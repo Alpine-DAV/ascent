@@ -1,0 +1,237 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>draw_plots &mdash; Strawman 0.1.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Strawman 0.1.0 documentation" href="../index.html"/>
+        <link rel="up" title="Strawman Actions" href="index.html"/>
+        <link rel="next" title="Strawman GPU Notes" href="../GPU_notes.html"/>
+        <link rel="prev" title="add_plot" href="Add_Plot.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Strawman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../Strawman.html">Strawman Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../Overview.html">Strawman Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ExampleIntegrations.html">Example Integrations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../BuildingStrawman.html">Building Strawman</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../StrawmanAPI.html">Strawman API</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Strawman Actions</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Actions.html">Strawman Actions Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Add_Plot.html">add_plot</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">draw_plots</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#connecting-to-the-web-server">Connecting To The Web Server</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../GPU_notes.html">Strawman GPU Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../Releases.html">Releases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Publications.html">Publications and Presentations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Licenses.html">License Info</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">Strawman</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../Strawman.html">Strawman Documentation</a> &raquo;</li>
+      
+          <li><a href="index.html">Strawman Actions</a> &raquo;</li>
+      
+    <li>draw_plots</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/Actions/Draw_Plots.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="draw-plots">
+<h1>draw_plots<a class="headerlink" href="#draw-plots" title="Permalink to this headline">¶</a></h1>
+<p>Draw plots simply renders the current plots.
+If a file name was specified in add_plots, then the rendered image will be saved to the file system.
+If a file name was not specified, then Strawman starts the embedded web server contained in Conduit.</p>
+<div class="section" id="connecting-to-the-web-server">
+<h2>Connecting To The Web Server<a class="headerlink" href="#connecting-to-the-web-server" title="Permalink to this headline">¶</a></h2>
+<p>The web server automatically starts when no file name is present, and it can be connected to at any point during the simulation.
+The load the web server simply navigate to <a class="reference external" href="http://localhost:9000">http://localhost:9000</a>.
+Here is an example of the web view using Lulesh:</p>
+<img alt="../_images/lulesh_webview.png" src="../_images/lulesh_webview.png" />
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../GPU_notes.html" class="btn btn-neutral float-right" title="Strawman GPU Notes" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Add_Plot.html" class="btn btn-neutral" title="add_plot" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015-2016, LLNS.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
