@@ -1,0 +1,56 @@
+[
+  {
+    "action": "add_plot",
+    "render_options": 
+    {
+      "width": 1024,
+      "height": 1024,
+      "renderer": "volume",
+      "color_map": 
+      {
+        "control_points": 
+        [
+          
+          {
+            "type": "rgb",
+            "position": 0.0,
+            "color": [0.7, 0.7,0.7]
+          },
+          
+          {
+            "type": "rgb",
+            "position": 0.5,
+            "color": [0.0, 0.0, 0.5]
+          },
+          
+          {
+            "type": "rgb",
+            "position": 1.0,
+            "color": [0.0, 0.0, 1.0]
+          },
+          {
+            "type": "alpha",
+            "position": 0.0,
+            "alpha": 0.005
+          },
+          {
+            "type": "alpha",
+            "position": 0.4,
+            "alpha": 0.02
+          },
+          {
+            "type": "alpha",
+            "position": 1.0,
+            "alpha": 0.1 
+          }
+        ]
+      },
+      "camera": 
+      {
+        "position": [40.0, 20.0, 30.0],
+        "look_at": [5.0, 5.0, 5.0],
+        "fov": 30.0
+      }
+    }
+  }
+]

@@ -1,0 +1,22 @@
+*clover
+
+ state 1 density=0.2 energy=1.0
+ state 2 density=1.0 energy=2.5 geometry=cuboid xmin=0.0 xmax=5.0 ymin=0.0 ymax=2.0 zmin=0.0 zmax=4.0
+
+ x_cells=384
+ y_cells=384
+ z_cells=384
+
+ xmin=0.0
+ ymin=0.0
+ zmin=0.0
+ xmax=10.0
+ ymax=10.0
+ zmax=10.0
+
+ initial_timestep=0.1
+ max_timestep=0.1
+ end_step=87
+ end_time=1000.1
+
+*endclover

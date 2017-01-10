@@ -1,0 +1,12 @@
+build-debug/
+build-release/
+build-debug-xcode/
+build-release-xcode/
+install-debug/
+install-release/
+.DS_Store
+*.pyc
+.ipynb_checkpoints
+visitlog.py
+uberenv_libs
+*.tar.gz

@@ -1,0 +1,4 @@
+{
+  "pipeline/type"    : "vtkm",
+  "pipeline/backend" : "serial"
+}

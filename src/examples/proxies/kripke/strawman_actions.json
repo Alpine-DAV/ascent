@@ -1,0 +1,40 @@
+[
+  {
+    "action": "add_plot",
+    "render_options": 
+    {
+      "width": 1024,
+      "height": 1024,
+      "renderer": "volume",
+      "color_map": 
+      {
+        "name" : "thermal",
+        "control_points": 
+        [
+          
+          {
+            "type": "alpha",
+            "position": 0.0,
+            "alpha": 0.007
+          },
+          {
+            "type": "alpha",
+            "position": 0.4,
+            "alpha": 0.02
+          },
+          {
+            "type": "alpha",
+            "position": 1.0,
+            "alpha": 0.1 
+          }
+        ]
+      },
+      "camera": 
+      {
+        "position": [200.0, 200.0, 200.0],
+        "look_at": [5.0, 5.0, 5.0],
+        "fov": 30.0
+      }
+    }
+  }
+]

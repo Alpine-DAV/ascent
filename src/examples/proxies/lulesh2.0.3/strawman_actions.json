@@ -1,0 +1,43 @@
+[
+  {
+    "action": "add_plot",
+    "field_name": "p",
+    "render_options": 
+    {
+      "width": 1024,
+      "height": 1024,
+      "renderer": "raytracer",
+      "color_map": 
+      {
+        "name": "thermal",
+        "control_points": 
+        [
+          
+          {
+            "type": "rgb",
+            "position": 0.0,
+            "color": [1.0, 0.0, 0.0]
+          },
+          
+          {
+            "type": "rgb",
+            "position": 0.5,
+            "color": [0.0, 1.0, 0.0]
+          },
+          
+          {
+            "type": "rgb",
+            "position": 1.0,
+            "color": [0.0, 0.0, 1.0]
+          }
+        ]
+      },
+      "camera": 
+      {
+        "position": [-0.1, -0.1, -0.1],
+        "look_at": [0.6, 0.6, 0.6],
+        "fov": 30.0
+      }
+    }
+  }
+]
