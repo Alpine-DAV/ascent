@@ -52,15 +52,13 @@
 #      CONDUIT_DIR={conduit install path}   \
 #   make
 #  ./example
-#
-# Note: (TODO)
 # 
 #
 ###############################################################################
 
 
 INC_FLAGS=-I$(STRAWMAN_DIR)/include/strawman -I$(CONDUIT_DIR)/include/conduit
-LINK_FLAGS=-L$(STRAWMAN_DIR)/lib/ -lstrawman 
+LINK_FLAGS=-L$(STRAWMAN_DIR)/lib/ -lstrawman -L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint
 
 main:
 	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example
