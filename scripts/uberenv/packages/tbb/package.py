@@ -65,6 +65,8 @@ class Tbb(Package):
 
     version('4.4.3', '9d8a4cdf43496f1b3f7c473a5248e5cc')
 
+    patch("tbb_rtm_key.patch",level=0)
+
     def url_for_version(self, version):
         tbb_tar_path =  os.path.abspath(join_path(os.path.dirname(__file__)))
         tbb_tar_path = join_path(tbb_tar_path,"tbb44_20160128oss_src.tgz")
@@ -111,7 +113,7 @@ class Tbb(Package):
 
 
         mkdirp(prefix)
-        mkdirp(prefix.lib)        
+        mkdirp(prefix.lib)
 
         #
         # tbb does not have a configure script or make install target
@@ -147,5 +149,4 @@ class Tbb(Package):
                 install(f, prefix.lib)
 
 
-  
 
