@@ -41,7 +41,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-
 """
  file: uberenv.py
 
@@ -116,6 +115,14 @@ def parse_args():
                       dest="project_json",
                       default=pjoin(uberenv_script_dir(),"project.json"),
                       help="uberenv project settings json file")
+
+    # flag to use insecure curl + git
+    parser.add_option("-k",
+                      action="store_true",
+                      dest="ignore_ssl_errors",
+                      default=False,
+                      help="Ignore SSL Errors")
+
     ###############
     # parse args
     ###############
@@ -174,8 +181,13 @@ def create_spack_mirror(mirror_path,pkg_name):
         print "[--create-mirror requires a mirror directory]"
         sys.exit(-1)
     mirror_path = os.path.abspath(mirror_path)
-    sexe("spack/bin/spack mirror create -d {} --dependencies {}".format(
-            mirror_path, pkg_name),echo=True)
+    
+    mirror_cmd = "spack/bin/spack "
+    if opts["ignore_ssl_errors"]:
+        mirror_cmd += "-k "
+    mirror_cmd += "mirror create -d {} --dependencies {}".format(mirror_path,
+                                                                 pkg_name)
+    return sexe(mirror_cmd, echo=True)
 
 def find_spack_mirror(spack_dir, mirror_name):
     """
@@ -266,7 +278,11 @@ def main():
         print "[info: cloning spack develop branch from github]"
         os.chdir(dest_dir)
         # clone spack into the dest path
-        sexe("git clone -b develop https://github.com/llnl/spack.git")
+        clone_cmd ="git "
+        if opts["ignore_ssl_errors"]:
+            clone_cmd +="-c http.sslVerify=false "
+        clone_cmd += "clone -b develop https://github.com/llnl/spack.git"
+        sexe(clone_cmd, echo=True)
         if "spack_develop_commit" in project_opts:
             sha1 = project_opts["spack_develop_commit"]
             print "[info: using spack develop %s]" % sha1
@@ -275,7 +291,7 @@ def main():
 
     os.chdir(dest_dir)
     # twist spack's arms 
-    patch_spack(dest_spack,compilers_yaml,pkgs)
+    patch_spack(dest_spack, compilers_yaml, pkgs)
 
     ##########################################################
     # we now have an instance of spack configured how we 
@@ -288,7 +304,7 @@ def main():
     # 
     ##########################################################
     if opts["create_mirror"]:
-        create_spack_mirror(opts["mirror"],uberenv_pkg_name)
+        return create_spack_mirror(opts["mirror"],uberenv_pkg_name)
     else:
         if not opts["mirror"] is None:
             use_spack_mirror(dest_spack,
@@ -296,10 +312,13 @@ def main():
                              opts["mirror"])
         # use the uberenv package to trigger the right builds 
         # and build an host-config.cmake file
-        sexe("spack/bin/spack install " + uberenv_pkg_name + opts["spec"],
-             echo=True)
+        install_cmd = "spack/bin/spack "
+        if opts["ignore_ssl_errors"]:
+            install_cmd += "-k "
+        install_cmd += "install " + uberenv_pkg_name + opts["spec"]
+        return sexe(install_cmd, echo=True)
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
 
 

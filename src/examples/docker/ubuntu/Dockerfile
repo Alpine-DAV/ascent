@@ -57,21 +57,25 @@ RUN apt-get update && apt-get install -y \
     python \
  && rm -rf /var/lib/apt/lists/*
 
-# at some sites, ssl certs are intercepted, which
-# cases issues fetching source via https.
-#
-# to resolve this, either install the proper certs into the image, or use 
-# the following commands to  disable ssl for git and curl (used by spack):
-#RUN git config --global http.sslVerify false
-#RUN echo insecure >> ~/.curlrc
 
 # obtain a copy of strawman source from host env
 COPY strawman.docker.src.tar.gz /
 RUN tar -xzf strawman.docker.src.tar.gz
 
+# at some sites ssl certs are intercepted, which cases issues fetching 
+# tpl sources via https
+
+# to resolve this, either:
+# 1) pass the "-k" option to uberenv (recommended), 
+# 2) install the proper certs into the image, or
+# 3) use  the following commands to disable ssl for git and 
+#    curl (both are used by spack):
+#RUN git config --global http.sslVerify false
+#RUN echo insecure >> ~/.curlrc
+
 # bootstrap third party libs using spack and uberenv
 #  for this example we use mpich for MPI
-RUN cd strawman && python scripts/uberenv/uberenv.py --spec %gcc+mpich
+RUN cd strawman && python scripts/uberenv/uberenv.py -k --spec %gcc+mpich
 
 # configure a debug build with cmake
 RUN cd strawman && mkdir build-debug
