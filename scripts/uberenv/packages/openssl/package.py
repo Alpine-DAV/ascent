@@ -34,7 +34,7 @@ class Openssl(Package):
        Transport Layer Security (TLS v1) protocols as well as a
        full-strength general purpose cryptography library."""
     homepage = "http://www.openssl.org"
-    url = "ftp://openssl.org/source/openssl-1.0.1h.tar.gz"
+    url = "ftp://openssl.org/source/old/1.0.2/openssl-1.0.2j.tar.gz"
 
     version('1.0.2j', '96322138f0b69e61b7212bc53d5e912b')
     version('1.0.2i', '678374e63f8df456a697d3e5e5a931fb')
