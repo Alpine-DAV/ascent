@@ -41,6 +41,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+
 """
  file: uberenv.py
 
@@ -173,7 +174,7 @@ def patch_spack(spack_dir,compilers_yaml,pkgs):
     sexe("cp -Rf %s %s" % (pkgs,dest_spack_pkgs))
 
 
-def create_spack_mirror(mirror_path,pkg_name):
+def create_spack_mirror(mirror_path,pkg_name,ignore_ssl_errors=False):
     """
     Creates a spack mirror for pkg_name at mirror_path.
     """
@@ -183,7 +184,7 @@ def create_spack_mirror(mirror_path,pkg_name):
     mirror_path = os.path.abspath(mirror_path)
     
     mirror_cmd = "spack/bin/spack "
-    if opts["ignore_ssl_errors"]:
+    if ignore_ssl_errors:
         mirror_cmd += "-k "
     mirror_cmd += "mirror create -d {} --dependencies {}".format(mirror_path,
                                                                  pkg_name)
@@ -304,7 +305,9 @@ def main():
     # 
     ##########################################################
     if opts["create_mirror"]:
-        return create_spack_mirror(opts["mirror"],uberenv_pkg_name)
+        return create_spack_mirror(opts["mirror"],
+                                   uberenv_pkg_name,
+                                   opts["ignore_ssl_errors"])
     else:
         if not opts["mirror"] is None:
             use_spack_mirror(dest_spack,
