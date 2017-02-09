@@ -98,29 +98,15 @@ set(CONDUIT_DIR "/nfs/tmp2/larsen30/conduit/install" CACHE PATH "")
 set(ICET_DIR "/usr/gapps/visit/strawman/uberenv_libs/spack/opt/spack/chaos_5_x86_64_ib/intel-14.0.3/icet-icet-master-hmg4hcjrztyseukkalbvxaga353ys6es" CACHE PATH "")
 
 #
-# eavl support from uberenv
-#
-
-# osmesa from uberenv
-set(OSMESA_DIR "/usr/gapps/visit/strawman/uberenv_libs/spack/opt/spack/chaos_5_x86_64_ib/intel-14.0.3/osmesa-7.5.2-fd2jiaki3ehyag5qrnbb75mh2d6uhb64" CACHE PATH "")
-
-# eavl from uberenv
-#set(EAVL_DIR "/usr/gapps/visit/strawman/uberenv_libs/spack/opt/spack/chaos_5_x86_64_ib/intel-14.0.3/eavl-github-bo44kqf5remiraajozuau2x27xcje54p" CACHE PATH "")
-set(EAVL_DIR "/g/g19/larsen30/EAVL" CACHE PATH "")
-
-#
 # vtkm support from uberenv
 #
-
-# boost-headers from uberenv
-set(BOOST_DIR "/usr/gapps/visit/strawman/uberenv_libs/spack/opt/spack/chaos_5_x86_64_ib/intel-14.0.3/boost-headers-1.58.0-bscwtvn3p6pvtnjyeqdpn3sd7gl2aa4n" CACHE PATH "")
 
 # tbb from uberenv
 #set(STRAWMAN_VTKM_USE_TBB OFF CACHE PATH "")
 set(TBB_DIR "/usr/gapps/visit/strawman/uberenv_libs/spack/opt/spack/chaos_5_x86_64_ib/intel-14.0.3/tbb-4.4.3-al6fuqhyuhr6ju4daik3mfwk5j7gcyvw" CACHE PATH "")
 
 # vtkm from uberenv
-set(VTKM_DIR "/nfs/tmp2/larsen30/VTKM_10/install" CACHE PATH "")
+set(VTKM_DIR "/usr/workspace/wsb/larsen30/vtk-m/install" CACHE PATH "")
 
 # hdf5 from uberenv
 set(HDF5_DIR "/usr/gapps/conduit/thirdparty_libs/stable/spack/opt/spack/chaos_5_x86_64_ib/gcc-4.9.3/hdf5-1.8.16-msbowehgkgvhlnl62fy6tb7bvefbr7h4" CACHE PATH "")

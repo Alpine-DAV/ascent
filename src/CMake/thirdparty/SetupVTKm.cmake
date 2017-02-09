@@ -46,8 +46,6 @@
 # Setup VTKm
 ###############################################################################
 
-# first Check for BOOST_DIR
-
 if(NOT VTKM_DIR)
     MESSAGE(FATAL_ERROR "VTKm support needs explicit VTKM_DIR")
 endif()
@@ -55,7 +53,7 @@ endif()
 MESSAGE(STATUS "Looking for VTKm using VTKM_DIR = ${VTKM_DIR}")
 
 # use VTKM_DIR to setup the options that cmake's find VTKm needs
-set(VTKm_DIR ${VTKM_DIR}/include)
+set(VTKm_DIR ${VTKM_DIR}/lib)
 
 #
 # VTKm will find TBB via the env var "TBB_ROOT"
@@ -64,14 +62,7 @@ if(TBB_DIR)
     set(ENV{TBB_ROOT} ${TBB_DIR})
 endif()
 
-find_package(VTKm REQUIRED)
+find_package(VTKm REQUIRED OPTIONAL_COMPONENTS Rendering)
 message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
 
 set(VTKM_FOUND TRUE)
-#####
-# At one point these were necessary?
-#####
-#include(VTKmMacros)
-#vtkm_configure_device(Serial)
-
-
