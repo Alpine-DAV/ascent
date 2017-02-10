@@ -75,7 +75,6 @@ class DataSet;
 //-----------------------------------------------------------------------------
 namespace strawman
 {
-template<typename DeviceAdatper>
 class Renderer;
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -83,7 +82,6 @@ class Renderer;
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-template <class DEVICE_ADAPTOR>
 class VTKMPipelineBackend: public Pipeline
 {
 public:
@@ -172,7 +170,7 @@ private:
     // holds the pipeline's plots
     std::vector<Plot> m_plots;
 
-    Renderer<DEVICE_ADAPTOR> *m_renderer;
+    Renderer *m_renderer;
 
     int cuda_device;
     // actions
