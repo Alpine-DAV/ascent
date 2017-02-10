@@ -1092,7 +1092,7 @@ Renderer::Render(vtkmActor *&plot,
           
 
 #else
-        m_png_data.Encode(&(m_canvas->ColorBuffer[0]),
+        m_png_data.Encode(&GetVTKMPointer(m_canvas->GetColorBuffer())[0][0],
                           image_width,
                           image_height);
 #endif

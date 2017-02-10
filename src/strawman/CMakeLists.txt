@@ -75,9 +75,7 @@ set(strawman_sources
     utils/strawman_file_system.cpp
     utils/strawman_block_timer.cpp
     utils/strawman_png_encoder.cpp
-    utils/strawman_web_interface.cpp
-    )
-
+    utils/strawman_web_interface.cpp)
 
 set(strawman_headers
     # strawman interface
@@ -93,8 +91,7 @@ set(strawman_headers
     utils/strawman_file_system.hpp
     utils/strawman_block_timer.hpp
     utils/strawman_png_encoder.hpp
-    utils/strawman_web_interface.hpp
-    )
+    utils/strawman_web_interface.hpp)
 
 if(VTKM_FOUND)
     # VTKm Pipeline Headers
@@ -106,12 +103,11 @@ if(VTKM_FOUND)
     # VTKm Pipeline Sources
     list(APPEND strawman_sources pipelines/strawman_vtkm_pipeline.cpp)
     list(APPEND strawman_sources pipelines/strawman_vtkm_pipeline_backend.cpp)
-
     # VTKm Rendering Headers
-    set(strawman_headers pipelines/strawman_vtkm_renderer.hpp)
+    list(APPEND strawman_headers pipelines/strawman_vtkm_renderer.hpp)
 
     # VTKm Rendering Sources
-    set(strawman_sources pipelines/strawman_vtkm_renderer.cpp)
+    list(APPEND strawman_sources pipelines/strawman_vtkm_renderer.cpp)
     
    
 endif()
@@ -120,8 +116,6 @@ if(HDF5_FOUND)
     list(APPEND strawman_headers pipelines/strawman_blueprint_hdf5_pipeline.hpp)
     list(APPEND strawman_sources pipelines/strawman_blueprint_hdf5_pipeline.cpp)
 endif()
-
-
 
 ##############################
 # optional features
@@ -148,21 +142,12 @@ set(strawman_thirdparty_libs
     conduit
     conduit_relay
     conduit_blueprint
-    lodepng)
-
-if(EAVL_FOUND)
-    list(APPEND strawman_thirdparty_libs
-                ${EAVL_LIBRARIES}
-                ${OSMESA_LIBRARIES})
-
-endif()
-
+    lodepng
+    ${VTKm_LIBRARIES})
 
 ##########################################
 # Build a serial version of strawman
 ##########################################
-
-
 
 if(BUILD_SHARED_LIBS)
     message(STATUS "Building strawman as a shared library")

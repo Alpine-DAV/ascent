@@ -48,6 +48,8 @@
 /// file: strawman_vtkm_pipeline.cpp
 ///
 //-----------------------------------------------------------------------------
+#warning "Should not have to define this"
+#define VTKM_DEVICE_ADAPTER VTKM_DEVICE_ADAPTER_SERIAL
 #include <strawman_vtkm_renderer.hpp>
 #include "strawman_vtkm_pipeline_backend.hpp"
 
@@ -88,7 +90,7 @@ typedef vtkm::cont::DataSet                vtkmDataSet;
 typedef vtkm::rendering::Actor             vtkmActor;
 
 
-struct VTKMPipeline::Plot
+struct VTKMPipelineBackend::Plot
 {
     std::string        m_var_name;
     std::string        m_cell_set_name;
@@ -108,9 +110,8 @@ struct VTKMPipeline::Plot
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-VTKMPipeline::DataAdapter::BlueprintToVTKmDataSet
-    (const Node &node, 
-     const std::string &field_name)
+VTKMPipelineBackend::DataAdapter::BlueprintToVTKmDataSet (const Node &node, 
+                                                   const std::string &field_name)
 {   
     STRAWMAN_BLOCK_TIMER(PIPELINE_GET_DATA);
     
@@ -279,7 +280,7 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-VTKMPipeline::DataAdapter::UniformBlueprintToVTKmDataSet
+VTKMPipelineBackend::DataAdapter::UniformBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name 
      const Node &n_coords,           // input mesh bp coordset (assumed uniform)
      const std::string &topo_name,   // input string with topo name
@@ -402,7 +403,7 @@ VTKMPipeline::DataAdapter::UniformBlueprintToVTKmDataSet
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-VTKMPipeline::DataAdapter::RectilinearBlueprintToVTKmDataSet
+VTKMPipelineBackend::DataAdapter::RectilinearBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name 
      const Node &n_coords,           // input mesh bp coordset (assumed rectilinear)
      const std::string &topo_name,   // input string with topo name
@@ -491,7 +492,7 @@ VTKMPipeline::DataAdapter::RectilinearBlueprintToVTKmDataSet
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-VTKMPipeline::DataAdapter::StructuredBlueprintToVTKmDataSet
+VTKMPipelineBackend::DataAdapter::StructuredBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name 
      const Node &n_coords,           // input mesh bp coordset (assumed rectilinear)
      const std::string &topo_name,   // input string with topo name
@@ -508,7 +509,7 @@ VTKMPipeline::DataAdapter::StructuredBlueprintToVTKmDataSet
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-VTKMPipeline::DataAdapter::UnstructuredBlueprintToVTKmDataSet
+VTKMPipelineBackend::DataAdapter::UnstructuredBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name 
      const Node &n_coords,           // input mesh bp coordset (assumed unstructured)
      const std::string &topo_name,   // input string with topo name
@@ -586,10 +587,9 @@ VTKMPipeline::DataAdapter::UnstructuredBlueprintToVTKmDataSet
                                        topo_dimensionality,
                                        neles);
     
-    vtkm::cont::CellSetExplicit<> cell_set(nverts,
-                                           topo_name.c_str());
+    vtkm::cont::CellSetExplicit<> cell_set(topo_name.c_str());
 
-    cell_set.Fill(shapes, num_indices, connectivity);
+    cell_set.Fill(nverts, shapes, num_indices, connectivity);
     
     result->AddCellSet(cell_set);
     
@@ -601,7 +601,7 @@ VTKMPipeline::DataAdapter::UnstructuredBlueprintToVTKmDataSet
 //-----------------------------------------------------------------------------
 
 void
-VTKMPipeline::DataAdapter::AddVariableField
+VTKMPipelineBackend::DataAdapter::AddVariableField
     (const std::string &field_name,
      const Node &n_field,
      const std::string &topo_name,
@@ -663,7 +663,7 @@ VTKMPipeline::DataAdapter::AddVariableField
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// VTKMPipeline Methods
+// VTKMPipelineBackend Methods
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -676,14 +676,14 @@ VTKMPipeline::DataAdapter::AddVariableField
 
 //-----------------------------------------------------------------------------
 
-VTKMPipeline::VTKMPipelineBackend()
+VTKMPipelineBackend::VTKMPipelineBackend()
 {
   STRAWMAN_BLOCK_TIMER(CONSTRUCTOR)
 }
 
 //-----------------------------------------------------------------------------
 
-VTKMPipeline::~VTKMPipelineBackend()
+VTKMPipelineBackend::~VTKMPipelineBackend()
 {
     delete m_renderer;
     Cleanup();
@@ -701,7 +701,7 @@ VTKMPipeline::~VTKMPipelineBackend()
 //-----------------------------------------------------------------------------
 
 void
-VTKMPipeline::Initialize(const conduit::Node &options)
+VTKMPipelineBackend::Initialize(const conduit::Node &options)
 {
 #if PARALLEL
     if(!options.has_path("mpi_comm"))
@@ -711,7 +711,7 @@ VTKMPipeline::Initialize(const conduit::Node &options)
 
     int mpi_handle = options["mpi_comm"].value();
     MPI_Comm comm = MPI_Comm_f2c(mpi_handle);
-    m_renderer = new Renderer<DEVICE_ADAPTOR>(comm);
+    m_renderer = new Renderer(comm);
 #ifdef VTKM_CUDA
     //
     //  If we are using cuda, figure out how many devices we have and
@@ -751,7 +751,7 @@ VTKMPipeline::Initialize(const conduit::Node &options)
 #endif
 
 #else
-    m_renderer = new Renderer<DEVICE_ADAPTOR>;
+    m_renderer = new Renderer;
 
 #endif
     
@@ -761,7 +761,7 @@ VTKMPipeline::Initialize(const conduit::Node &options)
 //-----------------------------------------------------------------------------
 
 void
-VTKMPipeline::Cleanup()
+VTKMPipelineBackend::Cleanup()
 {
    
 }
@@ -769,7 +769,7 @@ VTKMPipeline::Cleanup()
 //-----------------------------------------------------------------------------
 
 void
-VTKMPipeline::Publish(const conduit::Node &data)
+VTKMPipelineBackend::Publish(const conduit::Node &data)
 { 
     //
     // Delete the old plots and data sets
@@ -786,7 +786,7 @@ VTKMPipeline::Publish(const conduit::Node &data)
 //-----------------------------------------------------------------------------
 
 void
-VTKMPipeline::Execute(const conduit::Node &actions)
+VTKMPipelineBackend::Execute(const conduit::Node &actions)
 {
     //
     // Loop over the actions
@@ -824,7 +824,7 @@ VTKMPipeline::Execute(const conduit::Node &actions)
 //-----------------------------------------------------------------------------
 
 void
-VTKMPipeline::AddPlot(const conduit::Node &action)
+VTKMPipelineBackend::AddPlot(const conduit::Node &action)
 {
     const std::string field_name = action["field_name"].as_string();
 
@@ -874,7 +874,7 @@ VTKMPipeline::AddPlot(const conduit::Node &action)
 //-----------------------------------------------------------------------------
 
 void 
-VTKMPipeline::DrawPlots()
+VTKMPipelineBackend::DrawPlots()
 {
     for (int i = 0; i < m_plots.size(); ++i)
     {
@@ -890,7 +890,7 @@ VTKMPipeline::DrawPlots()
 //-----------------------------------------------------------------------------
 
 void
-VTKMPipeline::RenderPlot(const int plot_id,
+VTKMPipelineBackend::RenderPlot(const int plot_id,
                                                 const conduit::Node &render_options)
 { 
     render_options.print();

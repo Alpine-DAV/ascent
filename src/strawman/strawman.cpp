@@ -58,14 +58,9 @@
     #include <pipelines/strawman_vtkm_pipeline.hpp>
 #endif
 
-#if defined(STRAWMAN_EAVL_ENABLED)
-    #include <pipelines/strawman_eavl_pipeline.hpp>
-#endif
-
 #if defined(STRAWMAN_HDF5_ENABLED)
     #include <pipelines/strawman_blueprint_hdf5_pipeline.hpp>
 #endif
-
 
 using namespace conduit;
 //-----------------------------------------------------------------------------
