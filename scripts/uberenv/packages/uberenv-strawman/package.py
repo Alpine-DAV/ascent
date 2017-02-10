@@ -270,17 +270,6 @@ class UberenvStrawman(Package):
         cfg.write("\n")
 
         #######################
-        # eavl + tpls
-        #######################
-
-        cfg.write("\n# eval support\n\n")
-        cfg.write("# osmesa from uberenv\n")
-        cfg.write(cmake_cache_entry("OSMESA_DIR", spec['osmesa'].prefix))
-        cfg.write("# eavl from uberenv\n")
-        cfg.write(cmake_cache_entry("EAVL_DIR", spec['eavl'].prefix))
-        cfg.write("\n")
-
-        #######################
         # vtkm + tpls
         #######################
 
