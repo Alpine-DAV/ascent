@@ -71,11 +71,9 @@ class UberenvStrawman(Package):
     variant("mpich",default=False,description="build mpich as MPI lib for Strawman")
     
     depends_on("cmake@3.3.1")
-
-    depends_on("osmesa")
-    depends_on("eavl")
+    
     depends_on("icet")
-    depends_on("vtkm@1.0.0")
+    depends_on("vtkm")
     
     # python2
     depends_on("python", when="+python")
@@ -286,10 +284,7 @@ class UberenvStrawman(Package):
         # vtkm + tpls
         #######################
 
-        cfg.write("\n# vtkm support\n\n")
-        cfg.write("# boost-headers from uberenv\n")
-        cfg.write(cmake_cache_entry("BOOST_DIR", spec['boost-headers'].prefix))
-        
+        cfg.write("\n# vtkm support\n\n")    
 
         cfg.write("# tbb from uberenv\n")
         cfg.write(cmake_cache_entry("TBB_DIR", spec['tbb'].prefix))
