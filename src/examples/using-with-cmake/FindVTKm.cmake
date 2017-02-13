@@ -42,79 +42,50 @@
 # 
 ###############################################################################
 
+###############################################################################
+#
+# Setup VTKm 
+#
+###############################################################################
+#
+#  Expects VTKM_DIR to point to a Conduit installations.
+#
+# This file defines the following CMake variables:
+#  VTKM_FOUND - If Conduit was found
+#  VTKM_INCLUDE_DIRS - The Conduit include directories
+#
+#  If found, the vtkm CMake targets will also be imported.
+#  The main vtkm library targets are:
+#   vtkm 
+#   vtkm_cont
+#   vtkm_rendering
+#
+###############################################################################
 
-################################
-# Basic TPL Tests
-################################
-set(TPL_TESTS t_gtest_smoke)
-
-set(CUDA_TESTS t_cuda_smoke)
-
-set(TBB_TESTS)
-
-IF(VTKM_FOUND)
-    list(APPEND VTKM_TESTS t_vtkm_smoke )
-    list(APPEND CUDA_TESTS t_vtkm_cuda_smoke)
-    list(APPEND TBB_TESTS  t_vtkm_tbb_smoke)
+###############################################################################
+# Check for VTKM_DIR
+###############################################################################
+if(NOT VTKM_DIR)
+  MESSAGE(FATAL_ERROR "Could not find VTKM_DIR. Conduit requires explicit VTKM_DIR.")
 endif()
 
-set(FORTRAN_TESTS t_fortran_smoke
-                  t_fruit_smoke)
-
-################################
-# Add our Main Unit Tests
-################################
-message(STATUS "Adding thirdparty lib unit tests")
-foreach(TEST ${TPL_TESTS})
-    add_cpp_test(TEST ${TEST})
-endforeach()
-
-################################
-# Add our VTKm Unit Tests
-################################
-set(vtkm_dependencies ${VTKm_LIBRARIES})
-
-if(TBB_FOUND)
-  list(APPEND vtkm_dependencies ${TBB_LIBRARIES})
+if(NOT EXISTS ${VTKM_DIR}/lib/VTKmConfig.cmake)
+  MESSAGE(FATAL_ERROR "Could not find VTKm CMake include file (${VTKM_DIR}/lib/VTKmConfig.cmake)")
 endif()
 
-foreach(TEST ${VTKM_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON ${vtkm_dependencies})
-endforeach()
+###############################################################################
+# Import VTKm CMake targets
+###############################################################################
+include(${VTKM_DIR}/lib/VTKmConfig.cmake)
 
-if(CUDA_FOUND)
-    ################################
-    # Add our CUDA-based Unit Tests
-    ################################
-    message(STATUS "Adding thirdparty lib cuda-based unit tests")
-    foreach(TEST ${CUDA_TESTS})
-        add_cuda_test(TEST ${TEST})
-    endforeach()
-endif()
+###############################################################################
+# Set remaning CMake variables 
+###############################################################################
+# we found VTKm
+set(VTKM_FOUND TRUE)
+# provide location of the headers in VTKM_INCLUDE_DIRS
+set(VTKM_INCLUDE_DIRS ${VTKM_DIR}/include/vtkm)
 
-
-################################
-# Add our Optional Unit Tests
-################################
-if(MPI_FOUND)
-    message(STATUS "MPI enabled: Adding related unit tests")
-    foreach(TEST ${MPI_TESTS})
-        # this uses 2 procs
-        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2) 
-    endforeach()
-else()
-    message(STATUS "MPI disabled: Skipping related tests")
-endif()
-
-
-if(FORTRAN_FOUND)
-    message(STATUS "Fortran enabled: Adding related unit tests")
-    foreach(TEST ${FORTRAN_TESTS})
-      add_fortran_test(TEST ${TEST} DEPENDS_ON strawman)
-    endforeach()
-else()
-    message(STATUS "Fortran disabled: Skipping related tests")
-endif()
 
 
 

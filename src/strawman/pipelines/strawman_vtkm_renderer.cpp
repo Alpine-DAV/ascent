@@ -52,6 +52,7 @@
 #define VTKM_DEVICE_ADAPTER VTKM_DEVICE_ADAPTER_SERIAL
 // this should be defined in the file below
 //#include <vtkm/cont/internal/DeviceAdapterTag.h>
+//#include <vtkm/cont/internal/DeviceAdapterTag.h>
 
 #include "strawman_vtkm_renderer.hpp"
 

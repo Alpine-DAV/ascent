@@ -101,12 +101,13 @@ script:
   - make install
   # test our examples that demo using an installed strawman
   - export CONDUIT_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/conduit*`
+  - export VTKM_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/vtkm*`
   - export STRAWMAN_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install
   # using with cmake example
   - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
   - mkdir build
   - cd build
-  - cmake -DSTRAWMAN_DIR=${STRAWMAN_DIR} -DCONDUIT_DIR=${CONDUIT_DIR} ../
+  - cmake -DSTRAWMAN_DIR=${STRAWMAN_DIR} -DCONDUIT_DIR=${CONDUIT_DIR} -DVTKM_DIR=${VTKM_DIR} ../
   - make
   - ./example
   # using with make example (still needs work for static builds)

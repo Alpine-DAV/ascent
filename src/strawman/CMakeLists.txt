@@ -142,8 +142,13 @@ set(strawman_thirdparty_libs
     conduit
     conduit_relay
     conduit_blueprint
-    lodepng
-    ${VTKm_LIBRARIES})
+    lodepng)
+
+if(VTKM_FOUND)
+    list(APPEND strawman_thirdparty_libs vtkm)
+    list(APPEND strawman_thirdparty_libs vtkm_cont)
+    list(APPEND strawman_thirdparty_libs vtkm_rendering)
+endif()
 
 ##########################################
 # Build a serial version of strawman
