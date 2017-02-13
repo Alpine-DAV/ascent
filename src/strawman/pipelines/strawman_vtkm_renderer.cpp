@@ -923,7 +923,7 @@ Renderer::Render(vtkmActor *&plot,
         {
           vtkmColorTable color_table = SetColorMapFromNode();
           vtkmActor *new_actor = new vtkmActor(plot->GetCells(),
-                                               plot->GetCoordiantes(),
+                                               plot->GetCoordinates(),
                                                plot->GetScalarField(),
                                                color_table);
           delete plot;
@@ -940,7 +940,7 @@ Renderer::Render(vtkmActor *&plot,
                 vtkmColorTable color_table;
                 CreateDefaultTransferFunction(color_table);
                 vtkmActor *new_actor = new vtkmActor(plot->GetCells(),
-                                                     plot->GetCoordiantes(),
+                                                     plot->GetCoordinates(),
                                                      plot->GetScalarField(),
                                                      color_table);
                 delete plot;
