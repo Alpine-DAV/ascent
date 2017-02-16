@@ -49,9 +49,9 @@ compiler:
   - gcc
 env:
   global:
-  - COMPILER_CC=gcc-5
-  - COMPILER_CXX=g++-5
-  - COMPILER_FC=gfortran-5
+  - COMPILER_CC=gcc-4.9
+  - COMPILER_CXX=g++-4.9
+  - COMPILER_FC=gfortran-4.9
   matrix:
     # we want to test both static and shared
     - BUILD_SHARED_LIBS=ON
@@ -62,9 +62,9 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
        - binutils
-       - gcc-5
-       - g++-5
-       - gfortran-5
+       - gcc-4.9
+       - g++-4.9
+       - gfortran-4.9
 install:
   # none
 script:
@@ -76,7 +76,7 @@ script:
   - ${CC} --version
   - cd $TRAVIS_BUILD_DIR
   # build deps using uberenv
-  - python scripts/uberenv/uberenv.py --spec %gcc@5+mpich
+  - python scripts/uberenv/uberenv.py --spec %gcc@4.9+mpich
   # create out-of-source build dir
   - mkdir travis-debug-build
   - cd    travis-debug-build
