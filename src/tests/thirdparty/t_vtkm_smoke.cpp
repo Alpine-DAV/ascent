@@ -71,21 +71,23 @@ TEST(vtkm_smoke, basic_use)
 {
     vtkm::cont::testing::MakeTestDataSet maker;
     vtkm::cont::DataSet data = maker.Make3DExplicitDataSet2();
-    
+    //
+    // work around for a problem adding scalar fields of size 1
+    // to Actors
+    //
     std::vector<vtkm::Float32> scalars;
     scalars.push_back(0);
     scalars.push_back(1);
     vtkm::cont::Field scalarField("some_field",
-                                  vtkm::cont::Field::ASSOC_POINTS,
+                                  vtkm::cont::Field::ASSOC_CELL_SET,
                                   "cell_set",
                                   scalars);
+
     const vtkm::cont::CoordinateSystem coords = data.GetCoordinateSystem();
-    std::cout<<"before actor\n";
-    data.PrintSummary(std::cout);
     vtkm::rendering::Actor actor(data.GetCellSet(),
                                  data.GetCoordinateSystem(),
                                  scalarField);
-    std::cout<<"After actor\n";
+
     vtkm::Bounds coordsBounds; // Xmin,Xmax,Ymin..
     coordsBounds = actor.GetSpatialBounds();
 
