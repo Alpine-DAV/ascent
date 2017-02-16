@@ -73,8 +73,7 @@ class Cmake(Package):
 
         # configure, build, install:
         options = ['--prefix=%s' % prefix]
-        #options.append('--parallel=%s' % str(make_jobs))
-        options.append('--parallel=1'))
+        options.append('--parallel=%s' % str(make_jobs))
 
         if '+qt' in spec:
             options.append('--qt-gui')
@@ -88,5 +87,5 @@ class Cmake(Package):
             options.append('-DCMAKE_USE_OPENSSL=ON')
 
         configure(*options)
-        make()
+        make('parallel=false')
         make('install')
