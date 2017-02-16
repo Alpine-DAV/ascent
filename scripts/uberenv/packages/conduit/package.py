@@ -91,7 +91,7 @@ class Conduit(Package):
     #######################
     # CMake
     #######################
-    depends_on("cmake@3.3.1")
+    depends_on("cmake@3.4.0")
     
     #######################
     # python
