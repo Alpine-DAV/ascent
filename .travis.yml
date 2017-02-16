@@ -62,9 +62,9 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
        - binutils
-       - gcc-4.9
-       - g++-4.9
-       - gfortran-4.9
+       - gcc-5
+       - g++-5
+       - gfortran-5
 install:
   # none
 script:
@@ -76,7 +76,7 @@ script:
   - ${CC} --version
   - cd $TRAVIS_BUILD_DIR
   # build deps using uberenv
-  - python scripts/uberenv/uberenv.py --spec %gcc@4.9+mpich
+  - python scripts/uberenv/uberenv.py --spec %gcc@5+mpich
   # create out-of-source build dir
   - mkdir travis-debug-build
   - cd    travis-debug-build
@@ -108,7 +108,7 @@ script:
   - mkdir build
   - cd build
   - cmake -DSTRAWMAN_DIR=${STRAWMAN_DIR} -DCONDUIT_DIR=${CONDUIT_DIR} -DVTKM_DIR=${VTKM_DIR} ../
-  - make
+  - make VERBOSE=1
   - ./example
   # using with make example (still needs work for static builds)
   #- cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
