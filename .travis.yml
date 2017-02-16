@@ -110,7 +110,7 @@ script:
   - cmake -DSTRAWMAN_DIR=${STRAWMAN_DIR} -DCONDUIT_DIR=${CONDUIT_DIR} -DVTKM_DIR=${VTKM_DIR} ../
   - make VERBOSE=1
   - ./example
-  - cat /tmp/travis/spack-stage/spack-stage-fONW9j/cmake-3.4.0/spack-build.out 
+  - cat /tmp/travis/spack-stage/*/cmake-3.4.0/spack-build.out 
   # using with make example (still needs work for static builds)
   #- cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
   #- make
