@@ -96,7 +96,7 @@ script:
   - export HOST_CONFIG=`ls ../uberenv_libs/*.cmake`
   - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
   # build, test, and install
-  - make
+  - make VERBOSE=1
   - env CTEST_OUTPUT_ON_FAILURE=1 make test
   - make install
   # test our examples that demo using an installed strawman
@@ -122,5 +122,6 @@ notifications:
   email:
     recipients:
       - cyrush@llnl.gov
+      - larsen30@llnl.gov
     on_success: always
     on_failure: always
