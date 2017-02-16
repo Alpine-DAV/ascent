@@ -49,9 +49,9 @@ compiler:
   - gcc
 env:
   global:
-  - COMPILER_CC=gcc-4.9
-  - COMPILER_CXX=g++-4.9
-  - COMPILER_FC=gfortran-4.9
+  - COMPILER_CC=gcc-5
+  - COMPILER_CXX=g++-5
+  - COMPILER_FC=gfortran-5
   matrix:
     # we want to test both static and shared
     - BUILD_SHARED_LIBS=ON
