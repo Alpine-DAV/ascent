@@ -74,6 +74,7 @@ class Cmake(Package):
         # configure, build, install:
         options = ['--prefix=%s' % prefix]
         #options.append('--parallel=%s' % str(make_jobs))
+        options.append('--parallel=1'))
 
         if '+qt' in spec:
             options.append('--qt-gui')
