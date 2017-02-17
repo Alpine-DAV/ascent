@@ -188,10 +188,10 @@ add_target_compile_flags(TARGET strawman
 
 
 target_link_libraries(strawman ${strawman_thirdparty_libs})
+target_link_libraries(strawman rt)
 
 if(CUDA_FOUND)
     target_link_libraries(strawman ${CUDA_CUDART_LIBRARY})
-    
 endif()
 
 
@@ -288,7 +288,9 @@ if(MPI_FOUND)
     if(TBB_FOUND)
        target_link_libraries(strawman_par ${TBB_LIBRARIES})
     endif()
-
+  
+    
+    target_link_libraries(strawman_par rt)
 
 
     # install target for mpi ver
