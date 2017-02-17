@@ -70,7 +70,7 @@ class UberenvStrawman(Package):
     variant("python",default=True,description="build python 2")
     variant("mpich",default=False,description="build mpich as MPI lib for Strawman")
     
-    depends_on("cmake@3.4.0")
+    depends_on("cmake@3.3.1")
     
     depends_on("icet")
     depends_on("vtkm")
