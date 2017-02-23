@@ -44,19 +44,14 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_file_system.cpp
+/// file: strawman_vtkm_pipeline.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "strawman_file_system.hpp"
+#include "alpine_vtkm_pipeline.hpp"
 
-#include "strawman_logging.hpp"
-
-// standard includes
-#include <stdlib.h>
-// unix only
-#include <sys/types.h>
-#include <sys/stat.h>
+#include "alpine_vtkm_pipeline_backend.hpp"
+#include <cstdlib>
 
 //-----------------------------------------------------------------------------
 // -- begin strawman:: --
@@ -64,21 +59,77 @@
 namespace strawman
 {
 
+//-----------------------------------------------------------------------------
+// VTKMPipeline Methods
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-bool
-directory_exists(const std::string &path)
+//-----------------------------------------------------------------------------
+//
+// Creation and Destruction
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+VTKMPipeline::VTKMPipeline()
+: m_backend(NULL)
 {
-    return conduit::utils::is_directory(path);
+
 }
 
 //-----------------------------------------------------------------------------
-bool
-create_directory(const std::string &path)
+VTKMPipeline::~VTKMPipeline()
 {
-    // TODO, windows solution ...
-    return (mkdir(path.c_str(),S_IRWXU | S_IRWXG) == 0);
+    Cleanup();
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//
+// Main pipeline interface methods, which are called by the strawman interface.
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void
+VTKMPipeline::Initialize(const conduit::Node &options)
+{
+    Cleanup();
+    
+    m_backend = new VTKMPipelineBackend();
+
+    m_backend->Initialize(options);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+VTKMPipeline::Cleanup()
+{
+    if(m_backend != NULL)
+    {
+        m_backend->Cleanup();
+        delete m_backend;
+        m_backend = NULL;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKMPipeline::Publish(const conduit::Node &data)
+{
+    m_backend->Publish(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKMPipeline::Execute(const conduit::Node &actions)
+{
+    m_backend->Execute(actions);
+}
+
 
 
 //-----------------------------------------------------------------------------

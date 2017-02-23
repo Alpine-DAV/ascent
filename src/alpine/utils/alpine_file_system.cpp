@@ -42,19 +42,21 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_eavl_pipeline.hpp
+/// file: strawman_file_system.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef STRAWMAN_EAVL_PIPELINE_HPP
-#define STRAWMAN_EAVL_PIPELINE_HPP
+#include "alpine_file_system.hpp"
 
-#include <strawman.hpp>
-#include <strawman_pipeline.hpp>
+#include "alpine_logging.hpp"
 
+// standard includes
+#include <stdlib.h>
+// unix only
+#include <sys/types.h>
+#include <sys/stat.h>
 
 //-----------------------------------------------------------------------------
 // -- begin strawman:: --
@@ -62,56 +64,22 @@
 namespace strawman
 {
 
-class EAVLPipeline : public Pipeline
+
+//-----------------------------------------------------------------------------
+bool
+directory_exists(const std::string &path)
 {
-public:
-    
-    // Creation and Destruction
-    EAVLPipeline();
-    virtual ~EAVLPipeline();
+    return conduit::utils::is_directory(path);
+}
 
-    // Main pipeline interface methods, which are used by the strawman 
-    // interface.
+//-----------------------------------------------------------------------------
+bool
+create_directory(const std::string &path)
+{
+    // TODO, windows solution ...
+    return (mkdir(path.c_str(),S_IRWXU | S_IRWXG) == 0);
+}
 
-    void  Initialize(const conduit::Node &options);
-
-    void  Publish(const conduit::Node &data);
-    void  Execute(const conduit::Node &actions);
-    
-    void  Cleanup();
-
-private:
-    //forward declarations
-    class DataAdapter;
-    class Renderer;
-    class Plot;
-    
-    
-    // actions
-    void            AddPlot(const conduit::Node &options);
-    void            DrawPlots();
-    void            RenderPlot(const int plot_id, conduit::Node &options);
-
-
-    //filters and mutators
-    void            AddFilter(const conduit::Node &options);
-    void            BoxFilter(const conduit::Node &options);
-    void            IsosurfaceFilter(const conduit::Node &options);
-    // TODO: this should be called Recenter
-    void            CellToNodeFilter(const conduit::Node &options);
-    void            ThresholdFilter(const conduit::Node &options);
-    void            ExternalFacesFilter();
-
-    // conduit node that (externally) holds the data from the simulation 
-    conduit::Node     m_data; 
-
-    // holds the pipeline's plots
-    std::vector<Plot> m_plots;
-
-    // rendering
-    Renderer          *m_renderer;
-
-};
 
 //-----------------------------------------------------------------------------
 };
@@ -119,9 +87,5 @@ private:
 // -- end strawman:: --
 //-----------------------------------------------------------------------------
 
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
 
 

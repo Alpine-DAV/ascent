@@ -45,7 +45,7 @@
 
 ###############################################################################
 #
-# file: src/strawman/CMakeLists.txt
+# file: src/alpine/CMakeLists.txt
 #
 ###############################################################################
 
@@ -61,60 +61,60 @@ endif()
 
 
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/strawman_config.h.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/strawman_config.h")
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/alpine_config.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/alpine_config.h")
 
-set(strawman_sources
-    # strawman interface
-    strawman.cpp
-    c/strawman_c.cpp
+set(alpine_sources
+    # alpine interface
+    alpine.cpp
+    c/alpine_c.cpp
     # pipelines
-    strawman_pipeline.cpp
-    pipelines/strawman_empty_pipeline.cpp
+    alpine_pipeline.cpp
+    pipelines/alpine_empty_pipeline.cpp
     # utils
-    utils/strawman_file_system.cpp
-    utils/strawman_block_timer.cpp
-    utils/strawman_png_encoder.cpp
-    utils/strawman_web_interface.cpp)
+    utils/alpine_file_system.cpp
+    utils/alpine_block_timer.cpp
+    utils/alpine_png_encoder.cpp
+    utils/alpine_web_interface.cpp)
 
-set(strawman_headers
-    # strawman interface
-    ${CMAKE_CURRENT_BINARY_DIR}/strawman_config.h
-    strawman_exports.h
-    strawman.hpp
-    c/strawman.h
+set(alpine_headers
+    # alpine interface
+    ${CMAKE_CURRENT_BINARY_DIR}/alpine_config.h
+    alpine_exports.h
+    alpine.hpp
+    c/alpine.h
     # pipelines
-    strawman_pipeline.hpp
-    pipelines/strawman_empty_pipeline.hpp
+    alpine_pipeline.hpp
+    pipelines/alpine_empty_pipeline.hpp
     # utils
-    utils/strawman_logging.hpp
-    utils/strawman_file_system.hpp
-    utils/strawman_block_timer.hpp
-    utils/strawman_png_encoder.hpp
-    utils/strawman_web_interface.hpp)
+    utils/alpine_logging.hpp
+    utils/alpine_file_system.hpp
+    utils/alpine_block_timer.hpp
+    utils/alpine_png_encoder.hpp
+    utils/alpine_web_interface.hpp)
 
 if(VTKM_FOUND)
     # VTKm Pipeline Headers
-    list(APPEND strawman_headers pipelines/strawman_vtkm_pipeline.hpp)
-    list(APPEND strawman_headers pipelines/strawman_vtkm_pipeline_backend.hpp)
-    list(APPEND strawman_headers pipelines/strawman_vtkm_renderer.hpp)
+    list(APPEND alpine_headers pipelines/alpine_vtkm_pipeline.hpp)
+    list(APPEND alpine_headers pipelines/alpine_vtkm_pipeline_backend.hpp)
+    list(APPEND alpine_headers pipelines/alpine_vtkm_renderer.hpp)
 
 
     # VTKm Pipeline Sources
-    list(APPEND strawman_sources pipelines/strawman_vtkm_pipeline.cpp)
-    list(APPEND strawman_sources pipelines/strawman_vtkm_pipeline_backend.cpp)
+    list(APPEND alpine_sources pipelines/alpine_vtkm_pipeline.cpp)
+    list(APPEND alpine_sources pipelines/alpine_vtkm_pipeline_backend.cpp)
     # VTKm Rendering Headers
-    list(APPEND strawman_headers pipelines/strawman_vtkm_renderer.hpp)
+    list(APPEND alpine_headers pipelines/alpine_vtkm_renderer.hpp)
 
     # VTKm Rendering Sources
-    list(APPEND strawman_sources pipelines/strawman_vtkm_renderer.cpp)
+    list(APPEND alpine_sources pipelines/alpine_vtkm_renderer.cpp)
     
    
 endif()
 
 if(HDF5_FOUND)
-    list(APPEND strawman_headers pipelines/strawman_blueprint_hdf5_pipeline.hpp)
-    list(APPEND strawman_sources pipelines/strawman_blueprint_hdf5_pipeline.cpp)
+    list(APPEND alpine_headers pipelines/alpine_blueprint_hdf5_pipeline.hpp)
+    list(APPEND alpine_sources pipelines/alpine_blueprint_hdf5_pipeline.cpp)
 endif()
 
 ##############################
@@ -122,7 +122,7 @@ endif()
 #############################
 
 if(FORTRAN_FOUND)
-    list(APPEND strawman_sources fortran/strawman_fortran.f90)
+    list(APPEND alpine_sources fortran/alpine_fortran.f90)
 endif()
 
 ################################
@@ -138,39 +138,39 @@ endif()
 # req'd libs
 ##################
 
-set(strawman_thirdparty_libs 
+set(alpine_thirdparty_libs 
     conduit
     conduit_relay
     conduit_blueprint
     lodepng)
 
 if(VTKM_FOUND)
-    list(APPEND strawman_thirdparty_libs vtkm)
-    list(APPEND strawman_thirdparty_libs vtkm_cont)
-    list(APPEND strawman_thirdparty_libs vtkm_rendering)
+    list(APPEND alpine_thirdparty_libs vtkm)
+    list(APPEND alpine_thirdparty_libs vtkm_cont)
+    list(APPEND alpine_thirdparty_libs vtkm_rendering)
 endif()
 
 ##########################################
-# Build a serial version of strawman
+# Build a serial version of alpine
 ##########################################
 
 if(BUILD_SHARED_LIBS)
-    message(STATUS "Building strawman as a shared library")
+    message(STATUS "Building alpine as a shared library")
     if(VTKM_FOUND)
-        add_library(strawman SHARED 
-                    ${strawman_sources} 
-                    ${strawman_headers})
+        add_library(alpine SHARED 
+                    ${alpine_sources} 
+                    ${alpine_headers})
     else()
-        add_library(strawman SHARED ${strawman_sources} ${strawman_headers})
+        add_library(alpine SHARED ${alpine_sources} ${alpine_headers})
     endif()
 else()
-    message(STATUS "Building strawman as a static library")
+    message(STATUS "Building alpine as a static library")
     if(VTKM_FOUND)
-        add_library(strawman STATIC 
-                    ${strawman_sources} 
-                    ${strawman_headers})
+        add_library(alpine STATIC 
+                    ${alpine_sources} 
+                    ${alpine_headers})
     else()
-        add_library(strawman STATIC ${strawman_sources} ${strawman_headers})
+        add_library(alpine STATIC ${alpine_sources} ${alpine_headers})
     endif()
 endif()
 
@@ -178,42 +178,41 @@ endif()
 # Ensure we use c++11
 ##########################################
 
-set_target_properties(strawman PROPERTIES
+set_target_properties(alpine PROPERTIES
                       CXX_STANDARD 11
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENTIONS NO)
 
-add_target_compile_flags(TARGET strawman 
+add_target_compile_flags(TARGET alpine 
                          FLAGS ${VTKm_COMPILE_OPTIONS})
 
 
-target_link_libraries(strawman ${strawman_thirdparty_libs})
-target_link_libraries(strawman rt)
+target_link_libraries(alpine ${alpine_thirdparty_libs})
 
 if(CUDA_FOUND)
-    target_link_libraries(strawman ${CUDA_CUDART_LIBRARY})
+    target_link_libraries(alpine ${CUDA_CUDART_LIBRARY})
 endif()
 
 
 if(TBB_FOUND)
-   target_link_libraries(strawman ${TBB_LIBRARIES})
+   target_link_libraries(alpine ${TBB_LIBRARIES})
 endif()
 
 
-# install target for serial strawman lib
-install(TARGETS strawman
-        EXPORT  strawman
+# install target for serial alpine lib
+install(TARGETS alpine
+        EXPORT  alpine
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION lib
 )
 
 ################################################
-# Build Parallel (MPI) version of strawman
+# Build Parallel (MPI) version of alpine
 ################################################
 if(MPI_FOUND)
-    set(strawman_par_sources utils/strawman_icet_compositor.cpp)
-    set(strawman_par_headers utils/strawman_icet_compositor.hpp)
+    set(alpine_par_sources utils/alpine_icet_compositor.cpp)
+    set(alpine_par_headers utils/alpine_icet_compositor.hpp)
     
 
     if(VTKM_FOUND)
@@ -229,31 +228,31 @@ if(MPI_FOUND)
     endif()
    
     if(BUILD_SHARED_LIBS)
-        message(STATUS "Building strawman_par as a shared library")
-        message(STATUS "${strawman_sources}")
+        message(STATUS "Building alpine_par as a shared library")
+        message(STATUS "${alpine_sources}")
         if(VTKM_FOUND)
-            add_library(strawman_par SHARED ${strawman_sources} 
-                                            ${strawman_par_sources} 
-                                            ${strawman_headers}
-                                            ${strawman_par_headers})
+            add_library(alpine_par SHARED ${alpine_sources} 
+                                            ${alpine_par_sources} 
+                                            ${alpine_headers}
+                                            ${alpine_par_headers})
         else()
-            add_library(strawman_par SHARED ${strawman_sources} 
-                                            ${strawman_par_sources} 
-                                            ${strawman_headers}
-                                            ${strawman_par_headers})
+            add_library(alpine_par SHARED ${alpine_sources} 
+                                            ${alpine_par_sources} 
+                                            ${alpine_headers}
+                                            ${alpine_par_headers})
         endif()
     else()
-        message(STATUS "Building strawman_par as a static library")
+        message(STATUS "Building alpine_par as a static library")
         if(VTKM_FOUND)
-            add_library(strawman_par STATIC ${strawman_sources} 
-                                            ${strawman_par_sources} 
-                                            ${strawman_headers}
-                                            ${strawman_par_headers})
+            add_library(alpine_par STATIC ${alpine_sources} 
+                                            ${alpine_par_sources} 
+                                            ${alpine_headers}
+                                            ${alpine_par_headers})
         else()
-            add_library(strawman_par STATIC ${strawman_sources} 
-                                            ${strawman_par_sources} 
-                                            ${strawman_headers}
-                                            ${strawman_par_headers} )
+            add_library(alpine_par STATIC ${alpine_sources} 
+                                            ${alpine_par_sources} 
+                                            ${alpine_headers}
+                                            ${alpine_par_headers} )
         endif()
     endif()
     
@@ -261,20 +260,20 @@ if(MPI_FOUND)
     # Ensure we use c++11
     ##########################################
 
-    set_target_properties(strawman_par PROPERTIES
+    set_target_properties(alpine_par PROPERTIES
                           CXX_STANDARD 11
                           CXX_STANDARD_REQUIRED YES
                           CXX_EXTENTIONS NO)
 
-    add_target_compile_flags(TARGET strawman_par 
+    add_target_compile_flags(TARGET alpine_par 
                              FLAGS "${MPI_CXX_COMPILE_FLAGS} -D PARALLEL ${VTKm_COMPILE_OPTIONS}")
         
-    add_target_link_flags(TARGET strawman_par  
+    add_target_link_flags(TARGET alpine_par  
                           FLAGS "${MPI_CXX_LINK_FLAGS}")
     
-    target_link_libraries(strawman_par
+    target_link_libraries(alpine_par
                           conduit_relay_mpi
-                          ${strawman_thirdparty_libs}
+                          ${alpine_thirdparty_libs}
                           ${ICET_LIBRARIES}
                           ${MPI_CXX_LIBRARIES})
 
@@ -282,20 +281,16 @@ if(MPI_FOUND)
    
                         message(STATUS "Check to see if we actually have to link against cuda and tbb")
     if(CUDA_FOUND)
-        target_link_libraries(strawman_par ${CUDA_CUDART_LIBRARY})
+        target_link_libraries(alpine_par ${CUDA_CUDART_LIBRARY})
     endif()
 
     if(TBB_FOUND)
-       target_link_libraries(strawman_par ${TBB_LIBRARIES})
+       target_link_libraries(alpine_par ${TBB_LIBRARIES})
     endif()
   
-    
-    target_link_libraries(strawman_par rt)
-
-
     # install target for mpi ver
-    install(TARGETS strawman_par
-            EXPORT  strawman
+    install(TARGETS alpine_par
+            EXPORT  alpine
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib
@@ -304,9 +299,9 @@ if(MPI_FOUND)
 endif()
 
 ########################################
-# Extra Install Targets for strawman
+# Extra Install Targets for alpine
 ########################################
 
-install(FILES ${strawman_headers} DESTINATION include/strawman)
+install(FILES ${alpine_headers} DESTINATION include/alpine)
 
 

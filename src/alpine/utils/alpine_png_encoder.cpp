@@ -48,9 +48,9 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "strawman_png_encoder.hpp"
+#include "alpine_png_encoder.hpp"
 
-#include "strawman_logging.hpp"
+#include "alpine_logging.hpp"
 
 // standard includes
 #include <stdlib.h>

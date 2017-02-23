@@ -54,7 +54,7 @@
 //#include <vtkm/cont/internal/DeviceAdapterTag.h>
 //#include <vtkm/cont/internal/DeviceAdapterTag.h>
 
-#include "strawman_vtkm_renderer.hpp"
+#include "alpine_vtkm_renderer.hpp"
 
 // standard lib includes
 #include <iostream>
@@ -63,10 +63,10 @@
 #include <cstdlib>
 #include <sstream>
 
-// other strawman includes
-#include <strawman_block_timer.hpp>
-#include <strawman_png_encoder.hpp>
-#include <strawman_web_interface.hpp>
+// other alpine includes
+#include <alpine_block_timer.hpp>
+#include <alpine_ng_encoder.hpp>
+#include <alpine_web_interface.hpp>
 
 using namespace std;
 using namespace conduit;

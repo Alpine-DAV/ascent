@@ -42,26 +42,44 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_vtkm_pipeline.cpp
+/// file: strawman_empty_pipeline.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "strawman_vtkm_pipeline.hpp"
+#include "alpine_empty_pipeline.hpp"
 
-#include "strawman_vtkm_pipeline_backend.hpp"
+// standard lib includes
+#include <iostream>
+#include <string.h>
+#include <limits.h>
 #include <cstdlib>
+
+//-----------------------------------------------------------------------------
+// thirdparty includes
+//-----------------------------------------------------------------------------
+
+// conduit includes
+#include <conduit_blueprint.hpp>
+
+// mpi related includes
+#ifdef PARALLEL
+#include <mpi.h>
+// -- conduit relay mpi
+#include <conduit_relay_mpi.hpp>
+#endif
+
+using namespace conduit;
+using namespace std;
+
 
 //-----------------------------------------------------------------------------
 // -- begin strawman:: --
 //-----------------------------------------------------------------------------
 namespace strawman
 {
-
-//-----------------------------------------------------------------------------
-// VTKMPipeline Methods
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -72,14 +90,14 @@ namespace strawman
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-VTKMPipeline::VTKMPipeline()
-: m_backend(NULL)
+EmptyPipeline::EmptyPipeline()
+:Pipeline()
 {
 
 }
 
 //-----------------------------------------------------------------------------
-VTKMPipeline::~VTKMPipeline()
+EmptyPipeline::~EmptyPipeline()
 {
     Cleanup();
 }
@@ -87,48 +105,103 @@ VTKMPipeline::~VTKMPipeline()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //
-// Main pipeline interface methods, which are called by the strawman interface.
+// Main pipeline interface methods called by the strawman interface.
 //
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 void
-VTKMPipeline::Initialize(const conduit::Node &options)
+EmptyPipeline::Initialize(const conduit::Node &options)
 {
-    Cleanup();
-    
-    m_backend = new VTKMPipelineBackend();
-
-    m_backend->Initialize(options);
-}
-
-
-//-----------------------------------------------------------------------------
-void
-VTKMPipeline::Cleanup()
-{
-    if(m_backend != NULL)
+#if PARALLEL
+    if(!options.has_child("mpi_comm") ||
+       !options["mpi_comm"].dtype().is_integer())
     {
-        m_backend->Cleanup();
-        delete m_backend;
-        m_backend = NULL;
+        STRAWMAN_ERROR("Missing Strawman::Open options missing MPI communicator (mpi_comm)");
+    }
+#endif
+
+    m_pipeline_options = options;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+EmptyPipeline::Cleanup()
+{
+
+}
+
+//-----------------------------------------------------------------------------
+void
+EmptyPipeline::Publish(const conduit::Node &data)
+{
+    Node verify_info;
+    bool verify_ok = conduit::blueprint::mesh::verify(data,verify_info);
+
+#if PARALLEL
+
+    MPI_Comm mpi_comm = MPI_Comm_f2c(m_pipeline_options["mpi_comm"].to_int());
+
+    // parallel reduce to find if there were any verify errors across mpi tasks
+    // use an mpi sum to check if all is ok
+    Node n_src, n_reduce;
+
+    if(verify_ok)
+        n_src = (int)0;
+    else
+        n_src = (int)1;
+
+    conduit::relay::mpi::all_reduce(n_src,
+                                    n_reduce,
+                                    MPI_INT,
+                                    MPI_SUM,
+                                    mpi_comm);
+
+    int num_failures = n_reduce.value();
+    if(num_failures != 0)
+    {
+        STRAWMAN_ERROR("Mesh Blueprint Verify failed on "  
+                       << num_failures
+                       << " MPI Tasks");
+        
+        // you could use mpi to find out where things went wrong ...
+    }
+
+    
+    
+#else
+    if(!verify_ok)
+    {
+         STRAWMAN_ERROR("Mesh Blueprint Verify failed!"
+                        << std::endl
+                        << verify_info.to_json());
+    }
+#endif
+
+    // create our own tree, with all data zero copied.
+    m_data.set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+EmptyPipeline::Execute(const conduit::Node &actions)
+{
+    // Loop over the actions
+    for (int i = 0; i < actions.number_of_children(); ++i)
+    {
+        const Node &action = actions.child(i);
+        string action_name = action["action"].as_string();
+
+        STRAWMAN_INFO("Executing " << action_name);
+
+        // implement action
     }
 }
 
-//-----------------------------------------------------------------------------
-void
-VTKMPipeline::Publish(const conduit::Node &data)
-{
-    m_backend->Publish(data);
-}
 
-//-----------------------------------------------------------------------------
-void
-VTKMPipeline::Execute(const conduit::Node &actions)
-{
-    m_backend->Execute(actions);
-}
+
 
 
 

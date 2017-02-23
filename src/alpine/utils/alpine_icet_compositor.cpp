@@ -48,9 +48,9 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "strawman_icet_compositor.hpp"
+#include "alpine_icet_compositor.hpp"
 
-#include "strawman_logging.hpp"
+#include "alpine_logging.hpp"
 
  
 //-----------------------------------------------------------------------------

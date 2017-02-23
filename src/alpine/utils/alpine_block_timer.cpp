@@ -48,7 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "strawman_block_timer.hpp"
+#include "alpine_block_timer.hpp"
 #include <climits>
 #include <math.h>
 #include <stdio.h>

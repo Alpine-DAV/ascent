@@ -50,8 +50,8 @@
 //-----------------------------------------------------------------------------
 #warning "Should not have to define this"
 #define VTKM_DEVICE_ADAPTER VTKM_DEVICE_ADAPTER_SERIAL
-#include <strawman_vtkm_renderer.hpp>
-#include "strawman_vtkm_pipeline_backend.hpp"
+#include <alpine_vtkm_renderer.hpp>
+#include "alpine_vtkm_pipeline_backend.hpp"
 
 // standard lib includes
 #include <iostream>

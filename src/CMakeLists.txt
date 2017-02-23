@@ -54,7 +54,7 @@ cmake_policy(SET CMP0042 OLD)
 # Strawman
 ################################
 
-project(strawman VERSION "0.1.0")
+project(alpine VERSION "0.1.0")
 
 ################################
 # Build Options
@@ -118,7 +118,7 @@ add_subdirectory(thirdparty_builtin)
 ################################
 # Add our libs
 ################################
-add_subdirectory(strawman)
+add_subdirectory(alpine)
 
 ################################
 # Add our tests
@@ -143,7 +143,7 @@ add_subdirectory(docs)
 # Create CMake importable 
 # exports for all of our targets
 ################################
-install(EXPORT strawman DESTINATION lib/cmake)
+install(EXPORT alpine DESTINATION lib/cmake)
 
 
 

@@ -42,38 +42,25 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_empty_pipeline.cpp
+/// file: strawman_web_interface.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "strawman_empty_pipeline.hpp"
+#include "alpine_web_interface.hpp"
 
-// standard lib includes
-#include <iostream>
-#include <string.h>
-#include <limits.h>
-#include <cstdlib>
+#include <alpine_config.h>
+#include <alpine_logging.hpp>
 
-//-----------------------------------------------------------------------------
 // thirdparty includes
-//-----------------------------------------------------------------------------
+#include <lodepng.h>
 
 // conduit includes
-#include <conduit_blueprint.hpp>
-
-// mpi related includes
-#ifdef PARALLEL
-#include <mpi.h>
-// -- conduit relay mpi
-#include <conduit_relay_mpi.hpp>
-#endif
+#include <conduit_relay.hpp>
 
 using namespace conduit;
-using namespace std;
-
+using namespace conduit::relay::web;
 
 //-----------------------------------------------------------------------------
 // -- begin strawman:: --
@@ -82,127 +69,126 @@ namespace strawman
 {
 
 //-----------------------------------------------------------------------------
+WebInterface::WebInterface(int ms_poll,
+                           int ms_timeout)
+:m_server(NULL),
+ m_ms_poll(ms_poll),
+ m_ms_timeout(ms_timeout)
+{}
+  
 //-----------------------------------------------------------------------------
-//
-// Creation and Destruction
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-EmptyPipeline::EmptyPipeline()
-:Pipeline()
+WebInterface::~WebInterface()
 {
-
-}
-
-//-----------------------------------------------------------------------------
-EmptyPipeline::~EmptyPipeline()
-{
-    Cleanup();
-}
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//
-// Main pipeline interface methods called by the strawman interface.
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-void
-EmptyPipeline::Initialize(const conduit::Node &options)
-{
-#if PARALLEL
-    if(!options.has_child("mpi_comm") ||
-       !options["mpi_comm"].dtype().is_integer())
+    if(m_server)
     {
-        STRAWMAN_ERROR("Missing Strawman::Open options missing MPI communicator (mpi_comm)");
+        delete m_server;
     }
-#endif
-
-    m_pipeline_options = options;
 }
 
 
 //-----------------------------------------------------------------------------
-void
-EmptyPipeline::Cleanup()
+WebSocket *
+WebInterface::Connection()
 {
-
-}
-
-//-----------------------------------------------------------------------------
-void
-EmptyPipeline::Publish(const conduit::Node &data)
-{
-    Node verify_info;
-    bool verify_ok = conduit::blueprint::mesh::verify(data,verify_info);
-
-#if PARALLEL
-
-    MPI_Comm mpi_comm = MPI_Comm_f2c(m_pipeline_options["mpi_comm"].to_int());
-
-    // parallel reduce to find if there were any verify errors across mpi tasks
-    // use an mpi sum to check if all is ok
-    Node n_src, n_reduce;
-
-    if(verify_ok)
-        n_src = (int)0;
-    else
-        n_src = (int)1;
-
-    conduit::relay::mpi::all_reduce(n_src,
-                                    n_reduce,
-                                    MPI_INT,
-                                    MPI_SUM,
-                                    mpi_comm);
-
-    int num_failures = n_reduce.value();
-    if(num_failures != 0)
+    // start our web server if necessary 
+    if(m_server == NULL)
     {
-        STRAWMAN_ERROR("Mesh Blueprint Verify failed on "  
-                       << num_failures
-                       << " MPI Tasks");
-        
-        // you could use mpi to find out where things went wrong ...
+        m_server = new WebServer();
+        m_server->set_document_root(STRAWMAN_WEB_CLIENT_ROOT);
+        m_server->set_request_handler(new WebRequestHandler());
+        m_server->serve(false);
     }
 
+    //  Don't do any more work unless we have a valid client connection
+    WebSocket *wsock = m_server->websocket((index_t)m_ms_poll,
+                                           (index_t)m_ms_timeout);
+    return wsock;
+}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::PushMessage(Node &msg)
+{
+    //  Don't do any more work unless we have a valid client connection
+    WebSocket *wsock = Connection();
+
+    if(wsock == NULL)
+    {
+        return;
+    }
     
-    
-#else
-    if(!verify_ok)
-    {
-         STRAWMAN_ERROR("Mesh Blueprint Verify failed!"
-                        << std::endl
-                        << verify_info.to_json());
-    }
-#endif
-
-    // create our own tree, with all data zero copied.
-    m_data.set_external(data);
+    // sent the message
+    wsock->send(msg);
 }
 
 //-----------------------------------------------------------------------------
 void
-EmptyPipeline::Execute(const conduit::Node &actions)
+WebInterface::PushImage(PNGEncoder &png)
 {
-    // Loop over the actions
-    for (int i = 0; i < actions.number_of_children(); ++i)
+    //  Don't do any more work unless we have a valid client connection
+    WebSocket *wsock = Connection();
+
+    if(wsock == NULL)
     {
-        const Node &action = actions.child(i);
-        string action_name = action["action"].as_string();
-
-        STRAWMAN_INFO("Executing " << action_name);
-
-        // implement action
+        return;
     }
+    // create message with image data
+    png.Base64Encode();
+    Node msg;
+    msg["type"] = "image";
+    msg["data"] = "data:image/png;base64," + png.Base64Node().as_string();
+    // sent the message
+    wsock->send(msg);
 }
 
+//-----------------------------------------------------------------------------
+void
+WebInterface::PushImage(const std::string &png_image_path)
+{
+    //  Don't do any more work unless we have a valid client connection
+    WebSocket *wsock = Connection();
 
+    if(wsock == NULL)
+    {
+        return;
+    }
+    
+    STRAWMAN_INFO("png path:" << png_image_path);
 
+    std::ifstream file(png_image_path.c_str(),
+                       std::ios::binary);
 
+    // find out how big the png file is
+    file.seekg(0, std::ios::end);
+    std::streamsize png_raw_bytes = file.tellg();
+    file.seekg(0, std::ios::beg);
+    
+    // use a node to hold the buffers for raw and base64 encoded png data
+    Node png_data;
+    png_data["raw"].set(DataType::c_char(png_raw_bytes));
+    char *png_raw_ptr = png_data["raw"].value();
+    
+    // read in the raw png data
+    if(!file.read(png_raw_ptr, png_raw_bytes))
+    {
+        // ERROR ... 
+        STRAWMAN_WARN("ERROR Reading png file " << png_image_path);
+    }
+
+    // base64 encode the raw png data
+    png_data["encoded"].set(DataType::char8_str(png_raw_bytes*2));
+    
+    utils::base64_encode(png_raw_ptr,
+                         png_raw_bytes,
+                         png_data["encoded"].data_ptr());
+
+    // create message with image data
+    Node msg;
+    msg["type"] = "image";
+    msg["data"] = "data:image/png;base64," + png_data["encoded"].as_string();
+    // send the message
+    wsock->send(msg);
+}
 
 
 //-----------------------------------------------------------------------------
