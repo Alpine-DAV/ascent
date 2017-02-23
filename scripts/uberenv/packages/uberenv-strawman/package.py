@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -55,8 +55,8 @@ def cmake_cache_entry(name,value):
         
 
 
-class UberenvStrawman(Package):
-    """Spack Based Uberenv Build for Strawman Thirdparty Libs """
+class UberenvAlpine(Package):
+    """Spack Based Uberenv Build for Alpine Thirdparty Libs """
 
     homepage = "http://example.com"
 
@@ -66,9 +66,9 @@ class UberenvStrawman(Package):
     #variant('cuda',   default=False, description="Enable CUDA support.")
     #variant('openmp', default=False, description="Enable OpenMP support.")
 
-    variant("doc",default=True,description="build third party dependencies for creating Strawman's docs")
+    variant("doc",default=True,description="build third party dependencies for creating Alpine's docs")
     variant("python",default=True,description="build python 2")
-    variant("mpich",default=False,description="build mpich as MPI lib for Strawman")
+    variant("mpich",default=False,description="build mpich as MPI lib for Alpine")
     
     depends_on("cmake@3.3.1")
     
@@ -98,7 +98,7 @@ class UberenvStrawman(Package):
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
-        dummy_tar_path = pjoin(dummy_tar_path,"uberenv-strawman.tar.gz")
+        dummy_tar_path = pjoin(dummy_tar_path,"uberenv-alpine.tar.gz")
         url      = "file://" + dummy_tar_path
         return url
         

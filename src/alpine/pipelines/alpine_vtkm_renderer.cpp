@@ -65,7 +65,7 @@
 
 // other alpine includes
 #include <alpine_block_timer.hpp>
-#include <alpine_ng_encoder.hpp>
+#include <alpine_png_encoder.hpp>
 #include <alpine_web_interface.hpp>
 
 using namespace std;
