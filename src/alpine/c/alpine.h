@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,18 +44,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman.h
+/// file: alpine.h
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef STRAWMAN_H
-#define STRAWMAN_H
+#ifndef ALPINE_H
+#define ALPINE_H
 
 #include <conduit_node.h>
 
 //-----------------------------------------------------------------------------
 //
-// The C interface to strawman
+// The C interface to alpine
 //
 //-----------------------------------------------------------------------------
 
@@ -67,28 +67,28 @@ extern "C" {
 #endif
 
 //-----------------------------------------------------------------------------
-// -- typedef for strawman --
+// -- typedef for alpine --
 //-----------------------------------------------------------------------------
 
-typedef void  Strawman;
+typedef void  Alpine;
 
 //-----------------------------------------------------------------------------
-// --strawman methods --
+// --alpine methods --
 //-----------------------------------------------------------------------------
 
-void strawman_about(conduit_node *result);
+void alpine_about(conduit_node *result);
 
-Strawman *strawman_create();
+Alpine *alpine_create();
 
-void strawman_destroy(Strawman *sman);
+void alpine_destroy(Alpine *sman);
 
-void strawman_open(Strawman *sman,  conduit_node *options);
+void alpine_open(Alpine *sman,  conduit_node *options);
 
-void strawman_publish(Strawman *sman, conduit_node *data);
+void alpine_publish(Alpine *sman, conduit_node *data);
 
-void strawman_execute(Strawman *sman, conduit_node *actions);
+void alpine_execute(Alpine *sman, conduit_node *actions);
 
-void strawman_close(Strawman *sman);
+void alpine_close(Alpine *sman);
 
 
 #ifdef __cplusplus

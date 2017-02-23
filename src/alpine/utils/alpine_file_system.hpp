@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,19 +44,19 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_file_system.hpp
+/// file: alpine_file_system.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef STRAWMAN_FILE_SYSTEM_HPP
-#define STRAWMAN_FILE_SYSTEM_HPP
+#ifndef ALPINE_FILE_SYSTEM_HPP
+#define ALPINE_FILE_SYSTEM_HPP
 
 #include <string>
 
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 
@@ -68,7 +68,7 @@ bool create_directory(const std::string &path);
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 

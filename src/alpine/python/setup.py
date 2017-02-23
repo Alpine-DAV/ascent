@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 ###############################################################################
 # file: setup.py
-# Purpose: disutils setup for strawman python module.
+# Purpose: disutils setup for alpine python module.
 #
 ###############################################################################
 
@@ -58,10 +58,10 @@ class SkipEggInfo(install_egg_info):
         pass
 
 
-setup (name = 'strawman',
-       description = 'strawman',
-       package_dir = {'strawman':'py_src'},
-       packages=['strawman'],
+setup (name = 'alpine',
+       description = 'alpine',
+       package_dir = {'alpine':'py_src'},
+       packages=['alpine'],
        cmdclass={'install_egg_info': SkipEggInfo})
 
 

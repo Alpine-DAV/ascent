@@ -7,11 +7,11 @@
 !* 
 !* All rights reserved.
 !* 
-!* This file is part of Strawman. 
+!* This file is part of Alpine. 
 !* 
-!* For details, see: http://software.llnl.gov/strawman/.
+!* For details, see: http://software.llnl.gov/alpine/.
 !* 
-!* Please also read strawman/LICENSE
+!* Please also read alpine/LICENSE
 !* 
 !* Redistribution and use in source and binary forms, with or without 
 !* modification, are permitted provided that the following conditions are met:
@@ -45,12 +45,12 @@
 
 !------------------------------------------------------------------------------
 !
-! t_f_strawman_render_2d.f
+! t_f_alpine_render_2d.f
 !
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
-module t_f_strawman_render_2d
+module t_f_alpine_render_2d
 !------------------------------------------------------------------------------
 
   use iso_c_binding
@@ -58,7 +58,7 @@ module t_f_strawman_render_2d
   use conduit
   use conduit_blueprint
   use conduit_blueprint_mesh
-  use strawman
+  use alpine
   implicit none
 
 !------------------------------------------------------------------------------
@@ -70,7 +70,7 @@ contains
 !------------------------------------------------------------------------------
 
     !--------------------------------------------------------------------------
-    subroutine t_strawman_render_2d_basic
+    subroutine t_alpine_render_2d_basic
         type(C_PTR) cdata
         type(C_PTR) cverify_info
         type(C_PTR) csman
@@ -80,12 +80,12 @@ contains
         type(C_PTR) cdraw_plots
         integer res
         !----------------------------------------------------------------------
-        call set_case_name("t_strawman_render_2d_basic")
+        call set_case_name("t_alpine_render_2d_basic")
         !----------------------------------------------------------------------
         
         cdata  = conduit_node_create()
         cverify_info = conduit_node_create()
-        csman = strawman_create()
+        csman = alpine_create()
 
         call conduit_blueprint_mesh_examples_braid("quads",10_8,10_8,0_8,cdata)
         call assert_true( conduit_blueprint_mesh_verify(ncdata,c_verify_info) .eqv. .true., "verify true on braid quads")
@@ -101,27 +101,27 @@ contains
         CALL conduit_node_set_path_char8_str(cdraw_plots,"action", "draw_plots")
 
         copen_opts = conduit_node_create()
-        call strawman_open(csman,copen_opts)
-        call strawman_publish(csman,cdata)
-        call strawman_execute(csman,cactions)
-        call strawman_close(csman)
+        call alpine_open(csman,copen_opts)
+        call alpine_publish(csman,cdata)
+        call alpine_execute(csman,cactions)
+        call alpine_close(csman)
 
-        call strawman_destroy(csman)
+        call alpine_destroy(csman)
         call conduit_node_destroy(cactions)
         call conduit_node_destroy(cverify_info)
         call conduit_node_destroy(cdata)
 
-    end subroutine t_strawman_render_2d_basic
+    end subroutine t_alpine_render_2d_basic
 
 !------------------------------------------------------------------------------
-end module t_f_strawman_render_2d
+end module t_f_alpine_render_2d
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
 integer(C_INT) function fortran_test() bind(C,name="fortran_test")
 !------------------------------------------------------------------------------
   use fruit
-  use t_f_strawman_render_2d
+  use t_f_alpine_render_2d
   implicit none
   logical res
   
@@ -130,7 +130,7 @@ integer(C_INT) function fortran_test() bind(C,name="fortran_test")
   !----------------------------------------------------------------------------
   ! call our test routines
   !----------------------------------------------------------------------------
-  call t_strawman_render_2d_basic
+  call t_alpine_render_2d_basic
 
   call fruit_summary
   call fruit_finalize

@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,19 +44,19 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_png_encoder.hpp
+/// file: alpine_png_encoder.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef STRAWMAN_PNG_ENCODER_HPP
-#define STRAWMAN_PNG_ENCODER_HPP
+#ifndef ALPINE_PNG_ENCODER_HPP
+#define ALPINE_PNG_ENCODER_HPP
 
 #include <conduit.hpp>
 #include <string>
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 class PNGEncoder
@@ -90,7 +90,7 @@ private:
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 #endif

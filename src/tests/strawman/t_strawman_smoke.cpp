@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,29 +44,29 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_strawman_smoke.cpp
+/// file: t_alpine_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
 
-#include <strawman.hpp>
+#include <alpine.hpp>
 
 #include <iostream>
 #include <math.h>
 
 #include "t_config.hpp"
-#include "t_strawman_test_utils.hpp"
+#include "t_alpine_test_utils.hpp"
 
 
 using namespace std;
 using namespace conduit;
-using namespace strawman;
+using namespace alpine;
 
 
 //-----------------------------------------------------------------------------
-TEST(strawman_smoke, strawman_about)
+TEST(alpine_smoke, alpine_about)
 {
-    STRAWMAN_INFO(strawman::about());
+    ALPINE_INFO(alpine::about());
 }
 

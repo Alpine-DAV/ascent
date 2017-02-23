@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,16 +45,16 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_pipeline.cpp
+/// file: alpine_pipeline.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <strawman_pipeline.hpp>
+#include <alpine_pipeline.hpp>
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 //-----------------------------------------------------------------------------
@@ -72,7 +72,7 @@ Pipeline::~Pipeline()
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 

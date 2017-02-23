@@ -9,9 +9,9 @@
 .. #
 .. # This file is part of Conduit.
 .. #
-.. # For details, see: http://software.llnl.gov/strawman/.
+.. # For details, see: http://software.llnl.gov/alpine/.
 .. #
-.. # Please also read strawman/LICENSE
+.. # Please also read alpine/LICENSE
 .. #
 .. # Redistribution and use in source and binary forms, with or without
 .. # modification, are permitted provided that the following conditions are met:
@@ -42,9 +42,9 @@
 .. #
 .. ############################################################################
 
-Strawman API
+Alpine API
 ============
-The top level API for strawman consists of four calls:
+The top level API for alpine consists of four calls:
 
   - Open(condiut::Node)
   - Publish(conduit::Node)
@@ -53,10 +53,10 @@ The top level API for strawman consists of four calls:
 
 Open
 ----
-Open provides the initial setup of Strawman from a Conduit Node. 
+Open provides the initial setup of Alpine from a Conduit Node. 
 Options include pipeline type (e.g., VTK-m, Blueprint HDF5, or EAVL) and associated backend if available.
 If running in parallel (i.e., MPI), then a MPI comm handle must be supplied.
-Strawman will always check the file system for a file called ``strawman_options.json`` that will override compiled in options, and for obvious reasons, a MPI communicator cannot be specified in the file.
+Alpine will always check the file system for a file called ``alpine_options.json`` that will override compiled in options, and for obvious reasons, a MPI communicator cannot be specified in the file.
 Here is a file that would set the pipeline to VTK-m using a TBB backend:
 
 
@@ -71,16 +71,16 @@ A typical integration will include the following code:
 
 .. code-block:: c++
 
-  Strawman strawman;
-  conduit::Node strawman_options;
+  Alpine alpine;
+  conduit::Node alpine_options;
   
   #if USE_MPI
-  strawman_options["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+  alpine_options["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
   #endif
-  strawman_options["pipeline/type"] = "vtkm";
-  strawman_options["pipeline/backend"] = "tbb";
+  alpine_options["pipeline/type"] = "vtkm";
+  alpine_options["pipeline/backend"] = "tbb";
 
-  strawman.Open(strawman_options);
+  alpine.Open(alpine_options);
 
 Valid pipelines and backends include:
 
@@ -99,7 +99,7 @@ Valid pipelines and backends include:
   
 Publish
 -------
-This call publishes data to Strawman through `Conduit Blueprint <http://software.llnl.gov/blueprint_mesh.html>`_ mesh descriptions.
+This call publishes data to Alpine through `Conduit Blueprint <http://software.llnl.gov/blueprint_mesh.html>`_ mesh descriptions.
 In the Lulesh prox-app, data is already in a form that is compatible with the blueprint conventions and the code to create the Conduit Node is straight-forward:
 
 .. code-block:: c++
@@ -139,7 +139,7 @@ You can check if a node confirms to the mesh blueprint using the verify function
     if(!conduit::blueprint::mesh::verify(mesh_data,verify_info))
     {
         // verify failed, print error message
-        STRAWMAN_INFO("Error: Mesh Blueprint Verify Failed!");
+        ALPINE_INFO("Error: Mesh Blueprint Verify Failed!");
         // show details of what went awry 
         verify_info.print();
     }
@@ -150,13 +150,13 @@ Once the Conduit Node has been populated with data conforming to the mesh bluepr
 
   straman.Publish(mesh_data);
 
-Publish is called each cycle where Strawman is used.
+Publish is called each cycle where Alpine is used.
 
 Execute
 -------
 Execute applies some number of actions to published data.
 Each action is described inside of a Conduit Node and passed to the Execute call.
-For a full description of supported actions see :ref:`strawman-actions`.
+For a full description of supported actions see :ref:`alpine-actions`.
 
 Here is a simple example of adding a plot using the C++ API:
 
@@ -169,22 +169,22 @@ Here is a simple example of adding a plot using the C++ API:
       plot["field_name"] = "p";
       conduit::Node &draw = actions.append();
       draw["action"] = "draw_plots";
-      strawman.Publish(mesh_data);
-      strawman.Execute(actions);
+      alpine.Publish(mesh_data);
+      alpine.Execute(actions);
 
 Close
 -----
-Close informs Strawman that all actions are complete, and the call performs the appropriate clean-up.
+Close informs Alpine that all actions are complete, and the call performs the appropriate clean-up.
 
 .. code-block:: c++
 
-  strawman.Close();
+  alpine.Close();
 
 
 Error Handling
 ---------------
 
-  Strawman uses Conduit's error handling machinery. By default when errors occur 
+  Alpine uses Conduit's error handling machinery. By default when errors occur 
   C++ exceptions are thrown, but you can rewire Conduit's handlers with your own callbacks. For more info
   see the `Conduit Error Handling Tutorial <http://software.llnl.gov/conduit/tutorial_errors.html>`_.
 

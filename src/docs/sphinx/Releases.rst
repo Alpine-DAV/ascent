@@ -9,9 +9,9 @@
 .. #
 .. # This file is part of Conduit.
 .. #
-.. # For details, see: http://software.llnl.gov/strawman/.
+.. # For details, see: http://software.llnl.gov/alpine/.
 .. #
-.. # Please also read strawman/LICENSE
+.. # Please also read alpine/LICENSE
 .. #
 .. # Redistribution and use in source and binary forms, with or without
 .. # modification, are permitted provided that the following conditions are met:
@@ -47,15 +47,15 @@ Releases
 
 Source distributions for Conduit are hosted on github:
 
-https://github.com/llnl/strawman/releases
+https://github.com/llnl/alpine/releases
 
 v0.1.0
 -------
 
-The initial release of Strawman.
+The initial release of Alpine.
 
-* `Source Tarball <https://github.com/LLNL/strawman/archive/v0.1.0.tar.gz>`_
-* `Docs <http://software.llnl.gov/strawman/v0.1.0>`_
+* `Source Tarball <https://github.com/LLNL/alpine/archive/v0.1.0.tar.gz>`_
+* `Docs <http://software.llnl.gov/alpine/v0.1.0>`_
 
 
 

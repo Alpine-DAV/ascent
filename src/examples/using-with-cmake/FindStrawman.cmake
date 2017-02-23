@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,46 +44,46 @@
 
 ###############################################################################
 #
-# Setup Strawman
+# Setup Alpine
 #
 ###############################################################################
 #
-#  Expects STRAWMAN_DIR to point to a Strawman installation.
+#  Expects ALPINE_DIR to point to a Alpine installation.
 #
 # This file defines the following CMake variables:
-#  STRAWMAN_FOUND - If Strawman was found
-#  STRAWMAN_INCLUDE_DIRS - The Conduit include directories
+#  ALPINE_FOUND - If Alpine was found
+#  ALPINE_INCLUDE_DIRS - The Conduit include directories
 #
-#  If found, the strawman CMake targets will also be imported.
-#  The main strawman library targets are:
-#   strawman
-#   strawman_par (if strawman was built with mpi support)
+#  If found, the alpine CMake targets will also be imported.
+#  The main alpine library targets are:
+#   alpine
+#   alpine_par (if alpine was built with mpi support)
 #
 ###############################################################################
 
 ###############################################################################
-# Check for STRAWMAN_DIR
+# Check for ALPINE_DIR
 ###############################################################################
-if(NOT STRAWMAN_DIR)
-    MESSAGE(FATAL_ERROR "Could not find Strawman. Strawman requires explicit STRAWMAN_DIR.")
+if(NOT ALPINE_DIR)
+    MESSAGE(FATAL_ERROR "Could not find Alpine. Alpine requires explicit ALPINE_DIR.")
 endif()
 
-if(NOT EXISTS ${STRAWMAN_DIR}/lib/cmake/strawman.cmake)
-    MESSAGE(FATAL_ERROR "Could not find Strawman CMake include file (${STRAWMAN_DIR}/lib/cmake/strawman.cmake)")
+if(NOT EXISTS ${ALPINE_DIR}/lib/cmake/alpine.cmake)
+    MESSAGE(FATAL_ERROR "Could not find Alpine CMake include file (${ALPINE_DIR}/lib/cmake/alpine.cmake)")
 endif()
 
 ###############################################################################
-# Import Strawman's CMake targets
+# Import Alpine's CMake targets
 ###############################################################################
-include(${STRAWMAN_DIR}/lib/cmake/strawman.cmake)
+include(${ALPINE_DIR}/lib/cmake/alpine.cmake)
 
 ###############################################################################
 # Set remaning CMake variables 
 ###############################################################################
-# we found Strawman
-set(STRAWMAN_FOUND TRUE)
-# provide location of the headers in STRAWMAN_INCLUDE_DIRS
-set(STRAWMAN_INCLUDE_DIRS ${STRAWMAN_DIR}/include/strawman)
+# we found Alpine
+set(ALPINE_FOUND TRUE)
+# provide location of the headers in ALPINE_INCLUDE_DIRS
+set(ALPINE_INCLUDE_DIRS ${ALPINE_DIR}/include/alpine)
 
 
 

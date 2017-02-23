@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -43,7 +43,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
-function strawman_websocket_client()
+function alpine_websocket_client()
 {
     var wsproto = (location.protocol === 'https:') ? 'wss:' : 'ws:';
     connection = new WebSocket(wsproto + '//' + window.location.host + '/websocket');
@@ -98,13 +98,13 @@ function strawman_websocket_client()
         connection.close();
         $("#connection_info").html('<span class="label label-warning">Not Connected</span>');
         // this allows infinite reconnect ...
-        strawman_websocket_client();
+        alpine_websocket_client();
     }
 
     
 }
 
-strawman_websocket_client();
+alpine_websocket_client();
 
 
 

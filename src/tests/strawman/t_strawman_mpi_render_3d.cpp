@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,13 +44,13 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_mpi_render_3d.cpp
+/// file: alpine_mpi_render_3d.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
 
-#include <strawman.hpp>
+#include <alpine.hpp>
 #include <iostream>
 #include <math.h>
 
@@ -60,14 +60,14 @@
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
-#include "t_strawman_test_utils.hpp"
+#include "t_alpine_test_utils.hpp"
 
 using namespace std;
 using namespace conduit;
-using namespace strawman;
+using namespace alpine;
 
 //-----------------------------------------------------------------------------
-TEST(strawman_mpi_render_3d, mpi_render_3d_default_pipeline)
+TEST(alpine_mpi_render_3d, mpi_render_3d_default_pipeline)
 {
     //
     // Set Up MPI
@@ -78,7 +78,7 @@ TEST(strawman_mpi_render_3d, mpi_render_3d_default_pipeline)
     MPI_Comm_rank(comm, &par_rank);
     MPI_Comm_size(comm, &par_size);
     
-    STRAWMAN_INFO("Rank "
+    ALPINE_INFO("Rank "
                   << par_rank 
                   << " of " 
                   << par_size
@@ -132,16 +132,16 @@ TEST(strawman_mpi_render_3d, mpi_render_3d_default_pipeline)
     actions.append()["action"] = "draw_plots";
     
     //
-    // Run Strawman
+    // Run Alpine
     //
     
-    Strawman sman;
+    Alpine sman;
 
-    Node strawman_opts;
+    Node alpine_opts;
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
-    strawman_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    sman.Open(strawman_opts);
+    alpine_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    sman.Open(alpine_opts);
     sman.Publish(data);
     sman.Execute(actions);
     sman.Close();

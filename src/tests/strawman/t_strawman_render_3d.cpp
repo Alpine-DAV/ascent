@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,14 +44,14 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_strawman_render_3d.cpp
+/// file: t_alpine_render_3d.cpp
 ///
 //-----------------------------------------------------------------------------
 
 
 #include "gtest/gtest.h"
 
-#include <strawman.hpp>
+#include <alpine.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -59,21 +59,21 @@
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
-#include "t_strawman_test_utils.hpp"
+#include "t_alpine_test_utils.hpp"
 
 
 
 
 using namespace std;
 using namespace conduit;
-using namespace strawman;
+using namespace alpine;
 
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 
 //-----------------------------------------------------------------------------
-TEST(strawman_render_3d, test_render_3d_render_default_pipeline)
+TEST(alpine_render_3d, test_render_3d_render_default_pipeline)
 {
     //
     // Create an example mesh.
@@ -88,7 +88,7 @@ TEST(strawman_render_3d, test_render_3d_render_default_pipeline)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
 
-    STRAWMAN_INFO("Testing 3D Rendering with Default Pipeline");
+    ALPINE_INFO("Testing 3D Rendering with Default Pipeline");
 
 
     string output_path = prepare_output_dir();
@@ -116,10 +116,10 @@ TEST(strawman_render_3d, test_render_3d_render_default_pipeline)
     actions.append()["action"] = "draw_plots";
     
     //
-    // Run Strawman
+    // Run Alpine
     //
     
-    Strawman sman;
+    Alpine sman;
     sman.Open();
     sman.Publish(data);
     sman.Execute(actions);
@@ -130,18 +130,18 @@ TEST(strawman_render_3d, test_render_3d_render_default_pipeline)
 }
 
 //-----------------------------------------------------------------------------
-TEST(strawman_render_3d, test_render_3d_render_eavl_serial_backend)
+TEST(alpine_render_3d, test_render_3d_render_eavl_serial_backend)
 {
     Node n;
-    strawman::about(n);
-    // only run this test if strawman was built with eavl support
+    alpine::about(n);
+    // only run this test if alpine was built with eavl support
     if(n["pipelines/eavl/status"].as_string() == "disabled")
     {
-        STRAWMAN_INFO("EAVL support disabled, skipping 3D EAVL-serial test");
+        ALPINE_INFO("EAVL support disabled, skipping 3D EAVL-serial test");
         return;
     }
     
-    STRAWMAN_INFO("Testing 3D Rendering with EAVL Pipeline using Serial Backend");
+    ALPINE_INFO("Testing 3D Rendering with EAVL Pipeline using Serial Backend");
 
     
     //
@@ -183,14 +183,14 @@ TEST(strawman_render_3d, test_render_3d_render_eavl_serial_backend)
     actions.append()["action"] = "draw_plots";
     
     //
-    // Run Strawman
+    // Run Alpine
     //
     
     Node open_opts;
     open_opts["pipeline/type"] = "eavl";
     open_opts["pipeline/backend"] = "serial";
     
-    Strawman sman;
+    Alpine sman;
     sman.Open(open_opts);
     sman.Publish(data);
     sman.Execute(actions);
@@ -202,24 +202,24 @@ TEST(strawman_render_3d, test_render_3d_render_eavl_serial_backend)
 
 
 //-----------------------------------------------------------------------------
-TEST(strawman_render_3d, test_render_3d_render_eavl_cuda_backend)
+TEST(alpine_render_3d, test_render_3d_render_eavl_cuda_backend)
 {
     Node n;
-    strawman::about(n);
-    // only run this test if strawman was built with eavl support
+    alpine::about(n);
+    // only run this test if alpine was built with eavl support
     if(n["pipelines/eavl/status"].as_string() == "disabled")
     {
-        STRAWMAN_INFO("EAVL support disabled, skipping 3D EAVL-cuda test");
+        ALPINE_INFO("EAVL support disabled, skipping 3D EAVL-cuda test");
         return;
     }
     
     if(n["pipelines/eavl/backends/cuda"].as_string() != "enabled")
     {
-        STRAWMAN_INFO("EAVL CUDA support disabled, skipping 3D EAVL-cuda test");
+        ALPINE_INFO("EAVL CUDA support disabled, skipping 3D EAVL-cuda test");
         return;
     }
 
-    STRAWMAN_INFO("Testing 3D Rendering with EAVL Pipeline using CUDA Backend");
+    ALPINE_INFO("Testing 3D Rendering with EAVL Pipeline using CUDA Backend");
 
     
     //
@@ -261,14 +261,14 @@ TEST(strawman_render_3d, test_render_3d_render_eavl_cuda_backend)
     actions.append()["action"] = "draw_plots";
     
     //
-    // Run Strawman
+    // Run Alpine
     //
     
     Node open_opts;
     open_opts["pipeline/type"] = "eavl";
     open_opts["pipeline/backend"] = "cuda";
     
-    Strawman sman;
+    Alpine sman;
     sman.Open(open_opts);
     sman.Publish(data);
     sman.Execute(actions);
@@ -280,19 +280,19 @@ TEST(strawman_render_3d, test_render_3d_render_eavl_cuda_backend)
 
 
 //-----------------------------------------------------------------------------
-TEST(strawman_render_3d, test_render_3d_render_vtkm_serial_backend)
+TEST(alpine_render_3d, test_render_3d_render_vtkm_serial_backend)
 {
     
     Node n;
-    strawman::about(n);
-    // only run this test if strawman was built with vtkm support
+    alpine::about(n);
+    // only run this test if alpine was built with vtkm support
     if(n["pipelines/vtkm/status"].as_string() == "disabled")
     {
-        STRAWMAN_INFO("VTKm support disabled, skipping 3D VTKm-serial test");
+        ALPINE_INFO("VTKm support disabled, skipping 3D VTKm-serial test");
         return;
     }
     
-    STRAWMAN_INFO("Testing 3D Rendering with VTKm Pipeline using Serial Backend");
+    ALPINE_INFO("Testing 3D Rendering with VTKm Pipeline using Serial Backend");
     
     //
     // Create an example mesh.
@@ -332,14 +332,14 @@ TEST(strawman_render_3d, test_render_3d_render_vtkm_serial_backend)
 
     
     //
-    // Run Strawman
+    // Run Alpine
     //
     
     Node open_opts;
     open_opts["pipeline/type"] = "vtkm";
     open_opts["pipeline/backend"] = "serial";
     
-    Strawman sman;
+    Alpine sman;
     sman.Open(open_opts);
     sman.Publish(data);
     sman.Execute(actions);
@@ -352,25 +352,25 @@ TEST(strawman_render_3d, test_render_3d_render_vtkm_serial_backend)
 
 
 //-----------------------------------------------------------------------------
-TEST(strawman_render_3d, test_render_3d_render_vtkm_tbb_backend)
+TEST(alpine_render_3d, test_render_3d_render_vtkm_tbb_backend)
 {
     
     Node n;
-    strawman::about(n);
-    // only run this test if strawman was built with vtkm support
+    alpine::about(n);
+    // only run this test if alpine was built with vtkm support
     if(n["pipelines/vtkm/status"].as_string() == "disabled")
     {
-        STRAWMAN_INFO("VTKm support disabled, skipping 3D VTKm-tbb test");
+        ALPINE_INFO("VTKm support disabled, skipping 3D VTKm-tbb test");
         return;
     }
     
     if(n["pipelines/vtkm/backends/tbb"].as_string() != "enabled")
     {
-        STRAWMAN_INFO("VTKm TBB support disabled, skipping 3D VTKm-tbb test");
+        ALPINE_INFO("VTKm TBB support disabled, skipping 3D VTKm-tbb test");
         return;
     }
     
-    STRAWMAN_INFO("Testing 3D Rendering with VTKm Pipeline using TBB Backend");
+    ALPINE_INFO("Testing 3D Rendering with VTKm Pipeline using TBB Backend");
     
     //
     // Create an example mesh.
@@ -411,14 +411,14 @@ TEST(strawman_render_3d, test_render_3d_render_vtkm_tbb_backend)
     actions.append()["action"] = "draw_plots";
     
     //
-    // Run Strawman
+    // Run Alpine
     //
     
     Node open_opts;
     open_opts["pipeline/type"] = "vtkm";
     open_opts["pipeline/backend"] = "tbb";
     
-    Strawman sman;
+    Alpine sman;
     sman.Open(open_opts);
     sman.Publish(data);
     sman.Execute(actions);
@@ -430,25 +430,25 @@ TEST(strawman_render_3d, test_render_3d_render_vtkm_tbb_backend)
 
 
 //-----------------------------------------------------------------------------
-TEST(strawman_render_3d, test_3d_serial_render_vtkm_pipeline_cuda_backend)
+TEST(alpine_render_3d, test_3d_serial_render_vtkm_pipeline_cuda_backend)
 {
     
     Node n;
-    strawman::about(n);
-    // only run this test if strawman was built with vtkm support
+    alpine::about(n);
+    // only run this test if alpine was built with vtkm support
     if(n["pipelines/vtkm/status"].as_string() == "disabled")
     {
-        STRAWMAN_INFO("VTKm support disabled, skipping 3D VTKm-cuda test");
+        ALPINE_INFO("VTKm support disabled, skipping 3D VTKm-cuda test");
         return;
     }
     
     if(n["pipelines/vtkm/backends/cuda"].as_string() != "enabled")
     {
-        STRAWMAN_INFO("VTKm CUDA support disabled, skipping 3D VTKm-cuda test");
+        ALPINE_INFO("VTKm CUDA support disabled, skipping 3D VTKm-cuda test");
         return;
     }
     
-    STRAWMAN_INFO("Testing 3D Rendering with VTKm Pipeline using CUDA Backend");
+    ALPINE_INFO("Testing 3D Rendering with VTKm Pipeline using CUDA Backend");
     
     //
     // Create an example mesh.
@@ -488,14 +488,14 @@ TEST(strawman_render_3d, test_3d_serial_render_vtkm_pipeline_cuda_backend)
     actions.append()["action"] = "draw_plots";
     
     //
-    // Run Strawman
+    // Run Alpine
     //
     
     Node open_opts;
     open_opts["pipeline/type"] = "vtkm";
     open_opts["pipeline/backend"] = "cuda";
     
-    Strawman sman;
+    Alpine sman;
     sman.Open(open_opts);
     sman.Publish(data);
     sman.Execute(actions);

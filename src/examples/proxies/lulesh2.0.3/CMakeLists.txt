@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 ###############################################################################
 #
-# LULESH CMake Build for Strawman
+# LULESH CMake Build for Alpine
 #
 ###############################################################################
 
@@ -58,11 +58,11 @@ set(LULESH_SOURCES
 
 add_executable(lulesh_ser ${LULESH_SOURCES})
 target_link_libraries(lulesh_ser
-                      strawman)
+                      alpine)
 
 
-configure_file(strawman_actions.json ${CMAKE_CURRENT_BINARY_DIR}/strawman_actions.json COPYONLY)
-configure_file(strawman_options.json ${CMAKE_CURRENT_BINARY_DIR}/strawman_options.json COPYONLY)
+configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
+configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
 
 
 if(OPENMP_FOUND)
@@ -84,7 +84,7 @@ if(MPI_FOUND)
                           FLAGS "${MPI_CXX_LINK_FLAGS}")
 
     target_link_libraries(lulesh_par
-                          strawman_par
+                          alpine_par
                           ${MPI_CXX_LIBRARIES})
 endif()
 

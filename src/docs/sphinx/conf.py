@@ -9,11 +9,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 # 
 ###############################################################################
 #
-# Strawman documentation build configuration file, created by
+# Alpine documentation build configuration file, created by
 # sphinx-quickstart on Thu Oct 16 11:23:46 2014.
 #
 # This file is execfile()d with the current directory set to its
@@ -93,7 +93,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Strawman'
+project = u'Alpine'
 copyright = u'2015-2016, LLNS'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -226,7 +226,7 @@ html_theme = 'default'
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Strawmandoc'
+htmlhelp_basename = 'Alpinedoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -246,7 +246,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'Strawman.tex', u'Strawman Documentation',
+  ('index', 'Alpine.tex', u'Alpine Documentation',
    u'LLNS', 'manual'),
 ]
 
@@ -276,7 +276,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'Strawman', u'Strawman Documentation',
+    ('index', 'Alpine', u'Alpine Documentation',
      [u'LLNS'], 1)
 ]
 
@@ -290,8 +290,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Strawman', u'Strawman Documentation',
-   u'LLNS', 'Strawman', '{The Strawman}',
+  ('index', 'Alpine', u'Alpine Documentation',
+   u'LLNS', 'Alpine', '{The Alpine}',
    'Miscellaneous'),
 ]
 
@@ -307,7 +307,7 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
-breathe_default_project = "strawman"
+breathe_default_project = "alpine"
 
 try:
     import sphinx_rtd_theme

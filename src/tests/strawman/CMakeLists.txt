@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -48,22 +48,22 @@
 ################################
 
 ################################
-# Core Strawman Unit Tests
+# Core Alpine Unit Tests
 ################################
-set(BASIC_TESTS t_strawman_smoke
-                t_strawman_empty_pipeline
-                t_strawman_render_2d
-                t_strawman_render_3d
-                t_strawman_web)
+set(BASIC_TESTS t_alpine_smoke
+                t_alpine_empty_pipeline
+                t_alpine_render_2d
+                t_alpine_render_3d
+                t_alpine_web)
 
 
-set(MPI_TESTS  t_strawman_mpi_empty_pipeline
-               t_strawman_mpi_render_2d
-               t_strawman_mpi_render_3d)
+set(MPI_TESTS  t_alpine_mpi_empty_pipeline
+               t_alpine_mpi_render_2d
+               t_alpine_mpi_render_3d)
 
 if(HDF5_FOUND)
-    list(APPEND BASIC_TESTS t_strawman_save_blueprint_hdf5)
-    list(APPEND MPI_TESTS   t_strawman_mpi_save_blueprint_hdf5)
+    list(APPEND BASIC_TESTS t_alpine_save_blueprint_hdf5)
+    list(APPEND MPI_TESTS   t_alpine_mpi_save_blueprint_hdf5)
 endif()
 
 
@@ -71,9 +71,9 @@ endif()
 ################################
 # Add main tests
 ################################
-message(STATUS "Adding strawman lib unit tests")
+message(STATUS "Adding alpine lib unit tests")
 foreach(TEST ${BASIC_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON strawman)
+    add_cpp_test(TEST ${TEST} DEPENDS_ON alpine)
 endforeach()
 
 
@@ -85,7 +85,7 @@ if(MPI_FOUND)
     message(STATUS "MPI enabled: Adding related unit tests")
     foreach(TEST ${MPI_TESTS})
         # this uses 2 procs
-        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON strawman_par) 
+        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON alpine_par) 
         set_target_properties( ${TEST} PROPERTIES COMPILE_FLAGS "-D PARALLEL")
     endforeach()
 else()
@@ -96,14 +96,14 @@ endif()
 if(PYTHON_FOUND)
     add_subdirectory("python")
 else()
-    message(STATUS "Python disabled: Skipping strawman python module tests")
+    message(STATUS "Python disabled: Skipping alpine python module tests")
 endif()
 
 
 if(FORTRAN_FOUND)
      add_subdirectory("fortran")
 else()
-     message(STATUS "Fortran disabled: Skipping strawman fortran interface tests")
+     message(STATUS "Fortran disabled: Skipping alpine fortran interface tests")
 endif()
 
 

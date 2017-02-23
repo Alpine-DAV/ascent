@@ -7,11 +7,11 @@
 !* 
 !* All rights reserved.
 !* 
-!* This file is part of Strawman. 
+!* This file is part of Alpine. 
 !* 
-!* For details, see: http://software.llnl.gov/strawman/.
+!* For details, see: http://software.llnl.gov/alpine/.
 !* 
-!* Please also read strawman/LICENSE
+!* Please also read alpine/LICENSE
 !* 
 !* Redistribution and use in source and binary forms, with or without 
 !* modification, are permitted provided that the following conditions are met:
@@ -44,12 +44,12 @@
 
 !------------------------------------------------------------------------------
 !
-! file: strawman.f90
+! file: alpine.f90
 !
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
-module strawman
+module alpine
 !------------------------------------------------------------------------------
     use, intrinsic :: iso_c_binding, only: C_PTR, C_CHAR, C_NULL_CHAR
     implicit none
@@ -59,89 +59,89 @@ module strawman
     !--------------------------------------------------------------------------
 
     !--------------------------------------------------------------------------
-    subroutine strawman_about(cnode) &
-            bind(C, name="strawman_about")
+    subroutine alpine_about(cnode) &
+            bind(C, name="alpine_about")
         use iso_c_binding
         implicit none
         type(C_PTR), value, intent(IN) ::cnode
-    end subroutine strawman_about
+    end subroutine alpine_about
 
     !--------------------------------------------------------------------------
-    function strawman_create() result(csman) &
-            bind(C, name="strawman_create")
+    function alpine_create() result(csman) &
+            bind(C, name="alpine_create")
         use iso_c_binding
         implicit none
         type(C_PTR) :: csman
-    end function strawman_create
+    end function alpine_create
  
      !--------------------------------------------------------------------------
-    subroutine strawman_destroy(csman) &
-            bind(C, name="strawman_destroy")
+    subroutine alpine_destroy(csman) &
+            bind(C, name="alpine_destroy")
         use iso_c_binding
         implicit none
         type(C_PTR), value, intent(IN) ::csman
-    end subroutine strawman_destroy
+    end subroutine alpine_destroy
  
     !--------------------------------------------------------------------------
-    subroutine strawman_open(csman,cnode) &
-            bind(C, name="strawman_open")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) ::csman
-        type(C_PTR), value, intent(IN) ::cnode
-    end subroutine strawman_open
- 
-    !--------------------------------------------------------------------------
-    subroutine strawman_publish(csman, cnode) &
-            bind(C, name="strawman_publish")
+    subroutine alpine_open(csman,cnode) &
+            bind(C, name="alpine_open")
         use iso_c_binding
         implicit none
         type(C_PTR), value, intent(IN) ::csman
         type(C_PTR), value, intent(IN) ::cnode
-    end subroutine strawman_publish
+    end subroutine alpine_open
  
     !--------------------------------------------------------------------------
-    subroutine strawman_execute(csman, cnode) &
-            bind(C, name="strawman_execute")
+    subroutine alpine_publish(csman, cnode) &
+            bind(C, name="alpine_publish")
         use iso_c_binding
         implicit none
         type(C_PTR), value, intent(IN) ::csman
         type(C_PTR), value, intent(IN) ::cnode
-    end subroutine strawman_execute
+    end subroutine alpine_publish
  
     !--------------------------------------------------------------------------
-    subroutine strawman_close(csman) &
-            bind(C, name="strawman_close")
+    subroutine alpine_execute(csman, cnode) &
+            bind(C, name="alpine_execute")
         use iso_c_binding
         implicit none
         type(C_PTR), value, intent(IN) ::csman
-    end subroutine strawman_close
+        type(C_PTR), value, intent(IN) ::cnode
+    end subroutine alpine_execute
  
     !--------------------------------------------------------------------------
-    subroutine strawman_timer_start(timer_name) &
-            bind(C, name="strawman_timer_start")
+    subroutine alpine_close(csman) &
+            bind(C, name="alpine_close")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) ::csman
+    end subroutine alpine_close
+ 
+    !--------------------------------------------------------------------------
+    subroutine alpine_timer_start(timer_name) &
+            bind(C, name="alpine_timer_start")
         use iso_c_binding
         implicit none
         character(kind=c_char) :: timer_name(*)
-    end subroutine strawman_timer_start
+    end subroutine alpine_timer_start
     
     !--------------------------------------------------------------------------
-    subroutine strawman_timer_stop(timer_name) &
-            bind(C, name="strawman_timer_stop")
+    subroutine alpine_timer_stop(timer_name) &
+            bind(C, name="alpine_timer_stop")
         use iso_c_binding
         implicit none
         character(kind=c_char) :: timer_name(*)
-    end subroutine strawman_timer_stop
+    end subroutine alpine_timer_stop
     !--------------------------------------------------------------------------
-    subroutine strawman_timer_write() &
-            bind(C, name="strawman_timer_write")
+    subroutine alpine_timer_write() &
+            bind(C, name="alpine_timer_write")
         use iso_c_binding
         implicit none
-    end subroutine strawman_timer_write
+    end subroutine alpine_timer_write
     !--------------------------------------------------------------------------
     end interface
     !--------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
-end module strawman
+end module alpine
 !------------------------------------------------------------------------------

@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_vtkm_renderer.cpp
+/// file: alpine_vtkm_renderer.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -70,7 +70,7 @@
 
 using namespace std;
 using namespace conduit;
-namespace strawman {
+namespace alpine {
 template<typename T>
 T *
 GetVTKMPointer(vtkm::cont::ArrayHandle<T> &handle)
@@ -169,9 +169,9 @@ Renderer::InitRendering(int plot_dims)
 {
     if(plot_dims != 2 && plot_dims != 3)
     {
-        STRAWMAN_ERROR("VTKM rendering currently only supports 3D");
+        ALPINE_ERROR("VTKM rendering currently only supports 3D");
     }
-    STRAWMAN_BLOCK_TIMER(RENDER_INIT);
+    ALPINE_BLOCK_TIMER(RENDER_INIT);
     
     // start from scratch
     Cleanup();
@@ -195,7 +195,7 @@ Renderer::InitRendering(int plot_dims)
   
     if(m_renderer == NULL)
     {
-        STRAWMAN_ERROR("vtkmMapper was not created");
+        ALPINE_ERROR("vtkmMapper was not created");
     }
 
     m_canvas = new vtkmCanvasRayTracer(1024,1024);
@@ -203,14 +203,14 @@ Renderer::InitRendering(int plot_dims)
 
     if(m_canvas == NULL)
     {
-      STRAWMAN_ERROR("vtkmCanvas was not created.");
+      ALPINE_ERROR("vtkmCanvas was not created.");
     }
     
     m_vtkm_camera = new vtkmCamera;
     
     if(m_canvas == NULL)
     {
-      STRAWMAN_ERROR("vtkmCamera was not created.");
+      ALPINE_ERROR("vtkmCamera was not created.");
     }
 }
 
@@ -219,7 +219,7 @@ Renderer::InitRendering(int plot_dims)
 void
 Renderer::SetDefaultCameraView(vtkmActor *plot)
 {
-    STRAWMAN_BLOCK_TIMER(SET_CAMERA)
+    ALPINE_BLOCK_TIMER(SET_CAMERA)
 
    
     // Set some defaults
@@ -501,7 +501,7 @@ Renderer::FindVisibilityOrdering(vtkmActor *plot)
 void
 Renderer::SetParallelPlotExtents(vtkmActor * plot)
 {
-    STRAWMAN_BLOCK_TIMER(PARALLEL_PLOT_EXTENTS)
+    ALPINE_BLOCK_TIMER(PARALLEL_PLOT_EXTENTS)
     // We need to get the correct data extents for all processes
     // in order to get the correct color map values
     float64 local_min = plot->GetScalarRange().Min;
@@ -540,7 +540,7 @@ Renderer::SetParallelPlotExtents(vtkmActor * plot)
 
 Renderer::~Renderer()
 {
-    STRAWMAN_BLOCK_TIMER(RENDERER_ON_DESTROY);
+    ALPINE_BLOCK_TIMER(RENDERER_ON_DESTROY);
     
     Cleanup();
 
@@ -679,7 +679,7 @@ Renderer::SetColorMapFromNode()
     if(!m_transfer_function.has_child("control_points"))
     {
         if(color_map_name == "") 
-          STRAWMAN_ERROR("Error: a color map node was provided without a color map name or control points");
+          ALPINE_ERROR("Error: a color map node was provided without a color map name or control points");
         return color_map;
     }
     
@@ -690,13 +690,13 @@ Renderer::SetColorMapFromNode()
         if(!peg.has_child("position"))
         {
             peg.print();
-            STRAWMAN_WARN("Color map control point must have a position. Ignoring");
+            ALPINE_WARN("Color map control point must have a position. Ignoring");
         }
         float64 position = peg["position"].as_float64();
         
         if(position > 1.0 || position < 0.0)
         {
-              STRAWMAN_WARN("Cannot add color map control point position "
+              ALPINE_WARN("Cannot add color map control point position "
                             << position 
                             << ". Must be a normalized scalar.");
         }
@@ -717,7 +717,7 @@ Renderer::SetColorMapFromNode()
         }
         else
         {
-            STRAWMAN_WARN("Unknown control point type " << peg["type"].as_string());
+            ALPINE_WARN("Unknown control point type " << peg["type"].as_string());
         }
     }
 
@@ -857,7 +857,7 @@ Renderer::Render(vtkmActor *&plot,
                  int dims,
                  const char *image_file_name)
 {
-    STRAWMAN_BLOCK_TIMER(RENDER)
+    ALPINE_BLOCK_TIMER(RENDER)
     try
     {
         PNGEncoder png;
@@ -1003,7 +1003,7 @@ Renderer::Render(vtkmActor *&plot,
         //---------------------------------------------------------------------
         {// open block for RENDER_PAINT Timer
         //---------------------------------------------------------------------
-            STRAWMAN_BLOCK_TIMER(RENDER_PAINT);
+            ALPINE_BLOCK_TIMER(RENDER_PAINT);
 
             m_canvas->Clear();
             plot->Render(*m_renderer, *m_canvas, *m_vtkm_camera);
@@ -1019,7 +1019,7 @@ Renderer::Render(vtkmActor *&plot,
         //---------------------------------------------------------------------
         {// open block for RENDER_COMPOSITE Timer
         //---------------------------------------------------------------------
-            STRAWMAN_BLOCK_TIMER(RENDER_COMPOSITE);
+            ALPINE_BLOCK_TIMER(RENDER_COMPOSITE);
 
               
             //
@@ -1076,7 +1076,7 @@ Renderer::Render(vtkmActor *&plot,
         //---------------------------------------------------------------------
           
         
-        STRAWMAN_BLOCK_TIMER(RENDER_ENCODE);
+        ALPINE_BLOCK_TIMER(RENDER_ENCODE);
         //
         // encode the composited image
         //
@@ -1176,5 +1176,5 @@ Renderer::SetupCamera()
     }
 }
 
-}; //namespace strawman
+}; //namespace alpine
 

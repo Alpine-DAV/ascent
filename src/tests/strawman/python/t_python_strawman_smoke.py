@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,20 +44,20 @@
 
 
 """
- file: t_python_strawman_smoke.py
- description: Simple unit test for the basic strawman python module interface.
+ file: t_python_alpine_smoke.py
+ description: Simple unit test for the basic alpine python module interface.
 
 """
 
 import sys
 import unittest
 
-import strawman
+import alpine
 
 class Test_Condut_Basic(unittest.TestCase):
     def test_about(self):
-        print(strawman.about())
-        s = strawman.Strawman()
+        print(alpine.about())
+        s = alpine.Alpine()
 
 if __name__ == '__main__':
     unittest.main()

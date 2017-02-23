@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_blueprint_hdf5_pipeline.cpp
+/// file: alpine_blueprint_hdf5_pipeline.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -82,9 +82,9 @@ using namespace std;
 
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 //-----------------------------------------------------------------------------
@@ -158,7 +158,7 @@ BlueprintHDF5Pipeline::IOManager::SaveToHDF5FileSet(const Node &data,
     uint64 domain = data["state/domain_id"].to_value();
     uint64 cycle  = data["state/cycle"].to_value();
 
-    STRAWMAN_INFO("rank: "   << m_rank << 
+    ALPINE_INFO("rank: "   << m_rank << 
                   " cycle: " << cycle << 
                   " domain:" << domain);
 
@@ -213,12 +213,12 @@ BlueprintHDF5Pipeline::IOManager::SaveToHDF5FileSet(const Node &data,
     // error out if something went wrong.
     if(n_reduce.as_int() != 1)
     {
-        STRAWMAN_ERROR("Error: failed to create directory " << output_dir);
+        ALPINE_ERROR("Error: failed to create directory " << output_dir);
     } 
 #else
     if(!dir_ok)
     {
-        STRAWMAN_ERROR("Error: failed to create directory " << output_dir);
+        ALPINE_ERROR("Error: failed to create directory " << output_dir);
     }
 #endif
 
@@ -299,7 +299,7 @@ BlueprintHDF5Pipeline::~BlueprintHDF5Pipeline()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //
-// Main pipeline interface methods, which are used by the strawman interface.
+// Main pipeline interface methods, which are used by the alpine interface.
 //
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -311,7 +311,7 @@ BlueprintHDF5Pipeline::Initialize(const conduit::Node &options)
 #if PARALLEL
     if(!options.has_child("mpi_comm"))
     {
-        STRAWMAN_ERROR("Missing Strawman::Open options missing MPI communicator (mpi_comm)");
+        ALPINE_ERROR("Missing Alpine::Open options missing MPI communicator (mpi_comm)");
     }
 
     int mpi_handle = options["mpi_comm"].value();
@@ -354,7 +354,7 @@ BlueprintHDF5Pipeline::Execute(const conduit::Node &actions)
     for (int i = 0; i < actions.number_of_children(); ++i)
     {
         const Node &action = actions.child(i);
-        STRAWMAN_INFO("Executing " << action["action"].as_string());
+        ALPINE_INFO("Executing " << action["action"].as_string());
         
         if (action["action"].as_string() == "save")
         {
@@ -362,7 +362,7 @@ BlueprintHDF5Pipeline::Execute(const conduit::Node &actions)
         }
         else
         {
-            STRAWMAN_INFO("Warning : unknown action "
+            ALPINE_INFO("Warning : unknown action "
                           << action["action"].as_string());
         }
     }
@@ -376,7 +376,7 @@ BlueprintHDF5Pipeline::Execute(const conduit::Node &actions)
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 

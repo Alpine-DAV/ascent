@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -75,14 +75,14 @@
 // conduit includes
 //---------------------------------------------------------------------------//
 #include "conduit.hpp"
-#include "strawman.hpp"
-#include "strawman_python_exports.h"
+#include "alpine.hpp"
+#include "alpine_python_exports.h"
 
 // conduit python module capi header
 #include "conduit_python.hpp"
 
 using namespace conduit;
-using namespace strawman;
+using namespace alpine;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -174,7 +174,7 @@ PyInt_AsLong(PyObject *o)
 //-----------------------------------------------------------------------------
 
 
-// Strawman class:
+// Alpine class:
     // void   Open(); // open with default options
     // void   Open(conduit::Node &options);
     // void   Publish(conduit::Node &data);
@@ -183,24 +183,24 @@ PyInt_AsLong(PyObject *o)
 
 
 //---------------------------------------------------------------------------//
-struct PyStrawman_Strawman
+struct PyAlpine_Alpine
 {
     PyObject_HEAD
-    Strawman *strawman; // NoteIterator is light weight, we can deal with copies
+    Alpine *alpine; // NoteIterator is light weight, we can deal with copies
 };
 
 
 //---------------------------------------------------------------------------//
 static PyObject * 
-PyStrawman_Strawman_new(PyTypeObject *type,
+PyAlpine_Alpine_new(PyTypeObject *type,
                         PyObject*, // args -- unused
                         PyObject*) // kwds -- unused
 {
-    PyStrawman_Strawman *self = (PyStrawman_Strawman*)type->tp_alloc(type, 0);
+    PyAlpine_Alpine *self = (PyAlpine_Alpine*)type->tp_alloc(type, 0);
 
     if (self)
     {
-        self->strawman = 0;
+        self->alpine = 0;
     }
 
     return ((PyObject*)self);
@@ -208,11 +208,11 @@ PyStrawman_Strawman_new(PyTypeObject *type,
 
 //---------------------------------------------------------------------------//
 static void
-PyStrawman_Strawman_dealloc(PyStrawman_Strawman *self)
+PyAlpine_Alpine_dealloc(PyAlpine_Alpine *self)
 {
-    if(self->strawman != NULL)
+    if(self->alpine != NULL)
     {
-        delete self->strawman;
+        delete self->alpine;
     }
     
     Py_TYPE(self)->tp_free((PyObject*)self);
@@ -221,19 +221,19 @@ PyStrawman_Strawman_dealloc(PyStrawman_Strawman *self)
 
 //---------------------------------------------------------------------------//
 static int
-PyStrawman_Strawman_init(PyStrawman_Strawman *self,
+PyAlpine_Alpine_init(PyAlpine_Alpine *self,
                          PyObject *,// args -- unused
                          PyObject *) // kwds -- unused
 {
   
-    self->strawman = new Strawman();
+    self->alpine = new Alpine();
     return 0;
 
 }
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyStrawman_Strawman_open(PyStrawman_Strawman *self,
+PyAlpine_Alpine_open(PyAlpine_Alpine *self,
                          PyObject *args,
                          PyObject *kwargs)
 {
@@ -258,7 +258,7 @@ PyStrawman_Strawman_open(PyStrawman_Strawman *self,
         if(!PyConduit_Node_Check(py_node))
         {
             PyErr_SetString(PyExc_TypeError,
-                            "Strawman::Open 'options' argument must be a "
+                            "Alpine::Open 'options' argument must be a "
                             "conduit::Node");
             return NULL;
         }
@@ -267,11 +267,11 @@ PyStrawman_Strawman_open(PyStrawman_Strawman *self,
     if(py_node != NULL)
     {
         Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-        self->strawman->Open(*node);
+        self->alpine->Open(*node);
     }
     else
     {
-        self->strawman->Open();
+        self->alpine->Open();
     }
 
 
@@ -280,7 +280,7 @@ PyStrawman_Strawman_open(PyStrawman_Strawman *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyStrawman_Strawman_publish(PyStrawman_Strawman *self,
+PyAlpine_Alpine_publish(PyAlpine_Alpine *self,
                             PyObject *args,
                             PyObject *kwargs)
 {
@@ -303,20 +303,20 @@ PyStrawman_Strawman_publish(PyStrawman_Strawman *self,
     if(!PyConduit_Node_Check(py_node))
     {
         PyErr_SetString(PyExc_TypeError,
-                        "Strawman::Publish 'data' argument must be a "
+                        "Alpine::Publish 'data' argument must be a "
                         "conduit::Node");
         return NULL;
     }
     
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-    self->strawman->Publish(*node);
+    self->alpine->Publish(*node);
 
     Py_RETURN_NONE; 
 }
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyStrawman_Strawman_execute(PyStrawman_Strawman *self,
+PyAlpine_Alpine_execute(PyAlpine_Alpine *self,
                             PyObject *args,
                             PyObject *kwargs)
 {
@@ -339,69 +339,69 @@ PyStrawman_Strawman_execute(PyStrawman_Strawman *self,
     if(!PyConduit_Node_Check(py_node))
     {
         PyErr_SetString(PyExc_TypeError,
-                        "Strawman::Execute 'actions' argument must be a "
+                        "Alpine::Execute 'actions' argument must be a "
                         "conduit::Node");
         return NULL;
     }
     
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-    self->strawman->Execute(*node);
+    self->alpine->Execute(*node);
 
     Py_RETURN_NONE; 
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyStrawman_Strawman_close(PyStrawman_Strawman *self)
+PyAlpine_Alpine_close(PyAlpine_Alpine *self)
 {
-    self->strawman->Close();
+    self->alpine->Close();
     Py_RETURN_NONE;
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyStrawman_Strawman_str(PyStrawman_Strawman *self)
+PyAlpine_Alpine_str(PyAlpine_Alpine *self)
 {
     return (Py_BuildValue("s", "{STRAW,MAN!}"));
 }
 
 //----------------------------------------------------------------------------//
-// Strawman methods table
+// Alpine methods table
 //----------------------------------------------------------------------------//
-static PyMethodDef PyStrawman_Strawman_METHODS[] = {
+static PyMethodDef PyAlpine_Alpine_METHODS[] = {
     //-----------------------------------------------------------------------//
     {"open",
-     (PyCFunction)PyStrawman_Strawman_open,
+     (PyCFunction)PyAlpine_Alpine_open,
      METH_VARARGS | METH_KEYWORDS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"publish",
-     (PyCFunction)PyStrawman_Strawman_publish,
+     (PyCFunction)PyAlpine_Alpine_publish,
      METH_VARARGS | METH_KEYWORDS,
      "{todo}"},
      //-----------------------------------------------------------------------//
      {"execute",
-      (PyCFunction)PyStrawman_Strawman_execute,
+      (PyCFunction)PyAlpine_Alpine_execute,
      METH_VARARGS | METH_KEYWORDS,
       "{todo}"},
     //-----------------------------------------------------------------------//
     {"close",
-     (PyCFunction)PyStrawman_Strawman_close, 
+     (PyCFunction)PyAlpine_Alpine_close, 
      METH_NOARGS,
      "{todo}"}, 
     //-----------------------------------------------------------------------//
-    // end Strawman methods table
+    // end Alpine methods table
     //-----------------------------------------------------------------------//
     {NULL, NULL, 0, NULL}
 };
 
 //---------------------------------------------------------------------------//
-static PyTypeObject PyStrawman_Strawman_TYPE = {
+static PyTypeObject PyAlpine_Alpine_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
-   "Strawman",
-   sizeof(PyStrawman_Strawman),  /* tp_basicsize */
+   "Alpine",
+   sizeof(PyAlpine_Alpine),  /* tp_basicsize */
    0, /* tp_itemsize */
-   (destructor)PyStrawman_Strawman_dealloc,   /* tp_dealloc */
+   (destructor)PyAlpine_Alpine_dealloc,   /* tp_dealloc */
    0, /* tp_print */
    0, /* tp_getattr */
    0, /* tp_setattr */
@@ -412,19 +412,19 @@ static PyTypeObject PyStrawman_Strawman_TYPE = {
    0, /* as_mapping */
    0, /* hash */
    0, /* call */
-   (reprfunc)PyStrawman_Strawman_str,                         /* str */
+   (reprfunc)PyAlpine_Alpine_str,                         /* str */
    0, /* getattro */
    0, /* setattro */
    0, /* asbuffer */
    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,     /* flags */
-   "Strawman object",
+   "Alpine object",
    0, /* traverse */
    0, /* clear */
    0, /* tp_richcompare */
    0, /* tp_weaklistoffset */
    0, /* iter */
    0, /* iternext */
-   PyStrawman_Strawman_METHODS, /* METHODS */
+   PyAlpine_Alpine_METHODS, /* METHODS */
    0, /* MEMBERS */
    0, /* get/set */
    0, /* tp_base */
@@ -432,9 +432,9 @@ static PyTypeObject PyStrawman_Strawman_TYPE = {
    0, /* descr_get */
    0, /* gescr_set */
    0, /* dictoffset */
-   (initproc)PyStrawman_Strawman_init,
+   (initproc)PyAlpine_Alpine_init,
    0, /* alloc */
-   PyStrawman_Strawman_new,   /* new */
+   PyAlpine_Alpine_new,   /* new */
    0, /* tp_free */
    0, /* tp_is_gc */
    0, /* tp_bases */
@@ -449,30 +449,30 @@ static PyTypeObject PyStrawman_Strawman_TYPE = {
 
 
 //---------------------------------------------------------------------------//
-// strawman::about
+// alpine::about
 //---------------------------------------------------------------------------//
 static PyObject *
-PyStrawman_about()
+PyAlpine_about()
 {
     //create and return a node with the result of about
     PyObject *py_node_res = PyConduit_Node_python_create();
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node_res);
-    strawman::about(*node);
+    alpine::about(*node);
     return (PyObject*)py_node_res;
 }
 
 //---------------------------------------------------------------------------//
 // Python Module Method Defs
 //---------------------------------------------------------------------------//
-static PyMethodDef strawman_python_funcs[] =
+static PyMethodDef alpine_python_funcs[] =
 {
     //-----------------------------------------------------------------------//
     {"about",
-     (PyCFunction)PyStrawman_about,
+     (PyCFunction)PyAlpine_about,
       METH_NOARGS,
       NULL},
     //-----------------------------------------------------------------------//
-    // end strawman methods table
+    // end alpine methods table
     //-----------------------------------------------------------------------//
     {NULL, NULL, METH_VARARGS, NULL}
 };
@@ -503,7 +503,7 @@ static struct module_state _state;
 #if defined(IS_PY3K)
 //---------------------------------------------------------------------------//
 static int
-strawman_python_traverse(PyObject *m, visitproc visit, void *arg)
+alpine_python_traverse(PyObject *m, visitproc visit, void *arg)
 {
     Py_VISIT(GETSTATE(m)->error);
     return 0;
@@ -511,7 +511,7 @@ strawman_python_traverse(PyObject *m, visitproc visit, void *arg)
 
 //---------------------------------------------------------------------------//
 static int 
-strawman_python_clear(PyObject *m)
+alpine_python_clear(PyObject *m)
 {
     Py_CLEAR(GETSTATE(m)->error);
     return 0;
@@ -521,13 +521,13 @@ strawman_python_clear(PyObject *m)
 static struct PyModuleDef relay_python_module_def = 
 {
         PyModuleDef_HEAD_INIT,
-        "strawman_python",
+        "alpine_python",
         NULL,
         sizeof(struct module_state),
-        strawman_python_funcs,
+        alpine_python_funcs,
         NULL,
-        strawman_python_traverse,
-        strawman_python_clear,
+        alpine_python_traverse,
+        alpine_python_clear,
         NULL
 };
 
@@ -552,9 +552,9 @@ static struct PyModuleDef relay_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *STRAWMAN_PYTHON_API PyInit_strawman_python(void)
+PyObject *ALPINE_PYTHON_API PyInit_alpine_python(void)
 #else
-void STRAWMAN_PYTHON_API initstrawman_python(void)
+void ALPINE_PYTHON_API initalpine_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    
@@ -563,10 +563,10 @@ void STRAWMAN_PYTHON_API initstrawman_python(void)
     //-----------------------------------------------------------------------//
 
 #if defined(IS_PY3K)
-    PyObject *py_module = PyModule_Create(&strawmanf_python_module_def);
+    PyObject *py_module = PyModule_Create(&alpinef_python_module_def);
 #else
-    PyObject *py_module = Py_InitModule((char*)"strawman_python",
-                                             strawman_python_funcs);
+    PyObject *py_module = Py_InitModule((char*)"alpine_python",
+                                             alpine_python_funcs);
 #endif
 
 
@@ -577,7 +577,7 @@ void STRAWMAN_PYTHON_API initstrawman_python(void)
 
     struct module_state *st = GETSTATE(py_module);
     
-    st->error = PyErr_NewException((char*)"strawman_python.Error",
+    st->error = PyErr_NewException((char*)"alpine_python.Error",
                                    NULL,
                                    NULL);
     if (st->error == NULL)
@@ -596,7 +596,7 @@ void STRAWMAN_PYTHON_API initstrawman_python(void)
     // init our custom types
     //-----------------------------------------------------------------------//
 
-    if (PyType_Ready(&PyStrawman_Strawman_TYPE) < 0)
+    if (PyType_Ready(&PyAlpine_Alpine_TYPE) < 0)
     {
         PY_MODULE_INIT_RETURN_ERROR;
     }
@@ -604,10 +604,10 @@ void STRAWMAN_PYTHON_API initstrawman_python(void)
     // add DataType
     //-----------------------------------------------------------------------//
     
-    Py_INCREF(&PyStrawman_Strawman_TYPE);
+    Py_INCREF(&PyAlpine_Alpine_TYPE);
     PyModule_AddObject(py_module,
-                       "Strawman",
-                       (PyObject*)&PyStrawman_Strawman_TYPE);
+                       "Alpine",
+                       (PyObject*)&PyAlpine_Alpine_TYPE);
 
 
 #if defined(IS_PY3K)

@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_vtkm_pipeline.cpp
+/// file: alpine_vtkm_pipeline.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -54,9 +54,9 @@
 #include <cstdlib>
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 //-----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ VTKMPipeline::~VTKMPipeline()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //
-// Main pipeline interface methods, which are called by the strawman interface.
+// Main pipeline interface methods, which are called by the alpine interface.
 //
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ VTKMPipeline::Execute(const conduit::Node &actions)
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 

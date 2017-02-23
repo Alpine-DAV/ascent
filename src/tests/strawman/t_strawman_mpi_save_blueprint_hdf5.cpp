@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,13 +44,13 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_strawman_mpi_save_hdf5.cpp
+/// file: t_alpine_mpi_save_hdf5.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
 
-#include <strawman.hpp>
+#include <alpine.hpp>
 #include <iostream>
 #include <math.h>
 
@@ -58,16 +58,16 @@
 #include <mpi.h>
 
 #include "t_config.hpp"
-#include "t_strawman_test_utils.hpp"
+#include "t_alpine_test_utils.hpp"
 
 
 
 using namespace std;
 using namespace conduit;
-using namespace strawman;
+using namespace alpine;
 
 //-----------------------------------------------------------------------------
-TEST(strawman_test_3d, test_3d_parallel_render_default_pipeline)
+TEST(alpine_test_3d, test_3d_parallel_render_default_pipeline)
 {
     //
     // Set Up MPI
@@ -78,7 +78,7 @@ TEST(strawman_test_3d, test_3d_parallel_render_default_pipeline)
     MPI_Comm_rank(comm, &par_rank);
     MPI_Comm_size(comm, &par_size);
 
-    STRAWMAN_INFO("Rank "
+    ALPINE_INFO("Rank "
                   << par_rank 
                   << " of " 
                   << par_size
@@ -110,9 +110,9 @@ TEST(strawman_test_3d, test_3d_parallel_render_default_pipeline)
     actions.print();
     
     //
-    // Run Strawman
+    // Run Alpine
     //
-    Strawman sman;
+    Alpine sman;
     Node opts;
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer

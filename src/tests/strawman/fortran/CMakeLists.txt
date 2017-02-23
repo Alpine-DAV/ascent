@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,20 +44,20 @@
 
 
 ###############################################################################
-# Strawman Fortran Interface Unit Tests
+# Alpine Fortran Interface Unit Tests
 ###############################################################################
 
 set(FORTRAN_TESTS 
-    t_f_strawman_smoke)
-    #t_f_strawman_render_2d)
+    t_f_alpine_smoke)
+    #t_f_alpine_render_2d)
 
 
 ################################
 # Add our tests
 ################################
-message(STATUS "Adding strawman lib fortran interface unit tests")
+message(STATUS "Adding alpine lib fortran interface unit tests")
 foreach(TEST ${FORTRAN_TESTS})
-    add_fortran_test(TEST ${TEST} DEPENDS_ON strawman
+    add_fortran_test(TEST ${TEST} DEPENDS_ON alpine
                                              conduit_blueprint)
 endforeach()
 

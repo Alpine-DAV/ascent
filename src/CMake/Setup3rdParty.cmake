@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -43,7 +43,7 @@
 ###############################################################################
 
 ################################
-# Strawman 3rd Party Dependencies
+# Alpine 3rd Party Dependencies
 ################################
 
 if(ENABLE_TESTS)
@@ -93,7 +93,7 @@ include(CMake/thirdparty/SetupConduit.cmake)
 ################################################################
 ################################################################
 #
-# 3rd Party Libs that underpin Strawman's Pipelines
+# 3rd Party Libs that underpin Alpine's Pipelines
 #
 ################################################################
 ################################################################
@@ -103,7 +103,7 @@ include(CMake/thirdparty/SetupConduit.cmake)
 # pipeline to build 
 ################################
 if(NOT EAVL_DIR AND NOT VTKM_DIR AND NOT HDF5_DIR)
-    message(FATAL_ERROR "Strawman requires at least once concrete pipeline (EAVL for VTKm)")
+    message(FATAL_ERROR "Alpine requires at least once concrete pipeline (EAVL for VTKm)")
 endif()
 
 

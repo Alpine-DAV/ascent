@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,14 +44,14 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_strawman_web.cpp
+/// file: t_alpine_web.cpp
 ///
 //-----------------------------------------------------------------------------
 
 
 #include "gtest/gtest.h"
 
-#include <strawman.hpp>
+#include <alpine.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -59,12 +59,12 @@
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
-#include "t_strawman_test_utils.hpp"
+#include "t_alpine_test_utils.hpp"
 
 
 using namespace std;
 using namespace conduit;
-using namespace strawman;
+using namespace alpine;
 
 
 const float64 PI_VALUE = 3.14159265359;
@@ -72,10 +72,10 @@ const float64 PI_VALUE = 3.14159265359;
 bool launch_server = false;
 
 //-----------------------------------------------------------------------------
-TEST(strawman_web, test_strawman_web_launch)
+TEST(alpine_web, test_alpine_web_launch)
 {
     // this test launches a web server and infinitely streams images from 
-    // strawman we  only run it if we passed proper command line arg
+    // alpine we  only run it if we passed proper command line arg
     if(!launch_server)
     {
         return;
@@ -107,14 +107,14 @@ TEST(strawman_web, test_strawman_web_launch)
     actions.append()["action"] = "draw_plots";
     
     //
-    // Launch strawman with webserver
+    // Launch alpine with webserver
     //
 
     
     Node open_opts;
     open_opts["web/stream"] = "true";
 
-    Strawman sman;
+    Alpine sman;
     sman.Open(open_opts);
     
     uint64  *cycle_ptr = data["state/cycle"].value();

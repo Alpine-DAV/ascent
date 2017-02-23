@@ -7,11 +7,11 @@
 !* 
 !* All rights reserved.
 !* 
-!* This file is part of Strawman. 
+!* This file is part of Alpine. 
 !* 
-!* For details, see: http://software.llnl.gov/strawman/.
+!* For details, see: http://software.llnl.gov/alpine/.
 !* 
-!* Please also read strawman/LICENSE
+!* Please also read alpine/LICENSE
 !* 
 !* Redistribution and use in source and binary forms, with or without 
 !* modification, are permitted provided that the following conditions are met:
@@ -45,18 +45,18 @@
 
 !------------------------------------------------------------------------------
 !
-! t_f_strawman_smoke.f
+! t_f_alpine_smoke.f
 !
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
-module t_f_strawman_smoke
+module t_f_alpine_smoke
 !------------------------------------------------------------------------------
 
   use iso_c_binding
   use fruit
   use conduit
-  use strawman
+  use alpine
   implicit none
 
 !------------------------------------------------------------------------------
@@ -68,30 +68,30 @@ contains
 !------------------------------------------------------------------------------
 
     !--------------------------------------------------------------------------
-    subroutine t_strawman_about
+    subroutine t_alpine_about
         type(C_PTR) cnode
         integer res
         
         !----------------------------------------------------------------------
-        call set_case_name("t_strawman_about")
+        call set_case_name("t_alpine_about")
         !----------------------------------------------------------------------
         
         cnode = conduit_node_create()
-        call strawman_about(cnode)
+        call alpine_about(cnode)
         call conduit_node_print(cnode)
         call conduit_node_destroy(cnode)
     
-    end subroutine t_strawman_about
+    end subroutine t_alpine_about
 
 !------------------------------------------------------------------------------
-end module t_f_strawman_smoke
+end module t_f_alpine_smoke
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
 integer(C_INT) function fortran_test() bind(C,name="fortran_test")
 !------------------------------------------------------------------------------
   use fruit
-  use t_f_strawman_smoke
+  use t_f_alpine_smoke
   implicit none
   logical res
   
@@ -100,7 +100,7 @@ integer(C_INT) function fortran_test() bind(C,name="fortran_test")
   !----------------------------------------------------------------------------
   ! call our test routines
   !----------------------------------------------------------------------------
-  call t_strawman_about
+  call t_alpine_about
 
   call fruit_summary
   call fruit_finalize

@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_png_encoder.cpp
+/// file: alpine_png_encoder.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -61,9 +61,9 @@
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 //-----------------------------------------------------------------------------
@@ -108,7 +108,7 @@ PNGEncoder::Encode(const unsigned char *rgba_in,
     
     if(error)
     {
-        STRAWMAN_WARN("lodepng_encode_memory failed")
+        ALPINE_WARN("lodepng_encode_memory failed")
     }
 }
 
@@ -126,7 +126,7 @@ PNGEncoder::Encode(const float *rgba_in,
 
     for(int x = 0; x < width; ++x)
 
-#ifdef STRAWMAN_USE_OPENMP
+#ifdef ALPINE_USE_OPENMP
         #pragma omp parrallel for
 #endif
         for (int y = 0; y < height; ++y)
@@ -151,7 +151,7 @@ PNGEncoder::Encode(const float *rgba_in,
     
     if(error)
     {
-        STRAWMAN_WARN("lodepng_encode_memory failed")
+        ALPINE_WARN("lodepng_encode_memory failed")
     }
 }
 
@@ -161,7 +161,7 @@ PNGEncoder::Save(const std::string &filename)
 {
     if(m_buffer == NULL)
     {
-        STRAWMAN_WARN("Save must be called after encode()")
+        ALPINE_WARN("Save must be called after encode()")
         /// we have a problem ...!
         return;
     }
@@ -171,7 +171,7 @@ PNGEncoder::Save(const std::string &filename)
                                        filename.c_str());
     if(error)
     {
-        STRAWMAN_WARN("Error saving PNG buffer to file: " << filename);
+        ALPINE_WARN("Error saving PNG buffer to file: " << filename);
     }
 }
 
@@ -195,7 +195,7 @@ PNGEncoder::Base64Encode()
 {
     if(m_buffer == NULL)
     {
-        STRAWMAN_WARN("base64_encode must be called after encode()")
+        ALPINE_WARN("base64_encode must be called after encode()")
         return;
     }
 
@@ -233,7 +233,7 @@ PNGEncoder::Cleanup()
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 

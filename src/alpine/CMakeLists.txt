@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -49,14 +49,14 @@
 #
 ###############################################################################
 
-set(STRAWMAN_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_client)
+set(ALPINE_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_client)
 
-set(STRAWMAN_VTKM_ENABLED ${VTKM_FOUND})
-set(STRAWMAN_HDF5_ENABLED ${HDF5_FOUND})
+set(ALPINE_VTKM_ENABLED ${VTKM_FOUND})
+set(ALPINE_HDF5_ENABLED ${HDF5_FOUND})
 
-if(STRAWMAN_VTKM_ENABLED)
-    set(STRAWMAN_VTKM_USE_CUDA ${CUDA_FOUND})
-    set(STRAWMAN_VTKM_USE_TBB  ${TBB_FOUND})
+if(ALPINE_VTKM_ENABLED)
+    set(ALPINE_VTKM_USE_CUDA ${CUDA_FOUND})
+    set(ALPINE_VTKM_USE_TBB  ${TBB_FOUND})
 endif()
 
 

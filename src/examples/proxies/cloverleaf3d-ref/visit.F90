@@ -22,7 +22,7 @@
 !>  The ideal gas and viscosity routines are invoked to make sure this data is
 !>  up to data with the current energy, density and velocity.
 
-SUBROUTINE visit(my_strawman)
+SUBROUTINE visit(my_alpine)
 
   USE clover_module
   USE update_halo_module
@@ -36,7 +36,7 @@ SUBROUTINE visit(my_strawman)
   USE iso_c_binding
   USE conduit
   USE conduit_blueprint
-  USE strawman
+  USE alpine
 
   IMPLICIT NONE
 
@@ -59,8 +59,8 @@ SUBROUTINE visit(my_strawman)
   !
   CHARACTER(len=80) :: savename
 
-  TYPE(C_PTR) strawman_opts
-  TYPE(C_PTR) my_strawman
+  TYPE(C_PTR) alpine_opts
+  TYPE(C_PTR) my_alpine
   TYPE(C_PTR) sim_data
   TYPE(C_PTR) verify_info
   TYPE(C_PTR) sim_actions
@@ -126,7 +126,7 @@ SUBROUTINE visit(my_strawman)
   
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  ! Begin Strawman Integration
+  ! Begin Alpine Integration
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -143,9 +143,9 @@ SUBROUTINE visit(my_strawman)
       nnodes = nxv * nyv * nzv
 
       !
-      ! Strawman in situ visualization
+      ! Alpine in situ visualization
       !
-      CALL strawman_timer_start(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
+      CALL alpine_timer_start(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
       ALLOCATE(xcoords(0:nxv-1), ycoords(0:nyv-1), zcoords(0:nzv-1))
       jmin=chunks(c)%field%x_min
       DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
@@ -278,17 +278,17 @@ SUBROUTINE visit(my_strawman)
 
       ! CALL sim_actions%print_detailed()
 
-      CALL strawman_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
-      !strawman_opts = conduit_node_create()
-      !CALL conduit_node_set_path_int32(strawman_opts,"mpi_comm",MPI_COMM_WORLD)
-      !CALL conduit_node_set_path_char8_str(strawman_opts,"pipeline/type", "vtkm")
-      !CALL conduit_node_set_path_char8_str(strawman_opts,"pipeline/backend", "serial")
-      !my_strawman   = strawman_create()
-      !CALL strawman_open(my_strawman,strawman_opts)
-      CALL strawman_publish(my_strawman, sim_data)
-      CALL strawman_execute(my_strawman, sim_actions)
-      !CALL strawman_close(my_strawman)
-      !CALL strawman_destroy(my_strawman)
+      CALL alpine_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
+      !alpine_opts = conduit_node_create()
+      !CALL conduit_node_set_path_int32(alpine_opts,"mpi_comm",MPI_COMM_WORLD)
+      !CALL conduit_node_set_path_char8_str(alpine_opts,"pipeline/type", "vtkm")
+      !CALL conduit_node_set_path_char8_str(alpine_opts,"pipeline/backend", "serial")
+      !my_alpine   = alpine_create()
+      !CALL alpine_open(my_alpine,alpine_opts)
+      CALL alpine_publish(my_alpine, sim_data)
+      CALL alpine_execute(my_alpine, sim_actions)
+      !CALL alpine_close(my_alpine)
+      !CALL alpine_destroy(my_alpine)
       CALL conduit_node_destroy(sim_actions)
       CALL conduit_node_destroy(sim_data)
 
@@ -299,7 +299,7 @@ SUBROUTINE visit(my_strawman)
       
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      ! End Strawman Integration
+      ! End Alpine Integration
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

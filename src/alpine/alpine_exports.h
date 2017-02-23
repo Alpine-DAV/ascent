@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,21 +45,21 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_exports.h
+/// file: alpine_exports.h
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef STRAWMAN_EXPORTS_H
-#define STRAWMAN_EXPORTS_H
+#ifndef ALPINE_EXPORTS_H
+#define ALPINE_EXPORTS_H
 
 //-----------------------------------------------------------------------------
 // -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
 #if defined(_WIN32)
-#if defined(STRAWMAN_EXPORTS) || defined(strawman_EXPORTS)
-#define STRAWMAN_API __declspec(dllexport)
+#if defined(ALPINE_EXPORTS) || defined(alpine_EXPORTS)
+#define ALPINE_API __declspec(dllexport)
 #else
-#define STRAWMAN_API __declspec(dllimport)
+#define ALPINE_API __declspec(dllimport)
 #endif
 #if defined(_MSC_VER)
 // Turn off warning about lack of DLL interface
@@ -70,10 +70,10 @@
 #pragma warning(disable:4786)
 #endif
 #else
-# if __GNUC__ >= 4 && (defined(STRAWMAN_EXPORTS) || defined(strawman_EXPORTS))
-#   define STRAWMAN_API __attribute__ ((visibility("default")))
+# if __GNUC__ >= 4 && (defined(ALPINE_EXPORTS) || defined(alpine_EXPORTS))
+#   define ALPINE_API __attribute__ ((visibility("default")))
 # else
-#   define STRAWMAN_API /* hidden by default */
+#   define ALPINE_API /* hidden by default */
 # endif
 #endif
 

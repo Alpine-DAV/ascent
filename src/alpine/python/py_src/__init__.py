@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,9 +44,9 @@
 
 ###############################################################################
 # file: __init__.py
-# Purpose: Main init for the strawman module.
+# Purpose: Main init for the alpine module.
 ###############################################################################
-from .strawman_python import *
+from .alpine_python import *
 
 
 

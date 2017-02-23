@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_icet_compositor.cpp
+/// file: alpine_icet_compositor.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -58,16 +58,16 @@
 {                                                                              \
     if(icetGetError() != ICET_NO_ERROR )                                       \
     {                                                                          \
-        STRAWMAN_WARN("IceT Error Occurred!");                                 \
+        ALPINE_WARN("IceT Error Occurred!");                                 \
     }                                                                          \
 }                                                                              \
 
 
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 //-----------------------------------------------------------------------------
@@ -288,7 +288,7 @@ IceTCompositor::Cleanup()
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 

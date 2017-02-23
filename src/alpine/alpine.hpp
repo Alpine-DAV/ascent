@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,43 +45,43 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman.hpp
+/// file: alpine.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef STRAWMAN_HPP
-#define STRAWMAN_HPP
+#ifndef ALPINE_HPP
+#define ALPINE_HPP
 
 
-#include <strawman_config.h>
-#include <strawman_exports.h>
+#include <alpine_config.h>
+#include <alpine_exports.h>
 
 
-#include <strawman_logging.hpp>
-#include <strawman_file_system.hpp>
-#include <strawman_block_timer.hpp>
+#include <alpine_logging.hpp>
+#include <alpine_file_system.hpp>
+#include <alpine_block_timer.hpp>
 
 #include <conduit.hpp>
 #include <conduit_blueprint.hpp>
 
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
-// Forward Declare the strawman::Pipeline interface class.
+// Forward Declare the alpine::Pipeline interface class.
 class Pipeline;
 
 //-----------------------------------------------------------------------------
-/// Strawman Interface
+/// Alpine Interface
 //-----------------------------------------------------------------------------
-class STRAWMAN_API Strawman
+class ALPINE_API Alpine
 {
 public:
-           Strawman();
-          ~Strawman();
+           Alpine();
+          ~Alpine();
 
     void   Open(); // open with default options
     void   Open(const conduit::Node &options);
@@ -96,14 +96,14 @@ private:
 
 
 //-----------------------------------------------------------------------------
-std::string STRAWMAN_API about();
+std::string ALPINE_API about();
 
 //-----------------------------------------------------------------------------
-void        STRAWMAN_API about(conduit::Node &node);
+void        ALPINE_API about(conduit::Node &node);
 
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 #endif

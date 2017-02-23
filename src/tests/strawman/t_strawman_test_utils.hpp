@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,13 +44,13 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_strawman_test_utils.hpp
+/// file: t_alpine_test_utils.hpp
 ///
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-#ifndef T_STRAWMAN_DATA
-#define T_STRAWMAN_DATA
+#ifndef T_ALPINE_DATA
+#define T_ALPINE_DATA
 //-----------------------------------------------------------------------------
 
 #include <iostream>
@@ -79,18 +79,18 @@ remove_test_image(const std::string &path)
 std::string 
 prepare_output_dir()
 {
-    string output_path = conduit::utils::join_file_path(STRAWMAN_T_BIN_DIR,"strawman");
+    string output_path = conduit::utils::join_file_path(ALPINE_T_BIN_DIR,"alpine");
     
-    if(!strawman::directory_exists(output_path))
+    if(!alpine::directory_exists(output_path))
     {
-        strawman::create_directory(output_path);
+        alpine::create_directory(output_path);
     }
     
     output_path = conduit::utils::join_file_path(output_path,"_output");
 
-    if(!strawman::directory_exists(output_path))
+    if(!alpine::directory_exists(output_path))
     {
-        strawman::create_directory(output_path);
+        alpine::create_directory(output_path);
     }
     
     return output_path;
@@ -100,7 +100,7 @@ prepare_output_dir()
 std::string 
 output_dir()
 {
-    string output_path = conduit::utils::join_file_path(STRAWMAN_T_BIN_DIR,"strawman");
+    string output_path = conduit::utils::join_file_path(ALPINE_T_BIN_DIR,"alpine");
     output_path = conduit::utils::join_file_path(output_path,"_output");
 
     return output_path;
@@ -127,7 +127,7 @@ create_2d_example_dataset(Node &data,
 
     // if( (par_size > 1)  && ((par_size % par_rank) != 0))
     // {
-    //     STRAWMAN_ERROR("par_size ("  << par_size << ") " <<
+    //     ALPINE_ERROR("par_size ("  << par_size << ") " <<
     //                    "must must divide evenly into " <<
     //                    "par_rank (" << par_rank << ")");
     // }
@@ -230,7 +230,7 @@ create_3d_example_dataset(Node &data,
     
     // if( (par_size > 1)  && ((par_size % par_rank) != 0))
     // {
-    //     STRAWMAN_ERROR("par_size ("  << par_size << ") " <<
+    //     ALPINE_ERROR("par_size ("  << par_size << ") " <<
     //                    "must must divide evenly into " <<
     //                    "par_rank (" << par_rank << ")");
     // }

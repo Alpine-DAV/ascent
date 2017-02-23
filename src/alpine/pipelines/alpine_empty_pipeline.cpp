@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_empty_pipeline.cpp
+/// file: alpine_empty_pipeline.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -76,9 +76,9 @@ using namespace std;
 
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 //-----------------------------------------------------------------------------
@@ -105,7 +105,7 @@ EmptyPipeline::~EmptyPipeline()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //
-// Main pipeline interface methods called by the strawman interface.
+// Main pipeline interface methods called by the alpine interface.
 //
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -118,7 +118,7 @@ EmptyPipeline::Initialize(const conduit::Node &options)
     if(!options.has_child("mpi_comm") ||
        !options["mpi_comm"].dtype().is_integer())
     {
-        STRAWMAN_ERROR("Missing Strawman::Open options missing MPI communicator (mpi_comm)");
+        ALPINE_ERROR("Missing Alpine::Open options missing MPI communicator (mpi_comm)");
     }
 #endif
 
@@ -162,7 +162,7 @@ EmptyPipeline::Publish(const conduit::Node &data)
     int num_failures = n_reduce.value();
     if(num_failures != 0)
     {
-        STRAWMAN_ERROR("Mesh Blueprint Verify failed on "  
+        ALPINE_ERROR("Mesh Blueprint Verify failed on "  
                        << num_failures
                        << " MPI Tasks");
         
@@ -174,7 +174,7 @@ EmptyPipeline::Publish(const conduit::Node &data)
 #else
     if(!verify_ok)
     {
-         STRAWMAN_ERROR("Mesh Blueprint Verify failed!"
+         ALPINE_ERROR("Mesh Blueprint Verify failed!"
                         << std::endl
                         << verify_info.to_json());
     }
@@ -194,7 +194,7 @@ EmptyPipeline::Execute(const conduit::Node &actions)
         const Node &action = actions.child(i);
         string action_name = action["action"].as_string();
 
-        STRAWMAN_INFO("Executing " << action_name);
+        ALPINE_INFO("Executing " << action_name);
 
         // implement action
     }
@@ -208,7 +208,7 @@ EmptyPipeline::Execute(const conduit::Node &actions)
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 

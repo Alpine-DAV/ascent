@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,46 +45,46 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman.cpp
+/// file: alpine.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <strawman.hpp>
-#include <strawman_pipeline.hpp>
+#include <alpine.hpp>
+#include <alpine_pipeline.hpp>
 
-#include <pipelines/strawman_empty_pipeline.hpp>
+#include <pipelines/alpine_empty_pipeline.hpp>
 
-#if defined(STRAWMAN_VTKM_ENABLED)
-    #include <pipelines/strawman_vtkm_pipeline.hpp>
+#if defined(ALPINE_VTKM_ENABLED)
+    #include <pipelines/alpine_vtkm_pipeline.hpp>
 #endif
 
-#if defined(STRAWMAN_HDF5_ENABLED)
-    #include <pipelines/strawman_blueprint_hdf5_pipeline.hpp>
+#if defined(ALPINE_HDF5_ENABLED)
+    #include <pipelines/alpine_blueprint_hdf5_pipeline.hpp>
 #endif
 
 using namespace conduit;
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-Strawman::Strawman()
+Alpine::Alpine()
 : m_pipeline(NULL)
 {
 }
 
 //-----------------------------------------------------------------------------
-Strawman::~Strawman()
+Alpine::~Alpine()
 {
 
 }
 
 //-----------------------------------------------------------------------------
 void
-Strawman::Open()
+Alpine::Open()
 {
     Node opts;
     Open(opts);
@@ -106,17 +106,17 @@ CheckForJSONFile(std::string file_name, conduit::Node &node)
 
 //-----------------------------------------------------------------------------
 void
-Strawman::Open(const conduit::Node &options)
+Alpine::Open(const conduit::Node &options)
 {
     Node processed_opts(options);
-    CheckForJSONFile("strawman_options.json", processed_opts); 
+    CheckForJSONFile("alpine_options.json", processed_opts); 
     if(m_pipeline != NULL)
     {
-        STRAWMAN_ERROR("Strawman Pipeline already exists.!");
+        ALPINE_ERROR("Alpine Pipeline already exists.!");
     }
     
     Node cfg;
-    strawman::about(cfg);
+    alpine::about(cfg);
     
     std::string pipeline_type = cfg["default_pipeline"].as_string();
     
@@ -134,31 +134,31 @@ Strawman::Open(const conduit::Node &options)
     }
     else if(pipeline_type == "vtkm")
     {
-#if defined(STRAWMAN_VTKM_ENABLED)
+#if defined(ALPINE_VTKM_ENABLED)
         m_pipeline = new VTKMPipeline();
 #else
-        STRAWMAN_ERROR("Strawman was not built with VTKm support");
+        ALPINE_ERROR("Alpine was not built with VTKm support");
 #endif
     }
     else if(pipeline_type == "eavl")
     {
-#if defined(STRAWMAN_EAVL_ENABLED)
+#if defined(ALPINE_EAVL_ENABLED)
         m_pipeline = new EAVLPipeline();
 #else
-        STRAWMAN_ERROR("Strawman was not built with EAVL support");
+        ALPINE_ERROR("Alpine was not built with EAVL support");
 #endif
     }
     else if(pipeline_type == "blueprint_hdf5")
     {
-    #if defined(STRAWMAN_HDF5_ENABLED)
+    #if defined(ALPINE_HDF5_ENABLED)
         m_pipeline = new BlueprintHDF5Pipeline();
     #else
-        STRAWMAN_ERROR("Strawman was not built with HDF5 support");
+        ALPINE_ERROR("Alpine was not built with HDF5 support");
     #endif
     }
     else
     {
-        STRAWMAN_ERROR("Unsupported Pipeline type " 
+        ALPINE_ERROR("Unsupported Pipeline type " 
                        << "\"" << pipeline_type << "\""
                        << " passed via 'pipeline' open option.");
     }
@@ -168,23 +168,23 @@ Strawman::Open(const conduit::Node &options)
 
 //-----------------------------------------------------------------------------
 void
-Strawman::Publish(const conduit::Node &data)
+Alpine::Publish(const conduit::Node &data)
 {
     m_pipeline->Publish(data);
 }
 
 //-----------------------------------------------------------------------------
 void
-Strawman::Execute(const conduit::Node &actions)
+Alpine::Execute(const conduit::Node &actions)
 {
     Node processed_actions(actions);
-    CheckForJSONFile("strawman_actions.json", processed_actions);
+    CheckForJSONFile("alpine_actions.json", processed_actions);
     m_pipeline->Execute(processed_actions);
 }
 
 //-----------------------------------------------------------------------------
 void
-Strawman::Close()
+Alpine::Close()
 {
     if(m_pipeline != NULL)
     {
@@ -199,7 +199,7 @@ std::string
 about()
 {
     Node n;
-    strawman::about(n);
+    alpine::about(n);
     return n.to_json();
 }
 
@@ -210,17 +210,17 @@ about(conduit::Node &n)
     n.reset();
     n["version"] = "0.1.0";
 
-#if defined(STRAWMAN_EAVL_ENABLED)
+#if defined(ALPINE_EAVL_ENABLED)
     n["pipelines/eavl/status"] = "enabled";
     n["pipelines/eavl/backends/serial"] = "enabled";
     
-    #ifdef STRAWMAN_EAVL_USE_OPENMP
+    #ifdef ALPINE_EAVL_USE_OPENMP
         n["pipelines/eavl/backends/openmp"] = "enabled";
     #else
         n["pipelines/eavl/backends/openmp"] = "disabled";
     #endif
 
-    #ifdef STRAWMAN_EAVL_USE_CUDA
+    #ifdef ALPINE_EAVL_USE_CUDA
         n["pipelines/eavl/backends/cuda"]   = "enabled";
     #else
         n["pipelines/eavl/backends/cuda"]   = "disabled";
@@ -229,18 +229,18 @@ about(conduit::Node &n)
     n["pipelines/eavl/status"] = "disabled";
 #endif
     
-#if defined(STRAWMAN_VTKM_ENABLED)
+#if defined(ALPINE_VTKM_ENABLED)
     n["pipelines/vtkm/status"] = "enabled";
     
     n["pipelines/vtkm/backends/serial"] = "enabled";
     
-#ifdef STRAWMAN_VTKM_USE_TBB
+#ifdef ALPINE_VTKM_USE_TBB
     n["pipelines/vtkm/backends/tbb"] = "enabled";
 #else
     n["pipelines/vtkm/backends/tbb"] = "disabled";
 #endif
 
-#ifdef STRAWMAN_VTKM_USE_CUDA
+#ifdef ALPINE_VTKM_USE_CUDA
     n["pipelines/vtkm/backends/cuda"] = "enabled";
 #else
     n["pipelines/vtkm/backends/cuda"] = "disabled";
@@ -250,7 +250,7 @@ about(conduit::Node &n)
     n["pipelines/vtkm/status"] = "disabled";
 #endif
 
-#if defined(STRAWMAN_HDF5_ENABLED)
+#if defined(ALPINE_HDF5_ENABLED)
     n["pipelines/blueprint_hdf5/status"] = "enabled";
 #else
     n["pipelines/blueprint_hdf5/status"] = "disabled";
@@ -259,11 +259,11 @@ about(conduit::Node &n)
 //
 // Select default pipeline based on what is available.
 //
-#if defined(STRAWMAN_VTKM_ENABLED)
+#if defined(ALPINE_VTKM_ENABLED)
     n["default_pipeline"] = "vtkm";
-#elif defined(STRAWMAN_EAVL_ENABLED)
+#elif defined(ALPINE_EAVL_ENABLED)
     n["default_pipeline"] = "eval";
-#elif defined(STRAWMAN_HDF5_ENABLED)    
+#elif defined(ALPINE_HDF5_ENABLED)    
     n["default_pipeline"] = "blueprint_hdf5";
 #else
     n["default_pipeline"] = "empty";    
@@ -273,7 +273,7 @@ about(conduit::Node &n)
 
 
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

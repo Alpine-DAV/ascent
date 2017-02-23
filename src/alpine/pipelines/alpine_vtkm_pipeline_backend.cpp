@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_vtkm_pipeline.cpp
+/// file: alpine_vtkm_pipeline.cpp
 ///
 //-----------------------------------------------------------------------------
 #warning "Should not have to define this"
@@ -72,16 +72,16 @@
 #include <vtkm/cont/cuda/ChooseCudaDevice.h>
 #endif
 
-// other strawman includes
-#include <strawman_block_timer.hpp>
+// other alpine includes
+#include <alpine_block_timer.hpp>
 
 using namespace std;
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 //-----------------------------------------------------------------------------
 // -- VTKm typedefs for convenience and sanity
@@ -113,13 +113,13 @@ vtkm::cont::DataSet *
 VTKMPipelineBackend::DataAdapter::BlueprintToVTKmDataSet (const Node &node, 
                                                    const std::string &field_name)
 {   
-    STRAWMAN_BLOCK_TIMER(PIPELINE_GET_DATA);
+    ALPINE_BLOCK_TIMER(PIPELINE_GET_DATA);
     
     vtkm::cont::DataSet * result = NULL;
     // Follow var_name -> field -> topology -> coordset
     if(!node["fields"].has_child(field_name))
     {
-        STRAWMAN_ERROR("Invalid field name " << field_name);
+        ALPINE_ERROR("Invalid field name " << field_name);
     }
     // as long as the field w/ field_name exists, and mesh blueprint verify 
     // is true, we access data without fear.
@@ -175,7 +175,7 @@ VTKMPipelineBackend::DataAdapter::BlueprintToVTKmDataSet (const Node &node,
     }
     else
     {
-        STRAWMAN_ERROR("Unsupported topology/type:" << mesh_type);
+        ALPINE_ERROR("Unsupported topology/type:" << mesh_type);
     }
     
     // add var
@@ -245,13 +245,13 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
     // }
     else
     {
-        STRAWMAN_ERROR("Unsupported element shape " << shape_type);
+        ALPINE_ERROR("Unsupported element shape " << shape_type);
     }
 
     if(conn_size < indices) 
-        STRAWMAN_ERROR("Connectivity array size " <<conn_size << " must be at least size " << indices);
+        ALPINE_ERROR("Connectivity array size " <<conn_size << " must be at least size " << indices);
     if(conn_size % indices != 0) 
-        STRAWMAN_ERROR("Connectivity array size " <<conn_size << " be evenly divided by indices size" << indices);
+        ALPINE_ERROR("Connectivity array size " <<conn_size << " be evenly divided by indices size" << indices);
 
     const vtkm::Id num_shapes = conn_size / indices;
 
@@ -267,7 +267,7 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
 
     const vtkm::UInt8 shape_value = shape_id;
     const vtkm::IdComponent indices_value = indices;
-#ifdef STRAWMAN_USE_OPENMP
+#ifdef ALPINE_USE_OPENMP
     #pragma omp parrallel for
 #endif
     for (int i = 0; i < num_shapes; ++i)
@@ -500,7 +500,7 @@ VTKMPipelineBackend::DataAdapter::StructuredBlueprintToVTKmDataSet
      int &neles,                     // output, number of eles
      int &nverts)                    // output, number of verts
 {
-    STRAWMAN_ERROR("Blueprint Structured Mesh to VTKm DataSet Not Implemented");
+    ALPINE_ERROR("Blueprint Structured Mesh to VTKm DataSet Not Implemented");
     return NULL;
 }
 
@@ -593,7 +593,7 @@ VTKMPipelineBackend::DataAdapter::UnstructuredBlueprintToVTKmDataSet
     
     result->AddCellSet(cell_set);
     
-    STRAWMAN_INFO("neles "  << neles);
+    ALPINE_INFO("neles "  << neles);
     
     return result;
 }
@@ -609,8 +609,8 @@ VTKMPipelineBackend::DataAdapter::AddVariableField
      int nverts,
      vtkm::cont::DataSet *dset)
 {
-    STRAWMAN_INFO("nverts "  << nverts);
-    STRAWMAN_INFO("neles "  << neles);
+    ALPINE_INFO("nverts "  << nverts);
+    ALPINE_INFO("neles "  << neles);
     
     
     // TODO: how do we deal with vector valued fields?, these will be mcarrays
@@ -651,7 +651,7 @@ VTKMPipelineBackend::DataAdapter::AddVariableField
     }
     catch (vtkm::cont::Error error)
     {
-        STRAWMAN_ERROR("VTKm exception:" << error.GetMessage());
+        ALPINE_ERROR("VTKm exception:" << error.GetMessage());
     }
 
 }
@@ -678,7 +678,7 @@ VTKMPipelineBackend::DataAdapter::AddVariableField
 
 VTKMPipelineBackend::VTKMPipelineBackend()
 {
-  STRAWMAN_BLOCK_TIMER(CONSTRUCTOR)
+  ALPINE_BLOCK_TIMER(CONSTRUCTOR)
 }
 
 //-----------------------------------------------------------------------------
@@ -693,7 +693,7 @@ VTKMPipelineBackend::~VTKMPipelineBackend()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //
-// Main pipeline interface methods, which are by the strawman interface.
+// Main pipeline interface methods, which are by the alpine interface.
 //
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -706,7 +706,7 @@ VTKMPipelineBackend::Initialize(const conduit::Node &options)
 #if PARALLEL
     if(!options.has_path("mpi_comm"))
     {
-        CONDUIT_ERROR("Missing Strawman::Open options missing MPI communicator (mpi_comm)");
+        CONDUIT_ERROR("Missing Alpine::Open options missing MPI communicator (mpi_comm)");
     }
 
     int mpi_handle = options["mpi_comm"].value();
@@ -727,7 +727,7 @@ VTKMPipelineBackend::Initialize(const conduit::Node &options)
         err = cudaSetDevice(rank_device);
         if(err != cudaSuccess)
         {
-            STRAWMAN_ERROR("Failed to set GPU " 
+            ALPINE_ERROR("Failed to set GPU " 
                            <<rank_device
                            <<" out of "<<device_count
                            <<" GPUs. Make sure there"
@@ -746,7 +746,7 @@ VTKMPipelineBackend::Initialize(const conduit::Node &options)
     }
     else
     {
-        STRAWMAN_ERROR("VTKm GPUs is enabled but none found");
+        ALPINE_ERROR("VTKm GPUs is enabled but none found");
     }
 #endif
 
@@ -796,12 +796,12 @@ VTKMPipelineBackend::Execute(const conduit::Node &actions)
         const Node &action = actions.child(i);
         if(!action.has_path("action"))
         {
-            STRAWMAN_INFO("Warning : action malformed");
+            ALPINE_INFO("Warning : action malformed");
             action.print();
             std::cout<<"\n";
             continue;
         }
-        STRAWMAN_INFO("Executing " << action["action"].as_string());
+        ALPINE_INFO("Executing " << action["action"].as_string());
        
         if (action["action"].as_string() == "add_plot")
         {
@@ -809,7 +809,7 @@ VTKMPipelineBackend::Execute(const conduit::Node &actions)
         }
         else if (action["action"].as_string() == "add_filter")
         {
-            STRAWMAN_INFO("VTKm add_filter not implemented");
+            ALPINE_INFO("VTKm add_filter not implemented");
         }
         else if (action["action"].as_string() == "draw_plots")
         {
@@ -817,7 +817,7 @@ VTKMPipelineBackend::Execute(const conduit::Node &actions)
         }
         else
         {
-            STRAWMAN_INFO("Warning : unknown action "<<action["action"].as_string());
+            ALPINE_INFO("Warning : unknown action "<<action["action"].as_string());
         }
    }
 }
@@ -845,9 +845,9 @@ VTKMPipelineBackend::AddPlot(const conduit::Node &action)
     plot.m_cell_set_name = topo_name;
     try
     {
-        STRAWMAN_BLOCK_TIMER(PLOT)
+        ALPINE_BLOCK_TIMER(PLOT)
         if(!plot.m_data_set->HasCellSet(plot.m_cell_set_name))
-            STRAWMAN_ERROR("AddPlot: no cell set named "<<plot.m_cell_set_name);
+            ALPINE_ERROR("AddPlot: no cell set named "<<plot.m_cell_set_name);
 
         int cell_set_index = plot.m_data_set->GetCellSetIndex(plot.m_cell_set_name);
         plot.m_plot = new vtkmActor(plot.m_data_set->GetCellSet(cell_set_index),
@@ -865,7 +865,7 @@ VTKMPipelineBackend::AddPlot(const conduit::Node &action)
     }
     catch (vtkm::cont::Error error) 
     {
-        STRAWMAN_ERROR("AddPlot Got the unexpected error: " << error.GetMessage() << std::endl);
+        ALPINE_ERROR("AddPlot Got the unexpected error: " << error.GetMessage() << std::endl);
     }
     m_plots.push_back(plot);
     
@@ -895,7 +895,7 @@ VTKMPipelineBackend::RenderPlot(const int plot_id,
 { 
     render_options.print();
     
-    STRAWMAN_BLOCK_TIMER(RENDER_PLOTS);
+    ALPINE_BLOCK_TIMER(RENDER_PLOTS);
 
     //
     // Extract the save image attributes.
@@ -930,7 +930,7 @@ VTKMPipelineBackend::RenderPlot(const int plot_id,
         }
         else
         {
-            STRAWMAN_INFO( "VTK-m Pipeline: unknown renderer "
+            ALPINE_INFO( "VTK-m Pipeline: unknown renderer "
                            << render_options["Renderer"].as_string() << endl
                            << "Defaulting to ray tracer");
             m_render_mode = RAYTRACER;
@@ -983,7 +983,7 @@ VTKMPipelineBackend::RenderPlot(const int plot_id,
 
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 

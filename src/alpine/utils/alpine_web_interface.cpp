@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_web_interface.cpp
+/// file: alpine_web_interface.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -63,9 +63,9 @@ using namespace conduit;
 using namespace conduit::relay::web;
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 //-----------------------------------------------------------------------------
@@ -94,7 +94,7 @@ WebInterface::Connection()
     if(m_server == NULL)
     {
         m_server = new WebServer();
-        m_server->set_document_root(STRAWMAN_WEB_CLIENT_ROOT);
+        m_server->set_document_root(ALPINE_WEB_CLIENT_ROOT);
         m_server->set_request_handler(new WebRequestHandler());
         m_server->serve(false);
     }
@@ -153,7 +153,7 @@ WebInterface::PushImage(const std::string &png_image_path)
         return;
     }
     
-    STRAWMAN_INFO("png path:" << png_image_path);
+    ALPINE_INFO("png path:" << png_image_path);
 
     std::ifstream file(png_image_path.c_str(),
                        std::ios::binary);
@@ -172,7 +172,7 @@ WebInterface::PushImage(const std::string &png_image_path)
     if(!file.read(png_raw_ptr, png_raw_bytes))
     {
         // ERROR ... 
-        STRAWMAN_WARN("ERROR Reading png file " << png_image_path);
+        ALPINE_WARN("ERROR Reading png file " << png_image_path);
     }
 
     // base64 encode the raw png data
@@ -194,7 +194,7 @@ WebInterface::PushImage(const std::string &png_image_path)
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 

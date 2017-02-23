@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,14 +44,14 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_block_timer.hpp
+/// file: alpine_block_timer.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef STRAWMAN_BLOCK_TIMER_HPP
-#define STRAWMAN_BLOCK_TIMER_HPP
+#ifndef ALPINE_BLOCK_TIMER_HPP
+#define ALPINE_BLOCK_TIMER_HPP
 
-#define STRAWMAN_BLOCK_TIMER(NAME) strawman::BlockTimer STRAWMAN_BLOCK_TIMER_##NAME(#NAME);
+#define ALPINE_BLOCK_TIMER(NAME) alpine::BlockTimer ALPINE_BLOCK_TIMER_##NAME(#NAME);
 #define MAX_DEPTH 5
 
 #include<sys/time.h>
@@ -61,12 +61,12 @@
 #include <cstdlib>
     
 #include <conduit.hpp>
-#include <strawman_config.h>
+#include <alpine_config.h>
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 //-----------------------------------------------------------------------------
@@ -131,7 +131,7 @@ private:
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 

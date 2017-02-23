@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,13 +44,13 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_strawman_empty_pipeline.cpp
+/// file: t_alpine_empty_pipeline.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
 
-#include <strawman.hpp>
+#include <alpine.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -59,16 +59,16 @@
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
-#include "t_strawman_test_utils.hpp"
+#include "t_alpine_test_utils.hpp"
 
 
 using namespace std;
 using namespace conduit;
-using namespace strawman;
+using namespace alpine;
 
 
 //-----------------------------------------------------------------------------
-TEST(strawman_empty_pipeline, test_empty_pipeline)
+TEST(alpine_empty_pipeline, test_empty_pipeline)
 {
     //
     // Create example mesh.
@@ -89,9 +89,9 @@ TEST(strawman_empty_pipeline, test_empty_pipeline)
     open_opts["pipeline/type"] = "empty";
     
     //
-    // Run Strawman
+    // Run Alpine
     //
-    Strawman sman;
+    Alpine sman;
     sman.Open(open_opts);
     sman.Publish(data);
     sman.Execute(actions);

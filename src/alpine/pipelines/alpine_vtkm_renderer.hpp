@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,11 +44,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_vtkm_rendering.hpp
+/// file: alpine_vtkm_rendering.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef STRAWMAN_VTKM_RENDERING_HPP
-#define STRAWMAN_VTKM_RENDERING_HPP
+#ifndef ALPINE_VTKM_RENDERING_HPP
+#define ALPINE_VTKM_RENDERING_HPP
 
 #include <vtkm/rendering/ColorTable.h>
 #include <vtkm/rendering/Actor.h>
@@ -58,26 +58,26 @@
 #include <vtkm/cont/DeviceAdapter.h>
 #include <conduit.hpp>
 
-#include <strawman_png_encoder.hpp>
-#include <strawman_web_interface.hpp>
-#include <strawman_logging.hpp>
+#include <alpine_png_encoder.hpp>
+#include <alpine_web_interface.hpp>
+#include <alpine_logging.hpp>
 
 
 // mpi related includes
 #ifdef PARALLEL
 #include <mpi.h>
 //----iceT includes 
-#include <strawman_icet_compositor.hpp>
+#include <alpine_icet_compositor.hpp>
 //---- conduit mpi 
 #include <conduit_relay_mpi.hpp>
 #endif
 
 
-using namespace strawman;
+using namespace alpine;
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 //-----------------------------------------------------------------------------
 // -- VTKm typedefs for convienince and sanity
@@ -246,9 +246,9 @@ VTKMCompareVisibility(const void *a, const void *b)
 
 };
 
-}; //namespace strawman
+}; //namespace alpine
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 #endif

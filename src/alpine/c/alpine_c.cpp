@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,17 +45,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_c.cpp
+/// file: alpine_c.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "strawman.h"
+#include "alpine.h"
 
 #include <conduit.hpp>
 #include <conduit_cpp_to_c.hpp>
 
-#include "strawman.hpp"
-#include "strawman_block_timer.hpp"
+#include "alpine.hpp"
+#include "alpine_block_timer.hpp"
 using conduit::Node;
 
 //-----------------------------------------------------------------------------
@@ -66,95 +66,95 @@ extern "C" {
 
 
 //---------------------------------------------------------------------------//
-strawman::Strawman *
-cpp_strawman(Strawman *v)
+alpine::Alpine *
+cpp_alpine(Alpine *v)
 {
-    return static_cast<strawman::Strawman*>(v);
+    return static_cast<alpine::Alpine*>(v);
 }
 
 //---------------------------------------------------------------------------//
-Strawman *
-c_strawman(strawman::Strawman *v)
+Alpine *
+c_alpine(alpine::Alpine *v)
 {
     return (void*)v;
 }
 
 //---------------------------------------------------------------------------//
 void
-strawman_about(conduit_node *result)
+alpine_about(conduit_node *result)
 {
     Node &n = conduit::cpp_node_ref(result);
-    strawman::about(n);
+    alpine::about(n);
 }
 
 //---------------------------------------------------------------------------//
-Strawman *
-strawman_create()
+Alpine *
+alpine_create()
 {
-    return c_strawman(new strawman::Strawman());
+    return c_alpine(new alpine::Alpine());
 }
 
 //---------------------------------------------------------------------------//
 void
-strawman_open(Strawman *c_sman,
+alpine_open(Alpine *c_sman,
               conduit_node *c_options)
 {
-    strawman::Strawman *v = cpp_strawman(c_sman);
+    alpine::Alpine *v = cpp_alpine(c_sman);
     Node  *n = static_cast<Node*>(c_options);
     v->Open(*n);
 }
 
 //---------------------------------------------------------------------------//
 void
-strawman_publish(Strawman *c_sman,
+alpine_publish(Alpine *c_sman,
                  conduit_node *c_data)
 {
-    strawman::Strawman *v = cpp_strawman(c_sman);
+    alpine::Alpine *v = cpp_alpine(c_sman);
     Node  *n = static_cast<Node*>(c_data);
     v->Publish(*n);
 }
 
 //---------------------------------------------------------------------------//
 void
-strawman_execute(Strawman *c_sman,
+alpine_execute(Alpine *c_sman,
                  conduit_node *c_actions)
 {
-    strawman::Strawman *v = cpp_strawman(c_sman);
+    alpine::Alpine *v = cpp_alpine(c_sman);
     Node  *n = static_cast<Node*>(c_actions);
     v->Execute(*n);
 }
 
 //---------------------------------------------------------------------------//
 void
-strawman_close(Strawman *c_sman)
+alpine_close(Alpine *c_sman)
 {
-    strawman::Strawman *v = cpp_strawman(c_sman);
+    alpine::Alpine *v = cpp_alpine(c_sman);
     v->Close();
 }
 
 //---------------------------------------------------------------------------//
 void
-strawman_destroy(Strawman *c_sman)
+alpine_destroy(Alpine *c_sman)
 {
-   strawman::Strawman *v = cpp_strawman(c_sman);
+   alpine::Alpine *v = cpp_alpine(c_sman);
     delete v;
 }
 
-void strawman_timer_start(char *name)
+void alpine_timer_start(char *name)
 {
-  strawman::BlockTimer::StartTimer(name); 
+  alpine::BlockTimer::StartTimer(name); 
 }
 
 //---------------------------------------------------------------------------//
-void strawman_timer_stop(char *name)
+void alpine_timer_stop(char *name)
 {
-  strawman::BlockTimer::StopTimer(name); 
+  alpine::BlockTimer::StopTimer(name); 
 }
 
 //---------------------------------------------------------------------------//
-void strawman_timer_write()
+void alpine_timer_write()
 {
-  strawman::BlockTimer::WriteLogFile(); 
+  alpine::BlockTimer::WriteLogFile(); 
 }
 }
 //-----------------------------------------------------------------------------

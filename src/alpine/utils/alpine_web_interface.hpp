@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,23 +44,23 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_web_interface.hpp
+/// file: alpine_web_interface.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef STRAWMAN_WEB_INTERFACE_HPP
-#define STRAWMAN_WEB_INTERFACE_HPP
+#ifndef ALPINE_WEB_INTERFACE_HPP
+#define ALPINE_WEB_INTERFACE_HPP
 
 #include <string>
 
 #include <conduit.hpp>
 #include <conduit_relay.hpp>
 
-#include <strawman_png_encoder.hpp>
+#include <alpine_png_encoder.hpp>
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 class WebInterface
@@ -90,7 +90,7 @@ private:
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 #endif

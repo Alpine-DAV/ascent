@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,20 +44,20 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_icet_compositor.hpp
+/// file: alpine_icet_compositor.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef STRAWMAN_ICET_COMPOSITOR_HPP
-#define STRAWMAN_ICET_COMPOSITOR_HPP
+#ifndef ALPINE_ICET_COMPOSITOR_HPP
+#define ALPINE_ICET_COMPOSITOR_HPP
 
 //----iceT includes 
 #include <IceT.h>
 #include <IceTMPI.h>
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 class IceTCompositor
@@ -111,7 +111,7 @@ private:
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 #endif

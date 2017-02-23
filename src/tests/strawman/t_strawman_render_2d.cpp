@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -43,13 +43,13 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 //-----------------------------------------------------------------------------
 ///
-/// file: t_strawman_render_2d.cpp
+/// file: t_alpine_render_2d.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
 
-#include <strawman.hpp>
+#include <alpine.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -57,18 +57,18 @@
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
-#include "t_strawman_test_utils.hpp"
+#include "t_alpine_test_utils.hpp"
 
 
 
 using namespace std;
 using namespace conduit;
-using namespace strawman;
+using namespace alpine;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 50;
 
 //-----------------------------------------------------------------------------
-TEST(strawman_render_2d, test_render_2d_default_pipeline)
+TEST(alpine_render_2d, test_render_2d_default_pipeline)
 {
     //
     // Create example mesh.
@@ -106,10 +106,10 @@ TEST(strawman_render_2d, test_render_2d_default_pipeline)
     actions.print();
     
     //
-    // Run Strawman
+    // Run Alpine
     //
     
-    Strawman sman;
+    Alpine sman;
 
     sman.Open();
     sman.Publish(data);
@@ -122,19 +122,19 @@ TEST(strawman_render_2d, test_render_2d_default_pipeline)
 
 
 //-----------------------------------------------------------------------------
-TEST(strawman_render_2d, test_render_2d_eval_serial_backend)
+TEST(alpine_render_2d, test_render_2d_eval_serial_backend)
 {
     Node n;
-    strawman::about(n);
-    // only run this test if strawman was built with eavl support
+    alpine::about(n);
+    // only run this test if alpine was built with eavl support
     if(n["pipelines/eavl/status"].as_string() == "disabled")
     {
-        STRAWMAN_INFO("EAVL support disabled, skipping 2D EAVL Serial "
+        ALPINE_INFO("EAVL support disabled, skipping 2D EAVL Serial "
                       "Pipeline test");
         return;
     }
     
-    STRAWMAN_INFO("Testing 2D EAVL Serial Pipeline");
+    ALPINE_INFO("Testing 2D EAVL Serial Pipeline");
     
     //
     // Create example mesh.
@@ -176,13 +176,13 @@ TEST(strawman_render_2d, test_render_2d_eval_serial_backend)
     actions.append()["action"] = "draw_plots";
 
     //
-    // Run Strawman
+    // Run Alpine
     //
     Node open_opts;
     open_opts["pipeline/type"] = "eavl";
     open_opts["pipeline/backend"] = "serial";
     
-    Strawman sman;
+    Alpine sman;
     sman.Open(open_opts);
     sman.Publish(data);
     sman.Execute(actions);
@@ -194,20 +194,20 @@ TEST(strawman_render_2d, test_render_2d_eval_serial_backend)
 
 
 //-----------------------------------------------------------------------------
-TEST(strawman_render_2d, test_render_2d_render_vtkm_serial_backend)
+TEST(alpine_render_2d, test_render_2d_render_vtkm_serial_backend)
 {
     
     Node n;
-    strawman::about(n);
-    // only run this test if strawman was built with vtkm support
+    alpine::about(n);
+    // only run this test if alpine was built with vtkm support
     if(n["pipelines/vtkm/status"].as_string() == "disabled")
     {
-        STRAWMAN_INFO("VTKm support disabled, skipping 2D VTKm Serial "
+        ALPINE_INFO("VTKm support disabled, skipping 2D VTKm Serial "
                       "Pipeline test");
         return;
     }
     
-    STRAWMAN_INFO("Testing 2D VTKm Serial Pipeline");
+    ALPINE_INFO("Testing 2D VTKm Serial Pipeline");
     
     //
     // Create an example mesh.
@@ -247,14 +247,14 @@ TEST(strawman_render_2d, test_render_2d_render_vtkm_serial_backend)
     
     
     //
-    // Run Strawman
+    // Run Alpine
     //
     
     Node open_opts;
     open_opts["pipeline/type"] = "vtkm";
     open_opts["pipeline/backend"] = "serial";
     
-    Strawman sman;
+    Alpine sman;
     sman.Open(open_opts);
     sman.Publish(data);
     sman.Execute(actions);

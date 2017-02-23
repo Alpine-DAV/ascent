@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -43,29 +43,29 @@
 ###############################################################################
 
 # Specify the sources of the pure python and compiled portions of our module.
-SET(strawman_py_python_sources  py_src/__init__.py)
-#SET(strawman_py_headers        strawman_python.hpp)
-SET(strawman_py_cpp_sources     strawman_python.cpp)
+SET(alpine_py_python_sources  py_src/__init__.py)
+#SET(alpine_py_headers        alpine_python.hpp)
+SET(alpine_py_cpp_sources     alpine_python.cpp)
 
 
 # Setup our module
-PYTHON_ADD_HYBRID_MODULE(strawman_python
+PYTHON_ADD_HYBRID_MODULE(alpine_python
                          python-modules
-                         strawman
+                         alpine
                          setup.py
-                         "${strawman_py_python_sources}"
-                         #${strawman_py_headers}
-                         ${strawman_py_cpp_sources})
+                         "${alpine_py_python_sources}"
+                         #${alpine_py_headers}
+                         ${alpine_py_cpp_sources})
 
 # link with the proper libs (beyond python)
-target_link_libraries(strawman_python strawman)
+target_link_libraries(alpine_python alpine)
 
 # TODO: ADD SUPPORT FOR SUPPORT PYTHON_MODULE_INSTALL_PREFIX
 # install the capi header so other python modules can use it
 # support alt install dir for python module via PYTHON_MODULE_INSTALL_PREFIX
 if(PYTHON_MODULE_INSTALL_PREFIX)
-    install(FILES ${py_headers} DESTINATION ${PYTHON_MODULE_INSTALL_PREFIX}/strawman/)
+    install(FILES ${py_headers} DESTINATION ${PYTHON_MODULE_INSTALL_PREFIX}/alpine/)
 else()
-    install(FILES ${py_headers} DESTINATION python-modules/strawman/)
+    install(FILES ${py_headers} DESTINATION python-modules/alpine/)
 endif()
 

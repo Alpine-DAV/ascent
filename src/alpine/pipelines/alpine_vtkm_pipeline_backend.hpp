@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,14 +45,14 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_vtkm_pipeline_backend.hpp
+/// file: alpine_vtkm_pipeline_backend.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef STRAWMAN_VTKM_PIPELINE_BACKEND_HPP
-#define STRAWMAN_VTKM_PIPELINE_BACKEND_HPP
+#ifndef ALPINE_VTKM_PIPELINE_BACKEND_HPP
+#define ALPINE_VTKM_PIPELINE_BACKEND_HPP
 
-#include "strawman_pipeline.hpp"
+#include "alpine_pipeline.hpp"
 
 
 // thirdparty includes
@@ -71,9 +71,9 @@ class DataSet;
 
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 class Renderer;
 //-----------------------------------------------------------------------------
@@ -180,7 +180,7 @@ private:
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 
 #endif

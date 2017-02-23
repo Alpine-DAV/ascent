@@ -9,9 +9,9 @@
 .. #
 .. # This file is part of Conduit.
 .. #
-.. # For details, see: http://software.llnl.gov/strawman/.
+.. # For details, see: http://software.llnl.gov/alpine/.
 .. #
-.. # Please also read strawman/LICENSE
+.. # Please also read alpine/LICENSE
 .. #
 .. # Redistribution and use in source and binary forms, with or without
 .. # modification, are permitted provided that the following conditions are met:
@@ -43,14 +43,14 @@
 .. ############################################################################
 
 
-Strawman Overview
+Alpine Overview
 =================
 
-This overview was distilled from `Strawman: A Batch In Situ Visualization and Analysis Infrastructure for Multi-Physics Simulation Codes <http://dl.acm.org/citation.cfm?id=2828625>`_ . This paper was presented at the `ISAV 2015 Workshop <http://vis.lbl.gov/Events/ISAV-2015/>`_, held in conjunction with SC 15, on November 16th 2015 in Austin, TX, USA.
+This overview was distilled from `Alpine: A Batch In Situ Visualization and Analysis Infrastructure for Multi-Physics Simulation Codes <http://dl.acm.org/citation.cfm?id=2828625>`_ . This paper was presented at the `ISAV 2015 Workshop <http://vis.lbl.gov/Events/ISAV-2015/>`_, held in conjunction with SC 15, on November 16th 2015 in Austin, TX, USA.
 
 Requirements
 -------------------
-To guide the development of Strawman, we focused on a set of important in situ visualization and analysis requirements extracted from our interactions and experiences with several simulation code teams. Here are Strawman's requirements broken out into three broader categories:
+To guide the development of Alpine, we focused on a set of important in situ visualization and analysis requirements extracted from our interactions and experiences with several simulation code teams. Here are Alpine's requirements broken out into three broader categories:
 
 Support a diverse set of simulations on many-core architectures.
   - Support execution on many-core architectures
@@ -72,25 +72,25 @@ Minimize  the  resource  impacts  on  host  simulations.
 
 System Architecture
 -------------------
-The Strawman sytem architecture is composed of several components:
-  * **Conduit**: `Conduit <http://software.llnl.gov/conduit/>`_  is used to describe and pass in-core mesh data and pipeline options from the simulation code to Strawman.
-  * **In Situ Pipelines**: Strawman contains a number of in situ pipelines that implement simple analysis, rendering, and I/O operations on the mesh data published to Strawman. At a high level, a pipeline is responsible for consuming the simulation data that is described using the Conduit Mesh Blueprint and performing a number of actions defined within Conduit Nodes, which create some form of output.
-  * **Data Adapters**: Simulation mesh data is described using Conduit's `Mesh Blueprint <http://software.llnl.gov/conduit/blueprint_mesh.html>`_, which outlines a set of conventions to describe different types of mesh-based scientific data. Strawman provides internal Data Adaptors that convert Mesh Blueprint data into a more a more specific data model, such as VTK-m's data model. Strawman will always zero-copy simulation data when possible. To simplify memory ownership semantics, the data provided to Strawman via Conduit Nodes is considered to be owned by the by the simulation.
-  * **IceT**: Strawman uses IceT for scalable distributed memory parallel image compositing.
-  * **Embedded Web Server**: Strawman can stream images rendered from a running simulation to a web browser using the Conduit Relay's embedded web-server.
+The Alpine sytem architecture is composed of several components:
+  * **Conduit**: `Conduit <http://software.llnl.gov/conduit/>`_  is used to describe and pass in-core mesh data and pipeline options from the simulation code to Alpine.
+  * **In Situ Pipelines**: Alpine contains a number of in situ pipelines that implement simple analysis, rendering, and I/O operations on the mesh data published to Alpine. At a high level, a pipeline is responsible for consuming the simulation data that is described using the Conduit Mesh Blueprint and performing a number of actions defined within Conduit Nodes, which create some form of output.
+  * **Data Adapters**: Simulation mesh data is described using Conduit's `Mesh Blueprint <http://software.llnl.gov/conduit/blueprint_mesh.html>`_, which outlines a set of conventions to describe different types of mesh-based scientific data. Alpine provides internal Data Adaptors that convert Mesh Blueprint data into a more a more specific data model, such as VTK-m's data model. Alpine will always zero-copy simulation data when possible. To simplify memory ownership semantics, the data provided to Alpine via Conduit Nodes is considered to be owned by the by the simulation.
+  * **IceT**: Alpine uses IceT for scalable distributed memory parallel image compositing.
+  * **Embedded Web Server**: Alpine can stream images rendered from a running simulation to a web browser using the Conduit Relay's embedded web-server.
 
 
 System Diagram
 --------------
-..  image:: images/StrawmanSystemDiagram.png
+..  image:: images/AlpineSystemDiagram.png
     :height: 600px
     :align: center
 
 
 Pipelines
 -----------------
-  Strawman can be configured with one or more of the following pipelines. 
-  When multiple pipelines are built with Strawman, available pipelines can be selected at runtime.
+  Alpine can be configured with one or more of the following pipelines. 
+  When multiple pipelines are built with Alpine, available pipelines can be selected at runtime.
   A pipeline has three main functions: consume simulation data, perfrom analysis (optional), and output data.
   Data describing the simulation mesh is sent to the pipeline within a Conduit Node which is formatted according to `Conduit Blueprint <http://software.llnl.gov/conduit/blueprint.html>`_.
   Once the data is in a compatible format, the pipeline can optionally perfrom some analysis operations, and then output the results. 
@@ -105,7 +105,7 @@ VTK-m
   VTK-m was created from the merging of three efforts: DAX, EAVL, and PISTON.
   While VTK-m's main focus is on scientific visualization, it can be used as a general purpose library for execution of supported architectures.
   It uses template-meta programming to provide flexible and performant execution, and VTK-m is currently under active development.
-  The current version of Strawman uses the tagged 1.0 release that can be found at `Kitware <https://gitlab.kitware.com/vtk/vtk-m>`_ and the user guide can be found at `m.vtk.org <http://m.vtk.org/images/c/c8/VTKmUsersGuide.pdf>`_.
+  The current version of Alpine uses the tagged 1.0 release that can be found at `Kitware <https://gitlab.kitware.com/vtk/vtk-m>`_ and the user guide can be found at `m.vtk.org <http://m.vtk.org/images/c/c8/VTKmUsersGuide.pdf>`_.
 
   Supported operations: 
 
@@ -121,7 +121,7 @@ EAVL
   EAVL uses a data-parallel programming model that abstracts away the underlying computer architecture, allowing algorithms developed in EAVL to be written once and executed on any supported architecture.
   Serial, OpenMP, and CUDA back-ends are supported in EAVL. 
   EAVL is no longer under active development, and it efforts have been absorbed into VTK-m.
-  The branch used by Strawman can be found on `EAVL's github page <https://github.com/jsmeredith/EAVL/tree/rayTracer>`_ as well as the `documentation <https://github.com/jsmeredith/EAVL/wiki>`_.
+  The branch used by Alpine can be found on `EAVL's github page <https://github.com/jsmeredith/EAVL/tree/rayTracer>`_ as well as the `documentation <https://github.com/jsmeredith/EAVL/wiki>`_.
   EAVL is no longer under active development, as the devopers efforts now go toward the VTK-m project.
  
   Supported operations: 

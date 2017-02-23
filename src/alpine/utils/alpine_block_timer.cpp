@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -62,7 +62,7 @@
 #include <set>
 #include <map>
 #include <fstream>
-#ifdef STRAWMAN_PLATFORM_UNIX
+#ifdef ALPINE_PLATFORM_UNIX
 #include <sys/sysinfo.h>
 #endif
 
@@ -79,9 +79,9 @@ using namespace conduit::relay::mpi;
 
 
 //-----------------------------------------------------------------------------
-// -- begin strawman:: --
+// -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace strawman
+namespace alpine
 {
 
 // Initialize BlockTimer static data members.
@@ -192,7 +192,7 @@ BlockTimer::Stop(const std::string &name)
         //
 
         // Get memory info
-#ifdef STRAWMAN_PLATFORM_UNIX
+#ifdef ALPINE_PLATFORM_UNIX
         struct sysinfo system_info;
         sysinfo(&system_info);
         long long memUsed = (system_info.totalram -system_info.freeram);
@@ -482,7 +482,7 @@ void BlockTimer::WriteLogFile()
 {
     BlockTimer::ReduceGlobalRoot();
 
-    std::string logfile = "strawman.log";
+    std::string logfile = "alpine.log";
     
     if(s_rank == 0 )
     {   
@@ -494,6 +494,6 @@ void BlockTimer::WriteLogFile()
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end strawman:: --
+// -- end alpine:: --
 //-----------------------------------------------------------------------------
 

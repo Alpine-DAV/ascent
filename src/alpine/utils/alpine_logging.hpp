@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,17 +44,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_logging.hpp
+/// file: alpine_logging.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef STRAWMAN_LOGGING_HPP
-#define STRAWMAN_LOGGING_HPP
+#ifndef ALPINE_LOGGING_HPP
+#define ALPINE_LOGGING_HPP
 
 #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 //
-/// The STRAWMAN_INFO macro is the primary mechanism used to log basic messages.
+/// The ALPINE_INFO macro is the primary mechanism used to log basic messages.
 ///
 /// We use CONDUIT_INFO, b/c conduit's logging infrastructure allows use 
 /// it to be easily rewire messages into a client code's logging mechanism.
@@ -62,12 +62,12 @@
 /// See conduit::utils docs for details.
 ///
 //-----------------------------------------------------------------------------
-#define STRAWMAN_INFO( msg ) CONDUIT_INFO( msg );
+#define ALPINE_INFO( msg ) CONDUIT_INFO( msg );
 
 //-----------------------------------------------------------------------------
 //
-/// The STRAWMAN_WARN macro is the primary mechanism used to capture warnings
-/// in strawman. 
+/// The ALPINE_WARN macro is the primary mechanism used to capture warnings
+/// in alpine. 
 ///
 /// We use CONDUIT_WARN, b/c conduit's logging infrastructure allows use 
 /// it to be easily rewire messages into a client code's logging mechanism.
@@ -75,12 +75,12 @@
 /// See conduit::utils docs for details.
 ///
 //-----------------------------------------------------------------------------
-#define STRAWMAN_WARN( msg ) CONDUIT_WARN( msg ); 
+#define ALPINE_WARN( msg ) CONDUIT_WARN( msg ); 
 
 //-----------------------------------------------------------------------------
 //
-/// The STRAWMAN_ERROR macro is the primary mechanism used to capture errors
-/// in strawman. 
+/// The ALPINE_ERROR macro is the primary mechanism used to capture errors
+/// in alpine. 
 ///
 /// We use CONDUIT_ERROR, b/c conduit's logging infrastructure allows use 
 /// it to be easily rewire messages into a client code's logging mechanism.
@@ -88,7 +88,7 @@
 /// See conduit::utils docs for details.
 ///
 //-----------------------------------------------------------------------------
-#define STRAWMAN_ERROR( msg ) CONDUIT_ERROR( msg ); 
+#define ALPINE_ERROR( msg ) CONDUIT_ERROR( msg ); 
 
 
 #endif
