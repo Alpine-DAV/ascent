@@ -42,52 +42,68 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_config.h
+/// file: t_strawman_save_hdf5.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef STRAWMAN_CONFIG_H
-#define STRAWMAN_CONFIG_H
+#include "gtest/gtest.h"
 
-// this path points to the web client js code tree
-#cmakedefine STRAWMAN_WEB_CLIENT_ROOT   "@STRAWMAN_WEB_CLIENT_ROOT@"
+#include <strawman.hpp>
 
-// defs for general openmp support
-#cmakedefine STRAWMAN_USE_OPENMP        "@OPENMP_FOUND@"
+#include <iostream>
+#include <math.h>
+#include <sstream>
 
-// defs for pipeline support based on which 3rd-party libs we have 
-#cmakedefine STRAWMAN_EAVL_ENABLED      "@EAVL_FOUND@"
-#cmakedefine STRAWMAN_EAVL_USE_OPENMP   "@OPENMP_FOUND@"
-#cmakedefine STRAWMAN_EAVL_USE_CUDA     "@CUDA_FOUND@"
+#include <conduit_blueprint.hpp>
 
-
-#cmakedefine STRAWMAN_VTKM_ENABLED      "@VTKM_FOUND@"
-#cmakedefine STRAWMAN_VTKM_USE_CUDA     "@CUDA_FOUND@"
-#cmakedefine STRAWMAN_VTKM_USE_TBB      "@TBB_FOUND@"
+#include "t_config.hpp"
+#include "t_strawman_test_utils.hpp"
 
 
-#cmakedefine STRAWMAN_HDF5_ENABLED      "@HDF5_FOUND@"
-#cmakedefine STRAWMAN_ADIOS_ENABLED      "@ADIOS_FOUND@"
+using namespace std;
+using namespace conduit;
+using namespace strawman;
+
+
 //-----------------------------------------------------------------------------
-//
-// #define platform check helpers
-//
-//-----------------------------------------------------------------------------
+TEST(strawman_test_2d_hdf5, test_2d_serial_hdf5_pipeline)
+{
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+    //
+    // Create the actions.
+    //
+    
+    string output_path = prepare_output_dir();
+    output_path = conduit::utils::join_file_path(output_path,"test_save_hdf5");
+    Node open_opts;
+    open_opts["pipeline/type"] = "blueprint_hdf5";
+    Node actions;
+    Node &save = actions.append();
+    save["action"]   = "save";
+    save["output_path"] = output_path;
+    open_opts.print();
+    actions.print();
+    data.print();
+    
+    
+    //
+    // Run Strawman
+    //
+    Strawman sman;
+    sman.Open(open_opts);
+    sman.Publish(data);
+    sman.Execute(actions);
+    sman.Close();
 
-#define STRAWMAN_PLATFORM_WINDOWS
-#elif  defined(__APPLE__)
-#define STRAWMAN_PLATFORM_APPLE
-#else
-#define STRAWMAN_PLATFORM_UNIX
-#endif
-
-
-#endif
-
-
+}
 

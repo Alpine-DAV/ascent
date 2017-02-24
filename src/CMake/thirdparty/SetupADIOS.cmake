@@ -43,35 +43,46 @@
 ###############################################################################
 
 ###############################################################################
-# Setup VTKm
+#
+# Setup ADIOS
+#
 ###############################################################################
 
-# first Check for BOOST_DIR
+# first Check for ADIOS_DIR
 
-if(NOT VTKM_DIR)
-    MESSAGE(FATAL_ERROR "VTKm support needs explicit VTKM_DIR")
+if(NOT ADIOS_DIR)
+    MESSAGE(FATAL_ERROR "ADIOS support needs explicit ADIOS_DIR")
 endif()
 
-MESSAGE(STATUS "Looking for VTKm using VTKM_DIR = ${VTKM_DIR}")
+MESSAGE(STATUS "Looking for ADIOS using ADIOS_DIR = ${ADIOS_DIR}")
 
-# use VTKM_DIR to setup the options that cmake's find VTKm needs
-set(VTKm_DIR ${VTKM_DIR})
+#find includes
+find_path(ADIOS_INCLUDE_DIRS adios.h
+          PATHS ${ADIOS_DIR}/include
+          NO_DEFAULT_PATH
+          NO_CMAKE_ENVIRONMENT_PATH
+          NO_CMAKE_PATH
+          NO_SYSTEM_ENVIRONMENT_PATH
+          NO_CMAKE_SYSTEM_PATH)
 
-#
-# VTKm will find TBB via the env var "TBB_ROOT"
-#
-if(TBB_DIR)
-    set(ENV{TBB_ROOT} ${TBB_DIR})
+#find libs
+find_library(ADIOS_LIBRARIES LIBRARIES NAMES adios
+             PATHS ${ADIOS_DIR}/lib
+             NO_DEFAULT_PATH
+             NO_CMAKE_ENVIRONMENT_PATH
+             NO_CMAKE_PATH
+             NO_SYSTEM_ENVIRONMENT_PATH
+             NO_CMAKE_SYSTEM_PATH)
+
+
+include(FindPackageHandleStandardArgs)
+# handle the QUIETLY and REQUIRED arguments and set OSMESA_FOUND to TRUE
+# if all listed variables are TRUE
+find_package_handle_standard_args(Adios  DEFAULT_MSG
+                                  ADIOS_LIBRARIES ADIOS_INCLUDE_DIRS)
+
+
+if(NOT ADIOS_FOUND)
+    message(FATAL_ERROR "ADIOS_DIR is not a path to a valid ADIOS install")
 endif()
-
-find_package(VTKm REQUIRED)
-message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
-
-set(VTKM_FOUND TRUE)
-#####
-# At one point these were necessary?
-#####
-#include(VTKmMacros)
-#vtkm_configure_device(Serial)
-
 

@@ -63,7 +63,7 @@
 // eavl includes
 
 // opengl (usually via osmesa)
-#include <GL/gl_mangle.h>
+//#include <GL/gl_mangle.h>
 
 #include <eavl.h>
 #include <eavlConfig.h>

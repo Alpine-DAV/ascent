@@ -121,7 +121,8 @@ public:
       typedef vtkm::rendering::MapperVolume<>                  vtkmVolumeRenderer;
       typedef vtkm::rendering::MapperRayTracer<>               vtkmRayTracer;
       Renderer();
-
+      //typedef vtkm::rendering::MapperVolume                 vtkmVolumeRenderer;
+      //typedef vtkm::rendering::MapperRayTracer               vtkmRayTracer;
 #ifdef PARALLEL
       Renderer(MPI_Comm mpi_comm);
 #endif

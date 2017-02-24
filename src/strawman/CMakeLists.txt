@@ -54,6 +54,8 @@ set(STRAWMAN_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_client)
 set(STRAWMAN_EAVL_ENABLED ${EAVL_FOUND})
 set(STRAWMAN_VTKM_ENABLED ${VTKM_FOUND})
 set(STRAWMAN_HDF5_ENABLED ${HDF5_FOUND})
+set(STRAWMAN_ADIOS_ENABLED ${ADIOS_FOUND})
+
 
 if(STRAWMAN_EAVL_ENABLED)
     set(STRAWMAN_VTKM_USE_OPENMP ${OPENMP_FOUND})
@@ -178,7 +180,10 @@ if(HDF5_FOUND)
     list(APPEND strawman_sources pipelines/strawman_blueprint_hdf5_pipeline.cpp)
 endif()
 
-
+if(ADIOS_FOUND)
+    list(APPEND strawman_headers pipelines/strawman_adios_pipeline.hpp)
+    list(APPEND strawman_sources pipelines/strawman_adios_pipeline.cpp)
+endif()
 
 ##############################
 # optional features
@@ -205,12 +210,15 @@ set(strawman_thirdparty_libs
     conduit
     conduit_relay
     conduit_blueprint
-    lodepng)
+    lodepng
+    adios
+    pthread)
 
 if(EAVL_FOUND)
     list(APPEND strawman_thirdparty_libs
                 ${EAVL_LIBRARIES}
-                ${OSMESA_LIBRARIES})
+                ${OSMESA_LIBRARIES}
+                ${MPI_CXX_LIBRARIES})
 
 endif()
 

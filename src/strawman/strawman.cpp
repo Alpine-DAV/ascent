@@ -66,6 +66,9 @@
     #include <pipelines/strawman_blueprint_hdf5_pipeline.hpp>
 #endif
 
+#if defined(STRAWMAN_ADIOS_ENABLED)
+    #include <pipelines/strawman_adios_pipeline.hpp>
+#endif
 
 using namespace conduit;
 //-----------------------------------------------------------------------------
@@ -159,6 +162,14 @@ Strawman::Open(const conduit::Node &options)
         m_pipeline = new BlueprintHDF5Pipeline();
     #else
         STRAWMAN_ERROR("Strawman was not built with HDF5 support");
+    #endif
+    }
+    else if(pipeline_type == "adios")
+    {
+    #if defined(STRAWMAN_ADIOS_ENABLED)
+        m_pipeline = new AdiosPipeline();
+    #else
+        STRAWMAN_ERROR("Strawman was not built with ADIOS support");
     #endif
     }
     else
@@ -261,6 +272,13 @@ about(conduit::Node &n)
     n["pipelines/blueprint_hdf5/status"] = "disabled";
 #endif
 
+#if defined(STRAWMAN_ADIOS_ENABLED)
+    n["pipelines/adios/status"] = "enabled";
+#else
+    n["pipelines/adios/status"] = "disabled";
+#endif
+
+
 //
 // Select default pipeline based on what is available.
 //
@@ -270,6 +288,8 @@ about(conduit::Node &n)
     n["default_pipeline"] = "eval";
 #elif defined(STRAWMAN_HDF5_ENABLED)    
     n["default_pipeline"] = "blueprint_hdf5";
+#elif defined(STRAWMAN_ADIOS_ENABLED)    
+    n["default_pipeline"] = "adios";
 #else
     n["default_pipeline"] = "empty";    
 #endif

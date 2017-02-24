@@ -45,49 +45,58 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: strawman_config.h
+/// file: strawman_blueprint_hdf5_pipeline.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef STRAWMAN_CONFIG_H
-#define STRAWMAN_CONFIG_H
+#ifndef STRAWMAN_ADIOS_PIPELINE_HPP
+#define STRAWMAN_ADIOS_PIPELINE_HPP
 
-// this path points to the web client js code tree
-#cmakedefine STRAWMAN_WEB_CLIENT_ROOT   "@STRAWMAN_WEB_CLIENT_ROOT@"
-
-// defs for general openmp support
-#cmakedefine STRAWMAN_USE_OPENMP        "@OPENMP_FOUND@"
-
-// defs for pipeline support based on which 3rd-party libs we have 
-#cmakedefine STRAWMAN_EAVL_ENABLED      "@EAVL_FOUND@"
-#cmakedefine STRAWMAN_EAVL_USE_OPENMP   "@OPENMP_FOUND@"
-#cmakedefine STRAWMAN_EAVL_USE_CUDA     "@CUDA_FOUND@"
+#include <strawman.hpp>
+#include <strawman_pipeline.hpp>
 
 
-#cmakedefine STRAWMAN_VTKM_ENABLED      "@VTKM_FOUND@"
-#cmakedefine STRAWMAN_VTKM_USE_CUDA     "@CUDA_FOUND@"
-#cmakedefine STRAWMAN_VTKM_USE_TBB      "@TBB_FOUND@"
-
-
-#cmakedefine STRAWMAN_HDF5_ENABLED      "@HDF5_FOUND@"
-#cmakedefine STRAWMAN_ADIOS_ENABLED      "@ADIOS_FOUND@"
 //-----------------------------------------------------------------------------
-//
-// #define platform check helpers
-//
+// -- begin strawman:: --
+//-----------------------------------------------------------------------------
+namespace strawman
+{
+
+class AdiosPipeline : public Pipeline
+{
+public:
+    
+    // Creation and Destruction
+    AdiosPipeline();
+    virtual ~AdiosPipeline();
+
+    // Main pipeline interface methods, which are used by the strawman 
+    // interface.
+
+    void  Initialize(const conduit::Node &options);
+
+    void  Publish(const conduit::Node &data);
+    void  Execute(const conduit::Node &actions);
+    
+    void  Cleanup();
+
+private:
+    class IOManager;
+    IOManager  *m_io;
+
+    // conduit node that (externally) holds the data from the simulation
+    conduit::Node     m_data; 
+};
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end strawman:: --
 //-----------------------------------------------------------------------------
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
-
-#define STRAWMAN_PLATFORM_WINDOWS
-#elif  defined(__APPLE__)
-#define STRAWMAN_PLATFORM_APPLE
-#else
-#define STRAWMAN_PLATFORM_UNIX
 #endif
-
-
-#endif
-
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------
 
 

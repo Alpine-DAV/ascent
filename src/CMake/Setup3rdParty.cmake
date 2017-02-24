@@ -102,8 +102,8 @@ include(CMake/thirdparty/SetupConduit.cmake)
 # Make sure we have a concrete
 # pipeline to build 
 ################################
-if(NOT EAVL_DIR AND NOT VTKM_DIR AND NOT HDF5_DIR)
-    message(FATAL_ERROR "Strawman requires at least once concrete pipeline (EAVL for VTKm)")
+if(NOT EAVL_DIR AND NOT VTKM_DIR AND NOT HDF5_DIR AND NOT ADIOS_DIR)
+    message(FATAL_ERROR "Strawman requires at least once concrete pipeline (EAVL or VTKm)")
 endif()
 
 
@@ -112,16 +112,16 @@ endif()
 # EAVL and supporting libs
 ################################
 if(EAVL_DIR)
-    ################################
-    # OSMesa
+
+     # OSMesa
     ################################
     include(CMake/thirdparty/SetupOSMesa.cmake)
-    
     ################################
     # EAVL
     ################################
     include(CMake/thirdparty/SetupEAVL.cmake)
-    
+   
+   
 endif()
 
 ################################
@@ -158,6 +158,10 @@ if(HDF5_DIR)
     include(CMake/thirdparty/SetupHDF5.cmake)
 endif()
 
+if(ADIOS_DIR)
+    include(CMake/thirdparty/SetupADIOS.cmake)
+    #include(CMake/thirdparty/SetupVTKm.cmake)
+endif()
 
 
 ################################

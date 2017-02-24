@@ -51,7 +51,8 @@
 #include "strawman_icet_compositor.hpp"
 
 #include "strawman_logging.hpp"
-
+#include <IceT.h>
+#include <IceTMPI.h>
  
 //-----------------------------------------------------------------------------
 #define CHECK_ICET_ERROR( msg )                                                \

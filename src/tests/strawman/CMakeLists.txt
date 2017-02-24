@@ -62,7 +62,7 @@ set(MPI_TESTS  t_strawman_mpi_empty_pipeline
                t_strawman_mpi_render_3d)
 
 if(HDF5_FOUND)
-    list(APPEND BASIC_TESTS t_strawman_save_blueprint_hdf5)
+    list(APPEND MPI_TESTS  t_strawman_save_blueprint_hdf5)
     list(APPEND MPI_TESTS   t_strawman_mpi_save_blueprint_hdf5)
 endif()
 

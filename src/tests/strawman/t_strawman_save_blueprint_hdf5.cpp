@@ -55,7 +55,7 @@
 #include <iostream>
 #include <math.h>
 #include <sstream>
-
+#include <mpi.h>
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
@@ -73,27 +73,43 @@ TEST(strawman_test_2d_hdf5, test_2d_serial_hdf5_pipeline)
     //
     // Create example mesh.
     //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
     Node data, verify_info;
     conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
     
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
+    //EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+   // verify_info.print();
 
     //
     // Create the actions.
     //
     
-    string output_path = prepare_output_dir();
-    output_path = conduit::utils::join_file_path(output_path,"test_save_hdf5");
+    string output_path = "";
+    if(par_rank == 0)
+    {
+        output_path = prepare_output_dir();
+    }
+    else
+    {
+        output_path = output_dir();
+    }
+    output_path = conduit::utils::join_file_path(output_path,"test_save_adios");
 
     Node actions;
     Node &save = actions.append();
     save["action"]   = "save";
     save["output_path"] = output_path;
-    actions.print();
-
+    save["selected_vars"] = "coordsets/coords/values";
+    //actions.print();
+    data.print();
     Node open_opts;
-    open_opts["pipeline/type"] = "blueprint_hdf5";
+    open_opts["pipeline/type"] = "adios";
+    open_opts["mpi_comm"] = MPI_Comm_c2f(comm);
     
     //
     // Run Strawman
@@ -104,5 +120,17 @@ TEST(strawman_test_2d_hdf5, test_2d_serial_hdf5_pipeline)
     sman.Execute(actions);
     sman.Close();
 
+}
+
+int main(int argc, char* argv[])
+{
+    int result = 0;
+
+    ::testing::InitGoogleTest(&argc, argv);
+    MPI_Init(&argc, &argv);
+    result = RUN_ALL_TESTS();
+    MPI_Finalize();
+
+    return result;
 }
 

@@ -42,36 +42,23 @@
 # 
 ###############################################################################
 
-###############################################################################
-# Setup VTKm
-###############################################################################
 
-# first Check for BOOST_DIR
-
-if(NOT VTKM_DIR)
-    MESSAGE(FATAL_ERROR "VTKm support needs explicit VTKM_DIR")
+################################
+# Guards for OpenMP support.
+################################
+if(ENABLE_OPENMP)
+    find_package(OpenMP)
+    if(NOT OPENMP_FOUND)
+        MESSAGE(FATAL_ERROR "ENABLE_OPENMP is true, but OpenMP compiler support wasn't found.")
+    endif()    
+    # when OpenMP is on, we set flags for all targets
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    if(ENABLE_FORTRAN)
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+    endif()
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_C_FLAGS}")
 endif()
 
-MESSAGE(STATUS "Looking for VTKm using VTKM_DIR = ${VTKM_DIR}")
-
-# use VTKM_DIR to setup the options that cmake's find VTKm needs
-set(VTKm_DIR ${VTKM_DIR})
-
-#
-# VTKm will find TBB via the env var "TBB_ROOT"
-#
-if(TBB_DIR)
-    set(ENV{TBB_ROOT} ${TBB_DIR})
-endif()
-
-find_package(VTKm REQUIRED)
-message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
-
-set(VTKM_FOUND TRUE)
-#####
-# At one point these were necessary?
-#####
-#include(VTKmMacros)
-#vtkm_configure_device(Serial)
 
 
