@@ -47,6 +47,13 @@
 /// file: strawman_vtkm_renderer.cpp
 ///
 //-----------------------------------------------------------------------------
+
+#warning "Should not have to define this"
+#define VTKM_DEVICE_ADAPTER VTKM_DEVICE_ADAPTER_SERIAL
+// this should be defined in the file below
+//#include <vtkm/cont/internal/DeviceAdapterTag.h>
+//#include <vtkm/cont/internal/DeviceAdapterTag.h>
+
 #include "strawman_vtkm_renderer.hpp"
 
 // standard lib includes
@@ -64,11 +71,21 @@
 using namespace std;
 using namespace conduit;
 namespace strawman {
+template<typename T>
+T *
+GetVTKMPointer(vtkm::cont::ArrayHandle<T> &handle)
+{
+  typedef typename vtkm::cont::ArrayHandle<T> HandleType;
+  typedef typename HandleType::template ExecutionTypes<vtkm::cont::DeviceAdapterTagSerial>::Portal PortalType;
+  typedef typename vtkm::cont::ArrayPortalToIterators<PortalType>::IteratorType IteratorType;
+  IteratorType iter = vtkm::cont::ArrayPortalToIterators<PortalType>(handle.GetPortalControl()).GetBegin();
+  return &(*iter);
+}
 //-----------------------------------------------------------------------------
 // Renderer public methods
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
-Renderer<DeviceAdapter>::Renderer()
+
+Renderer::Renderer()
 {   
     Init();
     NullRendering();
@@ -79,8 +96,8 @@ Renderer<DeviceAdapter>::Renderer()
 //-----------------------------------------------------------------------------
 #ifdef PARALLEL
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
-Renderer<DeviceAdapter>::Renderer(MPI_Comm mpi_comm)
+
+Renderer::Renderer(MPI_Comm mpi_comm)
 : m_mpi_comm(mpi_comm)
 {
     Init();
@@ -96,9 +113,9 @@ Renderer<DeviceAdapter>::Renderer(MPI_Comm mpi_comm)
 //-----------------------------------------------------------------------------
 #endif
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::Init()
+Renderer::Init()
 {
     m_camera.reset();
     m_transfer_function.reset();
@@ -112,9 +129,9 @@ Renderer<DeviceAdapter>::Init()
 }
 
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::NullRendering()
+Renderer::NullRendering()
 {
     m_canvas       = NULL;
     m_renderer     = NULL;
@@ -122,9 +139,9 @@ Renderer<DeviceAdapter>::NullRendering()
 }
 
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::Cleanup()
+Renderer::Cleanup()
 {
     
     if(m_canvas)
@@ -146,9 +163,9 @@ Renderer<DeviceAdapter>::Cleanup()
 }
 
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::InitRendering(int plot_dims)
+Renderer::InitRendering(int plot_dims)
 {
     if(plot_dims != 2 && plot_dims != 3)
     {
@@ -180,8 +197,9 @@ Renderer<DeviceAdapter>::InitRendering(int plot_dims)
     {
         STRAWMAN_ERROR("vtkmMapper was not created");
     }
-    m_renderer->SetBackgroundColor(m_bg_color);
-    m_canvas = new vtkmCanvasRayTracer(1024,1024, m_bg_color);
+
+    m_canvas = new vtkmCanvasRayTracer(1024,1024);
+    m_canvas->SetBackgroundColor(m_bg_color);
 
     if(m_canvas == NULL)
     {
@@ -197,46 +215,26 @@ Renderer<DeviceAdapter>::InitRendering(int plot_dims)
 }
 
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::SetDefaultCameraView(vtkmActor *plot)
+Renderer::SetDefaultCameraView(vtkmActor *plot)
 {
     STRAWMAN_BLOCK_TIMER(SET_CAMERA)
 
    
     // Set some defaults
-    m_vtkm_camera->Height = 1024;
-    m_vtkm_camera->Width = 1024;
-
-    m_vtkm_camera->NearPlane = .01f;
-    m_vtkm_camera->FarPlane = 100.f;
-
-    m_vtkm_camera->Camera3d.Up[0] = 0;
-    m_vtkm_camera->Camera3d.Up[1] = 1;
-    m_vtkm_camera->Camera3d.Up[2] = 0;
-
-    m_vtkm_camera->Camera3d.LookAt[0] = 0;
-    m_vtkm_camera->Camera3d.LookAt[1] = 0;
-    m_vtkm_camera->Camera3d.LookAt[2] = 0;
-
-    m_vtkm_camera->Camera3d.Position[0] = 10;
-    m_vtkm_camera->Camera3d.Position[1] = 10;
-    m_vtkm_camera->Camera3d.Position[2] = 10;
-
-    m_vtkm_camera->Camera3d.FieldOfView = 45;
-    m_vtkm_camera->Camera3d.XPan = 0;
-    m_vtkm_camera->Camera3d.YPan = 0;
-    m_vtkm_camera->Camera3d.Zoom = 1;
+    m_canvas->ResizeBuffers(1024, 1024);
+    m_spatial_bounds = plot->GetSpatialBounds(); 
 #ifdef PARALLEL
     // Rank plot extents set when plot is created.
     // We need to perfrom global reductions to create
     // the same view on every rank.
-    vtkm::Float64 x_min = plot->SpatialBounds.X.Min;
-    vtkm::Float64 x_max = plot->SpatialBounds.X.Max;
-    vtkm::Float64 y_min = plot->SpatialBounds.Y.Min;
-    vtkm::Float64 y_max = plot->SpatialBounds.Y.Max;
-    vtkm::Float64 z_min = plot->SpatialBounds.Z.Min;
-    vtkm::Float64 z_max = plot->SpatialBounds.Z.Max;
+    vtkm::Float64 x_min = plot->GetSpatialBounds().X.Min;
+    vtkm::Float64 x_max = plot->GetSpatialBounds().X.Max;
+    vtkm::Float64 y_min = plot->GetSpatialBounds().Y.Min;
+    vtkm::Float64 y_max = plot->GetSpatialBounds().Y.Max;
+    vtkm::Float64 z_min = plot->GetSpatialBounds().Z.Min;
+    vtkm::Float64 z_max = plot->GetSpatialBounds().Z.Max;
     vtkm::Float64 global_x_min = 0;
     vtkm::Float64 global_x_max = 0;
     vtkm::Float64 global_y_min = 0;
@@ -286,72 +284,119 @@ Renderer<DeviceAdapter>::SetDefaultCameraView(vtkmActor *plot)
                   MPI_MAX,
                   m_mpi_comm);
 
-    plot->SpatialBounds.X.Min = global_x_min;
-    plot->SpatialBounds.X.Max = global_x_max;
-    plot->SpatialBounds.Y.Min = global_y_min;
-    plot->SpatialBounds.Y.Max = global_y_max;
-    plot->SpatialBounds.Z.Min = global_z_min;
-    plot->SpatialBounds.Z.Max = global_z_max;
+    m_spatial_bounds.X.Min = global_x_min;
+    m_spatial_bounds.X.Max = global_x_max;
+    m_spatial_bounds.Y.Min = global_y_min;
+    m_spatial_bounds.Y.Max = global_y_max;
+    m_spatial_bounds.Z.Min = global_z_min;
+    m_spatial_bounds.Z.Max = global_z_max;
 #endif
-    vtkm::Vec<vtkm::Float32,3> total_extent;
-    total_extent[0] = vtkm::Float32(plot->SpatialBounds.X.Max - plot->SpatialBounds.X.Min);
-    total_extent[1] = vtkm::Float32(plot->SpatialBounds.Y.Max - plot->SpatialBounds.Y.Min);
-    total_extent[2] = vtkm::Float32(plot->SpatialBounds.Z.Max - plot->SpatialBounds.Z.Min);
+    vtkmVec3f total_extent;
+    total_extent[0] = vtkm::Float32(m_spatial_bounds.X.Max - m_spatial_bounds.X.Min);
+    total_extent[1] = vtkm::Float32(m_spatial_bounds.Y.Max - m_spatial_bounds.Y.Min);
+    total_extent[2] = vtkm::Float32(m_spatial_bounds.Z.Max - m_spatial_bounds.Z.Min);
     vtkm::Float32 mag = vtkm::Magnitude(total_extent);
-    vtkm::Vec<vtkm::Float32,3> n_total_extent = total_extent;
+    vtkmVec3f n_total_extent = total_extent;
     vtkm::Normalize(n_total_extent);
     
-    vtkm::Vec<vtkm::Float32,3> bounds_min(plot->SpatialBounds.X.Min,
-                                          plot->SpatialBounds.Y.Min,
-                                          plot->SpatialBounds.Z.Min);
+    vtkmVec3f bounds_min(m_spatial_bounds.X.Min,
+                         m_spatial_bounds.Y.Min,
+                         m_spatial_bounds.Z.Min);
     
+    //
     // detect a 2d data set
+    //
     int min_dim = 0;
     if(total_extent[1] < total_extent[min_dim]) min_dim = 1;
     if(total_extent[2] < total_extent[min_dim]) min_dim = 2;
   
     bool is_2d = (total_extent[min_dim] == 0.f);
     // look at the center
-    m_vtkm_camera->Camera3d.LookAt = bounds_min + n_total_extent * (mag * 0.5f);
+    m_vtkm_camera->SetLookAt(bounds_min + n_total_extent * (mag * 0.5f));
     // find the maximum dim that will be the x in image space
     int x_dim = 0;
     if(total_extent[1] > total_extent[x_dim]) x_dim = 1;
     if(total_extent[2] > total_extent[x_dim]) x_dim = 2;
     
     // choose up to be the other dimension
+    vtkmVec3f up(0,0,0);
     int up_dim = 0;
     for(int i = 0; i < 3; ++i)
     {
         if(i != x_dim && i != min_dim) up_dim = i;
     }
-
-    vtkm::Vec<vtkm::Float32,3> up(0.f, 0.f, 0.f);
     up[up_dim] = 1.f;
-    const float default_fov = 60.f; 
+
+    const float default_fov = m_vtkm_camera->GetFieldOfView(); 
     
-    m_vtkm_camera->Camera3d.Up = up;
-    m_vtkm_camera->NearPlane = 0.001f;
-    m_vtkm_camera->FarPlane = 1000.f;
-    m_vtkm_camera->Camera3d.FieldOfView = 60.f;
+    vtkmVec3f position(0,0,0);
     if(is_2d)
     {
-        vtkm::Vec<vtkm::Float32,3> pos(0.f, 0.f, 0.f);
+        vtkmVec3f pos(0.f, 0.f, 0.f);
         for(int i = 0; i < 3; ++i) 
             pos[i] = (total_extent[i] != 0.f) ? bounds_min[i] + total_extent[i] / 2.f : total_extent[i];
         const float pi = 3.14159f;
         float theta = (default_fov + 4) * (pi/180.f);
         float min_pos = std::tan(theta) * total_extent[x_dim] / 2.f;
-        m_vtkm_camera->Camera3d.LookAt = pos;
+        m_vtkm_camera->SetLookAt(pos);
         pos[min_dim] = bounds_min[min_dim] + min_pos;
-        m_vtkm_camera->Camera3d.Position = pos;
+        m_vtkm_camera->SetPosition(pos);
+        position = pos;
     }
     else
     {
-        m_vtkm_camera->Camera3d.Position = -n_total_extent * (mag * 1.6);
-        m_vtkm_camera->Camera3d.Position[0] += .001f;
-        m_vtkm_camera->Camera3d.Position[1] += .001f;
-        m_vtkm_camera->Camera3d.Position[2] += .05f*mag;
+        position = -n_total_extent * (mag * 1.6);
+        position[0] += .001f;
+        position[1] += .001f;
+        position[2] += .05f*mag;
+        m_vtkm_camera->SetPosition(position);
     }
+    // set a default near and far plane
+    vtkmVec3f bounding_box[8];
+    bounding_box[0][0] = m_spatial_bounds.X.Min;
+    bounding_box[0][1] = m_spatial_bounds.Y.Min;
+    bounding_box[0][2] = m_spatial_bounds.Z.Min;
+
+    bounding_box[1][0] = m_spatial_bounds.X.Min;
+    bounding_box[1][1] = m_spatial_bounds.Y.Min;
+    bounding_box[1][2] = m_spatial_bounds.Z.Max;
+
+    bounding_box[2][0] = m_spatial_bounds.X.Min;
+    bounding_box[2][1] = m_spatial_bounds.Y.Max;
+    bounding_box[2][2] = m_spatial_bounds.Z.Min;
+
+    bounding_box[3][0] = m_spatial_bounds.X.Min;
+    bounding_box[3][1] = m_spatial_bounds.Y.Max;
+    bounding_box[3][2] = m_spatial_bounds.Z.Max;
+
+    bounding_box[4][0] = m_spatial_bounds.X.Max;
+    bounding_box[4][1] = m_spatial_bounds.Y.Min;
+    bounding_box[4][2] = m_spatial_bounds.Z.Min;
+
+    bounding_box[5][0] = m_spatial_bounds.X.Max;
+    bounding_box[5][1] = m_spatial_bounds.Y.Min;
+    bounding_box[5][2] = m_spatial_bounds.Z.Max;
+
+    bounding_box[6][0] = m_spatial_bounds.X.Max;
+    bounding_box[6][1] = m_spatial_bounds.Y.Max;
+    bounding_box[6][2] = m_spatial_bounds.Z.Min;
+
+    bounding_box[7][0] = m_spatial_bounds.X.Max;
+    bounding_box[7][1] = m_spatial_bounds.Y.Max;
+    bounding_box[7][2] = m_spatial_bounds.Z.Max;
+
+    vtkm::Float32 max_distance = 0.01f; 
+    for(int i = 0; i < 8; ++i)
+    {
+        vtkm::Float32 distance = vtkm::Magnitude(bounding_box[i] - position);
+        max_distance = vtkm::Max(max_distance, distance);
+    }
+    max_distance *= 1.1f;
+
+    vtkm::Range clipping_range;
+    clipping_range.Min = .01f;
+    clipping_range.Max = max_distance;
+    m_vtkm_camera->SetClippingRange(clipping_range);
 }
 
 //-----------------------------------------------------------------------------
@@ -360,9 +405,9 @@ Renderer<DeviceAdapter>::SetDefaultCameraView(vtkmActor *plot)
 #ifdef PARALLEL
 
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 int *
-Renderer<DeviceAdapter>::FindVisibilityOrdering(vtkmActor *plot)
+Renderer::FindVisibilityOrdering(vtkmActor *plot)
 {
     //
     // In order for parallel volume rendering to composite correctly,
@@ -380,12 +425,12 @@ Renderer<DeviceAdapter>::FindVisibilityOrdering(vtkmActor *plot)
     //
     double x[2], y[2], z[2];
 
-    x[0] = plot->SpatialBounds.X.Min;
-    x[1] = plot->SpatialBounds.X.Max;
-    y[0] = plot->SpatialBounds.Y.Min;
-    y[1] = plot->SpatialBounds.Y.Max;
-    z[0] = plot->SpatialBounds.Z.Min;
-    z[1] = plot->SpatialBounds.Z.Max;
+    x[0] = plot->GetSpatialBounds().X.Min;
+    x[1] = plot->GetSpatialBounds().X.Max;
+    y[0] = plot->GetSpatialBounds().Y.Min;
+    y[1] = plot->GetSpatialBounds().Y.Max;
+    z[0] = plot->GetSpatialBounds().Z.Min;
+    z[1] = plot->GetSpatialBounds().Z.Max;
     
     float minz;
     minz = std::numeric_limits<float>::max();
@@ -452,15 +497,15 @@ Renderer<DeviceAdapter>::FindVisibilityOrdering(vtkmActor *plot)
 }
 
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::SetParallelPlotExtents(vtkmActor * plot)
+Renderer::SetParallelPlotExtents(vtkmActor * plot)
 {
     STRAWMAN_BLOCK_TIMER(PARALLEL_PLOT_EXTENTS)
     // We need to get the correct data extents for all processes
     // in order to get the correct color map values
-    float64 local_min = plot->ScalarRange.Min;
-    float64 local_max = plot->ScalarRange.Max;
+    float64 local_min = plot->GetScalarRange().Min;
+    float64 local_max = plot->GetScalarRange().Max;
     
     float64 global_min = 0;
     float64 global_max = 0;
@@ -480,8 +525,10 @@ Renderer<DeviceAdapter>::SetParallelPlotExtents(vtkmActor * plot)
                   MPI_DOUBLE,
                   MPI_MAX,
                   m_mpi_comm);
-    plot->ScalarRange.Min = global_min;
-    plot->ScalarRange.Max = global_max;
+    vtkm::Range scalar_range;
+    scalar_range.Min = global_min;
+    scalar_range.Max = global_max;
+    plot->SetScalarRange(scalar_range);
 }
 #endif
 
@@ -490,8 +537,8 @@ Renderer<DeviceAdapter>::SetParallelPlotExtents(vtkmActor * plot)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
-Renderer<DeviceAdapter>::~Renderer()
+
+Renderer::~Renderer()
 {
     STRAWMAN_BLOCK_TIMER(RENDERER_ON_DESTROY);
     
@@ -503,9 +550,9 @@ Renderer<DeviceAdapter>::~Renderer()
 }
 
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::SetOptions(const Node &options)
+Renderer::SetOptions(const Node &options)
 {
 
     if(options.has_path("web/stream") && 
@@ -517,9 +564,9 @@ Renderer<DeviceAdapter>::SetOptions(const Node &options)
     
 }
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::CreateDefaultTransferFunction(vtkmColorTable &color_table)
+Renderer::CreateDefaultTransferFunction(vtkmColorTable &color_table)
 {
     const vtkm::Int32 num_opacity_points = 256;
     const vtkm::Int32 num_peg_points = 8;
@@ -596,24 +643,24 @@ Renderer<DeviceAdapter>::CreateDefaultTransferFunction(vtkmColorTable &color_tab
 }
 
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::SetData(Node *data_node_ptr)
+Renderer::SetData(Node *data_node_ptr)
 {
      m_data = data_node_ptr;
 }
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::SetTransferFunction(const Node &transfer_function_params)
+Renderer::SetTransferFunction(const Node &transfer_function_params)
 {
     m_transfer_function.reset();
     m_transfer_function.set(transfer_function_params);
 }
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 vtkm::rendering::ColorTable
-Renderer<DeviceAdapter>::SetColorMapFromNode()
+Renderer::SetColorMapFromNode()
 {
 
     std::string color_map_name = "";
@@ -678,9 +725,9 @@ Renderer<DeviceAdapter>::SetColorMapFromNode()
 }
 
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::SetCamera(const Node &camera_params)
+Renderer::SetCamera(const Node &camera_params)
 {
     m_camera.set(camera_params);
 }
@@ -688,9 +735,9 @@ Renderer<DeviceAdapter>::SetCamera(const Node &camera_params)
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::WebSocketPush(PNGEncoder &png)
+Renderer::WebSocketPush(PNGEncoder &png)
 {
     // no op if web streaming isn't enabled
     if( !m_web_stream_enabled )
@@ -735,9 +782,9 @@ Renderer<DeviceAdapter>::WebSocketPush(PNGEncoder &png)
  }
 
  //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::WebSocketPush(const std::string &img_file_path)
+Renderer::WebSocketPush(const std::string &img_file_path)
 {
     // no op if web streaming isn't enabled
     if( !m_web_stream_enabled )
@@ -782,9 +829,9 @@ Renderer<DeviceAdapter>::WebSocketPush(const std::string &img_file_path)
  }
 
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::SaveImage(const char *image_file_name)
+Renderer::SaveImage(const char *image_file_name)
 {
 #ifdef PARALLEL
     if(m_rank == 0)
@@ -801,14 +848,14 @@ Renderer<DeviceAdapter>::SaveImage(const char *image_file_name)
 }
 
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::Render(vtkmActor *plot,
-                               int image_height,
-                               int image_width,
-                               RendererType mode,
-                               int dims,
-                               const char *image_file_name)
+Renderer::Render(vtkmActor *&plot,
+                 int image_height,
+                 int image_width,
+                 RendererType mode,
+                 int dims,
+                 const char *image_file_name)
 {
     STRAWMAN_BLOCK_TIMER(RENDER)
     try
@@ -857,13 +904,10 @@ Renderer<DeviceAdapter>::Render(vtkmActor *plot,
         if(screen_dirty)
         {
             delete m_canvas;
-            m_canvas = new vtkmCanvasRayTracer(image_width,image_height, m_bg_color);
+            m_canvas = new vtkmCanvasRayTracer(image_width,image_height);
+            m_canvas->SetBackgroundColor(m_bg_color);
         }
         
-        
-        m_vtkm_camera->Height = image_height;
-        m_vtkm_camera->Width = image_width;
-          
         //
         // Check to see if we have camera params
         //
@@ -877,7 +921,13 @@ Renderer<DeviceAdapter>::Render(vtkmActor *plot,
         //
         if(!m_transfer_function.dtype().is_empty())
         {
-           plot->ColorTable = SetColorMapFromNode();
+          vtkmColorTable color_table = SetColorMapFromNode();
+          vtkmActor *new_actor = new vtkmActor(plot->GetCells(),
+                                               plot->GetCoordinates(),
+                                               plot->GetScalarField(),
+                                               color_table);
+          delete plot;
+          plot = new_actor;
         }
         else
         {
@@ -887,7 +937,14 @@ Renderer<DeviceAdapter>::Render(vtkmActor *plot,
             //
             if(m_render_type == VOLUME)
             {
-                CreateDefaultTransferFunction(plot->ColorTable);
+                vtkmColorTable color_table;
+                CreateDefaultTransferFunction(color_table);
+                vtkmActor *new_actor = new vtkmActor(plot->GetCells(),
+                                                     plot->GetCoordinates(),
+                                                     plot->GetScalarField(),
+                                                     color_table);
+                delete plot;
+                plot = new_actor;
             }
         }
 
@@ -900,9 +957,9 @@ Renderer<DeviceAdapter>::Render(vtkmActor *plot,
               //set sample distance
               const vtkm::Float32 num_samples = 200.f;
               vtkm::Vec<vtkm::Float32,3> totalExtent;
-              totalExtent[0] = vtkm::Float32(plot->SpatialBounds.X.Max - plot->SpatialBounds.X.Min);
-              totalExtent[1] = vtkm::Float32(plot->SpatialBounds.Y.Max - plot->SpatialBounds.Y.Min);
-              totalExtent[2] = vtkm::Float32(plot->SpatialBounds.Z.Max - plot->SpatialBounds.Z.Min);
+              totalExtent[0] = vtkm::Float32(m_spatial_bounds.X.Max - m_spatial_bounds.X.Min);
+              totalExtent[1] = vtkm::Float32(m_spatial_bounds.Y.Max - m_spatial_bounds.Y.Min);
+              totalExtent[2] = vtkm::Float32(m_spatial_bounds.Z.Max - m_spatial_bounds.Z.Min);
               vtkm::Float32 sample_distance = vtkm::Magnitude(totalExtent) / num_samples;
               vtkmVolumeRenderer *volume_renderer = static_cast<vtkmVolumeRenderer*>(m_renderer);
               
@@ -926,7 +983,10 @@ Renderer<DeviceAdapter>::Render(vtkmActor *plot,
         if(m_render_type == VOLUME)
         {
             // Set the backgound color to transparent
-            m_canvas->BackgroundColor.Components[3] = 0.f;
+            vtkmColor color = m_canvas->GetBackgroundColor();
+            
+            color.Components[3] = 0.f;
+            m_canvas->SetBackgroundColor(color);
 
             //
             // Calculate visibility ordering AFTER 
@@ -975,9 +1035,13 @@ Renderer<DeviceAdapter>::Render(vtkmActor *plot,
             const float *input_depth_buffer  = NULL;    
             
           
-            input_color_buffer = &m_canvas->ColorBuffer[0];
-            input_depth_buffer = &m_canvas->DepthBuffer[0];
-            
+            input_color_buffer = &GetVTKMPointer(m_canvas->GetColorBuffer())[0][0];
+            input_depth_buffer = GetVTKMPointer(m_canvas->GetDepthBuffer());
+            float bg_color[4];
+            bg_color[0] = m_bg_color.Components[0];
+            bg_color[1] = m_bg_color.Components[1];
+            bg_color[2] = m_bg_color.Components[2];
+            bg_color[3] = m_bg_color.Components[3];
             if(m_render_type != VOLUME)
             {   
                 result_color_buffer = m_icet.Composite(image_width,
@@ -985,7 +1049,7 @@ Renderer<DeviceAdapter>::Render(vtkmActor *plot,
                                                        input_color_buffer,
                                                        input_depth_buffer,
                                                        view_port,
-                                                       m_bg_color.Components);
+                                                       bg_color);
             }
             else
             {    
@@ -997,7 +1061,7 @@ Renderer<DeviceAdapter>::Render(vtkmActor *plot,
                                                        image_height,
                                                        input_color_buffer,
                                                        vis_order,
-                                                       m_bg_color.Components);
+                                                       bg_color);
                 // leak?
                 free(vis_order);
             }
@@ -1029,7 +1093,7 @@ Renderer<DeviceAdapter>::Render(vtkmActor *plot,
           
 
 #else
-        m_png_data.Encode(&(m_canvas->ColorBuffer[0]),
+        m_png_data.Encode(&GetVTKMPointer(m_canvas->GetColorBuffer())[0][0],
                           image_width,
                           image_height);
 #endif
@@ -1050,9 +1114,9 @@ Renderer<DeviceAdapter>::Render(vtkmActor *plot,
     }
 }
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
+
 void
-Renderer<DeviceAdapter>::SetupCamera()
+Renderer::SetupCamera()
 {
     //
     // Get the optional camera parameters
@@ -1060,55 +1124,55 @@ Renderer<DeviceAdapter>::SetupCamera()
     if(m_camera.has_child("look_at"))
     {
         float64 *coords = m_camera["look_at"].as_float64_ptr();
-        m_vtkm_camera->Camera3d.LookAt[0] = coords[0];  
-        m_vtkm_camera->Camera3d.LookAt[1] = coords[1];  
-        m_vtkm_camera->Camera3d.LookAt[2] = coords[2];  
+        vtkmVec3f look_at(coords[0], coords[1], coords[2]);
+        m_vtkm_camera->SetLookAt(look_at);  
     }
     if(m_camera.has_child("position"))
     {
         float64 *coords = m_camera["position"].as_float64_ptr();
-        m_vtkm_camera->Camera3d.Position[0] = coords[0];  
-        m_vtkm_camera->Camera3d.Position[1] = coords[1];  
-        m_vtkm_camera->Camera3d.Position[2] = coords[2];  
+        vtkmVec3f position(coords[0], coords[1], coords[2]);
+        m_vtkm_camera->SetPosition(position);  
     }
     
     if(m_camera.has_child("up"))
     {
         float64 *coords = m_camera["up"].as_float64_ptr();
-        m_vtkm_camera->Camera3d.Up[0] = coords[0];
-        m_vtkm_camera->Camera3d.Up[1] = coords[1];
-        m_vtkm_camera->Camera3d.Up[2] = coords[2];
-        vtkm::Normalize(m_vtkm_camera->Camera3d.Up);
+        vtkmVec3f up(coords[0], coords[1], coords[2]);
+        vtkm::Normalize(up);
+        m_vtkm_camera->SetViewUp(up);
     }
     
     if(m_camera.has_child("fov"))
     {
-        m_vtkm_camera->Camera3d.FieldOfView = m_camera["fov"].to_float64();
+        m_vtkm_camera->SetFieldOfView(m_camera["fov"].to_float64());
     }
 
-    if(m_camera.has_child("xpan"))
+    if(m_camera.has_child("xpan") || m_camera.has_child("ypan"))
     {
-        m_vtkm_camera->Camera3d.XPan = m_camera["xpan"].to_float64();
-    }
-
-    if(m_camera.has_child("ypan"))
-    {
-        m_vtkm_camera->Camera3d.YPan = m_camera["ypan"].to_float64();
+        vtkm::Float64 xpan = 0.;
+        vtkm::Float64 ypan = 0.;
+        if(m_camera.has_child("xpan")) xpan = m_camera["xpan"].to_float64();
+        if(m_camera.has_child("ypan")) xpan = m_camera["ypan"].to_float64();
+        m_vtkm_camera->Pan(xpan, ypan);
     }
 
     if(m_camera.has_child("zoom"))
     {
-        m_vtkm_camera->Camera3d.Zoom = m_camera["zoom"].to_float64();
+        m_vtkm_camera->Zoom(m_camera["zoom"].to_float64());
     }
 
     if(m_camera.has_child("nearplane"))
     {
-        m_vtkm_camera->NearPlane = m_camera["nearplane"].to_float64();
+        vtkm::Range clipping_range = m_vtkm_camera->GetClippingRange();
+        clipping_range.Min = m_camera["nearplane"].to_float64();
+        m_vtkm_camera->SetClippingRange(clipping_range);
     }
 
     if(m_camera.has_child("farplane"))
     {
-        m_vtkm_camera->FarPlane = m_camera["farplane"].to_float64();
+        vtkm::Range clipping_range = m_vtkm_camera->GetClippingRange();
+        clipping_range.Max = m_camera["farplane"].to_float64();
+        m_vtkm_camera->SetClippingRange(clipping_range);
     }
 }
 

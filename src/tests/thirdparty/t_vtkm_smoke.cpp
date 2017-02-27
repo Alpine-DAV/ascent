@@ -54,10 +54,10 @@
 
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/testing/MakeTestDataSet.h>
-#include <vtkm/cont/DeviceAdapter.h>
+#include <vtkm/rendering/Actor.h>
+//#include <vtkm/cont/DeviceAdapter.h>
 #include <iostream>
 
-typedef VTKM_DEFAULT_DEVICE_ADAPTER_TAG DeviceAdapter;
 
 //-----------------------------------------------------------------------------
 TEST(vtkm_smoke, headers_work)
@@ -71,12 +71,25 @@ TEST(vtkm_smoke, basic_use)
 {
     vtkm::cont::testing::MakeTestDataSet maker;
     vtkm::cont::DataSet data = maker.Make3DExplicitDataSet2();
-    
-    vtkm::cont::Field scalarField = data.GetField("cellvar");
+    //
+    // work around for a problem adding scalar fields of size 1
+    // to Actors
+    //
+    std::vector<vtkm::Float32> scalars;
+    scalars.push_back(0);
+    scalars.push_back(1);
+    vtkm::cont::Field scalarField("some_field",
+                                  vtkm::cont::Field::ASSOC_CELL_SET,
+                                  "cell_set",
+                                  scalars);
+
     const vtkm::cont::CoordinateSystem coords = data.GetCoordinateSystem();
+    vtkm::rendering::Actor actor(data.GetCellSet(),
+                                 data.GetCoordinateSystem(),
+                                 scalarField);
 
     vtkm::Bounds coordsBounds; // Xmin,Xmax,Ymin..
-    coordsBounds = coords.GetBounds(DeviceAdapter());
+    coordsBounds = actor.GetSpatialBounds();
 
     //should be [0,1,0,1,0,1];
     

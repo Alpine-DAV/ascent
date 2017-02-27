@@ -60,12 +60,6 @@ include_directories(${PROJECT_SOURCE_DIR}/strawman/pipelines)
 
 include_directories(${CONDUIT_INCLUDE_DIRS})
 
-if(EAVL_FOUND)
-    # OSMesa and EAVL
-    include_directories(${OSMESA_INCLUDE_DIRS})
-    include_directories(${EAVL_INCLUDE_DIRS})
-endif()
-
 if(VTKM_FOUND)
     # tbb
     if(TBB_FOUND)

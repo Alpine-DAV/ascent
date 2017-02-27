@@ -53,6 +53,7 @@
 #  cmake \
 #   -DSTRAWMAN_DIR={strawman install path}  \ 
 #   -DCONDUIT_DIR={conduit install path}    \ 
+#   -DVTKM_DIR={vtkm install path}          \
 #   ../
 # make
 # ./example
@@ -65,6 +66,7 @@ project(using_with_cmake)
 
 include("FindStrawman.cmake")
 include("FindConduit.cmake")
+include("FindVTKm.cmake")
 
 # setup the strawman & conduit include paths
 include_directories(${STRAWMAN_INCLUDE_DIRS})

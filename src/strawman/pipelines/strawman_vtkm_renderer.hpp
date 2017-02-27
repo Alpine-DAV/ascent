@@ -107,7 +107,6 @@ enum RendererType
 // Internal Class that Handles Rendering via VTKM
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-template<typename DeviceAdapter>
 class Renderer
 {
 public:
@@ -118,8 +117,9 @@ public:
       typedef vtkm::rendering::Canvas                          vtkmCanvas;
       typedef vtkm::rendering::CanvasRayTracer                 vtkmCanvasRayTracer;
       typedef vtkm::rendering::Mapper                          vtkmMapper;
-      typedef vtkm::rendering::MapperVolume<>                  vtkmVolumeRenderer;
-      typedef vtkm::rendering::MapperRayTracer<>               vtkmRayTracer;
+      typedef vtkm::rendering::MapperVolume                    vtkmVolumeRenderer;
+      typedef vtkm::rendering::MapperRayTracer                 vtkmRayTracer;
+      typedef vtkm::Vec<vtkm::Float32,3>                       vtkmVec3f;
       Renderer();
 
 #ifdef PARALLEL
@@ -133,12 +133,11 @@ public:
       void SetTransferFunction(const conduit::Node &tFunction);
       void CreateDefaultTransferFunction(vtkmColorTable &color_table);
       void SetCamera(const conduit::Node &_camera);
-      void AddPlot(vtkmActor *plot);
       void SetData(conduit::Node *data_ptr);
   
       void ClearScene();
 
-      void Render(vtkmActor *plot,
+      void Render(vtkmActor *&plot,
                   int image_height,
                   int image_width, 
                   RendererType type,
@@ -204,7 +203,7 @@ private:
     vtkmCamera         *m_vtkm_camera;
 
     vtkmColor           m_bg_color;
-  
+    vtkm::Bounds        m_spatial_bounds; 
     RendererType        m_render_type;
     RenderParams        m_last_render;
   

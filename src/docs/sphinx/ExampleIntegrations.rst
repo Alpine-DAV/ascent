@@ -84,7 +84,7 @@ The command below would launch Lulesh for 10 iterations with a problem size of 3
 
 CloverLeaf3D
 ^^^^^^^^^^^^
-CloverLeaf3D is a proxy-application from the Atomic Weapons Establishment (AWE) that can be found at `http://uk-max.github.io/CloverLeaf3D <http://uk-max.github.io/CloverLeaf3D>`_.
+CloverLeaf3D is a proxy-application from the Atomic Weapons Establishment (AWE) that can be found at `http://uk-mac.github.io/CloverLeaf3D <http://uk-mac.github.io/CloverLeaf3D>`_.
 CloverLeaf is written in Fortran90.
 The data integration can be found in the file ``src/examples/proxies/cloverleaf3d-ref/visit.F90``, and the Strawman API in the main loop can be found at ``src/examples/proxies/cloverleaf3d-ref/hydro.F90`` starting at line 46.
 CloverLeaf3D uses ghost zones, thus they have to be stripped each time step before being passed to Strawman.

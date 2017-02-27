@@ -133,13 +133,9 @@ if(VTKM_DIR)
     set(VTKm_CUDA_Architecture "kepler" CACHE PATH "" FORCE)
 
     ################################
-    # Boost (for VTK-M)
-    ################################
-    include(CMake/thirdparty/SetupBoost.cmake)
-
-    ################################
     # TBB (for VTK-M)
     ################################
+    message(STATUS "If VTK-m was configured with TBB then you must specify the TBB_DIR")
     if(TBB_DIR) # optional 
         include(CMake/thirdparty/SetupTBB.cmake)
     endif()
@@ -214,13 +210,4 @@ endif()
 if(ENABLE_FORTRAN)
     add_subdirectory(thirdparty_builtin/fruit-3.3.9)
 endif()
-
-
-
-
-
-################################
-# CUDA
-################################
-
 
