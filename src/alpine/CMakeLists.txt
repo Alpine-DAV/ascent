@@ -229,7 +229,6 @@ if(MPI_FOUND)
    
     if(BUILD_SHARED_LIBS)
         message(STATUS "Building alpine_par as a shared library")
-        message(STATUS "${alpine_sources}")
         if(VTKM_FOUND)
             add_library(alpine_par SHARED ${alpine_sources} 
                                             ${alpine_par_sources} 
@@ -279,7 +278,6 @@ if(MPI_FOUND)
 
 
    
-                        message(STATUS "Check to see if we actually have to link against cuda and tbb")
     if(CUDA_FOUND)
         target_link_libraries(alpine_par ${CUDA_CUDART_LIBRARY})
     endif()
