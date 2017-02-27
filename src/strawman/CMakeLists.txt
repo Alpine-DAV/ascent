@@ -51,15 +51,8 @@
 
 set(STRAWMAN_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_client)
 
-set(STRAWMAN_EAVL_ENABLED ${EAVL_FOUND})
 set(STRAWMAN_VTKM_ENABLED ${VTKM_FOUND})
 set(STRAWMAN_HDF5_ENABLED ${HDF5_FOUND})
-
-if(STRAWMAN_EAVL_ENABLED)
-    set(STRAWMAN_VTKM_USE_OPENMP ${OPENMP_FOUND})
-    set(STRAWMAN_EAVL_USE_CUDA   ${CUDA_FOUND})
-endif()
-
 
 if(STRAWMAN_VTKM_ENABLED)
     set(STRAWMAN_VTKM_USE_CUDA ${CUDA_FOUND})
@@ -82,9 +75,7 @@ set(strawman_sources
     utils/strawman_file_system.cpp
     utils/strawman_block_timer.cpp
     utils/strawman_png_encoder.cpp
-    utils/strawman_web_interface.cpp
-    )
-
+    utils/strawman_web_interface.cpp)
 
 set(strawman_headers
     # strawman interface
@@ -100,85 +91,31 @@ set(strawman_headers
     utils/strawman_file_system.hpp
     utils/strawman_block_timer.hpp
     utils/strawman_png_encoder.hpp
-    utils/strawman_web_interface.hpp
-    )
-
-if(EAVL_FOUND)
-    #
-    # EAVL Pipeline Headers
-    #
-    list(APPEND strawman_headers pipelines/strawman_eavl_pipeline.hpp)
-
-    #
-    # EAVL Pipeline Sources
-    #
-    list(APPEND strawman_sources pipelines/strawman_eavl_pipeline.cpp)
-
-endif()
+    utils/strawman_web_interface.hpp)
 
 if(VTKM_FOUND)
-    set(strawman_vtkm_sources "")
-    set(strawman_vtkm_headers "")
-    
     # VTKm Pipeline Headers
-    list(APPEND strawman_vtkm_headers pipelines/strawman_vtkm_pipeline.hpp)
-    list(APPEND strawman_vtkm_headers pipelines/strawman_vtkm_pipeline_backend.hpp)
-    list(APPEND strawman_vtkm_headers pipelines/strawman_vtkm_renderer.hpp)
+    list(APPEND strawman_headers pipelines/strawman_vtkm_pipeline.hpp)
+    list(APPEND strawman_headers pipelines/strawman_vtkm_pipeline_backend.hpp)
+    list(APPEND strawman_headers pipelines/strawman_vtkm_renderer.hpp)
 
 
     # VTKm Pipeline Sources
-    list(APPEND strawman_vtkm_sources pipelines/strawman_vtkm_pipeline.cpp)
-    list(APPEND strawman_vtkm_sources pipelines/strawman_vtkm_pipeline_backend_serial.cpp)
-
-
+    list(APPEND strawman_sources pipelines/strawman_vtkm_pipeline.cpp)
+    list(APPEND strawman_sources pipelines/strawman_vtkm_pipeline_backend.cpp)
     # VTKm Rendering Headers
-    set(strawman_vtkm_renderer_headers pipelines/strawman_vtkm_renderer.hpp)
+    list(APPEND strawman_headers pipelines/strawman_vtkm_renderer.hpp)
 
     # VTKm Rendering Sources
-    set(strawman_vtkm_renderer_sources pipelines/strawman_vtkm_renderer_serial.cpp)
+    list(APPEND strawman_sources pipelines/strawman_vtkm_renderer.cpp)
     
-    if(TBB_FOUND)
-       list(APPEND strawman_vtkm_sources pipelines/strawman_vtkm_pipeline_backend_tbb.cpp)
-       list(APPEND strawman_vtkm_renderer_sources pipelines/strawman_vtkm_renderer_tbb.cpp)
-    endif()
-    
-    #
-    # VTKm library objects
-    #
-    add_library(strawman_vtkm_renderer OBJECT ${strawman_vtkm_renderer_sources} ${strawman_vtkm_renderer_headers})
-    add_library(strawman_vtkm OBJECT ${strawman_vtkm_sources} ${strawman_vtkm_headers})
-        
-
-    if(CUDA_FOUND)
-        #
-        # VTKm cuda objects
-        #
-        
-        # cuda_wrap_srcs doesn't seem to pick up -fPIC, even though we have 
-        # set(CMAKE_POSITION_INDEPENDENT_CODE ON) enabled for the entire project
-        # to add fPIC, we have to global cxx flags b/c of how the cmake cuda wrappers work 
-        # we save / restore the previous set of global flags after we create the cuda 
-        # target
-
-        SET(CMAKE_CXX_FLAGS_PREVIOUS ${CMAKE_CXX_FLAGS})
-        SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC" )
-
-        cuda_wrap_srcs(strawman_vtkm_pipeline_cuda OBJ vtkm_cuda_pipeline pipelines/strawman_vtkm_pipeline_backend_cuda.cu)
-        cuda_wrap_srcs(strawman_vtkm_renderer_cuda OBJ vtkm_cuda_renderer pipelines/strawman_vtkm_renderer_cuda.cu)
-        
-        # restore old global cxx flags
-        SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_PREVIOUS})
-
-    endif()
-
+   
 endif()
 
 if(HDF5_FOUND)
     list(APPEND strawman_headers pipelines/strawman_blueprint_hdf5_pipeline.hpp)
     list(APPEND strawman_sources pipelines/strawman_blueprint_hdf5_pipeline.cpp)
 endif()
-
-
 
 ##############################
 # optional features
@@ -207,30 +144,22 @@ set(strawman_thirdparty_libs
     conduit_blueprint
     lodepng)
 
-if(EAVL_FOUND)
-    list(APPEND strawman_thirdparty_libs
-                ${EAVL_LIBRARIES}
-                ${OSMESA_LIBRARIES})
-
+if(VTKM_FOUND)
+    list(APPEND strawman_thirdparty_libs vtkm)
+    list(APPEND strawman_thirdparty_libs vtkm_cont)
+    list(APPEND strawman_thirdparty_libs vtkm_rendering)
 endif()
-
 
 ##########################################
 # Build a serial version of strawman
 ##########################################
-
-
 
 if(BUILD_SHARED_LIBS)
     message(STATUS "Building strawman as a shared library")
     if(VTKM_FOUND)
         add_library(strawman SHARED 
                     ${strawman_sources} 
-                    ${strawman_headers} 
-                    $<TARGET_OBJECTS:strawman_vtkm> 
-                    ${vtkm_cuda_pipeline}
-                    $<TARGET_OBJECTS:strawman_vtkm_renderer>
-                    ${vtkm_cuda_renderer})
+                    ${strawman_headers})
     else()
         add_library(strawman SHARED ${strawman_sources} ${strawman_headers})
     endif()
@@ -239,16 +168,20 @@ else()
     if(VTKM_FOUND)
         add_library(strawman STATIC 
                     ${strawman_sources} 
-                    ${strawman_headers} 
-                    $<TARGET_OBJECTS:strawman_vtkm> 
-                    ${vtkm_cuda_pipeline}
-                    $<TARGET_OBJECTS:strawman_vtkm_renderer> 
-                    ${vtkm_cuda_renderer})
+                    ${strawman_headers})
     else()
         add_library(strawman STATIC ${strawman_sources} ${strawman_headers})
     endif()
 endif()
 
+##########################################
+# Ensure we use c++11
+##########################################
+
+set_target_properties(strawman PROPERTIES
+                      CXX_STANDARD 11
+                      CXX_STANDARD_REQUIRED YES
+                      CXX_EXTENTIONS NO)
 
 add_target_compile_flags(TARGET strawman 
                          FLAGS ${VTKm_COMPILE_OPTIONS})
@@ -256,9 +189,9 @@ add_target_compile_flags(TARGET strawman
 
 target_link_libraries(strawman ${strawman_thirdparty_libs})
 
+
 if(CUDA_FOUND)
     target_link_libraries(strawman ${CUDA_CUDART_LIBRARY})
-    
 endif()
 
 
@@ -291,21 +224,6 @@ if(MPI_FOUND)
         SET(CMAKE_CXX_FLAGS_PREVIOUS ${CMAKE_CXX_FLAGS})
         SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS} -D PARALLEL -fPIC" )
         
-        #
-        #  VTKm library objects
-        #
-        
-        add_library(strawman_vtkm_par OBJECT ${strawman_vtkm_sources} ${strawman_vtkm_headers})
-        add_library(strawman_vtkm_renderer_par OBJECT ${strawman_vtkm_renderer_sources} ${strawman_vtkm_renderer_headers})
-
-        if(CUDA_FOUND)
-            #
-            #  VTKm cuda objects
-            #
-            cuda_wrap_srcs(strawman_vtkm_pipeline_cuda_par OBJ vtkm_cuda_pipeline_par pipelines/strawman_vtkm_pipeline_backend_cuda.cu)
-            cuda_wrap_srcs(strawman_vtkm_renderer_cuda_par OBJ vtkm_cuda_renderer_par pipelines/strawman_vtkm_renderer_cuda.cu)
-        endif()
-        
         # restore old global cxx flags
         SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_PREVIOUS})
     endif()
@@ -317,16 +235,12 @@ if(MPI_FOUND)
             add_library(strawman_par SHARED ${strawman_sources} 
                                             ${strawman_par_sources} 
                                             ${strawman_headers}
-                                            ${strawman_par_headers}
-                                            $<TARGET_OBJECTS:strawman_vtkm_par>
-                                            ${vtkm_cuda_pipeline_par}
-                                            $<TARGET_OBJECTS:strawman_vtkm_renderer_par> 
-                                            ${vtkm_cuda_renderer_par})
+                                            ${strawman_par_headers})
         else()
             add_library(strawman_par SHARED ${strawman_sources} 
                                             ${strawman_par_sources} 
                                             ${strawman_headers}
-                                            ${strawman_par_headers} )
+                                            ${strawman_par_headers})
         endif()
     else()
         message(STATUS "Building strawman_par as a static library")
@@ -334,11 +248,7 @@ if(MPI_FOUND)
             add_library(strawman_par STATIC ${strawman_sources} 
                                             ${strawman_par_sources} 
                                             ${strawman_headers}
-                                            ${strawman_par_headers}
-                                            $<TARGET_OBJECTS:strawman_vtkm_par>
-                                            ${vtkm_cuda_pipeline_par}
-                                            $<TARGET_OBJECTS:strawman_vtkm_renderer_par> 
-                                            ${vtkm_cuda_renderer_par})
+                                            ${strawman_par_headers})
         else()
             add_library(strawman_par STATIC ${strawman_sources} 
                                             ${strawman_par_sources} 
@@ -347,18 +257,18 @@ if(MPI_FOUND)
         endif()
     endif()
     
+    ##########################################
+    # Ensure we use c++11
+    ##########################################
+
+    set_target_properties(strawman_par PROPERTIES
+                          CXX_STANDARD 11
+                          CXX_STANDARD_REQUIRED YES
+                          CXX_EXTENTIONS NO)
+
     add_target_compile_flags(TARGET strawman_par 
                              FLAGS "${MPI_CXX_COMPILE_FLAGS} -D PARALLEL ${VTKm_COMPILE_OPTIONS}")
-    #
-    # VTKm: We have to add the same compiler flags to both the pipeline and rendering object
-    #
-    if(VTKM_FOUND)
-        add_target_compile_flags(TARGET strawman_vtkm_par 
-                                 FLAGS "${MPI_CXX_COMPILE_FLAGS} -D PARALLEL ${VTKm_COMPILE_OPTIONS}")
-        add_target_compile_flags(TARGET strawman_vtkm_renderer_par 
-                                 FLAGS "${MPI_CXX_COMPILE_FLAGS} -D PARALLEL ${VTKm_COMPILE_OPTIONS}")
-    endif()
-    
+        
     add_target_link_flags(TARGET strawman_par  
                           FLAGS "${MPI_CXX_LINK_FLAGS}")
     
@@ -370,6 +280,7 @@ if(MPI_FOUND)
 
 
    
+                        message(STATUS "Check to see if we actually have to link against cuda and tbb")
     if(CUDA_FOUND)
         target_link_libraries(strawman_par ${CUDA_CUDART_LIBRARY})
     endif()
@@ -377,7 +288,6 @@ if(MPI_FOUND)
     if(TBB_FOUND)
        target_link_libraries(strawman_par ${TBB_LIBRARIES})
     endif()
-
 
 
     # install target for mpi ver

@@ -42,48 +42,50 @@
 # 
 ###############################################################################
 
+###############################################################################
+#
+# Setup VTKm 
+#
+###############################################################################
+#
+#  Expects VTKM_DIR to point to a Conduit installations.
+#
+# This file defines the following CMake variables:
+#  VTKM_FOUND - If Conduit was found
+#  VTKM_INCLUDE_DIRS - The Conduit include directories
+#
+#  If found, the vtkm CMake targets will also be imported.
+#  The main vtkm library targets are:
+#   vtkm 
+#   vtkm_cont
+#   vtkm_rendering
+#
+###############################################################################
 
 ###############################################################################
-# Setup Eavl
-# This file defines:
-#  EAVL_FOUND - If Eavl was found
-#  EAVL_INCLUDE_DIRS - The Eavl include directories
-#  EAVL_LIBRARIES - The libraries needed to use Eavl
+# Check for VTKM_DIR
 ###############################################################################
-
-# first Check for EAVL_DIR
-
-if(NOT EAVL_DIR)
-    MESSAGE(FATAL_ERROR "Eavl support needs explicit EAVL_DIR")
+if(NOT VTKM_DIR)
+  MESSAGE(FATAL_ERROR "Could not find VTKM_DIR. Conduit requires explicit VTKM_DIR.")
 endif()
 
-MESSAGE(STATUS "Looking for Eavl using EAVL_DIR = ${EAVL_DIR}")
-
-#find includes
-find_path(EAVL_INCLUDE_DIRS eavl.h
-          PATHS ${EAVL_DIR}/include
-          NO_DEFAULT_PATH
-          NO_CMAKE_ENVIRONMENT_PATH
-          NO_CMAKE_PATH
-          NO_SYSTEM_ENVIRONMENT_PATH
-          NO_CMAKE_SYSTEM_PATH)
-
-#find libs
-find_library(EAVL_LIBRARIES LIBRARIES NAMES eavl
-             PATHS ${EAVL_DIR}/lib
-             NO_DEFAULT_PATH
-             NO_CMAKE_ENVIRONMENT_PATH
-             NO_CMAKE_PATH
-             NO_SYSTEM_ENVIRONMENT_PATH
-             NO_CMAKE_SYSTEM_PATH)
-
-
-include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set EAVL_FOUND to TRUE
-# if all listed variables are TRUE
-find_package_handle_standard_args(EAVL DEFAULT_MSG
-                                  EAVL_LIBRARIES EAVL_INCLUDE_DIRS)
-
-if(NOT EAVL_FOUND)
-  message(FATAL_ERROR "EAVL_DIR is not a path to a valid eavl install")
+if(NOT EXISTS ${VTKM_DIR}/lib/VTKmConfig.cmake)
+  MESSAGE(FATAL_ERROR "Could not find VTKm CMake include file (${VTKM_DIR}/lib/VTKmConfig.cmake)")
 endif()
+
+###############################################################################
+# Import VTKm CMake targets
+###############################################################################
+include(${VTKM_DIR}/lib/VTKmConfig.cmake)
+
+###############################################################################
+# Set remaning CMake variables 
+###############################################################################
+# we found VTKm
+set(VTKM_FOUND TRUE)
+# provide location of the headers in VTKM_INCLUDE_DIRS
+set(VTKM_INCLUDE_DIRS ${VTKM_DIR}/include/vtkm)
+
+
+
+

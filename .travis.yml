@@ -49,9 +49,9 @@ compiler:
   - gcc
 env:
   global:
-  - COMPILER_CC=gcc-5
-  - COMPILER_CXX=g++-5
-  - COMPILER_FC=gfortran-5
+  - COMPILER_CC=gcc-4.9
+  - COMPILER_CXX=g++-4.9
+  - COMPILER_FC=gfortran-4.9
   matrix:
     # we want to test both static and shared
     - BUILD_SHARED_LIBS=ON
@@ -62,9 +62,9 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
        - binutils
-       - gcc-5
-       - g++-5
-       - gfortran-5
+       - gcc-4.9
+       - g++-4.9
+       - gfortran-4.9
 install:
   # none
 script:
@@ -76,7 +76,7 @@ script:
   - ${CC} --version
   - cd $TRAVIS_BUILD_DIR
   # build deps using uberenv
-  - python scripts/uberenv/uberenv.py --spec %gcc@5+mpich
+  - python scripts/uberenv/uberenv.py --spec %gcc@4.9+mpich
   # create out-of-source build dir
   - mkdir travis-debug-build
   - cd    travis-debug-build
@@ -96,18 +96,19 @@ script:
   - export HOST_CONFIG=`ls ../uberenv_libs/*.cmake`
   - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
   # build, test, and install
-  - make
+  - make VERBOSE=1
   - env CTEST_OUTPUT_ON_FAILURE=1 make test
   - make install
   # test our examples that demo using an installed strawman
   - export CONDUIT_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/conduit*`
+  - export VTKM_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/vtkm*`
   - export STRAWMAN_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install
   # using with cmake example
   - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
   - mkdir build
   - cd build
-  - cmake -DSTRAWMAN_DIR=${STRAWMAN_DIR} -DCONDUIT_DIR=${CONDUIT_DIR} ../
-  - make
+  - cmake -DSTRAWMAN_DIR=${STRAWMAN_DIR} -DCONDUIT_DIR=${CONDUIT_DIR} -DVTKM_DIR=${VTKM_DIR} ../
+  - make VERBOSE=1
   - ./example
   # using with make example (still needs work for static builds)
   #- cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
@@ -121,5 +122,6 @@ notifications:
   email:
     recipients:
       - cyrush@llnl.gov
+      - larsen30@llnl.gov
     on_success: always
     on_failure: always

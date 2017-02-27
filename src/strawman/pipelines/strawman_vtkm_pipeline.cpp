@@ -50,17 +50,6 @@
 
 #include "strawman_vtkm_pipeline.hpp"
 
-namespace vtkm
-{
-    namespace cont
-    {
-        class DeviceAdapterTagSerial;
-        class DeviceAdapterTagTBB;
-        class DeviceAdapterTagCuda;
-    };
-        
-};
-
 #include "strawman_vtkm_pipeline_backend.hpp"
 #include <cstdlib>
 
@@ -109,42 +98,7 @@ VTKMPipeline::Initialize(const conduit::Node &options)
 {
     Cleanup();
     
-    std::string backend_type = "serial";
-
-
-    if(options.has_path("pipeline/backend"))
-    {
-        backend_type = options["pipeline/backend"].as_string();
-    }
-    
-    if(backend_type == "serial")
-    {
-        m_backend = new VTKMPipelineBackend<vtkm::cont::DeviceAdapterTagSerial>();
-    }
-    else if(backend_type == "tbb")
-    {
-#if defined(STRAWMAN_VTKM_USE_TBB)
-       
-        m_backend = new VTKMPipelineBackend<vtkm::cont::DeviceAdapterTagTBB>();
-
-#else
-        STRAWMAN_ERROR("Strawman was not built with VTKm TBB support");
-#endif
-    }
-    else if(backend_type == "cuda")
-    {
-#if defined(STRAWMAN_VTKM_USE_CUDA)
-        
-        m_backend = new VTKMPipelineBackend<vtkm::cont::DeviceAdapterTagCuda>();
-        
-#else
-        STRAWMAN_ERROR("Strawman was not built with VTKm CUDA support");
-#endif
-    }
-    else
-    {
-        STRAWMAN_ERROR("Unknown VTKm pipeline backend: " << backend_type);
-    }
+    m_backend = new VTKMPipelineBackend();
 
     m_backend->Initialize(options);
 }
