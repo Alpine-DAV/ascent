@@ -95,7 +95,7 @@ set(CONDUIT_DIR "/nfs/tmp2/larsen30/conduit/install" CACHE PATH "")
 #set(CONDUIT_DIR " /usr/gapps/visit/alpine/uberenv_libs/spack/opt/spack/chaos_5_x86_64_ib/intel-14.0.3/conduit-github-naws5eho7jxgjaaldoubcarv5v3x4sgt/" CACHE PATH "")
 
 # icet from uberenv
-set(ICET_DIR "/usr/gapps/visit/alpine/uberenv_libs/spack/opt/spack/chaos_5_x86_64_ib/intel-14.0.3/icet-icet-master-hmg4hcjrztyseukkalbvxaga353ys6es" CACHE PATH "")
+set(ICET_DIR "/usr/gapps/visit/strawman/uberenv_libs/spack/opt/spack/chaos_5_x86_64_ib/intel-14.0.3/icet-icet-master-hmg4hcjrztyseukkalbvxaga353ys6es" CACHE PATH "")
 
 #
 # vtkm support from uberenv
@@ -103,7 +103,7 @@ set(ICET_DIR "/usr/gapps/visit/alpine/uberenv_libs/spack/opt/spack/chaos_5_x86_6
 
 # tbb from uberenv
 #set(ALPINE_VTKM_USE_TBB OFF CACHE PATH "")
-set(TBB_DIR "/usr/gapps/visit/alpine/uberenv_libs/spack/opt/spack/chaos_5_x86_64_ib/intel-14.0.3/tbb-4.4.3-al6fuqhyuhr6ju4daik3mfwk5j7gcyvw" CACHE PATH "")
+set(TBB_DIR "/usr/gapps/visit/strawman/uberenv_libs/spack/opt/spack/chaos_5_x86_64_ib/intel-14.0.3/tbb-4.4.3-al6fuqhyuhr6ju4daik3mfwk5j7gcyvw" CACHE PATH "")
 
 # vtkm from uberenv
 set(VTKM_DIR "/usr/workspace/wsb/larsen30/vtk-m/install" CACHE PATH "")
