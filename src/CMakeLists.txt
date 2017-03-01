@@ -63,7 +63,7 @@ option(BUILD_SHARED_LIBS  "Build shared libraries"    ON)
 option(ENABLE_TESTS       "Build tests"               ON)
 
 option(ENABLE_FORTRAN     "Build Fortran support"     ON)
-option(ENABLE_PYTHON      "Build Python Support"      OFF)
+option(ENABLE_PYTHON      "Build Python Support"      ON)
 
 option(ENABLE_MPI         "Build MPI Support"         ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)

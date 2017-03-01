@@ -92,7 +92,7 @@ else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()
 
-
+#TODO: If FOUND, but not enabled, test will fail
 if(PYTHON_FOUND)
     add_subdirectory("python")
 else()

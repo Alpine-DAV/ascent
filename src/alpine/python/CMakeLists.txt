@@ -59,7 +59,6 @@ PYTHON_ADD_HYBRID_MODULE(alpine_python
 
 # link with the proper libs (beyond python)
 target_link_libraries(alpine_python alpine)
-
 # TODO: ADD SUPPORT FOR SUPPORT PYTHON_MODULE_INSTALL_PREFIX
 # install the capi header so other python modules can use it
 # support alt install dir for python module via PYTHON_MODULE_INSTALL_PREFIX
