@@ -81,7 +81,7 @@ endforeach()
 # Add optional tests
 ################################
 
-if(MPI_FOUND)
+if(MPI_FOUND AND ENABLE_MPI)
     message(STATUS "MPI enabled: Adding related unit tests")
     foreach(TEST ${MPI_TESTS})
         # this uses 2 procs
@@ -92,15 +92,14 @@ else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()
 
-#TODO: If FOUND, but not enabled, test will fail
-if(PYTHON_FOUND)
+if(PYTHON_FOUND AND ENABLE_PYTHON)
     add_subdirectory("python")
 else()
     message(STATUS "Python disabled: Skipping alpine python module tests")
 endif()
 
 
-if(FORTRAN_FOUND)
+if(FORTRAN_FOUND AND ENABLE_FORTRAN)
      add_subdirectory("fortran")
 else()
      message(STATUS "Fortran disabled: Skipping alpine fortran interface tests")
