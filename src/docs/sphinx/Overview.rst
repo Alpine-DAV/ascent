@@ -94,7 +94,7 @@ Pipelines
   A pipeline has three main functions: consume simulation data, perfrom analysis (optional), and output data.
   Data describing the simulation mesh is sent to the pipeline within a Conduit Node which is formatted according to `Conduit Blueprint <http://software.llnl.gov/conduit/blueprint.html>`_.
   Once the data is in a compatible format, the pipeline can optionally perfrom some analysis operations, and then output the results. 
-  Currently, the VTK-m and EAVL pipelines output images to either the file system or to the web browser, and the HDF5 pipeline creates and HDF5 file.
+  Currently, the VTK-m pipeline output images to either the file system or to the web browser, and the HDF5 pipeline creates and HDF5 file.
 
 
 
@@ -114,22 +114,6 @@ VTK-m
 
   Access to VTK-m filters are coming in a future release.
 
-EAVL
-""""
-  EAVL is the Extreme-Scale Analysis and Visualization Library that was developed as a research project at Oak Ridge National Laboratory. 
-  EAVL's focus was to develop a more flexible and efficient model for scientific data sets.
-  EAVL uses a data-parallel programming model that abstracts away the underlying computer architecture, allowing algorithms developed in EAVL to be written once and executed on any supported architecture.
-  Serial, OpenMP, and CUDA back-ends are supported in EAVL. 
-  EAVL is no longer under active development, and it efforts have been absorbed into VTK-m.
-  The branch used by Alpine can be found on `EAVL's github page <https://github.com/jsmeredith/EAVL/tree/rayTracer>`_ as well as the `documentation <https://github.com/jsmeredith/EAVL/wiki>`_.
-  EAVL is no longer under active development, as the devopers efforts now go toward the VTK-m project.
- 
-  Supported operations: 
-
-  - Strucutured and unstructured volume rendering
-  - Ray tracing
-  - Rasterization (OSMesa)
-  - Limited filter support
 
 Blueprint HDF5
 """"""""""""""""

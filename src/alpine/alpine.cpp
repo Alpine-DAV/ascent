@@ -140,14 +140,6 @@ Alpine::Open(const conduit::Node &options)
         ALPINE_ERROR("Alpine was not built with VTKm support");
 #endif
     }
-    else if(pipeline_type == "eavl")
-    {
-#if defined(ALPINE_EAVL_ENABLED)
-        m_pipeline = new EAVLPipeline();
-#else
-        ALPINE_ERROR("Alpine was not built with EAVL support");
-#endif
-    }
     else if(pipeline_type == "blueprint_hdf5")
     {
     #if defined(ALPINE_HDF5_ENABLED)
@@ -210,25 +202,6 @@ about(conduit::Node &n)
     n.reset();
     n["version"] = "0.1.0";
 
-#if defined(ALPINE_EAVL_ENABLED)
-    n["pipelines/eavl/status"] = "enabled";
-    n["pipelines/eavl/backends/serial"] = "enabled";
-    
-    #ifdef ALPINE_EAVL_USE_OPENMP
-        n["pipelines/eavl/backends/openmp"] = "enabled";
-    #else
-        n["pipelines/eavl/backends/openmp"] = "disabled";
-    #endif
-
-    #ifdef ALPINE_EAVL_USE_CUDA
-        n["pipelines/eavl/backends/cuda"]   = "enabled";
-    #else
-        n["pipelines/eavl/backends/cuda"]   = "disabled";
-    #endif
-#else
-    n["pipelines/eavl/status"] = "disabled";
-#endif
-    
 #if defined(ALPINE_VTKM_ENABLED)
     n["pipelines/vtkm/status"] = "enabled";
     
@@ -261,8 +234,6 @@ about(conduit::Node &n)
 //
 #if defined(ALPINE_VTKM_ENABLED)
     n["default_pipeline"] = "vtkm";
-#elif defined(ALPINE_EAVL_ENABLED)
-    n["default_pipeline"] = "eval";
 #elif defined(ALPINE_HDF5_ENABLED)    
     n["default_pipeline"] = "blueprint_hdf5";
 #else

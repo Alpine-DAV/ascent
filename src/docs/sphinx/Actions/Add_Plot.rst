@@ -66,7 +66,7 @@ Additional parameters allow you to specific camera and color map options.
 - ``file_name`` if specified, the image will be saved to the file system. Otherwise, images will be streamed to the web server.
 - ``width`` image width in pixels
 - ``height`` image height in pixels
-- ``renderer`` The VTK-m and EAVL pipelines include renderer. Valid options are ``raytracer`` and ``volume``. Additionally, EAVL allows ``opengl``
+- ``renderer`` The VTK-m pipeline includes a renderer. Valid options are ``raytracer`` and ``volume``. 
 - ``color_map`` specifies a the color map to use
 - ``camera`` specifies the camera parameters to use
 
@@ -75,7 +75,7 @@ Color Map
 The color map translates normalized scalars to color values.
 Minimally, a color map name needs to be specified, but the ``color_map`` nodes allows you to specify RGB and Alpha (opacity) control points for complete customization of color maps. 
 Alpha control points are used when rendering volumes.
-Color map names are the same for both EAVL and VTK-m. A full list of names can be found in the `EAVL repository <https://github.com/jsmeredith/EAVL/blob/master/src/rendering/eavlColorTable.h>`_.
+Color map names names can be found in the `VTK-m repository <https://gitlab.kitware.com/vtk/vtk-m/blob/master/vtkm/rendering/ColorTable.cxx>`_.
 Colors are three double precision values between 0 and 1.
 Alphas and positions  are a single double precision values between 0 and 1.
 

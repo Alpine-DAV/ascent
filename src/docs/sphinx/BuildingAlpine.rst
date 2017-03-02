@@ -63,9 +63,6 @@ For a minimal build with no parallel components, the following are required:
     
     * Conduit
     * VTK-m
-      
-      * Boost
-    
     * C++ and Fortran compilers
 
 
@@ -95,20 +92,11 @@ IceT
 Pipelines
 """""""""
 
-* EAVL: 
-    
-    * OSMesa (7.5.2) is used for rendering data set annotations and is required
-    * OpenMP 3.5+ 
-    * CUDA 6.5 + (Optional) 
-
 * VTK-m: 
   
-    * Boost
     * TBB (Optional)  Intel's Threaded Building Blocks
     * CUDA 6.5+ (Optional)
 
-.. note:: When building Stawman with VTK-m 1.0 and CUDA, nvcc becomes confused and emits warnings about calling host functions from device functions. When combined with template meta-programming, this can emit quite a large amount of text during compilation. These warning messages have been suppressed in later versions of VTK-m.
-  
 * HDF5
   
     * Conduit with conduit_relay HDF5 support.
@@ -116,29 +104,19 @@ Pipelines
 
 .. note:: 
 
-    Alpine uses VTK-m 1.0 which must be configured with rendering on, among other options. 
+    When building VTK-m with Alpine which must be configured with rendering on, among other options. 
     For a full list of options that need to be set, consult `/uberenv_libs/spack/var/spack/repos/builtin/packages/vtkm/package.py`.
-    If you plan to use CUDA, a patch must be applied to VTK-m to prevent a compile error. 
-    Using the build script will apply this patch automatically, but if compiling manually, the patch must be applied.
-    The patch can be found in the source repo at `/uberenv_libs/spack/var/spack/repos/builtin/packages/vtkm/vtkm_patch.patch`
 
 
 Getting Started
 ---------------
-Clone the Straman repo:
+Clone the Alpine repo:
 
 * From Github
 
 .. code:: bash
     
-    git clone https://github.com/llnl/alpine.git
-
-
-* From LLNL's CZ Stash Instance (LLNL Users)
-
-.. code:: bash
-    
-    git clone https://{USER_NAME}@lc.llnl.gov/stash/scm/vis/alpine.git
+    git clone https://github.com/Alpine-DAV/alpine.git 
 
 
 Configure a build:
@@ -180,8 +158,7 @@ Straman's build system supports the following CMake options:
 
  The Alpine python module will build for both Python 2 and Python 3. To select a specific Python, set the CMake variable PYTHON_EXECUTABLE to path of the desired python binary. The alpine python module requires the Conduit python module.
 
-* **ENABLE_OPENMP** - Controls if EAVL and proxy-apps are configured with OpenMP. *(default = OFF)*
-* **ENABLE_CUDA** - Controls if VTK-m and EAVL are configured with GPU support. *(default = OFF)*
+* **ENABLE_OPENMP** - Controls if the proxy-apps are configured with OpenMP. *(default = OFF)*
 * **ENABLE_MPI** - Controls if parallel versions of proxy-apps and Alpine are built. *(default = ON)*
 
 
@@ -193,11 +170,7 @@ Straman's build system supports the following CMake options:
 
 * **ICET_DIR** - Path to an ICET install *(required for parallel version)*. 
 
-* **EAVL_DIR** - Path to an EAVL install *(optional)*. 
-
 * **VTKM_DIR** - Path to an VTK-m install *(optional)*. 
-
-* **OSMESA_DIR** - Path to an VTK-m install *(required for EAVL)*. 
 
 * **HDF5_DIR** - Path to a HDF5 install *(optional)*. 
 

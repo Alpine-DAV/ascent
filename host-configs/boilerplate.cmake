@@ -61,7 +61,7 @@ set(CMAKE_CXX_COMPILER "/path/to/cxx_compiler" CACHE PATH "")
 # fortran compiler (need for cloverleaf)
 set(CMAKE_Fortran_COMPILER  "/path/to/fortran_compiler" CACHE PATH "")
 
-# OPENMP (optional: for proxy apps and EAVL)
+# OPENMP (optional: for proxy apps)
 set(ENABLE_OPENMP ON CACHE PATH "")
 
 # MPI Support
@@ -81,11 +81,9 @@ set(MPIEXEC_NUMPROC_FLAG -n CACHE PATH "")
 
 # CUDA support
 #set(ENABLE_CUDA ON CACHE PATH "")
-#set(CUDA_BIN_DIR /path/to/cudatoolkit-7.0/bin CACHE PATH "")
 
 # NO CUDA Support
 set(ENABLE_CUDA OFF CACHE PATH "")
-
 
 # conduit 
 set(CONDUIT_DIR "/path/to/conduit_install/" CACHE PATH "")
@@ -97,9 +95,6 @@ set(ICET_DIR "/path/to/icet_install/" CACHE PATH "")
 # vtkm
 #
 
-# boost-headers 
-set(BOOST_DIR "/path/to/boost/" CACHE PATH "")
-
 # tbb
 #set(ALPINE_VTKM_USE_TBB OFF CACHE PATH "")
 set(TBB_DIR "/path/to/tbb_install" CACHE PATH "")
@@ -107,17 +102,6 @@ set(TBB_DIR "/path/to/tbb_install" CACHE PATH "")
 # vtkm
 set(VTKM_DIR "/path/to/vtkm_install" CACHE PATH "")
 
-#
-# eavl support (optional)
-#
-
-# osmesa 
-set(OSMESA_DIR "/path/to/osmesa_install" CACHE PATH "")
-
-# eavl
-set(EAVL_DIR "/path/to/eavl_install" CACHE PATH "")
-
-# 
 # HDF5 support (optional)
 #
 # hdf5v

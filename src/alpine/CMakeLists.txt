@@ -96,13 +96,11 @@ set(alpine_headers
 if(VTKM_FOUND)
     # VTKm Pipeline Headers
     list(APPEND alpine_headers pipelines/alpine_vtkm_pipeline.hpp)
-    list(APPEND alpine_headers pipelines/alpine_vtkm_pipeline_backend.hpp)
     list(APPEND alpine_headers pipelines/alpine_vtkm_renderer.hpp)
 
 
     # VTKm Pipeline Sources
     list(APPEND alpine_sources pipelines/alpine_vtkm_pipeline.cpp)
-    list(APPEND alpine_sources pipelines/alpine_vtkm_pipeline_backend.cpp)
     # VTKm Rendering Headers
     list(APPEND alpine_headers pipelines/alpine_vtkm_renderer.hpp)
 
@@ -116,6 +114,11 @@ if(HDF5_FOUND)
     list(APPEND alpine_headers pipelines/alpine_blueprint_hdf5_pipeline.hpp)
     list(APPEND alpine_sources pipelines/alpine_blueprint_hdf5_pipeline.cpp)
 endif()
+
+##############################
+# Add lodepng 
+#############################
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty_builtin/lodepng/ ${CMAKE_CURRENT_SOURCE_DIR}/utils/lodepng)
 
 ##############################
 # optional features
@@ -133,7 +136,6 @@ if(PYTHON_FOUND)
     add_subdirectory(python)
 endif()
 
-
 ##################
 # req'd libs
 ##################
@@ -141,8 +143,7 @@ endif()
 set(alpine_thirdparty_libs 
     conduit
     conduit_relay
-    conduit_blueprint
-    lodepng)
+    conduit_blueprint)
 
 if(VTKM_FOUND)
     list(APPEND alpine_thirdparty_libs vtkm)
@@ -156,22 +157,16 @@ endif()
 
 if(BUILD_SHARED_LIBS)
     message(STATUS "Building alpine as a shared library")
-    if(VTKM_FOUND)
-        add_library(alpine SHARED 
-                    ${alpine_sources} 
-                    ${alpine_headers})
-    else()
-        add_library(alpine SHARED ${alpine_sources} ${alpine_headers})
-    endif()
+     add_library(alpine SHARED 
+                 ${alpine_sources} 
+                 $<TARGET_OBJECTS:lodepng>
+                 ${alpine_headers})
 else()
     message(STATUS "Building alpine as a static library")
-    if(VTKM_FOUND)
-        add_library(alpine STATIC 
-                    ${alpine_sources} 
-                    ${alpine_headers})
-    else()
-        add_library(alpine STATIC ${alpine_sources} ${alpine_headers})
-    endif()
+    add_library(alpine STATIC 
+                ${alpine_sources} 
+                 $<TARGET_OBJECTS:lodepng>
+                ${alpine_headers})
 endif()
 
 ##########################################
@@ -229,30 +224,18 @@ if(MPI_FOUND)
    
     if(BUILD_SHARED_LIBS)
         message(STATUS "Building alpine_par as a shared library")
-        if(VTKM_FOUND)
-            add_library(alpine_par SHARED ${alpine_sources} 
-                                            ${alpine_par_sources} 
-                                            ${alpine_headers}
-                                            ${alpine_par_headers})
-        else()
-            add_library(alpine_par SHARED ${alpine_sources} 
-                                            ${alpine_par_sources} 
-                                            ${alpine_headers}
-                                            ${alpine_par_headers})
-        endif()
+        add_library(alpine_par SHARED ${alpine_sources} 
+                                      ${alpine_par_sources} 
+                                      ${alpine_headers}
+                                      $<TARGET_OBJECTS:lodepng>
+                                      ${alpine_par_headers})
     else()
         message(STATUS "Building alpine_par as a static library")
-        if(VTKM_FOUND)
-            add_library(alpine_par STATIC ${alpine_sources} 
-                                            ${alpine_par_sources} 
-                                            ${alpine_headers}
-                                            ${alpine_par_headers})
-        else()
-            add_library(alpine_par STATIC ${alpine_sources} 
-                                            ${alpine_par_sources} 
-                                            ${alpine_headers}
-                                            ${alpine_par_headers} )
-        endif()
+        add_library(alpine_par STATIC ${alpine_sources} 
+                                      ${alpine_par_sources} 
+                                      ${alpine_headers}
+                                      $<TARGET_OBJECTS:lodepng>
+                                      ${alpine_par_headers})
     endif()
     
     ##########################################

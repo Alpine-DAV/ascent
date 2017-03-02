@@ -42,7 +42,8 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-//-----------------------------------------------z------------------------------
+
+//-----------------------------------------------------------------------------
 ///
 /// file: alpine_vtkm_pipeline.hpp
 ///
@@ -51,29 +52,42 @@
 #ifndef ALPINE_VTKM_PIPELINE_HPP
 #define ALPINE_VTKM_PIPELINE_HPP
 
-#include <alpine.hpp>
+
+// thirdparty includes
+// VTKm includes
+
+namespace vtkm
+{ 
+namespace cont
+{
+class DataSet;
+};
+};
+
 #include <alpine_pipeline.hpp>
+// conduit includes
 #include <conduit.hpp>
+
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
 //-----------------------------------------------------------------------------
 namespace alpine
 {
+class Renderer;
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// VTKm Pipeline
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-
-/// This is currently a stub 
 class VTKMPipeline : public Pipeline
 {
 public:
+
+                  VTKMPipeline();
+    virtual      ~VTKMPipeline();
     
-    // Creation and Destruction
-    VTKMPipeline();
-    virtual ~VTKMPipeline();
-
-    // Main pipeline interface methods, which are used by the alpine 
-    // interface.
-
     void  Initialize(const conduit::Node &options);
 
     void  Publish(const conduit::Node &data);
@@ -81,9 +95,85 @@ public:
     
     void  Cleanup();
 
-private:
-    Pipeline *m_backend;
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Class that Handles Blueprint to VTKm Data Transforms
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
+class DataAdapter 
+{
+public:
+    // convert blueprint data to an vtkm Data Set
+    // assumes "n" conforms to the mesh blueprint
+    //
+    //  conduit::blueprint::mesh::verify(n,info) == true
+    //
+    static vtkm::cont::DataSet  *BlueprintToVTKmDataSet(const conduit::Node &n,
+                                                        const std::string &field_name);
+
+
+private:
+    // helpers for specific conversion cases
+    static vtkm::cont::DataSet  *UniformBlueprintToVTKmDataSet(const std::string &coords_name,
+                                                               const conduit::Node &n_coords,
+                                                               const std::string &topo_name,
+                                                               const conduit::Node &n_topo,
+                                                               int &neles,
+                                                               int &nverts);
+
+
+    static vtkm::cont::DataSet  *RectilinearBlueprintToVTKmDataSet(const std::string &coords_name,
+                                                                   const conduit::Node &n_coords,
+                                                                   const std::string &topo_name,
+                                                                   const conduit::Node &n_topo,
+                                                                   int &neles,
+                                                                   int &nverts);
+
+    static vtkm::cont::DataSet  *StructuredBlueprintToVTKmDataSet(const std::string &coords_name,
+                                                                  const conduit::Node &n_coords,
+                                                                  const std::string &topo_name,
+                                                                  const conduit::Node &n_topo,
+                                                                  int &neles,
+                                                                  int &nverts);
+
+     static vtkm::cont::DataSet *UnstructuredBlueprintToVTKmDataSet(const std::string &coords_name,
+                                                                    const conduit::Node &n_coords,
+                                                                    const std::string &topo_name,
+                                                                    const conduit::Node &n_topo,
+                                                                    int &neles,
+                                                                    int &nverts);
+
+    // helper for adding field data
+    static void                  AddVariableField(const std::string &field_name,
+                                                  const conduit::Node &n_field,
+                                                  const std::string &topo_name,
+                                                  int neles,
+                                                  int nverts,
+                                                  vtkm::cont::DataSet *dset);
+
+};
+
+private:
+    //forward declarations
+    class Plot;
+    //class Renderer;
+
+    // Actions
+    void            DrawPlots();
+    void            RenderPlot(const int plot_id,
+                               const conduit::Node &render_options);
+    // conduit node that (externally) holds the data from the simulation 
+    conduit::Node     m_data; 
+
+    // holds the pipeline's plots
+    std::vector<Plot> m_plots;
+
+    Renderer *m_renderer;
+
+    int cuda_device;
+    // actions
+    void            AddPlot(const conduit::Node &action);
 };
 
 //-----------------------------------------------------------------------------

@@ -17,15 +17,14 @@ Source Repo
 
 Alpine's source is hosted on GitHub:
 
-https://github.com/llnl/alpine
-
+https://github.com/Alpine-DAV/alpine
 
 License
 ===========
 
 Alpine is released under a BSD-style license - for detailed license info, refer to:
 
-http://software.llnl.gov/alpine/Licenses.html
+http://software.llnl.gov/strawman/Licenses.html
 
 or the following files in the Alpine source tree:
 - [LICENSE](/LICENSE)

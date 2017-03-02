@@ -56,15 +56,6 @@ set(lodepng_sources
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# we always build lodepng as a static lib
-add_library(lodepng STATIC ${lodepng_sources} )
+# we always build lodepng as lib object
+add_library(lodepng OBJECT ${lodepng_sources} )
 
-# TODO:
-# We plan to use lodepng static internal to the project, 
-# we probably don't need to install
-
-install(TARGETS lodepng
-  EXPORT alpine
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
