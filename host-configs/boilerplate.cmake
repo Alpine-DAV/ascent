@@ -61,7 +61,7 @@ set(CMAKE_CXX_COMPILER "/path/to/cxx_compiler" CACHE PATH "")
 # fortran compiler (need for cloverleaf)
 set(CMAKE_Fortran_COMPILER  "/path/to/fortran_compiler" CACHE PATH "")
 
-# OPENMP (optional: for proxy apps and EAVL)
+# OPENMP (optional: for proxy apps)
 set(ENABLE_OPENMP ON CACHE PATH "")
 
 # MPI Support

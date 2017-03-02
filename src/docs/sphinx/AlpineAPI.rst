@@ -54,7 +54,7 @@ The top level API for alpine consists of four calls:
 Open
 ----
 Open provides the initial setup of Alpine from a Conduit Node. 
-Options include pipeline type (e.g., VTK-m, Blueprint HDF5, or EAVL) and associated backend if available.
+Options include pipeline type (e.g., VTK-m, Blueprint HDF5, or empty) and associated backend if available.
 If running in parallel (i.e., MPI), then a MPI comm handle must be supplied.
 Alpine will always check the file system for a file called ``alpine_options.json`` that will override compiled in options, and for obvious reasons, a MPI communicator cannot be specified in the file.
 Here is a file that would set the pipeline to VTK-m using a TBB backend:
@@ -82,20 +82,13 @@ A typical integration will include the following code:
 
   alpine.Open(alpine_options);
 
-Valid pipelines and backends include:
+Valid pipelines include:
 
   - vtkm
     
-    - serial
-    - cuda
-    - tbb
-  
-  - EAVL
-    
-    - cpu (will use OpenMP if configured)
-    - cuda
-
   - hdf5
+
+  - empty
   
 Publish
 -------

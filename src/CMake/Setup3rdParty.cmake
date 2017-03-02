@@ -102,27 +102,10 @@ include(CMake/thirdparty/SetupConduit.cmake)
 # Make sure we have a concrete
 # pipeline to build 
 ################################
-if(NOT EAVL_DIR AND NOT VTKM_DIR AND NOT HDF5_DIR)
+if(NOT VTKM_DIR AND NOT HDF5_DIR)
     message(FATAL_ERROR "Alpine requires at least once concrete pipeline (EAVL for VTKm)")
 endif()
 
-
-
-################################
-# EAVL and supporting libs
-################################
-if(EAVL_DIR)
-    ################################
-    # OSMesa
-    ################################
-    include(CMake/thirdparty/SetupOSMesa.cmake)
-    
-    ################################
-    # EAVL
-    ################################
-    include(CMake/thirdparty/SetupEAVL.cmake)
-    
-endif()
 
 ################################
 # VTKm and supporting libs
