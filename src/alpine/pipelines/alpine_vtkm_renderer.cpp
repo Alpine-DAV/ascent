@@ -48,11 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#warning "Should not have to define this"
 #define VTKM_DEVICE_ADAPTER VTKM_DEVICE_ADAPTER_SERIAL
-// this should be defined in the file below
-//#include <vtkm/cont/internal/DeviceAdapterTag.h>
-//#include <vtkm/cont/internal/DeviceAdapterTag.h>
 
 #include "alpine_vtkm_renderer.hpp"
 
@@ -71,6 +67,10 @@
 using namespace std;
 using namespace conduit;
 namespace alpine {
+
+//-----------------------------------------------------------------------------
+// VTKm utility  methods
+//-----------------------------------------------------------------------------
 template<typename T>
 T *
 GetVTKMPointer(vtkm::cont::ArrayHandle<T> &handle)
@@ -81,6 +81,7 @@ GetVTKMPointer(vtkm::cont::ArrayHandle<T> &handle)
   IteratorType iter = vtkm::cont::ArrayPortalToIterators<PortalType>(handle.GetPortalControl()).GetBegin();
   return &(*iter);
 }
+
 //-----------------------------------------------------------------------------
 // Renderer public methods
 //-----------------------------------------------------------------------------
