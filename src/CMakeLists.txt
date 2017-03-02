@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -51,10 +51,10 @@ cmake_minimum_required(VERSION 3.0)
 cmake_policy(SET CMP0042 OLD)
 
 ################################
-# Strawman
+# Alpine
 ################################
 
-project(strawman VERSION "0.1.0")
+project(alpine VERSION "0.1.0")
 
 ################################
 # Build Options
@@ -63,7 +63,7 @@ option(BUILD_SHARED_LIBS  "Build shared libraries"    ON)
 option(ENABLE_TESTS       "Build tests"               ON)
 
 option(ENABLE_FORTRAN     "Build Fortran support"     ON)
-option(ENABLE_PYTHON      "Build Python Support"      OFF)
+option(ENABLE_PYTHON      "Build Python Support"      ON)
 
 option(ENABLE_MPI         "Build MPI Support"         ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
@@ -118,7 +118,7 @@ add_subdirectory(thirdparty_builtin)
 ################################
 # Add our libs
 ################################
-add_subdirectory(strawman)
+add_subdirectory(alpine)
 
 ################################
 # Add our tests
@@ -143,7 +143,7 @@ add_subdirectory(docs)
 # Create CMake importable 
 # exports for all of our targets
 ################################
-install(EXPORT strawman DESTINATION lib/cmake)
+install(EXPORT alpine DESTINATION lib/cmake)
 
 
 

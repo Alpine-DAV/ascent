@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -110,7 +110,7 @@ endif()
 if(FORTRAN_FOUND)
     message(STATUS "Fortran enabled: Adding related unit tests")
     foreach(TEST ${FORTRAN_TESTS})
-      add_fortran_test(TEST ${TEST} DEPENDS_ON strawman)
+      add_fortran_test(TEST ${TEST} DEPENDS_ON alpine)
     endforeach()
 else()
     message(STATUS "Fortran disabled: Skipping related tests")

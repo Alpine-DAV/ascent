@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -53,10 +53,10 @@ include_directories(${PROJECT_SOURCE_DIR}/thirdparty_builtin/lodepng)
 # add include dirs so units tests have access to the headers across
 # libs and in unit tests
 
-include_directories(${PROJECT_SOURCE_DIR}/strawman/)
-include_directories(${PROJECT_BINARY_DIR}/strawman/)
-include_directories(${PROJECT_SOURCE_DIR}/strawman/utils)
-include_directories(${PROJECT_SOURCE_DIR}/strawman/pipelines)
+include_directories(${PROJECT_SOURCE_DIR}/alpine/)
+include_directories(${PROJECT_BINARY_DIR}/alpine/)
+include_directories(${PROJECT_SOURCE_DIR}/alpine/utils)
+include_directories(${PROJECT_SOURCE_DIR}/alpine/pipelines)
 
 include_directories(${CONDUIT_INCLUDE_DIRS})
 

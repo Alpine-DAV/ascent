@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,14 +44,14 @@
 
 ###############################################################################
 #
-# Example that shows how to use an installed instance of Strawman in another
+# Example that shows how to use an installed instance of Alpine in another
 # CMake-based build system.
 #
 # To build:
 #  mkdir build
 #  cd build
 #  cmake \
-#   -DSTRAWMAN_DIR={strawman install path}  \ 
+#   -DALPINE_DIR={alpine install path}  \ 
 #   -DCONDUIT_DIR={conduit install path}    \ 
 #   -DVTKM_DIR={vtkm install path}          \
 #   ../
@@ -64,17 +64,17 @@ cmake_minimum_required(VERSION 3.0)
 
 project(using_with_cmake)
 
-include("FindStrawman.cmake")
+include("FindAlpine.cmake")
 include("FindConduit.cmake")
 include("FindVTKm.cmake")
 
-# setup the strawman & conduit include paths
-include_directories(${STRAWMAN_INCLUDE_DIRS})
+# setup the alpine & conduit include paths
+include_directories(${ALPINE_INCLUDE_DIRS})
 include_directories(${CONDUIT_INCLUDE_DIRS})
 
 # create our example 
 add_executable(example example.cpp)
 
-# link to strawman
-target_link_libraries(example strawman)
+# link to alpine
+target_link_libraries(example alpine)
 
