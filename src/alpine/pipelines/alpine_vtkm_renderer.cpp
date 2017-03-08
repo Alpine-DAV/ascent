@@ -352,6 +352,16 @@ Renderer::SetDefaultCameraView(vtkmActor *plot)
         position[2] += .05f*mag;
         m_vtkm_camera->SetPosition(position);
     }
+
+    this->SetDefaultClippingPlane();
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Renderer::SetDefaultClippingPlane()
+{
+    vtkmVec3f position = m_vtkm_camera->GetPosition();
     // set a default near and far plane
     vtkmVec3f bounding_box[8];
     bounding_box[0][0] = m_spatial_bounds.X.Min;
@@ -399,7 +409,6 @@ Renderer::SetDefaultCameraView(vtkmActor *plot)
     clipping_range.Max = max_distance;
     m_vtkm_camera->SetClippingRange(clipping_range);
 }
-
 //-----------------------------------------------------------------------------
 // imp EAVLPipeline::Renderer private methods for MPI case
 //-----------------------------------------------------------------------------
@@ -1161,7 +1170,12 @@ Renderer::SetupCamera()
     {
         m_vtkm_camera->Zoom(m_camera["zoom"].to_float64());
     }
-
+    //
+    // With a new potential camera position. We need to reset the
+    // clipping plane as not to cut out part of the data set
+    //
+    this->SetDefaultClippingPlane();
+    
     if(m_camera.has_child("nearplane"))
     {
         vtkm::Range clipping_range = m_vtkm_camera->GetClippingRange();
