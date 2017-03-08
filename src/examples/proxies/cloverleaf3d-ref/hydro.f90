@@ -46,13 +46,11 @@ SUBROUTINE hydro
   TYPE(C_PTR) my_alpine
   TYPE(C_PTR) alpine_opts
 
-      my_alpine   = alpine_create()
-      alpine_opts = conduit_node_create()
-      CALL conduit_node_set_path_int32(alpine_opts,"mpi_comm",MPI_COMM_WORLD)
-      CALL conduit_node_set_path_char8_str(alpine_opts,"pipeline/type", "vtkm")
-      CALL conduit_node_set_path_char8_str(alpine_opts,"pipeline/backend", "serial")
-      CALL alpine_open(my_alpine,alpine_opts)
-
+  my_alpine   = alpine_create()
+  alpine_opts = conduit_node_create()
+  CALL conduit_node_set_path_int32(alpine_opts,"mpi_comm",MPI_COMM_WORLD)
+  CALL conduit_node_set_path_char8_str(alpine_opts,"pipeline/type", "vtkm")
+  CALL alpine_open(my_alpine,alpine_opts)
 
   timerstart = timer()
   DO

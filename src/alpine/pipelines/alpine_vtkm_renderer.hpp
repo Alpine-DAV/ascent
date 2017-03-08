@@ -183,6 +183,7 @@ private:
     void SetCameraAttributes(conduit::Node &node);
     void SetDefaultCameraView(vtkmActor *plot);
     void SetupCamera();
+    void SetDefaultClippingPlane();
     vtkmColorTable  SetColorMapFromNode();
 //-----------------------------------------------------------------------------
 // private methods for MPI case
