@@ -163,10 +163,10 @@ Additional BSD Notice
 #include "lulesh.h"
 
 #include "conduit.hpp"
-#include "strawman.hpp"
+#include "alpine.hpp"
 
 using namespace conduit;
-using namespace strawman;
+using namespace alpine;
 
 /*********************************/
 /* Data structure implementation */
@@ -2847,22 +2847,22 @@ int main(int argc, char *argv[])
 #endif   
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------
- * Begin Strawman Integration
+ * Begin Alpine Integration
  *--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
    //
-   // setup Strawman In-situ rendering.
+   // setup Alpine In-situ rendering.
    //
-    Strawman sman;
-    Node strawman_opts;
+    Alpine sman;
+    Node alpine_opts;
 
 #if USE_MPI
-    strawman_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+    alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
-    strawman_opts["pipeline/type"] = "vtkm";
-    strawman_opts["pipeline/backend"] = "serial";
+    alpine_opts["pipeline/type"] = "vtkm";
+    alpine_opts["pipeline/backend"] = "serial";
     
-    sman.Open(strawman_opts);
+    sman.Open(alpine_opts);
    // BEGIN timestep to solution */
 #if USE_MPI   
    double start = MPI_Wtime();
@@ -2876,7 +2876,7 @@ int main(int argc, char *argv[])
 //      std::cout << "region" << i + 1<< "size" << locDom->regElemSize(i) <<std::endl;
    while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
      {
-        STRAWMAN_BLOCK_TIMER(LULESH_MAIN_LOOP)
+        ALPINE_BLOCK_TIMER(LULESH_MAIN_LOOP)
         TimeIncrement(*locDom) ;
         LagrangeLeapFrog(*locDom) ;
      }
@@ -2884,7 +2884,7 @@ int main(int argc, char *argv[])
          printf("cycle = %d, time = %e, dt=%e\n",
                 locDom->cycle(), double(locDom->time()), double(locDom->deltatime()) ) ;
       }
-      //-- begin calls to strawman -- //
+      //-- begin calls to alpine -- //
       if ( (locDom->cycle() % 1 == 0) || (locDom->cycle() == 0))
       {
             char outFileName[30];
@@ -2909,7 +2909,7 @@ int main(int argc, char *argv[])
    
    /*--------------------------------------------------------------------------
     *--------------------------------------------------------------------------
-    * End Strawman Integration
+    * End Alpine Integration
     *--------------------------------------------------------------------------
     *--------------------------------------------------------------------------*/
    

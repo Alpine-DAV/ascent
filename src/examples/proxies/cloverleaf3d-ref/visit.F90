@@ -22,7 +22,7 @@
 !>  The ideal gas and viscosity routines are invoked to make sure this data is
 !>  up to data with the current energy, density and velocity.
 
-SUBROUTINE visit(my_strawman)
+SUBROUTINE visit(my_alpine)
 
   USE clover_module
   USE update_halo_module
@@ -36,7 +36,7 @@ SUBROUTINE visit(my_strawman)
   USE iso_c_binding
   USE conduit
   USE conduit_blueprint
-  USE strawman
+  USE alpine
 
   IMPLICIT NONE
 
@@ -59,8 +59,8 @@ SUBROUTINE visit(my_strawman)
   !
   CHARACTER(len=80) :: savename
 
-  TYPE(C_PTR) strawman_opts
-  TYPE(C_PTR) my_strawman
+  TYPE(C_PTR) alpine_opts
+  TYPE(C_PTR) my_alpine
   TYPE(C_PTR) sim_data
   TYPE(C_PTR) verify_info
   TYPE(C_PTR) sim_actions
@@ -126,7 +126,7 @@ SUBROUTINE visit(my_strawman)
   
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  ! Begin Strawman Integration
+  ! Begin Alpine Integration
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -143,9 +143,9 @@ SUBROUTINE visit(my_strawman)
       nnodes = nxv * nyv * nzv
 
       !
-      ! Strawman in situ visualization
+      ! Alpine in situ visualization
       !
-      CALL strawman_timer_start(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
+      CALL alpine_timer_start(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
       ALLOCATE(xcoords(0:nxv-1), ycoords(0:nyv-1), zcoords(0:nzv-1))
       jmin=chunks(c)%field%x_min
       DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
@@ -188,23 +188,23 @@ SUBROUTINE visit(my_strawman)
       ALLOCATE(xvel(0:nxv-1,0:nyv-1,0:nzv-1))
       ALLOCATE(yvel(0:nxv-1,0:nyv-1,0:nzv-1))
       ALLOCATE(zvel(0:nxv-1,0:nyv-1,0:nzv-1))
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max
+      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
+        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
+          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
             xvel(j-jmin,k-kmin,l-lmin)=chunks(c)%field%xvel0(j,k,l)
           ENDDO
         ENDDO
       ENDDO
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max
+      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
+        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
+          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
             yvel(j-jmin,k-kmin,l-lmin)=chunks(c)%field%yvel0(j,k,l)
           ENDDO
         ENDDO
       ENDDO
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max
+      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
+        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
+          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
             zvel(j-jmin,k-kmin,l-lmin)=chunks(c)%field%zvel0(j,k,l)
           ENDDO
         ENDDO
@@ -216,40 +216,41 @@ SUBROUTINE visit(my_strawman)
       CALL conduit_node_set_path_int32(sim_data,"state/domain", parallel%task)
       CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
       CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")
-      CALL conduit_node_set_path_external_float64_ptr(sim_data,"coordsets/coords/values/x", xcoords, nxv*1_8)
-      CALL conduit_node_set_path_external_float64_ptr(sim_data,"coordsets/coords/values/y", ycoords, nyv*1_8)
-      CALL conduit_node_set_path_external_float64_ptr(sim_data,"coordsets/coords/values/z", zcoords, nzv*1_8)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", xcoords, nxv*1_8)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", ycoords, nyv*1_8)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", zcoords, nzv*1_8)
       CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/type", "rectilinear")
       CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/coordset", "coords")
       ! density 
       CALL conduit_node_set_path_char8_str(sim_data,"fields/density/association", "element")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/density/topology", "mesh")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/density/type", "scalar")
-      CALL conduit_node_set_path_external_float64_ptr(sim_data,"fields/density/values", density, ncells)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/density/values", density, ncells)
       ! energy
       CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/association", "element")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/topology", "mesh")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/type", "scalar")
-      CALL conduit_node_set_path_external_float64_ptr(sim_data,"fields/energy/values", energy, ncells)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/energy/values", energy, ncells)
       ! pressure
       CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/association", "element")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/topology", "mesh")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/type", "scalar")
-      CALL conduit_node_set_path_external_float64_ptr(sim_data,"fields/pressure/values", pressure, ncells)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/pressure/values", pressure, ncells)
       ! velocity x 
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_x/association", "vertex")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_x/topology", "mesh")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_x/type", "scalar")
-      CALL conduit_node_set_path_external_float64_ptr(sim_data,"fields/velocityx/values", xvel, nnodes)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity_x/values", xvel, nnodes)
       ! velocity y
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_y/association", "vertex")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_y/topology", "mesh")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_y/type", "scalar")
-      CALL conduit_node_set_path_external_float64_ptr(sim_data,"fields/velocityy/values", yvel, nnodes)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity_y/values", yvel, nnodes)
       ! velocity z
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_z/association", "vertex")
+      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_z/topology", "mesh")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_z/type", "scalar")
-      CALL conduit_node_set_path_external_float64_ptr(sim_data,"fields/velocityz/values", zvel, nnodes)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity_z/values", zvel, nnodes)
       ! CALL sim_data%print_detailed()
 
       WRITE(chunk_name, '(i6)') parallel%task+100001
@@ -268,7 +269,8 @@ SUBROUTINE visit(my_strawman)
       sim_actions = conduit_node_create()
       add_plot = conduit_node_append(sim_actions)
       CALL conduit_node_set_path_char8_str(add_plot,"action", "add_plot")
-      CALL conduit_node_set_path_char8_str(add_plot,"field_name", "pressure")
+      !CALL conduit_node_set_path_char8_str(add_plot,"field_name", "pressure")
+      CALL conduit_node_set_path_char8_str(add_plot,"field_name", "velocity_y")
       CALL conduit_node_set_path_char8_str(add_plot,"render_options/file_name", savename)
       CALL conduit_node_set_path_char8_str(add_plot,"render_options/renderer","volume")
       CALL conduit_node_set_path_int32(add_plot,"render_options/width", 1024)
@@ -278,17 +280,9 @@ SUBROUTINE visit(my_strawman)
 
       ! CALL sim_actions%print_detailed()
 
-      CALL strawman_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
-      !strawman_opts = conduit_node_create()
-      !CALL conduit_node_set_path_int32(strawman_opts,"mpi_comm",MPI_COMM_WORLD)
-      !CALL conduit_node_set_path_char8_str(strawman_opts,"pipeline/type", "vtkm")
-      !CALL conduit_node_set_path_char8_str(strawman_opts,"pipeline/backend", "serial")
-      !my_strawman   = strawman_create()
-      !CALL strawman_open(my_strawman,strawman_opts)
-      CALL strawman_publish(my_strawman, sim_data)
-      CALL strawman_execute(my_strawman, sim_actions)
-      !CALL strawman_close(my_strawman)
-      !CALL strawman_destroy(my_strawman)
+      CALL alpine_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
+      CALL alpine_publish(my_alpine, sim_data)
+      CALL alpine_execute(my_alpine, sim_actions)
       CALL conduit_node_destroy(sim_actions)
       CALL conduit_node_destroy(sim_data)
 
@@ -299,7 +293,7 @@ SUBROUTINE visit(my_strawman)
       
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      ! End Strawman Integration
+      ! End Alpine Integration
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

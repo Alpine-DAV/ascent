@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -46,8 +46,6 @@
 # Setup VTKm
 ###############################################################################
 
-# first Check for BOOST_DIR
-
 if(NOT VTKM_DIR)
     MESSAGE(FATAL_ERROR "VTKm support needs explicit VTKM_DIR")
 endif()
@@ -55,7 +53,7 @@ endif()
 MESSAGE(STATUS "Looking for VTKm using VTKM_DIR = ${VTKM_DIR}")
 
 # use VTKM_DIR to setup the options that cmake's find VTKm needs
-set(VTKm_DIR ${VTKM_DIR}/include)
+set(VTKm_DIR ${VTKM_DIR}/lib)
 
 #
 # VTKm will find TBB via the env var "TBB_ROOT"
@@ -64,14 +62,7 @@ if(TBB_DIR)
     set(ENV{TBB_ROOT} ${TBB_DIR})
 endif()
 
-find_package(VTKm REQUIRED)
+find_package(VTKm REQUIRED OPTIONAL_COMPONENTS Rendering)
 message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
 
 set(VTKM_FOUND TRUE)
-#####
-# At one point these were necessary?
-#####
-#include(VTKmMacros)
-#vtkm_configure_device(Serial)
-
-

@@ -9,9 +9,9 @@
 .. #
 .. # This file is part of Conduit.
 .. #
-.. # For details, see: http://software.llnl.gov/strawman/.
+.. # For details, see: http://software.llnl.gov/alpine/.
 .. #
-.. # Please also read strawman/LICENSE
+.. # Please also read alpine/LICENSE
 .. #
 .. # Redistribution and use in source and binary forms, with or without
 .. # modification, are permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 
 Example Integrations
 --------------------
-Strawman comes with three example integrations:
+Alpine comes with three example integrations:
 
   - Lulesh: a lagrangian shock hydrodynamics code 
   - Kripke: a deterministic neutron transport code
@@ -61,12 +61,12 @@ Lulesh is a proxy-application for LLNL's production ALE3D code.
 Lulesh in programmed in C++ and uses an unstructured mesh. 
 More information about Lulesh can be found at `https://codesign.llnl.gov/lulesh.php <https://codesign.llnl.gov/lulesh.php>`_.
 
-The Strawman integration can be found in two locations.
-Lulesh's mesh description can be found at line 189 in ``/src/examples/proxies/lulesh2.0.3/lulesh-init.cc``, and the Strawman API usage can be found in the simulations main loop beginning at line 2769 in the file ``/src/examples/proxies/lulesh2.0.3/lulesh.cc``.
+The Alpine integration can be found in two locations.
+Lulesh's mesh description can be found at line 189 in ``/src/examples/proxies/lulesh2.0.3/lulesh-init.cc``, and the Alpine API usage can be found in the simulations main loop beginning at line 2769 in the file ``/src/examples/proxies/lulesh2.0.3/lulesh.cc``.
 
 Running Lulesh
 """"""""""""""
-Strawman will create two versions of lulesh, one serial and one MPI parallel, but both versions are capable of using OpenMP.
+Alpine will create two versions of lulesh, one serial and one MPI parallel, but both versions are capable of using OpenMP.
 Lulesh takes several command line arguments, but the most useful are:
   
   - ``-p`` prints the progress of the solver as the simulation progresses
@@ -84,10 +84,10 @@ The command below would launch Lulesh for 10 iterations with a problem size of 3
 
 CloverLeaf3D
 ^^^^^^^^^^^^
-CloverLeaf3D is a proxy-application from the Atomic Weapons Establishment (AWE) that can be found at `http://uk-max.github.io/CloverLeaf3D <http://uk-max.github.io/CloverLeaf3D>`_.
+CloverLeaf3D is a proxy-application from the Atomic Weapons Establishment (AWE) that can be found at `http://uk-mac.github.io/CloverLeaf3D <http://uk-mac.github.io/CloverLeaf3D>`_.
 CloverLeaf is written in Fortran90.
-The data integration can be found in the file ``src/examples/proxies/cloverleaf3d-ref/visit.F90``, and the Strawman API in the main loop can be found at ``src/examples/proxies/cloverleaf3d-ref/hydro.F90`` starting at line 46.
-CloverLeaf3D uses ghost zones, thus they have to be stripped each time step before being passed to Strawman.
+The data integration can be found in the file ``src/examples/proxies/cloverleaf3d-ref/visit.F90``, and the Alpine API in the main loop can be found at ``src/examples/proxies/cloverleaf3d-ref/hydro.F90`` starting at line 46.
+CloverLeaf3D uses ghost zones, thus they have to be stripped each time step before being passed to Alpine.
 
 Running CloverLeaf3D
 """"""""""""""""""""
@@ -121,7 +121,7 @@ Important variables to keep note of are:
  - ``state`` defines different areas with in the mesh, their shape, and the amount of initial energy deposited in them.
  - ``x_cells`` defines the number of cells in the x direction
  - ``xmin`` and ``xmax`` defines the spatial extents in the x direction for the problem
- - ``visit_freqency`` defines often the Strawman API is called
+ - ``visit_freqency`` defines often the Alpine API is called
 
 Kripke
 ^^^^^^
@@ -130,7 +130,7 @@ More information about Kripke can be found at `https://codesign.llnl.gov/kripke.
 Unlike the other two proxy-applications, Kripke does not have discrete time steps.
 Instead, the simulation represents a single moment in time and the iterations converge to a solution for the problem.
 
-The both the Strawman API calls and the data integration can be found in ``src/examples/proxies/kripke/Kripke/Sweep_Solver.cpp``.
+The both the Alpine API calls and the data integration can be found in ``src/examples/proxies/kripke/Kripke/Sweep_Solver.cpp``.
 Kripke is meant to study the efficiency of different loop orderings and memory layouts for different architectures which makes zero copying the data difficult.
 Thus, the data is extracted each iteration.
 Mesh data extraction can be found starting at line 20, and the API calls can be found at line 101.

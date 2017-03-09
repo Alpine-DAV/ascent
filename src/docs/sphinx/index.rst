@@ -9,9 +9,9 @@
 .. #
 .. # This file is part of Conduit.
 .. #
-.. # For details, see: http://software.llnl.gov/strawman/.
+.. # For details, see: http://software.llnl.gov/alpine/.
 .. #
-.. # Please also read strawman/LICENSE
+.. # Please also read alpine/LICENSE
 .. #
 .. # Redistribution and use in source and binary forms, with or without
 .. # modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 
 ========
-Strawman
+Alpine
 ========
 
 A many-core capable lightweight in situ visualization and analysis infrastructure for multi-physics HPC simulations.
@@ -52,28 +52,28 @@ A many-core capable lightweight in situ visualization and analysis infrastructur
 Introduction
 ============
 
-Strawman is a system designed to explore the in situ visualization and analysis needs of simulation code teams running multi-physics calculations on many-core HPC architectures. It provides rendering pipelines that can leverage both many-core CPUs and GPUs to render images of simulation meshes. 
+Alpine is a system designed to explore the in situ visualization and analysis needs of simulation code teams running multi-physics calculations on many-core HPC architectures. It provides rendering pipelines that can leverage both many-core CPUs and GPUs to render images of simulation meshes. 
 
-Strawman focuses on ease of use and reduced integration burden for simulation code teams:
+Alpine focuses on ease of use and reduced integration burden for simulation code teams:
 
 - It does not require any GUI or system graphics libraries.
-- It includes integration examples which demonstrate how to use Strawman inside of three different HPC simulation proxy applications.
+- It includes integration examples which demonstrate how to use Alpine inside of three different HPC simulation proxy applications.
 - It provides a built-in web server that supports streaming rendered images directly to a web browser.
 
-Strawman Project Resources
+Alpine Project Resources
 ==========================
 
 **Online Documentation**
 
-http://software.llnl.gov/strawman
+http://software.llnl.gov/alpine
 
 **Githib Source Repo**
 
-http://github.com/llnl/strawman
+http://github.com/llnl/alpine
 
 **Issue Tracker**
 
-http://github.com/llnl/strawman/issues
+http://github.com/llnl/alpine/issues
 
 Contributors
 ============
@@ -85,12 +85,12 @@ Contributors
 - Kevin Griffin (LLNL)
 - Hank Childs (LBL and UO)
 
-Strawman Documentation
+Alpine Documentation
 ======================
 
 .. toctree::
 
-   Strawman 
+   Alpine 
    Releases
    Publications
    Licenses

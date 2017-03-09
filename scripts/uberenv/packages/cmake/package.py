@@ -87,5 +87,5 @@ class Cmake(Package):
             options.append('-DCMAKE_USE_OPENSSL=ON')
 
         configure(*options)
-        make()
+        make(parallel=False)
         make('install')

@@ -8,11 +8,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,17 +44,17 @@
 ###############################################################################
 
 # remove old source tarball if it exists
-echo "rm -f strawman.docker.src.tar.gz"
-rm -f strawman.docker.src.tar.gz
+echo "rm -f alpine.docker.src.tar.gz"
+rm -f alpine.docker.src.tar.gz
 
 # get current copy of the conduit source
-echo "cd ../../../../ && python package.py src/examples/docker/ubuntu/strawman.docker.src.tar.gz"
-cd ../../../../ && python package.py src/examples/docker/ubuntu/strawman.docker.src.tar.gz
+echo "cd ../../../../ && python package.py src/examples/docker/ubuntu/alpine.docker.src.tar.gz"
+cd ../../../../ && python package.py src/examples/docker/ubuntu/alpine.docker.src.tar.gz
 
 # change back to the dir with our Dockerfile
 echo "cd src/examples/docker/ubuntu/"
 cd src/examples/docker/ubuntu/
 
 # exec docker build to create image
-echo "docker build -t strawman-ubuntu:current ."
-docker build -t strawman-ubuntu:current .
+echo "docker build -t alpine-ubuntu:current ."
+docker build -t alpine-ubuntu:current .

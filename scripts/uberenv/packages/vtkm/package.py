@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -49,21 +49,20 @@ class Vtkm(Package):
     homepage = "https://m.vtk.org/"
     url      = "http://m.vtk.org/images/8/87/Vtk-m-1.0.0.tar.gz"
 
-    # version('larsen-kitware-gitlab',
-    #         git='https://gitlab.kitware.com/mclarsen/vtk-m.git',
-    #         branch='research')
+    version('kitware-gitlab',
+            git='https://gitlab.kitware.com/vtk/vtk-m.git',
+            branch='master')
 
-    version('1.0.0',  '9d9d45e675d5b0628b19b32f5542ed9c')
+    #version('1.0.0',  '9d9d45e675d5b0628b19b32f5542ed9c')
 
     depends_on("cmake")
     depends_on("tbb")
-    depends_on("boost-headers")
-    patch('vtkm_patch.patch')
+    #depends_on("boost-headers")
+    #patch('vtkm_patch.patch')
     def install(self, spec, prefix):
         os.environ["TBB_ROOT"] = spec["tbb"].prefix
         with working_dir('spack-build', create=True):
             cmake_args = ["../",
-                          "-DBOOST_INCLUDEDIR=%s/include" % spec["boost-headers"].prefix,
                           "-DVTKm_ENABLE_TBB=ON",
                           "-DVTKm_ENABLE_TESTING=OFF",
                           "-DVTKm_BUILD_RENDERING=ON",

@@ -9,9 +9,9 @@
 .. #
 .. # This file is part of Conduit.
 .. #
-.. # For details, see: http://software.llnl.gov/strawman/.
+.. # For details, see: http://software.llnl.gov/alpine/.
 .. #
-.. # Please also read strawman/LICENSE
+.. # Please also read alpine/LICENSE
 .. #
 .. # Redistribution and use in source and binary forms, with or without
 .. # modification, are permitted provided that the following conditions are met:
@@ -45,14 +45,14 @@
 License Info
 ================================
 
-Strawman License
+Alpine License
 ----------------
 
 .. include:: ../../../LICENSE
 
 Third Party Builtin Libraries
 -----------------------------
-Here is a list of the software components used by Strawman in source form and the location of their respective license files in our source repo.
+Here is a list of the software components used by Alpine in source form and the location of their respective license files in our source repo.
 
 C and C++ Libraries
 """""""""""""""""""
@@ -71,7 +71,7 @@ Build System
 Proxy Applications
 """"""""""""""""""
 
-Strawman includes working copies of three previously released HPC simulation proxy applications.
+Alpine includes working copies of three previously released HPC simulation proxy applications.
 These proxies are provided under their original licenses:
 
 

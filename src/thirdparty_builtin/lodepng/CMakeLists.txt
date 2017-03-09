@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -56,15 +56,6 @@ set(lodepng_sources
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# we always build lodepng as a static lib
-add_library(lodepng STATIC ${lodepng_sources} )
+# we always build lodepng as lib object
+add_library(lodepng OBJECT ${lodepng_sources} )
 
-# TODO:
-# We plan to use lodepng static internal to the project, 
-# we probably don't need to install
-
-install(TARGETS lodepng
-  EXPORT strawman
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
