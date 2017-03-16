@@ -68,6 +68,7 @@
 #include <mpi.h>
 //----iceT includes 
 #include <alpine_icet_compositor.hpp>
+#include <alpine_diy_compositor.hpp>
 //---- conduit mpi 
 #include <conduit_relay_mpi.hpp>
 #endif
@@ -229,6 +230,7 @@ private:
     MPI_Comm            m_mpi_comm;
     
     IceTCompositor      m_icet;
+    //DIYCompositor       m_icet;
     
     int                 m_mpi_size;
 
