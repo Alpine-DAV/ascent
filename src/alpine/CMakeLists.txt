@@ -206,7 +206,9 @@ install(TARGETS alpine
 # Build Parallel (MPI) version of alpine
 ################################################
 if(MPI_FOUND)
+    set(alpine_par_sources utils/alpine_diy_compositor.cpp)
     set(alpine_par_sources utils/alpine_icet_compositor.cpp)
+    set(alpine_par_headers utils/alpine_diy_compositor.hpp)
     set(alpine_par_headers utils/alpine_icet_compositor.hpp)
     
 

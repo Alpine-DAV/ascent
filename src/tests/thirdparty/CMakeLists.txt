@@ -61,6 +61,9 @@ endif()
 set(FORTRAN_TESTS t_fortran_smoke
                   t_fruit_smoke)
 
+set(MPI_TESTS t_mpi_smoke
+              t_diy_smoke)
+
 ################################
 # Add our Main Unit Tests
 ################################
