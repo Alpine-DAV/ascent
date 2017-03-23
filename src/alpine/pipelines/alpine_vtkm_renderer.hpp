@@ -229,8 +229,8 @@ private:
 #ifdef PARALLEL
     MPI_Comm            m_mpi_comm;
     
-    IceTCompositor      m_icet;
-    //DIYCompositor       m_icet;
+    //IceTCompositor      m_icet;
+    DIYCompositor       m_icet;
     
     int                 m_mpi_size;
 

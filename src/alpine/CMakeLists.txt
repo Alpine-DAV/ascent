@@ -211,7 +211,8 @@ if(MPI_FOUND)
                            utils/alpine_diy_compositor.cpp)
                          
     set(alpine_par_headers utils/alpine_icet_compositor.hpp
-                           utils/alpine_diy_compositor.hpp)
+                           utils/alpine_diy_compositor.hpp
+                           utils/alpine_diy_image.hpp)
     
 
 

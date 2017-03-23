@@ -1025,7 +1025,7 @@ Renderer::Render(vtkmActor *&plot,
         //Save the image.
 #ifdef PARALLEL
 
-        const float *result_color_buffer = NULL;
+        unsigned char *result_color_buffer = NULL;
         //---------------------------------------------------------------------
         {// open block for RENDER_COMPOSITE Timer
         //---------------------------------------------------------------------

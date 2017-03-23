@@ -49,42 +49,15 @@
 //-----------------------------------------------------------------------------
 #ifndef ALPINE_DIY_COMPOSITOR_HPP
 #define ALPINE_DIY_COMPOSITOR_HPP
+
+#include "alpine_diy_image.hpp"
 #include <diy/mpi.hpp>
+#include <iostream>
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
 //-----------------------------------------------------------------------------
 namespace alpine
 {
-
-struct Pixel
-{
-    int           m_pixel_id;
-    int           m_y;
-    unsigned char m_rgba[4];
-    float         m_depth;
-    //std::vector<float> m_cinema_ scalar_data 
-    Pixel()
-     : m_pixel_id(-1),
-       m_rgba{0,0,0,0},
-       m_depth(-1.f)
-    {}
-
-    inline void SetRGBA(const float *color)
-    {
-        for(int i = 0; i < 4; ++i)
-        {
-            m_rgba[i] =  static_cast<unsigned char>(color[i] * 255.f);
-        }
-    }
-
-    inline void SetRGBA(const unsigned char *color)
-    {
-        for(int i = 0; i < 4; ++i)
-        {
-            m_rgba[i] = color[i];
-        }
-    }
-};
 
 class DIYCompositor
 {
@@ -101,7 +74,7 @@ public:
                                 const unsigned char *color_buffer,
                                 const int           *vis_order,
                                 const float         *bg_color);
-    float            *Composite(int                  width,
+    unsigned char    *Composite(int                  width,
                                 int                  height,
                                 const float         *color_buffer,
                                 const int           *vis_order,
@@ -116,7 +89,7 @@ public:
                                 const int           *viewport,
                                 const float         *bg_color);
 
-    float            *Composite(int                  width,
+    unsigned char     *Composite(int                  width,
                                 int                  height,
                                 const float         *color_buffer,
                                 const float         *depth_buffer,
@@ -127,16 +100,10 @@ public:
     void              Cleanup();
     
 private:
-    template<typename T>
-    void              Extract(const T            *color_buffer,
-                              const float        *depth_buffer,
-                              int                 width,
-                              int                 height,
-                              std::vector<Pixel> &pixels);
-
-  
+    void                     Composite();
     diy::mpi::communicator   m_diy_comm;
     int                      m_rank;
+    Image                    m_image;
 };
 
 //-----------------------------------------------------------------------------
