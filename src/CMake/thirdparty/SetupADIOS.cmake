@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Strawman. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/strawman/.
 # 
-# Please also read alpine/LICENSE
+# Please also read strawman/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -43,30 +43,46 @@
 ###############################################################################
 
 ###############################################################################
-# Setup VTKm
+#
+# Setup ADIOS
+#
 ###############################################################################
 
-if(NOT VTKM_DIR)
-    MESSAGE(FATAL_ERROR "VTKm support needs explicit VTKM_DIR")
+# first Check for ADIOS_DIR
+
+if(NOT ADIOS_DIR)
+    MESSAGE(FATAL_ERROR "ADIOS support needs explicit ADIOS_DIR")
 endif()
 
-MESSAGE(STATUS "Looking for VTKm using VTKM_DIR = ${VTKM_DIR}")
+MESSAGE(STATUS "Looking for ADIOS using ADIOS_DIR = ${ADIOS_DIR}")
 
-# use VTKM_DIR to setup the options that cmake's find VTKm needs
-<<<<<<< HEAD
-set(VTKm_DIR ${VTKM_DIR})
-=======
-set(VTKm_DIR ${VTKM_DIR}/lib)
->>>>>>> c86fd9e32d8eb7b1d46bd439503701dc527a1188
+#find includes
+find_path(ADIOS_INCLUDE_DIRS adios.h
+          PATHS ${ADIOS_DIR}/include
+          NO_DEFAULT_PATH
+          NO_CMAKE_ENVIRONMENT_PATH
+          NO_CMAKE_PATH
+          NO_SYSTEM_ENVIRONMENT_PATH
+          NO_CMAKE_SYSTEM_PATH)
 
-#
-# VTKm will find TBB via the env var "TBB_ROOT"
-#
-if(TBB_DIR)
-    set(ENV{TBB_ROOT} ${TBB_DIR})
+#find libs
+find_library(ADIOS_LIBRARIES LIBRARIES NAMES adios
+             PATHS ${ADIOS_DIR}/lib
+             NO_DEFAULT_PATH
+             NO_CMAKE_ENVIRONMENT_PATH
+             NO_CMAKE_PATH
+             NO_SYSTEM_ENVIRONMENT_PATH
+             NO_CMAKE_SYSTEM_PATH)
+
+
+include(FindPackageHandleStandardArgs)
+# handle the QUIETLY and REQUIRED arguments and set OSMESA_FOUND to TRUE
+# if all listed variables are TRUE
+find_package_handle_standard_args(Adios  DEFAULT_MSG
+                                  ADIOS_LIBRARIES ADIOS_INCLUDE_DIRS)
+
+
+if(NOT ADIOS_FOUND)
+    message(FATAL_ERROR "ADIOS_DIR is not a path to a valid ADIOS install")
 endif()
 
-find_package(VTKm REQUIRED OPTIONAL_COMPONENTS Rendering)
-message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
-
-set(VTKM_FOUND TRUE)

@@ -1,0 +1,16 @@
+<?xml version ="1.0 "?>
+<adios-config host-language="C">
+<adios-group name="temperature" stats="default">
+<var name="NX" type="integer"/>
+<var name="t" type="double" dimensions="NX"/>
+<attribute name="recorded date" path="/" value="Sep 19 , 2008" 
+type="string"/>
+<!-- conditional writing of a variable -->
+<gwrite src="if ( want_x ) {"/>
+<var name="x" type="integer" dimensions="NX"/>
+<gwrite src="}"/>
+</adios-group>
+<method group="temperature" method="MPI"/>
+<buffer max-size-MB="1"/>
+<analysis adios-group="temperature" var="t" break-points="0, 100 , 200 , 300"/>
+</adios-config>

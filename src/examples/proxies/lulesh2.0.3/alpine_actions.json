@@ -1,5 +1,10 @@
 [
   {
+<<<<<<< HEAD:src/examples/proxies/lulesh2.0.3/strawman_actions.json
+    "action": "save",
+    "output_path": "/home/dongliang/t_save_adios",
+    "selected_vars":"coordsets/coords/values"
+=======
     "action": "add_plot",
     "field_name": "p",
     "render_options": 
@@ -39,5 +44,6 @@
         "fov": 45.0
       }
     }
+>>>>>>> c86fd9e32d8eb7b1d46bd439503701dc527a1188:src/examples/proxies/lulesh2.0.3/alpine_actions.json
   }
 ]

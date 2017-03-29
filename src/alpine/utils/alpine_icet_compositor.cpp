@@ -50,8 +50,14 @@
 
 #include "alpine_icet_compositor.hpp"
 
+<<<<<<< HEAD:src/strawman/utils/strawman_icet_compositor.cpp
+#include "strawman_logging.hpp"
+#include <IceT.h>
+#include <IceTMPI.h>
+=======
 #include "alpine_logging.hpp"
 
+>>>>>>> c86fd9e32d8eb7b1d46bd439503701dc527a1188:src/alpine/utils/alpine_icet_compositor.cpp
  
 //-----------------------------------------------------------------------------
 #define CHECK_ICET_ERROR( msg )                                                \

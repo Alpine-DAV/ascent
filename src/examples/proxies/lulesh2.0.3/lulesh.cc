@@ -163,8 +163,13 @@ Additional BSD Notice
 #include "lulesh.h"
 
 #include "conduit.hpp"
+<<<<<<< HEAD
+#include "strawman.hpp"
+#include "strawman.hpp"
+=======
 #include "alpine.hpp"
 
+>>>>>>> c86fd9e32d8eb7b1d46bd439503701dc527a1188
 using namespace conduit;
 using namespace alpine;
 
@@ -2859,10 +2864,17 @@ int main(int argc, char *argv[])
 #if USE_MPI
     alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
+<<<<<<< HEAD
+    //strawman_opts["pipeline/type"] = "vtkm";
+    //strawman_opts["pipeline/backend"] = "serial";
+    strawman_opts["pipeline/type"] = "adios";
+    sman.Open(strawman_opts);
+=======
     alpine_opts["pipeline/type"] = "vtkm";
     alpine_opts["pipeline/backend"] = "serial";
     
     sman.Open(alpine_opts);
+>>>>>>> c86fd9e32d8eb7b1d46bd439503701dc527a1188
    // BEGIN timestep to solution */
 #if USE_MPI   
    double start = MPI_Wtime();
@@ -2880,19 +2892,25 @@ int main(int argc, char *argv[])
         TimeIncrement(*locDom) ;
         LagrangeLeapFrog(*locDom) ;
      }
-      if ((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0)) {
-         printf("cycle = %d, time = %e, dt=%e\n",
-                locDom->cycle(), double(locDom->time()), double(locDom->deltatime()) ) ;
+      //if ((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0)) 
+      {
+         //printf("cycle = %d, time = %e, dt=%e\n",
+                //locDom->cycle(), double(locDom->time()), double(locDom->deltatime()) ) ;
       }
+<<<<<<< HEAD
+      //-- begin calls to strawman -- //
+      if ( (locDom->cycle()== 2) || (locDom->cycle() == 0))
+=======
       //-- begin calls to alpine -- //
       if ( (locDom->cycle() % 1 == 0) || (locDom->cycle() == 0))
+>>>>>>> c86fd9e32d8eb7b1d46bd439503701dc527a1188
       {
             char outFileName[30];
             sprintf(outFileName,"lulesh_image%03d",locDom->cycle()); 
             //
             // Create the actions.
             //
-            conduit::Node actions;
+            /*conduit::Node actions;
             conduit::Node &add = actions.append();
             add["action"] = "add_plot";
             add["field_name"] = "p";
@@ -2900,8 +2918,16 @@ int main(int argc, char *argv[])
             add["render_options/file_name"] = outFileName;
             add["render_options/width"]  = 1024;
             add["render_options/height"] = 1024;
-            draw["action"] = "draw_plots";
+            draw["action"] = "draw_plots";*/
+            std::string output_path = "";
+            output_path = conduit::utils::join_file_path(output_path,"test_save_adios");
+            Node actions;
+            Node &save = actions.append();
+            save["action"]   = "save";
+            save["output_path"] = "/home/dongliang/t_save_adios";
+            save["selected_vars"] = "coordsets/coords/values";
             sman.Publish(locDom->visitNode());
+            printf("\n\ncyclesdf\n");
             sman.Execute(actions);
       }
    }

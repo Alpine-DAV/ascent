@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Alpine. 
+// This file is part of Strawman. 
 // 
-// For details, see: http://software.llnl.gov/alpine/.
+// For details, see: http://software.llnl.gov/strawman/.
 // 
-// Please also read alpine/LICENSE
+// Please also read strawman/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -42,95 +42,61 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+
 //-----------------------------------------------------------------------------
 ///
-/// file: t_alpine_save_hdf5.cpp
+/// file: strawman_blueprint_hdf5_pipeline.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "gtest/gtest.h"
+#ifndef STRAWMAN_ADIOS_PIPELINE_HPP
+#define STRAWMAN_ADIOS_PIPELINE_HPP
 
-#include <alpine.hpp>
-
-#include <iostream>
-#include <math.h>
-#include <sstream>
-#include <mpi.h>
-#include <conduit_blueprint.hpp>
-
-#include "t_config.hpp"
-#include "t_alpine_test_utils.hpp"
-
-
-using namespace std;
-using namespace conduit;
-using namespace alpine;
+#include <strawman.hpp>
+#include <strawman_pipeline.hpp>
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_test_2d_hdf5, test_2d_serial_hdf5_pipeline)
+// -- begin strawman:: --
+//-----------------------------------------------------------------------------
+namespace strawman
 {
-    //
-    // Create example mesh.
-    //
-    int par_rank;
-    int par_size;
-    MPI_Comm comm = MPI_COMM_WORLD;
-    MPI_Comm_rank(comm, &par_rank);
-    MPI_Comm_size(comm, &par_size);
 
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
-    
-    //EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-   // verify_info.print();
-
-    //
-    // Create the actions.
-    //
-    
-    string output_path = "";
-    if(par_rank == 0)
-    {
-        output_path = prepare_output_dir();
-    }
-    else
-    {
-        output_path = output_dir();
-    }
-    output_path = conduit::utils::join_file_path(output_path,"test_save_adios");
-
-    Node actions;
-    Node &save = actions.append();
-    save["action"]   = "save";
-    save["output_path"] = output_path;
-    save["selected_vars"] = "coordsets/coords/values";
-    //actions.print();
-    data.print();
-    Node open_opts;
-    open_opts["pipeline/type"] = "adios";
-    open_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    
-    //
-    // Run Alpine
-    //
-    Alpine sman;
-    sman.Open(open_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
-
-}
-
-int main(int argc, char* argv[])
+class AdiosPipeline : public Pipeline
 {
-    int result = 0;
+public:
+    
+    // Creation and Destruction
+    AdiosPipeline();
+    virtual ~AdiosPipeline();
 
-    ::testing::InitGoogleTest(&argc, argv);
-    MPI_Init(&argc, &argv);
-    result = RUN_ALL_TESTS();
-    MPI_Finalize();
+    // Main pipeline interface methods, which are used by the strawman 
+    // interface.
 
-    return result;
-}
+    void  Initialize(const conduit::Node &options);
+
+    void  Publish(const conduit::Node &data);
+    void  Execute(const conduit::Node &actions);
+    
+    void  Cleanup();
+
+private:
+    class IOManager;
+    IOManager  *m_io;
+
+    // conduit node that (externally) holds the data from the simulation
+    conduit::Node     m_data; 
+};
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end strawman:: --
+//-----------------------------------------------------------------------------
+
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------
+
 

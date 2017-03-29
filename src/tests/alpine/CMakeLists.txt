@@ -62,8 +62,13 @@ set(MPI_TESTS  t_alpine_mpi_empty_pipeline
                t_alpine_mpi_render_3d)
 
 if(HDF5_FOUND)
+<<<<<<< HEAD:src/tests/strawman/CMakeLists.txt
+    list(APPEND MPI_TESTS  t_strawman_save_blueprint_hdf5)
+    list(APPEND MPI_TESTS   t_strawman_mpi_save_blueprint_hdf5)
+=======
     list(APPEND BASIC_TESTS t_alpine_save_blueprint_hdf5)
     list(APPEND MPI_TESTS   t_alpine_mpi_save_blueprint_hdf5)
+>>>>>>> c86fd9e32d8eb7b1d46bd439503701dc527a1188:src/tests/alpine/CMakeLists.txt
 endif()
 
 

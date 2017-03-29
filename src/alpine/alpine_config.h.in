@@ -65,8 +65,14 @@
 #cmakedefine ALPINE_VTKM_USE_TBB      "@TBB_FOUND@"
 
 
+<<<<<<< HEAD:src/strawman/strawman_config.h.in
+
+#cmakedefine STRAWMAN_HDF5_ENABLED      "@HDF5_FOUND@"
+#cmakedefine STRAWMAN_ADIOS_ENABLED      "@ADIOS_FOUND@"
+=======
 #cmakedefine ALPINE_HDF5_ENABLED      "@HDF5_FOUND@"
 
+>>>>>>> c86fd9e32d8eb7b1d46bd439503701dc527a1188:src/alpine/alpine_config.h.in
 //-----------------------------------------------------------------------------
 //
 // #define platform check helpers

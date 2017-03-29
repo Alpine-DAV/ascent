@@ -62,6 +62,17 @@
     #include <pipelines/alpine_blueprint_hdf5_pipeline.hpp>
 #endif
 
+<<<<<<< HEAD:src/strawman/strawman.cpp
+#if defined(STRAWMAN_HDF5_ENABLED)
+    #include <pipelines/strawman_blueprint_hdf5_pipeline.hpp>
+#endif
+
+#if defined(STRAWMAN_ADIOS_ENABLED)
+    #include <pipelines/strawman_adios_pipeline.hpp>
+#endif
+
+=======
+>>>>>>> c86fd9e32d8eb7b1d46bd439503701dc527a1188:src/alpine/alpine.cpp
 using namespace conduit;
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
@@ -148,6 +159,14 @@ Alpine::Open(const conduit::Node &options)
         ALPINE_ERROR("Alpine was not built with HDF5 support");
     #endif
     }
+    else if(pipeline_type == "adios")
+    {
+    #if defined(STRAWMAN_ADIOS_ENABLED)
+        m_pipeline = new AdiosPipeline();
+    #else
+        STRAWMAN_ERROR("Strawman was not built with ADIOS support");
+    #endif
+    }
     else
     {
         ALPINE_ERROR("Unsupported Pipeline type " 
@@ -229,6 +248,13 @@ about(conduit::Node &n)
     n["pipelines/blueprint_hdf5/status"] = "disabled";
 #endif
 
+#if defined(STRAWMAN_ADIOS_ENABLED)
+    n["pipelines/adios/status"] = "enabled";
+#else
+    n["pipelines/adios/status"] = "disabled";
+#endif
+
+
 //
 // Select default pipeline based on what is available.
 //
@@ -236,6 +262,8 @@ about(conduit::Node &n)
     n["default_pipeline"] = "vtkm";
 #elif defined(ALPINE_HDF5_ENABLED)    
     n["default_pipeline"] = "blueprint_hdf5";
+#elif defined(STRAWMAN_ADIOS_ENABLED)    
+    n["default_pipeline"] = "adios";
 #else
     n["default_pipeline"] = "empty";    
 #endif
