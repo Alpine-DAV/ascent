@@ -1,0 +1,49 @@
+[
+  {
+<<<<<<< HEAD:src/examples/proxies/lulesh2.0.3/strawman_actions.json
+    "action": "save",
+    "output_path": "/home/dongliang/t_save_adios",
+    "selected_vars":"coordsets/coords/values"
+=======
+    "action": "add_plot",
+    "field_name": "p",
+    "render_options": 
+    {
+      "width": 1024,
+      "height": 1024,
+      "renderer": "raytracer",
+      "color_map": 
+      {
+        "name": "thermal",
+        "control_points": 
+        [
+          
+          {
+            "type": "rgb",
+            "position": 0.0,
+            "color": [1.0, 0.0, 0.0]
+          },
+          
+          {
+            "type": "rgb",
+            "position": 0.5,
+            "color": [0.0, 1.0, 0.0]
+          },
+          
+          {
+            "type": "rgb",
+            "position": 1.0,
+            "color": [0.0, 0.0, 1.0]
+          }
+        ]
+      },
+      "camera": 
+      {
+        "position": [-1.5, -1.5, -1.5],
+        "look_at": [0.6, 0.6, 0.6],
+        "fov": 45.0
+      }
+    }
+>>>>>>> c86fd9e32d8eb7b1d46bd439503701dc527a1188:src/examples/proxies/lulesh2.0.3/alpine_actions.json
+  }
+]

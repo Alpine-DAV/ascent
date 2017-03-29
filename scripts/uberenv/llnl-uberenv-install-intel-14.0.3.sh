@@ -8,11 +8,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -48,8 +48,8 @@
 # make sure to source the proper intel env helper
 source /usr/local/tools/dotkit/init.sh
 source ../llnl-surface-load-env-intel-14.0.3.sh 
-python uberenv.py --prefix /usr/workspace/wsa/visit/strawman/uberenv_libs --spec %intel@14.0.3 "$@"
+python uberenv.py --prefix /usr/workspace/wsa/visit/alpine/uberenv_libs --spec %intel@14.0.3 "$@"
 # change group and perms
-chgrp -R visit /usr/workspace/wsa/visit/strawman/uberenv_libs
-chmod -R g+rwX /usr/workspace/wsa/visit/strawman/uberenv_libs
+chgrp -R visit /usr/workspace/wsa/visit/alpine/uberenv_libs
+chmod -R g+rwX /usr/workspace/wsa/visit/alpine/uberenv_libs
 

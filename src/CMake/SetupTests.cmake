@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -66,6 +66,10 @@ function(add_cpp_test)
 
     add_executable( ${arg_TEST} ${arg_TEST}.cpp )
 
+    set_target_properties(${arg_TEST} PROPERTIES
+                          CXX_STANDARD 11
+                          CXX_STANDARD_REQUIRED YES
+                          CXX_EXTENTIONS NO)
     target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS})
     target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
    

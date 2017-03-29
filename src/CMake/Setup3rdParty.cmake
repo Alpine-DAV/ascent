@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -43,7 +43,7 @@
 ###############################################################################
 
 ################################
-# Strawman 3rd Party Dependencies
+# Alpine 3rd Party Dependencies
 ################################
 
 if(ENABLE_TESTS)
@@ -93,7 +93,7 @@ include(CMake/thirdparty/SetupConduit.cmake)
 ################################################################
 ################################################################
 #
-# 3rd Party Libs that underpin Strawman's Pipelines
+# 3rd Party Libs that underpin Alpine's Pipelines
 #
 ################################################################
 ################################################################
@@ -102,6 +102,7 @@ include(CMake/thirdparty/SetupConduit.cmake)
 # Make sure we have a concrete
 # pipeline to build 
 ################################
+<<<<<<< HEAD
 if(NOT EAVL_DIR AND NOT VTKM_DIR AND NOT HDF5_DIR AND NOT ADIOS_DIR)
     message(FATAL_ERROR "Strawman requires at least once concrete pipeline (EAVL or VTKm)")
 endif()
@@ -124,6 +125,13 @@ if(EAVL_DIR)
    
 endif()
 
+=======
+if(NOT VTKM_DIR AND NOT HDF5_DIR)
+    message(FATAL_ERROR "Alpine requires at least once concrete pipeline (EAVL for VTKm)")
+endif()
+
+
+>>>>>>> c86fd9e32d8eb7b1d46bd439503701dc527a1188
 ################################
 # VTKm and supporting libs
 ################################
@@ -133,13 +141,9 @@ if(VTKM_DIR)
     set(VTKm_CUDA_Architecture "kepler" CACHE PATH "" FORCE)
 
     ################################
-    # Boost (for VTK-M)
-    ################################
-    include(CMake/thirdparty/SetupBoost.cmake)
-
-    ################################
     # TBB (for VTK-M)
     ################################
+    message(STATUS "If VTK-m was configured with TBB then you must specify the TBB_DIR")
     if(TBB_DIR) # optional 
         include(CMake/thirdparty/SetupTBB.cmake)
     endif()
@@ -218,13 +222,4 @@ endif()
 if(ENABLE_FORTRAN)
     add_subdirectory(thirdparty_builtin/fruit-3.3.9)
 endif()
-
-
-
-
-
-################################
-# CUDA
-################################
-
 

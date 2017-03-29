@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -53,9 +53,9 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 ################################
 # Unit Tests
 ################################
-# add tpl smoke tests, so they run before we run the strawman tests
+# add tpl smoke tests, so they run before we run the alpine tests
 add_subdirectory("thirdparty")
-# add strawman tests
-add_subdirectory("strawman")
+# add alpine tests
+add_subdirectory("alpine")
 
 

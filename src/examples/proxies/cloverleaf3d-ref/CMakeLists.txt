@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 ###############################################################################
 #
-# Cloverleaf3D CMake Build for Strawman
+# Cloverleaf3D CMake Build for Alpine
 #
 ###############################################################################
 
@@ -101,8 +101,8 @@ set(CLOVER3D_SOURCES
 if(MPI_FOUND AND FORTRAN_FOUND)
     # copy over the input deck
     configure_file(clover.in ${CMAKE_CURRENT_BINARY_DIR}/clover.in COPYONLY)
-    configure_file(strawman_actions.json ${CMAKE_CURRENT_BINARY_DIR}/strawman_actions.json COPYONLY)
-    configure_file(strawman_options.json ${CMAKE_CURRENT_BINARY_DIR}/strawman_options.json COPYONLY)
+    configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
+    configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
 
     add_executable(cloverleaf3d_par ${CLOVER3D_SOURCES})
 
@@ -116,7 +116,7 @@ if(MPI_FOUND AND FORTRAN_FOUND)
                              FLAGS "${clover_compile_flags}")
 
     target_link_libraries(cloverleaf3d_par
-                          strawman_par
+                          alpine_par
                           conduit_blueprint
                           ${MPI_Fortran_LIBRARIES})
 endif()

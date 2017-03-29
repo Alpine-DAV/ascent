@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,11 +44,11 @@
 
 ###############################################################################
 #
-# Example that shows how to use an installed instance of Strawman in Makefile
+# Example that shows how to use an installed instance of Alpine in Makefile
 # based build system.
 #
 # To build:
-#  env STRAWMAN_DIR={strawman install path} \
+#  env ALPINE_DIR={alpine install path} \
 #      CONDUIT_DIR={conduit install path}   \
 #   make
 #  ./example
@@ -57,8 +57,8 @@
 ###############################################################################
 
 
-INC_FLAGS=-I$(STRAWMAN_DIR)/include/strawman -I$(CONDUIT_DIR)/include/conduit
-LINK_FLAGS=-L$(STRAWMAN_DIR)/lib/ -lstrawman -L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint
+INC_FLAGS=-I$(ALPINE_DIR)/include/alpine -I$(CONDUIT_DIR)/include/conduit
+LINK_FLAGS=-L$(ALPINE_DIR)/lib/ -lalpine -L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint
 
 main:
 	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example

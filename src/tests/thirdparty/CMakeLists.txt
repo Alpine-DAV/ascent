@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -53,7 +53,7 @@ set(CUDA_TESTS t_cuda_smoke)
 set(TBB_TESTS)
 
 IF(VTKM_FOUND)
-    list(APPEND TPL_TESTS t_vtkm_smoke)
+    list(APPEND VTKM_TESTS t_vtkm_smoke )
     list(APPEND CUDA_TESTS t_vtkm_cuda_smoke)
     list(APPEND TBB_TESTS  t_vtkm_tbb_smoke)
 endif()
@@ -67,6 +67,19 @@ set(FORTRAN_TESTS t_fortran_smoke
 message(STATUS "Adding thirdparty lib unit tests")
 foreach(TEST ${TPL_TESTS})
     add_cpp_test(TEST ${TEST})
+endforeach()
+
+################################
+# Add our VTKm Unit Tests
+################################
+set(vtkm_dependencies ${VTKm_LIBRARIES})
+
+if(TBB_FOUND)
+  list(APPEND vtkm_dependencies ${TBB_LIBRARIES})
+endif()
+
+foreach(TEST ${VTKM_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON ${vtkm_dependencies})
 endforeach()
 
 if(CUDA_FOUND)
@@ -93,21 +106,11 @@ else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()
 
-if(TBB_DIR AND STRAWMAN_VTKM_USE_TBB)
-
-    message(STATUS "TBB enabled: Adding related unit tests")
-    foreach(TEST ${TBB_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON ${TBB_LIBRARY_RELEASE})
-    endforeach()
-else()
-    message(STATUS "TBB disabled: Skipping related tests")
-endif()
-
 
 if(FORTRAN_FOUND)
     message(STATUS "Fortran enabled: Adding related unit tests")
     foreach(TEST ${FORTRAN_TESTS})
-        add_fortran_test(TEST ${TEST})
+      add_fortran_test(TEST ${TEST} DEPENDS_ON alpine)
     endforeach()
 else()
     message(STATUS "Fortran disabled: Skipping related tests")

@@ -8,11 +8,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -47,8 +47,8 @@
 # use uberenv to install everything
 source /usr/local/tools/dotkit/init.sh
 source ../llnl-surface-load-env-gcc-4.4.7.sh 
-python uberenv.py --prefix /usr/gapps/visit/strawman/uberenv_libs --spec %gcc@4.4.7 "$@"
+python uberenv.py --prefix /usr/gapps/visit/alpine/uberenv_libs --spec %gcc@4.4.7 "$@"
 # change group and perms
-chgrp -R visit /usr/gapps/visit/strawman/
-chmod -R g+rwX /usr/gapps/visit/strawman/
+chgrp -R visit /usr/gapps/visit/alpine/
+chmod -R g+rwX /usr/gapps/visit/alpine/
 

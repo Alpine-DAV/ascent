@@ -32,7 +32,7 @@ SUBROUTINE hydro
   USE reset_field_module
   USE iso_c_binding
   USE conduit
-  USE strawman
+  USE alpine
   IMPLICIT NONE
 
   INTEGER         :: loc(1)
@@ -43,21 +43,19 @@ SUBROUTINE hydro
   REAL(KIND=8)    :: first_step,second_step
   REAL(KIND=8)    :: kernel_total,totals(parallel%max_task)
   
-  TYPE(C_PTR) my_strawman
-  TYPE(C_PTR) strawman_opts
+  TYPE(C_PTR) my_alpine
+  TYPE(C_PTR) alpine_opts
 
-      my_strawman   = strawman_create()
-      strawman_opts = conduit_node_create()
-      CALL conduit_node_set_path_int32(strawman_opts,"mpi_comm",MPI_COMM_WORLD)
-      CALL conduit_node_set_path_char8_str(strawman_opts,"pipeline/type", "vtkm")
-      CALL conduit_node_set_path_char8_str(strawman_opts,"pipeline/backend", "serial")
-      CALL strawman_open(my_strawman,strawman_opts)
-
+  my_alpine   = alpine_create()
+  alpine_opts = conduit_node_create()
+  CALL conduit_node_set_path_int32(alpine_opts,"mpi_comm",MPI_COMM_WORLD)
+  CALL conduit_node_set_path_char8_str(alpine_opts,"pipeline/type", "vtkm")
+  CALL alpine_open(my_alpine,alpine_opts)
 
   timerstart = timer()
   DO
 
-    CALL strawman_timer_start(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
+    CALL alpine_timer_start(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
     step_time = timer()
 
     step = step + 1
@@ -80,13 +78,13 @@ SUBROUTINE hydro
   
     time = time + dt
     
-    CALL strawman_timer_stop(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
+    CALL alpine_timer_stop(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
     
     IF(summary_frequency.NE.0) THEN
       IF(MOD(step, summary_frequency).EQ.0) CALL field_summary()
     ENDIF
     IF(visit_frequency.NE.0) THEN
-      IF(MOD(step, visit_frequency).EQ.0) CALL visit(my_strawman)
+      IF(MOD(step, visit_frequency).EQ.0) CALL visit(my_alpine)
     ENDIF
 
     ! Sometimes there can be a significant start up cost that appears in the first step.
@@ -176,8 +174,8 @@ SUBROUTINE hydro
           WRITE(g_out,'(a23,2f16.4)')"The Rest              :",wall_clock-kernel_total,100.0*(wall_clock-kernel_total)/wall_clock
         ENDIF
       ENDIF
-      CALL strawman_close(my_strawman)
-      CALL strawman_destroy(my_strawman)
+      CALL alpine_close(my_alpine)
+      CALL alpine_destroy(my_alpine)
       CALL clover_finalize
 
       EXIT

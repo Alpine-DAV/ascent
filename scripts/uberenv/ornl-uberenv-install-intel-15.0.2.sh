@@ -8,11 +8,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Strawman. 
+# This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/strawman/.
+# For details, see: http://software.llnl.gov/alpine/.
 # 
-# Please also read strawman/LICENSE
+# Please also read alpine/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -48,8 +48,8 @@
 # make sure to source the proper intel env helper
 #source /usr/local/tools/dotkit/init.sh
 source  ../ornl-titan-load-env-intel-15.0.2.sh 
-python uberenv.py --prefix /lustre/atlas2/csc094/proj-shared/strawman/uberenv_libs  --spec %intel@15.0.2 --openmp "$@"
+python uberenv.py --prefix /lustre/atlas2/csc094/proj-shared/alpine/uberenv_libs  --spec %intel@15.0.2 --openmp "$@"
 # change group and perms
 #chgrp -R visit /usr/gapps/visit/straw2an/
-chmod -R g+rwX /lustre/atlas2/csc094/proj-shared/strawman/uberenv_libs
+chmod -R g+rwX /lustre/atlas2/csc094/proj-shared/alpine/uberenv_libs
 

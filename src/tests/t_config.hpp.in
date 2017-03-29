@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Strawman. 
+// This file is part of Alpine. 
 // 
-// For details, see: http://software.llnl.gov/strawman/.
+// For details, see: http://software.llnl.gov/alpine/.
 // 
-// Please also read strawman/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -49,8 +49,8 @@
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef STRAWMAN_T_CONFIG_HPP
-#define STRAWMAN_T_CONFIG_HPP
+#ifndef ALPINE_T_CONFIG_HPP
+#define ALPINE_T_CONFIG_HPP
 
 //-----------------------------------------------------------------------------
 //
@@ -58,8 +58,8 @@
 //
 //-----------------------------------------------------------------------------
 
-#define STRAWMAN_T_SRC_DIR  "@CMAKE_CURRENT_SOURCE_DIR@"
-#define STRAWMAN_T_BIN_DIR  "@CMAKE_CURRENT_BINARY_DIR@"
+#define ALPINE_T_SRC_DIR  "@CMAKE_CURRENT_SOURCE_DIR@"
+#define ALPINE_T_BIN_DIR  "@CMAKE_CURRENT_BINARY_DIR@"
 
 #endif
 

@@ -12,17 +12,17 @@
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------
- * Begin Strawman Integration
+ * Begin Alpine Integration
  *--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 
 #include <conduit_blueprint.hpp>
-#include <strawman.hpp>
+#include <alpine.hpp>
 
 using namespace conduit;
-using strawman::Strawman;
+using alpine::Alpine;
 
-void writeStrawmanData(Strawman &sman, Grid_Data *grid_data, int timeStep)
+void writeAlpineData(Alpine &sman, Grid_Data *grid_data, int timeStep)
 {
   
   grid_data->kernel->LTimes(grid_data);
@@ -37,7 +37,7 @@ void writeStrawmanData(Strawman &sman, Grid_Data *grid_data, int timeStep)
   // TODO: we don't support domain overloading ... 
   for(int sdom_idx = 0; sdom_idx < grid_data->num_zone_sets; ++sdom_idx)
   {
-    STRAWMAN_BLOCK_TIMER(COPY_DATA);
+    ALPINE_BLOCK_TIMER(COPY_DATA);
     
     int sdom_id =  grid_data->zs_to_sdomid[sdom_idx];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
@@ -100,7 +100,7 @@ void writeStrawmanData(Strawman &sman, Grid_Data *grid_data, int timeStep)
     add["action"] = "add_plot";
     add["field_name"] = "phi";
     char filename[50];
-    sprintf(filename, "strawman_%04d", timeStep);
+    sprintf(filename, "alpine_%04d", timeStep);
     add["render_options/file_name"] = filename;
     add["render_options/width"] = 1024;
     add["render_options/height"] = 1024;
@@ -118,13 +118,13 @@ void writeStrawmanData(Strawman &sman, Grid_Data *grid_data, int timeStep)
 */
 int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
 {
-  conduit::Node strawman_opts;
-  strawman_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
-  strawman_opts["pipeline/type"] = "vtkm";
-  strawman_opts["pipeline/backend"] = "serial";
+  conduit::Node alpine_opts;
+  alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+  alpine_opts["pipeline/type"] = "vtkm";
+  alpine_opts["pipeline/backend"] = "serial";
 
-  Strawman sman;
-  sman.Open(strawman_opts);
+  Alpine sman;
+  sman.Open(alpine_opts);
 
   conduit::Node testNode;
   Kernel *kernel = grid_data->kernel;
@@ -139,8 +139,8 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
   double part_last = 0.0;
  for(int iter = 0;iter < grid_data->niter;++ iter){
    
-   {//strawman block timer
-     STRAWMAN_BLOCK_TIMER(KRIPKE_MAIN_LOOP);
+   {//alpine block timer
+     ALPINE_BLOCK_TIMER(KRIPKE_MAIN_LOOP);
     /*
      * Compute the RHS:  rhs = LPlus*S*L*psi + Q
      */
@@ -203,7 +203,7 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
     }
    }//end main loop timing
     double part = grid_data->particleEdit();
-    writeStrawmanData(sman, grid_data, iter);
+    writeAlpineData(sman, grid_data, iter);
     if(mpi_rank==0){
       printf("iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
     }
@@ -213,14 +213,14 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
   sman.Close();
   }//Solve block
   
-  //Strawman: we don't want to execute all loop orderings, so we will just exit;
+  //Alpine: we don't want to execute all loop orderings, so we will just exit;
   exit(0);
   return(0);
 }
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------
- * End Strawman Integration
+ * End Alpine Integration
  *--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 
