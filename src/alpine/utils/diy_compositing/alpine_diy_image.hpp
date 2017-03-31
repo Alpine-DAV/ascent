@@ -45,7 +45,10 @@ struct Image
     
       const int size = width * height;
       m_pixels.resize(size * 4);
-      m_depths.resize(size);
+      if(depth_buffer)
+      {
+        m_depths.resize(size);
+      }
 #ifdef ALPINE_USE_OPENMP
       #pragma omp parallel for 
 #endif
@@ -56,10 +59,14 @@ struct Image
         m_pixels[offset + 1] = static_cast<unsigned char>(color_buffer[offset + 1] * 255.f);
         m_pixels[offset + 2] = static_cast<unsigned char>(color_buffer[offset + 2] * 255.f);
         m_pixels[offset + 3] = static_cast<unsigned char>(color_buffer[offset + 3] * 255.f);
+        if(depth_buffer)
+        {
+          
         float depth = depth_buffer[i];
         //make sure we can do a single comparison on depth
-        //depth = depth < 0 ? 2.f : depth;
+        depth = depth < 0 ? 2.f : depth;
         m_depths[i] =  depth;
+        }
       }
       /*
       std::copy(depth_buffer,
@@ -81,25 +88,32 @@ struct Image
 
       const int size = width * height;
       m_pixels.resize(size * 4);
-      m_depths.resize(size);
+      if(depth_buffer)
+      {
+        m_depths.resize(size);
+      }
 
       std::copy(color_buffer,
                 color_buffer + size * 4,
                 &m_pixels[0]);
-#ifdef ALPINE_USE_OPENMP
-      #pragma omp parallel for 
-#endif
-      for(int i = 0; i < size; ++i)
+      if(depth_buffer)
       {
-        float depth = depth_buffer[i];
-        //make sure we can do a single comparison on depth
-        //depth = depth < 0 ? 2.f : depth;
-        m_depths[i] =  depth;
-      }
+#ifdef ALPINE_USE_OPENMP
+        #pragma omp parallel for 
+#endif
+        for(int i = 0; i < size; ++i)
+        {
+          float depth = depth_buffer[i];
+          //make sure we can do a single comparison on depth
+          depth = depth < 0 ? 2.f : depth;
+          m_depths[i] =  depth;
+        } // for
+      } // if depth
     }
 
     void Composite(const Image &image)
     {
+      assert(m_depths.size() == m_pixels.size());
       assert(m_bounds.min[0] == image.m_bounds.min[0]); 
       assert(m_bounds.min[1] == image.m_bounds.min[1]); 
       assert(m_bounds.max[0] == image.m_bounds.max[0]); 
@@ -161,6 +175,7 @@ struct Image
     {
       m_orig_bounds = image.m_orig_bounds;
       m_bounds = sub_region;
+      m_orig_rank = image.m_orig_rank;
 
       assert(sub_region.min[0] >= image.m_bounds.min[0]);
       assert(sub_region.min[1] >= image.m_bounds.min[1]);
@@ -177,7 +192,12 @@ struct Image
       const int start_y = m_bounds.min[1] - image.m_bounds.min[1];
       const int end_y = start_y + s_dy;
       m_pixels.resize(s_dx * s_dy * 4);
-      m_depths.resize(s_dx * s_dy);
+      bool has_depth = image.m_depths.size() != 0;
+
+      if(has_depth)
+      {
+        m_depths.resize(s_dx * s_dy);
+      }
       
       
 #ifdef ALPINE_USE_OPENMP
@@ -191,10 +211,12 @@ struct Image
         std::copy(&image.m_pixels[copy_from * 4],
                   &image.m_pixels[copy_from * 4] + s_dx * 4,
                   &m_pixels[copy_to * 4]);
-
-        std::copy(&image.m_depths[copy_from],
-                  &image.m_depths[copy_from] + s_dx,
-                  &m_depths[copy_to]);
+        if(has_depth)
+        {
+          std::copy(&image.m_depths[copy_from],
+                    &image.m_depths[copy_from] + s_dx,
+                    &m_depths[copy_to]);
+        }
       }
       
     }
@@ -242,6 +264,8 @@ struct Image
       
       const int start_x = m_bounds.min[0] - image.m_bounds.min[0];
       const int start_y = m_bounds.min[1] - image.m_bounds.min[1];
+    
+      bool has_depth = image.m_depths.size() != 0;
 
 #ifdef ALPINE_USE_OPENMP
         #pragma omp parallel for 
@@ -253,9 +277,12 @@ struct Image
         std::copy(&m_pixels[copy_from * 4],
                   &m_pixels[copy_from * 4] + s_dx * 4,
                   &image.m_pixels[copy_to * 4]);
-        std::copy(&m_depths[copy_from],
-                  &m_depths[copy_from] + s_dx,
-                  &image.m_depths[copy_to]);
+        if(has_depth)
+        {
+          std::copy(&m_depths[copy_from],
+                    &m_depths[copy_from] + s_dx,
+                    &image.m_depths[copy_to]);
+        }
       }
     }
 
@@ -287,7 +314,7 @@ struct Image
     {
       std::stringstream ss;
       fmt::print(ss, "Total size pixels {} tile dims: [{},{}] - [{},{}] {}\n",
-                 (int) m_depths.size(), 
+                 (int) m_pixels.size() / 4, 
                  m_bounds.min[0],
                  m_bounds.min[1],
                  m_bounds.max[0],
@@ -347,6 +374,7 @@ struct Serialization<alpine::Image>
     diy::save(bb, image.m_bounds);
     diy::save(bb, image.m_pixels);
     diy::save(bb, image.m_depths);
+    diy::save(bb, image.m_orig_rank);
   }
 
   static void load(BinaryBuffer &bb, alpine::Image &image)
@@ -355,6 +383,7 @@ struct Serialization<alpine::Image>
     diy::load(bb, image.m_bounds);
     diy::load(bb, image.m_pixels);
     diy::load(bb, image.m_depths);
+    diy::load(bb, image.m_orig_rank);
   }
 };
 

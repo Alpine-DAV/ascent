@@ -51,6 +51,7 @@
 #include "alpine_diy_compositor.hpp"
 #include "alpine_config.h"
 #include "alpine_logging.hpp"
+#include "diy_compositing/alpine_diy_direct_send.hpp"
 #include "diy_compositing/alpine_diy_radix_k.hpp"
 #include <diy/mpi.hpp>
 
@@ -98,7 +99,23 @@ DIYCompositor::Composite(int            width,
                          const int     *vis_order,
                          const float   *bg_color)
 {
-   return NULL;
+    m_image.Init(color_buffer,
+                 NULL,
+                 width,
+                 height);
+
+    DirectSendCompositor compositor;
+    compositor.CompositeVolume(m_diy_comm, m_image, vis_order);
+    m_image.m_orig_rank = m_rank;
+
+    if(m_rank == 0)
+    {
+      return &m_image.m_pixels[0];
+    }
+    else
+    {
+      return NULL;
+    }
 }
 
 
