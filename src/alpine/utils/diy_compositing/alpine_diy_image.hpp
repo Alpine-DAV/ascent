@@ -3,6 +3,8 @@
 
 #include <diy/master.hpp>
 #include <alpine_png_encoder.hpp>
+#include <alpine_config.h>
+
 // -- begin alpine:: --
 //-----------------------------------------------------------------------------
 namespace alpine
@@ -14,13 +16,15 @@ struct Image
     diy::DiscreteBounds          m_bounds; 
     std::vector<unsigned char>   m_pixels;
     std::vector<float>           m_depths; 
+    int                          m_orig_rank;
 
     Image()
     {}
 
     Image(const diy::DiscreteBounds &bounds)
       : m_orig_bounds(bounds),
-        m_bounds(bounds) 
+        m_bounds(bounds),
+        m_orig_rank(-1)
     {
         const int dx  = bounds.max[0] - bounds.min[0];
         const int dy  = bounds.max[1] - bounds.min[1];
@@ -108,16 +112,45 @@ struct Image
 #endif
       for(int i = 0; i < size; ++i)
       {
-        if(m_depths[i] < image.m_depths[i])
+        const float depth = image.m_depths[i];
+        if(depth > 1.f  || m_depths[i] < depth)
         {
           continue;
         }
         const int offset = i * 4;
-        m_depths[i] = image.m_depths[i];
+        m_depths[i] = depth;
         m_pixels[offset + 0] = image.m_pixels[offset + 0];
         m_pixels[offset + 1] = image.m_pixels[offset + 1];
         m_pixels[offset + 2] = image.m_pixels[offset + 2];
         m_pixels[offset + 3] = image.m_pixels[offset + 3];
+      }
+    }
+
+    void Blend(const Image &image)
+    {
+      assert(m_bounds.min[0] == image.m_bounds.min[0]); 
+      assert(m_bounds.min[1] == image.m_bounds.min[1]); 
+      assert(m_bounds.max[0] == image.m_bounds.max[0]); 
+      assert(m_bounds.max[1] == image.m_bounds.max[1]); 
+
+      const int size = static_cast<int>(m_depths.size()); 
+  
+#ifdef ALPINE_USE_OPENMP
+      #pragma omp parallel for 
+#endif
+      for(int i = 0; i < size; ++i)
+      {
+        if(m_pixels[3] = 255) continue;
+        const int offset = i * 4;
+        float alpha = static_cast<float>(m_pixels[offset + 4]);
+        float alpha2 = static_cast<float>(image.m_pixels[offset + 4]);
+        const float one_minus = 1.f - static_cast<float>(alpha);
+        m_pixels[offset + 0] += static_cast<unsigned char>(one_minus * static_cast<float>(image.m_pixels[offset + 0])); 
+        m_pixels[offset + 1] += static_cast<unsigned char>(one_minus * static_cast<float>(image.m_pixels[offset + 1])); 
+        m_pixels[offset + 2] += static_cast<unsigned char>(one_minus * static_cast<float>(image.m_pixels[offset + 2])); 
+        alpha += one_minus * alpha2;
+        alpha = std::min(alpha, 1.f);
+        m_pixels[offset + 4] = static_cast<unsigned char>(alpha * 255.f);
       }
     }
     //

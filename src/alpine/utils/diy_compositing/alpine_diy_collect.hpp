@@ -44,79 +44,76 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_diy_compositor.hpp
+/// file: alpine_diy_collect.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ALPINE_DIY_COMPOSITOR_HPP
-#define ALPINE_DIY_COMPOSITOR_HPP
+#ifndef ALPINE_DIY_COLLECT_HPP
+#define ALPINE_DIY_COLLECT_HPP
 
-#include "diy_compositing/alpine_diy_image.hpp"
-#include <diy/mpi.hpp>
-#include <iostream>
-//-----------------------------------------------------------------------------
+#include <diy/master.hpp>
+#include <diy/partners/swap.hpp>
+#include <diy/reduce.hpp>
+#include <diy/reduce-operations.hpp>
+#include "alpine_diy_image.hpp"
+
 // -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace alpine
+
+namespace alpine 
 {
 
-class DIYCompositor
+struct CollectImages
 {
-public:
-     DIYCompositor();
-    ~DIYCompositor();
-    
-    void              Init(MPI_Comm mpi_comm);
-    
-    // composite with given visibility ordering.
-    
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const unsigned char *color_buffer,
-                                const int           *vis_order,
-                                const float         *bg_color);
+  const diy::RegularDecomposer<diy::DiscreteBounds> &m_decomposer;
 
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const float         *color_buffer,
-                                const int           *vis_order,
-                                const float         *bg_color);
+  CollectImages(const diy::RegularDecomposer<diy::DiscreteBounds> &decomposer)
+    : m_decomposer(decomposer)
+  {}
 
-    // composite with using a depth buffer.
-    
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const unsigned char *color_buffer,
-                                const float         *depth_buffer,
-                                const int           *viewport,
-                                const float         *bg_color);
+  void operator()(void *b, const diy::ReduceProxy &proxy) const
+  {
+    ImageBlock *block = reinterpret_cast<ImageBlock*>(b);
+    //
+    // first round we have no incoming. Take the images we have
+    // and sent them to to the right rank
+    //
+    const int collection_rank = 0; 
+    if(proxy.in_link().size() == 0)
+    {
+      if(proxy.gid() != collection_rank)
+      {
+        int dest_gid =  collection_rank;
+        diy::BlockID dest = proxy.out_link().target(dest_gid);
+        proxy.enqueue(dest, block->m_image);
+        block->m_image.Clear();
+      }
+    } // if
+    else if(proxy.gid() == collection_rank)
+    {
+      Image final_image(block->m_image.m_orig_bounds); 
+      block->m_image.SubsetTo(final_image);
+      for(int i = 0; i < proxy.in_link().size(); ++i)
+      {
+        int gid = proxy.in_link().target(i).gid;
+        if(gid == collection_rank ) 
+        {
+          continue;
+        }
+        Image incoming;
+        proxy.dequeue(gid, incoming); 
+        incoming.SubsetTo(final_image);
+      } // for 
+      block->m_image.Swap(final_image);
+    } // else
 
-    unsigned char     *Composite(int                  width,
-                                int                  height,
-                                const float         *color_buffer,
-                                const float         *depth_buffer,
-                                const int           *viewport,
-                                const float         *bg_color);
-
-
-    void              Cleanup();
-    
-private:
-    void                     Composite();
-    diy::mpi::communicator   m_diy_comm;
-    int                      m_rank;
-    Image                    m_image;
-    std::stringstream        m_timing_log;
+  } // operator
 };
 
-//-----------------------------------------------------------------------------
-};
+} 
 //-----------------------------------------------------------------------------
 // -- end alpine:: --
 //-----------------------------------------------------------------------------
-
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-

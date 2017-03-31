@@ -71,7 +71,11 @@ struct Profiler
         {
             const Event& e = events[i];
             auto time = std::chrono::duration_cast<std::chrono::microseconds>(e.stamp - start).count();
-
+            fmt::print(out, "{} {} {}\n",
+                            time / 1000000.,
+                            (e.begin ? '<' : '>'),
+                            e.name);
+            /*
             fmt::print(out, "{:02d}:{:02d}:{:02d}.{:06d} {}{}\n",
                             time/1000000/60/60,
                             time/1000000/60 % 60,
@@ -79,6 +83,7 @@ struct Profiler
                             time % 1000000,
                             (e.begin ? '<' : '>'),
                             e.name);
+                            */
         }
     }
 

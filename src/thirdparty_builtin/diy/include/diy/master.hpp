@@ -1062,6 +1062,8 @@ void
 diy::Master::
 flush()
 {
+
+  auto scoped = prof.scoped("comm");
 #ifdef DEBUG
   time_type start = get_time();
   unsigned wait = 1;

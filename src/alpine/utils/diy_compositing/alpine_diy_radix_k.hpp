@@ -44,79 +44,33 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_diy_compositor.hpp
+/// file: alpine_diy_radix_k.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ALPINE_DIY_COMPOSITOR_HPP
-#define ALPINE_DIY_COMPOSITOR_HPP
+#ifndef ALPINE_DIY_RADIX_K_HPP
+#define ALPINE_DIY_RADIX_K_HPP
 
-#include "diy_compositing/alpine_diy_image.hpp"
+#include "alpine_diy_image.hpp"
 #include <diy/mpi.hpp>
-#include <iostream>
-//-----------------------------------------------------------------------------
+
 // -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace alpine
+namespace alpine 
 {
 
-class DIYCompositor
+class RadixKCompositor
 {
 public:
-     DIYCompositor();
-    ~DIYCompositor();
-    
-    void              Init(MPI_Comm mpi_comm);
-    
-    // composite with given visibility ordering.
-    
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const unsigned char *color_buffer,
-                                const int           *vis_order,
-                                const float         *bg_color);
-
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const float         *color_buffer,
-                                const int           *vis_order,
-                                const float         *bg_color);
-
-    // composite with using a depth buffer.
-    
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const unsigned char *color_buffer,
-                                const float         *depth_buffer,
-                                const int           *viewport,
-                                const float         *bg_color);
-
-    unsigned char     *Composite(int                  width,
-                                int                  height,
-                                const float         *color_buffer,
-                                const float         *depth_buffer,
-                                const int           *viewport,
-                                const float         *bg_color);
-
-
-    void              Cleanup();
-    
-private:
-    void                     Composite();
-    diy::mpi::communicator   m_diy_comm;
-    int                      m_rank;
-    Image                    m_image;
-    std::stringstream        m_timing_log;
+  RadixKCompositor();
+  ~RadixKCompositor();
+  void CompositeSurface(diy::mpi::communicator &diy_comm, Image &image); 
 };
 
-//-----------------------------------------------------------------------------
-};
+}
 //-----------------------------------------------------------------------------
 // -- end alpine:: --
 //-----------------------------------------------------------------------------
-
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-
