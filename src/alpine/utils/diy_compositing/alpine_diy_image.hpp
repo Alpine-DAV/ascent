@@ -17,19 +17,24 @@ struct Image
     std::vector<unsigned char>   m_pixels;
     std::vector<float>           m_depths; 
     int                          m_orig_rank;
-
+    bool                         m_z_buffer_mode;
     Image()
     {}
 
-    Image(const diy::DiscreteBounds &bounds)
+    Image(const diy::DiscreteBounds &bounds, bool z_buffer_mode = true)
       : m_orig_bounds(bounds),
         m_bounds(bounds),
-        m_orig_rank(-1)
+        m_orig_rank(-1),
+        m_z_buffer_mode(z_buffer_mode)
+
     {
         const int dx  = bounds.max[0] - bounds.min[0];
         const int dy  = bounds.max[1] - bounds.min[1];
         m_pixels.resize(dx * dy * 4);
-        m_depths.resize(dx * dy);
+        if(m_z_buffer_mode)
+        {
+          m_depths.resize(dx * dy);
+        }
     }
 
     void Init(const float *color_buffer,
@@ -42,10 +47,10 @@ struct Image
       m_bounds.max[0] = width;
       m_bounds.max[1] = height;
       m_orig_bounds = m_bounds; 
-    
+      m_z_buffer_mode = depth_buffer != NULL; 
       const int size = width * height;
       m_pixels.resize(size * 4);
-      if(depth_buffer)
+      if(m_z_buffer_mode)
       {
         m_depths.resize(size);
       }
@@ -59,13 +64,12 @@ struct Image
         m_pixels[offset + 1] = static_cast<unsigned char>(color_buffer[offset + 1] * 255.f);
         m_pixels[offset + 2] = static_cast<unsigned char>(color_buffer[offset + 2] * 255.f);
         m_pixels[offset + 3] = static_cast<unsigned char>(color_buffer[offset + 3] * 255.f);
-        if(depth_buffer)
+        if(m_z_buffer_mode)
         {
-          
-        float depth = depth_buffer[i];
-        //make sure we can do a single comparison on depth
-        depth = depth < 0 ? 2.f : depth;
-        m_depths[i] =  depth;
+          float depth = depth_buffer[i];
+          //make sure we can do a single comparison on depth
+          depth = depth < 0 ? 2.f : depth;
+          m_depths[i] =  depth;
         }
       }
       /*
@@ -88,7 +92,8 @@ struct Image
 
       const int size = width * height;
       m_pixels.resize(size * 4);
-      if(depth_buffer)
+      m_z_buffer_mode = depth_buffer != NULL;
+      if(m_z_buffer_mode)
       {
         m_depths.resize(size);
       }
@@ -96,7 +101,8 @@ struct Image
       std::copy(color_buffer,
                 color_buffer + size * 4,
                 &m_pixels[0]);
-      if(depth_buffer)
+
+      if(m_z_buffer_mode)
       {
 #ifdef ALPINE_USE_OPENMP
         #pragma omp parallel for 
@@ -112,6 +118,18 @@ struct Image
     }
 
     void Composite(const Image &image)
+    {
+      if(m_z_buffer_mode)
+      {
+        ZComposite(image);
+      }
+      else
+      {
+        Blend(image);
+      }
+    }
+
+    void ZComposite(const Image &image)
     {
       assert(m_depths.size() == m_pixels.size());
       assert(m_bounds.min[0] == image.m_bounds.min[0]); 
@@ -154,7 +172,7 @@ struct Image
 #endif
       for(int i = 0; i < size; ++i)
       {
-        if(m_pixels[3] = 255) continue;
+        if(m_pixels[3] == 255) continue;
         const int offset = i * 4;
         float alpha = static_cast<float>(m_pixels[offset + 4]);
         float alpha2 = static_cast<float>(image.m_pixels[offset + 4]);
@@ -176,6 +194,7 @@ struct Image
       m_orig_bounds = image.m_orig_bounds;
       m_bounds = sub_region;
       m_orig_rank = image.m_orig_rank;
+      m_z_buffer_mode = image.m_z_buffer_mode;
 
       assert(sub_region.min[0] >= image.m_bounds.min[0]);
       assert(sub_region.min[1] >= image.m_bounds.min[1]);
@@ -191,10 +210,10 @@ struct Image
       const int start_x = m_bounds.min[0] - image.m_bounds.min[0];
       const int start_y = m_bounds.min[1] - image.m_bounds.min[1];
       const int end_y = start_y + s_dy;
-      m_pixels.resize(s_dx * s_dy * 4);
-      bool has_depth = image.m_depths.size() != 0;
 
-      if(has_depth)
+      m_pixels.resize(s_dx * s_dy * 4);
+
+      if(m_z_buffer_mode)
       {
         m_depths.resize(s_dx * s_dy);
       }
@@ -211,7 +230,7 @@ struct Image
         std::copy(&image.m_pixels[copy_from * 4],
                   &image.m_pixels[copy_from * 4] + s_dx * 4,
                   &m_pixels[copy_to * 4]);
-        if(has_depth)
+        if(m_z_buffer_mode)
         {
           std::copy(&image.m_depths[copy_from],
                     &image.m_depths[copy_from] + s_dx,
@@ -265,8 +284,6 @@ struct Image
       const int start_x = m_bounds.min[0] - image.m_bounds.min[0];
       const int start_y = m_bounds.min[1] - image.m_bounds.min[1];
     
-      bool has_depth = image.m_depths.size() != 0;
-
 #ifdef ALPINE_USE_OPENMP
         #pragma omp parallel for 
 #endif
@@ -277,7 +294,7 @@ struct Image
         std::copy(&m_pixels[copy_from * 4],
                   &m_pixels[copy_from * 4] + s_dx * 4,
                   &image.m_pixels[copy_to * 4]);
-        if(has_depth)
+        if(m_z_buffer_mode)
         {
           std::copy(&m_depths[copy_from],
                     &m_depths[copy_from] + s_dx,
@@ -313,7 +330,7 @@ struct Image
     std::string ToString() const
     {
       std::stringstream ss;
-      fmt::print(ss, "Total size pixels {} tile dims: [{},{}] - [{},{}] {}\n",
+      fmt::print(ss, "Total size pixels {} tile dims: [{},{}] - [{},{}]\n",
                  (int) m_pixels.size() / 4, 
                  m_bounds.min[0],
                  m_bounds.min[1],
@@ -321,6 +338,7 @@ struct Image
                  m_bounds.max[1]);
       return ss.str();
     }
+
     void Save(std::string name)
     {
       PNGEncoder encoder;
@@ -375,6 +393,7 @@ struct Serialization<alpine::Image>
     diy::save(bb, image.m_pixels);
     diy::save(bb, image.m_depths);
     diy::save(bb, image.m_orig_rank);
+    diy::save(bb, image.m_z_buffer_mode);
   }
 
   static void load(BinaryBuffer &bb, alpine::Image &image)
@@ -384,6 +403,7 @@ struct Serialization<alpine::Image>
     diy::load(bb, image.m_pixels);
     diy::load(bb, image.m_depths);
     diy::load(bb, image.m_orig_rank);
+    diy::load(bb, image.m_z_buffer_mode);
   }
 };
 

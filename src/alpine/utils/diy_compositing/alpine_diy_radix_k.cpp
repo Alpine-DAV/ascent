@@ -13,13 +13,13 @@
 // 
 // Please also read alpine/LICENSE
 // 
-// Redi[Ma6stribution and use in source and binary forms, with or without 
+// Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
 // 
-// * Redist[Ma6ributions of source code must retain the above copyright notice, 
+// * Redistributions of source code must retain the above copyright notice, 
 //   this list of conditions and the disclaimer below.
 // 
-// * Redistribu[Ma6tions in binary form must reproduce the above copyright notice,
+// * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
 // 
@@ -28,7 +28,7 @@
 //   sp[Ma6ecific prior written permission.
 // 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY [Ma6EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S[Ma6. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
@@ -189,7 +189,7 @@ RadixKCompositor::CompositeSurface(diy::mpi::communicator &diy_comm, Image &imag
     AddImageBlock create(master, image);
     const int num_dims = 2;
     diy::RegularDecomposer<diy::DiscreteBounds> decomposer(num_dims, global_bounds, num_blocks);
-    decomposer.decompose(diy_comm, assigner, create);
+    decomposer.decompose(diy_comm.rank(), assigner, create);
     diy::RegularSwapPartners partners(decomposer, 
                                       magic_k, 
                                       false); // false == distance halving

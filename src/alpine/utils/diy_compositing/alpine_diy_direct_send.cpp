@@ -65,9 +65,11 @@ struct Redistribute
 {
   typedef diy::RegularDecomposer<diy::DiscreteBounds> Decomposer;
   const diy::RegularDecomposer<diy::DiscreteBounds> &m_decomposer;
-
-  Redistribute(const Decomposer &decomposer)
-    : m_decomposer(decomposer)
+  const int * m_vis_order;
+  Redistribute(const Decomposer &decomposer,
+               const int * vis_order = NULL)
+    : m_decomposer(decomposer),
+      m_vis_order(vis_order)
   {}
 
   void operator()(void *v_block, const diy::ReduceProxy &proxy) const
@@ -80,17 +82,13 @@ struct Redistribute
     //
     const int rank = proxy.gid();
     const int world_size = m_decomposer.nblocks;
+    
     if(proxy.in_link().size() == 0)
     {
       std::map<diy::BlockID,Image> outgoing;
 
       for(int i = 0; i < world_size; ++i)
       {
-        if(i == rank) 
-        {
-          // don't send to self
-          continue;
-        }
         diy::DiscreteBounds sub_image_bounds;
         m_decomposer.fill_bounds(sub_image_bounds, i);
         
@@ -98,32 +96,55 @@ struct Redistribute
         outgoing[dest].SubsetFrom(block->m_image, sub_image_bounds); 
         std::cout<<outgoing[dest].ToString()<<"\n";
       } //for
-     /* 
-      typename std::map<diy::BlockID,std::vector<typename BlockType::PartialType>>::iterator it;
-      for( it = outgoing.begin(); it != outgoing.end(); ++it)
+
+      typename std::map<diy::BlockID,Image>::iterator it;
+      for(it = outgoing.begin(); it != outgoing.end(); ++it)
       {
         proxy.enqueue(it->first, it->second);
-        it->second.clear();
-      }*/
+      }
     } // if
-    else
+    else if(!block->m_image.m_z_buffer_mode)
     {
-      /*
-      size_t total = 0;
+      // blend images according to vis order
+      assert(m_vis_order != NULL);
+      std::vector<Image> incoming(world_size);
       for(int i = 0; i < proxy.in_link().size(); ++i)
       {
         int gid = proxy.in_link().target(i).gid;
-        std::vector<typename BlockType::PartialType> incoming_partials;
-        proxy.dequeue(gid, incoming_partials); 
-        const int incoming_size = incoming_partials.size();
-        // TODO: make this a std::copy
-        for(int j = 0; j < incoming_size; ++j)
-        {
-          block->m_partials.push_back(incoming_partials[j]);
-        }
+        proxy.dequeue(gid, incoming[gid]); 
+        std::cout<<"rank "<<rank<<" rec "<<incoming[gid].ToString()<<"\n";
       } // for
-     */ 
-    } // else
+
+      const int start = m_vis_order[0];
+      for(int i = 1; i < world_size; ++i)
+      {
+         const int next = m_vis_order[i]; 
+         std::stringstream ss;
+         ss<<rank<<"_before.png";
+         incoming[start].Save(ss.str());
+         //std::stringstream ss2;
+         //ss2<<rank<<"_blending.png";
+         //incoming[next].Save(ss2.str());
+         incoming[start].Blend(incoming[next]);
+         std::stringstream ss3;
+         ss3<<rank<<"_after.png";
+         incoming[start].Save(ss3.str());
+      }
+      block->m_image.Swap(incoming[start]);
+    } // else if
+    else
+    {
+      /*
+      // z buffer compositing
+      for(int i = 0; i < proxy.in_link().size(); ++i)
+      {
+        Image image;
+        int gid = proxy.in_link().target(i).gid;
+        proxy.dequeue(gid, image); 
+        block
+      } // for
+      */
+    }
 
   } // operator
 };
@@ -142,7 +163,9 @@ DirectSendCompositor::CompositeVolume(diy::mpi::communicator &diy_comm,
                                       Image                  &image, 
                                       const int *             vis_order)
 {
-  
+  std::stringstream ss;
+  ss<<"original_"<<diy_comm.rank()<<".png";
+  image.Save(ss.str());
   diy::DiscreteBounds global_bounds = image.m_orig_bounds;;
   
   // tells diy to use all availible threads
@@ -160,7 +183,15 @@ DirectSendCompositor::CompositeVolume(diy::mpi::communicator &diy_comm,
   diy::RegularDecomposer<diy::DiscreteBounds> decomposer(dims, global_bounds, num_blocks);
   decomposer.decompose(diy_comm.rank(), assigner, create);
   
-  diy::all_to_all(master, assigner, Redistribute(decomposer), magic_k);
+  diy::all_to_all(master, 
+                  assigner, 
+                  Redistribute(decomposer, vis_order), 
+                  magic_k);
+
+  diy::all_to_all(master,
+                  assigner,
+                  CollectImages(decomposer),
+                  magic_k);
 }
 
 }
