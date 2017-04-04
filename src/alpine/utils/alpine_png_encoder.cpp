@@ -91,7 +91,7 @@ PNGEncoder::Encode(const unsigned char *rgba_in,
 
     for (int y=0; y<height; ++y)
     {
-        memcpy(&(rgba_flip[y*height*4]),
+        memcpy(&(rgba_flip[y*width*4]),
                &(rgba_in[(height-y-1)*width*4]),
                width*4);
     }

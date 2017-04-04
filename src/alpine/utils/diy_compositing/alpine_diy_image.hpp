@@ -42,8 +42,8 @@ struct Image
               int width,
               int height)
     {
-      m_bounds.min[0] = 0;
-      m_bounds.min[1] = 0;
+      m_bounds.min[0] = 1;
+      m_bounds.min[1] = 1;
       m_bounds.max[0] = width;
       m_bounds.max[1] = height;
       m_orig_bounds = m_bounds; 
@@ -84,8 +84,8 @@ struct Image
               int width,
               int height)
     {
-      m_bounds.min[0] = 0;
-      m_bounds.min[1] = 0;
+      m_bounds.min[0] = 1;
+      m_bounds.min[1] = 1;
       m_bounds.max[0] = width;
       m_bounds.max[1] = height;
       m_orig_bounds = m_bounds; 
@@ -157,6 +157,12 @@ struct Image
         m_pixels[offset + 3] = image.m_pixels[offset + 3];
       }
     }
+    void PrintColor(int i, float alpha) const
+    {
+      std::cout<<"["<<(int)m_pixels[i*4+0]<<","
+                    <<(int)m_pixels[i*4+1]<<","
+                    <<(int)m_pixels[i*4+2]<<","<<alpha<<"]\n";
+    } 
 
     void Blend(const Image &image)
     {
@@ -165,24 +171,65 @@ struct Image
       assert(m_bounds.max[0] == image.m_bounds.max[0]); 
       assert(m_bounds.max[1] == image.m_bounds.max[1]); 
 
-      const int size = static_cast<int>(m_depths.size()); 
+      const int size = static_cast<int>(m_pixels.size() / 4); 
   
 #ifdef ALPINE_USE_OPENMP
       #pragma omp parallel for 
 #endif
       for(int i = 0; i < size; ++i)
       {
-        if(m_pixels[3] == 255) continue;
         const int offset = i * 4;
-        float alpha = static_cast<float>(m_pixels[offset + 4]);
-        float alpha2 = static_cast<float>(image.m_pixels[offset + 4]);
-        const float one_minus = 1.f - static_cast<float>(alpha);
-        m_pixels[offset + 0] += static_cast<unsigned char>(one_minus * static_cast<float>(image.m_pixels[offset + 0])); 
-        m_pixels[offset + 1] += static_cast<unsigned char>(one_minus * static_cast<float>(image.m_pixels[offset + 1])); 
-        m_pixels[offset + 2] += static_cast<unsigned char>(one_minus * static_cast<float>(image.m_pixels[offset + 2])); 
-        alpha += one_minus * alpha2;
+        if(m_pixels[offset + 3] == 255) continue;
+        float alpha = static_cast<float>(m_pixels[offset + 3]) / 255.f;
+        float alpha2 = static_cast<float>(image.m_pixels[offset + 3]) / 255.f;
+        const float opacity = (1.f - alpha) * alpha2;
+        if(i == 268538)
+        {
+          std::cout<<"Before ";PrintColor(i, alpha);
+          std::cout<<"with ";image.PrintColor(i, alpha2);
+        }
+        m_pixels[offset + 0] += static_cast<unsigned char>(opacity * static_cast<float>(image.m_pixels[offset + 0])); 
+        m_pixels[offset + 1] += static_cast<unsigned char>(opacity * static_cast<float>(image.m_pixels[offset + 1])); 
+        m_pixels[offset + 2] += static_cast<unsigned char>(opacity * static_cast<float>(image.m_pixels[offset + 2])); 
+        alpha += opacity;
         alpha = std::min(alpha, 1.f);
-        m_pixels[offset + 4] = static_cast<unsigned char>(alpha * 255.f);
+        if(i == 268538)
+        { 
+          std::cout<<"after";PrintColor(i, alpha);
+          m_pixels[offset + 0] = 255;
+          m_pixels[offset + 1] = 0;
+          m_pixels[offset + 2] = 0;
+          m_pixels[offset + 3] = 255;
+          std::cout<<"after1";PrintColor(i, alpha);
+        }
+        else
+        {
+          m_pixels[offset + 3] = static_cast<unsigned char>(alpha * 255.f);
+        }
+      }
+    }
+    
+    void CompositeBackground(const float *color)
+    {
+
+      const int size = static_cast<int>(m_pixels.size() / 4); 
+      std::cout<<"BG "<<color[0]<<" "<<color[1]<<" "<<color[2]<<" "<<color[3]<<"\n"; 
+#ifdef ALPINE_USE_OPENMP
+      #pragma omp parallel for 
+#endif
+      for(int i = 0; i < size; ++i)
+      {
+        const int offset = i * 4;
+        if(m_pixels[offset + 3] == 255) continue;
+        float alpha = static_cast<float>(m_pixels[offset + 3]) / 255.f;
+        float alpha2 = color[3];
+        const float opacity = (1.f - alpha) * alpha2;
+        m_pixels[offset + 0] += static_cast<unsigned char>(opacity * color[0] * 255.f); 
+        m_pixels[offset + 1] += static_cast<unsigned char>(opacity * color[1] * 255.f); 
+        m_pixels[offset + 2] += static_cast<unsigned char>(opacity * color[2] * 255.f); 
+        alpha += opacity;
+        alpha = std::min(alpha, 1.f);
+        m_pixels[offset + 3] = static_cast<unsigned char>(alpha * 255.f);
       }
     }
     //
@@ -201,11 +248,11 @@ struct Image
       assert(sub_region.max[0] <= image.m_bounds.max[0]);
       assert(sub_region.max[1] <= image.m_bounds.max[1]);
 
-      const int s_dx  = m_bounds.max[0] - m_bounds.min[0];
-      const int s_dy  = m_bounds.max[1] - m_bounds.min[1];
+      const int s_dx  = m_bounds.max[0] - m_bounds.min[0] + 1;
+      const int s_dy  = m_bounds.max[1] - m_bounds.min[1] + 1;
 
-      const int dx  = image.m_bounds.max[0] - image.m_bounds.min[0];
-      const int dy  = image.m_bounds.max[1] - image.m_bounds.min[1];
+      const int dx  = image.m_bounds.max[0] - image.m_bounds.min[0] + 1;
+      const int dy  = image.m_bounds.max[1] - image.m_bounds.min[1] + 1;
       
       const int start_x = m_bounds.min[0] - image.m_bounds.min[0];
       const int start_y = m_bounds.min[1] - image.m_bounds.min[1];
@@ -275,11 +322,11 @@ struct Image
       assert(m_bounds.max[0] <= image.m_bounds.max[0]);
       assert(m_bounds.max[1] <= image.m_bounds.max[1]);
 
-      const int s_dx  = m_bounds.max[0] - m_bounds.min[0];
-      const int s_dy  = m_bounds.max[1] - m_bounds.min[1];
+      const int s_dx  = m_bounds.max[0] - m_bounds.min[0] + 1;
+      const int s_dy  = m_bounds.max[1] - m_bounds.min[1] + 1;
 
-      const int dx  = image.m_bounds.max[0] - image.m_bounds.min[0];
-      const int dy  = image.m_bounds.max[1] - image.m_bounds.min[1];
+      const int dx  = image.m_bounds.max[0] - image.m_bounds.min[0] + 1;
+      const int dy  = image.m_bounds.max[1] - image.m_bounds.min[1] + 1;
       
       const int start_x = m_bounds.min[0] - image.m_bounds.min[0];
       const int start_y = m_bounds.min[1] - image.m_bounds.min[1];
@@ -343,8 +390,8 @@ struct Image
     {
       PNGEncoder encoder;
       encoder.Encode(&m_pixels[0],
-                     m_bounds.max[0] - m_bounds.min[0],
-                     m_bounds.max[1] - m_bounds.min[0]);
+                     m_bounds.max[0] - m_bounds.min[0] + 1,
+                     m_bounds.max[1] - m_bounds.min[1] + 1);
       encoder.Save(name);
     }
 };

@@ -65,7 +65,8 @@ public:
   ~DirectSendCompositor();
   void CompositeVolume(diy::mpi::communicator &diy_comm, 
                        Image                  &image, 
-                       const int *             vis_order); 
+                       const int *             vis_order,
+                       const float *           bg_color); 
 };
 
 }

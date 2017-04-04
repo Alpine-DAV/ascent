@@ -995,6 +995,9 @@ Renderer::Render(vtkmActor *&plot,
             // Set the backgound color to transparent
             vtkmColor color = m_canvas->GetBackgroundColor();
             
+            color.Components[0] = 0.f;
+            color.Components[1] = 0.f;
+            color.Components[2] = 0.f;
             color.Components[3] = 0.f;
             m_canvas->SetBackgroundColor(color);
 
@@ -1025,6 +1028,7 @@ Renderer::Render(vtkmActor *&plot,
         //Save the image.
 #ifdef PARALLEL
 
+        //float  *result_color_buffer = NULL;
         unsigned char *result_color_buffer = NULL;
         //---------------------------------------------------------------------
         {// open block for RENDER_COMPOSITE Timer

@@ -101,7 +101,6 @@ public:
     void              Cleanup();
     
 private:
-    void                     Composite();
     diy::mpi::communicator   m_diy_comm;
     int                      m_rank;
     Image                    m_image;

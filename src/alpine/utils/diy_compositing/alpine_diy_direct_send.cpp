@@ -65,11 +65,14 @@ struct Redistribute
 {
   typedef diy::RegularDecomposer<diy::DiscreteBounds> Decomposer;
   const diy::RegularDecomposer<diy::DiscreteBounds> &m_decomposer;
-  const int * m_vis_order;
+  const int *   m_vis_order;
+  const float * m_bg_color;
   Redistribute(const Decomposer &decomposer,
-               const int * vis_order = NULL)
+               const int *       vis_order = NULL,
+               const float *     bg_color = NULL)
     : m_decomposer(decomposer),
-      m_vis_order(vis_order)
+      m_vis_order(vis_order),
+      m_bg_color(bg_color)
   {}
 
   void operator()(void *v_block, const diy::ReduceProxy &proxy) const
@@ -107,30 +110,36 @@ struct Redistribute
     {
       // blend images according to vis order
       assert(m_vis_order != NULL);
+      assert(m_bg_color != NULL);
       std::vector<Image> incoming(world_size);
       for(int i = 0; i < proxy.in_link().size(); ++i)
       {
         int gid = proxy.in_link().target(i).gid;
         proxy.dequeue(gid, incoming[gid]); 
-        std::cout<<"rank "<<rank<<" rec "<<incoming[gid].ToString()<<"\n";
+        //std::cout<<"rank "<<rank<<" rec "<<incoming[gid].ToString()<<"\n";
       } // for
 
       const int start = m_vis_order[0];
       for(int i = 1; i < world_size; ++i)
       {
-         const int next = m_vis_order[i]; 
-         std::stringstream ss;
-         ss<<rank<<"_before.png";
-         incoming[start].Save(ss.str());
-         //std::stringstream ss2;
-         //ss2<<rank<<"_blending.png";
-         //incoming[next].Save(ss2.str());
-         incoming[start].Blend(incoming[next]);
-         std::stringstream ss3;
-         ss3<<rank<<"_after.png";
-         incoming[start].Save(ss3.str());
+        const int next = m_vis_order[i]; 
+        std::stringstream  ss;
+        ss<<rank<<"_befor.png";
+        incoming[start].Save(ss.str());
+
+        std::stringstream  ss1;
+        ss1<<rank<<"_blending.png";
+        incoming[next].Save(ss1.str());
+        if(rank ==1)
+        incoming[start].Blend(incoming[next]);
+
+        std::stringstream  ss2;
+        ss2<<rank<<"_after.png";
+        incoming[start].Save(ss2.str());
       }
       block->m_image.Swap(incoming[start]);
+      block->m_image.CompositeBackground(m_bg_color);
+
     } // else if
     else
     {
@@ -161,7 +170,8 @@ DirectSendCompositor::~DirectSendCompositor()
 void
 DirectSendCompositor::CompositeVolume(diy::mpi::communicator &diy_comm, 
                                       Image                  &image, 
-                                      const int *             vis_order)
+                                      const int *             vis_order,
+                                      const float *           bg_color)
 {
   std::stringstream ss;
   ss<<"original_"<<diy_comm.rank()<<".png";
@@ -185,7 +195,7 @@ DirectSendCompositor::CompositeVolume(diy::mpi::communicator &diy_comm,
   
   diy::all_to_all(master, 
                   assigner, 
-                  Redistribute(decomposer, vis_order), 
+                  Redistribute(decomposer, vis_order, bg_color), 
                   magic_k);
 
   diy::all_to_all(master,

@@ -105,11 +105,11 @@ DIYCompositor::Composite(int            width,
                  height);
 
     DirectSendCompositor compositor;
-    compositor.CompositeVolume(m_diy_comm, m_image, vis_order);
+    compositor.CompositeVolume(m_diy_comm, m_image, vis_order, bg_color);
     m_image.m_orig_rank = m_rank;
 
     if(m_rank == 0)
-    {
+    {m_image.Save("out.png");
       return &m_image.m_pixels[0];
     }
     else
