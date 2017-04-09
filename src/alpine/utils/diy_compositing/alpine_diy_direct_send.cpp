@@ -123,23 +123,14 @@ struct Redistribute
       for(int i = 1; i < world_size; ++i)
       {
         const int next = m_vis_order[i]; 
-        std::stringstream  ss;
-        ss<<rank<<"_befor.png";
-        incoming[start].Save(ss.str());
-
-        std::stringstream  ss1;
-        ss1<<rank<<"_blending.png";
-        incoming[next].Save(ss1.str());
-        if(rank ==1)
         incoming[start].Blend(incoming[next]);
-
-        std::stringstream  ss2;
-        ss2<<rank<<"_after.png";
-        incoming[start].Save(ss2.str());
       }
+
       block->m_image.Swap(incoming[start]);
       block->m_image.CompositeBackground(m_bg_color);
-
+      std::stringstream ss;
+      ss<<rank<<"_part.png";
+      block->m_image.Save(ss.str());
     } // else if
     else
     {
@@ -174,8 +165,6 @@ DirectSendCompositor::CompositeVolume(diy::mpi::communicator &diy_comm,
                                       const float *           bg_color)
 {
   std::stringstream ss;
-  ss<<"original_"<<diy_comm.rank()<<".png";
-  image.Save(ss.str());
   diy::DiscreteBounds global_bounds = image.m_orig_bounds;;
   
   // tells diy to use all availible threads

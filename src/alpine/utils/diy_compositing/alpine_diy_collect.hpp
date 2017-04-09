@@ -92,6 +92,7 @@ struct CollectImages
     {
       Image final_image(block->m_image.m_orig_bounds, block->m_image.m_z_buffer_mode); 
       block->m_image.SubsetTo(final_image);
+
       for(int i = 0; i < proxy.in_link().size(); ++i)
       {
         int gid = proxy.in_link().target(i).gid;

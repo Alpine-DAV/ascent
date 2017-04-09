@@ -12,6 +12,10 @@ namespace alpine
 
 struct Image
 {
+    // The image bounds are indicated by a grid starting at
+    // 1-width and 1-height. Actual width would be calculated 
+    // m_bounds.max[0] - m_bounds.min[0] + 1
+    // 1024 - 1 + 1 = 1024
     diy::DiscreteBounds          m_orig_bounds; 
     diy::DiscreteBounds          m_bounds; 
     std::vector<unsigned char>   m_pixels;
@@ -28,8 +32,8 @@ struct Image
         m_z_buffer_mode(z_buffer_mode)
 
     {
-        const int dx  = bounds.max[0] - bounds.min[0];
-        const int dy  = bounds.max[1] - bounds.min[1];
+        const int dx  = bounds.max[0] - bounds.min[0] + 1;
+        const int dy  = bounds.max[1] - bounds.min[1] + 1;
         m_pixels.resize(dx * dy * 4);
         if(m_z_buffer_mode)
         {
@@ -179,33 +183,17 @@ struct Image
       for(int i = 0; i < size; ++i)
       {
         const int offset = i * 4;
-        if(m_pixels[offset + 3] == 255) continue;
-        float alpha = static_cast<float>(m_pixels[offset + 3]) / 255.f;
-        float alpha2 = static_cast<float>(image.m_pixels[offset + 3]) / 255.f;
-        const float opacity = (1.f - alpha) * alpha2;
-        if(i == 268538)
-        {
-          std::cout<<"Before ";PrintColor(i, alpha);
-          std::cout<<"with ";image.PrintColor(i, alpha2);
-        }
-        m_pixels[offset + 0] += static_cast<unsigned char>(opacity * static_cast<float>(image.m_pixels[offset + 0])); 
-        m_pixels[offset + 1] += static_cast<unsigned char>(opacity * static_cast<float>(image.m_pixels[offset + 1])); 
-        m_pixels[offset + 2] += static_cast<unsigned char>(opacity * static_cast<float>(image.m_pixels[offset + 2])); 
-        alpha += opacity;
-        alpha = std::min(alpha, 1.f);
-        if(i == 268538)
-        { 
-          std::cout<<"after";PrintColor(i, alpha);
-          m_pixels[offset + 0] = 255;
-          m_pixels[offset + 1] = 0;
-          m_pixels[offset + 2] = 0;
-          m_pixels[offset + 3] = 255;
-          std::cout<<"after1";PrintColor(i, alpha);
-        }
-        else
-        {
-          m_pixels[offset + 3] = static_cast<unsigned char>(alpha * 255.f);
-        }
+        //float alpha = static_cast<float>(m_pixels[offset + 3]) / 255.f;
+        unsigned int alpha = m_pixels[offset + 3];// / 255.f;
+        //const float opacity = (1.f - alpha) * alpha2;
+        const unsigned int opacity = 255 - alpha;//(1.f - alpha) * alpha2;
+        //m_pixels[offset + 0] += static_cast<unsigned char>(opacity * static_cast<float>(image.m_pixels[offset + 0])); 
+        //m_pixels[offset + 1] += static_cast<unsigned char>(opacity * static_cast<float>(image.m_pixels[offset + 1])); 
+        //m_pixels[offset + 2] += static_cast<unsigned char>(opacity * static_cast<float>(image.m_pixels[offset + 2])); 
+        m_pixels[offset + 0] += static_cast<unsigned char>(opacity * image.m_pixels[offset + 0] / 255); 
+        m_pixels[offset + 1] += static_cast<unsigned char>(opacity * image.m_pixels[offset + 1] / 255); 
+        m_pixels[offset + 2] += static_cast<unsigned char>(opacity * image.m_pixels[offset + 2] / 255); 
+        m_pixels[offset + 3] += static_cast<unsigned char>(opacity * image.m_pixels[offset + 3] / 255); 
       }
     }
     
@@ -214,22 +202,24 @@ struct Image
 
       const int size = static_cast<int>(m_pixels.size() / 4); 
       std::cout<<"BG "<<color[0]<<" "<<color[1]<<" "<<color[2]<<" "<<color[3]<<"\n"; 
+      unsigned char bg_color[4];
+      for(int i = 0; i < 4; ++i)
+      {
+        bg_color[i] = static_cast<unsigned char>(color[i] * 255.f);
+      }
+
 #ifdef ALPINE_USE_OPENMP
       #pragma omp parallel for 
 #endif
       for(int i = 0; i < size; ++i)
       {
         const int offset = i * 4;
-        if(m_pixels[offset + 3] == 255) continue;
-        float alpha = static_cast<float>(m_pixels[offset + 3]) / 255.f;
-        float alpha2 = color[3];
-        const float opacity = (1.f - alpha) * alpha2;
-        m_pixels[offset + 0] += static_cast<unsigned char>(opacity * color[0] * 255.f); 
-        m_pixels[offset + 1] += static_cast<unsigned char>(opacity * color[1] * 255.f); 
-        m_pixels[offset + 2] += static_cast<unsigned char>(opacity * color[2] * 255.f); 
-        alpha += opacity;
-        alpha = std::min(alpha, 1.f);
-        m_pixels[offset + 3] = static_cast<unsigned char>(alpha * 255.f);
+        unsigned int alpha = static_cast<unsigned int>(m_pixels[offset + 3]);
+        const float opacity = (255 - alpha);
+        m_pixels[offset + 0] += static_cast<unsigned char>(opacity * bg_color[0] / 255); 
+        m_pixels[offset + 1] += static_cast<unsigned char>(opacity * bg_color[1] / 255); 
+        m_pixels[offset + 2] += static_cast<unsigned char>(opacity * bg_color[2] / 255); 
+        m_pixels[offset + 3] += static_cast<unsigned char>(opacity * bg_color[3] / 255); 
       }
     }
     //
@@ -338,9 +328,11 @@ struct Image
       {
         const int copy_to = (y + start_y) * dx + start_x;
         const int copy_from = y * s_dx;
+        
         std::copy(&m_pixels[copy_from * 4],
                   &m_pixels[copy_from * 4] + s_dx * 4,
                   &image.m_pixels[copy_to * 4]);
+
         if(m_z_buffer_mode)
         {
           std::copy(&m_depths[copy_from],
