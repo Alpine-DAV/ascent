@@ -161,15 +161,40 @@ private:
        int          m_width;
        RendererType m_render_type;
        int          m_plot_dims;
+       int          m_image_count;
 
        RenderParams()
        : m_height(-1),
          m_width(-1),
          m_render_type(RAYTRACER),
-         m_plot_dims(-1)
+         m_plot_dims(-1),
+         m_image_count(1)
        {}
   };
 
+  struct ImageData 
+  {
+    public:
+        vtkmCamera  m_camera;
+        vtkmCanvas *m_canvas;
+        std::string m_image_name;
+
+        ImageData()
+          : m_canvas(NULL)
+        {}
+
+        ImageData(const vtkmCamera &camera)
+          : m_canvas(NULL)
+        {}
+
+        ~ImageData()
+        {
+            if(m_canvas)
+            {
+                delete m_canvas;
+            }
+        }
+  };
 //-----------------------------------------------------------------------------
 // private methods
 //-----------------------------------------------------------------------------
@@ -183,7 +208,11 @@ private:
     void SetCameraAttributes(conduit::Node &node);
     void SetDefaultCameraView(vtkmActor *plot);
     void SetupCamera();
-    void SetDefaultClippingPlane();
+    void SetupCameras(const std::string image_name);
+    void ParseCameraNode(const conduit::Node &camera, 
+                         vtkmCamera &res);
+    void SetDefaultClippingPlane(vtkmCamera &camera);
+    int  CountImages();
     vtkmColorTable  SetColorMapFromNode();
 //-----------------------------------------------------------------------------
 // private methods for MPI case
@@ -199,29 +228,28 @@ private:
 // private data members
 //-----------------------------------------------------------------------------
 
-    vtkmCanvas         *m_canvas;
-    vtkmMapper         *m_renderer;
-    vtkmCamera         *m_vtkm_camera;
+    vtkmCanvas             *m_canvas;
+    std::vector<ImageData>  m_images;
+    vtkmMapper             *m_renderer;
+    vtkmCamera              m_vtkm_camera;
 
-    vtkmColor           m_bg_color;
-    vtkm::Bounds        m_spatial_bounds; 
-    RendererType        m_render_type;
-    RenderParams        m_last_render;
+    vtkmColor               m_bg_color;
+    vtkm::Bounds            m_spatial_bounds; 
+    RendererType            m_render_type;
+    RenderParams            m_last_render;
   
-    conduit::Node       m_transfer_function;
-    conduit::Node       m_camera;
-  
-    conduit::Node      *m_data;
+    conduit::Node           m_transfer_function;
+    conduit::Node           m_camera;
+    conduit::Node           *m_data;
 
     // always keep rank, even for serial
-    int                 m_rank;
+    int                     m_rank;
   
-    conduit::Node       m_options;              // CDH: need to store?
-    bool                m_web_stream_enabled;   // CDH: move to pipeline ?
-    WebInterface        m_web_interface;        // CDH: move to pipeline ?
+    conduit::Node           m_options;              // CDH: need to store?
+    bool                    m_web_stream_enabled;   // CDH: move to pipeline ?
+    WebInterface            m_web_interface;        // CDH: move to pipeline ?
   
-    PNGEncoder          m_png_data;
-
+    PNGEncoder              m_png_data;
 //-----------------------------------------------------------------------------
 // private vars for MPI case
 //-----------------------------------------------------------------------------
