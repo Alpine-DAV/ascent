@@ -252,7 +252,6 @@ private:
 // private data members
 //-----------------------------------------------------------------------------
 
-    vtkmCanvas             *m_canvas;
     std::vector<ImageData>  m_images;
     vtkmMapper             *m_renderer;
     vtkmCamera              m_vtkm_camera;

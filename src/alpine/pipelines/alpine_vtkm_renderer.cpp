@@ -134,7 +134,6 @@ Renderer::Init()
 void
 Renderer::NullRendering()
 {
-    m_canvas       = NULL;
     m_renderer     = NULL;
 
     const int images_size = static_cast<int>(m_images.size());
@@ -155,11 +154,6 @@ Renderer::Cleanup()
         delete m_images[i].m_canvas;
     }
      
-    if(m_canvas)
-    {
-        delete m_canvas;
-    }
-
     if(m_renderer)
     {
         delete m_renderer;
@@ -205,7 +199,6 @@ Renderer::InitRendering(int plot_dims)
         ALPINE_ERROR("vtkmMapper was not created");
     }
 
-    m_canvas = new vtkmCanvasRayTracer(1,1);
     //
     // check to see how many images we have this render
     //
@@ -927,9 +920,6 @@ Renderer::Render(vtkmActor *&plot,
             InitRendering(dims);
         }
         
-                
-        m_canvas->ResizeBuffers(image_width, image_height);
-
         for(int i = 0; i < image_count; ++i)
         {
             m_images[i].m_canvas->ResizeBuffers(image_width, image_height);
@@ -1288,6 +1278,7 @@ Renderer::SetupCameras(const std::string image_name)
         }
         m_images[i].m_camera.SetPosition(pos);
         m_images[i].m_camera.SetLookAt(center);
+        this->SetDefaultClippingPlane(m_images[i].m_camera);
         m_images[i].m_camera.Print();
         m_images[i].m_image_name = prefixes[i] + image_name;
         std::cout<<m_images[i].m_image_name<<"\n";
