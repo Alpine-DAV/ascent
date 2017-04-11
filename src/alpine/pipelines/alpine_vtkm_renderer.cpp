@@ -1265,8 +1265,28 @@ Renderer::SetupCameras(const std::string image_name)
     std::cout<<"Images names\n";
     for(int i =0; i < verts.size(); ++i)
     {
+        std::cout<<"Images "<<i<<"\n";
         m_images[i].m_camera = m_vtkm_camera;
-        m_images[i].m_camera.SetPosition(verts[i] * radius + center);
+        vtkmVec3f pos = verts[i] * radius + center; 
+        vtkmVec3f view_dir = pos - center;
+        vtkmVec3f up = m_vtkm_camera.GetViewUp();
+        vtkm::Normalize(view_dir);
+        vtkm::Normalize(up);
+        std::cout<<"view "<<view_dir<<"\n";
+        std::cout<<"up"<<up<<"\n";
+
+        if(view_dir == -up) std::cout<<"*^*&^*&^*&^*&^*&^\n";
+        if(view_dir == up || view_dir == -up)
+        {
+          //
+          // if view == up then this will cause nans in the 
+          // view matrix. TODO: this is not the right
+          // way to handle this.
+          //
+          vtkmVec3f epsilon(0.00001f, 0.00001f, 0.00001f);
+          pos += epsilon;
+        }
+        m_images[i].m_camera.SetPosition(pos);
         m_images[i].m_camera.SetLookAt(center);
         m_images[i].m_camera.Print();
         m_images[i].m_image_name = prefixes[i] + image_name;
