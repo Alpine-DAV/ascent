@@ -432,7 +432,7 @@ Renderer::SetDefaultClippingPlane(vtkmCamera &camera)
 //-----------------------------------------------------------------------------
 
 int *
-Renderer::FindVisibilityOrdering(vtkmActor *plot)
+Renderer::FindVisibilityOrdering(vtkmActor *plot, const vtkmCamera &camera)
 {
     //
     // In order for parallel volume rendering to composite correctly,
@@ -442,7 +442,7 @@ Renderer::FindVisibilityOrdering(vtkmActor *plot)
     // track of rank, then pass the list in.
     //
     vtkm::Matrix<vtkm::Float32,4,4> view_matrix = 
-        m_vtkm_camera.CreateViewMatrix();
+        camera.CreateViewMatrix();
     
     //
     // z's should both be negative since the camera is 
@@ -491,7 +491,6 @@ Renderer::FindVisibilityOrdering(vtkmActor *plot)
     }
 
     MPI_Gather(&minz, 1, MPI_FLOAT, z_array, 1, MPI_FLOAT, 0, m_mpi_comm);
-
     if(m_rank == 0)
     {
         vis_order = new VTKMVisibility[m_mpi_size];
@@ -510,7 +509,8 @@ Renderer::FindVisibilityOrdering(vtkmActor *plot)
         
         for(int i = 0; i < m_mpi_size; i++)
         {
-            ((int*) vis_rank_order)[i] = vis_order[i].m_rank;;
+            ((int*) vis_rank_order)[i] = vis_order[i].m_rank;
+            std::cout<<"Vis order "<<i<<" "<<((int*) vis_rank_order)[i] <<"\n";
         }
         
         free(z_array);
@@ -1008,25 +1008,26 @@ Renderer::Render(vtkmActor *&plot,
         //  is painted. 
         
         
-        int *vis_order = NULL;
         if(m_render_type == VOLUME)
         {
-            // Set the backgound color to transparent
-            vtkmColor color = m_canvas->GetBackgroundColor();
-            
-            color.Components[3] = 0.f;
-            m_canvas->SetBackgroundColor(color);
+            for(int i = 0; i < image_count; ++i)
+            {
+                // Set the backgound color to transparent
+                vtkmColor color = m_images[i].m_canvas->GetBackgroundColor();
+                
+                color.Components[3] = 0.f;
+                m_images[i].m_canvas->SetBackgroundColor(color);
 
-            //
-            // Calculate visibility ordering AFTER 
-            // the camera parameters have been set
-            // IceT uses this list to composite the images
-            
-            //
-            // TODO: This relies on plot 0
-            //
-            vis_order = FindVisibilityOrdering(plot);
-    
+                //
+                // Calculate visibility ordering AFTER 
+                // the camera parameters have been set
+                // IceT uses this list to composite the images
+                
+                //
+                // TODO: This relies on plot 0
+                //
+                m_images[i].SetVisOrder( FindVisibilityOrdering(plot, m_images[i].m_camera) );
+            } 
         }
 #endif
         //---------------------------------------------------------------------
@@ -1096,10 +1097,8 @@ Renderer::Render(vtkmActor *&plot,
                     result_color_buffer = m_icet.Composite(image_width,
                                                            image_height,
                                                            input_color_buffer,
-                                                           vis_order,
+                                                           m_images[i].GetVisOrder(),
                                                            bg_color);
-                    // leak?
-                    free(vis_order);
                 }
             
             //---------------------------------------------------------------------
@@ -1186,7 +1185,7 @@ Renderer::SetupCameras(const std::string image_name)
     bool is_cinema = false;
 
     std::cout<<")))))))\n"; 
-    m_camera.print();
+    //m_camera.print();
     if(m_camera.has_path("type"))
     {
         if(m_camera["type"].as_string() == "cinema")

@@ -174,24 +174,48 @@ private:
 
   struct ImageData 
   {
+    private:
+    int        *m_vis_order;
     public:
         vtkmCamera  m_camera;
         vtkmCanvas *m_canvas;
         std::string m_image_name;
 
         ImageData()
-          : m_canvas(NULL)
+          : m_canvas(NULL),
+            m_vis_order(NULL)
         {}
 
         ImageData(const vtkmCamera &camera)
-          : m_canvas(NULL)
+          : m_canvas(NULL),
+            m_vis_order(NULL)
         {}
+
+        void SetVisOrder(int *vis_order)
+        {
+            if(m_vis_order)
+            {
+              free(m_vis_order);
+            }
+            
+            m_vis_order = vis_order;
+        }
+      
+        int * GetVisOrder()
+        {
+            return m_vis_order;
+        }
 
         ~ImageData()
         {
             if(m_canvas)
             {
                 delete m_canvas;
+            }
+
+            if(m_vis_order)
+            {
+                free(m_vis_order);
             }
         }
   };
@@ -219,7 +243,7 @@ private:
 //-----------------------------------------------------------------------------
 #ifdef PARALLEL
     void  CheckIceTError();
-    int  *FindVisibilityOrdering(vtkmActor *plot);
+    int  *FindVisibilityOrdering(vtkmActor *plot, const vtkmCamera &camera);
     void  SetParallelPlotExtents(vtkmActor * plot);
 #endif
   
