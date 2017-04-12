@@ -931,7 +931,7 @@ Renderer::Render(vtkmActor *&plot,
         //
         if(!m_camera.dtype().is_empty())
         {
-            SetupCamera();
+            ParseCameraNode(m_camera, m_vtkm_camera);
         } 
 
         SetupCameras(image_file_name);
@@ -1179,7 +1179,6 @@ Renderer::SetupCameras(const std::string image_name)
 {
     bool is_cinema = false;
 
-    std::cout<<")))))))\n"; 
     //m_camera.print();
     if(m_camera.has_path("type"))
     {
@@ -1187,10 +1186,6 @@ Renderer::SetupCameras(const std::string image_name)
         {
             is_cinema = true;
         }
-    }
-    if(is_cinema)
-    {
-        std::cout<<"IS CINEMA\n";
     }
 
     if(!is_cinema)
@@ -1211,7 +1206,6 @@ Renderer::SetupCameras(const std::string image_name)
     int images = 0; 
     int num_phi = 0;
     int num_theta = 0;
-    std::cout<<"******CINEMA\n";
      
     if(!m_camera.has_path("phi") ||
        !m_camera.has_path("theta"))
@@ -1253,11 +1247,11 @@ Renderer::SetupCameras(const std::string image_name)
             std::stringstream ss;
             ss<<phi<<"_"<<theta<<"_";
             prefixes[p * num_theta + t] = ss.str();
-            std::cout<<ss.str()<<"\n";
+            //std::cout<<ss.str()<<"\n";
             verts[p * num_theta + t] = v0;
         }
     }      
-    std::cout<<"Images names\n";
+
     for(int i =0; i < verts.size(); ++i)
     {
         m_images[i].m_camera = m_vtkm_camera;
@@ -1291,14 +1285,13 @@ Renderer::SetupCameras(const std::string image_name)
           }
           vtkm::Normalize(perp);
           m_images[i].m_camera.SetViewUp(perp);
-          flag = "_*****_";
         }
         m_images[i].m_camera.SetPosition(pos);
         m_images[i].m_camera.SetLookAt(center);
         this->SetDefaultClippingPlane(m_images[i].m_camera);
         m_images[i].m_camera.Print();
         m_images[i].m_image_name = prefixes[i] + flag + image_name;
-        std::cout<<m_images[i].m_image_name<<"\n";
+        //std::cout<<m_images[i].m_image_name<<"\n";
     }
     
     std::cout<<"Number of images "<<images<<"\n";
@@ -1374,71 +1367,12 @@ Renderer::ParseCameraNode(const conduit::Node &camera, vtkmCamera &res)
         res.SetClippingRange(clipping_range);
     }
 }
+
 //-----------------------------------------------------------------------------
-void
-Renderer::SetupCamera()
+std::string
+Renderer::GetModelInfo(const vtkmActor &actor, const int &image_num)
 {
-    //
-    // Get the optional camera parameters
-    //
-    if(m_camera.has_child("look_at"))
-    {
-        float64 *coords = m_camera["look_at"].as_float64_ptr();
-        vtkmVec3f look_at(coords[0], coords[1], coords[2]);
-        m_vtkm_camera.SetLookAt(look_at);  
-    }
-    if(m_camera.has_child("position"))
-    {
-        float64 *coords = m_camera["position"].as_float64_ptr();
-        vtkmVec3f position(coords[0], coords[1], coords[2]);
-        m_vtkm_camera.SetPosition(position);  
-    }
-    
-    if(m_camera.has_child("up"))
-    {
-        float64 *coords = m_camera["up"].as_float64_ptr();
-        vtkmVec3f up(coords[0], coords[1], coords[2]);
-        vtkm::Normalize(up);
-        m_vtkm_camera.SetViewUp(up);
-    }
-    
-    if(m_camera.has_child("fov"))
-    {
-        m_vtkm_camera.SetFieldOfView(m_camera["fov"].to_float64());
-    }
 
-    if(m_camera.has_child("xpan") || m_camera.has_child("ypan"))
-    {
-        vtkm::Float64 xpan = 0.;
-        vtkm::Float64 ypan = 0.;
-        if(m_camera.has_child("xpan")) xpan = m_camera["xpan"].to_float64();
-        if(m_camera.has_child("ypan")) xpan = m_camera["ypan"].to_float64();
-        m_vtkm_camera.Pan(xpan, ypan);
-    }
-
-    if(m_camera.has_child("zoom"))
-    {
-        m_vtkm_camera.Zoom(m_camera["zoom"].to_float64());
-    }
-    //
-    // With a new potential camera position. We need to reset the
-    // clipping plane as not to cut out part of the data set
-    //
-    this->SetDefaultClippingPlane(m_vtkm_camera);
-    
-    if(m_camera.has_child("nearplane"))
-    {
-        vtkm::Range clipping_range = m_vtkm_camera.GetClippingRange();
-        clipping_range.Min = m_camera["nearplane"].to_float64();
-        m_vtkm_camera.SetClippingRange(clipping_range);
-    }
-
-    if(m_camera.has_child("farplane"))
-    {
-        vtkm::Range clipping_range = m_vtkm_camera.GetClippingRange();
-        clipping_range.Max = m_camera["farplane"].to_float64();
-        m_vtkm_camera.SetClippingRange(clipping_range);
-    }
 }
 
 }; //namespace alpine

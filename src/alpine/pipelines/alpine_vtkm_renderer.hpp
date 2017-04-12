@@ -238,6 +238,7 @@ private:
     void SetDefaultClippingPlane(vtkmCamera &camera);
     int  CountImages();
     vtkmColorTable  SetColorMapFromNode();
+    std::string GetModelInfo(const vtkmActor &actor, const int &image_num);
 //-----------------------------------------------------------------------------
 // private methods for MPI case
 //-----------------------------------------------------------------------------
@@ -273,6 +274,8 @@ private:
     WebInterface            m_web_interface;        // CDH: move to pipeline ?
   
     PNGEncoder              m_png_data;
+
+    std::stringstream       m_log_stream;
 //-----------------------------------------------------------------------------
 // private vars for MPI case
 //-----------------------------------------------------------------------------
