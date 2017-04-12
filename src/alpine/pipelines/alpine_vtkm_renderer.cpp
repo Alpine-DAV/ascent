@@ -1021,6 +1021,10 @@ Renderer::Render(vtkmActor *&plot,
             } 
         }
 #endif
+        if(VTKMDataSetInfo::IsRectilinear(*plot))
+        {
+          std::cout<<"************we have a rectilinear dataset\n";
+        }
         //---------------------------------------------------------------------
         {// open block for RENDER_PAINT Timer
         //---------------------------------------------------------------------

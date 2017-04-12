@@ -28,7 +28,17 @@ public:
 //-----------------------------------------------------------------------------
   static bool IsStructured(const vtkm::cont::DataSet &data_set, int &topo_dims)
   {
-    vtkm::cont::DynamicCellSet cell_set = data_set.GetCellSet();
+    const vtkm::cont::DynamicCellSet cell_set = data_set.GetCellSet();
+    return IsStructured(cell_set, topo_dims);
+  }
+
+  static bool IsStructured(const vtkm::rendering::Actor &actor, int &topo_dims)
+  {
+    return IsStructured(actor.GetCells(), topo_dims); 
+  }
+
+  static bool IsStructured(const vtkm::cont::DynamicCellSet &cell_set, int &topo_dims)
+  {
     bool is_structured = false;
     topo_dims = -1;
 
@@ -53,8 +63,20 @@ public:
 //-----------------------------------------------------------------------------
   static bool IsRectilinear(const vtkm::cont::DataSet &data_set)
   {
-    vtkm::cont::CoordinateSystem coords = data_set.GetCoordinateSystem();
+    const vtkm::cont::CoordinateSystem coords = data_set.GetCoordinateSystem();
+    return IsRectilinear(coords);
+  }
+
+  static bool IsRectilinear(const vtkm::rendering::Actor &actor)
+  {
+    return IsRectilinear(actor.GetCoordinates()); 
+  }
+
+  static bool IsRectilinear(const vtkm::cont::CoordinateSystem &coords)
+  {
+
     bool is_rect= false; 
+
     if(coords.GetData().IsSameType(CartesianArrayHandle()))
     {
       is_rect = true; 
@@ -64,7 +86,17 @@ public:
 //-----------------------------------------------------------------------------
   static bool IsUniform(const vtkm::cont::DataSet &data_set)
   {
-    vtkm::cont::CoordinateSystem coords = data_set.GetCoordinateSystem();
+    const vtkm::cont::CoordinateSystem coords = data_set.GetCoordinateSystem();
+    return IsUniform(coords);
+  }
+
+  static bool IsUniform(const vtkm::rendering::Actor &actor)
+  {
+    return IsUniform(actor.GetCoordinates()); 
+  }
+
+  static bool IsUniform(const vtkm::cont::CoordinateSystem &coords)
+  {
     bool is_uniform= false; 
     if(coords.GetData().IsSameType(UniformArrayHandle()))
     {
@@ -76,8 +108,19 @@ public:
 //-----------------------------------------------------------------------------
   static bool GetPointDims(const vtkm::cont::DataSet &data_set, int *dims)
   {
+    const vtkm::cont::DynamicCellSet cell_set = data_set.GetCellSet();
+    return GetPointDims(cell_set, dims);
+  }
+
+  static bool GetPointDims(const vtkm::rendering::Actor &actor, int *dims)
+  {
+    return GetPointDims(actor.GetCells(), dims); 
+  }
+
+  static bool GetPointDims(const vtkm::cont::DynamicCellSet &cell_set, int *dims)
+  {
     int topo_dims;
-    bool is_structured = IsStructured(data_set, topo_dims);
+    bool is_structured = IsStructured(cell_set, topo_dims);
     bool success = false;
     if(!is_structured)
     {
@@ -88,7 +131,6 @@ public:
       success = true;
     }
     
-    vtkm::cont::DynamicCellSet cell_set = data_set.GetCellSet();
     if(topo_dims == 1)
     {
       vtkm::cont::CellSetStructured<1> cell_set1 = 
@@ -121,8 +163,19 @@ public:
 //-----------------------------------------------------------------------------
   static bool GetCellDims(const vtkm::cont::DataSet &data_set, int *dims)
   {
+    const vtkm::cont::DynamicCellSet cell_set = data_set.GetCellSet();
+    return GetCellDims(cell_set, dims);
+  }
+
+  static bool GetCellDims(const vtkm::rendering::Actor &actor, int *dims)
+  {
+    return GetCellDims(actor.GetCells(), dims); 
+  }
+
+  static bool GetCellDims(const vtkm::cont::DynamicCellSet &cell_set, int *dims)
+  {
     int topo_dims;
-    bool is_structured = IsStructured(data_set, topo_dims);
+    bool is_structured = IsStructured(cell_set, topo_dims);
     bool success = false;
     if(!is_structured)
     {
@@ -133,7 +186,6 @@ public:
       success = true;
     }
     
-    vtkm::cont::DynamicCellSet cell_set = data_set.GetCellSet();
     if(topo_dims == 1)
     {
       vtkm::cont::CellSetStructured<1> cell_set1 = 
@@ -162,7 +214,7 @@ public:
     return success;
 
   }
-
+  
 };
 
 } 
