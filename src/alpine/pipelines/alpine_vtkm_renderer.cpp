@@ -63,6 +63,7 @@
 #include <alpine_block_timer.hpp>
 #include <alpine_png_encoder.hpp>
 #include <alpine_web_interface.hpp>
+#include <alpine_vtkm_dataset_info.hpp>
 
 using namespace std;
 using namespace conduit;
@@ -1255,17 +1256,13 @@ Renderer::SetupCameras(const std::string image_name)
     std::cout<<"Images names\n";
     for(int i =0; i < verts.size(); ++i)
     {
-        std::cout<<"Images "<<i<<"\n";
         m_images[i].m_camera = m_vtkm_camera;
         vtkmVec3f pos = verts[i] * radius + center; 
         vtkmVec3f view_dir = pos - center;
         vtkmVec3f up = m_vtkm_camera.GetViewUp();
         vtkm::Normalize(view_dir);
         vtkm::Normalize(up);
-        std::cout<<"view "<<view_dir<<"\n";
-        std::cout<<"up"<<up<<"\n";
-
-        if(view_dir == -up) std::cout<<"*^*&^*&^*&^*&^*&^\n";
+        std::string flag;
         if(view_dir == up || view_dir == -up)
         {
           //
@@ -1273,14 +1270,30 @@ Renderer::SetupCameras(const std::string image_name)
           // view matrix. TODO: this is not the right
           // way to handle this.
           //
-          vtkmVec3f epsilon(0.00001f, 0.00001f, 0.00001f);
-          pos += epsilon;
+          vtkmVec3f up_abs(std::abs(up[0]), std::abs(up[1]), std::abs(up[2]));
+          float max_up = std::max(up_abs[0], std::max(up_abs[1], up_abs[2]));
+          vtkmVec3f perp(up[1], -up[0], 0.f);
+          if(max_up == up_abs[2])
+          {
+              perp[0] = 0.f;
+              perp[1] = up[2];
+              perp[2] = -up[1];
+          }
+          else if(max_up == up_abs[2])
+          {
+              perp[0] = -up[2];
+              perp[1] = 0.f;
+              perp[2] = up[0];
+          }
+          vtkm::Normalize(perp);
+          m_images[i].m_camera.SetViewUp(perp);
+          flag = "_*****_";
         }
         m_images[i].m_camera.SetPosition(pos);
         m_images[i].m_camera.SetLookAt(center);
         this->SetDefaultClippingPlane(m_images[i].m_camera);
         m_images[i].m_camera.Print();
-        m_images[i].m_image_name = prefixes[i] + image_name;
+        m_images[i].m_image_name = prefixes[i] + flag + image_name;
         std::cout<<m_images[i].m_image_name<<"\n";
     }
     
