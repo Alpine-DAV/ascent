@@ -51,6 +51,7 @@
 #define ALPINE_DIY_COMPOSITOR_HPP
 
 #include "diy_compositing/alpine_diy_image.hpp"
+#include "alpine_compositor_base.hpp"
 #include <diy/mpi.hpp>
 #include <iostream>
 //-----------------------------------------------------------------------------
@@ -59,7 +60,7 @@
 namespace alpine
 {
 
-class DIYCompositor
+class DIYCompositor : public Compositor
 {
 public:
      DIYCompositor();
@@ -104,7 +105,6 @@ private:
     diy::mpi::communicator   m_diy_comm;
     int                      m_rank;
     Image                    m_image;
-    std::stringstream        m_timing_log;
 };
 
 //-----------------------------------------------------------------------------

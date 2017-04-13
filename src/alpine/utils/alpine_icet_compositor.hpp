@@ -53,14 +53,14 @@
 //----iceT includes 
 #include <IceT.h>
 #include <IceTMPI.h>
-
+#include "alpine_compositor_base.hpp"
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
 //-----------------------------------------------------------------------------
 namespace alpine
 {
 
-class IceTCompositor
+class IceTCompositor : public Compositor
 {
 public:
      IceTCompositor();
@@ -75,7 +75,7 @@ public:
                                 const unsigned char *color_buffer,
                                 const int           *vis_order,
                                 const float         *bg_color);
-    float            *Composite(int                  width,
+    unsigned char    *Composite(int                  width,
                                 int                  height,
                                 const float         *color_buffer,
                                 const int           *vis_order,
@@ -90,7 +90,7 @@ public:
                                 const int           *viewport,
                                 const float         *bg_color);
 
-    float            *Composite(int                  width,
+    unsigned char    *Composite(int                  width,
                                 int                  height,
                                 const float         *color_buffer,
                                 const float         *depth_buffer,
@@ -101,7 +101,7 @@ public:
     void              Cleanup();
     
 private:
-    
+    void                GetTimings(); 
     IceTCommunicator    m_icet_comm;
     IceTContext         m_icet_context;
     IceTImage           m_icet_image;

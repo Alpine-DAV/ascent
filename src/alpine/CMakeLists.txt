@@ -214,6 +214,7 @@ if(MPI_FOUND)
                            utils/diy_compositing/alpine_diy_radix_k.cpp)
                          
     set(alpine_par_headers utils/alpine_icet_compositor.hpp
+                           utils/alpine_compositor_base.hpp
                            utils/alpine_diy_compositor.hpp
                            utils/diy_compositing/alpine_diy_image.hpp
                            utils/diy_compositing/alpine_diy_collect.hpp

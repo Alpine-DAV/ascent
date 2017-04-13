@@ -190,7 +190,6 @@ private:
 // private methods for MPI case
 //-----------------------------------------------------------------------------
 #ifdef PARALLEL
-    void  CheckIceTError();
     int  *FindVisibilityOrdering(vtkmActor *plot);
     void  SetParallelPlotExtents(vtkmActor * plot);
 #endif
@@ -229,8 +228,7 @@ private:
 #ifdef PARALLEL
     MPI_Comm            m_mpi_comm;
     
-    //IceTCompositor      m_icet;
-    DIYCompositor       m_icet;
+    Compositor         *m_compositor;
     
     int                 m_mpi_size;
 

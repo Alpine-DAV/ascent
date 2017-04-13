@@ -88,7 +88,26 @@ DIYCompositor::Composite(int            width,
                          const int           *vis_order,
                          const float         *bg_color)
 {
-    return NULL;
+    m_image.Init(color_buffer,
+                 NULL,
+                 width,
+                 height);
+
+    DirectSendCompositor compositor;
+    compositor.CompositeVolume(m_diy_comm, m_image, vis_order, bg_color);
+    m_image.m_orig_rank = m_rank;
+
+    m_log_stream<<compositor.GetTimingString();
+
+    if(m_rank == 0)
+    { 
+      m_image.Save("out.png");
+      return &m_image.m_pixels[0];
+    }
+    else
+    {
+      return NULL;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -108,8 +127,11 @@ DIYCompositor::Composite(int            width,
     compositor.CompositeVolume(m_diy_comm, m_image, vis_order, bg_color);
     m_image.m_orig_rank = m_rank;
 
+    m_log_stream<<compositor.GetTimingString();
+
     if(m_rank == 0)
-    {m_image.Save("out.png");
+    { 
+      m_image.Save("out.png");
       return &m_image.m_pixels[0];
     }
     else
@@ -137,6 +159,8 @@ DIYCompositor::Composite(int width,
     RadixKCompositor compositor;
     compositor.CompositeSurface(m_diy_comm, m_image);
 
+    m_log_stream<<compositor.GetTimingString();
+
     if(m_rank == 0)
     {
       return &m_image.m_pixels[0];
@@ -163,6 +187,8 @@ DIYCompositor::Composite(int width,
     RadixKCompositor compositor;
     compositor.CompositeSurface(m_diy_comm, m_image);
 
+    m_log_stream<<compositor.GetTimingString();
+
     if(m_rank == 0)
     {
       return &m_image.m_pixels[0];
@@ -178,13 +204,7 @@ DIYCompositor::Composite(int width,
 void
 DIYCompositor::Cleanup()
 {
-  if(m_rank == 0)
-  {
-    std::ofstream log_file;
-    log_file.open("composite_timings.log");
-    log_file<<m_timing_log.str();
-    log_file.close();
-  }
+
 }
 
 }; //namespace alpine

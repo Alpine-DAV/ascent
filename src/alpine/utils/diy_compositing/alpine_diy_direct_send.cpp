@@ -191,6 +191,18 @@ DirectSendCompositor::CompositeVolume(diy::mpi::communicator &diy_comm,
                   assigner,
                   CollectImages(decomposer),
                   magic_k);
+  if(diy_comm.rank() == 0) 
+  {
+    master.prof.output(m_timing_log);
+  }
+}
+
+std::string 
+DirectSendCompositor::GetTimingString()
+{
+  std::string res(m_timing_log.str());
+  m_timing_log.str("");
+  return res;
 }
 
 }

@@ -52,6 +52,7 @@
 
 #include "alpine_diy_image.hpp"
 #include <diy/mpi.hpp>
+#include <sstream>
 
 // -- begin alpine:: --
 //-----------------------------------------------------------------------------
@@ -67,6 +68,9 @@ public:
                        Image                  &image, 
                        const int *             vis_order,
                        const float *           bg_color); 
+  std::string GetTimingString();
+private:
+  std::stringstream m_timing_log;
 };
 
 }

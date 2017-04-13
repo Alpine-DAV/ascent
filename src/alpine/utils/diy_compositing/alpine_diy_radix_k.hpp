@@ -52,6 +52,7 @@
 
 #include "alpine_diy_image.hpp"
 #include <diy/mpi.hpp>
+#include <sstream>
 
 // -- begin alpine:: --
 //-----------------------------------------------------------------------------
@@ -64,9 +65,13 @@ public:
   RadixKCompositor();
   ~RadixKCompositor();
   void CompositeSurface(diy::mpi::communicator &diy_comm, Image &image); 
+  std::string GetTimingString();
+private:
+  std::stringstream m_timing_log;
 };
 
 }
+
 //-----------------------------------------------------------------------------
 // -- end alpine:: --
 //-----------------------------------------------------------------------------

@@ -203,12 +203,20 @@ RadixKCompositor::CompositeSurface(diy::mpi::communicator &diy_comm, Image &imag
                     assigner,
                     CollectImages(decomposer),
                     magic_k);
-  /*
+  
     if(diy_comm.rank() == 0) 
     {
       master.prof.output(m_timing_log);
     }
-  */
+  
+}
+
+std::string 
+RadixKCompositor::GetTimingString()
+{
+  std::string res(m_timing_log.str());
+  m_timing_log.str("");
+  return res;
 }
 
 }
