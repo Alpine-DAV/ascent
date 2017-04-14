@@ -58,6 +58,7 @@
 #include <limits.h>
 #include <cstdlib>
 #include <sstream>
+#include <type_traits>
 
 // thirdparty includes
 
@@ -447,7 +448,8 @@ VTKMPipeline::DataAdapter::RectilinearBlueprintToVTKmDataSet
         z_coords_handle.GetPortalControl().Set(0, 0.0);
     }
 
-    //The VTKM_USE_DOUBLE_PRECISION define make FloatDefault doubles
+    static_assert(std::is_same<vtkm::FloatDefault, double>::value,
+                  "VTK-m needs to be configured with 'VTKm_USE_DOUBLE_PRECISION=ON'");
     vtkm::cont::ArrayHandleCartesianProduct<
         vtkm::cont::ArrayHandle<vtkm::FloatDefault>,
         vtkm::cont::ArrayHandle<vtkm::FloatDefault>,
@@ -572,6 +574,8 @@ VTKMPipeline::DataAdapter::UnstructuredBlueprintToVTKmDataSet
     // TODO: assumes int32, and contiguous
     const int32 *ele_idx_ptr = n_topo_eles["connectivity"].value();
     int32 conn_size = n_topo_eles["connectivity"].dtype().number_of_elements();
+    static_assert(std::is_same<vtkm::Id, int>::value,
+                  "VTK-m needs to be configured with 'VTKm_USE_64_BIT_IDS=OFF'");
     vtkm::cont::ArrayHandle<vtkm::Id> connectivity = vtkm::cont::make_ArrayHandle(ele_idx_ptr,
                                                                                   conn_size);
     
