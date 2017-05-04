@@ -44,13 +44,53 @@
 
 ###############################################################################
 #
-# file: src/examples/CMakeLists.txt
+# Noise CMake Build for Alpine
 #
 ###############################################################################
 
-add_subdirectory(proxies/lulesh2.0.3)
-add_subdirectory(proxies/kripke)
-add_subdirectory(proxies/cloverleaf3d-ref)
-add_subdirectory(synthetic/noise)
+set(noise_sources
+    noise.cpp
+    open_simplex_noise.c)
+
+set(noise_header
+    open_simplex_noise.h)
+
+
+add_executable(noise_ser ${noise_sources})
+
+target_link_libraries(noise_ser
+                      alpine)
+
+
+#configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
+#configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
+
+
+if(OPENMP_FOUND)
+  set(noise_openmp_flags "-DNOISE_USE_OPENMP")
+else()
+   set(noise_openmp_flags "")
+endif()
+
+add_target_compile_flags(TARGET noise_ser
+                         FLAGS "${noise_openmp_flags}")
+
+if(MPI_FOUND)
+    add_executable(noise_par ${noise_sources})
+
+    add_target_compile_flags(TARGET noise_par 
+                             FLAGS "${MPI_CXX_COMPILE_FLAGS} -DPARALLEL  ${noise_openmp_flags}")
+
+    add_target_link_flags(TARGET noise_par  
+                          FLAGS "${MPI_CXX_LINK_FLAGS}")
+
+    target_link_libraries(noise_par
+                          alpine_par
+                          ${MPI_CXX_LIBRARIES})
+endif()
+
+
+
+
 
 
