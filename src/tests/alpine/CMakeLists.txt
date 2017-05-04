@@ -56,6 +56,8 @@ set(BASIC_TESTS t_alpine_smoke
                 t_alpine_render_3d
                 t_alpine_web)
 
+set(FLOW_TESTS  t_alpine_flow)
+
 
 set(MPI_TESTS  t_alpine_mpi_empty_pipeline
                t_alpine_mpi_render_2d
@@ -75,6 +77,13 @@ message(STATUS "Adding alpine lib unit tests")
 foreach(TEST ${BASIC_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON alpine)
 endforeach()
+
+
+message(STATUS "Adding alpine flow lib unit tests")
+foreach(TEST ${FLOW_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON alpine alpine_flow)
+endforeach()
+
 
 
 ################################

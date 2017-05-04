@@ -43,49 +43,51 @@
 ###############################################################################
 
 
-################################
-#  Project Wide Includes
-################################
+###############################################################################
+#
+# file: src/alpine/flow/CMakeLists.txt
+#
+###############################################################################
 
-# add lodepng include dir
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty_builtin/lodepng)
+set(alpine_flow_sources
+    # alpine flow interface
+    alpine_flow.cpp)
+    
+set(alpine_flow_headers
+    alpine_flow.hpp)
 
-# add include dirs so units tests have access to the headers across
-# libs and in unit tests
 
-include_directories(${PROJECT_SOURCE_DIR}/alpine/)
-include_directories(${PROJECT_BINARY_DIR}/alpine/)
-include_directories(${PROJECT_SOURCE_DIR}/alpine/utils)
-include_directories(${PROJECT_SOURCE_DIR}/alpine/pipelines)
-include_directories(${PROJECT_SOURCE_DIR}/alpine/flow)
+set(alpine_flow_thirdparty_libs 
+    conduit
+    conduit_blueprint)
 
-include_directories(${CONDUIT_INCLUDE_DIRS})
+##########################################
+# Build a serial version of flow
+##########################################
 
-if(VTKM_FOUND)
-    # tbb
-    if(TBB_FOUND)
-        include_directories(${TBB_INCLUDE_DIRS})
-    endif()
-    # VTK-m
-    include_directories(${VTKm_INCLUDE_DIRS})
+if(BUILD_SHARED_LIBS)
+    message(STATUS "Building alpine_flow as a shared library")
+     add_library(alpine_flow SHARED 
+                 ${alpine_flow_sources} 
+                 ${alpine_flow_headers})
+else()
+    message(STATUS "Building alpine_flow as a static library")
+    add_library(alpine_flow STATIC 
+                ${alpine_flow_sources} 
+                ${alpine_flow_headers})
 endif()
 
 
-if(MPI_FOUND)
-    include_directories(${ICET_INCLUDE_DIRS})
-    include_directories(${MPI_CXX_INCLUDE_PATH})
-endif()
+target_link_libraries(alpine_flow ${alpine_flow_thirdparty_libs})
 
-if(CUDA_FOUND)
-    include_directories(${CUDA_INCLUDE_DIRS})
-endif()
+# install target for alpine flow lib
+install(TARGETS alpine_flow
+        EXPORT  alpine
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION lib
+)
 
-
-if(HDF5_FOUND)
-    include_directories(${HDF5_INCLUDE_DIRS})
-endif()
-
-
-
+install(FILES ${alpine_flow_headers} DESTINATION include/alpine)
 
 
