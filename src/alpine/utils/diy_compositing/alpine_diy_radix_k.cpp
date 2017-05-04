@@ -82,14 +82,6 @@ void reduce_images(void *b,
         }
         Image incoming; 
         proxy.dequeue(gid, incoming);
-        /*
-        fmt::print(std::cout, 
-                   "[{}] Recieved {} from [{}] {}\n",
-                   proxy.gid(), 
-                   incoming.m_depths.size(), 
-                   gid,
-                   incoming.ToString());
-         */
         image.Composite(incoming);
       } // for in links
   } 

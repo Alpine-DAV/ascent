@@ -1,3 +1,52 @@
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
+// 
+// Produced at the Lawrence Livermore National Laboratory
+// 
+// LLNL-CODE-716457
+// 
+// All rights reserved.
+// 
+// This file is part of Alpine. 
+// 
+// For details, see: http://software.llnl.gov/alpine/.
+// 
+// Please also read alpine/LICENSE
+// 
+// Redistribution and use in source and binary forms, with or without 
+// modification, are permitted provided that the following conditions are met:
+// 
+// * Redistributions of source code must retain the above copyright notice, 
+//   this list of conditions and the disclaimer below.
+// 
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the disclaimer (as noted below) in the
+//   documentation and/or other materials provided with the distribution.
+// 
+// * Neither the name of the LLNS/LLNL nor the names of its contributors may
+//   be used to endorse or promote products derived from this software without
+//   specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
+// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// POSSIBILITY OF SUCH DAMAGE.
+// 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+
+//-----------------------------------------------------------------------------
+///
+/// file: alpine_diy_image.cpp
+///
+//-----------------------------------------------------------------------------
 #ifndef ALPINE_DIY_IMAGE_HPP
 #define ALPINE_DIY_IMAGE_HPP
 
@@ -76,11 +125,6 @@ struct Image
           m_depths[i] =  depth;
         }
       }
-      /*
-      std::copy(depth_buffer,
-                depth_buffer + size,
-                &m_depths[0]);
-      */
     }
 
     void Init(const unsigned char *color_buffer,
@@ -135,7 +179,7 @@ struct Image
 
     void ZComposite(const Image &image)
     {
-      assert(m_depths.size() == m_pixels.size());
+      assert(m_depths.size() == m_pixels.size() / 4);
       assert(m_bounds.min[0] == image.m_bounds.min[0]); 
       assert(m_bounds.min[1] == image.m_bounds.min[1]); 
       assert(m_bounds.max[0] == image.m_bounds.max[0]); 
@@ -183,13 +227,8 @@ struct Image
       for(int i = 0; i < size; ++i)
       {
         const int offset = i * 4;
-        //float alpha = static_cast<float>(m_pixels[offset + 3]) / 255.f;
         unsigned int alpha = m_pixels[offset + 3];// / 255.f;
-        //const float opacity = (1.f - alpha) * alpha2;
         const unsigned int opacity = 255 - alpha;//(1.f - alpha) * alpha2;
-        //m_pixels[offset + 0] += static_cast<unsigned char>(opacity * static_cast<float>(image.m_pixels[offset + 0])); 
-        //m_pixels[offset + 1] += static_cast<unsigned char>(opacity * static_cast<float>(image.m_pixels[offset + 1])); 
-        //m_pixels[offset + 2] += static_cast<unsigned char>(opacity * static_cast<float>(image.m_pixels[offset + 2])); 
         m_pixels[offset + 0] += static_cast<unsigned char>(opacity * image.m_pixels[offset + 0] / 255); 
         m_pixels[offset + 1] += static_cast<unsigned char>(opacity * image.m_pixels[offset + 1] / 255); 
         m_pixels[offset + 2] += static_cast<unsigned char>(opacity * image.m_pixels[offset + 2] / 255); 
@@ -201,7 +240,6 @@ struct Image
     {
 
       const int size = static_cast<int>(m_pixels.size() / 4); 
-      std::cout<<"BG "<<color[0]<<" "<<color[1]<<" "<<color[2]<<" "<<color[3]<<"\n"; 
       unsigned char bg_color[4];
       for(int i = 0; i < 4; ++i)
       {
