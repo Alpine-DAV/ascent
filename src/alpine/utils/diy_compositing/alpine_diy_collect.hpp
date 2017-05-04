@@ -44,79 +44,77 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_icet_compositor.hpp
+/// file: alpine_diy_collect.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ALPINE_ICET_COMPOSITOR_HPP
-#define ALPINE_ICET_COMPOSITOR_HPP
+#ifndef ALPINE_DIY_COLLECT_HPP
+#define ALPINE_DIY_COLLECT_HPP
 
-//----iceT includes 
-#include <IceT.h>
-#include <IceTMPI.h>
-#include "alpine_compositor_base.hpp"
-//-----------------------------------------------------------------------------
+#include <diy/master.hpp>
+#include <diy/partners/swap.hpp>
+#include <diy/reduce.hpp>
+#include <diy/reduce-operations.hpp>
+#include "alpine_diy_image.hpp"
+
 // -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace alpine
+
+namespace alpine 
 {
 
-class IceTCompositor : public Compositor
+struct CollectImages
 {
-public:
-     IceTCompositor();
-    ~IceTCompositor();
-    
-    void              Init(MPI_Comm mpi_comm);
-    
-    // composite with given visibility ordering.
-    
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const unsigned char *color_buffer,
-                                const int           *vis_order,
-                                const float         *bg_color);
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const float         *color_buffer,
-                                const int           *vis_order,
-                                const float         *bg_color);
+  const diy::RegularDecomposer<diy::DiscreteBounds> &m_decomposer;
 
-    // composite with using a depth buffer.
-    
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const unsigned char *color_buffer,
-                                const float         *depth_buffer,
-                                const int           *viewport,
-                                const float         *bg_color);
+  CollectImages(const diy::RegularDecomposer<diy::DiscreteBounds> &decomposer)
+    : m_decomposer(decomposer)
+  {}
 
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const float         *color_buffer,
-                                const float         *depth_buffer,
-                                const int           *viewport,
-                                const float         *bg_color);
+  void operator()(void *b, const diy::ReduceProxy &proxy) const
+  {
+    ImageBlock *block = reinterpret_cast<ImageBlock*>(b);
+    //
+    // first round we have no incoming. Take the images we have
+    // and sent them to to the right rank
+    //
+    const int collection_rank = 0; 
+    if(proxy.in_link().size() == 0)
+    {
+      if(proxy.gid() != collection_rank)
+      {
+        int dest_gid =  collection_rank;
+        diy::BlockID dest = proxy.out_link().target(dest_gid);
+        proxy.enqueue(dest, block->m_image);
+        block->m_image.Clear();
+      }
+    } // if
+    else if(proxy.gid() == collection_rank)
+    {
+      Image final_image(block->m_image.m_orig_bounds, block->m_image.m_z_buffer_mode); 
+      block->m_image.SubsetTo(final_image);
 
+      for(int i = 0; i < proxy.in_link().size(); ++i)
+      {
+        int gid = proxy.in_link().target(i).gid;
+        if(gid == collection_rank) 
+        {
+          continue;
+        }
+        Image incoming;
+        proxy.dequeue(gid, incoming); 
+        incoming.SubsetTo(final_image);
+      } // for 
+      block->m_image.Swap(final_image);
+    } // else
 
-    void              Cleanup();
-    
-private:
-    void                GetTimings(); 
-    IceTCommunicator    m_icet_comm;
-    IceTContext         m_icet_context;
-    IceTImage           m_icet_image;
-    int                 m_rank;
+  } // operator
 };
 
-//-----------------------------------------------------------------------------
-};
+} 
 //-----------------------------------------------------------------------------
 // -- end alpine:: --
 //-----------------------------------------------------------------------------
-
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-

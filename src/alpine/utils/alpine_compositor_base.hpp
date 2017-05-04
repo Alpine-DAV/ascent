@@ -41,71 +41,87 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-
+#include <sstream>
+#include <alpine_config.h>
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_icet_compositor.hpp
+/// file: alpine_compositor_base.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ALPINE_ICET_COMPOSITOR_HPP
-#define ALPINE_ICET_COMPOSITOR_HPP
+#ifndef ALPINE_COMPOSITOR_BASE_HPP
+#define ALPINE_COMPOSITOR_BASE_HPP
 
-//----iceT includes 
-#include <IceT.h>
-#include <IceTMPI.h>
-#include "alpine_compositor_base.hpp"
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
 //-----------------------------------------------------------------------------
 namespace alpine
 {
 
-class IceTCompositor : public Compositor
+class Compositor
 {
 public:
-     IceTCompositor();
-    ~IceTCompositor();
+     Compositor() {};
+     virtual ~Compositor() {};
     
-    void              Init(MPI_Comm mpi_comm);
+    virtual void      Init(MPI_Comm mpi_comm) = 0;
     
     // composite with given visibility ordering.
     
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const unsigned char *color_buffer,
-                                const int           *vis_order,
-                                const float         *bg_color);
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const float         *color_buffer,
-                                const int           *vis_order,
-                                const float         *bg_color);
+    virtual unsigned char    *Composite(int                  width,
+                                        int                  height,
+                                        const unsigned char *color_buffer,
+                                        const int           *vis_order,
+                                        const float         *bg_color) = 0;
+
+    virtual unsigned char    *Composite(int                  width,
+                                        int                  height,
+                                        const float         *color_buffer,
+                                        const int           *vis_order,
+                                        const float         *bg_color) = 0;
 
     // composite with using a depth buffer.
     
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const unsigned char *color_buffer,
-                                const float         *depth_buffer,
-                                const int           *viewport,
-                                const float         *bg_color);
+    virtual unsigned char    *Composite(int                  width,
+                                        int                  height,
+                                        const unsigned char *color_buffer,
+                                        const float         *depth_buffer,
+                                        const int           *viewport,
+                                        const float         *bg_color) = 0;
 
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const float         *color_buffer,
-                                const float         *depth_buffer,
-                                const int           *viewport,
-                                const float         *bg_color);
+    virtual unsigned char            *Composite(int                  width,
+                                                int                  height,
+                                                const float         *color_buffer,
+                                                const float         *depth_buffer,
+                                                const int           *viewport,
+                                                const float         *bg_color) = 0;
 
 
-    void              Cleanup();
+    virtual void         Cleanup() = 0;
     
-private:
-    void                GetTimings(); 
-    IceTCommunicator    m_icet_comm;
-    IceTContext         m_icet_context;
-    IceTImage           m_icet_image;
-    int                 m_rank;
+    std::string          GetLogString() 
+    { 
+        std::string res = m_log_stream.str(); 
+        m_log_stream.str("");
+        return res;
+    }     
+
+    unsigned char * ConvertBuffer(const float *buffer, const int size)
+    {
+        unsigned char *ubytes = new unsigned char[size];
+
+#ifdef ALPINE_USE_OPENMP
+        #pragma omp parallel for
+#endif
+        for(int i = 0; i < size; ++i)
+        {
+            ubytes[i] = static_cast<unsigned char>(buffer[i] * 255.f);
+        }
+
+        return ubytes;
+    }
+
+protected:
+    std::stringstream m_log_stream;    
 };
 
 //-----------------------------------------------------------------------------

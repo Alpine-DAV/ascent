@@ -44,27 +44,27 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_icet_compositor.hpp
+/// file: alpine_diy_compositor.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ALPINE_ICET_COMPOSITOR_HPP
-#define ALPINE_ICET_COMPOSITOR_HPP
+#ifndef ALPINE_DIY_COMPOSITOR_HPP
+#define ALPINE_DIY_COMPOSITOR_HPP
 
-//----iceT includes 
-#include <IceT.h>
-#include <IceTMPI.h>
+#include "diy_compositing/alpine_diy_image.hpp"
 #include "alpine_compositor_base.hpp"
+#include <diy/mpi.hpp>
+#include <iostream>
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
 //-----------------------------------------------------------------------------
 namespace alpine
 {
 
-class IceTCompositor : public Compositor
+class DIYCompositor : public Compositor
 {
 public:
-     IceTCompositor();
-    ~IceTCompositor();
+     DIYCompositor();
+    ~DIYCompositor();
     
     void              Init(MPI_Comm mpi_comm);
     
@@ -75,6 +75,7 @@ public:
                                 const unsigned char *color_buffer,
                                 const int           *vis_order,
                                 const float         *bg_color);
+
     unsigned char    *Composite(int                  width,
                                 int                  height,
                                 const float         *color_buffer,
@@ -90,7 +91,7 @@ public:
                                 const int           *viewport,
                                 const float         *bg_color);
 
-    unsigned char    *Composite(int                  width,
+    unsigned char     *Composite(int                  width,
                                 int                  height,
                                 const float         *color_buffer,
                                 const float         *depth_buffer,
@@ -101,11 +102,9 @@ public:
     void              Cleanup();
     
 private:
-    void                GetTimings(); 
-    IceTCommunicator    m_icet_comm;
-    IceTContext         m_icet_context;
-    IceTImage           m_icet_image;
-    int                 m_rank;
+    diy::mpi::communicator   m_diy_comm;
+    int                      m_rank;
+    Image                    m_image;
 };
 
 //-----------------------------------------------------------------------------

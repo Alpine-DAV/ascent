@@ -44,79 +44,40 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_icet_compositor.hpp
+/// file: alpine_diy_direct_send.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ALPINE_ICET_COMPOSITOR_HPP
-#define ALPINE_ICET_COMPOSITOR_HPP
+#ifndef ALPINE_DIY_DIRECT_SEND_HPP
+#define ALPINE_DIY_DIRECT_SEND_HPP
 
-//----iceT includes 
-#include <IceT.h>
-#include <IceTMPI.h>
-#include "alpine_compositor_base.hpp"
-//-----------------------------------------------------------------------------
+#include "alpine_diy_image.hpp"
+#include <diy/mpi.hpp>
+#include <sstream>
+
 // -- begin alpine:: --
 //-----------------------------------------------------------------------------
-namespace alpine
+namespace alpine 
 {
 
-class IceTCompositor : public Compositor
+class DirectSendCompositor
 {
 public:
-     IceTCompositor();
-    ~IceTCompositor();
-    
-    void              Init(MPI_Comm mpi_comm);
-    
-    // composite with given visibility ordering.
-    
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const unsigned char *color_buffer,
-                                const int           *vis_order,
-                                const float         *bg_color);
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const float         *color_buffer,
-                                const int           *vis_order,
-                                const float         *bg_color);
-
-    // composite with using a depth buffer.
-    
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const unsigned char *color_buffer,
-                                const float         *depth_buffer,
-                                const int           *viewport,
-                                const float         *bg_color);
-
-    unsigned char    *Composite(int                  width,
-                                int                  height,
-                                const float         *color_buffer,
-                                const float         *depth_buffer,
-                                const int           *viewport,
-                                const float         *bg_color);
-
-
-    void              Cleanup();
-    
+  DirectSendCompositor();
+  ~DirectSendCompositor();
+  void CompositeVolume(diy::mpi::communicator &diy_comm, 
+                       Image                  &image, 
+                       const int *             vis_order,
+                       const float *           bg_color); 
+  std::string GetTimingString();
 private:
-    void                GetTimings(); 
-    IceTCommunicator    m_icet_comm;
-    IceTContext         m_icet_context;
-    IceTImage           m_icet_image;
-    int                 m_rank;
+  std::stringstream m_timing_log;
 };
 
-//-----------------------------------------------------------------------------
-};
+}
 //-----------------------------------------------------------------------------
 // -- end alpine:: --
 //-----------------------------------------------------------------------------
-
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-

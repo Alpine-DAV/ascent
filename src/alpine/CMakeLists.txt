@@ -60,6 +60,7 @@ if(ALPINE_VTKM_ENABLED)
 endif()
 
 
+set(ALPINE_USE_OPENMP  ${OPENMP_FOUND})
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/alpine_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/alpine_config.h")
@@ -206,9 +207,21 @@ install(TARGETS alpine
 # Build Parallel (MPI) version of alpine
 ################################################
 if(MPI_FOUND)
-    set(alpine_par_sources utils/alpine_icet_compositor.cpp)
-    set(alpine_par_headers utils/alpine_icet_compositor.hpp)
+    set(alpine_par_sources utils/alpine_icet_compositor.cpp
+                           utils/alpine_diy_compositor.cpp
+                           utils/diy_compositing/alpine_diy_direct_send.cpp
+                           utils/diy_compositing/alpine_diy_direct_send.cpp
+                           utils/diy_compositing/alpine_diy_radix_k.cpp)
+                         
+    set(alpine_par_headers utils/alpine_icet_compositor.hpp
+                           utils/alpine_compositor_base.hpp
+                           utils/alpine_diy_compositor.hpp
+                           utils/diy_compositing/alpine_diy_image.hpp
+                           utils/diy_compositing/alpine_diy_collect.hpp
+                           utils/diy_compositing/alpine_diy_direct_send.hpp
+                           utils/diy_compositing/alpine_diy_radix_k.hpp)
     
+
 
     if(VTKM_FOUND)
         # we need to set compiler flags for the MPI case
