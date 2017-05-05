@@ -560,7 +560,7 @@ Renderer::SetParallelPlotExtents(vtkmActor * plot)
 Renderer::~Renderer()
 {
     ALPINE_BLOCK_TIMER(RENDERER_ON_DESTROY);
-    
+    WriteCinemaMetadata(); 
     Cleanup();
 
 #ifdef PARALLEL
@@ -1173,19 +1173,15 @@ Renderer::CountImages()
     return images;
 }
 
-//-----------------------------------------------------------------------------
 void
 Renderer::SetupCameras(const std::string image_name)
 {
     bool is_cinema = false;
 
     //m_camera.print();
-    if(m_camera.has_path("type"))
+    if(m_camera.has_path("cinema"))
     {
-        if(m_camera["type"].as_string() == "cinema")
-        {
-            is_cinema = true;
-        }
+        is_cinema = true;
     }
 
     if(!is_cinema)
@@ -1202,33 +1198,63 @@ Renderer::SetupCameras(const std::string image_name)
 
          return;
     }
+    
+    const conduit::Node &cinema = m_camera.fetch_child("cinema");
 
     int images = 0; 
     int num_phi = 0;
     int num_theta = 0;
      
-    if(!m_camera.has_path("phi") ||
-       !m_camera.has_path("theta"))
+    if(!cinema.has_path("phi") ||
+       !cinema.has_path("theta"))
     {
         ALPINE_ERROR("Camera with cinema type must have phi and theta defined");
     }
 
-    num_phi = m_camera["phi"].as_int64();
-    num_theta = m_camera["theta"].as_int64();
+    if(!cinema.has_path("image_name"))
+    {
+        ALPINE_ERROR("Camera with cinema type must have image_name defined");
+    }
+    std::string cinema_name = cinema["image_name"].as_string();
+    //
+    // Check to see if we alreay have an entry
+    //
+    bool has_meta = m_cinema_metas.count(cinema_name) == 1;
+
+    if(!has_meta)
+    {
+      m_cinema_metas[cinema_name] = CinemaMetadata();
+    }
+
+    CinemaMetadata &meta = m_cinema_metas[cinema_name];
+    meta.m_image_name = cinema_name;
+    int cycle = meta.m_cycle_count;
+
+    if(cinema.has_path("cycle"))
+    {
+      cycle = m_camera["cycle"].as_int64();
+    }
+        
+    meta.m_times.push_back(cycle);
+
+    meta.m_cycle_count++;
+
+    num_phi = cinema["phi"].as_int64();
+    num_theta = cinema["theta"].as_int64();
     images = num_phi * num_theta;
+
     if(images != m_images.size())
     {
         ALPINE_ERROR("Internal error: number of images does not match m_images");
     }
+
     vtkmVec3f center = m_spatial_bounds.Center();
     vtkm::Vec<vtkm::Float32,3> totalExtent;   
     totalExtent[0] = vtkm::Float32(m_spatial_bounds.X.Length());   
     totalExtent[1] = vtkm::Float32(m_spatial_bounds.Y.Length());   
     totalExtent[2] = vtkm::Float32(m_spatial_bounds.Z.Length());   
-    vtkm::Float32 radius = vtkm::Magnitude(totalExtent) * 3.5 / 2.0;   
+    vtkm::Float32 radius = vtkm::Magnitude(totalExtent) * 2.5 / 2.0;   
     
-    std::vector<vtkm::Vec<vtkm::Float32,3> > verts(images);
-    std::vector<std::string> prefixes(images);
     const double pi = 3.141592653589793;
     double phi_inc = 180.0 / double(num_phi);
     double theta_inc = 360.0 / double(num_theta);
@@ -1236,65 +1262,51 @@ Renderer::SetupCameras(const std::string image_name)
     {
         for(int t = 0; t < num_theta; ++t)
         {
-            double phi  =  phi_inc * p;
-            double theta = -180 + theta_inc * t;
-            double pr = (pi * phi) / 180.0;
-            double tr = (pi * theta) / 180.0;
-            vtkm::Vec<vtkm::Float32,3> v0;
-            v0[0] = cos(tr) * sin(pr);
-            v0[1] = sin(tr) * sin(pr);
-            v0[2] = cos(pr);
+            float phi  =  phi_inc * p;
+            float theta = -180 + theta_inc * t;
+
+            const int i = p * num_theta + t;
+
+            m_images[i].m_camera = m_vtkm_camera;
+
+            //
+            //  spherical coords start (r=1, theta = 0, phi = 0)
+            //  (x = 0, y = 0, z = 1)
+            //  up is the x+, and right is y+
+            //
+
+            vtkmVec3f pos(0.f,0.f,1.f);
+            vtkmVec3f up(1.f,0.f,0.f);
+
+            vtkm::Matrix<vtkm::Float32,4,4> phi_rot;  
+            vtkm::Matrix<vtkm::Float32,4,4> theta_rot;  
+            vtkm::Matrix<vtkm::Float32,4,4> rot;  
+
+            phi_rot = vtkm::Transform3DRotateY(phi); 
+            theta_rot = vtkm::Transform3DRotateZ(theta); 
+            rot = vtkm::MatrixMultiply(phi_rot, theta_rot); 
+
+            up = vtkm::Transform3DVector(rot, up);
+            vtkm::Normalize(up);
+            m_images[i].m_camera.SetViewUp(up);
+
+            pos = vtkm::Transform3DPoint(rot, pos);
+            pos = pos * radius + center; 
+            m_images[i].m_camera.SetPosition(pos);
+
             std::stringstream ss;
-            ss<<phi<<"_"<<theta<<"_";
-            prefixes[p * num_theta + t] = ss.str();
-            //std::cout<<ss.str()<<"\n";
-            verts[p * num_theta + t] = v0;
+            ss<<cycle<<"_"<<phi<<"_"<<theta<<"_";
+            m_images[i].m_image_name = ss.str() + image_name;
+            if(!has_meta)
+            {
+              meta.m_phis.push_back(phi);
+              meta.m_thetas.push_back(theta);
+            }
+            m_images[i].m_camera.SetLookAt(center);
+            this->SetDefaultClippingPlane(m_images[i].m_camera);
         }
     }      
 
-    for(int i =0; i < verts.size(); ++i)
-    {
-        m_images[i].m_camera = m_vtkm_camera;
-        vtkmVec3f pos = verts[i] * radius + center; 
-        vtkmVec3f view_dir = pos - center;
-        vtkmVec3f up = m_vtkm_camera.GetViewUp();
-        vtkm::Normalize(view_dir);
-        vtkm::Normalize(up);
-        std::string flag;
-        if(view_dir == up || view_dir == -up)
-        {
-          //
-          // if view == up then this will cause nans in the 
-          // view matrix. TODO: this is not the right
-          // way to handle this.
-          //
-          vtkmVec3f up_abs(std::abs(up[0]), std::abs(up[1]), std::abs(up[2]));
-          float max_up = std::max(up_abs[0], std::max(up_abs[1], up_abs[2]));
-          vtkmVec3f perp(up[1], -up[0], 0.f);
-          if(max_up == up_abs[2])
-          {
-              perp[0] = 0.f;
-              perp[1] = up[2];
-              perp[2] = -up[1];
-          }
-          else if(max_up == up_abs[2])
-          {
-              perp[0] = -up[2];
-              perp[1] = 0.f;
-              perp[2] = up[0];
-          }
-          vtkm::Normalize(perp);
-          m_images[i].m_camera.SetViewUp(perp);
-        }
-        m_images[i].m_camera.SetPosition(pos);
-        m_images[i].m_camera.SetLookAt(center);
-        this->SetDefaultClippingPlane(m_images[i].m_camera);
-        m_images[i].m_camera.Print();
-        m_images[i].m_image_name = prefixes[i] + flag + image_name;
-        //std::cout<<m_images[i].m_image_name<<"\n";
-    }
-    
-    std::cout<<"Number of images "<<images<<"\n";
 }
 
 //-----------------------------------------------------------------------------
@@ -1369,9 +1381,54 @@ Renderer::ParseCameraNode(const conduit::Node &camera, vtkmCamera &res)
 }
 
 //-----------------------------------------------------------------------------
-std::string
-Renderer::GetModelInfo(const vtkmActor &actor, const int &image_num)
+void
+Renderer::WriteCinemaMetadata()
 {
+    const int meta_count = m_cinema_metas.size();
+    if(meta_count == 0)
+    {
+        return;
+    }
+
+    std::map<std::string, CinemaMetadata>::iterator it;
+    for(it = m_cinema_metas.begin(); it != m_cinema_metas.end(); ++it)
+    {
+        conduit::Node output;
+        CinemaMetadata &cinema = it->second;
+        conduit::Node &header = output.append();
+        header["type"] = "cinema";
+        header["version"] = "1.1";
+        conduit::Node meta;
+        meta["type"] = "parametric-image-stack";
+        header["metadata"] = meta;
+
+        output["name_pattern"] = "{time}_{phi}_{theta}_"+cinema.m_image_name+".png";
+      
+        conduit::Node arguments;
+        conduit::Node time;
+        time["default"] = cinema.m_times[0];
+        time["label"] = "time";
+        time["type"] = "range";
+        time.set_path_float64_vector("values", cinema.m_times);
+        arguments["time"] = time;
+
+        conduit::Node phi;
+        time["default"] = cinema.m_phis[0];
+        time["label"] = "phi";
+        time["type"] = "range";
+        time.set_path_float64_vector("values", cinema.m_phis);
+        arguments["phi"] = phi;
+
+        conduit::Node theta;
+        time["default"] = cinema.m_thetas[0];
+        time["label"] = "theta";
+        time["type"] = "range";
+        time.set_path_float64_vector("values", cinema.m_phis);
+        arguments["theta"] = theta;
+
+        output["arguments"] = arguments;
+        output.print();
+    }
 
 }
 
