@@ -1153,21 +1153,18 @@ Renderer::CountImages()
     //
         
     int images = 1; 
-    if(m_camera.has_path("type"))
+    if(m_camera.has_child("cinema"))
     {
-        if(m_camera["type"].as_string() == "cinema")
+        std::cout<<"******CINEMA\n";
+        const conduit::Node &cinema = m_camera["cinema"]; 
+        if(!cinema.has_path("phi") ||
+           !cinema.has_path("theta"))
         {
-            std::cout<<"******CINEMA\n";
-             
-            if(!m_camera.has_path("phi") ||
-               !m_camera.has_path("theta"))
-            {
-                ALPINE_ERROR("Camera with cinema type must have phi and theta defined");
-            }
-            int phi = m_camera["phi"].as_int64();
-            int theta = m_camera["theta"].as_int64();
-            images = phi * theta;
+            ALPINE_ERROR("Camera with cinema type must have phi and theta defined");
         }
+        int phi = cinema["phi"].as_int64();
+        int theta = cinema["theta"].as_int64();
+        images = phi * theta;
     }
     std::cout<<"Number of images "<<images<<"\n";
     return images;
@@ -1179,7 +1176,7 @@ Renderer::SetupCameras(const std::string image_name)
     bool is_cinema = false;
 
     //m_camera.print();
-    if(m_camera.has_path("cinema"))
+    if(m_camera.has_child("cinema"))
     {
         is_cinema = true;
     }
@@ -1195,7 +1192,8 @@ Renderer::SetupCameras(const std::string image_name)
          {
              ParseCameraNode(m_camera, m_images[0].m_camera);
          }
-
+         std::cout<<"No Cinema\n";
+         m_camera.print();
          return;
     }
     
@@ -1223,6 +1221,7 @@ Renderer::SetupCameras(const std::string image_name)
 
     if(!has_meta)
     {
+      std::cout<<"########## !has_meta\n";
       m_cinema_metas[cinema_name] = CinemaMetadata();
     }
 
@@ -1299,6 +1298,7 @@ Renderer::SetupCameras(const std::string image_name)
             m_images[i].m_image_name = ss.str() + image_name;
             if(!has_meta)
             {
+              std::cout<<"#### phi "<<phi<<" theta "<<theta<<"\n";
               meta.m_phis.push_back(phi);
               meta.m_thetas.push_back(theta);
             }
@@ -1387,6 +1387,7 @@ Renderer::WriteCinemaMetadata()
     const int meta_count = m_cinema_metas.size();
     if(meta_count == 0)
     {
+        std::cout<<"no meta\n";
         return;
     }
 
@@ -1398,36 +1399,37 @@ Renderer::WriteCinemaMetadata()
         conduit::Node &header = output.append();
         header["type"] = "cinema";
         header["version"] = "1.1";
-        conduit::Node meta;
-        meta["type"] = "parametric-image-stack";
-        header["metadata"] = meta;
+       // conduit::Node meta;
+        //meta["type"] = "parametric-image-stack";
+        //header["metadata"] = meta;
 
+        //header.print();
         output["name_pattern"] = "{time}_{phi}_{theta}_"+cinema.m_image_name+".png";
-      
+     /* 
         conduit::Node arguments;
         conduit::Node time;
         time["default"] = cinema.m_times[0];
         time["label"] = "time";
         time["type"] = "range";
-        time.set_path_float64_vector("values", cinema.m_times);
+        time["values"].set_external_float64_vector(cinema.m_times);
         arguments["time"] = time;
 
         conduit::Node phi;
-        time["default"] = cinema.m_phis[0];
-        time["label"] = "phi";
-        time["type"] = "range";
-        time.set_path_float64_vector("values", cinema.m_phis);
+        phi["default"] = cinema.m_phis[0];
+        phi["label"] = "phi";
+        phi["type"] = "range";
+        phi["values"].set_external_float64_vector(cinema.m_phis);
         arguments["phi"] = phi;
 
         conduit::Node theta;
-        time["default"] = cinema.m_thetas[0];
-        time["label"] = "theta";
-        time["type"] = "range";
-        time.set_path_float64_vector("values", cinema.m_phis);
+        theta["default"] = cinema.m_thetas[0];
+        theta["label"] = "theta";
+        theta["type"] = "range";
+        theta["values"].set_external_float64_vector(cinema.m_thetas);
         arguments["theta"] = theta;
 
         output["arguments"] = arguments;
-        output.print();
+        arguments.print();*/
     }
 
 }
