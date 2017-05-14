@@ -263,7 +263,7 @@ struct DataSet
    inline void SetCell(const double &val, const int &x, const int &y, const int &z)
    {
      const int offset = z * m_cell_dims[0] * m_cell_dims[1] +
-                        y * m_cell_dims[1] + x;
+                        y * m_cell_dims[0] + x;
      m_zonal_scalars[offset] = val;
    } 
     
@@ -448,7 +448,7 @@ int main(int argc, char** argv)
   for(int t = 0; t < options.m_time_steps; ++t)
   {
     // 
-    // update zonal scalars
+    // update scalars
     //
     for(int z = 0; z < data_set.m_point_dims[2]; ++z)
       for(int y = 0; y < data_set.m_point_dims[1]; ++y)
@@ -460,8 +460,15 @@ int main(int argc, char** argv)
           double coord[4];
           data_set.GetCoord(x,y,z,coord);
           coord[3] = time;
-          double val = open_simplex_noise4(ctx_zonal, coord[0], coord[1], coord[2], coord[3]);
-          data_set.SetPoint(val,x,y,z);
+          double val_point = open_simplex_noise4(ctx_nodal, coord[0], coord[1], coord[2], coord[3]);
+          double val_cell = open_simplex_noise4(ctx_zonal, coord[0], coord[1], coord[2], coord[3]);
+          data_set.SetPoint(val_point,x,y,z);
+          if(x < data_set.m_cell_dims[0] &&
+             y < data_set.m_cell_dims[1] &&
+             z < data_set.m_cell_dims[2] )
+          {
+            data_set.SetCell(val_cell, x, y, z);
+          }
         }
 
         time += options.m_time_delta;
@@ -487,6 +494,8 @@ int main(int argc, char** argv)
   // 
   // cleanup
   //
+  open_simplex_noise_free(ctx_nodal);
+  open_simplex_noise_free(ctx_zonal);
   alpine.Close();
   Finalize();
 }
