@@ -1,6 +1,8 @@
 #ifndef VTK_H_HPP
 #define VTK_H_HPP
 
+#include <string>
+
 #ifdef PARALLEL
 #include <mpi.h>
 #endif
@@ -22,6 +24,7 @@ public:
   void Open();
 #endif
   void Close();
+  std::string About();
 };
 
 }

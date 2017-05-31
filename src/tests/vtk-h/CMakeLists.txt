@@ -44,51 +44,41 @@
 
 
 ################################
-#  Project Wide Includes
+# Unit Tests
 ################################
 
-# add lodepng include dir
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty_builtin/lodepng)
-# add DIY include dir
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty_builtin/diy/include)
+################################
+# Core VTK-h Unit Tests
+################################
+set(BASIC_TESTS t_vtk-h_smoke)
 
-# add include dirs so units tests have access to the headers across
-# libs and in unit tests
 
-include_directories(${PROJECT_SOURCE_DIR}/alpine/)
-include_directories(${PROJECT_BINARY_DIR}/alpine/)
-include_directories(${PROJECT_SOURCE_DIR}/alpine/utils)
-include_directories(${PROJECT_SOURCE_DIR}/alpine/pipelines)
+set(MPI_TESTS t_vtk-h_smoke_par)
 
-include_directories(${PROJECT_SOURCE_DIR}/vtk-h/)
 
-include_directories(${CONDUIT_INCLUDE_DIRS})
+################################
+# Add main tests
+################################
+message(STATUS "Adding vtk-h lib unit tests")
+foreach(TEST ${BASIC_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON vtkh)
+endforeach()
 
-if(VTKM_FOUND)
-    # tbb
-    if(TBB_FOUND)
-        include_directories(${TBB_INCLUDE_DIRS})
-    endif()
-    # VTK-m
-    include_directories(${VTKm_INCLUDE_DIRS})
+
+################################
+# Add optional tests
+################################
+
+if(MPI_FOUND AND ENABLE_MPI)
+    message(STATUS "MPI enabled: Adding related unit tests")
+    foreach(TEST ${MPI_TESTS})
+        # this uses 2 procs
+        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON vtkh_par) 
+        set_target_properties( ${TEST} PROPERTIES COMPILE_FLAGS "-D PARALLEL")
+    endforeach()
+else()
+    message(STATUS "MPI disabled: Skipping related tests")
 endif()
-
-
-if(MPI_FOUND)
-    include_directories(${ICET_INCLUDE_DIRS})
-    include_directories(${MPI_CXX_INCLUDE_PATH})
-endif()
-
-if(CUDA_FOUND)
-    include_directories(${CUDA_INCLUDE_DIRS})
-endif()
-
-
-if(HDF5_FOUND)
-    include_directories(${HDF5_INCLUDE_DIRS})
-endif()
-
-
 
 
 
