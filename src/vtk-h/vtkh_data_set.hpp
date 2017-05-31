@@ -21,7 +21,7 @@ public:
   std::vector<vtkm::cont::DataSet> m_domains;
   std::vector<int>                 m_domain_ids;
   
-  vtkm::Bounds GetBounds() const;
+  vtkm::Bounds GetBounds(vtkm::Id index = 0) const;
   vtkm::cont::ArrayHandle<vtkm::Range> GetRange(const std::string &field_name) const;
 };
 
