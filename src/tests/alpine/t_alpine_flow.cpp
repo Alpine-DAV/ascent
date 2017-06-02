@@ -443,6 +443,14 @@ TEST(alpine_flow, alpine_flow_workspace_reg_source)
     w.registry().consume("a");
     
     w.print();
+    
+    Node *n_s = w.registry().fetch(":src");
+    
+    ALPINE_INFO("Input result: " << n_s->to_json());
+    
+    EXPECT_EQ(n_s->as_int(),10);
+    
+    EXPECT_EQ(n_s,&v);
 }
 
 
