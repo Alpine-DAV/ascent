@@ -73,67 +73,442 @@ TEST(alpine_flow, alpine_flow_registry)
     n->set(10);
     
     flow::Registry r;
-    r.add_entry("data",n,2);
+    r.add("d",flow::Data(n),2);
+    r.print();
 
-    Node *n_fetch = r.fetch_entry("data");
+    Node *n_fetch = r.fetch("d");
     EXPECT_EQ(n,n_fetch);
 
-    r.dec_entry_ref_count("data");
-    n_fetch = r.fetch_entry("data");
-    EXPECT_EQ(n,n_fetch);
+    r.consume("d");
+    r.print();
 
-    r.dec_entry_ref_count("data");
     
-    n_fetch = r.fetch_entry("data");
+    n_fetch = r.fetch("d");
+    EXPECT_EQ(n,n_fetch);
+
+    r.consume("d");
+    r.print();
+    
+    
+    // TODO, we want n to be deleted ...
+    
+    
+    n_fetch = r.fetch("d");
     EXPECT_EQ(NULL,n_fetch);
     
 }
 
 //-----------------------------------------------------------------------------
-class TestFilter: public flow::Filter
+TEST(alpine_flow, alpine_flow_registry_aliased)
+{
+    Node *n = new Node();
+    
+    n->set(10);
+    
+    
+    flow::Registry r;
+    r.add("d1",flow::Data(n),1);
+    r.add("d2",flow::Data(n),1);
+    r.print();
+
+
+    Node *n_fetch = r.fetch("d1");
+    EXPECT_EQ(n,n_fetch);
+
+    r.consume("d1");
+    r.print();
+
+    n_fetch = r.fetch("d2");
+    EXPECT_EQ(n,n_fetch);
+
+    r.consume("d2");
+    r.print();
+
+    
+    // TODO, we want n to be deleted ...    
+    
+    n_fetch = r.fetch("d1");
+    EXPECT_EQ(NULL,n_fetch);
+
+    n_fetch = r.fetch("d2");
+    EXPECT_EQ(NULL,n_fetch);
+
+    
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow, alpine_flow_registry_untracked)
+{
+    Node *n = new Node();
+    
+    n->set(10);
+
+    flow::Registry r;
+    r.add("d",flow::Data(n),-1);
+    r.print();
+
+    Node *n_fetch = r.fetch("d");
+    EXPECT_EQ(n,n_fetch);
+
+    r.consume("d");
+    r.print();
+
+    n_fetch = r.fetch("d");
+    EXPECT_EQ(n,n_fetch);
+
+    r.consume("d");
+    r.print();
+
+    
+    n_fetch = r.fetch("d");
+    EXPECT_EQ(n,n_fetch);
+
+
+    delete n;
+}
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow, alpine_flow_registry_untracked_aliased)
+{
+    Node *n = new Node();
+    
+    n->set(10);
+
+    flow::Registry r;
+    r.add("d",flow::Data(n),-1);
+    r.add("d_al",flow::Data(n),1);
+    r.print();
+
+    Node *n_fetch = r.fetch("d");
+    EXPECT_EQ(n,n_fetch);
+    r.consume("d");
+
+
+    n_fetch = r.fetch("d_al");
+    EXPECT_EQ(n,n_fetch);
+
+    r.consume("d_al");
+
+    n_fetch = r.fetch("d_al");
+    EXPECT_EQ(NULL,n_fetch);
+    
+
+    n_fetch = r.fetch("d");
+    EXPECT_EQ(n,n_fetch);
+
+    r.print();
+    
+    delete n;
+}
+
+
+//-----------------------------------------------------------------------------
+class SrcFilter: public flow::Filter
 {
 public:
-    TestFilter()
+    SrcFilter()
     : flow::Filter()
     {
         Node &p = properties();
-        p["type_name"] = "test";
-        p["input_port_names"].append().set("in");
-        p["default_params"]["value"] = "default";
+        p["type_name"] = "src";
+        p["port_names"] = DataType::empty();
+        p["default_params"]["value"].set((int)0);
         p["output_port"] = "true";
-
-        init();
     }
         
-    virtual ~TestFilter()
+    virtual ~SrcFilter()
     {}
 
     virtual void execute()
-    {
+    {;
+        int val = params()["value"].value();
         Node *res = new Node();
-        Node *in = input("in");
-        res->set(*in);
-
+        res->set(val);
         output().set(res);
+        ALPINE_INFO("exec: " << name() << " result = " << res->to_json());
+    }
+
+    // stand in for factory solution
+    static Filter *type()
+    {
+        return new SrcFilter();
     }
 };
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_filter_graph)
+class IncFilter: public flow::Filter
+{
+public:
+    IncFilter()
+    : flow::Filter()
+    {
+        Node &p = properties();
+        p["type_name"] = "inc";
+        p["port_names"].append().set("in");
+        p["default_params"]["inc"].set((int)1);
+        p["output_port"] = "true";
+    }
+        
+    virtual ~IncFilter()
+    {}
+
+    virtual void execute()
+    {
+        Node &in = input("in");
+        int val  = in.to_int();
+        int inc  = params()["inc"].value();
+
+        val+= inc;
+
+        Node *res = new Node();
+        res->set(val);
+        
+        output().set(res);
+        ALPINE_INFO("exec: " << name() << " result = " << res->to_json());
+    }
+
+    // stand in for factory solution
+    static Filter *type()
+    {
+        return new IncFilter();
+    }
+};
+
+
+//-----------------------------------------------------------------------------
+class AddFilter: public flow::Filter
+{
+public:
+    AddFilter()
+    : flow::Filter()
+    {
+        Node &p = properties();
+        p["type_name"] = "add";
+        p["port_names"].append().set("a");
+        p["port_names"].append().set("b");
+        p["output_port"] = "true";
+    }
+        
+    virtual ~AddFilter()
+    {}
+
+    virtual void execute()
+    {
+        Node &a_in = input("a");
+        Node &b_in = input("b");
+        
+        int rval = a_in.to_int() + b_in.to_int();
+        Node *res = new Node();
+        res->set(rval);
+        output().set(res);
+        
+        ALPINE_INFO("exec: " << name() << " result = " << res->to_json());
+    }
+
+    // stand in for factory solution
+    static Filter *type()
+    {
+        return new AddFilter();
+    }
+};
+
+
+
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow, alpine_flow_workspace_linear)
 {
 
-    flow::FilterGraph f;
-    
-    f.add_filter("a", new TestFilter());
-    f.add_filter("b", new TestFilter());
-    f.add_filter("c", new TestFilter());
-    
-    f.connect("a","b","in");
-    f.connect("b","c","in");
-    
-    
-    f.print();
+    flow::Workspace w;
+    // w.graph().register(FilterType(class))
 
+    w.graph().register_filter_type(&SrcFilter::type);    
+    w.graph().register_filter_type(&IncFilter::type);
+
+
+    w.graph().add_filter("src","s");
+    
+    w.graph().add_filter("inc","a");
+    w.graph().add_filter("inc","b");
+    w.graph().add_filter("inc","c");
+    
+    // // src, dest, port
+    w.graph().connect("s","a","in");
+    w.graph().connect("a","b","in");
+    w.graph().connect("b","c","in");
+    //
+    w.print();
+    //
+    w.execute();
+    
+    Node &res = w.registry().fetch("c");
+    
+    ALPINE_INFO("Final result: " << res.to_json());
+
+    EXPECT_EQ(res.as_int(),3);
+
+    w.registry().consume("c");
+
+    w.print();
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow, alpine_flow_workspace_graph)
+{
+
+    flow::Workspace w;
+    // w.graph().register(FilterType(class))
+
+    w.graph().register_filter_type(&SrcFilter::type);
+    w.graph().register_filter_type(&AddFilter::type);
+
+
+    Node p_vs;
+    p_vs["value"].set(int(10));
+
+    w.graph().add_filter("src","v1",p_vs);
+    w.graph().add_filter("src","v2",p_vs);
+    w.graph().add_filter("src","v3",p_vs);
+    
+    
+    w.graph().add_filter("add","a1");
+    w.graph().add_filter("add","a2");
+    
+    
+    // // src, dest, port
+    w.graph().connect("v1","a1","a");
+    w.graph().connect("v2","a1","b");
+    
+    
+    w.graph().connect("a1","a2","a");
+    w.graph().connect("v3","a2","b");
+
+    //
+    w.print();
+    //
+    w.execute();
+    
+    Node &res = w.registry().fetch("a2");
+    
+    ALPINE_INFO("Final result: " << res.to_json());
+    
+    EXPECT_EQ(res.as_int(),30);
+    
+    w.registry().consume("a2");
+    
+    w.print();
+}
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow, alpine_flow_workspace_reg_source)
+{
+
+    flow::Workspace w;
+    // w.graph().register(FilterType(class))
+
+    w.graph().register_filter_type(&flow::filters::RegistrySource::type);
+    w.graph().register_filter_type(&AddFilter::type);
+
+
+    Node v;
+    
+    v.set(int(10));
+
+    Node p;
+    p["entry"] = ":src";
+    w.registry().add(":src",flow::Data(&v));
+    
+    w.graph().add_filter("registry_source","s",p);
+    
+    w.graph().add_filter("add","a");
+
+    // // src, dest, port
+    w.graph().connect("s","a","a");
+    w.graph().connect("s","a","b");
+
+    //
+    w.print();
+    //
+    w.execute();
+    
+    Node &res = w.registry().fetch("a");
+    
+    ALPINE_INFO("Final result: " << res.to_json());
+    
+    EXPECT_EQ(res.as_int(),20);
+    
+    w.registry().consume("a");
+    
+    w.print();
+}
+
+
+//-----------------------------------------------------------------------------
+// TEST(alpine_flow, alpine_flow_workspace_notes)
+// {
+
+    // flow::Workspace w;
+
+    
+    // FILTER_FACTORY(TestFilter) ?
+    // w.graph().register_filter_type(&TestFilter::type);
+    //
+    // Node n;
+    // n.set(64);
+    //
+    // w.add_source(":src",&n);
+    // // does the following:
+    //
+    // // adds with ref count = -1, registry won't reap
+    // w.registry().add_entry(":src",&n);
+    // w.graph().add_filter("registry_source",":src");
+    //
+    //
+    // //
+    //
+    // w.graph().add_filter("test","a");
+    // w.graph().add_filter("test","b");
+    // w.graph().add_filter("test","c");
+    //
+    // ///
+    //
+    // // src, dest, port
+    // w.graph().connect("a","b","in");
+    // w.graph().connect("b","c","in");
+    //
+    // // special case, one input port
+    // w.graph().connect("a","b");
+    // w.graph().connect("b","c");
+    //
+    //
+    // w.print();
+    //
+    // // supports auto name ... (f%04d % count)
+    // Filter &f0 = w.graph().add_filter("test");
+    // Filter &f1 = w.graph().add_filter("test");
+    // Filter &f2 = w.graph().add_filter("test");
+    //
+    // f0.name() == "f0000";
+    // f1.name() == "f0001";
+    // f2.name() == "f0002";
+    //
+    //
+    // // dest.connect(src) ?
+    // // dest.connect(src, port) ?
+    // f1.connect(f0,"in")
+    // f2.connect(f1,"in")
+    //
+    //
+    // Filter &fsnk = w.add_sink(":dest");
+    // // does the following:
+    // w.graph().add_filter("registry_sink",":dest");
+    //
+    // fsnk.connect(f2);
+    
+
+// }
+
 

@@ -45,24 +45,81 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_flow.hpp
+/// file: alpine_flow_data.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ALPINE_FLOW_HPP
-#define ALPINE_FLOW_HPP
+#ifndef ALPINE_FLOW_DATA_HPP
+#define ALPINE_FLOW_DATA_HPP
 
 #include <conduit.hpp>
 
-#include <alpine_flow_data.hpp>
-#include <alpine_flow_registry.hpp>
-#include <alpine_flow_filter.hpp>
-#include <alpine_flow_graph.hpp>
-#include <alpine_flow_workspace.hpp>
 
-// filters
-#include <alpine_flow_registry_filters.hpp>
+//-----------------------------------------------------------------------------
+// -- begin alpine:: --
+//-----------------------------------------------------------------------------
+namespace alpine
+{
 
+//-----------------------------------------------------------------------------
+// -- begin alpine::flow --
+//-----------------------------------------------------------------------------
+namespace flow
+{
+
+
+//-----------------------------------------------------------------------------
+class Data
+{
+public:
+    Data();
+   Data(conduit::Node *data);
+
+   ~Data();
+   
+   Data(Data &ds);
+   Data &operator=(const Data &ds);
+   Data &operator=(Data &ds);
+    
+    void           set(conduit::Node *data);
+    // void        set (VTKHDataset *ds);
+    void           release();
+
+    
+    void          *data_ptr();
+    
+    conduit::Node *as_node_ptr();
+
+    // VTKHDataset *as_vtkh_dataset();
+
+    operator conduit::Node &();
+    operator conduit::Node *();
+    
+    //operator VtkHDataset *();
+
+    void        info(conduit::Node &out);
+    std::string to_json();
+    void        print();
+
+private:
+    conduit::Node *m_data_ptr;
+
+};
+
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end alpine::flow --
+//-----------------------------------------------------------------------------
+
+
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end alpine:: --
+//-----------------------------------------------------------------------------
 
 #endif
 //-----------------------------------------------------------------------------

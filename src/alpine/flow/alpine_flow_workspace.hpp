@@ -45,24 +45,77 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_flow.hpp
+/// file: alpine_flow_workspace.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ALPINE_FLOW_HPP
-#define ALPINE_FLOW_HPP
+#ifndef ALPINE_FLOW_WORKSPACE_HPP
+#define ALPINE_FLOW_WORKSPACE_HPP
 
 #include <conduit.hpp>
 
 #include <alpine_flow_data.hpp>
 #include <alpine_flow_registry.hpp>
-#include <alpine_flow_filter.hpp>
 #include <alpine_flow_graph.hpp>
-#include <alpine_flow_workspace.hpp>
 
-// filters
-#include <alpine_flow_registry_filters.hpp>
 
+//-----------------------------------------------------------------------------
+// -- begin alpine:: --
+//-----------------------------------------------------------------------------
+namespace alpine
+{
+
+//-----------------------------------------------------------------------------
+// -- begin alpine::flow --
+//-----------------------------------------------------------------------------
+namespace flow
+{
+
+//-----------------------------------------------------------------------------
+class Workspace
+{
+public:
+
+    Workspace();
+   ~Workspace();
+   
+   
+   Graph       &graph();
+   
+   Registry    &registry();
+   
+   void         execute();
+   
+   
+    /// human friendly output
+    void        info(conduit::Node &out);
+    std::string to_json();
+    void        print();
+
+private:
+
+    class ExecutionPlan;
+
+    Graph       m_graph;
+    Registry    m_registry;
+   
+
+   
+};
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end alpine::flow --
+//-----------------------------------------------------------------------------
+
+
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end alpine:: --
+//-----------------------------------------------------------------------------
 
 #endif
 //-----------------------------------------------------------------------------
