@@ -1,4 +1,5 @@
 #include "vtkh.hpp"
+#include "vtkh_error.hpp"
 
 #include <vtkm/cont/RuntimeDeviceInformation.h>
 #include <vtkm/cont/DeviceAdapterListTag.h>
@@ -9,7 +10,7 @@ namespace vtkh
 
 #ifdef PARALLEL
 
-MPI_Comm VTKH::m_mpi_comm;
+MPI_Comm VTKH::m_mpi_comm = NULL;
 
 void VTKH::Open(MPI_Comm mpi_comm)
 {
@@ -18,6 +19,13 @@ void VTKH::Open(MPI_Comm mpi_comm)
 
 MPI_Comm VTKH::GetMPIComm()
 {
+  if(m_mpi_comm == NULL)
+  {
+    std::stringstream msg;
+    msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
+    msg<<"It is likely that VTKH.Open(MPI_Comm) was not called.";
+    throw Error(msg.str());
+  }
   return m_mpi_comm;
 }
 

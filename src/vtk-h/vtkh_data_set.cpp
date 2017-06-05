@@ -9,6 +9,39 @@
 #endif
 namespace vtkh {
 
+void 
+vtkhDataSet::AddDomain(vtkm::cont::DataSet data_set, int domain_id) 
+{
+
+  assert(m_domains.size() == m_domain_ids.size());
+  m_domains.push_back(data_set);
+  m_domain_ids.push_back(domain_id);
+}
+
+void 
+vtkhDataSet::GetDomain(const int index, vtkm::cont::DataSet &data_set, int &domain_id) 
+{
+  const size_t num_domains = m_domains.size();
+
+  if(index >= num_domains && index < 0)
+  {
+    std::stringstream msg;
+    msg<<"Get domain call failed. Invalid index "<<index
+       <<" in "<<num_domains<<" domains.";
+    throw Error(msg.str());
+  }
+ 
+  data_set = m_domains[index];
+  domain_id = m_domain_ids[index];
+
+}
+
+vtkm::Id 
+vtkhDataSet::GetNumDomains() const
+{
+  return m_domains.size();
+}
+
 vtkm::Bounds 
 vtkhDataSet::GetBounds(vtkm::Id index) const
 {

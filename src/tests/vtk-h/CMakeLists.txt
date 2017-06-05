@@ -50,10 +50,12 @@
 ################################
 # Core VTK-h Unit Tests
 ################################
-set(BASIC_TESTS t_vtk-h_smoke)
+set(BASIC_TESTS t_vtk-h_smoke
+                t_vtk-h_dataset)
 
 
-set(MPI_TESTS t_vtk-h_smoke_par)
+set(MPI_TESTS t_vtk-h_smoke_par
+              t_vtk-h_dataset_par)
 
 
 ################################
