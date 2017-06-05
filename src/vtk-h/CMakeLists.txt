@@ -24,6 +24,7 @@ set(vtkh_sources
     # vtkh interface
     vtkh.cpp
     vtkh_data_set.cpp
+    vtkh_renderer.cpp
     )
 
 set(vtkh_headers
