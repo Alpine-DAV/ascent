@@ -184,6 +184,8 @@ public:
     
     void   info(Node &out);
     
+    void   reset();
+    
 private:
 
     std::map<void*,Value>         m_values;
@@ -342,7 +344,6 @@ Registry::Map::Value::data_ptr()
 {
     return m_data.data_ptr();
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -549,6 +550,7 @@ Registry::Map::dec(const std::string &key)
     
     if(ent_refs == 0)
     {
+        ALPINE_INFO("Registry Removing: " << key);
         m_entries.erase(key);
     }
 
@@ -556,6 +558,13 @@ Registry::Map::dec(const std::string &key)
 
     if(val_refs == 0)
     {
+        Node rel_info;
+        ostringstream oss;
+        oss << data_ptr;
+        
+        rel_info[oss.str()]["pending"] = value.ref().pending();
+        ALPINE_INFO("Registry Releasing: " << rel_info.to_json());
+                
         m_values[data_ptr].data().release();
         m_values.erase(data_ptr);
     }
@@ -593,6 +602,25 @@ Registry::Map::info(Node &out)
 
 }
 
+//-----------------------------------------------------------------------------
+void
+Registry::Map::reset()
+{
+    m_entries.clear();
+    
+    std::map<void*,Value>::iterator vitr;
+    for(vitr = m_values.begin(); vitr != m_values.end(); vitr++)
+    {
+        Value &v = vitr->second;
+        if(v.ref().tracked())
+        {
+            v.data().release();
+        }
+    }
+
+    m_values.clear();
+}
+
 
 
 //-----------------------------------------------------------------------------
@@ -607,6 +635,7 @@ Registry::Registry()
 //-----------------------------------------------------------------------------
 Registry::~Registry()
 {
+    reset();
     delete m_map;
 }
 
@@ -622,11 +651,19 @@ Registry::add(const std::string &key,
 }
 
 //-----------------------------------------------------------------------------
+bool 
+Registry::has_entry(const std::string &key)
+{
+    return m_map->has_entry(key);
+}
+
+//-----------------------------------------------------------------------------
 Data 
 Registry::fetch(const std::string &key)
 {
     if(!m_map->has_entry(key))
     {
+        ALPINE_WARN("Attempt to fetch unknown key: " << key);
         return Data();
     }
     else
@@ -645,6 +682,13 @@ Registry::consume(const std::string &key)
     }
 }
 
+
+//-----------------------------------------------------------------------------
+void
+Registry::reset()
+{
+    m_map->reset();
+}
 
 
 //-----------------------------------------------------------------------------

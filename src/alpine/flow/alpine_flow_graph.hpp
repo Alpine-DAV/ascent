@@ -70,6 +70,11 @@ namespace flow
 class Workspace;
 
 //-----------------------------------------------------------------------------
+///
+/// Filter Graph
+///
+//-----------------------------------------------------------------------------
+
 class Graph
 {
 public:
@@ -86,13 +91,24 @@ public:
 
     Workspace &workspace();
 
-    // interface to construct a graph
-    void add_filter(const std::string &filter_type,
-                    const std::string &name);
 
-    void add_filter(const std::string &filter_type,
-                    const std::string &name,
-                    const conduit::Node &params);
+    // interface to construct a graph
+    
+
+    Filter *add_filter(const std::string &filter_type,
+                       const std::string &name);
+
+
+    Filter *add_filter(const std::string &filter_type,
+                       const std::string &name,
+                       const conduit::Node &params);
+
+    // let the graph gen a unique a name
+    Filter *add_filter(const std::string &filter_type);
+
+    // let the graph gen a unique a name
+    Filter *add_filter(const std::string &filter_type,
+                       const conduit::Node &params);
 
 
     void connect(const std::string &src_name,
@@ -125,6 +141,8 @@ private:
     conduit::Node                    m_edges;
     std::map<std::string,Filter*>    m_filters;
     std::map<std::string,FilterType> m_filter_types;
+    
+    int                              m_filter_count;
 
 };
 

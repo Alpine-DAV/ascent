@@ -72,6 +72,12 @@ namespace flow
 {
 
 //-----------------------------------------------------------------------------
+///
+/// Workspace 
+///
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 class Workspace
 {
 public:
@@ -80,12 +86,11 @@ public:
    ~Workspace();
    
    
-   Graph       &graph();
+    Graph       &graph();
    
-   Registry    &registry();
+    Registry    &registry();
    
-   void         execute();
-   
+    void         execute();
    
     /// human friendly output
     void        info(conduit::Node &out);

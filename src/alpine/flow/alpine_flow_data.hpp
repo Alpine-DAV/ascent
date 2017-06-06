@@ -69,10 +69,25 @@ namespace flow
 
 
 //-----------------------------------------------------------------------------
+/// Container that  wrappers inputs and output datasets from filters so
+/// they can be managed by the registry. 
+///
+/// Key features:
+///
+/// Provides easy access to specific wrapped data:
+///    (so far just a Conduit Node Pointer)
+///   Data can cast to conduit::Node *, or conduit::Node & .
+///
+///
+/// Provides a release() method used by the registry to manage result lifetimes.
+//
+//-----------------------------------------------------------------------------    
+
+//-----------------------------------------------------------------------------
 class Data
 {
 public:
-    Data();
+   Data();
    Data(conduit::Node *data);
 
    ~Data();
@@ -83,6 +98,7 @@ public:
     
     void           set(conduit::Node *data);
     // void        set (VTKHDataset *ds);
+
     void           release();
 
     

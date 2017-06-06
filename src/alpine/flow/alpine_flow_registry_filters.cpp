@@ -119,7 +119,7 @@ RegistrySource::execute()
 
 //-----------------------------------------------------------------------------
 Filter *
-RegistrySource::type()
+RegistrySource::create()
 {
     return new RegistrySource();
 }

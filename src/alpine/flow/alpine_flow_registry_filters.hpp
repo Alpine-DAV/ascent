@@ -71,6 +71,20 @@ namespace flow
 //-----------------------------------------------------------------------------
 namespace filters
 {
+
+
+//-----------------------------------------------------------------------------
+///
+/// Filters Related to Registry Access
+///
+//-----------------------------------------------------------------------------
+
+// RegistrySource filter:
+// hoists a registry entry into the data flow
+// expects refs_needed to be to -1 (not-managed)
+// output of the filter will alias an existing entry
+// can add as refs_need -1
+
     
 //-----------------------------------------------------------------------------
 class RegistrySource : public Filter
@@ -80,7 +94,7 @@ public:
    ~RegistrySource();
     
     void    execute();
-    static Filter *type();
+    static Filter *create();
 };
 
 //-----------------------------------------------------------------------------

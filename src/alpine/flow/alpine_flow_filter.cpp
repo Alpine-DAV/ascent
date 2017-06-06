@@ -114,6 +114,16 @@ Filter::graph()
 
 //-----------------------------------------------------------------------------
 void
+Filter::connect_input_port(const std::string &port_name,
+                           Filter *filter)
+{
+    graph().connect(filter->name(),
+                    this->name(),
+                    port_name);
+}
+
+//-----------------------------------------------------------------------------
+void
 Filter::init(Graph *g,
              const std::string &name,
              const Node &p)
@@ -173,6 +183,17 @@ Filter::params()
 {
     return m_props["params"];
 }
+
+
+//-----------------------------------------------------------------------------
+bool
+Filter::verify_params(const Node &params,
+                      Node &info)
+{
+    info.reset();
+    return true;
+}
+
 
 //-----------------------------------------------------------------------------
 Data &

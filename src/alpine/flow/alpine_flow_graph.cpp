@@ -89,9 +89,11 @@ namespace flow
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+
 //-----------------------------------------------------------------------------
 Graph::Graph(Workspace *w)
-:m_workspace(w)
+:m_workspace(w),
+ m_filter_count(0)
 {
     
 }
@@ -174,17 +176,17 @@ Graph::register_filter_type(FilterType fr)
 
 
 //-----------------------------------------------------------------------------
-void
+Filter *
 Graph::add_filter(const std::string &filter_type,
                   const std::string &filter_name)
 {
     Node filter_params;
-    add_filter(filter_type, filter_name, filter_params);
+    return add_filter(filter_type, filter_name, filter_params);
 }
 
 
 //-----------------------------------------------------------------------------
-void
+Filter *
 Graph::add_filter(const std::string &filter_type,
                   const std::string &filter_name,
                   const Node &filter_params)
@@ -193,7 +195,7 @@ Graph::add_filter(const std::string &filter_type,
     {
         ALPINE_WARN("Cannot create filter, filter named: " << filter_name
                      << " already exists in Graph");
-        return;
+        return NULL;
     }
 
     std::map<std::string,FilterType>::iterator itr = m_filter_types.find(filter_type);
@@ -201,7 +203,7 @@ Graph::add_filter(const std::string &filter_type,
     {
         ALPINE_WARN("Cannot create unknown filter type: "
                     << filter_type);
-        return;
+        return NULL;
     }
     
     // this creates a new instance ...
@@ -225,7 +227,33 @@ Graph::add_filter(const std::string &filter_type,
     {
         m_edges["out"][filter_name] = DataType::list();
     }
+    
+    m_filter_count++;
+    
+    return f;
 }
+
+//-----------------------------------------------------------------------------
+Filter *
+Graph::add_filter(const std::string &filter_type)
+{
+    ostringstream oss;
+    oss << "f_" << m_filter_count;
+    Node filter_params;
+    return add_filter(filter_type, oss.str(), filter_params);
+}
+
+//-----------------------------------------------------------------------------
+Filter *
+Graph::add_filter(const std::string &filter_type,
+                  const Node &filter_params)
+{
+    ostringstream oss;
+    oss << "f_" << m_filter_count;
+    return add_filter(filter_type, oss.str(), filter_params);
+}
+
+
 
 //-----------------------------------------------------------------------------
 void 

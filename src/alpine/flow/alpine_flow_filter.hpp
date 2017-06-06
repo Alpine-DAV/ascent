@@ -85,34 +85,39 @@ public:
     virtual ~Filter();
 
     // filter properties 
-    std::string          name();
-    std::string          type_name();
-    const conduit::Node &port_names();
-    const conduit::Node &default_params();
-    bool                 output_port();
+    std::string           name();
+    std::string           type_name();
+    const conduit::Node  &port_names();
+    const conduit::Node  &default_params();
+    bool                  output_port();
 
-    bool                 has_port(const std::string &name);
+    bool                  has_port(const std::string &name);
 
     // imp to do work in subclass
-    virtual void         execute() = 0;
+    virtual void          execute() = 0;
 
-    // bool                   verify_params(const Node &params,
-    //                                      Node &info);
+    virtual bool          verify_params(const conduit::Node &params,
+                                        conduit::Node &info);
 
     // methods used to implement filter exe
 
-    conduit::Node          &params();
-    conduit::Node          &properties();
+    conduit::Node         &params();
+    conduit::Node         &properties();
 
-    Data                   &input(const std::string &port_name);
-    Data                   &output();
+    Data                  &input(const std::string &port_name);
+    Data                  &output();
     
-    Graph                  &graph();
+    Graph                 &graph();
+    
+    // graph().connect(f->name(),this->name(),port_name);
+    void                  connect_input_port(const std::string &port_name,
+                                             Filter *filter);
+
     
     /// human friendly output
-    void                    info(conduit::Node &out);
-    std::string             to_json();
-    void                    print();
+    void                   info(conduit::Node &out);
+    std::string            to_json();
+    void                   print();
 
 protected:
     Filter();
@@ -137,7 +142,9 @@ private:
 
 };
 
+//-----------------------------------------------------------------------------
 typedef Filter *(*FilterType)();
+
 
 //-----------------------------------------------------------------------------
 };

@@ -70,17 +70,13 @@ namespace flow
 {
 
 
-// registry use cases:
-    
-// data into and out of the data flow network:
-// 
-// aliasing a registry input 
-// providing a registry output 
-    
+//-----------------------------------------------------------------------------
+///
+/// Registry 
+///
+//-----------------------------------------------------------------------------
 
-// data created and consumed within a data flow network
-// data aliased within a data flow network
-    
+
 
 // goals:
 // we want to be able to track data used in the network and free it
@@ -112,33 +108,19 @@ namespace flow
 
 // filter exe:
 //
-// T * my_data_1 = input(0)->data();
-// T * my_data_2 = input(1)->data();
+// T * my_data_1 = input(0);
+// T * my_data_2 = input(1);
 // aliased! 
 // filters that consume output will each inc refs_need of my_data_2 by 1
 // output()->set(my_data_2)
 
 
-
 // filter exe:
 //
-// T * my_data_1 = input(0)->data();
-// T * my_data_2 = input(1)->data();
+// T * my_data_1 = input(0);
+// T * my_data_2 = input(1);
 // life will be managed by the registry
 // output()->set(my_new_data)
-    
-    
-// RegistrySource filter:
-// hoists a registry entry into the data flow
-// expects refs_needed to be to -1 (not-managed)
-// output of the filter will alias an existing entry
-// can add as refs_need -1
-
-
-// RegistrySink filter:
-// hoists a result into a registry entry that has refs_needed
-// equal -1 (not-managed)
-// output of the filter will alias an existing entry
 
 //-----------------------------------------------------------------------------
 class Registry
@@ -153,10 +135,18 @@ public:
                     Data data,
                     int refs_needed=-1); // -1 means don't manage mem
     
+    
+    bool        has_entry(const std::string &key);
+    
     /// fetch entry by key, does not dec
     Data        fetch(const std::string &key);
     
     void        consume(const std::string &key);
+
+    /// clears registry entries and releases any outstanding
+    /// tracked data refs.
+    void        reset();
+    
     
     void        info(conduit::Node &out);
     std::string to_json();
