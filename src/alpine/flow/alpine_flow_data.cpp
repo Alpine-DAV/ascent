@@ -109,7 +109,7 @@ Data::Data(conduit::Node *node)
 }
 
 //-----------------------------------------------------------------------------
-Data::Data(Data &ds)
+Data::Data(const Data &ds)
 : m_data_ptr(NULL)
 {
     // shallow cpy

@@ -92,7 +92,7 @@ public:
 
    ~Data();
    
-   Data(Data &ds);
+   Data(const Data &ds);
    Data &operator=(const Data &ds);
    Data &operator=(Data &ds);
     

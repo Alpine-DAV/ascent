@@ -110,6 +110,7 @@ public:
              Ref(const Ref &r);
              Ref &operator=(Ref &v);
 
+
              bool tracked() const;
              int  pending() const;
              int  dec();
@@ -128,7 +129,7 @@ public:
             Value();
             ~Value();
 
-            Value(Value &v);
+            Value(const Value &v);
             Value &operator=(Value &v);
 
             Data     &data();
@@ -148,7 +149,7 @@ public:
     {
         public:
                  Entry();
-                 Entry(Entry &ent);
+                 Entry(const Entry &ent);
                  Entry &operator=(Entry &ent);
                  
                  ~Entry();
@@ -304,7 +305,7 @@ Registry::Map::Value::Value()
 
 
 //-----------------------------------------------------------------------------
-Registry::Map::Value::Value(Value &v)
+Registry::Map::Value::Value(const Value &v)
 :m_ref(v.m_ref),
  m_data(v.m_data)
 {
@@ -379,7 +380,7 @@ Registry::Map::Entry::Entry()
 }
 
 //-----------------------------------------------------------------------------
-Registry::Map::Entry::Entry(Entry &e)
+Registry::Map::Entry::Entry(const Entry &e)
 :m_ref(e.m_ref),
  m_value(e.m_value)
 {
