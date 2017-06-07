@@ -96,11 +96,11 @@ namespace filters
 RegistrySource::RegistrySource()
 :Filter()
 {
-    Node &p = properties();
-    p["type_name"] = "registry_source";
-    p["port_names"] = DataType::empty();
-    p["default_params"]["entry"] = "";
-    p["output_port"] = "true";
+    Node &i = interface();
+    i["type_name"]   = "registry_source";
+    i["port_names"]  = DataType::empty();
+    i["output_port"] = "true";
+    i["default_params"]["entry"] = "";
 }
 
 //-----------------------------------------------------------------------------

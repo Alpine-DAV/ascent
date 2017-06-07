@@ -196,11 +196,12 @@ public:
     SrcFilter()
     : flow::Filter()
     {
-        Node &p = properties();
-        p["type_name"] = "src";
-        p["port_names"] = DataType::empty();
-        p["default_params"]["value"].set((int)0);
-        p["output_port"] = "true";
+        Node &i = interface();
+        i["type_name"]   = "src";
+        i["output_port"] = "true";
+        i["port_names"] = DataType::empty();
+        i["default_params"]["value"].set((int)0);
+
     }
         
     virtual ~SrcFilter()
@@ -235,13 +236,13 @@ public:
     IncFilter()
     : flow::Filter()
     {
-        Node &p = properties();
-        p["type_name"] = "inc";
-        p["port_names"].append().set("in");
-        p["default_params"]["inc"].set((int)1);
-        p["output_port"] = "true";
+        Node &i = interface();
+        i["type_name"]   = "inc";
+        i["output_port"] = "true";
+        i["port_names"].append().set("in");
+        i["default_params"]["inc"].set((int)1);
     }
-        
+
     virtual ~IncFilter()
     {}
 
@@ -285,11 +286,12 @@ public:
     AddFilter()
     : flow::Filter()
     {
-        Node &p = properties();
-        p["type_name"] = "add";
-        p["port_names"].append().set("a");
-        p["port_names"].append().set("b");
-        p["output_port"] = "true";
+        Node &i = interface();
+        i["type_name"]   = "add";
+        i["output_port"] = "true";
+        i["port_names"].append().set("a");
+        i["port_names"].append().set("b");
+
     }
         
     virtual ~AddFilter()
@@ -402,6 +404,42 @@ TEST(alpine_flow, alpine_flow_workspace_linear_filter_ptr_iface)
 
 
 //-----------------------------------------------------------------------------
+TEST(alpine_flow, alpine_flow_workspace_linear_filter_ptr_iface_port_idx)
+{
+
+    flow::Workspace w;
+
+    w.graph().register_filter_type(&SrcFilter::create);
+    w.graph().register_filter_type(&IncFilter::create);
+
+
+    flow::Filter *f_s = w.graph().add_filter("src","s");
+    
+    flow::Filter *f_a = w.graph().add_filter("inc","a");
+    flow::Filter *f_b = w.graph().add_filter("inc","b");
+    flow::Filter *f_c = w.graph().add_filter("inc","c");
+    
+    f_a->connect_input_port(0,f_s);
+    f_b->connect_input_port(0,f_a);
+    f_c->connect_input_port(0,f_b);
+    
+    //
+    w.print();
+    //
+    w.execute();
+    
+    Node &res = w.registry().fetch("c");
+    
+    ALPINE_INFO("Final result: " << res.to_json());
+
+    EXPECT_EQ(res.as_int(),3);
+
+    w.registry().consume("c");
+
+    w.print();
+}
+
+//-----------------------------------------------------------------------------
 TEST(alpine_flow, alpine_flow_workspace_graph)
 {
     flow::Workspace w;
@@ -472,6 +510,49 @@ TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface)
 
     f_a2->connect_input_port("a",f_a1);
     f_a2->connect_input_port("b",f_v3);
+
+    //
+    w.print();
+    //
+    w.execute();
+    
+    Node &res = w.registry().fetch("a2");
+    
+    ALPINE_INFO("Final result: " << res.to_json());
+    
+    EXPECT_EQ(res.as_int(),30);
+    
+    w.registry().consume("a2");
+    
+    w.print();
+}
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface_port_idx)
+{
+    flow::Workspace w;
+
+    w.graph().register_filter_type(&SrcFilter::create);
+    w.graph().register_filter_type(&AddFilter::create);
+
+
+    Node p_vs;
+    p_vs["value"].set(int(10));
+
+    flow::Filter *f_v1 = w.graph().add_filter("src","v1",p_vs);
+    flow::Filter *f_v2 = w.graph().add_filter("src","v2",p_vs);
+    flow::Filter *f_v3 = w.graph().add_filter("src","v3",p_vs);
+    
+    
+    flow::Filter *f_a1 = w.graph().add_filter("add","a1");
+    flow::Filter *f_a2 = w.graph().add_filter("add","a2");
+
+    
+    f_a1->connect_input_port(0,f_v1);
+    f_a1->connect_input_port(1,f_v2);
+
+    f_a2->connect_input_port(0,f_a1);
+    f_a2->connect_input_port(1,f_v3);
 
     //
     w.print();
@@ -580,13 +661,13 @@ TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface_auto_name)
     //
     w.execute();
     
-    Node &res = w.registry().fetch("f_4");
+    Node &res = w.registry().fetch(f_a2->name());
     
     ALPINE_INFO("Final result: " << res.to_json());
     
     EXPECT_EQ(res.as_int(),30);
     
-    w.registry().consume("f_4");
+    w.registry().consume(f_a2->name());
     
     w.print();
 }

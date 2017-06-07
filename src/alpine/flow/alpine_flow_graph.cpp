@@ -126,12 +126,6 @@ Graph::reset()
 
     m_filters.clear();
     
-    // // delete all registered types
-    // for(itr = m_filter_types.begin(); itr != m_filter_types.end(); itr++)
-    // {
-    //     delete itr->second;
-    // }
-
     m_filter_types.clear();
     
     m_edges.reset();
@@ -154,6 +148,19 @@ Graph::register_filter_type(FilterType fr)
     // an instance
     
     Filter *f = fr();
+    
+    // verify f provides proper interface declares
+    
+    Node v_info;
+    if(!Filter::verify_interface(f->interface(),v_info))
+    {
+        // failed interface verify ... 
+        ALPINE_ERROR("filter type interface verify failed." << std::endl
+                      << "Details"
+                      << v_info.to_json());
+    }
+
+    // obtain the filter's type name 
     Node p;
     f->init(this,"",p);
     
@@ -164,14 +171,12 @@ Graph::register_filter_type(FilterType fr)
     
     if(has_registered_filter_type(f_type_name))
     {
-        ALPINE_WARN("filter type named:"
+        ALPINE_ERROR("filter type named:"
                      << f_type_name 
                     << " is already registered");
-        return;
     }
     
     m_filter_types[f_type_name] = fr;
-
 }
 
 
@@ -208,10 +213,25 @@ Graph::add_filter(const std::string &filter_type,
     
     // this creates a new instance ...
     Filter *f =itr->second();
+        
     
     f->init(this,
             filter_name,
             filter_params);
+    
+    Node v_info;
+    if(!f->verify_params(filter_params,v_info))
+    {
+        std::string f_name = f->detailed_name();
+        // cleanup f ... 
+        delete f;
+        ALPINE_WARN("Cannot create filter " << f_name 
+                    << " because verify_params failed." << std::endl
+                    << "Details:" << std::endl
+                    << v_info.to_json());
+        return NULL;
+    }
+    
     
     m_filters[filter_name] = f;
     
@@ -266,14 +286,14 @@ Graph::connect(const std::string &src_name,
     if(!has_filter(src_name))
     {
         ALPINE_WARN("source filter named: " << src_name
-                    << "does not exist in FilterGraph");
+                    << "does not exist in Filter Graph");
         return;
     }
 
     if(!has_filter(des_name))
     {
         ALPINE_WARN("destination filter named: " << des_name
-                    << "does not exist in FilterGraph");
+                    << "does not exist in Filter Graph");
         return;
     }
 
@@ -285,8 +305,7 @@ Graph::connect(const std::string &src_name,
     if(!des_filter->has_port(port_name))
     {
         ALPINE_WARN("destination filter: "
-                     << des_name 
-                     << " (type: " << des_filter->type_name() << ")"
+                     << des_filter->detailed_name()
                      << "does not have input port named:"
                      << port_name);
         return;
@@ -295,6 +314,27 @@ Graph::connect(const std::string &src_name,
     m_edges["in"][des_name][port_name] = src_name;
     m_edges["out"][src_name].append().set(des_name);
 }
+
+//-----------------------------------------------------------------------------
+void 
+Graph::connect(const std::string &src_name,
+               const std::string &des_name,
+               int port_idx)
+{
+    if(!has_filter(des_name))
+    {
+        ALPINE_WARN("destination filter named: " << des_name
+                    << "does not exist in Filter Graph ");
+        return;
+    }
+
+    Filter *des_filter = m_filters[des_name];
+    std::string port_name = des_filter->port_index_to_name(port_idx);
+
+
+    connect(src_name,des_name,port_name);
+}
+
 
 
 
@@ -313,7 +353,7 @@ Graph::remove_filter(const std::string &name)
     if(!has_filter(name))
     {
         ALPINE_WARN("filter named: " << name
-                     << "does not exist in FilterGraph");
+                     << "does not exist in Filter Graph");
         return;
     }
 

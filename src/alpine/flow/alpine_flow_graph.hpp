@@ -115,6 +115,11 @@ public:
                  const std::string &des_name,
                  const std::string &port_name);
 
+    void connect(const std::string &src_name,
+                 const std::string &des_name,
+                 int port_idx);
+
+
     bool has_filter(const std::string &name);
 
     void remove_filter(const std::string &name);

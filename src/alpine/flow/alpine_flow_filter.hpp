@@ -75,6 +75,66 @@ class Workspace;
 class Graph;
 
 //-----------------------------------------------------------------------------
+///
+/// Filter Interface
+///
+///
+/// Filters optionally provide:
+///   - A set of named input ports
+///   - output
+///   - A set of default parameters 
+///
+///  To create a new filter, create a new subclass of Filter and:
+///
+///  1) Declare the filter interrace, by adding the following entires to the 
+//      interface() node in in your constructor.
+///
+///  MyFilter::MyFilter
+///  :Filter()
+///  {
+///    Node &i = interface();
+///
+///    // unique filter name
+///    i["type_name"]   = "my_filter";
+///
+///    // declare if this filter provides output
+///    i["output_port"] = {"true" | "false"};
+///
+///    // declare the names of this filters input ports
+///    // Provide a conduit list of strings with the names of the input ports 
+///    // or DataType::empty() if there are no input ports.
+///    i["port_names"].append().set("in");
+///
+///    // Set any default parameters.
+///    // default_params can be any conduit tree, params() will be
+///    // inited with a *copy* of the default_params when the filter is
+///    // added to the filter graph.
+///    i["default_params"]["inc"].set((int)1);
+///  }
+///
+///  2) Implement an execute() method:
+///
+///  void MyFilter::execute()
+///  {
+///     // If your filter has input ports, input data can be fetched by name
+///     Node &in_0 = input("in");
+///     // or index:
+///     Node &in_0 = input(0);
+///  
+///     // You can access filter parameters via params()
+///     int val = params()["my_knob"].value();
+///
+///     // If your filter provides output, set your output data:
+///     Node *my_result = new Node();
+///     output()->set(Data(my_result); 
+///     // the registry manages result lifetimes.
+///
+///  }
+/// 
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
 class Filter
 {
 public:
@@ -84,33 +144,61 @@ public:
     
     virtual ~Filter();
 
-    // filter properties 
-    std::string           name();
-    std::string           type_name();
-    const conduit::Node  &port_names();
-    const conduit::Node  &default_params();
-    bool                  output_port();
 
-    bool                  has_port(const std::string &name);
+    // implement these:
 
-    // imp to do work in subclass
+    /// override to imp filter's work
     virtual void          execute() = 0;
 
+
+    /// override to 
+    /// (used as a guard when a filter instance is created in a graph)
     virtual bool          verify_params(const conduit::Node &params,
                                         conduit::Node &info);
 
-    // methods used to implement filter exe
 
+    // filter interface
+    
+    /// static method that checks if conduit node passed conforms to what 
+    /// is needed to declare a filter interface.
+    /// (used as a guard when a filter type is added to a graph)
+    static bool           verify_interface(const conduit::Node &i,
+                                           conduit::Node &info);
+  
+    std::string           type_name()   const;
+    const conduit::Node  &port_names()  const;
+    bool                  output_port() const;
+    
+    const conduit::Node  &default_params() const;
+
+    int                   number_of_input_ports() const;
+    bool                  has_port(const std::string &name) const;
+    std::string           port_index_to_name(int idx) const;
+
+    // instance properties 
+    std::string           name() const;
+    std::string           detailed_name() const;
+
+
+    // methods used to implement filter interface
+    conduit::Node         &interface();
+
+
+    // methods used to implement filter exec
     conduit::Node         &params();
-    conduit::Node         &properties();
 
     Data                  &input(const std::string &port_name);
+    Data                  &input(int idx);
     Data                  &output();
     
     Graph                 &graph();
-    
+
+    // methods used to help build a filter graph 
     // graph().connect(f->name(),this->name(),port_name);
     void                  connect_input_port(const std::string &port_name,
+                                             Filter *filter);
+
+    void                  connect_input_port(int idx,
                                              Filter *filter);
 
     
@@ -124,7 +212,7 @@ protected:
 
 private:
 
-    // used by ws interface prior to imp exec
+    // used by ws interface to imp data flow exec
     void                    set_input(const std::string &port_name,
                                       Data ds);
 
@@ -135,7 +223,12 @@ private:
     void                    reset_inputs_and_output();
 
 
+    conduit::Node           &properties();
+    const conduit::Node     &properties() const;
+
+    
     Graph                         *m_graph;
+    
     conduit::Node                  m_props;
     Data                           m_out;
     std::map<std::string,Data>     m_inputs;
