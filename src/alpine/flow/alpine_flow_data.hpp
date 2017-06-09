@@ -84,43 +84,72 @@ namespace flow
 //-----------------------------------------------------------------------------    
 
 //-----------------------------------------------------------------------------
-class Data
+class DataContainer
 {
 public:
-   Data();
-   Data(conduit::Node *data);
+    DataContainer(void *data);
 
-   ~Data();
-   
-   Data(const Data &ds);
-   Data &operator=(const Data &ds);
-   Data &operator=(Data &ds);
+    virtual ~DataContainer();
     
-    void           set(conduit::Node *data);
-    // void        set (VTKHDataset *ds);
-
-    void           release();
-
+    
+    // creates a new container for given data
+    virtual DataContainer  *wrap(void *data) = 0;
+    // actually delete the data
+    virtual void            release()        = 0;
     
     void          *data_ptr();
+    const  void   *data_ptr() const;
     
-    conduit::Node *as_node_ptr();
+    // access methods
+    template <class T>
+    T *value()
+    {
+        return static_cast<T*>(data_ptr());
+    }
 
-    // VTKHDataset *as_vtkh_dataset();
-
-    operator conduit::Node &();
-    operator conduit::Node *();
+    template <class T>
+    const T *value() const
+    {
+        return static_cast<T*>(data_ptr());
+    }
     
-    //operator VtkHDataset *();
-
     void        info(conduit::Node &out);
     std::string to_json();
     void        print();
 
 private:
-    conduit::Node *m_data_ptr;
+    void *m_data_ptr;
 
 };
+
+//-----------------------------------------------------------------------------
+template <class T>
+class DataHolder: public DataContainer
+{
+ public:
+    DataHolder(void *data)
+    : DataContainer(data)
+    {
+        // empty
+    }
+    
+    virtual ~DataHolder()
+    {
+        // empty
+    }
+
+    DataContainer *wrap(void *data)
+    {
+        return new DataHolder<T>(data);
+    }
+
+    virtual void release()
+    {
+        T * t = static_cast<T*>(data_ptr());
+        delete t;
+    }
+};
+
 
 
 //-----------------------------------------------------------------------------

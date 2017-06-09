@@ -187,9 +187,26 @@ public:
     // methods used to implement filter exec
     conduit::Node         &params();
 
-    Data                  &input(const std::string &port_name);
-    Data                  &input(int idx);
-    Data                  &output();
+    template <class T>
+    T *input(const std::string &port_name)
+    {
+        return fetch_input(port_name)->value<T>();
+    }
+
+    template <class T>
+    T *input(int idx)
+    {
+        return fetch_input(idx)->value<T>();
+    }
+
+    template <class T>
+    void set_output(T *data_ptr)
+    {
+        DataHolder<T> data(data_ptr);
+        set_output(data);
+    }
+    
+    void                   set_output(DataContainer &data);
     
     Graph                 &graph();
 
@@ -207,14 +224,21 @@ public:
     std::string            to_json();
     void                   print();
 
+    DataContainer          &output();
+
 protected:
     Filter();
 
 private:
 
+    DataContainer          *fetch_input(const std::string &port_name);
+    DataContainer          *fetch_input(int port_idx);
+
+
+
     // used by ws interface to imp data flow exec
     void                    set_input(const std::string &port_name,
-                                      Data ds);
+                                      DataContainer *data);
 
     void                    init(Graph *graph,
                                  const std::string &name,
@@ -229,9 +253,9 @@ private:
     
     Graph                         *m_graph;
     
-    conduit::Node                  m_props;
-    Data                           m_out;
-    std::map<std::string,Data>     m_inputs;
+    conduit::Node                          m_props;
+    DataContainer                         *m_out;
+    std::map<std::string,DataContainer*>   m_inputs;
 
 };
 

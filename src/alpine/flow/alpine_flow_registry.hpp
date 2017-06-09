@@ -130,33 +130,48 @@ public:
     // Creation and Destruction
     Registry();
    ~Registry();
-    
-    void        add(const std::string &key, 
-                    Data data,
-                    int refs_needed=-1); // -1 means don't manage mem
-    
-    
-    bool        has_entry(const std::string &key);
-    
-    /// fetch entry by key, does not dec
-    Data        fetch(const std::string &key);
-    
-    void        consume(const std::string &key);
+
+
+    // generic interface add
+    template <class T>
+    void add(const std::string &key, 
+             T *data_ptr,
+             int refs_needed=-1) // -1 means don't track and release mem
+    {
+        DataHolder<T> data(data_ptr);
+        add_entry(key,data,refs_needed);
+    } 
+
+    /// generic interface fetch
+    /// fetch entry by key, does not dec refs_pending
+    template <class T>
+    T *fetch(const std::string &key)
+    {
+        return fetch_container(key)->value<T>();
+    }
+
+    void           add_entry(const std::string &key, 
+                             DataContainer &data,
+                             int refs_needed);
+
+    DataContainer *fetch_container(const std::string &key);
+    bool           has_entry(const std::string &key);
+    void           consume(const std::string &key);
 
     /// clears registry entries and releases any outstanding
     /// tracked data refs.
-    void        reset();
+    void           reset();
     
-    
-    void        info(conduit::Node &out);
-    std::string to_json();
-    void        print();
+    void           info(conduit::Node &out);
+    std::string    to_json();
+    void           print();
+
 
 private:
-    // private class that hides imp from main interface
+
+    // internal private class that hides imp from main interface
     class Map;
     Map *m_map;
-
 };
 
 

@@ -73,17 +73,17 @@ TEST(alpine_flow, alpine_flow_registry)
     n->set(10);
     
     flow::Registry r;
-    r.add("d",flow::Data(n),2);
+    r.add<Node>("d",n,2);
     r.print();
 
-    Node *n_fetch = r.fetch("d");
+    Node *n_fetch = r.fetch<Node>("d");
     EXPECT_EQ(n,n_fetch);
 
     r.consume("d");
     r.print();
 
     
-    n_fetch = r.fetch("d");
+    n_fetch = r.fetch<Node>("d");
     EXPECT_EQ(n,n_fetch);
 
     r.consume("d");
@@ -102,18 +102,18 @@ TEST(alpine_flow, alpine_flow_registry_aliased)
     
     
     flow::Registry r;
-    r.add("d1",flow::Data(n),1);
-    r.add("d2",flow::Data(n),1);
+    r.add<Node>("d1",n,1);
+    r.add<Node>("d2",n,1);
     r.print();
 
 
-    Node *n_fetch = r.fetch("d1");
+    Node *n_fetch = r.fetch<Node>("d1");
     EXPECT_EQ(n,n_fetch);
 
     r.consume("d1");
     r.print();
 
-    n_fetch = r.fetch("d2");
+    n_fetch = r.fetch<Node>("d2");
     EXPECT_EQ(n,n_fetch);
 
     r.consume("d2");
@@ -134,23 +134,23 @@ TEST(alpine_flow, alpine_flow_registry_untracked)
     n->set(10);
 
     flow::Registry r;
-    r.add("d",flow::Data(n),-1);
+    r.add<Node>("d",n,-1);
     r.print();
 
-    Node *n_fetch = r.fetch("d");
+    Node *n_fetch = r.fetch<Node>("d");
     EXPECT_EQ(n,n_fetch);
 
     r.consume("d");
     r.print();
 
-    n_fetch = r.fetch("d");
+    n_fetch = r.fetch<Node>("d");
     EXPECT_EQ(n,n_fetch);
 
     r.consume("d");
     r.print();
 
     
-    n_fetch = r.fetch("d");
+    n_fetch = r.fetch<Node>("d");
     EXPECT_EQ(n,n_fetch);
 
 
@@ -165,23 +165,23 @@ TEST(alpine_flow, alpine_flow_registry_untracked_aliased)
     n->set(10);
 
     flow::Registry r;
-    r.add("d",flow::Data(n),-1);
-    r.add("d_al",flow::Data(n),1);
+    r.add<Node>("d",n,-1);
+    r.add<Node>("d_al",n,1);
     r.print();
 
-    Node *n_fetch = r.fetch("d");
+    Node *n_fetch = r.fetch<Node>("d");
     EXPECT_EQ(n,n_fetch);
     r.consume("d");
 
 
-    n_fetch = r.fetch("d_al");
+    n_fetch = r.fetch<Node>("d_al");
     EXPECT_EQ(n,n_fetch);
 
     r.consume("d_al");
 
     EXPECT_FALSE(r.has_entry("d_al"));
 
-    n_fetch = r.fetch("d");
+    n_fetch = r.fetch<Node>("d");
     EXPECT_EQ(n,n_fetch);
 
     r.print();
@@ -214,7 +214,7 @@ public:
         // set output
         Node *res = new Node();
         res->set(val);
-        output().set(res);
+        set_output<Node>(res);
 
         // the registry will take care of deleting the data
         // when all consuming filters have executed.
@@ -253,8 +253,8 @@ public:
         int inc  = params()["inc"].value();
         
         // get input data
-        Node &in = input("in");
-        int val  = in.to_int();
+        Node *in = input<Node>("in");
+        int val  = in->to_int();
      
          // do something useful
         val+= inc;
@@ -266,7 +266,7 @@ public:
         // the registry will take care of deleting the data
         // when all consuming filters have executed.
         
-        output().set(res);
+        set_output<Node>(res);
 
         ALPINE_INFO("exec: " << name() << " result = " << res->to_json());
     }
@@ -301,11 +301,11 @@ public:
     {
         // grab data from inputs
         
-        Node &a_in = input("a");
-        Node &b_in = input("b");
+        Node *a_in = input<Node>("a");
+        Node *b_in = input<Node>("b");
         
         // do something useful 
-        int rval = a_in.to_int() + b_in.to_int();
+        int rval = a_in->to_int() + b_in->to_int();
         
         // set output
         Node *res = new Node();
@@ -313,7 +313,7 @@ public:
 
         // the registry will take care of deleting the data
         // when all consuming filters have executed.
-        output().set(res);
+        set_output<Node>(res);
 
         
         ALPINE_INFO("exec: " << name() << " result = " << res->to_json());
@@ -355,11 +355,11 @@ TEST(alpine_flow, alpine_flow_workspace_linear)
     //
     w.execute();
     
-    Node &res = w.registry().fetch("c");
+    Node *res = w.registry().fetch<Node>("c");
     
-    ALPINE_INFO("Final result: " << res.to_json());
+    ALPINE_INFO("Final result: " << res->to_json());
 
-    EXPECT_EQ(res.as_int(),3);
+    EXPECT_EQ(res->as_int(),3);
 
     w.registry().consume("c");
 
@@ -391,11 +391,11 @@ TEST(alpine_flow, alpine_flow_workspace_linear_filter_ptr_iface)
     //
     w.execute();
     
-    Node &res = w.registry().fetch("c");
+    Node *res = w.registry().fetch<Node>("c");
     
-    ALPINE_INFO("Final result: " << res.to_json());
+    ALPINE_INFO("Final result: " << res->to_json());
 
-    EXPECT_EQ(res.as_int(),3);
+    EXPECT_EQ(res->as_int(),3);
 
     w.registry().consume("c");
 
@@ -428,11 +428,11 @@ TEST(alpine_flow, alpine_flow_workspace_linear_filter_ptr_iface_port_idx)
     //
     w.execute();
     
-    Node &res = w.registry().fetch("c");
+    Node *res = w.registry().fetch<Node>("c");
     
-    ALPINE_INFO("Final result: " << res.to_json());
+    ALPINE_INFO("Final result: " << res->to_json());
 
-    EXPECT_EQ(res.as_int(),3);
+    EXPECT_EQ(res->as_int(),3);
 
     w.registry().consume("c");
 
@@ -473,11 +473,11 @@ TEST(alpine_flow, alpine_flow_workspace_graph)
     //
     w.execute();
     
-    Node &res = w.registry().fetch("a2");
+    Node *res = w.registry().fetch<Node>("a2");
     
-    ALPINE_INFO("Final result: " << res.to_json());
+    ALPINE_INFO("Final result: " << res->to_json());
     
-    EXPECT_EQ(res.as_int(),30);
+    EXPECT_EQ(res->as_int(),30);
     
     w.registry().consume("a2");
     
@@ -516,11 +516,11 @@ TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface)
     //
     w.execute();
     
-    Node &res = w.registry().fetch("a2");
+    Node *res = w.registry().fetch<Node>("a2");
     
-    ALPINE_INFO("Final result: " << res.to_json());
+    ALPINE_INFO("Final result: " << res->to_json());
     
-    EXPECT_EQ(res.as_int(),30);
+    EXPECT_EQ(res->as_int(),30);
     
     w.registry().consume("a2");
     
@@ -559,11 +559,11 @@ TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface_port_idx)
     //
     w.execute();
     
-    Node &res = w.registry().fetch("a2");
+    Node *res = w.registry().fetch<Node>("a2");
     
-    ALPINE_INFO("Final result: " << res.to_json());
+    ALPINE_INFO("Final result: " << res->to_json());
     
-    EXPECT_EQ(res.as_int(),30);
+    EXPECT_EQ(res->as_int(),30);
     
     w.registry().consume("a2");
     
@@ -586,7 +586,7 @@ TEST(alpine_flow, alpine_flow_workspace_reg_source)
 
     Node p;
     p["entry"] = ":src";
-    w.registry().add(":src",flow::Data(&v));
+    w.registry().add<Node>(":src",&v);
     
     w.graph().add_filter("registry_source","s",p);
     
@@ -601,17 +601,17 @@ TEST(alpine_flow, alpine_flow_workspace_reg_source)
     //
     w.execute();
     
-    Node &res = w.registry().fetch("a");
+    Node *res = w.registry().fetch<Node>("a");
     
-    ALPINE_INFO("Final result: " << res.to_json());
+    ALPINE_INFO("Final result: " << res->to_json());
     
-    EXPECT_EQ(res.as_int(),20);
+    EXPECT_EQ(res->as_int(),20);
     
     w.registry().consume("a");
     
     w.print();
     
-    Node *n_s = w.registry().fetch(":src");
+    Node *n_s = w.registry().fetch<Node>(":src");
     
     ALPINE_INFO("Input result: " << n_s->to_json());
     
@@ -661,11 +661,11 @@ TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface_auto_name)
     //
     w.execute();
     
-    Node &res = w.registry().fetch(f_a2->name());
+    Node *res = w.registry().fetch<Node>(f_a2->name());
     
-    ALPINE_INFO("Final result: " << res.to_json());
+    ALPINE_INFO("Final result: " << res->to_json());
     
-    EXPECT_EQ(res.as_int(),30);
+    EXPECT_EQ(res->as_int(),30);
     
     w.registry().consume(f_a2->name());
     

@@ -92,16 +92,19 @@ namespace flow
 
 //-----------------------------------------------------------------------------
 Filter::Filter()
-: m_graph(NULL)
+: m_graph(NULL),
+  m_out(NULL)
 {
 
 }
 
-
 //-----------------------------------------------------------------------------
 Filter::~Filter()
 {
-    
+    if (m_out != NULL)
+    {
+        delete m_out;
+    }
 }
 
 
@@ -309,9 +312,36 @@ Filter::verify_interface(const Node &i,
 }
 
 
+// //-----------------------------------------------------------------------------
+// Data &
+// Filter::input(const std::string &port_name)
+// {
+//     if(!has_port(port_name) )
+//     {
+//         ALPINE_ERROR( detailed_name()
+//                       << "does not have an input port named: " << port_name);
+//     }
+//
+//     return m_inputs[port_name];
+// }
+//
+// //-----------------------------------------------------------------------------
+// Data &
+// Filter::input(int idx)
+// {
+//     return m_inputs[port_index_to_name(idx)];
+// }
+
+
 //-----------------------------------------------------------------------------
-Data &
-Filter::input(const std::string &port_name)
+//-----------------------------------------------------------------------------
+// private helpers
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+DataContainer *
+Filter::fetch_input(const std::string &port_name)
 {
     if(!has_port(port_name) )
     {
@@ -323,28 +353,41 @@ Filter::input(const std::string &port_name)
 }
 
 //-----------------------------------------------------------------------------
-Data &
-Filter::input(int idx)
+DataContainer *
+Filter::fetch_input(int port_idx)
 {
-    return m_inputs[port_index_to_name(idx)];
+    return m_inputs[port_index_to_name(port_idx)];
 }
+
+//-----------------------------------------------------------------------------
+void
+Filter::set_output(DataContainer &data)
+{
+    if(m_out != NULL)
+    {
+        delete m_out;
+        m_out = NULL;
+    }
+
+    m_out = data.wrap(data.data_ptr());
+}
+
+//-----------------------------------------------------------------------------
+DataContainer &
+Filter::output()
+{
+    // TODO GUARD NULL?
+    return *m_out;
+}
+
 
 
 //-----------------------------------------------------------------------------
 void
 Filter::set_input(const std::string &port_name, 
-                  Data ds)
+                  DataContainer *data)
 {
-    m_inputs[port_name] = ds;
-}
-
-
-
-//-----------------------------------------------------------------------------
-Data &
-Filter::output()
-{
-    return m_out;
+    m_inputs[port_name] = data;
 }
 
 
@@ -386,8 +429,15 @@ Filter::port_index_to_name(int idx) const
 void
 Filter::reset_inputs_and_output()
 {
+    // inputs aren't owned
     m_inputs.clear();
-    m_out = Data();
+    
+    // output pointer to container is owned
+    if(m_out != NULL)
+    {
+        delete m_out;
+        m_out = NULL;
+    }
 }
 
 
@@ -400,13 +450,20 @@ Filter::info(Node &out)
     
     Node &f_inputs = out["inputs"];
     
-    std::map<std::string,Data>::iterator itr;
+    std::map<std::string,DataContainer*>::iterator itr;
     for(itr = m_inputs.begin(); itr != m_inputs.end(); itr++)
     {   
-        itr->second.info(f_inputs[itr->first]);
+        itr->second->info(f_inputs[itr->first]);
     }
     
-    m_out.info(out["output"]);
+    if(m_out != NULL)
+    {
+        m_out->info(out["output"]);
+    }
+    else
+    {
+        out["output"] = DataType::empty();
+    }
 }
 
 

@@ -114,7 +114,8 @@ void
 RegistrySource::execute()
 {
     std::string key = params()["entry"].as_string();
-    output().set(graph().workspace().registry().fetch(key));
+    
+    set_output(*graph().workspace().registry().fetch_container(key));
 }
 
 //-----------------------------------------------------------------------------

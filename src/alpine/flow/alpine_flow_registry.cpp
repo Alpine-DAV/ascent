@@ -104,12 +104,8 @@ public:
     class Ref
     {
         public:
-             Ref();
+             Ref(int refs_needed=-1);
             ~Ref();
-
-             Ref(const Ref &r);
-             Ref &operator=(Ref &v);
-
 
              bool tracked() const;
              int  pending() const;
@@ -126,38 +122,29 @@ public:
     class Value
     {
         public:
-            Value();
+
+            Value(DataContainer &data, int refs_needed);
             ~Value();
 
-            Value(const Value &v);
-            Value &operator=(Value &v);
-
-            Data     &data();
-            void      set_data(Data &data);
-            Ref      &ref();
+            DataContainer *data();
+            Ref           *ref();
  
-            void     *data_ptr();
+            void          *data_ptr();
  
         private:
-            Ref      m_ref;
-            Data     m_data;
-
-        
+            Ref            m_ref;
+            DataContainer *m_data;
     };
 
     class Entry
     {
         public:
-                 Entry();
-                 Entry(const Entry &ent);
-                 Entry &operator=(Entry &ent);
-                 
+                 Entry(Value *, int refs_needed);
                  ~Entry();
 
-                 Value &value();
-                 void   set_value_ptr(Value *v);
-                 Data  &data();
-                 Ref   &ref();
+                 Value          *value();
+                 DataContainer  *data();
+                 Ref            *ref();
 
         private:
             Ref    m_ref;
@@ -171,15 +158,15 @@ public:
    ~Map();
 
     void   add(const std::string &key,
-               Data &data,
+               DataContainer &d,
                int refs_needed=-1);
 
     bool   has_entry(const std::string &key);
     bool   has_value(void *data_ptr);
         
-    Entry &fetch_entry(const std::string &key);
+    Entry *fetch_entry(const std::string &key);
     
-    Value &fetch_value(void *data_ptr);
+    Value *fetch_value(void *data_ptr);
     
     void   dec(const std::string &key);
     
@@ -189,8 +176,8 @@ public:
     
 private:
 
-    std::map<void*,Value>         m_values;
-    std::map<std::string,Entry>   m_entries;
+    std::map<void*,Value*>         m_values;
+    std::map<std::string,Entry*>   m_entries;
 
 };
 
@@ -205,8 +192,8 @@ private:
 
 
 //-----------------------------------------------------------------------------
-Registry::Map::Ref::Ref()
-:m_pending(-1)
+Registry::Map::Ref::Ref(int refs_needed)
+:m_pending(refs_needed)
 {
     // empty
 }
@@ -215,24 +202,6 @@ Registry::Map::Ref::Ref()
 Registry::Map::Ref::~Ref()
 {
     // empty
-}
-
-//-----------------------------------------------------------------------------
-Registry::Map::Ref::Ref(const Ref &r)
-:m_pending(r.m_pending)
-{
-    // empty
-}
-
-//-----------------------------------------------------------------------------
-Registry::Map::Ref &
-Registry::Map::Ref::operator=(Registry::Map::Ref &r)
-{
-    if(&r != this)
-    {
-        m_pending = r.m_pending;
-    }
-    return *this;
 }
 
 //-----------------------------------------------------------------------------
@@ -296,44 +265,26 @@ Registry::Map::Ref::inc(int amt)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-Registry::Map::Value::Value()
-:m_ref(),
- m_data()
+Registry::Map::Value::Value(DataContainer &data,
+                            int refs_needed)
+:m_ref(refs_needed),
+ m_data(NULL)
 {
-    // empty
+    m_data = data.wrap(data.data_ptr());
 }
-
-
-//-----------------------------------------------------------------------------
-Registry::Map::Value::Value(const Value &v)
-:m_ref(v.m_ref),
- m_data(v.m_data)
-{
-    // empty
-}
-
-
-//-----------------------------------------------------------------------------
-Registry::Map::Value &
-Registry::Map::Value::operator=(Registry::Map::Value &v)
-{
-    if(&v != this)
-    {
-        m_ref  = v.m_ref;
-        m_data = v.m_data;
-    }
-    return *this;
-}
-
 
 //-----------------------------------------------------------------------------
 Registry::Map::Value::~Value()
 {
     // empty
+    if(m_data != NULL)
+    {
+        delete m_data;
+    }
 }
 
 //-----------------------------------------------------------------------------
-Data &
+DataContainer *
 Registry::Map::Value::data()
 {
     return m_data;
@@ -343,22 +294,15 @@ Registry::Map::Value::data()
 void *
 Registry::Map::Value::data_ptr()
 {
-    return m_data.data_ptr();
-}
-
-//-----------------------------------------------------------------------------
-void
-Registry::Map::Value::set_data(Data &data)
-{
-    m_data = data;
+    return m_data->data_ptr();
 }
 
 
 //-----------------------------------------------------------------------------
-Registry::Map::Ref &
+Registry::Map::Ref *
 Registry::Map::Value::ref()
 {
-    return m_ref;
+    return &m_ref;
 }
 
 //-----------------------------------------------------------------------------
@@ -372,33 +316,12 @@ Registry::Map::Value::ref()
 
 //-----------------------------------------------------------------------------
 
-Registry::Map::Entry::Entry()
-: m_ref(),
-  m_value(NULL)
+Registry::Map::Entry::Entry(Value *value, int refs_needed)
+: m_ref(refs_needed),
+  m_value(value)
 {
     // empty
 }
-
-//-----------------------------------------------------------------------------
-Registry::Map::Entry::Entry(const Entry &e)
-:m_ref(e.m_ref),
- m_value(e.m_value)
-{
-    // empty
-}
-
-//-----------------------------------------------------------------------------
-Registry::Map::Entry &
-Registry::Map::Entry::operator=(Registry::Map::Entry &e)
-{
-    if(&e != this)
-    {
-        m_ref   = e.m_ref;
-        m_value = e.m_value;
-    }
-    return *this;
-}
-
 
 //-----------------------------------------------------------------------------
 Registry::Map::Entry::~Entry()
@@ -407,35 +330,26 @@ Registry::Map::Entry::~Entry()
 }
 
 //-----------------------------------------------------------------------------
-Registry::Map::Value &
+Registry::Map::Value *
 Registry::Map::Entry::value()
 {
-    return *m_value;
+    return m_value;
 }
 
 
 //-----------------------------------------------------------------------------
-void
-Registry::Map::Entry::set_value_ptr(Registry::Map::Value *v)
-{
-    m_value = v;
-}
-
-
-
-//-----------------------------------------------------------------------------
-Registry::Map::Ref &
+Registry::Map::Ref *
 Registry::Map::Entry::ref()
 {
-    return m_ref;
+    return &m_ref;
 }
 
 
 //-----------------------------------------------------------------------------
-Data &
+DataContainer *
 Registry::Map::Entry::data()
 {
-    return value().data();
+    return value()->data();
 }
 
 
@@ -465,53 +379,49 @@ Registry::Map::~Map()
 //-----------------------------------------------------------------------------
 void
 Registry::Map::add(const std::string &key,
-                         Data &data,
-                         int refs_needed)
+                   DataContainer &data,
+                   int refs_needed)
 {
     // if key already exists, throw an error
 
     void *data_ptr = data.data_ptr();
 
     // check if we are already tracking this pointer
-    std::map<void*,Value>::iterator itr = m_values.find(data_ptr);
+    std::map<void*,Value*>::iterator itr = m_values.find(data_ptr);
     if( itr != m_values.end() )
     {
+        Value *val = itr->second;
         // if we are already tracking it, fetch the value and
         // inc the refs needed
-        itr->second.ref().inc(refs_needed);
+        val->ref()->inc(refs_needed);
 
-        Entry &ent = m_entries[key];
-        // wire up the entry
-        ent.set_value_ptr(&itr->second);
-        ent.ref().set_pending(refs_needed);
-
+        // create a new entry assoced with this pointer
+        Entry *ent = new Entry(val,refs_needed);
+        // add to our entries
+        m_entries[key] = ent;
     }
     else
     {
         // if we aren't already tracking it, we can create a
         // new value and entry
     
-        Value &val = m_values[data_ptr];
-        val.set_data(data);
-        val.ref().set_pending(refs_needed);
-    
-    
-        Entry &ent = m_entries[key];
-        // wire up the entry
-        ent.set_value_ptr(&m_values[data_ptr]);
-        ent.ref().set_pending(refs_needed);
+        Value *val = new Value(data,refs_needed);
+        m_values[data_ptr] = val;
+
+        Entry *ent = new Entry(val,refs_needed);
+        m_entries[key] = ent;
     }
 }
 
 //-----------------------------------------------------------------------------
-Registry::Map::Entry &
+Registry::Map::Entry *
 Registry::Map::fetch_entry(const std::string &key)
 {
     return m_entries[key];
 }
 
 //-----------------------------------------------------------------------------
-Registry::Map::Value &
+Registry::Map::Value *
 Registry::Map::fetch_value(void *data_ptr)
 {
     return m_values[data_ptr];
@@ -522,7 +432,7 @@ Registry::Map::fetch_value(void *data_ptr)
 bool
 Registry::Map::has_entry(const std::string &key)
 {
-    std::map<std::string,Entry>::const_iterator itr;
+    std::map<std::string,Entry*>::const_iterator itr;
     itr = m_entries.find(key);
     return itr != m_entries.end();
 }
@@ -531,7 +441,7 @@ Registry::Map::has_entry(const std::string &key)
 bool
 Registry::Map::has_value(void *data_ptr)
 {
-    std::map<void*,Value>::const_iterator itr;
+    std::map<void*,Value*>::const_iterator itr;
     itr = m_values.find(data_ptr);
     return itr != m_values.end();
 }
@@ -542,31 +452,39 @@ void
 Registry::Map::dec(const std::string &key)
 {
 
-    Entry &ent = m_entries[key];
-
-    Value  &value = ent.value();
-    void *data_ptr = value.data_ptr();
+    Entry *ent   = fetch_entry(key);
+    Value *value = ent->value();
     
-    int ent_refs = ent.ref().dec();
+    int ent_refs = ent->ref()->dec();
     
     if(ent_refs == 0)
     {
         ALPINE_INFO("Registry Removing: " << key);
+
+        // clean up bookkeeping obj
+        delete ent;
         m_entries.erase(key);
     }
 
-    int val_refs = value.ref().dec();
+    int val_refs = value->ref()->dec();
 
     if(val_refs == 0)
     {
+        
+        void *data_ptr = value->data_ptr();
+        
         Node rel_info;
         ostringstream oss;
         oss << data_ptr;
         
-        rel_info[oss.str()]["pending"] = value.ref().pending();
+        rel_info[oss.str()]["pending"] = value->ref()->pending();
+
         ALPINE_INFO("Registry Releasing: " << rel_info.to_json());
+
+        value->data()->release();
                 
-        m_values[data_ptr].data().release();
+        // clean up bookkeeping obj
+        delete value;
         m_values.erase(data_ptr);
     }
 }
@@ -579,25 +497,25 @@ Registry::Map::info(Node &out)
     out.reset();
 
     Node &ents = out["entries"];
-    std::map<std::string,Entry>::iterator eitr;
+    std::map<std::string,Entry*>::iterator eitr;
     
     for(eitr = m_entries.begin(); eitr != m_entries.end(); eitr++)
     {
-        Entry &ent = eitr->second;
-        ents[eitr->first]["pending"] = ent.ref().pending();
-        ent.data().info(ents[eitr->first]["data"]);
+        Entry *ent = eitr->second;
+        ents[eitr->first]["pending"] = ent->ref()->pending();
+        ent->data()->info(ents[eitr->first]["data"]);
     }
 
     Node &ptrs = out["pointers"];
 
-    std::map<void*,Value>::iterator vitr;
+    std::map<void*,Value*>::iterator vitr;
 
     ostringstream oss;
     for(vitr = m_values.begin(); vitr != m_values.end(); vitr++)
     {
         oss << vitr->first;
-        Value &v= vitr->second;
-        ptrs[oss.str()]["pending"] = v.ref().pending();
+        Value *v= vitr->second;
+        ptrs[oss.str()]["pending"] = v->ref()->pending();
         oss.str("");
     }
 
@@ -607,16 +525,35 @@ Registry::Map::info(Node &out)
 void
 Registry::Map::reset()
 {
-    m_entries.clear();
-    
-    std::map<void*,Value>::iterator vitr;
+    // release anything still tracked
+    std::map<void*,Value*>::iterator vitr;
     for(vitr = m_values.begin(); vitr != m_values.end(); vitr++)
     {
-        Value &v = vitr->second;
-        if(v.ref().tracked())
+        Value *v = vitr->second;
+        if(v->ref()->tracked())
         {
-            v.data().release();
+            v->data()->release();
         }
+    }
+
+
+    // clean up internally allcoed stuff
+
+
+    std::map<std::string,Entry*>::iterator eitr;
+    for(eitr = m_entries.begin(); eitr != m_entries.end(); eitr++)
+    {
+        Entry *e = eitr->second;
+        delete e;
+    }
+    m_entries.clear();
+
+    
+    // std::map<void*,Value*>::iterator vitr;
+    for(vitr = m_values.begin(); vitr != m_values.end(); vitr++)
+    {
+        Value *v = vitr->second;
+        delete v;
     }
 
     m_values.clear();
@@ -640,37 +577,11 @@ Registry::~Registry()
     delete m_map;
 }
 
-
-//-----------------------------------------------------------------------------
-void
-Registry::add(const std::string &key, 
-              Data data,
-              int ref_count)
-{
-    
-    m_map->add(key,data,ref_count);
-}
-
 //-----------------------------------------------------------------------------
 bool 
 Registry::has_entry(const std::string &key)
 {
     return m_map->has_entry(key);
-}
-
-//-----------------------------------------------------------------------------
-Data 
-Registry::fetch(const std::string &key)
-{
-    if(!m_map->has_entry(key))
-    {
-        ALPINE_WARN("Attempt to fetch unknown key: " << key);
-        return Data();
-    }
-    else
-    {
-        return m_map->fetch_entry(key).value().data();
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -717,6 +628,41 @@ Registry::print()
     ALPINE_INFO(to_json());
 }
 
+//-----------------------------------------------------------------------------
+// private helper
+    
+//-----------------------------------------------------------------------------
+DataContainer *
+Registry::fetch_container(const std::string &key)
+{
+    DataContainer *res = NULL;
+    if(!m_map->has_entry(key))
+    {
+        ALPINE_WARN("Attempt to fetch unknown key: " << key);
+    }
+    else
+    {
+        res = m_map->fetch_entry(key)->value()->data();
+    }
+    
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Registry::add_entry(const std::string &key,
+                    DataContainer &data,
+                    int refs_needed)
+{
+    if(m_map->has_entry(key))
+    {
+        ALPINE_WARN("Attempt to overwrite existing entry with key: " << key);
+    }
+    else
+    {
+        m_map->add(key, data, refs_needed);
+    }
+}
 
 
 //-----------------------------------------------------------------------------

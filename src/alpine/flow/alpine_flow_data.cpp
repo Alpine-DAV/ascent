@@ -87,129 +87,47 @@ namespace flow
 {
 
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//
-// Data
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-Data::Data()
-: m_data_ptr(NULL)
+DataContainer::DataContainer(void *data)
+:m_data_ptr(data)
 {
+        // empty
+}
     
-}
-
 //-----------------------------------------------------------------------------
-Data::Data(conduit::Node *node)
-: m_data_ptr(NULL)
+DataContainer::~DataContainer()
 {
-    set(node);
-}
-
-//-----------------------------------------------------------------------------
-Data::Data(const Data &ds)
-: m_data_ptr(NULL)
-{
-    // shallow cpy
-    m_data_ptr = ds.m_data_ptr;
-}
-
-//-----------------------------------------------------------------------------
-Data &
-Data::operator=(Data &v)
-{
-    if(&v != this)
-    {
-        m_data_ptr = v.m_data_ptr;
-    }
-    return *this;
-}
-
-//-----------------------------------------------------------------------------
-Data &
-Data::operator=(const Data &v)
-{
-    if(&v != this)
-    {
-        m_data_ptr = v.m_data_ptr;
-    }
-    return *this;
-}
-
-
-//-----------------------------------------------------------------------------
-Data::~Data()
-{
-
-}
-
-
-//-----------------------------------------------------------------------------
-void
-Data::set(Node *data_ptr)
-{
-    m_data_ptr = data_ptr;
-}
-
-//-----------------------------------------------------------------------------
-void
-Data::release()
-{
-    if(m_data_ptr != NULL)
-    {
-        delete m_data_ptr;
-    }
+        // empty
 }
 
 //-----------------------------------------------------------------------------
 void *
-Data::data_ptr()
-{
-    return (void*)m_data_ptr;
-}
-
-//-----------------------------------------------------------------------------
-conduit::Node *
-Data::as_node_ptr()
+DataContainer::data_ptr()
 {
     return m_data_ptr;
 }
 
-//-----------------------------------------------------------------------------
-Data::operator Node &()
-{
-    Node *node_ptr = as_node_ptr();
-    if(node_ptr == NULL)
-    {
-        ALPINE_ERROR("Data is not a conduit::Node instance");
-    }
-
-    return *as_node_ptr();
-}
 
 //-----------------------------------------------------------------------------
-Data::operator Node *()
+const void *
+DataContainer::data_ptr() const
 {
-    return as_node_ptr();
+    return m_data_ptr;
 }
-
 //-----------------------------------------------------------------------------
 void
-Data::info(Node &out)
+DataContainer::info(Node &out)
 {
     out.reset();
     ostringstream oss;
     oss << m_data_ptr;
-    out["node_ptr"] = oss.str();
+    out["data_ptr"] = oss.str();
 }
 
 
 
 //-----------------------------------------------------------------------------
 std::string
-Data::to_json()
+DataContainer::to_json()
 {
     Node out;
     info(out);
@@ -220,11 +138,10 @@ Data::to_json()
 
 //-----------------------------------------------------------------------------
 void
-Data::print()
+DataContainer::print()
 {
     ALPINE_INFO(to_json());
 }
-
 
 //-----------------------------------------------------------------------------
 };
