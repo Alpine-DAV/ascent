@@ -84,18 +84,18 @@ namespace flow
 //-----------------------------------------------------------------------------    
 
 //-----------------------------------------------------------------------------
-class DataContainer
+class Data
 {
 public:
-    DataContainer(void *data);
+    Data(void *data);
 
-    virtual ~DataContainer();
+    virtual ~Data();
     
     
     // creates a new container for given data
-    virtual DataContainer  *wrap(void *data) = 0;
+    virtual Data  *wrap(void *data)   = 0;
     // actually delete the data
-    virtual void            release()        = 0;
+    virtual void            release() = 0;
     
     void          *data_ptr();
     const  void   *data_ptr() const;
@@ -117,6 +117,9 @@ public:
     std::string to_json();
     void        print();
 
+protected:
+    void    set_data_ptr(void *);
+
 private:
     void *m_data_ptr;
 
@@ -124,29 +127,33 @@ private:
 
 //-----------------------------------------------------------------------------
 template <class T>
-class DataHolder: public DataContainer
+class DataWrapper: public Data
 {
  public:
-    DataHolder(void *data)
-    : DataContainer(data)
+    DataWrapper(void *data)
+    : Data(data)
     {
         // empty
     }
     
-    virtual ~DataHolder()
+    virtual ~DataWrapper()
     {
         // empty
     }
 
-    DataContainer *wrap(void *data)
+    Data *wrap(void *data)
     {
-        return new DataHolder<T>(data);
+        return new DataWrapper<T>(data);
     }
 
     virtual void release()
     {
-        T * t = static_cast<T*>(data_ptr());
-        delete t;
+        if(data_ptr() != NULL)
+        {
+            T * t = static_cast<T*>(data_ptr());
+            delete t;
+            set_data_ptr(NULL);
+        }
     }
 };
 

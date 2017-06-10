@@ -101,6 +101,7 @@ RegistrySource::RegistrySource()
     i["port_names"]  = DataType::empty();
     i["output_port"] = "true";
     i["default_params"]["entry"] = "";
+
 }
 
 //-----------------------------------------------------------------------------
@@ -115,7 +116,7 @@ RegistrySource::execute()
 {
     std::string key = params()["entry"].as_string();
     
-    set_output(*graph().workspace().registry().fetch_container(key));
+    set_output(graph().workspace().registry().fetch_data(key));
 }
 
 //-----------------------------------------------------------------------------

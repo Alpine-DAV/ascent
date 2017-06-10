@@ -202,11 +202,13 @@ public:
     template <class T>
     void set_output(T *data_ptr)
     {
-        DataHolder<T> data(data_ptr);
+        DataWrapper<T> data(data_ptr);
         set_output(data);
     }
     
-    void                   set_output(DataContainer &data);
+
+    void                   set_output(Data &data);
+    Data                  &output();
     
     Graph                 &graph();
 
@@ -224,21 +226,18 @@ public:
     std::string            to_json();
     void                   print();
 
-    DataContainer          &output();
+
 
 protected:
     Filter();
 
 private:
 
-    DataContainer          *fetch_input(const std::string &port_name);
-    DataContainer          *fetch_input(int port_idx);
-
-
-
+    Data                   *fetch_input(const std::string &port_name);
+    Data                   *fetch_input(int port_idx);
     // used by ws interface to imp data flow exec
     void                    set_input(const std::string &port_name,
-                                      DataContainer *data);
+                                      Data *data);
 
     void                    init(Graph *graph,
                                  const std::string &name,
@@ -251,11 +250,11 @@ private:
     const conduit::Node     &properties() const;
 
     
-    Graph                         *m_graph;
+    Graph                        *m_graph;
     
-    conduit::Node                          m_props;
-    DataContainer                         *m_out;
-    std::map<std::string,DataContainer*>   m_inputs;
+    conduit::Node                 m_props;
+    Data                         *m_out;
+    std::map<std::string,Data*>   m_inputs;
 
 };
 

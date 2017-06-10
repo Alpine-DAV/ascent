@@ -340,7 +340,7 @@ Filter::verify_interface(const Node &i,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-DataContainer *
+Data *
 Filter::fetch_input(const std::string &port_name)
 {
     if(!has_port(port_name) )
@@ -353,7 +353,7 @@ Filter::fetch_input(const std::string &port_name)
 }
 
 //-----------------------------------------------------------------------------
-DataContainer *
+Data *
 Filter::fetch_input(int port_idx)
 {
     return m_inputs[port_index_to_name(port_idx)];
@@ -361,7 +361,7 @@ Filter::fetch_input(int port_idx)
 
 //-----------------------------------------------------------------------------
 void
-Filter::set_output(DataContainer &data)
+Filter::set_output(Data &data)
 {
     if(m_out != NULL)
     {
@@ -373,7 +373,7 @@ Filter::set_output(DataContainer &data)
 }
 
 //-----------------------------------------------------------------------------
-DataContainer &
+Data &
 Filter::output()
 {
     // TODO GUARD NULL?
@@ -385,7 +385,7 @@ Filter::output()
 //-----------------------------------------------------------------------------
 void
 Filter::set_input(const std::string &port_name, 
-                  DataContainer *data)
+                  Data *data)
 {
     m_inputs[port_name] = data;
 }
@@ -450,7 +450,7 @@ Filter::info(Node &out)
     
     Node &f_inputs = out["inputs"];
     
-    std::map<std::string,DataContainer*>::iterator itr;
+    std::map<std::string,Data*>::iterator itr;
     for(itr = m_inputs.begin(); itr != m_inputs.end(); itr++)
     {   
         itr->second->info(f_inputs[itr->first]);

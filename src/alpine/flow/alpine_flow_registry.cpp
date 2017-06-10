@@ -123,17 +123,17 @@ public:
     {
         public:
 
-            Value(DataContainer &data, int refs_needed);
+            Value(Data &data, int refs_needed);
             ~Value();
 
-            DataContainer *data();
+            Data *data();
             Ref           *ref();
  
             void          *data_ptr();
  
         private:
             Ref            m_ref;
-            DataContainer *m_data;
+            Data *m_data;
     };
 
     class Entry
@@ -143,7 +143,7 @@ public:
                  ~Entry();
 
                  Value          *value();
-                 DataContainer  *data();
+                 Data  *data();
                  Ref            *ref();
 
         private:
@@ -158,7 +158,7 @@ public:
    ~Map();
 
     void   add(const std::string &key,
-               DataContainer &d,
+               Data &d,
                int refs_needed=-1);
 
     bool   has_entry(const std::string &key);
@@ -265,7 +265,7 @@ Registry::Map::Ref::inc(int amt)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-Registry::Map::Value::Value(DataContainer &data,
+Registry::Map::Value::Value(Data &data,
                             int refs_needed)
 :m_ref(refs_needed),
  m_data(NULL)
@@ -284,7 +284,7 @@ Registry::Map::Value::~Value()
 }
 
 //-----------------------------------------------------------------------------
-DataContainer *
+Data *
 Registry::Map::Value::data()
 {
     return m_data;
@@ -346,7 +346,7 @@ Registry::Map::Entry::ref()
 
 
 //-----------------------------------------------------------------------------
-DataContainer *
+Data *
 Registry::Map::Entry::data()
 {
     return value()->data();
@@ -379,7 +379,7 @@ Registry::Map::~Map()
 //-----------------------------------------------------------------------------
 void
 Registry::Map::add(const std::string &key,
-                   DataContainer &data,
+                   Data &data,
                    int refs_needed)
 {
     // if key already exists, throw an error
@@ -632,26 +632,21 @@ Registry::print()
 // private helper
     
 //-----------------------------------------------------------------------------
-DataContainer *
-Registry::fetch_container(const std::string &key)
+Data &
+Registry::fetch_data(const std::string &key)
 {
-    DataContainer *res = NULL;
     if(!m_map->has_entry(key))
     {
-        ALPINE_WARN("Attempt to fetch unknown key: " << key);
-    }
-    else
-    {
-        res = m_map->fetch_entry(key)->value()->data();
+        ALPINE_ERROR("Attempt to fetch unknown key: " << key);
     }
     
-    return res;
+    return *m_map->fetch_entry(key)->value()->data();
 }
 
 //-----------------------------------------------------------------------------
 void
 Registry::add_entry(const std::string &key,
-                    DataContainer &data,
+                    Data &data,
                     int refs_needed)
 {
     if(m_map->has_entry(key))

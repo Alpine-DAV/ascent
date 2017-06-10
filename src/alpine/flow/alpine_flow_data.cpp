@@ -87,35 +87,41 @@ namespace flow
 {
 
 //-----------------------------------------------------------------------------
-DataContainer::DataContainer(void *data)
+Data::Data(void *data)
 :m_data_ptr(data)
 {
         // empty
 }
     
 //-----------------------------------------------------------------------------
-DataContainer::~DataContainer()
+Data::~Data()
 {
         // empty
 }
 
 //-----------------------------------------------------------------------------
 void *
-DataContainer::data_ptr()
+Data::data_ptr()
 {
     return m_data_ptr;
 }
 
+//-----------------------------------------------------------------------------
+void
+Data::set_data_ptr(void *data_ptr)
+{
+    m_data_ptr = data_ptr;
+}
 
 //-----------------------------------------------------------------------------
 const void *
-DataContainer::data_ptr() const
+Data::data_ptr() const
 {
     return m_data_ptr;
 }
 //-----------------------------------------------------------------------------
 void
-DataContainer::info(Node &out)
+Data::info(Node &out)
 {
     out.reset();
     ostringstream oss;
@@ -127,7 +133,7 @@ DataContainer::info(Node &out)
 
 //-----------------------------------------------------------------------------
 std::string
-DataContainer::to_json()
+Data::to_json()
 {
     Node out;
     info(out);
@@ -138,7 +144,7 @@ DataContainer::to_json()
 
 //-----------------------------------------------------------------------------
 void
-DataContainer::print()
+Data::print()
 {
     ALPINE_INFO(to_json());
 }

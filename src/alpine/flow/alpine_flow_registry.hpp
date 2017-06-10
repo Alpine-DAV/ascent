@@ -132,13 +132,13 @@ public:
    ~Registry();
 
 
-    // generic interface add
+    /// generic interface add
     template <class T>
     void add(const std::string &key, 
              T *data_ptr,
              int refs_needed=-1) // -1 means don't track and release mem
     {
-        DataHolder<T> data(data_ptr);
+        DataWrapper<T> data(data_ptr);
         add_entry(key,data,refs_needed);
     } 
 
@@ -147,14 +147,14 @@ public:
     template <class T>
     T *fetch(const std::string &key)
     {
-        return fetch_container(key)->value<T>();
+        return fetch_data(key).value<T>();
     }
 
     void           add_entry(const std::string &key, 
-                             DataContainer &data,
+                             Data &data,
                              int refs_needed);
 
-    DataContainer *fetch_container(const std::string &key);
+    Data          &fetch_data(const std::string &key);
     bool           has_entry(const std::string &key);
     void           consume(const std::string &key);
 
