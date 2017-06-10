@@ -84,11 +84,6 @@ public:
     
    ~Graph();
 
-    
-    // basic factory
-    bool has_registered_filter_type(const std::string &filter_type);
-    void register_filter_type(FilterType fr);
-
     Workspace &workspace();
 
 
@@ -143,8 +138,6 @@ private:
     Workspace                       *m_workspace;
     conduit::Node                    m_edges;
     std::map<std::string,Filter*>    m_filters;
-    std::map<std::string,FilterType> m_filter_types;
-    
     int                              m_filter_count;
 
 };

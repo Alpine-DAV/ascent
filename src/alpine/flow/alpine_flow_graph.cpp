@@ -69,6 +69,7 @@
 // alpine includes
 //-----------------------------------------------------------------------------
 #include <alpine_logging.hpp>
+#include <alpine_flow_workspace.hpp>
 
 
 using namespace conduit;
@@ -125,60 +126,9 @@ Graph::reset()
     }
 
     m_filters.clear();
-    
-    m_filter_types.clear();
-    
     m_edges.reset();
 
 }
-
-//-----------------------------------------------------------------------------
-bool
-Graph::has_registered_filter_type(const std::string &name)
-{
-    std::map<std::string,FilterType>::iterator itr = m_filter_types.find(name);
-    return itr != m_filter_types.end();
-}
-
-//-----------------------------------------------------------------------------
-void
-Graph::register_filter_type(FilterType fr)
-{
-    // check that filter is valid by creating
-    // an instance
-    
-    Filter *f = fr();
-    
-    // verify f provides proper interface declares
-    
-    Node v_info;
-    if(!Filter::verify_interface(f->interface(),v_info))
-    {
-        // failed interface verify ... 
-        ALPINE_ERROR("filter type interface verify failed." << std::endl
-                      << "Details"
-                      << v_info.to_json());
-    }
-
-    // obtain the filter's type name 
-    Node p;
-    f->init(this,"",p);
-    
-    std::string f_type_name =f->type_name();
-    
-    // we no longer need this instance ...
-    delete f;
-    
-    if(has_registered_filter_type(f_type_name))
-    {
-        ALPINE_ERROR("filter type named:"
-                     << f_type_name 
-                    << " is already registered");
-    }
-    
-    m_filter_types[f_type_name] = fr;
-}
-
 
 //-----------------------------------------------------------------------------
 Filter *
@@ -202,18 +152,8 @@ Graph::add_filter(const std::string &filter_type,
                      << " already exists in Graph");
         return NULL;
     }
-
-    std::map<std::string,FilterType>::iterator itr = m_filter_types.find(filter_type);
-    if(itr == m_filter_types.end())
-    {
-        ALPINE_WARN("Cannot create unknown filter type: "
-                    << filter_type);
-        return NULL;
-    }
     
-    // this creates a new instance ...
-    Filter *f =itr->second();
-        
+    Filter *f = Workspace::create_filter(filter_type);
     
     f->init(this,
             filter_name,

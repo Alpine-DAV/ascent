@@ -63,6 +63,7 @@
 using namespace std;
 using namespace conduit;
 using namespace alpine;
+using namespace alpine::flow;
 
 
 //-----------------------------------------------------------------------------
@@ -72,7 +73,7 @@ TEST(alpine_flow, alpine_flow_registry)
     
     n->set(10);
     
-    flow::Registry r;
+    Registry r;
     r.add<Node>("d",n,2);
     r.print();
 
@@ -101,7 +102,7 @@ TEST(alpine_flow, alpine_flow_registry_aliased)
     n->set(10);
     
     
-    flow::Registry r;
+    Registry r;
     r.add<Node>("d1",n,1);
     r.add<Node>("d2",n,1);
     r.print();
@@ -133,7 +134,7 @@ TEST(alpine_flow, alpine_flow_registry_untracked)
     
     n->set(10);
 
-    flow::Registry r;
+    Registry r;
     r.add<Node>("d",n,-1);
     r.print();
 
@@ -164,7 +165,7 @@ TEST(alpine_flow, alpine_flow_registry_untracked_aliased)
     
     n->set(10);
 
-    flow::Registry r;
+    Registry r;
     r.add<Node>("d",n,-1);
     r.add<Node>("d_al",n,1);
     r.print();
@@ -190,11 +191,11 @@ TEST(alpine_flow, alpine_flow_registry_untracked_aliased)
 }
 
 //-----------------------------------------------------------------------------
-class SrcFilter: public flow::Filter
+class SrcFilter: public Filter
 {
 public:
     SrcFilter()
-    : flow::Filter()
+    : Filter()
     {
         Node &i = interface();
         i["type_name"]   = "src";
@@ -220,21 +221,15 @@ public:
         // when all consuming filters have executed.
         ALPINE_INFO("exec: " << name() << " result = " << res->to_json());
     }
-
-    // bare-bones factory method
-    static Filter *create()
-    {
-        return new SrcFilter();
-    }
 };
 
 
 //-----------------------------------------------------------------------------
-class IncFilter: public flow::Filter
+class IncFilter: public Filter
 {
 public:
     IncFilter()
-    : flow::Filter()
+    : Filter()
     {
         Node &i = interface();
         i["type_name"]   = "inc";
@@ -271,20 +266,15 @@ public:
         ALPINE_INFO("exec: " << name() << " result = " << res->to_json());
     }
 
-    // bare-bones factory method
-    static Filter *create()
-    {
-        return new IncFilter();
-    }
 };
 
 
 //-----------------------------------------------------------------------------
-class AddFilter: public flow::Filter
+class AddFilter: public Filter
 {
 public:
     AddFilter()
-    : flow::Filter()
+    : Filter()
     {
         Node &i = interface();
         i["type_name"]   = "add";
@@ -319,11 +309,6 @@ public:
         ALPINE_INFO("exec: " << name() << " result = " << res->to_json());
     }
 
-    // bare-bones factory method
-    static Filter *create()
-    {
-        return new AddFilter();
-    }
 };
 
 
@@ -332,13 +317,11 @@ public:
 //-----------------------------------------------------------------------------
 TEST(alpine_flow, alpine_flow_workspace_linear)
 {
+    Workspace::register_filter_type<SrcFilter>();
+    Workspace::register_filter_type<IncFilter>();
 
-    flow::Workspace w;
+    Workspace w;
     // w.graph().register(FilterType(class))
-
-    w.graph().register_filter_type(&SrcFilter::create);
-    w.graph().register_filter_type(&IncFilter::create);
-
 
     w.graph().add_filter("src","s");
     
@@ -364,23 +347,23 @@ TEST(alpine_flow, alpine_flow_workspace_linear)
     w.registry().consume("c");
 
     w.print();
+
+    Workspace::clear_supported_filter_types();
 }
 
 //-----------------------------------------------------------------------------
 TEST(alpine_flow, alpine_flow_workspace_linear_filter_ptr_iface)
 {
-
-    flow::Workspace w;
-
-    w.graph().register_filter_type(&SrcFilter::create);
-    w.graph().register_filter_type(&IncFilter::create);
-
-
-    flow::Filter *f_s = w.graph().add_filter("src","s");
+    Workspace::register_filter_type<SrcFilter>();
+    Workspace::register_filter_type<IncFilter>();
     
-    flow::Filter *f_a = w.graph().add_filter("inc","a");
-    flow::Filter *f_b = w.graph().add_filter("inc","b");
-    flow::Filter *f_c = w.graph().add_filter("inc","c");
+    Workspace w;
+
+    Filter *f_s = w.graph().add_filter("src","s");
+    
+    Filter *f_a = w.graph().add_filter("inc","a");
+    Filter *f_b = w.graph().add_filter("inc","b");
+    Filter *f_c = w.graph().add_filter("inc","c");
     
     f_a->connect_input_port("in",f_s);
     f_b->connect_input_port("in",f_a);
@@ -400,24 +383,25 @@ TEST(alpine_flow, alpine_flow_workspace_linear_filter_ptr_iface)
     w.registry().consume("c");
 
     w.print();
+
+    Workspace::clear_supported_filter_types();
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(alpine_flow, alpine_flow_workspace_linear_filter_ptr_iface_port_idx)
 {
+    Workspace::register_filter_type<SrcFilter>();
+    Workspace::register_filter_type<IncFilter>();
 
-    flow::Workspace w;
-
-    w.graph().register_filter_type(&SrcFilter::create);
-    w.graph().register_filter_type(&IncFilter::create);
+    Workspace w;
 
 
-    flow::Filter *f_s = w.graph().add_filter("src","s");
+    Filter *f_s = w.graph().add_filter("src","s");
     
-    flow::Filter *f_a = w.graph().add_filter("inc","a");
-    flow::Filter *f_b = w.graph().add_filter("inc","b");
-    flow::Filter *f_c = w.graph().add_filter("inc","c");
+    Filter *f_a = w.graph().add_filter("inc","a");
+    Filter *f_b = w.graph().add_filter("inc","b");
+    Filter *f_c = w.graph().add_filter("inc","c");
     
     f_a->connect_input_port(0,f_s);
     f_b->connect_input_port(0,f_a);
@@ -437,16 +421,18 @@ TEST(alpine_flow, alpine_flow_workspace_linear_filter_ptr_iface_port_idx)
     w.registry().consume("c");
 
     w.print();
+
+    Workspace::clear_supported_filter_types();
 }
 
 //-----------------------------------------------------------------------------
 TEST(alpine_flow, alpine_flow_workspace_graph)
 {
-    flow::Workspace w;
-
-    w.graph().register_filter_type(&SrcFilter::create);
-    w.graph().register_filter_type(&AddFilter::create);
-
+    Workspace::register_filter_type<SrcFilter>();
+    Workspace::register_filter_type<AddFilter>();
+    
+    
+    Workspace w;
 
     Node p_vs;
     p_vs["value"].set(int(10));
@@ -482,27 +468,29 @@ TEST(alpine_flow, alpine_flow_workspace_graph)
     w.registry().consume("a2");
     
     w.print();
+    
+    Workspace::clear_supported_filter_types();
 }
 
 //-----------------------------------------------------------------------------
 TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface)
 {
-    flow::Workspace w;
-
-    w.graph().register_filter_type(&SrcFilter::create);
-    w.graph().register_filter_type(&AddFilter::create);
+    Workspace::register_filter_type<SrcFilter>();
+    Workspace::register_filter_type<AddFilter>();
+        
+    Workspace w;
 
 
     Node p_vs;
     p_vs["value"].set(int(10));
 
-    flow::Filter *f_v1 = w.graph().add_filter("src","v1",p_vs);
-    flow::Filter *f_v2 = w.graph().add_filter("src","v2",p_vs);
-    flow::Filter *f_v3 = w.graph().add_filter("src","v3",p_vs);
+    Filter *f_v1 = w.graph().add_filter("src","v1",p_vs);
+    Filter *f_v2 = w.graph().add_filter("src","v2",p_vs);
+    Filter *f_v3 = w.graph().add_filter("src","v3",p_vs);
     
     
-    flow::Filter *f_a1 = w.graph().add_filter("add","a1");
-    flow::Filter *f_a2 = w.graph().add_filter("add","a2");
+    Filter *f_a1 = w.graph().add_filter("add","a1");
+    Filter *f_a2 = w.graph().add_filter("add","a2");
 
     
     f_a1->connect_input_port("a",f_v1);
@@ -525,27 +513,29 @@ TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface)
     w.registry().consume("a2");
     
     w.print();
+    
+    Workspace::clear_supported_filter_types();
 }
 
 //-----------------------------------------------------------------------------
 TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface_port_idx)
 {
-    flow::Workspace w;
+    Workspace::register_filter_type<SrcFilter>();
+    Workspace::register_filter_type<AddFilter>();
 
-    w.graph().register_filter_type(&SrcFilter::create);
-    w.graph().register_filter_type(&AddFilter::create);
 
+    Workspace w;
 
     Node p_vs;
     p_vs["value"].set(int(10));
 
-    flow::Filter *f_v1 = w.graph().add_filter("src","v1",p_vs);
-    flow::Filter *f_v2 = w.graph().add_filter("src","v2",p_vs);
-    flow::Filter *f_v3 = w.graph().add_filter("src","v3",p_vs);
+    Filter *f_v1 = w.graph().add_filter("src","v1",p_vs);
+    Filter *f_v2 = w.graph().add_filter("src","v2",p_vs);
+    Filter *f_v3 = w.graph().add_filter("src","v3",p_vs);
     
     
-    flow::Filter *f_a1 = w.graph().add_filter("add","a1");
-    flow::Filter *f_a2 = w.graph().add_filter("add","a2");
+    Filter *f_a1 = w.graph().add_filter("add","a1");
+    Filter *f_a2 = w.graph().add_filter("add","a2");
 
     
     f_a1->connect_input_port(0,f_v1);
@@ -568,17 +558,17 @@ TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface_port_idx)
     w.registry().consume("a2");
     
     w.print();
+    
+    Workspace::clear_supported_filter_types();
 }
 
 //-----------------------------------------------------------------------------
 TEST(alpine_flow, alpine_flow_workspace_reg_source)
 {
+    Workspace::register_filter_type<filters::RegistrySource>();
+    Workspace::register_filter_type<AddFilter>();
 
-    flow::Workspace w;
-
-    w.graph().register_filter_type(&flow::filters::RegistrySource::create);
-    w.graph().register_filter_type(&AddFilter::create);
-
+    Workspace w;
 
     Node v;
     
@@ -618,29 +608,31 @@ TEST(alpine_flow, alpine_flow_workspace_reg_source)
     EXPECT_EQ(n_s->as_int(),10);
     
     EXPECT_EQ(n_s,&v);
+    
+    Workspace::clear_supported_filter_types();
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface_auto_name)
 {
-    flow::Workspace w;
+    Workspace::register_filter_type<SrcFilter>();
+    Workspace::register_filter_type<AddFilter>();
 
-    w.graph().register_filter_type(&SrcFilter::create);
-    w.graph().register_filter_type(&AddFilter::create);
+    Workspace w;
 
 
     Node p_vs;
     p_vs["value"].set(int(10));
 
-    flow::Filter *f_v1 = w.graph().add_filter("src",p_vs);
-    flow::Filter *f_v2 = w.graph().add_filter("src",p_vs);
-    flow::Filter *f_v3 = w.graph().add_filter("src",p_vs);
+    Filter *f_v1 = w.graph().add_filter("src",p_vs);
+    Filter *f_v2 = w.graph().add_filter("src",p_vs);
+    Filter *f_v3 = w.graph().add_filter("src",p_vs);
     
     
     
-    flow::Filter *f_a1 = w.graph().add_filter("add");
-    flow::Filter *f_a2 = w.graph().add_filter("add");
+    Filter *f_a1 = w.graph().add_filter("add");
+    Filter *f_a2 = w.graph().add_filter("add");
 
 
     EXPECT_EQ(f_v1->name(),"f_0");
@@ -670,6 +662,8 @@ TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface_auto_name)
     w.registry().consume(f_a2->name());
     
     w.print();
+    
+    Workspace::clear_supported_filter_types();
 }
 
 
@@ -677,10 +671,9 @@ TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface_auto_name)
 // TEST(alpine_flow, alpine_flow_workspace_notes)
 // {
 
-    // flow::Workspace w;
+    // Workspace w;
 
     
-    // FILTER_FACTORY(TestFilter) ?
     // w.graph().register_filter_type(&TestFilter::type);
     //
     // Node n;

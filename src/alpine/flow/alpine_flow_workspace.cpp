@@ -108,17 +108,17 @@ class Workspace::FilterFactory
 {
 public:
 
-    static std::map<std::string,FilterType> &registered_types()
+    static std::map<std::string,FilterFactoryMethod> &registered_types()
     {
         return m_filter_types;
     }
         
 private:
-    static std::map<std::string,FilterType> m_filter_types;
+    static std::map<std::string,FilterFactoryMethod> m_filter_types;
 };
 
 //-----------------------------------------------------------------------------
-std::map<std::string,FilterType> Workspace::FilterFactory::m_filter_types;
+std::map<std::string,FilterFactoryMethod> Workspace::FilterFactory::m_filter_types;
 
 
 //-----------------------------------------------------------------------------
@@ -396,7 +396,7 @@ Workspace::create_filter(const std::string &filter_type)
 bool
 Workspace::supports_filter_type(const std::string &filter_type)
 {
-    std::map<std::string,FilterType>::const_iterator itr;
+    std::map<std::string,FilterFactoryMethod>::const_iterator itr;
     itr = FilterFactory::registered_types().find(filter_type);
     return (itr != FilterFactory::registered_types().end());
 }
@@ -405,7 +405,7 @@ Workspace::supports_filter_type(const std::string &filter_type)
 void
 Workspace::remove_filter_type(const std::string &filter_type)
 {
-    std::map<std::string,FilterType>::const_iterator itr;
+    std::map<std::string,FilterFactoryMethod>::const_iterator itr;
     itr = FilterFactory::registered_types().find(filter_type);
     if(itr != FilterFactory::registered_types().end())
     {
@@ -414,7 +414,7 @@ Workspace::remove_filter_type(const std::string &filter_type)
 }
 //-----------------------------------------------------------------------------
 void
-Workspace::register_filter_type(FilterType fr)
+Workspace::register_filter_type(FilterFactoryMethod fr)
 {
     
     // TODO: we want the interface info to be static ...
@@ -450,6 +450,13 @@ Workspace::register_filter_type(FilterType fr)
     FilterFactory::registered_types()[f_type_name] = fr;
 }
 
+
+//-----------------------------------------------------------------------------
+void
+Workspace::clear_supported_filter_types()
+{
+    FilterFactory::registered_types().clear();
+}
 
 //-----------------------------------------------------------------------------
 };

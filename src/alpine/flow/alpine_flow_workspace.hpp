@@ -82,6 +82,8 @@ class Workspace
 {
 public:
 
+    friend class Graph;
+
     Workspace();
    ~Workspace();
    
@@ -101,13 +103,14 @@ public:
     // basic factory
     static bool supports_filter_type(const std::string &filter_type);
     static void remove_filter_type(const std::string &filter_type);
-    static void register_filter_type(FilterType fr);
+    static void register_filter_type(FilterFactoryMethod fr);
+    static void clear_supported_filter_types();
 
 
     template <class T>
     static void register_filter_type()
     {
-        // use template to inst FilterType ptr
+        register_filter_type(&CreateFilter<T>);
     }
 
 
