@@ -97,9 +97,26 @@ public:
     std::string to_json();
     void        print();
 
+
+    // basic factory
+    static bool supports_filter_type(const std::string &filter_type);
+    static void remove_filter_type(const std::string &filter_type);
+    static void register_filter_type(FilterType fr);
+
+
+    template <class T>
+    static void register_filter_type()
+    {
+        // use template to inst FilterType ptr
+    }
+
+
 private:
 
+    static Filter *create_filter(const std::string &filter_type);
+
     class ExecutionPlan;
+    class FilterFactory;
 
     Graph       m_graph;
     Registry    m_registry;

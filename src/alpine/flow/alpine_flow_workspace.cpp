@@ -103,6 +103,23 @@ class Workspace::ExecutionPlan
                                        conduit::Node &tarv);
 };
 
+//-----------------------------------------------------------------------------
+class Workspace::FilterFactory
+{
+public:
+
+    static std::map<std::string,FilterType> &registered_types()
+    {
+        return m_filter_types;
+    }
+        
+private:
+    static std::map<std::string,FilterType> m_filter_types;
+};
+
+//-----------------------------------------------------------------------------
+std::map<std::string,FilterType> Workspace::FilterFactory::m_filter_types;
+
 
 //-----------------------------------------------------------------------------
 Workspace::ExecutionPlan::ExecutionPlan()
@@ -361,7 +378,77 @@ Workspace::print()
     ALPINE_INFO(to_json());
 }
 
+//-----------------------------------------------------------------------------
+Filter *
+Workspace::create_filter(const std::string &filter_type)
+{
+    if(!supports_filter_type(filter_type))
+    {
+        ALPINE_WARN("Cannot create unknown filter type: "
+                    << filter_type);
+        return NULL;
+    }
+    
+    return FilterFactory::registered_types()[filter_type]();
+}
 
+//-----------------------------------------------------------------------------
+bool
+Workspace::supports_filter_type(const std::string &filter_type)
+{
+    std::map<std::string,FilterType>::const_iterator itr;
+    itr = FilterFactory::registered_types().find(filter_type);
+    return (itr != FilterFactory::registered_types().end());
+}
+
+//-----------------------------------------------------------------------------
+void
+Workspace::remove_filter_type(const std::string &filter_type)
+{
+    std::map<std::string,FilterType>::const_iterator itr;
+    itr = FilterFactory::registered_types().find(filter_type);
+    if(itr != FilterFactory::registered_types().end())
+    {
+        FilterFactory::registered_types().erase(filter_type);
+    }
+}
+//-----------------------------------------------------------------------------
+void
+Workspace::register_filter_type(FilterType fr)
+{
+    
+    // TODO: we want the interface info to be static ...
+    
+    // check that filter is valid by creating
+    // an instance
+    
+    Filter *f = fr();
+    
+    // verify f provides proper interface declares
+    
+    Node v_info;
+    if(!Filter::verify_interface(f->interface(),v_info))
+    {
+        // failed interface verify ... 
+        ALPINE_ERROR("filter type interface verify failed." << std::endl
+                      << "Details"
+                      << v_info.to_json());
+    }
+        
+    std::string f_type_name =f->type_name();
+    
+    // we no longer need this instance ...
+    delete f;
+    
+    if(supports_filter_type(f_type_name))
+    {
+        ALPINE_ERROR("filter type named:"
+                     << f_type_name 
+                    << " is already registered");
+    }
+    
+    FilterFactory::registered_types()[f_type_name] = fr;
+}
 
 
 //-----------------------------------------------------------------------------

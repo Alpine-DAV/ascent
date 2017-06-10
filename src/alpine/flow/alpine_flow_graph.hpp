@@ -93,8 +93,6 @@ public:
 
 
     // interface to construct a graph
-    
-
     Filter *add_filter(const std::string &filter_type,
                        const std::string &name);
 
