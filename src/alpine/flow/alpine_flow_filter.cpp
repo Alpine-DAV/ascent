@@ -312,25 +312,25 @@ Filter::verify_interface(const Node &i,
 }
 
 
-// //-----------------------------------------------------------------------------
-// Data &
-// Filter::input(const std::string &port_name)
-// {
-//     if(!has_port(port_name) )
-//     {
-//         ALPINE_ERROR( detailed_name()
-//                       << "does not have an input port named: " << port_name);
-//     }
-//
-//     return m_inputs[port_name];
-// }
-//
-// //-----------------------------------------------------------------------------
-// Data &
-// Filter::input(int idx)
-// {
-//     return m_inputs[port_index_to_name(idx)];
-// }
+//-----------------------------------------------------------------------------
+Data &
+Filter::input(const std::string &port_name)
+{
+    if(!has_port(port_name) )
+    {
+        ALPINE_ERROR( detailed_name()
+                      << "does not have an input port named: " << port_name);
+    }
+
+    return *m_inputs[port_name];
+}
+
+//-----------------------------------------------------------------------------
+Data &
+Filter::input(int idx)
+{
+    return *m_inputs[port_index_to_name(idx)];
+}
 
 
 //-----------------------------------------------------------------------------

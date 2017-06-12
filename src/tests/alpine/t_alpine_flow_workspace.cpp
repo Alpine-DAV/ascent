@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_alpine_flow_smoke.cpp
+/// file: t_alpine_flow_workspace.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -64,131 +64,6 @@ using namespace std;
 using namespace conduit;
 using namespace alpine;
 using namespace alpine::flow;
-
-
-//-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_registry)
-{
-    Node *n = new Node();
-    
-    n->set(10);
-    
-    Registry r;
-    r.add<Node>("d",n,2);
-    r.print();
-
-    Node *n_fetch = r.fetch<Node>("d");
-    EXPECT_EQ(n,n_fetch);
-
-    r.consume("d");
-    r.print();
-
-    
-    n_fetch = r.fetch<Node>("d");
-    EXPECT_EQ(n,n_fetch);
-
-    r.consume("d");
-    r.print();
-    
-    EXPECT_FALSE(r.has_entry("d"));
-
-}
-
-//-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_registry_aliased)
-{
-    Node *n = new Node();
-    
-    n->set(10);
-    
-    
-    Registry r;
-    r.add<Node>("d1",n,1);
-    r.add<Node>("d2",n,1);
-    r.print();
-
-
-    Node *n_fetch = r.fetch<Node>("d1");
-    EXPECT_EQ(n,n_fetch);
-
-    r.consume("d1");
-    r.print();
-
-    n_fetch = r.fetch<Node>("d2");
-    EXPECT_EQ(n,n_fetch);
-
-    r.consume("d2");
-    r.print();
-
-    EXPECT_FALSE(r.has_entry("d1"));
-            
-    EXPECT_FALSE(r.has_entry("d2"));
-
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_registry_untracked)
-{
-    Node *n = new Node();
-    
-    n->set(10);
-
-    Registry r;
-    r.add<Node>("d",n,-1);
-    r.print();
-
-    Node *n_fetch = r.fetch<Node>("d");
-    EXPECT_EQ(n,n_fetch);
-
-    r.consume("d");
-    r.print();
-
-    n_fetch = r.fetch<Node>("d");
-    EXPECT_EQ(n,n_fetch);
-
-    r.consume("d");
-    r.print();
-
-    
-    n_fetch = r.fetch<Node>("d");
-    EXPECT_EQ(n,n_fetch);
-
-
-    delete n;
-}
-
-//-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_registry_untracked_aliased)
-{
-    Node *n = new Node();
-    
-    n->set(10);
-
-    Registry r;
-    r.add<Node>("d",n,-1);
-    r.add<Node>("d_al",n,1);
-    r.print();
-
-    Node *n_fetch = r.fetch<Node>("d");
-    EXPECT_EQ(n,n_fetch);
-    r.consume("d");
-
-
-    n_fetch = r.fetch<Node>("d_al");
-    EXPECT_EQ(n,n_fetch);
-
-    r.consume("d_al");
-
-    EXPECT_FALSE(r.has_entry("d_al"));
-
-    n_fetch = r.fetch<Node>("d");
-    EXPECT_EQ(n,n_fetch);
-
-    r.print();
-    
-    delete n;
-}
 
 //-----------------------------------------------------------------------------
 class SrcFilter: public Filter
@@ -315,7 +190,7 @@ public:
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_workspace_linear)
+TEST(alpine_flow_workspace, linear_graph)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<IncFilter>();
@@ -352,7 +227,7 @@ TEST(alpine_flow, alpine_flow_workspace_linear)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_workspace_linear_filter_ptr_iface)
+TEST(alpine_flow_workspace, linear_graph_using_filter_ptr_iface)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<IncFilter>();
@@ -389,7 +264,7 @@ TEST(alpine_flow, alpine_flow_workspace_linear_filter_ptr_iface)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_workspace_linear_filter_ptr_iface_port_idx)
+TEST(alpine_flow_workspace, linear_graph_using_filter_ptr_iface_and_port_idx)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<IncFilter>();
@@ -473,7 +348,7 @@ TEST(alpine_flow, alpine_flow_workspace_graph)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface)
+TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<AddFilter>();
@@ -518,7 +393,7 @@ TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface_port_idx)
+TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface_port_idx)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<AddFilter>();
@@ -563,7 +438,7 @@ TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface_port_idx)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_workspace_reg_source)
+TEST(alpine_flow_workspace, graph_workspace_reg_source)
 {
     Workspace::register_filter_type<filters::RegistrySource>();
     Workspace::register_filter_type<AddFilter>();
@@ -614,7 +489,7 @@ TEST(alpine_flow, alpine_flow_workspace_reg_source)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_workspace_graph_filter_ptr_iface_auto_name)
+TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface_auto_name)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<AddFilter>();

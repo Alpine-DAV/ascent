@@ -187,6 +187,9 @@ public:
     // methods used to implement filter exec
     conduit::Node         &params();
 
+    Data &input(const std::string &port_name);
+    Data &input(int port_idx);
+
     template <class T>
     T *input(const std::string &port_name)
     {
@@ -198,6 +201,7 @@ public:
     {
         return fetch_input(idx)->value<T>();
     }
+
 
     template <class T>
     void set_output(T *data_ptr)

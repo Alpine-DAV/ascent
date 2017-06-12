@@ -56,7 +56,9 @@ set(BASIC_TESTS t_alpine_smoke
                 t_alpine_render_3d
                 t_alpine_web)
 
-set(FLOW_TESTS  t_alpine_flow)
+set(FLOW_TESTS  t_alpine_flow_data
+                t_alpine_flow_registry
+                t_alpine_flow_workspace)
 
 
 set(MPI_TESTS  t_alpine_mpi_empty_pipeline

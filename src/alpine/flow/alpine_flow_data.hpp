@@ -83,6 +83,10 @@ namespace flow
 //
 //-----------------------------------------------------------------------------    
 
+// forward declare so we can use dynamic cast in our check_type() method.
+template <class T>
+class DataWrapper;
+
 //-----------------------------------------------------------------------------
 class Data
 {
@@ -108,10 +112,19 @@ public:
     }
 
     template <class T>
+    bool check_type() const
+    {
+        const DataWrapper<T> *check = dynamic_cast<const DataWrapper<T>*>(this);
+        return check != NULL;
+    }
+
+
+    template <class T>
     const T *value() const
     {
         return static_cast<T*>(data_ptr());
     }
+
     
     void        info(conduit::Node &out);
     std::string to_json();
