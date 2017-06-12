@@ -426,16 +426,30 @@ Workspace::register_filter_type(FilterFactoryMethod fr)
     
     // verify f provides proper interface declares
     
+    Node i_test;
     Node v_info;
-    if(!Filter::verify_interface(f->interface(),v_info))
+    
+    std::string f_type_name = "(type_name missing!)";
+    
+    f->declare_interface(i_test);
+    if(!Filter::verify_interface(i_test,v_info))
     {
+        // if  the type name was provided, that helps improve 
+        // the error message, so try to include it
+        if(i_test.has_child("type_name") && 
+           i_test["type_name"].dtype().is_string())
+        {
+            f_type_name = i_test["type_name"].as_string();
+        }
+        
         // failed interface verify ... 
         ALPINE_ERROR("filter type interface verify failed." << std::endl
-                      << "Details"
+                      << f_type_name   << std::endl
+                      << "Details:" << std::endl
                       << v_info.to_json());
     }
         
-    std::string f_type_name =f->type_name();
+    f_type_name =i_test["type_name"].as_string();
     
     // we no longer need this instance ...
     delete f;

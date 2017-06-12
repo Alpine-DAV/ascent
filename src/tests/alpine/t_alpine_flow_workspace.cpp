@@ -71,17 +71,20 @@ class SrcFilter: public Filter
 public:
     SrcFilter()
     : Filter()
-    {
-        Node &i = interface();
-        i["type_name"]   = "src";
-        i["output_port"] = "true";
-        i["port_names"] = DataType::empty();
-        i["default_params"]["value"].set((int)0);
-
-    }
+    {}
         
     virtual ~SrcFilter()
     {}
+
+
+    virtual void declare_interface(Node &i)
+    {
+        i["type_name"]   = "src";
+        i["output_port"] = "true";
+        i["port_names"] = DataType::empty();
+        i["default_params"]["value"].set((int)0);  
+    }
+        
 
     virtual void execute()
     {
@@ -105,16 +108,18 @@ class IncFilter: public Filter
 public:
     IncFilter()
     : Filter()
-    {
-        Node &i = interface();
-        i["type_name"]   = "inc";
-        i["output_port"] = "true";
-        i["port_names"].append().set("in");
-        i["default_params"]["inc"].set((int)1);
-    }
+    {}
 
     virtual ~IncFilter()
     {}
+           
+    virtual void declare_interface(Node &i)
+    {
+        i["type_name"]   = "inc";
+        i["output_port"] = "true";
+        i["port_names"].append().set("in");
+        i["default_params"]["inc"].set((int)1);      
+    }
 
     virtual void execute()
     {
@@ -150,17 +155,18 @@ class AddFilter: public Filter
 public:
     AddFilter()
     : Filter()
-    {
-        Node &i = interface();
-        i["type_name"]   = "add";
-        i["output_port"] = "true";
-        i["port_names"].append().set("a");
-        i["port_names"].append().set("b");
-
-    }
+    {}
         
     virtual ~AddFilter()
     {}
+
+    virtual void declare_interface(Node &i)
+    {
+        i["type_name"]   = "add";
+        i["output_port"] = "true";
+        i["port_names"].append().set("a");
+        i["port_names"].append().set("b");        
+    }
 
     virtual void execute()
     {

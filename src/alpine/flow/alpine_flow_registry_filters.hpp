@@ -93,8 +93,8 @@ public:
     RegistrySource();
    ~RegistrySource();
     
-    void    execute();
-    static Filter *create();
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
 };
 
 //-----------------------------------------------------------------------------

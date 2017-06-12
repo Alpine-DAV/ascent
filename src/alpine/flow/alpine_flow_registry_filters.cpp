@@ -96,19 +96,25 @@ namespace filters
 RegistrySource::RegistrySource()
 :Filter()
 {
-    Node &i = interface();
-    i["type_name"]   = "registry_source";
-    i["port_names"]  = DataType::empty();
-    i["output_port"] = "true";
-    i["default_params"]["entry"] = "";
-
+// empty
 }
 
 //-----------------------------------------------------------------------------
 RegistrySource::~RegistrySource()
 {
-
+// empty
 }
+
+//-----------------------------------------------------------------------------
+void 
+RegistrySource::declare_interface(Node &i)
+{
+    i["type_name"]   = "registry_source";
+    i["port_names"]  = DataType::empty();
+    i["output_port"] = "true";
+    i["default_params"]["entry"] = "";
+}
+
 
 //-----------------------------------------------------------------------------
 void 
@@ -119,12 +125,6 @@ RegistrySource::execute()
     set_output(graph().workspace().registry().fetch_data(key));
 }
 
-//-----------------------------------------------------------------------------
-Filter *
-RegistrySource::create()
-{
-    return new RegistrySource();
-}
 
 //-----------------------------------------------------------------------------
 };

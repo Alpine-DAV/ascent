@@ -144,6 +144,7 @@ Filter::init(Graph *g,
 {
     m_graph = g;
     m_props["name"] = name;
+    declare_interface(interface());
     params().update(default_params());
     params().update(p);
 }
@@ -214,6 +215,15 @@ Filter::properties() const
 }
 
 
+//-----------------------------------------------------------------------------
+const Node &
+Filter::interface() const
+{
+    return m_props["interface"];
+}
+
+//-----------------------------------------------------------------------------
+// note this one is private.
 //-----------------------------------------------------------------------------
 Node &
 Filter::interface()

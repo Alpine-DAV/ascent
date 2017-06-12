@@ -86,14 +86,11 @@ class Graph;
 ///
 ///  To create a new filter, create a new subclass of Filter and:
 ///
-///  1) Declare the filter interrace, by adding the following entires to the 
-//      interface() node in in your constructor.
+///  1) Implement declare_interface(), and adding the following entires 
+///  to a conduit Node.
 ///
-///  MyFilter::MyFilter
-///  :Filter()
+///  void MyFilter::declare_interface(conduit::Node &i)
 ///  {
-///    Node &i = interface();
-///
 ///    // unique filter name
 ///    i["type_name"]   = "my_filter";
 ///
@@ -144,20 +141,22 @@ public:
     
     virtual ~Filter();
 
-
     // implement these:
+
+    /// fill i with the info about the filter's interface
+    virtual void          declare_interface(conduit::Node &i) = 0;
 
     /// override to imp filter's work
     virtual void          execute() = 0;
 
 
-    /// override to 
+    /// override to allow filter to verify custom params
     /// (used as a guard when a filter instance is created in a graph)
     virtual bool          verify_params(const conduit::Node &params,
                                         conduit::Node &info);
 
 
-    // filter interface
+    // filter properties
     
     /// static method that checks if conduit node passed conforms to what 
     /// is needed to declare a filter interface.
@@ -175,21 +174,21 @@ public:
     bool                  has_port(const std::string &name) const;
     std::string           port_index_to_name(int idx) const;
 
-    // instance properties 
     std::string           name() const;
     std::string           detailed_name() const;
 
 
-    // methods used to implement filter interface
-    conduit::Node         &interface();
-
-
-    // methods used to implement filter exec
+    // allows sub class to fetch the full interface def
+    const conduit::Node   &interface() const;
+    // allows sub class to fetch the params
     conduit::Node         &params();
+
+    /// generic fetch of wrapped input data
 
     Data &input(const std::string &port_name);
     Data &input(int port_idx);
 
+    /// templated fetch of wrapped input data 
     template <class T>
     T *input(const std::string &port_name)
     {
@@ -203,6 +202,10 @@ public:
     }
 
 
+    /// generic set of wrapped output data
+    void                   set_output(Data &data);
+
+    /// templated fetch of wrapped output data 
     template <class T>
     void set_output(T *data_ptr)
     {
@@ -211,7 +214,6 @@ public:
     }
     
 
-    void                   set_output(Data &data);
     Data                  &output();
     
     Graph                 &graph();
@@ -236,6 +238,9 @@ protected:
     Filter();
 
 private:
+
+    conduit::Node          &interface();
+
 
     Data                   *fetch_input(const std::string &port_name);
     Data                   *fetch_input(int port_idx);
