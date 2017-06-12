@@ -88,10 +88,14 @@ public:
    ~Workspace();
    
    
+    /// access the filter graph
     Graph       &graph();
    
+    /// access the registry
     Registry    &registry();
    
+   
+    /// executes the filter graph.
     void         execute();
    
     /// human friendly output
@@ -100,13 +104,18 @@ public:
     void        print();
 
 
-    // basic factory
-    static bool supports_filter_type(const std::string &filter_type);
-    static void remove_filter_type(const std::string &filter_type);
+    /// filter factory interface
+    /// register a new type 
     static void register_filter_type(FilterFactoryMethod fr);
+    /// check if type with given name is registered
+    static bool supports_filter_type(const std::string &filter_type);
+    /// remove type with given name if registered
+    static void remove_filter_type(const std::string &filter_type);
+    /// remove all registered types
     static void clear_supported_filter_types();
 
-
+    /// helper to for registering a filter type that does not provide its own
+    /// FilterFactoryMethod
     template <class T>
     static void register_filter_type()
     {

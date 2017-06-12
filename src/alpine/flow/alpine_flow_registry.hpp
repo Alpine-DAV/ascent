@@ -139,7 +139,7 @@ public:
              int refs_needed=-1) // -1 means don't track and release mem
     {
         DataWrapper<T> data(data_ptr);
-        add_entry(key,data,refs_needed);
+        add(key,data,refs_needed);
     } 
 
     /// generic interface fetch
@@ -147,14 +147,15 @@ public:
     template <class T>
     T *fetch(const std::string &key)
     {
-        return fetch_data(key).value<T>();
+        return fetch(key).value<T>();
     }
 
-    void           add_entry(const std::string &key, 
-                             Data &data,
-                             int refs_needed);
+    void           add(const std::string &key, 
+                       Data &data,
+                       int refs_needed);
 
-    Data          &fetch_data(const std::string &key);
+    Data          &fetch(const std::string &key);
+
     bool           has_entry(const std::string &key);
     void           consume(const std::string &key);
 

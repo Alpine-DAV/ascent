@@ -122,7 +122,7 @@ RegistrySource::execute()
 {
     std::string key = params()["entry"].as_string();
     
-    set_output(graph().workspace().registry().fetch_data(key));
+    set_output(graph().workspace().registry().fetch(key));
 }
 
 

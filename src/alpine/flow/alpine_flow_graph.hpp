@@ -84,39 +84,52 @@ public:
     
    ~Graph();
 
+    /// access workspace that owns this graph
     Workspace &workspace();
 
 
-    // interface to construct a graph
+    /// add a new filter of given type, and assigned name
     Filter *add_filter(const std::string &filter_type,
                        const std::string &name);
 
 
+    /// add a new filter of given type, assigned name,
+    /// and params
     Filter *add_filter(const std::string &filter_type,
                        const std::string &name,
                        const conduit::Node &params);
 
-    // let the graph gen a unique a name
+    /// add a new filter of given type, let the graph 
+    /// generate a unique a name
     Filter *add_filter(const std::string &filter_type);
 
-    // let the graph gen a unique a name
+    /// add a new filter of given typea using params
+    /// let the graph generate a unique a name
     Filter *add_filter(const std::string &filter_type,
                        const conduit::Node &params);
 
+    /// connect src filter to dest's input port
+    /// using port name
 
     void connect(const std::string &src_name,
                  const std::string &des_name,
                  const std::string &port_name);
 
+    /// connect src filter to dest's input port
+    /// using port index
     void connect(const std::string &src_name,
                  const std::string &des_name,
                  int port_idx);
 
 
+    /// check if this graph has a filter with passed name
     bool has_filter(const std::string &name);
 
+    /// remove if filter with passed name from this graph
     void remove_filter(const std::string &name);
 
+
+    /// remove all filters 
     void reset();
 
     /// human friendly output

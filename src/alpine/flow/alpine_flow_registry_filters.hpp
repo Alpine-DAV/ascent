@@ -79,12 +79,10 @@ namespace filters
 ///
 //-----------------------------------------------------------------------------
 
-// RegistrySource filter:
-// hoists a registry entry into the data flow
-// expects refs_needed to be to -1 (not-managed)
-// output of the filter will alias an existing entry
-// can add as refs_need -1
-
+/// RegistrySource filter:
+/// hoists a registry entry into the data flow
+/// expects refs_needed to be to -1 (not-managed)
+/// output of the filter will alias an existing entry
     
 //-----------------------------------------------------------------------------
 class RegistrySource : public Filter

@@ -316,7 +316,7 @@ Workspace::execute()
             {
                 std::string port_name = ports_itr.next().as_string();
                 std::string f_input_name = graph().edges_in(f_name)[port_name].as_string();
-                f->set_input(port_name,&registry().fetch_data(f_input_name));
+                f->set_input(port_name,&registry().fetch(f_input_name));
             }
 
 
@@ -327,9 +327,9 @@ Workspace::execute()
             if(f->output_port())
             {
                 
-                registry().add_entry(f_name,
-                                     f->output(),
-                                     uref);
+                registry().add(f_name,
+                               f->output(),
+                               uref);
             }
             
             f->reset_inputs_and_output();

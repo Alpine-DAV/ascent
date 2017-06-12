@@ -633,7 +633,7 @@ Registry::print()
     
 //-----------------------------------------------------------------------------
 Data &
-Registry::fetch_data(const std::string &key)
+Registry::fetch(const std::string &key)
 {
     if(!m_map->has_entry(key))
     {
@@ -645,9 +645,9 @@ Registry::fetch_data(const std::string &key)
 
 //-----------------------------------------------------------------------------
 void
-Registry::add_entry(const std::string &key,
-                    Data &data,
-                    int refs_needed)
+Registry::add(const std::string &key,
+              Data &data,
+              int refs_needed)
 {
     if(m_map->has_entry(key))
     {
