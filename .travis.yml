@@ -76,7 +76,10 @@ script:
   - ${CC} --version
   - cd $TRAVIS_BUILD_DIR
   # build deps using uberenv
-  - python scripts/uberenv/uberenv.py --spec %gcc@4.9+mpich
+  #  use 'travis_wait' to avoid timeout when building tpls 
+  #  see: https://docs.travis-ci.com/user/common-build-problems/#Build-times-out-because-no-output-was-received
+  #  (cmake was often taking over 10 min to build)
+  - travis_wait python scripts/uberenv/uberenv.py --spec %gcc@4.9+mpich
   # create out-of-source build dir
   - mkdir travis-debug-build
   - cd    travis-debug-build
