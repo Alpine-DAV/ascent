@@ -114,19 +114,24 @@ class Graph;
 ///  void MyFilter::execute()
 ///  {
 ///     // If your filter has input ports, input data can be fetched by name
-///     Node &in_0 = input("in");
+///     Node *in_0 = input<Node>("in");
 ///     // or index:
-///     Node &in_0 = input(0);
+///     Node *in_0 = input<Node>(0);
+
+///     // you can also check the type of an input using
+///     // if(input("in").check_type<Node>) ...
 ///  
 ///     // You can access filter parameters via params()
 ///     int val = params()["my_knob"].value();
 ///
 ///     // If your filter provides output, set your output data:
 ///     Node *my_result = new Node();
-///     output()->set(Data(my_result); 
+///     set_output<Node>(my_result);
 ///     // the registry manages result lifetimes.
 ///
 ///  }
+/// 
+///  TODO: talk about optional verify_params()
 /// 
 //-----------------------------------------------------------------------------
 
@@ -141,16 +146,16 @@ public:
     
     virtual ~Filter();
 
-    // implement these:
+    // subclasses need to implement these to define a filter:
 
-    /// fill i with the info about the filter's interface
+    /// override and fill i with the info about the filter's interface
     virtual void          declare_interface(conduit::Node &i) = 0;
 
     /// override to imp filter's work
     virtual void          execute() = 0;
 
 
-    /// override to allow filter to verify custom params
+    /// optionally override to allow filter to verify custom params
     /// (used as a guard when a filter instance is created in a graph)
     virtual bool          verify_params(const conduit::Node &params,
                                         conduit::Node &info);
@@ -160,10 +165,13 @@ public:
     
     /// static method that checks if conduit node passed conforms to what 
     /// is needed to declare a filter interface.
-    /// (used as a guard when a filter type is added to a graph)
+    /// (used as a guard when a filter type is registered)
     static bool           verify_interface(const conduit::Node &i,
                                            conduit::Node &info);
   
+    /// helpers that provide access to the specifc parts
+    /// of the filter interface 
+    /// (you can call test in execute()
     std::string           type_name()   const;
     const conduit::Node  &port_names()  const;
     bool                  output_port() const;
@@ -272,7 +280,7 @@ typedef Filter *(*FilterFactoryMethod)();
 
 //-----------------------------------------------------------------------------
 template <class T>
-static Filter *CreateFilter()
+Filter *CreateFilter()
 {
     return new T;
 }
