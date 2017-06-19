@@ -95,7 +95,7 @@ namespace alpine
 FlowPipeline::FlowPipeline()
 :Pipeline()
 {
-
+    flow::filters::register_builtin();
 }
 
 //-----------------------------------------------------------------------------
@@ -125,6 +125,8 @@ FlowPipeline::Initialize(const conduit::Node &options)
 #endif
 
     m_pipeline_options = options;
+    
+    flow::filters::register_builtin();
 }
 
 
@@ -195,11 +197,6 @@ FlowPipeline::Publish(const conduit::Node &data)
     }
     else
     {
-       if(!flow::Workspace::supports_filter_type("registry_source"))
-       {
-           flow::Workspace::register_filter_type<flow::filters::RegistrySource>();
-       }
-
        Node p;
        p["entry"] = "alpine_src";
        w.graph().add_filter("registry_source",":src",p);

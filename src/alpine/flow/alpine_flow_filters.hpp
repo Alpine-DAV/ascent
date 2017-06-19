@@ -42,111 +42,62 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+
 //-----------------------------------------------------------------------------
 ///
-/// file: t_alpine_empty_pipeline.cpp
+/// file: alpine_flow_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "gtest/gtest.h"
-
-#include <alpine.hpp>
-
-#include <iostream>
-#include <math.h>
-#include <sstream>
-
-#include <conduit_blueprint.hpp>
-
-#include "t_config.hpp"
-#include "t_alpine_test_utils.hpp"
+#ifndef ALPINE_FLOW_FILTERS_HPP
+#define ALPINE_FLOW_FILTERS_HPP
 
 
-using namespace std;
-using namespace conduit;
-using namespace alpine;
-
-
-#include <alpine_flow.hpp>
-
-class InspectFilter: public flow::Filter
+//-----------------------------------------------------------------------------
+// -- begin alpine:: --
+//-----------------------------------------------------------------------------
+namespace alpine
 {
-public:
-    InspectFilter(): flow::Filter()
-    {}
-    ~InspectFilter()
-    {}
-        
-    void declare_interface(Node &i)
-    {
-        i["type_name"] = "inspect";
-        i["port_names"].append().set("in");
-        i["output_port"] = "true";
-    }
+
+//-----------------------------------------------------------------------------
+// -- begin alpine::flow --
+//-----------------------------------------------------------------------------
+namespace flow
+{
+
+//-----------------------------------------------------------------------------
+// -- begin alpine::flow::filters --
+//-----------------------------------------------------------------------------
+namespace filters
+{
     
-    
-    void execute()
-    {
-        if(!input(0).check_type<Node>())
-        {
-            ALPINE_ERROR("Error, input is not a conduit node!");
-        }
-        
-        Node *n = input<Node>(0);
-        
-        ALPINE_INFO("Total Strided Bytes = " << n->total_strided_bytes());
-        
-        set_output<Node>(n);
-    }
+    // registers all built-in filter types.
+    void register_builtin();
 
 };
+//-----------------------------------------------------------------------------
+// -- end alpine::flow::filters --
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end alpine::flow --
+//-----------------------------------------------------------------------------
 
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_pipeline, test_flow_pipeline)
-{
-    
-    flow::Workspace::register_filter_type<InspectFilter>();
+};
+//-----------------------------------------------------------------------------
+// -- end alpine:: --
+//-----------------------------------------------------------------------------
 
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
-    
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
-    
-    Node actions;
-    Node &a_add_insp = actions.append();
-    a_add_insp["action"] = "add_filter";
-    a_add_insp["type_name"]  = "inspect";
-    a_add_insp["name"] = "fi";
-    
-    Node &a_conn = actions.append();
-    
-    a_conn["action"] = "connect";
-    a_conn["src"]  = ":src";
-    a_conn["dest"] = "fi";
-    a_conn["port"] = "in";
-    
-    Node &a_exec = actions.append();
-    a_exec["action"] = "execute";
-    
-    actions.print();
 
-    // we want the "flow" pipeline
-    Node open_opts;
-    open_opts["pipeline/type"] = "flow";
-    
-    //
-    // Run Alpine
-    //
-    Alpine alpine;
-    alpine.Open(open_opts);
-    alpine.Publish(data);
-    alpine.Execute(actions);
-    alpine.Close();
-}
+
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------
 

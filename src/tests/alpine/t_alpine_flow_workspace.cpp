@@ -51,6 +51,7 @@
 #include "gtest/gtest.h"
 
 #include <alpine_flow.hpp>
+#include <alpine_flow_registry_filters.hpp>
 
 #include <iostream>
 #include <math.h>

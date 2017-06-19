@@ -54,6 +54,7 @@ set(alpine_flow_sources
     alpine_flow_data.cpp
     alpine_flow_registry.cpp
     alpine_flow_filter.cpp
+    alpine_flow_filters.cpp
     alpine_flow_graph.cpp
     alpine_flow_workspace.cpp
     alpine_flow_registry_filters.cpp)
@@ -62,6 +63,7 @@ set(alpine_flow_headers
     alpine_flow_data.hpp
     alpine_flow_registry.hpp
     alpine_flow_filter.hpp
+    alpine_flow_filters.hpp
     alpine_flow_graph.hpp
     alpine_flow_workspace.hpp
     alpine_flow_registry_filters.hpp

@@ -70,7 +70,7 @@
 #include <alpine_flow_workspace.hpp>
 
 // filters
-#include <alpine_flow_registry_filters.hpp>
+#include <alpine_flow_filters.hpp>
 
 
 #endif
