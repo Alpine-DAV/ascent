@@ -184,6 +184,26 @@ FlowPipeline::Publish(const conduit::Node &data)
 
     // create our own tree, with all data zero copied.
     m_data.set_external(data);
+    
+    // may need to remove then add ...
+    w.registry().add<Node>("alpine_src",&m_data);
+    
+    
+    if(w.graph().has_filter(":src"))
+    {
+       w.graph().remove_filter(":src");
+    }
+    else
+    {
+       if(!flow::Workspace::supports_filter_type("registry_source"))
+       {
+           flow::Workspace::register_filter_type<flow::filters::RegistrySource>();
+       }
+
+       Node p;
+       p["entry"] = "alpine_src";
+       w.graph().add_filter("registry_source",":src",p);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -197,6 +217,23 @@ FlowPipeline::Execute(const conduit::Node &actions)
         string action_name = action["action"].as_string();
 
         ALPINE_INFO("Executing " << action_name);
+
+        if(action_name == "add_filter")
+        {
+            w.graph().add_filter(action["type_name"].as_string(),
+                                 action["name"].as_string());
+        }
+        else if( action_name == "connect")
+        {
+            w.graph().connect(action["src"].as_string(),
+                              action["dest"].as_string(),
+                              action["port"].as_string());
+        }
+        else if( action_name == "execute")
+        {
+            w.execute();
+        }
+
 
         // implement action
     }

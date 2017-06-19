@@ -55,6 +55,10 @@
 #include <alpine.hpp>
 #include <alpine_pipeline.hpp>
 
+#include <alpine_flow.hpp>
+
+
+
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
@@ -83,6 +87,8 @@ private:
     conduit::Node     m_pipeline_options;
     // conduit node that (externally) holds the data from the simulation
     conduit::Node     m_data; 
+    
+    flow::Workspace w;
 };
 
 //-----------------------------------------------------------------------------

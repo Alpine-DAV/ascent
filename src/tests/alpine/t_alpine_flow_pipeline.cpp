@@ -67,9 +67,48 @@ using namespace conduit;
 using namespace alpine;
 
 
+#include <alpine_flow.hpp>
+
+class InspectFilter: public flow::Filter
+{
+public:
+    InspectFilter(): flow::Filter()
+    {}
+    ~InspectFilter()
+    {}
+        
+    void declare_interface(Node &i)
+    {
+        i["type_name"] = "inspect";
+        i["port_names"].append().set("in");
+        i["output_port"] = "true";
+    }
+    
+    
+    void execute()
+    {
+        if(!input(0).check_type<Node>())
+        {
+            ALPINE_ERROR("Error, input is not a conduit node!");
+        }
+        
+        Node *n = input<Node>(0);
+        
+        ALPINE_INFO("Total Strided Bytes = " << n->total_strided_bytes());
+        
+        set_output<Node>(n);
+    }
+
+};
+
+
+
 //-----------------------------------------------------------------------------
 TEST(alpine_flow_pipeline, test_flow_pipeline)
 {
+    
+    flow::Workspace::register_filter_type<InspectFilter>();
+
     //
     // Create example mesh.
     //
@@ -80,8 +119,21 @@ TEST(alpine_flow_pipeline, test_flow_pipeline)
     verify_info.print();
     
     Node actions;
-    Node &hello = actions.append();
-    hello["action"]   = "hello!";
+    Node &a_add_insp =     actions.append();
+    a_add_insp["action"] = "add_filter";
+    a_add_insp["type_name"]   = "inspect";
+    a_add_insp["name"]   = "fi";
+    
+    Node &a_conn = actions.append();
+    
+    a_conn["action"] = "connect";
+    a_conn["src"]  = ":src";
+    a_conn["dest"] = "fi";
+    a_conn["port"] = "in";
+    
+    Node &a_exec = actions.append();
+    a_exec["action"] = "execute";
+    
     actions.print();
 
     // we want the "flow" pipeline

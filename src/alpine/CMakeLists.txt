@@ -152,7 +152,8 @@ endif()
 set(alpine_thirdparty_libs 
     conduit
     conduit_relay
-    conduit_blueprint)
+    conduit_blueprint
+    alpine_flow)
 
 if(VTKM_FOUND)
     list(APPEND alpine_thirdparty_libs vtkm)
