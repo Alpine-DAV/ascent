@@ -128,6 +128,8 @@ public:
         int inc  = params()["inc"].value();
         
         // get input data
+        
+        
         Node *in = input<Node>("in");
         int val  = in->to_int();
      
@@ -246,8 +248,11 @@ TEST(alpine_flow_workspace, linear_graph_using_filter_ptr_iface)
     Filter *f_b = w.graph().add_filter("inc","b");
     Filter *f_c = w.graph().add_filter("inc","c");
     
+    //w.graph().connect("s","a","in");
     f_a->connect_input_port("in",f_s);
+    // w.graph().connect("a","b","in");
     f_b->connect_input_port("in",f_a);
+    // w.graph().connect("b","c","in");
     f_c->connect_input_port("in",f_b);
     
     //
@@ -326,6 +331,9 @@ TEST(alpine_flow, alpine_flow_workspace_graph)
     w.graph().add_filter("add","a1");
     w.graph().add_filter("add","a2");
     
+    
+    
+    // ascii art pictures?
     
     // // src, dest, port
     w.graph().connect("v1","a1","a");
@@ -450,15 +458,15 @@ TEST(alpine_flow_workspace, graph_workspace_reg_source)
     Workspace::register_filter_type<AddFilter>();
 
     Workspace w;
-
+    // create data
     Node v;
-    
     v.set(int(10));
-
-    Node p;
-    p["entry"] = ":src";
+    // add to reg with name
     w.registry().add<Node>(":src",&v);
-    
+
+    // create a filter that allows us to access this as data
+    Node p;
+    p["entry"] = ":src"; 
     w.graph().add_filter("registry_source","s",p);
     
     w.graph().add_filter("add","a");

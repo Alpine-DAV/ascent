@@ -71,6 +71,7 @@ set(alpine_sources
     # pipelines
     alpine_pipeline.cpp
     pipelines/alpine_empty_pipeline.cpp
+    pipelines/alpine_flow_pipeline.cpp
     # utils
     utils/alpine_file_system.cpp
     utils/alpine_block_timer.cpp
@@ -86,6 +87,8 @@ set(alpine_headers
     # pipelines
     alpine_pipeline.hpp
     pipelines/alpine_empty_pipeline.hpp
+    # flow
+    pipelines/alpine_flow_pipeline.hpp
     # utils
     utils/alpine_logging.hpp
     utils/alpine_file_system.hpp

@@ -58,7 +58,8 @@ set(BASIC_TESTS t_alpine_smoke
 
 set(FLOW_TESTS  t_alpine_flow_data
                 t_alpine_flow_registry
-                t_alpine_flow_workspace)
+                t_alpine_flow_workspace
+                t_alpine_flow_pipeline)
 
 
 set(MPI_TESTS  t_alpine_mpi_empty_pipeline
