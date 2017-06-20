@@ -401,6 +401,28 @@ Workspace::supports_filter_type(const std::string &filter_type)
     return (itr != FilterFactory::registered_types().end());
 }
 
+
+//-----------------------------------------------------------------------------
+bool
+Workspace::supports_filter_type(FilterFactoryMethod fr)
+{
+    Filter *f = fr();
+
+    Node iface;
+    std::string f_type_name = "(type_name missing!)";
+    f->declare_interface(iface);
+    delete f;
+    
+    if(iface.has_child("type_name") && 
+       iface["type_name"].dtype().is_string())
+    {
+        f_type_name = iface["type_name"].as_string();
+    }
+    
+    return supports_filter_type(f_type_name);
+}
+
+
 //-----------------------------------------------------------------------------
 void
 Workspace::remove_filter_type(const std::string &filter_type)

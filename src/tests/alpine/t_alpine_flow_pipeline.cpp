@@ -69,6 +69,9 @@ using namespace alpine;
 
 #include <alpine_flow.hpp>
 
+// ----- //
+// This tests that we can create a custom filter, register it and use it
+// in the flow pipeline.
 class InspectFilter: public flow::Filter
 {
 public:

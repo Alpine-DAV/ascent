@@ -86,7 +86,7 @@ namespace filters
 void
 register_builtin()
 {
-    if(!Workspace::supports_filter_type("registry_source"))
+    if(!Workspace::supports_filter_type<RegistrySource>())
     {
         Workspace::register_filter_type<RegistrySource>();
     }

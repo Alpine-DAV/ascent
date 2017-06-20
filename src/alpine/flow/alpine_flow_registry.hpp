@@ -132,7 +132,8 @@ public:
    ~Registry();
 
 
-    /// generic interface add
+    /// adds a new entry to the registry 
+    /// if refs needed == -1, the entry is not tracked 
     template <class T>
     void add(const std::string &key, 
              T *data_ptr,
@@ -142,29 +143,42 @@ public:
         add(key,data,refs_needed);
     } 
 
-    /// generic interface fetch
-    /// fetch entry by key, does not dec refs_pending
+    /// fetch entry by key, does not decrement refs_needed
     template <class T>
     T *fetch(const std::string &key)
     {
         return fetch(key).value<T>();
     }
 
+    /// adds a new entry to the registry 
+    /// if refs needed == -1, the entry is not tracked 
     void           add(const std::string &key, 
                        Data &data,
                        int refs_needed);
 
+    /// fetch entry by key, does not decrement refs_needed
     Data          &fetch(const std::string &key);
 
+    /// check if the registry contains entry with given name
     bool           has_entry(const std::string &key);
+    
+    /// decs refs needed if entry is tracked, if refs need = 0
+    /// releases the data held by the entry.
     void           consume(const std::string &key);
+
+    /// removes entry from that data store w/o releasing data.
+    void           detach(const std::string &key);
 
     /// clears registry entries and releases any outstanding
     /// tracked data refs.
     void           reset();
     
+    /// create human understandable tree that describes the state
+    /// of the registry
     void           info(conduit::Node &out);
+    /// create json string from info
     std::string    to_json();
+    /// print json version of info
     void           print();
 
 

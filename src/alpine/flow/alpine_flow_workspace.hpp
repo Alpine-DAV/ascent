@@ -109,6 +109,9 @@ public:
     static void register_filter_type(FilterFactoryMethod fr);
     /// check if type with given name is registered
     static bool supports_filter_type(const std::string &filter_type);
+    /// check if type with given factory is registered
+    static bool supports_filter_type(FilterFactoryMethod fr);
+    
     /// remove type with given name if registered
     static void remove_filter_type(const std::string &filter_type);
     /// remove all registered types
@@ -120,6 +123,13 @@ public:
     static void register_filter_type()
     {
         register_filter_type(&CreateFilter<T>);
+    }
+
+    /// helper for checkeding if a filter type is registered
+    template <class T>
+    static bool supports_filter_type()
+    {
+        return supports_filter_type(&CreateFilter<T>);
     }
 
 

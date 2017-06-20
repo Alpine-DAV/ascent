@@ -170,6 +170,8 @@ public:
     
     void   dec(const std::string &key);
     
+    void   detach(const std::string &key);
+    
     void   info(Node &out);
     
     void   reset();
@@ -489,6 +491,24 @@ Registry::Map::dec(const std::string &key)
     }
 }
 
+//-----------------------------------------------------------------------------
+void
+Registry::Map::detach(const std::string &key)
+{
+    // removes this entry from the map, sets value refs_needed to -1
+    // to avoid any deletes
+    Entry *ent   = fetch_entry(key);
+    Value *value = ent->value();
+    
+    ALPINE_INFO("Registry Removing: " << key);
+
+    // clean up bookkeeping obj
+    delete ent;
+    m_entries.erase(key);
+    // make sure we don't reap
+    value->ref()->set_pending(-1);
+}
+
 
 //-----------------------------------------------------------------------------
 void
@@ -591,6 +611,16 @@ Registry::consume(const std::string &key)
     if(m_map->has_entry(key))
     {
         m_map->dec(key);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Registry::detach(const std::string &key)
+{
+    if(m_map->has_entry(key))
+    {
+        m_map->detach(key);
     }
 }
 

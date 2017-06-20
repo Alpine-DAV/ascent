@@ -191,4 +191,27 @@ TEST(alpine_flow_registry, untracked_aliased)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(alpine_flow_registry, detach_tracked)
+{
+    Node *n = new Node();
+    n->set(10);
+
+    Registry r;
+    r.add<Node>("d",n,1);
+    r.print();
+
+    Node *n_fetch = r.fetch<Node>("d");
+    EXPECT_EQ(n,n_fetch);
+    // liberate d
+    r.detach("d");
+
+    EXPECT_FALSE(r.has_entry("d"));
+
+    r.print();
+    
+    delete n;
+}
+
+
 
