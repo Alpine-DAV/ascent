@@ -226,14 +226,14 @@ Graph::connect(const std::string &src_name,
     if(!has_filter(src_name))
     {
         ALPINE_WARN("source filter named: " << src_name
-                    << "does not exist in Filter Graph");
+                    << " does not exist in Filter Graph");
         return;
     }
 
     if(!has_filter(des_name))
     {
         ALPINE_WARN("destination filter named: " << des_name
-                    << "does not exist in Filter Graph");
+                    << " does not exist in Filter Graph");
         return;
     }
 
@@ -246,7 +246,7 @@ Graph::connect(const std::string &src_name,
     {
         ALPINE_WARN("destination filter: "
                      << des_filter->detailed_name()
-                     << "does not have input port named:"
+                     << " does not have input port named:"
                      << port_name);
         return;
     }
@@ -264,7 +264,7 @@ Graph::connect(const std::string &src_name,
     if(!has_filter(des_name))
     {
         ALPINE_WARN("destination filter named: " << des_name
-                    << "does not exist in Filter Graph ");
+                    << " does not exist in Filter Graph ");
         return;
     }
 
@@ -293,7 +293,7 @@ Graph::remove_filter(const std::string &name)
     if(!has_filter(name))
     {
         ALPINE_WARN("filter named: " << name
-                     << "does not exist in Filter Graph");
+                     << " does not exist in Filter Graph");
         return;
     }
 

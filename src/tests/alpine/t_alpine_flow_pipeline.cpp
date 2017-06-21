@@ -110,7 +110,10 @@ public:
 TEST(alpine_flow_pipeline, test_flow_pipeline)
 {
     
-    flow::Workspace::register_filter_type<InspectFilter>();
+    if(!flow::Workspace::supports_filter_type<InspectFilter>())
+    {
+        flow::Workspace::register_filter_type<InspectFilter>();
+    }
 
     //
     // Create example mesh.
@@ -130,7 +133,7 @@ TEST(alpine_flow_pipeline, test_flow_pipeline)
     Node &a_conn = actions.append();
     
     a_conn["action"] = "connect";
-    a_conn["src"]  = ":src";
+    a_conn["src"]  = ":source";
     a_conn["dest"] = "fi";
     a_conn["port"] = "in";
     
@@ -150,6 +153,66 @@ TEST(alpine_flow_pipeline, test_flow_pipeline)
     alpine.Open(open_opts);
     alpine.Publish(data);
     alpine.Execute(actions);
+    alpine.Close();
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow_pipeline, test_flow_pipeline_reuse_network)
+{
+    
+    if(!flow::Workspace::supports_filter_type<InspectFilter>())
+    {
+        flow::Workspace::register_filter_type<InspectFilter>();
+    }
+    
+    Node actions;
+    Node &a_add_insp = actions.append();
+    a_add_insp["action"] = "add_filter";
+    a_add_insp["type_name"]  = "inspect";
+    a_add_insp["name"] = "fi";
+    
+    Node &a_conn = actions.append();
+    
+    a_conn["action"] = "connect";
+    a_conn["src"]  = ":source";
+    a_conn["dest"] = "fi";
+    a_conn["port"] = "in";
+    
+    Node &a_exec = actions.append();
+    a_exec["action"] = "execute";
+    
+    actions.print();
+
+    // we want the "flow" pipeline
+    Node open_opts;
+    open_opts["pipeline/type"] = "flow";
+    
+    //
+    // Run Alpine
+    //
+    Alpine alpine;
+    alpine.Open(open_opts);
+
+    //
+    // Create example mesh.
+    //
+    Node data;
+    conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
+    alpine.Publish(data);
+    alpine.Execute(actions);
+
+    // publish new data, but use the same data flow network.
+    conduit::blueprint::mesh::examples::braid("quads",50,50,0,data);
+    alpine.Publish(data);
+    actions.reset();
+    actions.append()["action"] = "execute";
+
+    alpine.Publish(data);
+    alpine.Execute(actions);
+    
     alpine.Close();
 }
 

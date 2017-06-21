@@ -288,7 +288,7 @@ Workspace::execute()
     Node traversals;
     ExecutionPlan::generate(graph(),traversals);
 
-    ALPINE_INFO(traversals.to_json());
+    //ALPINE_INFO(traversals.to_json());
     
     // execute traversals 
     NodeIterator travs_itr(&traversals);
