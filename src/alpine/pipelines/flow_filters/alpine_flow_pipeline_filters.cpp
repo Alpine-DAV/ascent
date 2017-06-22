@@ -111,7 +111,13 @@ register_builtin()
         Workspace::register_filter_type<BlueprintVerify>();
     }
     
+    if(!Workspace::supports_filter_type<EnsureVTKM>())
+    {
+        Workspace::register_filter_type<EnsureVTKM>();
+    }
+    
 }
+
 
 
 //-----------------------------------------------------------------------------

@@ -52,10 +52,7 @@
 #include "alpine_flow_pipeline.hpp"
 
 // standard lib includes
-#include <iostream>
 #include <string.h>
-#include <limits.h>
-#include <cstdlib>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -148,6 +145,9 @@ FlowPipeline::Publish(const conduit::Node &data)
     // create our own tree, with all data zero copied.
     m_data.set_external(data);
     
+    // note: if the reg entry for data was already added
+    // the set_external updates everything,
+    // we don't need to remove and re-add.
     if(!w.registry().has_entry("_alpine_input_data"))
     {
         w.registry().add<Node>("_alpine_input_data",

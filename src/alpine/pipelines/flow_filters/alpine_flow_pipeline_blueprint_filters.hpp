@@ -108,18 +108,18 @@ public:
 ///
 //-----------------------------------------------------------------------------
 //
-// //-----------------------------------------------------------------------------
-// class EnsureVTKM : public alpine::flow::Filter
-// {
-// public:
-//     EnsureVTKM();
-//    ~EnsureVTKM();
-//
-//     virtual void   declare_interface(conduit::Node &i);
-//     virtual void   execute();
-// };
-//
-//
+//-----------------------------------------------------------------------------
+class EnsureVTKM : public alpine::flow::Filter
+{
+public:
+    EnsureVTKM();
+   ~EnsureVTKM();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
+
+
 // //-----------------------------------------------------------------------------
 // class BlueprintMeshSave : public alpine::flow::Filter
 // {

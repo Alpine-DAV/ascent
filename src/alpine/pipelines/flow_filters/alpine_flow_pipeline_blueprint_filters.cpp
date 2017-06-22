@@ -67,6 +67,12 @@
 #include <alpine_flow_graph.hpp>
 #include <alpine_flow_workspace.hpp>
 
+#if defined(ALPINE_VTKM_ENABLED)
+#include <vtkm/cont/DataSet.h>
+// stealing data adaptor logic for now ...
+#include <alpine_vtkm_pipeline.hpp>
+#endif
+
 using namespace conduit;
 using namespace std;
 
@@ -165,6 +171,61 @@ BlueprintVerify::execute()
     
     set_output<Node>(n_input);
 }
+
+
+//-----------------------------------------------------------------------------
+EnsureVTKM::EnsureVTKM()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+EnsureVTKM::~EnsureVTKM()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+EnsureVTKM::declare_interface(Node &i)
+{
+    i["type_name"]   = "ensure_vtkm";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+EnsureVTKM::execute()
+{
+#if !defined(ALPINE_VTKM_ENABLED)
+        ALPINE_ERROR("alpine was not built with VTKm support!");
+#else
+    if(input(0).check_type<vtkm::cont::DataSet>())
+    {
+        set_output(input(0));
+    }
+    else if(input(0).check_type<Node>())
+    {
+        // convert from conduit to vtkm
+        
+        const Node *n_input = input<Node>(0);
+        
+        // TODO: need to support the case where we don't give a field name ...
+        vtkm::cont::DataSet  *res = VTKMPipeline::DataAdapter::BlueprintToVTKmDataSet(*n_input,
+                                                                                      "braid");
+        res->PrintSummary(std::cout);
+        set_output<vtkm::cont::DataSet>(res);
+    }
+    else
+    {
+        ALPINE_ERROR("unsupported input type for ensure_vtkm");
+    }
+#endif
+}
+
 
 
 

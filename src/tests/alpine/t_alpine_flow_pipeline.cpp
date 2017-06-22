@@ -281,6 +281,12 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_blueprint_verify)
     actions[0]["name"] = "v";
     actions[0]["params/protocol"] = "mesh";
     
+    
+    actions.append();
+    actions[1]["action"] = "connect";
+    actions[1]["src"]  = ":source";
+    actions[1]["dest"] = "v";
+    
     actions.append()["action"] = "execute";
     actions.print();
 
@@ -307,6 +313,71 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_blueprint_verify)
     data.reset();
     alpine.Publish(data);
     EXPECT_THROW(alpine.Execute(actions),conduit::Error);
+    
+    alpine.Close();
+    
+}
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow_pipeline, test_flow_vtkm)
+{
+    Node actions;
+    
+    actions.append();
+    actions[0]["action"] = "add_filter";
+    actions[0]["type_name"]  = "blueprint_verify";
+    actions[0]["name"] = "verify";
+    actions[0]["params/protocol"] = "mesh";
+
+    actions.append();
+    actions[1]["action"] = "add_filter";
+    actions[1]["type_name"]  = "ensure_vtkm";
+    actions[1]["name"] = "vtkm_data";
+
+    actions.append();
+    actions[2]["action"] = "connect";
+    actions[2]["src"]  = ":source";
+    actions[2]["dest"] = "verify";
+
+    actions.append();
+    actions[3]["action"] = "connect";
+    actions[3]["src"]  = "verify";
+    actions[3]["dest"] = "vtkm_data";
+
+    
+    actions.append()["action"] = "execute";
+    actions.print();
+
+    // we want the "flow" pipeline
+    Node open_opts;
+    open_opts["pipeline/type"] = "flow";
+
+    //
+    // Create example mesh.
+    //
+    Node data;
+    conduit::blueprint::mesh::examples::braid("quads",10,10,0,data);
+    
+    //
+    // Run Alpine
+    //
+    Alpine alpine;
+    alpine.Open(open_opts);
+    alpine.Publish(data);
+    
+    Node n;
+    alpine::about(n);
+
+    // expect an error if we don't have vtkm support 
+    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    {
+        EXPECT_THROW(alpine.Execute(actions),conduit::Error);
+    }
+    else
+    {
+        alpine.Execute(actions);
+    }
+
     
     alpine.Close();
     
