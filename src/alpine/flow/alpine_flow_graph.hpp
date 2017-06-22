@@ -132,6 +132,22 @@ public:
     /// remove all filters 
     void reset();
 
+    /// save graph graph state to a conduit tree, 
+    /// which can be used to restore the graph with load
+    /// (Note: does not handle filter type registration)
+    void save(conduit::Node &n);
+
+    /// save graph graph state to a file, 
+    /// which can be used to restore the graph with load
+    /// (Note: does not handle filter type registration)
+    void save(const std::string &ofile);
+
+    /// load graph from file
+    void load(const std::string &ofile);
+    
+    /// load graph from conduit tree
+    void load(const conduit::Node &n);
+
     /// human friendly output
     void        info(conduit::Node &out);
     std::string to_json();

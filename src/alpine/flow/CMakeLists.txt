@@ -70,7 +70,8 @@ set(alpine_flow_headers
     alpine_flow.hpp)
 
 set(alpine_flow_thirdparty_libs 
-    conduit)
+    conduit
+    conduit_relay)
 
 ##########################################
 # Build a serial version of flow

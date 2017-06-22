@@ -63,6 +63,7 @@
 
 // conduit includes
 #include <conduit.hpp>
+#include <conduit_relay.hpp>
 
 
 //-----------------------------------------------------------------------------
@@ -175,7 +176,7 @@ Graph::add_filter(const std::string &filter_type,
     
     m_filters[filter_name] = f;
     
-    NodeConstIterator ports_itr(&f->port_names());
+    NodeConstIterator ports_itr = f->port_names().children();
 
     while(ports_itr.has_next())
     {
@@ -319,14 +320,14 @@ Graph::edges() const
 const Node &
 Graph::edges_out(const std::string &f_name) const
 {
-    return m_edges["out"][f_name];
+    return edges()["out"][f_name];
 }
 
 //-----------------------------------------------------------------------------
 const Node &
 Graph::edges_in(const std::string &f_name) const
 {
-    return m_edges["in"][f_name];
+    return edges()["in"][f_name];
 }
 
 
@@ -336,6 +337,151 @@ Graph::filters()
 {
     return m_filters;
 }
+
+
+//-----------------------------------------------------------------------------
+void
+Graph::save(const std::string &path)
+{
+    Node out;
+    save(out);
+    conduit::relay::io::save(out,path,"conduit_json");
+}
+
+//-----------------------------------------------------------------------------
+void
+Graph::save(Node &n)
+{
+    n.reset();
+    Node &filts = n["filters"];
+    
+    std::map<std::string,Filter*>::iterator itr;
+    for(itr = filters().begin(); itr != filters().end(); itr++)
+    {
+        Filter *f_ptr = itr->second;
+        Node &f_info = filts[itr->first];
+        f_info["type_name"] = f_ptr->type_name();
+        f_info["params"]    = f_ptr->params();
+    }
+
+    n["edges"].set(m_edges);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Graph::load(const std::string &path)
+{
+    Node n;
+    conduit::relay::io::load(path,"conduit_json",n);
+    load(n);
+}
+
+
+
+//-----------------------------------------------------------------------------
+void
+Graph::load(const Node &n)
+{
+    reset();
+    
+    ALPINE_INFO(n.to_json());
+
+    if(n.has_child("filters"))
+    {
+        NodeConstIterator filters = n["filters"].children();
+    
+        // first make sure we have only supported filters.
+        bool ok = true;
+        ostringstream oss;
+        
+        while(filters.has_next())
+        {
+            const Node &f_info = filters.next();
+            std::string f_name = filters.name();
+            
+            if(!f_info.has_child("type_name") ||
+               !f_info["type_name"].dtype().is_string())
+            {
+                oss << "Filter '" 
+                    << f_name 
+                    << "' is missing required  type_name' entry"
+                    << std::endl;
+                ok = false;
+            }
+            
+            std::string f_type = f_info["type_name"].as_string();
+            if(!Workspace::supports_filter_type(f_type))
+            {
+                
+                oss << "Workspace does not support filter type "
+                    << "'" << f_type << "' "
+                    << "(filter name: '" << f_name << "')"
+                    << std::endl;
+                ok = false;
+            }
+        }
+        
+        // provide one error message with all issues discovered
+        if(!ok)
+        {
+            ALPINE_ERROR(oss.str());
+            return;
+        }
+        
+        filters.to_front();
+
+        while(filters.has_next())
+        {
+            const Node &f_info = filters.next();
+            std::string f_name = filters.name();
+            std::string f_type = f_info["type_name"].as_string();
+
+            if(f_info.has_child("params"))
+            {
+                add_filter(f_type,f_name,f_info["params"]);
+            }
+            else
+            {
+                add_filter(f_type,f_name);
+            }
+        }
+    }
+    else
+    {
+        // no filters, issue soft warning
+        ALPINE_INFO("No filters found");
+    }
+    
+    if(n.has_child("edges"))
+    {
+        // replay the edges
+        NodeConstIterator edges_itr = n["edges/in"].children();
+
+        while(edges_itr.has_next())
+        {
+            const Node &edge = edges_itr.next();
+            std::string dest_name = edges_itr.name();
+
+            NodeConstIterator ports_itr = edge.children();
+            while(ports_itr.has_next())
+            {
+                const Node &port = ports_itr.next();
+                std::string port_name = ports_itr.name();
+                std::string src_name  = port.as_string();
+                connect(src_name,dest_name,port_name);
+            }
+        }
+    }
+    
+    else
+    {
+        // no edges, issue soft warning
+        ALPINE_INFO("No edges found");
+    }
+    
+}
+
 
 
 

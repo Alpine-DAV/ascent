@@ -226,7 +226,7 @@ TEST(alpine_flow_workspace, linear_graph)
     
     ALPINE_INFO("Final result: " << res->to_json());
 
-    EXPECT_EQ(res->as_int(),3);
+    EXPECT_EQ(res->to_int(),3);
 
     w.registry().consume("c");
 
@@ -265,7 +265,7 @@ TEST(alpine_flow_workspace, linear_graph_using_filter_ptr_iface)
     
     ALPINE_INFO("Final result: " << res->to_json());
 
-    EXPECT_EQ(res->as_int(),3);
+    EXPECT_EQ(res->to_int(),3);
 
     w.registry().consume("c");
 
@@ -303,7 +303,7 @@ TEST(alpine_flow_workspace, linear_graph_using_filter_ptr_iface_and_port_idx)
     
     ALPINE_INFO("Final result: " << res->to_json());
 
-    EXPECT_EQ(res->as_int(),3);
+    EXPECT_EQ(res->to_int(),3);
 
     w.registry().consume("c");
 
@@ -353,7 +353,7 @@ TEST(alpine_flow, alpine_flow_workspace_graph)
     
     ALPINE_INFO("Final result: " << res->to_json());
     
-    EXPECT_EQ(res->as_int(),30);
+    EXPECT_EQ(res->to_int(),30);
     
     w.registry().consume("a2");
     
@@ -398,7 +398,7 @@ TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface)
     
     ALPINE_INFO("Final result: " << res->to_json());
     
-    EXPECT_EQ(res->as_int(),30);
+    EXPECT_EQ(res->to_int(),30);
     
     w.registry().consume("a2");
     
@@ -443,7 +443,7 @@ TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface_port_idx)
     
     ALPINE_INFO("Final result: " << res->to_json());
     
-    EXPECT_EQ(res->as_int(),30);
+    EXPECT_EQ(res->to_int(),30);
     
     w.registry().consume("a2");
     
@@ -485,7 +485,7 @@ TEST(alpine_flow_workspace, graph_workspace_reg_source)
     
     ALPINE_INFO("Final result: " << res->to_json());
     
-    EXPECT_EQ(res->as_int(),20);
+    EXPECT_EQ(res->to_int(),20);
     
     w.registry().consume("a");
     
@@ -495,7 +495,7 @@ TEST(alpine_flow_workspace, graph_workspace_reg_source)
     
     ALPINE_INFO("Input result: " << n_s->to_json());
     
-    EXPECT_EQ(n_s->as_int(),10);
+    EXPECT_EQ(n_s->to_int(),10);
     
     EXPECT_EQ(n_s,&v);
     
@@ -547,7 +547,7 @@ TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface_auto_name)
     
     ALPINE_INFO("Final result: " << res->to_json());
     
-    EXPECT_EQ(res->as_int(),30);
+    EXPECT_EQ(res->to_int(),30);
     
     w.registry().consume(f_a2->name());
     
@@ -558,67 +558,89 @@ TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface_auto_name)
 
 
 //-----------------------------------------------------------------------------
-// TEST(alpine_flow, alpine_flow_workspace_notes)
-// {
-
-    // Workspace w;
-
+TEST(alpine_flow_workspace, dag_graph_save_and_load)
+{
+    Workspace::register_filter_type<SrcFilter>();
+    Workspace::register_filter_type<AddFilter>();
     
-    // w.graph().register_filter_type(&TestFilter::type);
-    //
-    // Node n;
-    // n.set(64);
-    //
-    // w.add_source(":src",&n);
-    // // does the following:
-    //
-    // // adds with ref count = -1, registry won't reap
-    // w.registry().add_entry(":src",&n);
-    // w.graph().add_filter("registry_source",":src");
-    //
-    //
-    // //
-    //
-    // w.graph().add_filter("test","a");
-    // w.graph().add_filter("test","b");
-    // w.graph().add_filter("test","c");
-    //
-    // ///
-    //
+    Workspace w;
+
+    Node p_vs;
+    p_vs["value"].set(int(10));
+
+    w.graph().add_filter("src","v1",p_vs);
+    w.graph().add_filter("src","v2",p_vs);
+    w.graph().add_filter("src","v3",p_vs);
+    
+    
+    w.graph().add_filter("add","a1");
+    w.graph().add_filter("add","a2");
+    
+    
+    // ascii art pictures?
+    
     // // src, dest, port
-    // w.graph().connect("a","b","in");
-    // w.graph().connect("b","c","in");
-    //
-    // // special case, one input port
-    // w.graph().connect("a","b");
-    // w.graph().connect("b","c");
-    //
-    //
-    // w.print();
-    //
-    // // supports auto name ... (f%04d % count)
-    // Filter &f0 = w.graph().add_filter("test");
-    // Filter &f1 = w.graph().add_filter("test");
-    // Filter &f2 = w.graph().add_filter("test");
-    //
-    // f0.name() == "f0000";
-    // f1.name() == "f0001";
-    // f2.name() == "f0002";
-    //
-    //
-    // // dest.connect(src) ?
-    // // dest.connect(src, port) ?
-    // f1.connect(f0,"in")
-    // f2.connect(f1,"in")
-    //
-    //
-    // Filter &fsnk = w.add_sink(":dest");
-    // // does the following:
-    // w.graph().add_filter("registry_sink",":dest");
-    //
-    // fsnk.connect(f2);
+    w.graph().connect("v1","a1","a");
+    w.graph().connect("v2","a1","b");
     
+    
+    w.graph().connect("a1","a2","a");
+    w.graph().connect("v3","a2","b");
 
-// }
+    //
+    w.print();
+
+    string output_file = conduit::utils::join_file_path(output_dir(),
+                                                        "tout_flow_wrkspace_dag_save_and_load.json");
+
+    w.graph().save(output_file);
+
+    w.execute();
+
+    Node *res = w.registry().fetch<Node>("a2");
+    
+    ALPINE_INFO("Result: " << res->to_json());
+
+    EXPECT_EQ(res->to_int(),30);
+
+    // load the graph into a new workspace and execute it
+    Workspace w2;
+
+    w2.graph().load(output_file);
+    w2.print();
+    w2.execute();
+    
+    
+    res = w2.registry().fetch<Node>("a2");
+    
+    ALPINE_INFO("Result from loaded graph: " << res->to_json());
+
+    EXPECT_EQ(res->to_int(),30);
+
+    w2.registry().consume("a2");
+    
+    w2.print();
+    
+    // reload the graph and execute it
+
+    w2.graph().load(output_file);
+    w2.print();
+    w2.execute();
+    
+    
+    res = w2.registry().fetch<Node>("a2");
+    
+    ALPINE_INFO("Result from loaded graph: " << res->to_json());
+
+    EXPECT_EQ(res->to_int(),30);
+
+    w2.registry().consume("a2");
+    
+    w2.print();
+    
+    
+    
+    Workspace::clear_supported_filter_types();
+}
 
 

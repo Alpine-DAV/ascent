@@ -291,7 +291,7 @@ Workspace::execute()
     //ALPINE_INFO(traversals.to_json());
     
     // execute traversals 
-    NodeIterator travs_itr(&traversals);
+    NodeIterator travs_itr = traversals.children();
     
     while(travs_itr.has_next())
     {
