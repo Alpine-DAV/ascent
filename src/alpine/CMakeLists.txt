@@ -74,6 +74,7 @@ set(alpine_sources
     pipelines/alpine_flow_pipeline.cpp
     pipelines/flow_filters/alpine_flow_pipeline_filters.cpp
     pipelines/flow_filters/alpine_flow_pipeline_relay_filters.cpp
+    pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.cpp
     # utils
     utils/alpine_file_system.cpp
     utils/alpine_block_timer.cpp
@@ -93,6 +94,7 @@ set(alpine_headers
     pipelines/alpine_flow_pipeline.hpp
     pipelines/flow_filters/alpine_flow_pipeline_filters.hpp
     pipelines/flow_filters/alpine_flow_pipeline_relay_filters.hpp
+    pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.hpp
     # utils
     utils/alpine_logging.hpp
     utils/alpine_file_system.hpp

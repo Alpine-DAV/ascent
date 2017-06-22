@@ -45,38 +45,32 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_flow_pipeline.cpp
+/// file: alpine_flow_pipeline_blueprint_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "alpine_flow_pipeline.hpp"
-
-// standard lib includes
-#include <iostream>
-#include <string.h>
-#include <limits.h>
-#include <cstdlib>
+#include "alpine_flow_pipeline_blueprint_filters.hpp"
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
 //-----------------------------------------------------------------------------
 
 // conduit includes
+#include <conduit.hpp>
+#include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
 
-// mpi related includes
-#ifdef PARALLEL
-#include <mpi.h>
-// -- conduit relay mpi
-#include <conduit_relay_mpi.hpp>
-#endif
-
-#include <alpine_flow.hpp>
-#include <alpine_flow_pipeline_filters.hpp>
+//-----------------------------------------------------------------------------
+// alpine includes
+//-----------------------------------------------------------------------------
+#include <alpine_logging.hpp>
+#include <alpine_flow_graph.hpp>
+#include <alpine_flow_workspace.hpp>
 
 using namespace conduit;
 using namespace std;
 
+using namespace alpine::flow;
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
@@ -85,138 +79,115 @@ namespace alpine
 {
 
 //-----------------------------------------------------------------------------
+// -- begin alpine::pipeline --
 //-----------------------------------------------------------------------------
-//
-// Creation and Destruction
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
+namespace pipeline
+{
 
 //-----------------------------------------------------------------------------
-FlowPipeline::FlowPipeline()
-:Pipeline()
+// -- begin alpine::pipeline::flow --
+//-----------------------------------------------------------------------------
+namespace flow
 {
-    flow::filters::register_builtin();
+
+//-----------------------------------------------------------------------------
+// -- begin alpine::pipeline::flow::filters --
+//-----------------------------------------------------------------------------
+namespace filters
+{
+
+
+
+//-----------------------------------------------------------------------------
+BlueprintVerify::BlueprintVerify()
+:Filter()
+{
+// empty
 }
 
 //-----------------------------------------------------------------------------
-FlowPipeline::~FlowPipeline()
+BlueprintVerify::~BlueprintVerify()
 {
-    Cleanup();
+// empty
 }
 
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//
-// Main pipeline interface methods called by the alpine interface.
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-void
-FlowPipeline::Initialize(const conduit::Node &options)
+void 
+BlueprintVerify::declare_interface(Node &i)
 {
-#if PARALLEL
-    if(!options.has_child("mpi_comm") ||
-       !options["mpi_comm"].dtype().is_integer())
-    {
-        ALPINE_ERROR("Missing Alpine::Open options missing MPI communicator (mpi_comm)");
-    }
-#endif
+    i["type_name"]   = "blueprint_verify";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
 
-    m_pipeline_options = options;
+//-----------------------------------------------------------------------------
+bool
+BlueprintVerify::verify_params(const conduit::Node &params,
+                               conduit::Node &info)
+{
+    info.reset();   
+    bool res = true;
     
-    // standard flow filters
-    flow::filters::register_builtin();
-    // filters for apline flow pipeline.
-    pipeline::flow::filters::register_builtin();
+    if(! params.has_child("protocol") || 
+       ! params["protocol"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'protocol'";
+    }
+
+    return res;
 }
 
 
 //-----------------------------------------------------------------------------
-void
-FlowPipeline::Cleanup()
+void 
+BlueprintVerify::execute()
 {
 
-}
+    if(!input(0).check_type<Node>())
+    {
+        ALPINE_ERROR("blueprint_verify input must be a conduit node");
+    }
 
-//-----------------------------------------------------------------------------
-void
-FlowPipeline::Publish(const conduit::Node &data)
-{
-    // create our own tree, with all data zero copied.
-    m_data.set_external(data);
+
+    std::string protocol = params()["protocol"].as_string();
+
+    Node v_info;
+    Node *n_input = input<Node>(0);
+    if(!conduit::blueprint::verify(protocol,
+                                   *n_input,
+                                   v_info))
+    {
+        ALPINE_ERROR("blueprint verify failed for protocol"
+                      << protocol << std::endl
+                      << "details:" << std::endl
+                      << v_info.to_json());
+    }
     
-    if(!w.registry().has_entry("_alpine_input_data"))
-    {
-        w.registry().add<Node>("_alpine_input_data",
-                               &m_data);
-    }
-
-    if(!w.graph().has_filter(":source"))
-    {
-       Node p;
-       p["entry"] = "_alpine_input_data";
-       w.graph().add_filter("registry_source",":source",p);
-    }
+    set_output<Node>(n_input);
 }
+
+
 
 //-----------------------------------------------------------------------------
-void
-FlowPipeline::Execute(const conduit::Node &actions)
-{
-    // Loop over the actions
-    for (int i = 0; i < actions.number_of_children(); ++i)
-    {
-        const Node &action = actions.child(i);
-        string action_name = action["action"].as_string();
-
-        ALPINE_INFO("Executing " << action_name);
-
-        // implement actions
-
-        if(action_name == "add_filter")
-        {
-            if(action.has_child("params"))
-            {
-                w.graph().add_filter(action["type_name"].as_string(),
-                                     action["name"].as_string(),
-                                     action["params"]);
-            }
-            else
-            {
-                w.graph().add_filter(action["type_name"].as_string(),
-                                     action["name"].as_string());
-            }
-        }
-        else if( action_name == "connect")
-        {
-            if(action.has_child("port"))
-            {
-                w.graph().connect(action["src"].as_string(),
-                                  action["dest"].as_string(),
-                                  action["port"].as_string());
-            }
-            else
-            {
-                // if no port, assume input 0
-                w.graph().connect(action["src"].as_string(),
-                                  action["dest"].as_string(),
-                                  0);
-            }
-        }
-        else if( action_name == "execute")
-        {
-            w.execute();
-            w.registry().reset();
-        }
-    }
-}
+};
+//-----------------------------------------------------------------------------
+// -- end alpine::pipeline::flow::filters --
+//-----------------------------------------------------------------------------
 
 
 
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end alpine::pipeline::flow --
+//-----------------------------------------------------------------------------
 
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end alpine::pipeline --
+//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
@@ -224,6 +195,8 @@ FlowPipeline::Execute(const conduit::Node &actions)
 //-----------------------------------------------------------------------------
 // -- end alpine:: --
 //-----------------------------------------------------------------------------
+
+
 
 
 

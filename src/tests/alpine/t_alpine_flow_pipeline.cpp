@@ -125,21 +125,18 @@ TEST(alpine_flow_pipeline, test_flow_pipeline)
     verify_info.print();
     
     Node actions;
-    Node &a_add_insp = actions.append();
-    a_add_insp["action"] = "add_filter";
-    a_add_insp["type_name"]  = "inspect";
-    a_add_insp["name"] = "fi";
+    actions.append();
+    actions[0]["action"] = "add_filter";
+    actions[0]["type_name"]  = "inspect";
+    actions[0]["name"] = "fi";
     
-    Node &a_conn = actions.append();
+    actions.append();
+    actions[1]["action"] = "connect";
+    actions[1]["src"]  = ":source";
+    actions[1]["dest"] = "fi";
+    actions[1]["port"] = "in";
     
-    a_conn["action"] = "connect";
-    a_conn["src"]  = ":source";
-    a_conn["dest"] = "fi";
-    a_conn["port"] = "in";
-    
-    Node &a_exec = actions.append();
-    a_exec["action"] = "execute";
-    
+    actions.append()["action"] = "execute";
     actions.print();
 
     // we want the "flow" pipeline
@@ -169,21 +166,18 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_reuse_network)
     }
     
     Node actions;
-    Node &a_add_insp = actions.append();
-    a_add_insp["action"] = "add_filter";
-    a_add_insp["type_name"]  = "inspect";
-    a_add_insp["name"] = "fi";
     
-    Node &a_conn = actions.append();
+    actions.append();
+    actions[0]["action"] = "add_filter";
+    actions[0]["type_name"]  = "inspect";
+    actions[0]["name"] = "fi";
     
-    a_conn["action"] = "connect";
-    a_conn["src"]  = ":source";
-    a_conn["dest"] = "fi";
-    a_conn["port"] = "in";
+    actions.append();
+    actions[1]["action"] = "connect";
+    actions[1]["src"]  = ":source";
+    actions[1]["dest"] = "fi";
     
-    Node &a_exec = actions.append();
-    a_exec["action"] = "execute";
-    
+    actions.append()["action"] = "execute";
     actions.print();
 
     // we want the "flow" pipeline
@@ -226,41 +220,34 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_relay_save)
     }
     
     Node actions;
-    Node &a_add_insp = actions.append();
-    a_add_insp["action"] = "add_filter";
-    a_add_insp["type_name"]  = "inspect";
-    a_add_insp["name"] = "fi";
+    actions.append();
+    actions[0]["action"] = "add_filter";
+    actions[0]["type_name"]  = "inspect";
+    actions[0]["name"] = "fi";
 
-    Node &a_add_out = actions.append();
-    a_add_out["action"] = "add_filter";
-    a_add_out["type_name"]  = "relay_io_save";
-    a_add_out["name"] = "out";
-    
     string output_file = conduit::utils::join_file_path(output_dir(),
                                                         "tout_flow_pipeline_relay_save.json");
-    
-    a_add_out["params/path"] = "test.json";
+
+
+    actions.append();
+    actions[1]["action"] = "add_filter";
+    actions[1]["type_name"]  = "relay_io_save";
+    actions[1]["name"] = "out";
+    actions[1]["params/path"] = "test.json";
 
     
-    Node &a_conn = actions.append();
-    
-    a_conn["action"] = "connect";
-    a_conn["src"]  = ":source";
-    a_conn["dest"] = "fi";
-    a_conn["port"] = "in";
+    actions.append();
+    actions[2]["action"] = "connect";
+    actions[2]["src"]  = ":source";
+    actions[2]["dest"] = "fi";
     
     
-    Node &a_conn2 = actions.append();
+    actions.append();
+    actions[3]["action"] = "connect";
+    actions[3]["src"]  = "fi";
+    actions[3]["dest"] = "out";
     
-    a_conn2["action"] = "connect";
-    a_conn2["src"]  = "fi";
-    a_conn2["dest"] = "out";
-    a_conn2["port"] = "in";
-    
-    
-    Node &a_exec = actions.append();
-    a_exec["action"] = "execute";
-    
+    actions.append()["action"] = "execute";
     actions.print();
 
     // we want the "flow" pipeline
@@ -283,5 +270,46 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_relay_save)
     alpine.Close();
 }
 
+//-----------------------------------------------------------------------------
+TEST(alpine_flow_pipeline, test_flow_pipeline_blueprint_verify)
+{
+    Node actions;
+    
+    actions.append();
+    actions[0]["action"] = "add_filter";
+    actions[0]["type_name"]  = "blueprint_verify";
+    actions[0]["name"] = "v";
+    actions[0]["params/protocol"] = "mesh";
+    
+    actions.append()["action"] = "execute";
+    actions.print();
+
+    // we want the "flow" pipeline
+    Node open_opts;
+    open_opts["pipeline/type"] = "flow";
+
+    //
+    // Create example mesh.
+    //
+    Node data;
+    conduit::blueprint::mesh::examples::braid("quads",10,10,0,data);
+    
+    //
+    // Run Alpine
+    //
+    Alpine alpine;
+    alpine.Open(open_opts);
+    alpine.Publish(data);
+    alpine.Execute(actions);
+
+    // catch exception ... when verify fails
+    
+    data.reset();
+    alpine.Publish(data);
+    EXPECT_THROW(alpine.Execute(actions),conduit::Error);
+    
+    alpine.Close();
+    
+}
 
 
