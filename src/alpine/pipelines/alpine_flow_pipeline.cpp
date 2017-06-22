@@ -72,6 +72,7 @@
 #endif
 
 #include <alpine_flow.hpp>
+#include <alpine_flow_pipeline_filters.hpp>
 
 using namespace conduit;
 using namespace std;
@@ -126,7 +127,10 @@ FlowPipeline::Initialize(const conduit::Node &options)
 
     m_pipeline_options = options;
     
+    // standard flow filters
     flow::filters::register_builtin();
+    // filters for apline flow pipeline.
+    pipeline::flow::filters::register_builtin();
 }
 
 
@@ -213,10 +217,21 @@ FlowPipeline::Execute(const conduit::Node &actions)
 
         ALPINE_INFO("Executing " << action_name);
 
+        // implement actions
+
         if(action_name == "add_filter")
         {
-            w.graph().add_filter(action["type_name"].as_string(),
-                                 action["name"].as_string());
+            if(action.has_child("params"))
+            {
+                w.graph().add_filter(action["type_name"].as_string(),
+                                     action["name"].as_string(),
+                                     action["params"]);
+            }
+            else
+            {
+                w.graph().add_filter(action["type_name"].as_string(),
+                                     action["name"].as_string());
+            }
         }
         else if( action_name == "connect")
         {
@@ -231,7 +246,7 @@ FlowPipeline::Execute(const conduit::Node &actions)
         }
 
 
-        // implement action
+
     }
 }
 

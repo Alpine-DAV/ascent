@@ -57,7 +57,7 @@ set(alpine_flow_sources
     alpine_flow_filters.cpp
     alpine_flow_graph.cpp
     alpine_flow_workspace.cpp
-    alpine_flow_registry_filters.cpp)
+    filters/alpine_flow_registry_filters.cpp)
     
 set(alpine_flow_headers
     alpine_flow_data.hpp
@@ -66,12 +66,11 @@ set(alpine_flow_headers
     alpine_flow_filters.hpp
     alpine_flow_graph.hpp
     alpine_flow_workspace.hpp
-    alpine_flow_registry_filters.hpp
+    filters/alpine_flow_registry_filters.hpp
     alpine_flow.hpp)
 
 set(alpine_flow_thirdparty_libs 
-    conduit
-    conduit_blueprint)
+    conduit)
 
 ##########################################
 # Build a serial version of flow

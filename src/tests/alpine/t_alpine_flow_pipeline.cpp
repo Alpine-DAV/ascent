@@ -216,3 +216,72 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_reuse_network)
     alpine.Close();
 }
 
+//-----------------------------------------------------------------------------
+TEST(alpine_flow_pipeline, test_flow_pipeline_relay_save)
+{
+    
+    if(!flow::Workspace::supports_filter_type<InspectFilter>())
+    {
+        flow::Workspace::register_filter_type<InspectFilter>();
+    }
+    
+    Node actions;
+    Node &a_add_insp = actions.append();
+    a_add_insp["action"] = "add_filter";
+    a_add_insp["type_name"]  = "inspect";
+    a_add_insp["name"] = "fi";
+
+    Node &a_add_out = actions.append();
+    a_add_out["action"] = "add_filter";
+    a_add_out["type_name"]  = "relay_io_save";
+    a_add_out["name"] = "out";
+    
+    string output_file = conduit::utils::join_file_path(output_dir(),
+                                                        "tout_flow_pipeline_relay_save.json");
+    
+    a_add_out["params/path"] = "test.json";
+
+    
+    Node &a_conn = actions.append();
+    
+    a_conn["action"] = "connect";
+    a_conn["src"]  = ":source";
+    a_conn["dest"] = "fi";
+    a_conn["port"] = "in";
+    
+    
+    Node &a_conn2 = actions.append();
+    
+    a_conn2["action"] = "connect";
+    a_conn2["src"]  = "fi";
+    a_conn2["dest"] = "out";
+    a_conn2["port"] = "in";
+    
+    
+    Node &a_exec = actions.append();
+    a_exec["action"] = "execute";
+    
+    actions.print();
+
+    // we want the "flow" pipeline
+    Node open_opts;
+    open_opts["pipeline/type"] = "flow";
+
+    //
+    // Create example mesh.
+    //
+    Node data;
+    conduit::blueprint::mesh::examples::braid("quads",10,10,0,data);
+    
+    //
+    // Run Alpine
+    //
+    Alpine alpine;
+    alpine.Open(open_opts);
+    alpine.Publish(data);
+    alpine.Execute(actions);    
+    alpine.Close();
+}
+
+
+

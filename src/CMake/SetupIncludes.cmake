@@ -58,6 +58,8 @@ include_directories(${PROJECT_BINARY_DIR}/alpine/)
 include_directories(${PROJECT_SOURCE_DIR}/alpine/utils)
 include_directories(${PROJECT_SOURCE_DIR}/alpine/pipelines)
 include_directories(${PROJECT_SOURCE_DIR}/alpine/flow)
+include_directories(${PROJECT_SOURCE_DIR}/alpine/flow/filters)
+include_directories(${PROJECT_SOURCE_DIR}/alpine/pipelines/flow_filters)
 
 include_directories(${CONDUIT_INCLUDE_DIRS})
 
