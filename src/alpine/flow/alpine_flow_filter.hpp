@@ -146,7 +146,9 @@ public:
     
     virtual ~Filter();
 
+    //-------------------------------------------------------------------------
     // subclasses need to implement these to define a filter:
+    //-------------------------------------------------------------------------
 
     /// override and fill i with the info about the filter's interface
     virtual void          declare_interface(conduit::Node &i) = 0;
@@ -160,18 +162,18 @@ public:
     virtual bool          verify_params(const conduit::Node &params,
                                         conduit::Node &info);
 
+    //-------------------------------------------------------------------------
+    // filter interface properties
+    //-------------------------------------------------------------------------
 
-    // filter properties
-    
     /// static method that checks if conduit node passed conforms to what 
     /// is needed to declare a filter interface.
     /// (used as a guard when a filter type is registered)
     static bool           verify_interface(const conduit::Node &i,
                                            conduit::Node &info);
   
-    /// helpers that provide access to the specifc parts
+    /// helpers that provide access to the specific parts
     /// of the filter interface 
-    /// (you can call test in execute()
     std::string           type_name()   const;
     const conduit::Node  &port_names()  const;
     bool                  output_port() const;
@@ -185,24 +187,28 @@ public:
     std::string           name() const;
     std::string           detailed_name() const;
 
+    //-------------------------------------------------------------------------
+    // filter instance  properties
+    //-------------------------------------------------------------------------
 
     // allows sub class to fetch the full interface def
     const conduit::Node   &interface() const;
     // allows sub class to fetch the params
     conduit::Node         &params();
 
-    /// generic fetch of wrapped input data
-
+    /// generic fetch of wrapped input data by port name
     Data &input(const std::string &port_name);
+    /// generic fetch of wrapped input data by port index
     Data &input(int port_idx);
 
-    /// templated fetch of wrapped input data 
+    /// templated fetch of wrapped input data by port name
     template <class T>
     T *input(const std::string &port_name)
     {
         return fetch_input(port_name)->value<T>();
     }
 
+    /// templated fetch of wrapped input data by port index
     template <class T>
     T *input(int idx)
     {
@@ -213,32 +219,47 @@ public:
     /// generic set of wrapped output data
     void                   set_output(Data &data);
 
-    /// templated fetch of wrapped output data 
+    /// templated set of wrapped output data 
     template <class T>
     void set_output(T *data_ptr)
     {
         DataWrapper<T> data(data_ptr);
         set_output(data);
     }
-    
 
+    /// generic access to wrapped output data
     Data                  &output();
-    
+   
+    /// templated access to  wrapped output data 
+    template <class T>
+    T *output()
+    {
+        return output().value<T>();
+    }
+
+    /// access the filter's graph
     Graph                 &graph();
 
-    // methods used to help build a filter graph 
-    // graph().connect(f->name(),this->name(),port_name);
+    /// connect helper
+    /// equiv to:
+    ///   graph().connect(f->name(),this->name(),port_name);
     void                  connect_input_port(const std::string &port_name,
                                              Filter *filter);
 
+    /// connect helper
+    /// equiv to:
+    ///   graph().connect(f->name(),this->name(),idx);
     void                  connect_input_port(int idx,
                                              Filter *filter);
 
     
-    /// human friendly output
-    void                   info(conduit::Node &out);
-    std::string            to_json();
-    void                   print();
+    /// create human understandable tree that describes the state
+    /// of the filter
+    void           info(conduit::Node &out) const;
+    /// create json string from info
+    std::string    to_json() const;
+    /// print json version of info
+    void           print() const;
 
 
 

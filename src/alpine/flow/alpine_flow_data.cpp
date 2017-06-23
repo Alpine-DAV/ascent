@@ -121,7 +121,7 @@ Data::data_ptr() const
 }
 //-----------------------------------------------------------------------------
 void
-Data::info(Node &out)
+Data::info(Node &out) const
 {
     out.reset();
     ostringstream oss;
@@ -133,7 +133,7 @@ Data::info(Node &out)
 
 //-----------------------------------------------------------------------------
 std::string
-Data::to_json()
+Data::to_json() const
 {
     Node out;
     info(out);
@@ -144,7 +144,7 @@ Data::to_json()
 
 //-----------------------------------------------------------------------------
 void
-Data::print()
+Data::print() const
 {
     ALPINE_INFO(to_json());
 }

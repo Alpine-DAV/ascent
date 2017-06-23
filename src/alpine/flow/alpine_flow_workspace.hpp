@@ -84,27 +84,41 @@ public:
 
     friend class Graph;
 
+   // ------------------------------------------------------------------------
+   /// Workspace instance methods
+   // ------------------------------------------------------------------------
+
     Workspace();
    ~Workspace();
    
-   
     /// access the filter graph
-    Graph       &graph();
+    Graph           &graph();
+    /// const access to the filter graph
+    const Graph     &graph() const;
    
     /// access the registry
-    Registry    &registry();
+    Registry        &registry();
+    /// const access to the registry
+    const Registry  &registry() const;
    
+    /// execute the filter graph.
+    void             execute();
+    
+    /// reset the registry and graph
+    void             reset();
    
-    /// executes the filter graph.
-    void         execute();
-   
-    /// human friendly output
-    void        info(conduit::Node &out);
-    std::string to_json();
-    void        print();
+    /// create human understandable tree that describes the state
+    /// of the workspace
+    void           info(conduit::Node &out) const;
+    /// create json string from info
+    std::string    to_json() const;
+    /// print json version of info
+    void           print() const;
 
-
+    // ------------------------------------------------------------------------
     /// filter factory interface
+    // ------------------------------------------------------------------------
+
     /// register a new type 
     static void register_filter_type(FilterFactoryMethod fr);
     /// check if type with given name is registered

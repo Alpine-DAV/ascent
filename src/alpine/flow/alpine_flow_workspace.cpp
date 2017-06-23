@@ -273,12 +273,26 @@ Workspace::graph()
 }
 
 //-----------------------------------------------------------------------------
+const Graph &
+Workspace::graph() const
+{
+    return m_graph;
+}
+
+
+//-----------------------------------------------------------------------------
 Registry &
 Workspace::registry()
 {
     return m_registry;
 }
 
+//-----------------------------------------------------------------------------
+const Registry &
+Workspace::registry() const
+{
+    return m_registry;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -288,7 +302,6 @@ Workspace::execute()
     Node traversals;
     ExecutionPlan::generate(graph(),traversals);
 
-    //ALPINE_INFO(traversals.to_json());
     
     // execute traversals 
     NodeIterator travs_itr = traversals.children();
@@ -351,7 +364,16 @@ Workspace::execute()
 
 //-----------------------------------------------------------------------------
 void
-Workspace::info(Node &out)
+Workspace::reset()
+{
+    graph().reset();
+    registry().reset();
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Workspace::info(Node &out) const
 {
     out.reset();
     
@@ -362,7 +384,7 @@ Workspace::info(Node &out)
 
 //-----------------------------------------------------------------------------
 std::string
-Workspace::to_json()
+Workspace::to_json() const
 {
     Node out;
     info(out);
@@ -373,7 +395,7 @@ Workspace::to_json()
 
 //-----------------------------------------------------------------------------
 void
-Workspace::print()
+Workspace::print() const
 {
     ALPINE_INFO(to_json());
 }

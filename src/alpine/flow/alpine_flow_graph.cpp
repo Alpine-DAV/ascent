@@ -341,79 +341,85 @@ Graph::filters()
 
 //-----------------------------------------------------------------------------
 void
-Graph::save(const std::string &path)
+Graph::filters(Node &out) const
 {
-    Node out;
-    save(out);
-    conduit::relay::io::save(out,path,"conduit_json");
-}
-
-//-----------------------------------------------------------------------------
-void
-Graph::save(Node &n)
-{
-    n.reset();
-    Node &filts = n["filters"];
-    
-    std::map<std::string,Filter*>::iterator itr;
-    for(itr = filters().begin(); itr != filters().end(); itr++)
+    out.reset();
+    std::map<std::string,Filter*>::const_iterator itr;
+    for(itr = m_filters.begin(); itr != m_filters.end(); itr++)
     {
         Filter *f_ptr = itr->second;
-        Node &f_info = filts[itr->first];
+        Node &f_info = out[itr->first];
         f_info["type_name"] = f_ptr->type_name();
-        f_info["params"]    = f_ptr->params();
-    }
-
-    n["edges"].set(m_edges);
-}
-
-
-//-----------------------------------------------------------------------------
-void
-Graph::load(const std::string &path)
-{
-    Node n;
-    conduit::relay::io::load(path,"conduit_json",n);
-    load(n);
-}
-
-
-
-//-----------------------------------------------------------------------------
-void
-Graph::load(const Node &n)
-{
-    reset();
-    
-    ALPINE_INFO(n.to_json());
-
-    if(n.has_child("filters"))
-    {
-        NodeConstIterator filters = n["filters"].children();
-    
-        // first make sure we have only supported filters.
-        bool ok = true;
-        ostringstream oss;
         
-        while(filters.has_next())
+        if(f_ptr->params().number_of_children() > 0)
         {
-            const Node &f_info = filters.next();
-            std::string f_name = filters.name();
-            
-            if(!f_info.has_child("type_name") ||
-               !f_info["type_name"].dtype().is_string())
+            f_info["params"] = f_ptr->params();
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Graph::connections(Node &out) const
+{
+    out.reset();
+    NodeConstIterator edges_itr = edges()["in"].children();
+    while(edges_itr.has_next())
+    {
+        const Node &edge = edges_itr.next();
+        std::string dest_name = edges_itr.name();
+        NodeConstIterator ports_itr = edge.children();
+        while(ports_itr.has_next())
+        {
+            const Node &port = ports_itr.next();
+            if(port.dtype().is_string())
             {
-                oss << "Filter '" 
-                    << f_name 
-                    << "' is missing required  type_name' entry"
-                    << std::endl;
-                ok = false;
+                std::string port_name = ports_itr.name();
+                std::string src_name  = port.as_string();
+                Node &edge = out.append();
+                edge["src"]  = src_name;
+                edge["dest"] = dest_name;
+                edge["port"] = port_name;
             }
-            
+        }
+    }
+}
+
+
+
+//-----------------------------------------------------------------------------
+void
+Graph::add_filters(const Node &filters)
+{
+    ALPINE_INFO(filters.to_json());
+
+    NodeConstIterator filters_itr = filters.children();
+
+    // first make sure we have only supported filters.
+    bool ok = true;
+    ostringstream oss;
+    
+    while(filters_itr.has_next())
+    {
+        const Node &f_info = filters_itr.next();
+        std::string f_name = filters_itr.name();
+        
+        if(!f_info.has_child("type_name") ||
+           !f_info["type_name"].dtype().is_string())
+        {
+            oss << "Filter '" 
+                << f_name 
+                << "' is missing required 'type_name' entry"
+                << std::endl;
+            ok = false;
+        }
+        else 
+        {
             std::string f_type = f_info["type_name"].as_string();
             if(!Workspace::supports_filter_type(f_type))
             {
-                
+            
                 oss << "Workspace does not support filter type "
                     << "'" << f_type << "' "
                     << "(filter name: '" << f_name << "')"
@@ -421,65 +427,144 @@ Graph::load(const Node &n)
                 ok = false;
             }
         }
+    }
+    
+    // provide one error message with all issues discovered
+    if(!ok)
+    {
+        ALPINE_ERROR(oss.str());
+        return;
+    }
+    
+    filters_itr.to_front();
+
+    while(filters_itr.has_next())
+    {
+        const Node &f_info = filters_itr.next();
+        std::string f_name = filters_itr.name();
+        std::string f_type = f_info["type_name"].as_string();
+
+        if(f_info.has_child("params"))
+        {
+            add_filter(f_type,f_name,f_info["params"]);
+        }
+        else
+        {
+            add_filter(f_type,f_name);
+        }
+    }    
+}
+
+//-----------------------------------------------------------------------------
+void
+Graph::add_connections(const Node &conns)
+{
+    ALPINE_INFO(conns.to_json());
+
+    NodeConstIterator conns_itr = conns.children();
+    while(conns_itr.has_next())
+    {
+        const Node &edge = conns_itr.next();
+
+        bool ok = true;
+        ostringstream oss;
+        if(!edge.has_child("src") ||
+           !edge["src"].dtype().is_string())
+        {
+            oss << "Connection is missing required 'src' entry" << std::endl;
+            ok = false;
+        }
+
+        if(!edge.has_child("dest") ||
+           !edge["dest"].dtype().is_string())
+        {
+            oss << "Connection is missing required 'dest' entry" << std::endl;
+            ok = false;
+        }
         
-        // provide one error message with all issues discovered
         if(!ok)
         {
             ALPINE_ERROR(oss.str());
             return;
         }
+  
         
-        filters.to_front();
-
-        while(filters.has_next())
+        if(edge.has_child("port"))
         {
-            const Node &f_info = filters.next();
-            std::string f_name = filters.name();
-            std::string f_type = f_info["type_name"].as_string();
-
-            if(f_info.has_child("params"))
-            {
-                add_filter(f_type,f_name,f_info["params"]);
-            }
-            else
-            {
-                add_filter(f_type,f_name);
-            }
+            connect(edge["src"].as_string(),
+                    edge["dest"].as_string(),
+                    edge["port"].as_string());
+        }
+        else
+        {
+            connect(edge["src"].as_string(),
+                    edge["dest"].as_string(),
+                    0);
         }
     }
-    else
-    {
-        // no filters, issue soft warning
-        ALPINE_INFO("No filters found");
-    }
-    
-    if(n.has_child("edges"))
-    {
-        // replay the edges
-        NodeConstIterator edges_itr = n["edges/in"].children();
+}
 
-        while(edges_itr.has_next())
-        {
-            const Node &edge = edges_itr.next();
-            std::string dest_name = edges_itr.name();
 
-            NodeConstIterator ports_itr = edge.children();
-            while(ports_itr.has_next())
-            {
-                const Node &port = ports_itr.next();
-                std::string port_name = ports_itr.name();
-                std::string src_name  = port.as_string();
-                connect(src_name,dest_name,port_name);
-            }
-        }
-    }
-    
-    else
+//-----------------------------------------------------------------------------
+void
+Graph::add_graph(const Graph &g)
+{
+    Node n;
+    g.info(n);
+    add_graph(n);
+}
+
+//-----------------------------------------------------------------------------
+void
+Graph::add_graph(const Node &g)
+{
+    if(g.has_child("filters"))
     {
-        // no edges, issue soft warning
-        ALPINE_INFO("No edges found");
+        add_filters(g["filters"]);
     }
-    
+
+    if(g.has_child("connections"))
+    {
+        add_connections(g["connections"]);
+    }
+}
+
+
+
+//-----------------------------------------------------------------------------
+void
+Graph::save(const std::string &path,const std::string &protocol)
+{
+    Node out;
+    save(out);
+    conduit::relay::io::save(out,path,protocol);
+}
+
+//-----------------------------------------------------------------------------
+void
+Graph::save(Node &out)
+{
+    out.reset();
+    info(out);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Graph::load(const std::string &path, const std::string &protocol)
+{
+    Node n;
+    conduit::relay::io::load(path,protocol,n);
+    load(n);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Graph::load(const Node &n)
+{
+    reset();
+    add_graph(n);
 }
 
 
@@ -487,25 +572,17 @@ Graph::load(const Node &n)
 
 //-----------------------------------------------------------------------------
 void
-Graph::info(Node &out)
+Graph::info(Node &out) const
 {
     out.reset();
-    Node &filts = out["filters"];
-    
-    std::map<std::string,Filter*>::iterator itr;
-    for(itr = m_filters.begin(); itr != m_filters.end(); itr++)
-    {
-        itr->second->info(filts[itr->first]);
-    }
-
-    out["edges"] = m_edges;
-
+    filters(out["filters"]);
+    connections(out["connections"]);
 }
 
 
 //-----------------------------------------------------------------------------
 std::string
-Graph::to_json()
+Graph::to_json() const
 {
     Node out;
     info(out);
@@ -514,9 +591,52 @@ Graph::to_json()
     return oss.str();
 }
 
+
+//-----------------------------------------------------------------------------
+std::string
+Graph::to_dot() const
+{
+    Node out;
+    info(out);
+
+    ostringstream oss;
+    
+    // traverse conns to create a dot graph;
+    oss << "digraph {" << std::endl;
+    
+    
+    NodeConstIterator itr = out["filters"].children();
+    while(itr.has_next())
+    {
+        const Node &f= itr.next();
+        std::string f_name = itr.name();
+        oss << "  "
+            << f_name 
+            << " [label=\"" << f_name 
+            << "(" << f["type_name"].as_string() << ")" 
+            << "\"];" << std::endl;
+    }
+    
+    itr = out["connections"].children();
+    
+    while(itr.has_next())
+    {
+        const Node &c= itr.next();
+        oss << "  "
+            << c["src"].as_string() 
+            << " -> " 
+            << c["dest"].as_string() 
+            << ";"
+            << std::endl;
+    }
+    
+    oss << "}" << std::endl;
+    return oss.str();
+}
+
 //-----------------------------------------------------------------------------
 void
-Graph::print()
+Graph::print() const
 {
     ALPINE_INFO(to_json());
 }

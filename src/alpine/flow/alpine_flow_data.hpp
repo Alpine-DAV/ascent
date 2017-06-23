@@ -126,9 +126,9 @@ public:
     }
 
     
-    void        info(conduit::Node &out);
-    std::string to_json();
-    void        print();
+    void        info(conduit::Node &out) const;
+    std::string to_json() const;
+    void        print() const;
 
 protected:
     void    set_data_ptr(void *);

@@ -453,14 +453,14 @@ Filter::reset_inputs_and_output()
 
 //-----------------------------------------------------------------------------
 void
-Filter::info(Node &out)
+Filter::info(Node &out) const
 {
     out.reset();
     out.set(m_props);
     
     Node &f_inputs = out["inputs"];
     
-    std::map<std::string,Data*>::iterator itr;
+    std::map<std::string,Data*>::const_iterator itr;
     for(itr = m_inputs.begin(); itr != m_inputs.end(); itr++)
     {   
         itr->second->info(f_inputs[itr->first]);
@@ -479,7 +479,7 @@ Filter::info(Node &out)
 
 //-----------------------------------------------------------------------------
 std::string
-Filter::to_json()
+Filter::to_json() const
 {
     Node out;
     info(out);
@@ -490,7 +490,7 @@ Filter::to_json()
 
 //-----------------------------------------------------------------------------
 void
-Filter::print()
+Filter::print() const
 {
     ALPINE_INFO(to_json());
 }

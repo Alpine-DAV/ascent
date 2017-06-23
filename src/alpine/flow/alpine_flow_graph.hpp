@@ -103,14 +103,13 @@ public:
     /// generate a unique a name
     Filter *add_filter(const std::string &filter_type);
 
-    /// add a new filter of given typea using params
+    /// add a new filter of given type using params
     /// let the graph generate a unique a name
     Filter *add_filter(const std::string &filter_type,
                        const conduit::Node &params);
 
     /// connect src filter to dest's input port
-    /// using port name
-
+    /// using portname
     void connect(const std::string &src_name,
                  const std::string &des_name,
                  const std::string &port_name);
@@ -128,31 +127,68 @@ public:
     /// remove if filter with passed name from this graph
     void remove_filter(const std::string &name);
 
+    /// this methods are used by save() and info()
+    /// the produce conduit trees with data that can be used
+    /// add_filters() and add_connections().
+
+    /// Provides a conduit description of the filters in the graph
+    void filters(conduit::Node &out) const;
+    /// Provides a conduit description of the connections in the graph
+    void connections(conduit::Node &out) const;
+
+    /// adds a set of filters from a conduit tree that describes them
+    void add_filters(const conduit::Node &filters);
+    /// adds a set of connections from a conduit tree that describes them
+    void add_connections(const conduit::Node &conns);
+
+
+    /// adds a set of filters and connections from the given graph
+    void add_graph(const Graph &g);
+    /// adds a set of filters and connections from a conduit tree that 
+    //  describes them
+    void add_graph(const conduit::Node &g);
+
 
     /// remove all filters 
     void reset();
 
     /// save graph graph state to a conduit tree, 
     /// which can be used to restore the graph with load
-    /// (Note: does not handle filter type registration)
     void save(conduit::Node &n);
 
     /// save graph graph state to a file, 
     /// which can be used to restore the graph with load
-    /// (Note: does not handle filter type registration)
-    void save(const std::string &ofile);
+    void save(const std::string &ofile,
+              const std::string &protocol="conduit_json");
 
     /// load graph from file
-    void load(const std::string &ofile);
+    ///  equiv to:
+    ///   load n from ofile
+    ///   reset();
+    ///   add_filters(n["filters"]);
+    ///   add_connections(n["connections"]);
+    /// (Note: does not handle filter type registration)
+    void load(const std::string &ofile,
+              const std::string &protocol="conduit_json");
     
     /// load graph from conduit tree
+    ///  equiv to:
+    ///   reset();
+    ///   add_filters(n["filters"]);
+    ///   add_connections(n["connections"]);
+    /// (Note: does not handle filter type registration)
     void load(const conduit::Node &n);
 
-    /// human friendly output
-    void        info(conduit::Node &out);
-    std::string to_json();
-    void        print();
+    /// create human understandable tree that describes the state
+    /// of the workspace
+    void           info(conduit::Node &out) const;
+    /// create json string from info
+    std::string    to_json() const;
+    /// print json version of info
+    void           print() const;
 
+    /// create graphviz output
+    std::string to_dot() const;
 
 private:
     Graph(Workspace *w);

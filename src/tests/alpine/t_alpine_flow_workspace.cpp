@@ -556,6 +556,45 @@ TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface_auto_name)
     Workspace::clear_supported_filter_types();
 }
 
+//-----------------------------------------------------------------------------
+TEST(alpine_flow_workspace, graph_info)
+{
+    Workspace::register_filter_type<SrcFilter>();
+    Workspace::register_filter_type<AddFilter>();
+    
+    Workspace w;
+
+    Node p_vs;
+    p_vs["value"].set(int(10));
+
+    w.graph().add_filter("src","v1",p_vs);
+    w.graph().add_filter("src","v2",p_vs);
+    w.graph().add_filter("src","v3",p_vs);
+    
+    
+    w.graph().add_filter("add","a1");
+    w.graph().add_filter("add","a2");
+    
+    
+    // ascii art pictures?
+    
+    // // src, dest, port
+    w.graph().connect("v1","a1","a");
+    w.graph().connect("v2","a1","b");
+    
+    
+    w.graph().connect("a1","a2","a");
+    w.graph().connect("v3","a2","b");
+
+    //
+    w.graph().print();
+    w.print();
+    
+    ALPINE_INFO(w.graph().to_dot());
+    
+    Workspace::clear_supported_filter_types();
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(alpine_flow_workspace, dag_graph_save_and_load)
@@ -609,8 +648,6 @@ TEST(alpine_flow_workspace, dag_graph_save_and_load)
     w2.graph().load(output_file);
     w2.print();
     w2.execute();
-    
-    
     res = w2.registry().fetch<Node>("a2");
     
     ALPINE_INFO("Result from loaded graph: " << res->to_json());
@@ -620,27 +657,45 @@ TEST(alpine_flow_workspace, dag_graph_save_and_load)
     w2.registry().consume("a2");
     
     w2.print();
-    
-    // reload the graph and execute it
 
+    // reload the graph and execute it
     w2.graph().load(output_file);
+    
+    Node w2_info;
+    w2.info(w2_info);
     w2.print();
     w2.execute();
-    
-    
+
     res = w2.registry().fetch<Node>("a2");
-    
+
     ALPINE_INFO("Result from loaded graph: " << res->to_json());
 
     EXPECT_EQ(res->to_int(),30);
 
     w2.registry().consume("a2");
-    
+
     w2.print();
     
-    
-    
+    Workspace w3;
+    w3.graph().add_graph(w2_info["graph"]);
+    w3.execute();
+    res = w3.registry().fetch<Node>("a2");
+    EXPECT_EQ(res->to_int(),30);
+    w3.registry().consume("a2");
+    w3.print();
+
+    // check add_filters and add_connections
+    w3.reset();
+    w3.graph().add_filters(w2_info["graph/filters"]);
+    w3.graph().add_connections(w2_info["graph/connections"]);
+    w3.execute();
+    res = w3.registry().fetch<Node>("a2");
+    EXPECT_EQ(res->to_int(),30);
+    w3.registry().consume("a2");
+    w3.print();
+
+
+
     Workspace::clear_supported_filter_types();
 }
-
 

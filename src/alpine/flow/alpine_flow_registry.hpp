@@ -133,7 +133,7 @@ public:
 
 
     /// adds a new entry to the registry 
-    /// if refs needed == -1, the entry is not tracked 
+    /// if refs_needed == -1, the entry is not tracked 
     template <class T>
     void add(const std::string &key, 
              T *data_ptr,
@@ -143,7 +143,8 @@ public:
         add(key,data,refs_needed);
     } 
 
-    /// fetch entry by key, does not decrement refs_needed
+    /// fetch entry by key
+    /// (does not decrement refs_needed)
     template <class T>
     T *fetch(const std::string &key)
     {
@@ -151,7 +152,7 @@ public:
     }
 
     /// adds a new entry to the registry 
-    /// if refs needed == -1, the entry is not tracked 
+    /// if refs_needed == -1, the entry is not tracked 
     void           add(const std::string &key, 
                        Data &data,
                        int refs_needed);
@@ -162,8 +163,8 @@ public:
     /// check if the registry contains entry with given name
     bool           has_entry(const std::string &key);
     
-    /// decs refs needed if entry is tracked, if refs need = 0
-    /// releases the data held by the entry.
+    /// decrement refs needed if entry is tracked, 
+    ///  if refs_needed = 0 releases the data held by the entry.
     void           consume(const std::string &key);
 
     /// removes entry from that data store w/o releasing data.
@@ -175,11 +176,11 @@ public:
     
     /// create human understandable tree that describes the state
     /// of the registry
-    void           info(conduit::Node &out);
+    void           info(conduit::Node &out) const;
     /// create json string from info
-    std::string    to_json();
+    std::string    to_json() const;
     /// print json version of info
-    void           print();
+    void           print() const;
 
 
 private:

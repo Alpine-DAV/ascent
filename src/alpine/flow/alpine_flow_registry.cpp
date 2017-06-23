@@ -172,7 +172,7 @@ public:
     
     void   detach(const std::string &key);
     
-    void   info(Node &out);
+    void   info(Node &out) const;
     
     void   reset();
     
@@ -512,12 +512,12 @@ Registry::Map::detach(const std::string &key)
 
 //-----------------------------------------------------------------------------
 void
-Registry::Map::info(Node &out)
+Registry::Map::info(Node &out) const
 {
     out.reset();
 
     Node &ents = out["entries"];
-    std::map<std::string,Entry*>::iterator eitr;
+    std::map<std::string,Entry*>::const_iterator eitr;
     
     for(eitr = m_entries.begin(); eitr != m_entries.end(); eitr++)
     {
@@ -528,7 +528,7 @@ Registry::Map::info(Node &out)
 
     Node &ptrs = out["pointers"];
 
-    std::map<void*,Value*>::iterator vitr;
+    std::map<void*,Value*>::const_iterator vitr;
 
     ostringstream oss;
     for(vitr = m_values.begin(); vitr != m_values.end(); vitr++)
@@ -635,14 +635,14 @@ Registry::reset()
 
 //-----------------------------------------------------------------------------
 void
-Registry::info(Node &out)
+Registry::info(Node &out) const
 {
     m_map->info(out);
 }
 
 //-----------------------------------------------------------------------------
 std::string
-Registry::to_json()
+Registry::to_json() const
 {
     Node out;
     info(out);
@@ -653,7 +653,7 @@ Registry::to_json()
 
 //-----------------------------------------------------------------------------
 void
-Registry::print()
+Registry::print() const
 {
     ALPINE_INFO(to_json());
 }
