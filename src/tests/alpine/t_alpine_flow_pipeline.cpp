@@ -384,3 +384,169 @@ TEST(alpine_flow_pipeline, test_flow_vtkm)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(alpine_flow_pipeline, test_flow_bulk_actions_1)
+{
+    // test add_graph, add_filters, and add_connections
+    
+        if(!flow::Workspace::supports_filter_type<InspectFilter>())
+        {
+            flow::Workspace::register_filter_type<InspectFilter>();
+        }
+    
+        Node actions;
+    
+        Node graph;
+        graph["filters/fi/type_name"] = "inspect";
+        graph["connections"].append();
+
+        graph["connections"][0]["src"] = ":source";
+        graph["connections"][0]["dest"] = "fi";
+    
+    
+        actions.append();
+        actions[0]["action"] = "add_filters";
+        actions[0]["filters"] = graph["filters"];
+    
+        actions.append();
+        actions[1]["action"] = "add_connections";
+        actions[1]["connections"] = graph["connections"];
+
+        actions.append()["action"] = "execute";
+        actions.print();
+
+        // we want the "flow" pipeline
+        Node open_opts;
+        open_opts["pipeline/type"] = "flow";
+    
+        //
+        // Run Alpine
+        //
+        Alpine alpine;
+        alpine.Open(open_opts);
+
+        //
+        // Create example mesh.
+        //
+        Node data;
+        conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
+        alpine.Publish(data);
+        alpine.Execute(actions);
+        alpine.Close();
+    
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow_pipeline, test_flow_bulk_actions_2)
+{
+    // test add_graph, add_filters, and add_connections
+    
+        if(!flow::Workspace::supports_filter_type<InspectFilter>())
+        {
+            flow::Workspace::register_filter_type<InspectFilter>();
+        }
+    
+        Node actions;
+        
+    
+        actions.append();
+        actions[0]["action"] = "add_graph";
+        Node &graph = actions[0]["graph"];
+
+        graph["filters/fi/type_name"] = "inspect";
+
+        graph["connections"].append();
+        graph["connections"][0]["src"] = ":source";
+        graph["connections"][0]["dest"] = "fi";
+
+        actions.append()["action"] = "execute";
+        actions.print();
+
+        // we want the "flow" pipeline
+        Node open_opts;
+        open_opts["pipeline/type"] = "flow";
+
+        //
+        // Run Alpine
+        //
+        Alpine alpine;
+        alpine.Open(open_opts);
+
+        //
+        // Create example mesh.
+        //
+        Node data;
+        conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
+        alpine.Publish(data);
+        alpine.Execute(actions);
+        alpine.Close();
+    
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow_pipeline, test_flow_load_and_save_graph)
+{
+    // test add_graph, add_filters, and add_connections
+    
+        if(!flow::Workspace::supports_filter_type<InspectFilter>())
+        {
+            flow::Workspace::register_filter_type<InspectFilter>();
+        }
+    
+        Node actions;
+        string graph_ofile = conduit::utils::join_file_path(output_dir(),
+                                                            "tout_flow_pipeline_load_and_save.json");
+    
+        actions.append();
+        actions[0]["action"] = "add_graph";
+        Node &graph = actions[0]["graph"];
+
+        graph["filters/fi/type_name"] = "inspect";
+
+        graph["connections"].append();
+        graph["connections"][0]["src"] = ":source";
+        graph["connections"][0]["dest"] = "fi";
+
+        actions.append()["action"] = "execute";
+        
+        actions.append();
+        actions[2]["action"] = "save_graph";
+        actions[2]["path"]   = graph_ofile;
+        
+        actions.print();
+
+        // we want the "flow" pipeline
+        Node open_opts;
+        open_opts["pipeline/type"] = "flow";
+
+        //
+        // Run Alpine
+        //
+        Alpine alpine;
+        alpine.Open(open_opts);
+
+        //
+        // Create example mesh.
+        //
+        Node data;
+        conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
+        alpine.Publish(data);
+        alpine.Execute(actions);
+        
+        actions.reset();
+        actions.append()["action"] = "reset";
+        actions.append();
+        actions[1]["action"] = "load_graph";
+        actions[1]["path"] = graph_ofile;
+        alpine.Execute(actions);
+    
+        
+        alpine.Close();
+    
+}
+
+
+

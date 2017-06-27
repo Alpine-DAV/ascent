@@ -190,6 +190,10 @@ FlowPipeline::Execute(const conduit::Node &actions)
                                      action["name"].as_string());
             }
         }
+        else if( action_name == "add_filters")
+        {
+            w.graph().add_filters(action["filters"]);
+        }
         else if( action_name == "connect")
         {
             if(action.has_child("port"))
@@ -206,11 +210,32 @@ FlowPipeline::Execute(const conduit::Node &actions)
                                   0);
             }
         }
+        else if( action_name == "add_connections")
+        {
+            w.graph().add_connections(action["connections"]);
+        }
+        else if( action_name == "add_graph")
+        {
+            w.graph().add_graph(action["graph"]);
+        }
+        else if( action_name == "load_graph")
+        {
+            w.graph().load(action["path"].as_string());
+        }
+        else if( action_name == "save_graph")
+        {
+            w.graph().save(action["path"].as_string());
+        }
         else if( action_name == "execute")
         {
             w.execute();
             w.registry().reset();
         }
+        else if( action_name == "reset")
+        {
+            w.reset();
+        }
+        
     }
 }
 
