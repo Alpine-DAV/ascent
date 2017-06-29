@@ -1,0 +1,13 @@
+machine:
+  services:
+   - docker
+  pre:
+   - sudo rm -rf /usr/local/android-sdk-linux
+   - sudo rm -rf /usr/local/go
+   - sudo rm -rf /usr/local/android-ndk
+   - sudo rm -rf /home/ubuntu/nvm
+   - sudo rm -rf /home/ubuntu/.android
+test:
+  override:
+    - cd src/examples/docker/ubuntu/ && ./example_build.sh:
+        timeout: 30000
