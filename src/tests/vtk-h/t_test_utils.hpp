@@ -2,9 +2,11 @@
 #define t_test_utils_hpp
 
 #include <assert.h>
+#include <vtkm/VectorAnalysis.h>
 #include <vtkm/cont/DataSet.h>
 
 #define BASE_SIZE 32
+typedef vtkm::cont::ArrayHandleUniformPointCoordinates UniformCoords;
 
 struct SpatialDivision
 {
@@ -118,14 +120,18 @@ vtkm::cont::Field CreateCellScalarField(int size)
   return field;
 }
 
-vtkm::cont::Field CreatePointScalarField(int size)
+vtkm::cont::Field CreatePointScalarField(UniformCoords coords)
 {
+  const int size = coords.GetPortalConstControl().GetNumberOfValues();
   vtkm::cont::ArrayHandle<vtkm::Float32> data;
   data.Allocate(size);
-
+  auto portal = coords.GetPortalConstControl();
   for(int i = 0; i < size; ++i)
   {
-    vtkm::Float32 val = i / vtkm::Float32(size);
+    vtkm::Vec<vtkm::FloatDefault,3> point = portal.Get(i);
+    
+    vtkm::Float32 val = vtkm::Magnitude(point);
+
     data.GetPortalControl().Set(i, val); 
   }
 
@@ -189,17 +195,21 @@ vtkm::cont::DataSet CreateTestData(int block, int num_blocks, int base_size)
 
   vtkm::cont::DataSet data_set;
 
-  data_set.AddCoordinateSystem( vtkm::cont::CoordinateSystem("coords",
-                                                             point_dims,
-                                                             origin,
-                                                             spacing));
+  UniformCoords point_handle(point_dims,
+                             origin,
+                             spacing);
+   
+  vtkm::cont::CoordinateSystem coords("coords", point_handle);
+  data_set.AddCoordinateSystem(coords);
+
   vtkm::cont::CellSetStructured<3> cell_set("cells");   
   cell_set.SetPointDimensions(point_dims);
   data_set.AddCellSet(cell_set);
+
   int num_points = point_dims[0] * point_dims[1] * point_dims[2];
   int num_cells = cell_dims[0] * cell_dims[1] * cell_dims[2];
 
-  data_set.AddField(CreatePointScalarField(num_points));
+  data_set.AddField(CreatePointScalarField(point_handle));
   data_set.AddField(CreatePointVecField(num_points));
   data_set.AddField(CreateCellScalarField(num_cells));
 

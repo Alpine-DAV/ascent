@@ -51,11 +51,16 @@
 # Core VTK-h Unit Tests
 ################################
 set(BASIC_TESTS t_vtk-h_smoke
-                t_vtk-h_dataset)
+                t_vtk-h_dataset
+                t_vtk-h_raytracer
+                )
 
 
 set(MPI_TESTS t_vtk-h_smoke_par
-              t_vtk-h_dataset_par)
+              t_vtk-h_dataset_par
+              t_vtk-h_raytracer_par
+              t_vtk-h_volume_renderer_par
+              )
 
 
 ################################

@@ -22,10 +22,19 @@ protected:
   std::vector<int>                 m_domain_ids;
 public:
   void AddDomain(vtkm::cont::DataSet data_set, int domain_id); 
-  void GetDomain(const int index, vtkm::cont::DataSet &data_set, int &domain_id); 
-  vtkm::Id GetNumDomains() const;
-  vtkm::Bounds GetBounds(vtkm::Id index = 0) const;
+  void GetDomain(const int index, 
+                 vtkm::cont::DataSet &data_set, 
+                 int &domain_id); 
+  vtkm::cont::Field GetField(const std::string &field_name, 
+                             const int &domain_index); 
+  vtkm::Id GetNumberOfDomains() const;
+  vtkm::Id GetGlobalNumberOfDomains() const;
+  vtkm::Bounds GetBounds(vtkm::Id coordinate_system_index = 0) const;
+  vtkm::Bounds GetGlobalBounds(vtkm::Id coordinate_system_index = 0) const;
+  vtkm::Bounds GetDomainBounds(const int &domain_index,
+                               vtkm::Id coordinate_system_index = 0) const;
   vtkm::cont::ArrayHandle<vtkm::Range> GetRange(const std::string &field_name) const;
+  vtkm::cont::ArrayHandle<vtkm::Range> GetRange(const int &index) const;
 };
 
 } // namespace vtkh

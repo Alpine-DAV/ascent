@@ -24,7 +24,7 @@ set(vtkh_sources
     # vtkh interface
     vtkh.cpp
     vtkh_data_set.cpp
-    vtkh_renderer.cpp
+    utils/vtkh_png_encoder.cpp
     )
 
 set(vtkh_headers
@@ -33,11 +33,30 @@ set(vtkh_headers
     vtkh_data_set.hpp
     vtkh_error.hpp
     vtkh_filter.hpp
+    utils/vtkm_dataset_info.hpp
+    utils/vtkh_png_encoder.hpp
     )
 
-if(VTKM_FOUND)
-   
-endif()
+##############################
+# Add additional sources
+#############################
+
+set(vtkh_rendering_headers
+    rendering/compositing/vtkh_compositor.hpp
+    rendering/vtkh_image.hpp
+    rendering/vtkh_renderer.hpp
+    rendering/vtkh_renderer_ray_tracer.hpp
+    rendering/vtkh_renderer_volume.hpp
+    ) 
+
+set(vtkh_rendering_sources
+    rendering/compositing/vtkh_compositor.cpp
+    rendering/vtkh_renderer.cpp
+    rendering/vtkh_renderer_ray_tracer.cpp
+    rendering/vtkh_renderer_volume.cpp
+    )
+list (APPEND vtkh_sources ${vtkh_rendering_sources})
+list (APPEND vtkh_headers ${vtkh_rendering_headers})
 
 ##############################
 # Add lodepng 
@@ -112,7 +131,24 @@ if(MPI_FOUND)
     set(vtkh_par_sources )
                          
     set(vtkh_par_headers )
-    
+      
+    set(vtkh_par_rendering_headers
+        rendering/compositing/vtkh_diy_collect.hpp
+        rendering/compositing/vtkh_diy_compositor.hpp
+        rendering/compositing/vtkh_diy_direct_send.hpp
+        rendering/compositing/vtkh_diy_image_block.hpp
+        rendering/compositing/vtkh_diy_radix_k.hpp
+        ) 
+
+    set(vtkh_par_rendering_sources
+        rendering/vtkh_renderer.cpp
+        rendering/vtkh_renderer_ray_tracer.cpp
+        rendering/compositing/vtkh_diy_compositor.cpp
+        rendering/compositing/vtkh_diy_direct_send.cpp
+        rendering/compositing/vtkh_diy_radix_k.cpp
+        )
+    list (APPEND vtkh_par_sources ${vtkh_par_rendering_sources})
+    list (APPEND vtkh_par_headers ${vtkh_par_rendering_headers})
 
 
     if(VTKM_FOUND)

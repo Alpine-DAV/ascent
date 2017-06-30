@@ -22,6 +22,7 @@ TEST(vtkh_dataset, vtkh_range)
  
   const int base_size = 32;
   const int num_blocks = 2; 
+
   data_set.AddDomain(CreateTestData(0, num_blocks, base_size), 0);
   data_set.AddDomain(CreateTestData(1, num_blocks, base_size), 1);
 
@@ -29,6 +30,8 @@ TEST(vtkh_dataset, vtkh_range)
   
   const double max_val = base_size * num_blocks;
   const double min_val = 0.; 
+
+  std::cout<<data_bounds<<"\n";
 
   EXPECT_EQ(data_bounds.X.Min, min_val);
   EXPECT_EQ(data_bounds.Y.Min, min_val);
@@ -38,7 +41,6 @@ TEST(vtkh_dataset, vtkh_range)
   EXPECT_EQ(data_bounds.Y.Max, max_val);
   EXPECT_EQ(data_bounds.Z.Max, max_val);
 
-  std::cout<<data_bounds<<"\n";
   vtkm::cont::ArrayHandle<vtkm::Range> vec_range;
   vec_range = data_set.GetRange("vector_data");
 

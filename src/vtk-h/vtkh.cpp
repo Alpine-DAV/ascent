@@ -12,12 +12,14 @@ namespace vtkh
 
 MPI_Comm VTKH::m_mpi_comm = NULL;
 
-void VTKH::Open(MPI_Comm mpi_comm)
+void 
+VTKH::Open(MPI_Comm mpi_comm)
 {
   m_mpi_comm = mpi_comm;
 }
 
-MPI_Comm VTKH::GetMPIComm()
+MPI_Comm 
+VTKH::GetMPIComm()
 {
   if(m_mpi_comm == NULL)
   {
@@ -27,6 +29,38 @@ MPI_Comm VTKH::GetMPIComm()
     throw Error(msg.str());
   }
   return m_mpi_comm;
+}
+
+int 
+VTKH::GetMPIRank()
+{
+  if(m_mpi_comm == NULL)
+  {
+    std::stringstream msg;
+    msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
+    msg<<"It is likely that VTKH.Open(MPI_Comm) was not called.";
+    throw Error(msg.str());
+  }
+  int rank;
+  MPI_Comm comm = VTKH::GetMPIComm(); 
+  MPI_Comm_rank(comm, &rank);
+  return rank;
+}
+
+int 
+VTKH::GetMPISize()
+{
+  if(m_mpi_comm == NULL)
+  {
+    std::stringstream msg;
+    msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
+    msg<<"It is likely that VTKH.Open(MPI_Comm) was not called.";
+    throw Error(msg.str());
+  }
+  int size;
+  MPI_Comm comm = VTKH::GetMPIComm(); 
+  MPI_Comm_size(comm, &size);
+  return size;
 }
 
 #else

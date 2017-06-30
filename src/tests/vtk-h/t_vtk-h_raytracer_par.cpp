@@ -9,14 +9,15 @@
 #include <mpi.h>
 #include <vtkh.hpp>
 #include <vtkh_data_set.hpp>
+#include <rendering/vtkh_renderer_ray_tracer.hpp>
 #include "t_test_utils.hpp"
 
 #include <iostream>
 
 
 
-//-----------------------------------------------------------------------------
-TEST(vtkh_dataset_par, vtkh_range_par)
+//----------------------------------------------------------------------------
+TEST(vtkh_raytracer, vtkh_parallel_render)
 {
   MPI_Init(NULL, NULL);
   int comm_size, rank;
@@ -36,31 +37,13 @@ TEST(vtkh_dataset_par, vtkh_range_par)
     int domain_id = rank * blocks_per_rank + i;
     data_set.AddDomain(CreateTestData(domain_id, num_blocks, base_size), domain_id);
   }
-
-  vtkm::Bounds data_bounds = data_set.GetGlobalBounds();
   
-  const double max_val = base_size * num_blocks;
-  const double min_val = 0.; 
+  vtkh::vtkhRayTracer tracer;
+   
+  tracer.SetInput(&data_set);
+  tracer.SetField("point_data"); 
 
-  EXPECT_EQ(data_bounds.X.Min, min_val);
-  EXPECT_EQ(data_bounds.Y.Min, min_val);
-  EXPECT_EQ(data_bounds.Z.Min, min_val);
-
-  EXPECT_EQ(data_bounds.X.Max, max_val);
-  EXPECT_EQ(data_bounds.Y.Max, max_val);
-  EXPECT_EQ(data_bounds.Z.Max, max_val);
-
-  std::cout<<data_bounds<<"\n";
-
-  vtkm::cont::ArrayHandle<vtkm::Range> vec_range;
-
-  vec_range = data_set.GetRange("vector_data");
-
-  EXPECT_EQ(3, vec_range.GetPortalControl().GetNumberOfValues());
-
-  vtkm::cont::ArrayHandle<vtkm::Range> scalar_range;
-  scalar_range = data_set.GetRange("point_data");
-  EXPECT_EQ(1, scalar_range.GetPortalControl().GetNumberOfValues());
-
+  tracer.Update();
+ 
   MPI_Finalize();
 }

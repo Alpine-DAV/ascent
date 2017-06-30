@@ -10,14 +10,27 @@ namespace vtkh
 class vtkhFilter
 {
 public:
+  vtkhFilter() 
+  { 
+    m_input = nullptr; 
+    m_output = nullptr; 
+  };
+  virtual ~vtkhFilter() { };
   void SetInput(vtkhDataSet *input) { m_input = input; }
-  vtkhDataSet* Update();
+  vtkhDataSet* Update()
+  {
+    PreExecute();
+    DoExecute();
+    PostExecute();
+    return m_output;
+  }
 protected:
   virtual void DoExecute() = 0;
   virtual void PreExecute() {};
   virtual void PostExecute() {};
 
   vtkhDataSet *m_input;
+  vtkhDataSet *m_output;
 };
 
 } //namespace vtkh

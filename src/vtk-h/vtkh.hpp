@@ -20,6 +20,8 @@ public:
 #ifdef PARALLEL
   void Open(MPI_Comm mpi_comm);
   static MPI_Comm GetMPIComm();
+  static int GetMPIRank();
+  static int GetMPISize();
 #else
   void Open();
 #endif

@@ -12,10 +12,24 @@ namespace vtkh {
 void 
 vtkhDataSet::AddDomain(vtkm::cont::DataSet data_set, int domain_id) 
 {
+  if(m_domains.size() != 0)
+  {
+    // TODO: verify same number / name of:
+    // cellsets coords and fields
+  }
 
   assert(m_domains.size() == m_domain_ids.size());
   m_domains.push_back(data_set);
   m_domain_ids.push_back(domain_id);
+}
+
+vtkm::cont::Field 
+vtkhDataSet::GetField(const std::string &field_name, const int &domain_index)
+{
+  assert(domain_index >= 0);
+  assert(domain_index < m_domains.size());
+
+  return m_domains[domain_index].GetField(field_name);
 }
 
 void 
@@ -37,36 +51,75 @@ vtkhDataSet::GetDomain(const int index, vtkm::cont::DataSet &data_set, int &doma
 }
 
 vtkm::Id 
-vtkhDataSet::GetNumDomains() const
+vtkhDataSet::GetNumberOfDomains() const
 {
-  return m_domains.size();
+  return static_cast<vtkm::Id>(m_domains.size());
+}
+
+vtkm::Id 
+vtkhDataSet::GetGlobalNumberOfDomains() const
+{
+  vtkm::Id domains = this->GetNumberOfDomains(); 
+#ifdef PARALLEL 
+  MPI_Comm mpi_comm = VTKH::GetMPIComm();
+  int local_doms = static_cast<int>(domains);  
+  int global_doms = 0;
+  MPI_Allreduce(&local_doms, 
+                &global_doms, 
+                1, 
+                MPI_INT, 
+                MPI_SUM,
+                mpi_comm);
+  domains = global_doms;
+#endif
+  return domains;
 }
 
 vtkm::Bounds 
-vtkhDataSet::GetBounds(vtkm::Id index) const
+vtkhDataSet::GetDomainBounds(const int &domain_index,
+                             vtkm::Id coordinate_system_index) const
 {
+  const vtkm::Id index = coordinate_system_index;
+  vtkm::cont::CoordinateSystem coords;
+  try
+  {
+    coords = m_domains[domain_index].GetCoordinateSystem(index); 
+  } 
+  catch (const vtkm::cont::Error &error)
+  {
+    std::stringstream msg;
+    msg<<"GetBounds call failed. vtk-m error was encountered while "
+       <<"attempting to get coordinate system "<<index<<" from "
+       <<"domaim "<<domain_index<<". vtkm error message: "<<error.GetMessage();
+    throw Error(msg.str());
+  }
+
+  return coords.GetBounds();
+}
+
+
+vtkm::Bounds 
+vtkhDataSet::GetBounds(vtkm::Id coordinate_system_index) const
+{
+  const vtkm::Id index = coordinate_system_index;
   const size_t num_domains = m_domains.size();
+
   vtkm::Bounds bounds;
+
   for(size_t i = 0; i < num_domains; ++i)
   {
-    vtkm::cont::CoordinateSystem coords;
-    try
-    {
-      coords = m_domains[i].GetCoordinateSystem(index); 
-    } 
-    catch (const vtkm::cont::Error &error)
-    {
-      std::stringstream msg;
-      msg<<"GetBounds call failed. vtk-m error was encountered while "
-         <<"attempting to get coordinate system "<<index<<" from "
-         <<"domaim "<<i<<". vtkm error message: "<<error.GetMessage();
-      throw Error(msg.str());
-    }
-
-    vtkm::Bounds dom_bounds = coords.GetBounds();
-  
+    vtkm::Bounds dom_bounds = GetDomainBounds(i, index);
     bounds.Include(dom_bounds);
   }
+
+  return bounds;
+}
+
+vtkm::Bounds 
+vtkhDataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
+{
+  vtkm::Bounds bounds;
+  bounds = GetBounds(coordinate_system_index);
 
 #ifdef PARALLEL
   MPI_Comm mpi_comm = VTKH::GetMPIComm();
@@ -134,6 +187,15 @@ vtkhDataSet::GetBounds(vtkm::Id index) const
   bounds.Z.Max = global_z_max;
 #endif
   return bounds;
+}
+
+vtkm::cont::ArrayHandle<vtkm::Range> 
+vtkhDataSet::GetRange(const int &index) const
+{
+  assert(m_domains.size() > 0); 
+  vtkm::cont::Field field = m_domains.at(0).GetField(index);
+  std::string field_name = field.GetName();
+  return this->GetRange(field_name);
 }
 
 vtkm::cont::ArrayHandle<vtkm::Range> 
