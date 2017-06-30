@@ -88,5 +88,6 @@ class Cmake(Package):
             options.append('-DCMAKE_USE_OPENSSL=ON')
 
         configure(*options)
-        make()
+        # keep from using high numbers (-j32 routinely fails on travis)
+        make("-j4",parallel=False)
         make('install')
