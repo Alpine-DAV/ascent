@@ -49,9 +49,12 @@ class Vtkm(Package):
     homepage = "https://m.vtk.org/"
     url      = "http://m.vtk.org/images/8/87/Vtk-m-1.0.0.tar.gz"
 
-    version('kitware-gitlab',
-            git='https://gitlab.kitware.com/vtk/vtk-m.git',
-            branch='master')
+    #version('kitware-gitlab',
+    #        git='https://gitlab.kitware.com/vtk/vtk-m.git',
+    #        branch='master')
+    version('kitware-gitlab-test',
+            git='https://gitlab.kitware.com/mclarsen/vtk-m.git',
+            branch='cyrush_test_me')
 
     #version('1.0.0',  '9d9d45e675d5b0628b19b32f5542ed9c')
 
