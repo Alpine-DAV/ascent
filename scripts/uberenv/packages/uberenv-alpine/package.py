@@ -88,12 +88,12 @@ class UberenvAlpine(Package):
     #on osx, always build mpich for mpi support
     if "darwin" in platform.system().lower():
         depends_on("mpich")
-        depends_on("conduit~silo~python3+mpich")
+        depends_on("conduit~doc~silo~python3+mpich")
     else: # else, defer to the variant
-        depends_on("conduit~silo~python3")
+        depends_on("conduit~doc~silo~python3")
         depends_on("mpich",when="+mpich")
         depends_on("icet+mpich", when="+mpich")
-        depends_on("conduit~silo~python3+mpich", when="+mpich")
+        depends_on("conduit~doc~silo~python3+mpich", when="+mpich")
 
 
     def url_for_version(self, version):
