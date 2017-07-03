@@ -43,7 +43,9 @@ DIYCompositor::CompositeZBufferBlend()
 void 
 DIYCompositor::CompositeVisOrder()
 {
-  assert("this is not implemented yet" == "error");  
+  assert(m_images.size() != 0);
+  DirectSendCompositor compositor;
+  compositor.CompositeVolume(m_diy_comm, this->m_images, m_background_color);
 }
 #if 0
 unsigned char *

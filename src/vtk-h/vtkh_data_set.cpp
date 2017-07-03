@@ -190,16 +190,16 @@ vtkhDataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
 }
 
 vtkm::cont::ArrayHandle<vtkm::Range> 
-vtkhDataSet::GetRange(const int &index) const
+vtkhDataSet::GetGlobalRange(const int &index) const
 {
   assert(m_domains.size() > 0); 
   vtkm::cont::Field field = m_domains.at(0).GetField(index);
   std::string field_name = field.GetName();
-  return this->GetRange(field_name);
+  return this->GetGlobalRange(field_name);
 }
 
 vtkm::cont::ArrayHandle<vtkm::Range> 
-vtkhDataSet::GetRange(const std::string &field_name) const
+vtkhDataSet::GetGlobalRange(const std::string &field_name) const
 {
   bool valid_field = true;
   const size_t num_domains = m_domains.size();
@@ -222,7 +222,8 @@ vtkhDataSet::GetRange(const std::string &field_name) const
     if(i == 0)
     {
       num_components = sub_range.GetPortalConstControl().GetNumberOfValues();    
-      range.Allocate(num_components);
+      range = sub_range;
+      continue;
     }
 
     vtkm::Id components = sub_range.GetPortalConstControl().GetNumberOfValues();    
@@ -259,7 +260,6 @@ vtkhDataSet::GetRange(const std::string &field_name) const
   for(int i = 0; i < num_components; ++i)
   {
     vtkm::Range c_range = range.GetPortalControl().Get(i);
-
     vtkm::Float64 local_min = c_range.Min;
     vtkm::Float64 local_max = c_range.Max;
     

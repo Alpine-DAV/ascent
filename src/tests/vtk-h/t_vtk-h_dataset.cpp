@@ -42,13 +42,13 @@ TEST(vtkh_dataset, vtkh_range)
   EXPECT_EQ(data_bounds.Z.Max, max_val);
 
   vtkm::cont::ArrayHandle<vtkm::Range> vec_range;
-  vec_range = data_set.GetRange("vector_data");
+  vec_range = data_set.GetGlobalRange("vector_data");
 
   EXPECT_EQ(3, vec_range.GetPortalControl().GetNumberOfValues());
   
 
   vtkm::cont::ArrayHandle<vtkm::Range> scalar_range;
-  scalar_range = data_set.GetRange("point_data");
+  scalar_range = data_set.GetGlobalRange("point_data");
   EXPECT_EQ(1, scalar_range.GetPortalControl().GetNumberOfValues());
 
   vtkm::Float64 min_coord = 0.;

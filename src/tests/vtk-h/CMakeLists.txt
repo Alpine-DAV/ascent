@@ -53,6 +53,7 @@
 set(BASIC_TESTS t_vtk-h_smoke
                 t_vtk-h_dataset
                 t_vtk-h_raytracer
+                t_vtk-h_volume_renderer
                 )
 
 

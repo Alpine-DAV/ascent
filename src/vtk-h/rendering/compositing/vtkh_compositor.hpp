@@ -37,8 +37,15 @@ public:
                   const int            width,
                   const int            height,
                   const int            vis_order);
+
+    void AddImage(const float *color_buffer,
+                  const int    width,
+                  const int    height,
+                  const int    vis_order);
     
     Image Composite();
+
+    void SetBackgroundColor(float *background_color);
 
     virtual void         Cleanup();
     
@@ -67,7 +74,7 @@ protected:
     std::stringstream   m_log_stream;    
     CompositeMode       m_composite_mode;
     std::vector<Image>  m_images;
-    std::vector<int>    m_local_vis_order;
+    float               m_background_color[4];
 };
 
 };

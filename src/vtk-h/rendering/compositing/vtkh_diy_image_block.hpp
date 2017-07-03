@@ -12,6 +12,18 @@ struct ImageBlock
   Image &m_image;
   ImageBlock(Image &image)
     : m_image(image)
+  {
+  }
+};
+
+struct MultiImageBlock
+{
+  std::vector<Image> &m_images;
+  Image              &m_output;
+  MultiImageBlock(std::vector<Image> &images,
+                  Image &output)
+    : m_images(images),
+      m_output(output)
   {}
 };
 
@@ -22,7 +34,8 @@ struct AddImageBlock
 
   AddImageBlock(diy::Master &master, Image &image)
     : m_master(master), m_image(image)
-  {}
+  {
+  }
   template<typename BoundsType, typename LinkType>                 
   void operator()(int gid,
                   const BoundsType &local_bounds,
@@ -31,6 +44,33 @@ struct AddImageBlock
                   const LinkType &link) const
   {
     ImageBlock *block = new ImageBlock(m_image);
+    LinkType *linked = new LinkType(link);
+    diy::Master& master = const_cast<diy::Master&>(m_master);
+    int lid = master.add(gid, block, linked);
+  }
+}; 
+
+struct AddMultiImageBlock
+{
+  std::vector<Image> &m_images;
+  Image              &m_output;
+  const diy::Master  &m_master;
+
+  AddMultiImageBlock(diy::Master &master, 
+                     std::vector<Image> &images,
+                     Image &output)
+    : m_master(master), 
+      m_images(images),
+      m_output(output)
+  {}
+  template<typename BoundsType, typename LinkType>                 
+  void operator()(int gid,
+                  const BoundsType &local_bounds,
+                  const BoundsType &local_with_ghost_bounds,
+                  const BoundsType &domain_bounds,
+                  const LinkType &link) const
+  {
+    MultiImageBlock *block = new MultiImageBlock(m_images, m_output);
     LinkType *linked = new LinkType(link);
     diy::Master& master = const_cast<diy::Master&>(m_master);
     int lid = master.add(gid, block, linked);
@@ -64,6 +104,7 @@ struct Serialization<vtkh::Image>
     diy::save(bb, image.m_depths);
     diy::save(bb, image.m_orig_rank);
     diy::save(bb, image.m_z_buffer_mode);
+    diy::save(bb, image.m_composite_order);
   }
 
   static void load(BinaryBuffer &bb, vtkh::Image &image)
@@ -86,6 +127,7 @@ struct Serialization<vtkh::Image>
     diy::load(bb, image.m_depths);
     diy::load(bb, image.m_orig_rank);
     diy::load(bb, image.m_z_buffer_mode);
+    diy::load(bb, image.m_composite_order);
   }
 };
 

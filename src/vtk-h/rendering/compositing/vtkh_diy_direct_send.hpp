@@ -14,8 +14,7 @@ public:
   DirectSendCompositor();
   ~DirectSendCompositor();
   void CompositeVolume(diy::mpi::communicator &diy_comm, 
-                       Image                  &image, 
-                       const int *             vis_order,
+                       std::vector<Image>     &images, 
                        const float *           bg_color); 
   std::string GetTimingString();
 private:

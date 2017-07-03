@@ -21,6 +21,8 @@ struct Image
     std::vector<float>           m_depths; 
     int                          m_orig_rank;
     bool                         m_z_buffer_mode;
+    int                          m_composite_order;
+
     Image()
     {}
 
@@ -28,7 +30,8 @@ struct Image
       : m_orig_bounds(bounds),
         m_bounds(bounds),
         m_orig_rank(-1),
-        m_z_buffer_mode(z_buffer_mode)
+        m_z_buffer_mode(z_buffer_mode),
+        m_composite_order(-1)
 
     {
         const int dx  = bounds.X.Max - bounds.X.Min + 1;
@@ -43,8 +46,10 @@ struct Image
     void Init(const float *color_buffer,
               const float *depth_buffer,
               int width,
-              int height)
+              int height,
+              int composite_order = -1)
     {
+      m_composite_order = composite_order;
       m_bounds.X.Min = 1;
       m_bounds.Y.Min = 1;
       m_bounds.X.Max = width;
@@ -80,8 +85,10 @@ struct Image
     void Init(const unsigned char *color_buffer,
               const float *depth_buffer,
               int width,
-              int height)
+              int height,
+              int composite_order = -1)
     {
+      m_composite_order = composite_order;
       m_bounds.X.Min = 1;
       m_bounds.Y.Min = 1;
       m_bounds.X.Max = width;
@@ -179,10 +186,14 @@ struct Image
         const int offset = i * 4;
         unsigned int alpha = m_pixels[offset + 3];// / 255.f;
         const unsigned int opacity = 255 - alpha;//(1.f - alpha) * alpha2;
-        m_pixels[offset + 0] += static_cast<unsigned char>(opacity * image.m_pixels[offset + 0] / 255); 
-        m_pixels[offset + 1] += static_cast<unsigned char>(opacity * image.m_pixels[offset + 1] / 255); 
-        m_pixels[offset + 2] += static_cast<unsigned char>(opacity * image.m_pixels[offset + 2] / 255); 
-        m_pixels[offset + 3] += static_cast<unsigned char>(opacity * image.m_pixels[offset + 3] / 255); 
+        m_pixels[offset + 0] += 
+          static_cast<unsigned char>(opacity * image.m_pixels[offset + 0] / 255); 
+        m_pixels[offset + 1] += 
+          static_cast<unsigned char>(opacity * image.m_pixels[offset + 1] / 255); 
+        m_pixels[offset + 2] += 
+          static_cast<unsigned char>(opacity * image.m_pixels[offset + 2] / 255); 
+        m_pixels[offset + 3] += 
+          static_cast<unsigned char>(opacity * image.m_pixels[offset + 3] / 255); 
       }
     }
     
@@ -220,6 +231,7 @@ struct Image
       m_bounds = sub_region;
       m_orig_rank = image.m_orig_rank;
       m_z_buffer_mode = image.m_z_buffer_mode;
+      m_composite_order = image.m_composite_order;
 
       assert(sub_region.X.Min >= image.m_bounds.X.Min);
       assert(sub_region.Y.Min >= image.m_bounds.Y.Min);
@@ -294,7 +306,7 @@ struct Image
     //
     void SubsetTo(Image &image) const
     {
-     
+      image.m_composite_order = m_composite_order; 
       assert(m_bounds.X.Min >= image.m_bounds.X.Min);
       assert(m_bounds.Y.Min >= image.m_bounds.Y.Min);
       assert(m_bounds.X.Max <= image.m_bounds.X.Max);
@@ -343,6 +355,10 @@ struct Image
 
       m_pixels.swap(other.m_pixels);
       m_depths.swap(other.m_depths);
+      
+      bool z_buffer_mode = m_z_buffer_mode;
+      m_z_buffer_mode = other.m_z_buffer_mode;
+      other.m_z_buffer_mode = z_buffer_mode;
     }
     
     void Clear()
@@ -373,5 +389,12 @@ struct Image
     }
 };
 
+struct CompositeOrderSort
+{
+  inline bool operator()(const Image &lhs, const Image &rhs) const
+  {
+    return lhs.m_composite_order < rhs.m_composite_order;
+  }
+};
 } //namespace  vtkh
 #endif

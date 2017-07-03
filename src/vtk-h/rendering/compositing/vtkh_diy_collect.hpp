@@ -10,7 +10,6 @@
 
 namespace vtkh 
 {
-
 struct CollectImages
 {
   const diy::RegularDecomposer<diy::DiscreteBounds> &m_decomposer;
@@ -29,10 +28,12 @@ struct CollectImages
     const int collection_rank = 0; 
     if(proxy.in_link().size() == 0)
     {
+
       if(proxy.gid() != collection_rank)
       {
-        int dest_gid =  collection_rank;
+        int dest_gid = collection_rank;
         diy::BlockID dest = proxy.out_link().target(dest_gid);
+
         proxy.enqueue(dest, block->m_image);
         block->m_image.Clear();
       }
@@ -45,6 +46,7 @@ struct CollectImages
       for(int i = 0; i < proxy.in_link().size(); ++i)
       {
         int gid = proxy.in_link().target(i).gid;
+
         if(gid == collection_rank) 
         {
           continue;

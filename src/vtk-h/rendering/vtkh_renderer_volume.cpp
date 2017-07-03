@@ -2,7 +2,6 @@
 #include <utils/vtkm_array_utils.hpp>
 
 #include <vtkm/rendering/CanvasRayTracer.h>
-#include <vtkm/rendering/MapperVolume.h>
 
 #include <memory>
 
@@ -14,23 +13,81 @@ namespace detail
   {
     int m_rank;
     int m_domain_index;
-    int order;
+    int m_order;
     float m_minz;
-    bool operator<(const VisOrdering &other) const
+  };
+
+  struct DepthOrder
+  {
+    inline bool operator()(const VisOrdering &lhs, const VisOrdering &rhs)
     {
-      return m_minz < other.m_minz;
-    } 
+      return lhs.m_minz < rhs.m_minz;
+    }
+  };
+
+  struct RankOrder
+  {
+    inline bool operator()(const VisOrdering &lhs, const VisOrdering &rhs)
+    {
+      if(lhs.m_rank < rhs.m_rank)
+      {
+        return true;
+      }
+      else if(lhs.m_rank == rhs.m_rank)
+      {
+        return lhs.m_domain_index < rhs.m_domain_index;
+      }
+      return false;
+    }
   };
 } //  namespace detail
 
 vtkhVolumeRenderer::vtkhVolumeRenderer()
 {
   typedef vtkm::rendering::MapperVolume TracerType;
-  this->m_mapper = std::make_shared<TracerType>();
+  m_tracer = std::make_shared<TracerType>();
+  this->m_mapper = m_tracer;
+  m_tracer->SetCompositeBackground(false);
+  //
+  // add some default opacity to the color table
+  //
+  m_color_table.AddAlphaControlPoint(0.0f, .1);
+  m_color_table.AddAlphaControlPoint(1.0f, .1);
+  m_num_samples = -1;
 }
 
 vtkhVolumeRenderer::~vtkhVolumeRenderer()
 {
+}
+
+void 
+vtkhVolumeRenderer::PreExecute() 
+{
+  vtkhRenderer::PreExecute();
+  
+  const float default_samples = 200.f;
+  float samples = default_samples;
+  if(m_num_samples != -1)
+  {
+    samples = m_num_samples;
+    float ratio = default_samples / samples;
+    vtkm::rendering::ColorTable corrected;
+    corrected = this->m_color_table.CorrectOpacity(ratio);
+    m_tracer->SetActiveColorTable(corrected);
+  }
+  vtkm::Vec<vtkm::Float32,3> extent; 
+  extent[0] = static_cast<vtkm::Float32>(this->m_bounds.X.Length());
+  extent[1] = static_cast<vtkm::Float32>(this->m_bounds.Y.Length());
+  extent[2] = static_cast<vtkm::Float32>(this->m_bounds.Z.Length());
+  vtkm::Float32 dist = vtkm::Magnitude(extent) / samples; 
+  m_tracer->SetSampleDistance(dist);
+}
+
+void
+vtkhVolumeRenderer::SetNumberOfSamples(const int num_samples)
+{
+  assert(num_samples > 0);
+  m_num_samples = num_samples; 
 }
 
 vtkhRenderer::vtkmCanvasPtr 
@@ -95,7 +152,6 @@ vtkhVolumeRenderer::Composite(const int &num_images)
   m_compositor->SetCompositeMode(Compositor::VIS_ORDER_BLEND);
 
   FindVisibilityOrdering(); 
-  return;
 
   for(int i = 0; i < num_images; ++i)
   {
@@ -107,9 +163,9 @@ vtkhVolumeRenderer::Composite(const int &num_images)
       int width = m_canvases[dom][i]->GetWidth();
 
       m_compositor->AddImage(color_buffer,
-                             depth_buffer,
                              width,
-                             height);
+                             height,
+                             m_visibility_orders[i][dom]);
     } //for dom
 
     Image result = m_compositor->Composite();
@@ -126,159 +182,177 @@ vtkhVolumeRenderer::Composite(const int &num_images)
   } // for image
 }
 
+void 
+vtkhVolumeRenderer::DepthSort(const int &num_domains, 
+                              const std::vector<float> &min_depths,
+                              std::vector<int> &local_vis_order)
+{
+  assert(min_depths.size() == num_domains);
+  assert(local_vis_order.size() == num_domains);
+#ifdef PARALLEL
+  int root = 0;
+  MPI_Comm comm = VTKH::GetMPIComm();
+  int num_ranks = VTKH::GetMPISize();
+  int rank = VTKH::GetMPIRank();
+  int *domain_counts = NULL; 
+  int *domain_offsets = NULL; 
+  int *vis_order = NULL; 
+  float *depths = NULL;
+
+  if(rank == root)
+  {
+    domain_counts = new int[num_ranks]; 
+    domain_offsets = new int[num_ranks]; 
+  }
+
+  MPI_Gather(&num_domains,
+             1,
+             MPI_INT,
+             domain_counts,
+             1,
+             MPI_INT,
+             root,
+             comm);
+
+  int depths_size = 0;
+  if(rank == root)
+  {
+    //scan for dispacements
+    domain_offsets[0] = 0;
+    for(int i = 1; i < num_ranks; ++i)
+    {
+      domain_offsets[i] = domain_offsets[i - 1] + domain_counts[i - 1]; 
+    }
+
+    for(int i = 0; i < num_ranks; ++i)
+    {
+      depths_size += domain_counts[i];
+    }
+
+    depths = new float[depths_size];
+                 
+  }
+  
+  MPI_Gatherv(&min_depths[0],
+              num_domains,
+              MPI_FLOAT,
+              depths,
+              domain_counts,
+              domain_offsets,
+              MPI_FLOAT,
+              root,
+              comm);
+
+  if(rank == root)
+  {
+    std::vector<detail::VisOrdering> order;
+    order.resize(depths_size);
+
+    for(int i = 0; i < num_ranks; ++i)
+    {
+      for(int c = 0; c < domain_counts[i]; ++c)
+      {
+        int index = domain_offsets[i] + c;    
+        order[index].m_rank = i;
+        order[index].m_domain_index = c;
+        order[index].m_minz = depths[index];
+      }
+    }
+    
+    std::sort(order.begin(), order.end(), detail::DepthOrder());
+    
+    for(int i = 0; i < depths_size; ++i)
+    {
+      order[i].m_order = i;
+    }
+
+    std::sort(order.begin(), order.end(), detail::RankOrder());
+        
+    vis_order = new int[depths_size];
+    for(int i = 0; i < depths_size; ++i)
+    {
+      vis_order[i] = order[i].m_order;
+    }
+  }
+  
+  MPI_Scatterv(vis_order,
+               domain_counts,
+               domain_offsets,
+               MPI_INT,
+               &local_vis_order[0],
+               num_domains,
+               MPI_INT,
+               root,
+               comm);
+
+  if(rank == root)
+  {
+    delete[] domain_counts;
+    delete[] domain_offsets;
+    delete[] vis_order;
+    delete[] depths;
+  }
+#else
+
+  std::vector<detail::VisOrdering> order;
+  order.resize(num_domains);
+
+  for(int i = 0; i < num_domains; ++i)
+  {
+      order[i].m_rank = 0;
+      order[i].m_domain_index = i;
+      order[i].m_minz = min_depths[i];
+  }
+  std::sort(order.begin(), order.end(), detail::DepthOrder());
+  
+  for(int i = 0; i < num_domains; ++i)
+  {
+    order[i].m_order = i;
+  }
+
+  std::sort(order.begin(), order.end(), detail::RankOrder());
+   
+  for(int i = 0; i < num_domains; ++i)
+  {
+    local_vis_order[i] = order[i].m_order;
+  }
+#endif
+}
+
 void
 vtkhVolumeRenderer::FindVisibilityOrdering()
 {
-    const int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
-    const int num_cameras = static_cast<int>(m_cameras.size());
+  const int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
+  const int num_cameras = static_cast<int>(m_cameras.size());
 
-    m_visibility_orders.resize(num_cameras);
+  m_visibility_orders.resize(num_cameras);
 
-    for(int i = 0; i < num_cameras; ++i)
+  for(int i = 0; i < num_cameras; ++i)
+  {
+    m_visibility_orders[i].resize(num_domains);
+  }
+  
+  //
+  // In order for parallel volume rendering to composite correctly,
+  // we nee to establish a visibility ordering to pass to IceT.
+  // We will transform the data extents into camera space and
+  // take the minimum z value. Then sort them while keeping 
+  // track of rank, then pass the list in.
+  //
+  std::vector<float> min_depths;     
+  min_depths.resize(num_domains);
+
+  for(int i = 0; i < num_cameras; ++i)
+  {
+    const vtkm::rendering::Camera &camera = m_cameras[i];
+    for(int dom = 0; dom < num_domains; ++dom)
     {
-      m_visibility_orders[i].resize(num_domains);
+      vtkm::Bounds bounds = this->m_input->GetDomainBounds(dom);
+      min_depths[dom] = FindMinDepth(camera, bounds);
     }
-    
-    //
-    // In order for parallel volume rendering to composite correctly,
-    // we nee to establish a visibility ordering to pass to IceT.
-    // We will transform the data extents into camera space and
-    // take the minimum z value. Then sort them while keeping 
-    // track of rank, then pass the list in.
-    //
-    std::vector<float> min_depths;     
-    min_depths.resize(num_domains);
-
-    for(int i = 0; i < num_cameras; ++i)
-    {
-      const vtkm::rendering::Camera &camera = m_cameras[i];
-      for(int dom = 0; dom < num_domains; ++dom)
-      {
-        vtkm::Bounds bounds = this->m_input->GetDomainBounds(dom);
-        min_depths[dom] = FindMinDepth(camera, bounds);
-      }
-     
-#ifdef PARALLEL
-      int root = 0;
-      MPI_Comm comm = VTKH::GetMPIComm();
-      int num_ranks = VTKH::GetMPISize();
-      int rank = VTKH::GetMPIRank();
-      int *domain_counts = NULL; 
-      int *domain_offsets = NULL; 
-      float *depths = NULL;
-
-      if(rank == root)
-      {
-        domain_counts = new int[num_ranks]; 
-        domain_offsets = new int[num_ranks]; 
-      }
-
-      MPI_Gather(&num_domains,
-                 1,
-                 MPI_INT,
-                 domain_counts,
-                 1,
-                 MPI_INT,
-                 root,
-                 comm);
-    
-     int depths_size = 0;
-     if(rank == root)
-     {
-       //scan for dispacements
-       domain_offsets[0] = 0;
-       for(int i = 1; i < num_ranks; ++i)
-       {
-         domain_offsets[i] = domain_offsets[i - 1] + domain_counts[i - 1]; 
-       }
-
-       
-       for(int i = 0; i < num_ranks; ++i)
-       {
-         depths_size += domain_counts[i];
-       }
-
-       depths = new float[depths_size];
-
-                    
-     }
-    
-     MPI_Gatherv(&min_depths[0],
-                 num_domains,
-                 MPI_FLOAT,
-                 depths,
-                 domain_counts,
-                 domain_offsets,
-                 MPI_FLOAT,
-                 root,
-                 comm);
-
-     if(rank == root)
-     {
-        for(int i = 0; i < num_ranks; ++i)
-        {
-          std::cout<<"Rank"<<i<<" has "<<domain_counts[i]<<"\n";
-        }
-
-        for(int i = 0; i < depths_size; ++i)
-        {
-          std::cout<<"Global Domain "<<i<<" has depth "<<depths[i]<<"\n";
-        }
-     }
-
-     if(rank == root)
-     {
-       delete[] domain_counts;
-       delete[] domain_offsets;
-       delete[] depths;
-     }
-#endif
-#if 0 
-      //FindMinDepth
-      int data_type_size;
-
-      MPI_Type_size(MPI_FLOAT, &data_type_size);
-      void *z_array;
       
-      void *vis_rank_order = malloc(m_mpi_size * sizeof(int));
-      VTKMVisibility *vis_order;
+    DepthSort(num_domains, min_depths, m_visibility_orders[i]); 
 
-      if(m_rank == 0)
-      {
-          // TODO CDH :: new / delete, or use conduit?
-          z_array = malloc(m_mpi_size * data_type_size);
-      }
-
-      MPI_Gather(&minz, 1, MPI_FLOAT, z_array, 1, MPI_FLOAT, 0, m_mpi_comm);
-
-      if(m_rank == 0)
-      {
-          vis_order = new VTKMVisibility[m_mpi_size];
-          
-          for(int i = 0; i < m_mpi_size; i++)
-          {
-              vis_order[i].m_rank = i;
-              vis_order[i].m_minz = ((float*)z_array)[i];
-          }
-
-          std::qsort(vis_order,
-                     m_mpi_size,
-                     sizeof(VTKMVisibility),
-                     VTKMCompareVisibility);
-
-          
-          for(int i = 0; i < m_mpi_size; i++)
-          {
-              ((int*) vis_rank_order)[i] = vis_order[i].m_rank;;
-          }
-          
-          free(z_array);
-          delete[] vis_order;
-      }
-
-      MPI_Bcast(vis_rank_order, m_mpi_size, MPI_INT, 0, m_mpi_comm);
-      return (int*)vis_rank_order;
-#endif
-    } // for each camera
+  } // for each camera
 }
 } // namespace vtkh

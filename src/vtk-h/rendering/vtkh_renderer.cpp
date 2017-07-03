@@ -179,7 +179,6 @@ vtkhRenderer::Render()
     throw Error(msg);
   }
   
-  m_mapper->SetActiveColorTable(m_color_table);
 
   // check to see if any cameras were set.
   // if not, then just render with the default camera.
@@ -208,7 +207,6 @@ vtkhRenderer::Render()
       const vtkm::cont::DynamicCellSet &cellset = data_set.GetCellSet();
       const vtkm::cont::Field &field = data_set.GetField(m_field_index);
       const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
-      field.PrintSummary(std::cout); 
       for(int i = 0; i < current_batch_size; ++i)
       {
         // paint
@@ -255,13 +253,15 @@ vtkhRenderer::PreExecute()
     m_field_index = data_set.GetFieldIndex(m_field_name);
   }
 
-  vtkm::cont::ArrayHandle<vtkm::Range> ranges = m_input->GetRange(m_field_index);
+  vtkm::cont::ArrayHandle<vtkm::Range> ranges = m_input->GetGlobalRange(m_field_index);
   int num_components = ranges.GetPortalControl().GetNumberOfValues();
   //
   // current vtkm renderers only supports single component scalar fields
   //
   assert(num_components == 1);
   m_range = ranges.GetPortalControl().Get(0);
+
+  m_mapper->SetActiveColorTable(m_color_table);
 }
 
 void 

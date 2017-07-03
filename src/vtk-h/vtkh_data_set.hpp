@@ -33,8 +33,8 @@ public:
   vtkm::Bounds GetGlobalBounds(vtkm::Id coordinate_system_index = 0) const;
   vtkm::Bounds GetDomainBounds(const int &domain_index,
                                vtkm::Id coordinate_system_index = 0) const;
-  vtkm::cont::ArrayHandle<vtkm::Range> GetRange(const std::string &field_name) const;
-  vtkm::cont::ArrayHandle<vtkm::Range> GetRange(const int &index) const;
+  vtkm::cont::ArrayHandle<vtkm::Range> GetGlobalRange(const std::string &field_name) const;
+  vtkm::cont::ArrayHandle<vtkm::Range> GetGlobalRange(const int &index) const;
 };
 
 } // namespace vtkh
