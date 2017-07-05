@@ -32,6 +32,22 @@ vtkhDataSet::GetField(const std::string &field_name, const int &domain_index)
   return m_domains[domain_index].GetField(field_name);
 }
 
+vtkm::cont::DataSet
+vtkhDataSet::GetDomain(const int index) 
+{
+  const size_t num_domains = m_domains.size();
+
+  if(index >= num_domains && index < 0)
+  {
+    std::stringstream msg;
+    msg<<"Get domain call failed. Invalid index "<<index
+       <<" in "<<num_domains<<" domains.";
+    throw Error(msg.str());
+  }
+ 
+  return  m_domains[index];
+
+}
 void 
 vtkhDataSet::GetDomain(const int index, vtkm::cont::DataSet &data_set, int &domain_id) 
 {

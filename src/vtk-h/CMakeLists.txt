@@ -42,21 +42,33 @@ set(vtkh_headers
 #############################
 
 set(vtkh_rendering_headers
-    rendering/compositing/vtkh_compositor.hpp
-    rendering/vtkh_image.hpp
-    rendering/vtkh_renderer.hpp
-    rendering/vtkh_renderer_ray_tracer.hpp
-    rendering/vtkh_renderer_volume.hpp
+      rendering/compositing/vtkh_compositor.hpp
+      rendering/vtkh_image.hpp
+      rendering/vtkh_renderer.hpp
+      rendering/vtkh_renderer_ray_tracer.hpp
+      rendering/vtkh_renderer_volume.hpp
     ) 
 
 set(vtkh_rendering_sources
-    rendering/compositing/vtkh_compositor.cpp
-    rendering/vtkh_renderer.cpp
-    rendering/vtkh_renderer_ray_tracer.cpp
-    rendering/vtkh_renderer_volume.cpp
+      rendering/compositing/vtkh_compositor.cpp
+      rendering/vtkh_renderer.cpp
+      rendering/vtkh_renderer_ray_tracer.cpp
+      rendering/vtkh_renderer_volume.cpp
     )
+
+set(vtkh_marching_cubes_headers
+     vtkh_marching_cubes.hpp
+   )
+
+set(vtkh_marching_cubes_sources
+     vtkh_marching_cubes.cpp
+   )
+
 list (APPEND vtkh_sources ${vtkh_rendering_sources})
 list (APPEND vtkh_headers ${vtkh_rendering_headers})
+
+list (APPEND vtkh_sources ${vtkh_marching_cubes_sources})
+list (APPEND vtkh_headers ${vtkh_marching_cubes_headers})
 
 ##############################
 # Add lodepng 

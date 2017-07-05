@@ -47,36 +47,6 @@ DIYCompositor::CompositeVisOrder()
   DirectSendCompositor compositor;
   compositor.CompositeVolume(m_diy_comm, this->m_images, m_background_color);
 }
-#if 0
-unsigned char *
-DIYCompositor::Composite(int            width,
-                         int            height,
-                         const float   *color_buffer,
-                         const int     *vis_order,
-                         const float   *bg_color)
-{
-    m_image.Init(color_buffer,
-                 NULL,
-                 width,
-                 height);
-
-    DirectSendCompositor compositor;
-    compositor.CompositeVolume(m_diy_comm, m_image, vis_order, bg_color);
-    m_image.m_orig_rank = m_rank;
-
-    m_log_stream<<compositor.GetTimingString();
-
-    if(m_rank == 0)
-    { 
-      m_image.Save("out.png");
-      return &m_image.m_pixels[0];
-    }
-    else
-    {
-      return NULL;
-    }
-}
-#endif
 
 void
 DIYCompositor::Cleanup()

@@ -17,6 +17,7 @@ public:
   };
   virtual ~vtkhFilter() { };
   void SetInput(vtkhDataSet *input) { m_input = input; }
+  vtkhDataSet* GetOutput() { return m_output; }
   vtkhDataSet* Update()
   {
     PreExecute();

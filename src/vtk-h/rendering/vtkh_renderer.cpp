@@ -243,7 +243,6 @@ vtkhRenderer::PreExecute()
 {
   m_bounds = this->m_input->GetGlobalBounds();
   m_default_camera.ResetToBounds(m_bounds);
-  
   // Look for a provided field 
   if(m_field_name != "")
   {

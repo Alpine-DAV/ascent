@@ -25,6 +25,9 @@ public:
   void GetDomain(const int index, 
                  vtkm::cont::DataSet &data_set, 
                  int &domain_id); 
+
+  vtkm::cont::DataSet GetDomain(const int index); 
+  
   vtkm::cont::Field GetField(const std::string &field_name, 
                              const int &domain_index); 
   vtkm::Id GetNumberOfDomains() const;
