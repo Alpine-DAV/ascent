@@ -45,25 +45,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_flow_pipeline_filters.cpp
+/// file: alpine_flow_pipeline_vtkh_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <alpine_flow_pipeline_filters.hpp>
+#ifndef ALPINE_FLOW_PIPELINE_VTKH_FILTERS
+#define ALPINE_FLOW_PIPELINE_VTKH_FILTERS
 
+#include <alpine.hpp>
+#include <alpine_flow.hpp>
 
-//-----------------------------------------------------------------------------
-// alpine includes
-//-----------------------------------------------------------------------------
-#include <alpine_logging.hpp>
-#include <alpine_flow_workspace.hpp>
+#include <alpine_flow_filter.hpp>
 
-#include <alpine_flow_pipeline_relay_filters.hpp>
-#include <alpine_flow_pipeline_blueprint_filters.hpp>
-#include <alpine_flow_pipeline_vtkh_filters.hpp>
-
-
-using namespace alpine::flow;
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
@@ -89,49 +82,30 @@ namespace flow
 namespace filters
 {
 
+//-----------------------------------------------------------------------------
+///
+/// VTK-H Filters
+///
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
+class VTKHRayTracer : public alpine::flow::Filter
 {
-    if(!Workspace::supports_filter_type<RelayIOSave>())
-    {
-        Workspace::register_filter_type<RelayIOSave>();
-    }
+public:
+    VTKHRayTracer();
+   ~VTKHRayTracer();
     
-    
-    if(!Workspace::supports_filter_type<RelayIOLoad>())
-    {
-        Workspace::register_filter_type<RelayIOLoad>();
-    }
-    
-    if(!Workspace::supports_filter_type<BlueprintVerify>())
-    {
-        Workspace::register_filter_type<BlueprintVerify>();
-    }
-    
-    if(!Workspace::supports_filter_type<EnsureVTKM>())
-    {
-        Workspace::register_filter_type<EnsureVTKM>();
-    }
-    if(!Workspace::supports_filter_type<VTKHRayTracer>())
-    {
-        Workspace::register_filter_type<VTKHRayTracer>();
-    }
-
-    
-}
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
 
 
-
-//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end alpine::pipeline::flow::filters --
 //-----------------------------------------------------------------------------
-
 
 
 //-----------------------------------------------------------------------------
@@ -141,12 +115,12 @@ register_builtin()
 //-----------------------------------------------------------------------------
 
 
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end alpine::pipeline --
 //-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 };
@@ -154,3 +128,10 @@ register_builtin()
 // -- end alpine:: --
 //-----------------------------------------------------------------------------
 
+
+
+
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------

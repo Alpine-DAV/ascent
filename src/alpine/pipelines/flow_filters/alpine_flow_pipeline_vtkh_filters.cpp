@@ -45,23 +45,38 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_flow_pipeline_filters.cpp
+/// file: alpine_flow_pipeline_vtkh_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <alpine_flow_pipeline_filters.hpp>
+#include "alpine_flow_pipeline_vtkh_filters.hpp"
 
+//-----------------------------------------------------------------------------
+// thirdparty includes
+//-----------------------------------------------------------------------------
+
+// conduit includes
+#include <conduit.hpp>
+#include <conduit_relay.hpp>
+#include <conduit_blueprint.hpp>
 
 //-----------------------------------------------------------------------------
 // alpine includes
 //-----------------------------------------------------------------------------
 #include <alpine_logging.hpp>
+#include <alpine_flow_graph.hpp>
 #include <alpine_flow_workspace.hpp>
 
-#include <alpine_flow_pipeline_relay_filters.hpp>
-#include <alpine_flow_pipeline_blueprint_filters.hpp>
-#include <alpine_flow_pipeline_vtkh_filters.hpp>
+#if defined(ALPINE_VTKM_ENABLED)
+#include <vtkh.hpp>
+#include <vtkh_data_set.hpp>
+#include <rendering/vtkh_renderer_ray_tracer.hpp>
+#include <vtkm/cont/DataSet.h>
 
+#endif
+
+using namespace conduit;
+using namespace std;
 
 using namespace alpine::flow;
 
@@ -90,37 +105,63 @@ namespace filters
 {
 
 
-//-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
-{
-    if(!Workspace::supports_filter_type<RelayIOSave>())
-    {
-        Workspace::register_filter_type<RelayIOSave>();
-    }
-    
-    
-    if(!Workspace::supports_filter_type<RelayIOLoad>())
-    {
-        Workspace::register_filter_type<RelayIOLoad>();
-    }
-    
-    if(!Workspace::supports_filter_type<BlueprintVerify>())
-    {
-        Workspace::register_filter_type<BlueprintVerify>();
-    }
-    
-    if(!Workspace::supports_filter_type<EnsureVTKM>())
-    {
-        Workspace::register_filter_type<EnsureVTKM>();
-    }
-    if(!Workspace::supports_filter_type<VTKHRayTracer>())
-    {
-        Workspace::register_filter_type<VTKHRayTracer>();
-    }
 
+//-----------------------------------------------------------------------------
+VTKHRayTracer::VTKHRayTracer()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHRayTracer::~VTKHRayTracer()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHRayTracer::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_raytracer";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHRayTracer::verify_params(const conduit::Node &params,
+                                   conduit::Node &info)
+{
+    info.reset();   
+    bool res = true;
+    // TODO
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+VTKHRayTracer::execute()
+{
+
+    ALPINE_INFO("Doing the render!");
+    
+    if(!input(0).check_type<vtkm::cont::DataSet>())
+    {
+        ALPINE_ERROR("vtkh_raytracer input must be a vtk-m dataset");
+    }
+    
+    // create vtk-h from vtkm
+    // TODO, use "ensure_vtkh" style filter 
+    vtkm::cont::DataSet *vtkm_data = input<vtkm::cont::DataSet>(0);
+
+    vtkh::vtkhDataSet data_set;
+    data_set.AddDomain(*vtkm_data,0);
+    vtkh::vtkhRayTracer ray_tracer;  
+    ray_tracer.SetInput(&data_set);
+    ray_tracer.SetField("braid"); 
+    ray_tracer.Update();
     
 }
 
@@ -153,4 +194,8 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end alpine:: --
 //-----------------------------------------------------------------------------
+
+
+
+
 
