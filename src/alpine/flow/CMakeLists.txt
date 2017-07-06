@@ -43,78 +43,63 @@
 ###############################################################################
 
 
-################################
-# Unit Tests
-################################
+###############################################################################
+#
+# file: src/alpine/flow/CMakeLists.txt
+#
+###############################################################################
 
-################################
-# Core Alpine Unit Tests
-################################
-set(BASIC_TESTS t_alpine_smoke
-                t_alpine_empty_pipeline
-                t_alpine_render_2d
-                t_alpine_render_3d
-                t_alpine_web)
+set(alpine_flow_sources
+    # alpine flow interface
+    alpine_flow_data.cpp
+    alpine_flow_registry.cpp
+    alpine_flow_filter.cpp
+    alpine_flow_filters.cpp
+    alpine_flow_graph.cpp
+    alpine_flow_workspace.cpp
+    filters/alpine_flow_registry_filters.cpp)
+    
+set(alpine_flow_headers
+    alpine_flow_data.hpp
+    alpine_flow_registry.hpp
+    alpine_flow_filter.hpp
+    alpine_flow_filters.hpp
+    alpine_flow_graph.hpp
+    alpine_flow_workspace.hpp
+    filters/alpine_flow_registry_filters.hpp
+    alpine_flow.hpp)
 
-set(FLOW_TESTS  t_alpine_flow_data
-                t_alpine_flow_registry
-                t_alpine_flow_workspace
-                t_alpine_flow_pipeline)
+set(alpine_flow_thirdparty_libs 
+    conduit
+    conduit_relay)
 
+##########################################
+# Build a serial version of flow
+##########################################
 
-set(MPI_TESTS  t_alpine_mpi_empty_pipeline
-               t_alpine_mpi_render_2d
-               t_alpine_mpi_render_3d)
-
-if(HDF5_FOUND)
-    list(APPEND BASIC_TESTS t_alpine_save_blueprint_hdf5)
-    list(APPEND MPI_TESTS   t_alpine_mpi_save_blueprint_hdf5)
-endif()
-
-
-
-################################
-# Add main tests
-################################
-message(STATUS "Adding alpine lib unit tests")
-foreach(TEST ${BASIC_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON alpine)
-endforeach()
-
-
-message(STATUS "Adding alpine flow lib unit tests")
-foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON alpine alpine_flow)
-endforeach()
-
-
-
-################################
-# Add optional tests
-################################
-
-if(MPI_FOUND AND ENABLE_MPI)
-    message(STATUS "MPI enabled: Adding related unit tests")
-    foreach(TEST ${MPI_TESTS})
-        # this uses 2 procs
-        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON alpine_par) 
-        set_target_properties( ${TEST} PROPERTIES COMPILE_FLAGS "-D PARALLEL")
-    endforeach()
+if(BUILD_SHARED_LIBS)
+    message(STATUS "Building alpine_flow as a shared library")
+     add_library(alpine_flow SHARED 
+                 ${alpine_flow_sources} 
+                 ${alpine_flow_headers})
 else()
-    message(STATUS "MPI disabled: Skipping related tests")
-endif()
-
-if(PYTHON_FOUND AND ENABLE_PYTHON)
-    add_subdirectory("python")
-else()
-    message(STATUS "Python disabled: Skipping alpine python module tests")
+    message(STATUS "Building alpine_flow as a static library")
+    add_library(alpine_flow STATIC 
+                ${alpine_flow_sources} 
+                ${alpine_flow_headers})
 endif()
 
 
-if(FORTRAN_FOUND AND ENABLE_FORTRAN)
-     add_subdirectory("fortran")
-else()
-     message(STATUS "Fortran disabled: Skipping alpine fortran interface tests")
-endif()
+target_link_libraries(alpine_flow ${alpine_flow_thirdparty_libs})
+
+# install target for alpine flow lib
+install(TARGETS alpine_flow
+        EXPORT  alpine
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION lib
+)
+
+install(FILES ${alpine_flow_headers} DESTINATION include/alpine)
 
 

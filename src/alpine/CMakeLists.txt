@@ -72,6 +72,10 @@ set(alpine_sources
     # pipelines
     alpine_pipeline.cpp
     pipelines/alpine_empty_pipeline.cpp
+    pipelines/alpine_flow_pipeline.cpp
+    pipelines/flow_filters/alpine_flow_pipeline_filters.cpp
+    pipelines/flow_filters/alpine_flow_pipeline_relay_filters.cpp
+    pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.cpp
     # utils
     utils/alpine_file_system.cpp
     utils/alpine_block_timer.cpp
@@ -87,6 +91,11 @@ set(alpine_headers
     # pipelines
     alpine_pipeline.hpp
     pipelines/alpine_empty_pipeline.hpp
+    # flow
+    pipelines/alpine_flow_pipeline.hpp
+    pipelines/flow_filters/alpine_flow_pipeline_filters.hpp
+    pipelines/flow_filters/alpine_flow_pipeline_relay_filters.hpp
+    pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.hpp
     # utils
     utils/alpine_logging.hpp
     utils/alpine_file_system.hpp
@@ -117,6 +126,12 @@ if(HDF5_FOUND)
 endif()
 
 ##############################
+# Add apline_flow
+#############################
+add_subdirectory(flow)
+
+
+##############################
 # Add lodepng 
 #############################
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty_builtin/lodepng/ ${CMAKE_CURRENT_SOURCE_DIR}/utils/lodepng)
@@ -144,7 +159,8 @@ endif()
 set(alpine_thirdparty_libs 
     conduit
     conduit_relay
-    conduit_blueprint)
+    conduit_blueprint
+    alpine_flow)
 
 if(VTKM_FOUND)
     list(APPEND alpine_thirdparty_libs vtkm)

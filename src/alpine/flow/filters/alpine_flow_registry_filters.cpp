@@ -45,32 +45,34 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_empty_pipeline.cpp
+/// file: alpine_flow_registry_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "alpine_empty_pipeline.hpp"
+#include "alpine_flow_registry_filters.hpp"
 
 // standard lib includes
+#include <iostream>
 #include <string.h>
+#include <limits.h>
+#include <cstdlib>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
 //-----------------------------------------------------------------------------
 
 // conduit includes
-#include <conduit_blueprint.hpp>
+#include <conduit.hpp>
 
-// mpi related includes
-#ifdef PARALLEL
-#include <mpi.h>
-// -- conduit relay mpi
-#include <conduit_relay_mpi.hpp>
-#endif
+//-----------------------------------------------------------------------------
+// alpine includes
+//-----------------------------------------------------------------------------
+#include <alpine_logging.hpp>
+#include <alpine_flow_graph.hpp>
+#include <alpine_flow_workspace.hpp>
 
 using namespace conduit;
 using namespace std;
-
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
@@ -79,127 +81,64 @@ namespace alpine
 {
 
 //-----------------------------------------------------------------------------
+// -- begin alpine::flow --
 //-----------------------------------------------------------------------------
-//
-// Creation and Destruction
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-EmptyPipeline::EmptyPipeline()
-:Pipeline()
+namespace flow
 {
 
+//-----------------------------------------------------------------------------
+// -- begin alpine::flow::filters --
+//-----------------------------------------------------------------------------
+namespace filters
+{
+
+//-----------------------------------------------------------------------------
+RegistrySource::RegistrySource()
+:Filter()
+{
+// empty
 }
 
 //-----------------------------------------------------------------------------
-EmptyPipeline::~EmptyPipeline()
+RegistrySource::~RegistrySource()
 {
-    Cleanup();
+// empty
 }
 
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//
-// Main pipeline interface methods called by the alpine interface.
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-void
-EmptyPipeline::Initialize(const conduit::Node &options)
+void 
+RegistrySource::declare_interface(Node &i)
 {
-#if PARALLEL
-    if(!options.has_child("mpi_comm") ||
-       !options["mpi_comm"].dtype().is_integer())
-    {
-        ALPINE_ERROR("Missing Alpine::Open options missing MPI communicator (mpi_comm)");
-    }
-#endif
-
-    m_pipeline_options = options;
+    i["type_name"]   = "registry_source";
+    i["port_names"]  = DataType::empty();
+    i["output_port"] = "true";
+    i["default_params"]["entry"] = "";
 }
 
 
 //-----------------------------------------------------------------------------
-void
-EmptyPipeline::Cleanup()
+void 
+RegistrySource::execute()
 {
-
-}
-
-//-----------------------------------------------------------------------------
-void
-EmptyPipeline::Publish(const conduit::Node &data)
-{
-    Node verify_info;
-    bool verify_ok = conduit::blueprint::mesh::verify(data,verify_info);
-
-#if PARALLEL
-
-    MPI_Comm mpi_comm = MPI_Comm_f2c(m_pipeline_options["mpi_comm"].to_int());
-
-    // parallel reduce to find if there were any verify errors across mpi tasks
-    // use an mpi sum to check if all is ok
-    Node n_src, n_reduce;
-
-    if(verify_ok)
-        n_src = (int)0;
-    else
-        n_src = (int)1;
-
-    conduit::relay::mpi::all_reduce(n_src,
-                                    n_reduce,
-                                    MPI_INT,
-                                    MPI_SUM,
-                                    mpi_comm);
-
-    int num_failures = n_reduce.value();
-    if(num_failures != 0)
-    {
-        ALPINE_ERROR("Mesh Blueprint Verify failed on "  
-                       << num_failures
-                       << " MPI Tasks");
-        
-        // you could use mpi to find out where things went wrong ...
-    }
-
+    std::string key = params()["entry"].as_string();
     
-    
-#else
-    if(!verify_ok)
-    {
-         ALPINE_ERROR("Mesh Blueprint Verify failed!"
-                        << std::endl
-                        << verify_info.to_json());
-    }
-#endif
-
-    // create our own tree, with all data zero copied.
-    m_data.set_external(data);
+    set_output(graph().workspace().registry().fetch(key));
 }
+
 
 //-----------------------------------------------------------------------------
-void
-EmptyPipeline::Execute(const conduit::Node &actions)
-{
-    // Loop over the actions
-    for (int i = 0; i < actions.number_of_children(); ++i)
-    {
-        const Node &action = actions.child(i);
-        string action_name = action["action"].as_string();
-
-        ALPINE_INFO("Executing " << action_name);
-
-        // implement action
-    }
-}
+};
+//-----------------------------------------------------------------------------
+// -- end alpine::flow::filters --
+//-----------------------------------------------------------------------------
 
 
 
-
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end alpine::flow --
+//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------

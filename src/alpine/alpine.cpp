@@ -53,6 +53,7 @@
 #include <alpine_pipeline.hpp>
 
 #include <pipelines/alpine_empty_pipeline.hpp>
+#include <pipelines/alpine_flow_pipeline.hpp>
 
 #if defined(ALPINE_VTKM_ENABLED)
     #include <pipelines/alpine_vtkm_pipeline.hpp>
@@ -147,6 +148,10 @@ Alpine::Open(const conduit::Node &options)
     #else
         ALPINE_ERROR("Alpine was not built with HDF5 support");
     #endif
+    }
+    else if(pipeline_type == "flow")
+    {
+        m_pipeline = new FlowPipeline();
     }
     else
     {

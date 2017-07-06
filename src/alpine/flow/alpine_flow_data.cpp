@@ -45,32 +45,34 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_empty_pipeline.cpp
+/// file: alpine_flow_data.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "alpine_empty_pipeline.hpp"
+#include "alpine_flow_data.hpp"
 
 // standard lib includes
+#include <iostream>
 #include <string.h>
+#include <limits.h>
+#include <cstdlib>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
 //-----------------------------------------------------------------------------
 
 // conduit includes
-#include <conduit_blueprint.hpp>
+#include <conduit.hpp>
 
-// mpi related includes
-#ifdef PARALLEL
-#include <mpi.h>
-// -- conduit relay mpi
-#include <conduit_relay_mpi.hpp>
-#endif
+
+
+//-----------------------------------------------------------------------------
+// alpine includes
+//-----------------------------------------------------------------------------
+#include <alpine_logging.hpp>
 
 using namespace conduit;
 using namespace std;
-
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
@@ -79,127 +81,79 @@ namespace alpine
 {
 
 //-----------------------------------------------------------------------------
+// -- begin alpine::flow --
 //-----------------------------------------------------------------------------
-//
-// Creation and Destruction
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-EmptyPipeline::EmptyPipeline()
-:Pipeline()
+namespace flow
 {
 
+//-----------------------------------------------------------------------------
+Data::Data(void *data)
+:m_data_ptr(data)
+{
+        // empty
 }
-
-//-----------------------------------------------------------------------------
-EmptyPipeline::~EmptyPipeline()
-{
-    Cleanup();
-}
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//
-// Main pipeline interface methods called by the alpine interface.
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-void
-EmptyPipeline::Initialize(const conduit::Node &options)
-{
-#if PARALLEL
-    if(!options.has_child("mpi_comm") ||
-       !options["mpi_comm"].dtype().is_integer())
-    {
-        ALPINE_ERROR("Missing Alpine::Open options missing MPI communicator (mpi_comm)");
-    }
-#endif
-
-    m_pipeline_options = options;
-}
-
-
-//-----------------------------------------------------------------------------
-void
-EmptyPipeline::Cleanup()
-{
-
-}
-
-//-----------------------------------------------------------------------------
-void
-EmptyPipeline::Publish(const conduit::Node &data)
-{
-    Node verify_info;
-    bool verify_ok = conduit::blueprint::mesh::verify(data,verify_info);
-
-#if PARALLEL
-
-    MPI_Comm mpi_comm = MPI_Comm_f2c(m_pipeline_options["mpi_comm"].to_int());
-
-    // parallel reduce to find if there were any verify errors across mpi tasks
-    // use an mpi sum to check if all is ok
-    Node n_src, n_reduce;
-
-    if(verify_ok)
-        n_src = (int)0;
-    else
-        n_src = (int)1;
-
-    conduit::relay::mpi::all_reduce(n_src,
-                                    n_reduce,
-                                    MPI_INT,
-                                    MPI_SUM,
-                                    mpi_comm);
-
-    int num_failures = n_reduce.value();
-    if(num_failures != 0)
-    {
-        ALPINE_ERROR("Mesh Blueprint Verify failed on "  
-                       << num_failures
-                       << " MPI Tasks");
-        
-        // you could use mpi to find out where things went wrong ...
-    }
-
     
-    
-#else
-    if(!verify_ok)
-    {
-         ALPINE_ERROR("Mesh Blueprint Verify failed!"
-                        << std::endl
-                        << verify_info.to_json());
-    }
-#endif
+//-----------------------------------------------------------------------------
+Data::~Data()
+{
+        // empty
+}
 
-    // create our own tree, with all data zero copied.
-    m_data.set_external(data);
+//-----------------------------------------------------------------------------
+void *
+Data::data_ptr()
+{
+    return m_data_ptr;
 }
 
 //-----------------------------------------------------------------------------
 void
-EmptyPipeline::Execute(const conduit::Node &actions)
+Data::set_data_ptr(void *data_ptr)
 {
-    // Loop over the actions
-    for (int i = 0; i < actions.number_of_children(); ++i)
-    {
-        const Node &action = actions.child(i);
-        string action_name = action["action"].as_string();
+    m_data_ptr = data_ptr;
+}
 
-        ALPINE_INFO("Executing " << action_name);
-
-        // implement action
-    }
+//-----------------------------------------------------------------------------
+const void *
+Data::data_ptr() const
+{
+    return m_data_ptr;
+}
+//-----------------------------------------------------------------------------
+void
+Data::info(Node &out) const
+{
+    out.reset();
+    ostringstream oss;
+    oss << m_data_ptr;
+    out["data_ptr"] = oss.str();
 }
 
 
 
+//-----------------------------------------------------------------------------
+std::string
+Data::to_json() const
+{
+    Node out;
+    info(out);
+    ostringstream oss;
+    out.to_json_stream(oss);
+    return oss.str();
+}
 
+//-----------------------------------------------------------------------------
+void
+Data::print() const
+{
+    ALPINE_INFO(to_json());
+}
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end alpine::flow --
+//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------

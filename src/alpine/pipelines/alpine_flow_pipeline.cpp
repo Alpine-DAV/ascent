@@ -45,11 +45,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_empty_pipeline.cpp
+/// file: alpine_flow_pipeline.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "alpine_empty_pipeline.hpp"
+#include "alpine_flow_pipeline.hpp"
 
 // standard lib includes
 #include <string.h>
@@ -67,6 +67,9 @@
 // -- conduit relay mpi
 #include <conduit_relay_mpi.hpp>
 #endif
+
+#include <alpine_flow.hpp>
+#include <alpine_flow_pipeline_filters.hpp>
 
 using namespace conduit;
 using namespace std;
@@ -87,14 +90,14 @@ namespace alpine
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-EmptyPipeline::EmptyPipeline()
+FlowPipeline::FlowPipeline()
 :Pipeline()
 {
-
+    flow::filters::register_builtin();
 }
 
 //-----------------------------------------------------------------------------
-EmptyPipeline::~EmptyPipeline()
+FlowPipeline::~FlowPipeline()
 {
     Cleanup();
 }
@@ -109,7 +112,7 @@ EmptyPipeline::~EmptyPipeline()
 
 //-----------------------------------------------------------------------------
 void
-EmptyPipeline::Initialize(const conduit::Node &options)
+FlowPipeline::Initialize(const conduit::Node &options)
 {
 #if PARALLEL
     if(!options.has_child("mpi_comm") ||
@@ -120,70 +123,48 @@ EmptyPipeline::Initialize(const conduit::Node &options)
 #endif
 
     m_pipeline_options = options;
+    
+    // standard flow filters
+    flow::filters::register_builtin();
+    // filters for apline flow pipeline.
+    pipeline::flow::filters::register_builtin();
 }
 
 
 //-----------------------------------------------------------------------------
 void
-EmptyPipeline::Cleanup()
+FlowPipeline::Cleanup()
 {
 
 }
 
 //-----------------------------------------------------------------------------
 void
-EmptyPipeline::Publish(const conduit::Node &data)
+FlowPipeline::Publish(const conduit::Node &data)
 {
-    Node verify_info;
-    bool verify_ok = conduit::blueprint::mesh::verify(data,verify_info);
-
-#if PARALLEL
-
-    MPI_Comm mpi_comm = MPI_Comm_f2c(m_pipeline_options["mpi_comm"].to_int());
-
-    // parallel reduce to find if there were any verify errors across mpi tasks
-    // use an mpi sum to check if all is ok
-    Node n_src, n_reduce;
-
-    if(verify_ok)
-        n_src = (int)0;
-    else
-        n_src = (int)1;
-
-    conduit::relay::mpi::all_reduce(n_src,
-                                    n_reduce,
-                                    MPI_INT,
-                                    MPI_SUM,
-                                    mpi_comm);
-
-    int num_failures = n_reduce.value();
-    if(num_failures != 0)
-    {
-        ALPINE_ERROR("Mesh Blueprint Verify failed on "  
-                       << num_failures
-                       << " MPI Tasks");
-        
-        // you could use mpi to find out where things went wrong ...
-    }
-
-    
-    
-#else
-    if(!verify_ok)
-    {
-         ALPINE_ERROR("Mesh Blueprint Verify failed!"
-                        << std::endl
-                        << verify_info.to_json());
-    }
-#endif
-
     // create our own tree, with all data zero copied.
     m_data.set_external(data);
+    
+    // note: if the reg entry for data was already added
+    // the set_external updates everything,
+    // we don't need to remove and re-add.
+    if(!w.registry().has_entry("_alpine_input_data"))
+    {
+        w.registry().add<Node>("_alpine_input_data",
+                               &m_data);
+    }
+
+    if(!w.graph().has_filter(":source"))
+    {
+       Node p;
+       p["entry"] = "_alpine_input_data";
+       w.graph().add_filter("registry_source",":source",p);
+    }
 }
 
 //-----------------------------------------------------------------------------
 void
-EmptyPipeline::Execute(const conduit::Node &actions)
+FlowPipeline::Execute(const conduit::Node &actions)
 {
     // Loop over the actions
     for (int i = 0; i < actions.number_of_children(); ++i)
@@ -193,7 +174,68 @@ EmptyPipeline::Execute(const conduit::Node &actions)
 
         ALPINE_INFO("Executing " << action_name);
 
-        // implement action
+        // implement actions
+
+        if(action_name == "add_filter")
+        {
+            if(action.has_child("params"))
+            {
+                w.graph().add_filter(action["type_name"].as_string(),
+                                     action["name"].as_string(),
+                                     action["params"]);
+            }
+            else
+            {
+                w.graph().add_filter(action["type_name"].as_string(),
+                                     action["name"].as_string());
+            }
+        }
+        else if( action_name == "add_filters")
+        {
+            w.graph().add_filters(action["filters"]);
+        }
+        else if( action_name == "connect")
+        {
+            if(action.has_child("port"))
+            {
+                w.graph().connect(action["src"].as_string(),
+                                  action["dest"].as_string(),
+                                  action["port"].as_string());
+            }
+            else
+            {
+                // if no port, assume input 0
+                w.graph().connect(action["src"].as_string(),
+                                  action["dest"].as_string(),
+                                  0);
+            }
+        }
+        else if( action_name == "add_connections")
+        {
+            w.graph().add_connections(action["connections"]);
+        }
+        else if( action_name == "add_graph")
+        {
+            w.graph().add_graph(action["graph"]);
+        }
+        else if( action_name == "load_graph")
+        {
+            w.graph().load(action["path"].as_string());
+        }
+        else if( action_name == "save_graph")
+        {
+            w.graph().save(action["path"].as_string());
+        }
+        else if( action_name == "execute")
+        {
+            w.execute();
+            w.registry().reset();
+        }
+        else if( action_name == "reset")
+        {
+            w.reset();
+        }
+        
     }
 }
 
