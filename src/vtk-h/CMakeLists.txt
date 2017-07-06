@@ -56,19 +56,21 @@ set(vtkh_rendering_sources
       rendering/vtkh_renderer_volume.cpp
     )
 
-set(vtkh_marching_cubes_headers
+set(vtkh_filter_headers
      vtkh_marching_cubes.hpp
+     vtkh_clip.hpp
    )
 
-set(vtkh_marching_cubes_sources
+set(vtkh_filter_sources
      vtkh_marching_cubes.cpp
+     vtkh_clip.cpp
    )
 
 list (APPEND vtkh_sources ${vtkh_rendering_sources})
 list (APPEND vtkh_headers ${vtkh_rendering_headers})
 
-list (APPEND vtkh_sources ${vtkh_marching_cubes_sources})
-list (APPEND vtkh_headers ${vtkh_marching_cubes_headers})
+list (APPEND vtkh_sources ${vtkh_filter_sources})
+list (APPEND vtkh_headers ${vtkh_filter_headers})
 
 ##############################
 # Add lodepng 

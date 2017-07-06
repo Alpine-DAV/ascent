@@ -304,4 +304,14 @@ vtkhDataSet::GetGlobalRange(const std::string &field_name) const
   return range;
 }
 
+void 
+vtkhDataSet::PrintSummary(std::ostream &stream) const
+{
+  for(size_t dom = 0; dom < m_domains.size(); ++dom)
+  {
+    stream<<"Domain "<<m_domain_ids[dom]<<"\n";
+    m_domains[dom].PrintSummary(stream);
+  }
+}
+
 } // namspace vtkh
