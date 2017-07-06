@@ -105,6 +105,54 @@ namespace filters
 {
 
 
+//-----------------------------------------------------------------------------
+EnsureVTKH::EnsureVTKH()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+EnsureVTKH::~EnsureVTKH()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+EnsureVTKH::declare_interface(Node &i)
+{
+    i["type_name"]   = "ensure_vtkh";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+void 
+EnsureVTKH::execute()
+{
+
+    
+    if(input(0).check_type<vtkm::cont::DataSet>())
+    {
+        vtkm::cont::DataSet *vtkm_data = input<vtkm::cont::DataSet>(0);
+        vtkh::vtkhDataSet   *res = new  vtkh::vtkhDataSet;
+        // should be MPI_TASK
+        res->AddDomain(*vtkm_data,0);
+        
+        set_output<vtkh::vtkhDataSet>(res);
+    }
+    else if(input(0).check_type<vtkh::vtkhDataSet>())
+    {
+        // ok
+        set_output(input(0));
+    }
+    else
+    {
+        ALPINE_ERROR("ensure_vtkh input must be a vtk-m or vtk-h dataset");
+    }
+}
+
 
 //-----------------------------------------------------------------------------
 VTKHRayTracer::VTKHRayTracer()
@@ -144,26 +192,72 @@ VTKHRayTracer::verify_params(const conduit::Node &params,
 void 
 VTKHRayTracer::execute()
 {
-
+    if(!input(0).check_type<vtkh::vtkhDataSet>())
+    {
+        ALPINE_ERROR("vtkh_raytracer input must be a vtk-h dataset");
+    }
+ 
     ALPINE_INFO("Doing the render!");
     
-    if(!input(0).check_type<vtkm::cont::DataSet>())
-    {
-        ALPINE_ERROR("vtkh_raytracer input must be a vtk-m dataset");
-    }
-    
-    // create vtk-h from vtkm
-    // TODO, use "ensure_vtkh" style filter 
-    vtkm::cont::DataSet *vtkm_data = input<vtkm::cont::DataSet>(0);
-
-    vtkh::vtkhDataSet data_set;
-    data_set.AddDomain(*vtkm_data,0);
+    vtkh::vtkhDataSet *data = input<vtkh::vtkhDataSet>(0);
     vtkh::vtkhRayTracer ray_tracer;  
-    ray_tracer.SetInput(&data_set);
+    ray_tracer.SetInput(data);
     ray_tracer.SetField("braid"); 
     ray_tracer.Update();
     
 }
+
+
+//-----------------------------------------------------------------------------
+VTKHMarchingCubes::VTKHMarchingCubes()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHMarchingCubes::~VTKHMarchingCubes()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHMarchingCubes::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_marchingcubes";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHMarchingCubes::verify_params(const conduit::Node &params,
+                                   conduit::Node &info)
+{
+    info.reset();   
+    bool res = true;
+    // TODO
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+VTKHMarchingCubes::execute()
+{
+
+    ALPINE_INFO("Marching the cubes!");
+    
+    if(!input(0).check_type<vtkh::vtkhDataSet>())
+    {
+        ALPINE_ERROR("vtkh_marchingcubes input must be a vtk-h dataset");
+    }
+    
+    // TODO!
+    set_output(input(0));
+}
+
 
 
 

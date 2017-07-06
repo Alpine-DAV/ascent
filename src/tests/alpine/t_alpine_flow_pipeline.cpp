@@ -393,8 +393,9 @@ TEST(alpine_flow_pipeline, test_flow_vtkh_render)
 
     graph["filters/verify/type_name"] = "blueprint_verify";
     graph["filters/verify/params/protocol"] = "mesh";
-    graph["filters/vtkm_data/type_name"] = "ensure_vtkm";
-    graph["filters/vtkh_render/type_name"] = "vtkh_raytracer";
+    graph["filters/vtkm_data/type_name"]    = "ensure_vtkm";
+    graph["filters/vtkh_data/type_name"]    = "ensure_vtkh";
+    graph["filters/vtkh_render/type_name"]  = "vtkh_raytracer";
 
     graph["connections"].append();
     graph["connections"][0]["src"] = ":source";
@@ -406,7 +407,11 @@ TEST(alpine_flow_pipeline, test_flow_vtkh_render)
 
     graph["connections"].append();
     graph["connections"][2]["src"] = "vtkm_data";
-    graph["connections"][2]["dest"] = "vtkh_render";
+    graph["connections"][2]["dest"] = "vtkh_data";
+
+    graph["connections"].append();
+    graph["connections"][3]["src"] = "vtkh_data";
+    graph["connections"][3]["dest"] = "vtkh_render";
 
     actions.append()["action"] = "execute";
     actions.print();

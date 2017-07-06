@@ -89,6 +89,17 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+class EnsureVTKH : public alpine::flow::Filter
+{
+public:
+    EnsureVTKH();
+   ~EnsureVTKH();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class VTKHRayTracer : public alpine::flow::Filter
 {
 public:
@@ -100,6 +111,21 @@ public:
                                  conduit::Node &info);
     virtual void   execute();
 };
+
+//-----------------------------------------------------------------------------
+class VTKHMarchingCubes : public alpine::flow::Filter
+{
+public:
+    VTKHMarchingCubes();
+   ~VTKHMarchingCubes();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+
 
 
 };
