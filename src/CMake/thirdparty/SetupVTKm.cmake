@@ -62,7 +62,7 @@ if(TBB_DIR)
     set(ENV{TBB_ROOT} ${TBB_DIR})
 endif()
 
-find_package(VTKm REQUIRED OPTIONAL_COMPONENTS Rendering)
+find_package(VTKm REQUIRED OPTIONAL_COMPONENTS Rendering Serial CUDA TBB)
 message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
 
 set(VTKM_FOUND TRUE)

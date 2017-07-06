@@ -114,11 +114,15 @@ include(CMake/SetupIncludes.cmake)
 ################################
 add_subdirectory(thirdparty_builtin)
 
-
 ################################
 # Add our libs
 ################################
 add_subdirectory(alpine)
+
+################################
+# Add vtk-h 
+################################
+add_subdirectory(vtk-h)
 
 ################################
 # Add our tests

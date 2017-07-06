@@ -57,5 +57,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 add_subdirectory("thirdparty")
 # add alpine tests
 add_subdirectory("alpine")
+# add vtk-h tests
+add_subdirectory("vtk-h")
 
 
