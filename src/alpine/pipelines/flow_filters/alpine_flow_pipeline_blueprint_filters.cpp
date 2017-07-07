@@ -69,8 +69,7 @@
 
 #if defined(ALPINE_VTKM_ENABLED)
 #include <vtkm/cont/DataSet.h>
-// stealing data adaptor logic for now ...
-#include <alpine_vtkm_pipeline.hpp>
+#include <alpine_data_adapter.hpp>
 #endif
 
 using namespace conduit;
@@ -210,13 +209,8 @@ EnsureVTKM::execute()
     else if(input(0).check_type<Node>())
     {
         // convert from conduit to vtkm
-        
         const Node *n_input = input<Node>(0);
-        
-        // TODO: need to support the case where we don't give a field name ...
-        vtkm::cont::DataSet  *res = VTKMPipeline::DataAdapter::BlueprintToVTKmDataSet(*n_input,
-                                                                                      "braid");
-        res->PrintSummary(std::cout);
+        vtkm::cont::DataSet  *res = DataAdapter::BlueprintToVTKmDataSet(*n_input);
         set_output<vtkm::cont::DataSet>(res);
     }
     else

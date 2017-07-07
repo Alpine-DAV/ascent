@@ -386,6 +386,18 @@ TEST(alpine_flow_pipeline, test_flow_vtkm)
 //-----------------------------------------------------------------------------
 TEST(alpine_flow_pipeline, test_flow_vtkh_render)
 {   
+    
+    Node n;
+    alpine::about(n);
+    
+    // vtk-h requires vtk-m, don't run this test if we don't have vtk-m support
+    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    {
+        
+        return;
+    }
+    
+    
     Node actions;
     actions.append();
     actions[0]["action"] = "add_graph";
@@ -393,24 +405,99 @@ TEST(alpine_flow_pipeline, test_flow_vtkh_render)
 
     graph["filters/verify/type_name"] = "blueprint_verify";
     graph["filters/verify/params/protocol"] = "mesh";
-    graph["filters/vtkm_data/type_name"]    = "ensure_vtkm";
-    graph["filters/vtkh_data/type_name"]    = "ensure_vtkh";
-    graph["filters/vtkh_render/type_name"]  = "vtkh_raytracer";
 
+    graph["filters/vtkh_data/type_name"]    = "ensure_vtkh";
+
+    graph["filters/vtkh_render/type_name"]  = "vtkh_raytracer";
+    graph["filters/vtkh_render/params/field"]  = "braid";
+
+    
     graph["connections"].append();
     graph["connections"][0]["src"] = ":source";
     graph["connections"][0]["dest"] = "verify";
 
     graph["connections"].append();
     graph["connections"][1]["src"] = "verify";
-    graph["connections"][1]["dest"] = "vtkm_data";
+    graph["connections"][1]["dest"] = "vtkh_data";
 
     graph["connections"].append();
-    graph["connections"][2]["src"] = "vtkm_data";
-    graph["connections"][2]["dest"] = "vtkh_data";
+    graph["connections"][2]["src"] = "vtkh_data";
+    graph["connections"][2]["dest"] = "vtkh_render";
+
+    actions.append()["action"] = "execute";
+    actions.print();
+
+    // we want the "flow" pipeline
+    Node open_opts;
+    open_opts["pipeline/type"] = "flow";
+
+    //
+    // Create example mesh.
+    //
+    Node data;
+    conduit::blueprint::mesh::examples::braid("hexs",10,10,10,data);
+    
+    //
+    // Run Alpine
+    //
+    Alpine alpine;
+    alpine.Open(open_opts);
+    alpine.Publish(data);
+    alpine.Execute(actions);
+    alpine.Close();
+    
+}
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow_pipeline, test_flow_vtkh_filter)
+{   
+    
+    Node n;
+    alpine::about(n);
+    
+    // vtk-h requires vtk-m, don't run this test if we don't have vtk-m support
+    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    {
+        
+        return;
+    }
+    
+    
+    Node actions;
+    actions.append();
+    actions[0]["action"] = "add_graph";
+    Node &graph = actions[0]["graph"];
+
+    graph["filters/verify/type_name"] = "blueprint_verify";
+    graph["filters/verify/params/protocol"] = "mesh";
+
+    graph["filters/vtkh_data/type_name"]    = "ensure_vtkh";
+
+    graph["filters/vtkh_isov/type_name"]  = "vtkh_marchingcubes";
+    graph["filters/vtkh_isov/params/field"]  = "braid";
+    
+    Node &isov = graph["filters/vtkh_isov/params/iso_values"];
+    isov.set_float64(0.0);
+
+    graph["filters/vtkh_render/type_name"]  = "vtkh_raytracer";
+    graph["filters/vtkh_render/params/field"]  = "braid";
+
+    
+    graph["connections"].append();
+    graph["connections"][0]["src"] = ":source";
+    graph["connections"][0]["dest"] = "verify";
 
     graph["connections"].append();
-    graph["connections"][3]["src"] = "vtkh_data";
+    graph["connections"][1]["src"] = "verify";
+    graph["connections"][1]["dest"] = "vtkh_data";
+
+    graph["connections"].append();
+    graph["connections"][2]["src"] = "vtkh_data";
+    graph["connections"][2]["dest"] = "vtkh_isov";
+
+
+    graph["connections"].append();
+    graph["connections"][3]["src"] = "vtkh_isov";
     graph["connections"][3]["dest"] = "vtkh_render";
 
     actions.append()["action"] = "execute";
@@ -432,24 +519,11 @@ TEST(alpine_flow_pipeline, test_flow_vtkh_render)
     Alpine alpine;
     alpine.Open(open_opts);
     alpine.Publish(data);
-    
-    Node n;
-    alpine::about(n);
-
-    // expect an error if we don't have vtkm support 
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
-    {
-        EXPECT_THROW(alpine.Execute(actions),conduit::Error);
-    }
-    else
-    {
-        alpine.Execute(actions);
-    }
-
-    
+    alpine.Execute(actions);
     alpine.Close();
     
 }
+
 
 
 

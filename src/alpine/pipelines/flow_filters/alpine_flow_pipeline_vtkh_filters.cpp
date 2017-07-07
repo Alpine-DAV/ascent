@@ -71,7 +71,10 @@
 #include <vtkh.hpp>
 #include <vtkh_data_set.hpp>
 #include <rendering/vtkh_renderer_ray_tracer.hpp>
+#include <vtkh_marching_cubes.hpp>
 #include <vtkm/cont/DataSet.h>
+
+#include <alpine_data_adapter.hpp>
 
 #endif
 
@@ -131,25 +134,29 @@ EnsureVTKH::declare_interface(Node &i)
 void 
 EnsureVTKH::execute()
 {
-
-    
-    if(input(0).check_type<vtkm::cont::DataSet>())
+    if(input(0).check_type<Node>())
     {
-        vtkm::cont::DataSet *vtkm_data = input<vtkm::cont::DataSet>(0);
-        vtkh::vtkhDataSet   *res = new  vtkh::vtkhDataSet;
-        // should be MPI_TASK
-        res->AddDomain(*vtkm_data,0);
-        
+        // convert from blueprint to vtk-h
+        const Node *n_input = input<Node>(0);
+        vtkh::vtkhDataSet *res = DataAdapter::BlueprintToVTKHDataSet(*n_input);
+        set_output<vtkh::vtkhDataSet>(res);
+
+    }
+    else if(input(0).check_type<vtkm::cont::DataSet>())
+    {
+        // wrap our vtk-m dataset in vtk-h
+        vtkh::vtkhDataSet *res = DataAdapter::VTKmDataSetToVTKHDataSet(input<vtkm::cont::DataSet>(0));
         set_output<vtkh::vtkhDataSet>(res);
     }
     else if(input(0).check_type<vtkh::vtkhDataSet>())
     {
-        // ok
+        // our data is already vtkh, pass though
         set_output(input(0));
     }
     else
     {
-        ALPINE_ERROR("ensure_vtkh input must be a vtk-m or vtk-h dataset");
+        ALPINE_ERROR("ensure_vtkh input must be a mesh blueprint "
+                     "conforming conduit::Node, a vtk-m dataset, or vtk-h dataset");
     }
 }
 
@@ -183,7 +190,12 @@ VTKHRayTracer::verify_params(const conduit::Node &params,
 {
     info.reset();   
     bool res = true;
-    // TODO
+    
+    if(! params.has_child("field") || 
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+    }
     return res;
 }
 
@@ -202,7 +214,7 @@ VTKHRayTracer::execute()
     vtkh::vtkhDataSet *data = input<vtkh::vtkhDataSet>(0);
     vtkh::vtkhRayTracer ray_tracer;  
     ray_tracer.SetInput(data);
-    ray_tracer.SetField("braid"); 
+    ray_tracer.SetField(params()["field"].as_string());
     ray_tracer.Update();
     
 }
@@ -233,11 +245,23 @@ VTKHMarchingCubes::declare_interface(Node &i)
 //-----------------------------------------------------------------------------
 bool
 VTKHMarchingCubes::verify_params(const conduit::Node &params,
-                                   conduit::Node &info)
+                                 conduit::Node &info)
 {
-    info.reset();   
+    info.reset();
     bool res = true;
-    // TODO
+    
+    if(! params.has_child("field") || 
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+    }
+    
+    if(! params.has_child("iso_values") || 
+       ! params["iso_values"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'iso_values'";
+    }
+    
     return res;
 }
 
@@ -253,9 +277,33 @@ VTKHMarchingCubes::execute()
     {
         ALPINE_ERROR("vtkh_marchingcubes input must be a vtk-h dataset");
     }
+
+    std::string field_name = params()["field"].as_string();
     
-    // TODO!
-    set_output(input(0));
+    vtkh::vtkhDataSet *data = input<vtkh::vtkhDataSet>(0);
+    vtkh::vtkhMarchingCubes marcher;
+    
+
+    
+    marcher.SetInput(data);
+    marcher.SetField(field_name);
+
+    const Node &n_iso_vals = params()["iso_values"];
+
+    // convert to contig doubles
+    Node n_iso_vals_dbls;
+    n_iso_vals.to_float64_array(n_iso_vals_dbls);
+    
+    marcher.SetIsoValues(n_iso_vals.as_double_ptr(),
+                         n_iso_vals.dtype().number_of_elements());
+
+    // TODO: do we need to map all other fields?
+    marcher.AddMapField(field_name);
+    marcher.Update();
+
+    vtkh::vtkhDataSet *iso_output = marcher.GetOutput();
+    
+    set_output<vtkh::vtkhDataSet>(iso_output);
 }
 
 

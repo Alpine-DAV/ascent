@@ -69,6 +69,8 @@ set(alpine_sources
     # alpine interface
     alpine.cpp
     c/alpine_c.cpp
+    # data adaptor
+    pipelines/alpine_data_adapter.cpp
     # pipelines
     alpine_pipeline.cpp
     pipelines/alpine_empty_pipeline.cpp
@@ -89,6 +91,8 @@ set(alpine_headers
     alpine_exports.h
     alpine.hpp
     c/alpine.h
+    # data adaptor
+    pipelines/alpine_data_adapter.hpp
     # pipelines
     alpine_pipeline.hpp
     pipelines/alpine_empty_pipeline.hpp
