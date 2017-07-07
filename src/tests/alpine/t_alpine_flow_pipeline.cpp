@@ -147,10 +147,10 @@ TEST(alpine_flow_pipeline, test_flow_pipeline)
     // Run Alpine
     //
     Alpine alpine;
-    alpine.Open(open_opts);
-    alpine.Publish(data);
-    alpine.Execute(actions);
-    alpine.Close();
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 }
 
 
@@ -188,26 +188,26 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_reuse_network)
     // Run Alpine
     //
     Alpine alpine;
-    alpine.Open(open_opts);
+    alpine.open(open_opts);
 
     //
     // Create example mesh.
     //
     Node data;
     conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
-    alpine.Publish(data);
-    alpine.Execute(actions);
+    alpine.publish(data);
+    alpine.execute(actions);
 
     // publish new data, but use the same data flow network.
     conduit::blueprint::mesh::examples::braid("quads",50,50,0,data);
-    alpine.Publish(data);
+    alpine.publish(data);
     actions.reset();
     actions.append()["action"] = "execute";
 
-    alpine.Publish(data);
-    alpine.Execute(actions);
+    alpine.publish(data);
+    alpine.execute(actions);
     
-    alpine.Close();
+    alpine.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -264,10 +264,10 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_relay_save)
     // Run Alpine
     //
     Alpine alpine;
-    alpine.Open(open_opts);
-    alpine.Publish(data);
-    alpine.Execute(actions);    
-    alpine.Close();
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);    
+    alpine.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -304,17 +304,17 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_blueprint_verify)
     // Run Alpine
     //
     Alpine alpine;
-    alpine.Open(open_opts);
-    alpine.Publish(data);
-    alpine.Execute(actions);
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
 
     // catch exception ... when verify fails
     
     data.reset();
-    alpine.Publish(data);
-    EXPECT_THROW(alpine.Execute(actions),conduit::Error);
+    alpine.publish(data);
+    EXPECT_THROW(alpine.execute(actions),conduit::Error);
     
-    alpine.Close();
+    alpine.close();
     
 }
 
@@ -362,8 +362,8 @@ TEST(alpine_flow_pipeline, test_flow_vtkm)
     // Run Alpine
     //
     Alpine alpine;
-    alpine.Open(open_opts);
-    alpine.Publish(data);
+    alpine.open(open_opts);
+    alpine.publish(data);
     
     Node n;
     alpine::about(n);
@@ -371,15 +371,15 @@ TEST(alpine_flow_pipeline, test_flow_vtkm)
     // expect an error if we don't have vtkm support 
     if(n["pipelines/vtkm/status"].as_string() == "disabled")
     {
-        EXPECT_THROW(alpine.Execute(actions),conduit::Error);
+        EXPECT_THROW(alpine.execute(actions),conduit::Error);
     }
     else
     {
-        alpine.Execute(actions);
+        alpine.execute(actions);
     }
 
     
-    alpine.Close();
+    alpine.close();
     
 }
 
@@ -441,10 +441,10 @@ TEST(alpine_flow_pipeline, test_flow_vtkh_render)
     // Run Alpine
     //
     Alpine alpine;
-    alpine.Open(open_opts);
-    alpine.Publish(data);
-    alpine.Execute(actions);
-    alpine.Close();
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
     
 }
 
@@ -517,10 +517,10 @@ TEST(alpine_flow_pipeline, test_flow_vtkh_filter)
     // Run Alpine
     //
     Alpine alpine;
-    alpine.Open(open_opts);
-    alpine.Publish(data);
-    alpine.Execute(actions);
-    alpine.Close();
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
     
 }
 
@@ -566,16 +566,16 @@ TEST(alpine_flow_pipeline, test_flow_bulk_actions_1)
         // Run Alpine
         //
         Alpine alpine;
-        alpine.Open(open_opts);
+        alpine.open(open_opts);
 
         //
         // Create example mesh.
         //
         Node data;
         conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
-        alpine.Publish(data);
-        alpine.Execute(actions);
-        alpine.Close();
+        alpine.publish(data);
+        alpine.execute(actions);
+        alpine.close();
     
 }
 
@@ -614,16 +614,16 @@ TEST(alpine_flow_pipeline, test_flow_bulk_actions_2)
         // Run Alpine
         //
         Alpine alpine;
-        alpine.Open(open_opts);
+        alpine.open(open_opts);
 
         //
         // Create example mesh.
         //
         Node data;
         conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
-        alpine.Publish(data);
-        alpine.Execute(actions);
-        alpine.Close();
+        alpine.publish(data);
+        alpine.execute(actions);
+        alpine.close();
     
 }
 
@@ -669,25 +669,25 @@ TEST(alpine_flow_pipeline, test_flow_load_and_save_graph)
         // Run Alpine
         //
         Alpine alpine;
-        alpine.Open(open_opts);
+        alpine.open(open_opts);
 
         //
         // Create example mesh.
         //
         Node data;
         conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
-        alpine.Publish(data);
-        alpine.Execute(actions);
+        alpine.publish(data);
+        alpine.execute(actions);
         
         actions.reset();
         actions.append()["action"] = "reset";
         actions.append();
         actions[1]["action"] = "load_graph";
         actions[1]["path"] = graph_ofile;
-        alpine.Execute(actions);
+        alpine.execute(actions);
     
         
-        alpine.Close();
+        alpine.close();
     
 }
 

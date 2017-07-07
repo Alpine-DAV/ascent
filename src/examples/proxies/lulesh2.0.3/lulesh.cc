@@ -2853,7 +2853,7 @@ int main(int argc, char *argv[])
    //
    // setup Alpine In-situ rendering.
    //
-    Alpine sman;
+    Alpine alpine;
     Node alpine_opts;
 
 #if USE_MPI
@@ -2862,7 +2862,7 @@ int main(int argc, char *argv[])
     alpine_opts["pipeline/type"] = "vtkm";
     alpine_opts["pipeline/backend"] = "serial";
     
-    sman.Open(alpine_opts);
+    alpine.open(alpine_opts);
    // BEGIN timestep to solution */
 #if USE_MPI   
    double start = MPI_Wtime();
@@ -2901,11 +2901,11 @@ int main(int argc, char *argv[])
             add["render_options/width"]  = 1024;
             add["render_options/height"] = 1024;
             draw["action"] = "draw_plots";
-            sman.Publish(locDom->visitNode());
-            sman.Execute(actions);
+            alpine.publish(locDom->visitNode());
+            alpine.execute(actions);
       }
    }
-   sman.Close();
+   alpine.close();
    
    /*--------------------------------------------------------------------------
     *--------------------------------------------------------------------------

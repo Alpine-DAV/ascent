@@ -134,16 +134,16 @@ TEST(alpine_mpi_render_2d, test_render_mpi_2d_default_pipeline)
     // Run Alpine
     //
     
-    Alpine sman;
+    Alpine alpine;
 
     Node alpine_opts;
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
     alpine_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    sman.Open(alpine_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    alpine.open(alpine_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
    
     MPI_Barrier(comm);
     // check that we created an image

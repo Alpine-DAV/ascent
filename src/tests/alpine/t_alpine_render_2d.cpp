@@ -109,12 +109,12 @@ TEST(alpine_render_2d, test_render_2d_default_pipeline)
     // Run Alpine
     //
     
-    Alpine sman;
+    Alpine alpine;
 
-    sman.Open();
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    alpine.open();
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
@@ -181,11 +181,11 @@ TEST(alpine_render_2d, test_render_2d_render_vtkm_serial_backend)
     open_opts["pipeline/type"] = "vtkm";
     open_opts["pipeline/backend"] = "serial";
     
-    Alpine sman;
-    sman.Open(open_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    Alpine alpine;
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));

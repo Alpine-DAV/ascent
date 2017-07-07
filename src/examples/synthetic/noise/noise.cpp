@@ -435,7 +435,7 @@ int main(int argc, char** argv)
   alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
   alpine_opts["pipeline/type"] = "vtkm";
-  alpine.Open(alpine_opts);
+  alpine.open(alpine_opts);
 
 
   conduit::Node alpine_node; 
@@ -486,8 +486,8 @@ int main(int argc, char** argv)
         add["render_options/width"]  = 1024;
         add["render_options/height"] = 1024;
         draw["action"] = "draw_plots";
-        alpine.Publish(alpine_node);
-        alpine.Execute(actions);
+        alpine.publish(alpine_node);
+        alpine.execute(actions);
       } //for each time step
   
 
@@ -496,6 +496,6 @@ int main(int argc, char** argv)
   //
   open_simplex_noise_free(ctx_nodal);
   open_simplex_noise_free(ctx_zonal);
-  alpine.Close();
+  alpine.close();
   Finalize();
 }

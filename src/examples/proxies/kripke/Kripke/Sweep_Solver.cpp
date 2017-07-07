@@ -22,7 +22,7 @@
 using namespace conduit;
 using alpine::Alpine;
 
-void writeAlpineData(Alpine &sman, Grid_Data *grid_data, int timeStep)
+void writeAlpineData(Alpine &alpine, Grid_Data *grid_data, int timeStep)
 {
   
   grid_data->kernel->LTimes(grid_data);
@@ -109,8 +109,8 @@ void writeAlpineData(Alpine &sman, Grid_Data *grid_data, int timeStep)
     conduit::Node &draw = actions.append();
     draw["action"] = "draw_plots";
 
-    sman.Publish(data);
-    sman.Execute(actions);
+    alpine.publish(data);
+    alpine.execute(actions);
 }
 
 /**
@@ -123,8 +123,8 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
   alpine_opts["pipeline/type"] = "vtkm";
   alpine_opts["pipeline/backend"] = "serial";
 
-  Alpine sman;
-  sman.Open(alpine_opts);
+  Alpine alpine;
+  alpine.open(alpine_opts);
 
   conduit::Node testNode;
   Kernel *kernel = grid_data->kernel;
@@ -203,14 +203,14 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
     }
    }//end main loop timing
     double part = grid_data->particleEdit();
-    writeAlpineData(sman, grid_data, iter);
+    writeAlpineData(alpine, grid_data, iter);
     if(mpi_rank==0){
       printf("iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
     }
     part_last = part;
   }
   
-  sman.Close();
+  alpine.close();
   }//Solve block
   
   //Alpine: we don't want to execute all loop orderings, so we will just exit;
