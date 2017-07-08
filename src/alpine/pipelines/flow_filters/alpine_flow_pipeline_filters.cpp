@@ -60,6 +60,7 @@
 
 #include <alpine_flow_pipeline_relay_filters.hpp>
 #include <alpine_flow_pipeline_blueprint_filters.hpp>
+#include <alpine_flow_pipeline_vtkh_filters.hpp>
 
 
 using namespace alpine::flow;
@@ -115,6 +116,24 @@ register_builtin()
     {
         Workspace::register_filter_type<EnsureVTKM>();
     }
+
+    if(!Workspace::supports_filter_type<EnsureVTKH>())
+    {
+        Workspace::register_filter_type<EnsureVTKH>();
+    }
+
+ 
+    if(!Workspace::supports_filter_type<VTKHRayTracer>())
+    {
+        Workspace::register_filter_type<VTKHRayTracer>();
+    }
+
+    if(!Workspace::supports_filter_type<VTKHMarchingCubes>())
+    {
+        Workspace::register_filter_type<VTKHMarchingCubes>();
+    }
+
+
     
 }
 

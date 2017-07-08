@@ -107,11 +107,11 @@ TEST(alpine_test_3d, test_3d_parallel_render_default_pipeline)
     //
     // Run Alpine
     //
-    Alpine sman;
-    sman.Open(open_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    Alpine alpine;
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 }
 
 //-----------------------------------------------------------------------------

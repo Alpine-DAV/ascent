@@ -92,7 +92,7 @@ void vtkhMarchingCubes::DoExecute()
   vtkm::filter::MarchingCubes marcher;
 
   marcher.SetIsoValues(m_iso_values);
-
+ 
   const int num_domains = this->m_input->GetNumberOfDomains(); 
 
   for(int i = 0; i < num_domains; ++i)

@@ -119,11 +119,11 @@ TEST(alpine_render_3d, test_render_3d_render_default_pipeline)
     // Run Alpine
     //
     
-    Alpine sman;
-    sman.Open();
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    Alpine alpine;
+    alpine.open();
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
@@ -189,11 +189,11 @@ TEST(alpine_render_3d, test_render_3d_render_vtkm_serial_backend)
     Node open_opts;
     open_opts["pipeline/type"] = "vtkm";
     
-    Alpine sman;
-    sman.Open(open_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    Alpine alpine;
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
@@ -268,11 +268,11 @@ TEST(alpine_render_3d, test_render_3d_render_vtkm_tbb_backend)
     open_opts["pipeline/type"] = "vtkm";
     open_opts["pipeline/backend"] = "tbb";
     
-    Alpine sman;
-    sman.Open(open_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    Alpine alpine;
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
@@ -345,11 +345,11 @@ TEST(alpine_render_3d, test_3d_serial_render_vtkm_pipeline_cuda_backend)
     open_opts["pipeline/type"] = "vtkm";
     open_opts["pipeline/backend"] = "cuda";
     
-    Alpine sman;
-    sman.Open(open_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    Alpine alpine;
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));

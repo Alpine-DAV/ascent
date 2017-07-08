@@ -135,16 +135,16 @@ TEST(alpine_mpi_render_3d, mpi_render_3d_default_pipeline)
     // Run Alpine
     //
     
-    Alpine sman;
+    Alpine alpine;
 
     Node alpine_opts;
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
     alpine_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    sman.Open(alpine_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    alpine.open(alpine_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
     MPI_Barrier(comm);    
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
@@ -221,16 +221,16 @@ TEST(alpine_mpi_render_3d, mpi_render_3d_diy_compositor_surface)
     // Run Alpine
     //
     
-    Alpine sman;
+    Alpine alpine;
 
     Node alpine_opts;
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
     alpine_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    sman.Open(alpine_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    alpine.open(alpine_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
     MPI_Barrier(comm);    
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
@@ -307,16 +307,16 @@ TEST(alpine_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
     // Run Alpine
     //
     
-    Alpine sman;
+    Alpine alpine;
 
     Node alpine_opts;
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
     alpine_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    sman.Open(alpine_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    alpine.open(alpine_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
     MPI_Barrier(comm);    
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));

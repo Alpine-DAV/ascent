@@ -45,37 +45,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_flow_pipeline_blueprint_filters.cpp
+/// file: alpine_flow_pipeline_vtkh_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "alpine_flow_pipeline_blueprint_filters.hpp"
+#ifndef ALPINE_FLOW_PIPELINE_VTKH_FILTERS
+#define ALPINE_FLOW_PIPELINE_VTKH_FILTERS
 
-//-----------------------------------------------------------------------------
-// thirdparty includes
-//-----------------------------------------------------------------------------
+#include <alpine.hpp>
+#include <alpine_flow.hpp>
 
-// conduit includes
-#include <conduit.hpp>
-#include <conduit_relay.hpp>
-#include <conduit_blueprint.hpp>
+#include <alpine_flow_filter.hpp>
 
-//-----------------------------------------------------------------------------
-// alpine includes
-//-----------------------------------------------------------------------------
-#include <alpine_logging.hpp>
-#include <alpine_flow_graph.hpp>
-#include <alpine_flow_workspace.hpp>
-
-#if defined(ALPINE_VTKM_ENABLED)
-#include <vtkm/cont/DataSet.h>
-#include <alpine_data_adapter.hpp>
-#endif
-
-using namespace conduit;
-using namespace std;
-
-using namespace alpine::flow;
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
@@ -101,134 +82,56 @@ namespace flow
 namespace filters
 {
 
-
+//-----------------------------------------------------------------------------
+///
+/// VTK-H Filters
+///
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-BlueprintVerify::BlueprintVerify()
-:Filter()
+class EnsureVTKH : public alpine::flow::Filter
 {
-// empty
-}
-
-//-----------------------------------------------------------------------------
-BlueprintVerify::~BlueprintVerify()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-void 
-BlueprintVerify::declare_interface(Node &i)
-{
-    i["type_name"]   = "blueprint_verify";
-    i["port_names"].append() = "in";
-    i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-BlueprintVerify::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();   
-    bool res = true;
+public:
+    EnsureVTKH();
+   ~EnsureVTKH();
     
-    if(! params.has_child("protocol") || 
-       ! params["protocol"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'protocol'";
-    }
-
-    return res;
-}
-
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
 
 //-----------------------------------------------------------------------------
-void 
-BlueprintVerify::execute()
+class VTKHRayTracer : public alpine::flow::Filter
 {
-
-    if(!input(0).check_type<Node>())
-    {
-        ALPINE_ERROR("blueprint_verify input must be a conduit node");
-    }
-
-
-    std::string protocol = params()["protocol"].as_string();
-
-    Node v_info;
-    Node *n_input = input<Node>(0);
-    if(!conduit::blueprint::verify(protocol,
-                                   *n_input,
-                                   v_info))
-    {
-        ALPINE_ERROR("blueprint verify failed for protocol"
-                      << protocol << std::endl
-                      << "details:" << std::endl
-                      << v_info.to_json());
-    }
+public:
+    VTKHRayTracer();
+   ~VTKHRayTracer();
     
-    set_output<Node>(n_input);
-}
-
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
 
 //-----------------------------------------------------------------------------
-EnsureVTKM::EnsureVTKM()
-:Filter()
+class VTKHMarchingCubes : public alpine::flow::Filter
 {
-// empty
-}
-
-//-----------------------------------------------------------------------------
-EnsureVTKM::~EnsureVTKM()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-void 
-EnsureVTKM::declare_interface(Node &i)
-{
-    i["type_name"]   = "ensure_vtkm";
-    i["port_names"].append() = "in";
-    i["output_port"] = "true";
-}
-
-
-//-----------------------------------------------------------------------------
-void 
-EnsureVTKM::execute()
-{
-#if !defined(ALPINE_VTKM_ENABLED)
-        ALPINE_ERROR("alpine was not built with VTKm support!");
-#else
-    if(input(0).check_type<vtkm::cont::DataSet>())
-    {
-        set_output(input(0));
-    }
-    else if(input(0).check_type<Node>())
-    {
-        // convert from conduit to vtkm
-        const Node *n_input = input<Node>(0);
-        vtkm::cont::DataSet  *res = DataAdapter::BlueprintToVTKmDataSet(*n_input);
-        set_output<vtkm::cont::DataSet>(res);
-    }
-    else
-    {
-        ALPINE_ERROR("unsupported input type for ensure_vtkm");
-    }
-#endif
-}
+public:
+    VTKHMarchingCubes();
+   ~VTKHMarchingCubes();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
 
 
 
 
-//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end alpine::pipeline::flow::filters --
 //-----------------------------------------------------------------------------
-
 
 
 //-----------------------------------------------------------------------------
@@ -238,12 +141,12 @@ EnsureVTKM::execute()
 //-----------------------------------------------------------------------------
 
 
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end alpine::pipeline --
 //-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 };
@@ -254,4 +157,7 @@ EnsureVTKM::execute()
 
 
 
-
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------

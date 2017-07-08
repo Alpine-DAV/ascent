@@ -91,10 +91,10 @@ TEST(alpine_empty_pipeline, test_empty_pipeline)
     //
     // Run Alpine
     //
-    Alpine sman;
-    sman.Open(open_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    Alpine alpine;
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 }
 

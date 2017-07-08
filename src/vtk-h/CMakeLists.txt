@@ -132,7 +132,7 @@ endif()
 
 # install target for serial vtkh lib
 install(TARGETS vtkh 
-        EXPORT  vtkh 
+        EXPORT  alpine 
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION lib
@@ -227,7 +227,7 @@ if(MPI_FOUND)
   
     # install target for mpi ver
     install(TARGETS vtkh_par
-            EXPORT  vtkh
+            EXPORT  alpine
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib

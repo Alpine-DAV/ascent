@@ -98,11 +98,11 @@ TEST(alpine_test_2d_hdf5, test_2d_serial_hdf5_pipeline)
     //
     // Run Alpine
     //
-    Alpine sman;
-    sman.Open(open_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    Alpine alpine;
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 
 }
 

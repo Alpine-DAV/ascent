@@ -85,10 +85,10 @@ Alpine::~Alpine()
 
 //-----------------------------------------------------------------------------
 void
-Alpine::Open()
+Alpine::open()
 {
     Node opts;
-    Open(opts);
+    open(opts);
 }
 
 //-----------------------------------------------------------------------------
@@ -107,7 +107,7 @@ CheckForJSONFile(std::string file_name, conduit::Node &node)
 
 //-----------------------------------------------------------------------------
 void
-Alpine::Open(const conduit::Node &options)
+Alpine::open(const conduit::Node &options)
 {
     Node processed_opts(options);
     CheckForJSONFile("alpine_options.json", processed_opts); 
@@ -165,14 +165,14 @@ Alpine::Open(const conduit::Node &options)
 
 //-----------------------------------------------------------------------------
 void
-Alpine::Publish(const conduit::Node &data)
+Alpine::publish(const conduit::Node &data)
 {
     m_pipeline->Publish(data);
 }
 
 //-----------------------------------------------------------------------------
 void
-Alpine::Execute(const conduit::Node &actions)
+Alpine::execute(const conduit::Node &actions)
 {
     Node processed_actions(actions);
     CheckForJSONFile("alpine_actions.json", processed_actions);
@@ -181,7 +181,7 @@ Alpine::Execute(const conduit::Node &actions)
 
 //-----------------------------------------------------------------------------
 void
-Alpine::Close()
+Alpine::close()
 {
     if(m_pipeline != NULL)
     {

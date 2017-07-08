@@ -112,17 +112,17 @@ TEST(alpine_test_3d, test_3d_parallel_render_default_pipeline)
     //
     // Run Alpine
     //
-    Alpine sman;
+    Alpine alpine;
     Node opts;
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
     opts["mpi_comm"] = MPI_Comm_c2f(comm);
     // we want the hdf5 pipeline
     opts["pipeline/type"] = "blueprint_hdf5";
-    sman.Open(opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    alpine.open(opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
     
     
 }

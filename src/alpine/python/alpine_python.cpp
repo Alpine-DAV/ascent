@@ -175,11 +175,11 @@ PyInt_AsLong(PyObject *o)
 
 
 // Alpine class:
-    // void   Open(); // open with default options
-    // void   Open(conduit::Node &options);
-    // void   Publish(conduit::Node &data);
-    // void   Execute(conduit::Node &actions);
-    // void   Close();
+    // void   open(); // open with default options
+    // void   open(conduit::Node &options);
+    // void   publish(conduit::Node &data);
+    // void   execute(conduit::Node &actions);
+    // void   close();
 
 
 //---------------------------------------------------------------------------//
@@ -267,11 +267,11 @@ PyAlpine_Alpine_open(PyAlpine_Alpine *self,
     if(py_node != NULL)
     {
         Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-        self->alpine->Open(*node);
+        self->alpine->open(*node);
     }
     else
     {
-        self->alpine->Open();
+        self->alpine->open();
     }
 
 
@@ -309,7 +309,7 @@ PyAlpine_Alpine_publish(PyAlpine_Alpine *self,
     }
     
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-    self->alpine->Publish(*node);
+    self->alpine->publish(*node);
 
     Py_RETURN_NONE; 
 }
@@ -345,7 +345,7 @@ PyAlpine_Alpine_execute(PyAlpine_Alpine *self,
     }
     
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-    self->alpine->Execute(*node);
+    self->alpine->execute(*node);
 
     Py_RETURN_NONE; 
 }
@@ -354,7 +354,7 @@ PyAlpine_Alpine_execute(PyAlpine_Alpine *self,
 static PyObject *
 PyAlpine_Alpine_close(PyAlpine_Alpine *self)
 {
-    self->alpine->Close();
+    self->alpine->close();
     Py_RETURN_NONE;
 }
 

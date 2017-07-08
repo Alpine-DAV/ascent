@@ -45,11 +45,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_flow_pipeline_blueprint_filters.cpp
+/// file: alpine_flow_pipeline_vtkh_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "alpine_flow_pipeline_blueprint_filters.hpp"
+#include "alpine_flow_pipeline_vtkh_filters.hpp"
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -68,8 +68,14 @@
 #include <alpine_flow_workspace.hpp>
 
 #if defined(ALPINE_VTKM_ENABLED)
+#include <vtkh.hpp>
+#include <vtkh_data_set.hpp>
+#include <rendering/vtkh_renderer_ray_tracer.hpp>
+#include <vtkh_marching_cubes.hpp>
 #include <vtkm/cont/DataSet.h>
+
 #include <alpine_data_adapter.hpp>
+
 #endif
 
 using namespace conduit;
@@ -102,122 +108,202 @@ namespace filters
 {
 
 
-
 //-----------------------------------------------------------------------------
-BlueprintVerify::BlueprintVerify()
+EnsureVTKH::EnsureVTKH()
 :Filter()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
-BlueprintVerify::~BlueprintVerify()
+EnsureVTKH::~EnsureVTKH()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
 void 
-BlueprintVerify::declare_interface(Node &i)
+EnsureVTKH::declare_interface(Node &i)
 {
-    i["type_name"]   = "blueprint_verify";
+    i["type_name"]   = "ensure_vtkh";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
+void 
+EnsureVTKH::execute()
+{
+    if(input(0).check_type<Node>())
+    {
+        // convert from blueprint to vtk-h
+        const Node *n_input = input<Node>(0);
+        vtkh::vtkhDataSet *res = DataAdapter::BlueprintToVTKHDataSet(*n_input);
+        set_output<vtkh::vtkhDataSet>(res);
+
+    }
+    else if(input(0).check_type<vtkm::cont::DataSet>())
+    {
+        // wrap our vtk-m dataset in vtk-h
+        vtkh::vtkhDataSet *res = DataAdapter::VTKmDataSetToVTKHDataSet(input<vtkm::cont::DataSet>(0));
+        set_output<vtkh::vtkhDataSet>(res);
+    }
+    else if(input(0).check_type<vtkh::vtkhDataSet>())
+    {
+        // our data is already vtkh, pass though
+        set_output(input(0));
+    }
+    else
+    {
+        ALPINE_ERROR("ensure_vtkh input must be a mesh blueprint "
+                     "conforming conduit::Node, a vtk-m dataset, or vtk-h dataset");
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+VTKHRayTracer::VTKHRayTracer()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHRayTracer::~VTKHRayTracer()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHRayTracer::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_raytracer";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
 bool
-BlueprintVerify::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
+VTKHRayTracer::verify_params(const conduit::Node &params,
+                                   conduit::Node &info)
 {
     info.reset();   
     bool res = true;
     
-    if(! params.has_child("protocol") || 
-       ! params["protocol"].dtype().is_string() )
+    if(! params.has_child("field") || 
+       ! params["field"].dtype().is_string() )
     {
-        info["errors"].append() = "Missing required string parameter 'protocol'";
+        info["errors"].append() = "Missing required string parameter 'field'";
     }
-
     return res;
 }
 
 
 //-----------------------------------------------------------------------------
 void 
-BlueprintVerify::execute()
+VTKHRayTracer::execute()
 {
-
-    if(!input(0).check_type<Node>())
+    if(!input(0).check_type<vtkh::vtkhDataSet>())
     {
-        ALPINE_ERROR("blueprint_verify input must be a conduit node");
+        ALPINE_ERROR("vtkh_raytracer input must be a vtk-h dataset");
     }
-
-
-    std::string protocol = params()["protocol"].as_string();
-
-    Node v_info;
-    Node *n_input = input<Node>(0);
-    if(!conduit::blueprint::verify(protocol,
-                                   *n_input,
-                                   v_info))
-    {
-        ALPINE_ERROR("blueprint verify failed for protocol"
-                      << protocol << std::endl
-                      << "details:" << std::endl
-                      << v_info.to_json());
-    }
+ 
+    ALPINE_INFO("Doing the render!");
     
-    set_output<Node>(n_input);
+    vtkh::vtkhDataSet *data = input<vtkh::vtkhDataSet>(0);
+    vtkh::vtkhRayTracer ray_tracer;  
+    ray_tracer.SetInput(data);
+    ray_tracer.SetField(params()["field"].as_string());
+    ray_tracer.Update();
+    
 }
 
 
 //-----------------------------------------------------------------------------
-EnsureVTKM::EnsureVTKM()
+VTKHMarchingCubes::VTKHMarchingCubes()
 :Filter()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
-EnsureVTKM::~EnsureVTKM()
+VTKHMarchingCubes::~VTKHMarchingCubes()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
 void 
-EnsureVTKM::declare_interface(Node &i)
+VTKHMarchingCubes::declare_interface(Node &i)
 {
-    i["type_name"]   = "ensure_vtkm";
+    i["type_name"]   = "vtkh_marchingcubes";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHMarchingCubes::verify_params(const conduit::Node &params,
+                                 conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    
+    if(! params.has_child("field") || 
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+    }
+    
+    if(! params.has_child("iso_values") || 
+       ! params["iso_values"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'iso_values'";
+    }
+    
+    return res;
 }
 
 
 //-----------------------------------------------------------------------------
 void 
-EnsureVTKM::execute()
+VTKHMarchingCubes::execute()
 {
-#if !defined(ALPINE_VTKM_ENABLED)
-        ALPINE_ERROR("alpine was not built with VTKm support!");
-#else
-    if(input(0).check_type<vtkm::cont::DataSet>())
+
+    ALPINE_INFO("Marching the cubes!");
+    
+    if(!input(0).check_type<vtkh::vtkhDataSet>())
     {
-        set_output(input(0));
+        ALPINE_ERROR("vtkh_marchingcubes input must be a vtk-h dataset");
     }
-    else if(input(0).check_type<Node>())
-    {
-        // convert from conduit to vtkm
-        const Node *n_input = input<Node>(0);
-        vtkm::cont::DataSet  *res = DataAdapter::BlueprintToVTKmDataSet(*n_input);
-        set_output<vtkm::cont::DataSet>(res);
-    }
-    else
-    {
-        ALPINE_ERROR("unsupported input type for ensure_vtkm");
-    }
-#endif
+
+    std::string field_name = params()["field"].as_string();
+    
+    vtkh::vtkhDataSet *data = input<vtkh::vtkhDataSet>(0);
+    vtkh::vtkhMarchingCubes marcher;
+    
+
+    
+    marcher.SetInput(data);
+    marcher.SetField(field_name);
+
+    const Node &n_iso_vals = params()["iso_values"];
+
+    // convert to contig doubles
+    Node n_iso_vals_dbls;
+    n_iso_vals.to_float64_array(n_iso_vals_dbls);
+    
+    marcher.SetIsoValues(n_iso_vals.as_double_ptr(),
+                         n_iso_vals.dtype().number_of_elements());
+
+    // TODO: do we need to map all other fields?
+    marcher.AddMapField(field_name);
+    marcher.Update();
+
+    vtkh::vtkhDataSet *iso_output = marcher.GetOutput();
+    
+    set_output<vtkh::vtkhDataSet>(iso_output);
 }
 
 

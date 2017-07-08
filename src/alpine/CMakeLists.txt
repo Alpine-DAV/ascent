@@ -69,6 +69,8 @@ set(alpine_sources
     # alpine interface
     alpine.cpp
     c/alpine_c.cpp
+    # data adaptor
+    pipelines/alpine_data_adapter.cpp
     # pipelines
     alpine_pipeline.cpp
     pipelines/alpine_empty_pipeline.cpp
@@ -76,6 +78,7 @@ set(alpine_sources
     pipelines/flow_filters/alpine_flow_pipeline_filters.cpp
     pipelines/flow_filters/alpine_flow_pipeline_relay_filters.cpp
     pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.cpp
+    pipelines/flow_filters/alpine_flow_pipeline_vtkh_filters.cpp
     # utils
     utils/alpine_file_system.cpp
     utils/alpine_block_timer.cpp
@@ -88,6 +91,8 @@ set(alpine_headers
     alpine_exports.h
     alpine.hpp
     c/alpine.h
+    # data adaptor
+    pipelines/alpine_data_adapter.hpp
     # pipelines
     alpine_pipeline.hpp
     pipelines/alpine_empty_pipeline.hpp
@@ -96,6 +101,7 @@ set(alpine_headers
     pipelines/flow_filters/alpine_flow_pipeline_filters.hpp
     pipelines/flow_filters/alpine_flow_pipeline_relay_filters.hpp
     pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.hpp
+    pipelines/flow_filters/alpine_flow_pipeline_vtkh_filters.hpp
     # utils
     utils/alpine_logging.hpp
     utils/alpine_file_system.hpp
@@ -166,6 +172,7 @@ if(VTKM_FOUND)
     list(APPEND alpine_thirdparty_libs vtkm)
     list(APPEND alpine_thirdparty_libs vtkm_cont)
     list(APPEND alpine_thirdparty_libs vtkm_rendering)
+    list(APPEND alpine_thirdparty_libs vtkh)
 endif()
 
 ##########################################
