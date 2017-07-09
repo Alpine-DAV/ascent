@@ -161,15 +161,78 @@ private:
        int          m_width;
        RendererType m_render_type;
        int          m_plot_dims;
+       int          m_image_count;
 
        RenderParams()
        : m_height(-1),
          m_width(-1),
          m_render_type(RAYTRACER),
-         m_plot_dims(-1)
+         m_plot_dims(-1),
+         m_image_count(1)
        {}
   };
 
+  struct ImageData 
+  {
+    private:
+    int        *m_vis_order;
+    public:
+        vtkmCamera  m_camera;
+        vtkmCanvas *m_canvas;
+        std::string m_image_name;
+
+        ImageData()
+          : m_canvas(NULL),
+            m_vis_order(NULL)
+        {}
+
+        ImageData(const vtkmCamera &camera)
+          : m_canvas(NULL),
+            m_vis_order(NULL)
+        {}
+
+        void SetVisOrder(int *vis_order)
+        {
+            if(m_vis_order)
+            {
+              free(m_vis_order);
+            }
+            
+            m_vis_order = vis_order;
+        }
+      
+        int * GetVisOrder()
+        {
+            return m_vis_order;
+        }
+
+        ~ImageData()
+        {
+            if(m_canvas)
+            {
+                delete m_canvas;
+            }
+
+            if(m_vis_order)
+            {
+                free(m_vis_order);
+            }
+        }
+  };
+
+  struct CinemaMetadata
+  {
+    int                      m_cycle_count;
+    std::string              m_image_name;
+    std::vector<double> m_phis;  
+    std::vector<double> m_thetas;  
+    std::vector<double> m_times;  
+
+    CinemaMetadata()
+      : m_cycle_count(0)
+    {}
+
+  };
 //-----------------------------------------------------------------------------
 // private methods
 //-----------------------------------------------------------------------------
@@ -183,14 +246,20 @@ private:
     void SetCameraAttributes(conduit::Node &node);
     void SetDefaultCameraView(vtkmActor *plot);
     void SetupCamera();
-    void SetDefaultClippingPlane();
+    void SetupCameras(const std::string image_name);
+    void ParseCameraNode(const conduit::Node &camera, 
+                         vtkmCamera &res);
+    void SetDefaultClippingPlane(vtkmCamera &camera);
+    int  CountImages();
+    void WriteCinemaMetadata();
     vtkmColorTable  SetColorMapFromNode();
+    std::string GetModelInfo(const vtkmActor &actor, const int &image_num);
 //-----------------------------------------------------------------------------
 // private methods for MPI case
 //-----------------------------------------------------------------------------
 #ifdef PARALLEL
     void  CheckIceTError();
-    int  *FindVisibilityOrdering(vtkmActor *plot);
+    int  *FindVisibilityOrdering(vtkmActor *plot, const vtkmCamera &camera);
     void  SetParallelPlotExtents(vtkmActor * plot);
 #endif
   
@@ -199,29 +268,30 @@ private:
 // private data members
 //-----------------------------------------------------------------------------
 
-    vtkmCanvas         *m_canvas;
-    vtkmMapper         *m_renderer;
-    vtkmCamera         *m_vtkm_camera;
+    std::vector<ImageData>                   m_images;
+    vtkmMapper                              *m_renderer;
+    vtkmCamera                               m_vtkm_camera;
 
-    vtkmColor           m_bg_color;
-    vtkm::Bounds        m_spatial_bounds; 
-    RendererType        m_render_type;
-    RenderParams        m_last_render;
+    vtkmColor                                m_bg_color;
+    vtkm::Bounds                             m_spatial_bounds; 
+    RendererType                             m_render_type;
+    RenderParams                             m_last_render;
   
-    conduit::Node       m_transfer_function;
-    conduit::Node       m_camera;
-  
-    conduit::Node      *m_data;
+    conduit::Node                            m_transfer_function;
+    conduit::Node                            m_camera;
+    conduit::Node                           *m_data;
 
     // always keep rank, even for serial
-    int                 m_rank;
+    int                                      m_rank;
+    std::map<std::string, CinemaMetadata>    m_cinema_metas; 
   
-    conduit::Node       m_options;              // CDH: need to store?
-    bool                m_web_stream_enabled;   // CDH: move to pipeline ?
-    WebInterface        m_web_interface;        // CDH: move to pipeline ?
+    conduit::Node                            m_options;              // CDH: need to store?
+    bool                                     m_web_stream_enabled;   // CDH: move to pipeline ?
+    WebInterface                             m_web_interface;        // CDH: move to pipeline ?
   
-    PNGEncoder          m_png_data;
+    PNGEncoder                               m_png_data;
 
+    std::stringstream                        m_log_stream;
 //-----------------------------------------------------------------------------
 // private vars for MPI case
 //-----------------------------------------------------------------------------
