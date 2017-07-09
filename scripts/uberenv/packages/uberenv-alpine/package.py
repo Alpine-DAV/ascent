@@ -202,14 +202,6 @@ class UberenvAlpine(Package):
         #######################
         # sphinx
         #######################
-        sphinx_build_exe = pjoin(spec['python'].prefix.bin,"sphinx-build")
-        cfg.write("# python from uberenv\n")
-        cfg.write(cmake_cache_entry("SPHINX_EXECUTABLE",sphinx_build_exe))
-
-
-        #######################
-        # sphinx
-        #######################
         if "+doc" in spec:
             sphinx_build_exe = pjoin(spec['python'].prefix.bin,"sphinx-build")
             cfg.write("# sphinx from uberenv\n")
