@@ -91,6 +91,7 @@ set(alpine_headers
     utils/alpine_file_system.hpp
     utils/alpine_block_timer.hpp
     utils/alpine_png_encoder.hpp
+    utils/alpine_vtkm_dataset_info.hpp
     utils/alpine_web_interface.hpp)
 
 if(VTKM_FOUND)

@@ -42,45 +42,55 @@
 # 
 ###############################################################################
 
-from spack import *
-import os
+###############################################################################
+#
+# Noise CMake Build for Alpine
+#
+###############################################################################
 
-class Vtkm(Package):
-    homepage = "https://m.vtk.org/"
-    url      = "http://m.vtk.org/images/8/87/Vtk-m-1.0.0.tar.gz"
+set(noise_sources
+    noise.cpp
+    open_simplex_noise.c)
 
-    version('kitware-gitlab',
-            git='https://mclarsen@gitlab.kitware.com/mclarsen/vtk-m.git',
-            branch='cyrush_test_me')
+set(noise_header
+    open_simplex_noise.h)
 
-    #version('1.0.0',  '9d9d45e675d5b0628b19b32f5542ed9c')
 
-    depends_on("cmake")
-    depends_on("tbb")
-    #depends_on("boost-headers")
-    #patch('vtkm_patch.patch')
-    def install(self, spec, prefix):
-        os.environ["TBB_ROOT"] = spec["tbb"].prefix
-        with working_dir('spack-build', create=True):
-            cmake_args = ["../",
-                          "-DVTKm_ENABLE_TBB=ON",
-                          "-DVTKm_ENABLE_TESTING=OFF",
-                          "-DVTKm_BUILD_RENDERING=ON",
-                          "-DVTKm_USE_64BIT_IDS=OFF",
-                          "-DVTKm_USE_DOUBLE_PRECISION=ON"]
-            # check for cuda support
-            nvcc = which("nvcc")
-            if not nvcc  is None:
-                cmake_args.append("-DVTKm_ENABLE_CUDA=ON")
-                # this fix is necessary if compiling platform has cuda, but no devices
-                # (this common for front end nodes on hpc clusters)
-                # we choose kepler for llnl surface and ornl titan
-                cmake_args.append("-DVTKm_CUDA_Architecture=kepler")
-            cmake_args.extend(std_cmake_args)
-            print cmake_args
-            cmake(*cmake_args)
-            make(parallel=False)
-            make("install",parallel=False)
+add_executable(noise_ser ${noise_sources})
+
+target_link_libraries(noise_ser
+                      alpine)
+
+
+#configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
+#configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
+
+
+if(OPENMP_FOUND)
+  set(noise_openmp_flags "-DNOISE_USE_OPENMP")
+else()
+   set(noise_openmp_flags "")
+endif()
+
+add_target_compile_flags(TARGET noise_ser
+                         FLAGS "${noise_openmp_flags}")
+
+if(MPI_FOUND)
+    add_executable(noise_par ${noise_sources})
+
+    add_target_compile_flags(TARGET noise_par 
+                             FLAGS "${MPI_CXX_COMPILE_FLAGS} -DPARALLEL  ${noise_openmp_flags}")
+
+    add_target_link_flags(TARGET noise_par  
+                          FLAGS "${MPI_CXX_LINK_FLAGS}")
+
+    target_link_libraries(noise_par
+                          alpine_par
+                          ${MPI_CXX_LIBRARIES})
+endif()
+
+
+
 
 
 

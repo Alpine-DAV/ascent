@@ -63,6 +63,7 @@
 #include <alpine_block_timer.hpp>
 #include <alpine_png_encoder.hpp>
 #include <alpine_web_interface.hpp>
+#include <alpine_vtkm_dataset_info.hpp>
 
 using namespace std;
 using namespace conduit;
@@ -134,9 +135,13 @@ Renderer::Init()
 void
 Renderer::NullRendering()
 {
-    m_canvas       = NULL;
     m_renderer     = NULL;
-    m_vtkm_camera  = NULL;
+
+    const int images_size = static_cast<int>(m_images.size());
+    for(int i = 0; i < images_size; ++i)
+    {
+        m_images[i].m_canvas = NULL;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -144,22 +149,17 @@ Renderer::NullRendering()
 void
 Renderer::Cleanup()
 {
-    
-    if(m_canvas)
+    const int images_size = static_cast<int>(m_images.size());
+    for(int i = 0; i < images_size; ++i)
     {
-        delete m_canvas;
+        delete m_images[i].m_canvas;
     }
-
+     
     if(m_renderer)
     {
         delete m_renderer;
     }
-
-    if(m_vtkm_camera)
-    {
-        delete m_vtkm_camera;
-    }
-    
+        
     NullRendering();
 }
 
@@ -170,8 +170,9 @@ Renderer::InitRendering(int plot_dims)
 {
     if(plot_dims != 2 && plot_dims != 3)
     {
-        ALPINE_ERROR("VTKM rendering currently only supports 3D");
+        ALPINE_ERROR("VTKM rendering currently only supports 2D and 3D");
     }
+
     ALPINE_BLOCK_TIMER(RENDER_INIT);
     
     // start from scratch
@@ -199,20 +200,29 @@ Renderer::InitRendering(int plot_dims)
         ALPINE_ERROR("vtkmMapper was not created");
     }
 
-    m_canvas = new vtkmCanvasRayTracer(1024,1024);
-    m_canvas->SetBackgroundColor(m_bg_color);
+    //
+    // check to see how many images we have this render
+    //
+    int image_count = CountImages();
+    if(m_render_type == VOLUME || m_render_type == RAYTRACER)
+    {
+        m_images.resize(image_count);
+        for(int i = 0; i < image_count; ++i)
+        {
+            m_images[i].m_canvas = new vtkmCanvasRayTracer(1,1);
+            m_images[i].m_canvas->SetBackgroundColor(m_bg_color);
 
-    if(m_canvas == NULL)
-    {
-      ALPINE_ERROR("vtkmCanvas was not created.");
+            if(m_images[i].m_canvas == NULL)
+            {
+                ALPINE_ERROR("vtkmCanvas was not created.");
+            }
+        }
     }
-    
-    m_vtkm_camera = new vtkmCamera;
-    
-    if(m_canvas == NULL)
+    else
     {
-      ALPINE_ERROR("vtkmCamera was not created.");
+        //TODO: setup any other type of canvas we have
     }
+
 }
 
 //-----------------------------------------------------------------------------
@@ -224,7 +234,6 @@ Renderer::SetDefaultCameraView(vtkmActor *plot)
 
    
     // Set some defaults
-    m_canvas->ResizeBuffers(1024, 1024);
     m_spatial_bounds = plot->GetSpatialBounds(); 
 #ifdef PARALLEL
     // Rank plot extents set when plot is created.
@@ -313,7 +322,7 @@ Renderer::SetDefaultCameraView(vtkmActor *plot)
   
     bool is_2d = (total_extent[min_dim] == 0.f);
     // look at the center
-    m_vtkm_camera->SetLookAt(bounds_min + n_total_extent * (mag * 0.5f));
+    m_vtkm_camera.SetLookAt(bounds_min + n_total_extent * (mag * 0.5f));
     // find the maximum dim that will be the x in image space
     int x_dim = 0;
     if(total_extent[1] > total_extent[x_dim]) x_dim = 1;
@@ -328,7 +337,7 @@ Renderer::SetDefaultCameraView(vtkmActor *plot)
     }
     up[up_dim] = 1.f;
 
-    const float default_fov = m_vtkm_camera->GetFieldOfView(); 
+    const float default_fov = m_vtkm_camera.GetFieldOfView(); 
     
     vtkmVec3f position(0,0,0);
     if(is_2d)
@@ -339,9 +348,9 @@ Renderer::SetDefaultCameraView(vtkmActor *plot)
         const float pi = 3.14159f;
         float theta = (default_fov + 4) * (pi/180.f);
         float min_pos = std::tan(theta) * total_extent[x_dim] / 2.f;
-        m_vtkm_camera->SetLookAt(pos);
+        m_vtkm_camera.SetLookAt(pos);
         pos[min_dim] = bounds_min[min_dim] + min_pos;
-        m_vtkm_camera->SetPosition(pos);
+        m_vtkm_camera.SetPosition(pos);
         position = pos;
     }
     else
@@ -350,18 +359,18 @@ Renderer::SetDefaultCameraView(vtkmActor *plot)
         position[0] += .001f;
         position[1] += .001f;
         position[2] += .05f*mag;
-        m_vtkm_camera->SetPosition(position);
+        m_vtkm_camera.SetPosition(position);
     }
 
-    this->SetDefaultClippingPlane();
+    this->SetDefaultClippingPlane(m_vtkm_camera);
 }
 
 
 //-----------------------------------------------------------------------------
 void
-Renderer::SetDefaultClippingPlane()
+Renderer::SetDefaultClippingPlane(vtkmCamera &camera)
 {
-    vtkmVec3f position = m_vtkm_camera->GetPosition();
+    vtkmVec3f position = camera.GetPosition();
     // set a default near and far plane
     vtkmVec3f bounding_box[8];
     bounding_box[0][0] = m_spatial_bounds.X.Min;
@@ -407,7 +416,7 @@ Renderer::SetDefaultClippingPlane()
     vtkm::Range clipping_range;
     clipping_range.Min = .01f;
     clipping_range.Max = max_distance;
-    m_vtkm_camera->SetClippingRange(clipping_range);
+    camera.SetClippingRange(clipping_range);
 }
 //-----------------------------------------------------------------------------
 // imp EAVLPipeline::Renderer private methods for MPI case
@@ -417,7 +426,7 @@ Renderer::SetDefaultClippingPlane()
 //-----------------------------------------------------------------------------
 
 int *
-Renderer::FindVisibilityOrdering(vtkmActor *plot)
+Renderer::FindVisibilityOrdering(vtkmActor *plot, const vtkmCamera &camera)
 {
     //
     // In order for parallel volume rendering to composite correctly,
@@ -427,7 +436,7 @@ Renderer::FindVisibilityOrdering(vtkmActor *plot)
     // track of rank, then pass the list in.
     //
     vtkm::Matrix<vtkm::Float32,4,4> view_matrix = 
-        m_vtkm_camera->CreateViewMatrix();
+        camera.CreateViewMatrix();
     
     //
     // z's should both be negative since the camera is 
@@ -476,7 +485,6 @@ Renderer::FindVisibilityOrdering(vtkmActor *plot)
     }
 
     MPI_Gather(&minz, 1, MPI_FLOAT, z_array, 1, MPI_FLOAT, 0, m_mpi_comm);
-
     if(m_rank == 0)
     {
         vis_order = new VTKMVisibility[m_mpi_size];
@@ -495,7 +503,8 @@ Renderer::FindVisibilityOrdering(vtkmActor *plot)
         
         for(int i = 0; i < m_mpi_size; i++)
         {
-            ((int*) vis_rank_order)[i] = vis_order[i].m_rank;;
+            ((int*) vis_rank_order)[i] = vis_order[i].m_rank;
+            std::cout<<"Vis order "<<i<<" "<<((int*) vis_rank_order)[i] <<"\n";
         }
         
         free(z_array);
@@ -551,7 +560,7 @@ Renderer::SetParallelPlotExtents(vtkmActor * plot)
 Renderer::~Renderer()
 {
     ALPINE_BLOCK_TIMER(RENDERER_ON_DESTROY);
-    
+    WriteCinemaMetadata(); 
     Cleanup();
 
 #ifdef PARALLEL
@@ -871,6 +880,8 @@ Renderer::Render(vtkmActor *&plot,
     try
     {
         PNGEncoder png;
+        // Set the Default camera position
+        SetDefaultCameraView(plot);
         //
         // Do some check to see if we need
         // to re-init rendering
@@ -881,7 +892,7 @@ Renderer::Render(vtkmActor *&plot,
                
         bool render_dirty = false;
         bool screen_dirty = false;
-        
+        bool image_count_dirty = false; 
         if(m_render_type != m_last_render.m_render_type)
         {
             render_dirty = true;
@@ -891,31 +902,28 @@ Renderer::Render(vtkmActor *&plot,
         {
             render_dirty = true;
         }
-        
-        if(image_height != m_last_render.m_height ||
-           image_width  != m_last_render.m_width)
+
+        const int image_count = CountImages();
+        if(m_last_render.m_image_count != image_count)
         {
-            screen_dirty = true;
+            image_count_dirty = true;
         }
         
+
         m_last_render.m_render_type     = m_render_type;
         m_last_render.m_plot_dims       = dims;
         m_last_render.m_height          = image_height;
         m_last_render.m_width           = image_width;
+        m_last_render.m_image_count     = image_count;
 
         if(render_dirty)
         {
             InitRendering(dims);
         }
         
-        // Set the Default camera position
-        SetDefaultCameraView(plot);
-        
-        if(screen_dirty)
+        for(int i = 0; i < image_count; ++i)
         {
-            delete m_canvas;
-            m_canvas = new vtkmCanvasRayTracer(image_width,image_height);
-            m_canvas->SetBackgroundColor(m_bg_color);
+            m_images[i].m_canvas->ResizeBuffers(image_width, image_height);
         }
         
         //
@@ -923,8 +931,10 @@ Renderer::Render(vtkmActor *&plot,
         //
         if(!m_camera.dtype().is_empty())
         {
-            SetupCamera();
+            ParseCameraNode(m_camera, m_vtkm_camera);
         } 
+
+        SetupCameras(image_file_name);
        
         //
         // Check for transfer function / color table
@@ -989,134 +999,144 @@ Renderer::Render(vtkmActor *&plot,
         //  is painted. 
         
         
-        int *vis_order = NULL;
         if(m_render_type == VOLUME)
         {
-            // Set the backgound color to transparent
-            vtkmColor color = m_canvas->GetBackgroundColor();
-            
-            color.Components[3] = 0.f;
-            m_canvas->SetBackgroundColor(color);
+            for(int i = 0; i < image_count; ++i)
+            {
+                // Set the backgound color to transparent
+                vtkmColor color = m_images[i].m_canvas->GetBackgroundColor();
+                
+                color.Components[3] = 0.f;
+                m_images[i].m_canvas->SetBackgroundColor(color);
 
-            //
-            // Calculate visibility ordering AFTER 
-            // the camera parameters have been set
-            // IceT uses this list to composite the images
-            
-            //
-            // TODO: This relies on plot 0
-            //
-            vis_order = FindVisibilityOrdering(plot);
-    
+                //
+                // Calculate visibility ordering AFTER 
+                // the camera parameters have been set
+                // IceT uses this list to composite the images
+                
+                //
+                // TODO: This relies on plot 0
+                //
+                m_images[i].SetVisOrder( FindVisibilityOrdering(plot, m_images[i].m_camera) );
+            } 
         }
 #endif
+        if(VTKMDataSetInfo::IsRectilinear(*plot))
+        {
+          std::cout<<"************we have a rectilinear dataset\n";
+        }
         //---------------------------------------------------------------------
         {// open block for RENDER_PAINT Timer
         //---------------------------------------------------------------------
             ALPINE_BLOCK_TIMER(RENDER_PAINT);
-
-            m_canvas->Clear();
-            plot->Render(*m_renderer, *m_canvas, *m_vtkm_camera);
-
+            for(int i = 0; i < image_count; ++i)
+            {
+                std::cout<<"Rendering image "<<i<<"\n";
+                m_images[i].m_canvas->Clear();
+                plot->Render(*m_renderer, 
+                             *m_images[i].m_canvas, 
+                              m_images[i].m_camera);
+            }
         //---------------------------------------------------------------------
         } // close block for RENDER_PAINT Timer
         //---------------------------------------------------------------------
         
         //Save the image.
+        for(int i = 0; i < image_count; ++i)
+        {
+            std::cout<<"compositing "<<i<<"\n";
 #ifdef PARALLEL
 
-        const float *result_color_buffer = NULL;
-        //---------------------------------------------------------------------
-        {// open block for RENDER_COMPOSITE Timer
-        //---------------------------------------------------------------------
-            ALPINE_BLOCK_TIMER(RENDER_COMPOSITE);
+            const float *result_color_buffer = NULL;
+            //---------------------------------------------------------------------
+            {// open block for RENDER_COMPOSITE Timer
+            //---------------------------------------------------------------------
+                ALPINE_BLOCK_TIMER(RENDER_COMPOSITE);
 
-              
-            //
-            // init IceT parallel image compositing
-            //
-            int view_port[4] = {0,
-                                0,
-                                image_width,
-                                image_height};
+                  
+                //
+                // init IceT parallel image compositing
+                //
+                int view_port[4] = {0,
+                                    0,
+                                    image_width,
+                                    image_height};
 
-             
-            const float *input_color_buffer  = NULL;
-            const float *input_depth_buffer  = NULL;    
-            
-          
-            input_color_buffer = &GetVTKMPointer(m_canvas->GetColorBuffer())[0][0];
-            input_depth_buffer = GetVTKMPointer(m_canvas->GetDepthBuffer());
-            float bg_color[4];
-            bg_color[0] = m_bg_color.Components[0];
-            bg_color[1] = m_bg_color.Components[1];
-            bg_color[2] = m_bg_color.Components[2];
-            bg_color[3] = m_bg_color.Components[3];
-            if(m_render_type != VOLUME)
-            {   
-                result_color_buffer = m_icet.Composite(image_width,
-                                                       image_height,
-                                                       input_color_buffer,
-                                                       input_depth_buffer,
-                                                       view_port,
-                                                       bg_color);
-            }
-            else
-            {    
-                //
-                // Volume rendering uses a visibility ordering 
-                // by rank instead of a depth buffer
-                //
-                result_color_buffer = m_icet.Composite(image_width,
-                                                       image_height,
-                                                       input_color_buffer,
-                                                       vis_order,
-                                                       bg_color);
-                // leak?
-                free(vis_order);
-            }
-        
-        //---------------------------------------------------------------------
-        }// close block for RENDER_COMPOSITE Timer
-        //---------------------------------------------------------------------
-          
+                 
+                const float *input_color_buffer  = NULL;
+                const float *input_depth_buffer  = NULL;    
                 
-        //---------------------------------------------------------------------
-        {// open block for RENDER_ENCODE Timer
-        //---------------------------------------------------------------------
-          
-        
-        ALPINE_BLOCK_TIMER(RENDER_ENCODE);
-        //
-        // encode the composited image
-        //
-        if(m_rank == 0)
-        {   
-            m_png_data.Encode(result_color_buffer,
+              
+                input_color_buffer = &GetVTKMPointer(m_images[i].m_canvas->GetColorBuffer())[0][0];
+                input_depth_buffer = GetVTKMPointer(m_images[i].m_canvas->GetDepthBuffer());
+                float bg_color[4];
+                bg_color[0] = m_bg_color.Components[0];
+                bg_color[1] = m_bg_color.Components[1];
+                bg_color[2] = m_bg_color.Components[2];
+                bg_color[3] = m_bg_color.Components[3];
+                if(m_render_type != VOLUME)
+                {   
+                    result_color_buffer = m_icet.Composite(image_width,
+                                                           image_height,
+                                                           input_color_buffer,
+                                                           input_depth_buffer,
+                                                           view_port,
+                                                           bg_color);
+                }
+                else
+                {    
+                    //
+                    // Volume rendering uses a visibility ordering 
+                    // by rank instead of a depth buffer
+                    //
+                    result_color_buffer = m_icet.Composite(image_width,
+                                                           image_height,
+                                                           input_color_buffer,
+                                                           m_images[i].GetVisOrder(),
+                                                           bg_color);
+                }
+            
+            //---------------------------------------------------------------------
+            }// close block for RENDER_COMPOSITE Timer
+            //---------------------------------------------------------------------
+              
+                    
+            //---------------------------------------------------------------------
+            {// open block for RENDER_ENCODE Timer
+            //---------------------------------------------------------------------
+              
+            
+            ALPINE_BLOCK_TIMER(RENDER_ENCODE);
+            //
+            // encode the composited image
+            //
+            if(m_rank == 0)
+            {   
+                m_png_data.Encode(result_color_buffer,
+                                  image_width,
+                                  image_height);
+            }
+            
+            //---------------------------------------------------------------------
+            }// close block for RENDER_ENCODE Timer
+            //---------------------------------------------------------------------
+              
+
+#else
+            m_png_data.Encode(&GetVTKMPointer(m_images[i].m_canvas->GetColorBuffer())[0][0],
                               image_width,
                               image_height);
-        }
-        
-        //---------------------------------------------------------------------
-        }// close block for RENDER_ENCODE Timer
-        //---------------------------------------------------------------------
-          
-
-#else
-        m_png_data.Encode(&GetVTKMPointer(m_canvas->GetColorBuffer())[0][0],
-                          image_width,
-                          image_height);
 #endif
-    
+        
 
 #if PARALLEL
-        // png will be null if rank !=0, thats fine
-        WebSocketPush(m_png_data);
+            // png will be null if rank !=0, thats fine
+            WebSocketPush(m_png_data);
 #else
-        WebSocketPush(m_png_data);
+            WebSocketPush(m_png_data);
 #endif
-
-        if(image_file_name != NULL) SaveImage(image_file_name);
+            if(image_file_name != NULL) SaveImage(m_images[i].m_image_name.c_str());
+        }// for each image
     }// end try
     catch (vtkm::cont::Error error) 
     {
@@ -1125,70 +1145,293 @@ Renderer::Render(vtkmActor *&plot,
 }
 //-----------------------------------------------------------------------------
 
-void
-Renderer::SetupCamera()
+int
+Renderer::CountImages()
 {
+    //
+    // determine the number of images this render
+    //
+        
+    int images = 1; 
+    if(m_camera.has_child("cinema"))
+    {
+        std::cout<<"******CINEMA\n";
+        const conduit::Node &cinema = m_camera["cinema"]; 
+        if(!cinema.has_path("phi") ||
+           !cinema.has_path("theta"))
+        {
+            ALPINE_ERROR("Camera with cinema type must have phi and theta defined");
+        }
+        int phi = cinema["phi"].as_int64();
+        int theta = cinema["theta"].as_int64();
+        images = phi * theta;
+    }
+    std::cout<<"Number of images "<<images<<"\n";
+    return images;
+}
+
+void
+Renderer::SetupCameras(const std::string image_name)
+{
+    bool is_cinema = false;
+
+    //m_camera.print();
+    if(m_camera.has_child("cinema"))
+    {
+        is_cinema = true;
+    }
+
+    if(!is_cinema)
+    {
+         m_images[0].m_image_name = image_name;  
+         if(m_camera.dtype().is_empty())
+         {
+              m_images[0].m_camera = m_vtkm_camera;
+         }
+         else
+         {
+             ParseCameraNode(m_camera, m_images[0].m_camera);
+         }
+         std::cout<<"No Cinema\n";
+         m_camera.print();
+         return;
+    }
+    
+    const conduit::Node &cinema = m_camera.fetch_child("cinema");
+
+    int images = 0; 
+    int num_phi = 0;
+    int num_theta = 0;
+     
+    if(!cinema.has_path("phi") ||
+       !cinema.has_path("theta"))
+    {
+        ALPINE_ERROR("Camera with cinema type must have phi and theta defined");
+    }
+
+    if(!cinema.has_path("image_name"))
+    {
+        ALPINE_ERROR("Camera with cinema type must have image_name defined");
+    }
+    std::string cinema_name = cinema["image_name"].as_string();
+    //
+    // Check to see if we alreay have an entry
+    //
+    bool has_meta = m_cinema_metas.count(cinema_name) == 1;
+
+    if(!has_meta)
+    {
+      std::cout<<"########## !has_meta\n";
+      m_cinema_metas[cinema_name] = CinemaMetadata();
+    }
+
+    CinemaMetadata &meta = m_cinema_metas[cinema_name];
+    meta.m_image_name = cinema_name;
+    int cycle = meta.m_cycle_count;
+
+    if(cinema.has_path("cycle"))
+    {
+      cycle = m_camera["cycle"].as_int64();
+    }
+        
+    meta.m_times.push_back(cycle);
+
+    meta.m_cycle_count++;
+
+    num_phi = cinema["phi"].as_int64();
+    num_theta = cinema["theta"].as_int64();
+    images = num_phi * num_theta;
+
+    if(images != m_images.size())
+    {
+        ALPINE_ERROR("Internal error: number of images does not match m_images");
+    }
+
+    vtkmVec3f center = m_spatial_bounds.Center();
+    vtkm::Vec<vtkm::Float32,3> totalExtent;   
+    totalExtent[0] = vtkm::Float32(m_spatial_bounds.X.Length());   
+    totalExtent[1] = vtkm::Float32(m_spatial_bounds.Y.Length());   
+    totalExtent[2] = vtkm::Float32(m_spatial_bounds.Z.Length());   
+    vtkm::Float32 radius = vtkm::Magnitude(totalExtent) * 2.5 / 2.0;   
+    
+    const double pi = 3.141592653589793;
+    double phi_inc = 180.0 / double(num_phi);
+    double theta_inc = 360.0 / double(num_theta);
+    for(int p = 0; p < num_phi; ++p)
+    {
+        for(int t = 0; t < num_theta; ++t)
+        {
+            float phi  =  phi_inc * p;
+            float theta = -180 + theta_inc * t;
+
+            const int i = p * num_theta + t;
+
+            m_images[i].m_camera = m_vtkm_camera;
+
+            //
+            //  spherical coords start (r=1, theta = 0, phi = 0)
+            //  (x = 0, y = 0, z = 1)
+            //  up is the x+, and right is y+
+            //
+
+            vtkmVec3f pos(0.f,0.f,1.f);
+            vtkmVec3f up(1.f,0.f,0.f);
+
+            vtkm::Matrix<vtkm::Float32,4,4> phi_rot;  
+            vtkm::Matrix<vtkm::Float32,4,4> theta_rot;  
+            vtkm::Matrix<vtkm::Float32,4,4> rot;  
+
+            phi_rot = vtkm::Transform3DRotateY(phi); 
+            theta_rot = vtkm::Transform3DRotateZ(theta); 
+            rot = vtkm::MatrixMultiply(phi_rot, theta_rot); 
+
+            up = vtkm::Transform3DVector(rot, up);
+            vtkm::Normalize(up);
+            m_images[i].m_camera.SetViewUp(up);
+
+            pos = vtkm::Transform3DPoint(rot, pos);
+            pos = pos * radius + center; 
+            m_images[i].m_camera.SetPosition(pos);
+
+            std::stringstream ss;
+            ss<<cycle<<"_"<<phi<<"_"<<theta<<"_";
+            m_images[i].m_image_name = ss.str() + image_name;
+            if(!has_meta)
+            {
+              std::cout<<"#### phi "<<phi<<" theta "<<theta<<"\n";
+              meta.m_phis.push_back(phi);
+              meta.m_thetas.push_back(theta);
+            }
+            m_images[i].m_camera.SetLookAt(center);
+            this->SetDefaultClippingPlane(m_images[i].m_camera);
+        }
+    }      
+
+}
+
+//-----------------------------------------------------------------------------
+void
+Renderer::ParseCameraNode(const conduit::Node &camera, vtkmCamera &res)
+{
+    //
+    // start with the default camera
+    //
+    res = m_vtkm_camera; 
     //
     // Get the optional camera parameters
     //
-    if(m_camera.has_child("look_at"))
+    if(camera.has_child("look_at"))
     {
-        float64 *coords = m_camera["look_at"].as_float64_ptr();
+        const float64 *coords = camera["look_at"].as_float64_ptr();
         vtkmVec3f look_at(coords[0], coords[1], coords[2]);
-        m_vtkm_camera->SetLookAt(look_at);  
+        res.SetLookAt(look_at);  
     }
-    if(m_camera.has_child("position"))
+    if(camera.has_child("position"))
     {
-        float64 *coords = m_camera["position"].as_float64_ptr();
+        const float64 *coords = camera["position"].as_float64_ptr();
         vtkmVec3f position(coords[0], coords[1], coords[2]);
-        m_vtkm_camera->SetPosition(position);  
+        res.SetPosition(position);  
     }
     
-    if(m_camera.has_child("up"))
+    if(camera.has_child("up"))
     {
-        float64 *coords = m_camera["up"].as_float64_ptr();
+        const float64 *coords = camera["up"].as_float64_ptr();
         vtkmVec3f up(coords[0], coords[1], coords[2]);
         vtkm::Normalize(up);
-        m_vtkm_camera->SetViewUp(up);
+        res.SetViewUp(up);
     }
     
-    if(m_camera.has_child("fov"))
+    if(camera.has_child("fov"))
     {
-        m_vtkm_camera->SetFieldOfView(m_camera["fov"].to_float64());
+        res.SetFieldOfView(camera["fov"].to_float64());
     }
 
-    if(m_camera.has_child("xpan") || m_camera.has_child("ypan"))
+    if(camera.has_child("xpan") || camera.has_child("ypan"))
     {
         vtkm::Float64 xpan = 0.;
         vtkm::Float64 ypan = 0.;
-        if(m_camera.has_child("xpan")) xpan = m_camera["xpan"].to_float64();
-        if(m_camera.has_child("ypan")) xpan = m_camera["ypan"].to_float64();
-        m_vtkm_camera->Pan(xpan, ypan);
+        if(camera.has_child("xpan")) xpan = camera["xpan"].to_float64();
+        if(camera.has_child("ypan")) xpan = camera["ypan"].to_float64();
+        res.Pan(xpan, ypan);
     }
 
-    if(m_camera.has_child("zoom"))
+    if(camera.has_child("zoom"))
     {
-        m_vtkm_camera->Zoom(m_camera["zoom"].to_float64());
+        res.Zoom(camera["zoom"].to_float64());
     }
     //
     // With a new potential camera position. We need to reset the
     // clipping plane as not to cut out part of the data set
     //
-    this->SetDefaultClippingPlane();
+    this->SetDefaultClippingPlane(res);
     
-    if(m_camera.has_child("nearplane"))
+    if(camera.has_child("nearplane"))
     {
-        vtkm::Range clipping_range = m_vtkm_camera->GetClippingRange();
-        clipping_range.Min = m_camera["nearplane"].to_float64();
-        m_vtkm_camera->SetClippingRange(clipping_range);
+        vtkm::Range clipping_range = res.GetClippingRange();
+        clipping_range.Min = camera["nearplane"].to_float64();
+        res.SetClippingRange(clipping_range);
     }
 
-    if(m_camera.has_child("farplane"))
+    if(camera.has_child("farplane"))
     {
-        vtkm::Range clipping_range = m_vtkm_camera->GetClippingRange();
-        clipping_range.Max = m_camera["farplane"].to_float64();
-        m_vtkm_camera->SetClippingRange(clipping_range);
+        vtkm::Range clipping_range = res.GetClippingRange();
+        clipping_range.Max = camera["farplane"].to_float64();
+        res.SetClippingRange(clipping_range);
     }
+}
+
+//-----------------------------------------------------------------------------
+void
+Renderer::WriteCinemaMetadata()
+{
+    const int meta_count = m_cinema_metas.size();
+    if(meta_count == 0)
+    {
+        std::cout<<"no meta\n";
+        return;
+    }
+
+    std::map<std::string, CinemaMetadata>::iterator it;
+    for(it = m_cinema_metas.begin(); it != m_cinema_metas.end(); ++it)
+    {
+        conduit::Node output;
+        CinemaMetadata &cinema = it->second;
+        conduit::Node &header = output.append();
+        header["type"] = "cinema";
+        header["version"] = "1.1";
+       // conduit::Node meta;
+        //meta["type"] = "parametric-image-stack";
+        //header["metadata"] = meta;
+
+        //header.print();
+        output["name_pattern"] = "{time}_{phi}_{theta}_"+cinema.m_image_name+".png";
+     /* 
+        conduit::Node arguments;
+        conduit::Node time;
+        time["default"] = cinema.m_times[0];
+        time["label"] = "time";
+        time["type"] = "range";
+        time["values"].set_external_float64_vector(cinema.m_times);
+        arguments["time"] = time;
+
+        conduit::Node phi;
+        phi["default"] = cinema.m_phis[0];
+        phi["label"] = "phi";
+        phi["type"] = "range";
+        phi["values"].set_external_float64_vector(cinema.m_phis);
+        arguments["phi"] = phi;
+
+        conduit::Node theta;
+        theta["default"] = cinema.m_thetas[0];
+        theta["label"] = "theta";
+        theta["type"] = "range";
+        theta["values"].set_external_float64_vector(cinema.m_thetas);
+        arguments["theta"] = theta;
+
+        output["arguments"] = arguments;
+        arguments.print();*/
+    }
+
 }
 
 }; //namespace alpine
