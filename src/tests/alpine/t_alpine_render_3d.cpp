@@ -201,7 +201,6 @@ TEST(alpine_render_3d, test_render_3d_render_vtkm_serial_backend)
     
     Node open_opts;
     open_opts["pipeline/type"] = "vtkm";
-    open_opts["pipeline/backend"] = "serial";
     
     Alpine sman;
     sman.Open(open_opts);

@@ -125,6 +125,7 @@ IceTCompositor::Composite(int            width,
                                       NULL,
                                       icet_bg_color);
     CHECK_ICET_ERROR();
+    GetTimings();
     
     unsigned char * res= NULL;
     if(m_rank == 0)
@@ -135,7 +136,7 @@ IceTCompositor::Composite(int            width,
 }
 
 //-----------------------------------------------------------------------------
-float *
+unsigned char*
 IceTCompositor::Composite(int            width,
                           int            height,
                           const float   *color_buffer,
@@ -144,7 +145,7 @@ IceTCompositor::Composite(int            width,
 {
     icetResetTiles();
     icetAddTile(0, 0, width, height, 0);
-    
+    unsigned char * ubytes = ConvertBuffer(color_buffer, width * height * 4);     
     //best strategy for use with a single tile (i.e., one monitor)
     icetStrategy(ICET_STRATEGY_SEQUENTIAL); 
     icetSingleImageStrategy(ICET_SINGLE_IMAGE_STRATEGY_AUTOMATIC);
@@ -158,23 +159,28 @@ IceTCompositor::Composite(int            width,
                                    bg_color[3] };
 
     icetCompositeMode(ICET_COMPOSITE_MODE_BLEND);
-    icetSetColorFormat(ICET_IMAGE_COLOR_RGBA_FLOAT);
+    icetSetColorFormat(ICET_IMAGE_COLOR_RGBA_UBYTE);
     icetSetDepthFormat(ICET_IMAGE_DEPTH_NONE);
     icetEnable(ICET_ORDERED_COMPOSITE);
     icetCompositeOrder(vis_order);
-    m_icet_image = icetCompositeImage(color_buffer,
+    m_icet_image = icetCompositeImage(ubytes,
                                       NULL,
                                       NULL,
                                       NULL,
                                       NULL,
                                       icet_bg_color);
     CHECK_ICET_ERROR();
+    GetTimings();
     
     // Only rank 0 has the image
     int rank;
     icetGetIntegerv(ICET_RANK, &rank);
-    float * res = NULL;
-    if(rank == 0) res = icetImageGetColorf(m_icet_image);
+    unsigned char * res = NULL;
+    if(rank == 0) 
+    {
+        res = icetImageGetColorub(m_icet_image);
+    }
+    delete[] ubytes; 
     return res;
 }
 
@@ -221,7 +227,8 @@ IceTCompositor::Composite(int width,
                                       NULL,
                                       icet_bg_color);
     CHECK_ICET_ERROR();
-    
+    GetTimings();    
+
     unsigned char * res= NULL;
     if(m_rank == 0)
     {
@@ -231,7 +238,7 @@ IceTCompositor::Composite(int width,
     return res;
 }
 
-float *
+unsigned char *
 IceTCompositor::Composite(int width,
                           int height,
                           const float *color_buffer,
@@ -242,6 +249,7 @@ IceTCompositor::Composite(int width,
     icetResetTiles();
     icetAddTile(0, 0, width, height, 0);
     
+    unsigned char * ubytes = ConvertBuffer(color_buffer, width * height * 4);     
     //best strategy for use with a single tile (i.e., one monitor)
     icetStrategy(ICET_STRATEGY_SEQUENTIAL); 
     icetSingleImageStrategy(ICET_SINGLE_IMAGE_STRATEGY_AUTOMATIC);
@@ -254,11 +262,11 @@ IceTCompositor::Composite(int width,
                                    bg_color[2],
                                    bg_color[3] };
 
-    icetSetColorFormat(ICET_IMAGE_COLOR_RGBA_FLOAT);
+    icetSetColorFormat(ICET_IMAGE_COLOR_RGBA_UBYTE);
     icetSetDepthFormat(ICET_IMAGE_DEPTH_FLOAT);
     icetCompositeMode(ICET_COMPOSITE_MODE_Z_BUFFER);
 
-    m_icet_image = icetCompositeImage(color_buffer,
+    m_icet_image = icetCompositeImage(ubytes,
                                       depth_buffer,
                                       viewport,
                                       NULL,
@@ -266,14 +274,33 @@ IceTCompositor::Composite(int width,
                                       icet_bg_color);
 
     CHECK_ICET_ERROR();
-    
+    GetTimings();    
     // Only rank 0 has the image
     int rank;
     icetGetIntegerv(ICET_RANK, &rank);
-    if(rank == 0) return icetImageGetColorf(m_icet_image);
+    delete[] ubytes;
+    if(rank == 0) return icetImageGetColorub(m_icet_image);
     else return NULL;
 }
 
+
+//-----------------------------------------------------------------------------
+void
+IceTCompositor::GetTimings()
+{
+  double time;
+  icetGetDoublev(ICET_COLLECT_TIME, &time);
+  m_log_stream<<"icet_collect_time"<<" "<<time<<"\n";
+
+  icetGetDoublev(ICET_COMPOSITE_TIME, &time);
+  m_log_stream<<"icet_composite_time"<<" "<<time<<"\n";
+
+  icetGetDoublev(ICET_BLEND_TIME, &time);
+  m_log_stream<<"icet_blend_time"<<" "<<time<<"\n";
+
+  icetGetDoublev(ICET_COMPRESS_TIME, &time);
+  m_log_stream<<"icet_COMPRESS_time"<<" "<<time<<"\n";
+}
 
 //-----------------------------------------------------------------------------
 void

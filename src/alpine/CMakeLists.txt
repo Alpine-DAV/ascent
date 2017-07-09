@@ -60,6 +60,7 @@ if(ALPINE_VTKM_ENABLED)
 endif()
 
 
+set(ALPINE_USE_OPENMP  ${OPENMP_FOUND})
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/alpine_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/alpine_config.h")
@@ -71,6 +72,10 @@ set(alpine_sources
     # pipelines
     alpine_pipeline.cpp
     pipelines/alpine_empty_pipeline.cpp
+    pipelines/alpine_flow_pipeline.cpp
+    pipelines/flow_filters/alpine_flow_pipeline_filters.cpp
+    pipelines/flow_filters/alpine_flow_pipeline_relay_filters.cpp
+    pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.cpp
     # utils
     utils/alpine_file_system.cpp
     utils/alpine_block_timer.cpp
@@ -86,6 +91,11 @@ set(alpine_headers
     # pipelines
     alpine_pipeline.hpp
     pipelines/alpine_empty_pipeline.hpp
+    # flow
+    pipelines/alpine_flow_pipeline.hpp
+    pipelines/flow_filters/alpine_flow_pipeline_filters.hpp
+    pipelines/flow_filters/alpine_flow_pipeline_relay_filters.hpp
+    pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.hpp
     # utils
     utils/alpine_logging.hpp
     utils/alpine_file_system.hpp
@@ -116,6 +126,12 @@ if(HDF5_FOUND)
 endif()
 
 ##############################
+# Add apline_flow
+#############################
+add_subdirectory(flow)
+
+
+##############################
 # Add lodepng 
 #############################
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty_builtin/lodepng/ ${CMAKE_CURRENT_SOURCE_DIR}/utils/lodepng)
@@ -143,7 +159,8 @@ endif()
 set(alpine_thirdparty_libs 
     conduit
     conduit_relay
-    conduit_blueprint)
+    conduit_blueprint
+    alpine_flow)
 
 if(VTKM_FOUND)
     list(APPEND alpine_thirdparty_libs vtkm)
@@ -207,9 +224,21 @@ install(TARGETS alpine
 ################################################
 if(MPI_FOUND)
     if(VTKM_FOUND)
-        # we only need ice-t if we are rendering with vtk-m
-        set(alpine_par_sources utils/alpine_icet_compositor.cpp)
-        set(alpine_par_headers utils/alpine_icet_compositor.hpp)
+        # we only need compositing if we are rendering with vtk-m
+        set(alpine_par_sources utils/alpine_icet_compositor.cpp
+                               utils/alpine_diy_compositor.cpp
+                               utils/diy_compositing/alpine_diy_direct_send.cpp
+                               utils/diy_compositing/alpine_diy_direct_send.cpp
+                               utils/diy_compositing/alpine_diy_radix_k.cpp)
+                     
+        set(alpine_par_headers utils/alpine_icet_compositor.hpp
+                               utils/alpine_compositor_base.hpp
+                               utils/alpine_diy_compositor.hpp
+                               utils/diy_compositing/alpine_diy_image.hpp
+                               utils/diy_compositing/alpine_diy_collect.hpp
+                               utils/diy_compositing/alpine_diy_direct_send.hpp
+                               utils/diy_compositing/alpine_diy_radix_k.hpp)
+
         
         # we need to set compiler flags for the MPI case
         # we have to global cxx flags b/c of how the cmake cuda wrappers work 
