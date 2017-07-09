@@ -206,11 +206,11 @@ install(TARGETS alpine
 # Build Parallel (MPI) version of alpine
 ################################################
 if(MPI_FOUND)
-    set(alpine_par_sources utils/alpine_icet_compositor.cpp)
-    set(alpine_par_headers utils/alpine_icet_compositor.hpp)
-    
-
     if(VTKM_FOUND)
+        # we only need ice-t if we are rendering with vtk-m
+        set(alpine_par_sources utils/alpine_icet_compositor.cpp)
+        set(alpine_par_headers utils/alpine_icet_compositor.hpp)
+        
         # we need to set compiler flags for the MPI case
         # we have to global cxx flags b/c of how the cmake cuda wrappers work 
         # we save / restore the previous set of global flags after we create the cuda 

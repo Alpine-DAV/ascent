@@ -65,16 +65,16 @@ class UberenvAlpine(Package):
     # would like to use these in the future, but we need global variant support
     #variant('cuda',   default=False, description="Enable CUDA support.")
     #variant('openmp', default=False, description="Enable OpenMP support.")
-
+    variant("vtkm",default=True,description="build with vtkm pipeline support")
     variant("doc",default=True,description="build third party dependencies for creating Alpine's docs")
     variant("python",default=True,description="build python 2")
     variant("mpich",default=False,description="build mpich as MPI lib for Alpine")
     
     depends_on("cmake@3.3.1")
-    
-    depends_on("icet")
-    depends_on("vtkm")
-    
+
+    depends_on("vtkm",when="+vtkm")
+    depends_on("icet",when="+vtkm")
+
     # python2
     depends_on("python", when="+python")
     depends_on("py-numpy", when="+python")
@@ -262,24 +262,26 @@ class UberenvAlpine(Package):
         cfg.write(cmake_cache_entry("HDF5_DIR", spec['hdf5'].prefix))
         cfg.write("\n")
 
-        #######################
-        # icet
-        #######################
-        cfg.write("# icet from uberenv\n")
-        cfg.write(cmake_cache_entry("ICET_DIR", spec['icet'].prefix))
-        cfg.write("\n")
+    
 
         #######################
         # vtkm + tpls
         #######################
+        if "+vtkm" in spec:
+            cfg.write("\n# vtkm support\n\n")    
 
-        cfg.write("\n# vtkm support\n\n")    
+            cfg.write("# tbb from uberenv\n")
+            cfg.write(cmake_cache_entry("TBB_DIR", spec['tbb'].prefix))
 
-        cfg.write("# tbb from uberenv\n")
-        cfg.write(cmake_cache_entry("TBB_DIR", spec['tbb'].prefix))
+            cfg.write("# vtkm from uberenv\n")
+            cfg.write(cmake_cache_entry("VTKM_DIR", spec['vtkm'].prefix))
 
-        cfg.write("# vtkm from uberenv\n")
-        cfg.write(cmake_cache_entry("VTKM_DIR", spec['vtkm'].prefix))
+            #######################
+            # icet
+            #######################
+            cfg.write("# icet from uberenv\n")
+            cfg.write(cmake_cache_entry("ICET_DIR", spec['icet'].prefix))
+            cfg.write("\n")
 
 
         cfg.write("##################################\n")

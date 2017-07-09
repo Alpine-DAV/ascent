@@ -182,7 +182,7 @@ endif()
 ################################
 # IceT
 ################################
-if(ENABLE_MPI)
+if(ENABLE_MPI AND VTKM_FOUND)
     include(CMake/thirdparty/SetupIceT.cmake)
 endif()
 
