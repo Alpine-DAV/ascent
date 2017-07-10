@@ -53,9 +53,16 @@ env:
   - COMPILER_CXX=g++-4.8
   - COMPILER_FC=gfortran-4.8
   matrix:
-    # we want to test both static and shared
+    # we want to test both static and shared, w/ and w/o docs and vtkm.
     - BUILD_SHARED_LIBS=ON
+      ENABLE_VTKM=ON
+      ENABLE_DOCS=ON
     - BUILD_SHARED_LIBS=OFF
+      ENABLE_VTKM=ON
+      ENABLE_DOCS=OFF
+    - BUILD_SHARED_LIBS=ON
+      ENABLE_VTKM=OFF
+      ENABLE_DOCS=OFF
 addons:
   apt:
     sources:
@@ -75,8 +82,13 @@ script:
   - export FC=${COMPILER_FC}
   - ${CC} --version
   - cd $TRAVIS_BUILD_DIR
+  # setup spack spec based on our travis options
+  - export SPACK_SPEC="%gcc@4.8+mpich"
+  - test ${ENABLE_VTKM} = "OFF" && export SPACK_SPEC=${SPACK_SPEC}~vtkm
+  - test ${ENABLE_DOCS} = "OFF" && export SPACK_SPEC=${SPACK_SPEC}~doc
+  - echo "Using spack spec: ${SPACK_SPEC}"
   # build deps using uberenv
-  - python scripts/uberenv/uberenv.py --spec %gcc@4.8+mpich
+  - python scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
   # create out-of-source build dir
   - mkdir travis-debug-build
   - cd    travis-debug-build
