@@ -66,7 +66,9 @@ project(using_with_cmake)
 
 include("FindAlpine.cmake")
 include("FindConduit.cmake")
-include("FindVTKm.cmake")
+if(VTKM_DIR)
+    include("FindVTKm.cmake")
+endif()
 
 # setup the alpine & conduit include paths
 include_directories(${ALPINE_INCLUDE_DIRS})
