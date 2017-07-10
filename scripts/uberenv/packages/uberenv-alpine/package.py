@@ -131,7 +131,7 @@ class UberenvAlpine(Package):
         #######################
 
         if "+cmake" in spec:
-            cmake_exe = spec['cmake'].command.path
+            cmake_exe = pjoin(spec['cmake'].prefix.bin,"cmake")
         else:
             cmake_exe = which("cmake")
             if cmake_exe is None:
