@@ -223,23 +223,23 @@ install(TARGETS alpine
 # Build Parallel (MPI) version of alpine
 ################################################
 if(MPI_FOUND)
-    set(alpine_par_sources utils/alpine_icet_compositor.cpp
-                           utils/alpine_diy_compositor.cpp
-                           utils/diy_compositing/alpine_diy_direct_send.cpp
-                           utils/diy_compositing/alpine_diy_direct_send.cpp
-                           utils/diy_compositing/alpine_diy_radix_k.cpp)
-                         
-    set(alpine_par_headers utils/alpine_icet_compositor.hpp
-                           utils/alpine_compositor_base.hpp
-                           utils/alpine_diy_compositor.hpp
-                           utils/diy_compositing/alpine_diy_image.hpp
-                           utils/diy_compositing/alpine_diy_collect.hpp
-                           utils/diy_compositing/alpine_diy_direct_send.hpp
-                           utils/diy_compositing/alpine_diy_radix_k.hpp)
-    
-
-
     if(VTKM_FOUND)
+        # we only need compositing if we are rendering with vtk-m
+        set(alpine_par_sources utils/alpine_icet_compositor.cpp
+                               utils/alpine_diy_compositor.cpp
+                               utils/diy_compositing/alpine_diy_direct_send.cpp
+                               utils/diy_compositing/alpine_diy_direct_send.cpp
+                               utils/diy_compositing/alpine_diy_radix_k.cpp)
+                     
+        set(alpine_par_headers utils/alpine_icet_compositor.hpp
+                               utils/alpine_compositor_base.hpp
+                               utils/alpine_diy_compositor.hpp
+                               utils/diy_compositing/alpine_diy_image.hpp
+                               utils/diy_compositing/alpine_diy_collect.hpp
+                               utils/diy_compositing/alpine_diy_direct_send.hpp
+                               utils/diy_compositing/alpine_diy_radix_k.hpp)
+
+        
         # we need to set compiler flags for the MPI case
         # we have to global cxx flags b/c of how the cmake cuda wrappers work 
         # we save / restore the previous set of global flags after we create the cuda 

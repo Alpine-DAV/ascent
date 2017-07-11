@@ -122,7 +122,9 @@ add_subdirectory(alpine)
 ################################
 # Add vtk-h 
 ################################
-add_subdirectory(vtk-h)
+if(VTKM_FOUND)
+    add_subdirectory(vtk-h)
+endif()
 
 ################################
 # Add our tests

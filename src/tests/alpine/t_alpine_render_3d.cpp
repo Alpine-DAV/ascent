@@ -75,6 +75,19 @@ index_t EXAMPLE_MESH_SIDE_DIM = 20;
 //-----------------------------------------------------------------------------
 TEST(alpine_render_3d, test_render_3d_render_default_pipeline)
 {
+    // the vtkm pipeline is currently our only rendering pipeline
+    Node n;
+    alpine::about(n);
+    // only run this test if alpine was built with vtkm support
+    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    {
+        ALPINE_INFO("VTKm support disabled, skipping 2D default"
+                      "Pipeline test");
+
+        return;
+    }
+    
+    
     //
     // Create an example mesh.
     //

@@ -58,23 +58,28 @@ def cmake_cache_entry(name,value):
 class UberenvAlpine(Package):
     """Spack Based Uberenv Build for Alpine Thirdparty Libs """
 
-    homepage = "http://example.com"
+    homepage = "https://github.com/alpine-DAV/alpine"
 
     version('0.1', '8d378ef62dedc2df5db447b029b71200')
     
-    # would like to use these in the future, but we need global variant support
+    # would like to use these in the future
     #variant('cuda',   default=False, description="Enable CUDA support.")
     #variant('openmp', default=False, description="Enable OpenMP support.")
 
+    variant("cmake", default=True,
+             description="Build CMake (if off, attempt to use cmake from PATH)")
+
+    variant("vtkm",default=True,description="build with vtkm pipeline support")
     variant("doc",default=True,description="build third party dependencies for creating Alpine's docs")
     variant("python",default=True,description="build python 2")
     variant("mpich",default=False,description="build mpich as MPI lib for Alpine")
     
-    depends_on("cmake@3.8.2")
     
-    depends_on("icet")
-    depends_on("vtkm")
-    
+    depends_on("cmake@3.3.1",when="+cmake")
+
+    depends_on("vtkm",when="+vtkm")
+    depends_on("icet",when="+vtkm")
+
     # python2
     depends_on("python", when="+python")
     depends_on("py-numpy", when="+python")
@@ -88,12 +93,12 @@ class UberenvAlpine(Package):
     #on osx, always build mpich for mpi support
     if "darwin" in platform.system().lower():
         depends_on("mpich")
-        depends_on("conduit~silo~python3+mpich")
+        depends_on("conduit~doc~silo~python3+mpich")
     else: # else, defer to the variant
-        depends_on("conduit~silo~python3")
+        depends_on("conduit~doc~silo~python3")
         depends_on("mpich",when="+mpich")
         depends_on("icet+mpich", when="+mpich")
-        depends_on("conduit~silo~python3+mpich", when="+mpich")
+        depends_on("conduit~doc~silo~python3+mpich", when="+mpich")
 
 
     def url_for_version(self, version):
@@ -124,7 +129,15 @@ class UberenvAlpine(Package):
         #######################
         # TPL Paths
         #######################
-        cmake_exe  = pjoin(spec['cmake'].prefix.bin,"cmake")
+
+        if "+cmake" in spec:
+            cmake_exe = pjoin(spec['cmake'].prefix.bin,"cmake")
+        else:
+            cmake_exe = which("cmake")
+            if cmake_exe is None:
+                msg = 'failed to find CMake (and cmake variant is off)'
+                raise RuntimeError(msg)
+            cmake_exe = cmake_exe.path
 
         print "cmake executable: %s" % cmake_exe
         
@@ -202,14 +215,6 @@ class UberenvAlpine(Package):
         #######################
         # sphinx
         #######################
-        sphinx_build_exe = pjoin(spec['python'].prefix.bin,"sphinx-build")
-        cfg.write("# python from uberenv\n")
-        cfg.write(cmake_cache_entry("SPHINX_EXECUTABLE",sphinx_build_exe))
-
-
-        #######################
-        # sphinx
-        #######################
         if "+doc" in spec:
             sphinx_build_exe = pjoin(spec['python'].prefix.bin,"sphinx-build")
             cfg.write("# sphinx from uberenv\n")
@@ -262,24 +267,26 @@ class UberenvAlpine(Package):
         cfg.write(cmake_cache_entry("HDF5_DIR", spec['hdf5'].prefix))
         cfg.write("\n")
 
-        #######################
-        # icet
-        #######################
-        cfg.write("# icet from uberenv\n")
-        cfg.write(cmake_cache_entry("ICET_DIR", spec['icet'].prefix))
-        cfg.write("\n")
+    
 
         #######################
         # vtkm + tpls
         #######################
+        if "+vtkm" in spec:
+            cfg.write("\n# vtkm support\n\n")    
 
-        cfg.write("\n# vtkm support\n\n")    
+            cfg.write("# tbb from uberenv\n")
+            cfg.write(cmake_cache_entry("TBB_DIR", spec['tbb'].prefix))
 
-        cfg.write("# tbb from uberenv\n")
-        cfg.write(cmake_cache_entry("TBB_DIR", spec['tbb'].prefix))
+            cfg.write("# vtkm from uberenv\n")
+            cfg.write(cmake_cache_entry("VTKM_DIR", spec['vtkm'].prefix))
 
-        cfg.write("# vtkm from uberenv\n")
-        cfg.write(cmake_cache_entry("VTKM_DIR", spec['vtkm'].prefix))
+            #######################
+            # icet
+            #######################
+            cfg.write("# icet from uberenv\n")
+            cfg.write(cmake_cache_entry("ICET_DIR", spec['icet'].prefix))
+            cfg.write("\n")
 
 
         cfg.write("##################################\n")

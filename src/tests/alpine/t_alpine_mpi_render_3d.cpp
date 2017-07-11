@@ -69,6 +69,18 @@ using namespace alpine;
 //-----------------------------------------------------------------------------
 TEST(alpine_mpi_render_3d, mpi_render_3d_default_pipeline)
 {
+    // the vtkm pipeline is currently our only rendering pipeline
+    Node n;
+    alpine::about(n);
+    // only run this test if alpine was built with vtkm support
+    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    {
+        ALPINE_INFO("VTKm support disabled, skipping 3D MPI "
+                      "Pipeline test");
+
+        return;
+    }
+    
     //
     // Set Up MPI
     //
@@ -153,6 +165,18 @@ TEST(alpine_mpi_render_3d, mpi_render_3d_default_pipeline)
 //-----------------------------------------------------------------------------
 TEST(alpine_mpi_render_3d, mpi_render_3d_diy_compositor_surface)
 {
+    // the vtkm pipeline is currently our only rendering pipeline
+    Node n;
+    alpine::about(n);
+    // only run this test if alpine was built with vtkm support
+    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    {
+        ALPINE_INFO("VTKm support disabled, skipping 3D MPI "
+                      "Pipeline test");
+
+        return;
+    }
+    
     //
     // Set Up MPI
     //
@@ -239,6 +263,18 @@ TEST(alpine_mpi_render_3d, mpi_render_3d_diy_compositor_surface)
 //-----------------------------------------------------------------------------
 TEST(alpine_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
 {
+    // the vtkm pipeline is currently our only rendering pipeline
+    Node n;
+    alpine::about(n);
+    // only run this test if alpine was built with vtkm support
+    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    {
+        ALPINE_INFO("VTKm support disabled, skipping 3D MPI "
+                      "Pipeline test");
+
+        return;
+    }
+    
     //
     // Set Up MPI
     //

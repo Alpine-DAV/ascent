@@ -61,6 +61,10 @@ add_executable(noise_ser ${noise_sources})
 target_link_libraries(noise_ser
                       alpine)
 
+set_target_properties(noise_ser PROPERTIES
+                      CXX_STANDARD 11
+                      CXX_STANDARD_REQUIRED YES
+                      CXX_EXTENTIONS NO)
 
 #configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
 #configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
@@ -87,6 +91,12 @@ if(MPI_FOUND)
     target_link_libraries(noise_par
                           alpine_par
                           ${MPI_CXX_LIBRARIES})
+
+    set_target_properties(noise_par PROPERTIES
+                        CXX_STANDARD 11
+                        CXX_STANDARD_REQUIRED YES
+                        CXX_EXTENTIONS NO)
+
 endif()
 
 
