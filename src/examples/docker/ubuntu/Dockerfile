@@ -75,7 +75,7 @@ RUN tar -xzf alpine.docker.src.tar.gz
 
 # bootstrap third party libs using spack and uberenv
 #  for this example we use mpich for MPI
-RUN cd alpine && python scripts/uberenv/uberenv.py -k --spec %gcc+mpich~doc~vtkm
+RUN cd alpine && python scripts/uberenv/uberenv.py -k --spec %gcc+mpich~doc
 
 # configure a debug build with cmake
 RUN cd alpine && mkdir build-debug
