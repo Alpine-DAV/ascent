@@ -84,9 +84,13 @@ script:
   - cd $TRAVIS_BUILD_DIR
   # setup spack spec based on our travis options
   - export SPACK_SPEC="%gcc@4.8+mpich"
-  - (test "${ENABLE_VTKM}" = "OFF" && export SPACK_SPEC=${SPACK_SPEC}~vtkm) || true 
-  - (test "${ENABLE_DOCS}" = "OFF" && export SPACK_SPEC=${SPACK_SPEC}~doc)  || true 
+  - (test ${ENABLE_VTKM} = "OFF" && export SPACK_SPEC=${SPACK_SPEC}~vtkm) || true 
+  - (test ${ENABLE_DOCS} = "OFF" && export SPACK_SPEC=${SPACK_SPEC}~doc)  || true 
   - echo $SPACK_SPEC
+  - export EXAMPLE_CMAKE_FLAGS="test "
+  - (test ${ENABLE_VTKM} = "ON" && export EXAMPLE_CMAKE_FLAGS="${EXAMPLE_CMAKE_FLAGS} -DVTKM_DIR=${VTKM_DIR}" ) || true 
+  - echo ${EXAMPLE_CMAKE_FLAGS}
+  - travis_terminate 0
   # build deps using uberenv
   - python scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
   # create out-of-source build dir
