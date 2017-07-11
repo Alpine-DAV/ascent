@@ -84,16 +84,12 @@ script:
   - cd $TRAVIS_BUILD_DIR
   # setup spack spec based on our travis options
   - export SPACK_SPEC="%gcc@4.8+mpich"
-  - if [ $ENABLE_VTKM == 'ON' ]; then
-        export SPACK_SPEC=${SPACK_SPEC}~vtkm;
-    fi
-  - if [ $ENABLE_DOCS == 'ON' ]; then
-        export SPACK_SPEC=${SPACK_SPEC}~doc;
-    fi
+  - if [ $ENABLE_VTKM = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkm; fi
+  - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~doc; fi
   - echo $SPACK_SPEC
-  - export EXAMPLE_CMAKE_FLAGS="test "
-  - test ${ENABLE_VTKM} = "ON" && export EXAMPLE_CMAKE_FLAGS="${EXAMPLE_CMAKE_FLAGS} -DVTKM_DIR=${VTKM_DIR}";
-  - echo ${EXAMPLE_CMAKE_FLAGS}
+  - export EXAMPLE_CFG="test "
+  - export VTKM_DIR="path"
+  - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR}"; fi
   - travis_terminate 0
   # build deps using uberenv
   - python scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
@@ -128,7 +124,7 @@ script:
   - mkdir build
   - cd build
   - export EXAMPLE_CMAKE_FLAGS="-DALPINE_DIR=${ALPINE_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
-  - (test "${ENABLE_VTKM}" = "ON" && export EXAMPLE_CMAKE_FLAGS="${EXAMPLE_CMAKE_FLAGS} -DVTKM_DIR=${VTKM_DIR}" ) || true 
+  - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CMAKE_FLAGS="${EXAMPLE_CMAKE_FLAGS} -DVTKM_DIR=${VTKM_DIR}"; fi
   - echo $EXAMPLE_CMAKE_FLAGS
   - cmake  ${EXAMPLE_CMAKE_FLAGS} ../
   - make VERBOSE=1
