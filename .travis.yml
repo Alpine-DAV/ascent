@@ -87,10 +87,6 @@ script:
   - if [ $ENABLE_VTKM = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkm; fi
   - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~doc; fi
   - echo $SPACK_SPEC
-  - export EXAMPLE_CFG="test "
-  - export VTKM_DIR="path"
-  - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR}"; fi
-  - travis_terminate 0
   # build deps using uberenv
   - python scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
   # create out-of-source build dir
@@ -123,10 +119,10 @@ script:
   - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
   - mkdir build
   - cd build
-  - export EXAMPLE_CMAKE_FLAGS="-DALPINE_DIR=${ALPINE_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
-  - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CMAKE_FLAGS="${EXAMPLE_CMAKE_FLAGS} -DVTKM_DIR=${VTKM_DIR}"; fi
-  - echo $EXAMPLE_CMAKE_FLAGS
-  - cmake  ${EXAMPLE_CMAKE_FLAGS} ../
+  - export EXAMPLE_CFG="-DALPINE_DIR=${ALPINE_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
+  - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR}"; fi
+  - echo $EXAMPLE_CFG
+  - cmake  ${EXAMPLE_CFG} ../
   - make VERBOSE=1
   - ./example
   # using with make example (still needs work for static builds)
