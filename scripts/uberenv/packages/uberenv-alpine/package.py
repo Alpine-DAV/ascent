@@ -58,19 +58,24 @@ def cmake_cache_entry(name,value):
 class UberenvAlpine(Package):
     """Spack Based Uberenv Build for Alpine Thirdparty Libs """
 
-    homepage = "http://example.com"
+    homepage = "https://github.com/alpine-DAV/alpine"
 
     version('0.1', '8d378ef62dedc2df5db447b029b71200')
     
-    # would like to use these in the future, but we need global variant support
+    # would like to use these in the future
     #variant('cuda',   default=False, description="Enable CUDA support.")
     #variant('openmp', default=False, description="Enable OpenMP support.")
+
+    variant("cmake", default=True,
+             description="Build CMake (if off, attempt to use cmake from PATH)")
+
     variant("vtkm",default=True,description="build with vtkm pipeline support")
     variant("doc",default=True,description="build third party dependencies for creating Alpine's docs")
     variant("python",default=True,description="build python 2")
     variant("mpich",default=False,description="build mpich as MPI lib for Alpine")
     
-    depends_on("cmake@3.3.1")
+    
+    depends_on("cmake@3.3.1",when="+cmake")
 
     depends_on("vtkm",when="+vtkm")
     depends_on("icet",when="+vtkm")
@@ -124,7 +129,15 @@ class UberenvAlpine(Package):
         #######################
         # TPL Paths
         #######################
-        cmake_exe  = pjoin(spec['cmake'].prefix.bin,"cmake")
+
+        if "+cmake" in spec:
+            cmake_exe = pjoin(spec['cmake'].prefix.bin,"cmake")
+        else:
+            cmake_exe = which("cmake")
+            if cmake_exe is None:
+                msg = 'failed to find CMake (and cmake variant is off)'
+                raise RuntimeError(msg)
+            cmake_exe = cmake_exe.path
 
         print "cmake executable: %s" % cmake_exe
         
