@@ -69,7 +69,7 @@ function(add_cpp_test)
     set_target_properties(${arg_TEST} PROPERTIES
                           CXX_STANDARD 11
                           CXX_STANDARD_REQUIRED YES
-                          CXX_EXTENTIONS NO)
+                          CXX_EXTENSIONS NO)
     target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS})
     target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
    

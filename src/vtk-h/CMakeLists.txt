@@ -112,7 +112,7 @@ endif()
 set_target_properties(vtkh PROPERTIES
                       CXX_STANDARD 11
                       CXX_STANDARD_REQUIRED YES
-                      CXX_EXTENTIONS NO)
+                      CXX_EXTENSIONS NO)
 
 add_target_compile_flags(TARGET vtkh 
                          FLAGS ${VTKm_COMPILE_OPTIONS})
