@@ -48,7 +48,7 @@
 ####################################
 set(PYTHON_MODULE_TESTS t_python_alpine_smoke)
 
-
+message(STATUS "Adding alpine lib python interface unit tests")
 foreach(TEST ${PYTHON_MODULE_TESTS})
     add_python_test(${TEST})
 endforeach()
