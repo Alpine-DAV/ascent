@@ -128,7 +128,7 @@ if(MPI_FOUND)
         HEADERS     ${vtkh_par_headers}
         DEPENDS_ON  ${vtkh_thirdparty_libs} mpi icet)
   
-    add_target_compile_flags(TARGET vtkh_par FLAGS "-D PARALLEL")
+    blt_add_target_compile_flags(TO vtkh_par FLAGS "-D PARALLEL")
   
     # install target for mpi ver
     install(TARGETS vtkh_par

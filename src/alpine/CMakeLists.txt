@@ -76,8 +76,6 @@ set(alpine_sources
     pipelines/flow_filters/alpine_flow_pipeline_filters.cpp
     pipelines/flow_filters/alpine_flow_pipeline_relay_filters.cpp
     pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.cpp
-    # TODO: fix this once we have OBJECT lib support?
-    # ${CMAKE_SOURCE_DIR}/thirdparty_builtin/lodepng/lodepng.cpp
     # utils
     utils/alpine_file_system.cpp
     utils/alpine_block_timer.cpp
@@ -212,20 +210,20 @@ if(MPI_FOUND)
     endif()
    
     # req'd libs 
-    set(alpine_par_thirdparyt_libs mpi conduit_relay_mpi)
+    set(alpine_par_thirdparty_libs mpi conduit_relay_mpi)
 
     # optional libs
     if(ICET_FOUND)
-        list(APPEND alpine_par_thirdparyt_libs icet)
+        list(APPEND alpine_par_thirdparty_libs icet)
     endif()
    
     blt_add_library(
         NAME        alpine_par
         SOURCES     ${alpine_sources} ${alpine_par_sources} $<TARGET_OBJECTS:lodepng>
         HEADERS     ${alpine_headers} ${alpine_par_headers}
-        DEPENDS_ON  ${alpine_thirdparty_libs} ${alpine_par_thirdparyt_libs})
-
-    add_target_compile_flags(TARGET alpine_par FLAGS "-D PARALLEL")
+        DEPENDS_ON  ${alpine_thirdparty_libs} ${alpine_par_thirdparty_libs})
+    
+    blt_add_target_compile_flags(TO alpine_par FLAGS "-D PARALLEL")
 
     # install target for mpi ver
     install(TARGETS alpine_par

@@ -42,9 +42,6 @@
 # 
 ###############################################################################
 
-
-set(UNIT_TEST_BASE_LIBS gtest_main gtest)
-
 ##------------------------------------------------------------------------------
 ## - Builds and adds a test that uses gtest
 ##
@@ -63,17 +60,6 @@ function(add_cpp_test)
                          "${multiValueArgs}" ${ARGN} )
 
     message(STATUS " [*] Adding Unit Test: ${arg_TEST}")
-
-    # add_executable( ${arg_TEST} ${arg_TEST}.cpp )
-    #
-    # set_target_properties(${arg_TEST} PROPERTIES
-    #                       CXX_STANDARD 11
-    #                       CXX_STANDARD_REQUIRED YES
-    #                       CXX_EXTENTIONS NO)
-    # target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS})
-    # target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
-    #
-    # add_test( ${arg_TEST} ${arg_TEST} )
 
     blt_add_executable( NAME ${arg_TEST}
                         SOURCES ${arg_TEST}.cpp ${fortran_driver_source}
@@ -105,15 +91,6 @@ function(add_cuda_test)
                          "${multiValueArgs}" ${ARGN} )
 
     message(STATUS " [*] Adding CUDA Unit Test: ${arg_TEST}")
-
-    # cuda_compile( ${arg_TEST}_O ${arg_TEST}.cu)
-    #
-    # cuda_add_executable(${arg_TEST} ${${arg_TEST}_O})
-    #
-    # target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS})
-    # target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
-    #
-    # add_test( ${arg_TEST} ${arg_TEST} )
 
     blt_add_executable( NAME ${arg_TEST}
                         SOURCES ${arg_TEST}.cpp ${fortran_driver_source}
@@ -155,31 +132,6 @@ function(add_cpp_mpi_test)
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${arg_TEST}
                   NUM_PROCS ${arg_NUM_PROCS})
-
-  
-    # # make sure the test can see the mpi headers
-#     include_directories(${MPI_CXX_INCLUDE_PATH})
-#     # guard against empty mpi params
-#     if(NOT "${MPI_CXX_COMPILE_FLAGS}" STREQUAL "")
-#         set_source_files_properties(${arg_TEST}.cpp PROPERTIES COMPILE_FLAGS  ${MPI_CXX_COMPILE_FLAGS} )
-#     endif()
-#     if(NOT "${MPI_CXX_LINK_FLAGS}" STREQUAL "")
-#         set_source_files_properties(${arg_TEST}.cpp PROPERTIES LINK_FLAGS  ${MPI_CXX_LINK_FLAGS} )
-#     endif()
-#
-#
-#     add_executable( ${arg_TEST} ${arg_TEST}.cpp )
-#
-#     target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS} )
-#     target_link_libraries( ${arg_TEST} ${MPI_CXX_LIBRARIES} )
-#     target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
-
-    # setup custom test command to launch the test via mpi
-    
-    # set(test_parameters ${MPIEXEC_NUMPROC_FLAG} ${arg_NUM_PROCS} "./${arg_TEST}")
- #
-   
-    #add_test(NAME ${arg_TEST} COMMAND ${MPIEXEC} ${test_parameters})
 
 endfunction()
 
@@ -231,16 +183,6 @@ macro(add_fortran_test)
         blt_add_test( NAME ${arg_TEST}
                       COMMAND ${arg_TEST}
                         )
-
-    # add_executable( ${arg_TEST} ${arg_TEST}.f ${fortran_driver_source})
-    # set_target_properties(${arg_TEST} PROPERTIES Fortran_FORMAT "FREE")
-    #
-    # target_link_libraries( ${arg_TEST} fruit)
-    # target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS})
-    # target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
-    #
-    # add_test( ${arg_TEST} ${arg_TEST})
-
 endmacro(add_fortran_test)
 
 

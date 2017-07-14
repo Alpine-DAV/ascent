@@ -55,47 +55,32 @@ set(noise_sources
 set(noise_header
     open_simplex_noise.h)
 
-
-add_executable(noise_ser ${noise_sources})
-
-target_link_libraries(noise_ser
-                      alpine)
-
-set_target_properties(noise_ser PROPERTIES
-                      CXX_STANDARD 11
-                      CXX_STANDARD_REQUIRED YES
-                      CXX_EXTENTIONS NO)
-
-#configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
-#configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
-
-
 if(OPENMP_FOUND)
   set(noise_openmp_flags "-DNOISE_USE_OPENMP")
 else()
    set(noise_openmp_flags "")
 endif()
 
-add_target_compile_flags(TARGET noise_ser
-                         FLAGS "${noise_openmp_flags}")
+blt_add_executable(
+    NAME        noise_ser
+    SOURCES     ${noise_sources}
+    DEPENDS_ON  alpine)
+
+blt_add_target_compile_flags(TO noise_ser FLAGS "${noise_openmp_flags}")
 
 if(MPI_FOUND)
-    add_executable(noise_par ${noise_sources})
+    
+    set(noise_par_deps alpine_par mpi)
+    if(OPENMP_FOUND)
+           list(APPEND noise_par_deps openmp)
+    endif()
+    
+    blt_add_executable(
+        NAME        noise_par
+        SOURCES     ${noise_sources}
+        DEPENDS_ON  ${noise_par_deps})
 
-    add_target_compile_flags(TARGET noise_par 
-                             FLAGS "${MPI_CXX_COMPILE_FLAGS} -DPARALLEL  ${noise_openmp_flags}")
-
-    add_target_link_flags(TARGET noise_par  
-                          FLAGS "${MPI_CXX_LINK_FLAGS}")
-
-    target_link_libraries(noise_par
-                          alpine_par
-                          ${MPI_CXX_LIBRARIES})
-
-    set_target_properties(noise_par PROPERTIES
-                        CXX_STANDARD 11
-                        CXX_STANDARD_REQUIRED YES
-                        CXX_EXTENTIONS NO)
+    blt_add_target_compile_flags(TO noise_par FLAGS "-DPARALLEL  ${noise_openmp_flags}")
 
 endif()
 
