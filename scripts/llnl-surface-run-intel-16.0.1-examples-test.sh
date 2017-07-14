@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 # Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
 # 
@@ -42,8 +43,6 @@
 # 
 ###############################################################################
 
-use ic
-module load gcc-4.9.2
-module load cudatoolkit/7.0
-use mvapich2-intel-2.0
-
+source /usr/local/tools/dotkit/init.sh
+source llnl-surface-load-env-intel-16.0.3.sh
+source run-proxy-examples-tests.sh

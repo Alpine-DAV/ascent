@@ -45,10 +45,11 @@
 
 ###############################################################################
 # use uberenv to install everything
+# make sure to source the proper intel env helper
 source /usr/local/tools/dotkit/init.sh
-source ../llnl-surface-load-env-gcc-4.4.7.sh 
-python uberenv.py --prefix /usr/gapps/visit/alpine/uberenv_libs --spec %gcc@4.4.7 "$@"
+source ../llnl-surface-load-env-gnu-4.9.3.sh 
+python uberenv.py --prefix /usr/workspace/wsa/visit/alpine/uberenv_libs --spec %gcc@4.9.3 "$@"
 # change group and perms
-chgrp -R visit /usr/gapps/visit/alpine/
-chmod -R g+rwX /usr/gapps/visit/alpine/
+chgrp -R visit /usr/workspace/wsa/visit/alpine/uberenv_libs
+chmod -R g+rwX /usr/workspace/wsa/visit/alpine/uberenv_libs
 

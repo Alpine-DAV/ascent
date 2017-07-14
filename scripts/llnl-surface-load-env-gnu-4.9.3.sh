@@ -1,4 +1,3 @@
-#!/bin/bash
 ###############################################################################
 # Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
 # 
@@ -43,6 +42,5 @@
 # 
 ###############################################################################
 
-source /usr/local/tools/dotkit/init.sh
-source llnl-surface-load-env-intel-14.0.3.sh
-source run-proxy-examples-tests.sh
+module load cudatoolkit/7.0
+export PATH=/usr/local/tools/mvapich2-gnu-2.0/bin:$PATH

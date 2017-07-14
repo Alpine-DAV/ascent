@@ -17,11 +17,6 @@ compilers:
             f77: None
             fc:  None   
         # default intel
-        intel@14.0.3:
-            cc:  /usr/local/tools/ic/bin/icc
-            cxx: /usr/local/tools/ic/bin/icpc
-            f77: /usr/local/tools/ic/bin/fort
-            fc:  /usr/local/tools/ic/bin/ifort  
         intel@15.0.187:
             cc:  /usr/local/tools/ic-15.0.187/bin/icc
             cxx: /usr/local/tools/ic-15.0.187/bin/icpc
