@@ -42,88 +42,20 @@
 # 
 ###############################################################################
 
-###############################################################################
-#
-# Cloverleaf3D CMake Build for Alpine
-#
-###############################################################################
-
-
-set(CLOVER3D_SOURCES
-    PdV.f90
-    PdV_kernel.f90
-    accelerate.f90
-    accelerate_kernel.f90
-    advec_cell_driver.f90
-    advec_cell_kernel.f90
-    advec_mom_driver.f90
-    advec_mom_kernel.f90
-    advection.f90
-    build_field.f90
-    calc_dt.f90
-    calc_dt_kernel.f90
-    clover.F90
-    clover_leaf.f90
-    data.f90
-    definitions.f90
-    field_summary.f90
-    field_summary_kernel.f90
-    flux_calc.f90
-    flux_calc_kernel.f90
-    generate_chunk.f90
-    generate_chunk_kernel.f90
-    hydro.f90
-    ideal_gas.f90
-    ideal_gas_kernel.f90
-    initialise.f90
-    initialise_chunk.f90
-    initialise_chunk_kernel.f90
-    pack_kernel.f90
-    parse.f90
-    read_input.f90
-    report.f90
-    reset_field.f90
-    reset_field_kernel.f90
-    revert.f90
-    revert_kernel.f90
-    start.f90
-    timer.f90
-    timestep.f90
-    update_halo.f90
-    update_halo_kernel.f90
-    viscosity.f90
-    viscosity_kernel.f90
-    visit.F90
-    timer_c.c
-    clover_main.cpp)
-
-# cloverleaf3d reqs fortran and mpi
-if(MPI_FOUND AND FORTRAN_FOUND)
-    # copy over the input deck
-    configure_file(clover.in ${CMAKE_CURRENT_BINARY_DIR}/clover.in COPYONLY)
-    configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
-    configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
-
-    if(MPI_Fortran_USE_MODULE )
-        set(clover_compile_flags "-DUSE_MOD")
+################################
+# Guards for Fortran support.
+################################
+if(ENABLE_FORTRAN)
+    if(CMAKE_Fortran_COMPILER)
+        MESSAGE(STATUS  "Fortran Compiler: ${CMAKE_Fortran_COMPILER}")
+        set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/fortran)
+    elseif(CMAKE_GENERATOR STREQUAL Xcode)
+        MESSAGE(STATUS "Disabling Fortran support: ENABLE_FORTRAN is true, "
+                       "but the Xcode CMake Generator does not support Fortran.")
+        set(ENABLE_FORTRAN OFF)
     else()
-        set(clover_compile_flags "-DUSE_MPIF") 
+        MESSAGE(FATAL_ERROR "ENABLE_FORTRAN is true, but a Fortran compiler wasn't found.")
     endif()
-
-    set(clover_par_deps alpine_par mpi)
-    
-    blt_add_executable(
-        NAME        cloverleaf3d_par
-        SOURCES     ${CLOVER3D_SOURCES}
-        DEPENDS_ON  ${clover_par_deps})
-
-                          
-    blt_add_target_compile_flags(TO cloverleaf3d_par FLAGS "${clover_compile_flags}")
-
+    set(FORTRAN_FOUND 1)
 endif()
-
-
-
-
-
 

@@ -85,34 +85,27 @@ include(blt/SetupBLT.cmake)
 ################################
 # Basic CMake Setup
 ################################
-include(CMake/CMakeBasics.cmake)
-
+include(cmake/CMakeBasics.cmake)
 
 ################################
-# Compiler Options
-# (fortran, openmp, cuda, etc)
+# Setup Fortran Support
 ################################
-#include(CMake/SetupCompilerOptions.cmake)
+include(cmake/SetupFortran.cmake)
 
 ################################
 # Setup 3rd Party Libs
 ################################
-include(CMake/Setup3rdParty.cmake)
-
-################################
-# Setup docs targets
-################################
-#include(CMake/SetupDocs.cmake)
+include(cmake/Setup3rdParty.cmake)
 
 ################################
 # Setup tests helpers
 ################################
-include(CMake/SetupTests.cmake)
+include(cmake/SetupTests.cmake)
 
 ################################
 # Setup project wide includes
 ################################
-include(CMake/SetupIncludes.cmake)
+include(cmake/SetupIncludes.cmake)
 
 ################################
 # Add builtin third party libs

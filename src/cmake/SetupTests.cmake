@@ -171,18 +171,14 @@ macro(add_fortran_test)
                          "${multiValueArgs}" ${ARGN} )
 
     message(STATUS " [*] Adding Fortran Unit Test: ${arg_TEST}")
-    # TODO: FIX THIS!!!!
-    set(fortran_driver_source
-        ${CMAKE_SOURCE_DIR}/thirdparty_builtin/fruit-3.3.9/gtest_fortran_driver.cpp)
+    blt_add_executable( NAME ${arg_TEST}
+                        SOURCES ${arg_TEST}.f
+                        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+                        DEPENDS_ON fruit gtest "${arg_DEPENDS_ON}")
 
-        blt_add_executable( NAME ${arg_TEST}
-                            SOURCES ${arg_TEST}.f ${fortran_driver_source}
-                            OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
-                            DEPENDS_ON fruit gtest "${arg_DEPENDS_ON}")
+    blt_add_test( NAME ${arg_TEST}
+                  COMMAND ${arg_TEST})
 
-        blt_add_test( NAME ${arg_TEST}
-                      COMMAND ${arg_TEST}
-                        )
 endmacro(add_fortran_test)
 
 
