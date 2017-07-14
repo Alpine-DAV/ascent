@@ -148,7 +148,7 @@ if(NOT TBB_FOUND)
     set(TBB_MALLOC_PROXY_DEBUG_LIB "")
 
     set(TBBROOT ${TBB_DIR})
-    include(CMake/thirdparty/FindTBB.cmake)
+    include(cmake/thirdparty/FindTBB.cmake)
 endif()
 
 

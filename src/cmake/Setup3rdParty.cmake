@@ -54,7 +54,7 @@
 # Setup Python if requested
 ################################
 if(ENABLE_PYTHON)
-    include(CMake/thirdparty/SetupPython.cmake)
+    include(cmake/thirdparty/SetupPython.cmake)
     message(STATUS "Using Python Include: ${PYTHON_INCLUDE_DIRS}")
     include_directories(${PYTHON_INCLUDE_DIRS})
     # if we don't find python, throw a fatal error
@@ -66,7 +66,7 @@ endif()
 ################################
 # Conduit
 ################################
-include(CMake/thirdparty/SetupConduit.cmake)
+include(cmake/thirdparty/SetupConduit.cmake)
 
 
 ################################################################
@@ -99,13 +99,13 @@ if(VTKM_DIR)
     ################################
     message(STATUS "If VTK-m was configured with TBB then you must specify the TBB_DIR")
     if(TBB_DIR) # optional 
-        include(CMake/thirdparty/SetupTBB.cmake)
+        include(cmake/thirdparty/SetupTBB.cmake)
     endif()
 
     ################################
     # VTKm
     ################################
-    include(CMake/thirdparty/SetupVTKm.cmake)
+    include(cmake/thirdparty/SetupVTKm.cmake)
 endif()
 
 
@@ -113,7 +113,7 @@ endif()
 # Setup HDF5
 ################################
 if(HDF5_DIR)
-    include(CMake/thirdparty/SetupHDF5.cmake)
+    include(cmake/thirdparty/SetupHDF5.cmake)
 endif()
 
 
@@ -125,7 +125,7 @@ endif()
 # IceT
 ################################
 if(ENABLE_MPI AND VTKM_FOUND)
-    include(CMake/thirdparty/SetupIceT.cmake)
+    include(cmake/thirdparty/SetupIceT.cmake)
 endif()
 
 

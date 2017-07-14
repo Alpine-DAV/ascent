@@ -141,7 +141,7 @@ endif()
 # Standard CTest Options
 ################################
 if(ENABLE_TESTS)
-    set(MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_SOURCE_DIR}/CMake/valgrind.supp" CACHE PATH "")
+    set(MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_SOURCE_DIR}/cmake/valgrind.supp" CACHE PATH "")
     include(CTest)
 endif()
 
