@@ -46,9 +46,9 @@
 ################################
 # Basic TPL Tests
 ################################
-set(TPL_TESTS t_gtest_smoke)
-
-set(CUDA_TESTS t_cuda_smoke)
+# set(TPL_TESTS t_gtest_smoke)
+#
+# set(CUDA_TESTS t_cuda_smoke)
 
 set(TBB_TESTS)
 
@@ -57,12 +57,12 @@ IF(VTKM_FOUND)
     list(APPEND CUDA_TESTS t_vtkm_cuda_smoke)
     list(APPEND TBB_TESTS  t_vtkm_tbb_smoke)
 endif()
-
-set(FORTRAN_TESTS t_fortran_smoke
-                  t_fruit_smoke)
-
-set(MPI_TESTS t_mpi_smoke
-              t_diy_smoke)
+#
+# set(FORTRAN_TESTS t_fortran_smoke
+#                   t_fruit_smoke)
+#
+# set(MPI_TESTS t_mpi_smoke
+#               t_diy_smoke)
 
 ################################
 # Add our Main Unit Tests
@@ -85,39 +85,39 @@ foreach(TEST ${VTKM_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON ${vtkm_dependencies})
 endforeach()
 
-if(CUDA_FOUND)
-    ################################
-    # Add our CUDA-based Unit Tests
-    ################################
-    message(STATUS "Adding thirdparty lib cuda-based unit tests")
-    foreach(TEST ${CUDA_TESTS})
-        add_cuda_test(TEST ${TEST})
-    endforeach()
-endif()
-
-
-################################
-# Add our Optional Unit Tests
-################################
-if(MPI_FOUND)
-    message(STATUS "MPI enabled: Adding related unit tests")
-    foreach(TEST ${MPI_TESTS})
-        # this uses 2 procs
-        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2) 
-    endforeach()
-else()
-    message(STATUS "MPI disabled: Skipping related tests")
-endif()
-
-
-if(FORTRAN_FOUND)
-    message(STATUS "Fortran enabled: Adding related unit tests")
-    foreach(TEST ${FORTRAN_TESTS})
-      add_fortran_test(TEST ${TEST} DEPENDS_ON alpine)
-    endforeach()
-else()
-    message(STATUS "Fortran disabled: Skipping related tests")
-endif()
+# if(CUDA_FOUND)
+#     ################################
+#     # Add our CUDA-based Unit Tests
+#     ################################
+#     message(STATUS "Adding thirdparty lib cuda-based unit tests")
+#     foreach(TEST ${CUDA_TESTS})
+#         add_cuda_test(TEST ${TEST})
+#     endforeach()
+# endif()
+#
+#
+# ################################
+# # Add our Optional Unit Tests
+# ################################
+# if(MPI_FOUND)
+#     message(STATUS "MPI enabled: Adding related unit tests")
+#     foreach(TEST ${MPI_TESTS})
+#         # this uses 2 procs
+#         add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2)
+#     endforeach()
+# else()
+#     message(STATUS "MPI disabled: Skipping related tests")
+# endif()
+#
+#
+# if(FORTRAN_FOUND)
+#     message(STATUS "Fortran enabled: Adding related unit tests")
+#     foreach(TEST ${FORTRAN_TESTS})
+#       add_fortran_test(TEST ${TEST} DEPENDS_ON alpine)
+#     endforeach()
+# else()
+#     message(STATUS "Fortran disabled: Skipping related tests")
+# endif()
 
 
 

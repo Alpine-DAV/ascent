@@ -76,3 +76,7 @@ if(NOT HDF5_FOUND)
     message(FATAL_ERROR "HDF5_DIR is not a path to a valid hdf5 install")
 endif()
 
+blt_register_library(NAME hdf5
+                     INCLUDES ${HDF5_INCLUDE_DIRS}
+                     LIBRARIES ${HDF5_LIBRARIES} )
+

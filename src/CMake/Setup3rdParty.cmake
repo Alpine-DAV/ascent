@@ -46,30 +46,30 @@
 # Alpine 3rd Party Dependencies
 ################################
 
-if(ENABLE_TESTS)
-    add_definitions(-DGTEST_HAS_TR1_TUPLE=0)
-    ################################
-    # Enable GTest
-    ################################
-    
-    #
-    # We always want to build gtest as a static lib, however
-    # it shares our "BUILD_SHARED_LIBS" option, so we need
-    # to force this value to OFF, and then restore the 
-    # previous setting.
-    #
-
-    set(BSL_ORIG_VALUE ${BUILD_SHARED_LIBS})
-    
-    set(BUILD_SHARED_LIBS OFF)
-    add_subdirectory(thirdparty_builtin/gtest-1.7.0)
-    
-    set(BUILD_SHARED_LIBS ${BSL_ORIG_VALUE})
-    
-    enable_testing()
-    include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-
-endif()
+# if(ENABLE_TESTS)
+#     add_definitions(-DGTEST_HAS_TR1_TUPLE=0)
+#     ################################
+#     # Enable GTest
+#     ################################
+#
+#     #
+#     # We always want to build gtest as a static lib, however
+#     # it shares our "BUILD_SHARED_LIBS" option, so we need
+#     # to force this value to OFF, and then restore the
+#     # previous setting.
+#     #
+#
+#     set(BSL_ORIG_VALUE ${BUILD_SHARED_LIBS})
+#
+#     set(BUILD_SHARED_LIBS OFF)
+#     add_subdirectory(thirdparty_builtin/gtest-1.7.0)
+#
+#     set(BUILD_SHARED_LIBS ${BSL_ORIG_VALUE})
+#
+#     enable_testing()
+#     include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+#
+# endif()
 
 ################################
 # Setup Python if requested
@@ -103,7 +103,7 @@ include(CMake/thirdparty/SetupConduit.cmake)
 # pipeline to build 
 ################################
 if(NOT VTKM_DIR AND NOT HDF5_DIR)
-    message(FATAL_ERROR "Alpine requires at least once concrete pipeline (EAVL for VTKm)")
+    message(FATAL_ERROR "Alpine requires at least once concrete pipeline (HDF5 for VTKm)")
 endif()
 
 
@@ -146,38 +146,38 @@ endif()
 ################################
 # Documentation Packages
 ################################
-# Doxygen
-find_package(Doxygen)
-# Sphinx
-include(CMake/thirdparty/FindSphinx.cmake)
+# # Doxygen
+# find_package(Doxygen)
+# # Sphinx
+# include(CMake/thirdparty/FindSphinx.cmake)
 
 ################################
 # Setup MPI if available 
 ################################
 # Search for MPI.
-if(ENABLE_MPI)
-    include(FindMPI)
-    # if we don't find mpi, throw a fatal error
-    if(NOT MPI_FOUND)
-        message(FATAL_ERROR "ENABLE_MPI is true, but MPI wasn't found.")
-    endif()
-    
-    # Fortran: check for mpi module vs mpi header
-    if(ENABLE_FORTRAN)
-        find_path(mpif_path 
-                  NAMES mpif.h
-                  PATHS ${MPI_Fortran_INCLUDE_PATH} 
-                  NO_DEFAULT_PATH)
-        if(${mpif_path})
-            set(MPI_Fortran_USE_MODULE OFF CACHE PATH "")
-            message(STATUS "Found MPI_Fortran: mpif.h")
-        else()
-            set(MPI_Fortran_USE_MODULE ON CACHE PATH "")
-            message(STATUS "Found MPI_Fortran: mpi.mod")
-        endif()
-
-    endif()    
-endif()
+# if(ENABLE_MPI)
+#     include(FindMPI)
+#     # if we don't find mpi, throw a fatal error
+#     if(NOT MPI_FOUND)
+#         message(FATAL_ERROR "ENABLE_MPI is true, but MPI wasn't found.")
+#     endif()
+#
+#     # Fortran: check for mpi module vs mpi header
+#     if(ENABLE_FORTRAN)
+#         find_path(mpif_path
+#                   NAMES mpif.h
+#                   PATHS ${MPI_Fortran_INCLUDE_PATH}
+#                   NO_DEFAULT_PATH)
+#         if(${mpif_path})
+#             set(MPI_Fortran_USE_MODULE OFF CACHE PATH "")
+#             message(STATUS "Found MPI_Fortran: mpif.h")
+#         else()
+#             set(MPI_Fortran_USE_MODULE ON CACHE PATH "")
+#             message(STATUS "Found MPI_Fortran: mpi.mod")
+#         endif()
+#
+#     endif()
+# endif()
 
 ################################
 # IceT
@@ -190,7 +190,7 @@ endif()
 ################################
 # Setup fruit (fortran unit testing framework) if fortran is enabled
 ################################
-if(ENABLE_FORTRAN)
-    add_subdirectory(thirdparty_builtin/fruit-3.3.9)
-endif()
+# if(ENABLE_FORTRAN)
+#     add_subdirectory(thirdparty_builtin/fruit-3.3.9)
+# endif()
 

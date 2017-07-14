@@ -102,3 +102,7 @@ if(NOT ICET_FOUND)
     message(FATAL_ERROR "ICET_DIR is not a path to a valid icet install")
 endif()
 
+blt_register_library(NAME icet
+                     INCLUDES ${ICET_INCLUDE_DIRS}
+                     LIBRARIES ${ICET_LIBRARIES} )
+

@@ -107,5 +107,14 @@ message(STATUS "FOUND Conduit at ${CONDUIT_DIR}")
 message(STATUS "CONDUIT_INCLUDE_DIRS = ${CONDUIT_INCLUDE_DIRS}")
 
 
+blt_register_library( NAME conduit
+                      INCLUDES ${CONDUIT_INCLUDE_DIRS} 
+                      LIBRARIES  conduit conduit_relay conduit_blueprint)
 
+# assumes conduit was built with mpi
+if(MPI_FOUND)
+    blt_register_library( NAME conduit_relay_mpi
+                          INCLUDES ${CONDUIT_INCLUDE_DIRS}
+                          LIBRARIES  conduit_relay_mpi)
+endif()
 

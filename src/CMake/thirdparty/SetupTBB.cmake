@@ -156,3 +156,7 @@ if(NOT TBB_FOUND)
     message(FATAL_ERROR "TBB_DIR is not a path to a valid tbb install")
 endif()
 
+blt_register_library(NAME tbb
+                     INCLUDES ${TBB_INCLUDE_DIRS}
+                     LIBRARIES ${TBB_LIB} ${TBB_MALLOC_LIB} ${TBB_MALLOC_PROXY_LIB})
+

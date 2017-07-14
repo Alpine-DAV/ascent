@@ -49,6 +49,9 @@ cmake_minimum_required(VERSION 3.0)
 ################################
 # avoid default mac osx rpath settings for cmake 3.0
 cmake_policy(SET CMP0042 OLD)
+# avoid warnings for project commands w/o VERSION
+cmake_policy(SET CMP0048 NEW)
+
 
 ################################
 # Alpine
@@ -77,6 +80,8 @@ if(ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
+include(blt/SetupBLT.cmake)
+
 ################################
 # Basic CMake Setup
 ################################
@@ -87,7 +92,7 @@ include(CMake/CMakeBasics.cmake)
 # Compiler Options
 # (fortran, openmp, cuda, etc)
 ################################
-include(CMake/SetupCompilerOptions.cmake)
+#include(CMake/SetupCompilerOptions.cmake)
 
 ################################
 # Setup 3rd Party Libs
@@ -97,7 +102,7 @@ include(CMake/Setup3rdParty.cmake)
 ################################
 # Setup docs targets
 ################################
-include(CMake/SetupDocs.cmake)
+#include(CMake/SetupDocs.cmake)
 
 ################################
 # Setup tests helpers
