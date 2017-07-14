@@ -116,7 +116,7 @@ Clone the Alpine repo:
 
 .. code:: bash
     
-    git clone https://github.com/Alpine-DAV/alpine.git 
+    git clone --recursive https://github.com/Alpine-DAV/alpine.git 
 
 
 Configure a build:
