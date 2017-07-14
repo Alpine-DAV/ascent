@@ -43,6 +43,7 @@
 ###############################################################################
 
 use ic
+module load gcc-4.9.2
 module load cudatoolkit/7.0
 use mvapich2-intel-2.0
 

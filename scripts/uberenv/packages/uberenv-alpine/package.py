@@ -75,7 +75,7 @@ class UberenvAlpine(Package):
     variant("mpich",default=False,description="build mpich as MPI lib for Alpine")
     
     
-    depends_on("cmake@3.3.1",when="+cmake")
+    depends_on("cmake@3.8.2",when="+cmake")
 
     depends_on("vtkm",when="+vtkm")
     depends_on("icet",when="+vtkm")
