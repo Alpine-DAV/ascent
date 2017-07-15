@@ -42,5 +42,5 @@
 # 
 ###############################################################################
 
-module load cudatoolkit/7.0
+module load cudatoolkit/8.0
 export PATH=/usr/local/tools/mvapich2-gnu-2.0/bin:$PATH

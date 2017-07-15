@@ -1,49 +1,16 @@
 compilers:
     # llnl chaos clusters
     chaos_5_x86_64_ib:
-        gcc@4.7.1:
-            cc:  /usr/apps/gnu/4.7.1/bin/gcc
-            cxx: /usr/apps/gnu/4.7.1/bin/g++
-            f77: /usr/apps/gnu/4.7.1/bin/gfortran
-            fc:  /usr/apps/gnu/4.7.1/bin/gfortran
         gcc@4.9.3:
             cc:  /usr/apps/gnu/4.9.3/bin/gcc
             cxx: /usr/apps/gnu/4.9.3/bin/g++
             f77: /usr/apps/gnu/4.9.3/bin/gfortran
             fc:  /usr/apps/gnu/4.9.3/bin/gfortran
-        clang@3.5.0:
-            cc:  /usr/global/tools/clang/chaos_5_x86_64_ib/clang-omp-3.5.0/bin/clang
-            cxx: /usr/global/tools/clang/chaos_5_x86_64_ib/clang-omp-3.5.0/bin/clang++
-            f77: None
-            fc:  None   
-        # default intel
-        intel@15.0.187:
-            cc:  /usr/local/tools/ic-15.0.187/bin/icc
-            cxx: /usr/local/tools/ic-15.0.187/bin/icpc
-            f77: /usr/local/tools/ic-15.0.187/bin/ifort
-            fc:  /usr/local/tools/ic-15.0.187/bin/ifort
         intel@16.0.109:
             cc: /usr/local/tools/ic-16.0.109/bin/icc
             cxx: /usr/local/tools/ic-16.0.109/bin/icpc
             f77: /usr/local/tools/ic-16.0.109/bin/ifort
             fc: /usr/local/tools/ic-16.0.109/bin/ifort
-    # llnl bgq clusters
-    bgqos_0:
-          gcc@4.7.2:
-             cc:  /usr/local/tools/toolchain-4.7.2/scripts/bggcc
-             cxx: /usr/local/tools/toolchain-4.7.2/scripts/bgg++
-             f77: /usr/local/tools/toolchain-4.7.2/scripts/bggfortran
-             fc:  /usr/local/tools/toolchain-4.7.2/scripts/bggfortran
-          xlc@12.1:
-            cc:  /usr/local/bin/bgxlc_r
-            cxx: /usr/local/bin/bgxlc++_r
-            f77: /usr/local/bin/bgxlf2003_r
-            fc:  /usr/local/bin/bgxlf2003_r
-          clang@3.7.0:
-             cc:  /usr/local/bin/bgclang
-             cxx: /usr/local/bin/bgclang++
-             f77: None
-             fc:  None
     # generic osx
     # note: you may need to tweak the fortran compiler location
     darwin-x86_64:
