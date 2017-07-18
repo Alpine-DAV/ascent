@@ -10,7 +10,7 @@
 namespace vtkh {
 
 void 
-vtkhDataSet::AddDomain(vtkm::cont::DataSet data_set, vtkm::Id domain_id) 
+DataSet::AddDomain(vtkm::cont::DataSet data_set, vtkm::Id domain_id) 
 {
   if(m_domains.size() != 0)
   {
@@ -24,7 +24,7 @@ vtkhDataSet::AddDomain(vtkm::cont::DataSet data_set, vtkm::Id domain_id)
 }
 
 vtkm::cont::Field 
-vtkhDataSet::GetField(const std::string &field_name, const vtkm::Id domain_index)
+DataSet::GetField(const std::string &field_name, const vtkm::Id domain_index)
 {
   assert(domain_index >= 0);
   assert(domain_index < m_domains.size());
@@ -33,7 +33,7 @@ vtkhDataSet::GetField(const std::string &field_name, const vtkm::Id domain_index
 }
 
 vtkm::cont::DataSet
-vtkhDataSet::GetDomain(const vtkm::Id index) 
+DataSet::GetDomain(const vtkm::Id index) 
 {
   const size_t num_domains = m_domains.size();
 
@@ -49,9 +49,9 @@ vtkhDataSet::GetDomain(const vtkm::Id index)
 
 }
 void 
-vtkhDataSet::GetDomain(const vtkm::Id index, 
-                       vtkm::cont::DataSet &data_set, 
-                       vtkm::Id &domain_id) 
+DataSet::GetDomain(const vtkm::Id index, 
+                   vtkm::cont::DataSet &data_set, 
+                   vtkm::Id &domain_id) 
 {
   const size_t num_domains = m_domains.size();
 
@@ -69,13 +69,13 @@ vtkhDataSet::GetDomain(const vtkm::Id index,
 }
 
 vtkm::Id 
-vtkhDataSet::GetNumberOfDomains() const
+DataSet::GetNumberOfDomains() const
 {
   return static_cast<vtkm::Id>(m_domains.size());
 }
 
 vtkm::Id 
-vtkhDataSet::GetGlobalNumberOfDomains() const
+DataSet::GetGlobalNumberOfDomains() const
 {
   vtkm::Id domains = this->GetNumberOfDomains(); 
 #ifdef PARALLEL 
@@ -94,8 +94,8 @@ vtkhDataSet::GetGlobalNumberOfDomains() const
 }
 
 vtkm::Bounds 
-vtkhDataSet::GetDomainBounds(const int &domain_index,
-                             vtkm::Id coordinate_system_index) const
+DataSet::GetDomainBounds(const int &domain_index,
+                         vtkm::Id coordinate_system_index) const
 {
   const vtkm::Id index = coordinate_system_index;
   vtkm::cont::CoordinateSystem coords;
@@ -117,7 +117,7 @@ vtkhDataSet::GetDomainBounds(const int &domain_index,
 
 
 vtkm::Bounds 
-vtkhDataSet::GetBounds(vtkm::Id coordinate_system_index) const
+DataSet::GetBounds(vtkm::Id coordinate_system_index) const
 {
   const vtkm::Id index = coordinate_system_index;
   const size_t num_domains = m_domains.size();
@@ -134,7 +134,7 @@ vtkhDataSet::GetBounds(vtkm::Id coordinate_system_index) const
 }
 
 vtkm::Bounds 
-vtkhDataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
+DataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
 {
   vtkm::Bounds bounds;
   bounds = GetBounds(coordinate_system_index);
@@ -208,7 +208,7 @@ vtkhDataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
 }
 
 vtkm::cont::ArrayHandle<vtkm::Range> 
-vtkhDataSet::GetGlobalRange(const vtkm::Id index) const
+DataSet::GetGlobalRange(const vtkm::Id index) const
 {
   assert(m_domains.size() > 0); 
   vtkm::cont::Field field = m_domains.at(0).GetField(index);
@@ -217,7 +217,7 @@ vtkhDataSet::GetGlobalRange(const vtkm::Id index) const
 }
 
 vtkm::cont::ArrayHandle<vtkm::Range> 
-vtkhDataSet::GetGlobalRange(const std::string &field_name) const
+DataSet::GetGlobalRange(const std::string &field_name) const
 {
   bool valid_field = true;
   const size_t num_domains = m_domains.size();
@@ -307,7 +307,7 @@ vtkhDataSet::GetGlobalRange(const std::string &field_name) const
 }
 
 void 
-vtkhDataSet::PrintSummary(std::ostream &stream) const
+DataSet::PrintSummary(std::ostream &stream) const
 {
   for(size_t dom = 0; dom < m_domains.size(); ++dom)
   {

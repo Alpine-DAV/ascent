@@ -20,7 +20,7 @@
 #if 0
 TEST(vtkh_clip, vtkh_box_clip)
 {
-  vtkh::vtkhDataSet data_set;
+  vtkh::DataSet data_set;
  
   const int base_size = 32;
   const int num_blocks = 1; 
@@ -47,7 +47,7 @@ TEST(vtkh_clip, vtkh_box_clip)
   clipper.AddMapField("cell_data");
   clipper.Update();
 
-  vtkh::vtkhDataSet *clip_output = clipper.GetOutput();
+  vtkh::DataSet *clip_output = clipper.GetOutput();
   
   vtkm::Bounds result_bounds = clip_output->GetGlobalBounds();
   std::cout<<"clip_bounds "<<clip_bounds<<" res bounds "<<result_bounds<<"\n";
@@ -80,7 +80,7 @@ TEST(vtkh_clip, vtkh_box_clip)
 #else 
 TEST(vtkh_clip, vtkh_sphere_clip)
 {
-  vtkh::vtkhDataSet data_set;
+  vtkh::DataSet data_set;
  
   const int base_size = 32;
   const int num_blocks = 1; 
@@ -109,7 +109,7 @@ TEST(vtkh_clip, vtkh_sphere_clip)
   clipper.AddMapField("cell_data");
   clipper.Update();
 
-  vtkh::vtkhDataSet *clip_output = clipper.GetOutput();
+  vtkh::DataSet *clip_output = clipper.GetOutput();
   
   vtkm::Bounds result_bounds = clip_output->GetGlobalBounds();
   //std::cout<<"clip_bounds "<<clip_bounds<<" res bounds "<<result_bounds<<"\n";

@@ -16,9 +16,9 @@ public:
     m_output = nullptr; 
   };
   virtual ~vtkhFilter() { };
-  void SetInput(vtkhDataSet *input) { m_input = input; }
-  vtkhDataSet* GetOutput() { return m_output; }
-  vtkhDataSet* Update()
+  void SetInput(DataSet *input) { m_input = input; }
+  DataSet* GetOutput() { return m_output; }
+  DataSet* Update()
   {
     PreExecute();
     DoExecute();
@@ -30,8 +30,8 @@ protected:
   virtual void PreExecute() {};
   virtual void PostExecute() {};
 
-  vtkhDataSet *m_input;
-  vtkhDataSet *m_output;
+  DataSet *m_input;
+  DataSet *m_output;
 };
 
 } //namespace vtkh

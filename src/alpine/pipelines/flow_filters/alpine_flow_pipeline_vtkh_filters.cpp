@@ -138,17 +138,17 @@ EnsureVTKH::execute()
     {
         // convert from blueprint to vtk-h
         const Node *n_input = input<Node>(0);
-        vtkh::vtkhDataSet *res = DataAdapter::BlueprintToVTKHDataSet(*n_input);
-        set_output<vtkh::vtkhDataSet>(res);
+        vtkh::DataSet *res = DataAdapter::BlueprintToVTKHDataSet(*n_input);
+        set_output<vtkh::DataSet>(res);
 
     }
     else if(input(0).check_type<vtkm::cont::DataSet>())
     {
         // wrap our vtk-m dataset in vtk-h
-        vtkh::vtkhDataSet *res = DataAdapter::VTKmDataSetToVTKHDataSet(input<vtkm::cont::DataSet>(0));
-        set_output<vtkh::vtkhDataSet>(res);
+        vtkh::DataSet *res = DataAdapter::VTKmDataSetToVTKHDataSet(input<vtkm::cont::DataSet>(0));
+        set_output<vtkh::DataSet>(res);
     }
-    else if(input(0).check_type<vtkh::vtkhDataSet>())
+    else if(input(0).check_type<vtkh::DataSet>())
     {
         // our data is already vtkh, pass though
         set_output(input(0));
@@ -204,14 +204,14 @@ VTKHRayTracer::verify_params(const conduit::Node &params,
 void 
 VTKHRayTracer::execute()
 {
-    if(!input(0).check_type<vtkh::vtkhDataSet>())
+    if(!input(0).check_type<vtkh::DataSet>())
     {
         ALPINE_ERROR("vtkh_raytracer input must be a vtk-h dataset");
     }
  
     ALPINE_INFO("Doing the render!");
     
-    vtkh::vtkhDataSet *data = input<vtkh::vtkhDataSet>(0);
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
     vtkh::vtkhRayTracer ray_tracer;  
     ray_tracer.SetInput(data);
     ray_tracer.SetField(params()["field"].as_string());
@@ -273,14 +273,14 @@ VTKHMarchingCubes::execute()
 
     ALPINE_INFO("Marching the cubes!");
     
-    if(!input(0).check_type<vtkh::vtkhDataSet>())
+    if(!input(0).check_type<vtkh::DataSet>())
     {
         ALPINE_ERROR("vtkh_marchingcubes input must be a vtk-h dataset");
     }
 
     std::string field_name = params()["field"].as_string();
     
-    vtkh::vtkhDataSet *data = input<vtkh::vtkhDataSet>(0);
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
     vtkh::vtkhMarchingCubes marcher;
     
 
@@ -301,9 +301,9 @@ VTKHMarchingCubes::execute()
     marcher.AddMapField(field_name);
     marcher.Update();
 
-    vtkh::vtkhDataSet *iso_output = marcher.GetOutput();
+    vtkh::DataSet *iso_output = marcher.GetOutput();
     
-    set_output<vtkh::vtkhDataSet>(iso_output);
+    set_output<vtkh::DataSet>(iso_output);
 }
 
 

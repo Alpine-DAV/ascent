@@ -88,7 +88,7 @@ vtkhMarchingCubes::ContainsIsoValues(vtkm::cont::DataSet &dom)
 
 void vtkhMarchingCubes::DoExecute()
 {
-  this->m_output = new vtkhDataSet();
+  this->m_output = new DataSet();
   vtkm::filter::MarchingCubes marcher;
 
   marcher.SetIsoValues(m_iso_values);

@@ -17,7 +17,7 @@
 //-----------------------------------------------------------------------------
 TEST(vtkh_dataset, vtkh_range)
 {
-  vtkh::vtkhDataSet data_set;
+  vtkh::DataSet data_set;
  
   const int base_size = 32;
   const int num_blocks = 2; 

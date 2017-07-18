@@ -89,7 +89,7 @@ namespace alpine
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-vtkh::vtkhDataSet *
+vtkh::DataSet *
 DataAdapter::BlueprintToVTKHDataSet(const Node &node,
                                     const std::string &topo_name)
 {   
@@ -104,7 +104,7 @@ DataAdapter::BlueprintToVTKHDataSet(const Node &node,
         domain_id = node["state/domain_id"].to_int();
     }
 
-    vtkh::vtkhDataSet   *res = new  vtkh::vtkhDataSet;
+    vtkh::DataSet *res = new vtkh::DataSet;
     res->AddDomain(*dset,domain_id);
     
     // vtk-m will shallow copy the data assoced with dset
@@ -115,11 +115,11 @@ DataAdapter::BlueprintToVTKHDataSet(const Node &node,
 }
 
 //-----------------------------------------------------------------------------
-vtkh::vtkhDataSet *
+vtkh::DataSet *
 DataAdapter::VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset)
 {
     // wrap a single VTKm data set into a VTKH dataset
-    vtkh::vtkhDataSet   *res = new  vtkh::vtkhDataSet;
+    vtkh::DataSet   *res = new  vtkh::DataSet;
     int domain_id = 0; // TODO, MPI_TASK_ID ?
     res->AddDomain(*dset,domain_id);
     return res;

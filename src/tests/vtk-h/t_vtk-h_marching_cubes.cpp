@@ -19,7 +19,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_marching_cubes, vtkh_serial_marching_cubes)
 {
-  vtkh::vtkhDataSet data_set;
+  vtkh::DataSet data_set;
  
   const int base_size = 32;
   const int num_blocks = 2; 
@@ -43,7 +43,7 @@ TEST(vtkh_marching_cubes, vtkh_serial_marching_cubes)
   marcher.AddMapField("cell_data");
   marcher.Update();
 
-  vtkh::vtkhDataSet *iso_output = marcher.GetOutput();
+  vtkh::DataSet *iso_output = marcher.GetOutput();
 
   vtkh::vtkhRayTracer tracer;
   tracer.SetInput(iso_output);

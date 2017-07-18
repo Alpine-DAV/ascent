@@ -27,7 +27,7 @@ TEST(vtkh_marching_cubes_par, vtkh_parallel_marching_cubes)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
   vtkh::SetMPIComm(MPI_COMM_WORLD);
-  vtkh::vtkhDataSet data_set;
+  vtkh::DataSet data_set;
  
   const int base_size = 32;
   const int blocks_per_rank = 2;
@@ -53,7 +53,7 @@ TEST(vtkh_marching_cubes_par, vtkh_parallel_marching_cubes)
   marcher.AddMapField("cell_data");
   marcher.Update();
 
-  vtkh::vtkhDataSet *iso_output = marcher.GetOutput();
+  vtkh::DataSet *iso_output = marcher.GetOutput();
 
   vtkh::vtkhRayTracer tracer;
   tracer.SetInput(iso_output);

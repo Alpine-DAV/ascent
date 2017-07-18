@@ -93,7 +93,7 @@ void vtkhClip::PostExecute()
 void vtkhClip::DoExecute()
 {
   
-  this->m_output = new vtkhDataSet();
+  this->m_output = new DataSet();
 
   const int num_domains = this->m_input->GetNumberOfDomains(); 
 

@@ -25,7 +25,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
   vtkh::SetMPIComm(MPI_COMM_WORLD);
-  vtkh::vtkhDataSet data_set;
+  vtkh::DataSet data_set;
  
   const int base_size = 32;
   const int blocks_per_rank = 2;

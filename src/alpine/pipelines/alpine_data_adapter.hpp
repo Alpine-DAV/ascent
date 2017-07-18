@@ -66,7 +66,7 @@ class DataSet;
 
 namespace vtkh
 { 
-class vtkhDataSet;
+class DataSet;
 };
 
 
@@ -96,8 +96,8 @@ public:
     //
     //  conduit::blueprint::mesh::verify(n,info) == true
     //
-    static vtkh::vtkhDataSet  *BlueprintToVTKHDataSet(const conduit::Node &n,
-                                                      const std::string &topo_name="");
+    static vtkh::DataSet  *BlueprintToVTKHDataSet(const conduit::Node &n,
+                                                  const std::string &topo_name="");
 
 
     // convert blueprint data to a vtkm Data Set
@@ -110,7 +110,7 @@ public:
 
 
     // wraps a single VTKm data set into a VTKH dataset
-    static vtkh::vtkhDataSet    *VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset);
+    static vtkh::DataSet    *VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset);
 
 
 private:
