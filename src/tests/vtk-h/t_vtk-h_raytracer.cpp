@@ -27,7 +27,7 @@ TEST(vtkh_raytracer, vtkh_serial_render)
   {
     data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
   }
-  vtkh::vtkhRayTracer tracer;
+  vtkh::RayTracer tracer;
    
   tracer.SetInput(&data_set);
   tracer.SetField("point_data"); 

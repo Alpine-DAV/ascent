@@ -42,7 +42,7 @@ namespace detail
   };
 } //  namespace detail
 
-vtkhVolumeRenderer::vtkhVolumeRenderer()
+VolumeRenderer::VolumeRenderer()
 {
   typedef vtkm::rendering::MapperVolume TracerType;
   m_tracer = std::make_shared<TracerType>();
@@ -56,14 +56,14 @@ vtkhVolumeRenderer::vtkhVolumeRenderer()
   m_num_samples = -1;
 }
 
-vtkhVolumeRenderer::~vtkhVolumeRenderer()
+VolumeRenderer::~VolumeRenderer()
 {
 }
 
 void 
-vtkhVolumeRenderer::PreExecute() 
+VolumeRenderer::PreExecute() 
 {
-  vtkhRenderer::PreExecute();
+  Renderer::PreExecute();
   
   const float default_samples = 200.f;
   float samples = default_samples;
@@ -84,19 +84,19 @@ vtkhVolumeRenderer::PreExecute()
 }
 
 void
-vtkhVolumeRenderer::SetNumberOfSamples(const int num_samples)
+VolumeRenderer::SetNumberOfSamples(const int num_samples)
 {
   assert(num_samples > 0);
   m_num_samples = num_samples; 
 }
 
-vtkhRenderer::vtkmCanvasPtr 
-vtkhVolumeRenderer::GetNewCanvas()
+Renderer::vtkmCanvasPtr 
+VolumeRenderer::GetNewCanvas()
 {
   return std::make_shared<vtkm::rendering::CanvasRayTracer>();
 }
 void 
-vtkhVolumeRenderer::SetupCanvases()
+VolumeRenderer::SetupCanvases()
 {
   this->CreateCanvases();
   float black[4] = {0.f, 0.f, 0.f, 0.f};
@@ -104,7 +104,7 @@ vtkhVolumeRenderer::SetupCanvases()
 }
 
 float 
-vtkhVolumeRenderer::FindMinDepth(const vtkm::rendering::Camera &camera, 
+VolumeRenderer::FindMinDepth(const vtkm::rendering::Camera &camera, 
                                  const vtkm::Bounds &bounds) const
 {
   
@@ -145,7 +145,7 @@ vtkhVolumeRenderer::FindMinDepth(const vtkm::rendering::Camera &camera,
 }
 
 void 
-vtkhVolumeRenderer::Composite(const int &num_images)
+VolumeRenderer::Composite(const int &num_images)
 {
   const int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
 
@@ -183,7 +183,7 @@ vtkhVolumeRenderer::Composite(const int &num_images)
 }
 
 void 
-vtkhVolumeRenderer::DepthSort(const int &num_domains, 
+VolumeRenderer::DepthSort(const int &num_domains, 
                               const std::vector<float> &min_depths,
                               std::vector<int> &local_vis_order)
 {
@@ -320,7 +320,7 @@ vtkhVolumeRenderer::DepthSort(const int &num_domains,
 }
 
 void
-vtkhVolumeRenderer::FindVisibilityOrdering()
+VolumeRenderer::FindVisibilityOrdering()
 {
   const int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
   const int num_cameras = static_cast<int>(m_cameras.size());

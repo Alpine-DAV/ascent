@@ -13,7 +13,7 @@
 
 namespace vtkh {
 
-vtkhRenderer::vtkhRenderer()
+Renderer::Renderer()
   : m_color_table("cool2warm"),
     m_width(1024),
     m_height(1024),
@@ -30,60 +30,60 @@ vtkhRenderer::vtkhRenderer()
 
 }
 
-vtkhRenderer::~vtkhRenderer()
+Renderer::~Renderer()
 {
   delete m_compositor;
 }
 
 void 
-vtkhRenderer::SetField(const std::string field_name)
+Renderer::SetField(const std::string field_name)
 {
   m_field_name = field_name; 
 }
 
 void
-vtkhRenderer::AddCamera(const vtkm::rendering::Camera &camera)
+Renderer::AddCamera(const vtkm::rendering::Camera &camera)
 {
   m_cameras.push_back(camera); 
 }
 
 int
-vtkhRenderer::GetNumberOfCameras() const
+Renderer::GetNumberOfCameras() const
 {
   return static_cast<int>(m_cameras.size());
 }
 
 void
-vtkhRenderer::ClearCameras()
+Renderer::ClearCameras()
 {
   m_cameras.clear(); 
 }
 
 void 
-vtkhRenderer::SetImageBatchSize(const int &batch_size)
+Renderer::SetImageBatchSize(const int &batch_size)
 {
   assert(batch_size > 0);
   m_batch_size = batch_size;
 }
 
 int
-vtkhRenderer::GetImageBatchSize() const 
+Renderer::GetImageBatchSize() const 
 {
   return m_batch_size;
 }
 
-void vtkhRenderer::SetColorTable(const vtkm::rendering::ColorTable &color_table)
+void Renderer::SetColorTable(const vtkm::rendering::ColorTable &color_table)
 {
   m_color_table = color_table;
 }
 
-vtkm::rendering::ColorTable vtkhRenderer::GetColorTable() const
+vtkm::rendering::ColorTable Renderer::GetColorTable() const
 {
   return m_color_table;
 }
 
 void 
-vtkhRenderer::CreateCanvases()
+Renderer::CreateCanvases()
 {
   int num_cameras = static_cast<int>(m_cameras.size()); 
   int num_canvases = std::min(m_batch_size, num_cameras);
@@ -108,7 +108,7 @@ vtkhRenderer::CreateCanvases()
 }
 
 void 
-vtkhRenderer::SetupCanvases()
+Renderer::SetupCanvases()
 {
   CreateCanvases();  
   SetCanvasBackgroundColor(m_background_color);
@@ -116,7 +116,7 @@ vtkhRenderer::SetupCanvases()
 
 
 void 
-vtkhRenderer::SetCanvasBackgroundColor(float color[4])
+Renderer::SetCanvasBackgroundColor(float color[4])
 {
   int current_size = static_cast<int>(m_canvases.size());
   vtkm::rendering::Color vtkm_color;
@@ -135,7 +135,7 @@ vtkhRenderer::SetCanvasBackgroundColor(float color[4])
 }
 
 void 
-vtkhRenderer::Composite(const int &num_images)
+Renderer::Composite(const int &num_images)
 {
   const int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
 
@@ -171,7 +171,7 @@ vtkhRenderer::Composite(const int &num_images)
 }
 
 void 
-vtkhRenderer::Render()
+Renderer::Render()
 {
   if(m_mapper.get() == 0)
   {
@@ -239,7 +239,7 @@ vtkhRenderer::Render()
 }
  
 void 
-vtkhRenderer::PreExecute() 
+Renderer::PreExecute() 
 {
   m_bounds = this->m_input->GetGlobalBounds();
   m_default_camera.ResetToBounds(m_bounds);
@@ -264,12 +264,12 @@ vtkhRenderer::PreExecute()
 }
 
 void 
-vtkhRenderer::PostExecute() 
+Renderer::PostExecute() 
 {
 }
 
 void 
-vtkhRenderer::DoExecute() 
+Renderer::DoExecute() 
 {
   Render();
 }

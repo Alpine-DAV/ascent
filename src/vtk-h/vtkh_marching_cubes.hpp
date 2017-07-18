@@ -8,11 +8,11 @@
 namespace vtkh
 {
 
-class vtkhMarchingCubes : public vtkhFilter
+class MarchingCubes : public Filter
 {
 public:
-  vtkhMarchingCubes(); 
-  virtual ~vtkhMarchingCubes(); 
+  MarchingCubes(); 
+  virtual ~MarchingCubes(); 
   void SetIsoValue(const double &iso_value);
   void SetIsoValues(const double *iso_values, const int &num_values);
   void AddMapField(const std::string &field_name);

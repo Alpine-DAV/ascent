@@ -10,11 +10,11 @@
 namespace vtkh
 {
 
-class vtkhClip: public vtkhFilter
+class Clip: public Filter
 {
 public:
-  vtkhClip(); 
-  virtual ~vtkhClip(); 
+  Clip(); 
+  virtual ~Clip(); 
   void SetBoxClip(const vtkm::Bounds &clipping_bounds);
   void SetSphereClip(const double center[3], const double radius);
   void SetPlaneClip(const double origin[3], const double normal[3]);

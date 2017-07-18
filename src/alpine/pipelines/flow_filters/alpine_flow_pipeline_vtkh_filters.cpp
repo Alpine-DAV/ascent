@@ -212,7 +212,7 @@ VTKHRayTracer::execute()
     ALPINE_INFO("Doing the render!");
     
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
-    vtkh::vtkhRayTracer ray_tracer;  
+    vtkh::RayTracer ray_tracer;  
     ray_tracer.SetInput(data);
     ray_tracer.SetField(params()["field"].as_string());
     ray_tracer.Update();
@@ -281,9 +281,7 @@ VTKHMarchingCubes::execute()
     std::string field_name = params()["field"].as_string();
     
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
-    vtkh::vtkhMarchingCubes marcher;
-    
-
+    vtkh::MarchingCubes marcher;
     
     marcher.SetInput(data);
     marcher.SetField(field_name);

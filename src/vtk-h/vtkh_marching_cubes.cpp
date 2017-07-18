@@ -5,26 +5,25 @@
 namespace vtkh 
 {
 
-vtkhMarchingCubes::vtkhMarchingCubes()
+MarchingCubes::MarchingCubes()
 {
 
 }
 
-vtkhMarchingCubes::~vtkhMarchingCubes()
+MarchingCubes::~MarchingCubes()
 {
 
 }
-
 
 void 
-vtkhMarchingCubes::SetIsoValue(const double &iso_value)
+MarchingCubes::SetIsoValue(const double &iso_value)
 {
   m_iso_values.clear();
   m_iso_values.push_back(iso_value);
 }
 
 void 
-vtkhMarchingCubes::SetIsoValues(const double *iso_values, const int &num_values)
+MarchingCubes::SetIsoValues(const double *iso_values, const int &num_values)
 {
   assert(num_values > 0);
   m_iso_values.clear();
@@ -35,23 +34,23 @@ vtkhMarchingCubes::SetIsoValues(const double *iso_values, const int &num_values)
 }
 
 void 
-vtkhMarchingCubes::AddMapField(const std::string &field_name)
+MarchingCubes::AddMapField(const std::string &field_name)
 {
   m_map_fields.push_back(field_name);
 }
 
 void 
-vtkhMarchingCubes::ClearMapFields()
+MarchingCubes::ClearMapFields()
 {
   m_map_fields.clear();
 }
 
 void 
-vtkhMarchingCubes::SetField(const std::string &field_name)
+MarchingCubes::SetField(const std::string &field_name)
 {
   m_field_name = field_name;
 }
-void vtkhMarchingCubes::PreExecute() 
+void MarchingCubes::PreExecute() 
 {
   assert(m_iso_values.size() > 0);
   assert(m_field_name != "");
@@ -61,13 +60,13 @@ void vtkhMarchingCubes::PreExecute()
   }
 }
 
-void vtkhMarchingCubes::PostExecute()
+void MarchingCubes::PostExecute()
 {
 
 }
 
 bool 
-vtkhMarchingCubes::ContainsIsoValues(vtkm::cont::DataSet &dom)
+MarchingCubes::ContainsIsoValues(vtkm::cont::DataSet &dom)
 {
   vtkm::cont::Field field = dom.GetField(m_field_name);
   vtkm::cont::ArrayHandle<vtkm::Range> ranges = field.GetRange();
@@ -86,7 +85,7 @@ vtkhMarchingCubes::ContainsIsoValues(vtkm::cont::DataSet &dom)
 
 }
 
-void vtkhMarchingCubes::DoExecute()
+void MarchingCubes::DoExecute()
 {
   this->m_output = new DataSet();
   vtkm::filter::MarchingCubes marcher;

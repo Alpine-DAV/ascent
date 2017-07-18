@@ -7,15 +7,15 @@
 namespace vtkh
 {
 
-class vtkhFilter
+class Filter
 {
 public:
-  vtkhFilter() 
+  Filter() 
   { 
     m_input = nullptr; 
     m_output = nullptr; 
   };
-  virtual ~vtkhFilter() { };
+  virtual ~Filter() { };
   void SetInput(DataSet *input) { m_input = input; }
   DataSet* GetOutput() { return m_output; }
   DataSet* Update()

@@ -6,26 +6,26 @@
 namespace vtkh 
 {
 
-struct vtkhClip::InternalsType
+struct Clip::InternalsType
 {
   vtkm::filter::ClipWithImplicitFunction m_clipper; 
   InternalsType()
   {}
 };
 
-vtkhClip::vtkhClip()
+Clip::Clip()
   : m_internals(new InternalsType)
 {
 
 }
 
-vtkhClip::~vtkhClip()
+Clip::~Clip()
 {
 
 }
 
 void 
-vtkhClip::SetBoxClip(const vtkm::Bounds &clipping_bounds)
+Clip::SetBoxClip(const vtkm::Bounds &clipping_bounds)
 {
   auto box = std::make_shared<vtkm::cont::Box>(clipping_bounds.X.Min,
                                                clipping_bounds.X.Max,
@@ -38,7 +38,7 @@ vtkhClip::SetBoxClip(const vtkm::Bounds &clipping_bounds)
 }
 
 void 
-vtkhClip::SetSphereClip(const double center[3], const double radius)
+Clip::SetSphereClip(const double center[3], const double radius)
 {
   vtkm::Vec<vtkm::FloatDefault,3> vec_center;
   vec_center[0] = center[0];
@@ -52,7 +52,7 @@ vtkhClip::SetSphereClip(const double center[3], const double radius)
 }
 
 void 
-vtkhClip::SetPlaneClip(const double origin[3], const double normal[3]) 
+Clip::SetPlaneClip(const double origin[3], const double normal[3]) 
 {
   vtkm::Vec<vtkm::FloatDefault,3> vec_origin;
   vec_origin[0] = origin[0];
@@ -69,28 +69,28 @@ vtkhClip::SetPlaneClip(const double origin[3], const double normal[3])
 }
 
 void 
-vtkhClip::AddMapField(const std::string &field_name)
+Clip::AddMapField(const std::string &field_name)
 {
   m_map_fields.push_back(field_name);
 }
 
 void 
-vtkhClip::ClearMapFields()
+Clip::ClearMapFields()
 {
   m_map_fields.clear();
 }
 
-void vtkhClip::PreExecute() 
+void Clip::PreExecute() 
 {
 
 }
 
-void vtkhClip::PostExecute()
+void Clip::PostExecute()
 {
 
 }
 
-void vtkhClip::DoExecute()
+void Clip::DoExecute()
 {
   
   this->m_output = new DataSet();

@@ -5,12 +5,12 @@
 
 namespace vtkh {
 
-class vtkhRayTracer : public vtkhRenderer
+class RayTracer : public Renderer
 {
 public:
-  vtkhRayTracer();
-  virtual ~vtkhRayTracer();
-  virtual vtkhRenderer::vtkmCanvasPtr GetNewCanvas() override;
+  RayTracer();
+  virtual ~RayTracer();
+  virtual Renderer::vtkmCanvasPtr GetNewCanvas() override;
 };
 
 } // namespace vtkh

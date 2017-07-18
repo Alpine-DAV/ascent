@@ -11,15 +11,15 @@
 
 namespace vtkh {
 
-class vtkhRenderer : public vtkhFilter
+class Renderer : public Filter
 {
 public:
   typedef std::shared_ptr<vtkm::rendering::Canvas> vtkmCanvasPtr; 
   typedef std::shared_ptr<vtkm::rendering::Mapper> vtkmMapperPtr; 
   typedef vtkm::rendering::Camera vtkmCamera; 
 
-  vtkhRenderer(); 
-  virtual ~vtkhRenderer(); 
+  Renderer(); 
+  virtual ~Renderer(); 
   void AddCamera(const vtkm::rendering::Camera &camera); 
   void ClearCameras(); 
   void SetImageBatchSize(const int &batch_size);

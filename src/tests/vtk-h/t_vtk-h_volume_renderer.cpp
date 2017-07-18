@@ -29,7 +29,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
     data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
   }
   
-  vtkh::vtkhVolumeRenderer tracer;
+  vtkh::VolumeRenderer tracer;
   vtkm::rendering::ColorTable color_map("cool2warm"); 
   color_map.AddAlphaControlPoint(0.0, .05);
   color_map.AddAlphaControlPoint(1.0, .05);

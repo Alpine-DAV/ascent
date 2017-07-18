@@ -5,18 +5,18 @@
 
 namespace vtkh {
   
-vtkhRayTracer::vtkhRayTracer()
+RayTracer::RayTracer()
 {
   typedef vtkm::rendering::MapperRayTracer TracerType;
   this->m_mapper = std::make_shared<TracerType>();
 }
 
-vtkhRayTracer::~vtkhRayTracer()
+RayTracer::~RayTracer()
 {
 }
 
-vtkhRenderer::vtkmCanvasPtr 
-vtkhRayTracer::GetNewCanvas()
+Renderer::vtkmCanvasPtr 
+RayTracer::GetNewCanvas()
 {
   return std::make_shared<vtkm::rendering::CanvasRayTracer>();
 }

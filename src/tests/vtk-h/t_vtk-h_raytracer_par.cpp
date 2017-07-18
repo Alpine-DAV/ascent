@@ -37,7 +37,7 @@ TEST(vtkh_raytracer, vtkh_parallel_render)
     data_set.AddDomain(CreateTestData(domain_id, num_blocks, base_size), domain_id);
   }
   
-  vtkh::vtkhRayTracer tracer;
+  vtkh::RayTracer tracer;
    
   tracer.SetInput(&data_set);
   tracer.SetField("point_data"); 

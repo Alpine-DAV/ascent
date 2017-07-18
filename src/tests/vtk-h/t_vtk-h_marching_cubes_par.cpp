@@ -39,7 +39,7 @@ TEST(vtkh_marching_cubes_par, vtkh_parallel_marching_cubes)
     data_set.AddDomain(CreateTestData(domain_id, num_blocks, base_size), domain_id);
   }
   
-  vtkh::vtkhMarchingCubes marcher;
+  vtkh::MarchingCubes marcher;
   marcher.SetInput(&data_set);
   marcher.SetField("point_data"); 
 
@@ -55,7 +55,7 @@ TEST(vtkh_marching_cubes_par, vtkh_parallel_marching_cubes)
 
   vtkh::DataSet *iso_output = marcher.GetOutput();
 
-  vtkh::vtkhRayTracer tracer;
+  vtkh::RayTracer tracer;
   tracer.SetInput(iso_output);
   tracer.SetField("cell_data"); 
   tracer.Update();

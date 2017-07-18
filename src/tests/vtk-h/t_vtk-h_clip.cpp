@@ -39,7 +39,7 @@ TEST(vtkh_clip, vtkh_box_clip)
   clip_bounds.Y.Max = center[1] + .5;
   clip_bounds.Z.Max = center[2] + .5;
 
-  vtkh::vtkhClip clipper;
+  vtkh::Clip clipper;
   
   clipper.SetBoxClip(clip_bounds);
   clipper.SetInput(&data_set);
@@ -101,7 +101,7 @@ TEST(vtkh_clip, vtkh_sphere_clip)
 
   double radius = base_size * num_blocks * 0.5f;
 
-  vtkh::vtkhClip clipper;
+  vtkh::Clip clipper;
   
   clipper.SetSphereClip(center, radius);
   clipper.SetInput(&data_set);
@@ -121,7 +121,7 @@ TEST(vtkh_clip, vtkh_sphere_clip)
   camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
   vtkm::Vec<vtkm::Float64, 3> look(0,0,0);
   camera.SetLookAt(look);
-  vtkh::vtkhRayTracer tracer;
+  vtkh::RayTracer tracer;
   tracer.AddCamera(camera);
   tracer.SetInput(clip_output);
   tracer.SetField("point_data"); 
