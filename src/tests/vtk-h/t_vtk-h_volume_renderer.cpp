@@ -19,8 +19,6 @@
 TEST(vtkh_volume_renderer, vtkh_parallel_render)
 {
   
-  vtkh::VTKH vtkh;
-  vtkh.Open();
   vtkh::vtkhDataSet data_set;
  
   const int base_size = 32;

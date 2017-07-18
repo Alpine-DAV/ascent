@@ -14,7 +14,7 @@ namespace vtkh
 DIYCompositor::DIYCompositor()
 : m_rank(0)
 {
-    m_diy_comm = diy::mpi::communicator(VTKH::GetMPIComm());
+    m_diy_comm = diy::mpi::communicator(vtkh::GetMPIComm());
     m_rank = m_diy_comm.rank();
 }
   

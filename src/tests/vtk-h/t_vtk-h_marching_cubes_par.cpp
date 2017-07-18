@@ -26,8 +26,7 @@ TEST(vtkh_marching_cubes_par, vtkh_parallel_marching_cubes)
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
-  vtkh::VTKH vtkh;
-  vtkh.Open(MPI_COMM_WORLD);
+  vtkh::SetMPIComm(MPI_COMM_WORLD);
   vtkh::vtkhDataSet data_set;
  
   const int base_size = 32;

@@ -19,7 +19,6 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_marching_cubes, vtkh_serial_marching_cubes)
 {
-  vtkh::VTKH vtkh;
   vtkh::vtkhDataSet data_set;
  
   const int base_size = 32;

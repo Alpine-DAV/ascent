@@ -10,7 +10,7 @@
 namespace vtkh {
 
 void 
-vtkhDataSet::AddDomain(vtkm::cont::DataSet data_set, int domain_id) 
+vtkhDataSet::AddDomain(vtkm::cont::DataSet data_set, vtkm::Id domain_id) 
 {
   if(m_domains.size() != 0)
   {
@@ -24,7 +24,7 @@ vtkhDataSet::AddDomain(vtkm::cont::DataSet data_set, int domain_id)
 }
 
 vtkm::cont::Field 
-vtkhDataSet::GetField(const std::string &field_name, const int &domain_index)
+vtkhDataSet::GetField(const std::string &field_name, const vtkm::Id domain_index)
 {
   assert(domain_index >= 0);
   assert(domain_index < m_domains.size());
@@ -33,7 +33,7 @@ vtkhDataSet::GetField(const std::string &field_name, const int &domain_index)
 }
 
 vtkm::cont::DataSet
-vtkhDataSet::GetDomain(const int index) 
+vtkhDataSet::GetDomain(const vtkm::Id index) 
 {
   const size_t num_domains = m_domains.size();
 
@@ -49,7 +49,9 @@ vtkhDataSet::GetDomain(const int index)
 
 }
 void 
-vtkhDataSet::GetDomain(const int index, vtkm::cont::DataSet &data_set, int &domain_id) 
+vtkhDataSet::GetDomain(const vtkm::Id index, 
+                       vtkm::cont::DataSet &data_set, 
+                       vtkm::Id &domain_id) 
 {
   const size_t num_domains = m_domains.size();
 
@@ -77,7 +79,7 @@ vtkhDataSet::GetGlobalNumberOfDomains() const
 {
   vtkm::Id domains = this->GetNumberOfDomains(); 
 #ifdef PARALLEL 
-  MPI_Comm mpi_comm = VTKH::GetMPIComm();
+  MPI_Comm mpi_comm = vtkh::GetMPIComm();
   int local_doms = static_cast<int>(domains);  
   int global_doms = 0;
   MPI_Allreduce(&local_doms, 
@@ -138,7 +140,7 @@ vtkhDataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
   bounds = GetBounds(coordinate_system_index);
 
 #ifdef PARALLEL
-  MPI_Comm mpi_comm = VTKH::GetMPIComm();
+  MPI_Comm mpi_comm = vtkh::GetMPIComm();
 
   vtkm::Float64 x_min = bounds.X.Min;
   vtkm::Float64 x_max = bounds.X.Max;
@@ -206,7 +208,7 @@ vtkhDataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
 }
 
 vtkm::cont::ArrayHandle<vtkm::Range> 
-vtkhDataSet::GetGlobalRange(const int &index) const
+vtkhDataSet::GetGlobalRange(const vtkm::Id index) const
 {
   assert(m_domains.size() > 0); 
   vtkm::cont::Field field = m_domains.at(0).GetField(index);
@@ -272,7 +274,7 @@ vtkhDataSet::GetGlobalRange(const std::string &field_name) const
   }
 
 #ifdef PARALLEL
-  MPI_Comm mpi_comm = VTKH::GetMPIComm();
+  MPI_Comm mpi_comm = vtkh::GetMPIComm();
   for(int i = 0; i < num_components; ++i)
   {
     vtkm::Range c_range = range.GetPortalControl().Get(i);

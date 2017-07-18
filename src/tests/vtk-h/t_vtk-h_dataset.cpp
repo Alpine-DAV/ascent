@@ -17,7 +17,6 @@
 //-----------------------------------------------------------------------------
 TEST(vtkh_dataset, vtkh_range)
 {
-  vtkh::VTKH vtkh;
   vtkh::vtkhDataSet data_set;
  
   const int base_size = 32;

@@ -20,7 +20,6 @@
 #if 0
 TEST(vtkh_clip, vtkh_box_clip)
 {
-  vtkh::VTKH vtkh;
   vtkh::vtkhDataSet data_set;
  
   const int base_size = 32;
@@ -81,7 +80,6 @@ TEST(vtkh_clip, vtkh_box_clip)
 #else 
 TEST(vtkh_clip, vtkh_sphere_clip)
 {
-  vtkh::VTKH vtkh;
   vtkh::vtkhDataSet data_set;
  
   const int base_size = 32;

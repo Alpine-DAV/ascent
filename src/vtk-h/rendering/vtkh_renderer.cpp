@@ -159,7 +159,7 @@ vtkhRenderer::Composite(const int &num_images)
     Image result = m_compositor->Composite();
     const std::string image_name = "output.png";
 #ifdef PARALLEL
-    if(VTKH::GetMPIRank() == 0)
+    if(vtkh::GetMPIRank() == 0)
     {
       result.Save(image_name);
     }
@@ -202,7 +202,7 @@ vtkhRenderer::Render()
     for(int dom = 0; dom < num_domains; ++dom)
     {
       vtkm::cont::DataSet data_set; 
-      int domain_id;
+      vtkm::Id domain_id;
       m_input->GetDomain(dom, data_set, domain_id);
       const vtkm::cont::DynamicCellSet &cellset = data_set.GetCellSet();
       const vtkm::cont::Field &field = data_set.GetField(m_field_index);

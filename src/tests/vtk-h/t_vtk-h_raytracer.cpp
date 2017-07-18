@@ -18,7 +18,6 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_raytracer, vtkh_serial_render)
 {
-  vtkh::VTKH vtkh;
   vtkh::vtkhDataSet data_set;
  
   const int base_size = 32;

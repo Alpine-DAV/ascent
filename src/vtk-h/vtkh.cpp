@@ -10,31 +10,31 @@ namespace vtkh
 
 #ifdef PARALLEL
 
-MPI_Comm VTKH::m_mpi_comm = NULL;
+static MPI_Comm g_mpi_comm = NULL;
 
 void 
-VTKH::Open(MPI_Comm mpi_comm)
+SetMPIComm(MPI_Comm mpi_comm)
 {
-  m_mpi_comm = mpi_comm;
+  g_mpi_comm = mpi_comm;
 }
 
 MPI_Comm 
-VTKH::GetMPIComm()
+GetMPIComm()
 {
-  if(m_mpi_comm == NULL)
+  if(g_mpi_comm == NULL)
   {
     std::stringstream msg;
     msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
     msg<<"It is likely that VTKH.Open(MPI_Comm) was not called.";
     throw Error(msg.str());
   }
-  return m_mpi_comm;
+  return g_mpi_comm;
 }
 
 int 
-VTKH::GetMPIRank()
+GetMPIRank()
 {
-  if(m_mpi_comm == NULL)
+  if(g_mpi_comm == NULL)
   {
     std::stringstream msg;
     msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
@@ -42,15 +42,15 @@ VTKH::GetMPIRank()
     throw Error(msg.str());
   }
   int rank;
-  MPI_Comm comm = VTKH::GetMPIComm(); 
+  MPI_Comm comm = GetMPIComm(); 
   MPI_Comm_rank(comm, &rank);
   return rank;
 }
 
 int 
-VTKH::GetMPISize()
+GetMPISize()
 {
-  if(m_mpi_comm == NULL)
+  if(g_mpi_comm == NULL)
   {
     std::stringstream msg;
     msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
@@ -58,24 +58,14 @@ VTKH::GetMPISize()
     throw Error(msg.str());
   }
   int size;
-  MPI_Comm comm = VTKH::GetMPIComm(); 
+  MPI_Comm comm = GetMPIComm(); 
   MPI_Comm_size(comm, &size);
   return size;
 }
 
-#else
-void VTKH::Open()
-{
-
-}
 #endif
 
-void VTKH::Close()
-{
-
-}
-
-std::string VTKH::About()
+std::string AboutVTKH()
 {
   std::stringstream msg;
   vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagCuda> cuda;

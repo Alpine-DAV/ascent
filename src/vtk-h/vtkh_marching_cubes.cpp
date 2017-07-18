@@ -97,7 +97,7 @@ void vtkhMarchingCubes::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    int domain_id;
+    vtkm::Id domain_id;
     vtkm::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
     bool valid_domain = ContainsIsoValues(dom);

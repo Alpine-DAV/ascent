@@ -171,7 +171,7 @@ vtkhVolumeRenderer::Composite(const int &num_images)
     Image result = m_compositor->Composite();
     const std::string image_name = "output.png";
 #ifdef PARALLEL
-    if(VTKH::GetMPIRank() == 0)
+    if(vtkh::GetMPIRank() == 0)
     {
       result.Save(image_name);
     }
@@ -191,9 +191,9 @@ vtkhVolumeRenderer::DepthSort(const int &num_domains,
   assert(local_vis_order.size() == num_domains);
 #ifdef PARALLEL
   int root = 0;
-  MPI_Comm comm = VTKH::GetMPIComm();
-  int num_ranks = VTKH::GetMPISize();
-  int rank = VTKH::GetMPIRank();
+  MPI_Comm comm = vtkh::GetMPIComm();
+  int num_ranks = vtkh::GetMPISize();
+  int rank = vtkh::GetMPIRank();
   int *domain_counts = NULL; 
   int *domain_offsets = NULL; 
   int *vis_order = NULL; 
