@@ -84,6 +84,11 @@ namespace alpine
 //-----------------------------------------------------------------------------
 namespace flow
 {
+    
+// we init m_default_mpi_comm to -1, it's not clear if we can
+// pick a safe non-inited value w/o the mpi headers, but
+// we will try this strategy.
+int Workspace::m_default_mpi_comm = -1;
 
 //-----------------------------------------------------------------------------
 class Workspace::ExecutionPlan
@@ -413,6 +418,29 @@ Workspace::create_filter(const std::string &filter_type)
     
     return FilterFactory::registered_types()[filter_type]();
 }
+
+//-----------------------------------------------------------------------------
+void
+Workspace::set_default_mpi_comm(int mpi_comm_id)
+{
+    m_default_mpi_comm = mpi_comm_id;
+}
+
+int
+Workspace::default_mpi_comm()
+{
+    // we init m_default_mpi_comm to -1, it's not clear if we can
+    // pick a safe non-inited value w/o the mpi headers, but
+    // we will try this strategy.
+    
+    if(m_default_mpi_comm == -1)
+    {
+        ALPINE_ERROR("flow::Workspace default MPI communicator is not initialized.")
+    }
+
+    return m_default_mpi_comm;
+}
+
 
 //-----------------------------------------------------------------------------
 bool

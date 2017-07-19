@@ -242,7 +242,7 @@ Filter::params()
 
 //-----------------------------------------------------------------------------
 bool
-Filter::verify_params(const Node &params,
+Filter::verify_params(const Node &, // unused: params,
                       Node &info)
 {
     info.reset();

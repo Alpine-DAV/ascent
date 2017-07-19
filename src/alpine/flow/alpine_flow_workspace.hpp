@@ -116,6 +116,16 @@ public:
     void           print() const;
 
     // ------------------------------------------------------------------------
+    /// Interface to set and obtain the MPI communicator.
+    ///
+    /// We use an integer handle from MPI_Comm_c2f to avoid
+    /// a header dependency of mpi just for the handle. 
+    ///
+    // ------------------------------------------------------------------------
+    void static set_default_mpi_comm(int mpi_comm_id);
+    int  static default_mpi_comm();
+
+    // ------------------------------------------------------------------------
     /// filter factory interface
     // ------------------------------------------------------------------------
 
@@ -150,6 +160,8 @@ public:
 private:
 
     static Filter *create_filter(const std::string &filter_type);
+
+    static int  m_default_mpi_comm;
 
     class ExecutionPlan;
     class FilterFactory;

@@ -120,6 +120,9 @@ FlowPipeline::Initialize(const conduit::Node &options)
     {
         ALPINE_ERROR("Missing Alpine::Open options missing MPI communicator (mpi_comm)");
     }
+    
+    flow::Workspace::set_default_mpi_comm(options["mpi_comm"].as_int());
+    
 #endif
 
     m_pipeline_options = options;
