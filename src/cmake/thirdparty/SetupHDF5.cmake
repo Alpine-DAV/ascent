@@ -44,55 +44,39 @@
 
 ###############################################################################
 #
-# LULESH CMake Build for Alpine
+# Setup HDF5
 #
 ###############################################################################
 
-set(LULESH_SOURCES
-    lulesh.cc 
-    lulesh-comm.cc 
-    lulesh-viz.cc 
-    lulesh-util.cc 
-    lulesh-init.cc)
+# first Check for HDF5_DIR
 
-configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
-configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
-
-set(lulesh_deps alpine)
-
-if(OPENMP_FOUND)
-   set(lulesh_openmp_flags "-DLULESH_USE_OPENMP")
-   list(APPEND lulesh_deps openmp)
-else()
-   set(lulesh_openmp_flags "")
+if(NOT HDF5_DIR)
+    MESSAGE(FATAL_ERROR "HDF5 support needs explicit HDF5_DIR")
 endif()
 
-blt_add_executable(
-    NAME        lulesh_ser
-    SOURCES     ${LULESH_SOURCES}
-    DEPENDS_ON  ${lulesh_deps})
+MESSAGE(STATUS "Looking for HDF5 using HDF5_DIR = ${HDF5_DIR}")
 
+# CMake's FindHDF5 module uses the HDF5_ROOT env var
+set(HDF5_ROOT ${HDF5_DIR})
+set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
 
-blt_add_target_compile_flags(TO lulesh_ser FLAGS "-DUSE_MPI=0 ${lulesh_openmp_flags}")
+# Use CMake's FindHDF5 module, which uses hdf5's compiler wrappers to extract
+# all the info about the hdf5 install
+include(FindHDF5)
 
-if(MPI_FOUND)
-    
-    set(lulesh_par_deps alpine_par mpi)
-    if(OPENMP_FOUND)
-           list(APPEND lulesh_par_deps openmp)
-    endif()
-    
-    blt_add_executable(
-        NAME        lulesh_par
-        SOURCES     ${LULESH_SOURCES}
-        DEPENDS_ON  ${lulesh_par_deps})
+# FindHDF5 sets HDF5_DIR to it's installed CMake info if it exists
+# we want to keep HDF5_DIR as the root dir of the install to be 
+# consistent with other packages
 
-    blt_add_target_compile_flags(TO lulesh_par FLAGS "-DUSE_MPI=1 ${lulesh_openmp_flags}")
+set(HDF5_DIR ${HDF5_ROOT} CACHE PATH "" FORCE)
+# not sure why we need to set this, but we do
+#set(HDF5_FOUND TRUE CACHE PATH "" FORCE)
 
+if(NOT HDF5_FOUND)
+    message(FATAL_ERROR "HDF5_DIR is not a path to a valid hdf5 install")
 endif()
 
-
-
-
-
+blt_register_library(NAME hdf5
+                     INCLUDES ${HDF5_INCLUDE_DIRS}
+                     LIBRARIES ${HDF5_LIBRARIES} )
 

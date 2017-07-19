@@ -104,21 +104,22 @@ if(MPI_FOUND AND FORTRAN_FOUND)
     configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
     configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
 
-    add_executable(cloverleaf3d_par ${CLOVER3D_SOURCES})
-
     if(MPI_Fortran_USE_MODULE )
-        set(clover_compile_flags "${MPI_Fortran_COMPILE_FLAGS} -DUSE_MOD")
+        set(clover_compile_flags "-DUSE_MOD")
     else()
-        set(clover_compile_flags "${MPI_Fortran_COMPILE_FLAGS} -DUSE_MPIF") 
+        set(clover_compile_flags "-DUSE_MPIF") 
     endif()
 
-    add_target_compile_flags(TARGET cloverleaf3d_par
-                             FLAGS "${clover_compile_flags}")
+    set(clover_par_deps alpine_par mpi)
+    
+    blt_add_executable(
+        NAME        cloverleaf3d_par
+        SOURCES     ${CLOVER3D_SOURCES}
+        DEPENDS_ON  ${clover_par_deps})
 
-    target_link_libraries(cloverleaf3d_par
-                          alpine_par
-                          conduit_blueprint
-                          ${MPI_Fortran_LIBRARIES})
+                          
+    blt_add_target_compile_flags(TO cloverleaf3d_par FLAGS "${clover_compile_flags}")
+
 endif()
 
 

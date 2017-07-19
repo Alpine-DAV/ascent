@@ -42,57 +42,5 @@
 # 
 ###############################################################################
 
-###############################################################################
-#
-# LULESH CMake Build for Alpine
-#
-###############################################################################
-
-set(LULESH_SOURCES
-    lulesh.cc 
-    lulesh-comm.cc 
-    lulesh-viz.cc 
-    lulesh-util.cc 
-    lulesh-init.cc)
-
-configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
-configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
-
-set(lulesh_deps alpine)
-
-if(OPENMP_FOUND)
-   set(lulesh_openmp_flags "-DLULESH_USE_OPENMP")
-   list(APPEND lulesh_deps openmp)
-else()
-   set(lulesh_openmp_flags "")
-endif()
-
-blt_add_executable(
-    NAME        lulesh_ser
-    SOURCES     ${LULESH_SOURCES}
-    DEPENDS_ON  ${lulesh_deps})
-
-
-blt_add_target_compile_flags(TO lulesh_ser FLAGS "-DUSE_MPI=0 ${lulesh_openmp_flags}")
-
-if(MPI_FOUND)
-    
-    set(lulesh_par_deps alpine_par mpi)
-    if(OPENMP_FOUND)
-           list(APPEND lulesh_par_deps openmp)
-    endif()
-    
-    blt_add_executable(
-        NAME        lulesh_par
-        SOURCES     ${LULESH_SOURCES}
-        DEPENDS_ON  ${lulesh_par_deps})
-
-    blt_add_target_compile_flags(TO lulesh_par FLAGS "-DUSE_MPI=1 ${lulesh_openmp_flags}")
-
-endif()
-
-
-
-
-
-
+module load cudatoolkit/8.0
+export PATH=/usr/local/tools/mvapich2-gnu-2.0/bin:$PATH

@@ -43,56 +43,32 @@
 ###############################################################################
 
 ###############################################################################
-#
-# LULESH CMake Build for Alpine
-#
+# Setup VTKm
 ###############################################################################
 
-set(LULESH_SOURCES
-    lulesh.cc 
-    lulesh-comm.cc 
-    lulesh-viz.cc 
-    lulesh-util.cc 
-    lulesh-init.cc)
-
-configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
-configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
-
-set(lulesh_deps alpine)
-
-if(OPENMP_FOUND)
-   set(lulesh_openmp_flags "-DLULESH_USE_OPENMP")
-   list(APPEND lulesh_deps openmp)
-else()
-   set(lulesh_openmp_flags "")
+if(NOT VTKM_DIR)
+    MESSAGE(FATAL_ERROR "VTKm support needs explicit VTKM_DIR")
 endif()
 
-blt_add_executable(
-    NAME        lulesh_ser
-    SOURCES     ${LULESH_SOURCES}
-    DEPENDS_ON  ${lulesh_deps})
+MESSAGE(STATUS "Looking for VTKm using VTKM_DIR = ${VTKM_DIR}")
 
+# use VTKM_DIR to setup the options that cmake's find VTKm needs
+set(VTKm_DIR ${VTKM_DIR}/lib)
 
-blt_add_target_compile_flags(TO lulesh_ser FLAGS "-DUSE_MPI=0 ${lulesh_openmp_flags}")
-
-if(MPI_FOUND)
-    
-    set(lulesh_par_deps alpine_par mpi)
-    if(OPENMP_FOUND)
-           list(APPEND lulesh_par_deps openmp)
-    endif()
-    
-    blt_add_executable(
-        NAME        lulesh_par
-        SOURCES     ${LULESH_SOURCES}
-        DEPENDS_ON  ${lulesh_par_deps})
-
-    blt_add_target_compile_flags(TO lulesh_par FLAGS "-DUSE_MPI=1 ${lulesh_openmp_flags}")
-
+#
+# VTKm will find TBB via the env var "TBB_ROOT"
+#
+if(TBB_DIR)
+    set(ENV{TBB_ROOT} ${TBB_DIR})
 endif()
 
+find_package(VTKm REQUIRED OPTIONAL_COMPONENTS Rendering Serial CUDA TBB)
+message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
 
+set(VTKM_FOUND TRUE)
 
-
-
-
+blt_register_library(NAME vtkm
+                     INCLUDES ${VTKm_INCLUDE_DIRS}
+                     COMPILE_FLAGS ${VTKm_COMPILE_OPTIONS}
+                     LIBRARIES vtkm vtkm_cont vtkm_rendering
+                     )

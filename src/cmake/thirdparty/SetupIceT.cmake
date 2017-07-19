@@ -42,57 +42,67 @@
 # 
 ###############################################################################
 
+
 ###############################################################################
-#
-# LULESH CMake Build for Alpine
-#
+# Setup IceT
+# This file defines:
+#  ICET_FOUND - If IceT was found
+#  ICET_INCLUDE_DIRS - The IceT include directories
+#  ICET_LIBRARIES - The libraries needed to use IceT
 ###############################################################################
 
-set(LULESH_SOURCES
-    lulesh.cc 
-    lulesh-comm.cc 
-    lulesh-viz.cc 
-    lulesh-util.cc 
-    lulesh-init.cc)
+# first Check for ICET_DIR
 
-configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
-configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
-
-set(lulesh_deps alpine)
-
-if(OPENMP_FOUND)
-   set(lulesh_openmp_flags "-DLULESH_USE_OPENMP")
-   list(APPEND lulesh_deps openmp)
-else()
-   set(lulesh_openmp_flags "")
+if(NOT ICET_DIR)
+    MESSAGE(FATAL_ERROR "IceT support needs explicit ICET_DIR")
 endif()
 
-blt_add_executable(
-    NAME        lulesh_ser
-    SOURCES     ${LULESH_SOURCES}
-    DEPENDS_ON  ${lulesh_deps})
+MESSAGE(STATUS "Looking for IceT using ICET_DIR = ${ICET_DIR}")
+
+#find includes
+find_path(ICET_INCLUDE_DIRS IceT.h
+          PATHS ${ICET_DIR}/include
+          NO_DEFAULT_PATH
+          NO_CMAKE_ENVIRONMENT_PATH
+          NO_CMAKE_PATH
+          NO_SYSTEM_ENVIRONMENT_PATH
+          NO_CMAKE_SYSTEM_PATH)
+
+#find libs
+find_library(ICET_CORE_LIB LIBRARIES NAMES IceTCore
+             PATHS ${ICET_DIR}/lib
+             NO_DEFAULT_PATH
+             NO_CMAKE_ENVIRONMENT_PATH
+             NO_CMAKE_PATH
+             NO_SYSTEM_ENVIRONMENT_PATH
+             NO_CMAKE_SYSTEM_PATH)
 
 
-blt_add_target_compile_flags(TO lulesh_ser FLAGS "-DUSE_MPI=0 ${lulesh_openmp_flags}")
+find_library(ICET_MPI_LIB LIBRARIES NAMES IceTMPI
+             PATHS ${ICET_DIR}/lib
+             NO_DEFAULT_PATH
+             NO_CMAKE_ENVIRONMENT_PATH
+             NO_CMAKE_PATH
+             NO_SYSTEM_ENVIRONMENT_PATH
+             NO_CMAKE_SYSTEM_PATH)
 
-if(MPI_FOUND)
-    
-    set(lulesh_par_deps alpine_par mpi)
-    if(OPENMP_FOUND)
-           list(APPEND lulesh_par_deps openmp)
-    endif()
-    
-    blt_add_executable(
-        NAME        lulesh_par
-        SOURCES     ${LULESH_SOURCES}
-        DEPENDS_ON  ${lulesh_par_deps})
 
-    blt_add_target_compile_flags(TO lulesh_par FLAGS "-DUSE_MPI=1 ${lulesh_openmp_flags}")
+set(ICET_LIBRARIES ${ICET_CORE_LIB} ${ICET_MPI_LIB})
 
+include(FindPackageHandleStandardArgs)
+# handle the QUIETLY and REQUIRED arguments and set ICET_FOUND to TRUE
+# if all listed variables are TRUE
+find_package_handle_standard_args(IceT  DEFAULT_MSG
+                                  ICET_LIBRARIES ICET_INCLUDE_DIRS)
+
+mark_as_advanced(ICET_CORE_LIB
+                 ICET_MPI_LIB)
+
+if(NOT ICET_FOUND)
+    message(FATAL_ERROR "ICET_DIR is not a path to a valid icet install")
 endif()
 
-
-
-
-
+blt_register_library(NAME icet
+                     INCLUDES ${ICET_INCLUDE_DIRS}
+                     LIBRARIES ${ICET_LIBRARIES} )
 

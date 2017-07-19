@@ -65,6 +65,9 @@ class Conduit(Package):
     version('0.2.1', 'cd2b42c76f70ac3546582b6da77c6028')
     version('0.2.0', 'd595573dedf55514c11d7391092fd760')
 
+    variant("cmake", default=True,
+             description="Build CMake (if off, attempt to use cmake from PATH)")
+
     variant("hdf5",default=True,description="build third party dependencies for Conduit HDF5 support")
     variant("silo",default=True,description="build third party dependencies for Conduit Silo support")
     
@@ -91,7 +94,7 @@ class Conduit(Package):
     #######################
     # CMake
     #######################
-    depends_on("cmake@3.3.1")
+    depends_on("cmake@3.8.2",when="+cmake")
     
     #######################
     # python
@@ -135,7 +138,17 @@ class Conduit(Package):
         #######################
         # TPL Paths
         #######################
-        cmake_exe  = pjoin(spec['cmake'].prefix.bin,"cmake")
+        if "+cmake" in spec:
+            cmake_exe = pjoin(spec['cmake'].prefix.bin,"cmake")
+        else:
+            cmake_exe = which("cmake")
+            if cmake_exe is None:
+                msg = 'failed to find CMake (and cmake variant is off)'
+                raise RuntimeError(msg)
+            cmake_exe = cmake_exe.path
+
+        print "cmake executable: %s" % cmake_exe
+
     
         #######################
         # Check for MPI

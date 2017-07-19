@@ -108,7 +108,6 @@ if(VTKM_FOUND)
     list(APPEND alpine_headers pipelines/alpine_vtkm_pipeline.hpp)
     list(APPEND alpine_headers pipelines/alpine_vtkm_renderer.hpp)
 
-
     # VTKm Pipeline Sources
     list(APPEND alpine_sources pipelines/alpine_vtkm_pipeline.cpp)
     # VTKm Rendering Headers
@@ -116,7 +115,6 @@ if(VTKM_FOUND)
 
     # VTKm Rendering Sources
     list(APPEND alpine_sources pipelines/alpine_vtkm_renderer.cpp)
-    
    
 endif()
 
@@ -130,11 +128,6 @@ endif()
 #############################
 add_subdirectory(flow)
 
-
-##############################
-# Add lodepng 
-#############################
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty_builtin/lodepng/ ${CMAKE_CURRENT_SOURCE_DIR}/utils/lodepng)
 
 ##############################
 # optional features
@@ -158,58 +151,34 @@ endif()
 
 set(alpine_thirdparty_libs 
     conduit
-    conduit_relay
-    conduit_blueprint
     alpine_flow)
 
+##################
+# optional libs
+##################
 if(VTKM_FOUND)
     list(APPEND alpine_thirdparty_libs vtkm)
-    list(APPEND alpine_thirdparty_libs vtkm_cont)
-    list(APPEND alpine_thirdparty_libs vtkm_rendering)
 endif()
+
+if(CUDA_FOUND)
+    list(APPEND alpine_thirdparty_libs cuda_runtime)
+endif()
+
+
+if(TBB_FOUND)
+    list(APPEND alpine_thirdparty_libs tbb)
+endif()
+
 
 ##########################################
 # Build a serial version of alpine
 ##########################################
 
-if(BUILD_SHARED_LIBS)
-    message(STATUS "Building alpine as a shared library")
-     add_library(alpine SHARED 
-                 ${alpine_sources} 
-                 $<TARGET_OBJECTS:lodepng>
-                 ${alpine_headers})
-else()
-    message(STATUS "Building alpine as a static library")
-    add_library(alpine STATIC 
-                ${alpine_sources} 
-                 $<TARGET_OBJECTS:lodepng>
-                ${alpine_headers})
-endif()
-
-##########################################
-# Ensure we use c++11
-##########################################
-
-set_target_properties(alpine PROPERTIES
-                      CXX_STANDARD 11
-                      CXX_STANDARD_REQUIRED YES
-                      CXX_EXTENTIONS NO)
-
-add_target_compile_flags(TARGET alpine 
-                         FLAGS ${VTKm_COMPILE_OPTIONS})
-
-
-target_link_libraries(alpine ${alpine_thirdparty_libs})
-
-if(CUDA_FOUND)
-    target_link_libraries(alpine ${CUDA_CUDART_LIBRARY})
-endif()
-
-
-if(TBB_FOUND)
-   target_link_libraries(alpine ${TBB_LIBRARIES})
-endif()
-
+blt_add_library(
+    NAME        alpine
+    SOURCES     ${alpine_sources} $<TARGET_OBJECTS:lodepng>
+    HEADERS     ${alpine_headers}
+    DEPENDS_ON  ${alpine_thirdparty_libs})
 
 # install target for serial alpine lib
 install(TARGETS alpine
@@ -238,66 +207,24 @@ if(MPI_FOUND)
                                utils/diy_compositing/alpine_diy_collect.hpp
                                utils/diy_compositing/alpine_diy_direct_send.hpp
                                utils/diy_compositing/alpine_diy_radix_k.hpp)
-
-        
-        # we need to set compiler flags for the MPI case
-        # we have to global cxx flags b/c of how the cmake cuda wrappers work 
-        # we save / restore the previous set of global flags after we create the cuda 
-        # target
-        SET(CMAKE_CXX_FLAGS_PREVIOUS ${CMAKE_CXX_FLAGS})
-        SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS} -D PARALLEL -fPIC" )
-        
-        # restore old global cxx flags
-        SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_PREVIOUS})
     endif()
    
-    if(BUILD_SHARED_LIBS)
-        message(STATUS "Building alpine_par as a shared library")
-        add_library(alpine_par SHARED ${alpine_sources} 
-                                      ${alpine_par_sources} 
-                                      ${alpine_headers}
-                                      $<TARGET_OBJECTS:lodepng>
-                                      ${alpine_par_headers})
-    else()
-        message(STATUS "Building alpine_par as a static library")
-        add_library(alpine_par STATIC ${alpine_sources} 
-                                      ${alpine_par_sources} 
-                                      ${alpine_headers}
-                                      $<TARGET_OBJECTS:lodepng>
-                                      ${alpine_par_headers})
+    # req'd libs 
+    set(alpine_par_thirdparty_libs mpi conduit_relay_mpi)
+
+    # optional libs
+    if(ICET_FOUND)
+        list(APPEND alpine_par_thirdparty_libs icet)
     endif()
-    
-    ##########################################
-    # Ensure we use c++11
-    ##########################################
-
-    set_target_properties(alpine_par PROPERTIES
-                          CXX_STANDARD 11
-                          CXX_STANDARD_REQUIRED YES
-                          CXX_EXTENTIONS NO)
-
-    add_target_compile_flags(TARGET alpine_par 
-                             FLAGS "${MPI_CXX_COMPILE_FLAGS} -D PARALLEL ${VTKm_COMPILE_OPTIONS}")
-        
-    add_target_link_flags(TARGET alpine_par  
-                          FLAGS "${MPI_CXX_LINK_FLAGS}")
-    
-    target_link_libraries(alpine_par
-                          conduit_relay_mpi
-                          ${alpine_thirdparty_libs}
-                          ${ICET_LIBRARIES}
-                          ${MPI_CXX_LIBRARIES})
-
-
    
-    if(CUDA_FOUND)
-        target_link_libraries(alpine_par ${CUDA_CUDART_LIBRARY})
-    endif()
+    blt_add_library(
+        NAME        alpine_par
+        SOURCES     ${alpine_sources} ${alpine_par_sources} $<TARGET_OBJECTS:lodepng>
+        HEADERS     ${alpine_headers} ${alpine_par_headers}
+        DEPENDS_ON  ${alpine_thirdparty_libs} ${alpine_par_thirdparty_libs})
+    
+    blt_add_target_compile_flags(TO alpine_par FLAGS "-D PARALLEL")
 
-    if(TBB_FOUND)
-       target_link_libraries(alpine_par ${TBB_LIBRARIES})
-    endif()
-  
     # install target for mpi ver
     install(TARGETS alpine_par
             EXPORT  alpine

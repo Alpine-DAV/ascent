@@ -9,5 +9,7 @@ machine:
    - sudo rm -rf /home/ubuntu/.android
 test:
   override:
+    - git submodule init
+    - git submodule update
     - cd src/examples/docker/ubuntu/ && ./example_build.sh:
         timeout: 30000

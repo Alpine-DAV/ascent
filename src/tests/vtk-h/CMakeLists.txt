@@ -85,7 +85,7 @@ if(MPI_FOUND AND ENABLE_MPI)
     foreach(TEST ${MPI_TESTS})
         # this uses 2 procs
         add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON vtkh_par) 
-        set_target_properties( ${TEST} PROPERTIES COMPILE_FLAGS "-D PARALLEL")
+        blt_add_target_compile_flags(TO ${TEST} FLAGS "-D PARALLEL")
     endforeach()
 else()
     message(STATUS "MPI disabled: Skipping related tests")
