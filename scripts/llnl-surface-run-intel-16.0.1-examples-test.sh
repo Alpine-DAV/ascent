@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 # Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
 # 
@@ -42,41 +43,6 @@
 # 
 ###############################################################################
 
-###############################################################################
-#
-# Example that shows how to use an installed instance of Alpine in another
-# CMake-based build system.
-#
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DALPINE_DIR={alpine install path}  \ 
-#   -DCONDUIT_DIR={conduit install path}    \ 
-#   -DVTKM_DIR={vtkm install path}          \
-#   ../
-# make
-# ./example
-#
-###############################################################################
-
-cmake_minimum_required(VERSION 3.0)
-
-project(using_with_cmake)
-
-include("FindAlpine.cmake")
-include("FindConduit.cmake")
-if(VTKM_DIR)
-    include("FindVTKm.cmake")
-endif()
-
-# setup the alpine & conduit include paths
-include_directories(${ALPINE_INCLUDE_DIRS})
-include_directories(${CONDUIT_INCLUDE_DIRS})
-
-# create our example 
-add_executable(example example.cpp)
-
-# link to alpine
-target_link_libraries(example alpine)
-
+source /usr/local/tools/dotkit/init.sh
+source llnl-surface-load-env-intel-16.0.3.sh
+source run-proxy-examples-tests.sh

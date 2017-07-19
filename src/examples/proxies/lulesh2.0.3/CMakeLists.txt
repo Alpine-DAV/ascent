@@ -55,37 +55,40 @@ set(LULESH_SOURCES
     lulesh-util.cc 
     lulesh-init.cc)
 
-
-add_executable(lulesh_ser ${LULESH_SOURCES})
-target_link_libraries(lulesh_ser
-                      alpine)
-
-
 configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
 configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
 
+set(lulesh_deps alpine)
 
 if(OPENMP_FOUND)
    set(lulesh_openmp_flags "-DLULESH_USE_OPENMP")
+   list(APPEND lulesh_deps openmp)
 else()
    set(lulesh_openmp_flags "")
 endif()
 
-add_target_compile_flags(TARGET lulesh_ser
-                         FLAGS "-DUSE_MPI=0 ${lulesh_openmp_flags}")
+blt_add_executable(
+    NAME        lulesh_ser
+    SOURCES     ${LULESH_SOURCES}
+    DEPENDS_ON  ${lulesh_deps})
+
+
+blt_add_target_compile_flags(TO lulesh_ser FLAGS "-DUSE_MPI=0 ${lulesh_openmp_flags}")
 
 if(MPI_FOUND)
-    add_executable(lulesh_par ${LULESH_SOURCES})
+    
+    set(lulesh_par_deps alpine_par mpi)
+    if(OPENMP_FOUND)
+           list(APPEND lulesh_par_deps openmp)
+    endif()
+    
+    blt_add_executable(
+        NAME        lulesh_par
+        SOURCES     ${LULESH_SOURCES}
+        DEPENDS_ON  ${lulesh_par_deps})
 
-    add_target_compile_flags(TARGET lulesh_par 
-                             FLAGS "${MPI_CXX_COMPILE_FLAGS} -DUSE_MPI=1  ${lulesh_openmp_flags}")
+    blt_add_target_compile_flags(TO lulesh_par FLAGS "-DUSE_MPI=1 ${lulesh_openmp_flags}")
 
-    add_target_link_flags(TARGET lulesh_par  
-                          FLAGS "${MPI_CXX_LINK_FLAGS}")
-
-    target_link_libraries(lulesh_par
-                          alpine_par
-                          ${MPI_CXX_LIBRARIES})
 endif()
 
 

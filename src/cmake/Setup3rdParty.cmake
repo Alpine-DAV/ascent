@@ -1,6 +1,6 @@
 ###############################################################################
 # Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
-#  
+# 
 # Produced at the Lawrence Livermore National Laboratory
 # 
 # LLNL-CODE-716457
@@ -42,114 +42,90 @@
 # 
 ###############################################################################
 
-
-cmake_minimum_required(VERSION 3.0)
 ################################
-# cmake policy selections
-################################
-# avoid default mac osx rpath settings for cmake 3.0
-cmake_policy(SET CMP0042 OLD)
-# avoid warnings for project commands w/o VERSION
-cmake_policy(SET CMP0048 NEW)
-
-
-################################
-# Alpine
+# Alpine 3rd Party Dependencies
 ################################
 
-project(alpine VERSION "0.1.0")
+###############################################################################
+# gtest, fruit, mpi,cuda, openmp, sphinx and doxygen are handled by blt
+###############################################################################
 
 ################################
-# Build Options
+# Setup Python if requested
 ################################
-option(BUILD_SHARED_LIBS  "Build shared libraries"    ON)
-option(ENABLE_TESTS       "Build tests"               ON)
-
-option(ENABLE_FORTRAN     "Build Fortran support"     ON)
-option(ENABLE_PYTHON      "Build Python Support"      ON)
-
-option(ENABLE_MPI         "Build MPI Support"         ON)
-option(ENABLE_CUDA        "Build CUDA Support"        OFF)
-option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
-
-################################
-# Invoke CMake Fortran setup
-# if ENABLE_FORTRAN == ON
-################################
-if(ENABLE_FORTRAN)
-    enable_language(Fortran)
-endif()
-
-include(blt/SetupBLT.cmake)
-
-################################
-# Basic CMake Setup
-################################
-include(cmake/CMakeBasics.cmake)
-
-################################
-# Setup Fortran Support
-################################
-include(cmake/SetupFortran.cmake)
-
-################################
-# Setup 3rd Party Libs
-################################
-include(cmake/Setup3rdParty.cmake)
-
-################################
-# Setup tests helpers
-################################
-include(cmake/SetupTests.cmake)
-
-################################
-# Setup project wide includes
-################################
-include(cmake/SetupIncludes.cmake)
-
-################################
-# Add builtin third party libs
-################################
-add_subdirectory(thirdparty_builtin)
-
-################################
-# Add our libs
-################################
-add_subdirectory(alpine)
-
-################################
-# Add vtk-h 
-################################
-if(VTKM_FOUND)
-    add_subdirectory(vtk-h)
+if(ENABLE_PYTHON)
+    include(cmake/thirdparty/SetupPython.cmake)
+    message(STATUS "Using Python Include: ${PYTHON_INCLUDE_DIRS}")
+    include_directories(${PYTHON_INCLUDE_DIRS})
+    # if we don't find python, throw a fatal error
+    if(NOT PYTHON_FOUND)
+        message(FATAL_ERROR "ENABLE_PYTHON is true, but Python wasn't found.")
+    endif()
 endif()
 
 ################################
-# Add our tests
+# Conduit
 ################################
-if(ENABLE_TESTS)
-    add_subdirectory(tests)
+include(cmake/thirdparty/SetupConduit.cmake)
+
+
+################################################################
+################################################################
+#
+# 3rd Party Libs that underpin Alpine's Pipelines
+#
+################################################################
+################################################################
+
+################################
+# Make sure we have a concrete
+# pipeline to build 
+################################
+if(NOT VTKM_DIR AND NOT HDF5_DIR)
+    message(FATAL_ERROR "Alpine requires at least once concrete pipeline (HDF5 for VTKm)")
 endif()
 
-################################
-# Add mini-app examples
-################################
-add_subdirectory(examples)
-
 
 ################################
-# Add documentation targets
+# VTKm and supporting libs
 ################################
-add_subdirectory(docs)
+if(VTKM_DIR)
+    # explicitly setting this avoids a bug with VTKm's cuda
+    # arch detection logic
+    set(VTKm_CUDA_Architecture "kepler" CACHE PATH "" FORCE)
+
+    ################################
+    # TBB (for VTK-M)
+    ################################
+    message(STATUS "If VTK-m was configured with TBB then you must specify the TBB_DIR")
+    if(TBB_DIR) # optional 
+        include(cmake/thirdparty/SetupTBB.cmake)
+    endif()
+
+    ################################
+    # VTKm
+    ################################
+    include(cmake/thirdparty/SetupVTKm.cmake)
+endif()
 
 
 ################################
-# Create CMake importable 
-# exports for all of our targets
+# Setup HDF5
 ################################
-install(EXPORT alpine DESTINATION lib/cmake)
+if(HDF5_DIR)
+    include(cmake/thirdparty/SetupHDF5.cmake)
+endif()
 
 
+################################
+# Optional Features
+################################
 
+################################
+# IceT
+################################
+if(ENABLE_MPI AND VTKM_FOUND)
+    include(cmake/thirdparty/SetupIceT.cmake)
+endif()
 
 

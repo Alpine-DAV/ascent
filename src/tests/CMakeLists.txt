@@ -58,6 +58,8 @@ add_subdirectory("thirdparty")
 # add alpine tests
 add_subdirectory("alpine")
 # add vtk-h tests
-add_subdirectory("vtk-h")
+if(VTKM_FOUND)
+    add_subdirectory("vtk-h")
+endif()
 
 

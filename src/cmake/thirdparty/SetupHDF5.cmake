@@ -44,39 +44,39 @@
 
 ###############################################################################
 #
-# Example that shows how to use an installed instance of Alpine in another
-# CMake-based build system.
-#
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DALPINE_DIR={alpine install path}  \ 
-#   -DCONDUIT_DIR={conduit install path}    \ 
-#   -DVTKM_DIR={vtkm install path}          \
-#   ../
-# make
-# ./example
+# Setup HDF5
 #
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.0)
+# first Check for HDF5_DIR
 
-project(using_with_cmake)
-
-include("FindAlpine.cmake")
-include("FindConduit.cmake")
-if(VTKM_DIR)
-    include("FindVTKm.cmake")
+if(NOT HDF5_DIR)
+    MESSAGE(FATAL_ERROR "HDF5 support needs explicit HDF5_DIR")
 endif()
 
-# setup the alpine & conduit include paths
-include_directories(${ALPINE_INCLUDE_DIRS})
-include_directories(${CONDUIT_INCLUDE_DIRS})
+MESSAGE(STATUS "Looking for HDF5 using HDF5_DIR = ${HDF5_DIR}")
 
-# create our example 
-add_executable(example example.cpp)
+# CMake's FindHDF5 module uses the HDF5_ROOT env var
+set(HDF5_ROOT ${HDF5_DIR})
+set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
 
-# link to alpine
-target_link_libraries(example alpine)
+# Use CMake's FindHDF5 module, which uses hdf5's compiler wrappers to extract
+# all the info about the hdf5 install
+include(FindHDF5)
+
+# FindHDF5 sets HDF5_DIR to it's installed CMake info if it exists
+# we want to keep HDF5_DIR as the root dir of the install to be 
+# consistent with other packages
+
+set(HDF5_DIR ${HDF5_ROOT} CACHE PATH "" FORCE)
+# not sure why we need to set this, but we do
+#set(HDF5_FOUND TRUE CACHE PATH "" FORCE)
+
+if(NOT HDF5_FOUND)
+    message(FATAL_ERROR "HDF5_DIR is not a path to a valid hdf5 install")
+endif()
+
+blt_register_library(NAME hdf5
+                     INCLUDES ${HDF5_INCLUDE_DIRS}
+                     LIBRARIES ${HDF5_LIBRARIES} )
 

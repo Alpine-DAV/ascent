@@ -42,41 +42,20 @@
 # 
 ###############################################################################
 
-###############################################################################
-#
-# Example that shows how to use an installed instance of Alpine in another
-# CMake-based build system.
-#
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DALPINE_DIR={alpine install path}  \ 
-#   -DCONDUIT_DIR={conduit install path}    \ 
-#   -DVTKM_DIR={vtkm install path}          \
-#   ../
-# make
-# ./example
-#
-###############################################################################
-
-cmake_minimum_required(VERSION 3.0)
-
-project(using_with_cmake)
-
-include("FindAlpine.cmake")
-include("FindConduit.cmake")
-if(VTKM_DIR)
-    include("FindVTKm.cmake")
+################################
+# Guards for Fortran support.
+################################
+if(ENABLE_FORTRAN)
+    if(CMAKE_Fortran_COMPILER)
+        MESSAGE(STATUS  "Fortran Compiler: ${CMAKE_Fortran_COMPILER}")
+        set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/fortran)
+    elseif(CMAKE_GENERATOR STREQUAL Xcode)
+        MESSAGE(STATUS "Disabling Fortran support: ENABLE_FORTRAN is true, "
+                       "but the Xcode CMake Generator does not support Fortran.")
+        set(ENABLE_FORTRAN OFF)
+    else()
+        MESSAGE(FATAL_ERROR "ENABLE_FORTRAN is true, but a Fortran compiler wasn't found.")
+    endif()
+    set(FORTRAN_FOUND 1)
 endif()
-
-# setup the alpine & conduit include paths
-include_directories(${ALPINE_INCLUDE_DIRS})
-include_directories(${CONDUIT_INCLUDE_DIRS})
-
-# create our example 
-add_executable(example example.cpp)
-
-# link to alpine
-target_link_libraries(example alpine)
 

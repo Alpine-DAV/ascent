@@ -43,40 +43,32 @@
 ###############################################################################
 
 ###############################################################################
-#
-# Example that shows how to use an installed instance of Alpine in another
-# CMake-based build system.
-#
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DALPINE_DIR={alpine install path}  \ 
-#   -DCONDUIT_DIR={conduit install path}    \ 
-#   -DVTKM_DIR={vtkm install path}          \
-#   ../
-# make
-# ./example
-#
+# Setup VTKm
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.0)
-
-project(using_with_cmake)
-
-include("FindAlpine.cmake")
-include("FindConduit.cmake")
-if(VTKM_DIR)
-    include("FindVTKm.cmake")
+if(NOT VTKM_DIR)
+    MESSAGE(FATAL_ERROR "VTKm support needs explicit VTKM_DIR")
 endif()
 
-# setup the alpine & conduit include paths
-include_directories(${ALPINE_INCLUDE_DIRS})
-include_directories(${CONDUIT_INCLUDE_DIRS})
+MESSAGE(STATUS "Looking for VTKm using VTKM_DIR = ${VTKM_DIR}")
 
-# create our example 
-add_executable(example example.cpp)
+# use VTKM_DIR to setup the options that cmake's find VTKm needs
+set(VTKm_DIR ${VTKM_DIR}/lib)
 
-# link to alpine
-target_link_libraries(example alpine)
+#
+# VTKm will find TBB via the env var "TBB_ROOT"
+#
+if(TBB_DIR)
+    set(ENV{TBB_ROOT} ${TBB_DIR})
+endif()
 
+find_package(VTKm REQUIRED OPTIONAL_COMPONENTS Rendering Serial CUDA TBB)
+message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
+
+set(VTKM_FOUND TRUE)
+
+blt_register_library(NAME vtkm
+                     INCLUDES ${VTKm_INCLUDE_DIRS}
+                     COMPILE_FLAGS ${VTKm_COMPILE_OPTIONS}
+                     LIBRARIES vtkm vtkm_cont vtkm_rendering
+                     )

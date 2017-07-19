@@ -91,17 +91,19 @@ if(MPI_FOUND)
     include_directories(.)
     include_directories("tools")
 
-    add_executable(kripke_par ${KRIPKE_SOURCES})
 
-    add_target_compile_flags(TARGET kripke_par 
-                             FLAGS "${kripke_openmp_flags} ${MPI_CXX_COMPILE_FLAGS} -D PARALLEL")
+    set(kripke_par_deps alpine_par mpi)
+    if(OPENMP_FOUND)
+           list(APPEND kripke_par_deps openmp)
+    endif()
+    
+    blt_add_executable(
+        NAME        kripke_par
+        SOURCES     ${KRIPKE_SOURCES}
+        DEPENDS_ON  ${kripke_par_deps})
 
-    add_target_link_flags(TARGET kripke_par  
-                          FLAGS "${MPI_CXX_LINK_FLAGS}")
+    blt_add_target_compile_flags(TO kripke_par FLAGS "-D PARALLEL ${kripke_openmp_flags}")
 
-    target_link_libraries(kripke_par
-                          alpine_par
-                          ${MPI_CXX_LIBRARIES})
 endif()
 
 

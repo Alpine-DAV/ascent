@@ -42,41 +42,67 @@
 # 
 ###############################################################################
 
+
 ###############################################################################
-#
-# Example that shows how to use an installed instance of Alpine in another
-# CMake-based build system.
-#
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DALPINE_DIR={alpine install path}  \ 
-#   -DCONDUIT_DIR={conduit install path}    \ 
-#   -DVTKM_DIR={vtkm install path}          \
-#   ../
-# make
-# ./example
-#
+# Setup IceT
+# This file defines:
+#  ICET_FOUND - If IceT was found
+#  ICET_INCLUDE_DIRS - The IceT include directories
+#  ICET_LIBRARIES - The libraries needed to use IceT
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.0)
+# first Check for ICET_DIR
 
-project(using_with_cmake)
-
-include("FindAlpine.cmake")
-include("FindConduit.cmake")
-if(VTKM_DIR)
-    include("FindVTKm.cmake")
+if(NOT ICET_DIR)
+    MESSAGE(FATAL_ERROR "IceT support needs explicit ICET_DIR")
 endif()
 
-# setup the alpine & conduit include paths
-include_directories(${ALPINE_INCLUDE_DIRS})
-include_directories(${CONDUIT_INCLUDE_DIRS})
+MESSAGE(STATUS "Looking for IceT using ICET_DIR = ${ICET_DIR}")
 
-# create our example 
-add_executable(example example.cpp)
+#find includes
+find_path(ICET_INCLUDE_DIRS IceT.h
+          PATHS ${ICET_DIR}/include
+          NO_DEFAULT_PATH
+          NO_CMAKE_ENVIRONMENT_PATH
+          NO_CMAKE_PATH
+          NO_SYSTEM_ENVIRONMENT_PATH
+          NO_CMAKE_SYSTEM_PATH)
 
-# link to alpine
-target_link_libraries(example alpine)
+#find libs
+find_library(ICET_CORE_LIB LIBRARIES NAMES IceTCore
+             PATHS ${ICET_DIR}/lib
+             NO_DEFAULT_PATH
+             NO_CMAKE_ENVIRONMENT_PATH
+             NO_CMAKE_PATH
+             NO_SYSTEM_ENVIRONMENT_PATH
+             NO_CMAKE_SYSTEM_PATH)
+
+
+find_library(ICET_MPI_LIB LIBRARIES NAMES IceTMPI
+             PATHS ${ICET_DIR}/lib
+             NO_DEFAULT_PATH
+             NO_CMAKE_ENVIRONMENT_PATH
+             NO_CMAKE_PATH
+             NO_SYSTEM_ENVIRONMENT_PATH
+             NO_CMAKE_SYSTEM_PATH)
+
+
+set(ICET_LIBRARIES ${ICET_CORE_LIB} ${ICET_MPI_LIB})
+
+include(FindPackageHandleStandardArgs)
+# handle the QUIETLY and REQUIRED arguments and set ICET_FOUND to TRUE
+# if all listed variables are TRUE
+find_package_handle_standard_args(IceT  DEFAULT_MSG
+                                  ICET_LIBRARIES ICET_INCLUDE_DIRS)
+
+mark_as_advanced(ICET_CORE_LIB
+                 ICET_MPI_LIB)
+
+if(NOT ICET_FOUND)
+    message(FATAL_ERROR "ICET_DIR is not a path to a valid icet install")
+endif()
+
+blt_register_library(NAME icet
+                     INCLUDES ${ICET_INCLUDE_DIRS}
+                     LIBRARIES ${ICET_LIBRARIES} )
 

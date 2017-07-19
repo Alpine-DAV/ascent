@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 # Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
 # 
@@ -43,40 +44,12 @@
 ###############################################################################
 
 ###############################################################################
-#
-# Example that shows how to use an installed instance of Alpine in another
-# CMake-based build system.
-#
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DALPINE_DIR={alpine install path}  \ 
-#   -DCONDUIT_DIR={conduit install path}    \ 
-#   -DVTKM_DIR={vtkm install path}          \
-#   ../
-# make
-# ./example
-#
-###############################################################################
-
-cmake_minimum_required(VERSION 3.0)
-
-project(using_with_cmake)
-
-include("FindAlpine.cmake")
-include("FindConduit.cmake")
-if(VTKM_DIR)
-    include("FindVTKm.cmake")
-endif()
-
-# setup the alpine & conduit include paths
-include_directories(${ALPINE_INCLUDE_DIRS})
-include_directories(${CONDUIT_INCLUDE_DIRS})
-
-# create our example 
-add_executable(example example.cpp)
-
-# link to alpine
-target_link_libraries(example alpine)
+# use uberenv to install everything
+# make sure to source the proper intel env helper
+source /usr/local/tools/dotkit/init.sh
+source ../llnl-surface-load-env-gnu-4.9.3.sh 
+python uberenv.py --prefix /usr/workspace/wsa/visit/alpine/uberenv_libs --spec %gcc@4.9.3 "$@"
+# change group and perms
+chgrp -R visit /usr/workspace/wsa/visit/alpine/uberenv_libs
+chmod -R g+rwX /usr/workspace/wsa/visit/alpine/uberenv_libs
 

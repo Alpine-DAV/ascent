@@ -170,6 +170,14 @@ def patch_spack(spack_dir,compilers_yaml,pkgs):
         os.mkdir(spack_etc)
     sexe("cp %s spack/etc/spack/compilers.yaml" % compilers_yaml, echo=True)
     dest_spack_pkgs = pjoin(spack_dir,"var","spack","repos","builtin","packages")
+
+    # limit max number of build jobs to 8
+    spack_build_env = pjoin(spack_dir,"lib","spack","spack","build_environment.py")
+
+    build_env_src = open(spack_build_env).read().replace("jobs = multiprocessing.cpu_count()",
+                                                         "jobs = min(8,multiprocessing.cpu_count())")
+    open(spack_build_env,"w").write(build_env_src)
+
     # hot-copy our packages into spack
     sexe("cp -Rf %s %s" % (pkgs,dest_spack_pkgs))
 
