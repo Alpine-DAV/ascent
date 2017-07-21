@@ -239,7 +239,6 @@ Graph::connect(const std::string &src_name,
     }
 
 
-    Filter *src_filter = m_filters[src_name];
     Filter *des_filter = m_filters[des_name];
 
     // make sure it has an input port with the given name

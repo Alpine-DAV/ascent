@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_alpine_empty_pipeline.cpp
+/// file: t_alpine_flow_pipeline.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -525,6 +525,57 @@ TEST(alpine_flow_pipeline, test_flow_vtkh_filter)
 }
 
 
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow_pipeline, test_flow_mesh_blueprint_hdf5_output)
+{   
+    
+    Node n;
+    alpine::about(n);
+    
+    
+    Node actions;
+    actions.append();
+    actions[0]["action"] = "add_graph";
+    Node &graph = actions[0]["graph"];
+
+    graph["filters/verify/type_name"] = "blueprint_verify";
+    graph["filters/verify/params/protocol"] = "mesh";
+
+    graph["filters/save/type_name"] = "relay_io_save";
+    graph["filters/save/params/protocol"]  = "blueprint/mesh/hdf5";
+    graph["filters/save/params/path"]      = "tout_flow_mesh_bp_test";
+    
+    graph["connections"].list_of(Schema(DataType::empty()),2);
+    graph["connections"][0]["src"]  = ":source";
+    graph["connections"][0]["dest"] = "verify";
+
+    graph["connections"][1]["src"]  = "verify";
+    graph["connections"][1]["dest"] = "save";
+
+    actions.append()["action"] = "execute";
+    actions.print();
+
+    // we want the "flow" pipeline
+    Node open_opts;
+    open_opts["pipeline/type"] = "flow";
+
+    //
+    // Create example mesh.
+    //
+    Node data;
+    conduit::blueprint::mesh::examples::braid("hexs",10,10,10,data);
+    
+    //
+    // Run Alpine
+    //
+    Alpine alpine;
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
+    
+}
 
 
 //-----------------------------------------------------------------------------
