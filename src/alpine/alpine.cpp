@@ -197,7 +197,46 @@ about()
 {
     Node n;
     alpine::about(n);
-    return n.to_json();
+
+    
+    std::string ALPINE_MASCOT = "\n"
+    "                                       \n"
+    "         &&&&&&&&&&&                   \n"
+    "       &&%&&@@@@@&&&%&&                \n"
+    "      &%%&@       #@&%%&@              \n"
+    "      %%%@           @&%%%%&           \n"
+    "      %%%,            &%%%%%%%&        \n"
+    "      &%#%*          &%##%######%%%%%  \n"
+    "       @%###%&       %####%&%%%#####   \n"
+    "          %###############&    @%##    \n"
+    "                %%@*%((((##      &     \n"
+    "                   ,#(((((#            \n"
+    "                   @(////(%            \n"
+    "                   &(/////#            \n"
+    "                   &(/***/#            \n"
+    "       #&&%%%#####%&(****/(            \n"
+    "   %(////***********(*****(            \n"
+    "  (********,,,,,,,**(*,,,*(            \n"
+    " #**,,,*************%*,,,*(            \n"
+    " (*,,,*/(((((((((#% %*,,,*%            \n"
+    " /,.,*#              /,.,*             \n"
+    " (,..,(             ,(,..,             \n"
+    " %,..,(              (,..,             \n"
+    "  ,..,/              #,..,             \n"
+    "  *..,(              %...,             \n"
+    "  /..,(              ..  ,             \n"
+    "  @. ,#               .  .             \n"
+    "  (..,#               .  .             \n"
+    "\n\n"
+    "Alpine Mascot ASCII Art is licensed under the: \n"
+    " Creative Commons - Attribution - Share Alike license.\n"
+    "  https://creativecommons.org/licenses/by-sa/3.0/\n"
+    "\n"
+    " Derived from:\n"
+    "  https://www.thingiverse.com/thing:5340\n";
+    
+    return n.to_json() + "\n" + ALPINE_MASCOT;
+    
 }
 
 //---------------------------------------------------------------------------//
@@ -242,9 +281,8 @@ about(conduit::Node &n)
 #elif defined(ALPINE_HDF5_ENABLED)    
     n["default_pipeline"] = "blueprint_hdf5";
 #else
-    n["default_pipeline"] = "empty";    
+    n["default_pipeline"] = "empty";
 #endif
-
 }
 
 
