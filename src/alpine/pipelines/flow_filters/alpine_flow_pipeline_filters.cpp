@@ -60,7 +60,13 @@
 
 #include <alpine_flow_pipeline_relay_filters.hpp>
 #include <alpine_flow_pipeline_blueprint_filters.hpp>
-#include <alpine_flow_pipeline_vtkh_filters.hpp>
+
+#if defined(ALPINE_VTKM_ENABLED)
+    #include <alpine_flow_pipeline_vtkh_filters.hpp>
+#endif
+
+
+
 
 
 using namespace alpine::flow;
@@ -112,6 +118,8 @@ register_builtin()
         Workspace::register_filter_type<BlueprintVerify>();
     }
     
+    
+#if defined(ALPINE_VTKM_ENABLED)
     if(!Workspace::supports_filter_type<EnsureVTKM>())
     {
         Workspace::register_filter_type<EnsureVTKM>();
@@ -132,7 +140,7 @@ register_builtin()
     {
         Workspace::register_filter_type<VTKHMarchingCubes>();
     }
-
+#endif
 
     
 }
