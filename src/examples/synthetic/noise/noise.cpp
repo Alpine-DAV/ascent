@@ -332,7 +332,6 @@ void Init(SpatialDivision &div, const Options &options)
   if(rank == 0) options.Print(); 
   std::vector<SpatialDivision> divs; 
   divs.push_back(div);
-  int assigned = 1;
   int avail = comm_size - 1;
   int current_dim = 0;
   int missed_splits = 0;

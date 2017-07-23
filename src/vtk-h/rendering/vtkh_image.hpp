@@ -242,7 +242,7 @@ struct Image
       const int s_dy  = m_bounds.Y.Max - m_bounds.Y.Min + 1;
 
       const int dx  = image.m_bounds.X.Max - image.m_bounds.X.Min + 1;
-      const int dy  = image.m_bounds.Y.Max - image.m_bounds.Y.Min + 1;
+      //const int dy  = image.m_bounds.Y.Max - image.m_bounds.Y.Min + 1;
       
       const int start_x = m_bounds.X.Min - image.m_bounds.X.Min;
       const int start_y = m_bounds.Y.Min - image.m_bounds.Y.Min;
@@ -287,7 +287,8 @@ struct Image
       c[2] = 0;
       int index = color % 3; 
       c[index] = 255 - color * 11;;
-      for(int i = 0; i < m_pixels.size(); ++i)
+      const int size = static_cast<int>(m_pixels.size());
+      for(int i = 0; i < size; ++i)
       {
         float d = m_depths[i / 4]; 
         if(d >0 && d < 1)
@@ -316,7 +317,7 @@ struct Image
       const int s_dy  = m_bounds.Y.Max - m_bounds.Y.Min + 1;
 
       const int dx  = image.m_bounds.X.Max - image.m_bounds.X.Min + 1;
-      const int dy  = image.m_bounds.Y.Max - image.m_bounds.Y.Min + 1;
+      //const int dy  = image.m_bounds.Y.Max - image.m_bounds.Y.Min + 1;
       
       const int start_x = m_bounds.X.Min - image.m_bounds.X.Min;
       const int start_y = m_bounds.Y.Min - image.m_bounds.Y.Min;
