@@ -9,6 +9,7 @@
 #include <mpi.h>
 #include <vtkh.hpp>
 #include <vtkh_data_set.hpp>
+#include <vtkm/cont/DataSetBuilderExplicit.h>
 #include "t_test_utils.hpp"
 
 #include <iostream>
@@ -61,5 +62,35 @@ TEST(vtkh_dataset_par, vtkh_range_par)
   scalar_range = data_set.GetGlobalRange("point_data");
   EXPECT_EQ(1, scalar_range.GetPortalControl().GetNumberOfValues());
 
+  int topo_dims;
+  EXPECT_EQ(true, data_set.IsStructured(topo_dims));
+  EXPECT_EQ(3, topo_dims);
+  
+  if(rank ==0)
+  {
+    vtkm::cont::DataSet unstructured; 
+
+    std::vector<vtkm::Vec<vtkm::Float32,3>> coords;
+    coords.push_back(vtkm::Vec<vtkm::Float32,3>(0.f, 0.f, 0.f));
+    coords.push_back(vtkm::Vec<vtkm::Float32,3>(1.f, 0.f, 0.f));
+    coords.push_back(vtkm::Vec<vtkm::Float32,3>(0.f, 0.f, 1.f));
+
+    std::vector<vtkm::UInt8> shapes;
+    shapes.push_back(5);
+    std::vector<vtkm::IdComponent> num_indices;
+    num_indices.push_back(3);
+    std::vector<vtkm::Id> conn;
+    conn.push_back(0);
+    conn.push_back(1);
+    conn.push_back(2);
+    
+    vtkm::cont::DataSetBuilderExplicit builder;
+    unstructured = builder.Create(coords, shapes, num_indices, conn, "coordinates", "cells");
+    data_set.AddDomain(unstructured, -1);
+  }
+
+  EXPECT_EQ(false, data_set.IsStructured(topo_dims));
+  EXPECT_EQ(-1, topo_dims);
+  
   MPI_Finalize();
 }

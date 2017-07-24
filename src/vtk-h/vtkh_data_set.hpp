@@ -34,7 +34,17 @@ public:
                                vtkm::Id coordinate_system_index = 0) const;
   vtkm::cont::ArrayHandle<vtkm::Range> GetGlobalRange(const std::string &field_name) const;
   vtkm::cont::ArrayHandle<vtkm::Range> GetGlobalRange(const vtkm::Id index) const;
-  
+
+  /*! \brief IsStructured returns true if all domains, globally,
+   *         are stuctured data sets of the same topological dimension. 
+   *  \param topological_dims set to the dimensions of the cell set (1,2, or 3)
+   *         If unstructred or structured with different dimensions, this value 
+   *         is set to -1
+   *  \param cell_set_index the index of the cell set to perform the IsStructured 
+   *         test. Defaults to 0.
+   */
+  bool IsStructured(int &topological_dims, const vtkm::Id cell_set_index = 0) const;
+
   void PrintSummary(std::ostream &stream) const;
 };
 

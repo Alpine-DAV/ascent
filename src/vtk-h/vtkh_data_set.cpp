@@ -1,5 +1,6 @@
 #include <vtkh_error.hpp>
 #include <vtkh_data_set.hpp>
+#include <utils/vtkm_dataset_info.hpp>
 // std includes
 #include <sstream>
 //vtkm includes
@@ -316,4 +317,50 @@ DataSet::PrintSummary(std::ostream &stream) const
   }
 }
 
+bool 
+DataSet::IsStructured(int &topological_dims, const vtkm::Id cell_set_index) const
+{
+  topological_dims = -1;
+  bool is_structured = false;
+  const size_t num_domains = m_domains.size();
+  for(size_t i = 0; i < num_domains; ++i)
+  {
+    const vtkm::cont::DataSet &dom = m_domains[i];
+    int dims; 
+    is_structured = VTKMDataSetInfo::IsStructured(dom, dims, cell_set_index);
+
+    if(i == 0)
+    {
+      topological_dims = dims;    
+    }
+    
+    if(!is_structured || dims != topological_dims)
+    {
+      topological_dims = -1;
+      break;
+    }
+  }
+
+#ifdef PARALLEL
+  int local_boolean = is_structured ? 1 : 0; 
+  int global_boolean;
+  MPI_Comm mpi_comm = vtkh::GetMPIComm();
+  MPI_Allreduce((void *)(&local_boolean),
+                (void *)(&global_boolean),
+                1,
+                MPI_INT,
+                MPI_SUM,
+                mpi_comm);
+
+  if(global_boolean != vtkh::GetMPISize())
+  {
+    is_structured = false;
+  }
+  if(!is_structured)
+  {
+    topological_dims = -1;
+  }
+#endif
+  return is_structured;
+}
 } // namspace vtkh
