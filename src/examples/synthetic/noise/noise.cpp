@@ -290,6 +290,11 @@ struct DataSet
       node["fields/nodal_noise/type"]        = "scalar";
       node["fields/nodal_noise/topology"]    = "mesh";
       node["fields/nodal_noise/values"].set_external(m_nodal_scalars);
+
+      node["fields/zonal_noise/association"] = "element";
+      node["fields/zonal_noise/type"]        = "scalar";
+      node["fields/zonal_noise/topology"]    = "mesh";
+      node["fields/zonal_noise/values"].set_external(m_zonal_scalars);
    }
 
    void Print()
@@ -485,6 +490,32 @@ int main(int argc, char** argv)
         add["render_options/width"]  = 1024;
         add["render_options/height"] = 1024;
         draw["action"] = "draw_plots";
+
+      
+        conduit::Node pipelines;
+        // pipeline 1
+        pipelines["pl1/filters/f1/filter_type"] = "contour";
+        pipelines["pl1/filters/f1/field_name"] = "nodal_noise";
+        // filter knobs
+        pipelines["pl1/filters/f1/iso_val"] = 0.0;
+
+        // pipeline 2 
+        pipelines["pl2/filters/f1/filter_type"] = "threshold";
+        pipelines["pl2/filters/f1/field_name"] = "zonal_noise";
+        // filter knobs
+        pipelines["pl2/filters/f1/min_value"] = 0.0;
+        pipelines["pl2/filters/f1/max_value"] = 0.5;
+
+        pipelines["pl2/filters/f2/filter_type"] = "clip";
+        pipelines["pl2/filters/f2/topology_name"] = "mesh";
+        // filter knobs
+        pipelines["pl2/filters/f2/sphere/center/x"] = 0.0;
+        pipelines["pl2/filters/f2/sphere/center/y"] = 0.0;
+        pipelines["pl2/filters/f2/sphere/center/z"] = 0.0;
+        pipelines["pl2/filters/f2/sphere/radius"] = .1;
+        
+
+
         alpine.publish(alpine_node);
         alpine.execute(actions);
       } //for each time step

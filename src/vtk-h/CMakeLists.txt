@@ -59,12 +59,14 @@ set(vtkh_filter_headers
       vtkh_marching_cubes.hpp
       vtkh_clip.hpp
       vtkh_wavelet_compressor.hpp
+      vtkh_threshold.hpp
    )
 
 set(vtkh_filter_sources
       vtkh_marching_cubes.cpp
       vtkh_clip.cpp
       vtkh_wavelet_compressor.cpp
+      vtkh_threshold.cpp
    )
 
 
