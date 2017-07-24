@@ -68,18 +68,6 @@ Clip::SetPlaneClip(const double origin[3], const double normal[3])
   m_internals->m_clipper.SetImplicitFunction(plane);
 }
 
-void 
-Clip::AddMapField(const std::string &field_name)
-{
-  m_map_fields.push_back(field_name);
-}
-
-void 
-Clip::ClearMapFields()
-{
-  m_map_fields.clear();
-}
-
 void Clip::PreExecute() 
 {
 

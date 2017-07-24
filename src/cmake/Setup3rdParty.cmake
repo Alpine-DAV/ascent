@@ -97,7 +97,6 @@ if(VTKM_DIR)
     ################################
     # TBB (for VTK-M)
     ################################
-    message(STATUS "If VTK-m was configured with TBB then you must specify the TBB_DIR")
     if(TBB_DIR) # optional 
         include(cmake/thirdparty/SetupTBB.cmake)
     endif()

@@ -18,14 +18,12 @@ public:
   void SetBoxClip(const vtkm::Bounds &clipping_bounds);
   void SetSphereClip(const double center[3], const double radius);
   void SetPlaneClip(const double origin[3], const double normal[3]);
-  void AddMapField(const std::string &field_name);
-  void ClearMapFields();
 
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
-  std::vector<std::string> m_map_fields;
+
   struct InternalsType;
   std::shared_ptr<InternalsType> m_internals;
 };

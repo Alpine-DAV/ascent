@@ -34,18 +34,6 @@ MarchingCubes::SetIsoValues(const double *iso_values, const int &num_values)
 }
 
 void 
-MarchingCubes::AddMapField(const std::string &field_name)
-{
-  m_map_fields.push_back(field_name);
-}
-
-void 
-MarchingCubes::ClearMapFields()
-{
-  m_map_fields.clear();
-}
-
-void 
 MarchingCubes::SetField(const std::string &field_name)
 {
   m_field_name = field_name;
