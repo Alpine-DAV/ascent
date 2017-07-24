@@ -74,9 +74,9 @@ list (APPEND vtkh_headers ${vtkh_filter_headers})
 
 ##################
 
-set(vtkh_thirdparty_libs )
+set(vtkh_thirdparty_libs lodepng)
 
-if(VTKM_FOUND)
+if(TBB_FOUND)
     list(APPEND vtkh_thirdparty_libs tbb)
 endif()
 
@@ -94,7 +94,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 blt_add_library(
     NAME        vtkh
-    SOURCES     ${vtkh_sources} $<TARGET_OBJECTS:lodepng>
+    SOURCES     ${vtkh_sources} 
     HEADERS     ${vtkh_headers}
     DEPENDS_ON  ${vtkh_thirdparty_libs})
 
@@ -128,7 +128,7 @@ if(MPI_FOUND)
 
     blt_add_library(
         NAME        vtkh_par
-        SOURCES     ${vtkh_sources} ${vtkh_par_sources} $<TARGET_OBJECTS:lodepng>
+        SOURCES     ${vtkh_sources} ${vtkh_par_sources}
         HEADERS     ${vtkh_par_headers}
         DEPENDS_ON  ${vtkh_thirdparty_libs} mpi icet)
   

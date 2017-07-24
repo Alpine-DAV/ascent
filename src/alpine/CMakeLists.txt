@@ -162,7 +162,8 @@ endif()
 
 set(alpine_thirdparty_libs 
     conduit
-    alpine_flow)
+    alpine_flow
+    lodepng)
 
 ##################
 # optional libs
@@ -187,7 +188,7 @@ endif()
 
 blt_add_library(
     NAME        alpine
-    SOURCES     ${alpine_sources} $<TARGET_OBJECTS:lodepng>
+    SOURCES     ${alpine_sources} 
     HEADERS     ${alpine_headers}
     DEPENDS_ON  ${alpine_thirdparty_libs})
 
@@ -230,7 +231,7 @@ if(MPI_FOUND)
    
     blt_add_library(
         NAME        alpine_par
-        SOURCES     ${alpine_sources} ${alpine_par_sources} $<TARGET_OBJECTS:lodepng>
+        SOURCES     ${alpine_sources} ${alpine_par_sources}
         HEADERS     ${alpine_headers} ${alpine_par_headers}
         DEPENDS_ON  ${alpine_thirdparty_libs} ${alpine_par_thirdparty_libs})
     
