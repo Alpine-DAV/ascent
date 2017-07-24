@@ -46,7 +46,6 @@ Clip::SetSphereClip(const double center[3], const double radius)
   vec_center[2] = center[2];
   vtkm::FloatDefault r = radius;
 
-  std::cout<<"****center "<<vec_center<<" radius "<<r<<"\n";
   auto sphere = std::make_shared<vtkm::cont::Sphere>(vec_center, r);
   m_internals->m_clipper.SetImplicitFunction(sphere);
 }

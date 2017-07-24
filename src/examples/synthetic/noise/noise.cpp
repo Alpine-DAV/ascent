@@ -495,26 +495,54 @@ int main(int argc, char** argv)
         conduit::Node pipelines;
         // pipeline 1
         pipelines["pl1/filters/f1/filter_type"] = "contour";
-        pipelines["pl1/filters/f1/field_name"] = "nodal_noise";
+        pipelines["pl1/filters/f1/field_name"]  = "nodal_noise";
         // filter knobs
         pipelines["pl1/filters/f1/iso_val"] = 0.0;
 
         // pipeline 2 
         pipelines["pl2/filters/f1/filter_type"] = "threshold";
-        pipelines["pl2/filters/f1/field_name"] = "zonal_noise";
+        pipelines["pl2/filters/f1/field_name"]  = "zonal_noise";
         // filter knobs
         pipelines["pl2/filters/f1/min_value"] = 0.0;
         pipelines["pl2/filters/f1/max_value"] = 0.5;
 
-        pipelines["pl2/filters/f2/filter_type"] = "clip";
+        pipelines["pl2/filters/f2/filter_type"]   = "clip";
         pipelines["pl2/filters/f2/topology_name"] = "mesh";
         // filter knobs
         pipelines["pl2/filters/f2/sphere/center/x"] = 0.0;
         pipelines["pl2/filters/f2/sphere/center/y"] = 0.0;
         pipelines["pl2/filters/f2/sphere/center/z"] = 0.0;
-        pipelines["pl2/filters/f2/sphere/radius"] = .1;
+        pipelines["pl2/filters/f2/sphere/radius"]   = .1;
         
+        conduit::Node plots;
+        plots["plot1/plot_type"]   = "pseudocolor";
+        plots["plot1/field_name"]  = "zonal_noise";
+        plots["plot1/pipeline"]    = "pl1";
 
+        plots["plot2/plot_type"]   = "pseudocolor";
+        plots["plot2/field_name"]  = "nodal_noise";
+        plots["plot2/pipeline"]    = "pl2";
+
+        // use default pipeline (original data}
+        plots["plot3/plot_type"]   = "volume";
+        plots["plot3/field_name"]  = "nodal_noise";
+  
+        conduit::Node scenes;
+        scenes["scene1/plots/pl1"];
+        scenes["scene1/plots/pl2"];
+        scenes["scene1/plots/pl3"];
+
+        conduit::Node extracts;
+        extracts["ex1/extract_type"] = "hdf5";
+        extracts["ex1/pipeline"]     = "pl2";
+
+        // use default pipeline (original data}
+        extracts["ex2/extract_type"] = "hdf5";
+  
+        alpine_node["pipelines"] = pipelines;
+        alpine_node["plots"]     = plots;
+        alpine_node["scenes"]    = scenes;
+        alpine_node["extracts"]  = extracts;
 
         alpine.publish(alpine_node);
         alpine.execute(actions);
