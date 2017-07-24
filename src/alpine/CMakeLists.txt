@@ -105,7 +105,7 @@ set(alpine_headers
 
 if(VTKM_FOUND)
 
-    # data adapterr
+    # data adapter
     list(APPEND alpine_headers pipelines/alpine_data_adapter.hpp)
     list(APPEND alpine_sources pipelines/alpine_data_adapter.cpp)
 
@@ -126,7 +126,10 @@ if(VTKM_FOUND)
     list(APPEND alpine_sources pipelines/flow_filters/alpine_flow_pipeline_vtkh_filters.cpp)
 
 
-   
+    # main pipeline
+    list(APPEND alpine_headers pipelines/alpine_alpine_pipeline.hpp)
+    list(APPEND alpine_sources pipelines/alpine_alpine_pipeline.cpp)
+
 endif()
 
 if(HDF5_FOUND)

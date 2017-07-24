@@ -57,6 +57,7 @@
 
 #if defined(ALPINE_VTKM_ENABLED)
     #include <pipelines/alpine_vtkm_pipeline.hpp>
+    #include <pipelines/alpine_alpine_pipeline.hpp>
 #endif
 
 #if defined(ALPINE_HDF5_ENABLED)
@@ -137,6 +138,14 @@ Alpine::open(const conduit::Node &options)
     {
 #if defined(ALPINE_VTKM_ENABLED)
         m_pipeline = new VTKMPipeline();
+#else
+        ALPINE_ERROR("Alpine was not built with VTKm support");
+#endif
+    }
+    else if(pipeline_type == "alpine")
+    {
+#if defined(ALPINE_VTKM_ENABLED)
+        m_pipeline = new AlpinePipeline();
 #else
         ALPINE_ERROR("Alpine was not built with VTKm support");
 #endif

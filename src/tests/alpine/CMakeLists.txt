@@ -66,6 +66,13 @@ set(MPI_TESTS  t_alpine_mpi_empty_pipeline
                t_alpine_mpi_render_2d
                t_alpine_mpi_render_3d)
 
+
+# include the "main" pipeline
+if(VTKM_FOUND)
+   list(APPEND BASIC_TESTS t_alpine_pipeline)
+   list(APPEND MPI_TESTS   t_alpine_mpi_pipeline)
+endif()
+
 if(HDF5_FOUND)
     list(APPEND BASIC_TESTS t_alpine_save_blueprint_hdf5)
     list(APPEND MPI_TESTS   t_alpine_mpi_save_blueprint_hdf5)
