@@ -14,7 +14,8 @@ struct Clip::InternalsType
 };
 
 Clip::Clip()
-  : m_internals(new InternalsType)
+  : m_internals(new InternalsType),
+    m_cell_set_index(0)
 {
 
 }
@@ -22,6 +23,12 @@ Clip::Clip()
 Clip::~Clip()
 {
 
+}
+
+void 
+Clip::SetCellSetIndex(const vtkm::Id index)
+{
+  m_cell_set_index = index;
 }
 
 void 
@@ -69,7 +76,7 @@ Clip::SetPlaneClip(const double origin[3], const double normal[3])
 
 void Clip::PreExecute() 
 {
-
+  m_internals->m_clipper.SetActiveCellSet(m_cell_set_index);
 }
 
 void Clip::PostExecute()

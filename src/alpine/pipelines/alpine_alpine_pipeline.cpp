@@ -166,6 +166,67 @@ AlpinePipeline::Publish(const conduit::Node &data)
 }
 
 //-----------------------------------------------------------------------------
+conduit::Node ConvertToFlowGraph(const conduit::Node &pipeline)
+{
+   
+    Node actions;
+    actions.append();
+    actions[0]["action"] = "add_graph";
+    Node &graph = actions[0]["graph"];
+    
+    // always add verify
+    graph["filters/verify/type_name"] = "blueprint_verify";
+    graph["filters/verify/params/protocol"] = "mesh";
+    // TODO: recognize who owns what filters and convert data sets
+    graph["filters/vtkh_data/type_name"] = "ensure_vtkh";
+
+
+    conduit::Node filters = pipeline["filters"];
+    for(int i = 0; i < filters.number_of_children(); ++i)
+    {
+      conduit::Node filter = filters.child(i);
+      if(filter["filter_type"].as_string() == "contour")
+      {
+        filter.print();
+        graph["filters/vtkh_isov/type_name"]  = "vtkh_marchingcubes";
+        graph["filters/vtkh_isov/params/field"] = filter["field_name"]; 
+        Node &isov = graph["filters/vtkh_isov/params/iso_values"];
+        isov.set_float64(filter["iso_value"].as_float64());
+      }
+
+      if(filter["filter_type"].as_string() == "threshold")
+      {
+        graph["filters/vtkh_thresh/type_name"]  = "vtkh_threshold";
+        graph["filters/vtkh_thresh/params/field"] = filter["field_name"]; 
+        Node &minv = graph["filters/vtkh_isov/params/min_value"];
+        minv.set_float64(filter["min_value"].as_float64());
+        Node &maxv = graph["filters/vtkh_isov/params/max_value"];
+        maxv.set_float64(filter["max_value"].as_float64());
+      }
+
+      if(filter["filter_type"].as_string() == "clip")
+      {
+        graph["filters/vtkh_clip/type_name"]  = "vtkh_clip";
+        graph["filters/vtkh_clip/sphere/"] = filter["sphere"];
+      }
+    }
+
+  return graph;
+}
+void 
+AlpinePipeline::CreatePipelines(const conduit::Node &pipelines)
+{
+  pipelines.print();
+  std::vector<std::string> names = pipelines.child_names(); 
+  for(int i = 0; i < pipelines.number_of_children(); ++i)
+  {
+    
+    std::cout<<"Pipeline name "<<names[i]<<"\n";
+    conduit::Node pipe = pipelines.child(i);
+    conduit::Node graph = ConvertToFlowGraph(pipe);
+  }
+}
+//-----------------------------------------------------------------------------
 void
 AlpinePipeline::Execute(const conduit::Node &actions)
 {
@@ -177,13 +238,17 @@ AlpinePipeline::Execute(const conduit::Node &actions)
 
         ALPINE_INFO("Executing " << action_name);
         
+        if(action_name == "add_pipelines")
+        {
+          CreatePipelines(action["pipelines"]);
+        }
         
         ////////
         // TODO: imp "alpine pipeline"
         ////////
         
         // implement actions
-
+/*
         if(action_name == "add_filter")
         {
             if(action.has_child("params"))
@@ -243,7 +308,7 @@ AlpinePipeline::Execute(const conduit::Node &actions)
         {
             w.reset();
         }
-        
+       */    
     }
 }
 

@@ -18,7 +18,7 @@ public:
   void SetBoxClip(const vtkm::Bounds &clipping_bounds);
   void SetSphereClip(const double center[3], const double radius);
   void SetPlaneClip(const double origin[3], const double normal[3]);
-
+  void SetCellSetIndex(vtkm::Id index);
 protected:
   void PreExecute() override;
   void PostExecute() override;
@@ -26,6 +26,7 @@ protected:
 
   struct InternalsType;
   std::shared_ptr<InternalsType> m_internals;
+  vtkm::Id m_cell_set_index;
 };
 
 } //namespace vtkh

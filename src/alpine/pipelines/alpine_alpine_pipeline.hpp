@@ -88,6 +88,8 @@ private:
     conduit::Node     m_data; 
     
     flow::Workspace w;
+
+    void CreatePipelines(const conduit::Node &pipelines);
 };
 
 //-----------------------------------------------------------------------------

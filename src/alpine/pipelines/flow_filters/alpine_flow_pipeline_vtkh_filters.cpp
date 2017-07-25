@@ -71,7 +71,9 @@
 #include <vtkh.hpp>
 #include <vtkh_data_set.hpp>
 #include <rendering/vtkh_renderer_ray_tracer.hpp>
+#include <vtkh_clip.hpp>
 #include <vtkh_marching_cubes.hpp>
+#include <vtkh_threshold.hpp>
 #include <vtkm/cont/DataSet.h>
 
 #include <alpine_data_adapter.hpp>
@@ -304,7 +306,180 @@ VTKHMarchingCubes::execute()
     set_output<vtkh::DataSet>(iso_output);
 }
 
+//-----------------------------------------------------------------------------
+VTKHThreshold::VTKHThreshold()
+:Filter()
+{
+// empty
+}
 
+//-----------------------------------------------------------------------------
+VTKHThreshold::~VTKHThreshold()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHThreshold::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_threshold";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHThreshold::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    
+    if(! params.has_child("field") || 
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+    }
+    
+    if(! params.has_child("") || 
+       ! params["min_value"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'min_value'";
+    }
+    if(! params.has_child("") || 
+       ! params["max_value"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'max_value'";
+    }
+    
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+VTKHThreshold::execute()
+{
+
+    ALPINE_INFO("Thresholding!");
+    
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ALPINE_ERROR("VTKHThresholds input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Threshold thresher;
+    
+    thresher.SetInput(data);
+    thresher.SetField(field_name);
+
+    const Node &n_min_val = params()["min_value"];
+    const Node &n_max_val = params()["max_value"];
+
+    // convert to contig doubles
+    double min_val = n_min_val.as_float64(); 
+    double max_val = n_max_val.as_float64(); 
+    thresher.SetUpperThreshold(max_val);
+    thresher.SetLowerThreshold(min_val);
+
+    thresher.AddMapField(field_name);
+    thresher.Update();
+
+    vtkh::DataSet *thresh_output = thresher.GetOutput();
+    
+    set_output<vtkh::DataSet>(thresh_output);
+}
+
+
+//-----------------------------------------------------------------------------
+VTKHClip::VTKHClip()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHClip::~VTKHClip()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHClip::declare_interface(Node &i)
+{
+    i["type_name"] = "vtkh_clip";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHClip::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    
+    if(! params.has_child("topology") || 
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'topology'";
+    }
+    
+    if(! params.has_child("") || 
+       ! params["sphere"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'sphere'";
+    }
+    // TODO: check for other clip types 
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+VTKHClip::execute()
+{
+
+    ALPINE_INFO("We be clipping!");
+    
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ALPINE_ERROR("VTKHClip input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Clip clipper;
+    
+    clipper.SetInput(data);
+
+    //if(params.has_child("topology"))
+    //{
+    //}
+
+    const Node &sphere = params()["sphere"];
+    double center[3];
+
+    center[0] = sphere["center/x"].as_float64();
+    center[1] = sphere["center/y"].as_float64();
+    center[2] = sphere["center/z"].as_float64();
+    double radius = sphere["radius"].as_float64(); 
+  
+    clipper.SetSphereClip(center, radius);
+
+    clipper.Update();
+
+    vtkh::DataSet *clip_output = clipper.GetOutput();
+    
+    set_output<vtkh::DataSet>(clip_output);
+}
 
 
 //-----------------------------------------------------------------------------
