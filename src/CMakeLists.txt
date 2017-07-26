@@ -80,7 +80,13 @@ if(ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
-include(blt/SetupBLT.cmake)
+################################
+# Set BLT Options
+################################
+# forward alpine's build shared libs option to blt
+set(ENABLE_SHARED_LIBS ${BUILD_SHARED_LIBS})
+# don't use BLT's all warnings feature
+set(ENABLE_ALL_WARNINGS OFF)
 
 ################################
 # Basic CMake Setup
