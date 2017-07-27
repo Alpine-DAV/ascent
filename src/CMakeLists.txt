@@ -89,6 +89,11 @@ set(ENABLE_SHARED_LIBS ${BUILD_SHARED_LIBS} CACHE BOOL "")
 set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
 
 ################################
+# Init BLT
+################################
+include(blt/SetupBLT.cmake)
+
+################################
 # Basic CMake Setup
 ################################
 include(cmake/CMakeBasics.cmake)
