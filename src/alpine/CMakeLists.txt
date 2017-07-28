@@ -138,12 +138,6 @@ if(HDF5_FOUND)
 endif()
 
 ##############################
-# Add apline_flow
-#############################
-add_subdirectory(flow)
-
-
-##############################
 # optional features
 #############################
 
@@ -165,7 +159,7 @@ endif()
 
 set(alpine_thirdparty_libs 
     conduit
-    alpine_flow
+    flow
     lodepng)
 
 ##################

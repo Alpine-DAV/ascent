@@ -45,11 +45,11 @@
 
 ###############################################################################
 #
-# file: src/alpine/flow/CMakeLists.txt
+# file: src/flow/CMakeLists.txt
 #
 ###############################################################################
 
-set(alpine_flow_sources
+set(flow_sources
     # alpine flow interface
     alpine_flow_data.cpp
     alpine_flow_registry.cpp
@@ -59,7 +59,7 @@ set(alpine_flow_sources
     alpine_flow_workspace.cpp
     filters/alpine_flow_registry_filters.cpp)
     
-set(alpine_flow_headers
+set(flow_headers
     alpine_flow_data.hpp
     alpine_flow_registry.hpp
     alpine_flow_filter.hpp
@@ -69,37 +69,28 @@ set(alpine_flow_headers
     filters/alpine_flow_registry_filters.hpp
     alpine_flow.hpp)
 
-set(alpine_flow_thirdparty_libs 
+set(flow_thirdparty_libs 
     conduit
     conduit_relay)
 
 ##########################################
-# Build a serial version of flow
+# Build flow
 ##########################################
 
-if(BUILD_SHARED_LIBS)
-    message(STATUS "Building alpine_flow as a shared library")
-     add_library(alpine_flow SHARED 
-                 ${alpine_flow_sources} 
-                 ${alpine_flow_headers})
-else()
-    message(STATUS "Building alpine_flow as a static library")
-    add_library(alpine_flow STATIC 
-                ${alpine_flow_sources} 
-                ${alpine_flow_headers})
-endif()
+blt_add_library(
+    NAME        flow
+    SOURCES     ${flow_sources} 
+    HEADERS     ${flow_headers}
+    DEPENDS_ON  ${flow_thirdparty_libs})
 
-
-target_link_libraries(alpine_flow ${alpine_flow_thirdparty_libs})
-
-# install target for alpine flow lib
-install(TARGETS alpine_flow
+# install target for serial alpine lib
+install(TARGETS flow
         EXPORT  alpine
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION lib
 )
 
-install(FILES ${alpine_flow_headers} DESTINATION include/alpine)
+install(FILES ${flow_headers} DESTINATION include/alpine)
 
 

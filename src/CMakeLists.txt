@@ -126,7 +126,10 @@ add_subdirectory(thirdparty_builtin)
 ################################
 # Add our libs
 ################################
+add_subdirectory(flow)
+
 add_subdirectory(alpine)
+
 
 ################################
 # Add vtk-h 
