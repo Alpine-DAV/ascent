@@ -140,6 +140,16 @@ register_builtin()
     {
         Workspace::register_filter_type<VTKHMarchingCubes>();
     }
+
+    if(!Workspace::supports_filter_type<VTKHClip>())
+    {
+        Workspace::register_filter_type<VTKHClip>();
+    }
+
+    if(!Workspace::supports_filter_type<VTKHThreshold>())
+    {
+        Workspace::register_filter_type<VTKHThreshold>();
+    }
 #endif
 
     

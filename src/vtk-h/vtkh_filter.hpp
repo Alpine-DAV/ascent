@@ -46,6 +46,20 @@ protected:
 
   DataSet *m_input;
   DataSet *m_output;
+
+  void MapAllFields()
+  {
+    if(m_input->GetNumberOfDomains() > 0)
+    {
+      vtkm::cont::DataSet dom = m_input->GetDomain(0);
+      vtkm::IdComponent num_fields = dom.GetNumberOfFields();  
+      for(vtkm::IdComponent i = 0; i < num_fields; ++i)
+      {
+        std::string field_name = dom.GetField(i).GetName();
+        m_map_fields.push_back(field_name);
+      }
+    }
+  }
 };
 
 } //namespace vtkh

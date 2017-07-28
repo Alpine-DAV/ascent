@@ -54,7 +54,10 @@ Threshold::GetField() const
 
 void Threshold::PreExecute() 
 {
-
+  if(m_map_fields.size() == 0)
+  {
+    this->MapAllFields(); 
+  }
 }
 
 void Threshold::PostExecute()

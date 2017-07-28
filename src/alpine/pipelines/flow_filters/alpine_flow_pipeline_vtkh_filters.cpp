@@ -274,7 +274,7 @@ VTKHMarchingCubes::execute()
 {
 
     ALPINE_INFO("Marching the cubes!");
-    
+    params().print(); 
     if(!input(0).check_type<vtkh::DataSet>())
     {
         ALPINE_ERROR("vtkh_marchingcubes input must be a vtk-h dataset");
@@ -297,8 +297,6 @@ VTKHMarchingCubes::execute()
     marcher.SetIsoValues(n_iso_vals.as_double_ptr(),
                          n_iso_vals.dtype().number_of_elements());
 
-    // TODO: do we need to map all other fields?
-    marcher.AddMapField(field_name);
     marcher.Update();
 
     vtkh::DataSet *iso_output = marcher.GetOutput();

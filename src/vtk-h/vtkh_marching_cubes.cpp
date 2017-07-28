@@ -44,7 +44,7 @@ void MarchingCubes::PreExecute()
   assert(m_field_name != "");
   if(m_map_fields.size() == 0)
   {
-    m_map_fields.push_back(m_field_name);
+    this->MapAllFields(); 
   }
 }
 

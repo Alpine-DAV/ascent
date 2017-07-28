@@ -77,6 +77,11 @@ Clip::SetPlaneClip(const double origin[3], const double normal[3])
 void Clip::PreExecute() 
 {
   m_internals->m_clipper.SetActiveCellSet(m_cell_set_index);
+
+  if(m_map_fields.size() == 0)
+  {
+    this->MapAllFields(); 
+  }
 }
 
 void Clip::PostExecute()
