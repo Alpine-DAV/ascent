@@ -174,7 +174,7 @@ macro(add_fortran_test)
     blt_add_executable( NAME ${arg_TEST}
                         SOURCES ${arg_TEST}.f
                         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
-                        DEPENDS_ON fruit gtest "${arg_DEPENDS_ON}")
+                        DEPENDS_ON fruit "${arg_DEPENDS_ON}")
 
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${arg_TEST})

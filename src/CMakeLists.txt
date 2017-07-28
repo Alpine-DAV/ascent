@@ -80,6 +80,17 @@ if(ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
+################################
+# Set BLT Options
+################################
+# forward the build shared libs option to blt
+set(ENABLE_SHARED_LIBS ${BUILD_SHARED_LIBS} CACHE BOOL "")
+# don't use BLT's all warnings feature
+set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
+
+################################
+# Init BLT
+################################
 include(blt/SetupBLT.cmake)
 
 ################################

@@ -54,7 +54,7 @@ import unittest
 
 import alpine
 
-class Test_Condut_Basic(unittest.TestCase):
+class Test_Alpine_Basic(unittest.TestCase):
     def test_about(self):
         print(alpine.about())
         s = alpine.Alpine()
