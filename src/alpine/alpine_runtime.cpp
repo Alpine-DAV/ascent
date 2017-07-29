@@ -45,14 +45,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_pipeline.hpp
+/// file: alpine_runtime.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ALPINE_PIPELINE_HPP
-#define ALPINE_PIPELINE_HPP
-
-#include <alpine.hpp>
+#include <alpine_runtime.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
@@ -60,21 +57,17 @@
 namespace alpine
 {
 
-// Pipeline Interface Class
-
-class Pipeline
+//-----------------------------------------------------------------------------
+Runtime::Runtime()
 {
-public:
-    Pipeline();
-    virtual ~Pipeline();
 
-    virtual void  Initialize(const conduit::Node &options)=0;
+}
 
-    virtual void  Publish(const conduit::Node &data)=0;
-    virtual void  Execute(const conduit::Node &actions)=0;
-    
-    virtual void  Cleanup()=0;
-};
+//-----------------------------------------------------------------------------
+Runtime::~Runtime()
+{
+
+}
 
 //-----------------------------------------------------------------------------
 };
@@ -82,9 +75,5 @@ public:
 // -- end alpine:: --
 //-----------------------------------------------------------------------------
 
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
 
 

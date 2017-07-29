@@ -42,100 +42,49 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+
 //-----------------------------------------------------------------------------
 ///
-/// file: t_alpine_mpi_save_hdf5.cpp
+/// file: alpine_runtime.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "gtest/gtest.h"
+#ifndef ALPINE_RUNTIME_HPP
+#define ALPINE_RUNTIME_HPP
 
 #include <alpine.hpp>
-#include <iostream>
-#include <math.h>
-
-
-#include <mpi.h>
-
-#include "t_config.hpp"
-#include "t_utils.hpp"
-
-
-
-using namespace std;
-using namespace conduit;
-using namespace alpine;
 
 //-----------------------------------------------------------------------------
-TEST(alpine_test_3d, test_3d_parallel_render_default_pipeline)
+// -- begin alpine:: --
+//-----------------------------------------------------------------------------
+namespace alpine
 {
-    //
-    // Set Up MPI
-    //
-    int par_rank;
-    int par_size;
-    MPI_Comm comm = MPI_COMM_WORLD;
-    MPI_Comm_rank(comm, &par_rank);
-    MPI_Comm_size(comm, &par_size);
 
-    ALPINE_INFO("Rank "
-                  << par_rank 
-                  << " of " 
-                  << par_size
-                  << " reporting");
+// Pipeline Interface Class
 
-    //
-    // Create the data.
-    //
-    Node data;
-    create_3d_example_dataset(data, par_rank, par_size);
+class Runtime
+{
+public:
+    Runtime();
+    virtual ~Runtime();
 
-    // make sure the _output dir exists
-    string output_path = "";
-    if(par_rank == 0)
-    {
-        output_path = prepare_output_dir();
-    }
-    else
-    {
-        output_path = output_dir();
-    }
-    
-    output_path = conduit::utils::join_file_path(output_path,"test_mpi_save_hdf5");
+    virtual void  Initialize(const conduit::Node &options)=0;
 
-    Node actions;
-    Node &save = actions.append();
-    save["action"]   = "save";
-    save["output_path"] = output_path;
-    actions.print();
+    virtual void  Publish(const conduit::Node &data)=0;
+    virtual void  Execute(const conduit::Node &actions)=0;
     
-    //
-    // Run Alpine
-    //
-    Alpine alpine;
-    Node opts;
-    // we use the mpi handle provided by the fortran interface
-    // since it is simply an integer
-    opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    // we want the hdf5 pipeline
-    opts["pipeline/type"] = "blueprint_hdf5";
-    alpine.open(opts);
-    alpine.publish(data);
-    alpine.execute(actions);
-    alpine.close();
-    
-    
-}
+    virtual void  Cleanup()=0;
+};
 
 //-----------------------------------------------------------------------------
-int main(int argc, char* argv[])
-{
-    int result = 0;
+};
+//-----------------------------------------------------------------------------
+// -- end alpine:: --
+//-----------------------------------------------------------------------------
 
-    ::testing::InitGoogleTest(&argc, argv);
-    MPI_Init(&argc, &argv);
-    result = RUN_ALL_TESTS();
-    MPI_Finalize();
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------
 
-    return result;
-}
+

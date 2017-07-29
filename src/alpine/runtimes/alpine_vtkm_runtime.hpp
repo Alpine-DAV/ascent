@@ -45,12 +45,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_data_adapter.hpp
+/// file: alpine_vtkm_runtime.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ALPINE_DATA_ADAPTER_HPP
-#define ALPINE_DATA_ADAPTER_HPP
+#ifndef ALPINE_VTKM_RUNTIME_HPP
+#define ALPINE_VTKM_RUNTIME_HPP
 
 
 // thirdparty includes
@@ -64,13 +64,7 @@ class DataSet;
 };
 };
 
-namespace vtkh
-{ 
-class DataSet;
-};
-
-
-#include <alpine_pipeline.hpp>
+#include <alpine_runtime.hpp>
 // conduit includes
 #include <conduit.hpp>
 
@@ -80,37 +74,43 @@ class DataSet;
 //-----------------------------------------------------------------------------
 namespace alpine
 {
+class Renderer;
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// VTKm Pipeline
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+class VTKMRuntime : public Runtime
+{
+public:
+
+                  VTKMRuntime();
+    virtual      ~VTKMRuntime();
+    
+    void  Initialize(const conduit::Node &options);
+
+    void  Publish(const conduit::Node &data);
+    void  Execute(const conduit::Node &actions);
+    
+    void  Cleanup();
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// Class that Handles Blueprint to vtk-h, VTKm Data Transforms
+// Class that Handles Blueprint to VTKm Data Transforms
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 class DataAdapter 
 {
 public:
-
-    // convert blueprint data to a vtkh Data Set
-    // assumes "n" conforms to the mesh blueprint
-    //
-    //  conduit::blueprint::mesh::verify(n,info) == true
-    //
-    static vtkh::DataSet  *BlueprintToVTKHDataSet(const conduit::Node &n,
-                                                  const std::string &topo_name="");
-
-
-    // convert blueprint data to a vtkm Data Set
+    // convert blueprint data to an vtkm Data Set
     // assumes "n" conforms to the mesh blueprint
     //
     //  conduit::blueprint::mesh::verify(n,info) == true
     //
     static vtkm::cont::DataSet  *BlueprintToVTKmDataSet(const conduit::Node &n,
-                                                        const std::string &topo_name="");
-
-
-    // wraps a single VTKm data set into a VTKH dataset
-    static vtkh::DataSet    *VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset);
+                                                        const std::string &field_name);
 
 
 private:
@@ -145,13 +145,35 @@ private:
                                                                     int &nverts);
 
     // helper for adding field data
-    static void                  AddField(const std::string &field_name,
-                                          const conduit::Node &n_field,
-                                          const std::string &topo_name,
-                                          int neles,
-                                          int nverts,
-                                          vtkm::cont::DataSet *dset);
+    static void                  AddVariableField(const std::string &field_name,
+                                                  const conduit::Node &n_field,
+                                                  const std::string &topo_name,
+                                                  int neles,
+                                                  int nverts,
+                                                  vtkm::cont::DataSet *dset);
 
+};
+
+private:
+    //forward declarations
+    class Plot;
+    //class Renderer;
+
+    // Actions
+    void            DrawPlots();
+    void            RenderPlot(const int plot_id,
+                               const conduit::Node &render_options);
+    // conduit node that (externally) holds the data from the simulation 
+    conduit::Node     m_data; 
+
+    // holds the runtime's plots
+    std::vector<Plot> m_plots;
+
+    Renderer *m_renderer;
+
+    int cuda_device;
+    // actions
+    void            AddPlot(const conduit::Node &action);
 };
 
 //-----------------------------------------------------------------------------

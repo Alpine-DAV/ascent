@@ -42,64 +42,123 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_flow_pipeline.hpp
+/// file: alpine_mpi_render_2d.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ALPINE_FLOW_PIPELINE_HPP
-#define ALPINE_FLOW_PIPELINE_HPP
+#include "gtest/gtest.h"
 
 #include <alpine.hpp>
-#include <alpine_pipeline.hpp>
 
-#include <flow.hpp>
+#include <iostream>
+#include <math.h>
+#include <mpi.h>
 
+#include <conduit_blueprint.hpp>
 
+#include "t_config.hpp"
+#include "t_utils.hpp"
 
+using namespace std;
+using namespace conduit;
+using alpine::Alpine;
 
 //-----------------------------------------------------------------------------
-// -- begin alpine:: --
-//-----------------------------------------------------------------------------
-namespace alpine
+TEST(alpine_mpi_runtime, test_render_mpi_2d_main_runtime)
 {
 
-class FlowPipeline : public Pipeline
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+    
+    ALPINE_INFO("Rank "
+                  << par_rank 
+                  << " of " 
+                  << par_size
+                  << " reporting");
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    create_2d_example_dataset(data,par_rank,par_size);
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
+    
+    // make sure the _output dir exists
+    string output_path = "";
+    if(par_rank == 0)
+    {
+        output_path = prepare_output_dir();
+    }
+    else
+    {
+        output_path = output_dir();
+    }
+    
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_mpi_2d_default_runtime");
+    
+    // remove old images before rendering
+    remove_test_image(output_file);
+    
+    
+    //
+    // Create the actions.
+    //
+
+    Node actions;
+    
+    Node &plot = actions.append();
+    plot["action"]      = "add_plot";
+    plot["field_name"]  = "braid";
+    
+    Node &opts = plot["render_options"];
+    opts["width"]  = 500;
+    opts["height"] = 500;
+    opts["file_name"] = output_file;
+    
+    actions.append()["action"] = "draw_plots";
+    
+    
+    //
+    // Run Alpine
+    //
+  
+    Alpine alpine;
+
+    Node alpine_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    alpine_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    alpine_opts["runtime"] = "alpine";
+    alpine.open(alpine_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
+   
+    MPI_Barrier(comm);
+    // check that we created an image
+    // EXPECT_TRUE(check_test_image(output_file));
+}
+
+//-----------------------------------------------------------------------------
+int main(int argc, char* argv[])
 {
-public:
-    
-    // Creation and Destruction
-    FlowPipeline();
-    virtual ~FlowPipeline();
+    int result = 0;
 
-    // Main pipeline interface methods used by the alpine interface.
-    void  Initialize(const conduit::Node &options);
+    ::testing::InitGoogleTest(&argc, argv);
+    MPI_Init(&argc, &argv);
+    result = RUN_ALL_TESTS();
+    MPI_Finalize();
 
-    void  Publish(const conduit::Node &data);
-    void  Execute(const conduit::Node &actions);
-    
-    void  Cleanup();
-
-private:
-    // holds options passed to initialize
-    conduit::Node     m_pipeline_options;
-    // conduit node that (externally) holds the data from the simulation
-    conduit::Node     m_data; 
-    
-    flow::Workspace w;
-};
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end alpine:: --
-//-----------------------------------------------------------------------------
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
+    return result;
+}
 
 

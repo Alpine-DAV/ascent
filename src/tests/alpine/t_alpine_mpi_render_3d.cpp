@@ -67,13 +67,13 @@ using namespace conduit;
 using namespace alpine;
 
 //-----------------------------------------------------------------------------
-TEST(alpine_mpi_render_3d, mpi_render_3d_default_pipeline)
+TEST(alpine_mpi_render_3d, mpi_render_3d_default_runtime)
 {
-    // the vtkm pipeline is currently our only rendering pipeline
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         ALPINE_INFO("VTKm support disabled, skipping 3D MPI "
                       "Pipeline test");
@@ -121,7 +121,7 @@ TEST(alpine_mpi_render_3d, mpi_render_3d_default_pipeline)
         output_path = output_dir();
     }
     
-    string output_file = conduit::utils::join_file_path(output_path,"tout_render_mpi_3d_default_pipeline");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_mpi_3d_default_runtime");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -153,6 +153,8 @@ TEST(alpine_mpi_render_3d, mpi_render_3d_default_pipeline)
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
     alpine_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    // default is now alpine
+    alpine_opts["runtime/type"] = "vtkm";
     alpine.open(alpine_opts);
     alpine.publish(data);
     alpine.execute(actions);
@@ -165,11 +167,11 @@ TEST(alpine_mpi_render_3d, mpi_render_3d_default_pipeline)
 //-----------------------------------------------------------------------------
 TEST(alpine_mpi_render_3d, mpi_render_3d_diy_compositor_surface)
 {
-    // the vtkm pipeline is currently our only rendering pipeline
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         ALPINE_INFO("VTKm support disabled, skipping 3D MPI "
                       "Pipeline test");
@@ -251,6 +253,8 @@ TEST(alpine_mpi_render_3d, mpi_render_3d_diy_compositor_surface)
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
     alpine_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    // default is now alpine
+    alpine_opts["runtime/type"] = "vtkm";
     alpine.open(alpine_opts);
     alpine.publish(data);
     alpine.execute(actions);
@@ -263,11 +267,11 @@ TEST(alpine_mpi_render_3d, mpi_render_3d_diy_compositor_surface)
 //-----------------------------------------------------------------------------
 TEST(alpine_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
 {
-    // the vtkm pipeline is currently our only rendering pipeline
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         ALPINE_INFO("VTKm support disabled, skipping 3D MPI "
                       "Pipeline test");
@@ -349,6 +353,8 @@ TEST(alpine_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
     alpine_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    // default is now alpine
+    alpine_opts["runtime/type"] = "vtkm";
     alpine.open(alpine_opts);
     alpine.publish(data);
     alpine.execute(actions);

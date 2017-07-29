@@ -45,15 +45,19 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_blueprint_hdf5_pipeline.hpp
+/// file: alpine_flow_runtime.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ALPINE_BLUEPRINT_HDF5_PIPELINE_HPP
-#define ALPINE_BLUEPRINT_HDF5_PIPELINE_HPP
+#ifndef ALPINE_FLOW_RUNTIME_HPP
+#define ALPINE_FLOW_RUNTIME_HPP
 
 #include <alpine.hpp>
-#include <alpine_pipeline.hpp>
+#include <alpine_runtime.hpp>
+
+#include <flow.hpp>
+
+
 
 
 //-----------------------------------------------------------------------------
@@ -62,17 +66,15 @@
 namespace alpine
 {
 
-class BlueprintHDF5Pipeline : public Pipeline
+class FlowRuntime : public Runtime
 {
 public:
     
     // Creation and Destruction
-    BlueprintHDF5Pipeline();
-    virtual ~BlueprintHDF5Pipeline();
+    FlowRuntime();
+    virtual ~FlowRuntime();
 
-    // Main pipeline interface methods, which are used by the alpine 
-    // interface.
-
+    // Main runtime interface methods used by the alpine interface.
     void  Initialize(const conduit::Node &options);
 
     void  Publish(const conduit::Node &data);
@@ -81,11 +83,12 @@ public:
     void  Cleanup();
 
 private:
-    class IOManager;
-    IOManager  *m_io;
-
+    // holds options passed to initialize
+    conduit::Node     m_runtime_options;
     // conduit node that (externally) holds the data from the simulation
     conduit::Node     m_data; 
+    
+    flow::Workspace w;
 };
 
 //-----------------------------------------------------------------------------

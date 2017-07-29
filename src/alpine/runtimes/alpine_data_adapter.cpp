@@ -45,12 +45,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_vtkm_pipeline.cpp
+/// file: alpine_data_adapter.cpp
 ///
 //-----------------------------------------------------------------------------
-#define VTKM_DEVICE_ADAPTER VTKM_DEVICE_ADAPTER_SERIAL
-#include <alpine_vtkm_renderer.hpp>
-#include "alpine_vtkm_pipeline.hpp"
+// #define VTKM_DEVICE_ADAPTER VTKM_DEVICE_ADAPTER_SERIAL
+#include "alpine_data_adapter.hpp"
 
 // standard lib includes
 #include <iostream>
@@ -65,14 +64,9 @@
 // VTKm includes
 #define VTKM_USE_DOUBLE_PRECISION
 #include <vtkm/cont/DataSet.h>
-#include <vtkm/cont/DataSetBuilderRectilinear.h>
-#include <vtkm/rendering/Actor.h>
-
-#ifdef VTKM_CUDA
-#include <vtkm/cont/cuda/ChooseCudaDevice.h>
-#endif
-
+#include <vtkh_data_set.hpp>
 // other alpine includes
+#include <alpine_logging.hpp>
 #include <alpine_block_timer.hpp>
 
 using namespace std;
@@ -83,50 +77,73 @@ using namespace conduit;
 //-----------------------------------------------------------------------------
 namespace alpine
 {
-//-----------------------------------------------------------------------------
-// -- VTKm typedefs for convenience and sanity
-//-----------------------------------------------------------------------------
-typedef vtkm::cont::DataSet                vtkmDataSet;
-typedef vtkm::rendering::Actor             vtkmActor;
-
-
-struct VTKMPipeline::Plot
-{
-    std::string        m_var_name;
-    std::string        m_cell_set_name;
-    bool               m_drawn;
-    bool               m_hidden;
-    vtkmDataSet       *m_data_set;     //typedefs are in renderer TODO: move to typedefs file
-    vtkmActor         *m_plot;
-    Node               m_render_options;
-};
-
 
 //-----------------------------------------------------------------------------
-// VTKMPipeine::DataAdapter public methods
+// DataAdapter public methods
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-
-vtkm::cont::DataSet *
-VTKMPipeline::DataAdapter::BlueprintToVTKmDataSet (const Node &node, 
-                                                   const std::string &field_name)
+vtkh::DataSet *
+DataAdapter::BlueprintToVTKHDataSet(const Node &node,
+                                    const std::string &topo_name)
 {   
-    ALPINE_BLOCK_TIMER(PIPELINE_GET_DATA);
+    // TODO: check for multi-domain case:
+
+    vtkm::cont::DataSet *dset = DataAdapter::BlueprintToVTKmDataSet(node,
+                                                                    topo_name);
     
-    vtkm::cont::DataSet * result = NULL;
-    // Follow var_name -> field -> topology -> coordset
-    if(!node["fields"].has_child(field_name))
+    int domain_id = 0;
+    if(node.has_path("state/domain_id"))
     {
-        ALPINE_ERROR("Invalid field name " << field_name);
+        domain_id = node["state/domain_id"].to_int();
     }
-    // as long as the field w/ field_name exists, and mesh blueprint verify 
-    // is true, we access data without fear.
+
+    vtkh::DataSet *res = new vtkh::DataSet;
+    res->AddDomain(*dset,domain_id);
     
-    const Node &n_field  = node["fields"][field_name];
+    // vtk-m will shallow copy the data assoced with dset
+    // clean up our copy
+    delete dset;
     
-    string topo_name     = n_field["topology"].as_string();
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+vtkh::DataSet *
+DataAdapter::VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset)
+{
+    // wrap a single VTKm data set into a VTKH dataset
+    vtkh::DataSet   *res = new  vtkh::DataSet;
+    int domain_id = 0; // TODO, MPI_TASK_ID ?
+    res->AddDomain(*dset,domain_id);
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+vtkm::cont::DataSet *
+DataAdapter::BlueprintToVTKmDataSet(const Node &node,
+                                    const std::string &topo_name_str)
+{   
+    vtkm::cont::DataSet * result = NULL;
+
+    std::string topo_name = topo_name_str;
+    // if we don't specify a topology, find the first topology ...
+    if(topo_name == "")
+    {
+        NodeConstIterator itr = node["topologies"].children();
+        itr.next();
+        topo_name = itr.name();
+    }
+    else
+    {
+        if(!node["topologies"].has_child(topo_name))
+        {
+            ALPINE_ERROR("Invalid topology name: " << topo_name);
+        }
+    }
+
+    // as long as mesh blueprint verify true, we access data without fear.
+    
     const Node &n_topo   = node["topologies"][topo_name];
     string mesh_type     = n_topo["type"].as_string();
     
@@ -178,14 +195,32 @@ VTKMPipeline::DataAdapter::BlueprintToVTKmDataSet (const Node &node,
         ALPINE_ERROR("Unsupported topology/type:" << mesh_type);
     }
     
-    // add var
-    AddVariableField(field_name,
-                     n_field,
-                     topo_name,
-                     neles,
-                     nverts,
-                     result);
-   
+    
+    if(node.has_child("fields"))
+    {
+        // add all of the fields:
+        NodeConstIterator itr = node["fields"].children();
+        while(itr.has_next())
+        {
+        
+            const Node &n_field = itr.next();
+            std::string field_name = itr.name();
+
+            // skip vector fields for now, we need to add
+            // more logic to AddField
+            if(n_field["values"].number_of_children() == 0 )
+            {
+            
+                AddField(field_name,
+                         n_field,
+                         topo_name,
+                         neles,
+                         nverts,
+                         result);
+            }
+        }
+    }
+    
     return result;
 }
 
@@ -194,7 +229,7 @@ VTKMPipeline::DataAdapter::BlueprintToVTKmDataSet (const Node &node,
 class ExplicitArrayHelper
 {
 public:
-// Helper function to create explicit coordiante arrays for vtkm data sets
+// Helper function to create explicit coordinate arrays for vtkm data sets
 void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
                           vtkm::cont::ArrayHandle<vtkm::IdComponent> &num_indices,
                           const std::string &shape_type,
@@ -280,7 +315,7 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-VTKMPipeline::DataAdapter::UniformBlueprintToVTKmDataSet
+DataAdapter::UniformBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name 
      const Node &n_coords,           // input mesh bp coordset (assumed uniform)
      const std::string &topo_name,   // input string with topo name
@@ -403,7 +438,7 @@ VTKMPipeline::DataAdapter::UniformBlueprintToVTKmDataSet
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-VTKMPipeline::DataAdapter::RectilinearBlueprintToVTKmDataSet
+DataAdapter::RectilinearBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name 
      const Node &n_coords,           // input mesh bp coordset (assumed rectilinear)
      const std::string &topo_name,   // input string with topo name
@@ -493,7 +528,7 @@ VTKMPipeline::DataAdapter::RectilinearBlueprintToVTKmDataSet
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-VTKMPipeline::DataAdapter::StructuredBlueprintToVTKmDataSet
+DataAdapter::StructuredBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name 
      const Node &n_coords,           // input mesh bp coordset (assumed rectilinear)
      const std::string &topo_name,   // input string with topo name
@@ -510,7 +545,7 @@ VTKMPipeline::DataAdapter::StructuredBlueprintToVTKmDataSet
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-VTKMPipeline::DataAdapter::UnstructuredBlueprintToVTKmDataSet
+DataAdapter::UnstructuredBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name 
      const Node &n_coords,           // input mesh bp coordset (assumed unstructured)
      const std::string &topo_name,   // input string with topo name
@@ -604,13 +639,12 @@ VTKMPipeline::DataAdapter::UnstructuredBlueprintToVTKmDataSet
 //-----------------------------------------------------------------------------
 
 void
-VTKMPipeline::DataAdapter::AddVariableField
-    (const std::string &field_name,
-     const Node &n_field,
-     const std::string &topo_name,
-     int neles,
-     int nverts,
-     vtkm::cont::DataSet *dset)
+DataAdapter::AddField(const std::string &field_name,
+                      const Node &n_field,
+                      const std::string &topo_name,
+                      int neles,
+                      int nverts,
+                      vtkm::cont::DataSet *dset)
 {
     ALPINE_INFO("nverts "  << nverts);
     ALPINE_INFO("neles "  << neles);
@@ -659,330 +693,6 @@ VTKMPipeline::DataAdapter::AddVariableField
 
 }
 
-
-
-
-
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// VTKMPipeline Methods
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//
-// Creation and Destruction
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-
-VTKMPipeline::VTKMPipeline()
-{
-  ALPINE_BLOCK_TIMER(CONSTRUCTOR)
-}
-
-//-----------------------------------------------------------------------------
-
-VTKMPipeline::~VTKMPipeline()
-{
-    delete m_renderer;
-    Cleanup();
-}
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//
-// Main pipeline interface methods, which are by the alpine interface.
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-
-void
-VTKMPipeline::Initialize(const conduit::Node &options)
-{
-#if PARALLEL
-    if(!options.has_path("mpi_comm"))
-    {
-        CONDUIT_ERROR("Missing Alpine::Open options missing MPI communicator (mpi_comm)");
-    }
-
-    int mpi_handle = options["mpi_comm"].value();
-    MPI_Comm comm = MPI_Comm_f2c(mpi_handle);
-    m_renderer = new Renderer(comm);
-#ifdef VTKM_CUDA
-    //
-    //  If we are using cuda, figure out how many devices we have and
-    //  assign a GPU based on rank.
-    //
-    int device_count = 0;
-    cudaError_t err = cudaGetDeviceCount(&device_count);
-    if (err == cudaSuccess && device_count > 0 && device_count <= 256)
-    {
-        int rank;  
-        MPI_Comm_rank(comm,&rank);
-        int rank_device = rank % device_count;
-        err = cudaSetDevice(rank_device);
-        if(err != cudaSuccess)
-        {
-            ALPINE_ERROR("Failed to set GPU " 
-                           <<rank_device
-                           <<" out of "<<device_count
-                           <<" GPUs. Make sure there"
-                           <<" are an equal amount of"
-                           <<" MPI ranks/gpus per node.");
-        }
-        else
-        {
-
-            char proc_name[100];
-            int length=0;
-            MPI_Get_processor_name(proc_name, &length);
-
-        }
-        cuda_device  = rank_device;
-    }
-    else
-    {
-        ALPINE_ERROR("VTKm GPUs is enabled but none found");
-    }
-#endif
-
-#else
-    m_renderer = new Renderer;
-
-#endif
-    
-}
-
-
-//-----------------------------------------------------------------------------
-
-void
-VTKMPipeline::Cleanup()
-{
-   
-}
-
-//-----------------------------------------------------------------------------
-
-void
-VTKMPipeline::Publish(const conduit::Node &data)
-{ 
-    //
-    // Delete the old plots and data sets
-    //
-    for(int i = 0; i < m_plots.size(); ++i)
-    {
-     delete m_plots[i].m_data_set;
-     delete m_plots[i].m_plot; 
-    }
-    m_plots.clear();
-    m_data.set_external(data);
-}
-
-//-----------------------------------------------------------------------------
-
-void
-VTKMPipeline::Execute(const conduit::Node &actions)
-{
-    //
-    // Loop over the actions
-    //
-    for (int i = 0; i < actions.number_of_children(); ++i)
-    {
-        const Node &action = actions.child(i);
-        if(!action.has_path("action"))
-        {
-            ALPINE_INFO("Warning : action malformed");
-            action.print();
-            std::cout<<"\n";
-            continue;
-        }
-        ALPINE_INFO("Executing " << action["action"].as_string());
-       
-        if (action["action"].as_string() == "add_plot")
-        {
-            AddPlot(action);
-        }
-        else if (action["action"].as_string() == "add_filter")
-        {
-            ALPINE_INFO("VTKm add_filter not implemented");
-        }
-        else if (action["action"].as_string() == "draw_plots")
-        {
-            DrawPlots();
-        }
-        else
-        {
-            ALPINE_INFO("Warning : unknown action "<<action["action"].as_string());
-        }
-   }
-}
-//-----------------------------------------------------------------------------
-
-void
-VTKMPipeline::AddPlot(const conduit::Node &action)
-{
-    const std::string field_name = action["field_name"].as_string();
-
-    vtkm::rendering::ColorTable color_table("Spectral");
-    //
-    // Create the plot.
-    //
-    Plot plot;
-    plot.m_var_name = field_name;
-    plot.m_drawn = false;
-    plot.m_hidden = false;
-    plot.m_data_set = DataAdapter::BlueprintToVTKmDataSet(m_data,field_name);
-    
-    // we need the topo name ...
-    const Node &n_field  = m_data["fields"][field_name];
-    string topo_name     = n_field["topology"].as_string();
-    
-    plot.m_cell_set_name = topo_name;
-    try
-    {
-        ALPINE_BLOCK_TIMER(PLOT)
-        if(!plot.m_data_set->HasCellSet(plot.m_cell_set_name))
-            ALPINE_ERROR("AddPlot: no cell set named "<<plot.m_cell_set_name);
-
-        int cell_set_index = plot.m_data_set->GetCellSetIndex(plot.m_cell_set_name);
-        plot.m_plot = new vtkmActor(plot.m_data_set->GetCellSet(cell_set_index),
-                                    plot.m_data_set->GetCoordinateSystem(),
-                                    plot.m_data_set->GetField(field_name),
-                                    color_table);
-        if(action.has_path("render_options"))
-        {
-            plot.m_render_options = action.fetch("render_options"); 
-        }
-        else 
-        {
-            plot.m_render_options = conduit::Node(); 
-        }
-    }
-    catch (vtkm::cont::Error error) 
-    {
-        ALPINE_ERROR("AddPlot Got the unexpected error: " << error.GetMessage() << std::endl);
-    }
-    m_plots.push_back(plot);
-    
-}
-
-//-----------------------------------------------------------------------------
-
-void 
-VTKMPipeline::DrawPlots()
-{
-    for (int i = 0; i < m_plots.size(); ++i)
-    {
-        if(!m_plots[i].m_hidden)
-        {
-            RenderPlot(i, m_plots[i].m_render_options);
-            m_plots[i].m_drawn = true;
-        }
-        else m_plots[i].m_drawn = false;
-    }
-}
-
-//-----------------------------------------------------------------------------
-
-void
-VTKMPipeline::RenderPlot(const int plot_id,
-                                                const conduit::Node &render_options)
-{ 
-    render_options.print();
-    
-    ALPINE_BLOCK_TIMER(RENDER_PLOTS);
-
-    //
-    // Extract the save image attributes.
-    //
-
-    int image_width  = 1024;
-    int image_height = 1024;
-    
-    if(render_options.has_path("width"))
-    {
-        image_width = render_options["width"].to_int();
-    }
-    if(render_options.has_path("height"))
-    {
-        image_height = render_options["height"].to_int();
-    }
-
-    RendererType m_render_mode;
-    //
-    // Determine the render mode, default is opengl.
-    //
-
-    if(render_options.has_path("renderer"))
-    {
-        if(render_options["renderer"].as_string() == "volume")
-        {
-            m_render_mode = VOLUME;
-        }
-        else if(render_options["renderer"].as_string() == "raytracer")
-        {
-            m_render_mode = RAYTRACER;
-        }
-        else
-        {
-            ALPINE_INFO( "VTK-m Pipeline: unknown renderer "
-                           << render_options["Renderer"].as_string() << endl
-                           << "Defaulting to ray tracer");
-            m_render_mode = RAYTRACER;
-        }
-    }
-    else
-    {
-        m_render_mode = RAYTRACER;
-    }
-    
-    const char *image_file_name = NULL;
-    //
-    // If a file name is provided, then save the image, otherwise start a web server
-    //
-    if(render_options.has_path("file_name"))
-    {
-       image_file_name = render_options["file_name"].as_char8_str();
-    }
-    else 
-    {
-        conduit::Node options;
-        options["web/stream"] = "true";
-        m_renderer->SetOptions(options);
-    }
-    
-    //
-    //    Check for camera attributes
-    //
-    if(render_options.has_path("camera")) 
-    {
-        m_renderer->SetCamera(render_options.fetch("camera"));
-    }
-    
-    //
-    // Check for Color Map
-    //
-    if(render_options.has_path("color_map"))
-    {
-        m_renderer->SetTransferFunction(render_options.fetch("color_map"));
-    }
-    int dims = 3;
-    
-    m_renderer->Render(m_plots[plot_id].m_plot,
-                       image_height,
-                       image_width,
-                       m_render_mode,
-                       dims,
-                       image_file_name);
-}
 
 };
 //-----------------------------------------------------------------------------

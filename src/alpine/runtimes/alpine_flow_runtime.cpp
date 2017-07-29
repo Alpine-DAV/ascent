@@ -45,11 +45,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_alpine_pipeline.cpp
+/// file: alpine_flow_runtime.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "alpine_alpine_pipeline.hpp"
+#include "alpine_flow_runtime.hpp"
 
 // standard lib includes
 #include <string.h>
@@ -69,7 +69,7 @@
 #endif
 
 #include <flow.hpp>
-#include <alpine_flow_pipeline_filters.hpp>
+#include <alpine_runtime_filters.hpp>
 
 using namespace conduit;
 using namespace std;
@@ -90,14 +90,14 @@ namespace alpine
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-AlpinePipeline::AlpinePipeline()
-:Pipeline()
+FlowRuntime::FlowRuntime()
+:Runtime()
 {
     flow::filters::register_builtin();
 }
 
 //-----------------------------------------------------------------------------
-AlpinePipeline::~AlpinePipeline()
+FlowRuntime::~FlowRuntime()
 {
     Cleanup();
 }
@@ -105,45 +105,45 @@ AlpinePipeline::~AlpinePipeline()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //
-// Main pipeline interface methods called by the alpine interface.
+// Main runtime interface methods called by the alpine interface.
 //
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 void
-AlpinePipeline::Initialize(const conduit::Node &options)
+FlowRuntime::Initialize(const conduit::Node &options)
 {
 #if PARALLEL
     if(!options.has_child("mpi_comm") ||
        !options["mpi_comm"].dtype().is_integer())
     {
-        ALPINE_ERROR("Missing Alpine::Open options missing MPI communicator (mpi_comm)");
+        ALPINE_ERROR("Missing Alpine::open options missing MPI communicator (mpi_comm)");
     }
     
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].as_int());
     
 #endif
 
-    m_pipeline_options = options;
+    m_runtime_options = options;
     
     // standard flow filters
     flow::filters::register_builtin();
-    // filters for apline flow pipeline.
-    pipeline::flow::filters::register_builtin();
+    // filters for alpine flow runtime.
+    runtime::filters::register_builtin();
 }
 
 
 //-----------------------------------------------------------------------------
 void
-AlpinePipeline::Cleanup()
+FlowRuntime::Cleanup()
 {
 
 }
 
 //-----------------------------------------------------------------------------
 void
-AlpinePipeline::Publish(const conduit::Node &data)
+FlowRuntime::Publish(const conduit::Node &data)
 {
     // create our own tree, with all data zero copied.
     m_data.set_external(data);
@@ -166,201 +166,9 @@ AlpinePipeline::Publish(const conduit::Node &data)
 }
 
 //-----------------------------------------------------------------------------
-conduit::Node ConvertToFlowGraph(const conduit::Node &pipeline)
-{
-   
-    Node graph;
-    // always add verify
-    graph["filters/verify/type_name"] = "blueprint_verify";
-    graph["filters/verify/params/protocol"] = "mesh";
-    // TODO: recognize who owns what filters and convert data sets
-    graph["filters/vtkh_data/type_name"] = "ensure_vtkh";
-   
-    int conn_id = 0;
-    graph["connections"].append();
-    graph["connections"][conn_id]["src"] = ":source";
-    graph["connections"][conn_id]["dest"] = "verify";
-
-    conn_id++;
-
-    graph["connections"].append();
-    graph["connections"][conn_id]["src"] = "verify";
-    graph["connections"][conn_id]["dest"] = "vtkh_data";
-
-    conn_id++;
-
-    graph["connections"].append();
-    graph["connections"][conn_id]["src"] = "vtkh_data";
-    graph["connections"][conn_id]["dest"] = "";
-
-    conn_id++;
-
-    conduit::Node filters = pipeline["filters"];
-    std::string prev_name = "ensure";
-    for(int i = 0; i < filters.number_of_children(); ++i)
-    {
-      conduit::Node filter = filters.child(i);
-      std::string name;
-      if(filter["filter_type"].as_string() == "contour")
-      {
-        name = "vtkh_contour";
-        graph["filters/vtkh_contour/type_name"]  = "vtkh_marchingcubes";
-        graph["filters/vtkh_contour/params/"] = filter["params"];
-
-      }
-      else if(filter["filter_type"].as_string() == "threshold")
-      {
-        name = "vtkh_thresh";
-        graph["filters/vtkh_thresh/type_name"]  = "vtkh_threshold";
-        graph["filters/vtkh_thresh/params"] = filter["params"]; 
-      }
-      else if(filter["filter_type"].as_string() == "clip")
-      {
-        name = "vtkh_clip";
-        graph["filters/vtkh_clip/type_name"]  = "vtkh_clip";
-        graph["filters/vtkh_clip/params/"] = filter["params"];
-      }
-      else
-      {
-        ALPINE_ERROR("Unrecognized filter "<<filter["filter_type"].as_string());
-      }
-
-      graph["connections"].append();
-      graph["connections"][conn_id-1]["dest"] = name; 
-      graph["connections"][conn_id]["src"] = name; 
-      graph["connections"][conn_id]["dest"] = ""; 
-      conn_id++;
-      prev_name = name;
-    }
-  return graph;
-}
-
-//-----------------------------------------------------------------------------
-void 
-AlpinePipeline::CreatePipelines(const conduit::Node &pipelines)
-{
-  //pipelines.print();
-  std::vector<std::string> names = pipelines.child_names(); 
-  for(int i = 0; i < pipelines.number_of_children(); ++i)
-  {
-    
-    std::cout<<"Pipeline name "<<names[i]<<"\n";
-    conduit::Node pipe = pipelines.child(i);
-    conduit::Node graph = ConvertToFlowGraph(pipe);
-    if(m_flow_pipelines.has_path(names[i]))
-    {
-      ALPINE_ERROR("Duplicate pipeline name "<<names[i]);
-    }
-    m_flow_pipelines[names[i]] = graph;
-  }
-}
-
-//-----------------------------------------------------------------------------
-conduit::Node ConvertPlotToFlow(const conduit::Node &plot)
-{
-   
-  Node graph;
-  
-  std::string name;
-  if(!plot.has_path("plot_type"))
-  {
-    //plot.print();
-    ALPINE_ERROR("Plot must have a 'plot_type'");
-  }
-
-  if(plot["plot_type"].as_string() == "pseudocolor")
-  {
-    name = "vtkh_raytracer";
-    graph["filters/vtkh_raytracer/type_name"]  = "vtkh_raytracer";
-    graph["filters/vtkh_raytracer/params/"] = plot["params"];
-
-  }
-  else if(plot["plot_type"].as_string() == "volume")
-  {
-    name = "vtkh_volume";
-    graph["filters/vtkh_volume/type_name"]  = "vtkh_volume";
-    graph["filters/vtkh_volume/params"] = plot["params"]; 
-  }
-  else
-  {
-    ALPINE_ERROR("Unrecognized plot type "<<plot["plot_type"].as_string());
-  }
- 
-  if(plot.has_path("pipeline"))
-  {
-    graph["pipeline"] = plot["pipeline"];
-  }
-
-  //graph["connections"].append();
-  //graph["connections"][0]["src"] = ""; 
-  //graph["connections"][0]["dest"] = name; 
-  //graph.print();
-
-  return graph;
-}
-//-----------------------------------------------------------------------------
-void 
-AlpinePipeline::CreatePlots(const conduit::Node &plots)
-{
-  //plots.print();
-  std::vector<std::string> names = plots.child_names(); 
-  for(int i = 0; i < plots.number_of_children(); ++i)
-  {
-    
-    //std::cout<<"plot name "<<names[i]<<"\n";
-    conduit::Node plot = plots.child(i);
-    conduit::Node graph = ConvertPlotToFlow(plot);
-    if(m_plots.has_path(names[i]))
-    {
-      ALPINE_ERROR("Duplicate plot name "<<names[i]);
-    }
-    m_plots[names[i]] = graph;
-  }
-}
-//-----------------------------------------------------------------------------
-void 
-AlpinePipeline::MergeGraphs()
-{
-  m_flow_graphs.reset();
-  //create plot + pipine graphs
-  //m_plots.print(); 
-  std::vector<std::string> names = m_plots.child_names(); 
-  for (int i = 0; i < m_plots.number_of_children(); ++i)
-  { 
-    Node &plot = m_plots.child(i);
-    if(!plot.has_path("pipeline"))
-    {
-      plot["connections"].append();
-      plot["connections"][0]["src"] = ":source"; 
-      plot["connections"][0]["dest"] = names[i]; 
-      m_flow_graphs[names[i]] = plot;
-      continue;
-    }
-    std::string pipeline = plot["pipeline"].as_string();
-    if(!m_flow_pipelines.has_path(pipeline))
-    {
-      ALPINE_ERROR("Plot '"<<names[i]<<"' references unknown pipeline: "<<pipeline);
-    }
-
-    conduit::Node graph = m_flow_pipelines[pipeline]; 
-    int conn_count = graph["connections"].number_of_children();
-    //plot["filters"].print();
-  
-    //std::vector<std::string> filter_names = graph["filters"].child_names(); 
-    
-    graph["filters/"+names[i]] = plot["filters"][0];
-    graph["connections"][conn_count-1]["dest"] = names[i];
-
-    w.graph().add_graph(graph);
-    //graph.print();
-  }
-}
-//-----------------------------------------------------------------------------
 void
-AlpinePipeline::Execute(const conduit::Node &actions)
+FlowRuntime::Execute(const conduit::Node &actions)
 {
-    // start fresh
-    m_flow_pipelines.reset();
     // Loop over the actions
     for (int i = 0; i < actions.number_of_children(); ++i)
     {
@@ -368,23 +176,9 @@ AlpinePipeline::Execute(const conduit::Node &actions)
         string action_name = action["action"].as_string();
 
         ALPINE_INFO("Executing " << action_name);
-        
-        if(action_name == "add_pipelines")
-        {
-          CreatePipelines(action["pipelines"]);
-        }
 
-        if(action_name == "add_plots")
-        {
-          CreatePlots(action["plots"]);
-        }
-        
-        ////////
-        // TODO: imp "alpine pipeline"
-        ////////
-        
         // implement actions
-/*
+
         if(action_name == "add_filter")
         {
             if(action.has_child("params"))
@@ -444,12 +238,8 @@ AlpinePipeline::Execute(const conduit::Node &actions)
         {
             w.reset();
         }
-       */    
+        
     }
-    MergeGraphs();
-    w.execute();
-    w.registry().reset();
-    //ExecutePlots();
 }
 
 

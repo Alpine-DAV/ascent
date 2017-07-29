@@ -71,8 +71,8 @@
 namespace alpine
 {
 
-// Forward Declare the alpine::Pipeline interface class.
-class Pipeline;
+// Forward Declare the alpine::Runtime interface class.
+class Runtime;
 
 //-----------------------------------------------------------------------------
 /// Alpine Interface
@@ -91,7 +91,7 @@ public:
 
 private:
     
-    Pipeline *m_pipeline;
+    Runtime *m_runtime;
 };
 
 

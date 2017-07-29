@@ -68,13 +68,13 @@ using namespace alpine;
 index_t EXAMPLE_MESH_SIDE_DIM = 50;
 
 //-----------------------------------------------------------------------------
-TEST(alpine_render_2d, test_render_2d_default_pipeline)
+TEST(alpine_render_2d, test_render_2d_default_runtime)
 {
-    // the vtkm pipeline is currently our only rendering pipeline
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         ALPINE_INFO("VTKm support disabled, skipping 2D default"
                       "Pipeline test");
@@ -95,7 +95,7 @@ TEST(alpine_render_2d, test_render_2d_default_pipeline)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_default_pipeline");
+    string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_default_runtime");
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -122,8 +122,10 @@ TEST(alpine_render_2d, test_render_2d_default_pipeline)
     //
     
     Alpine alpine;
-
-    alpine.open();
+    Node alpine_opts;
+    // default is now alpine
+    alpine_opts["runtime/type"] = "vtkm";
+    alpine.open(alpine_opts);
     alpine.publish(data);
     alpine.execute(actions);
     alpine.close();
@@ -139,7 +141,7 @@ TEST(alpine_render_2d, test_render_2d_render_vtkm_serial_backend)
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         ALPINE_INFO("VTKm support disabled, skipping 2D VTKm Serial "
                       "Pipeline test");
@@ -190,8 +192,8 @@ TEST(alpine_render_2d, test_render_2d_render_vtkm_serial_backend)
     //
     
     Node open_opts;
-    open_opts["pipeline/type"] = "vtkm";
-    open_opts["pipeline/backend"] = "serial";
+    open_opts["runtime/type"] = "vtkm";
+    open_opts["runtime/backend"] = "serial";
     
     Alpine alpine;
     alpine.open(open_opts);

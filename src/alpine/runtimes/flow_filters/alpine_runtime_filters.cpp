@@ -45,13 +45,31 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_flow_pipeline_filters.hpp
+/// file: alpine_runtime_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ALPINE_FLOW_PIPELINE_FILTERS_HPP
-#define ALPINE_FLOW_PIPELINE_FILTERS_HPP
+#include <alpine_runtime_filters.hpp>
 
+
+//-----------------------------------------------------------------------------
+// alpine includes
+//-----------------------------------------------------------------------------
+#include <alpine_logging.hpp>
+#include <flow_workspace.hpp>
+
+#include <alpine_runtime_relay_filters.hpp>
+#include <alpine_runtime_blueprint_filters.hpp>
+
+#if defined(ALPINE_VTKM_ENABLED)
+    #include <alpine_runtime_vtkh_filters.hpp>
+#endif
+
+
+
+
+
+using namespace flow;
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
@@ -60,57 +78,59 @@ namespace alpine
 {
 
 //-----------------------------------------------------------------------------
-// -- begin alpine::pipeline --
+// -- begin alpine::runtime --
 //-----------------------------------------------------------------------------
-namespace pipeline
-{
-
-
-//-----------------------------------------------------------------------------
-// -- begin alpine::pipeline::flow --
-//-----------------------------------------------------------------------------
-namespace flow
+namespace runtime
 {
 
 //-----------------------------------------------------------------------------
-// -- begin alpine::pipeline::flow::filters --
+// -- begin alpine::runtime::filters --
 //-----------------------------------------------------------------------------
 namespace filters
 {
+
+
+//-----------------------------------------------------------------------------
+// init all built in filters
+//-----------------------------------------------------------------------------
+void
+register_builtin()
+{
+    Workspace::register_filter_type<RelayIOSave>();
+    Workspace::register_filter_type<RelayIOLoad>();
+    Workspace::register_filter_type<BlueprintVerify>(); 
+        
     
-    // registers all built-in filter types.
-    void register_builtin();
+#if defined(ALPINE_VTKM_ENABLED)
+    Workspace::register_filter_type<EnsureVTKM>();
+    Workspace::register_filter_type<EnsureVTKH>();
+    Workspace::register_filter_type<VTKHRayTracer>();
+    Workspace::register_filter_type<VTKHMarchingCubes>();
+    Workspace::register_filter_type<VTKHClip>();
+    Workspace::register_filter_type<VTKHThreshold>();
+#endif
 
-};
-//-----------------------------------------------------------------------------
-// -- end alpine::pipeline::flow::filters --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end alpine::pipeline::flow --
-//-----------------------------------------------------------------------------
+    
+}
 
 
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end alpine::pipeline --
+// -- end alpine::runtime::filters --
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end alpine::runtime --
+//-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end alpine:: --
-//-----------------------------------------------------------------------------
-
-
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
 //-----------------------------------------------------------------------------
 

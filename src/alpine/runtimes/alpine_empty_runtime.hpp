@@ -45,18 +45,15 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_alpine_pipeline.hpp
+/// file: alpine_empty_runtime.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ALPINE_ALPINE_PIPELINE_HPP
-#define ALPINE_ALPINE_PIPELINE_HPP
+#ifndef ALPINE_EMPTY_RUNTIME_HPP
+#define ALPINE_EMPTY_RUNTIME_HPP
 
 #include <alpine.hpp>
-#include <alpine_pipeline.hpp>
-
-#include <flow.hpp>
-
+#include <alpine_runtime.hpp>
 
 
 //-----------------------------------------------------------------------------
@@ -65,15 +62,15 @@
 namespace alpine
 {
 
-class AlpinePipeline : public Pipeline
+class EmptyRuntime : public Runtime
 {
 public:
     
     // Creation and Destruction
-    AlpinePipeline();
-    virtual ~AlpinePipeline();
+    EmptyRuntime();
+    virtual ~EmptyRuntime();
 
-    // Main pipeline interface methods used by the alpine interface.
+    // Main runtime interface methods used by the alpine interface.
     void  Initialize(const conduit::Node &options);
 
     void  Publish(const conduit::Node &data);
@@ -83,19 +80,9 @@ public:
 
 private:
     // holds options passed to initialize
-    conduit::Node     m_pipeline_options;
+    conduit::Node     m_runtime_options;
     // conduit node that (externally) holds the data from the simulation
     conduit::Node     m_data; 
-    conduit::Node     m_flow_pipelines; 
-    conduit::Node     m_plots; 
-    conduit::Node     m_flow_graphs; 
-
-    flow::Workspace w;
-
-    void CreatePipelines(const conduit::Node &pipelines);
-    void CreatePlots(const conduit::Node &plots);
-    void MergeGraphs();
-    void ExecuteGraphs();
 };
 
 //-----------------------------------------------------------------------------

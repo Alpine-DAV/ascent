@@ -42,67 +42,71 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+
 //-----------------------------------------------------------------------------
 ///
-/// file: t_alpine_save_hdf5.cpp
+/// file: alpine_main_runtime.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "gtest/gtest.h"
+#ifndef ALPINE_ALPINE_RUNTIME_HPP
+#define ALPINE_ALPINE_RUNTIME_HPP
 
 #include <alpine.hpp>
+#include <alpine_runtime.hpp>
 
-#include <iostream>
-#include <math.h>
-#include <sstream>
+#include <flow.hpp>
 
-#include <conduit_blueprint.hpp>
-
-#include "t_config.hpp"
-#include "t_utils.hpp"
-
-
-using namespace std;
-using namespace conduit;
-using namespace alpine;
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_test_2d_hdf5, test_2d_serial_hdf5_pipeline)
+// -- begin alpine:: --
+//-----------------------------------------------------------------------------
+namespace alpine
 {
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
+
+class AlpineRuntime : public Runtime
+{
+public:
     
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
+    // Creation and Destruction
+    AlpineRuntime();
+    virtual ~AlpineRuntime();
 
-    //
-    // Create the actions.
-    //
+    // Main runtime interface methods used by the alpine interface.
+    void  Initialize(const conduit::Node &options);
+
+    void  Publish(const conduit::Node &data);
+    void  Execute(const conduit::Node &actions);
     
-    string output_path = prepare_output_dir();
-    output_path = conduit::utils::join_file_path(output_path,"test_save_hdf5");
+    void  Cleanup();
 
-    Node actions;
-    Node &save = actions.append();
-    save["action"]   = "save";
-    save["output_path"] = output_path;
-    actions.print();
+private:
+    // holds options passed to initialize
+    conduit::Node     m_runtime_options;
+    // conduit node that (externally) holds the data from the simulation
+    conduit::Node     m_data; 
+    conduit::Node     m_flow_pipelines; 
+    conduit::Node     m_plots; 
+    conduit::Node     m_flow_graphs; 
 
-    Node open_opts;
-    open_opts["pipeline/type"] = "blueprint_hdf5";
-    
-    //
-    // Run Alpine
-    //
-    Alpine alpine;
-    alpine.open(open_opts);
-    alpine.publish(data);
-    alpine.execute(actions);
-    alpine.close();
+    flow::Workspace w;
 
-}
+    void CreatePipelines(const conduit::Node &pipelines);
+    void CreatePlots(const conduit::Node &plots);
+    void MergeGraphs();
+    void ExecuteGraphs();
+};
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end alpine:: --
+//-----------------------------------------------------------------------------
+
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------
+
 

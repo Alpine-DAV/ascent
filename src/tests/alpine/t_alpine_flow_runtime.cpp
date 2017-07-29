@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_alpine_flow_pipeline.cpp
+/// file: t_alpine_flow_runtime.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -71,7 +71,7 @@ using namespace alpine;
 
 // ----- //
 // This tests that we can create a custom filter, register it and use it
-// in the flow pipeline.
+// in the flow runtime.
 class InspectFilter: public flow::Filter
 {
 public:
@@ -107,13 +107,11 @@ public:
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_pipeline, test_flow_pipeline)
+TEST(alpine_flow_runtime, test_flow_runtime)
 {
     
-    if(!flow::Workspace::supports_filter_type<InspectFilter>())
-    {
-        flow::Workspace::register_filter_type<InspectFilter>();
-    }
+    flow::Workspace::register_filter_type<InspectFilter>();
+
 
     //
     // Create example mesh.
@@ -139,9 +137,9 @@ TEST(alpine_flow_pipeline, test_flow_pipeline)
     actions.append()["action"] = "execute";
     actions.print();
 
-    // we want the "flow" pipeline
+    // we want the "flow" runtime
     Node open_opts;
-    open_opts["pipeline/type"] = "flow";
+    open_opts["runtime/type"] = "flow";
     
     //
     // Run Alpine
@@ -157,7 +155,7 @@ TEST(alpine_flow_pipeline, test_flow_pipeline)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_pipeline, test_flow_pipeline_reuse_network)
+TEST(alpine_flow_runtime, test_flow_runtime_reuse_network)
 {
     
     if(!flow::Workspace::supports_filter_type<InspectFilter>())
@@ -180,9 +178,9 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_reuse_network)
     actions.append()["action"] = "execute";
     actions.print();
 
-    // we want the "flow" pipeline
+    // we want the "flow" runtime
     Node open_opts;
-    open_opts["pipeline/type"] = "flow";
+    open_opts["runtime/type"] = "flow";
     
     //
     // Run Alpine
@@ -211,7 +209,7 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_reuse_network)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_pipeline, test_flow_pipeline_relay_save)
+TEST(alpine_flow_runtime, test_flow_runtime_relay_save)
 {
     
     if(!flow::Workspace::supports_filter_type<InspectFilter>())
@@ -226,7 +224,7 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_relay_save)
     actions[0]["name"] = "fi";
 
     string output_file = conduit::utils::join_file_path(output_dir(),
-                                                        "tout_flow_pipeline_relay_save.json");
+                                                        "tout_flow_runtime_relay_save.json");
 
 
     actions.append();
@@ -250,9 +248,9 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_relay_save)
     actions.append()["action"] = "execute";
     actions.print();
 
-    // we want the "flow" pipeline
+    // we want the "flow" runtime
     Node open_opts;
-    open_opts["pipeline/type"] = "flow";
+    open_opts["runtime/type"] = "flow";
 
     //
     // Create example mesh.
@@ -271,7 +269,7 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_relay_save)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_pipeline, test_flow_pipeline_blueprint_verify)
+TEST(alpine_flow_runtime, test_flow_runtime_blueprint_verify)
 {
     Node actions;
     
@@ -290,9 +288,9 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_blueprint_verify)
     actions.append()["action"] = "execute";
     actions.print();
 
-    // we want the "flow" pipeline
+    // we want the "flow" runtime
     Node open_opts;
-    open_opts["pipeline/type"] = "flow";
+    open_opts["runtime/type"] = "flow";
 
     //
     // Create example mesh.
@@ -319,7 +317,7 @@ TEST(alpine_flow_pipeline, test_flow_pipeline_blueprint_verify)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_pipeline, test_flow_vtkm)
+TEST(alpine_flow_runtime, test_flow_vtkm)
 {
     Node actions;
     
@@ -348,9 +346,9 @@ TEST(alpine_flow_pipeline, test_flow_vtkm)
     actions.append()["action"] = "execute";
     actions.print();
 
-    // we want the "flow" pipeline
+    // we want the "flow" runtime
     Node open_opts;
-    open_opts["pipeline/type"] = "flow";
+    open_opts["runtime/type"] = "flow";
 
     //
     // Create example mesh.
@@ -369,7 +367,7 @@ TEST(alpine_flow_pipeline, test_flow_vtkm)
     alpine::about(n);
 
     // expect an error if we don't have vtkm support 
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         EXPECT_THROW(alpine.execute(actions),conduit::Error);
     }
@@ -384,14 +382,14 @@ TEST(alpine_flow_pipeline, test_flow_vtkm)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_pipeline, test_flow_vtkh_render)
+TEST(alpine_flow_runtime, test_flow_vtkh_render)
 {   
     
     Node n;
     alpine::about(n);
     
     // vtk-h requires vtk-m, don't run this test if we don't have vtk-m support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         
         return;
@@ -427,9 +425,9 @@ TEST(alpine_flow_pipeline, test_flow_vtkh_render)
     actions.append()["action"] = "execute";
     actions.print();
 
-    // we want the "flow" pipeline
+    // we want the "flow" runtime
     Node open_opts;
-    open_opts["pipeline/type"] = "flow";
+    open_opts["runtime/type"] = "flow";
 
     //
     // Create example mesh.
@@ -449,14 +447,14 @@ TEST(alpine_flow_pipeline, test_flow_vtkh_render)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_pipeline, test_flow_vtkh_filter)
+TEST(alpine_flow_runtime, test_flow_vtkh_filter)
 {   
     
     Node n;
     alpine::about(n);
     
     // vtk-h requires vtk-m, don't run this test if we don't have vtk-m support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         
         return;
@@ -503,9 +501,9 @@ TEST(alpine_flow_pipeline, test_flow_vtkh_filter)
     actions.append()["action"] = "execute";
     actions.print();
 
-    // we want the "flow" pipeline
+    // we want the "flow" runtime
     Node open_opts;
-    open_opts["pipeline/type"] = "flow";
+    open_opts["runtime/type"] = "flow";
 
     //
     // Create example mesh.
@@ -527,7 +525,7 @@ TEST(alpine_flow_pipeline, test_flow_vtkh_filter)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_pipeline, test_flow_mesh_blueprint_hdf5_output)
+TEST(alpine_flow_runtime, test_flow_mesh_blueprint_hdf5_output)
 {   
     
     Node n;
@@ -556,9 +554,9 @@ TEST(alpine_flow_pipeline, test_flow_mesh_blueprint_hdf5_output)
     actions.append()["action"] = "execute";
     actions.print();
 
-    // we want the "flow" pipeline
+    // we want the "flow" runtime
     Node open_opts;
-    open_opts["pipeline/type"] = "flow";
+    open_opts["runtime/type"] = "flow";
 
     //
     // Create example mesh.
@@ -579,7 +577,7 @@ TEST(alpine_flow_pipeline, test_flow_mesh_blueprint_hdf5_output)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_pipeline, test_flow_bulk_actions_1)
+TEST(alpine_flow_runtime, test_flow_bulk_actions_1)
 {
     // test add_graph, add_filters, and add_connections
     
@@ -609,9 +607,9 @@ TEST(alpine_flow_pipeline, test_flow_bulk_actions_1)
         actions.append()["action"] = "execute";
         actions.print();
 
-        // we want the "flow" pipeline
+        // we want the "flow" runtime
         Node open_opts;
-        open_opts["pipeline/type"] = "flow";
+        open_opts["runtime/type"] = "flow";
     
         //
         // Run Alpine
@@ -632,7 +630,7 @@ TEST(alpine_flow_pipeline, test_flow_bulk_actions_1)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_pipeline, test_flow_bulk_actions_2)
+TEST(alpine_flow_runtime, test_flow_bulk_actions_2)
 {
     // test add_graph, add_filters, and add_connections
     
@@ -657,9 +655,9 @@ TEST(alpine_flow_pipeline, test_flow_bulk_actions_2)
         actions.append()["action"] = "execute";
         actions.print();
 
-        // we want the "flow" pipeline
+        // we want the "flow" runtime
         Node open_opts;
-        open_opts["pipeline/type"] = "flow";
+        open_opts["runtime/type"] = "flow";
 
         //
         // Run Alpine
@@ -681,7 +679,7 @@ TEST(alpine_flow_pipeline, test_flow_bulk_actions_2)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_pipeline, test_flow_load_and_save_graph)
+TEST(alpine_flow_runtime, test_flow_load_and_save_graph)
 {
     // test add_graph, add_filters, and add_connections
     
@@ -692,7 +690,7 @@ TEST(alpine_flow_pipeline, test_flow_load_and_save_graph)
     
         Node actions;
         string graph_ofile = conduit::utils::join_file_path(output_dir(),
-                                                            "tout_flow_pipeline_load_and_save.json");
+                                                            "tout_flow_runtime_load_and_save.json");
     
         actions.append();
         actions[0]["action"] = "add_graph";
@@ -712,9 +710,9 @@ TEST(alpine_flow_pipeline, test_flow_load_and_save_graph)
         
         actions.print();
 
-        // we want the "flow" pipeline
+        // we want the "flow" runtime
         Node open_opts;
-        open_opts["pipeline/type"] = "flow";
+        open_opts["runtime/type"] = "flow";
 
         //
         // Run Alpine

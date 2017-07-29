@@ -42,38 +42,58 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_pipeline.cpp
+/// file: t_alpine_empty_runtime.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <alpine_pipeline.hpp>
+#include "gtest/gtest.h"
+
+#include <alpine.hpp>
+
+#include <iostream>
+#include <math.h>
+#include <sstream>
+
+#include <conduit_blueprint.hpp>
+
+#include "t_config.hpp"
+
+
+using namespace std;
+using namespace conduit;
+using namespace alpine;
+
 
 //-----------------------------------------------------------------------------
-// -- begin alpine:: --
-//-----------------------------------------------------------------------------
-namespace alpine
+TEST(alpine_empty_runtime, test_empty_runtime)
 {
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
+    
+    Node actions;
+    Node &hello = actions.append();
+    hello["action"]   = "hello!";
+    actions.print();
 
-//-----------------------------------------------------------------------------
-Pipeline::Pipeline()
-{
-
+    // we want the "empty" example pipeline
+    Node open_opts;
+    open_opts["runtime/type"] = "empty";
+    
+    //
+    // Run Alpine
+    //
+    Alpine alpine;
+    alpine.open(open_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 }
-
-//-----------------------------------------------------------------------------
-Pipeline::~Pipeline()
-{
-
-}
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end alpine:: --
-//-----------------------------------------------------------------------------
-
-
 

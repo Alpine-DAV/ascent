@@ -45,11 +45,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_flow_pipeline_blueprint_filters.cpp
+/// file: alpine_runtime_blueprint_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "alpine_flow_pipeline_blueprint_filters.hpp"
+#include "alpine_runtime_blueprint_filters.hpp"
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -84,23 +84,16 @@ namespace alpine
 {
 
 //-----------------------------------------------------------------------------
-// -- begin alpine::pipeline --
+// -- begin alpine::runtime --
 //-----------------------------------------------------------------------------
-namespace pipeline
+namespace runtime
 {
 
 //-----------------------------------------------------------------------------
-// -- begin alpine::pipeline::flow --
-//-----------------------------------------------------------------------------
-namespace flow
-{
-
-//-----------------------------------------------------------------------------
-// -- begin alpine::pipeline::flow::filters --
+// -- begin alpine::runtime::filters --
 //-----------------------------------------------------------------------------
 namespace filters
 {
-
 
 
 //-----------------------------------------------------------------------------
@@ -172,76 +165,18 @@ BlueprintVerify::execute()
 }
 
 
-//-----------------------------------------------------------------------------
-EnsureVTKM::EnsureVTKM()
-:Filter()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-EnsureVTKM::~EnsureVTKM()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-void 
-EnsureVTKM::declare_interface(Node &i)
-{
-    i["type_name"]   = "ensure_vtkm";
-    i["port_names"].append() = "in";
-    i["output_port"] = "true";
-}
-
-
-//-----------------------------------------------------------------------------
-void 
-EnsureVTKM::execute()
-{
-#if !defined(ALPINE_VTKM_ENABLED)
-        ALPINE_ERROR("alpine was not built with VTKm support!");
-#else
-    if(input(0).check_type<vtkm::cont::DataSet>())
-    {
-        set_output(input(0));
-    }
-    else if(input(0).check_type<Node>())
-    {
-        // convert from conduit to vtkm
-        const Node *n_input = input<Node>(0);
-        vtkm::cont::DataSet  *res = DataAdapter::BlueprintToVTKmDataSet(*n_input);
-        set_output<vtkm::cont::DataSet>(res);
-    }
-    else
-    {
-        ALPINE_ERROR("unsupported input type for ensure_vtkm");
-    }
-#endif
-}
-
-
-
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end alpine::pipeline::flow::filters --
-//-----------------------------------------------------------------------------
-
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end alpine::pipeline::flow --
+// -- end alpine::runtime::filters --
 //-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end alpine::pipeline --
+// -- end alpine::runtime --
 //-----------------------------------------------------------------------------
 
 

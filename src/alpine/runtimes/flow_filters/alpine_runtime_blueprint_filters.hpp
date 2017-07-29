@@ -45,15 +45,16 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_empty_pipeline.hpp
+/// file: alpine_runtime_blueprint_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ALPINE_EMPTY_PIPELINE_HPP
-#define ALPINE_EMPTY_PIPELINE_HPP
+#ifndef ALPINE_RUNTIME_BLUEPRINT_FILTERS
+#define ALPINE_RUNTIME_BLUEPRINT_FILTERS
 
 #include <alpine.hpp>
-#include <alpine_pipeline.hpp>
+
+#include <flow_filter.hpp>
 
 
 //-----------------------------------------------------------------------------
@@ -62,28 +63,48 @@
 namespace alpine
 {
 
-class EmptyPipeline : public Pipeline
+//-----------------------------------------------------------------------------
+// -- begin alpine::runtime --
+//-----------------------------------------------------------------------------
+namespace runtime
+{
+
+//-----------------------------------------------------------------------------
+// -- begin alpine::runtime::filters --
+//-----------------------------------------------------------------------------
+namespace filters
+{
+
+//-----------------------------------------------------------------------------
+///
+/// Filters Related to Blueprint
+///
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+class BlueprintVerify : public ::flow::Filter
 {
 public:
+    BlueprintVerify();
+   ~BlueprintVerify();
     
-    // Creation and Destruction
-    EmptyPipeline();
-    virtual ~EmptyPipeline();
-
-    // Main pipeline interface methods used by the alpine interface.
-    void  Initialize(const conduit::Node &options);
-
-    void  Publish(const conduit::Node &data);
-    void  Execute(const conduit::Node &actions);
-    
-    void  Cleanup();
-
-private:
-    // holds options passed to initialize
-    conduit::Node     m_pipeline_options;
-    // conduit node that (externally) holds the data from the simulation
-    conduit::Node     m_data; 
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
 };
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end alpine::runtime::filters --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end alpine::runtime --
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 };
@@ -91,9 +112,10 @@ private:
 // -- end alpine:: --
 //-----------------------------------------------------------------------------
 
+
+
+
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-

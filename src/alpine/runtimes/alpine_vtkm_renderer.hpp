@@ -145,7 +145,7 @@ public:
                   int dims,
                   const char *image_file_name = NULL);
  
-      // TODO: Move to pipeline?
+      // TODO: Move to runtime?
       void WebSocketPush(PNGEncoder &png);
       void WebSocketPush(const std::string &img_file_path);
       void SaveImage(const char *image_file_name);  
@@ -217,8 +217,8 @@ private:
     int                 m_rank;
   
     conduit::Node       m_options;              // CDH: need to store?
-    bool                m_web_stream_enabled;   // CDH: move to pipeline ?
-    WebInterface        m_web_interface;        // CDH: move to pipeline ?
+    bool                m_web_stream_enabled;   // CDH: move to runtime ?
+    WebInterface        m_web_interface;        // CDH: move to runtime ?
   
     PNGEncoder          m_png_data;
 

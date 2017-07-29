@@ -66,13 +66,13 @@ using namespace conduit;
 using alpine::Alpine;
 
 //-----------------------------------------------------------------------------
-TEST(alpine_mpi_render_2d, test_render_mpi_2d_default_pipeline)
+TEST(alpine_mpi_render_2d, test_render_mpi_2d_default_runtime)
 {
-    // the vtkm pipeline is currently our only rendering pipeline
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         ALPINE_INFO("VTKm support disabled, skipping 2D MPI "
                       "Pipeline test");
@@ -114,7 +114,7 @@ TEST(alpine_mpi_render_2d, test_render_mpi_2d_default_pipeline)
         output_path = output_dir();
     }
     
-    string output_file = conduit::utils::join_file_path(output_path,"tout_render_mpi_2d_default_pipeline");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_mpi_2d_default_runtime");
     
     // remove old images before rendering
     remove_test_image(output_file);
@@ -149,6 +149,7 @@ TEST(alpine_mpi_render_2d, test_render_mpi_2d_default_pipeline)
     Alpine alpine;
 
     Node alpine_opts;
+    alpine_opts["runtime/type"] = "vtkm";
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
     alpine_opts["mpi_comm"] = MPI_Comm_c2f(comm);

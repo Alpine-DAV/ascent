@@ -58,7 +58,9 @@
 // defs for general openmp support
 #cmakedefine ALPINE_USE_OPENMP        "@OPENMP_FOUND@"
 
-// defs for pipeline support based on which 3rd-party libs we have 
+// defs for runtime support based on which 3rd-party libs we have 
+
+#cmakedefine ALPINE_VTKH_ENABLED      "@VTKM_FOUND@"
 
 #cmakedefine ALPINE_VTKM_ENABLED      "@VTKM_FOUND@"
 #cmakedefine ALPINE_VTKM_USE_CUDA     "@CUDA_FOUND@"

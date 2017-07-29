@@ -483,8 +483,12 @@ Workspace::remove_filter_type(const std::string &filter_type)
 void
 Workspace::register_filter_type(FilterFactoryMethod fr)
 {
-    
-    // TODO: we want the interface info to be static ...
+    if(supports_filter_type(fr))
+    {
+        ALPINE_INFO("TODO: Already Registered");
+        return;
+    }
+        
     
     // check that filter is valid by creating
     // an instance

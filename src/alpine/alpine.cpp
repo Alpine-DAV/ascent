@@ -50,18 +50,17 @@
 //-----------------------------------------------------------------------------
 
 #include <alpine.hpp>
-#include <alpine_pipeline.hpp>
+#include <alpine_runtime.hpp>
 
-#include <pipelines/alpine_empty_pipeline.hpp>
-#include <pipelines/alpine_flow_pipeline.hpp>
+#include <alpine_empty_runtime.hpp>
+#include <alpine_flow_runtime.hpp>
 
-#if defined(ALPINE_VTKM_ENABLED)
-    #include <pipelines/alpine_vtkm_pipeline.hpp>
-    #include <pipelines/alpine_alpine_pipeline.hpp>
+#if defined(ALPINE_VTKH_ENABLED)
+    #include <runtimes/alpine_main_runtime.hpp>
 #endif
 
-#if defined(ALPINE_HDF5_ENABLED)
-    #include <pipelines/alpine_blueprint_hdf5_pipeline.hpp>
+#if defined(ALPINE_VTKM_ENABLED)
+    #include <runtimes/alpine_vtkm_runtime.hpp>
 #endif
 
 using namespace conduit;
@@ -74,7 +73,7 @@ namespace alpine
 
 //-----------------------------------------------------------------------------
 Alpine::Alpine()
-: m_pipeline(NULL)
+: m_runtime(NULL)
 {
 }
 
@@ -112,71 +111,65 @@ Alpine::open(const conduit::Node &options)
 {
     Node processed_opts(options);
     CheckForJSONFile("alpine_options.json", processed_opts); 
-    if(m_pipeline != NULL)
+    if(m_runtime != NULL)
     {
-        ALPINE_ERROR("Alpine Pipeline already exists.!");
+        ALPINE_ERROR("Alpine Runtime already exists.!");
     }
     
     Node cfg;
     alpine::about(cfg);
     
-    std::string pipeline_type = cfg["default_pipeline"].as_string();
+    std::string runtime_type = cfg["default_runtime"].as_string();
     
-    if(processed_opts.has_path("pipeline"))
+    if(processed_opts.has_path("runtime"))
     {
-        if(processed_opts.has_path("pipeline/type"))
+        if(processed_opts.has_path("runtime/type"))
         {
-            pipeline_type = processed_opts["pipeline/type"].as_string();
+            runtime_type = processed_opts["runtime/type"].as_string();
         }
     }
 
-    if(pipeline_type == "empty")
+    ALPINE_INFO("Runtime Type = " << runtime_type);
+
+    if(runtime_type == "empty")
     {
-        m_pipeline = new EmptyPipeline();
+        m_runtime = new EmptyRuntime();
     }
-    else if(pipeline_type == "vtkm")
+    else if(runtime_type == "alpine")
+    {
+#if defined(ALPINE_VTKH_ENABLED)
+        m_runtime = new AlpineRuntime();
+#else
+        ALPINE_ERROR("Alpine was not built with vtk-h support");
+#endif
+    }
+    else if(runtime_type == "flow")
+    {
+        m_runtime = new FlowRuntime();
+    }
+    else if(runtime_type == "vtkm")
     {
 #if defined(ALPINE_VTKM_ENABLED)
-        m_pipeline = new VTKMPipeline();
+        m_runtime = new VTKMRuntime();
 #else
         ALPINE_ERROR("Alpine was not built with VTKm support");
 #endif
-    }
-    else if(pipeline_type == "alpine")
-    {
-#if defined(ALPINE_VTKM_ENABLED)
-        m_pipeline = new AlpinePipeline();
-#else
-        ALPINE_ERROR("Alpine was not built with VTKm support");
-#endif
-    }
-    else if(pipeline_type == "blueprint_hdf5")
-    {
-    #if defined(ALPINE_HDF5_ENABLED)
-        m_pipeline = new BlueprintHDF5Pipeline();
-    #else
-        ALPINE_ERROR("Alpine was not built with HDF5 support");
-    #endif
-    }
-    else if(pipeline_type == "flow")
-    {
-        m_pipeline = new FlowPipeline();
     }
     else
     {
-        ALPINE_ERROR("Unsupported Pipeline type " 
-                       << "\"" << pipeline_type << "\""
-                       << " passed via 'pipeline' open option.");
+        ALPINE_ERROR("Unsupported Runtime type " 
+                       << "\"" << m_runtime << "\""
+                       << " passed via 'runtime' open option.");
     }
     
-    m_pipeline->Initialize(processed_opts);
+    m_runtime->Initialize(processed_opts);
 }
 
 //-----------------------------------------------------------------------------
 void
 Alpine::publish(const conduit::Node &data)
 {
-    m_pipeline->Publish(data);
+    m_runtime->Publish(data);
 }
 
 //-----------------------------------------------------------------------------
@@ -185,18 +178,18 @@ Alpine::execute(const conduit::Node &actions)
 {
     Node processed_actions(actions);
     CheckForJSONFile("alpine_actions.json", processed_actions);
-    m_pipeline->Execute(processed_actions);
+    m_runtime->Execute(processed_actions);
 }
 
 //-----------------------------------------------------------------------------
 void
 Alpine::close()
 {
-    if(m_pipeline != NULL)
+    if(m_runtime != NULL)
     {
-        m_pipeline->Cleanup();
-        delete m_pipeline;
-        m_pipeline = NULL;
+        m_runtime->Cleanup();
+        delete m_runtime;
+        m_runtime = NULL;
     }
 }
 
@@ -253,44 +246,44 @@ void
 about(conduit::Node &n)
 {
     n.reset();
-    n["version"] = "0.1.0";
+    n["version"] = "0.Z.0";
+
+#if defined(ALPINE_VTKH_ENABLED)
+     n["runtimes/alpine/status"] = "enabled";
+#else
+     n["runtimes/alpine/status"] = "disabled";
+#endif
+
+    n["runtimes/flow/status"] = "enabled";
 
 #if defined(ALPINE_VTKM_ENABLED)
-    n["pipelines/vtkm/status"] = "enabled";
+    n["runtimes/vtkm/status"] = "enabled";
     
-    n["pipelines/vtkm/backends/serial"] = "enabled";
+    n["runtimes/vtkm/backends/serial"] = "enabled";
     
 #ifdef ALPINE_VTKM_USE_TBB
-    n["pipelines/vtkm/backends/tbb"] = "enabled";
+    n["runtimes/vtkm/backends/tbb"] = "enabled";
 #else
-    n["pipelines/vtkm/backends/tbb"] = "disabled";
+    n["runtimes/vtkm/backends/tbb"] = "disabled";
 #endif
 
 #ifdef ALPINE_VTKM_USE_CUDA
-    n["pipelines/vtkm/backends/cuda"] = "enabled";
+    n["runtimes/vtkm/backends/cuda"] = "enabled";
 #else
-    n["pipelines/vtkm/backends/cuda"] = "disabled";
+    n["runtimes/vtkm/backends/cuda"] = "disabled";
 #endif    
     
 #else
-    n["pipelines/vtkm/status"] = "disabled";
-#endif
-
-#if defined(ALPINE_HDF5_ENABLED)
-    n["pipelines/blueprint_hdf5/status"] = "enabled";
-#else
-    n["pipelines/blueprint_hdf5/status"] = "disabled";
+    n["runtimes/vtkm/status"] = "disabled";
 #endif
 
 //
-// Select default pipeline based on what is available.
+// Select default runtime based on what is available.
 //
-#if defined(ALPINE_VTKM_ENABLED)
-    n["default_pipeline"] = "vtkm";
-#elif defined(ALPINE_HDF5_ENABLED)    
-    n["default_pipeline"] = "blueprint_hdf5";
+#if defined(ALPINE_VTKH_ENABLED)
+    n["default_runtime"] = "alpine";
 #else
-    n["default_pipeline"] = "empty";
+    n["default_runtime"] = "flow";
 #endif
 }
 

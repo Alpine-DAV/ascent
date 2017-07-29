@@ -51,28 +51,22 @@
 # Core Alpine Unit Tests
 ################################
 set(BASIC_TESTS t_alpine_smoke
-                t_alpine_empty_pipeline
+                t_alpine_empty_runtime
                 t_alpine_render_2d
                 t_alpine_render_3d
                 t_alpine_web
-                t_alpine_flow_pipeline)
+                t_alpine_flow_runtime)
 
-set(MPI_TESTS  t_alpine_mpi_empty_pipeline
+set(MPI_TESTS  t_alpine_mpi_empty_runtime
                t_alpine_mpi_render_2d
                t_alpine_mpi_render_3d)
 
 
 # include the "main" pipeline
 if(VTKM_FOUND)
-   list(APPEND BASIC_TESTS t_alpine_pipeline)
-   list(APPEND MPI_TESTS   t_alpine_mpi_pipeline)
+   list(APPEND BASIC_TESTS t_alpine_main_runtime)
+   list(APPEND MPI_TESTS   t_alpine_mpi_main_runtime)
 endif()
-
-if(HDF5_FOUND)
-    list(APPEND BASIC_TESTS t_alpine_save_blueprint_hdf5)
-    list(APPEND MPI_TESTS   t_alpine_mpi_save_blueprint_hdf5)
-endif()
-
 
 
 ################################

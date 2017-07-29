@@ -73,13 +73,13 @@ index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_render_3d, test_render_3d_render_default_pipeline)
+TEST(alpine_render_3d, test_render_3d_render_default_runtime)
 {
-    // the vtkm pipeline is currently our only rendering pipeline
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         ALPINE_INFO("VTKm support disabled, skipping 2D default"
                       "Pipeline test");
@@ -105,7 +105,7 @@ TEST(alpine_render_3d, test_render_3d_render_default_pipeline)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_default_pipeline");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_default_runtime");
     
     // remove old images before rendering
     remove_test_image(output_file);
@@ -133,7 +133,10 @@ TEST(alpine_render_3d, test_render_3d_render_default_pipeline)
     //
     
     Alpine alpine;
-    alpine.open();
+    Node alpine_opts;
+    // default is now alpine
+    alpine_opts["runtime/type"] = "vtkm";
+    alpine.open(alpine_opts);
     alpine.publish(data);
     alpine.execute(actions);
     alpine.close();
@@ -150,7 +153,7 @@ TEST(alpine_render_3d, test_render_3d_render_vtkm_serial_backend)
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         ALPINE_INFO("VTKm support disabled, skipping 3D VTKm-serial test");
         return;
@@ -200,7 +203,7 @@ TEST(alpine_render_3d, test_render_3d_render_vtkm_serial_backend)
     //
     
     Node open_opts;
-    open_opts["pipeline/type"] = "vtkm";
+    open_opts["runtime/type"] = "vtkm";
     
     Alpine alpine;
     alpine.open(open_opts);
@@ -221,13 +224,13 @@ TEST(alpine_render_3d, test_render_3d_render_vtkm_tbb_backend)
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         ALPINE_INFO("VTKm support disabled, skipping 3D VTKm-tbb test");
         return;
     }
     
-    if(n["pipelines/vtkm/backends/tbb"].as_string() != "enabled")
+    if(n["runtimes/vtkm/backends/tbb"].as_string() != "enabled")
     {
         ALPINE_INFO("VTKm TBB support disabled, skipping 3D VTKm-tbb test");
         return;
@@ -278,8 +281,8 @@ TEST(alpine_render_3d, test_render_3d_render_vtkm_tbb_backend)
     //
     
     Node open_opts;
-    open_opts["pipeline/type"] = "vtkm";
-    open_opts["pipeline/backend"] = "tbb";
+    open_opts["runtime/type"] = "vtkm";
+    open_opts["runtime/backend"] = "tbb";
     
     Alpine alpine;
     alpine.open(open_opts);
@@ -293,19 +296,19 @@ TEST(alpine_render_3d, test_render_3d_render_vtkm_tbb_backend)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_render_3d, test_3d_serial_render_vtkm_pipeline_cuda_backend)
+TEST(alpine_render_3d, test_3d_serial_render_vtkm_runtime_cuda_backend)
 {
     
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/vtkm/status"].as_string() == "disabled")
     {
         ALPINE_INFO("VTKm support disabled, skipping 3D VTKm-cuda test");
         return;
     }
     
-    if(n["pipelines/vtkm/backends/cuda"].as_string() != "enabled")
+    if(n["runtimes/vtkm/backends/cuda"].as_string() != "enabled")
     {
         ALPINE_INFO("VTKm CUDA support disabled, skipping 3D VTKm-cuda test");
         return;
@@ -355,8 +358,9 @@ TEST(alpine_render_3d, test_3d_serial_render_vtkm_pipeline_cuda_backend)
     //
     
     Node open_opts;
-    open_opts["pipeline/type"] = "vtkm";
-    open_opts["pipeline/backend"] = "cuda";
+    open_opts["runtime/type"] = "vtkm";
+    open_opts["runtime/backend"] = "cuda";
+    
     
     Alpine alpine;
     alpine.open(open_opts);

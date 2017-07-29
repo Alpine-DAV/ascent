@@ -77,14 +77,6 @@ include(cmake/thirdparty/SetupConduit.cmake)
 ################################################################
 ################################################################
 
-################################
-# Make sure we have a concrete
-# pipeline to build 
-################################
-if(NOT VTKM_DIR AND NOT HDF5_DIR)
-    message(FATAL_ERROR "Alpine requires at least once concrete pipeline (HDF5 for VTKm)")
-endif()
-
 
 ################################
 # VTKm and supporting libs

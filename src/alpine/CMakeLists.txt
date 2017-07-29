@@ -69,13 +69,13 @@ set(alpine_sources
     # alpine interface
     alpine.cpp
     c/alpine_c.cpp
-    # pipelines
-    alpine_pipeline.cpp
-    pipelines/alpine_empty_pipeline.cpp
-    pipelines/alpine_flow_pipeline.cpp
-    pipelines/flow_filters/alpine_flow_pipeline_filters.cpp
-    pipelines/flow_filters/alpine_flow_pipeline_relay_filters.cpp
-    pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.cpp
+    # runtimes
+    alpine_runtime.cpp
+    runtimes/alpine_empty_runtime.cpp
+    runtimes/alpine_flow_runtime.cpp
+    runtimes/flow_filters/alpine_runtime_filters.cpp
+    runtimes/flow_filters/alpine_runtime_relay_filters.cpp
+    runtimes/flow_filters/alpine_runtime_blueprint_filters.cpp
     # utils
     utils/alpine_file_system.cpp
     utils/alpine_block_timer.cpp
@@ -88,14 +88,14 @@ set(alpine_headers
     alpine_exports.h
     alpine.hpp
     c/alpine.h
-    # pipelines
-    alpine_pipeline.hpp
-    pipelines/alpine_empty_pipeline.hpp
+    # runtimes
+    alpine_runtime.hpp
+    runtimes/alpine_empty_runtime.hpp
     # flow
-    pipelines/alpine_flow_pipeline.hpp
-    pipelines/flow_filters/alpine_flow_pipeline_filters.hpp
-    pipelines/flow_filters/alpine_flow_pipeline_relay_filters.hpp
-    pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.hpp
+    runtimes/alpine_flow_runtime.hpp
+    runtimes/flow_filters/alpine_runtime_filters.hpp
+    runtimes/flow_filters/alpine_runtime_relay_filters.hpp
+    runtimes/flow_filters/alpine_runtime_blueprint_filters.hpp
     # utils
     utils/alpine_logging.hpp
     utils/alpine_file_system.hpp
@@ -106,35 +106,30 @@ set(alpine_headers
 if(VTKM_FOUND)
 
     # data adapter
-    list(APPEND alpine_headers pipelines/alpine_data_adapter.hpp)
-    list(APPEND alpine_sources pipelines/alpine_data_adapter.cpp)
+    list(APPEND alpine_headers runtimes/alpine_data_adapter.hpp)
+    list(APPEND alpine_sources runtimes/alpine_data_adapter.cpp)
 
     # VTKm Pipeline Headers
-    list(APPEND alpine_headers  pipelines/alpine_vtkm_pipeline.hpp)
-    list(APPEND alpine_headers pipelines/alpine_vtkm_renderer.hpp)
+    list(APPEND alpine_headers runtimes/alpine_vtkm_runtime.hpp)
+    list(APPEND alpine_headers runtimes/alpine_vtkm_renderer.hpp)
 
     # VTKm Pipeline Sources
-    list(APPEND alpine_sources pipelines/alpine_vtkm_pipeline.cpp)
+    list(APPEND alpine_sources runtimes/alpine_vtkm_runtime.cpp)
     # VTKm Rendering Headers
-    list(APPEND alpine_headers pipelines/alpine_vtkm_renderer.hpp)
+    list(APPEND alpine_headers runtimes/alpine_vtkm_renderer.hpp)
 
     # VTKm Rendering Sources
-    list(APPEND alpine_sources pipelines/alpine_vtkm_renderer.cpp)
+    list(APPEND alpine_sources runtimes/alpine_vtkm_renderer.cpp)
 
     # vtkh filters
-    list(APPEND alpine_headers pipelines/flow_filters/alpine_flow_pipeline_vtkh_filters.hpp)
-    list(APPEND alpine_sources pipelines/flow_filters/alpine_flow_pipeline_vtkh_filters.cpp)
+    list(APPEND alpine_headers runtimes/flow_filters/alpine_runtime_vtkh_filters.hpp)
+    list(APPEND alpine_sources runtimes/flow_filters/alpine_runtime_vtkh_filters.cpp)
 
 
     # main pipeline
-    list(APPEND alpine_headers pipelines/alpine_alpine_pipeline.hpp)
-    list(APPEND alpine_sources pipelines/alpine_alpine_pipeline.cpp)
+    list(APPEND alpine_headers runtimes/alpine_main_runtime.hpp)
+    list(APPEND alpine_sources runtimes/alpine_main_runtime.cpp)
 
-endif()
-
-if(HDF5_FOUND)
-    list(APPEND alpine_headers pipelines/alpine_blueprint_hdf5_pipeline.hpp)
-    list(APPEND alpine_sources pipelines/alpine_blueprint_hdf5_pipeline.cpp)
 endif()
 
 ##############################
