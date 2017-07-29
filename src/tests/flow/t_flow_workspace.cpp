@@ -628,7 +628,7 @@ TEST(alpine_flow_workspace, dag_graph_save_and_load)
 
     //
     w.print();
-
+    prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_dir(),
                                                         "tout_flow_wrkspace_dag_save_and_load.json");
 

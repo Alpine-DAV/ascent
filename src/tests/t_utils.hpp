@@ -81,12 +81,7 @@ remove_test_image(const std::string &path)
 std::string 
 prepare_output_dir()
 {
-    string output_path = conduit::utils::join_file_path(ALPINE_T_BIN_DIR,"alpine");
-    
-    if(!alpine::directory_exists(output_path))
-    {
-        alpine::create_directory(output_path);
-    }
+    string output_path = ALPINE_T_BIN_DIR;
     
     output_path = conduit::utils::join_file_path(output_path,"_output");
 
@@ -102,10 +97,7 @@ prepare_output_dir()
 std::string 
 output_dir()
 {
-    string output_path = conduit::utils::join_file_path(ALPINE_T_BIN_DIR,"alpine");
-    output_path = conduit::utils::join_file_path(output_path,"_output");
-
-    return output_path;
+    return conduit::utils::join_file_path(ALPINE_T_BIN_DIR,"_output");;
 }
 
 //-----------------------------------------------------------------------------
