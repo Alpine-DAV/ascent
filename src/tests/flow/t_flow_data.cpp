@@ -50,7 +50,7 @@
 
 #include "gtest/gtest.h"
 
-#include <alpine_flow.hpp>
+#include <flow.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -61,8 +61,7 @@
 
 using namespace std;
 using namespace conduit;
-using namespace alpine;
-using namespace alpine::flow;
+using namespace flow;
 
 
 //-----------------------------------------------------------------------------

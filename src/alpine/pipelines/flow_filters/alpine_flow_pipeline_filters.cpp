@@ -56,7 +56,7 @@
 // alpine includes
 //-----------------------------------------------------------------------------
 #include <alpine_logging.hpp>
-#include <alpine_flow_workspace.hpp>
+#include <flow_workspace.hpp>
 
 #include <alpine_flow_pipeline_relay_filters.hpp>
 #include <alpine_flow_pipeline_blueprint_filters.hpp>
@@ -69,7 +69,7 @@
 
 
 
-using namespace alpine::flow;
+using namespace flow;
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --

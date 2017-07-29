@@ -52,8 +52,7 @@
 #ifndef ALPINE_FLOW_PIPELINE_RELAY_FILTERS_HPP
 #define ALPINE_FLOW_PIPELINE_RELAY_FILTERS_HPP
 
-#include <alpine_flow_filter.hpp>
-
+#include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
@@ -85,7 +84,7 @@ namespace filters
 ///
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-class RelayIOSave : public alpine::flow::Filter
+class RelayIOSave : public ::flow::Filter
 {
 public:
     RelayIOSave();
@@ -98,7 +97,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class RelayIOLoad : public alpine::flow::Filter
+class RelayIOLoad : public ::flow::Filter
 {
 public:
     RelayIOLoad();

@@ -68,7 +68,7 @@
 #include <conduit_relay_mpi.hpp>
 #endif
 
-#include <alpine_flow.hpp>
+#include <flow.hpp>
 #include <alpine_flow_pipeline_filters.hpp>
 
 using namespace conduit;

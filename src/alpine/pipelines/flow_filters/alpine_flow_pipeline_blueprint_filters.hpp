@@ -53,9 +53,8 @@
 #define ALPINE_FLOW_PIPELINE_BLUEPRINT_FILTERS
 
 #include <alpine.hpp>
-#include <alpine_flow.hpp>
 
-#include <alpine_flow_filter.hpp>
+#include <flow_filter.hpp>
 
 
 //-----------------------------------------------------------------------------
@@ -89,7 +88,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class BlueprintVerify : public alpine::flow::Filter
+class BlueprintVerify : public ::flow::Filter
 {
 public:
     BlueprintVerify();
@@ -109,7 +108,7 @@ public:
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-class EnsureVTKM : public alpine::flow::Filter
+class EnsureVTKM : public ::flow::Filter
 {
 public:
     EnsureVTKM();
@@ -118,20 +117,6 @@ public:
     virtual void   declare_interface(conduit::Node &i);
     virtual void   execute();
 };
-
-
-// //-----------------------------------------------------------------------------
-// class BlueprintMeshSave : public alpine::flow::Filter
-// {
-// public:
-//     BlueprintMeshSave();
-//    ~BlueprintMeshSave();
-//
-//     virtual void   declare_interface(conduit::Node &i);
-//     virtual bool   verify_params(const conduit::Node &params,
-//                                  conduit::Node &info);
-//     virtual void   execute();
-// };
 
 
 };

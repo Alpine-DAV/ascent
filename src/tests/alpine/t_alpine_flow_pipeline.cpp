@@ -67,7 +67,7 @@ using namespace conduit;
 using namespace alpine;
 
 
-#include <alpine_flow.hpp>
+#include <flow.hpp>
 
 // ----- //
 // This tests that we can create a custom filter, register it and use it

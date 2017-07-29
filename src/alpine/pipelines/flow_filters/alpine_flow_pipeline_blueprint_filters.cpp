@@ -64,8 +64,8 @@
 // alpine includes
 //-----------------------------------------------------------------------------
 #include <alpine_logging.hpp>
-#include <alpine_flow_graph.hpp>
-#include <alpine_flow_workspace.hpp>
+#include <flow_graph.hpp>
+#include <flow_workspace.hpp>
 
 #if defined(ALPINE_VTKM_ENABLED)
 #include <vtkm/cont/DataSet.h>
@@ -75,7 +75,7 @@
 using namespace conduit;
 using namespace std;
 
-using namespace alpine::flow;
+using namespace flow;
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --

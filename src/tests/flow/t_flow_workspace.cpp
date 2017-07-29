@@ -50,8 +50,8 @@
 
 #include "gtest/gtest.h"
 
-#include <alpine_flow.hpp>
-#include <alpine_flow_registry_filters.hpp>
+#include <flow.hpp>
+#include <flow_registry_filters.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -64,7 +64,7 @@
 using namespace std;
 using namespace conduit;
 using namespace alpine;
-using namespace alpine::flow;
+using namespace flow;
 
 //-----------------------------------------------------------------------------
 class SrcFilter: public Filter

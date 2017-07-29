@@ -65,8 +65,9 @@
 //-----------------------------------------------------------------------------
 #include <alpine_logging.hpp>
 #include <alpine_file_system.hpp>
-#include <alpine_flow_graph.hpp>
-#include <alpine_flow_workspace.hpp>
+
+#include <flow_graph.hpp>
+#include <flow_workspace.hpp>
 
 // mpi related includes
 #ifdef PARALLEL
@@ -78,7 +79,7 @@
 using namespace std;
 using namespace conduit;
 using namespace conduit::relay;
-using namespace alpine::flow;
+using namespace flow;
 
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --

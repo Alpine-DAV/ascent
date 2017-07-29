@@ -50,24 +50,24 @@
 ###############################################################################
 
 set(flow_sources
-    # alpine flow interface
-    alpine_flow_data.cpp
-    alpine_flow_registry.cpp
-    alpine_flow_filter.cpp
-    alpine_flow_filters.cpp
-    alpine_flow_graph.cpp
-    alpine_flow_workspace.cpp
-    filters/alpine_flow_registry_filters.cpp)
+    # flow interface
+    flow_data.cpp
+    flow_registry.cpp
+    flow_filter.cpp
+    flow_filters.cpp
+    flow_graph.cpp
+    flow_workspace.cpp
+    filters/flow_registry_filters.cpp)
     
 set(flow_headers
-    alpine_flow_data.hpp
-    alpine_flow_registry.hpp
-    alpine_flow_filter.hpp
-    alpine_flow_filters.hpp
-    alpine_flow_graph.hpp
-    alpine_flow_workspace.hpp
-    filters/alpine_flow_registry_filters.hpp
-    alpine_flow.hpp)
+    flow_data.hpp
+    flow_registry.hpp
+    flow_filter.hpp
+    flow_filters.hpp
+    flow_graph.hpp
+    flow_workspace.hpp
+    filters/flow_registry_filters.hpp
+    flow.hpp)
 
 set(flow_thirdparty_libs 
     conduit

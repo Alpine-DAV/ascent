@@ -45,137 +45,85 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_flow_data.hpp
+/// file: flow_registry_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ALPINE_FLOW_DATA_HPP
-#define ALPINE_FLOW_DATA_HPP
+#include "flow_registry_filters.hpp"
 
+// standard lib includes
+#include <iostream>
+#include <string.h>
+#include <limits.h>
+#include <cstdlib>
+
+//-----------------------------------------------------------------------------
+// thirdparty includes
+//-----------------------------------------------------------------------------
+
+// conduit includes
 #include <conduit.hpp>
 
+//-----------------------------------------------------------------------------
+// alpine includes
+//-----------------------------------------------------------------------------
+#include <alpine_logging.hpp>
+#include <flow_graph.hpp>
+#include <flow_workspace.hpp>
+
+using namespace conduit;
+using namespace std;
 
 //-----------------------------------------------------------------------------
-// -- begin alpine:: --
-//-----------------------------------------------------------------------------
-namespace alpine
-{
-
-//-----------------------------------------------------------------------------
-// -- begin alpine::flow --
+// -- begin flow:: --
 //-----------------------------------------------------------------------------
 namespace flow
 {
 
-
 //-----------------------------------------------------------------------------
-/// Container that  wrappers inputs and output datasets from filters so
-/// they can be managed by the registry. 
-///
-/// Key features:
-///
-/// Provides easy access to specific wrapped data:
-///    (so far just a Conduit Node Pointer)
-///   Data can cast to conduit::Node *, or conduit::Node & .
-///
-///
-/// Provides a release() method used by the registry to manage result lifetimes.
-//
-//-----------------------------------------------------------------------------    
-
-// forward declare so we can use dynamic cast in our check_type() method.
-template <class T>
-class DataWrapper;
-
+// -- begin flow::filters --
 //-----------------------------------------------------------------------------
-class Data
+namespace filters
 {
-public:
-    Data(void *data);
-
-    virtual ~Data();
-    
-    
-    // creates a new container for given data
-    virtual Data  *wrap(void *data)   = 0;
-    // actually delete the data
-    virtual void            release() = 0;
-    
-    void          *data_ptr();
-    const  void   *data_ptr() const;
-    
-    // access methods
-    template <class T>
-    T *value()
-    {
-        return static_cast<T*>(data_ptr());
-    }
-
-    template <class T>
-    bool check_type() const
-    {
-        const DataWrapper<T> *check = dynamic_cast<const DataWrapper<T>*>(this);
-        return check != NULL;
-    }
-
-
-    template <class T>
-    const T *value() const
-    {
-        return static_cast<T*>(data_ptr());
-    }
-
-    
-    void        info(conduit::Node &out) const;
-    std::string to_json() const;
-    void        print() const;
-
-protected:
-    void    set_data_ptr(void *);
-
-private:
-    void *m_data_ptr;
-
-};
 
 //-----------------------------------------------------------------------------
-template <class T>
-class DataWrapper: public Data
+RegistrySource::RegistrySource()
+:Filter()
 {
- public:
-    DataWrapper(void *data)
-    : Data(data)
-    {
-        // empty
-    }
+// empty
+}
+
+//-----------------------------------------------------------------------------
+RegistrySource::~RegistrySource()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+RegistrySource::declare_interface(Node &i)
+{
+    i["type_name"]   = "registry_source";
+    i["port_names"]  = DataType::empty();
+    i["output_port"] = "true";
+    i["default_params"]["entry"] = "";
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+RegistrySource::execute()
+{
+    std::string key = params()["entry"].as_string();
     
-    virtual ~DataWrapper()
-    {
-        // empty
-    }
-
-    Data *wrap(void *data)
-    {
-        return new DataWrapper<T>(data);
-    }
-
-    virtual void release()
-    {
-        if(data_ptr() != NULL)
-        {
-            T * t = static_cast<T*>(data_ptr());
-            delete t;
-            set_data_ptr(NULL);
-        }
-    }
-};
-
+    set_output(graph().workspace().registry().fetch(key));
+}
 
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end alpine::flow --
+// -- end flow::filters --
 //-----------------------------------------------------------------------------
 
 
@@ -183,12 +131,8 @@ class DataWrapper: public Data
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end alpine:: --
+// -- end flow:: --
 //-----------------------------------------------------------------------------
 
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
 
 

@@ -45,32 +45,133 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_flow.hpp
+/// file: flow_data.hpp
 ///
 //-----------------------------------------------------------------------------
 
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-///
-/// Flow is a simple data flow network infrastructure. 
-///
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-#ifndef ALPINE_FLOW_HPP
-#define ALPINE_FLOW_HPP
+#ifndef FLOW_DATA_HPP
+#define FLOW_DATA_HPP
 
 #include <conduit.hpp>
 
-#include <alpine_flow_data.hpp>
-#include <alpine_flow_registry.hpp>
-#include <alpine_flow_filter.hpp>
-#include <alpine_flow_graph.hpp>
-#include <alpine_flow_workspace.hpp>
 
-// filters
-#include <alpine_flow_filters.hpp>
+//-----------------------------------------------------------------------------
+// -- begin flow:: --
+//-----------------------------------------------------------------------------
+namespace flow
+{
+
+
+//-----------------------------------------------------------------------------
+/// Container that  wrappers inputs and output datasets from filters so
+/// they can be managed by the registry. 
+///
+/// Key features:
+///
+/// Provides easy access to specific wrapped data:
+///    (so far just a Conduit Node Pointer)
+///   Data can cast to conduit::Node *, or conduit::Node & .
+///
+///
+/// Provides a release() method used by the registry to manage result lifetimes.
+//
+//-----------------------------------------------------------------------------    
+
+// forward declare so we can use dynamic cast in our check_type() method.
+template <class T>
+class DataWrapper;
+
+//-----------------------------------------------------------------------------
+class Data
+{
+public:
+    Data(void *data);
+
+    virtual ~Data();
+    
+    
+    // creates a new container for given data
+    virtual Data  *wrap(void *data)   = 0;
+    // actually delete the data
+    virtual void            release() = 0;
+    
+    void          *data_ptr();
+    const  void   *data_ptr() const;
+    
+    // access methods
+    template <class T>
+    T *value()
+    {
+        return static_cast<T*>(data_ptr());
+    }
+
+    template <class T>
+    bool check_type() const
+    {
+        const DataWrapper<T> *check = dynamic_cast<const DataWrapper<T>*>(this);
+        return check != NULL;
+    }
+
+
+    template <class T>
+    const T *value() const
+    {
+        return static_cast<T*>(data_ptr());
+    }
+
+    
+    void        info(conduit::Node &out) const;
+    std::string to_json() const;
+    void        print() const;
+
+protected:
+    void    set_data_ptr(void *);
+
+private:
+    void *m_data_ptr;
+
+};
+
+//-----------------------------------------------------------------------------
+template <class T>
+class DataWrapper: public Data
+{
+ public:
+    DataWrapper(void *data)
+    : Data(data)
+    {
+        // empty
+    }
+    
+    virtual ~DataWrapper()
+    {
+        // empty
+    }
+
+    Data *wrap(void *data)
+    {
+        return new DataWrapper<T>(data);
+    }
+
+    virtual void release()
+    {
+        if(data_ptr() != NULL)
+        {
+            T * t = static_cast<T*>(data_ptr());
+            delete t;
+            set_data_ptr(NULL);
+        }
+    }
+};
+
+
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end flow:: --
+//-----------------------------------------------------------------------------
+
 
 
 #endif

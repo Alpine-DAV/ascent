@@ -53,9 +53,8 @@
 #define ALPINE_FLOW_PIPELINE_VTKH_FILTERS
 
 #include <alpine.hpp>
-#include <alpine_flow.hpp>
 
-#include <alpine_flow_filter.hpp>
+#include <flow_filter.hpp>
 
 
 //-----------------------------------------------------------------------------
@@ -89,7 +88,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class EnsureVTKH : public alpine::flow::Filter
+class EnsureVTKH : public ::flow::Filter
 {
 public:
     EnsureVTKH();
@@ -100,7 +99,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHRayTracer : public alpine::flow::Filter
+class VTKHRayTracer : public ::flow::Filter
 {
 public:
     VTKHRayTracer();
@@ -113,7 +112,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHMarchingCubes : public alpine::flow::Filter
+class VTKHMarchingCubes : public ::flow::Filter
 {
 public:
     VTKHMarchingCubes();
@@ -126,7 +125,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHThreshold : public alpine::flow::Filter
+class VTKHThreshold : public ::flow::Filter
 {
 public:
     VTKHThreshold();
@@ -139,7 +138,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHClip: public alpine::flow::Filter
+class VTKHClip: public ::flow::Filter
 {
 public:
     VTKHClip();
