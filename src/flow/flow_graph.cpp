@@ -62,14 +62,12 @@
 //-----------------------------------------------------------------------------
 
 // conduit includes
-#include <conduit.hpp>
 #include <conduit_relay.hpp>
 
 
 //-----------------------------------------------------------------------------
-// alpine includes
+// flow includes
 //-----------------------------------------------------------------------------
-#include <alpine_logging.hpp>
 #include <flow_workspace.hpp>
 
 
@@ -143,7 +141,7 @@ Graph::add_filter(const std::string &filter_type,
 {
     if(has_filter(filter_name))
     {
-        ALPINE_WARN("Cannot create filter, filter named: " << filter_name
+        CONDUIT_WARN("Cannot create filter, filter named: " << filter_name
                      << " already exists in Graph");
         return NULL;
     }
@@ -160,7 +158,7 @@ Graph::add_filter(const std::string &filter_type,
         std::string f_name = f->detailed_name();
         // cleanup f ... 
         delete f;
-        ALPINE_WARN("Cannot create filter " << f_name 
+        CONDUIT_WARN("Cannot create filter " << f_name 
                     << " because verify_params failed." << std::endl
                     << "Details:" << std::endl
                     << v_info.to_json());
@@ -220,14 +218,14 @@ Graph::connect(const std::string &src_name,
     
     if(!has_filter(src_name))
     {
-        ALPINE_WARN("source filter named: " << src_name
+        CONDUIT_WARN("source filter named: " << src_name
                     << " does not exist in Filter Graph");
         return;
     }
 
     if(!has_filter(des_name))
     {
-        ALPINE_WARN("destination filter named: " << des_name
+        CONDUIT_WARN("destination filter named: " << des_name
                     << " does not exist in Filter Graph");
         return;
     }
@@ -238,7 +236,7 @@ Graph::connect(const std::string &src_name,
     // make sure it has an input port with the given name
     if(!des_filter->has_port(port_name))
     {
-        ALPINE_WARN("destination filter: "
+        CONDUIT_WARN("destination filter: "
                      << des_filter->detailed_name()
                      << " does not have input port named:"
                      << port_name);
@@ -257,7 +255,7 @@ Graph::connect(const std::string &src_name,
 {
     if(!has_filter(des_name))
     {
-        ALPINE_WARN("destination filter named: " << des_name
+        CONDUIT_WARN("destination filter named: " << des_name
                     << " does not exist in Filter Graph ");
         return;
     }
@@ -286,7 +284,7 @@ Graph::remove_filter(const std::string &name)
 {
     if(!has_filter(name))
     {
-        ALPINE_WARN("filter named: " << name
+        CONDUIT_WARN("filter named: " << name
                      << " does not exist in Filter Graph");
         return;
     }
@@ -385,7 +383,7 @@ Graph::connections(Node &out) const
 void
 Graph::add_filters(const Node &filters)
 {
-    ALPINE_INFO(filters.to_json());
+    CONDUIT_INFO(filters.to_json());
 
     NodeConstIterator filters_itr = filters.children();
 
@@ -425,7 +423,7 @@ Graph::add_filters(const Node &filters)
     // provide one error message with all issues discovered
     if(!ok)
     {
-        ALPINE_ERROR(oss.str());
+        CONDUIT_ERROR(oss.str());
         return;
     }
     
@@ -452,7 +450,7 @@ Graph::add_filters(const Node &filters)
 void
 Graph::add_connections(const Node &conns)
 {
-    ALPINE_INFO(conns.to_json());
+    CONDUIT_INFO(conns.to_json());
 
     NodeConstIterator conns_itr = conns.children();
     while(conns_itr.has_next())
@@ -477,7 +475,7 @@ Graph::add_connections(const Node &conns)
         
         if(!ok)
         {
-            ALPINE_ERROR(oss.str());
+            CONDUIT_ERROR(oss.str());
             return;
         }
   
@@ -631,7 +629,7 @@ Graph::to_dot() const
 void
 Graph::print() const
 {
-    ALPINE_INFO(to_json());
+    CONDUIT_INFO(to_json());
 }
 
 

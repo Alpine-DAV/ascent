@@ -57,19 +57,6 @@
 #include <limits.h>
 #include <cstdlib>
 
-//-----------------------------------------------------------------------------
-// thirdparty includes
-//-----------------------------------------------------------------------------
-
-// conduit includes
-#include <conduit.hpp>
-
-
-//-----------------------------------------------------------------------------
-// alpine includes
-//-----------------------------------------------------------------------------
-#include <alpine_logging.hpp>
-
 using namespace conduit;
 using namespace std;
 
@@ -397,7 +384,7 @@ Workspace::to_json() const
 void
 Workspace::print() const
 {
-    ALPINE_INFO(to_json());
+    CONDUIT_INFO(to_json());
 }
 
 //-----------------------------------------------------------------------------
@@ -406,7 +393,7 @@ Workspace::create_filter(const std::string &filter_type)
 {
     if(!supports_filter_type(filter_type))
     {
-        ALPINE_WARN("Cannot create unknown filter type: "
+        CONDUIT_WARN("Cannot create unknown filter type: "
                     << filter_type);
         return NULL;
     }
@@ -430,7 +417,7 @@ Workspace::default_mpi_comm()
     
     if(m_default_mpi_comm == -1)
     {
-        ALPINE_ERROR("flow::Workspace default MPI communicator is not initialized.")
+        CONDUIT_ERROR("flow::Workspace default MPI communicator is not initialized.")
     }
 
     return m_default_mpi_comm;
@@ -485,7 +472,7 @@ Workspace::register_filter_type(FilterFactoryMethod fr)
 {
     if(supports_filter_type(fr))
     {
-        ALPINE_INFO("TODO: Already Registered");
+        CONDUIT_INFO("TODO: Filter Already Registered");
         return;
     }
         
@@ -514,7 +501,7 @@ Workspace::register_filter_type(FilterFactoryMethod fr)
         }
         
         // failed interface verify ... 
-        ALPINE_ERROR("filter type interface verify failed." << std::endl
+        CONDUIT_ERROR("filter type interface verify failed." << std::endl
                       << f_type_name   << std::endl
                       << "Details:" << std::endl
                       << v_info.to_json());
@@ -527,7 +514,7 @@ Workspace::register_filter_type(FilterFactoryMethod fr)
     
     if(supports_filter_type(f_type_name))
     {
-        ALPINE_ERROR("filter type named:"
+        CONDUIT_ERROR("filter type named:"
                      << f_type_name 
                     << " is already registered");
     }

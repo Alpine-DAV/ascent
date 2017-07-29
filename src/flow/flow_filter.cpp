@@ -58,17 +58,8 @@
 #include <cstdlib>
 
 //-----------------------------------------------------------------------------
-// thirdparty includes
+// flow includes
 //-----------------------------------------------------------------------------
-
-// conduit includes
-#include <conduit.hpp>
-
-
-//-----------------------------------------------------------------------------
-// alpine includes
-//-----------------------------------------------------------------------------
-#include <alpine_logging.hpp>
 #include <flow_data.hpp>
 #include <flow_registry.hpp>
 #include <flow_graph.hpp>
@@ -322,7 +313,7 @@ Filter::input(const std::string &port_name)
 {
     if(!has_port(port_name) )
     {
-        ALPINE_ERROR( detailed_name()
+        CONDUIT_ERROR( detailed_name()
                       << "does not have an input port named: " << port_name);
     }
 
@@ -349,7 +340,7 @@ Filter::fetch_input(const std::string &port_name)
 {
     if(!has_port(port_name) )
     {
-        ALPINE_ERROR( detailed_name()
+        CONDUIT_ERROR( detailed_name()
                       << "does not have an input port named: " << port_name);
     }
 
@@ -420,7 +411,7 @@ Filter::port_index_to_name(int idx) const
 
     if(idx > nports || idx < 0)
     {
-        ALPINE_ERROR("Fasiled to find input port name for index: " << idx 
+        CONDUIT_ERROR("Fasiled to find input port name for index: " << idx 
                      << " " << detailed_name() << " has " << nports
                      << " input port ports ");
     }
@@ -486,7 +477,7 @@ Filter::to_json() const
 void
 Filter::print() const
 {
-    ALPINE_INFO(to_json());
+    CONDUIT_INFO(to_json());
 }
 
 

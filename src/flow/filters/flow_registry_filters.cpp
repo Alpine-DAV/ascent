@@ -57,17 +57,10 @@
 #include <limits.h>
 #include <cstdlib>
 
-//-----------------------------------------------------------------------------
-// thirdparty includes
-//-----------------------------------------------------------------------------
-
-// conduit includes
-#include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
-// alpine includes
+// flow includes
 //-----------------------------------------------------------------------------
-#include <alpine_logging.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 

@@ -64,7 +64,7 @@ set(FLOW_TESTS  t_flow_data
 
 message(STATUS "Adding flow lib unit tests")
 foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON flow alpine)
+    add_cpp_test(TEST ${TEST} DEPENDS_ON flow)
 endforeach()
 
 

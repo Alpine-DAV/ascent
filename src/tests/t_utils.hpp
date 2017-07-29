@@ -85,9 +85,9 @@ prepare_output_dir()
     
     output_path = conduit::utils::join_file_path(output_path,"_output");
 
-    if(!alpine::directory_exists(output_path))
+    if(!conduit::utils::is_directory(output_path))
     {
-        alpine::create_directory(output_path);
+        conduit::utils::create_directory(output_path);
     }
     
     return output_path;

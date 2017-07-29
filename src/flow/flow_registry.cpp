@@ -57,19 +57,6 @@
 #include <limits.h>
 #include <cstdlib>
 
-//-----------------------------------------------------------------------------
-// thirdparty includes
-//-----------------------------------------------------------------------------
-
-// conduit includes
-#include <conduit.hpp>
-
-
-//-----------------------------------------------------------------------------
-// alpine includes
-//-----------------------------------------------------------------------------
-#include <alpine_logging.hpp>
-
 using namespace conduit;
 using namespace std;
 
@@ -455,7 +442,7 @@ Registry::Map::dec(const std::string &key)
     
     if(ent_refs == 0)
     {
-        ALPINE_INFO("Registry Removing: " << key);
+        CONDUIT_INFO("Registry Removing: " << key);
 
         // clean up bookkeeping obj
         delete ent;
@@ -475,7 +462,7 @@ Registry::Map::dec(const std::string &key)
         
         rel_info[oss.str()]["pending"] = value->ref()->pending();
 
-        ALPINE_INFO("Registry Releasing: " << rel_info.to_json());
+        CONDUIT_INFO("Registry Releasing: " << rel_info.to_json());
 
         value->data()->release();
                 
@@ -494,7 +481,7 @@ Registry::Map::detach(const std::string &key)
     Entry *ent   = fetch_entry(key);
     Value *value = ent->value();
     
-    ALPINE_INFO("Registry Removing: " << key);
+    CONDUIT_INFO("Registry Removing: " << key);
 
     // clean up bookkeeping obj
     delete ent;
@@ -649,7 +636,7 @@ Registry::to_json() const
 void
 Registry::print() const
 {
-    ALPINE_INFO(to_json());
+    CONDUIT_INFO(to_json());
 }
 
 //-----------------------------------------------------------------------------
@@ -661,7 +648,7 @@ Registry::fetch(const std::string &key)
 {
     if(!m_map->has_entry(key))
     {
-        ALPINE_ERROR("Attempt to fetch unknown key: " << key);
+        CONDUIT_ERROR("Attempt to fetch unknown key: " << key);
     }
     
     return *m_map->fetch_entry(key)->value()->data();
@@ -675,7 +662,7 @@ Registry::add(const std::string &key,
 {
     if(m_map->has_entry(key))
     {
-        ALPINE_WARN("Attempt to overwrite existing entry with key: " << key);
+        CONDUIT_WARN("Attempt to overwrite existing entry with key: " << key);
     }
     else
     {
