@@ -211,8 +211,8 @@ Graph::add_filter(const std::string &filter_type,
 //-----------------------------------------------------------------------------
 void 
 Graph::connect(const std::string &src_name,
-                     const std::string &des_name,
-                     const std::string &port_name)
+               const std::string &des_name,
+               const std::string &port_name)
 {
     // make sure we have a filter with the given name
     

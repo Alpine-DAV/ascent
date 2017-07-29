@@ -418,7 +418,7 @@ VTKHClip::verify_params(const conduit::Node &params,
     bool res = true;
     
     if(! params.has_child("topology") || 
-       ! params["field"].dtype().is_string() )
+       ! params["topology"].dtype().is_string() )
     {
         info["errors"].append() = "Missing required string parameter 'topology'";
     }
@@ -428,6 +428,7 @@ VTKHClip::verify_params(const conduit::Node &params,
     {
         info["errors"].append() = "Missing required numeric parameter 'sphere'";
     }
+    
     // TODO: check for other clip types 
     return res;
 }
@@ -445,7 +446,7 @@ VTKHClip::execute()
         ALPINE_ERROR("VTKHClip input must be a vtk-h dataset");
     }
 
-    std::string field_name = params()["field"].as_string();
+    std::string topology = params()["topology"].as_string();
     
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
     vtkh::Clip clipper;
@@ -465,12 +466,42 @@ VTKHClip::execute()
     double radius = sphere["radius"].as_float64(); 
   
     clipper.SetSphereClip(center, radius);
-
+    clipper.SetCellSet(topology);
     clipper.Update();
 
     vtkh::DataSet *clip_output = clipper.GetOutput();
     
     set_output<vtkh::DataSet>(clip_output);
+}
+
+//-----------------------------------------------------------------------------
+Alias::Alias()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Alias::~Alias()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+Alias::declare_interface(Node &i)
+{
+    i["type_name"]   = "alias";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+Alias::execute()
+{
+    set_output(input(0));
 }
 
 

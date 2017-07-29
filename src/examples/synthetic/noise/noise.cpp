@@ -431,14 +431,14 @@ int main(int argc, char** argv)
   
   double time = 0;
   //
-  //  Opem and setup alpine
+  //  Open and setup alpine
   //
   alpine::Alpine alpine;
   conduit::Node alpine_opts;
 #ifdef PARALLEL
   alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
-  alpine_opts["pipeline/type"] = "alpine";
+  alpine_opts["runtime/type"] = "alpine";
   alpine.open(alpine_opts);
 
 
@@ -494,23 +494,23 @@ int main(int argc, char** argv)
       
         conduit::Node pipelines;
         // pipeline 1
-        pipelines["pl1/filters/f1/filter_type"] = "contour";
+        pipelines["pl1/f1/type"] = "contour";
         // filter knobs
-        conduit::Node &contour_params = pipelines["pl1/filters/f1/params"];
+        conduit::Node &contour_params = pipelines["pl1/f1/params"];
         contour_params["field"] = "nodal_noise";
         contour_params["iso_values"] = 0.0;
 
         // pipeline 2 
-        pipelines["pl2/filters/f1/filter_type"] = "threshold";
+        pipelines["pl2/f1/type"] = "threshold";
         // filter knobs
-        conduit::Node &thresh_params = pipelines["pl2/filters/f1/params"];
+        conduit::Node &thresh_params = pipelines["pl2/f1/params"];
         thresh_params["field"]  = "zonal_noise";
         thresh_params["min_value"] = 0.0;
         thresh_params["max_value"] = 0.5;
 
-        pipelines["pl2/filters/f2/filter_type"]   = "clip";
+        pipelines["pl2/f2/type"]   = "clip";
         // filter knobs
-        conduit::Node &clip_params = pipelines["pl2/filters/f2/params/"];
+        conduit::Node &clip_params = pipelines["pl2/f2/params/"];
         clip_params["topology"] = "mesh";
         clip_params["sphere/center/x"] = 0.0;
         clip_params["sphere/center/y"] = 0.0;
@@ -518,16 +518,16 @@ int main(int argc, char** argv)
         clip_params["sphere/radius"]   = .1;
         
         conduit::Node plots;
-        plots["plot1/plot_type"]    = "pseudocolor";
+        plots["plot1/type"]    = "pseudocolor";
         plots["plot1/pipeline"]     = "pl1";
         plots["plot1/params/field"] = "zonal_noise";
 
-        //plots["plot2/plot_type"]    = "pseudocolor";
+        //plots["plot2/type"]    = "pseudocolor";
         //plots["plot2/pipeline"]     = "pl2";
         //plots["plot2/params/field"] = "nodal_noise";
 
         // use default pipeline (original data}
-        //plots["plot3/plot_type"]    = "volume";
+        //plots["plot3/type"]    = "volume";
         //plots["plot3/params/field"] = "nodal_noise";
   
         conduit::Node scenes;

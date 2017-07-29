@@ -14,8 +14,7 @@ struct Clip::InternalsType
 };
 
 Clip::Clip()
-  : m_internals(new InternalsType),
-    m_cell_set_index(0)
+  : m_internals(new InternalsType)
 {
 
 }
@@ -26,9 +25,9 @@ Clip::~Clip()
 }
 
 void 
-Clip::SetCellSetIndex(const vtkm::Id index)
+Clip::SetCellSet(const std::string &cell_set)
 {
-  m_cell_set_index = index;
+  m_cell_set = cell_set;
 }
 
 void 
@@ -76,7 +75,6 @@ Clip::SetPlaneClip(const double origin[3], const double normal[3])
 
 void Clip::PreExecute() 
 {
-  m_internals->m_clipper.SetActiveCellSet(m_cell_set_index);
 
   if(m_map_fields.size() == 0)
   {
@@ -101,6 +99,20 @@ void Clip::DoExecute()
     vtkm::Id domain_id;
     vtkm::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
+
+    if(m_cell_set != "")
+    {
+      if(dom.HasCellSet(m_cell_set))
+      {
+        vtkm::Id cell_set_index = dom.GetCellSetIndex(m_cell_set);
+        m_internals->m_clipper.SetActiveCellSet(cell_set_index);
+      }
+      else
+      {
+        std::cout<<"Clip: cell set "<<m_cell_set<<" not present. Skipping dom\n";
+        continue;
+      }
+    }
 
     vtkm::filter::ResultDataSet res = m_internals->m_clipper.Execute(dom);
 

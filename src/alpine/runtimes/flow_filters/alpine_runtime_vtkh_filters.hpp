@@ -154,9 +154,16 @@ public:
                                  conduit::Node &info);
     virtual void   execute();
 };
-
-
-
+//-----------------------------------------------------------------------------
+class Alias : public ::flow::Filter
+{
+public:
+    Alias();
+   ~Alias();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
 
 };
 //-----------------------------------------------------------------------------

@@ -86,15 +86,17 @@ private:
     conduit::Node     m_runtime_options;
     // conduit node that (externally) holds the data from the simulation
     conduit::Node     m_data; 
-    conduit::Node     m_flow_pipelines; 
-    conduit::Node     m_plots; 
-    conduit::Node     m_flow_graphs; 
+    conduit::Node     m_connections; 
 
     flow::Workspace w;
-
+    std::string CreateDefaultFilters();
+    void ConvertToFlowGraph(const conduit::Node &pipeline,
+                            const std::string pipeline_name);
+    void ConvertPlotToFlow(const conduit::Node &plot,
+                           const std::string plot_name);
     void CreatePipelines(const conduit::Node &pipelines);
     void CreatePlots(const conduit::Node &plots);
-    void MergeGraphs();
+    void ConnectGraphs();
     void ExecuteGraphs();
 };
 
