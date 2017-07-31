@@ -332,7 +332,7 @@ AlpineRuntime::ConvertPlotToFlow(const conduit::Node &plot,
   else
   {
     // default pipeline: directly connect to published data
-    plot_source = ":source";
+    plot_source = "default";
   }
 
   m_connections[plot_name] = plot_source;
@@ -361,7 +361,11 @@ AlpineRuntime::ConnectGraphs()
   for (int i = 0; i < m_connections.number_of_children(); ++i)
   { 
     std::string pipeline = m_connections[names[i]].as_string(); 
-    if(!w.graph().has_filter(pipeline))
+    if(pipeline == "default")
+    { 
+      pipeline = CreateDefaultFilters(); 
+    }
+    else if(!w.graph().has_filter(pipeline))
     {
       ALPINE_ERROR(names[i]<<"' references unknown pipeline: "<<pipeline);
     }
