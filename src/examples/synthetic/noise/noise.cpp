@@ -441,13 +441,82 @@ int main(int argc, char** argv)
   alpine_opts["runtime/type"] = "alpine";
   alpine.open(alpine_opts);
 
-
-  conduit::Node alpine_node; 
+  conduit::Node alpine_node;
   alpine_node["state/time"].set_external(&time);
   alpine_node["state/cycle"].set_external(&time);
   alpine_node["state/domain"] = 0;//myRank;
   alpine_node["state/info"] = "simplex noise";
   data_set.PopulateNode(alpine_node);
+  alpine.publish(alpine_node);
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "contour";
+  // filter knobs
+  conduit::Node &contour_params = pipelines["pl1/f1/params"];
+  contour_params["field"] = "nodal_noise";
+  contour_params["iso_values"] = 0.0;
+
+  // pipeline 2 
+  pipelines["pl2/f1/type"] = "threshold";
+  // filter knobs
+  conduit::Node &thresh_params = pipelines["pl2/f1/params"];
+  thresh_params["field"]  = "zonal_noise";
+  thresh_params["min_value"] = 0.0;
+  thresh_params["max_value"] = 0.5;
+
+  pipelines["pl2/f2/type"]   = "clip";
+  // filter knobs
+  conduit::Node &clip_params = pipelines["pl2/f2/params/"];
+  clip_params["topology"] = "mesh";
+  clip_params["sphere/center/x"] = 0.0;
+  clip_params["sphere/center/y"] = 0.0;
+  clip_params["sphere/center/z"] = 0.0;
+  clip_params["sphere/radius"]   = .1;
+  
+  conduit::Node plots;
+  plots["plot1/type"]    = "pseudocolor";
+  plots["plot1/pipeline"]     = "pl1";
+  plots["plot1/params/field"] = "zonal_noise";
+
+  //plots["plot2/type"]    = "pseudocolor";
+  //plots["plot2/pipeline"]     = "pl2";
+  //plots["plot2/params/field"] = "nodal_noise";
+
+  // use default pipeline (original data}
+  //plots["plot3/type"]    = "volume";
+  //plots["plot3/params/field"] = "nodal_noise";
+  
+  conduit::Node scenes;
+  scenes["scene1/plots/pl1"];
+  //scenes["scene2/plots/pl2"];
+  //scenes["scene3/plots/pl3"];
+
+  conduit::Node extracts;
+  extracts["ex1/extract_type"] = "hdf5";
+  extracts["ex1/pipeline"]     = "pl2";
+
+  // use default pipeline (original data}
+  extracts["ex2/extract_type"] = "hdf5";
+  
+  conduit::Node actions;
+  conduit::Node &add_pipelines = actions.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
+
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_plots";
+  add_plots["plots"] = plots;
+
+  conduit::Node &add_scenes = actions.append();
+  add_scenes["action"] = "add_scenes";
+  add_scenes["scenes"] = scenes;
+
+  conduit::Node &add_extracts = actions.append();
+  add_extracts["action"] = "add_extracts";
+  add_extracts["add_extracts"] = extracts;
+
+  alpine.execute(actions);
 
   for(int t = 0; t < options.m_time_steps; ++t)
   {
@@ -476,89 +545,11 @@ int main(int argc, char** argv)
         }
 
         time += options.m_time_delta;
-        //
-        // Create actions.
-        //
-        conduit::Node actions;
-        conduit::Node &add = actions.append();
-        add["action"] = "add_plot";
-        add["field_name"] = "nodal_noise";
-        conduit::Node &draw = actions.append();
-        std::stringstream ss;
-        ss<<"smooth_noise_"<<t;
-        add["render_options/file_name"] = ss.str();
-        add["render_options/width"]  = 1024;
-        add["render_options/height"] = 1024;
-        draw["action"] = "draw_plots";
-
-      
-        conduit::Node pipelines;
-        // pipeline 1
-        pipelines["pl1/f1/type"] = "contour";
-        // filter knobs
-        conduit::Node &contour_params = pipelines["pl1/f1/params"];
-        contour_params["field"] = "nodal_noise";
-        contour_params["iso_values"] = 0.0;
-
-        // pipeline 2 
-        pipelines["pl2/f1/type"] = "threshold";
-        // filter knobs
-        conduit::Node &thresh_params = pipelines["pl2/f1/params"];
-        thresh_params["field"]  = "zonal_noise";
-        thresh_params["min_value"] = 0.0;
-        thresh_params["max_value"] = 0.5;
-
-        pipelines["pl2/f2/type"]   = "clip";
-        // filter knobs
-        conduit::Node &clip_params = pipelines["pl2/f2/params/"];
-        clip_params["topology"] = "mesh";
-        clip_params["sphere/center/x"] = 0.0;
-        clip_params["sphere/center/y"] = 0.0;
-        clip_params["sphere/center/z"] = 0.0;
-        clip_params["sphere/radius"]   = .1;
-        
-        conduit::Node plots;
-        plots["plot1/type"]    = "pseudocolor";
-        plots["plot1/pipeline"]     = "pl1";
-        plots["plot1/params/field"] = "zonal_noise";
-
-        //plots["plot2/type"]    = "pseudocolor";
-        //plots["plot2/pipeline"]     = "pl2";
-        //plots["plot2/params/field"] = "nodal_noise";
-
-        // use default pipeline (original data}
-        //plots["plot3/type"]    = "volume";
-        //plots["plot3/params/field"] = "nodal_noise";
-  
-        conduit::Node scenes;
-        scenes["scene1/plots/pl1"];
-        scenes["scene2/plots/pl2"];
-        //scenes["scene3/plots/pl3"];
-
-        conduit::Node extracts;
-        extracts["ex1/extract_type"] = "hdf5";
-        extracts["ex1/pipeline"]     = "pl2";
-
-        // use default pipeline (original data}
-        extracts["ex2/extract_type"] = "hdf5";
-  
-        conduit::Node &add_pipelines = actions.append();
-        add_pipelines["action"] = "add_pipelines";
-        add_pipelines["pipelines"] = pipelines;
-
-        conduit::Node &add_plots = actions.append();
-        add_plots["action"] = "add_plots";
-        add_plots["plots"] = plots;
-
-        conduit::Node &add_scenes = actions.append();
-        add_scenes["action"] = "add_scenes";
-        add_scenes["scenes"] = scenes;
-
-        conduit::Node &add_extracts = actions.append();
-        add_extracts["action"] = "add_extracts";
-        add_extracts["add_extracts"] = extracts;
-
+           
         alpine.publish(alpine_node);
+        actions.reset();
+        conduit::Node &execute = actions.append();
+        execute["action"] = "execute";
         alpine.execute(actions);
       } //for each time step
   

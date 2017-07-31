@@ -83,7 +83,8 @@ TEST(alpine_pipeline, test_render_2d_main_pipeline)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_default_pipeline");
+    string output_file = conduit::utils::join_file_path(output_path, 
+                                                        "tout_render_2d_main_pipeline");
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -92,9 +93,13 @@ TEST(alpine_pipeline, test_render_2d_main_pipeline)
     //
     Node actions;
 
-    Node &plot = actions.append();
+    Node &= actions.append();
     plot["action"]     = "add_plot";
     plot["field_name"] = "braid";
+    
+    //plots["plot1/type"]    = "pseudocolor";
+    //plots["plot1/pipeline"]     = "pl1";
+    //plots["plot1/params/field"] = "zonal_noise";
 
     Node &opts = plot["render_options"];
     opts["width"]  = 500;
@@ -109,11 +114,10 @@ TEST(alpine_pipeline, test_render_2d_main_pipeline)
     // Run Alpine
     //
     
-    Node alpine_opts;
-    alpine_opts["pipeline"] = "alpine";
-    
     Alpine alpine;
 
+    Node alpine_opts;
+    alpine_opts["runtime/type"] = "alpine";
     alpine.open(alpine_opts);
     alpine.publish(data);
     alpine.execute(actions);

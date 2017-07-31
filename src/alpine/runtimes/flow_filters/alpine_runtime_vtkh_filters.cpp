@@ -417,12 +417,6 @@ VTKHClip::verify_params(const conduit::Node &params,
     info.reset();
     bool res = true;
     
-    if(! params.has_child("topology") || 
-       ! params["topology"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'topology'";
-    }
-    
     if(! params.has_child("") || 
        ! params["sphere"].dtype().is_number() )
     {
@@ -446,16 +440,17 @@ VTKHClip::execute()
         ALPINE_ERROR("VTKHClip input must be a vtk-h dataset");
     }
 
-    std::string topology = params()["topology"].as_string();
     
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
     vtkh::Clip clipper;
     
     clipper.SetInput(data);
 
-    //if(params.has_child("topology"))
-    //{
-    //}
+    if(params().has_child("topology"))
+    {
+      std::string topology = params()["topology"].as_string();
+      clipper.SetCellSet(topology);
+    }
 
     const Node &sphere = params()["sphere"];
     double center[3];
@@ -466,7 +461,6 @@ VTKHClip::execute()
     double radius = sphere["radius"].as_float64(); 
   
     clipper.SetSphereClip(center, radius);
-    clipper.SetCellSet(topology);
     clipper.Update();
 
     vtkh::DataSet *clip_output = clipper.GetOutput();

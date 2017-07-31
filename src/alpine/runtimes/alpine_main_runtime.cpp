@@ -394,77 +394,17 @@ AlpineRuntime::Execute(const conduit::Node &actions)
           CreatePlots(action["plots"]);
         }
         
-        ////////
-        // TODO: imp "alpine pipeline"
-        ////////
-        
-        // implement actions
-/*
-        if(action_name == "add_filter")
-        {
-            if(action.has_child("params"))
-            {
-                w.graph().add_filter(action["type_name"].as_string(),
-                                     action["name"].as_string(),
-                                     action["params"]);
-            }
-            else
-            {
-                w.graph().add_filter(action["type_name"].as_string(),
-                                     action["name"].as_string());
-            }
-        }
-        else if( action_name == "add_filters")
-        {
-            w.graph().add_filters(action["filters"]);
-        }
-        else if( action_name == "connect")
-        {
-            if(action.has_child("port"))
-            {
-                w.graph().connect(action["src"].as_string(),
-                                  action["dest"].as_string(),
-                                  action["port"].as_string());
-            }
-            else
-            {
-                // if no port, assume input 0
-                w.graph().connect(action["src"].as_string(),
-                                  action["dest"].as_string(),
-                                  0);
-            }
-        }
-        else if( action_name == "add_connections")
-        {
-            w.graph().add_connections(action["connections"]);
-        }
-        else if( action_name == "add_graph")
-        {
-            w.graph().add_graph(action["graph"]);
-        }
-        else if( action_name == "load_graph")
-        {
-            w.graph().load(action["path"].as_string());
-        }
-        else if( action_name == "save_graph")
-        {
-            w.graph().save(action["path"].as_string());
-        }
         else if( action_name == "execute")
         {
-            w.execute();
-            w.registry().reset();
+          ConnectGraphs();
+          w.execute();
+          w.registry().reset();
         }
         else if( action_name == "reset")
         {
             w.reset();
         }
-       */    
     }
-    ConnectGraphs();
-    w.execute();
-    w.registry().reset();
-    //ExecutePlots();
 }
 
 
