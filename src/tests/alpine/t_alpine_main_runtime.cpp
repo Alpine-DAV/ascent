@@ -93,7 +93,7 @@ TEST(alpine_pipeline, test_render_2d_main_pipeline)
     //
     Node actions;
 
-    Node &= actions.append();
+    Node &plot = actions.append();
     plot["action"]     = "add_plot";
     plot["field_name"] = "braid";
     
