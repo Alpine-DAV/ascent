@@ -21,6 +21,7 @@ struct Image
     std::vector<float>           m_depths; 
     int                          m_orig_rank;
     bool                         m_z_buffer_mode;
+    bool                         m_has_transparency;
     int                          m_composite_order;
 
     Image()
@@ -31,6 +32,7 @@ struct Image
         m_bounds(bounds),
         m_orig_rank(-1),
         m_z_buffer_mode(z_buffer_mode),
+        m_has_transparency(false),
         m_composite_order(-1)
 
     {
@@ -41,6 +43,16 @@ struct Image
         {
           m_depths.resize(dx * dy);
         }
+    }
+      
+    void SetHasTransparency(bool has_transparency)
+    {
+      m_has_transparency = has_transparency;
+    }
+
+    bool HasTransparency()
+    {
+      return m_has_transparency;
     }
 
     void Init(const float *color_buffer,
@@ -122,80 +134,6 @@ struct Image
       } // if depth
     }
 
-    void Composite(const Image &image)
-    {
-      if(m_z_buffer_mode)
-      {
-        ZComposite(image);
-      }
-      else
-      {
-        Blend(image);
-      }
-    }
-
-    void ZComposite(const Image &image)
-    {
-      assert(m_depths.size() == m_pixels.size() / 4);
-      assert(m_bounds.X.Min == image.m_bounds.X.Min); 
-      assert(m_bounds.Y.Min == image.m_bounds.Y.Min); 
-      assert(m_bounds.X.Max == image.m_bounds.X.Max); 
-      assert(m_bounds.Y.Max == image.m_bounds.Y.Max); 
-
-      const int size = static_cast<int>(m_depths.size()); 
-  
-#ifdef vtkh_USE_OPENMP
-      #pragma omp parallel for 
-#endif
-      for(int i = 0; i < size; ++i)
-      {
-        const float depth = image.m_depths[i];
-        if(depth > 1.f  || m_depths[i] < depth)
-        {
-          continue;
-        }
-        const int offset = i * 4;
-        m_depths[i] = depth;
-        m_pixels[offset + 0] = image.m_pixels[offset + 0];
-        m_pixels[offset + 1] = image.m_pixels[offset + 1];
-        m_pixels[offset + 2] = image.m_pixels[offset + 2];
-        m_pixels[offset + 3] = image.m_pixels[offset + 3];
-      }
-    }
-    void PrintColor(int i, float alpha) const
-    {
-      std::cout<<"["<<(int)m_pixels[i*4+0]<<","
-                    <<(int)m_pixels[i*4+1]<<","
-                    <<(int)m_pixels[i*4+2]<<","<<alpha<<"]\n";
-    } 
-
-    void Blend(const Image &image)
-    {
-      assert(m_bounds.X.Min == image.m_bounds.X.Min); 
-      assert(m_bounds.Y.Min == image.m_bounds.Y.Min); 
-      assert(m_bounds.X.Max == image.m_bounds.X.Max); 
-      assert(m_bounds.Y.Max == image.m_bounds.Y.Max); 
-
-      const int size = static_cast<int>(m_pixels.size() / 4); 
-  
-#ifdef VTKH_USE_OPENMP
-      #pragma omp parallel for 
-#endif
-      for(int i = 0; i < size; ++i)
-      {
-        const int offset = i * 4;
-        unsigned int alpha = m_pixels[offset + 3];// / 255.f;
-        const unsigned int opacity = 255 - alpha;//(1.f - alpha) * alpha2;
-        m_pixels[offset + 0] += 
-          static_cast<unsigned char>(opacity * image.m_pixels[offset + 0] / 255); 
-        m_pixels[offset + 1] += 
-          static_cast<unsigned char>(opacity * image.m_pixels[offset + 1] / 255); 
-        m_pixels[offset + 2] += 
-          static_cast<unsigned char>(opacity * image.m_pixels[offset + 2] / 255); 
-        m_pixels[offset + 3] += 
-          static_cast<unsigned char>(opacity * image.m_pixels[offset + 3] / 255); 
-      }
-    }
     
     void CompositeBackground(const float *color)
     {

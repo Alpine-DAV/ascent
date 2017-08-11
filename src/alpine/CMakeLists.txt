@@ -222,12 +222,20 @@ if(MPI_FOUND)
     if(ICET_FOUND)
         list(APPEND alpine_par_thirdparty_libs icet)
     endif()
-   
+
+    list(APPEND alpine_par_thirdparty_libs ${alpine_thirdparty_libs})
+
+    if(VTKM_FOUND)
+        # swap vtkh_par for vtkh
+        list(REMOVE_ITEM alpine_par_thirdparty_libs vtkh)
+        list(APPEND alpine_par_thirdparty_libs vtkh_par)
+    endif()
+
     blt_add_library(
         NAME        alpine_par
         SOURCES     ${alpine_sources} ${alpine_par_sources}
         HEADERS     ${alpine_headers} ${alpine_par_headers}
-        DEPENDS_ON  ${alpine_thirdparty_libs} ${alpine_par_thirdparty_libs})
+        DEPENDS_ON  ${alpine_par_thirdparty_libs})
     
     blt_add_target_compile_flags(TO alpine_par FLAGS "-D PARALLEL")
 

@@ -1,3 +1,4 @@
+#include <rendering/vtkh_image_compositor.hpp>
 #include "vtkh_diy_direct_send.hpp"
 #include "vtkh_diy_collect.hpp"
 #include "vtkh_diy_utils.hpp"
@@ -77,30 +78,19 @@ struct Redistribute
           //std::cout<<"rank "<<rank<<" rec "<<incoming[img].ToString()<<"\n";
         }
       } // for
-
-      const int total_images = images.size();
-      std::sort(images.begin(), images.end(), CompositeOrderSort());
-
-      for(int i = 1; i < total_images; ++i)
-      {
-        images[0].Blend(images[i]);
-      }
+      
+      ImageCompositor compositor;
+      compositor.OrderedComposite(images);
 
       block->m_output.Swap(images[0]);
       block->m_output.CompositeBackground(m_bg_color);
     } // else if
-    else
+    else if(block->m_images.at(0).m_z_buffer_mode &&
+            block->m_images.at(0).HasTransparency())
     {
-      /*
-      // z buffer compositing
-      for(int i = 0; i < proxy.in_link().size(); ++i)
-      {
-        Image image;
-        int gid = proxy.in_link().target(i).gid;
-        proxy.dequeue(gid, image); 
-        block
-      } // for
-      */
+      //
+      // we have images with a depth buffer and transparency
+      //
     }
 
   } // operator

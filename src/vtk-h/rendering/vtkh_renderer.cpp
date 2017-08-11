@@ -130,6 +130,7 @@ Renderer::SetCanvasBackgroundColor(float color[4])
     for(int j = 0; j < num_canvases; ++j)
     {
       m_canvases[i][j]->SetBackgroundColor(vtkm_color);
+      m_canvases[i][j]->Clear();
     }
   }
 }

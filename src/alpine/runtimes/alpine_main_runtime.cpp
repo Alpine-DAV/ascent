@@ -71,6 +71,8 @@
 #include <flow.hpp>
 #include <alpine_runtime_filters.hpp>
 
+#include <vtkh.hpp>
+
 using namespace conduit;
 using namespace std;
 
@@ -122,7 +124,9 @@ AlpineRuntime::Initialize(const conduit::Node &options)
     }
     
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].as_int());
-    
+   
+    MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].as_int());
+    vtkh::SetMPIComm(comm);
 #endif
 
     m_runtime_options = options;

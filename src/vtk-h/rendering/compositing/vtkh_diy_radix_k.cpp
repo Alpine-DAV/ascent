@@ -1,3 +1,4 @@
+#include <rendering/vtkh_image_compositor.hpp>
 #include "vtkh_diy_radix_k.hpp"
 #include "vtkh_diy_collect.hpp"
 #include "vtkh_diy_utils.hpp"
@@ -32,7 +33,8 @@ void reduce_images(void *b,
         }
         Image incoming; 
         proxy.dequeue(gid, incoming);
-        image.Composite(incoming);
+        vtkh::ImageCompositor compositor;
+        compositor.ZBufferComposite(image, incoming);
       } // for in links
   } 
 
