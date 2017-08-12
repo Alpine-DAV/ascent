@@ -83,7 +83,7 @@ TEST(vtkh_clip, vtkh_sphere_clip)
   vtkh::DataSet data_set;
  
   const int base_size = 32;
-  const int num_blocks = 1; 
+  const int num_blocks = 2; 
   
   for(int i = 0; i < num_blocks; ++i)
   {
@@ -111,18 +111,18 @@ TEST(vtkh_clip, vtkh_sphere_clip)
 
   vtkh::DataSet *clip_output = clipper.GetOutput();
   
-  vtkm::Bounds result_bounds = clip_output->GetGlobalBounds();
-  //std::cout<<"clip_bounds "<<clip_bounds<<" res bounds "<<result_bounds<<"\n";
-  //clip_output->PrintSummary(std::cout);
-  vtkm::cont::DataSet ds = clip_output->GetDomain(0);
-   
+  vtkm::Bounds bounds = clip_output->GetGlobalBounds();
 
   vtkm::rendering::Camera camera;
   camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
-  vtkm::Vec<vtkm::Float64, 3> look(0,0,0);
-  camera.SetLookAt(look);
+  camera.ResetToBounds(bounds);
+  vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(512, 
+                                                          512, 
+                                                          camera, 
+                                                          *clip_output, 
+                                                          "clip");  
   vtkh::RayTracer tracer;
-  tracer.AddCamera(camera);
+  tracer.AddRender(render);
   tracer.SetInput(clip_output);
   tracer.SetField("point_data"); 
   tracer.Update();

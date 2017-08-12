@@ -59,6 +59,7 @@ Compositor::AddImage(const unsigned char *color_buffer,
                      depth_buffer,
                      width,
                      height);
+    //m_images[0].Save("first.png");
   }
   else if(m_composite_mode == Z_BUFFER_SURFACE)
   {

@@ -91,16 +91,9 @@ VolumeRenderer::SetNumberOfSamples(const int num_samples)
 }
 
 Renderer::vtkmCanvasPtr 
-VolumeRenderer::GetNewCanvas()
+VolumeRenderer::GetNewCanvas(int width, int height)
 {
-  return std::make_shared<vtkm::rendering::CanvasRayTracer>();
-}
-void 
-VolumeRenderer::SetupCanvases()
-{
-  this->CreateCanvases();
-  float black[4] = {0.f, 0.f, 0.f, 0.f};
-  this->SetCanvasBackgroundColor(black);
+  return std::make_shared<vtkm::rendering::CanvasRayTracer>(width, height);
 }
 
 float 
@@ -155,12 +148,15 @@ VolumeRenderer::Composite(const int &num_images)
 
   for(int i = 0; i < num_images; ++i)
   {
-    for(int dom = 0; dom < num_domains; ++dom)
+    const int num_canvases = m_renders[i].GetNumberOfCanvases();
+
+    for(int dom = 0; dom < num_canvases; ++dom)
     {
-      float* color_buffer = &GetVTKMPointer(m_canvases[dom][i]->GetColorBuffer())[0][0]; 
-      float* depth_buffer = GetVTKMPointer(m_canvases[dom][i]->GetDepthBuffer()); 
-      int height = m_canvases[dom][i]->GetHeight();
-      int width = m_canvases[dom][i]->GetWidth();
+      float* color_buffer = &GetVTKMPointer(m_renders[i].GetCanvas(dom)->GetColorBuffer())[0][0]; 
+      float* depth_buffer = GetVTKMPointer(m_renders[i].GetCanvas(dom)->GetDepthBuffer()); 
+
+      int height = m_renders[i].GetCanvas(dom)->GetHeight();
+      int width = m_renders[i].GetCanvas(dom)->GetWidth();
 
       m_compositor->AddImage(color_buffer,
                              width,
@@ -169,13 +165,27 @@ VolumeRenderer::Composite(const int &num_images)
     } //for dom
 
     Image result = m_compositor->Composite();
-    const std::string image_name = "output.png";
+    const std::string image_name = m_renders[i].GetImageName() + ".png";
 #ifdef PARALLEL
     if(vtkh::GetMPIRank() == 0)
     {
+      float bg_color[4];
+      bg_color[0] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[0];
+      bg_color[1] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[1];
+      bg_color[2] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[2];
+      bg_color[3] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[3];
+
+      result.CompositeBackground(bg_color);
       result.Save(image_name);
     }
 #else
+      float bg_color[4];
+      bg_color[0] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[0];
+      bg_color[1] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[1];
+      bg_color[2] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[2];
+      bg_color[3] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[3];
+
+      result.CompositeBackground(bg_color);
     result.Save(image_name);
 #endif
     m_compositor->ClearImages();
@@ -323,7 +333,7 @@ void
 VolumeRenderer::FindVisibilityOrdering()
 {
   const int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
-  const int num_cameras = static_cast<int>(m_cameras.size());
+  const int num_cameras = static_cast<int>(m_renders.size());
 
   m_visibility_orders.resize(num_cameras);
 
@@ -344,7 +354,7 @@ VolumeRenderer::FindVisibilityOrdering()
 
   for(int i = 0; i < num_cameras; ++i)
   {
-    const vtkm::rendering::Camera &camera = m_cameras[i];
+    const vtkm::rendering::Camera &camera = m_renders[i].GetCamera();
     for(int dom = 0; dom < num_domains; ++dom)
     {
       vtkm::Bounds bounds = this->m_input->GetDomainBounds(dom);

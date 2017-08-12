@@ -15,11 +15,8 @@ namespace vtkh {
 
 Renderer::Renderer()
   : m_color_table("cool2warm"),
-    m_width(1024),
-    m_height(1024),
-    m_batch_size(10),
-    m_field_index(0),
-    m_background_color{1.f, 1.f, 1.f, 1.f}
+    m_do_composite(true),
+    m_field_index(0)
 {
   m_compositor  = NULL; 
 #ifdef PARALLEL
@@ -41,35 +38,28 @@ Renderer::SetField(const std::string field_name)
   m_field_name = field_name; 
 }
 
-void
-Renderer::AddCamera(const vtkm::rendering::Camera &camera)
-{
-  m_cameras.push_back(camera); 
-}
-
-int
-Renderer::GetNumberOfCameras() const
-{
-  return static_cast<int>(m_cameras.size());
-}
-
-void
-Renderer::ClearCameras()
-{
-  m_cameras.clear(); 
-}
-
 void 
-Renderer::SetImageBatchSize(const int &batch_size)
+Renderer::SetDoComposite(bool do_composite)
 {
-  assert(batch_size > 0);
-  m_batch_size = batch_size;
+  m_do_composite = do_composite;
+}
+
+void
+Renderer::AddRender(vtkh::Render &render)
+{
+  m_renders.push_back(render); 
 }
 
 int
-Renderer::GetImageBatchSize() const 
+Renderer::GetNumberOfRenders() const
 {
-  return m_batch_size;
+  return static_cast<int>(m_renders.size());
+}
+
+void
+Renderer::ClearRenders()
+{
+  m_renders.clear(); 
 }
 
 void Renderer::SetColorTable(const vtkm::rendering::ColorTable &color_table)
@@ -81,7 +71,7 @@ vtkm::rendering::ColorTable Renderer::GetColorTable() const
 {
   return m_color_table;
 }
-
+/*
 void 
 Renderer::CreateCanvases()
 {
@@ -106,50 +96,25 @@ Renderer::CreateCanvases()
   }
   
 }
-
-void 
-Renderer::SetupCanvases()
-{
-  CreateCanvases();  
-  SetCanvasBackgroundColor(m_background_color);
-}
-
-
-void 
-Renderer::SetCanvasBackgroundColor(float color[4])
-{
-  int current_size = static_cast<int>(m_canvases.size());
-  vtkm::rendering::Color vtkm_color;
-  vtkm_color.Components[0] = color[0];
-  vtkm_color.Components[1] = color[1];
-  vtkm_color.Components[2] = color[2];
-  vtkm_color.Components[3] = color[3];
-  for(int i = 0; i < current_size; ++i)
-  {
-    int num_canvases = static_cast<int>(m_canvases[i].size());
-    for(int j = 0; j < num_canvases; ++j)
-    {
-      m_canvases[i][j]->SetBackgroundColor(vtkm_color);
-      m_canvases[i][j]->Clear();
-    }
-  }
-}
+*/
 
 void 
 Renderer::Composite(const int &num_images)
 {
-  const int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
 
   m_compositor->SetCompositeMode(Compositor::Z_BUFFER_SURFACE);
+  std::cout<<"Compositing num_images "<<num_images<<"\n";
 
   for(int i = 0; i < num_images; ++i)
   {
-    for(int dom = 0; dom < num_domains; ++dom)
+    const int num_canvases = m_renders[i].GetNumberOfCanvases();
+    for(int dom = 0; dom < num_canvases; ++dom)
     {
-      float* color_buffer = &GetVTKMPointer(m_canvases[dom][i]->GetColorBuffer())[0][0]; 
-      float* depth_buffer = GetVTKMPointer(m_canvases[dom][i]->GetDepthBuffer()); 
-      int height = m_canvases[dom][i]->GetHeight();
-      int width = m_canvases[dom][i]->GetWidth();
+      float* color_buffer = &GetVTKMPointer(m_renders[i].GetCanvas(dom)->GetColorBuffer())[0][0]; 
+      float* depth_buffer = GetVTKMPointer(m_renders[i].GetCanvas(dom)->GetDepthBuffer()); 
+
+      int height = m_renders[i].GetCanvas(dom)->GetHeight();
+      int width = m_renders[i].GetCanvas(dom)->GetWidth();
 
       m_compositor->AddImage(color_buffer,
                              depth_buffer,
@@ -158,7 +123,7 @@ Renderer::Composite(const int &num_images)
     } //for dom
 
     Image result = m_compositor->Composite();
-    const std::string image_name = "output.png";
+    const std::string image_name = m_renders[i].GetImageName() + ".png";
 #ifdef PARALLEL
     if(vtkh::GetMPIRank() == 0)
     {
@@ -181,25 +146,10 @@ Renderer::Render()
   }
   
 
-  // check to see if any cameras were set.
-  // if not, then just render with the default camera.
-  bool using_default_camera = false;
-  if(m_cameras.size() == 0)
-  {
-    m_cameras.push_back(m_default_camera);
-    using_default_camera = true;
-  }
-  
-  this->SetupCanvases();
-
-  int total_images = static_cast<int>(m_cameras.size());
+  int total_renders = static_cast<int>(m_renders.size());
   int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
-  int images_processed = 0;
-  
-  while(images_processed < total_images)
+  for(int i = 0; i < total_renders; ++i)
   {
-    int images_remaining = total_images - images_processed;
-    int current_batch_size = std::min(images_remaining, m_batch_size);   
     for(int dom = 0; dom < num_domains; ++dom)
     {
       vtkm::cont::DataSet data_set; 
@@ -208,33 +158,24 @@ Renderer::Render()
       const vtkm::cont::DynamicCellSet &cellset = data_set.GetCellSet();
       const vtkm::cont::Field &field = data_set.GetField(m_field_index);
       const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
-      for(int i = 0; i < current_batch_size; ++i)
-      {
-        // paint
-        vtkmCanvasPtr p_canvas = m_canvases[dom][i];
-        int current_image = images_processed + i;
-        vtkmCamera camera = m_cameras[i]; 
-        m_mapper->SetCanvas(&(*p_canvas));
-        m_mapper->RenderCells(cellset,
-                              coords,
-                              field,
-                              m_color_table,
-                              camera,
-                              m_range);
-      }
+      // paint
+      vtkmCanvasPtr p_canvas = m_renders[i].GetDomainCanvas(domain_id);
+      const vtkmCamera &camera = m_renders[i].GetCamera();; 
+      m_mapper->SetCanvas(&(*p_canvas));
+      m_mapper->RenderCells(cellset,
+                            coords,
+                            field,
+                            m_color_table,
+                            camera,
+                            m_range);
+      p_canvas->SaveAs("out.pnm");
     }
 
-    this->Composite(current_batch_size);
-    //
-    // TODO: output the images to png or into the data set
-    //
-    images_processed += current_batch_size;
   }
 
-  // remove the default camera
-  if(using_default_camera)
+  if(m_do_composite)
   {
-    m_cameras.clear();
+    this->Composite(total_renders);
   }
 
 }
@@ -242,8 +183,6 @@ Renderer::Render()
 void 
 Renderer::PreExecute() 
 {
-  m_bounds = this->m_input->GetGlobalBounds();
-  m_default_camera.ResetToBounds(m_bounds);
   // Look for a provided field 
   if(m_field_name != "")
   {
@@ -260,7 +199,7 @@ Renderer::PreExecute()
   //
   assert(num_components == 1);
   m_range = ranges.GetPortalControl().Get(0);
-
+  m_bounds = m_input->GetGlobalBounds();
   m_mapper->SetActiveColorTable(m_color_table);
 }
 

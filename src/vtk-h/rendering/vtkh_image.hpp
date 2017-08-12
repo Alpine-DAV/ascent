@@ -44,7 +44,12 @@ struct Image
           m_depths.resize(dx * dy);
         }
     }
-      
+
+    int GetNumberOfPixels() const 
+    {
+      return static_cast<int>(m_pixels.size() / 4); 
+    }
+    
     void SetHasTransparency(bool has_transparency)
     {
       m_has_transparency = has_transparency;

@@ -36,10 +36,22 @@ TEST(vtkh_raytracer, vtkh_parallel_render)
     int domain_id = rank * blocks_per_rank + i;
     data_set.AddDomain(CreateTestData(domain_id, num_blocks, base_size), domain_id);
   }
+
+  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+
+  vtkm::rendering::Camera camera;
+  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  camera.ResetToBounds(bounds);
+  vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(512, 
+                                                          512, 
+                                                          camera, 
+                                                          data_set, 
+                                                          "ray_tracer_par");  
   
   vtkh::RayTracer tracer;
    
   tracer.SetInput(&data_set);
+  tracer.AddRender(render);
   tracer.SetField("point_data"); 
 
   tracer.Update();

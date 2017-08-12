@@ -54,9 +54,18 @@ TEST(vtkh_marching_cubes_par, vtkh_parallel_marching_cubes)
   marcher.Update();
 
   vtkh::DataSet *iso_output = marcher.GetOutput();
+  vtkm::Bounds bounds = iso_output->GetGlobalBounds();
 
+  vtkm::rendering::Camera camera;
+  camera.ResetToBounds(bounds);
+  vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(512, 
+                                                          512, 
+                                                          camera, 
+                                                          *iso_output, 
+                                                          "iso_par");  
   vtkh::RayTracer tracer;
   tracer.SetInput(iso_output);
+  tracer.AddRender(render);
   tracer.SetField("cell_data"); 
   tracer.Update();
 

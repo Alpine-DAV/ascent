@@ -88,9 +88,27 @@ struct Redistribute
     else if(block->m_images.at(0).m_z_buffer_mode &&
             block->m_images.at(0).HasTransparency())
     {
+      assert(m_bg_color != NULL);
+      std::vector<Image> images;
+      for(int i = 0; i < proxy.in_link().size(); ++i)
+      {
+
+        std::vector<Image> incoming;
+        int gid = proxy.in_link().target(i).gid;
+        proxy.dequeue(gid, incoming); 
+        const int in_size = incoming.size();
+        for(int img = 0; img < in_size; ++img)
+        {
+          images.emplace_back(incoming[img]);
+          //std::cout<<"rank "<<rank<<" rec "<<incoming[img].ToString()<<"\n";
+        }
+      } // for
+      
       //
       // we have images with a depth buffer and transparency
       //
+      ImageCompositor compositor;
+      compositor.ZBufferBlend(images);
     }
 
   } // operator

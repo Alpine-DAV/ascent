@@ -12,10 +12,9 @@ class VolumeRenderer : public Renderer
 public:
   VolumeRenderer();
   virtual ~VolumeRenderer();
-  virtual Renderer::vtkmCanvasPtr GetNewCanvas() override;
+  static Renderer::vtkmCanvasPtr GetNewCanvas(int width = 1024, int height = 1024);
   void SetNumberOfSamples(const int num_samples);
 protected:  
-  virtual void SetupCanvases() override;
   virtual void Composite(const int &num_images) override;
   void PreExecute() override;
 

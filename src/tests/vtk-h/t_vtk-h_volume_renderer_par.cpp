@@ -37,12 +37,25 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
     data_set.AddDomain(CreateTestData(domain_id, num_blocks, base_size), domain_id);
   }
   
-  vtkh::VolumeRenderer tracer;
+  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+
+  vtkm::rendering::Camera camera;
+  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  camera.ResetToBounds(bounds);
+  vtkh::Render render = vtkh::MakeRender<vtkh::VolumeRenderer>(512, 
+                                                               512, 
+                                                               camera, 
+                                                               data_set, 
+                                                               "volume_par");  
+
   vtkm::rendering::ColorTable color_map("cool2warm"); 
   color_map.AddAlphaControlPoint(0.0, .05);
   color_map.AddAlphaControlPoint(1.0, .05);
+  
+  vtkh::VolumeRenderer tracer;
   tracer.SetColorTable(color_map);
   tracer.SetInput(&data_set);
+  tracer.AddRender(render);
   tracer.SetField("point_data"); 
 
   tracer.Update();
