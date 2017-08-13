@@ -163,7 +163,6 @@ MakeRender(int width,
     vtkm::cont::DataSet ds; 
     vtkm::Id domain_id;
     data_set.GetDomain(i, ds, domain_id);
-
     auto canvas = RendererType::GetNewCanvas(width, height);
 
     canvas->SetBackgroundColor(color);

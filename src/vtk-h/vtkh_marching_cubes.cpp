@@ -81,7 +81,7 @@ void MarchingCubes::DoExecute()
   marcher.SetIsoValues(m_iso_values);
  
   const int num_domains = this->m_input->GetNumberOfDomains(); 
-
+  int valid = 0;
   for(int i = 0; i < num_domains; ++i)
   {
     vtkm::Id domain_id;
@@ -95,6 +95,7 @@ void MarchingCubes::DoExecute()
       // we have to check.
       continue;
     }
+    valid++;
     vtkm::filter::ResultDataSet res = marcher.Execute(dom, m_field_name);
     for(size_t f = 0; f < m_map_fields.size(); ++f)
     {

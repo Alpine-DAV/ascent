@@ -73,6 +73,10 @@
 
 #include <vtkh.hpp>
 
+#ifdef VTKM_CUDA
+#include <vtkm/cont/cuda/ChooseCudaDevice.h>
+#endif
+
 using namespace conduit;
 using namespace std;
 
@@ -127,6 +131,43 @@ AlpineRuntime::Initialize(const conduit::Node &options)
    
     MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].as_int());
     vtkh::SetMPIComm(comm);
+#ifdef VTKM_CUDA
+    //
+    //  If we are using cuda, figure out how many devices we have and
+    //  assign a GPU based on rank.
+    //
+    int device_count = 0;
+    cudaError_t err = cudaGetDeviceCount(&device_count);
+    if (err == cudaSuccess && device_count > 0 && device_count <= 256)
+    {
+        int rank;  
+        MPI_Comm_rank(comm,&rank);
+        int rank_device = rank % device_count;
+        err = cudaSetDevice(rank_device);
+        if(err != cudaSuccess)
+        {
+            ALPINE_ERROR("Failed to set GPU " 
+                           <<rank_device
+                           <<" out of "<<device_count
+                           <<" GPUs. Make sure there"
+                           <<" are an equal amount of"
+                           <<" MPI ranks/gpus per node.");
+        }
+        else
+        {
+
+            char proc_name[100];
+            int length=0;
+            MPI_Get_processor_name(proc_name, &length);
+
+        }
+        cuda_device  = rank_device;
+    }
+    else
+    {
+        ALPINE_ERROR("VTKm GPUs is enabled but none found");
+    }
+#endif
 #endif
 
     m_runtime_options = options;

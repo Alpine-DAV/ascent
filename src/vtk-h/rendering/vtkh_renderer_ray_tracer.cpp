@@ -8,7 +8,9 @@ namespace vtkh {
 RayTracer::RayTracer()
 {
   typedef vtkm::rendering::MapperRayTracer TracerType;
-  this->m_mapper = std::make_shared<TracerType>();
+  auto mapper = std::make_shared<TracerType>();
+  mapper->SetCompositeBackground(false);
+  this->m_mapper = mapper;
 }
 
 RayTracer::~RayTracer()

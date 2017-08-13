@@ -64,7 +64,6 @@ void
 VolumeRenderer::PreExecute() 
 {
   Renderer::PreExecute();
-  
   const float default_samples = 200.f;
   float samples = default_samples;
   if(m_num_samples != -1)
@@ -186,7 +185,7 @@ VolumeRenderer::Composite(const int &num_images)
       bg_color[3] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[3];
 
       result.CompositeBackground(bg_color);
-    result.Save(image_name);
+      result.Save(image_name);
 #endif
     m_compositor->ClearImages();
   } // for image
@@ -194,8 +193,8 @@ VolumeRenderer::Composite(const int &num_images)
 
 void 
 VolumeRenderer::DepthSort(const int &num_domains, 
-                              const std::vector<float> &min_depths,
-                              std::vector<int> &local_vis_order)
+                          const std::vector<float> &min_depths,
+                          std::vector<int> &local_vis_order)
 {
   assert(min_depths.size() == num_domains);
   assert(local_vis_order.size() == num_domains);
@@ -334,7 +333,6 @@ VolumeRenderer::FindVisibilityOrdering()
 {
   const int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
   const int num_cameras = static_cast<int>(m_renders.size());
-
   m_visibility_orders.resize(num_cameras);
 
   for(int i = 0; i < num_cameras; ++i)

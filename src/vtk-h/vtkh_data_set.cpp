@@ -38,7 +38,7 @@ DataSet::GetDomain(const vtkm::Id index)
 {
   const size_t num_domains = m_domains.size();
 
-  if(index >= num_domains && index < 0)
+  if(index >= num_domains || index < 0)
   {
     std::stringstream msg;
     msg<<"Get domain call failed. Invalid index "<<index
@@ -56,7 +56,7 @@ DataSet::GetDomain(const vtkm::Id index,
 {
   const size_t num_domains = m_domains.size();
 
-  if(index >= num_domains && index < 0)
+  if(index >= num_domains || index < 0)
   {
     std::stringstream msg;
     msg<<"Get domain call failed. Invalid index "<<index
@@ -276,6 +276,61 @@ DataSet::GetGlobalRange(const std::string &field_name) const
 
 #ifdef PARALLEL
   MPI_Comm mpi_comm = vtkh::GetMPIComm();
+  //
+  // it is possible to have an empty dataset at on of the ranks
+  // so we must check for this and so MPI comm does not hang.
+  // We also want to check for num components mis-match
+  // 
+  int *global_components = new int[vtkh::GetMPISize()];
+  int comps = static_cast<int>(num_components);
+
+  MPI_Allgather(&comps,
+                1,
+                MPI_INT,
+                global_components,
+                1,
+                MPI_INT,
+                mpi_comm);
+  int max_non_zero = 0;;
+  //
+  // find the largest component
+  //
+  for(int i = 0; i < vtkh::GetMPISize(); ++i)
+  {
+    if(global_components[i] != 0)
+    {
+      max_non_zero = std::max(global_components[i], max_non_zero);
+    }
+  }
+  //
+  // verify uniform component length
+  //
+  for(int i = 0; i < vtkh::GetMPISize(); ++i)
+  {
+    if(global_components[i] != 0)
+    {
+      if(max_non_zero != global_components[i])
+      {
+        std::stringstream msg;
+        msg<<"GetRange call failed. The number of components ("
+           <<global_components[i]<<") in field "
+           <<field_name<<" from rank"<<i<<" does not match the number of components in"
+           <<" the other ranks "<<max_non_zero;
+        throw Error(msg.str());
+      }
+    }
+  }
+  //
+  // if we do not have any components, then we need to init some
+  // empty ranges to participate in comm
+  //
+  if(num_components == 0)
+  {
+    range.Allocate(max_non_zero);
+    num_components = max_non_zero;
+  }
+
+  delete[] global_components;
   for(int i = 0; i < num_components; ++i)
   {
     vtkm::Range c_range = range.GetPortalControl().Get(i);

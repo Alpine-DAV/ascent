@@ -4,7 +4,7 @@
 #include <utils/vtkm_array_utils.hpp>
 #include <utils/vtkm_dataset_info.hpp>
 #include <utils/vtkh_png_encoder.hpp>
-
+#include <vtkm/rendering/raytracing/Logger.h>
 #ifdef PARALLEL
 #include <rendering/compositing/vtkh_diy_compositor.hpp>
 #endif
@@ -71,40 +71,13 @@ vtkm::rendering::ColorTable Renderer::GetColorTable() const
 {
   return m_color_table;
 }
-/*
-void 
-Renderer::CreateCanvases()
-{
-  int num_cameras = static_cast<int>(m_cameras.size()); 
-  int num_canvases = std::min(m_batch_size, num_cameras);
-  
-  int current_size = static_cast<int>(m_canvases.size());
-  int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
-  m_canvases.resize(num_domains);
-  
-  while(current_size < num_canvases)
-  {
-    for(int i = 0; i < num_domains; ++i)
-    {
-      //TODO: this could change if we can pass the same canvas to
-      //      vtkm renderers
-      //      Alternative: just take care of this when we transfer to
-      //      unsigned char
-      m_canvases[i].push_back(this->GetNewCanvas()); 
-    }
-    current_size++;
-  }
-  
-}
-*/
 
 void 
 Renderer::Composite(const int &num_images)
 {
 
   m_compositor->SetCompositeMode(Compositor::Z_BUFFER_SURFACE);
-  std::cout<<"Compositing num_images "<<num_images<<"\n";
-
+  std::cout<<"Comp "<<num_images<<"\n";
   for(int i = 0; i < num_images; ++i)
   {
     const int num_canvases = m_renders[i].GetNumberOfCanvases();
@@ -144,7 +117,6 @@ Renderer::Render()
     std::string msg = "Renderer Error: no renderer was set by sub-class"; 
     throw Error(msg);
   }
-  
 
   int total_renders = static_cast<int>(m_renders.size());
   int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
@@ -168,9 +140,7 @@ Renderer::Render()
                             m_color_table,
                             camera,
                             m_range);
-      p_canvas->SaveAs("out.pnm");
     }
-
   }
 
   if(m_do_composite)
@@ -183,16 +153,7 @@ Renderer::Render()
 void 
 Renderer::PreExecute() 
 {
-  // Look for a provided field 
-  if(m_field_name != "")
-  {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet data_set;
-    m_input->GetDomain(0, data_set, domain_id);
-    m_field_index = data_set.GetFieldIndex(m_field_name);
-  }
-
-  vtkm::cont::ArrayHandle<vtkm::Range> ranges = m_input->GetGlobalRange(m_field_index);
+  vtkm::cont::ArrayHandle<vtkm::Range> ranges = m_input->GetGlobalRange(m_field_name);
   int num_components = ranges.GetPortalControl().GetNumberOfValues();
   //
   // current vtkm renderers only supports single component scalar fields
