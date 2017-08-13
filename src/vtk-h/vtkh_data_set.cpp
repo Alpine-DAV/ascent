@@ -277,8 +277,8 @@ DataSet::GetGlobalRange(const std::string &field_name) const
 #ifdef PARALLEL
   MPI_Comm mpi_comm = vtkh::GetMPIComm();
   //
-  // it is possible to have an empty dataset at on of the ranks
-  // so we must check for this and so MPI comm does not hang.
+  // it is possible to have an empty dataset at one of the ranks
+  // so we must check for this so MPI comm does not hang.
   // We also want to check for num components mis-match
   // 
   int *global_components = new int[vtkh::GetMPISize()];
