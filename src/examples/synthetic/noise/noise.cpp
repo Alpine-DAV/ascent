@@ -504,9 +504,9 @@ int main(int argc, char** argv)
   scenes["scene1/plots/plt1/pipeline"]     = "pl1";
   scenes["scene1/plots/plt1/params/field"] = "zonal_noise";
 
-  scenes["scene1/plots/plt2/type"]         = "pseudocolor";
-  scenes["scene1/plots/plt2/pipeline"]     = "pl2";
-  scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
+  //scenes["scene1/plots/plt2/type"]         = "pseudocolor";
+  //scenes["scene1/plots/plt2/pipeline"]     = "pl2";
+  //scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
   //scenes["scene2/plots/pl2"];
   //scenes["scene3/plots/pl3"];
 
