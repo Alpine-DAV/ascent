@@ -114,7 +114,7 @@ void Clip::DoExecute()
       }
     }
 
-    vtkm::filter::ResultDataSet res = m_internals->m_clipper.Execute(dom);
+    vtkm::filter::Result res = m_internals->m_clipper.Execute(dom);
 
     for(size_t f = 0; f < m_map_fields.size(); ++f)
     {

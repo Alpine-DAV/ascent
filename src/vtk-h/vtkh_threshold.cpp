@@ -82,7 +82,7 @@ void Threshold::DoExecute()
     vtkm::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
-    vtkm::filter::ResultDataSet res = thresholder.Execute(dom, m_field_name);
+    vtkm::filter::Result res = thresholder.Execute(dom, m_field_name);
 
     for(size_t f = 0; f < m_map_fields.size(); ++f)
     {

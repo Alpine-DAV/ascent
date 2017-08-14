@@ -96,7 +96,7 @@ void MarchingCubes::DoExecute()
       continue;
     }
     valid++;
-    vtkm::filter::ResultDataSet res = marcher.Execute(dom, m_field_name);
+    vtkm::filter::Result res = marcher.Execute(dom, m_field_name);
     for(size_t f = 0; f < m_map_fields.size(); ++f)
     {
       marcher.MapFieldOntoOutput(res, dom.GetField(m_map_fields[f]));
