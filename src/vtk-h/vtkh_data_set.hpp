@@ -34,6 +34,7 @@ public:
                                vtkm::Id coordinate_system_index = 0) const;
   vtkm::cont::ArrayHandle<vtkm::Range> GetGlobalRange(const std::string &field_name) const;
   vtkm::cont::ArrayHandle<vtkm::Range> GetGlobalRange(const vtkm::Id index) const;
+  std::vector<vtkm::Id> GetDomainIds() const;
 
   /*! \brief IsStructured returns true if all domains, globally,
    *         are stuctured data sets of the same topological dimension. 

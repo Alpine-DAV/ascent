@@ -254,7 +254,6 @@ AlpineRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
     for(int i = 0; i < pipeline.number_of_children(); ++i)
     {
       conduit::Node filter = pipeline.child(i);
-      std::string name;
       std::string filter_name;
 
       if(!filter.has_path("type"))
@@ -286,10 +285,12 @@ AlpineRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
       {
         ALPINE_ERROR("Unrecognized filter "<<filter["type"].as_string());
       }
-
-      name = pipeline_name + "_" + filter_name;
+     
+      // create a unique name for the filter
+      std::stringstream ss;
+      ss<<pipeline_name<<"_"<<i<<"_"<<filter_name;
+      std::string name = ss.str(); 
       
-
       w.graph().add_filter(filter_name,
                            name,           
                            filter["params"]);
@@ -332,7 +333,8 @@ AlpineRuntime::CreatePipelines(const conduit::Node &pipelines)
 //-----------------------------------------------------------------------------
 void 
 AlpineRuntime::ConvertPlotToFlow(const conduit::Node &plot,
-                                 const std::string plot_name)
+                                 const std::string plot_name,
+                                 bool composite)
 {
   std::string filter_name; 
 
@@ -360,10 +362,19 @@ AlpineRuntime::ConvertPlotToFlow(const conduit::Node &plot,
     ALPINE_INFO("Duplicate plot name "<<plot_name
                 <<" original is being overwritted");
   }
-
+  //
+  // Plots are set to composite by default
+  // and only the last plot should perform
+  // compositing
+  //
+  conduit::Node params = plot["params"];
+  if(!composite)
+  {
+    params["composite"] = "false";
+  }
   w.graph().add_filter(filter_name,
                        plot_name,           
-                       plot["params"]);
+                       params);
 
   //
   // We can't connect the plot to the pipeline since
@@ -379,7 +390,7 @@ AlpineRuntime::ConvertPlotToFlow(const conduit::Node &plot,
     // default pipeline: directly connect to published data
     plot_source = "default";
   }
-
+  std::cout<<"Plot "<<plot_name<<" connects to "<<plot_source<<"\n";
   m_connections[plot_name] = plot_source;
 
 }
@@ -393,7 +404,8 @@ AlpineRuntime::CreatePlots(const conduit::Node &plots)
   {
     std::cout<<"plot name "<<names[i]<<"\n";
     conduit::Node plot = plots.child(i);
-    ConvertPlotToFlow(plot, names[i]);
+    bool composite = i == plots.number_of_children() - 1;
+    ConvertPlotToFlow(plot, names[i], composite);
   }
 }
 //-----------------------------------------------------------------------------
@@ -401,6 +413,7 @@ void
 AlpineRuntime::ConnectGraphs()
 {
   //create plot + pipine graphs
+  std::cout<<"Creating connections\n";
   m_connections.print(); 
   std::vector<std::string> names = m_connections.child_names(); 
   for (int i = 0; i < m_connections.number_of_children(); ++i)
@@ -419,6 +432,114 @@ AlpineRuntime::ConnectGraphs()
                       names[i], // dest
                       0);       // default port
   }
+  //w.graph().print();
+  std::cout<<"****************************\n";
+  std::cout<<w.graph().to_dot();
+}
+
+std::vector<std::string>
+AlpineRuntime::GetPipelines(const conduit::Node &plots)
+{
+  plots.print();
+  std::vector<std::string> pipelines;
+  std::vector<std::string> names = plots.child_names(); 
+  for(int i = 0; i < plots.number_of_children(); ++i)
+  {
+    std::cout<<"getting source from plot name "<<names[i]<<"\n";
+    conduit::Node plot = plots.child(i);
+    std::string pipeline;
+    if(plot.has_path("params/pipeline"))
+    {
+      pipeline = plot["params/pipeline"].as_string();
+    }
+    else
+    {
+      pipeline = CreateDefaultFilters(); 
+    }
+    std::cout<<"Adding pipeline "<<pipeline<<"\n";
+    pipelines.push_back(pipeline);
+  }
+  return pipelines;
+}
+
+void
+AlpineRuntime::CreateScenes(const conduit::Node &scenes)
+{
+
+  scenes.print();
+
+  std::vector<std::string> names = scenes.child_names(); 
+  for(int i = 0; i < scenes.number_of_children(); ++i)
+  {
+    conduit::Node scene = scenes.child(i);
+    std::cout<<"******scene name "<<names[i]<<"\n";
+    if(!scene.has_path("plots"))
+    {
+      ALPINE_ERROR("Default scene not implemented");
+    }
+
+    // create the default render 
+    conduit::Node count;
+    int plot_count = scene["plots"].number_of_children();
+    count["pipeline_count"] = plot_count;
+    std::string renders_name = names[i] + "_renders";           
+    
+    w.graph().add_filter("default_render",
+                          renders_name,
+                          count);
+    std::vector<std::string> pipelines = GetPipelines(scene["plots"]); 
+    std::vector<std::string> plot_names = scene["plots"].child_names();
+    CreatePlots(scene["plots"]);
+    for(int p = 0; i < plot_count; ++i)
+    {
+      //
+      // connect the plot source to the render filter.
+      // We need the input data set bounds to make a 
+      // default camera 
+      //
+      std::cout<<"Connecting pipeln "<<pipelines[i]<<" to default render "<<renders_name<<"\n";
+      w.graph().connect(pipelines[i], // src
+                        renders_name, // dest
+                        i);           // default port
+      //
+      // Connect the render to the plots
+      //
+      if(p == 0)
+      {
+        std::cout<<"Connecting renders "<<renders_name<<" to plot "<<plot_names[i]<<"\n";
+        //
+        // first plot connects to the render filter
+        // on the second port
+        w.graph().connect(renders_name,   // src
+                          plot_names[i], // dest
+                          1);           // default port
+      }
+      else
+      {
+        std::cout<<"Connecting plot "<<plot_names[i-1]<<" to plot "<<plot_names[i]<<"\n";
+        //
+        // Connect plot output to the next plot
+        //
+        w.graph().connect(plot_names[i-1],   // src
+                          plot_names[i],     // dest
+                          1);                // default port
+
+      }
+      
+    }
+
+    const int max_inputs = 3;
+    int pad = max_inputs - plot_count;
+    for(int i = 0; i < pad; ++i)
+    {
+      std::cout<<"Padding default render input "<<max_inputs - i -1<<"\n";;
+      w.graph().connect(pipelines[0], // src
+                        renders_name, // dest
+                        max_inputs - i - 1);           // default port
+    }
+  }
+
+  //CreatePlots(action["plots"]);
 }
 //-----------------------------------------------------------------------------
 void
@@ -438,9 +559,9 @@ AlpineRuntime::Execute(const conduit::Node &actions)
           CreatePipelines(action["pipelines"]);
         }
 
-        if(action_name == "add_plots")
+        if(action_name == "add_scenes")
         {
-          CreatePlots(action["plots"]);
+          CreateScenes(action["scenes"]);
         }
         
         else if( action_name == "execute")

@@ -176,7 +176,8 @@ VTKHRayTracer::declare_interface(Node &i)
 {
     i["type_name"]   = "vtkh_raytracer";
     i["port_names"].append() = "in";
-    i["output_port"] = "false";
+    i["port_names"].append() = "renders";
+    i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
@@ -202,17 +203,41 @@ VTKHRayTracer::execute()
 {
     if(!input(0).check_type<vtkh::DataSet>())
     {
-        ALPINE_ERROR("vtkh_raytracer input must be a vtk-h dataset");
+        ALPINE_ERROR("vtkh_raytracer input0 must be a vtk-h dataset");
+    }
+    if(!input(1).check_type<std::vector<vtkh::Render>>())
+    {
+        ALPINE_ERROR("vtkh_raytracer input1 must be a vth-h render");
     }
  
     ALPINE_INFO("Doing the render!");
-    
+    bool composite = true;
+    if(params().has_path("composite"))
+    {
+      if(params()["composite"].as_string() == "false")
+      {
+        composite = false; 
+      }
+    }    
+
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    std::vector<vtkh::Render> *renders = input<std::vector<vtkh::Render>>(1);
     vtkh::RayTracer ray_tracer;  
     ray_tracer.SetInput(data);
+    ray_tracer.SetDoComposite(composite);
+    ray_tracer.SetRenders(*renders);
     ray_tracer.SetField(params()["field"].as_string());
     ray_tracer.Update();
     
+    std::vector<vtkh::Render> out_renders = ray_tracer.GetRenders();
+    //
+    // We need to create a new pointer for the output because the input will be deleted
+    // There is only a small amount of overhead since the canvases contained 
+    // in the render will be shallow copied.
+    //
+    std::vector<vtkh::Render> *renders_ptr = new std::vector<vtkh::Render>();
+    *renders_ptr = out_renders;
+    set_output<std::vector<vtkh::Render>>(renders_ptr);
 }
 
 
@@ -235,6 +260,7 @@ VTKHMarchingCubes::declare_interface(Node &i)
 {
     i["type_name"]   = "vtkh_marchingcubes";
     i["port_names"].append() = "in";
+    i["port_names"].append() = "render";
     i["output_port"] = "true";
 }
 
@@ -386,6 +412,94 @@ VTKHThreshold::execute()
     set_output<vtkh::DataSet>(thresh_output);
 }
 
+
+//-----------------------------------------------------------------------------
+DefaultRender::DefaultRender()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+DefaultRender::~DefaultRender()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+DefaultRender::declare_interface(Node &i)
+{
+    i["type_name"] = "default_render";
+    i["port_names"].append() = "a";
+    i["port_names"].append() = "b";
+    i["port_names"].append() = "c";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+DefaultRender::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    
+    if(! params.has_child("pipeline_count")) 
+    {
+        info["errors"].append() = "Missing required numeric parameter 'pipelines'";
+    }
+  
+    return res;
+}
+
+static int s_image_count = 0;
+//-----------------------------------------------------------------------------
+void 
+DefaultRender::execute()
+{
+
+    ALPINE_INFO("We be default rendering!");
+    
+      
+    const int count = params()["pipeline_count"].as_int32();
+    vtkm::Bounds bounds;
+    std::vector<vtkm::Id> domain_ids;
+    vtkm::Id largest_dom_count = 0;
+    for(int i = 0; i < count; ++i)
+    {
+      if(!input(i).check_type<vtkh::DataSet>())
+      {
+          ALPINE_ERROR("All inputs must be a vtk-h dataset");
+      }
+      vtkh::DataSet *data = input<vtkh::DataSet>(0);
+      bounds.Include(data->GetGlobalBounds()); 
+      //
+      // we need to create one canvas for each domain.
+      // Since filters can create empty data sets, we 
+      // need to keep track of the most "complete"
+      // data set
+      //
+      vtkm::Id dom_count = data->GetGlobalNumberOfDomains();
+      if(largest_dom_count < dom_count)
+      {
+        domain_ids = data->GetDomainIds();
+        largest_dom_count = dom_count;
+      }
+    }
+    std::stringstream ss;
+    ss<<"default_image_"<<s_image_count;
+    s_image_count++;
+    std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
+    vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(1024,
+                                                            1024, 
+                                                            bounds,
+                                                            domain_ids,
+                                                            ss.str());
+
+    renders->push_back(render); 
+    set_output<std::vector<vtkh::Render>>(renders);
+}
 
 //-----------------------------------------------------------------------------
 VTKHClip::VTKHClip()

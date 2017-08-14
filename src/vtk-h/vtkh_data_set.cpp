@@ -49,6 +49,13 @@ DataSet::GetDomain(const vtkm::Id index)
   return  m_domains[index];
 
 }
+
+std::vector<vtkm::Id>
+DataSet::GetDomainIds() const
+{
+  return m_domain_ids;
+}
+
 void 
 DataSet::GetDomain(const vtkm::Id index, 
                    vtkm::cont::DataSet &data_set, 

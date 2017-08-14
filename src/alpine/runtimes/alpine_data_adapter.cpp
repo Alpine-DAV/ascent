@@ -93,10 +93,16 @@ DataAdapter::BlueprintToVTKHDataSet(const Node &node,
                                                                     topo_name);
     
     int domain_id = 0;
-    if(node.has_path("state/domain_id"))
+    if(!node.has_path("state/domain_id"))
     {
         domain_id = node["state/domain_id"].to_int();
     }
+#ifdef PARALLEL
+    else
+    {
+       domain_id = vtkh::GetMPIRank();
+    }
+#endif
 
     vtkh::DataSet *res = new vtkh::DataSet;
     res->AddDomain(*dset,domain_id);

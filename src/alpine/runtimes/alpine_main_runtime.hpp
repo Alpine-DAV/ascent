@@ -87,15 +87,20 @@ private:
     // conduit node that (externally) holds the data from the simulation
     conduit::Node     m_data; 
     conduit::Node     m_connections; 
+    conduit::Node     m_scene_connections; 
 
     flow::Workspace w;
     std::string CreateDefaultFilters();
     void ConvertToFlowGraph(const conduit::Node &pipeline,
                             const std::string pipeline_name);
     void ConvertPlotToFlow(const conduit::Node &plot,
-                           const std::string plot_name);
+                           const std::string plot_name,
+                           bool composite);
     void CreatePipelines(const conduit::Node &pipelines);
     void CreatePlots(const conduit::Node &plots);
+    std::vector<std::string> GetPipelines(const conduit::Node &plots);
+    void CreateScenes(const conduit::Node &scenes);
+    void ConvertSceneToFlow(const conduit::Node &scenes);
     void ConnectGraphs();
     void ExecuteGraphs();
 };

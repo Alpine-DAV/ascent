@@ -202,6 +202,7 @@ Compositor::CompositeZBufferSurface()
 {
   // nothing to do here. Images were composited as 
   // they were added to the compositor
+  m_images[0].CompositeBackground(m_background_color);
 }
 
 void 

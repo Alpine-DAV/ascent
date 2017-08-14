@@ -109,6 +109,7 @@ register_builtin()
     Workspace::register_filter_type<VTKHClip>();
     Workspace::register_filter_type<VTKHThreshold>();
     Workspace::register_filter_type<Alias>();
+    Workspace::register_filter_type<DefaultRender>();
 #endif
 
     

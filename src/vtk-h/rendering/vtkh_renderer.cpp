@@ -50,6 +50,18 @@ Renderer::AddRender(vtkh::Render &render)
   m_renders.push_back(render); 
 }
 
+std::vector<vtkh::Render>
+Renderer::GetRenders()
+{
+  return m_renders; 
+}
+
+void
+Renderer::SetRenders(const std::vector<vtkh::Render> &renders)
+{
+  m_renders = renders; 
+}
+
 int
 Renderer::GetNumberOfRenders() const
 {
@@ -81,6 +93,15 @@ Renderer::Composite(const int &num_images)
   for(int i = 0; i < num_images; ++i)
   {
     const int num_canvases = m_renders[i].GetNumberOfCanvases();
+
+    float bg_color[4];
+    vtkm::rendering::Color color = m_renders[i].GetCanvas(0)->GetBackgroundColor();
+    bg_color[0] = color.Components[0];
+    bg_color[1] = color.Components[1];
+    bg_color[2] = color.Components[2];
+    bg_color[3] = color.Components[3];
+    m_compositor->SetBackgroundColor(bg_color);
+
     for(int dom = 0; dom < num_canvases; ++dom)
     {
       float* color_buffer = &GetVTKMPointer(m_renders[i].GetCanvas(dom)->GetColorBuffer())[0][0]; 

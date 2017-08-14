@@ -119,6 +119,8 @@ MakeRender(int width,
   vtkh::Render render;
   vtkm::rendering::Camera camera;
   camera.ResetToBounds(scene_bounds);
+  camera.Azimuth(30.f);
+  camera.Elevation(25.f);
   render.SetCamera(camera);
   render.SetImageName(image_name);
 
@@ -190,7 +192,8 @@ public:
   void SetDoComposite(bool do_composite);
   vtkm::rendering::ColorTable GetColorTable() const;
   int  GetNumberOfRenders() const; 
-  
+  std::vector<Render> GetRenders(); 
+  void SetRenders(const std::vector<Render> &renders);
 protected:
   
   // image related data with cinema support

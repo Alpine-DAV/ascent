@@ -648,6 +648,7 @@ Registry::fetch(const std::string &key)
 {
     if(!m_map->has_entry(key))
     {
+        print();
         CONDUIT_ERROR("Attempt to fetch unknown key: " << key);
     }
     

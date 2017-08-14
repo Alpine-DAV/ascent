@@ -444,7 +444,13 @@ int main(int argc, char** argv)
   conduit::Node alpine_node;
   alpine_node["state/time"].set_external(&time);
   alpine_node["state/cycle"].set_external(&time);
-  alpine_node["state/domain"] = 0;//myRank;
+#ifdef PARALLEL  
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  alpine_node["state/domain_id"] = rank;
+#else
+  alpine_node["state/domain_id"] = 0;
+#endif
   alpine_node["state/info"] = "simplex noise";
   data_set.PopulateNode(alpine_node);
   alpine.publish(alpine_node);
@@ -457,27 +463,33 @@ int main(int argc, char** argv)
   contour_params["field"] = "nodal_noise";
   contour_params["iso_values"] = 0.0;
 
-  // pipeline 2 
-  pipelines["pl2/f1/type"] = "threshold";
+  pipelines["pl2/f1/type"] = "contour";
   // filter knobs
-  conduit::Node &thresh_params = pipelines["pl2/f1/params"];
-  thresh_params["field"]  = "zonal_noise";
-  thresh_params["min_value"] = 0.0;
-  thresh_params["max_value"] = 0.5;
+  conduit::Node &contour2_params = pipelines["pl2/f1/params"];
+  contour2_params["field"] = "nodal_noise";
+  contour2_params["iso_values"] = 0.8;
 
-  pipelines["pl2/f2/type"]   = "clip";
+  //// pipeline 2 
+  //pipelines["pl2/f1/type"] = "threshold";
+  //// filter knobs
+  //conduit::Node &thresh_params = pipelines["pl2/f1/params"];
+  //thresh_params["field"]  = "zonal_noise";
+  //thresh_params["min_value"] = 0.0;
+  //thresh_params["max_value"] = 0.5;
+
+  //pipelines["pl2/f2/type"]   = "clip";
   // filter knobs
-  conduit::Node &clip_params = pipelines["pl2/f2/params/"];
-  clip_params["topology"] = "mesh";
-  clip_params["sphere/center/x"] = 0.0;
-  clip_params["sphere/center/y"] = 0.0;
-  clip_params["sphere/center/z"] = 0.0;
-  clip_params["sphere/radius"]   = .1;
+  //conduit::Node &clip_params = pipelines["pl2/f2/params/"];
+  //clip_params["topology"] = "mesh";
+  //clip_params["sphere/center/x"] = 0.0;
+  //clip_params["sphere/center/y"] = 0.0;
+  //clip_params["sphere/center/z"] = 0.0;
+  //clip_params["sphere/radius"]   = .1;
   
-  conduit::Node plots;
-  plots["plot1/type"]    = "pseudocolor";
-  plots["plot1/pipeline"]     = "pl1";
-  plots["plot1/params/field"] = "zonal_noise";
+  //conduit::Node plots;
+  //plots["plot1/type"]    = "pseudocolor";
+  //plots["plot1/pipeline"]     = "pl1";
+  //plots["plot1/params/field"] = "zonal_noise";
 
   //plots["plot2/type"]    = "pseudocolor";
   //plots["plot2/pipeline"]     = "pl2";
@@ -488,7 +500,13 @@ int main(int argc, char** argv)
   //plots["plot3/params/field"] = "nodal_noise";
   
   conduit::Node scenes;
-  scenes["scene1/plots/pl1"];
+  scenes["scene1/plots/plt1/type"]         = "pseudocolor";
+  scenes["scene1/plots/plt1/pipeline"]     = "pl1";
+  scenes["scene1/plots/plt1/params/field"] = "zonal_noise";
+
+  scenes["scene1/plots/plt2/type"]         = "pseudocolor";
+  scenes["scene1/plots/plt2/pipeline"]     = "pl2";
+  scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
   //scenes["scene2/plots/pl2"];
   //scenes["scene3/plots/pl3"];
 
@@ -505,12 +523,9 @@ int main(int argc, char** argv)
   add_pipelines["pipelines"] = pipelines;
 
   conduit::Node &add_plots = actions.append();
-  add_plots["action"] = "add_plots";
-  add_plots["plots"] = plots;
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
 
-  conduit::Node &add_scenes = actions.append();
-  add_scenes["action"] = "add_scenes";
-  add_scenes["scenes"] = scenes;
 
   conduit::Node &add_extracts = actions.append();
   add_extracts["action"] = "add_extracts";
