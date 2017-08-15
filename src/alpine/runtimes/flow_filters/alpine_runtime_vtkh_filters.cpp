@@ -227,6 +227,7 @@ VTKHRayTracer::execute()
     ray_tracer.SetDoComposite(composite);
     ray_tracer.SetRenders(*renders);
     ray_tracer.SetField(params()["field"].as_string());
+    std::cout<<"PARAM "<<params()["field"].as_string()<<"\n";
     ray_tracer.Update();
     
     std::vector<vtkh::Render> out_renders = ray_tracer.GetRenders();
@@ -260,7 +261,6 @@ VTKHMarchingCubes::declare_interface(Node &i)
 {
     i["type_name"]   = "vtkh_marchingcubes";
     i["port_names"].append() = "in";
-    i["port_names"].append() = "render";
     i["output_port"] = "true";
 }
 

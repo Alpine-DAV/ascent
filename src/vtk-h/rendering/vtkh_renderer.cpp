@@ -149,8 +149,9 @@ Renderer::Render()
       vtkm::Id domain_id;
       m_input->GetDomain(dom, data_set, domain_id);
       const vtkm::cont::DynamicCellSet &cellset = data_set.GetCellSet();
-      const vtkm::cont::Field &field = data_set.GetField(m_field_index);
+      const vtkm::cont::Field &field = data_set.GetField(m_field_name);
       const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
+      std::cout<<"** RENDERING field "<<field.GetName()<<"\n";
       // paint
       vtkmCanvasPtr p_canvas = m_renders[i].GetDomainCanvas(domain_id);
       const vtkmCamera &camera = m_renders[i].GetCamera();; 

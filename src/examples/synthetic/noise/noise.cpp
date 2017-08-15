@@ -467,7 +467,7 @@ int main(int argc, char** argv)
   // filter knobs
   conduit::Node &contour2_params = pipelines["pl2/f1/params"];
   contour2_params["field"] = "nodal_noise";
-  contour2_params["iso_values"] = 0.8;
+  contour2_params["iso_values"] = 0.3;
 
   //// pipeline 2 
   //pipelines["pl2/f1/type"] = "threshold";
@@ -504,9 +504,9 @@ int main(int argc, char** argv)
   scenes["scene1/plots/plt1/pipeline"]     = "pl1";
   scenes["scene1/plots/plt1/params/field"] = "zonal_noise";
 
-  //scenes["scene1/plots/plt2/type"]         = "pseudocolor";
-  //scenes["scene1/plots/plt2/pipeline"]     = "pl2";
-  //scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
+  scenes["scene1/plots/plt2/type"]         = "pseudocolor";
+  scenes["scene1/plots/plt2/pipeline"]     = "pl2";
+  scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
   //scenes["scene2/plots/pl2"];
   //scenes["scene3/plots/pl3"];
 

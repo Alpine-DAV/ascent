@@ -99,6 +99,7 @@ void MarchingCubes::DoExecute()
     vtkm::filter::Result res = marcher.Execute(dom, m_field_name);
     for(size_t f = 0; f < m_map_fields.size(); ++f)
     {
+      std::cout<<"***** Mapping Field : "<<m_map_fields[f]<<"\n";
       marcher.MapFieldOntoOutput(res, dom.GetField(m_map_fields[f]));
     }
     this->m_output->AddDomain(res.GetDataSet(), domain_id);
