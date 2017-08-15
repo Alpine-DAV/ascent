@@ -130,7 +130,7 @@ TEST(alpine_flow_runtime, test_flow_runtime)
     
     actions.append();
     actions[1]["action"] = "connect";
-    actions[1]["src"]  = ":source";
+    actions[1]["src"]  = "source";
     actions[1]["dest"] = "fi";
     actions[1]["port"] = "in";
     
@@ -172,7 +172,7 @@ TEST(alpine_flow_runtime, test_flow_runtime_reuse_network)
     
     actions.append();
     actions[1]["action"] = "connect";
-    actions[1]["src"]  = ":source";
+    actions[1]["src"]  = "source";
     actions[1]["dest"] = "fi";
     
     actions.append()["action"] = "execute";
@@ -236,7 +236,7 @@ TEST(alpine_flow_runtime, test_flow_runtime_relay_save)
     
     actions.append();
     actions[2]["action"] = "connect";
-    actions[2]["src"]  = ":source";
+    actions[2]["src"]  = "source";
     actions[2]["dest"] = "fi";
     
     
@@ -282,7 +282,7 @@ TEST(alpine_flow_runtime, test_flow_runtime_blueprint_verify)
     
     actions.append();
     actions[1]["action"] = "connect";
-    actions[1]["src"]  = ":source";
+    actions[1]["src"]  = "source";
     actions[1]["dest"] = "v";
     
     actions.append()["action"] = "execute";
@@ -334,7 +334,7 @@ TEST(alpine_flow_runtime, test_flow_vtkm)
 
     actions.append();
     actions[2]["action"] = "connect";
-    actions[2]["src"]  = ":source";
+    actions[2]["src"]  = "source";
     actions[2]["dest"] = "verify";
 
     actions.append();
@@ -411,7 +411,7 @@ TEST(alpine_flow_runtime, test_flow_vtkh_render)
 
     
     graph["connections"].append();
-    graph["connections"][0]["src"] = ":source";
+    graph["connections"][0]["src"] = "source";
     graph["connections"][0]["dest"] = "verify";
 
     graph["connections"].append();
@@ -482,7 +482,7 @@ TEST(alpine_flow_runtime, test_flow_vtkh_filter)
 
     
     graph["connections"].append();
-    graph["connections"][0]["src"] = ":source";
+    graph["connections"][0]["src"] = "source";
     graph["connections"][0]["dest"] = "verify";
 
     graph["connections"].append();
@@ -545,7 +545,7 @@ TEST(alpine_flow_runtime, test_flow_mesh_blueprint_hdf5_output)
     graph["filters/save/params/path"]      = "tout_flow_mesh_bp_test";
     
     graph["connections"].list_of(Schema(DataType::empty()),2);
-    graph["connections"][0]["src"]  = ":source";
+    graph["connections"][0]["src"]  = "source";
     graph["connections"][0]["dest"] = "verify";
 
     graph["connections"][1]["src"]  = "verify";
@@ -592,7 +592,7 @@ TEST(alpine_flow_runtime, test_flow_bulk_actions_1)
         graph["filters/fi/type_name"] = "inspect";
         graph["connections"].append();
 
-        graph["connections"][0]["src"] = ":source";
+        graph["connections"][0]["src"] = "source";
         graph["connections"][0]["dest"] = "fi";
     
     
@@ -649,7 +649,7 @@ TEST(alpine_flow_runtime, test_flow_bulk_actions_2)
         graph["filters/fi/type_name"] = "inspect";
 
         graph["connections"].append();
-        graph["connections"][0]["src"] = ":source";
+        graph["connections"][0]["src"] = "source";
         graph["connections"][0]["dest"] = "fi";
 
         actions.append()["action"] = "execute";
@@ -699,7 +699,7 @@ TEST(alpine_flow_runtime, test_flow_load_and_save_graph)
         graph["filters/fi/type_name"] = "inspect";
 
         graph["connections"].append();
-        graph["connections"][0]["src"] = ":source";
+        graph["connections"][0]["src"] = "source";
         graph["connections"][0]["dest"] = "fi";
 
         actions.append()["action"] = "execute";

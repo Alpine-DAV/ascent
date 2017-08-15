@@ -202,11 +202,11 @@ AlpineRuntime::Publish(const conduit::Node &data)
                                &m_data);
     }
 
-    if(!w.graph().has_filter(":source"))
+    if(!w.graph().has_filter("source"))
     {
        Node p;
        p["entry"] = "_alpine_input_data";
-       w.graph().add_filter("registry_source",":source",p);
+       w.graph().add_filter("registry_source","source",p);
     }
 }
 
@@ -231,7 +231,7 @@ AlpineRuntime::CreateDefaultFilters()
                          "verify",           // "unique" filter name
                          params);
     
-    w.graph().connect(":source",
+    w.graph().connect("source",
                       "verify",
                       0);        // default port
 

@@ -616,7 +616,8 @@ Graph::to_dot() const
         oss << "  "
             << c["src"].as_string() 
             << " -> " 
-            << c["dest"].as_string() 
+            << c["dest"].as_string()
+            << "[ label=\"" << c["port"].as_string() << "\" ]"
             << ";"
             << std::endl;
     }
