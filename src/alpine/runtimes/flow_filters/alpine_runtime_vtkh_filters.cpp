@@ -176,6 +176,7 @@ VTKHRayTracer::declare_interface(Node &i)
 {
     i["type_name"]   = "vtkh_raytracer";
     i["port_names"].append() = "in";
+    i["port_names"].append() = "renders";
     i["output_port"] = "true";
 }
 
