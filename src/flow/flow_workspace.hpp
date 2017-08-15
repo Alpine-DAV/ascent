@@ -95,6 +95,9 @@ public:
     /// const access to the registry
     const Registry  &registry() const;
    
+    /// compute and return the graph traverals 
+    void             traversals(conduit::Node &out);
+   
     /// execute the filter graph.
     void             execute();
     

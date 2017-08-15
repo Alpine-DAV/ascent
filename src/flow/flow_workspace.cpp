@@ -220,8 +220,15 @@ Workspace::ExecutionPlan::bf_topo_sort_visit(Graph &graph,
                 std::string f_in_name = n_f_input.as_string();
                 bf_topo_sort_visit(graph, f_in_name, tags, trav);
             }
-            else // dangle?
+            else //  missing input.
             {
+                index_t port_idx = f_inputs.index();
+                CONDUIT_ERROR("Filter " << f->detailed_name()
+                              << " is missing connection to input port "
+                              << port_idx 
+                              << " ("
+                              << f->port_index_to_name(port_idx) 
+                              << ")");
                 uref = 0;
             }
         }
@@ -281,6 +288,13 @@ Workspace::registry() const
     return m_registry;
 }
 
+//-----------------------------------------------------------------------------
+void
+Workspace::traversals(Node &traversals) 
+{
+    traversals.reset();
+    ExecutionPlan::generate(graph(),traversals);
+}
 
 //-----------------------------------------------------------------------------
 void

@@ -699,3 +699,44 @@ TEST(alpine_flow_workspace, dag_graph_save_and_load)
     Workspace::clear_supported_filter_types();
 }
 
+
+
+//-----------------------------------------------------------------------------
+TEST(alpine_flow_workspace, dag_graph_missing_input_error)
+{
+    Workspace::register_filter_type<SrcFilter>();
+    Workspace::register_filter_type<AddFilter>();
+    
+    Workspace w;
+
+    Node p_vs;
+    p_vs["value"].set(int(10));
+
+    w.graph().add_filter("src","v1",p_vs);
+    w.graph().add_filter("src","v2",p_vs);
+    w.graph().add_filter("src","v3",p_vs);
+    
+    
+    w.graph().add_filter("add","a1");
+    w.graph().add_filter("add","a2");
+    
+    
+    // ascii art pictures?
+    
+    // // src, dest, port
+    w.graph().connect("v1","a1","a");
+    w.graph().connect("v2","a1","b");
+    
+    
+    w.graph().connect("a1","a2","a");
+    // omit connection to trigger error
+    //w.graph().connect("v3","a2","b");
+
+    //
+    w.print();
+    Node tout;
+    EXPECT_THROW(w.traversals(tout),conduit::Error);
+    EXPECT_THROW(w.execute(),conduit::Error);
+
+    Workspace::clear_supported_filter_types();
+}
