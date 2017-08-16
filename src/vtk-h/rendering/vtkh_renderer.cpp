@@ -131,7 +131,26 @@ Renderer::Composite(const int &num_images)
 }
 
 void 
-Renderer::Render()
+Renderer::PreExecute() 
+{
+  vtkm::cont::ArrayHandle<vtkm::Range> ranges = m_input->GetGlobalRange(m_field_name);
+  int num_components = ranges.GetPortalControl().GetNumberOfValues();
+  //
+  // current vtkm renderers only supports single component scalar fields
+  //
+  assert(num_components == 1);
+  m_range = ranges.GetPortalControl().Get(0);
+  m_bounds = m_input->GetGlobalBounds();
+  m_mapper->SetActiveColorTable(m_color_table);
+}
+
+void 
+Renderer::PostExecute() 
+{
+}
+
+void 
+Renderer::DoExecute() 
 {
   if(m_mapper.get() == 0)
   {
@@ -170,31 +189,6 @@ Renderer::Render()
     this->Composite(total_renders);
   }
 
-}
- 
-void 
-Renderer::PreExecute() 
-{
-  vtkm::cont::ArrayHandle<vtkm::Range> ranges = m_input->GetGlobalRange(m_field_name);
-  int num_components = ranges.GetPortalControl().GetNumberOfValues();
-  //
-  // current vtkm renderers only supports single component scalar fields
-  //
-  assert(num_components == 1);
-  m_range = ranges.GetPortalControl().Get(0);
-  m_bounds = m_input->GetGlobalBounds();
-  m_mapper->SetActiveColorTable(m_color_table);
-}
-
-void 
-Renderer::PostExecute() 
-{
-}
-
-void 
-Renderer::DoExecute() 
-{
-  Render();
 }
 
 } // namespace vtkh

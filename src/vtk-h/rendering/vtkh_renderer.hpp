@@ -211,7 +211,6 @@ protected:
   vtkm::rendering::ColorTable              m_color_table;
   
   // methods
-  void Render();
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute();
