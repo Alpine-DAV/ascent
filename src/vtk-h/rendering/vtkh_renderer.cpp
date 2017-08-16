@@ -89,7 +89,6 @@ Renderer::Composite(const int &num_images)
 {
 
   m_compositor->SetCompositeMode(Compositor::Z_BUFFER_SURFACE);
-  std::cout<<"Comp "<<num_images<<"\n";
   for(int i = 0; i < num_images; ++i)
   {
     const int num_canvases = m_renders[i].GetNumberOfCanvases();
@@ -170,7 +169,6 @@ Renderer::DoExecute()
       const vtkm::cont::DynamicCellSet &cellset = data_set.GetCellSet();
       const vtkm::cont::Field &field = data_set.GetField(m_field_name);
       const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
-      std::cout<<"** RENDERING field "<<field.GetName()<<"\n";
       // paint
       vtkmCanvasPtr p_canvas = m_renders[i].GetDomainCanvas(domain_id);
       const vtkmCamera &camera = m_renders[i].GetCamera();; 

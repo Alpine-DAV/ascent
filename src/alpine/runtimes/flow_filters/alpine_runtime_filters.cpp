@@ -96,20 +96,19 @@ namespace filters
 void
 register_builtin()
 {
+    Workspace::register_filter_type<BlueprintVerify>(); 
     Workspace::register_filter_type<RelayIOSave>();
     Workspace::register_filter_type<RelayIOLoad>();
-    Workspace::register_filter_type<BlueprintVerify>(); 
-        
     
 #if defined(ALPINE_VTKM_ENABLED)
-    Workspace::register_filter_type<EnsureVTKM>();
-    Workspace::register_filter_type<EnsureVTKH>();
-    Workspace::register_filter_type<VTKHRayTracer>();
-    Workspace::register_filter_type<VTKHMarchingCubes>();
-    Workspace::register_filter_type<VTKHClip>();
-    Workspace::register_filter_type<VTKHThreshold>();
     Workspace::register_filter_type<Alias>();
     Workspace::register_filter_type<DefaultRender>();
+    Workspace::register_filter_type<EnsureVTKH>();
+    Workspace::register_filter_type<VTKHClip>();
+    Workspace::register_filter_type<VTKHMarchingCubes>();
+    Workspace::register_filter_type<VTKHRayTracer>();
+    Workspace::register_filter_type<VTKHThreshold>();
+    Workspace::register_filter_type<VTKHVolumeTracer>();
 #endif
 
     

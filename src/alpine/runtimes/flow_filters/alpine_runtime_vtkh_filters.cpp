@@ -71,6 +71,7 @@
 #include <vtkh.hpp>
 #include <vtkh_data_set.hpp>
 #include <rendering/vtkh_renderer_ray_tracer.hpp>
+#include <rendering/vtkh_renderer_volume.hpp>
 #include <vtkh_clip.hpp>
 #include <vtkh_marching_cubes.hpp>
 #include <vtkh_threshold.hpp>
@@ -158,6 +159,85 @@ EnsureVTKH::execute()
 
 
 //-----------------------------------------------------------------------------
+VTKHVolumeTracer::VTKHVolumeTracer()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHVolumeTracer::~VTKHVolumeTracer()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHVolumeTracer::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_volumetracer";
+    i["port_names"].append() = "in";
+    i["port_names"].append() = "renders";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHVolumeTracer::verify_params(const conduit::Node &params,
+                                   conduit::Node &info)
+{
+    info.reset();   
+    bool res = true;
+    
+    if(! params.has_child("field") || 
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+    }
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+VTKHVolumeTracer::execute()
+{
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ALPINE_ERROR("vtkh_volumetracer input0 must be a vtk-h dataset");
+    }
+    if(!input(1).check_type<std::vector<vtkh::Render>>())
+    {
+        ALPINE_ERROR("vtkh_volumeracer input1 must be a vth-h render");
+    }
+ 
+    ALPINE_INFO("Doing the render!");
+    bool composite = true;
+    //
+    // there is no need to check for compositing param
+    // since a volume plot will always be at the end of 
+    // a series of plots
+    //
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    std::vector<vtkh::Render> *renders = input<std::vector<vtkh::Render>>(1);
+    vtkh::VolumeRenderer tracer;  
+    tracer.SetInput(data);
+    tracer.SetDoComposite(composite);
+    tracer.SetRenders(*renders);
+    tracer.SetField(params()["field"].as_string());
+    tracer.Update();
+    
+    std::vector<vtkh::Render> out_renders = tracer.GetRenders();
+    //
+    // We need to create a new pointer for the output because the input will be deleted
+    // There is only a small amount of overhead since the canvases contained 
+    // in the render will be shallow copied.
+    //
+    std::vector<vtkh::Render> *renders_ptr = new std::vector<vtkh::Render>();
+    *renders_ptr = out_renders;
+    set_output<std::vector<vtkh::Render>>(renders_ptr);
+}
+
 VTKHRayTracer::VTKHRayTracer()
 :Filter()
 {

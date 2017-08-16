@@ -117,6 +117,19 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class VTKHVolumeTracer : public ::flow::Filter
+{
+public:
+    VTKHVolumeTracer();
+   ~VTKHVolumeTracer();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class VTKHMarchingCubes : public ::flow::Filter
 {
 public:

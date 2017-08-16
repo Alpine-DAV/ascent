@@ -350,11 +350,12 @@ AlpineRuntime::ConvertPlotToFlow(const conduit::Node &plot,
   }
   else if(plot["type"].as_string() == "volume")
   {
-    filter_name = "vtkh_volume";
+    filter_name = "vtkh_volumetracer";
+
   }
   else
   {
-    ALPINE_ERROR("Unrecognized plot type "<<plot["plot_type"].as_string());
+    ALPINE_ERROR("Unrecognized plot type "<<plot["type"].as_string());
   }
  
   if(w.graph().has_filter(plot_name))
@@ -432,9 +433,6 @@ AlpineRuntime::ConnectGraphs()
                       names[i], // dest
                       0);       // default port
   }
-  //w.graph().print();
-  std::cout<<"****************************\n";
-  std::cout<<w.graph().to_dot();
 }
 
 std::vector<std::string>

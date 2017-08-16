@@ -329,7 +329,6 @@ Workspace::execute()
             {
                 std::string port_name = ports_itr.next().as_string();
                 std::string f_input_name = graph().edges_in(f_name)[port_name].as_string();
-                std::cout<<"EXE fname "<<f_name<<" port name "<<port_name<<" f_input_name "<<f_input_name<<"\n";
                 f->set_input(port_name,&registry().fetch(f_input_name));
             }
 
