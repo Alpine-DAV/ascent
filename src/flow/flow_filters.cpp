@@ -56,7 +56,7 @@
 // flow includes
 //-----------------------------------------------------------------------------
 #include <flow_workspace.hpp>
-#include <flow_registry_filters.hpp>
+#include <flow_builtin_filters.hpp>
 
 
 
@@ -82,6 +82,11 @@ register_builtin()
     if(!Workspace::supports_filter_type<RegistrySource>())
     {
         Workspace::register_filter_type<RegistrySource>();
+    }
+
+    if(!Workspace::supports_filter_type<Alias>())
+    {
+        Workspace::register_filter_type<Alias>();
     }
 }
 

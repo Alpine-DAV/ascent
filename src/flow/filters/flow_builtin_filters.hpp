@@ -45,12 +45,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_registry_filters.hpp
+/// file: flow_builtin_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef FLOW_REGISTRY_FILTERS_HPP
-#define FLOW_REGISTRY_FILTERS_HPP
+#ifndef FLOW_BUILTIN_FILTERS_HPP
+#define FLOW_BUILTIN_FILTERS_HPP
 
 #include <flow_filter.hpp>
 
@@ -66,6 +66,23 @@ namespace flow
 //-----------------------------------------------------------------------------
 namespace filters
 {
+
+//-----------------------------------------------------------------------------
+///
+/// Alias returns its input as output.
+///
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+class Alias : public ::flow::Filter
+{
+public:
+    Alias();
+   ~Alias();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
 
 
 //-----------------------------------------------------------------------------

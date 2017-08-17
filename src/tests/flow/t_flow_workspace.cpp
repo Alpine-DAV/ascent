@@ -51,7 +51,7 @@
 #include "gtest/gtest.h"
 
 #include <flow.hpp>
-#include <flow_registry_filters.hpp>
+#include <flow_builtin_filters.hpp>
 
 #include <iostream>
 #include <math.h>

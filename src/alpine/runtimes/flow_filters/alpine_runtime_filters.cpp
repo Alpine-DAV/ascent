@@ -101,9 +101,19 @@ register_builtin()
     Workspace::register_filter_type<RelayIOLoad>();
     
 #if defined(ALPINE_VTKM_ENABLED)
-    Workspace::register_filter_type<Alias>();
     Workspace::register_filter_type<DefaultRender>();
     Workspace::register_filter_type<EnsureVTKH>();
+    Workspace::register_filter_type<EnsureVTKM>();
+
+    Workspace::register_filter_type<VTKHBounds>();
+    Workspace::register_filter_type<VTKHUnionBounds>();
+
+    Workspace::register_filter_type<VTKHDomainIds>();
+    Workspace::register_filter_type<VTKHUnionDomainIds>();
+    
+    Workspace::register_filter_type<Scene>();
+
+
     Workspace::register_filter_type<VTKHClip>();
     Workspace::register_filter_type<VTKHMarchingCubes>();
     Workspace::register_filter_type<VTKHRayTracer>();

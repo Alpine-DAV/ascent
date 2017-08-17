@@ -662,36 +662,6 @@ VTKHClip::execute()
     set_output<vtkh::DataSet>(clip_output);
 }
 
-//-----------------------------------------------------------------------------
-Alias::Alias()
-:Filter()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-Alias::~Alias()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-void 
-Alias::declare_interface(Node &i)
-{
-    i["type_name"]   = "alias";
-    i["port_names"].append() = "in";
-    i["output_port"] = "true";
-}
-
-
-//-----------------------------------------------------------------------------
-void 
-Alias::execute()
-{
-    set_output(input(0));
-}
-
 
 //-----------------------------------------------------------------------------
 EnsureVTKM::EnsureVTKM()
@@ -739,6 +709,270 @@ EnsureVTKM::execute()
         ALPINE_ERROR("unsupported input type for ensure_vtkm");
     }
 #endif
+}
+
+
+//-----------------------------------------------------------------------------
+VTKHBounds::VTKHBounds()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHBounds::~VTKHBounds()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHBounds::declare_interface(Node &i)
+{
+    i["type_name"] = "vtkh_bounds";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+VTKHBounds::execute()
+{
+    ALPINE_INFO("VTK-h bounds");
+    vtkm::Bounds *bounds = new vtkm::Bounds;
+    
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ALPINE_ERROR("in must be a vtk-h dataset");
+    }
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    bounds->Include(data->GetGlobalBounds());
+
+    set_output<vtkm::Bounds>(bounds);
+}
+
+
+//-----------------------------------------------------------------------------
+VTKHUnionBounds::VTKHUnionBounds()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHUnionBounds::~VTKHUnionBounds()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHUnionBounds::declare_interface(Node &i)
+{
+    i["type_name"] = "vtkh_union_bounds";
+    i["port_names"].append() = "a";
+    i["port_names"].append() = "b";
+    i["output_port"] = "true";
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+VTKHUnionBounds::execute()
+{
+    if(!input(0).check_type<vtkm::Bounds>())
+    {
+        ALPINE_ERROR("'a' must be a vtkm::Bounds * instance");
+    }
+
+    if(!input(1).check_type<vtkm::Bounds>())
+    {
+        ALPINE_ERROR("'b' must be a vtkm::Bounds * instance");
+    }
+
+    vtkm::Bounds *result = new vtkm::Bounds;
+
+    vtkm::Bounds *bounds_a = input<vtkm::Bounds>(0);
+    vtkm::Bounds *bounds_b = input<vtkm::Bounds>(1);
+    
+
+    result->Include(*bounds_a);
+    result->Include(*bounds_a);
+    
+    set_output<vtkm::Bounds>(result);
+}
+
+
+
+//-----------------------------------------------------------------------------
+VTKHDomainIds::VTKHDomainIds()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHDomainIds::~VTKHDomainIds()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHDomainIds::declare_interface(Node &i)
+{
+    i["type_name"] = "vtkh_domain_ids";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+VTKHDomainIds::execute()
+{
+    ALPINE_INFO("VTK-h domain_ids");
+    
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ALPINE_ERROR("'in' must be a vtk-h dataset");
+    }
+    
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    
+    std::vector<vtkm::Id> domain_ids = data->GetDomainIds();
+
+    std::set<vtkm::Id> *result = new std::set<vtkm::Id>;
+    result->insert(domain_ids.begin(), domain_ids.end());
+
+    set_output<std::set<vtkm::Id> >(result);
+}
+
+
+
+//-----------------------------------------------------------------------------
+VTKHUnionDomainIds::VTKHUnionDomainIds()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHUnionDomainIds::~VTKHUnionDomainIds()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHUnionDomainIds::declare_interface(Node &i)
+{
+    i["type_name"] = "vtkh_union_domain_ids";
+    i["port_names"].append() = "a";
+    i["port_names"].append() = "b";
+    i["output_port"] = "true";
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+VTKHUnionDomainIds::execute()
+{
+    if(!input(0).check_type<std::set<vtkm::Id> >())
+    {
+        ALPINE_ERROR("'a' must be a std::set<vtkm::Id> * instance");
+    }
+
+    if(!input(1).check_type<std::set<vtkm::Id> >())
+    {
+        ALPINE_ERROR("'b' must be a std::set<vtkm::Id> * instance");
+    }
+
+
+    std::set<vtkm::Id> *dids_a = input<std::set<vtkm::Id>>(0);
+    std::set<vtkm::Id> *dids_b = input<std::set<vtkm::Id>>(1);
+
+    std::set<vtkm::Id> *result = new std::set<vtkm::Id>;
+    *result = *dids_a;
+    
+    result->insert(dids_b->begin(), dids_b->end());
+    
+    set_output<std::set<vtkm::Id>>(result);
+}
+
+
+
+
+int Scene::s_image_count = 0;
+
+//-----------------------------------------------------------------------------
+Scene::Scene()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Scene::~Scene()
+{
+// empty
+}
+
+
+//-----------------------------------------------------------------------------
+bool
+Scene::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    // TODO
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void 
+Scene::declare_interface(Node &i)
+{
+    i["type_name"] = "vtkh_scene";
+    i["port_names"].append() = "bounds";
+    i["port_names"].append() = "domain_ids";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+void 
+Scene::execute()
+{
+    ALPINE_INFO("Creating a scene default renderer!");
+    
+    // inputs are bounds and set of domains
+    vtkm::Bounds       *bounds_in     = input<vtkm::Bounds>(0);
+    std::set<vtkm::Id> *domain_ids_set = input<std::set<vtkm::Id> >(1);
+    
+    std::stringstream ss;
+    ss<<"default_image_"<<s_image_count;
+    s_image_count++;
+    
+    vtkm::Bounds bounds;
+    bounds.Include(*bounds_in);
+    
+    std::vector<vtkm::Id> domain_ids(domain_ids_set->begin(),
+                                     domain_ids_set->end());
+
+    
+    vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(1024,
+                                                            1024, 
+                                                            bounds,
+                                                            domain_ids,
+                                                            ss.str());
+
+    std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
+    renders->push_back(render);
+    set_output<std::vector<vtkh::Render> >(renders);
 }
 
 

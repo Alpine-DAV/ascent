@@ -167,16 +167,7 @@ public:
                                  conduit::Node &info);
     virtual void   execute();
 };
-//-----------------------------------------------------------------------------
-class Alias : public ::flow::Filter
-{
-public:
-    Alias();
-   ~Alias();
-    
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
+
 //-----------------------------------------------------------------------------
 class DefaultRender : public ::flow::Filter
 {
@@ -189,6 +180,74 @@ public:
                                  conduit::Node &info);
     virtual void   execute();
 };
+
+
+
+//-----------------------------------------------------------------------------
+class VTKHBounds: public ::flow::Filter
+{
+public:
+    VTKHBounds();
+   ~VTKHBounds();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class VTKHUnionBounds: public ::flow::Filter
+{
+public:
+    VTKHUnionBounds();
+   ~VTKHUnionBounds();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
+
+
+
+//-----------------------------------------------------------------------------
+class VTKHDomainIds: public ::flow::Filter
+{
+public:
+    VTKHDomainIds();
+   ~VTKHDomainIds();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class VTKHUnionDomainIds: public ::flow::Filter
+{
+public:
+    VTKHUnionDomainIds();
+   ~VTKHUnionDomainIds();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
+
+
+//-----------------------------------------------------------------------------
+class Scene: public ::flow::Filter
+{
+public:
+    Scene();
+   ~Scene();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+
+private:
+    static int s_image_count;
+};
+
+
+
 
 };
 //-----------------------------------------------------------------------------

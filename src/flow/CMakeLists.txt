@@ -57,7 +57,7 @@ set(flow_sources
     flow_filters.cpp
     flow_graph.cpp
     flow_workspace.cpp
-    filters/flow_registry_filters.cpp)
+    filters/flow_builtin_filters.cpp)
     
 set(flow_headers
     flow_data.hpp
@@ -66,7 +66,7 @@ set(flow_headers
     flow_filters.hpp
     flow_graph.hpp
     flow_workspace.hpp
-    filters/flow_registry_filters.hpp
+    filters/flow_builtin_filters.hpp
     flow.hpp)
 
 set(flow_thirdparty_libs 

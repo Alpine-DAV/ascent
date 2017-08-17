@@ -406,6 +406,11 @@ TEST(alpine_flow_runtime, test_flow_vtkh_render)
 
     graph["filters/vtkh_data/type_name"]    = "ensure_vtkh";
 
+    graph["filters/bounds/type_name"]     = "vtkh_bounds";
+    graph["filters/domain_ids/type_name"] = "vtkh_domain_ids";
+    graph["filters/scene/type_name"]      = "vtkh_scene";
+
+
     graph["filters/vtkh_render/type_name"]  = "vtkh_raytracer";
     graph["filters/vtkh_render/params/field"]  = "braid";
 
@@ -418,9 +423,38 @@ TEST(alpine_flow_runtime, test_flow_vtkh_render)
     graph["connections"][1]["src"] = "verify";
     graph["connections"][1]["dest"] = "vtkh_data";
 
+    
     graph["connections"].append();
     graph["connections"][2]["src"] = "vtkh_data";
-    graph["connections"][2]["dest"] = "vtkh_render";
+    graph["connections"][2]["dest"] = "bounds";
+
+    graph["connections"].append();
+    graph["connections"][3]["src"] = "vtkh_data";
+    graph["connections"][3]["dest"] = "domain_ids";
+    
+
+    graph["connections"].append();
+    graph["connections"][4]["src"]  = "bounds";
+    graph["connections"][4]["dest"] = "scene";
+    graph["connections"][4]["port"] = "bounds";
+
+    graph["connections"].append();
+    graph["connections"][5]["src"]  = "domain_ids";
+    graph["connections"][5]["dest"] = "scene";
+    graph["connections"][5]["port"] = "domain_ids";
+
+
+    graph["connections"].append();
+    graph["connections"][6]["src"]  = "vtkh_data";
+    graph["connections"][6]["dest"] = "vtkh_render";
+    graph["connections"][6]["port"] = "in";
+
+    graph["connections"].append();
+    graph["connections"][7]["src"]  = "scene";
+    graph["connections"][7]["dest"] = "vtkh_render";
+    graph["connections"][7]["port"] = "renders";
+    
+    
 
     actions.append()["action"] = "execute";
     actions.print();
@@ -477,6 +511,14 @@ TEST(alpine_flow_runtime, test_flow_vtkh_filter)
     Node &isov = graph["filters/vtkh_isov/params/iso_values"];
     isov.set_float64(0.0);
 
+
+
+    graph["filters/bounds/type_name"]     = "vtkh_bounds";
+    graph["filters/domain_ids/type_name"] = "vtkh_domain_ids";
+    graph["filters/scene/type_name"]      = "vtkh_scene";
+
+
+
     graph["filters/vtkh_render/type_name"]  = "vtkh_raytracer";
     graph["filters/vtkh_render/params/field"]  = "braid";
 
@@ -496,7 +538,35 @@ TEST(alpine_flow_runtime, test_flow_vtkh_filter)
 
     graph["connections"].append();
     graph["connections"][3]["src"] = "vtkh_isov";
-    graph["connections"][3]["dest"] = "vtkh_render";
+    graph["connections"][3]["dest"] = "bounds";
+
+    graph["connections"].append();
+    graph["connections"][4]["src"] = "vtkh_isov";
+    graph["connections"][4]["dest"] = "domain_ids";
+    
+
+    graph["connections"].append();
+    graph["connections"][5]["src"]  = "bounds";
+    graph["connections"][5]["dest"] = "scene";
+    graph["connections"][5]["port"] = "bounds";
+
+    graph["connections"].append();
+    graph["connections"][6]["src"]  = "domain_ids";
+    graph["connections"][6]["dest"] = "scene";
+    graph["connections"][6]["port"] = "domain_ids";
+
+
+    graph["connections"].append();
+    graph["connections"][7]["src"]  = "vtkh_isov";
+    graph["connections"][7]["dest"] = "vtkh_render";
+    graph["connections"][7]["port"] = "in";
+
+    graph["connections"].append();
+    graph["connections"][8]["src"]  = "scene";
+    graph["connections"][8]["dest"] = "vtkh_render";
+    graph["connections"][8]["port"] = "renders";
+    
+
 
     actions.append()["action"] = "execute";
     actions.print();
