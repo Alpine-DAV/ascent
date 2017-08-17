@@ -438,7 +438,7 @@ int main(int argc, char** argv)
 #ifdef PARALLEL
   alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
-  alpine_opts["runtime/type"] = "alpine";
+  alpine_opts["runtime/type"] = "ascent";
   alpine.open(alpine_opts);
 
   conduit::Node alpine_node;

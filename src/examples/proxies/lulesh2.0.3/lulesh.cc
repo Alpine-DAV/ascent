@@ -2859,7 +2859,8 @@ int main(int argc, char *argv[])
 #if USE_MPI
     alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
-    alpine_opts["runtime/type"] = "alpine";
+    // TODO:
+    alpine_opts["runtime/type"] = "ascent";
     
     alpine.open(alpine_opts);
    // BEGIN timestep to solution */
