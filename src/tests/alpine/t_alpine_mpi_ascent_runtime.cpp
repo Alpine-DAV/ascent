@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_alpine_flow_pipeline.cpp
+/// file: alpine_mpi_render_2d.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -54,75 +54,111 @@
 
 #include <iostream>
 #include <math.h>
-#include <sstream>
+#include <mpi.h>
 
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
 
-
-index_t EXAMPLE_MESH_SIDE_DIM = 50;
-
 using namespace std;
 using namespace conduit;
-using namespace alpine;
+using alpine::Alpine;
+
 //-----------------------------------------------------------------------------
-TEST(alpine_pipeline, test_render_2d_main_pipeline)
+TEST(alpine_mpi_runtime, test_render_mpi_2d_main_runtime)
 {
+
     //
-    // Create example mesh.
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+    
+    ALPINE_INFO("Rank "
+                  << par_rank 
+                  << " of " 
+                  << par_size
+                  << " reporting");
+    //
+    // Create the data.
     //
     Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("quads",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               0,
-                                               data);
+    create_2d_example_dataset(data,par_rank,par_size);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path, 
-                                                        "tout_render_2d_main_pipeline");
+    
+    // make sure the _output dir exists
+    string output_path = "";
+    if(par_rank == 0)
+    {
+        output_path = prepare_output_dir();
+    }
+    else
+    {
+        output_path = output_dir();
+    }
+    
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_mpi_2d_default_runtime");
+    
     // remove old images before rendering
     remove_test_image(output_file);
-
+    
+    
     //
     // Create the actions.
     //
-    Node actions;
 
-    Node &plot = actions.append();
-    plot["action"]     = "add_plot";
-    plot["field_name"] = "braid";
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/params/field"] = "braid";
+ 
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+    // todo add_scene, singular? to simplify
+        
     
-    //plots["plot1/type"]    = "pseudocolor";
-    //plots["plot1/pipeline"]     = "pl1";
-    //plots["plot1/params/field"] = "zonal_noise";
-
-    Node &opts = plot["render_options"];
-    opts["width"]  = 500;
-    opts["height"] = 500;
-    // TODO, .png?
-    opts["file_name"] = output_file;
-    
-    actions.append()["action"] = "draw_plots";
     actions.print();
+        
     
     //
     // Run Alpine
     //
-    
+  
     Alpine alpine;
 
     Node alpine_opts;
-    alpine_opts["runtime/type"] = "alpine";
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    alpine_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    alpine_opts["runtime"] = "ascent";
     alpine.open(alpine_opts);
     alpine.publish(data);
     alpine.execute(actions);
     alpine.close();
-    //
-    // // check that we created an image
+   
+    MPI_Barrier(comm);
+    // check that we created an image
     // EXPECT_TRUE(check_test_image(output_file));
 }
+
+//-----------------------------------------------------------------------------
+int main(int argc, char* argv[])
+{
+    int result = 0;
+
+    ::testing::InitGoogleTest(&argc, argv);
+    MPI_Init(&argc, &argv);
+    result = RUN_ALL_TESTS();
+    MPI_Finalize();
+
+    return result;
+}
+
+

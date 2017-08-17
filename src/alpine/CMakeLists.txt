@@ -129,8 +129,8 @@ if(VTKM_FOUND)
 
 
     # main pipeline
-    list(APPEND alpine_headers runtimes/alpine_main_runtime.hpp)
-    list(APPEND alpine_sources runtimes/alpine_main_runtime.cpp)
+    list(APPEND alpine_headers runtimes/alpine_ascent_runtime.hpp)
+    list(APPEND alpine_sources runtimes/alpine_ascent_runtime.cpp)
 
 endif()
 

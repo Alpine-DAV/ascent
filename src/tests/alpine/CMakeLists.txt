@@ -62,10 +62,10 @@ set(MPI_TESTS  t_alpine_mpi_empty_runtime
                t_alpine_mpi_render_3d)
 
 
-# include the "main" pipeline
+# include the "ascent" pipeline
 if(VTKM_FOUND)
-   list(APPEND BASIC_TESTS t_alpine_main_runtime)
-   list(APPEND MPI_TESTS   t_alpine_mpi_main_runtime)
+   list(APPEND BASIC_TESTS t_alpine_ascent_runtime)
+   list(APPEND MPI_TESTS   t_alpine_mpi_ascent_runtime)
 endif()
 
 

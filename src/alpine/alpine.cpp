@@ -56,7 +56,7 @@
 #include <alpine_flow_runtime.hpp>
 
 #if defined(ALPINE_VTKH_ENABLED)
-    #include <runtimes/alpine_main_runtime.hpp>
+    #include <runtimes/alpine_ascent_runtime.hpp>
 #endif
 
 #if defined(ALPINE_VTKM_ENABLED)
@@ -135,12 +135,13 @@ Alpine::open(const conduit::Node &options)
     {
         m_runtime = new EmptyRuntime();
     }
-    else if(runtime_type == "alpine")
+    else if(runtime_type == "ascent")
     {
 #if defined(ALPINE_VTKH_ENABLED)
-        m_runtime = new AlpineRuntime();
+        m_runtime = new AscentRuntime();
 #else
-        ALPINE_ERROR("Alpine was not built with vtk-h support");
+        ALPINE_ERROR("Ascent runtime is disabled. "
+                     "Alpine was not built with vtk-h support");
 #endif
     }
     else if(runtime_type == "flow")
@@ -249,9 +250,9 @@ about(conduit::Node &n)
     n["version"] = "0.Z.0";
 
 #if defined(ALPINE_VTKH_ENABLED)
-     n["runtimes/alpine/status"] = "enabled";
+     n["runtimes/ascent/status"] = "enabled";
 #else
-     n["runtimes/alpine/status"] = "disabled";
+     n["runtimes/ascent/status"] = "disabled";
 #endif
 
     n["runtimes/flow/status"] = "enabled";
@@ -281,7 +282,7 @@ about(conduit::Node &n)
 // Select default runtime based on what is available.
 //
 #if defined(ALPINE_VTKH_ENABLED)
-    n["default_runtime"] = "alpine";
+    n["default_runtime"] = "ascent";
 #else
     n["default_runtime"] = "flow";
 #endif

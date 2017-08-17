@@ -45,12 +45,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_main_runtime.hpp
+/// file: alpine_ascent_runtime.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ALPINE_ALPINE_RUNTIME_HPP
-#define ALPINE_ALPINE_RUNTIME_HPP
+#ifndef ALPINE_ASCENT_RUNTIME_HPP
+#define ALPINE_ASCENT_RUNTIME_HPP
 
 #include <alpine.hpp>
 #include <alpine_runtime.hpp>
@@ -65,13 +65,13 @@
 namespace alpine
 {
 
-class AlpineRuntime : public Runtime
+class AscentRuntime : public Runtime
 {
 public:
     
     // Creation and Destruction
-    AlpineRuntime();
-    virtual ~AlpineRuntime();
+    AscentRuntime();
+    virtual ~AscentRuntime();
 
     // Main runtime interface methods used by the alpine interface.
     void  Initialize(const conduit::Node &options);

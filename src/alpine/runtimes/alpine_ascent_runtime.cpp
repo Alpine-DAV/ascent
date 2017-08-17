@@ -45,11 +45,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine_main_runtime.cpp
+/// file: alpine_ascent_runtime.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "alpine_main_runtime.hpp"
+#include "alpine_ascent_runtime.hpp"
 
 // standard lib includes
 #include <string.h>
@@ -96,14 +96,14 @@ namespace alpine
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-AlpineRuntime::AlpineRuntime()
+AscentRuntime::AscentRuntime()
 :Runtime()
 {
     flow::filters::register_builtin();
 }
 
 //-----------------------------------------------------------------------------
-AlpineRuntime::~AlpineRuntime()
+AscentRuntime::~AscentRuntime()
 {
     Cleanup();
 }
@@ -118,7 +118,7 @@ AlpineRuntime::~AlpineRuntime()
 
 //-----------------------------------------------------------------------------
 void
-AlpineRuntime::Initialize(const conduit::Node &options)
+AscentRuntime::Initialize(const conduit::Node &options)
 {
 #if PARALLEL
     if(!options.has_child("mpi_comm") ||
@@ -181,14 +181,14 @@ AlpineRuntime::Initialize(const conduit::Node &options)
 
 //-----------------------------------------------------------------------------
 void
-AlpineRuntime::Cleanup()
+AscentRuntime::Cleanup()
 {
 
 }
 
 //-----------------------------------------------------------------------------
 void
-AlpineRuntime::Publish(const conduit::Node &data)
+AscentRuntime::Publish(const conduit::Node &data)
 {
     // create our own tree, with all data zero copied.
     m_data.set_external(data);
@@ -212,7 +212,7 @@ AlpineRuntime::Publish(const conduit::Node &data)
 
 //-----------------------------------------------------------------------------
 std::string 
-AlpineRuntime::CreateDefaultFilters()
+AscentRuntime::CreateDefaultFilters()
 {
     const std::string end_filter = "vtkh_data";
     if(w.graph().has_filter(end_filter))
@@ -246,7 +246,7 @@ AlpineRuntime::CreateDefaultFilters()
 }
 //-----------------------------------------------------------------------------
 void 
-AlpineRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
+AscentRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
                                   const std::string pipeline_name)
 {
     std::string prev_name = CreateDefaultFilters(); 
@@ -318,7 +318,7 @@ AlpineRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
 
 //-----------------------------------------------------------------------------
 void 
-AlpineRuntime::CreatePipelines(const conduit::Node &pipelines)
+AscentRuntime::CreatePipelines(const conduit::Node &pipelines)
 {
   std::vector<std::string> names = pipelines.child_names(); 
   for(int i = 0; i < pipelines.number_of_children(); ++i)
@@ -332,7 +332,7 @@ AlpineRuntime::CreatePipelines(const conduit::Node &pipelines)
 
 //-----------------------------------------------------------------------------
 void 
-AlpineRuntime::ConvertPlotToFlow(const conduit::Node &plot,
+AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
                                  const std::string plot_name,
                                  bool composite)
 {
@@ -397,7 +397,7 @@ AlpineRuntime::ConvertPlotToFlow(const conduit::Node &plot,
 }
 //-----------------------------------------------------------------------------
 void 
-AlpineRuntime::CreatePlots(const conduit::Node &plots)
+AscentRuntime::CreatePlots(const conduit::Node &plots)
 {
   plots.print();
   std::vector<std::string> names = plots.child_names(); 
@@ -411,7 +411,7 @@ AlpineRuntime::CreatePlots(const conduit::Node &plots)
 }
 //-----------------------------------------------------------------------------
 void 
-AlpineRuntime::ConnectGraphs()
+AscentRuntime::ConnectGraphs()
 {
   //create plot + pipine graphs
   std::cout<<"Creating connections\n";
@@ -436,7 +436,7 @@ AlpineRuntime::ConnectGraphs()
 }
 
 std::vector<std::string>
-AlpineRuntime::GetPipelines(const conduit::Node &plots)
+AscentRuntime::GetPipelines(const conduit::Node &plots)
 {
   plots.print();
   std::vector<std::string> pipelines;
@@ -461,7 +461,7 @@ AlpineRuntime::GetPipelines(const conduit::Node &plots)
 }
 
 void
-AlpineRuntime::CreateScenes(const conduit::Node &scenes)
+AscentRuntime::CreateScenes(const conduit::Node &scenes)
 {
 
   scenes.print();
@@ -541,7 +541,7 @@ AlpineRuntime::CreateScenes(const conduit::Node &scenes)
 }
 //-----------------------------------------------------------------------------
 void
-AlpineRuntime::Execute(const conduit::Node &actions)
+AscentRuntime::Execute(const conduit::Node &actions)
 {
     actions.print(); 
     // Loop over the actions
