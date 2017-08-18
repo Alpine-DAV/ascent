@@ -63,9 +63,12 @@ SUBROUTINE visit(my_alpine)
   TYPE(C_PTR) my_alpine
   TYPE(C_PTR) sim_data
   TYPE(C_PTR) verify_info
+      
   TYPE(C_PTR) sim_actions
-  TYPE(C_PTR) add_plot
-  TYPE(C_PTR) draw_plots
+  TYPE(C_PTR) add_scene_act
+  TYPE(C_PTR) scenes
+  TYPE(C_PTR) execute_act
+  TYPE(C_PTR) reset_act
 
   INTEGER(8) :: nnodes, ncells
   REAL(8), ALLOCATABLE :: xcoords(:), ycoords(:), zcoords(:)
@@ -259,24 +262,31 @@ SUBROUTINE visit(my_alpine)
       step_name(1:1) = "."
       savename = trim(trim(name) //trim(chunk_name)//trim(step_name))
 
-      ! make sure we conform to the blueprint
-      ! TODO
-      !verify_info = conduit_node_create()
-      !CALL conduit_blueprint_mesh_verify(sim_data,verify_info)
-      !CALL conduit_node_print(verify_info)
-      !CALL conduit_node_destroy(verify_info)
-      
       sim_actions = conduit_node_create()
-      add_plot = conduit_node_append(sim_actions)
-      CALL conduit_node_set_path_char8_str(add_plot,"action", "add_plot")
-      !CALL conduit_node_set_path_char8_str(add_plot,"field_name", "pressure")
-      CALL conduit_node_set_path_char8_str(add_plot,"field_name", "velocity_y")
-      CALL conduit_node_set_path_char8_str(add_plot,"render_options/file_name", savename)
-      CALL conduit_node_set_path_char8_str(add_plot,"render_options/renderer","volume")
-      CALL conduit_node_set_path_int32(add_plot,"render_options/width", 1024)
-      CALL conduit_node_set_path_int32(add_plot,"render_options/height", 1024)
-      draw_plots = conduit_node_append(sim_actions)
-      CALL conduit_node_set_path_char8_str(draw_plots,"action", "draw_plots")
+      add_scene_act = conduit_node_append(sim_actions)
+      CALL conduit_node_set_path_char8_str(add_scene_act,"action", "add_scenes")
+
+      scenes = conduit_node_fetch(add_scene_act,"scenes")
+      CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/type", "volume")      
+      CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/params/field", "velocity_y")
+
+      execute_act = conduit_node_append(sim_actions)
+      CALL conduit_node_set_path_char8_str(execute_act,"action", "execute")
+
+      reset_act = conduit_node_append(sim_actions)
+      CALL conduit_node_set_path_char8_str(reset_act,"action", "reset")
+
+      ! ---- old actions -- 
+!       add_plot = conduit_node_append(sim_actions)
+!       CALL conduit_node_set_path_char8_str(add_plot,"action", "add_plot")
+!       !CALL conduit_node_set_path_char8_str(add_plot,"field_name", "pressure")
+!       CALL conduit_node_set_path_char8_str(add_plot,"field_name", "velocity_y")
+!       CALL conduit_node_set_path_char8_str(add_plot,"render_options/file_name", savename)
+!       CALL conduit_node_set_path_char8_str(add_plot,"render_options/renderer","volume")
+!       CALL conduit_node_set_path_int32(add_plot,"render_options/width", 1024)
+!       CALL conduit_node_set_path_int32(add_plot,"render_options/height", 1024)
+!       draw_plots = conduit_node_append(sim_actions)
+!       CALL conduit_node_set_path_char8_str(draw_plots,"action", "draw_plots")
 
       ! CALL sim_actions%print_detailed()
 

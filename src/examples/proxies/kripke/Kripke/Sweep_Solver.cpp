@@ -23,6 +23,7 @@ using namespace conduit;
 using alpine::Alpine;
 static int count = 0;
 static int max_backlog = 0;
+
 void writeAlpineData(Alpine &alpine, Grid_Data *grid_data, int timeStep)
 {
   
@@ -99,22 +100,20 @@ void writeAlpineData(Alpine &alpine, Grid_Data *grid_data, int timeStep)
   {
       CONDUIT_INFO("blueprint verify succeeded");
   }
-   
-  //create some action
-  conduit::Node actions;
-  conduit::Node &add = actions.append();
-  add["action"] = "add_plot";
-  add["field_name"] = "phi";
-  char filename[50];
-  sprintf(filename, "alpine_%04d", timeStep);
-  add["render_options/file_name"] = filename;
-  add["render_options/width"] = 1024;
-  add["render_options/height"] = 1024;
-  add["render_options/renderer"] = "volume";
-  add["render_options/camera/zoom"] = (float64) 1.0;
-  conduit::Node &draw = actions.append();
-  draw["action"] = "draw_plots";
 
+  conduit::Node actions;   
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"]         = "volume";
+  scenes["s1/plots/p1/params/field"] = "phi";
+
+
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
+
+  actions.append()["action"] = "execute";  
+  actions.append()["action"] = "reset";
+  
   alpine.publish(data);
   alpine.execute(actions);
 }
@@ -126,8 +125,7 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
 {
   conduit::Node alpine_opts;
   alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
-  alpine_opts["pipeline/type"] = "vtkm";
-  alpine_opts["pipeline/backend"] = "serial";
+  alpine_opts["runtime/type"] = "ascent";
 
   Alpine alpine;
   alpine.open(alpine_opts);

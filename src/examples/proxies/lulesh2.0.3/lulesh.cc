@@ -2874,15 +2874,15 @@ int main(int argc, char *argv[])
 //debug to see region sizes
 //   for(Int_t i = 0; i < locDom->numReg(); i++)
 //      std::cout << "region" << i + 1<< "size" << locDom->regElemSize(i) <<std::endl;
+
+   conduit::Node scenes;
+   scenes["s1/plots/p1/type"]         = "pseudocolor";
+   scenes["s1/plots/p1/params/field"] = "p";
+ 
    conduit::Node actions;
-
-   conduit::Node plots;
-   plots["plot1/type"]    = "pseudocolor";
-   plots["plot1/params/field"] = "p";
-
    conduit::Node &add_plots = actions.append();
-   add_plots["action"] = "add_plots";
-   add_plots["plots"] = plots;
+   add_plots["action"] = "add_scenes";
+   add_plots["scenes"] = scenes;   
    
    alpine.publish(locDom->visitNode());
    alpine.execute(actions);

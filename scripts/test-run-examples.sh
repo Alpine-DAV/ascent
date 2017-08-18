@@ -43,18 +43,18 @@
 # 
 ###############################################################################
 
+# run noise
+build-debug/examples/synthetic/noise/noise_ser
+
 # run kripke
-cd build-debug/examples/kripke
-mpiexec -n 2 ./kripke_par --procs 2,1,1  --zones 32,32,32 --niter 3 --dir 1:12 --grp 1:1 --legendre 4 --quad 20:20 --dir 50:1
+mpiexec -n 2 build-debug/examples/proxies/kripke/kripke_par --procs 2,1,1  --zones 32,32,32 --niter 3 --dir 1:12 --grp 1:1 --legendre 4 --quad 20:20 --dir 50:1
 
-cd ../../../
-# skip cloverleaf3d, naples mpi doesn't have fortran support?
-cd build-debug/examples/cloverleaf3d-ref
-mpiexec -n 2 ./cloverleaf3d_par
-cd ../../../
-
+# run clover
+cp build-debug/examples/proxies/cloverleaf3d-ref/clover.in . 
+mpiexec -n 2 build-debug/examples/proxies/cloverleaf3d-ref/cloverleaf3d_par
+ 
 # run lulesh
-cd build-debug/examples/lulesh2.0.3
-mpiexec -n 8 ./lulesh_par -p -i 50
+mpiexec -n 8 build-debug/examples/proxies/lulesh2.0.3/lulesh_par -p -i 5
+
 
 

@@ -74,17 +74,16 @@ TEST(alpine_pipeline, test_render_2d_main_pipeline)
     // Create example mesh.
     //
     Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("quads",
+    conduit::blueprint::mesh::examples::braid("hexs",
                                                EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               0,
+                                               EXAMPLE_MESH_SIDE_DIM,                                                                         EXAMPLE_MESH_SIDE_DIM,
                                                data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path, 
-                                                        "tout_render_2d_main_pipeline");
+                                                        "tout_render_3d_ascent_pipeline");
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -109,9 +108,8 @@ TEST(alpine_pipeline, test_render_2d_main_pipeline)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    // todo add_scene, singular? to simplify
-        
-    
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
     actions.print();
     
     //
