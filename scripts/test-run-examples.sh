@@ -43,6 +43,9 @@
 # 
 ###############################################################################
 
+# add spack's mpiexec to path
+export PATH=$PATH:`ls -d uberenv_libs/spack/opt/spack/*/*/mpich-*/bin/`
+
 # run noise
 build-debug/examples/synthetic/noise/noise_ser
 
