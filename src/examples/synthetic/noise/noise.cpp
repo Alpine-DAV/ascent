@@ -441,19 +441,19 @@ int main(int argc, char** argv)
   alpine_opts["runtime/type"] = "ascent";
   alpine.open(alpine_opts);
 
-  conduit::Node alpine_node;
-  alpine_node["state/time"].set_external(&time);
-  alpine_node["state/cycle"].set_external(&time);
+  conduit::Node mesh_data;
+  mesh_data["state/time"].set_external(&time);
+  mesh_data["state/cycle"].set_external(&time);
 #ifdef PARALLEL  
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  alpine_node["state/domain_id"] = rank;
+  mesh_data["state/domain_id"] = rank;
 #else
-  alpine_node["state/domain_id"] = 0;
+  mesh_data["state/domain_id"] = 0;
 #endif
-  alpine_node["state/info"] = "simplex noise";
-  data_set.PopulateNode(alpine_node);
-  alpine.publish(alpine_node);
+  mesh_data["state/info"] = "simplex noise";
+  data_set.PopulateNode(mesh_data);
+  //alpine.publish(alpine_node);
 
   conduit::Node pipelines;
   // pipeline 1
@@ -468,36 +468,6 @@ int main(int argc, char** argv)
   conduit::Node &contour2_params = pipelines["pl2/f1/params"];
   contour2_params["field"] = "nodal_noise";
   contour2_params["iso_values"] = 0.3;
-
-  //// pipeline 2 
-  //pipelines["pl2/f1/type"] = "threshold";
-  //// filter knobs
-  //conduit::Node &thresh_params = pipelines["pl2/f1/params"];
-  //thresh_params["field"]  = "zonal_noise";
-  //thresh_params["min_value"] = 0.0;
-  //thresh_params["max_value"] = 0.5;
-
-  //pipelines["pl2/f2/type"]   = "clip";
-  // filter knobs
-  //conduit::Node &clip_params = pipelines["pl2/f2/params/"];
-  //clip_params["topology"] = "mesh";
-  //clip_params["sphere/center/x"] = 0.0;
-  //clip_params["sphere/center/y"] = 0.0;
-  //clip_params["sphere/center/z"] = 0.0;
-  //clip_params["sphere/radius"]   = .1;
-  
-  //conduit::Node plots;
-  //plots["plot1/type"]    = "pseudocolor";
-  //plots["plot1/pipeline"]     = "pl1";
-  //plots["plot1/params/field"] = "zonal_noise";
-
-  //plots["plot2/type"]    = "pseudocolor";
-  //plots["plot2/pipeline"]     = "pl2";
-  //plots["plot2/params/field"] = "nodal_noise";
-
-  // use default pipeline (original data}
-  //plots["plot3/type"]    = "volume";
-  //plots["plot3/params/field"] = "nodal_noise";
   
   conduit::Node scenes;
   scenes["scene1/plots/plt1/type"]         = "pseudocolor";
@@ -506,8 +476,6 @@ int main(int argc, char** argv)
 
   scenes["scene1/plots/plt2/type"]         = "volume";
   scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
-  //scenes["scene2/plots/pl2"];
-  //scenes["scene3/plots/pl3"];
 
   conduit::Node extracts;
   extracts["ex1/extract_type"] = "hdf5";
@@ -521,17 +489,22 @@ int main(int argc, char** argv)
   add_pipelines["action"] = "add_pipelines";
   add_pipelines["pipelines"] = pipelines;
 
-  conduit::Node &add_plots = actions.append();
-  add_plots["action"] = "add_scenes";
-  add_plots["scenes"] = scenes;
+  conduit::Node &add_scenes = actions.append();
+  add_scenes["action"] = "add_scenes";
+  add_scenes["scenes"] = scenes;
 
 
   conduit::Node &add_extracts = actions.append();
   add_extracts["action"] = "add_extracts";
   add_extracts["add_extracts"] = extracts;
 
-  alpine.execute(actions);
-
+  conduit::Node &execute = actions.append();
+  execute["action"] = "execute";
+  //alpine.execute(actions);
+  
+  conduit::Node reset;
+  conduit::Node &reset_action = reset.append();
+  reset_action["action"] = "reset";
   for(int t = 0; t < options.m_time_steps; ++t)
   {
     // 
@@ -560,11 +533,9 @@ int main(int argc, char** argv)
 
         time += options.m_time_delta;
            
-        alpine.publish(alpine_node);
-        actions.reset();
-        conduit::Node &execute = actions.append();
-        execute["action"] = "execute";
+        alpine.publish(mesh_data);
         alpine.execute(actions);
+        alpine.execute(reset);
       } //for each time step
   
 

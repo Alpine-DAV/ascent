@@ -103,6 +103,7 @@ private:
     void ConvertSceneToFlow(const conduit::Node &scenes);
     void ConnectGraphs();
     void ExecuteGraphs();
+    std::string GetDefaultImagePrefix(const std::string scene);
 };
 
 //-----------------------------------------------------------------------------

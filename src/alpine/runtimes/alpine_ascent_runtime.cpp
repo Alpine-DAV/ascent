@@ -460,6 +460,23 @@ AscentRuntime::GetPipelines(const conduit::Node &plots)
   return pipelines;
 }
 
+std::string 
+AscentRuntime::GetDefaultImagePrefix(const std::string scene)
+{
+  static conduit::Node image_counts;
+  int count = 0;
+  if(!image_counts.has_path(scene))
+  {
+    image_counts[scene] = count;
+  }
+  count = image_counts[scene].as_int32();
+  image_counts[scene] = count + 1;
+  
+  std::stringstream ss;
+  ss<<scene<<"_"<<count;
+  return ss.str(); 
+}
+
 void
 AscentRuntime::CreateScenes(const conduit::Node &scenes)
 {
@@ -470,21 +487,35 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
   for(int i = 0; i < scenes.number_of_children(); ++i)
   {
     conduit::Node scene = scenes.child(i);
-    std::cout<<"******scene name "<<names[i]<<"\n";
     if(!scene.has_path("plots"))
     {
       ALPINE_ERROR("Default scene not implemented");
     }
 
     // create the default render 
-    conduit::Node count;
+    conduit::Node render_params;
     int plot_count = scene["plots"].number_of_children();
-    count["pipeline_count"] = plot_count;
+    render_params["pipeline_count"] = plot_count;
+
+    if(scene.has_path("image_prefix"))
+    {
+      render_params["image_prefix"] = scene["image_prefix"].as_string();;
+    }
+    else
+    {
+      std::string image_prefix = GetDefaultImagePrefix(names[i]); 
+      render_params["image_prefix"] = image_prefix;
+    }
+
+    render_params["pipeline_count"] = plot_count;
     std::string renders_name = names[i] + "_renders";           
     
     w.graph().add_filter("default_render",
                           renders_name,
-                          count);
+                          render_params);
+    //
+    // TODO: detect if there is a volume plot, rendering it last
+    //
     std::vector<std::string> pipelines = GetPipelines(scene["plots"]); 
     std::vector<std::string> plot_names = scene["plots"].child_names();
     CreatePlots(scene["plots"]);
@@ -495,7 +526,8 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       // We need the input data set bounds to make a 
       // default camera 
       //
-      std::cout<<"Connecting pipeln "<<pipelines[i]<<" to default render "<<renders_name<<"\n";
+      //std::cout<<"Connecting pipeline "<<pipelines[i]<<" to default render "<<renders_name<<"\n";
+
       w.graph().connect(pipelines[i], // src
                         renders_name, // dest
                         i);           // default port
@@ -504,7 +536,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       //
       if(p == 0)
       {
-        std::cout<<"Connecting renders "<<renders_name<<" to plot "<<plot_names[i]<<"\n";
+        //std::cout<<"Connecting renders "<<renders_name<<" to plot "<<plot_names[i]<<"\n";
         //
         // first plot connects to the render filter
         // on the second port
@@ -514,7 +546,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       }
       else
       {
-        std::cout<<"Connecting plot "<<plot_names[i-1]<<" to plot "<<plot_names[i]<<"\n";
+        //std::cout<<"Connecting plot "<<plot_names[i-1]<<" to plot "<<plot_names[i]<<"\n";
         //
         // Connect plot output to the next plot
         //

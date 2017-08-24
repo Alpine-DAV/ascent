@@ -113,7 +113,6 @@ void writeAlpineData(Alpine &alpine, Grid_Data *grid_data, int timeStep)
 
   actions.append()["action"] = "execute";  
   actions.append()["action"] = "reset";
-  
   alpine.publish(data);
   alpine.execute(actions);
 }

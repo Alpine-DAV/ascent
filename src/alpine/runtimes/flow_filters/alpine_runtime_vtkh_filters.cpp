@@ -529,11 +529,13 @@ DefaultRender::verify_params(const conduit::Node &params,
     {
         info["errors"].append() = "Missing required numeric parameter 'pipelines'";
     }
-  
+    if(! params.has_child("image_prefix"))
+    {
+        info["errors"].append() = "Missing required string parameter 'image_prefix'";
+    }
     return res;
 }
 
-static int s_image_count = 0;
 //-----------------------------------------------------------------------------
 void 
 DefaultRender::execute()
@@ -567,15 +569,13 @@ DefaultRender::execute()
         largest_dom_count = dom_count;
       }
     }
-    std::stringstream ss;
-    ss<<"default_image_"<<s_image_count;
-    s_image_count++;
+    
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
     vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(1024,
                                                             1024, 
                                                             bounds,
                                                             domain_ids,
-                                                            ss.str());
+                                                            params()["image_prefix"].as_string());
 
     renders->push_back(render); 
     set_output<std::vector<vtkh::Render>>(renders);

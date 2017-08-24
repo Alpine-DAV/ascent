@@ -104,17 +104,16 @@ TEST(alpine_render_2d, test_render_2d_default_runtime)
     //
     Node actions;
 
-    Node &plot = actions.append();
-    plot["action"]     = "add_plot";
-    plot["field_name"] = "braid";
+    conduit::Node scenes;
+    scenes["scene1/plots/plt1/type"]         = "pseudocolor";
+    scenes["scene1/plots/plt1/params/field"] = "braid";
+    scenes["scene1/image_prefix"] =  output_file;
 
-    Node &opts = plot["render_options"];
-    opts["width"]  = 500;
-    opts["height"] = 500;
-    // TODO, .png?
-    opts["file_name"] = output_file;
-    
-    actions.append()["action"] = "draw_plots";
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+    conduit::Node &execute = actions.append();
+    execute["action"] = "execute";
     actions.print();
     
     //
@@ -124,7 +123,7 @@ TEST(alpine_render_2d, test_render_2d_default_runtime)
     Alpine alpine;
     Node alpine_opts;
     // default is now alpine
-    alpine_opts["runtime/type"] = "vtkm";
+    alpine_opts["runtime/type"] = "ascent";
     alpine.open(alpine_opts);
     alpine.publish(data);
     alpine.execute(actions);
@@ -133,9 +132,8 @@ TEST(alpine_render_2d, test_render_2d_default_runtime)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
-
 //-----------------------------------------------------------------------------
-TEST(alpine_render_2d, test_render_2d_render_vtkm_serial_backend)
+TEST(alpine_render_2d, test_render_2d_render_serial_backend)
 {
     
     Node n;
@@ -172,31 +170,29 @@ TEST(alpine_render_2d, test_render_2d_render_vtkm_serial_backend)
     //
     // Create the actions.
     //
-
     Node actions;
-    
-    Node &plot = actions.append();
-    plot["action"]     = "add_plot";
-    plot["field_name"] = "braid";
-    
-    Node &opts = plot["render_options"];
-    opts["width"]  = 500;
-    opts["height"] = 500;
-    opts["file_name"] = output_file;
-    
-    actions.append()["action"] = "draw_plots";
-    
+
+    conduit::Node scenes;
+    scenes["scene1/plots/plt1/type"]         = "pseudocolor";
+    scenes["scene1/plots/plt1/params/field"] = "braid";
+    scenes["scene1/image_prefix"] =  output_file;
+
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+    conduit::Node &execute = actions.append();
+    execute["action"] = "execute";
+    actions.print();
     
     //
     // Run Alpine
     //
     
-    Node open_opts;
-    open_opts["runtime/type"] = "vtkm";
-    open_opts["runtime/backend"] = "serial";
-    
     Alpine alpine;
-    alpine.open(open_opts);
+    Node alpine_opts;
+    // default is now alpine
+    alpine_opts["runtime/type"] = "ascent";
+    alpine.open(alpine_opts);
     alpine.publish(data);
     alpine.execute(actions);
     alpine.close();
