@@ -39,6 +39,7 @@ set(vtkh_rendering_headers
       rendering/vtkh_image_compositor.hpp
       rendering/vtkh_render.hpp
       rendering/vtkh_renderer.hpp
+      rendering/vtkh_renderer_mesh.hpp
       rendering/vtkh_renderer_ray_tracer.hpp
       rendering/vtkh_renderer_volume.hpp
     ) 
@@ -47,6 +48,7 @@ set(vtkh_rendering_sources
       rendering/compositing/vtkh_compositor.cpp
       rendering/vtkh_render.cpp
       rendering/vtkh_renderer.cpp
+      rendering/vtkh_renderer_mesh.cpp
       rendering/vtkh_renderer_ray_tracer.cpp
       rendering/vtkh_renderer_volume.cpp
     )
