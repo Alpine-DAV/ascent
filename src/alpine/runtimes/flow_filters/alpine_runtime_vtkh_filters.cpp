@@ -307,7 +307,6 @@ VTKHRayTracer::execute()
     ray_tracer.SetDoComposite(composite);
     ray_tracer.SetRenders(*renders);
     ray_tracer.SetField(params()["field"].as_string());
-    std::cout<<"PARAM "<<params()["field"].as_string()<<"\n";
     ray_tracer.Update();
     
     std::vector<vtkh::Render> out_renders = ray_tracer.GetRenders();
@@ -374,7 +373,6 @@ VTKHMarchingCubes::execute()
 {
 
     ALPINE_INFO("Marching the cubes!");
-    params().print(); 
     if(!input(0).check_type<vtkh::DataSet>())
     {
         ALPINE_ERROR("vtkh_marchingcubes input must be a vtk-h dataset");

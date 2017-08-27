@@ -323,8 +323,6 @@ AscentRuntime::CreatePipelines(const conduit::Node &pipelines)
   std::vector<std::string> names = pipelines.child_names(); 
   for(int i = 0; i < pipelines.number_of_children(); ++i)
   {
-    
-    std::cout<<"Pipeline name "<<names[i]<<"\n";
     conduit::Node pipe = pipelines.child(i);
     ConvertToFlowGraph(pipe, names[i]);
   }
@@ -391,7 +389,6 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
     // default pipeline: directly connect to published data
     plot_source = "default";
   }
-  std::cout<<"Plot "<<plot_name<<" connects to "<<plot_source<<"\n";
   m_connections[plot_name] = plot_source;
 
 }
@@ -399,11 +396,9 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
 void 
 AscentRuntime::CreatePlots(const conduit::Node &plots)
 {
-  plots.print();
   std::vector<std::string> names = plots.child_names(); 
   for(int i = 0; i < plots.number_of_children(); ++i)
   {
-    std::cout<<"plot name "<<names[i]<<"\n";
     conduit::Node plot = plots.child(i);
     bool composite = i == plots.number_of_children() - 1;
     ConvertPlotToFlow(plot, names[i], composite);
@@ -414,8 +409,6 @@ void
 AscentRuntime::ConnectGraphs()
 {
   //create plot + pipine graphs
-  std::cout<<"Creating connections\n";
-  m_connections.print(); 
   std::vector<std::string> names = m_connections.child_names(); 
   for (int i = 0; i < m_connections.number_of_children(); ++i)
   { 
@@ -438,12 +431,10 @@ AscentRuntime::ConnectGraphs()
 std::vector<std::string>
 AscentRuntime::GetPipelines(const conduit::Node &plots)
 {
-  plots.print();
   std::vector<std::string> pipelines;
   std::vector<std::string> names = plots.child_names(); 
   for(int i = 0; i < plots.number_of_children(); ++i)
   {
-    std::cout<<"getting source from plot name "<<names[i]<<"\n";
     conduit::Node plot = plots.child(i);
     std::string pipeline;
     if(plot.has_path("params/pipeline"))
@@ -454,7 +445,6 @@ AscentRuntime::GetPipelines(const conduit::Node &plots)
     {
       pipeline = CreateDefaultFilters(); 
     }
-    std::cout<<"Adding pipeline "<<pipeline<<"\n";
     pipelines.push_back(pipeline);
   }
   return pipelines;
@@ -480,8 +470,6 @@ AscentRuntime::GetDefaultImagePrefix(const std::string scene)
 void
 AscentRuntime::CreateScenes(const conduit::Node &scenes)
 {
-
-  scenes.print();
 
   std::vector<std::string> names = scenes.child_names(); 
   for(int i = 0; i < scenes.number_of_children(); ++i)
@@ -526,7 +514,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       // We need the input data set bounds to make a 
       // default camera 
       //
-      //std::cout<<"Connecting pipeline "<<pipelines[i]<<" to default render "<<renders_name<<"\n";
 
       w.graph().connect(pipelines[i], // src
                         renders_name, // dest
@@ -536,7 +523,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       //
       if(p == 0)
       {
-        //std::cout<<"Connecting renders "<<renders_name<<" to plot "<<plot_names[i]<<"\n";
         //
         // first plot connects to the render filter
         // on the second port
@@ -546,7 +532,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       }
       else
       {
-        //std::cout<<"Connecting plot "<<plot_names[i-1]<<" to plot "<<plot_names[i]<<"\n";
         //
         // Connect plot output to the next plot
         //
@@ -562,7 +547,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     int pad = max_inputs - plot_count;
     for(int i = 0; i < pad; ++i)
     {
-      std::cout<<"Padding default render input "<<max_inputs - i -1<<"\n";;
       w.graph().connect(pipelines[0], // src
                         renders_name, // dest
                         max_inputs - i - 1);           // default port
@@ -575,7 +559,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
 void
 AscentRuntime::Execute(const conduit::Node &actions)
 {
-    actions.print(); 
     // Loop over the actions
     for (int i = 0; i < actions.number_of_children(); ++i)
     {
