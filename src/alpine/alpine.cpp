@@ -69,7 +69,14 @@ using namespace conduit;
 //-----------------------------------------------------------------------------
 namespace alpine
 {
+
 //-----------------------------------------------------------------------------
+void  
+quiet_handler(const std::string &,
+              const std::string &,
+              int )
+{
+}
 
 //-----------------------------------------------------------------------------
 Alpine::Alpine()
@@ -115,7 +122,21 @@ Alpine::open(const conduit::Node &options)
     {
         ALPINE_ERROR("Alpine Runtime already exists.!");
     }
-    
+
+    bool quiet_output = true; 
+    if(options.has_path("alpine_info"))
+    {
+        if(options["alpine_info"].as_string() == "verbose")
+        {
+            quiet_output = false;
+        }
+    }
+
+    if(quiet_output)
+    {
+        conduit::utils::set_info_handler(quiet_handler);
+    }
+
     Node cfg;
     alpine::about(cfg);
     
@@ -162,7 +183,7 @@ Alpine::open(const conduit::Node &options)
                        << "\"" << m_runtime << "\""
                        << " passed via 'runtime' open option.");
     }
-    
+     
     m_runtime->Initialize(processed_opts);
 }
 
