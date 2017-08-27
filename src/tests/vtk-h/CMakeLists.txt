@@ -55,6 +55,7 @@ set(BASIC_TESTS t_vtk-h_smoke
                 t_vtk-h_clip
                 t_vtk-h_marching_cubes
                 t_vtk-h_threshold
+                t_vtk-h_mesh_renderer
                 t_vtk-h_multi_render
                 t_vtk-h_raytracer
                 t_vtk-h_volume_renderer
