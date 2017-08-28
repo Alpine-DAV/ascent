@@ -87,8 +87,8 @@ struct ConvertToIntImpl<T, true> {
 }  // namespace internal
 
 // Formats a value.
-template <typename Char, typename ArgFormatter, typename T>
-void format(BasicFormatter<Char, ArgFormatter> &f,
+template <typename Char, typename ArgFormatter_, typename T>
+void format(BasicFormatter<Char, ArgFormatter_> &f,
             const Char *&format_str, const T &value) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
 

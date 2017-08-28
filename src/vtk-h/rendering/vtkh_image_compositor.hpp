@@ -3,6 +3,8 @@
 
 #include <rendering/vtkh_image.hpp>
 
+#include <algorithm>
+
 namespace vtkh
 {
 

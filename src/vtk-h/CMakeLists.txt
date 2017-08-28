@@ -91,6 +91,10 @@ if(VTKM_FOUND)
     list(APPEND vtkh_thirdparty_libs vtkm)
 endif()
 
+if(CUDA_FOUND)
+    list(APPEND vtkh_thirdparty_libs cuda)
+endif()
+
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -136,7 +140,7 @@ if(MPI_FOUND)
     blt_add_library(
         NAME        vtkh_par
         SOURCES     ${vtkh_sources} ${vtkh_par_sources}
-        HEADERS     ${vtkh_par_headers}
+        HEADERS     ${vtkh_par_headers} ${vtkh_headers}
         DEPENDS_ON  ${vtkh_thirdparty_libs} mpi icet)
   
     blt_add_target_compile_flags(TO vtkh_par FLAGS "-D PARALLEL")

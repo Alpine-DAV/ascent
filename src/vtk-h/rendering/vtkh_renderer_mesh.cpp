@@ -1,6 +1,6 @@
 #include <rendering/vtkh_renderer_mesh.hpp>
 #include <vtkm/rendering/CanvasRayTracer.h>
-#include <vtkm/rendering/MapperWireFramer.h>
+#include <vtkm/rendering/MapperWireframer.h>
 #include <memory>
 
 namespace vtkh {

@@ -41,7 +41,6 @@ Compositor::ClearImages()
 {
   m_images.clear();
 }
-static int count = 0;
 
 void 
 Compositor::AddImage(const unsigned char *color_buffer,
