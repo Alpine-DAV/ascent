@@ -10,7 +10,18 @@ namespace vtkh
 
 #ifdef PARALLEL
 
-static MPI_Comm g_mpi_comm = NULL;
+static MPI_Comm g_mpi_comm = MPI_COMM_NULL;
+
+void CheckCommHandle()
+{
+  if(g_mpi_comm == MPI_COMM_NULL)
+  {
+    std::stringstream msg;
+    msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
+    msg<<"It is likely that VTKH.Open(MPI_Comm) was not called.";
+    throw Error(msg.str());
+  }
+}
 
 void 
 SetMPIComm(MPI_Comm mpi_comm)
@@ -21,26 +32,14 @@ SetMPIComm(MPI_Comm mpi_comm)
 MPI_Comm 
 GetMPIComm()
 {
-  if(g_mpi_comm == NULL)
-  {
-    std::stringstream msg;
-    msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
-    msg<<"It is likely that VTKH.Open(MPI_Comm) was not called.";
-    throw Error(msg.str());
-  }
+  CheckCommHandle();
   return g_mpi_comm;
 }
 
 int 
 GetMPIRank()
 {
-  if(g_mpi_comm == NULL)
-  {
-    std::stringstream msg;
-    msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
-    msg<<"It is likely that VTKH.Open(MPI_Comm) was not called.";
-    throw Error(msg.str());
-  }
+  CheckCommHandle();
   int rank;
   MPI_Comm comm = GetMPIComm(); 
   MPI_Comm_rank(comm, &rank);
@@ -50,13 +49,7 @@ GetMPIRank()
 int 
 GetMPISize()
 {
-  if(g_mpi_comm == NULL)
-  {
-    std::stringstream msg;
-    msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
-    msg<<"It is likely that VTKH.Open(MPI_Comm) was not called.";
-    throw Error(msg.str());
-  }
+  CheckCommHandle();
   int size;
   MPI_Comm comm = GetMPIComm(); 
   MPI_Comm_size(comm, &size);

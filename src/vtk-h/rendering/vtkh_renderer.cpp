@@ -169,6 +169,7 @@ Renderer::DoExecute()
       const vtkm::cont::DynamicCellSet &cellset = data_set.GetCellSet();
       const vtkm::cont::Field &field = data_set.GetField(m_field_name);
       const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
+      if(cellset.GetNumberOfCells() == 0) continue;
       // paint
       vtkmCanvasPtr p_canvas = m_renders[i].GetDomainCanvas(domain_id);
       const vtkmCamera &camera = m_renders[i].GetCamera();; 

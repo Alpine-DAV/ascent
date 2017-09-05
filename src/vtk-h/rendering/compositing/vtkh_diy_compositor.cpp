@@ -2,8 +2,8 @@
 //#include "alpine_config.h"
 #include "alpine_logging.hpp"
 #include <vtkh.hpp>
-#include "vtkh_diy_direct_send.hpp"
-#include "vtkh_diy_radix_k.hpp"
+#include <rendering/compositing/vtkh_diy_direct_send.hpp>
+#include <rendering/compositing/vtkh_diy_radix_k.hpp>
 #include <diy/mpi.hpp>
 
 #include <assert.h>

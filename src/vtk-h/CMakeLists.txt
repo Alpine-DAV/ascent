@@ -121,7 +121,9 @@ install(TARGETS vtkh
 # Build Parallel (MPI) version of vtkh
 ################################################
 if(MPI_FOUND)
-    set(vtkh_par_sources
+    set(vtkh_par_headers
+        rendering/vtkh_image_compositor.hpp
+        rendering/compositing/vtkh_compositor.hpp
         rendering/compositing/vtkh_diy_collect.hpp
         rendering/compositing/vtkh_diy_compositor.hpp
         rendering/compositing/vtkh_diy_direct_send.hpp
@@ -129,22 +131,32 @@ if(MPI_FOUND)
         rendering/compositing/vtkh_diy_radix_k.hpp
         ) 
 
-    set(vtkh_par_headers
-        rendering/vtkh_renderer.cpp
-        rendering/vtkh_renderer_ray_tracer.cpp
+    set(vtkh_par_sources
         rendering/compositing/vtkh_diy_compositor.cpp
         rendering/compositing/vtkh_diy_direct_send.cpp
         rendering/compositing/vtkh_diy_radix_k.cpp
         )
+
+
+    #add_definitions(-DPARALLEL)
+    if(VTKH_VTKM_USE_CUDA)
+        set(CUDA_NVCC_FLAGS_PREV ${CUDA_NVCC_FLAGS})   
+        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -D PARALLEL")
+    endif()
 
     blt_add_library(
         NAME        vtkh_par
         SOURCES     ${vtkh_sources} ${vtkh_par_sources}
         HEADERS     ${vtkh_par_headers} ${vtkh_headers}
         DEPENDS_ON  ${vtkh_thirdparty_libs} mpi icet)
+    
+    if(VTKH_VTKM_USE_CUDA)
+        SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS_PREVIOUS}) 
+    else()
+         blt_add_target_compile_flags(TO vtkh_par FLAGS "-D PARALLEL")
+    endif()
   
-    blt_add_target_compile_flags(TO vtkh_par FLAGS "-D PARALLEL")
-  
+    # remove_definitions(-DPARALLEL)
     # install target for mpi ver
     install(TARGETS vtkh_par
             EXPORT  alpine
