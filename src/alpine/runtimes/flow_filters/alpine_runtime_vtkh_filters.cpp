@@ -77,7 +77,7 @@
 #include <vtkh_threshold.hpp>
 #include <vtkm/cont/DataSet.h>
 
-#include <alpine_data_adapter.hpp>
+#include <alpine_vtkh_data_adapter.hpp>
 
 #endif
 
@@ -135,14 +135,14 @@ EnsureVTKH::execute()
     {
         // convert from blueprint to vtk-h
         const Node *n_input = input<Node>(0);
-        vtkh::DataSet *res = DataAdapter::BlueprintToVTKHDataSet(*n_input);
+        vtkh::DataSet *res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
         set_output<vtkh::DataSet>(res);
 
     }
     else if(input(0).check_type<vtkm::cont::DataSet>())
     {
         // wrap our vtk-m dataset in vtk-h
-        vtkh::DataSet *res = DataAdapter::VTKmDataSetToVTKHDataSet(input<vtkm::cont::DataSet>(0));
+        vtkh::DataSet *res = VTKHDataAdapter::VTKmDataSetToVTKHDataSet(input<vtkm::cont::DataSet>(0));
         set_output<vtkh::DataSet>(res);
     }
     else if(input(0).check_type<vtkh::DataSet>())
@@ -699,7 +699,7 @@ EnsureVTKM::execute()
     {
         // convert from conduit to vtkm
         const Node *n_input = input<Node>(0);
-        vtkm::cont::DataSet  *res = DataAdapter::BlueprintToVTKmDataSet(*n_input);
+        vtkm::cont::DataSet  *res = VTKHDataAdapter::BlueprintToVTKmDataSet(*n_input);
         set_output<vtkm::cont::DataSet>(res);
     }
     else

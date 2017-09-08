@@ -48,8 +48,7 @@
 /// file: alpine_data_adapter.cpp
 ///
 //-----------------------------------------------------------------------------
-// #define VTKM_DEVICE_ADAPTER VTKM_DEVICE_ADAPTER_SERIAL
-#include "alpine_data_adapter.hpp"
+#include "alpine_vtkh_data_adapter.hpp"
 
 // standard lib includes
 #include <iostream>
@@ -81,17 +80,17 @@ namespace alpine
 {
 
 //-----------------------------------------------------------------------------
-// DataAdapter public methods
+// VTKHDataAdapter public methods
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 vtkh::DataSet *
-DataAdapter::BlueprintToVTKHDataSet(const Node &node,
+VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
                                     const std::string &topo_name)
 {   
     // TODO: check for multi-domain case:
 
-    vtkm::cont::DataSet *dset = DataAdapter::BlueprintToVTKmDataSet(node,
+    vtkm::cont::DataSet *dset = VTKHDataAdapter::BlueprintToVTKmDataSet(node,
                                                                     topo_name);
     
     int domain_id = 0;
@@ -118,7 +117,7 @@ DataAdapter::BlueprintToVTKHDataSet(const Node &node,
 
 //-----------------------------------------------------------------------------
 vtkh::DataSet *
-DataAdapter::VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset)
+VTKHDataAdapter::VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset)
 {
     // wrap a single VTKm data set into a VTKH dataset
     vtkh::DataSet   *res = new  vtkh::DataSet;
@@ -129,7 +128,7 @@ DataAdapter::VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset)
 
 //-----------------------------------------------------------------------------
 vtkm::cont::DataSet *
-DataAdapter::BlueprintToVTKmDataSet(const Node &node,
+VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                                     const std::string &topo_name_str)
 {   
     vtkm::cont::DataSet * result = NULL;
@@ -323,7 +322,7 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-DataAdapter::UniformBlueprintToVTKmDataSet
+VTKHDataAdapter::UniformBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name 
      const Node &n_coords,           // input mesh bp coordset (assumed uniform)
      const std::string &topo_name,   // input string with topo name
@@ -446,7 +445,7 @@ DataAdapter::UniformBlueprintToVTKmDataSet
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-DataAdapter::RectilinearBlueprintToVTKmDataSet
+VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name 
      const Node &n_coords,           // input mesh bp coordset (assumed rectilinear)
      const std::string &topo_name,   // input string with topo name
@@ -536,7 +535,7 @@ DataAdapter::RectilinearBlueprintToVTKmDataSet
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-DataAdapter::StructuredBlueprintToVTKmDataSet
+VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name 
      const Node &n_coords,           // input mesh bp coordset (assumed rectilinear)
      const std::string &topo_name,   // input string with topo name
@@ -617,7 +616,7 @@ DataAdapter::StructuredBlueprintToVTKmDataSet
 //-----------------------------------------------------------------------------
 
 vtkm::cont::DataSet *
-DataAdapter::UnstructuredBlueprintToVTKmDataSet
+VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name 
      const Node &n_coords,           // input mesh bp coordset (assumed unstructured)
      const std::string &topo_name,   // input string with topo name
@@ -711,12 +710,12 @@ DataAdapter::UnstructuredBlueprintToVTKmDataSet
 //-----------------------------------------------------------------------------
 
 void
-DataAdapter::AddField(const std::string &field_name,
-                      const Node &n_field,
-                      const std::string &topo_name,
-                      int neles,
-                      int nverts,
-                      vtkm::cont::DataSet *dset)
+VTKHDataAdapter::AddField(const std::string &field_name,
+                          const Node &n_field,
+                          const std::string &topo_name,
+                          int neles,
+                          int nverts,
+                          vtkm::cont::DataSet *dset)
 {
     ALPINE_INFO("nverts "  << nverts);
     ALPINE_INFO("neles "  << neles);

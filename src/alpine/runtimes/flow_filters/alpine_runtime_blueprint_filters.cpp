@@ -69,7 +69,7 @@
 
 #if defined(ALPINE_VTKM_ENABLED)
 #include <vtkm/cont/DataSet.h>
-#include <alpine_data_adapter.hpp>
+#include <alpine_vtkh_data_adapter.hpp>
 #endif
 
 using namespace conduit;

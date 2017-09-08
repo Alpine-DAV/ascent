@@ -108,8 +108,8 @@ set(alpine_headers
 if(VTKM_FOUND)
 
     # data adapter
-    list(APPEND alpine_headers runtimes/alpine_data_adapter.hpp)
-    list(APPEND alpine_sources runtimes/alpine_data_adapter.cpp)
+    list(APPEND alpine_headers runtimes/alpine_vtkh_data_adapter.hpp)
+    list(APPEND alpine_sources runtimes/alpine_vtkh_data_adapter.cpp)
 
     # vtkh filters
     list(APPEND alpine_headers runtimes/flow_filters/alpine_runtime_vtkh_filters.hpp)

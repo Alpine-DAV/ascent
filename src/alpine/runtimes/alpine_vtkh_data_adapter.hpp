@@ -49,8 +49,8 @@
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ALPINE_DATA_ADAPTER_HPP
-#define ALPINE_DATA_ADAPTER_HPP
+#ifndef ALPINE_VTKH_DATA_ADAPTER_HPP
+#define ALPINE_VTKH_DATA_ADAPTER_HPP
 
 
 // forward decs
@@ -86,7 +86,7 @@ namespace alpine
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-class DataAdapter 
+class VTKHDataAdapter 
 {
 public:
 
