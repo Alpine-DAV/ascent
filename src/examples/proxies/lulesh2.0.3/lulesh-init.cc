@@ -206,11 +206,12 @@ Domain::Domain(Int_t numRanks, Int_t myRank,
       m_alpine_node["coordsets/coords/values/y"].set_external(m_y);
       m_alpine_node["coordsets/coords/values/z"].set_external(m_z);
       
-      m_alpine_node["topologies/mesh/type"] = "unstructured";
+      m_alpine_node["topologies/mesh/type"] = "structured";
       m_alpine_node["topologies/mesh/coordset"] = "coords";
-      
-      m_alpine_node["topologies/mesh/elements/shape"] = "hex";
-      m_alpine_node["topologies/mesh/elements/connectivity"].set_external(m_nodelist);
+
+      m_alpine_node["topologies/mesh/elements/dims/i"] = nx; 
+      m_alpine_node["topologies/mesh/elements/dims/j"] = nx; 
+      m_alpine_node["topologies/mesh/elements/dims/k"] = nx; 
 
       m_alpine_node["fields/e/association"] = "element";
       m_alpine_node["fields/e/type"]        = "scalar";

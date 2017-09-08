@@ -69,6 +69,8 @@
 #include <alpine_logging.hpp>
 #include <alpine_block_timer.hpp>
 
+#include <utils/vtkm_array_utils.hpp>
+
 using namespace std;
 using namespace conduit;
 
@@ -542,8 +544,72 @@ DataAdapter::StructuredBlueprintToVTKmDataSet
      int &neles,                     // output, number of eles
      int &nverts)                    // output, number of verts
 {
-    ALPINE_ERROR("Blueprint Structured Mesh to VTKm DataSet Not Implemented");
-    return NULL;
+    vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
+
+    nverts = n_coords["values/x"].dtype().number_of_elements();
+    
+
+    int32 ndims = 2;
+    
+    const float64 *x_coords_ptr = n_coords["values/x"].as_float64_ptr();
+    const float64 *y_coords_ptr = n_coords["values/y"].as_float64_ptr();
+    const float64 *z_coords_ptr = NULL;
+    
+    if(n_coords.has_path("values/z"))
+    {
+        ndims = 3;
+        z_coords_ptr = n_coords["values/z"].as_float64_ptr();
+    }
+
+    vtkm::cont::ArrayHandle<vtkm::Float64> x_coords_handle;
+    vtkm::cont::ArrayHandle<vtkm::Float64> y_coords_handle;
+    vtkm::cont::ArrayHandle<vtkm::Float64> z_coords_handle;
+    
+    x_coords_handle = vtkm::cont::make_ArrayHandle(x_coords_ptr, nverts);
+    y_coords_handle = vtkm::cont::make_ArrayHandle(y_coords_ptr, nverts);
+
+    if(ndims == 3)
+    {
+        z_coords_handle = vtkm::cont::make_ArrayHandle(z_coords_ptr, nverts);
+    }
+    else 
+    {
+        z_coords_handle.Allocate(nverts); 
+        // This does not get initialized to zero
+        vtkm::Float64 *z = vtkh::GetVTKMPointer(z_coords_handle);
+        memset(z, 0.0, nverts * sizeof(vtkm::Float64));
+    }
+    result->AddCoordinateSystem(
+      vtkm::cont::CoordinateSystem(coords_name.c_str(),
+        make_ArrayHandleCompositeVector(x_coords_handle,
+                                        0,
+                                        y_coords_handle,
+                                        0,
+                                        z_coords_handle,
+                                        0)));
+    n_topo.print();
+    int32 x_elems = n_topo["elements/dims/i"].as_int32(); 
+    int32 y_elems = n_topo["elements/dims/j"].as_int32(); 
+    if (ndims == 2)
+    {
+      vtkm::cont::CellSetStructured<2> cell_set(topo_name.c_str());
+      cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
+                                                 y_elems+1));
+      result->AddCellSet(cell_set);
+      neles = x_elems * y_elems;
+    }
+    else
+    {
+      int32 z_elems = n_topo["elements/dims/k"].as_int32(); 
+      vtkm::cont::CellSetStructured<3> cell_set(topo_name.c_str());
+      cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
+                                                 y_elems+1,
+                                                 z_elems+1));
+      result->AddCellSet(cell_set);
+      neles = x_elems * y_elems * z_elems;
+
+    }
+    return result;
 }
 
 

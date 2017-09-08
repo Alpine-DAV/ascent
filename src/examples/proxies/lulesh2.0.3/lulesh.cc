@@ -2861,6 +2861,7 @@ int main(int argc, char *argv[])
 #endif
     // TODO:
     alpine_opts["runtime/type"] = "ascent";
+    alpine_opts["alpine_info"] = "verbose";
     
     alpine.open(alpine_opts);
    // BEGIN timestep to solution */
@@ -2886,7 +2887,7 @@ int main(int argc, char *argv[])
    
    alpine.publish(locDom->visitNode());
    alpine.execute(actions);
-   
+   actions.print();
    while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
      {
         ALPINE_BLOCK_TIMER(LULESH_MAIN_LOOP)

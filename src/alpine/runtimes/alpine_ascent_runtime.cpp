@@ -472,9 +472,11 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
 {
 
   std::vector<std::string> names = scenes.child_names(); 
-  for(int i = 0; i < scenes.number_of_children(); ++i)
+  const int num_scenes = scenes.number_of_children();
+  for(int i = 0; i < num_scenes; ++i)
   {
     conduit::Node scene = scenes.child(i);
+    scene.print();
     if(!scene.has_path("plots"))
     {
       ALPINE_ERROR("Default scene not implemented");
@@ -506,8 +508,20 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     //
     std::vector<std::string> pipelines = GetPipelines(scene["plots"]); 
     std::vector<std::string> plot_names = scene["plots"].child_names();
-    CreatePlots(scene["plots"]);
-    for(int p = 0; i < plot_count; ++i)
+    
+    // create plots with scene name appended 
+    conduit::Node appended_plots;
+    for(int k = 0; k < plot_names.size(); ++k)
+    {
+      std::string p_name = plot_names[k] + "_" + names[i];
+      appended_plots[p_name] = scene["plots/" + plot_names[k]];
+    }
+
+    plot_names = appended_plots.child_names();
+
+    CreatePlots(appended_plots);
+
+    for(int p = 0; p < plot_count; ++p)
     {
       //
       // connect the plot source to the render filter.
@@ -515,9 +529,9 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       // default camera 
       //
 
-      w.graph().connect(pipelines[i], // src
+      w.graph().connect(pipelines[p], // src
                         renders_name, // dest
-                        i);           // default port
+                        p);           // default port
       //
       // Connect the render to the plots
       //
@@ -527,7 +541,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
         // first plot connects to the render filter
         // on the second port
         w.graph().connect(renders_name,   // src
-                          plot_names[i], // dest
+                          plot_names[p], // dest
                           1);           // default port
       }
       else
@@ -535,8 +549,8 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
         //
         // Connect plot output to the next plot
         //
-        w.graph().connect(plot_names[i-1],   // src
-                          plot_names[i],     // dest
+        w.graph().connect(plot_names[p-1],   // src
+                          plot_names[p],     // dest
                           1);                // default port
 
       }
@@ -545,15 +559,13 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
 
     const int max_inputs = 3;
     int pad = max_inputs - plot_count;
-    for(int i = 0; i < pad; ++i)
+    for(int x = 0; x < pad; ++x)
     {
       w.graph().connect(pipelines[0], // src
                         renders_name, // dest
-                        max_inputs - i - 1);           // default port
+                        max_inputs - x - 1);           // default port
     }
   }
-
-  //CreatePlots(action["plots"]);
 }
 //-----------------------------------------------------------------------------
 void

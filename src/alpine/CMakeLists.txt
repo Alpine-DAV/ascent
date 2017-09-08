@@ -81,6 +81,7 @@ set(alpine_sources
     # utils
     utils/alpine_file_system.cpp
     utils/alpine_block_timer.cpp
+    utils/alpine_png_encoder.cpp
     utils/alpine_web_interface.cpp)
 
 set(alpine_headers
@@ -153,14 +154,14 @@ if(VTKM_FOUND)
     list(APPEND alpine_thirdparty_libs vtkm vtkh)
 endif()
 
-if(CUDA_FOUND)
-    list(APPEND alpine_thirdparty_libs cuda_runtime)
-endif()
-
-
-if(TBB_FOUND)
-    list(APPEND alpine_thirdparty_libs tbb)
-endif()
+#if(CUDA_FOUND)
+#    list(APPEND alpine_thirdparty_libs cuda_runtime)
+#endif()
+#
+#
+#if(TBB_FOUND)
+#    list(APPEND alpine_thirdparty_libs tbb)
+#endif()
 
 
 ##########################################
