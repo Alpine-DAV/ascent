@@ -220,8 +220,6 @@ create_3d_example_dataset(Node &data,
                           int par_rank=0,
                           int par_size=1)
 {
-    const float64 PI_VALUE = 3.14159265359;
-    
     // if( (par_size > 1)  && ((par_size % par_rank) != 0))
     // {
     //     ALPINE_ERROR("par_size ("  << par_size << ") " <<

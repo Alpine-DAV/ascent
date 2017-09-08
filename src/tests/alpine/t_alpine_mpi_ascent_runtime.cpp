@@ -108,7 +108,6 @@ TEST(alpine_mpi_runtime, test_render_mpi_2d_main_runtime)
     // remove old images before rendering
     remove_test_image(output_file);
     
-    
     //
     // Create the actions.
     //
@@ -116,12 +115,15 @@ TEST(alpine_mpi_runtime, test_render_mpi_2d_main_runtime)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
  
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     // todo add_scene, singular? to simplify
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
         
     
     actions.print();
@@ -145,7 +147,7 @@ TEST(alpine_mpi_runtime, test_render_mpi_2d_main_runtime)
    
     MPI_Barrier(comm);
     // check that we created an image
-    // EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file));
 }
 
 //-----------------------------------------------------------------------------

@@ -74,9 +74,9 @@ TEST(alpine_render_2d, test_render_2d_default_runtime)
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["runtimes/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
     {
-        ALPINE_INFO("VTKm support disabled, skipping 2D default"
+        ALPINE_INFO("Ascent support disabled, skipping 2D default"
                       "Pipeline test");
 
         return;
@@ -107,7 +107,7 @@ TEST(alpine_render_2d, test_render_2d_default_runtime)
     conduit::Node scenes;
     scenes["scene1/plots/plt1/type"]         = "pseudocolor";
     scenes["scene1/plots/plt1/params/field"] = "braid";
-    scenes["scene1/image_prefix"] =  output_file;
+    scenes["scene1/image_prefix"] = output_file;
 
     conduit::Node &add_scenes = actions.append();
     add_scenes["action"] = "add_scenes";
@@ -139,14 +139,14 @@ TEST(alpine_render_2d, test_render_2d_render_serial_backend)
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["runtimes/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
     {
-        ALPINE_INFO("VTKm support disabled, skipping 2D VTKm Serial "
+        ALPINE_INFO("Ascent support disabled, skipping 2D Ascent Serial "
                       "Pipeline test");
         return;
     }
     
-    ALPINE_INFO("Testing 2D VTKm Serial Pipeline");
+    ALPINE_INFO("Testing 2D Ascent Runtime");
     
     //
     // Create an example mesh.
@@ -163,7 +163,7 @@ TEST(alpine_render_2d, test_render_2d_render_serial_backend)
     verify_info.print();
     
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_vtkm_serial_backend");
+    string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_ascent_serial_backend");
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -192,6 +192,7 @@ TEST(alpine_render_2d, test_render_2d_render_serial_backend)
     Node alpine_opts;
     // default is now alpine
     alpine_opts["runtime/type"] = "ascent";
+    alpine_opts["runtime/backend"] = "serial";
     alpine.open(alpine_opts);
     alpine.publish(data);
     alpine.execute(actions);
