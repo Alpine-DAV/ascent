@@ -31,7 +31,6 @@ struct Redistribute
     // chop it up into pieces, and send it to the domain resposible
     // for that portion 
     //
-    const int rank = proxy.gid();
     const int world_size = m_decomposer.nblocks;
     const int local_images = block->m_images.size(); 
     if(proxy.in_link().size() == 0)
@@ -50,7 +49,6 @@ struct Redistribute
         for(int img = 0;  img < local_images; ++img) 
         {
           outgoing[dest][img].SubsetFrom(block->m_images[img], vtkm_sub_bounds); 
-          //std::cout<<outgoing[dest][img].ToString()<<"\n";
         }
       } //for
 

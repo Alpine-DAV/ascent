@@ -2,12 +2,12 @@
 #include "vtkh_error.hpp"
 
 #include <vtkm/cont/RuntimeDeviceInformation.h>
+#include <vtkm/cont/RuntimeDeviceTracker.h>
 #include <vtkm/cont/DeviceAdapterListTag.h>
 #include <sstream>
 
 namespace vtkh
 {
-
 #ifdef PARALLEL
 
 static MPI_Comm g_mpi_comm = MPI_COMM_NULL;
@@ -58,12 +58,55 @@ GetMPISize()
 
 #endif
 
+bool IsSerialEnabled()
+{
+  vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagSerial> serial;
+  return serial.Exists();
+}
+
+bool IsTBBEnabled()
+{
+  vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagTBB> tbb;
+  return tbb.Exists();
+}
+
+bool IsCUDAEnabled()
+{
+  vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagCuda> cuda;
+  return cuda.Exists();
+}
+
+void ForceSerial()
+{
+  vtkm::cont::RuntimeDeviceTracker global_tracker;
+  global_tracker = vtkm::cont::GetGlobalRuntimeDeviceTracker();
+  global_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
+}
+
+void ForceTBB()
+{
+  vtkm::cont::RuntimeDeviceTracker global_tracker;
+  global_tracker = vtkm::cont::GetGlobalRuntimeDeviceTracker();
+  global_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagTBB());
+}
+
+void ForceCUDA()
+{
+  vtkm::cont::RuntimeDeviceTracker global_tracker;
+  global_tracker = vtkm::cont::GetGlobalRuntimeDeviceTracker();
+  global_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
+}
+
+void ResetDevices()
+{
+  vtkm::cont::RuntimeDeviceTracker global_tracker;
+  global_tracker = vtkm::cont::GetGlobalRuntimeDeviceTracker();
+  global_tracker.Reset();
+}
+
 std::string AboutVTKH()
 {
   std::stringstream msg;
-  vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagCuda> cuda;
-  vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagTBB> tbb;
-  vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagSerial> serial;
   msg<<"---------------- VTK-h -------------------\n";
 #ifdef PARALLEL
   int version, subversion;
@@ -74,17 +117,17 @@ std::string AboutVTKH()
 #endif
   msg<<"VTK-m adapters: ";
 
-  if(cuda.Exists())
+  if(IsCUDAEnabled())
   {
     msg<<"Cuda ";
   }
 
-  if(tbb.Exists())
+  if(IsTBBEnabled())
   {
     msg<<"TBB ";
   }
 
-  if(serial.Exists())
+  if(IsSerialEnabled())
   {
     msg<<"Serial ";
   }

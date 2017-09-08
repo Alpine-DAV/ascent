@@ -94,14 +94,7 @@ TEST(alpine_pipeline, test_render_2d_main_pipeline)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "braid";
- 
-    //
-    // Node &opts = plot["render_options"];
-    // opts["width"]  = 500;
-    // opts["height"] = 500;
-    // // TODO, .png?
-    // opts["file_name"] = output_file;
-    //
+    scenes["s1/image_prefix"] = output_file;
  
  
     conduit::Node actions;
@@ -126,5 +119,5 @@ TEST(alpine_pipeline, test_render_2d_main_pipeline)
     alpine.close();
     //
     // // check that we created an image
-    // EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file));
 }

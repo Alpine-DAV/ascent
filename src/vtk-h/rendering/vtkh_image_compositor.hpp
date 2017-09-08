@@ -111,8 +111,6 @@ void CombineImages(const std::vector<vtkh::Image> &images, std::vector<Pixel> &p
 {
 
   const int num_images = static_cast<int>(images.size());
-  int total_pixels = images[0].GetNumberOfPixels() * num_images;
-
   for(int i = 0; i < num_images; ++i)
   {
     //

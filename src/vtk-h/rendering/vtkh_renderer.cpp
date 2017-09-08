@@ -14,8 +14,8 @@
 namespace vtkh {
 
 Renderer::Renderer()
-  : m_color_table("cool2warm"),
-    m_do_composite(true),
+  : m_do_composite(true),
+    m_color_table("cool2warm"),
     m_field_index(0)
 {
   m_compositor  = NULL; 

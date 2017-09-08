@@ -57,6 +57,7 @@
 
 #if defined(ALPINE_VTKH_ENABLED)
     #include <runtimes/alpine_ascent_runtime.hpp>
+    #include <vtkh.hpp>
 #endif
 
 #if defined(ALPINE_VTKM_ENABLED)
@@ -160,6 +161,26 @@ Alpine::open(const conduit::Node &options)
     {
 #if defined(ALPINE_VTKH_ENABLED)
         m_runtime = new AscentRuntime();
+        if(processed_opts.has_path("runtime/backend"))
+        {
+          std::string backend = processed_opts["runtime/backend"].as_string();
+          if(backend == "serial")
+          {
+            vtkh::ForceSerial();
+          }
+          else if(backend == "tbb")
+          {
+            vtkh::ForceTBB();
+          }
+          else if(backend == "cuda")
+          {
+            vtkh::ForceCUDA();
+          }
+          else
+          {
+            ALPINE_ERROR("Ascent unrecognized backend "<<backend);
+          }
+        }
 #else
         ALPINE_ERROR("Ascent runtime is disabled. "
                      "Alpine was not built with vtk-h support");
@@ -272,6 +293,32 @@ about(conduit::Node &n)
 
 #if defined(ALPINE_VTKH_ENABLED)
      n["runtimes/ascent/status"] = "enabled";
+     if(vtkh::IsSerialEnabled())
+     {
+       n["runtimes/ascent/backends/serial"] = "enabled";
+     }
+     else
+     {
+       n["runtimes/ascent/backends/serial"] = "disabled";
+     }
+
+     if(vtkh::IsTBBEnabled())
+     {
+       n["runtimes/ascent/backends/tbb"] = "enabled";
+     }
+     else
+     {
+       n["runtimes/ascent/backends/tbb"] = "disabled";
+     }
+
+     if(vtkh::IsCUDAEnabled())
+     {
+       n["runtimes/ascent/backends/cuda"] = "enabled";
+     }
+     else
+     {
+       n["runtimes/ascent/backends/cuda"] = "disabled";
+     }
 #else
      n["runtimes/ascent/status"] = "disabled";
 #endif
