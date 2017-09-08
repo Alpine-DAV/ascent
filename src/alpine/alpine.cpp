@@ -60,10 +60,6 @@
     #include <vtkh.hpp>
 #endif
 
-#if defined(ALPINE_VTKM_ENABLED)
-    #include <runtimes/alpine_vtkm_runtime.hpp>
-#endif
-
 using namespace conduit;
 //-----------------------------------------------------------------------------
 // -- begin alpine:: --
@@ -189,14 +185,6 @@ Alpine::open(const conduit::Node &options)
     else if(runtime_type == "flow")
     {
         m_runtime = new FlowRuntime();
-    }
-    else if(runtime_type == "vtkm")
-    {
-#if defined(ALPINE_VTKM_ENABLED)
-        m_runtime = new VTKMRuntime();
-#else
-        ALPINE_ERROR("Alpine was not built with VTKm support");
-#endif
     }
     else
     {

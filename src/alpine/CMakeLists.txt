@@ -81,7 +81,6 @@ set(alpine_sources
     # utils
     utils/alpine_file_system.cpp
     utils/alpine_block_timer.cpp
-    utils/alpine_png_encoder.cpp
     utils/alpine_web_interface.cpp)
 
 set(alpine_headers
@@ -110,18 +109,6 @@ if(VTKM_FOUND)
     # data adapter
     list(APPEND alpine_headers runtimes/alpine_data_adapter.hpp)
     list(APPEND alpine_sources runtimes/alpine_data_adapter.cpp)
-
-    # VTKm Pipeline Headers
-    list(APPEND alpine_headers runtimes/alpine_vtkm_runtime.hpp)
-    list(APPEND alpine_headers runtimes/alpine_vtkm_renderer.hpp)
-
-    # VTKm Pipeline Sources
-    list(APPEND alpine_sources runtimes/alpine_vtkm_runtime.cpp)
-    # VTKm Rendering Headers
-    list(APPEND alpine_headers runtimes/alpine_vtkm_renderer.hpp)
-
-    # VTKm Rendering Sources
-    list(APPEND alpine_sources runtimes/alpine_vtkm_renderer.cpp)
 
     # vtkh filters
     list(APPEND alpine_headers runtimes/flow_filters/alpine_runtime_vtkh_filters.hpp)
@@ -200,19 +187,9 @@ install(TARGETS alpine
 if(MPI_FOUND)
     if(VTKM_FOUND)
         # we only need compositing if we are rendering with vtk-m
-        set(alpine_par_sources utils/alpine_icet_compositor.cpp
-                               utils/alpine_diy_compositor.cpp
-                               utils/diy_compositing/alpine_diy_direct_send.cpp
-                               utils/diy_compositing/alpine_diy_direct_send.cpp
-                               utils/diy_compositing/alpine_diy_radix_k.cpp)
+        set(alpine_par_sources )
                      
-        set(alpine_par_headers utils/alpine_icet_compositor.hpp
-                               utils/alpine_compositor_base.hpp
-                               utils/alpine_diy_compositor.hpp
-                               utils/diy_compositing/alpine_diy_image.hpp
-                               utils/diy_compositing/alpine_diy_collect.hpp
-                               utils/diy_compositing/alpine_diy_direct_send.hpp
-                               utils/diy_compositing/alpine_diy_radix_k.hpp)
+        set(alpine_par_headers )
     endif()
    
     # req'd libs 
