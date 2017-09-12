@@ -21,9 +21,11 @@ public:
                                                           DefaultHandle,
                                                           DefaultHandle> CartesianArrayHandle;
 //-----------------------------------------------------------------------------
-  static bool IsStructured(const vtkm::cont::DataSet &data_set, int &topo_dims)
+  static bool IsStructured(const vtkm::cont::DataSet &data_set, 
+                           int &topo_dims, 
+                           const vtkm::Id cell_set_index = 0)
   {
-    const vtkm::cont::DynamicCellSet cell_set = data_set.GetCellSet();
+    const vtkm::cont::DynamicCellSet cell_set = data_set.GetCellSet(cell_set_index);
     return IsStructured(cell_set, topo_dims);
   }
 

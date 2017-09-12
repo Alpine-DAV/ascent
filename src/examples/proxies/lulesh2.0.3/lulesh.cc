@@ -2853,16 +2853,17 @@ int main(int argc, char *argv[])
    //
    // setup Alpine In-situ rendering.
    //
-    Alpine sman;
+    Alpine alpine;
     Node alpine_opts;
 
 #if USE_MPI
     alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
-    alpine_opts["pipeline/type"] = "vtkm";
-    alpine_opts["pipeline/backend"] = "serial";
+    // TODO:
+    alpine_opts["runtime/type"] = "ascent";
+    alpine_opts["alpine_info"] = "verbose";
     
-    sman.Open(alpine_opts);
+    alpine.open(alpine_opts);
    // BEGIN timestep to solution */
 #if USE_MPI   
    double start = MPI_Wtime();
@@ -2874,6 +2875,19 @@ int main(int argc, char *argv[])
 //debug to see region sizes
 //   for(Int_t i = 0; i < locDom->numReg(); i++)
 //      std::cout << "region" << i + 1<< "size" << locDom->regElemSize(i) <<std::endl;
+
+   conduit::Node scenes;
+   scenes["s1/plots/p1/type"]         = "pseudocolor";
+   scenes["s1/plots/p1/params/field"] = "p";
+ 
+   conduit::Node actions;
+   conduit::Node &add_plots = actions.append();
+   add_plots["action"] = "add_scenes";
+   add_plots["scenes"] = scenes;   
+   
+   alpine.publish(locDom->visitNode());
+   alpine.execute(actions);
+   actions.print();
    while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
      {
         ALPINE_BLOCK_TIMER(LULESH_MAIN_LOOP)
@@ -2892,20 +2906,14 @@ int main(int argc, char *argv[])
             //
             // Create the actions.
             //
-            conduit::Node actions;
-            conduit::Node &add = actions.append();
-            add["action"] = "add_plot";
-            add["field_name"] = "p";
-            conduit::Node &draw = actions.append();
-            add["render_options/file_name"] = outFileName;
-            add["render_options/width"]  = 1024;
-            add["render_options/height"] = 1024;
-            draw["action"] = "draw_plots";
-            sman.Publish(locDom->visitNode());
-            sman.Execute(actions);
+            alpine.publish(locDom->visitNode());
+            actions.reset();
+            conduit::Node &execute = actions.append();
+            execute["action"] = "execute";
+            alpine.execute(actions);
       }
    }
-   sman.Close();
+   alpine.close();
    
    /*--------------------------------------------------------------------------
     *--------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 #include <vtkh_error.hpp>
 #include <vtkh_data_set.hpp>
+#include <utils/vtkm_dataset_info.hpp>
 // std includes
 #include <sstream>
 //vtkm includes
@@ -10,7 +11,7 @@
 namespace vtkh {
 
 void 
-vtkhDataSet::AddDomain(vtkm::cont::DataSet data_set, int domain_id) 
+DataSet::AddDomain(vtkm::cont::DataSet data_set, vtkm::Id domain_id) 
 {
   if(m_domains.size() != 0)
   {
@@ -24,7 +25,7 @@ vtkhDataSet::AddDomain(vtkm::cont::DataSet data_set, int domain_id)
 }
 
 vtkm::cont::Field 
-vtkhDataSet::GetField(const std::string &field_name, const int &domain_index)
+DataSet::GetField(const std::string &field_name, const vtkm::Id domain_index)
 {
   assert(domain_index >= 0);
   assert(domain_index < m_domains.size());
@@ -33,11 +34,11 @@ vtkhDataSet::GetField(const std::string &field_name, const int &domain_index)
 }
 
 vtkm::cont::DataSet
-vtkhDataSet::GetDomain(const int index) 
+DataSet::GetDomain(const vtkm::Id index) 
 {
   const size_t num_domains = m_domains.size();
 
-  if(index >= num_domains && index < 0)
+  if(index >= num_domains || index < 0)
   {
     std::stringstream msg;
     msg<<"Get domain call failed. Invalid index "<<index
@@ -48,12 +49,21 @@ vtkhDataSet::GetDomain(const int index)
   return  m_domains[index];
 
 }
+
+std::vector<vtkm::Id>
+DataSet::GetDomainIds() const
+{
+  return m_domain_ids;
+}
+
 void 
-vtkhDataSet::GetDomain(const int index, vtkm::cont::DataSet &data_set, int &domain_id) 
+DataSet::GetDomain(const vtkm::Id index, 
+                   vtkm::cont::DataSet &data_set, 
+                   vtkm::Id &domain_id) 
 {
   const size_t num_domains = m_domains.size();
 
-  if(index >= num_domains && index < 0)
+  if(index >= num_domains || index < 0)
   {
     std::stringstream msg;
     msg<<"Get domain call failed. Invalid index "<<index
@@ -67,17 +77,17 @@ vtkhDataSet::GetDomain(const int index, vtkm::cont::DataSet &data_set, int &doma
 }
 
 vtkm::Id 
-vtkhDataSet::GetNumberOfDomains() const
+DataSet::GetNumberOfDomains() const
 {
   return static_cast<vtkm::Id>(m_domains.size());
 }
 
 vtkm::Id 
-vtkhDataSet::GetGlobalNumberOfDomains() const
+DataSet::GetGlobalNumberOfDomains() const
 {
   vtkm::Id domains = this->GetNumberOfDomains(); 
 #ifdef PARALLEL 
-  MPI_Comm mpi_comm = VTKH::GetMPIComm();
+  MPI_Comm mpi_comm = vtkh::GetMPIComm();
   int local_doms = static_cast<int>(domains);  
   int global_doms = 0;
   MPI_Allreduce(&local_doms, 
@@ -92,8 +102,8 @@ vtkhDataSet::GetGlobalNumberOfDomains() const
 }
 
 vtkm::Bounds 
-vtkhDataSet::GetDomainBounds(const int &domain_index,
-                             vtkm::Id coordinate_system_index) const
+DataSet::GetDomainBounds(const int &domain_index,
+                         vtkm::Id coordinate_system_index) const
 {
   const vtkm::Id index = coordinate_system_index;
   vtkm::cont::CoordinateSystem coords;
@@ -115,7 +125,7 @@ vtkhDataSet::GetDomainBounds(const int &domain_index,
 
 
 vtkm::Bounds 
-vtkhDataSet::GetBounds(vtkm::Id coordinate_system_index) const
+DataSet::GetBounds(vtkm::Id coordinate_system_index) const
 {
   const vtkm::Id index = coordinate_system_index;
   const size_t num_domains = m_domains.size();
@@ -132,13 +142,13 @@ vtkhDataSet::GetBounds(vtkm::Id coordinate_system_index) const
 }
 
 vtkm::Bounds 
-vtkhDataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
+DataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
 {
   vtkm::Bounds bounds;
   bounds = GetBounds(coordinate_system_index);
 
 #ifdef PARALLEL
-  MPI_Comm mpi_comm = VTKH::GetMPIComm();
+  MPI_Comm mpi_comm = vtkh::GetMPIComm();
 
   vtkm::Float64 x_min = bounds.X.Min;
   vtkm::Float64 x_max = bounds.X.Max;
@@ -206,7 +216,7 @@ vtkhDataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
 }
 
 vtkm::cont::ArrayHandle<vtkm::Range> 
-vtkhDataSet::GetGlobalRange(const int &index) const
+DataSet::GetGlobalRange(const vtkm::Id index) const
 {
   assert(m_domains.size() > 0); 
   vtkm::cont::Field field = m_domains.at(0).GetField(index);
@@ -215,7 +225,7 @@ vtkhDataSet::GetGlobalRange(const int &index) const
 }
 
 vtkm::cont::ArrayHandle<vtkm::Range> 
-vtkhDataSet::GetGlobalRange(const std::string &field_name) const
+DataSet::GetGlobalRange(const std::string &field_name) const
 {
   bool valid_field = true;
   const size_t num_domains = m_domains.size();
@@ -272,7 +282,62 @@ vtkhDataSet::GetGlobalRange(const std::string &field_name) const
   }
 
 #ifdef PARALLEL
-  MPI_Comm mpi_comm = VTKH::GetMPIComm();
+  MPI_Comm mpi_comm = vtkh::GetMPIComm();
+  //
+  // it is possible to have an empty dataset at one of the ranks
+  // so we must check for this so MPI comm does not hang.
+  // We also want to check for num components mis-match
+  // 
+  int *global_components = new int[vtkh::GetMPISize()];
+  int comps = static_cast<int>(num_components);
+
+  MPI_Allgather(&comps,
+                1,
+                MPI_INT,
+                global_components,
+                1,
+                MPI_INT,
+                mpi_comm);
+  int max_non_zero = 0;;
+  //
+  // find the largest component
+  //
+  for(int i = 0; i < vtkh::GetMPISize(); ++i)
+  {
+    if(global_components[i] != 0)
+    {
+      max_non_zero = std::max(global_components[i], max_non_zero);
+    }
+  }
+  //
+  // verify uniform component length
+  //
+  for(int i = 0; i < vtkh::GetMPISize(); ++i)
+  {
+    if(global_components[i] != 0)
+    {
+      if(max_non_zero != global_components[i])
+      {
+        std::stringstream msg;
+        msg<<"GetRange call failed. The number of components ("
+           <<global_components[i]<<") in field "
+           <<field_name<<" from rank"<<i<<" does not match the number of components in"
+           <<" the other ranks "<<max_non_zero;
+        throw Error(msg.str());
+      }
+    }
+  }
+  //
+  // if we do not have any components, then we need to init some
+  // empty ranges to participate in comm
+  //
+  if(num_components == 0)
+  {
+    range.Allocate(max_non_zero);
+    num_components = max_non_zero;
+  }
+
+  delete[] global_components;
   for(int i = 0; i < num_components; ++i)
   {
     vtkm::Range c_range = range.GetPortalControl().Get(i);
@@ -305,7 +370,7 @@ vtkhDataSet::GetGlobalRange(const std::string &field_name) const
 }
 
 void 
-vtkhDataSet::PrintSummary(std::ostream &stream) const
+DataSet::PrintSummary(std::ostream &stream) const
 {
   for(size_t dom = 0; dom < m_domains.size(); ++dom)
   {
@@ -314,4 +379,50 @@ vtkhDataSet::PrintSummary(std::ostream &stream) const
   }
 }
 
+bool 
+DataSet::IsStructured(int &topological_dims, const vtkm::Id cell_set_index) const
+{
+  topological_dims = -1;
+  bool is_structured = false;
+  const size_t num_domains = m_domains.size();
+  for(size_t i = 0; i < num_domains; ++i)
+  {
+    const vtkm::cont::DataSet &dom = m_domains[i];
+    int dims; 
+    is_structured = VTKMDataSetInfo::IsStructured(dom, dims, cell_set_index);
+
+    if(i == 0)
+    {
+      topological_dims = dims;    
+    }
+    
+    if(!is_structured || dims != topological_dims)
+    {
+      topological_dims = -1;
+      break;
+    }
+  }
+
+#ifdef PARALLEL
+  int local_boolean = is_structured ? 1 : 0; 
+  int global_boolean;
+  MPI_Comm mpi_comm = vtkh::GetMPIComm();
+  MPI_Allreduce((void *)(&local_boolean),
+                (void *)(&global_boolean),
+                1,
+                MPI_INT,
+                MPI_SUM,
+                mpi_comm);
+
+  if(global_boolean != vtkh::GetMPISize())
+  {
+    is_structured = false;
+  }
+  if(!is_structured)
+  {
+    topological_dims = -1;
+  }
+#endif
+  return is_structured;
+}
 } // namspace vtkh

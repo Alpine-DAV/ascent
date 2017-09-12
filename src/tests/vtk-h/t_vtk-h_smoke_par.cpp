@@ -60,7 +60,6 @@ using namespace std;
 //-----------------------------------------------------------------------------
 TEST(vtkh_smoke, vtkh_about)
 {
-  vtkh::VTKH vtkh;
-  std::cout<<vtkh.About();
+  std::cout<<vtkh::AboutVTKH();
 }
 

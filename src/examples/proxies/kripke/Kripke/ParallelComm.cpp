@@ -4,10 +4,12 @@
 #include <Kripke/Subdomain.h>
 #include <Kripke/SubTVec.h>
 
+static int outgoingRequests = 0;
+static int incomingRequests = 0;
+
 ParallelComm::ParallelComm(Grid_Data *grid_data_ptr) :
   grid_data(grid_data_ptr)
 {
-
 }
 
 ParallelComm::~ParallelComm(){
@@ -94,7 +96,7 @@ void ParallelComm::postRecvs(int sdom_id, Subdomain &sdom){
     // Add request to pending list
     recv_requests.push_back(MPI_Request());
     recv_subdomains.push_back(sdom_id);
-
+    incomingRequests++;
     // compute the tag id of THIS subdomain (tags are always based on destination)
     int tag = computeTag(sdom.upwind[dim].mpi_rank, sdom.upwind[dim].subdomain_id);
 
@@ -148,7 +150,7 @@ void ParallelComm::postSends(Subdomain *sdom, double *src_buffers[3]){
     // At this point, we know that we have to send an MPI message
     // Add request to send queue
     send_requests.push_back(MPI_Request());
-
+    outgoingRequests++;
     // compute the tag id of TARGET subdomain (tags are always based on destination)
     int tag = computeTag(mpi_rank, sdom->downwind[dim].subdomain_id);
 
@@ -227,4 +229,21 @@ std::vector<int> ParallelComm::getReadyList(void){
     }
   }
   return ready;
+}
+
+
+int ParallelComm::getIncomingRequests()
+{
+  return incomingRequests;
+}
+
+int ParallelComm::getOutgoingRequests()
+{
+  return incomingRequests;
+}
+
+void ParallelComm::resetRequests()
+{
+  incomingRequests = 0;
+  outgoingRequests = 0;
 }

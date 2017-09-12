@@ -12,7 +12,7 @@ class ParallelComm {
   public:
     explicit ParallelComm(Grid_Data *grid_data_ptr);
     virtual ~ParallelComm();
-
+    
     // Adds a subdomain to the work queue
     virtual void addSubdomain(int sdom_id, Subdomain &sdom) = 0;
 
@@ -26,10 +26,13 @@ class ParallelComm {
     // Marks subdomains as complete, and performs downwind communication
     virtual void markComplete(int sdom_id) = 0;
 
+    static int getIncomingRequests();
+    static int getOutgoingRequests();
+    static void resetRequests();
+    
   protected:
     static int computeTag(int mpi_rank, int sdom_id);
     static void computeRankSdom(int tag, int &mpi_rank, int &sdom_id);
-
     int findSubdomain(int sdom_id);
     Subdomain *dequeueSubdomain(int sdom_id);
     void postRecvs(int sdom_id, Subdomain &sdom);

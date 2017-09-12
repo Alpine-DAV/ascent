@@ -115,7 +115,8 @@ if(MPI_FOUND AND FORTRAN_FOUND)
     blt_add_executable(
         NAME        cloverleaf3d_par
         SOURCES     ${CLOVER3D_SOURCES}
-        DEPENDS_ON  ${clover_par_deps})
+        DEPENDS_ON  ${clover_par_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
                           
     blt_add_target_compile_flags(TO cloverleaf3d_par FLAGS "${clover_compile_flags}")

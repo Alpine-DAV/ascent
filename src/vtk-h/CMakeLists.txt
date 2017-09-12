@@ -36,14 +36,19 @@ set(vtkh_headers
 set(vtkh_rendering_headers
       rendering/compositing/vtkh_compositor.hpp
       rendering/vtkh_image.hpp
+      rendering/vtkh_image_compositor.hpp
+      rendering/vtkh_render.hpp
       rendering/vtkh_renderer.hpp
+      rendering/vtkh_renderer_mesh.hpp
       rendering/vtkh_renderer_ray_tracer.hpp
       rendering/vtkh_renderer_volume.hpp
     ) 
 
 set(vtkh_rendering_sources
       rendering/compositing/vtkh_compositor.cpp
+      rendering/vtkh_render.cpp
       rendering/vtkh_renderer.cpp
+      rendering/vtkh_renderer_mesh.cpp
       rendering/vtkh_renderer_ray_tracer.cpp
       rendering/vtkh_renderer_volume.cpp
     )
@@ -56,14 +61,19 @@ list (APPEND vtkh_headers ${vtkh_rendering_headers})
 #############################
 
 set(vtkh_filter_headers
-     vtkh_marching_cubes.hpp
-     vtkh_clip.hpp
+      vtkh_marching_cubes.hpp
+      vtkh_clip.hpp
+      vtkh_wavelet_compressor.hpp
+      vtkh_threshold.hpp
    )
 
 set(vtkh_filter_sources
-     vtkh_marching_cubes.cpp
-     vtkh_clip.cpp
+      vtkh_marching_cubes.cpp
+      vtkh_clip.cpp
+      vtkh_wavelet_compressor.cpp
+      vtkh_threshold.cpp
    )
+
 
 list (APPEND vtkh_sources ${vtkh_filter_sources})
 list (APPEND vtkh_headers ${vtkh_filter_headers})
@@ -71,14 +81,18 @@ list (APPEND vtkh_headers ${vtkh_filter_headers})
 
 ##################
 
-set(vtkh_thirdparty_libs )
+set(vtkh_thirdparty_libs lodepng)
 
-if(VTKM_FOUND)
+if(TBB_FOUND)
     list(APPEND vtkh_thirdparty_libs tbb)
 endif()
 
 if(VTKM_FOUND)
     list(APPEND vtkh_thirdparty_libs vtkm)
+endif()
+
+if(CUDA_FOUND)
+    list(APPEND vtkh_thirdparty_libs cuda)
 endif()
 
 
@@ -88,15 +102,16 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # Build a serial version of vtkh
 ##########################################
 
+
 blt_add_library(
     NAME        vtkh
-    SOURCES     ${vtkh_sources} $<TARGET_OBJECTS:lodepng>
+    SOURCES     ${vtkh_sources} 
     HEADERS     ${vtkh_headers}
     DEPENDS_ON  ${vtkh_thirdparty_libs})
 
 # install target for serial vtkh lib
 install(TARGETS vtkh 
-        EXPORT  vtkh 
+        EXPORT  alpine 
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION lib
@@ -106,7 +121,9 @@ install(TARGETS vtkh
 # Build Parallel (MPI) version of vtkh
 ################################################
 if(MPI_FOUND)
-    set(vtkh_par_sources
+    set(vtkh_par_headers
+        rendering/vtkh_image_compositor.hpp
+        rendering/compositing/vtkh_compositor.hpp
         rendering/compositing/vtkh_diy_collect.hpp
         rendering/compositing/vtkh_diy_compositor.hpp
         rendering/compositing/vtkh_diy_direct_send.hpp
@@ -114,25 +131,35 @@ if(MPI_FOUND)
         rendering/compositing/vtkh_diy_radix_k.hpp
         ) 
 
-    set(vtkh_par_headers
-        rendering/vtkh_renderer.cpp
-        rendering/vtkh_renderer_ray_tracer.cpp
+    set(vtkh_par_sources
         rendering/compositing/vtkh_diy_compositor.cpp
         rendering/compositing/vtkh_diy_direct_send.cpp
         rendering/compositing/vtkh_diy_radix_k.cpp
         )
 
+
+    #add_definitions(-DPARALLEL)
+    if(VTKH_VTKM_USE_CUDA)
+        set(CUDA_NVCC_FLAGS_PREV ${CUDA_NVCC_FLAGS})   
+        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -D PARALLEL")
+    endif()
+
     blt_add_library(
         NAME        vtkh_par
-        SOURCES     ${vtkh_sources} ${vtkh_par_sources} $<TARGET_OBJECTS:lodepng>
-        HEADERS     ${vtkh_par_headers}
+        SOURCES     ${vtkh_sources} ${vtkh_par_sources}
+        HEADERS     ${vtkh_par_headers} ${vtkh_headers}
         DEPENDS_ON  ${vtkh_thirdparty_libs} mpi icet)
+    
+    if(VTKH_VTKM_USE_CUDA)
+        SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS_PREVIOUS}) 
+    else()
+         blt_add_target_compile_flags(TO vtkh_par FLAGS "-D PARALLEL")
+    endif()
   
-    blt_add_target_compile_flags(TO vtkh_par FLAGS "-D PARALLEL")
-  
+    # remove_definitions(-DPARALLEL)
     # install target for mpi ver
     install(TARGETS vtkh_par
-            EXPORT  vtkh
+            EXPORT  alpine
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib

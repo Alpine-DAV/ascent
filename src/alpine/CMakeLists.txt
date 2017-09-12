@@ -52,6 +52,8 @@
 set(ALPINE_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_client)
 
 set(ALPINE_VTKM_ENABLED ${VTKM_FOUND})
+set(ALPINE_VTKH_ENABLED ${VTKM_FOUND})
+
 set(ALPINE_HDF5_ENABLED ${HDF5_FOUND})
 
 if(ALPINE_VTKM_ENABLED)
@@ -69,13 +71,13 @@ set(alpine_sources
     # alpine interface
     alpine.cpp
     c/alpine_c.cpp
-    # pipelines
-    alpine_pipeline.cpp
-    pipelines/alpine_empty_pipeline.cpp
-    pipelines/alpine_flow_pipeline.cpp
-    pipelines/flow_filters/alpine_flow_pipeline_filters.cpp
-    pipelines/flow_filters/alpine_flow_pipeline_relay_filters.cpp
-    pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.cpp
+    # runtimes
+    alpine_runtime.cpp
+    runtimes/alpine_empty_runtime.cpp
+    runtimes/alpine_flow_runtime.cpp
+    runtimes/flow_filters/alpine_runtime_filters.cpp
+    runtimes/flow_filters/alpine_runtime_relay_filters.cpp
+    runtimes/flow_filters/alpine_runtime_blueprint_filters.cpp
     # utils
     utils/alpine_file_system.cpp
     utils/alpine_block_timer.cpp
@@ -88,14 +90,14 @@ set(alpine_headers
     alpine_exports.h
     alpine.hpp
     c/alpine.h
-    # pipelines
-    alpine_pipeline.hpp
-    pipelines/alpine_empty_pipeline.hpp
+    # runtimes
+    alpine_runtime.hpp
+    runtimes/alpine_empty_runtime.hpp
     # flow
-    pipelines/alpine_flow_pipeline.hpp
-    pipelines/flow_filters/alpine_flow_pipeline_filters.hpp
-    pipelines/flow_filters/alpine_flow_pipeline_relay_filters.hpp
-    pipelines/flow_filters/alpine_flow_pipeline_blueprint_filters.hpp
+    runtimes/alpine_flow_runtime.hpp
+    runtimes/flow_filters/alpine_runtime_filters.hpp
+    runtimes/flow_filters/alpine_runtime_relay_filters.hpp
+    runtimes/flow_filters/alpine_runtime_blueprint_filters.hpp
     # utils
     utils/alpine_logging.hpp
     utils/alpine_file_system.hpp
@@ -104,30 +106,21 @@ set(alpine_headers
     utils/alpine_web_interface.hpp)
 
 if(VTKM_FOUND)
-    # VTKm Pipeline Headers
-    list(APPEND alpine_headers pipelines/alpine_vtkm_pipeline.hpp)
-    list(APPEND alpine_headers pipelines/alpine_vtkm_renderer.hpp)
 
-    # VTKm Pipeline Sources
-    list(APPEND alpine_sources pipelines/alpine_vtkm_pipeline.cpp)
-    # VTKm Rendering Headers
-    list(APPEND alpine_headers pipelines/alpine_vtkm_renderer.hpp)
+    # data adapter
+    list(APPEND alpine_headers runtimes/alpine_vtkh_data_adapter.hpp)
+    list(APPEND alpine_sources runtimes/alpine_vtkh_data_adapter.cpp)
 
-    # VTKm Rendering Sources
-    list(APPEND alpine_sources pipelines/alpine_vtkm_renderer.cpp)
-   
+    # vtkh filters
+    list(APPEND alpine_headers runtimes/flow_filters/alpine_runtime_vtkh_filters.hpp)
+    list(APPEND alpine_sources runtimes/flow_filters/alpine_runtime_vtkh_filters.cpp)
+
+
+    # main pipeline
+    list(APPEND alpine_headers runtimes/alpine_ascent_runtime.hpp)
+    list(APPEND alpine_sources runtimes/alpine_ascent_runtime.cpp)
+
 endif()
-
-if(HDF5_FOUND)
-    list(APPEND alpine_headers pipelines/alpine_blueprint_hdf5_pipeline.hpp)
-    list(APPEND alpine_sources pipelines/alpine_blueprint_hdf5_pipeline.cpp)
-endif()
-
-##############################
-# Add apline_flow
-#############################
-add_subdirectory(flow)
-
 
 ##############################
 # optional features
@@ -151,23 +144,24 @@ endif()
 
 set(alpine_thirdparty_libs 
     conduit
-    alpine_flow)
+    flow
+    lodepng)
 
 ##################
 # optional libs
 ##################
 if(VTKM_FOUND)
-    list(APPEND alpine_thirdparty_libs vtkm)
+    list(APPEND alpine_thirdparty_libs vtkm vtkh)
 endif()
 
-if(CUDA_FOUND)
-    list(APPEND alpine_thirdparty_libs cuda_runtime)
-endif()
-
-
-if(TBB_FOUND)
-    list(APPEND alpine_thirdparty_libs tbb)
-endif()
+#if(CUDA_FOUND)
+#    list(APPEND alpine_thirdparty_libs cuda_runtime)
+#endif()
+#
+#
+#if(TBB_FOUND)
+#    list(APPEND alpine_thirdparty_libs tbb)
+#endif()
 
 
 ##########################################
@@ -176,7 +170,7 @@ endif()
 
 blt_add_library(
     NAME        alpine
-    SOURCES     ${alpine_sources} $<TARGET_OBJECTS:lodepng>
+    SOURCES     ${alpine_sources} 
     HEADERS     ${alpine_headers}
     DEPENDS_ON  ${alpine_thirdparty_libs})
 
@@ -194,19 +188,9 @@ install(TARGETS alpine
 if(MPI_FOUND)
     if(VTKM_FOUND)
         # we only need compositing if we are rendering with vtk-m
-        set(alpine_par_sources utils/alpine_icet_compositor.cpp
-                               utils/alpine_diy_compositor.cpp
-                               utils/diy_compositing/alpine_diy_direct_send.cpp
-                               utils/diy_compositing/alpine_diy_direct_send.cpp
-                               utils/diy_compositing/alpine_diy_radix_k.cpp)
+        set(alpine_par_sources )
                      
-        set(alpine_par_headers utils/alpine_icet_compositor.hpp
-                               utils/alpine_compositor_base.hpp
-                               utils/alpine_diy_compositor.hpp
-                               utils/diy_compositing/alpine_diy_image.hpp
-                               utils/diy_compositing/alpine_diy_collect.hpp
-                               utils/diy_compositing/alpine_diy_direct_send.hpp
-                               utils/diy_compositing/alpine_diy_radix_k.hpp)
+        set(alpine_par_headers )
     endif()
    
     # req'd libs 
@@ -216,12 +200,20 @@ if(MPI_FOUND)
     if(ICET_FOUND)
         list(APPEND alpine_par_thirdparty_libs icet)
     endif()
-   
+
+    list(APPEND alpine_par_thirdparty_libs ${alpine_thirdparty_libs})
+
+    if(VTKM_FOUND)
+        # swap vtkh_par for vtkh
+        list(REMOVE_ITEM alpine_par_thirdparty_libs vtkh)
+        list(APPEND alpine_par_thirdparty_libs vtkh_par)
+    endif()
+
     blt_add_library(
         NAME        alpine_par
-        SOURCES     ${alpine_sources} ${alpine_par_sources} $<TARGET_OBJECTS:lodepng>
+        SOURCES     ${alpine_sources} ${alpine_par_sources}
         HEADERS     ${alpine_headers} ${alpine_par_headers}
-        DEPENDS_ON  ${alpine_thirdparty_libs} ${alpine_par_thirdparty_libs})
+        DEPENDS_ON  ${alpine_par_thirdparty_libs})
     
     blt_add_target_compile_flags(TO alpine_par FLAGS "-D PARALLEL")
 

@@ -90,15 +90,15 @@ script:
   # build deps using uberenv
   - python scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
   # create out-of-source build dir
-  - mkdir travis-debug-build
-  - cd    travis-debug-build
+  - mkdir build-debug
+  - cd    build-debug
   # cmake options
   # build type
   - CMAKE_OPTS="-DCMAKE_BUILD_TYPE=Debug"
   # shared or static libs
   - CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
   # install path
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../travis-debug-install"
+  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install-debug"
   # make sure cmake is in our path
   - export CMAKE_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
   - export PATH=${CMAKE_BIN_DIR}:$PATH
@@ -114,7 +114,7 @@ script:
   # test our examples that demo using an installed alpine
   - export CONDUIT_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/conduit*`
   - export VTKM_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/vtkm*`
-  - export ALPINE_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install
+  - export ALPINE_DIR=${TRAVIS_BUILD_DIR}/install-debug
   # using with cmake example
   - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
   - mkdir build
@@ -129,6 +129,10 @@ script:
   #- cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
   #- make
   #- env LD_LIBRARY_PATH=${ALPINE_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
+  # test run example apps
+  - cd ${TRAVIS_BUILD_DIR}
+  - if [ $ENABLE_VTKM = 'ON' ]; then ./scripts/test-run-examples.sh ; fi
+  
 
 #cache:
 #  directories:

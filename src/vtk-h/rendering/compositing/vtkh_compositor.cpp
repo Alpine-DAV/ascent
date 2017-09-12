@@ -1,4 +1,5 @@
 #include "vtkh_compositor.hpp"
+#include <rendering/vtkh_image_compositor.hpp>
 
 #include <assert.h>
 #include <algorithm>
@@ -40,7 +41,6 @@ Compositor::ClearImages()
 {
   m_images.clear();
 }
-static int count = 0;
 
 void 
 Compositor::AddImage(const unsigned char *color_buffer,
@@ -58,6 +58,7 @@ Compositor::AddImage(const unsigned char *color_buffer,
                      depth_buffer,
                      width,
                      height);
+    //m_images[0].Save("first.png");
   }
   else if(m_composite_mode == Z_BUFFER_SURFACE)
   {
@@ -68,8 +69,8 @@ Compositor::AddImage(const unsigned char *color_buffer,
                depth_buffer,
                width,
                height);
-
-    m_images[0].Composite(image);
+    vtkh::ImageCompositor compositor;
+    compositor.ZBufferComposite(m_images[0],image);
   }
   else
   {
@@ -110,7 +111,8 @@ Compositor::AddImage(const float *color_buffer,
                width,
                height);
 
-    m_images[0].Composite(image);
+    vtkh::ImageCompositor compositor;
+    compositor.ZBufferComposite(m_images[0],image);
   }
   else
   {
@@ -199,6 +201,7 @@ Compositor::CompositeZBufferSurface()
 {
   // nothing to do here. Images were composited as 
   // they were added to the compositor
+  m_images[0].CompositeBackground(m_background_color);
 }
 
 void 
@@ -210,15 +213,8 @@ Compositor::CompositeZBufferBlend()
 void 
 Compositor::CompositeVisOrder()
 {
-  const int num_images = static_cast<int>(m_images.size()); 
-
-  std::sort(m_images.begin(), m_images.end(), CompositeOrderSort());
-  
-  for(int i = 1; i < num_images; ++i)
-  {
-    m_images[0].Composite(m_images[i]);
-  }
-
+  vtkh::ImageCompositor compositor;
+  compositor.OrderedComposite(m_images);
 }
 
 } // namespace vtkh

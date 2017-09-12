@@ -88,7 +88,7 @@ RUN cd alpine/build-debug && \
 
 # build, test, and install conduit
 RUN cd alpine/build-debug && make
-RUN cd alpine/build-debug && make test
+RUN cd alpine/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
 RUN cd alpine/build-debug && make install
 
 # open port 9000, for use by conduit relay

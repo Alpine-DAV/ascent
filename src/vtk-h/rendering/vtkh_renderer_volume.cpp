@@ -42,7 +42,7 @@ namespace detail
   };
 } //  namespace detail
 
-vtkhVolumeRenderer::vtkhVolumeRenderer()
+VolumeRenderer::VolumeRenderer()
 {
   typedef vtkm::rendering::MapperVolume TracerType;
   m_tracer = std::make_shared<TracerType>();
@@ -51,20 +51,19 @@ vtkhVolumeRenderer::vtkhVolumeRenderer()
   //
   // add some default opacity to the color table
   //
-  m_color_table.AddAlphaControlPoint(0.0f, .1);
-  m_color_table.AddAlphaControlPoint(1.0f, .1);
+  m_color_table.AddAlphaControlPoint(0.0f, .02);
+  m_color_table.AddAlphaControlPoint(1.0f, .02);
   m_num_samples = -1;
 }
 
-vtkhVolumeRenderer::~vtkhVolumeRenderer()
+VolumeRenderer::~VolumeRenderer()
 {
 }
 
 void 
-vtkhVolumeRenderer::PreExecute() 
+VolumeRenderer::PreExecute() 
 {
-  vtkhRenderer::PreExecute();
-  
+  Renderer::PreExecute();
   const float default_samples = 200.f;
   float samples = default_samples;
   if(m_num_samples != -1)
@@ -84,27 +83,20 @@ vtkhVolumeRenderer::PreExecute()
 }
 
 void
-vtkhVolumeRenderer::SetNumberOfSamples(const int num_samples)
+VolumeRenderer::SetNumberOfSamples(const int num_samples)
 {
   assert(num_samples > 0);
   m_num_samples = num_samples; 
 }
 
-vtkhRenderer::vtkmCanvasPtr 
-vtkhVolumeRenderer::GetNewCanvas()
+Renderer::vtkmCanvasPtr 
+VolumeRenderer::GetNewCanvas(int width, int height)
 {
-  return std::make_shared<vtkm::rendering::CanvasRayTracer>();
-}
-void 
-vtkhVolumeRenderer::SetupCanvases()
-{
-  this->CreateCanvases();
-  float black[4] = {0.f, 0.f, 0.f, 0.f};
-  this->SetCanvasBackgroundColor(black);
+  return std::make_shared<vtkm::rendering::CanvasRayTracer>(width, height);
 }
 
 float 
-vtkhVolumeRenderer::FindMinDepth(const vtkm::rendering::Camera &camera, 
+VolumeRenderer::FindMinDepth(const vtkm::rendering::Camera &camera, 
                                  const vtkm::Bounds &bounds) const
 {
   
@@ -145,7 +137,7 @@ vtkhVolumeRenderer::FindMinDepth(const vtkm::rendering::Camera &camera,
 }
 
 void 
-vtkhVolumeRenderer::Composite(const int &num_images)
+VolumeRenderer::Composite(const int &num_images)
 {
   const int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
 
@@ -155,12 +147,15 @@ vtkhVolumeRenderer::Composite(const int &num_images)
 
   for(int i = 0; i < num_images; ++i)
   {
-    for(int dom = 0; dom < num_domains; ++dom)
+    const int num_canvases = m_renders[i].GetNumberOfCanvases();
+
+    for(int dom = 0; dom < num_canvases; ++dom)
     {
-      float* color_buffer = &GetVTKMPointer(m_canvases[dom][i]->GetColorBuffer())[0][0]; 
-      float* depth_buffer = GetVTKMPointer(m_canvases[dom][i]->GetDepthBuffer()); 
-      int height = m_canvases[dom][i]->GetHeight();
-      int width = m_canvases[dom][i]->GetWidth();
+      float* color_buffer = &GetVTKMPointer(m_renders[i].GetCanvas(dom)->GetColorBuffer())[0][0]; 
+      float* depth_buffer = GetVTKMPointer(m_renders[i].GetCanvas(dom)->GetDepthBuffer()); 
+
+      int height = m_renders[i].GetCanvas(dom)->GetHeight();
+      int width = m_renders[i].GetCanvas(dom)->GetWidth();
 
       m_compositor->AddImage(color_buffer,
                              width,
@@ -169,31 +164,45 @@ vtkhVolumeRenderer::Composite(const int &num_images)
     } //for dom
 
     Image result = m_compositor->Composite();
-    const std::string image_name = "output.png";
+    const std::string image_name = m_renders[i].GetImageName() + ".png";
 #ifdef PARALLEL
-    if(VTKH::GetMPIRank() == 0)
+    if(vtkh::GetMPIRank() == 0)
     {
+      float bg_color[4];
+      bg_color[0] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[0];
+      bg_color[1] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[1];
+      bg_color[2] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[2];
+      bg_color[3] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[3];
+
+      result.CompositeBackground(bg_color);
       result.Save(image_name);
     }
 #else
-    result.Save(image_name);
+      float bg_color[4];
+      bg_color[0] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[0];
+      bg_color[1] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[1];
+      bg_color[2] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[2];
+      bg_color[3] = m_renders[i].GetCanvas(0)->GetBackgroundColor().Components[3];
+
+      result.CompositeBackground(bg_color);
+      result.Save(image_name);
 #endif
     m_compositor->ClearImages();
   } // for image
 }
 
 void 
-vtkhVolumeRenderer::DepthSort(const int &num_domains, 
-                              const std::vector<float> &min_depths,
-                              std::vector<int> &local_vis_order)
+VolumeRenderer::DepthSort(const int &num_domains, 
+                          const std::vector<float> &min_depths,
+                          std::vector<int> &local_vis_order)
 {
   assert(min_depths.size() == num_domains);
   assert(local_vis_order.size() == num_domains);
 #ifdef PARALLEL
   int root = 0;
-  MPI_Comm comm = VTKH::GetMPIComm();
-  int num_ranks = VTKH::GetMPISize();
-  int rank = VTKH::GetMPIRank();
+  MPI_Comm comm = vtkh::GetMPIComm();
+  int num_ranks = vtkh::GetMPISize();
+  int rank = vtkh::GetMPIRank();
   int *domain_counts = NULL; 
   int *domain_offsets = NULL; 
   int *vis_order = NULL; 
@@ -320,11 +329,10 @@ vtkhVolumeRenderer::DepthSort(const int &num_domains,
 }
 
 void
-vtkhVolumeRenderer::FindVisibilityOrdering()
+VolumeRenderer::FindVisibilityOrdering()
 {
   const int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
-  const int num_cameras = static_cast<int>(m_cameras.size());
-
+  const int num_cameras = static_cast<int>(m_renders.size());
   m_visibility_orders.resize(num_cameras);
 
   for(int i = 0; i < num_cameras; ++i)
@@ -344,7 +352,7 @@ vtkhVolumeRenderer::FindVisibilityOrdering()
 
   for(int i = 0; i < num_cameras; ++i)
   {
-    const vtkm::rendering::Camera &camera = m_cameras[i];
+    const vtkm::rendering::Camera &camera = m_renders[i].GetCamera();
     for(int dom = 0; dom < num_domains; ++dom)
     {
       vtkm::Bounds bounds = this->m_input->GetDomainBounds(dom);

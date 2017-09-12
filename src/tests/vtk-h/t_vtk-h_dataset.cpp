@@ -17,8 +17,7 @@
 //-----------------------------------------------------------------------------
 TEST(vtkh_dataset, vtkh_range)
 {
-  vtkh::VTKH vtkh;
-  vtkh::vtkhDataSet data_set;
+  vtkh::DataSet data_set;
  
   const int base_size = 32;
   const int num_blocks = 2; 
@@ -61,4 +60,8 @@ TEST(vtkh_dataset, vtkh_range)
   EXPECT_EQ(max_coord, bounds.X.Max);
   EXPECT_EQ(max_coord, bounds.Y.Max);
   EXPECT_EQ(max_coord, bounds.Z.Max);
+  int topo_dims;
+  EXPECT_EQ(true, data_set.IsStructured(topo_dims));
+  EXPECT_EQ(3, topo_dims);
+  
 }

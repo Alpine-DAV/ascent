@@ -76,8 +76,7 @@ directory_exists(const std::string &path)
 bool
 create_directory(const std::string &path)
 {
-    // TODO, windows solution ...
-    return (mkdir(path.c_str(),S_IRWXU | S_IRWXG) == 0);
+    return  conduit::utils::create_directory(path);
 }
 
 

@@ -19,9 +19,7 @@
 TEST(vtkh_volume_renderer, vtkh_parallel_render)
 {
   
-  vtkh::VTKH vtkh;
-  vtkh.Open();
-  vtkh::vtkhDataSet data_set;
+  vtkh::DataSet data_set;
  
   const int base_size = 32;
   const int num_blocks = 2;
@@ -30,12 +28,26 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
   {
     data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
   }
+
+  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+
+  vtkm::rendering::Camera camera;
+  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  camera.ResetToBounds(bounds);
+  vtkh::Render render = vtkh::MakeRender<vtkh::VolumeRenderer>(512, 
+                                                               512, 
+                                                               camera, 
+                                                               data_set, 
+                                                               "volume");  
   
-  vtkh::vtkhVolumeRenderer tracer;
+
   vtkm::rendering::ColorTable color_map("cool2warm"); 
   color_map.AddAlphaControlPoint(0.0, .05);
   color_map.AddAlphaControlPoint(1.0, .05);
+
+  vtkh::VolumeRenderer tracer;
   tracer.SetColorTable(color_map);
+  tracer.AddRender(render);
   tracer.SetInput(&data_set);
   tracer.SetField("point_data"); 
 

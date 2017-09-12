@@ -21,8 +21,10 @@
 
 using namespace conduit;
 using alpine::Alpine;
+static int count = 0;
+static int max_backlog = 0;
 
-void writeAlpineData(Alpine &sman, Grid_Data *grid_data, int timeStep)
+void writeAlpineData(Alpine &alpine, Grid_Data *grid_data, int timeStep)
 {
   
   grid_data->kernel->LTimes(grid_data);
@@ -47,9 +49,14 @@ void writeAlpineData(Alpine &sman, Grid_Data *grid_data, int timeStep)
     data["state/time"]   = (conduit::float64)3.1415;
     data["state/domain"] = (conduit::uint64) myid;
     data["state/cycle"]  = (conduit::uint64) timeStep;
-    data["coordsets/coords/type"]  = "rectilinear";
-    //data["coordsets/coords/dims"]  = (conduit::int32) 3;
 
+    data["state/performance/incomingRequests"] = ParallelComm::getIncomingRequests();
+    data["state/performance/outgointRequests"] = ParallelComm::getOutgoingRequests();
+    data["state/performance/loops"] = count;
+    data["state/performance/max_backlog"] = max_backlog;
+    ParallelComm::resetRequests();
+
+    data["coordsets/coords/type"]  = "rectilinear";
     data["coordsets/coords/values/x"].set(conduit::DataType::float64(sdom.nzones[0]+1));
     coords[0] = data["coordsets/coords/values/x"].value();
     data["coordsets/coords/values/y"].set(conduit::DataType::float64(sdom.nzones[1]+1));
@@ -83,34 +90,31 @@ void writeAlpineData(Alpine &sman, Grid_Data *grid_data, int timeStep)
 
   }//each sdom
   
-    //------- end wrapping with Conduit here -------//
-   conduit::Node verify_info;
-   if(!conduit::blueprint::mesh::verify(data,verify_info))
-   {
-       CONDUIT_INFO("blueprint verify failed!" + verify_info.to_json());
-   }
-   else
-   {
-       CONDUIT_INFO("blueprint verify succeeded");
-   }
-   
-  //create some action
-    conduit::Node actions;
-    conduit::Node &add = actions.append();
-    add["action"] = "add_plot";
-    add["field_name"] = "phi";
-    char filename[50];
-    sprintf(filename, "alpine_%04d", timeStep);
-    add["render_options/file_name"] = filename;
-    add["render_options/width"] = 1024;
-    add["render_options/height"] = 1024;
-    add["render_options/renderer"] = "volume";
-    add["render_options/camera/zoom"] = (float64) 1.0;
-    conduit::Node &draw = actions.append();
-    draw["action"] = "draw_plots";
+   //------- end wrapping with Conduit here -------//
+  conduit::Node verify_info;
+  if(!conduit::blueprint::mesh::verify(data,verify_info))
+  {
+      CONDUIT_INFO("blueprint verify failed!" + verify_info.to_json());
+  }
+  else
+  {
+      CONDUIT_INFO("blueprint verify succeeded");
+  }
 
-    sman.Publish(data);
-    sman.Execute(actions);
+  conduit::Node actions;   
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"]         = "volume";
+  scenes["s1/plots/p1/params/field"] = "phi";
+
+
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
+
+  actions.append()["action"] = "execute";  
+  actions.append()["action"] = "reset";
+  alpine.publish(data);
+  alpine.execute(actions);
 }
 
 /**
@@ -120,11 +124,10 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
 {
   conduit::Node alpine_opts;
   alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
-  alpine_opts["pipeline/type"] = "vtkm";
-  alpine_opts["pipeline/backend"] = "serial";
+  alpine_opts["runtime/type"] = "ascent";
 
-  Alpine sman;
-  sman.Open(alpine_opts);
+  Alpine alpine;
+  alpine.open(alpine_opts);
 
   conduit::Node testNode;
   Kernel *kernel = grid_data->kernel;
@@ -203,33 +206,34 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
     }
    }//end main loop timing
     double part = grid_data->particleEdit();
-    writeAlpineData(sman, grid_data, iter);
+    writeAlpineData(alpine, grid_data, iter);
     if(mpi_rank==0){
       printf("iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
     }
     part_last = part;
   }
   
-  sman.Close();
+  alpine.close();
   }//Solve block
   
   //Alpine: we don't want to execute all loop orderings, so we will just exit;
+  MPI_Finalize();
   exit(0);
   return(0);
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------
- * End Alpine Integration
- *--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-
+}   
+    
+/*  --------------------------------------------------------------------------
+ *  --------------------------------------------------------------------------
+ *   End Alpine Integration
+ *  --------------------------------------------------------------------------
+ *  --------------------------------------------------------------------------*/
+    
+    
 /**
   Perform full parallel sweep algorithm on subset of subdomains.
-*/
+*/  
 void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi)
-{
+{   
   // Create a new sweep communicator object
   ParallelComm *comm = NULL;
   if(block_jacobi){
@@ -244,14 +248,15 @@ void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, boo
     int sdom_id = subdomain_list[i];
     comm->addSubdomain(sdom_id, grid_data->subdomains[sdom_id]);
   }
-
+  count = 0;
+  max_backlog = 0;
   /* Loop until we have finished all of our work */
   while(comm->workRemaining()){
-
+    count++;
     // Get a list of subdomains that have met dependencies
     std::vector<int> sdom_ready = comm->readySubdomains();
     int backlog = sdom_ready.size();
-
+    max_backlog = max_backlog < backlog ? backlog : max_backlog;
     // Run top of list
     if(backlog > 0){
       int sdom_id = sdom_ready[0];
@@ -272,7 +277,6 @@ void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, boo
       comm->markComplete(sdom_id);
     }
   }
-
   delete comm;
 }
 

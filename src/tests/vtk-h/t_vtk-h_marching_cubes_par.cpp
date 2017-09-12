@@ -26,9 +26,8 @@ TEST(vtkh_marching_cubes_par, vtkh_parallel_marching_cubes)
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
-  vtkh::VTKH vtkh;
-  vtkh.Open(MPI_COMM_WORLD);
-  vtkh::vtkhDataSet data_set;
+  vtkh::SetMPIComm(MPI_COMM_WORLD);
+  vtkh::DataSet data_set;
  
   const int base_size = 32;
   const int blocks_per_rank = 2;
@@ -40,7 +39,7 @@ TEST(vtkh_marching_cubes_par, vtkh_parallel_marching_cubes)
     data_set.AddDomain(CreateTestData(domain_id, num_blocks, base_size), domain_id);
   }
   
-  vtkh::vtkhMarchingCubes marcher;
+  vtkh::MarchingCubes marcher;
   marcher.SetInput(&data_set);
   marcher.SetField("point_data"); 
 
@@ -54,10 +53,19 @@ TEST(vtkh_marching_cubes_par, vtkh_parallel_marching_cubes)
   marcher.AddMapField("cell_data");
   marcher.Update();
 
-  vtkh::vtkhDataSet *iso_output = marcher.GetOutput();
+  vtkh::DataSet *iso_output = marcher.GetOutput();
+  vtkm::Bounds bounds = iso_output->GetGlobalBounds();
 
-  vtkh::vtkhRayTracer tracer;
+  vtkm::rendering::Camera camera;
+  camera.ResetToBounds(bounds);
+  vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(512, 
+                                                          512, 
+                                                          camera, 
+                                                          *iso_output, 
+                                                          "iso_par");  
+  vtkh::RayTracer tracer;
   tracer.SetInput(iso_output);
+  tracer.AddRender(render);
   tracer.SetField("cell_data"); 
   tracer.Update();
 

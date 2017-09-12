@@ -2,85 +2,111 @@
 #include "vtkh_error.hpp"
 
 #include <vtkm/cont/RuntimeDeviceInformation.h>
+#include <vtkm/cont/RuntimeDeviceTracker.h>
 #include <vtkm/cont/DeviceAdapterListTag.h>
 #include <sstream>
 
 namespace vtkh
 {
-
 #ifdef PARALLEL
 
-MPI_Comm VTKH::m_mpi_comm = NULL;
+static MPI_Comm g_mpi_comm = MPI_COMM_NULL;
+
+void CheckCommHandle()
+{
+  if(g_mpi_comm == MPI_COMM_NULL)
+  {
+    std::stringstream msg;
+    msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
+    msg<<"It is likely that VTKH.Open(MPI_Comm) was not called.";
+    throw Error(msg.str());
+  }
+}
 
 void 
-VTKH::Open(MPI_Comm mpi_comm)
+SetMPIComm(MPI_Comm mpi_comm)
 {
-  m_mpi_comm = mpi_comm;
+  g_mpi_comm = mpi_comm;
 }
 
 MPI_Comm 
-VTKH::GetMPIComm()
+GetMPIComm()
 {
-  if(m_mpi_comm == NULL)
-  {
-    std::stringstream msg;
-    msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
-    msg<<"It is likely that VTKH.Open(MPI_Comm) was not called.";
-    throw Error(msg.str());
-  }
-  return m_mpi_comm;
+  CheckCommHandle();
+  return g_mpi_comm;
 }
 
 int 
-VTKH::GetMPIRank()
+GetMPIRank()
 {
-  if(m_mpi_comm == NULL)
-  {
-    std::stringstream msg;
-    msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
-    msg<<"It is likely that VTKH.Open(MPI_Comm) was not called.";
-    throw Error(msg.str());
-  }
+  CheckCommHandle();
   int rank;
-  MPI_Comm comm = VTKH::GetMPIComm(); 
+  MPI_Comm comm = GetMPIComm(); 
   MPI_Comm_rank(comm, &rank);
   return rank;
 }
 
 int 
-VTKH::GetMPISize()
+GetMPISize()
 {
-  if(m_mpi_comm == NULL)
-  {
-    std::stringstream msg;
-    msg<<"VTK-h internal error. There is no valid MPI comm availible. ";
-    msg<<"It is likely that VTKH.Open(MPI_Comm) was not called.";
-    throw Error(msg.str());
-  }
+  CheckCommHandle();
   int size;
-  MPI_Comm comm = VTKH::GetMPIComm(); 
+  MPI_Comm comm = GetMPIComm(); 
   MPI_Comm_size(comm, &size);
   return size;
 }
 
-#else
-void VTKH::Open()
-{
-
-}
 #endif
 
-void VTKH::Close()
+bool IsSerialEnabled()
 {
-
+  vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagSerial> serial;
+  return serial.Exists();
 }
 
-std::string VTKH::About()
+bool IsTBBEnabled()
+{
+  vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagTBB> tbb;
+  return tbb.Exists();
+}
+
+bool IsCUDAEnabled()
+{
+  vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagCuda> cuda;
+  return cuda.Exists();
+}
+
+void ForceSerial()
+{
+  vtkm::cont::RuntimeDeviceTracker global_tracker;
+  global_tracker = vtkm::cont::GetGlobalRuntimeDeviceTracker();
+  global_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
+}
+
+void ForceTBB()
+{
+  vtkm::cont::RuntimeDeviceTracker global_tracker;
+  global_tracker = vtkm::cont::GetGlobalRuntimeDeviceTracker();
+  global_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagTBB());
+}
+
+void ForceCUDA()
+{
+  vtkm::cont::RuntimeDeviceTracker global_tracker;
+  global_tracker = vtkm::cont::GetGlobalRuntimeDeviceTracker();
+  global_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
+}
+
+void ResetDevices()
+{
+  vtkm::cont::RuntimeDeviceTracker global_tracker;
+  global_tracker = vtkm::cont::GetGlobalRuntimeDeviceTracker();
+  global_tracker.Reset();
+}
+
+std::string AboutVTKH()
 {
   std::stringstream msg;
-  vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagCuda> cuda;
-  vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagTBB> tbb;
-  vtkm::cont::RuntimeDeviceInformation<vtkm::cont::DeviceAdapterTagSerial> serial;
   msg<<"---------------- VTK-h -------------------\n";
 #ifdef PARALLEL
   int version, subversion;
@@ -91,17 +117,17 @@ std::string VTKH::About()
 #endif
   msg<<"VTK-m adapters: ";
 
-  if(cuda.Exists())
+  if(IsCUDAEnabled())
   {
     msg<<"Cuda ";
   }
 
-  if(tbb.Exists())
+  if(IsTBBEnabled())
   {
     msg<<"TBB ";
   }
 
-  if(serial.Exists())
+  if(IsSerialEnabled())
   {
     msg<<"Serial ";
   }

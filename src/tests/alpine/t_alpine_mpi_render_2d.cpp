@@ -59,23 +59,23 @@
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
-#include "t_alpine_test_utils.hpp"
+#include "t_utils.hpp"
 
 using namespace std;
 using namespace conduit;
 using alpine::Alpine;
 
 //-----------------------------------------------------------------------------
-TEST(alpine_mpi_render_2d, test_render_mpi_2d_default_pipeline)
+TEST(alpine_mpi_render_2d, test_render_mpi_2d_default_runtime)
 {
-    // the vtkm pipeline is currently our only rendering pipeline
+    // the ascent runtime is currently our only rendering runtime
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
     {
-        ALPINE_INFO("VTKm support disabled, skipping 2D MPI "
-                      "Pipeline test");
+        ALPINE_INFO("Ascent support disabled, skipping 2D MPI "
+                      "runtime test");
         return;
     }
     
@@ -114,7 +114,7 @@ TEST(alpine_mpi_render_2d, test_render_mpi_2d_default_pipeline)
         output_path = output_dir();
     }
     
-    string output_file = conduit::utils::join_file_path(output_path,"tout_render_mpi_2d_default_pipeline");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_mpi_2d_default_runtime");
     
     // remove old images before rendering
     remove_test_image(output_file);
@@ -124,39 +124,36 @@ TEST(alpine_mpi_render_2d, test_render_mpi_2d_default_pipeline)
     // Create the actions.
     //
 
-    Node actions;
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+ 
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
     
-    Node &plot = actions.append();
-    plot["action"]      = "add_plot";
-    plot["field_name"]  = "braid";
-    
-    Node &opts = plot["render_options"];
-    opts["width"]  = 500;
-    opts["height"] = 500;
-    opts["file_name"] = output_file;
-    
-    actions.append()["action"] = "draw_plots";
-    
-
-    //
-    // TODO: remove old images before running
-    //
+    actions.print();
     
     //
     // Run Alpine
     //
-    
-    Alpine sman;
+  
+    Alpine alpine;
 
     Node alpine_opts;
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
     alpine_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    sman.Open(alpine_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
-   
+    alpine_opts["runtime"] = "ascent";
+    alpine.open(alpine_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
+       
     MPI_Barrier(comm);
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));

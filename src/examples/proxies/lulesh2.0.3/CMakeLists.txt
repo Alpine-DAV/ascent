@@ -70,7 +70,8 @@ endif()
 blt_add_executable(
     NAME        lulesh_ser
     SOURCES     ${LULESH_SOURCES}
-    DEPENDS_ON  ${lulesh_deps})
+    DEPENDS_ON  ${lulesh_deps}
+    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 
 blt_add_target_compile_flags(TO lulesh_ser FLAGS "-DUSE_MPI=0 ${lulesh_openmp_flags}")
@@ -85,7 +86,8 @@ if(MPI_FOUND)
     blt_add_executable(
         NAME        lulesh_par
         SOURCES     ${LULESH_SOURCES}
-        DEPENDS_ON  ${lulesh_par_deps})
+        DEPENDS_ON  ${lulesh_par_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
     blt_add_target_compile_flags(TO lulesh_par FLAGS "-DUSE_MPI=1 ${lulesh_openmp_flags}")
 

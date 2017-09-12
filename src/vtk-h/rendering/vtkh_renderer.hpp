@@ -2,7 +2,9 @@
 #define VTK_H_RENDERER_HPP
 
 #include <vector>
+#include <vtkh_error.hpp>
 #include <vtkh_filter.hpp>
+#include <rendering/vtkh_render.hpp>
 #include <rendering/compositing/vtkh_compositor.hpp>
 
 #include <vtkm/rendering/Camera.h>
@@ -11,55 +13,46 @@
 
 namespace vtkh {
 
-class vtkhRenderer : public vtkhFilter
+class Renderer : public Filter
 {
 public:
   typedef std::shared_ptr<vtkm::rendering::Canvas> vtkmCanvasPtr; 
   typedef std::shared_ptr<vtkm::rendering::Mapper> vtkmMapperPtr; 
   typedef vtkm::rendering::Camera vtkmCamera; 
 
-  vtkhRenderer(); 
-  virtual ~vtkhRenderer(); 
-  void AddCamera(const vtkm::rendering::Camera &camera); 
-  void ClearCameras(); 
-  void SetImageBatchSize(const int &batch_size);
+  Renderer(); 
+  virtual ~Renderer(); 
+  void AddRender(vtkh::Render &render); 
+  void ClearRenders(); 
   void SetField(const std::string field_name);
   void SetColorTable(const vtkm::rendering::ColorTable &color_table);
+  void SetDoComposite(bool do_composite);
   vtkm::rendering::ColorTable GetColorTable() const;
-  int  GetImageBatchSize() const;
-  int  GetNumberOfCameras() const; 
-
+  int  GetNumberOfRenders() const; 
+  std::vector<Render> GetRenders(); 
+  void SetRenders(const std::vector<Render> &renders);
 protected:
   
   // image related data with cinema support
-  std::vector<std::vector<vtkmCanvasPtr>>  m_canvases;
-  std::vector<vtkmCamera>                  m_cameras;
-  vtkmCamera                               m_default_camera;
-  int                                      m_batch_size;
-  int                                      m_height;
-  int                                      m_width; // should we allow different image resolutions for different views?
+  std::vector<vtkh::Render>                m_renders;
   int                                      m_field_index;
   Compositor                              *m_compositor;
   std::string                              m_field_name;
   // draw annoations?? 
   bool                                     m_world_annotations;   
   bool                                     m_screen_annotations;   
+  bool                                     m_do_composite;   
   vtkmMapperPtr                            m_mapper;
   vtkm::Bounds                             m_bounds;
   vtkm::Range                              m_range;
   vtkm::rendering::ColorTable              m_color_table;
-  float                                    m_background_color[4];
   
   // methods
-  void Render();
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute();
-  void SetCanvasBackgroundColor(float color[4]);
-  void CreateCanvases();
+  //void CreateCanvases();
   virtual void Composite(const int &num_images);
-  virtual vtkmCanvasPtr GetNewCanvas() = 0;
-  virtual void SetupCanvases();
 };
 
 } // namespace vtkh

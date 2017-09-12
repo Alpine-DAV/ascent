@@ -64,7 +64,8 @@ endif()
 blt_add_executable(
     NAME        noise_ser
     SOURCES     ${noise_sources}
-    DEPENDS_ON  alpine)
+    DEPENDS_ON  alpine
+    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 blt_add_target_compile_flags(TO noise_ser FLAGS "${noise_openmp_flags}")
 
@@ -78,7 +79,8 @@ if(MPI_FOUND)
     blt_add_executable(
         NAME        noise_par
         SOURCES     ${noise_sources}
-        DEPENDS_ON  ${noise_par_deps})
+        DEPENDS_ON  ${noise_par_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
     blt_add_target_compile_flags(TO noise_par FLAGS "-DPARALLEL  ${noise_openmp_flags}")
 

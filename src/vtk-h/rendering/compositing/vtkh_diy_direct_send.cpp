@@ -1,3 +1,4 @@
+#include <rendering/vtkh_image_compositor.hpp>
 #include "vtkh_diy_direct_send.hpp"
 #include "vtkh_diy_collect.hpp"
 #include "vtkh_diy_utils.hpp"
@@ -30,7 +31,6 @@ struct Redistribute
     // chop it up into pieces, and send it to the domain resposible
     // for that portion 
     //
-    const int rank = proxy.gid();
     const int world_size = m_decomposer.nblocks;
     const int local_images = block->m_images.size(); 
     if(proxy.in_link().size() == 0)
@@ -49,7 +49,6 @@ struct Redistribute
         for(int img = 0;  img < local_images; ++img) 
         {
           outgoing[dest][img].SubsetFrom(block->m_images[img], vtkm_sub_bounds); 
-          //std::cout<<outgoing[dest][img].ToString()<<"\n";
         }
       } //for
 
@@ -77,30 +76,37 @@ struct Redistribute
           //std::cout<<"rank "<<rank<<" rec "<<incoming[img].ToString()<<"\n";
         }
       } // for
-
-      const int total_images = images.size();
-      std::sort(images.begin(), images.end(), CompositeOrderSort());
-
-      for(int i = 1; i < total_images; ++i)
-      {
-        images[0].Blend(images[i]);
-      }
+      
+      ImageCompositor compositor;
+      compositor.OrderedComposite(images);
 
       block->m_output.Swap(images[0]);
       block->m_output.CompositeBackground(m_bg_color);
     } // else if
-    else
+    else if(block->m_images.at(0).m_z_buffer_mode &&
+            block->m_images.at(0).HasTransparency())
     {
-      /*
-      // z buffer compositing
+      assert(m_bg_color != NULL);
+      std::vector<Image> images;
       for(int i = 0; i < proxy.in_link().size(); ++i)
       {
-        Image image;
+
+        std::vector<Image> incoming;
         int gid = proxy.in_link().target(i).gid;
-        proxy.dequeue(gid, image); 
-        block
+        proxy.dequeue(gid, incoming); 
+        const int in_size = incoming.size();
+        for(int img = 0; img < in_size; ++img)
+        {
+          images.emplace_back(incoming[img]);
+          //std::cout<<"rank "<<rank<<" rec "<<incoming[img].ToString()<<"\n";
+        }
       } // for
-      */
+      
+      //
+      // we have images with a depth buffer and transparency
+      //
+      ImageCompositor compositor;
+      compositor.ZBufferBlend(images);
     }
 
   } // operator

@@ -77,14 +77,6 @@ include(cmake/thirdparty/SetupConduit.cmake)
 ################################################################
 ################################################################
 
-################################
-# Make sure we have a concrete
-# pipeline to build 
-################################
-if(NOT VTKM_DIR AND NOT HDF5_DIR)
-    message(FATAL_ERROR "Alpine requires at least once concrete pipeline (HDF5 for VTKm)")
-endif()
-
 
 ################################
 # VTKm and supporting libs
@@ -97,7 +89,6 @@ if(VTKM_DIR)
     ################################
     # TBB (for VTK-M)
     ################################
-    message(STATUS "If VTK-m was configured with TBB then you must specify the TBB_DIR")
     if(TBB_DIR) # optional 
         include(cmake/thirdparty/SetupTBB.cmake)
     endif()

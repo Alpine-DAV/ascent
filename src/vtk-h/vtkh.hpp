@@ -10,24 +10,20 @@
 namespace vtkh
 {
 
-class VTKH
-{
-private:
+  std::string AboutVTKH();
+  bool IsSerialEnabled();
+  bool IsTBBEnabled();
+  bool IsCUDAEnabled();
+  void ForceSerial();
+  void ForceTBB();
+  void ForceCUDA();
+  void ResetDevices();
 #ifdef PARALLEL
-  static MPI_Comm m_mpi_comm;
+  void   SetMPIComm(MPI_Comm mpi_comm);
+  MPI_Comm GetMPIComm();
+  int GetMPIRank();
+  int GetMPISize();
 #endif
-public:
-#ifdef PARALLEL
-  void Open(MPI_Comm mpi_comm);
-  static MPI_Comm GetMPIComm();
-  static int GetMPIRank();
-  static int GetMPISize();
-#else
-  void Open();
-#endif
-  void Close();
-  std::string About();
-};
 
 }
 #endif

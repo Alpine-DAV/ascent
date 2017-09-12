@@ -7,15 +7,14 @@
 
 namespace vtkh {
 
-class vtkhVolumeRenderer : public vtkhRenderer
+class VolumeRenderer : public Renderer
 {
 public:
-  vtkhVolumeRenderer();
-  virtual ~vtkhVolumeRenderer();
-  virtual vtkhRenderer::vtkmCanvasPtr GetNewCanvas() override;
+  VolumeRenderer();
+  virtual ~VolumeRenderer();
   void SetNumberOfSamples(const int num_samples);
+  static Renderer::vtkmCanvasPtr GetNewCanvas(int width = 1024, int height = 1024);
 protected:  
-  virtual void SetupCanvases() override;
   virtual void Composite(const int &num_images) override;
   void PreExecute() override;
 

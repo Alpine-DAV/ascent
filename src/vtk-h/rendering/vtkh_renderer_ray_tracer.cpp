@@ -5,20 +5,22 @@
 
 namespace vtkh {
   
-vtkhRayTracer::vtkhRayTracer()
+RayTracer::RayTracer()
 {
   typedef vtkm::rendering::MapperRayTracer TracerType;
-  this->m_mapper = std::make_shared<TracerType>();
+  auto mapper = std::make_shared<TracerType>();
+  mapper->SetCompositeBackground(false);
+  this->m_mapper = mapper;
 }
 
-vtkhRayTracer::~vtkhRayTracer()
+RayTracer::~RayTracer()
 {
 }
 
-vtkhRenderer::vtkmCanvasPtr 
-vtkhRayTracer::GetNewCanvas()
+Renderer::vtkmCanvasPtr 
+RayTracer::GetNewCanvas(int width, int height)
 {
-  return std::make_shared<vtkm::rendering::CanvasRayTracer>();
+  return std::make_shared<vtkm::rendering::CanvasRayTracer>(width, height);
 }
 
 } // namespace vtkh

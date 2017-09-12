@@ -57,7 +57,7 @@
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
-#include "t_alpine_test_utils.hpp"
+#include "t_utils.hpp"
 
 
 
@@ -68,15 +68,15 @@ using namespace alpine;
 index_t EXAMPLE_MESH_SIDE_DIM = 50;
 
 //-----------------------------------------------------------------------------
-TEST(alpine_render_2d, test_render_2d_default_pipeline)
+TEST(alpine_render_2d, test_render_2d_default_runtime)
 {
-    // the vtkm pipeline is currently our only rendering pipeline
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
     {
-        ALPINE_INFO("VTKm support disabled, skipping 2D default"
+        ALPINE_INFO("Ascent support disabled, skipping 2D default"
                       "Pipeline test");
 
         return;
@@ -95,7 +95,7 @@ TEST(alpine_render_2d, test_render_2d_default_pipeline)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_default_pipeline");
+    string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_default_runtime");
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -104,49 +104,49 @@ TEST(alpine_render_2d, test_render_2d_default_pipeline)
     //
     Node actions;
 
-    Node &plot = actions.append();
-    plot["action"]     = "add_plot";
-    plot["field_name"] = "braid";
+    conduit::Node scenes;
+    scenes["scene1/plots/plt1/type"]         = "pseudocolor";
+    scenes["scene1/plots/plt1/params/field"] = "braid";
+    scenes["scene1/image_prefix"] = output_file;
 
-    Node &opts = plot["render_options"];
-    opts["width"]  = 500;
-    opts["height"] = 500;
-    // TODO, .png?
-    opts["file_name"] = output_file;
-    
-    actions.append()["action"] = "draw_plots";
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+    conduit::Node &execute = actions.append();
+    execute["action"] = "execute";
     actions.print();
     
     //
     // Run Alpine
     //
     
-    Alpine sman;
-
-    sman.Open();
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    Alpine alpine;
+    Node alpine_opts;
+    // default is now alpine
+    alpine_opts["runtime/type"] = "ascent";
+    alpine.open(alpine_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
-
 //-----------------------------------------------------------------------------
-TEST(alpine_render_2d, test_render_2d_render_vtkm_serial_backend)
+TEST(alpine_render_2d, test_render_2d_render_serial_backend)
 {
     
     Node n;
     alpine::about(n);
     // only run this test if alpine was built with vtkm support
-    if(n["pipelines/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
     {
-        ALPINE_INFO("VTKm support disabled, skipping 2D VTKm Serial "
+        ALPINE_INFO("Ascent support disabled, skipping 2D Ascent Serial "
                       "Pipeline test");
         return;
     }
     
-    ALPINE_INFO("Testing 2D VTKm Serial Pipeline");
+    ALPINE_INFO("Testing 2D Ascent Runtime");
     
     //
     // Create an example mesh.
@@ -163,41 +163,40 @@ TEST(alpine_render_2d, test_render_2d_render_vtkm_serial_backend)
     verify_info.print();
     
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_vtkm_serial_backend");
+    string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_ascent_serial_backend");
     // remove old images before rendering
     remove_test_image(output_file);
 
     //
     // Create the actions.
     //
-
     Node actions;
-    
-    Node &plot = actions.append();
-    plot["action"]     = "add_plot";
-    plot["field_name"] = "braid";
-    
-    Node &opts = plot["render_options"];
-    opts["width"]  = 500;
-    opts["height"] = 500;
-    opts["file_name"] = output_file;
-    
-    actions.append()["action"] = "draw_plots";
-    
+
+    conduit::Node scenes;
+    scenes["scene1/plots/plt1/type"]         = "pseudocolor";
+    scenes["scene1/plots/plt1/params/field"] = "braid";
+    scenes["scene1/image_prefix"] =  output_file;
+
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+    conduit::Node &execute = actions.append();
+    execute["action"] = "execute";
+    actions.print();
     
     //
     // Run Alpine
     //
     
-    Node open_opts;
-    open_opts["pipeline/type"] = "vtkm";
-    open_opts["pipeline/backend"] = "serial";
-    
-    Alpine sman;
-    sman.Open(open_opts);
-    sman.Publish(data);
-    sman.Execute(actions);
-    sman.Close();
+    Alpine alpine;
+    Node alpine_opts;
+    // default is now alpine
+    alpine_opts["runtime/type"] = "ascent";
+    alpine_opts["runtime/backend"] = "serial";
+    alpine.open(alpine_opts);
+    alpine.publish(data);
+    alpine.execute(actions);
+    alpine.close();
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));

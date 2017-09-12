@@ -71,8 +71,8 @@
 namespace alpine
 {
 
-// Forward Declare the alpine::Pipeline interface class.
-class Pipeline;
+// Forward Declare the alpine::Runtime interface class.
+class Runtime;
 
 //-----------------------------------------------------------------------------
 /// Alpine Interface
@@ -83,15 +83,15 @@ public:
            Alpine();
           ~Alpine();
 
-    void   Open(); // open with default options
-    void   Open(const conduit::Node &options);
-    void   Publish(const conduit::Node &data);
-    void   Execute(const conduit::Node &actions);
-    void   Close();
+    void   open(); // open with default options
+    void   open(const conduit::Node &options);
+    void   publish(const conduit::Node &data);
+    void   execute(const conduit::Node &actions);
+    void   close();
 
 private:
     
-    Pipeline *m_pipeline;
+    Runtime *m_runtime;
 };
 
 

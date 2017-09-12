@@ -51,26 +51,22 @@
 # Core Alpine Unit Tests
 ################################
 set(BASIC_TESTS t_alpine_smoke
-                t_alpine_empty_pipeline
+                t_alpine_empty_runtime
                 t_alpine_render_2d
                 t_alpine_render_3d
-                t_alpine_web)
+                t_alpine_web
+                t_alpine_flow_runtime)
 
-set(FLOW_TESTS  t_alpine_flow_data
-                t_alpine_flow_registry
-                t_alpine_flow_workspace
-                t_alpine_flow_pipeline)
-
-
-set(MPI_TESTS  t_alpine_mpi_empty_pipeline
+set(MPI_TESTS  t_alpine_mpi_empty_runtime
                t_alpine_mpi_render_2d
                t_alpine_mpi_render_3d)
 
-if(HDF5_FOUND)
-    list(APPEND BASIC_TESTS t_alpine_save_blueprint_hdf5)
-    list(APPEND MPI_TESTS   t_alpine_mpi_save_blueprint_hdf5)
-endif()
 
+# include the "ascent" pipeline
+if(VTKM_FOUND)
+   list(APPEND BASIC_TESTS t_alpine_ascent_runtime)
+   list(APPEND MPI_TESTS   t_alpine_mpi_ascent_runtime)
+endif()
 
 
 ################################
@@ -80,14 +76,6 @@ message(STATUS "Adding alpine lib unit tests")
 foreach(TEST ${BASIC_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON alpine)
 endforeach()
-
-
-message(STATUS "Adding alpine flow lib unit tests")
-foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON alpine alpine_flow)
-endforeach()
-
-
 
 ################################
 # Add optional tests

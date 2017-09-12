@@ -29,24 +29,25 @@ struct MultiImageBlock
 
 struct AddImageBlock
 {
-  Image         &m_image;
-  const diy::Master  &m_master;
+  Image             &m_image;
+  const diy::Master &m_master;
 
   AddImageBlock(diy::Master &master, Image &image)
-    : m_master(master), m_image(image)
+    : m_image(image),
+      m_master(master)
   {
   }
   template<typename BoundsType, typename LinkType>                 
   void operator()(int gid,
-                  const BoundsType &local_bounds,
-                  const BoundsType &local_with_ghost_bounds,
-                  const BoundsType &domain_bounds,
+                  const BoundsType &,  // local_bounds
+                  const BoundsType &,  // local_with_ghost_bounds
+                  const BoundsType &,  // domain_bounds
                   const LinkType &link) const
   {
     ImageBlock *block = new ImageBlock(m_image);
     LinkType *linked = new LinkType(link);
     diy::Master& master = const_cast<diy::Master&>(m_master);
-    int lid = master.add(gid, block, linked);
+    master.add(gid, block, linked);
   }
 }; 
 
@@ -65,9 +66,9 @@ struct AddMultiImageBlock
   {}
   template<typename BoundsType, typename LinkType>                 
   void operator()(int gid,
-                  const BoundsType &local_bounds,
-                  const BoundsType &local_with_ghost_bounds,
-                  const BoundsType &domain_bounds,
+                  const BoundsType &,  // local_bounds
+                  const BoundsType &,  // local_with_ghost_bounds
+                  const BoundsType &,  // domain_bounds
                   const LinkType &link) const
   {
     MultiImageBlock *block = new MultiImageBlock(m_images, m_output);

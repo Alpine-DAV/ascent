@@ -101,7 +101,7 @@ alpine_open(Alpine *c_sman,
 {
     alpine::Alpine *v = cpp_alpine(c_sman);
     Node  *n = static_cast<Node*>(c_options);
-    v->Open(*n);
+    v->open(*n);
 }
 
 //---------------------------------------------------------------------------//
@@ -111,7 +111,7 @@ alpine_publish(Alpine *c_sman,
 {
     alpine::Alpine *v = cpp_alpine(c_sman);
     Node  *n = static_cast<Node*>(c_data);
-    v->Publish(*n);
+    v->publish(*n);
 }
 
 //---------------------------------------------------------------------------//
@@ -121,7 +121,7 @@ alpine_execute(Alpine *c_sman,
 {
     alpine::Alpine *v = cpp_alpine(c_sman);
     Node  *n = static_cast<Node*>(c_actions);
-    v->Execute(*n);
+    v->execute(*n);
 }
 
 //---------------------------------------------------------------------------//
@@ -129,7 +129,7 @@ void
 alpine_close(Alpine *c_sman)
 {
     alpine::Alpine *v = cpp_alpine(c_sman);
-    v->Close();
+    v->close();
 }
 
 //---------------------------------------------------------------------------//

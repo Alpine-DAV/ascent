@@ -59,7 +59,6 @@
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
-#include "t_alpine_test_utils.hpp"
 
 
 using namespace std;
@@ -114,22 +113,22 @@ TEST(alpine_web, test_alpine_web_launch)
     Node open_opts;
     open_opts["web/stream"] = "true";
 
-    Alpine sman;
-    sman.Open(open_opts);
+    Alpine alpine;
+    alpine.open(open_opts);
     
     uint64  *cycle_ptr = data["state/cycle"].value();
     float64 *time_ptr  = data["state/time"].value();
     while(true)
     {
         // publish the same mesh data, but update the state info
-        sman.Publish(data);
-        sman.Execute(actions);
+        alpine.publish(data);
+        alpine.execute(actions);
         conduit::utils::sleep(100);
         cycle_ptr[0]+=1;
         time_ptr[0] = PI_VALUE * cycle_ptr[0];
     }
     
-    sman.Close();
+    alpine.close();
 }
 
 

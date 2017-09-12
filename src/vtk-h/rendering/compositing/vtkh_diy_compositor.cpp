@@ -2,8 +2,8 @@
 //#include "alpine_config.h"
 #include "alpine_logging.hpp"
 #include <vtkh.hpp>
-#include "vtkh_diy_direct_send.hpp"
-#include "vtkh_diy_radix_k.hpp"
+#include <rendering/compositing/vtkh_diy_direct_send.hpp>
+#include <rendering/compositing/vtkh_diy_radix_k.hpp>
 #include <diy/mpi.hpp>
 
 #include <assert.h>
@@ -14,7 +14,7 @@ namespace vtkh
 DIYCompositor::DIYCompositor()
 : m_rank(0)
 {
-    m_diy_comm = diy::mpi::communicator(VTKH::GetMPIComm());
+    m_diy_comm = diy::mpi::communicator(vtkh::GetMPIComm());
     m_rank = m_diy_comm.rank();
 }
   

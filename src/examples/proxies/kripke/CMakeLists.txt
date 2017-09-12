@@ -100,7 +100,8 @@ if(MPI_FOUND)
     blt_add_executable(
         NAME        kripke_par
         SOURCES     ${KRIPKE_SOURCES}
-        DEPENDS_ON  ${kripke_par_deps})
+        DEPENDS_ON  ${kripke_par_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
     blt_add_target_compile_flags(TO kripke_par FLAGS "-D PARALLEL ${kripke_openmp_flags}")
 

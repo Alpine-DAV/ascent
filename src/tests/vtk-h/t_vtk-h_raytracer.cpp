@@ -18,8 +18,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_raytracer, vtkh_serial_render)
 {
-  vtkh::VTKH vtkh;
-  vtkh::vtkhDataSet data_set;
+  vtkh::DataSet data_set;
  
   const int base_size = 32;
   const int num_blocks = 2; 
@@ -28,9 +27,21 @@ TEST(vtkh_raytracer, vtkh_serial_render)
   {
     data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
   }
-  vtkh::vtkhRayTracer tracer;
+
+  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+
+  vtkm::rendering::Camera camera;
+  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  camera.ResetToBounds(bounds);
+  vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(512, 
+                                                          512, 
+                                                          camera, 
+                                                          data_set, 
+                                                          "ray_tracer");  
+  vtkh::RayTracer tracer;
    
   tracer.SetInput(&data_set);
+  tracer.AddRender(render);
   tracer.SetField("point_data"); 
   tracer.Update();
  

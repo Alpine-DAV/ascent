@@ -1,3 +1,4 @@
+#include <rendering/vtkh_image_compositor.hpp>
 #include "vtkh_diy_radix_k.hpp"
 #include "vtkh_diy_collect.hpp"
 #include "vtkh_diy_utils.hpp"
@@ -21,7 +22,6 @@ void reduce_images(void *b,
   // count the number of incoming pixels
   if(proxy.in_link().size() > 0)
   {
-      //fmt::print(std::cout, "Round [{}] recieving\n",round);
       for(int i = 0; i < proxy.in_link().size(); ++i)
       {
         int gid = proxy.in_link().target(i).gid;
@@ -32,7 +32,8 @@ void reduce_images(void *b,
         }
         Image incoming; 
         proxy.dequeue(gid, incoming);
-        image.Composite(incoming);
+        vtkh::ImageCompositor compositor;
+        compositor.ZBufferComposite(image, incoming);
       } // for in links
   } 
 
@@ -44,7 +45,6 @@ void reduce_images(void *b,
   const int group_size = proxy.out_link().size(); 
   const int current_dim = partners.dim(round);
   
-  const int size = image.m_depths.size(); 
   //create balanced set of ranges for current dim
   diy::DiscreteBounds image_bounds = VTKMBoundsToDIY(image.m_bounds);
   int range_length = image_bounds.max[current_dim] - image_bounds.min[current_dim];
@@ -73,7 +73,6 @@ void reduce_images(void *b,
   }
  
   //debug
-  const int size_minus_one = group_size - 1;
   if(group_size > 1)
   {
     for(int i = 1; i < group_size; ++i)

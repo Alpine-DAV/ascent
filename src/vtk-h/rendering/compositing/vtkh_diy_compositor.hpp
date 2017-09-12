@@ -2,7 +2,7 @@
 #define VTKH_DIY_COMPOSITOR_HPP
 
 #include <rendering/vtkh_image.hpp>
-#include "vtkh_compositor.hpp"
+#include <rendering/compositing/vtkh_compositor.hpp>
 #include <diy/mpi.hpp>
 #include <iostream>
 

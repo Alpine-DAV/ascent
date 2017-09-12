@@ -74,7 +74,6 @@ class UberenvAlpine(Package):
     variant("python",default=True,description="build python 2")
     variant("mpich",default=False,description="build mpich as MPI lib for Alpine")
     
-    
     depends_on("cmake@3.8.2",when="+cmake")
 
     depends_on("vtkm",when="+vtkm")

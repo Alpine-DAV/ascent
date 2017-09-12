@@ -24,9 +24,8 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
-  vtkh::VTKH vtkh;
-  vtkh.Open(MPI_COMM_WORLD);
-  vtkh::vtkhDataSet data_set;
+  vtkh::SetMPIComm(MPI_COMM_WORLD);
+  vtkh::DataSet data_set;
  
   const int base_size = 32;
   const int blocks_per_rank = 2;
@@ -38,12 +37,25 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
     data_set.AddDomain(CreateTestData(domain_id, num_blocks, base_size), domain_id);
   }
   
-  vtkh::vtkhVolumeRenderer tracer;
+  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+
+  vtkm::rendering::Camera camera;
+  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  camera.ResetToBounds(bounds);
+  vtkh::Render render = vtkh::MakeRender<vtkh::VolumeRenderer>(512, 
+                                                               512, 
+                                                               camera, 
+                                                               data_set, 
+                                                               "volume_par");  
+
   vtkm::rendering::ColorTable color_map("cool2warm"); 
   color_map.AddAlphaControlPoint(0.0, .05);
   color_map.AddAlphaControlPoint(1.0, .05);
+  
+  vtkh::VolumeRenderer tracer;
   tracer.SetColorTable(color_map);
   tracer.SetInput(&data_set);
+  tracer.AddRender(render);
   tracer.SetField("point_data"); 
 
   tracer.Update();

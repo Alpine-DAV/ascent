@@ -10,24 +10,24 @@
 namespace vtkh
 {
 
-class vtkhClip: public vtkhFilter
+class Clip: public Filter
 {
 public:
-  vtkhClip(); 
-  virtual ~vtkhClip(); 
+  Clip(); 
+  virtual ~Clip(); 
   void SetBoxClip(const vtkm::Bounds &clipping_bounds);
   void SetSphereClip(const double center[3], const double radius);
   void SetPlaneClip(const double origin[3], const double normal[3]);
-  void AddMapField(const std::string &field_name);
-  void ClearMapFields();
-
+  void SetCellSetIndex(vtkm::Id index);
+  void SetCellSet(const std::string &cell_set);
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
-  std::vector<std::string> m_map_fields;
+
   struct InternalsType;
   std::shared_ptr<InternalsType> m_internals;
+  std::string m_cell_set;
 };
 
 } //namespace vtkh

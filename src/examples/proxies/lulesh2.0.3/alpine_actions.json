@@ -1,42 +1,21 @@
 [
   {
-    "action": "add_plot",
-    "field_name": "p",
-    "render_options": 
+    "scenes": 
     {
-      "width": 1024,
-      "height": 1024,
-      "renderer": "raytracer",
-      "color_map": 
+      "s2": 
       {
-        "name": "thermal",
-        "control_points": 
-        [
-          
+        "plots": 
+        {
+          "p1": 
           {
-            "type": "rgb",
-            "position": 0.0,
-            "color": [1.0, 0.0, 0.0]
-          },
-          
-          {
-            "type": "rgb",
-            "position": 0.5,
-            "color": [0.0, 1.0, 0.0]
-          },
-          
-          {
-            "type": "rgb",
-            "position": 1.0,
-            "color": [0.0, 0.0, 1.0]
+            "type": "pseudocolor",
+            "params": 
+            {
+              "field": "e"
+            }
           }
-        ]
-      },
-      "camera": 
-      {
-        "position": [-1.5, -1.5, -1.5],
-        "look_at": [0.6, 0.6, 0.6],
-        "fov": 45.0
+        },
+        "image_prefix": "energy"
       }
     }
   }

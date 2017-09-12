@@ -11,25 +11,21 @@
 namespace vtkh
 {
 
-class vtkhDataSet
+class DataSet
 {
 protected:
-  // does it make sense to allow anytype of mesh??
-  // for example one domain could be uniform and another
-  // could be rectilinear, and one be explicit. 
-  // What does that make me?
   std::vector<vtkm::cont::DataSet> m_domains;
-  std::vector<int>                 m_domain_ids;
+  std::vector<vtkm::Id>            m_domain_ids;
 public:
-  void AddDomain(vtkm::cont::DataSet data_set, int domain_id); 
-  void GetDomain(const int index, 
+  void AddDomain(vtkm::cont::DataSet data_set, vtkm::Id domain_id); 
+  void GetDomain(const vtkm::Id index, 
                  vtkm::cont::DataSet &data_set, 
-                 int &domain_id); 
+                 vtkm::Id &domain_id); 
 
-  vtkm::cont::DataSet GetDomain(const int index); 
+  vtkm::cont::DataSet GetDomain(const vtkm::Id index); 
   
   vtkm::cont::Field GetField(const std::string &field_name, 
-                             const int &domain_index); 
+                             const vtkm::Id domain_index); 
   vtkm::Id GetNumberOfDomains() const;
   vtkm::Id GetGlobalNumberOfDomains() const;
   vtkm::Bounds GetBounds(vtkm::Id coordinate_system_index = 0) const;
@@ -37,8 +33,19 @@ public:
   vtkm::Bounds GetDomainBounds(const int &domain_index,
                                vtkm::Id coordinate_system_index = 0) const;
   vtkm::cont::ArrayHandle<vtkm::Range> GetGlobalRange(const std::string &field_name) const;
-  vtkm::cont::ArrayHandle<vtkm::Range> GetGlobalRange(const int &index) const;
-  
+  vtkm::cont::ArrayHandle<vtkm::Range> GetGlobalRange(const vtkm::Id index) const;
+  std::vector<vtkm::Id> GetDomainIds() const;
+
+  /*! \brief IsStructured returns true if all domains, globally,
+   *         are stuctured data sets of the same topological dimension. 
+   *  \param topological_dims set to the dimensions of the cell set (1,2, or 3)
+   *         If unstructred or structured with different dimensions, this value 
+   *         is set to -1
+   *  \param cell_set_index the index of the cell set to perform the IsStructured 
+   *         test. Defaults to 0.
+   */
+  bool IsStructured(int &topological_dims, const vtkm::Id cell_set_index = 0) const;
+
   void PrintSummary(std::ostream &stream) const;
 };
 

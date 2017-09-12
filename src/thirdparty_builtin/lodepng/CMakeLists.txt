@@ -56,6 +56,13 @@ set(lodepng_sources
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# we always build lodepng as lib object
-add_library(lodepng OBJECT ${lodepng_sources} )
+# we always build lodepng as lib 
+add_library(lodepng SHARED ${lodepng_sources} )
 
+# install target for serial alpine lib
+install(TARGETS lodepng 
+        EXPORT  alpine 
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION lib
+)

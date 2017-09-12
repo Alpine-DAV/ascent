@@ -290,6 +290,11 @@ struct DataSet
       node["fields/nodal_noise/type"]        = "scalar";
       node["fields/nodal_noise/topology"]    = "mesh";
       node["fields/nodal_noise/values"].set_external(m_nodal_scalars);
+
+      node["fields/zonal_noise/association"] = "element";
+      node["fields/zonal_noise/type"]        = "scalar";
+      node["fields/zonal_noise/topology"]    = "mesh";
+      node["fields/zonal_noise/values"].set_external(m_zonal_scalars);
    }
 
    void Print()
@@ -332,7 +337,6 @@ void Init(SpatialDivision &div, const Options &options)
   if(rank == 0) options.Print(); 
   std::vector<SpatialDivision> divs; 
   divs.push_back(div);
-  int assigned = 1;
   int avail = comm_size - 1;
   int current_dim = 0;
   int missed_splits = 0;
@@ -427,24 +431,80 @@ int main(int argc, char** argv)
   
   double time = 0;
   //
-  //  Opem and setup alpine
+  //  Open and setup alpine
   //
   alpine::Alpine alpine;
   conduit::Node alpine_opts;
 #ifdef PARALLEL
   alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
-  alpine_opts["pipeline/type"] = "vtkm";
-  alpine.Open(alpine_opts);
+  alpine_opts["runtime/type"] = "ascent";
+  alpine.open(alpine_opts);
+
+  conduit::Node mesh_data;
+  mesh_data["state/time"].set_external(&time);
+  mesh_data["state/cycle"].set_external(&time);
+#ifdef PARALLEL  
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  mesh_data["state/domain_id"] = rank;
+#else
+  mesh_data["state/domain_id"] = 0;
+#endif
+  mesh_data["state/info"] = "simplex noise";
+  data_set.PopulateNode(mesh_data);
+  //alpine.publish(alpine_node);
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "contour";
+  // filter knobs
+  conduit::Node &contour_params = pipelines["pl1/f1/params"];
+  contour_params["field"] = "nodal_noise";
+  contour_params["iso_values"] = -0.4;
+
+  pipelines["pl2/f1/type"] = "contour";
+  // filter knobs
+  conduit::Node &contour2_params = pipelines["pl2/f1/params"];
+  contour2_params["field"] = "nodal_noise";
+  contour2_params["iso_values"] = 0.3;
+  
+  conduit::Node scenes;
+  scenes["scene1/plots/plt1/type"]         = "pseudocolor";
+  scenes["scene1/plots/plt1/pipeline"]     = "pl1";
+  scenes["scene1/plots/plt1/params/field"] = "zonal_noise";
+
+  scenes["scene1/plots/plt2/type"]         = "volume";
+  scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
+
+  conduit::Node extracts;
+  extracts["ex1/extract_type"] = "hdf5";
+  extracts["ex1/pipeline"]     = "pl2";
+
+  // use default pipeline (original data}
+  extracts["ex2/extract_type"] = "hdf5";
+  
+  conduit::Node actions;
+  conduit::Node &add_pipelines = actions.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
+
+  conduit::Node &add_scenes = actions.append();
+  add_scenes["action"] = "add_scenes";
+  add_scenes["scenes"] = scenes;
 
 
-  conduit::Node alpine_node; 
-  alpine_node["state/time"].set_external(&time);
-  alpine_node["state/cycle"].set_external(&time);
-  alpine_node["state/domain"] = 0;//myRank;
-  alpine_node["state/info"] = "simplex noise";
-  data_set.PopulateNode(alpine_node);
+  conduit::Node &add_extracts = actions.append();
+  add_extracts["action"] = "add_extracts";
+  add_extracts["add_extracts"] = extracts;
 
+  conduit::Node &execute = actions.append();
+  execute["action"] = "execute";
+  //alpine.execute(actions);
+  
+  conduit::Node reset;
+  conduit::Node &reset_action = reset.append();
+  reset_action["action"] = "reset";
   for(int t = 0; t < options.m_time_steps; ++t)
   {
     // 
@@ -472,22 +532,10 @@ int main(int argc, char** argv)
         }
 
         time += options.m_time_delta;
-        //
-        // Create actions.
-        //
-        conduit::Node actions;
-        conduit::Node &add = actions.append();
-        add["action"] = "add_plot";
-        add["field_name"] = "nodal_noise";
-        conduit::Node &draw = actions.append();
-        std::stringstream ss;
-        ss<<"smooth_noise_"<<t;
-        add["render_options/file_name"] = ss.str();
-        add["render_options/width"]  = 1024;
-        add["render_options/height"] = 1024;
-        draw["action"] = "draw_plots";
-        alpine.Publish(alpine_node);
-        alpine.Execute(actions);
+           
+        alpine.publish(mesh_data);
+        alpine.execute(actions);
+        alpine.execute(reset);
       } //for each time step
   
 
@@ -496,6 +544,6 @@ int main(int argc, char** argv)
   //
   open_simplex_noise_free(ctx_nodal);
   open_simplex_noise_free(ctx_zonal);
-  alpine.Close();
+  alpine.close();
   Finalize();
 }
