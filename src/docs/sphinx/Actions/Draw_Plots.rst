@@ -9,9 +9,9 @@
 .. #
 .. # This file is part of Conduit.
 .. #
-.. # For details, see: http://software.llnl.gov/alpine/.
+.. # For details, see: http://software.llnl.gov/ascent/.
 .. #
-.. # Please also read alpine/LICENSE
+.. # Please also read ascent/LICENSE
 .. #
 .. # Redistribution and use in source and binary forms, with or without
 .. # modification, are permitted provided that the following conditions are met:
@@ -47,7 +47,7 @@ draw_plots
 
 Draw plots simply renders the current plots.
 If a file name was specified in add_plots, then the rendered image will be saved to the file system.
-If a file name was not specified, then Alpine starts the embedded web server contained in Conduit.
+If a file name was not specified, then Ascent starts the embedded web server contained in Conduit.
 
 Connecting To The Web Server
 ----------------------------

@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 file: update_license_header_txt.py
 description:
  Simple python script to help create a source file that can be used
- to include the alpine license as a cpp string. 
+ to include the ascent license as a cpp string. 
 """
 
 import os
@@ -67,8 +67,8 @@ def gen_lic_hpp(lic_file,hpp_out):
         hpp_f.write("%s%s" % (pattern["st"],l))
     hpp_f.write(pattern["hdr"])
     hpp_f.write("\n")
-    hpp_f.write("#ifndef ALPINE_LICENSE_TEXT_HPP\n")
-    hpp_f.write("#define ALPINE_LICENSE_TEXT_HPP\n\n")
+    hpp_f.write("#ifndef ASCENT_LICENSE_TEXT_HPP\n")
+    hpp_f.write("#define ASCENT_LICENSE_TEXT_HPP\n\n")
     hpp_f.write("std::string CONDUIT_LICENSE_TEXT = ")
     for l in lic_txt:
         ltxt = l.strip().replace("\"","\\\"")

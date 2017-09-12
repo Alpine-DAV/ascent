@@ -22,7 +22,7 @@
 !>  The ideal gas and viscosity routines are invoked to make sure this data is
 !>  up to data with the current energy, density and velocity.
 
-SUBROUTINE visit(my_alpine)
+SUBROUTINE visit(my_ascent)
 
   USE clover_module
   USE update_halo_module
@@ -36,7 +36,7 @@ SUBROUTINE visit(my_alpine)
   USE iso_c_binding
   USE conduit
   USE conduit_blueprint
-  USE alpine
+  USE ascent
 
   IMPLICIT NONE
 
@@ -59,8 +59,8 @@ SUBROUTINE visit(my_alpine)
   !
   CHARACTER(len=80) :: savename
 
-  TYPE(C_PTR) alpine_opts
-  TYPE(C_PTR) my_alpine
+  TYPE(C_PTR) ascent_opts
+  TYPE(C_PTR) my_ascent
   TYPE(C_PTR) sim_data
   TYPE(C_PTR) verify_info
       
@@ -129,7 +129,7 @@ SUBROUTINE visit(my_alpine)
   
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  ! Begin Alpine Integration
+  ! Begin Ascent Integration
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -146,9 +146,9 @@ SUBROUTINE visit(my_alpine)
       nnodes = nxv * nyv * nzv
 
       !
-      ! Alpine in situ visualization
+      ! Ascent in situ visualization
       !
-      CALL alpine_timer_start(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
+      CALL ascent_timer_start(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
       ALLOCATE(xcoords(0:nxv-1), ycoords(0:nyv-1), zcoords(0:nzv-1))
       jmin=chunks(c)%field%x_min
       DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
@@ -290,9 +290,9 @@ SUBROUTINE visit(my_alpine)
 
       ! CALL sim_actions%print_detailed()
 
-      CALL alpine_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
-      CALL alpine_publish(my_alpine, sim_data)
-      CALL alpine_execute(my_alpine, sim_actions)
+      CALL ascent_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
+      CALL ascent_publish(my_ascent, sim_data)
+      CALL ascent_execute(my_ascent, sim_actions)
       CALL conduit_node_destroy(sim_actions)
       CALL conduit_node_destroy(sim_data)
 
@@ -303,7 +303,7 @@ SUBROUTINE visit(my_alpine)
       
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      ! End Alpine Integration
+      ! End Ascent Integration
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

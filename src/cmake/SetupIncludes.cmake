@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -55,13 +55,13 @@ include_directories(${PROJECT_SOURCE_DIR}/thirdparty_builtin/diy/include)
 # add include dirs so units tests have access to the headers across
 # libs and in unit tests
 
-include_directories(${PROJECT_SOURCE_DIR}/alpine/)
-include_directories(${PROJECT_BINARY_DIR}/alpine/)
-include_directories(${PROJECT_SOURCE_DIR}/alpine/utils)
-include_directories(${PROJECT_SOURCE_DIR}/alpine/runtimes)
+include_directories(${PROJECT_SOURCE_DIR}/ascent/)
+include_directories(${PROJECT_BINARY_DIR}/ascent/)
+include_directories(${PROJECT_SOURCE_DIR}/ascent/utils)
+include_directories(${PROJECT_SOURCE_DIR}/ascent/runtimes)
 include_directories(${PROJECT_SOURCE_DIR}/flow)
 include_directories(${PROJECT_SOURCE_DIR}/flow/filters)
-include_directories(${PROJECT_SOURCE_DIR}/alpine/runtimes/flow_filters)
+include_directories(${PROJECT_SOURCE_DIR}/ascent/runtimes/flow_filters)
 
 include_directories(${PROJECT_SOURCE_DIR}/vtk-h/)
 

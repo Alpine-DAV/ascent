@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Alpine. 
+// This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/alpine/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,19 +44,19 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_alpine_test_utils.hpp
+/// file: t_ascent_test_utils.hpp
 ///
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-#ifndef T_ALPINE_DATA
-#define T_ALPINE_DATA
+#ifndef T_ASCENT_DATA
+#define T_ASCENT_DATA
 //-----------------------------------------------------------------------------
 
 #include <iostream>
 #include <math.h>
 
-#include <alpine.hpp>
+#include <ascent.hpp>
 
 using namespace std;
 using namespace conduit;
@@ -81,7 +81,7 @@ remove_test_image(const std::string &path)
 std::string 
 prepare_output_dir()
 {
-    string output_path = ALPINE_T_BIN_DIR;
+    string output_path = ASCENT_T_BIN_DIR;
     
     output_path = conduit::utils::join_file_path(output_path,"_output");
 
@@ -97,7 +97,7 @@ prepare_output_dir()
 std::string 
 output_dir()
 {
-    return conduit::utils::join_file_path(ALPINE_T_BIN_DIR,"_output");;
+    return conduit::utils::join_file_path(ASCENT_T_BIN_DIR,"_output");;
 }
 
 //-----------------------------------------------------------------------------
@@ -121,7 +121,7 @@ create_2d_example_dataset(Node &data,
 
     // if( (par_size > 1)  && ((par_size % par_rank) != 0))
     // {
-    //     ALPINE_ERROR("par_size ("  << par_size << ") " <<
+    //     ASCENT_ERROR("par_size ("  << par_size << ") " <<
     //                    "must must divide evenly into " <<
     //                    "par_rank (" << par_rank << ")");
     // }
@@ -222,7 +222,7 @@ create_3d_example_dataset(Node &data,
 {
     // if( (par_size > 1)  && ((par_size % par_rank) != 0))
     // {
-    //     ALPINE_ERROR("par_size ("  << par_size << ") " <<
+    //     ASCENT_ERROR("par_size ("  << par_size << ") " <<
     //                    "must must divide evenly into " <<
     //                    "par_rank (" << par_rank << ")");
     // }

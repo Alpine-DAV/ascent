@@ -9,9 +9,9 @@
 # 
 # This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -56,14 +56,14 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 ################################
 # Unit Tests
 ################################
-# add tpl smoke tests, so they run before we run the alpine tests
+# add tpl smoke tests, so they run before we run the ascent tests
 add_subdirectory("thirdparty")
 
 # add flow tests
 add_subdirectory("flow")
 
-# add alpine tests
-add_subdirectory("alpine")
+# add ascent tests
+add_subdirectory("ascent")
 
 # add vtk-h tests
 if(VTKM_FOUND)

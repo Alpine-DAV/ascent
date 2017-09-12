@@ -9,9 +9,9 @@
 .. #
 .. # This file is part of Conduit.
 .. #
-.. # For details, see: http://software.llnl.gov/alpine/.
+.. # For details, see: http://software.llnl.gov/ascent/.
 .. #
-.. # Please also read alpine/LICENSE
+.. # Please also read ascent/LICENSE
 .. #
 .. # Redistribution and use in source and binary forms, with or without
 .. # modification, are permitted provided that the following conditions are met:
@@ -42,19 +42,19 @@
 .. #
 .. ############################################################################
 
-.. _alpine-actions:
+.. _ascent-actions:
 
-Alpine Actions Overview
+Ascent Actions Overview
 =========================
 
-Actions are the mechanism that instruct Alpine to perform operations.
+Actions are the mechanism that instruct Ascent to perform operations.
 The currently supported actions are:
 
 - ``add_plot``: adds a new plot for the mesh
 - ``draw_plots``: renders the current plot list to files or streams the images to a web browser
 
-Alpine actions can be specified within the integration using Conduit Nodes and can be read in through a file.
-Each time Alpine executes a set of actions, it will check for a file in the current working directory called ``alpine_actions.json``.
+Ascent actions can be specified within the integration using Conduit Nodes and can be read in through a file.
+Each time Ascent executes a set of actions, it will check for a file in the current working directory called ``ascent_actions.json``.
 If found, the current actions will be updated with the contents of the json file.
 If specific action exists in both the Conduit Node and the file, shared fields will be overridden with the contents of the file.
 If additional actions are present in the file, they will be appended to the current list of actions.
@@ -98,7 +98,7 @@ The contents of the file are:
     }
   ]
 
-The resulting actions that are executed by Alpine will be:
+The resulting actions that are executed by Ascent will be:
 
 
 .. code-block:: json
@@ -123,6 +123,6 @@ The resulting actions that are executed by Alpine will be:
    ]
 
 While the updating feature is convient, we encourage users to be as explicit as possible when creating action files to avoid unexpected behavior.
-A full example of an actions file can be found in ``/src/examples/proxies/lulesh2.0.3/alpine_actions.json``.
+A full example of an actions file can be found in ``/src/examples/proxies/lulesh2.0.3/ascent_actions.json``.
 
 

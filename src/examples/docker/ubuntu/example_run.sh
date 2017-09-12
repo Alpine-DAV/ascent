@@ -8,11 +8,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,6 +44,6 @@
 ###############################################################################
 
 # exec docker run to create a container from our image
-echo "docker run -p 9000:9000 -t -i alpine-ubuntu:current"
-docker run -p 9000:9000 -t -i alpine-ubuntu:current
+echo "docker run -p 9000:9000 -t -i ascent-ubuntu:current"
+docker run -p 9000:9000 -t -i ascent-ubuntu:current
 

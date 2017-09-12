@@ -8,11 +8,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -51,5 +51,5 @@ source  ../ornl-titan-load-env-intel-15.0.2.sh
 python uberenv.py --spec %intel@15.0.2 --openmp "$@"
 # change group and perms
 #chgrp -R visit /usr/gapps/visit/straw2an/
-chmod -R g+rwX /usr/gapps/visit/alpine/
+chmod -R g+rwX /usr/gapps/visit/ascent/
 

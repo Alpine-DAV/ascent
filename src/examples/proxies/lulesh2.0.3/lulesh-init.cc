@@ -14,8 +14,8 @@
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
-#include "alpine.hpp"
-using namespace alpine;
+#include "ascent.hpp"
+using namespace ascent;
 
 /////////////////////////////////////////////////////////////////////
 Domain::Domain(Int_t numRanks, Int_t myRank, 
@@ -189,75 +189,75 @@ Domain::Domain(Int_t numRanks, Int_t myRank,
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------
- * Begin Alpine Integration
+ * Begin Ascent Integration
  *--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 
     //------- begin wrapping with Conduit here -------//
    {
-      ALPINE_BLOCK_TIMER(COPY_DATA)
-      m_alpine_node["state/time"].set_external(&m_time);
-      m_alpine_node["state/cycle"].set_external(&m_cycle);
-      m_alpine_node["state/domain"] = myRank;
-      m_alpine_node["state/info"] = "In Situ Pseudocolor rendering of Pressure from <br> LULESH Shock-Hydro Proxy Simulation";
+      ASCENT_BLOCK_TIMER(COPY_DATA)
+      m_ascent_node["state/time"].set_external(&m_time);
+      m_ascent_node["state/cycle"].set_external(&m_cycle);
+      m_ascent_node["state/domain"] = myRank;
+      m_ascent_node["state/info"] = "In Situ Pseudocolor rendering of Pressure from <br> LULESH Shock-Hydro Proxy Simulation";
 
-      m_alpine_node["coordsets/coords/type"] = "explicit";
-      m_alpine_node["coordsets/coords/values/x"].set_external(m_x);
-      m_alpine_node["coordsets/coords/values/y"].set_external(m_y);
-      m_alpine_node["coordsets/coords/values/z"].set_external(m_z);
+      m_ascent_node["coordsets/coords/type"] = "explicit";
+      m_ascent_node["coordsets/coords/values/x"].set_external(m_x);
+      m_ascent_node["coordsets/coords/values/y"].set_external(m_y);
+      m_ascent_node["coordsets/coords/values/z"].set_external(m_z);
       
-      m_alpine_node["topologies/mesh/type"] = "structured";
-      m_alpine_node["topologies/mesh/coordset"] = "coords";
+      m_ascent_node["topologies/mesh/type"] = "structured";
+      m_ascent_node["topologies/mesh/coordset"] = "coords";
 
-      m_alpine_node["topologies/mesh/elements/dims/i"] = nx; 
-      m_alpine_node["topologies/mesh/elements/dims/j"] = nx; 
-      m_alpine_node["topologies/mesh/elements/dims/k"] = nx; 
+      m_ascent_node["topologies/mesh/elements/dims/i"] = nx; 
+      m_ascent_node["topologies/mesh/elements/dims/j"] = nx; 
+      m_ascent_node["topologies/mesh/elements/dims/k"] = nx; 
 
-      m_alpine_node["fields/e/association"] = "element";
-      m_alpine_node["fields/e/type"]        = "scalar";
-      m_alpine_node["fields/e/topology"]    = "mesh";
-      m_alpine_node["fields/e/values"].set_external(m_e);
+      m_ascent_node["fields/e/association"] = "element";
+      m_ascent_node["fields/e/type"]        = "scalar";
+      m_ascent_node["fields/e/topology"]    = "mesh";
+      m_ascent_node["fields/e/values"].set_external(m_e);
 
-      m_alpine_node["fields/p/association"] = "element";
-      m_alpine_node["fields/p/type"]        = "scalar";
-      m_alpine_node["fields/p/topology"]    = "mesh";
-      m_alpine_node["fields/p/values"].set_external(m_p);
+      m_ascent_node["fields/p/association"] = "element";
+      m_ascent_node["fields/p/type"]        = "scalar";
+      m_ascent_node["fields/p/topology"]    = "mesh";
+      m_ascent_node["fields/p/values"].set_external(m_p);
 
-      m_alpine_node["fields/v/association"] = "element";
-      m_alpine_node["fields/v/type"]        = "scalar";
-      m_alpine_node["fields/v/topology"]    = "mesh";
-      m_alpine_node["fields/v/values"].set_external(m_v);
+      m_ascent_node["fields/v/association"] = "element";
+      m_ascent_node["fields/v/type"]        = "scalar";
+      m_ascent_node["fields/v/topology"]    = "mesh";
+      m_ascent_node["fields/v/values"].set_external(m_v);
 
-      m_alpine_node["fields/q/association"] = "element";
-      m_alpine_node["fields/q/type"]        = "scalar";
-      m_alpine_node["fields/q/topology"]    = "mesh";
-      m_alpine_node["fields/q/values"].set_external(m_q);
+      m_ascent_node["fields/q/association"] = "element";
+      m_ascent_node["fields/q/type"]        = "scalar";
+      m_ascent_node["fields/q/topology"]    = "mesh";
+      m_ascent_node["fields/q/values"].set_external(m_q);
 
-      m_alpine_node["fields/xd/association"] = "vertex";
-      m_alpine_node["fields/xd/type"]        = "scalar";
-      m_alpine_node["fields/xd/topology"]    = "mesh";
-      m_alpine_node["fields/xd/values"].set_external(m_xd);
+      m_ascent_node["fields/xd/association"] = "vertex";
+      m_ascent_node["fields/xd/type"]        = "scalar";
+      m_ascent_node["fields/xd/topology"]    = "mesh";
+      m_ascent_node["fields/xd/values"].set_external(m_xd);
 
-      m_alpine_node["fields/yd/association"] = "vertex";
-      m_alpine_node["fields/yd/type"]        = "scalar";
-      m_alpine_node["fields/yd/topology"]    = "mesh";
-      m_alpine_node["fields/yd/values"].set_external(m_yd);
+      m_ascent_node["fields/yd/association"] = "vertex";
+      m_ascent_node["fields/yd/type"]        = "scalar";
+      m_ascent_node["fields/yd/topology"]    = "mesh";
+      m_ascent_node["fields/yd/values"].set_external(m_yd);
 
-      m_alpine_node["fields/zd/association"] = "vertex";
-      m_alpine_node["fields/zd/type"]        = "scalar";
-      m_alpine_node["fields/zd/topology"]    = "mesh";
-      m_alpine_node["fields/zd/values"].set_external(m_yd);
+      m_ascent_node["fields/zd/association"] = "vertex";
+      m_ascent_node["fields/zd/type"]        = "scalar";
+      m_ascent_node["fields/zd/topology"]    = "mesh";
+      m_ascent_node["fields/zd/values"].set_external(m_yd);
    }
     //------- end wrapping with Conduit here -------//
    conduit::Node verify_info;
-   if(!conduit::blueprint::mesh::verify(m_alpine_node,verify_info))
+   if(!conduit::blueprint::mesh::verify(m_ascent_node,verify_info))
    {
        CONDUIT_INFO("blueprint verify failed!" + verify_info.to_json());
    }
     
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------
- * End Alpine Integration
+ * End Ascent Integration
  *--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 } // End constructor

@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -58,9 +58,9 @@ RUN apt-get update && apt-get install -y \
  && rm -rf /var/lib/apt/lists/*
 
 
-# obtain a copy of alpine source from host env
-COPY alpine.docker.src.tar.gz /
-RUN tar -xzf alpine.docker.src.tar.gz
+# obtain a copy of ascent source from host env
+COPY ascent.docker.src.tar.gz /
+RUN tar -xzf ascent.docker.src.tar.gz
 
 # at some sites ssl certs are intercepted, which cases issues fetching 
 # tpl sources via https
@@ -75,21 +75,21 @@ RUN tar -xzf alpine.docker.src.tar.gz
 
 # bootstrap third party libs using spack and uberenv
 #  for this example we use mpich for MPI
-RUN cd alpine && python scripts/uberenv/uberenv.py -k --spec %gcc+mpich~doc
+RUN cd ascent && python scripts/uberenv/uberenv.py -k --spec %gcc+mpich~doc
 
 # configure a debug build with cmake
-RUN cd alpine && mkdir build-debug
-RUN cd alpine/build-debug && \
+RUN cd ascent && mkdir build-debug
+RUN cd ascent/build-debug && \
     ../uberenv_libs/spack/opt/spack/*/*/cmake*/bin/cmake \
     -DCMAKE_BUILD_TYPE=Debug \
-    -DCMAKE_INSTALL_PREFIX=/alpine/install-debug \
+    -DCMAKE_INSTALL_PREFIX=/ascent/install-debug \
     -C ../uberenv_libs/*.cmake \
     ../src
 
 # build, test, and install conduit
-RUN cd alpine/build-debug && make
-RUN cd alpine/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
-RUN cd alpine/build-debug && make install
+RUN cd ascent/build-debug && make
+RUN cd ascent/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
+RUN cd ascent/build-debug && make install
 
 # open port 9000, for use by conduit relay
 EXPOSE 9000

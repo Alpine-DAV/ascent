@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Alpine. 
+// This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/alpine/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_alpine_flow_registry.cpp
+/// file: t_ascent_flow_registry.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ using namespace flow;
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_registry, basic)
+TEST(ascent_flow_registry, basic)
 {
     Node *n = new Node();
     
@@ -92,7 +92,7 @@ TEST(alpine_flow_registry, basic)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_registry, aliased)
+TEST(ascent_flow_registry, aliased)
 {
     Node *n = new Node();
     
@@ -125,7 +125,7 @@ TEST(alpine_flow_registry, aliased)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_registry, untracked)
+TEST(ascent_flow_registry, untracked)
 {
     Node *n = new Node();
     
@@ -156,7 +156,7 @@ TEST(alpine_flow_registry, untracked)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_registry, untracked_aliased)
+TEST(ascent_flow_registry, untracked_aliased)
 {
     Node *n = new Node();
     
@@ -189,7 +189,7 @@ TEST(alpine_flow_registry, untracked_aliased)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_registry, detach_tracked)
+TEST(ascent_flow_registry, detach_tracked)
 {
     Node *n = new Node();
     n->set(10);

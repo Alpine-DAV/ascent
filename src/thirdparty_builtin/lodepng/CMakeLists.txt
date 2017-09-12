@@ -9,9 +9,9 @@
 # 
 # This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -59,9 +59,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 # we always build lodepng as lib 
 add_library(lodepng SHARED ${lodepng_sources} )
 
-# install target for serial alpine lib
+# install target for serial ascent lib
 install(TARGETS lodepng 
-        EXPORT  alpine 
+        EXPORT  ascent 
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION lib

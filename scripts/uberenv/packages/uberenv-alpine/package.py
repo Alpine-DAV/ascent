@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -55,10 +55,10 @@ def cmake_cache_entry(name,value):
         
 
 
-class UberenvAlpine(Package):
-    """Spack Based Uberenv Build for Alpine Thirdparty Libs """
+class UberenvAscent(Package):
+    """Spack Based Uberenv Build for Ascent Thirdparty Libs """
 
-    homepage = "https://github.com/alpine-DAV/alpine"
+    homepage = "https://github.com/ascent-DAV/ascent"
 
     version('0.1', '8d378ef62dedc2df5db447b029b71200')
     
@@ -70,9 +70,9 @@ class UberenvAlpine(Package):
              description="Build CMake (if off, attempt to use cmake from PATH)")
 
     variant("vtkm",default=True,description="build with vtkm pipeline support")
-    variant("doc",default=True,description="build third party dependencies for creating Alpine's docs")
+    variant("doc",default=True,description="build third party dependencies for creating Ascent's docs")
     variant("python",default=True,description="build python 2")
-    variant("mpich",default=False,description="build mpich as MPI lib for Alpine")
+    variant("mpich",default=False,description="build mpich as MPI lib for Ascent")
     
     depends_on("cmake@3.8.2",when="+cmake")
 
@@ -102,7 +102,7 @@ class UberenvAlpine(Package):
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
-        dummy_tar_path = pjoin(dummy_tar_path,"uberenv-alpine.tar.gz")
+        dummy_tar_path = pjoin(dummy_tar_path,"uberenv-ascent.tar.gz")
         url      = "file://" + dummy_tar_path
         return url
         

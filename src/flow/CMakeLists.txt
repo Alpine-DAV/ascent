@@ -9,9 +9,9 @@
 # 
 # This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -83,14 +83,14 @@ blt_add_library(
     HEADERS     ${flow_headers}
     DEPENDS_ON  ${flow_thirdparty_libs})
 
-# install target for serial alpine lib
+# install target for serial ascent lib
 install(TARGETS flow
-        EXPORT  alpine
+        EXPORT  ascent
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION lib
 )
 
-install(FILES ${flow_headers} DESTINATION include/alpine)
+install(FILES ${flow_headers} DESTINATION include/ascent)
 
 

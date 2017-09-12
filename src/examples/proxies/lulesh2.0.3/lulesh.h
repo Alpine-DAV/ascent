@@ -275,7 +275,7 @@ class Domain {
    bool symmZempty()          { return m_symmZ.empty(); }
 
 
-   conduit::Node &visitNode() { return m_alpine_node; }
+   conduit::Node &visitNode() { return m_ascent_node; }
    //
    // Element-centered
    //
@@ -573,7 +573,7 @@ class Domain {
    Index_t m_planeMin, m_planeMax ;
    
    
-   conduit::Node m_alpine_node;
+   conduit::Node m_ascent_node;
    
 
 } ;

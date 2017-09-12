@@ -9,9 +9,9 @@
 .. #
 .. # This file is part of Conduit.
 .. #
-.. # For details, see: http://software.llnl.gov/alpine/.
+.. # For details, see: http://software.llnl.gov/ascent/.
 .. #
-.. # Please also read alpine/LICENSE
+.. # Please also read ascent/LICENSE
 .. #
 .. # Redistribution and use in source and binary forms, with or without
 .. # modification, are permitted provided that the following conditions are met:
@@ -47,15 +47,15 @@ Releases
 
 Source distributions for Conduit are hosted on github:
 
-https://github.com/llnl/alpine/releases
+https://github.com/llnl/ascent/releases
 
 v0.1.0
 -------
 
-The initial release of Alpine.
+The initial release of Ascent.
 
-* `Source Tarball <https://github.com/LLNL/alpine/archive/v0.1.0.tar.gz>`_
-* `Docs <http://software.llnl.gov/alpine/v0.1.0>`_
+* `Source Tarball <https://github.com/LLNL/ascent/archive/v0.1.0.tar.gz>`_
+* `Docs <http://software.llnl.gov/ascent/v0.1.0>`_
 
 
 

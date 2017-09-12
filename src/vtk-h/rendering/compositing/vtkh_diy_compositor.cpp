@@ -1,6 +1,6 @@
 #include "vtkh_diy_compositor.hpp"
 //#include "alpine_config.h"
-#include "alpine_logging.hpp"
+#include "ascent_logging.hpp"
 #include <vtkh.hpp>
 #include <rendering/compositing/vtkh_diy_direct_send.hpp>
 #include <rendering/compositing/vtkh_diy_radix_k.hpp>

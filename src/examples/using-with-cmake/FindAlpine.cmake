@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,46 +44,46 @@
 
 ###############################################################################
 #
-# Setup Alpine
+# Setup Ascent
 #
 ###############################################################################
 #
-#  Expects ALPINE_DIR to point to a Alpine installation.
+#  Expects ASCENT_DIR to point to a Ascent installation.
 #
 # This file defines the following CMake variables:
-#  ALPINE_FOUND - If Alpine was found
-#  ALPINE_INCLUDE_DIRS - The Conduit include directories
+#  ASCENT_FOUND - If Ascent was found
+#  ASCENT_INCLUDE_DIRS - The Conduit include directories
 #
-#  If found, the alpine CMake targets will also be imported.
-#  The main alpine library targets are:
-#   alpine
-#   alpine_par (if alpine was built with mpi support)
+#  If found, the ascent CMake targets will also be imported.
+#  The main ascent library targets are:
+#   ascent
+#   ascent_par (if ascent was built with mpi support)
 #
 ###############################################################################
 
 ###############################################################################
-# Check for ALPINE_DIR
+# Check for ASCENT_DIR
 ###############################################################################
-if(NOT ALPINE_DIR)
-    MESSAGE(FATAL_ERROR "Could not find Alpine. Alpine requires explicit ALPINE_DIR.")
+if(NOT ASCENT_DIR)
+    MESSAGE(FATAL_ERROR "Could not find Ascent. Ascent requires explicit ASCENT_DIR.")
 endif()
 
-if(NOT EXISTS ${ALPINE_DIR}/lib/cmake/alpine.cmake)
-    MESSAGE(FATAL_ERROR "Could not find Alpine CMake include file (${ALPINE_DIR}/lib/cmake/alpine.cmake)")
+if(NOT EXISTS ${ASCENT_DIR}/lib/cmake/ascent.cmake)
+    MESSAGE(FATAL_ERROR "Could not find Ascent CMake include file (${ASCENT_DIR}/lib/cmake/ascent.cmake)")
 endif()
 
 ###############################################################################
-# Import Alpine's CMake targets
+# Import Ascent's CMake targets
 ###############################################################################
-include(${ALPINE_DIR}/lib/cmake/alpine.cmake)
+include(${ASCENT_DIR}/lib/cmake/ascent.cmake)
 
 ###############################################################################
 # Set remaning CMake variables 
 ###############################################################################
-# we found Alpine
-set(ALPINE_FOUND TRUE)
-# provide location of the headers in ALPINE_INCLUDE_DIRS
-set(ALPINE_INCLUDE_DIRS ${ALPINE_DIR}/include/alpine)
+# we found Ascent
+set(ASCENT_FOUND TRUE)
+# provide location of the headers in ASCENT_INCLUDE_DIRS
+set(ASCENT_INCLUDE_DIRS ${ASCENT_DIR}/include/ascent)
 
 
 

@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Alpine. 
+// This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/alpine/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_alpine_flow_workspace.cpp
+/// file: t_ascent_flow_workspace.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@
 
 using namespace std;
 using namespace conduit;
-using namespace alpine;
+using namespace ascent;
 using namespace flow;
 
 //-----------------------------------------------------------------------------
@@ -98,7 +98,7 @@ public:
 
         // the registry will take care of deleting the data
         // when all consuming filters have executed.
-        ALPINE_INFO("exec: " << name() << " result = " << res->to_json());
+        ASCENT_INFO("exec: " << name() << " result = " << res->to_json());
     }
 };
 
@@ -146,7 +146,7 @@ public:
         
         set_output<Node>(res);
 
-        ALPINE_INFO("exec: " << name() << " result = " << res->to_json());
+        ASCENT_INFO("exec: " << name() << " result = " << res->to_json());
     }
 
 };
@@ -190,7 +190,7 @@ public:
         set_output<Node>(res);
 
         
-        ALPINE_INFO("exec: " << name() << " result = " << res->to_json());
+        ASCENT_INFO("exec: " << name() << " result = " << res->to_json());
     }
 
 };
@@ -199,7 +199,7 @@ public:
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_workspace, linear_graph)
+TEST(ascent_flow_workspace, linear_graph)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<IncFilter>();
@@ -224,7 +224,7 @@ TEST(alpine_flow_workspace, linear_graph)
     
     Node *res = w.registry().fetch<Node>("c");
     
-    ALPINE_INFO("Final result: " << res->to_json());
+    ASCENT_INFO("Final result: " << res->to_json());
 
     EXPECT_EQ(res->to_int(),3);
 
@@ -236,7 +236,7 @@ TEST(alpine_flow_workspace, linear_graph)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_workspace, linear_graph_using_filter_ptr_iface)
+TEST(ascent_flow_workspace, linear_graph_using_filter_ptr_iface)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<IncFilter>();
@@ -263,7 +263,7 @@ TEST(alpine_flow_workspace, linear_graph_using_filter_ptr_iface)
     
     Node *res = w.registry().fetch<Node>("c");
     
-    ALPINE_INFO("Final result: " << res->to_json());
+    ASCENT_INFO("Final result: " << res->to_json());
 
     EXPECT_EQ(res->to_int(),3);
 
@@ -276,7 +276,7 @@ TEST(alpine_flow_workspace, linear_graph_using_filter_ptr_iface)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_workspace, linear_graph_using_filter_ptr_iface_and_port_idx)
+TEST(ascent_flow_workspace, linear_graph_using_filter_ptr_iface_and_port_idx)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<IncFilter>();
@@ -301,7 +301,7 @@ TEST(alpine_flow_workspace, linear_graph_using_filter_ptr_iface_and_port_idx)
     
     Node *res = w.registry().fetch<Node>("c");
     
-    ALPINE_INFO("Final result: " << res->to_json());
+    ASCENT_INFO("Final result: " << res->to_json());
 
     EXPECT_EQ(res->to_int(),3);
 
@@ -313,7 +313,7 @@ TEST(alpine_flow_workspace, linear_graph_using_filter_ptr_iface_and_port_idx)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow, alpine_flow_workspace_graph)
+TEST(ascent_flow, ascent_flow_workspace_graph)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<AddFilter>();
@@ -351,7 +351,7 @@ TEST(alpine_flow, alpine_flow_workspace_graph)
     
     Node *res = w.registry().fetch<Node>("a2");
     
-    ALPINE_INFO("Final result: " << res->to_json());
+    ASCENT_INFO("Final result: " << res->to_json());
     
     EXPECT_EQ(res->to_int(),30);
     
@@ -363,7 +363,7 @@ TEST(alpine_flow, alpine_flow_workspace_graph)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface)
+TEST(ascent_flow_workspace, dag_graph_filter_ptr_iface)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<AddFilter>();
@@ -396,7 +396,7 @@ TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface)
     
     Node *res = w.registry().fetch<Node>("a2");
     
-    ALPINE_INFO("Final result: " << res->to_json());
+    ASCENT_INFO("Final result: " << res->to_json());
     
     EXPECT_EQ(res->to_int(),30);
     
@@ -408,7 +408,7 @@ TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface_port_idx)
+TEST(ascent_flow_workspace, dag_graph_filter_ptr_iface_port_idx)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<AddFilter>();
@@ -441,7 +441,7 @@ TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface_port_idx)
     
     Node *res = w.registry().fetch<Node>("a2");
     
-    ALPINE_INFO("Final result: " << res->to_json());
+    ASCENT_INFO("Final result: " << res->to_json());
     
     EXPECT_EQ(res->to_int(),30);
     
@@ -453,7 +453,7 @@ TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface_port_idx)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_workspace, graph_workspace_reg_source)
+TEST(ascent_flow_workspace, graph_workspace_reg_source)
 {
     Workspace::register_filter_type<filters::RegistrySource>();
     Workspace::register_filter_type<AddFilter>();
@@ -483,7 +483,7 @@ TEST(alpine_flow_workspace, graph_workspace_reg_source)
     
     Node *res = w.registry().fetch<Node>("a");
     
-    ALPINE_INFO("Final result: " << res->to_json());
+    ASCENT_INFO("Final result: " << res->to_json());
     
     EXPECT_EQ(res->to_int(),20);
     
@@ -493,7 +493,7 @@ TEST(alpine_flow_workspace, graph_workspace_reg_source)
     
     Node *n_s = w.registry().fetch<Node>(":src");
     
-    ALPINE_INFO("Input result: " << n_s->to_json());
+    ASCENT_INFO("Input result: " << n_s->to_json());
     
     EXPECT_EQ(n_s->to_int(),10);
     
@@ -504,7 +504,7 @@ TEST(alpine_flow_workspace, graph_workspace_reg_source)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface_auto_name)
+TEST(ascent_flow_workspace, dag_graph_filter_ptr_iface_auto_name)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<AddFilter>();
@@ -545,7 +545,7 @@ TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface_auto_name)
     
     Node *res = w.registry().fetch<Node>(f_a2->name());
     
-    ALPINE_INFO("Final result: " << res->to_json());
+    ASCENT_INFO("Final result: " << res->to_json());
     
     EXPECT_EQ(res->to_int(),30);
     
@@ -557,7 +557,7 @@ TEST(alpine_flow_workspace, dag_graph_filter_ptr_iface_auto_name)
 }
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_workspace, graph_info)
+TEST(ascent_flow_workspace, graph_info)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<AddFilter>();
@@ -590,14 +590,14 @@ TEST(alpine_flow_workspace, graph_info)
     w.graph().print();
     w.print();
     
-    ALPINE_INFO(w.graph().to_dot());
+    ASCENT_INFO(w.graph().to_dot());
     
     Workspace::clear_supported_filter_types();
 }
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_workspace, dag_graph_save_and_load)
+TEST(ascent_flow_workspace, dag_graph_save_and_load)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<AddFilter>();
@@ -638,7 +638,7 @@ TEST(alpine_flow_workspace, dag_graph_save_and_load)
 
     Node *res = w.registry().fetch<Node>("a2");
     
-    ALPINE_INFO("Result: " << res->to_json());
+    ASCENT_INFO("Result: " << res->to_json());
 
     EXPECT_EQ(res->to_int(),30);
 
@@ -650,7 +650,7 @@ TEST(alpine_flow_workspace, dag_graph_save_and_load)
     w2.execute();
     res = w2.registry().fetch<Node>("a2");
     
-    ALPINE_INFO("Result from loaded graph: " << res->to_json());
+    ASCENT_INFO("Result from loaded graph: " << res->to_json());
 
     EXPECT_EQ(res->to_int(),30);
 
@@ -668,7 +668,7 @@ TEST(alpine_flow_workspace, dag_graph_save_and_load)
 
     res = w2.registry().fetch<Node>("a2");
 
-    ALPINE_INFO("Result from loaded graph: " << res->to_json());
+    ASCENT_INFO("Result from loaded graph: " << res->to_json());
 
     EXPECT_EQ(res->to_int(),30);
 
@@ -702,7 +702,7 @@ TEST(alpine_flow_workspace, dag_graph_save_and_load)
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_workspace, dag_graph_missing_input_error)
+TEST(ascent_flow_workspace, dag_graph_missing_input_error)
 {
     Workspace::register_filter_type<SrcFilter>();
     Workspace::register_filter_type<AddFilter>();
