@@ -116,9 +116,9 @@ if(VTKM_FOUND)
     list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp)
 
 
-    # main pipeline
-    list(APPEND ascent_headers runtimes/ascent_ascent_runtime.hpp)
-    list(APPEND ascent_sources runtimes/ascent_ascent_runtime.cpp)
+    # main runtime 
+    list(APPEND ascent_headers runtimes/ascent_main_runtime.hpp)
+    list(APPEND ascent_sources runtimes/ascent_main_runtime.cpp)
 
 endif()
 

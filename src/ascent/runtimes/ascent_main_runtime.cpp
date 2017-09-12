@@ -45,11 +45,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_ascent_runtime.cpp
+/// file: ascent_main_runtime.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_ascent_runtime.hpp"
+#include "ascent_main_runtime.hpp"
 
 // standard lib includes
 #include <string.h>

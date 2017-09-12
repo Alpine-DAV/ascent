@@ -56,7 +56,7 @@
 #include <ascent_flow_runtime.hpp>
 
 #if defined(ASCENT_VTKH_ENABLED)
-    #include <runtimes/ascent_ascent_runtime.hpp>
+    #include <runtimes/ascent_main_runtime.hpp>
     #include <vtkh.hpp>
 #endif
 
