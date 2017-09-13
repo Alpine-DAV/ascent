@@ -44,16 +44,13 @@ class Szip(Package):
     """FIXME: Put a proper description of your package here."""
 
     # FIXME: Add a proper url for your package's homepage here.
-    homepage = "http://www.example.com"
+    homepage = "http://www.hdf5group.org"
     url      = "https://support.hdfgroup.org/ftp/lib-external/szip/2.1.1/src/szip-2.1.1.tar.gz"
 
     version('2.1.1', 'dd579cf0f26d44afd10a0ad7291fc282')
 
-    # FIXME: Add dependencies if required.
-    # depends_on('foo')
+    def install(self, spec, prefix):
+        configure("--prefix=%s" % prefix)
 
-    def configure_args(self):
-        # FIXME: Add arguments other than --prefix
-        # FIXME: If not needed delete this function
-        args = []
-        return args
+        make()
+        make("install")
