@@ -119,7 +119,7 @@ script:
   - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
   - mkdir build
   - cd build
-  - export EXAMPLE_CFG="-DASCENT_DIR=${ALPINE_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
+  - export EXAMPLE_CFG="-DASCENT_DIR=${ASCENT_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
   - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR}"; fi
   - echo $EXAMPLE_CFG
   - cmake  ${EXAMPLE_CFG} ../
