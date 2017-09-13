@@ -40,7 +40,7 @@
 from spack import *
 
 
-class Szip(AutotoolsPackage):
+class Szip(Package):
     """FIXME: Put a proper description of your package here."""
 
     # FIXME: Add a proper url for your package's homepage here.
