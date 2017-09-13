@@ -58,7 +58,7 @@ def cmake_cache_entry(name,value):
 class UberenvAscent(Package):
     """Spack Based Uberenv Build for Ascent Thirdparty Libs """
 
-    homepage = "https://github.com/ascent-DAV/ascent"
+    homepage = "https://github.com/alpine-DAV/ascent"
 
     version('0.1', '8d378ef62dedc2df5db447b029b71200')
     
