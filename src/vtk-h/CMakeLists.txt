@@ -111,7 +111,7 @@ blt_add_library(
 
 # install target for serial vtkh lib
 install(TARGETS vtkh 
-        EXPORT  alpine 
+        EXPORT  ascent 
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION lib
@@ -159,7 +159,7 @@ if(MPI_FOUND)
     # remove_definitions(-DPARALLEL)
     # install target for mpi ver
     install(TARGETS vtkh_par
-            EXPORT  alpine
+            EXPORT  ascent
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib

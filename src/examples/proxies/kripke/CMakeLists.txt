@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 
 ###############################################################################
 #
-# Kripke CMake Build for Alpine
+# Kripke CMake Build for Ascent
 #
 ###############################################################################
 
@@ -79,8 +79,8 @@ if(MPI_FOUND)
     configure_file(run_kripke_simple_example.sh 
                    ${CMAKE_CURRENT_BINARY_DIR}/run_kripke_simple_example.sh
                    COPYONLY)
-    configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
-    configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
+    configure_file(ascent_actions.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_actions.json COPYONLY)
+    configure_file(ascent_options.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_options.json COPYONLY)
 
     if(OPENMP_FOUND)
        set(kripke_openmp_flags "-DKRIPKE_USE_OPENMP")
@@ -92,7 +92,7 @@ if(MPI_FOUND)
     include_directories("tools")
 
 
-    set(kripke_par_deps alpine_par mpi)
+    set(kripke_par_deps ascent_par mpi)
     if(OPENMP_FOUND)
            list(APPEND kripke_par_deps openmp)
     endif()

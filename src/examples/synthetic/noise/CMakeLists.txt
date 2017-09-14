@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 ###############################################################################
 #
-# Noise CMake Build for Alpine
+# Noise CMake Build for Ascent
 #
 ###############################################################################
 
@@ -64,14 +64,14 @@ endif()
 blt_add_executable(
     NAME        noise_ser
     SOURCES     ${noise_sources}
-    DEPENDS_ON  alpine
+    DEPENDS_ON  ascent
     OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 blt_add_target_compile_flags(TO noise_ser FLAGS "${noise_openmp_flags}")
 
 if(MPI_FOUND)
     
-    set(noise_par_deps alpine_par mpi)
+    set(noise_par_deps ascent_par mpi)
     if(OPENMP_FOUND)
            list(APPEND noise_par_deps openmp)
     endif()

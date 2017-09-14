@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Alpine. 
+// This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/alpine/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_alpine_flow_data.cpp
+/// file: t_ascent_flow_data.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -65,7 +65,7 @@ using namespace flow;
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_data, generic_wrap)
+TEST(ascent_flow_data, generic_wrap)
 {
     Node *n = new Node();
     
@@ -85,7 +85,7 @@ TEST(alpine_flow_data, generic_wrap)
 }
 
 //-----------------------------------------------------------------------------
-// dummy class used to track and test alpine::Data release imp
+// dummy class used to track and test ascent::Data release imp
 class TestData
 {
 public:
@@ -121,7 +121,7 @@ int TestData::m_destroyed = 0;
 
 
 //-----------------------------------------------------------------------------
-TEST(alpine_flow_data, generic_release)
+TEST(ascent_flow_data, generic_release)
 {
     TestData::clear_stats();
     

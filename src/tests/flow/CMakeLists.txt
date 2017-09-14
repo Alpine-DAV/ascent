@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -60,7 +60,7 @@ set(FLOW_TESTS  t_flow_data
 # Add tests
 ################################
 
-#(tests depend on alpine b/c we are using some of its utils in the tests)
+#(tests depend on ascent b/c we are using some of its utils in the tests)
 
 message(STATUS "Adding flow lib unit tests")
 foreach(TEST ${FLOW_TESTS})

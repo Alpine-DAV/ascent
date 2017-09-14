@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,11 +44,11 @@
 
 ###############################################################################
 #
-# Example that shows how to use an installed instance of Alpine in Makefile
+# Example that shows how to use an installed instance of Ascent in Makefile
 # based build system.
 #
 # To build:
-#  env ALPINE_DIR={alpine install path} \
+#  env ASCENT_DIR={ascent install path} \
 #      CONDUIT_DIR={conduit install path}   \
 #   make
 #  ./example
@@ -57,8 +57,8 @@
 ###############################################################################
 
 
-INC_FLAGS=-I$(ALPINE_DIR)/include/alpine -I$(CONDUIT_DIR)/include/conduit
-LINK_FLAGS=-L$(ALPINE_DIR)/lib/ -lalpine -L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint
+INC_FLAGS=-I$(ASCENT_DIR)/include/ascent -I$(CONDUIT_DIR)/include/conduit
+LINK_FLAGS=-L$(ASCENT_DIR)/lib/ -lascent -L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint
 
 main:
 	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example

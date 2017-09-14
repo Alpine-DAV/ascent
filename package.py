@@ -8,11 +8,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -65,7 +65,7 @@ def create_package(output_file=None):
          suffix = "tar"
          t = datetime.datetime.now()
          output_file = "%s.%04d.%02d.%02d.%s" % (repo_name,t.year,t.month,t.day,suffix)
-    cmd = "python " + pkg_script + " --prefix=alpine " + output_file
+    cmd = "python " + pkg_script + " --prefix=ascent " + output_file
     print "[exe: %s]" % cmd
     subprocess.call(cmd,shell=True)
     

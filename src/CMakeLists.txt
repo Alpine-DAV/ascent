@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -54,10 +54,10 @@ cmake_policy(SET CMP0048 NEW)
 
 
 ################################
-# Alpine
+# Ascent
 ################################
 
-project(alpine VERSION "0.1.0")
+project(ascent VERSION "0.1.0")
 
 ################################
 # Build Options
@@ -128,7 +128,7 @@ add_subdirectory(thirdparty_builtin)
 ################################
 add_subdirectory(flow)
 
-add_subdirectory(alpine)
+add_subdirectory(ascent)
 
 
 ################################
@@ -161,5 +161,5 @@ add_subdirectory(docs)
 # Create CMake importable 
 # exports for all of our targets
 ################################
-install(EXPORT alpine DESTINATION lib/cmake)
+install(EXPORT ascent DESTINATION lib/cmake)
 

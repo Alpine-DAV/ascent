@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 ###############################################################################
 #
-# LULESH CMake Build for Alpine
+# LULESH CMake Build for Ascent
 #
 ###############################################################################
 
@@ -55,10 +55,10 @@ set(LULESH_SOURCES
     lulesh-util.cc 
     lulesh-init.cc)
 
-configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
-configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
+configure_file(ascent_actions.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_actions.json COPYONLY)
+configure_file(ascent_options.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_options.json COPYONLY)
 
-set(lulesh_deps alpine)
+set(lulesh_deps ascent)
 
 if(OPENMP_FOUND)
    set(lulesh_openmp_flags "-DLULESH_USE_OPENMP")
@@ -78,7 +78,7 @@ blt_add_target_compile_flags(TO lulesh_ser FLAGS "-DUSE_MPI=0 ${lulesh_openmp_fl
 
 if(MPI_FOUND)
     
-    set(lulesh_par_deps alpine_par mpi)
+    set(lulesh_par_deps ascent_par mpi)
     if(OPENMP_FOUND)
            list(APPEND lulesh_par_deps openmp)
     endif()

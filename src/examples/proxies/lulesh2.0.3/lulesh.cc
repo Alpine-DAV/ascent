@@ -163,10 +163,10 @@ Additional BSD Notice
 #include "lulesh.h"
 
 #include "conduit.hpp"
-#include "alpine.hpp"
+#include "ascent.hpp"
 
 using namespace conduit;
-using namespace alpine;
+using namespace ascent;
 
 /*********************************/
 /* Data structure implementation */
@@ -2847,23 +2847,23 @@ int main(int argc, char *argv[])
 #endif   
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------
- * Begin Alpine Integration
+ * Begin Ascent Integration
  *--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
    //
-   // setup Alpine In-situ rendering.
+   // setup Ascent In-situ rendering.
    //
-    Alpine alpine;
-    Node alpine_opts;
+    Ascent ascent;
+    Node ascent_opts;
 
 #if USE_MPI
-    alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
     // TODO:
-    alpine_opts["runtime/type"] = "ascent";
-    alpine_opts["alpine_info"] = "verbose";
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["ascent_info"] = "verbose";
     
-    alpine.open(alpine_opts);
+    ascent.open(ascent_opts);
    // BEGIN timestep to solution */
 #if USE_MPI   
    double start = MPI_Wtime();
@@ -2885,12 +2885,12 @@ int main(int argc, char *argv[])
    add_plots["action"] = "add_scenes";
    add_plots["scenes"] = scenes;   
    
-   alpine.publish(locDom->visitNode());
-   alpine.execute(actions);
+   ascent.publish(locDom->visitNode());
+   ascent.execute(actions);
    actions.print();
    while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
      {
-        ALPINE_BLOCK_TIMER(LULESH_MAIN_LOOP)
+        ASCENT_BLOCK_TIMER(LULESH_MAIN_LOOP)
         TimeIncrement(*locDom) ;
         LagrangeLeapFrog(*locDom) ;
      }
@@ -2898,7 +2898,7 @@ int main(int argc, char *argv[])
          printf("cycle = %d, time = %e, dt=%e\n",
                 locDom->cycle(), double(locDom->time()), double(locDom->deltatime()) ) ;
       }
-      //-- begin calls to alpine -- //
+      //-- begin calls to ascent -- //
       if ( (locDom->cycle() % 1 == 0) || (locDom->cycle() == 0))
       {
             char outFileName[30];
@@ -2906,18 +2906,18 @@ int main(int argc, char *argv[])
             //
             // Create the actions.
             //
-            alpine.publish(locDom->visitNode());
+            ascent.publish(locDom->visitNode());
             actions.reset();
             conduit::Node &execute = actions.append();
             execute["action"] = "execute";
-            alpine.execute(actions);
+            ascent.execute(actions);
       }
    }
-   alpine.close();
+   ascent.close();
    
    /*--------------------------------------------------------------------------
     *--------------------------------------------------------------------------
-    * End Alpine Integration
+    * End Ascent Integration
     *--------------------------------------------------------------------------
     *--------------------------------------------------------------------------*/
    

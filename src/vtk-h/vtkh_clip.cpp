@@ -105,7 +105,7 @@ void Clip::DoExecute()
       if(dom.HasCellSet(m_cell_set))
       {
         vtkm::Id cell_set_index = dom.GetCellSetIndex(m_cell_set);
-        m_internals->m_clipper.SetActiveCellSet(cell_set_index);
+        m_internals->m_clipper.SetActiveCellSetIndex(cell_set_index);
       }
       else
       {

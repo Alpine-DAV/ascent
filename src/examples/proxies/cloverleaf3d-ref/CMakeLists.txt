@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 ###############################################################################
 #
-# Cloverleaf3D CMake Build for Alpine
+# Cloverleaf3D CMake Build for Ascent
 #
 ###############################################################################
 
@@ -101,8 +101,8 @@ set(CLOVER3D_SOURCES
 if(MPI_FOUND AND FORTRAN_FOUND)
     # copy over the input deck
     configure_file(clover.in ${CMAKE_CURRENT_BINARY_DIR}/clover.in COPYONLY)
-    configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
-    configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
+    configure_file(ascent_actions.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_actions.json COPYONLY)
+    configure_file(ascent_options.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_options.json COPYONLY)
 
     if(MPI_Fortran_USE_MODULE )
         set(clover_compile_flags "-DUSE_MOD")
@@ -110,7 +110,7 @@ if(MPI_FOUND AND FORTRAN_FOUND)
         set(clover_compile_flags "-DUSE_MPIF") 
     endif()
 
-    set(clover_par_deps alpine_par mpi)
+    set(clover_par_deps ascent_par mpi)
     
     blt_add_executable(
         NAME        cloverleaf3d_par

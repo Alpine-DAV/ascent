@@ -8,11 +8,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,17 +44,17 @@
 ###############################################################################
 
 # remove old source tarball if it exists
-echo "rm -f alpine.docker.src.tar.gz"
-rm -f alpine.docker.src.tar.gz
+echo "rm -f ascent.docker.src.tar.gz"
+rm -f ascent.docker.src.tar.gz
 
 # get current copy of the conduit source
-echo "cd ../../../../ && python package.py src/examples/docker/ubuntu/alpine.docker.src.tar.gz"
-cd ../../../../ && python package.py src/examples/docker/ubuntu/alpine.docker.src.tar.gz
+echo "cd ../../../../ && python package.py src/examples/docker/ubuntu/ascent.docker.src.tar.gz"
+cd ../../../../ && python package.py src/examples/docker/ubuntu/ascent.docker.src.tar.gz
 
 # change back to the dir with our Dockerfile
 echo "cd src/examples/docker/ubuntu/"
 cd src/examples/docker/ubuntu/
 
 # exec docker build to create image
-echo "docker build -t alpine-ubuntu:current ."
-docker build -t alpine-ubuntu:current .
+echo "docker build -t ascent-ubuntu:current ."
+docker build -t ascent-ubuntu:current .

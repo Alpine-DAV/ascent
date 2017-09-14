@@ -8,11 +8,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -48,8 +48,8 @@
 # make sure to source the proper intel env helper
 source /usr/local/tools/dotkit/init.sh
 source ../llnl-surface-load-env-gnu-4.9.3.sh 
-python uberenv.py --prefix /usr/workspace/wsa/visit/alpine/uberenv_libs --spec %gcc@4.9.3 "$@"
+python uberenv.py --prefix /usr/workspace/wsa/visit/ascent/uberenv_libs --spec %gcc@4.9.3 "$@"
 # change group and perms
-chgrp -R visit /usr/workspace/wsa/visit/alpine/uberenv_libs
-chmod -R g+rwX /usr/workspace/wsa/visit/alpine/uberenv_libs
+chgrp -R visit /usr/workspace/wsa/visit/ascent/uberenv_libs
+chmod -R g+rwX /usr/workspace/wsa/visit/ascent/uberenv_libs
 

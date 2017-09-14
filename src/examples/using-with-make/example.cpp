@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Alpine. 
+// This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/alpine/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -50,11 +50,11 @@
 
 #include <iostream>
 
-#include "alpine.hpp"
+#include "ascent.hpp"
 
 int main(int argc, char **argv)
 {
-    std::cout << alpine::about() << std::endl;
+    std::cout << ascent::about() << std::endl;
 }
 
 

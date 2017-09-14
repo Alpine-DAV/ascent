@@ -12,19 +12,19 @@
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------
- * Begin Alpine Integration
+ * Begin Ascent Integration
  *--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 
 #include <conduit_blueprint.hpp>
-#include <alpine.hpp>
+#include <ascent.hpp>
 
 using namespace conduit;
-using alpine::Alpine;
+using ascent::Ascent;
 static int count = 0;
 static int max_backlog = 0;
 
-void writeAlpineData(Alpine &alpine, Grid_Data *grid_data, int timeStep)
+void writeAscentData(Ascent &ascent, Grid_Data *grid_data, int timeStep)
 {
   
   grid_data->kernel->LTimes(grid_data);
@@ -39,7 +39,7 @@ void writeAlpineData(Alpine &alpine, Grid_Data *grid_data, int timeStep)
   // TODO: we don't support domain overloading ... 
   for(int sdom_idx = 0; sdom_idx < grid_data->num_zone_sets; ++sdom_idx)
   {
-    ALPINE_BLOCK_TIMER(COPY_DATA);
+    ASCENT_BLOCK_TIMER(COPY_DATA);
     
     int sdom_id =  grid_data->zs_to_sdomid[sdom_idx];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
@@ -113,8 +113,8 @@ void writeAlpineData(Alpine &alpine, Grid_Data *grid_data, int timeStep)
 
   actions.append()["action"] = "execute";  
   actions.append()["action"] = "reset";
-  alpine.publish(data);
-  alpine.execute(actions);
+  ascent.publish(data);
+  ascent.execute(actions);
 }
 
 /**
@@ -122,12 +122,12 @@ void writeAlpineData(Alpine &alpine, Grid_Data *grid_data, int timeStep)
 */
 int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
 {
-  conduit::Node alpine_opts;
-  alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
-  alpine_opts["runtime/type"] = "ascent";
+  conduit::Node ascent_opts;
+  ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+  ascent_opts["runtime/type"] = "ascent";
 
-  Alpine alpine;
-  alpine.open(alpine_opts);
+  Ascent ascent;
+  ascent.open(ascent_opts);
 
   conduit::Node testNode;
   Kernel *kernel = grid_data->kernel;
@@ -142,8 +142,8 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
   double part_last = 0.0;
  for(int iter = 0;iter < grid_data->niter;++ iter){
    
-   {//alpine block timer
-     ALPINE_BLOCK_TIMER(KRIPKE_MAIN_LOOP);
+   {//ascent block timer
+     ASCENT_BLOCK_TIMER(KRIPKE_MAIN_LOOP);
     /*
      * Compute the RHS:  rhs = LPlus*S*L*psi + Q
      */
@@ -206,17 +206,17 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
     }
    }//end main loop timing
     double part = grid_data->particleEdit();
-    writeAlpineData(alpine, grid_data, iter);
+    writeAscentData(ascent, grid_data, iter);
     if(mpi_rank==0){
       printf("iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
     }
     part_last = part;
   }
   
-  alpine.close();
+  ascent.close();
   }//Solve block
   
-  //Alpine: we don't want to execute all loop orderings, so we will just exit;
+  //Ascent: we don't want to execute all loop orderings, so we will just exit;
   MPI_Finalize();
   exit(0);
   return(0);
@@ -224,7 +224,7 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
     
 /*  --------------------------------------------------------------------------
  *  --------------------------------------------------------------------------
- *   End Alpine Integration
+ *   End Ascent Integration
  *  --------------------------------------------------------------------------
  *  --------------------------------------------------------------------------*/
     

@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Alpine. 
+// This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/alpine/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -43,7 +43,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 #include "open_simplex_noise.h"
 
-#include <alpine.hpp>
+#include <ascent.hpp>
 #include <assert.h>
 #include <iostream>
 #include <conduit.hpp>
@@ -431,15 +431,15 @@ int main(int argc, char** argv)
   
   double time = 0;
   //
-  //  Open and setup alpine
+  //  Open and setup ascent
   //
-  alpine::Alpine alpine;
-  conduit::Node alpine_opts;
+  ascent::Ascent ascent;
+  conduit::Node ascent_opts;
 #ifdef PARALLEL
-  alpine_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+  ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
-  alpine_opts["runtime/type"] = "ascent";
-  alpine.open(alpine_opts);
+  ascent_opts["runtime/type"] = "ascent";
+  ascent.open(ascent_opts);
 
   conduit::Node mesh_data;
   mesh_data["state/time"].set_external(&time);
@@ -453,7 +453,7 @@ int main(int argc, char** argv)
 #endif
   mesh_data["state/info"] = "simplex noise";
   data_set.PopulateNode(mesh_data);
-  //alpine.publish(alpine_node);
+  //ascent.publish(ascent_node);
 
   conduit::Node pipelines;
   // pipeline 1
@@ -500,7 +500,7 @@ int main(int argc, char** argv)
 
   conduit::Node &execute = actions.append();
   execute["action"] = "execute";
-  //alpine.execute(actions);
+  //ascent.execute(actions);
   
   conduit::Node reset;
   conduit::Node &reset_action = reset.append();
@@ -533,9 +533,9 @@ int main(int argc, char** argv)
 
         time += options.m_time_delta;
            
-        alpine.publish(mesh_data);
-        alpine.execute(actions);
-        alpine.execute(reset);
+        ascent.publish(mesh_data);
+        ascent.execute(actions);
+        ascent.execute(reset);
       } //for each time step
   
 
@@ -544,6 +544,6 @@ int main(int argc, char** argv)
   //
   open_simplex_noise_free(ctx_nodal);
   open_simplex_noise_free(ctx_zonal);
-  alpine.close();
+  ascent.close();
   Finalize();
 }

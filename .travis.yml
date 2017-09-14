@@ -10,9 +10,9 @@
 # 
 # This file is part of Alpine. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -111,15 +111,15 @@ script:
   - make VERBOSE=1
   - env CTEST_OUTPUT_ON_FAILURE=1 make test
   - make install
-  # test our examples that demo using an installed alpine
+  # test our examples that demo using an installed ascent
   - export CONDUIT_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/conduit*`
   - export VTKM_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/vtkm*`
-  - export ALPINE_DIR=${TRAVIS_BUILD_DIR}/install-debug
+  - export ASCENT_DIR=${TRAVIS_BUILD_DIR}/install-debug
   # using with cmake example
   - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
   - mkdir build
   - cd build
-  - export EXAMPLE_CFG="-DALPINE_DIR=${ALPINE_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
+  - export EXAMPLE_CFG="-DASCENT_DIR=${ASCENT_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
   - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR}"; fi
   - echo $EXAMPLE_CFG
   - cmake  ${EXAMPLE_CFG} ../
@@ -128,7 +128,7 @@ script:
   # using with make example (still needs work for static builds)
   #- cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
   #- make
-  #- env LD_LIBRARY_PATH=${ALPINE_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
+  #- env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
   # test run example apps
   - cd ${TRAVIS_BUILD_DIR}
   - if [ $ENABLE_VTKM = 'ON' ]; then ./scripts/test-run-examples.sh ; fi
