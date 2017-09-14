@@ -17,7 +17,7 @@ Source Repo
 
 Ascent's source is hosted on GitHub:
 
-https://github.com/Ascent-DAV/ascent
+https://github.com/Alpine-DAV/ascent
 
 License
 ===========
