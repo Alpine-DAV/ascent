@@ -35,12 +35,17 @@ public:
   void                            SetImageName(const std::string &name);
   bool                            HasCanvas(const vtkm::Id &domain_id) const;
   void                            AddCanvas(vtkmCanvasPtr canvas, vtkm::Id domain_id);
+  void                            SetColorTable(const vtkm::rendering::ColorTable &color_table);
+  vtkm::rendering::ColorTable     GetColorTable() const;
+  bool                            HasColorTable() const;
 
 protected:
-  std::vector<vtkmCanvasPtr> m_canvases;
-  std::vector<vtkm::Id>      m_domain_ids;
-  vtkm::rendering::Camera    m_camera; 
-  std::string                m_image_name;
+  std::vector<vtkmCanvasPtr>   m_canvases;
+  std::vector<vtkm::Id>        m_domain_ids;
+  vtkm::rendering::Camera      m_camera; 
+  std::string                  m_image_name;
+  vtkm::rendering::ColorTable  m_color_table;
+  bool                         m_has_color_table;
 }; 
 
 static float vtkh_default_bg_color[4] = {1.f, 1.f, 1.f, 1.f};

@@ -484,6 +484,10 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
 
     // create the default render 
     conduit::Node render_params;
+    if(scene.has_path("renders"))
+    {
+      render_params["renders"] = scene["renders"];
+    } 
     int plot_count = scene["plots"].number_of_children();
     render_params["pipeline_count"] = plot_count;
 
@@ -521,17 +525,96 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
 
     CreatePlots(appended_plots);
 
+    std::vector<std::string> bounds_names;
+    std::vector<std::string> union_bounds_names;
+    std::vector<std::string> domain_ids_names;
+    std::vector<std::string> union_domain_ids_names;
+    
     for(int p = 0; p < plot_count; ++p)
     {
       //
-      // connect the plot source to the render filter.
-      // We need the input data set bounds to make a 
-      // default camera 
+      // To setup the rendering we need to setup a several filters.
+      // A render, needs two inputs:
+      //     1) a set of domain ids to create canvases
+      //     2) the coordinate bounds of all the input pipelines
+      //        to be able to create a defailt camera
+      // Thus, we have to call bounds and domain id filters and
+      // create unions of all inputs to feed to the render.
       //
+      std::string bounds_name = plot_names[p] + "_bounds";
+      conduit::Node empty; 
+      w.graph().add_filter("vtkh_bounds",
+                            bounds_name,
+                            empty);
 
       w.graph().connect(pipelines[p], // src
-                        renders_name, // dest
-                        p);           // default port
+                        bounds_name,  // dest
+                        0);           // default port
+      bounds_names.push_back(bounds_name);
+  
+      std::string domain_ids_name = plot_names[p] + "_domain_ids";
+      w.graph().add_filter("vtkh_domain_ids",
+                            domain_ids_name,
+                            empty);
+
+      w.graph().connect(pipelines[p],     // src
+                        domain_ids_name,  // dest
+                        0);               // default port
+      domain_ids_names.push_back(domain_ids_name);
+  
+      //
+      // we have more than one. Create union filters.
+      //
+      if(p > 0)
+      {
+        std::string union_bounds_name = plot_names[p] + "_union_bounds";
+        w.graph().add_filter("vtkh_union_bounds",
+                              union_bounds_name,
+                              empty);
+        union_bounds_names.push_back(union_bounds_name);
+
+        std::string union_domain_ids_name = plot_names[p] + "_union_domain_ids";
+        w.graph().add_filter("vtkh_union_domain_ids",
+                              union_domain_ids_name,
+                              empty);
+        union_domain_ids_names.push_back(union_domain_ids_name);
+
+        if(p == 1)
+        {
+          // first union just needs the output
+          // of the first bounds
+          w.graph().connect(bounds_names[p-1],  // src
+                            union_bounds_name,  // dest
+                            0);                 // default port
+
+          w.graph().connect(domain_ids_names[p-1],  // src
+                            union_domain_ids_name,  // dest
+                            0);                     // default port
+        }
+        else
+        {
+          // all subsequent unions needs the bounds of 
+          // the current plot and the output of the 
+          // previous union
+          //
+          w.graph().connect(union_bounds_names[p-1],  // src
+                            union_bounds_name,        // dest
+                            0);                       // default port
+
+          w.graph().connect(union_domain_ids_names[p-1],  // src
+                            union_domain_ids_name,        // dest
+                            0);                           // default port
+        }
+
+        w.graph().connect(bounds_name,        // src
+                          union_bounds_name,  // dest
+                          1);                 // default port
+
+        w.graph().connect(domain_ids_name,        // src
+                          union_domain_ids_name,  // dest
+                          1);                     // default port
+      }
+
       //
       // Connect the render to the plots
       //
@@ -541,8 +624,8 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
         // first plot connects to the render filter
         // on the second port
         w.graph().connect(renders_name,   // src
-                          plot_names[p], // dest
-                          1);           // default port
+                          plot_names[p],  // dest
+                          1);             // default port
       }
       else
       {
@@ -556,15 +639,33 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       }
       
     }
+  
+    //
+    // Connect the total bounds and domain ids
+    // up to the render inputs
+    //
+    std::string bounds_output; 
+    std::string domain_ids_output; 
 
-    const int max_inputs = 3;
-    int pad = max_inputs - plot_count;
-    for(int x = 0; x < pad; ++x)
+    if(bounds_names.size() == 1)
     {
-      w.graph().connect(pipelines[0], // src
-                        renders_name, // dest
-                        max_inputs - x - 1);           // default port
+      bounds_output = bounds_names[0];
+      domain_ids_output = domain_ids_names[0];
     }
+    else
+    {
+      const size_t union_size = union_bounds_names.size();
+      bounds_output = union_bounds_names[union_size-1];
+      domain_ids_output = union_domain_ids_names[union_size-1];
+    }
+
+    w.graph().connect(bounds_output, // src
+                      renders_name,  // dest
+                      0);            // default port
+
+    w.graph().connect(domain_ids_output, // src
+                      renders_name,      // dest
+                      1);                // default port
   }
 }
 //-----------------------------------------------------------------------------

@@ -4,6 +4,8 @@ namespace vtkh
 {
 
 Render::Render()
+  : m_color_table("cool2warm"),
+    m_has_color_table(false)
 {
 }
 
@@ -38,6 +40,13 @@ Render::GetCanvas(const vtkm::Id index)
 {
   assert(index >= 0 && index < m_canvases.size());
   return m_canvases[index];
+}
+
+void 
+Render::AddCanvas(vtkmCanvasPtr canvas, vtkm::Id domain_id)
+{
+  m_canvases.push_back(canvas);
+  m_domain_ids.push_back(domain_id);
 }
 
 int 
@@ -87,10 +96,22 @@ Render::GetImageName() const
 }
 
 void 
-Render::AddCanvas(vtkmCanvasPtr canvas, vtkm::Id domain_id)
+Render::SetColorTable(const vtkm::rendering::ColorTable &color_table)
 {
-  m_canvases.push_back(canvas);  
-  m_domain_ids.push_back(domain_id);  
+  m_color_table = color_table;
+  m_has_color_table = true;
+}
+
+bool
+Render::HasColorTable() const
+{
+  return m_has_color_table;
+}
+
+vtkm::rendering::ColorTable
+Render::GetColorTable() const
+{
+  return m_color_table;
 }
 
 } // namespace vtkh
