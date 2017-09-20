@@ -124,6 +124,7 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
         vtkmVec3f look_at(coords[0], coords[1], coords[2]);
         camera.SetLookAt(look_at);  
     }
+
     if(camera_node.has_child("position"))
     {
         const float64 *coords = camera_node["position"].as_float64_ptr();
