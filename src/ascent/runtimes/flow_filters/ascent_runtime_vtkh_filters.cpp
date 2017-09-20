@@ -104,6 +104,195 @@ namespace runtime
 namespace filters
 {
 
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::filters::detail --
+//-----------------------------------------------------------------------------
+namespace detail
+{
+
+//-----------------------------------------------------------------------------
+void 
+parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
+{
+    typedef vtkm::Vec<vtkm::Float32,3> vtkmVec3f;
+    //
+    // Get the optional camera parameters
+    //
+    if(camera_node.has_child("look_at"))
+    {
+        const float64 *coords = camera_node["look_at"].as_float64_ptr();
+        vtkmVec3f look_at(coords[0], coords[1], coords[2]);
+        camera.SetLookAt(look_at);  
+    }
+    if(camera_node.has_child("position"))
+    {
+        const float64 *coords = camera_node["position"].as_float64_ptr();
+        vtkmVec3f position(coords[0], coords[1], coords[2]);
+        camera.SetPosition(position);  
+    }
+    
+    if(camera_node.has_child("up"))
+    {
+        const float64 *coords = camera_node["up"].as_float64_ptr();
+        vtkmVec3f up(coords[0], coords[1], coords[2]);
+        vtkm::Normalize(up);
+        camera.SetViewUp(up);
+    }
+    
+    if(camera_node.has_child("fov"))
+    {
+        camera.SetFieldOfView(camera_node["fov"].to_float64());
+    }
+
+    if(camera_node.has_child("xpan") || camera_node.has_child("ypan"))
+    {
+        vtkm::Float64 xpan = 0.;
+        vtkm::Float64 ypan = 0.;
+        if(camera_node.has_child("xpan")) xpan = camera_node["xpan"].to_float64();
+        if(camera_node.has_child("ypan")) xpan = camera_node["ypan"].to_float64();
+        camera.Pan(xpan, ypan);
+    }
+
+    if(camera_node.has_child("zoom"))
+    {
+        camera.Zoom(camera_node["zoom"].to_float64());
+    }
+    //
+    // With a new potential camera position. We need to reset the
+    // clipping plane as not to cut out part of the data set
+    //
+    //this->SetDefaultClippingPlane();
+    
+    if(camera_node.has_child("near_plane"))
+    {
+        vtkm::Range clipping_range = camera.GetClippingRange();
+        clipping_range.Min = camera_node["near_plane"].to_float64();
+        camera.SetClippingRange(clipping_range);
+    }
+
+    if(camera_node.has_child("far_plane"))
+    {
+        vtkm::Range clipping_range = camera.GetClippingRange();
+        clipping_range.Max = camera_node["far_plane"].to_float64();
+        camera.SetClippingRange(clipping_range);
+    }
+}
+
+vtkm::rendering::ColorTable 
+parse_color_table(const conduit::Node &color_table_node)
+{
+  std::string color_map_name = "";
+  if(color_table_node.has_child("name"))
+  {
+      color_map_name = color_table_node["name"].as_string();
+  }
+
+  vtkm::rendering::ColorTable color_table(color_map_name);
+
+  if(color_map_name == "")
+  {
+      ASCENT_INFO("Color map name is empty. Ignoring");
+      color_table.Clear();
+  }
+  
+  if(!color_table_node.has_child("control_points"))
+  {
+      if(color_map_name == "") 
+        ASCENT_ERROR("Error: a color table node was provided without a color map name or control points");
+      return color_table;
+  }
+  
+  NodeConstIterator itr = color_table_node.fetch("control_points").children();
+  while(itr.has_next())
+  {
+      const Node &peg = itr.next();
+      if(!peg.has_child("position"))
+      {
+          ASCENT_WARN("Color map control point must have a position. Ignoring");
+      }
+      float64 position = peg["position"].as_float64();
+      
+      if(position > 1.0 || position < 0.0)
+      {
+            ASCENT_WARN("Cannot add color map control point position "
+                          << position 
+                          << ". Must be a normalized scalar.");
+      }
+
+      if (peg["type"].as_string() == "rgb")
+      {
+          const float64 *color = peg["color"].as_float64_ptr();
+          
+          vtkm::rendering::Color ecolor(color[0], color[1], color[2]);
+          
+          color_table.AddControlPoint(position, ecolor);
+      }
+      else if (peg["type"].as_string() == "alpha")
+      {
+          float64 alpha = peg["alpha"].to_float64();
+          color_table.AddAlphaControlPoint(position, alpha);
+      }
+      else
+      {
+          ASCENT_WARN("Unknown color table control point type " << peg["type"].as_string()<<
+                      "\nValid types are 'alpha' and 'rgb'");
+      }
+  }
+
+  return color_table;
+}
+
+vtkh::Render parse_render(const conduit::Node &render_node, 
+                          vtkm::Bounds &bounds, 
+                          const std::vector<vtkm::Id> &domain_ids,
+                          const std::string &image_name)
+{
+  int image_width = 1024; 
+  int image_height = 1024;
+
+  if(render_node.has_path("image_width"))
+  {
+    image_width = render_node["image_width"].as_int32();
+  }
+
+  if(render_node.has_path("image_height"))
+  {
+    image_height = render_node["image_height"].as_int32();
+  }
+  
+  //
+  // for now, all the canvases we support are the same
+  // so passing MakeRender a RayTracer is ok
+  //
+  vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(image_width,
+                                                          image_height, 
+                                                          bounds,
+                                                          domain_ids,
+                                                          image_name);
+  //
+  // render create a default camera. Now get it and check for 
+  // values that override the default view
+  //
+  if(render_node.has_path("camera"))
+  {
+    vtkm::rendering::Camera camera = render.GetCamera();
+    parse_camera(render_node["camera"], camera);
+    render.SetCamera(camera);
+  }
+
+  if(render_node.has_path("color_table"))
+  {
+    vtkm::rendering::ColorTable color_table =  parse_color_table(render_node["color_table"]);
+    render.SetColorTable(color_table);
+  }
+  return render;
+}
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end namespace detail --
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 EnsureVTKH::EnsureVTKH()
@@ -527,192 +716,6 @@ DefaultRender::verify_params(const conduit::Node &params,
     return res;
 }
 
-//-----------------------------------------------------------------------------
-namespace detail
-{
-
-//-----------------------------------------------------------------------------
-void 
-parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
-{
-    typedef vtkm::Vec<vtkm::Float32,3> vtkmVec3f;
-    //
-    // Get the optional camera parameters
-    //
-    if(camera_node.has_child("look_at"))
-    {
-        const float64 *coords = camera_node["look_at"].as_float64_ptr();
-        vtkmVec3f look_at(coords[0], coords[1], coords[2]);
-        camera.SetLookAt(look_at);  
-    }
-    if(camera_node.has_child("position"))
-    {
-        const float64 *coords = camera_node["position"].as_float64_ptr();
-        vtkmVec3f position(coords[0], coords[1], coords[2]);
-        camera.SetPosition(position);  
-    }
-    
-    if(camera_node.has_child("up"))
-    {
-        const float64 *coords = camera_node["up"].as_float64_ptr();
-        vtkmVec3f up(coords[0], coords[1], coords[2]);
-        vtkm::Normalize(up);
-        camera.SetViewUp(up);
-    }
-    
-    if(camera_node.has_child("fov"))
-    {
-        camera.SetFieldOfView(camera_node["fov"].to_float64());
-    }
-
-    if(camera_node.has_child("xpan") || camera_node.has_child("ypan"))
-    {
-        vtkm::Float64 xpan = 0.;
-        vtkm::Float64 ypan = 0.;
-        if(camera_node.has_child("xpan")) xpan = camera_node["xpan"].to_float64();
-        if(camera_node.has_child("ypan")) xpan = camera_node["ypan"].to_float64();
-        camera.Pan(xpan, ypan);
-    }
-
-    if(camera_node.has_child("zoom"))
-    {
-        camera.Zoom(camera_node["zoom"].to_float64());
-    }
-    //
-    // With a new potential camera position. We need to reset the
-    // clipping plane as not to cut out part of the data set
-    //
-    //this->SetDefaultClippingPlane();
-    
-    if(camera_node.has_child("near_plane"))
-    {
-        vtkm::Range clipping_range = camera.GetClippingRange();
-        clipping_range.Min = camera_node["near_plane"].to_float64();
-        camera.SetClippingRange(clipping_range);
-    }
-
-    if(camera_node.has_child("far_plane"))
-    {
-        vtkm::Range clipping_range = camera.GetClippingRange();
-        clipping_range.Max = camera_node["far_plane"].to_float64();
-        camera.SetClippingRange(clipping_range);
-    }
-}
-
-vtkm::rendering::ColorTable 
-parse_color_table(const conduit::Node &color_table_node)
-{
-  std::string color_map_name = "";
-  if(color_table_node.has_child("name"))
-  {
-      color_map_name = color_table_node["name"].as_string();
-  }
-
-  vtkm::rendering::ColorTable color_table(color_map_name);
-
-  if(color_map_name == "")
-  {
-      ASCENT_INFO("Color map name is empty. Ignoring");
-      color_table.Clear();
-  }
-  
-  if(!color_table_node.has_child("control_points"))
-  {
-      if(color_map_name == "") 
-        ASCENT_ERROR("Error: a color table node was provided without a color map name or control points");
-      return color_table;
-  }
-  
-  NodeConstIterator itr = color_table_node.fetch("control_points").children();
-  while(itr.has_next())
-  {
-      const Node &peg = itr.next();
-      if(!peg.has_child("position"))
-      {
-          ASCENT_WARN("Color map control point must have a position. Ignoring");
-      }
-      float64 position = peg["position"].as_float64();
-      
-      if(position > 1.0 || position < 0.0)
-      {
-            ASCENT_WARN("Cannot add color map control point position "
-                          << position 
-                          << ". Must be a normalized scalar.");
-      }
-
-      if (peg["type"].as_string() == "rgb")
-      {
-          const float64 *color = peg["color"].as_float64_ptr();
-          
-          vtkm::rendering::Color ecolor(color[0], color[1], color[2]);
-          
-          color_table.AddControlPoint(position, ecolor);
-      }
-      else if (peg["type"].as_string() == "alpha")
-      {
-          float64 alpha = peg["alpha"].to_float64();
-          color_table.AddAlphaControlPoint(position, alpha);
-      }
-      else
-      {
-          ASCENT_WARN("Unknown color table control point type " << peg["type"].as_string()<<
-                      "\nValid types are 'alpha' and 'rgb'");
-      }
-  }
-
-  return color_table;
-}
-
-vtkh::Render parse_render(const conduit::Node &render_node, 
-                          vtkm::Bounds &bounds, 
-                          const std::vector<vtkm::Id> &domain_ids,
-                          const std::string &image_name)
-{
-  int image_width = 1024; 
-  int image_height = 1024;
-
-  if(render_node.has_path("image_width"))
-  {
-    image_width = render_node["image_width"].as_int32();
-  }
-
-  if(render_node.has_path("image_height"))
-  {
-    image_height = render_node["image_height"].as_int32();
-  }
-  
-  //
-  // for now, all the canvases we support are the same
-  // so passing MakeRender a RayTracer is ok
-  //
-  vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(image_width,
-                                                          image_height, 
-                                                          bounds,
-                                                          domain_ids,
-                                                          image_name);
-  //
-  // render create a default camera. Now get it and check for 
-  // values that override the default view
-  //
-  if(render_node.has_path("camera"))
-  {
-    vtkm::rendering::Camera camera = render.GetCamera();
-    parse_camera(render_node["camera"], camera);
-    render.SetCamera(camera);
-  }
-
-  if(render_node.has_path("color_table"))
-  {
-    vtkm::rendering::ColorTable color_table =  parse_color_table(render_node["color_table"]);
-    render.SetColorTable(color_table);
-  }
-  return render;
-}
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end namespace detail --
 //-----------------------------------------------------------------------------
 
 void 
