@@ -56,25 +56,38 @@ def cmake_cache_entry(name,value):
 
 class Conduit(Package):
     """Spack package for Conduit"""
-
-    homepage = "http://software.llnl.gov/conduit"
-
     homepage = "http://software.llnl.gov/conduit/"
-    url      = "https://github.com/LLNL/conduit/archive/v0.2.1.tar.gz"
+    url      = "https://github.com/LLNL/conduit/releases/download/v0.3.0/conduit-v0.3.0-src-with-blt.tar.gz"
 
+    version('0.3.0', '6396f1d1ca16594d7c66d4535d4f898e')
+    # note: checksums on github automatic release source tars changed ~9/17
     version('0.2.1', 'ed7358af3463ba03f07eddd6a6e626ff')
-    version('0.2.0', 'd595573dedf55514c11d7391092fd760')
+    version('0.2.0', 'a7b398d493fd71b881a217993a9a29d4')
 
     variant("cmake", default=True,
              description="Build CMake (if off, attempt to use cmake from PATH)")
 
     variant("hdf5",default=True,description="build third party dependencies for Conduit HDF5 support")
-    variant("silo",default=True,description="build third party dependencies for Conduit Silo support")
+    variant("silo",default=False,description="build third party dependencies for Conduit Silo support")
     
     variant("doc",default=True,description="build third party dependencies for creating Conduit's docs")
     variant("python",default=True,description="build python 2")
     variant("python3",default=True,description="build python 3")
     variant("mpich",default=False,description="build mpich as MPI lib for Conduit")
+
+
+    def url_for_version(self, version):
+        v = str(version)
+        if v == "0.2.0":
+            return "https://github.com/LLNL/conduit/archive/v0.2.0.tar.gz"
+        elif v == "0.2.1":
+            return "https://github.com/LLNL/conduit/archive/v0.2.1.tar.gz"
+        elif v == "0.3.0":
+            # conduit uses BLT as a submodule, since github does not 
+            # automatically package source from submodules, conduit provides a
+            # custom src tarball
+            return "https://github.com/LLNL/conduit/releases/download/v0.3.0/conduit-v0.3.0-src-with-blt.tar.gz"
+        return url
 
 
     ###########################
