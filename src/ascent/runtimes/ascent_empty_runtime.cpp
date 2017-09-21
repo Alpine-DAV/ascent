@@ -150,11 +150,9 @@ EmptyRuntime::Publish(const conduit::Node &data)
     else
         n_src = (int)1;
 
-    conduit::relay::mpi::all_reduce(n_src,
-                                    n_reduce,
-                                    MPI_INT,
-                                    MPI_SUM,
-                                    mpi_comm);
+    conduit::relay::mpi::sum_all_reduce(n_src,
+                                        n_reduce,
+                                        mpi_comm);
 
     int num_failures = n_reduce.value();
     if(num_failures != 0)
