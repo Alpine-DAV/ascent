@@ -140,7 +140,6 @@ Renderer::PreExecute()
   assert(num_components == 1);
   m_range = ranges.GetPortalControl().Get(0);
   m_bounds = m_input->GetGlobalBounds();
-  m_mapper->SetActiveColorTable(m_color_table);
 }
 
 void 
@@ -159,20 +158,30 @@ Renderer::DoExecute()
 
   int total_renders = static_cast<int>(m_renders.size());
   int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
-  for(int i = 0; i < total_renders; ++i)
+  for(int dom = 0; dom < num_domains; ++dom)
   {
-    for(int dom = 0; dom < num_domains; ++dom)
+    vtkm::cont::DataSet data_set; 
+    vtkm::Id domain_id;
+    m_input->GetDomain(dom, data_set, domain_id);
+    const vtkm::cont::DynamicCellSet &cellset = data_set.GetCellSet();
+    const vtkm::cont::Field &field = data_set.GetField(m_field_name);
+    const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
+    if(cellset.GetNumberOfCells() == 0) continue;
+
+    for(int i = 0; i < total_renders; ++i)
     {
-      vtkm::cont::DataSet data_set; 
-      vtkm::Id domain_id;
-      m_input->GetDomain(dom, data_set, domain_id);
-      const vtkm::cont::DynamicCellSet &cellset = data_set.GetCellSet();
-      const vtkm::cont::Field &field = data_set.GetField(m_field_name);
-      const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
-      if(cellset.GetNumberOfCells() == 0) continue;
       // paint
+      if(m_renders[i].HasColorTable())
+      {
+        m_mapper->SetActiveColorTable(m_renders[i].GetColorTable());
+      }
+      else
+      {
+        m_mapper->SetActiveColorTable(m_color_table);
+      }
+
       vtkmCanvasPtr p_canvas = m_renders[i].GetDomainCanvas(domain_id);
-      const vtkmCamera &camera = m_renders[i].GetCamera();; 
+      const vtkmCamera &camera = m_renders[i].GetCamera(); 
       m_mapper->SetCanvas(&(*p_canvas));
       m_mapper->RenderCells(cellset,
                             coords,
