@@ -49,7 +49,7 @@
 
 # add a target to generate documentation with Sphinx
 
-add_sphinx_target( ascent_sphinx )
+blt_add_sphinx_target( ascent_sphinx )
 
 
 
