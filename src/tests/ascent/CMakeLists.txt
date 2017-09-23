@@ -58,6 +58,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_flow_runtime)
 
 set(MPI_TESTS  t_ascent_mpi_empty_runtime
+               t_ascent_mpi_adios_extract
                t_ascent_mpi_render_2d
                t_ascent_mpi_render_3d)
 

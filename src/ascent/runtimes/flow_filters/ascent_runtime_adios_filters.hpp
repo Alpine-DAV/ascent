@@ -45,19 +45,14 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_ascent_runtime.hpp
+/// file: ascent_runtime_adios_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_ASCENT_RUNTIME_HPP
-#define ASCENT_ASCENT_RUNTIME_HPP
+#ifndef ASCENT_FLOW_PIPELINE_ADIOS_FILTERS_HPP
+#define ASCENT_FLOW_PIPELINE_ADIOS_FILTERS_HPP
 
-#include <ascent.hpp>
-#include <ascent_runtime.hpp>
-
-#include <flow.hpp>
-
-
+#include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -65,55 +60,56 @@
 namespace ascent
 {
 
-class AscentRuntime : public Runtime
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime --
+//-----------------------------------------------------------------------------
+namespace runtime
+{
+
+
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::filters --
+//-----------------------------------------------------------------------------
+namespace filters
+{
+
+//-----------------------------------------------------------------------------
+///
+/// Filters Related to Conduit Relay IO
+///
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+class ADIOS : public ::flow::Filter
 {
 public:
+    ADIOS();
+   ~ADIOS();
     
-    // Creation and Destruction
-    AscentRuntime();
-    virtual ~AscentRuntime();
-
-    // Main runtime interface methods used by the ascent interface.
-    void  Initialize(const conduit::Node &options);
-
-    void  Publish(const conduit::Node &data);
-    void  Execute(const conduit::Node &actions);
-    
-    void  Cleanup();
-
-private:
-    // holds options passed to initialize
-    conduit::Node     m_runtime_options;
-    // conduit node that (externally) holds the data from the simulation
-    conduit::Node     m_data; 
-    conduit::Node     m_connections; 
-    conduit::Node     m_scene_connections; 
-
-    flow::Workspace w;
-    std::string CreateDefaultFilters();
-    void ConvertToFlowGraph(const conduit::Node &pipeline,
-                            const std::string pipeline_name);
-    void ConvertPlotToFlow(const conduit::Node &plot,
-                           const std::string plot_name,
-                           bool composite);
-    void ConvertExtractToFlow(const conduit::Node &plot,
-                              const std::string extract_name);
-    void CreatePipelines(const conduit::Node &pipelines);
-    void CreateExtracts(const conduit::Node &extracts);
-    void CreatePlots(const conduit::Node &plots);
-    std::vector<std::string> GetPipelines(const conduit::Node &plots);
-    void CreateScenes(const conduit::Node &scenes);
-    void ConvertSceneToFlow(const conduit::Node &scenes);
-    void ConnectGraphs();
-    void ExecuteGraphs();
-    std::string GetDefaultImagePrefix(const std::string scene);
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
 };
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime::filters --
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime --
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
 
 #endif
 //-----------------------------------------------------------------------------

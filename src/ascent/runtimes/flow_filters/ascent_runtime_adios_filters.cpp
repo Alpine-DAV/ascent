@@ -45,31 +45,35 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_filters.cpp
+/// file: ascent_runtime_adios_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <ascent_runtime_filters.hpp>
+#include "ascent_runtime_adios_filters.hpp"
 
+//-----------------------------------------------------------------------------
+// thirdparty includes
+//-----------------------------------------------------------------------------
+
+// conduit includes
+#include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <ascent_file_system.hpp>
+
+#include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
-#include <ascent_runtime_relay_filters.hpp>
-#include <ascent_runtime_blueprint_filters.hpp>
-#include <ascent_runtime_adios_filters.hpp>
-
-#if defined(ASCENT_VTKM_ENABLED)
-    #include <ascent_runtime_vtkh_filters.hpp>
+// mpi related includes
+#ifdef PARALLEL
+#include <mpi.h>
 #endif
 
-
-
-
-
+using namespace std;
+using namespace conduit;
 using namespace flow;
 
 //-----------------------------------------------------------------------------
@@ -90,50 +94,114 @@ namespace runtime
 namespace filters
 {
 
-
 //-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
+ADIOS::ADIOS()
+:Filter()
 {
-    Workspace::register_filter_type<BlueprintVerify>(); 
-    Workspace::register_filter_type<RelayIOSave>();
-    Workspace::register_filter_type<RelayIOLoad>();
-
-    Workspace::register_filter_type<ADIOS>();
-    
-#if defined(ASCENT_VTKM_ENABLED)
-    Workspace::register_filter_type<DefaultRender>();
-    Workspace::register_filter_type<EnsureVTKH>();
-    Workspace::register_filter_type<EnsureVTKM>();
-
-    Workspace::register_filter_type<VTKHBounds>();
-    Workspace::register_filter_type<VTKHUnionBounds>();
-
-    Workspace::register_filter_type<VTKHDomainIds>();
-    Workspace::register_filter_type<VTKHUnionDomainIds>();
-    
-    Workspace::register_filter_type<Scene>();
-
-
-    Workspace::register_filter_type<VTKHClip>();
-    Workspace::register_filter_type<VTKHMarchingCubes>();
-    Workspace::register_filter_type<VTKHRayTracer>();
-    Workspace::register_filter_type<VTKHThreshold>();
-    Workspace::register_filter_type<VTKHVolumeTracer>();
-#endif
-
-    
+// empty
 }
 
+//-----------------------------------------------------------------------------
+ADIOS::~ADIOS()
+{
+// empty
+}
 
+//-----------------------------------------------------------------------------
+void 
+ADIOS::declare_interface(Node &i)
+{
+    i["type_name"]   = "adios";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ADIOS::verify_params(const conduit::Node &params,
+                           conduit::Node &info)
+{
+    bool res = true;
+    
+    if( !params.has_child("important_param") ) 
+    {
+        info["errors"].append() = "missing required entry 'important_param'";
+        res = false;
+    }
+    return res;
+}
+//-----------------------------------------------------------------------------
+void 
+ADIOS::execute()
+{
+    int par_rank = 0;  
+    int par_size = 1;
+     
+#ifdef PARALLEL
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &par_rank);
+    MPI_Comm_size(mpi_comm, &par_size);
+#endif
+
+    std::string important_param;
+    important_param = params()["important_param"].as_string();
+    if(par_rank == 0)
+    {
+      std::cout<<"The important param is "<<important_param<<"\n";
+    }
+
+    if(params().has_child("int"))
+    {
+        int the_int = params()["int"].as_int32();
+    }
+
+    if(params().has_child("float"))
+    {
+        float the_float = params()["float"].as_float32();
+    }
+
+    if(params().has_child("double"))
+    {
+        double the_double = params()["double"].as_float64();
+    }
+
+    if(params().has_child("float_values"))
+    {
+       float *vals = params()["float_values"].as_float32_ptr();
+    }
+
+    if(params().has_child("double_values"))
+    {
+       double *vals = params()["double_values"].as_float64_ptr();
+    }
+
+    if(params().has_child("actions"))
+    {
+      const conduit::Node actions = params()["actions"];
+      if(par_rank == 0)
+      {
+        std::cout<<"Actions passed to adios filter:\n";
+        actions.print();
+      }
+    }
+
+    if(!input("in").check_type<Node>())
+    {
+        // error
+        ASCENT_ERROR("adios requires a conduit::Node input");
+    }
+
+    
+    Node *blueprint_data = input<Node>("in");
+
+}
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
@@ -147,4 +215,8 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
+
+
+
 
