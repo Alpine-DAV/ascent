@@ -42,59 +42,16 @@
 # 
 ###############################################################################
 
-
-################################
-# Unit Tests
-################################
-
-################################
-# Core VTK-h Unit Tests
-################################
-set(BASIC_TESTS t_vtk-h_smoke
-                t_vtk-h_dataset
-                t_vtk-h_clip
-                t_vtk-h_marching_cubes
-                t_vtk-h_threshold
-                t_vtk-h_mesh_renderer
-                t_vtk-h_multi_render
-                t_vtk-h_raytracer
-                t_vtk-h_volume_renderer
-                t_vtk-h_wavelet_compressor
-                )
-
-
-set(MPI_TESTS t_vtk-h_smoke_par
-              t_vtk-h_dataset_par
-              t_vtk-h_marching_cubes_par
-              t_vtk-h_multi_render_par
-              t_vtk-h_raytracer_par
-              t_vtk-h_volume_renderer_par
-              )
-
-
-################################
-# Add main tests
-################################
-message(STATUS "Adding vtk-h lib unit tests")
-foreach(TEST ${BASIC_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON vtkh)
-endforeach()
-
-
-################################
-# Add optional tests
-################################
-
-if(MPI_FOUND AND ENABLE_MPI)
-    message(STATUS "MPI enabled: Adding related unit tests")
-    foreach(TEST ${MPI_TESTS})
-        # this uses 2 procs
-        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON vtkh_par) 
-        blt_add_target_compile_flags(TO ${TEST} FLAGS "-D PARALLEL")
-    endforeach()
-else()
-    message(STATUS "MPI disabled: Skipping related tests")
+if(NOT VTKH_DIR)
+  MESSAGE(FATAL_ERROR "VTKh support needs explicit VTKH_DIR")
 endif()
 
+MESSAGE(STATUS "Looking for VTKh using VTKH_DIR = ${VTKH_DIR}")
 
+set(VTKh_DIR ${VTKH_DIR}/lib)
+find_package(VTKh REQUIRED)
+message(STATUS "Found VTKh include dirs: ${VTKh_INCLUDE_DIRS}")
+set(VTKH_FOUND TRUE)
 
+blt_register_library(NAME vtkh LIBRARIES vtkh)
+blt_register_library(NAME vtkh_par LIBRARIES vtkh_par)

@@ -97,6 +97,11 @@ if(VTKM_DIR)
     # VTKm
     ################################
     include(cmake/thirdparty/SetupVTKm.cmake)
+
+    ################################
+    # VTKm
+    ################################
+    include(cmake/thirdparty/SetupVTKh.cmake)
 endif()
 
 

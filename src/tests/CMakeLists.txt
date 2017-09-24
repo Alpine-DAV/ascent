@@ -64,10 +64,3 @@ add_subdirectory("flow")
 
 # add ascent tests
 add_subdirectory("ascent")
-
-# add vtk-h tests
-if(VTKM_FOUND)
-    add_subdirectory("vtk-h")
-endif()
-
-
