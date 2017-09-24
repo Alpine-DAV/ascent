@@ -78,6 +78,7 @@ class UberenvAscent(Package):
 
     depends_on("vtkm",when="+vtkm")
     depends_on("icet",when="+vtkm")
+    depends_on("vtkh",when="+vtkm")
 
     # python2
     depends_on("python", when="+python")
@@ -279,6 +280,12 @@ class UberenvAscent(Package):
 
             cfg.write("# vtkm from uberenv\n")
             cfg.write(cmake_cache_entry("VTKM_DIR", spec['vtkm'].prefix))
+
+            #######################
+            # vtk-h
+            #######################
+            cfg.write("# vtkh from uberenv\n")
+            cfg.write(cmake_cache_entry("VTKH_DIR", spec['vtkh'].prefix))
 
             #######################
             # icet
