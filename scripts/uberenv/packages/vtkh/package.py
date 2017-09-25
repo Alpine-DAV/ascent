@@ -59,6 +59,9 @@ class Vtkh(Package):
     depends_on("tbb")
     depends_on("vtkm")
     def install(self, spec, prefix):
+        # spack version used doesn't support submodules, so manually update it
+        # here.
+        os.system("git submodule update --init")
         os.environ["TBB_DIR"] = spec["tbb"].prefix
         with working_dir('spack-build', create=True):
             cmake_args = ["../src",
