@@ -43,6 +43,7 @@
 ###############################################################################
 from spack import *
 import os
+import platform
 
 class Vtkh(Package):
     homepage = "https://h.vtk.org/"
@@ -55,20 +56,36 @@ class Vtkh(Package):
 
     #version('1.0.0',  '9d9d45e675d5b0628b19b32f5542ed9c')
 
+    variant("mpich",default=False,description="build with mpich")
+
     depends_on("cmake")
     depends_on("tbb")
     depends_on("vtkm")
+
+    if "darwin" in platform.system().lower():
+        depends_on("mpich")
+
+    depends_on("mpich",when="+mpich")
+
     def install(self, spec, prefix):
         # spack version used doesn't support submodules, so manually update it
         # here.
         os.system("git submodule update --init")
+
         os.environ["TBB_DIR"] = spec["tbb"].prefix
         with working_dir('spack-build', create=True):
+            mpicc  = which("mpicc")
+            mpicxx = which("mpicxx")
+            if mpicc is None or mpicxx is None:
+                print "icet needs mpi ..."
+                crash()
             cmake_args = ["../src",
                           "-DVTKm_DIR=%s/lib" % spec["vtkm"].prefix,
                           "-DENABLE_TBB=ON",
                           "-DENABLE_TESTS=OFF",
-                          "-DBUILD_TESTING=OFF"]
+                          "-DBUILD_TESTING=OFF",
+                          "-DMPI_C_COMPILER=%s" % mpicc.command,
+                          "-DMPI_CXX_COMPILER=%s" % mpicxx.command]
             # check for cuda support
             nvcc = which("nvcc")
             if not nvcc  is None:

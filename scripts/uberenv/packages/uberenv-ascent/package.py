@@ -98,6 +98,7 @@ class UberenvAscent(Package):
         depends_on("conduit~doc~silo~python3")
         depends_on("mpich",when="+mpich")
         depends_on("icet+mpich", when="+mpich")
+        depends_on("vtkh+mpich", when="+mpich")
         depends_on("conduit~doc~silo~python3+mpich", when="+mpich")
 
 
