@@ -74,18 +74,21 @@ class Vtkh(Package):
 
         os.environ["TBB_DIR"] = spec["tbb"].prefix
         with working_dir('spack-build', create=True):
-            mpicc  = which("mpicc")
-            mpicxx = which("mpicxx")
-            if mpicc is None or mpicxx is None:
-                print "icet needs mpi ..."
-                crash()
             cmake_args = ["../src",
                           "-DVTKm_DIR=%s/lib" % spec["vtkm"].prefix,
                           "-DENABLE_TBB=ON",
                           "-DENABLE_TESTS=OFF",
-                          "-DBUILD_TESTING=OFF",
+                          "-DBUILD_TESTING=OFF"]
+            if "+mpich" in spec:
+                mpicc  = which("mpicc")
+                mpicxx = which("mpicxx")
+                if mpicc is None or mpicxx is None:
+                    print "VTKh needs mpi ..."
+                    crash()
+                cmake_args.extend([
                           "-DMPI_C_COMPILER=%s" % mpicc.command,
-                          "-DMPI_CXX_COMPILER=%s" % mpicxx.command]
+                          "-DMPI_CXX_COMPILER=%s" % mpicxx.command])
+
             # check for cuda support
             nvcc = which("nvcc")
             if not nvcc  is None:
