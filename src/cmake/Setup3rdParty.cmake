@@ -113,15 +113,4 @@ if(HDF5_DIR)
 endif()
 
 
-################################
-# Optional Features
-################################
-
-################################
-# IceT
-################################
-if(ENABLE_MPI AND VTKM_FOUND)
-    include(cmake/thirdparty/SetupIceT.cmake)
-endif()
-
 

@@ -77,7 +77,6 @@ class UberenvAscent(Package):
     depends_on("cmake@3.8.2",when="+cmake")
 
     depends_on("vtkm",when="+vtkm")
-    depends_on("icet",when="+vtkm")
     depends_on("vtkh~mpich",when="+vtkm~mpich")
     depends_on("vtkh+mpich",when="+vtkm+mpich")
 
@@ -98,7 +97,6 @@ class UberenvAscent(Package):
     else: # else, defer to the variant
         depends_on("conduit~doc~silo~python3")
         depends_on("mpich",when="+mpich")
-        depends_on("icet+mpich", when="+mpich")
         depends_on("conduit~doc~silo~python3+mpich", when="+mpich")
 
 
@@ -155,11 +153,6 @@ class UberenvAscent(Package):
             enable_cuda = "ON"
         else:
             enable_cuda = "OFF"
-
-        if env.has_key("UBERENV_OPENMP") or spec.satisfies('%intel'):
-            enable_openmp = "ON"
-        else:
-            enable_openmp = "OFF"
 
 
         #######################
@@ -221,11 +214,6 @@ class UberenvAscent(Package):
             cfg.write("# sphinx from uberenv\n")
             cfg.write(cmake_cache_entry("SPHINX_EXECUTABLE",sphinx_build_exe))
 
-        #######################
-        # openmp
-        #######################
-        cfg.write("# OPENMP Support\n")   
-        cfg.write(cmake_cache_entry("ENABLE_OPENMP",enable_openmp));
 
         #######################
         # mpi
@@ -287,13 +275,6 @@ class UberenvAscent(Package):
             #######################
             cfg.write("# vtkh from uberenv\n")
             cfg.write(cmake_cache_entry("VTKH_DIR", spec['vtkh'].prefix))
-
-            #######################
-            # icet
-            #######################
-            cfg.write("# icet from uberenv\n")
-            cfg.write(cmake_cache_entry("ICET_DIR", spec['icet'].prefix))
-            cfg.write("\n")
 
 
         cfg.write("##################################\n")

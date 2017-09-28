@@ -49,9 +49,21 @@ endif()
 MESSAGE(STATUS "Looking for VTKh using VTKH_DIR = ${VTKH_DIR}")
 
 set(VTKh_DIR ${VTKH_DIR}/lib)
+
 find_package(VTKh REQUIRED)
 message(STATUS "Found VTKh include dirs: ${VTKh_INCLUDE_DIRS}")
+
 set(VTKH_FOUND TRUE)
 
-blt_register_library(NAME vtkh LIBRARIES vtkh)
-blt_register_library(NAME vtkh_par LIBRARIES vtkh_par)
+
+blt_register_library(NAME vtkh 
+                     INCLUDES ${VTKh_INCLUDE_DIRS}
+                     LIBRARIES vtkh)
+
+if (MPI_FOUND)
+    blt_register_library(NAME vtkh_par
+                         DEFINES "-DPARALLEL"
+                         INCLUDES ${VTKh_INCLUDE_DIRS}
+                         LIBRARIES vtkh_par)
+
+endif()

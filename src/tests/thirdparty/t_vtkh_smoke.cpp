@@ -44,15 +44,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: gtest_smoke.cpp
+/// file: t_vtkh_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <iostream>
 #include "gtest/gtest.h"
+#include <iostream>
+#include "vtkh/vtkh.hpp"
+
 
 //-----------------------------------------------------------------------------
-TEST(gtest_smoke, basic_use)
+TEST(vtkh_smoke, about_vtkh)
 {
-    EXPECT_EQ(1, 1);
+    std::cout << vtkh::AboutVTKH() << std::endl;
 }

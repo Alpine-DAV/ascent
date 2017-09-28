@@ -51,10 +51,9 @@ class Vtkh(Package):
 
     version('vtkh-reorg',
             git='https://github.com/Alpine-DAV/vtk-h.git',
-            branch='reorg',
+            #branch='reorg',
+            branch='task/2017_09_cyrush_reorg_test',
             submodules=True)
-
-    #version('1.0.0',  '9d9d45e675d5b0628b19b32f5542ed9c')
 
     variant("mpich",default=False,description="build with mpich")
 
@@ -72,11 +71,10 @@ class Vtkh(Package):
         # here.
         os.system("git submodule update --init")
 
-        os.environ["TBB_DIR"] = spec["tbb"].prefix
         with working_dir('spack-build', create=True):
             cmake_args = ["../src",
-                          "-DVTKm_DIR=%s/lib" % spec["vtkm"].prefix,
-                          "-DENABLE_TBB=ON",
+                          "-DVTKM_DIR=%s" % spec["vtkm"].prefix,
+                          "-DTBB_DIR=%s"  % spec["tbb"].prefix,
                           "-DENABLE_TESTS=OFF",
                           "-DBUILD_TESTING=OFF"]
             if "+mpich" in spec:
