@@ -107,6 +107,13 @@ if(HDF5_DIR)
     include(cmake/thirdparty/SetupHDF5.cmake)
 endif()
 
+################################
+# Setup ADIOS
+################################  
+if (ADIOS_DIR)
+  include(cmake/thirdparty/SetupADIOS.cmake)
+  include(${ADIOS_DIR}/etc/FindADIOS.cmake)
+endif()
 
 ################################
 # Optional Features

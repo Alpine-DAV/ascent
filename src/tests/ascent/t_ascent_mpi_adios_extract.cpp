@@ -103,6 +103,8 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     extracts["e1/params/int"] = 1;
     extracts["e1/params/float"] = 1.f;
     extracts["e1/params/double"] = 1.;
+    extracts["e1/params/transport"] = "file";
+    extracts["e1/params/filename"] = "file.bp";
     
     std::vector<float> values;
     values.push_back(1.f);
