@@ -51,8 +51,7 @@ class Vtkh(Package):
 
     version('vtkh-reorg',
             git='https://github.com/Alpine-DAV/vtk-h.git',
-            branch='reorg',
-            #branch='task/2017_09_cyrush_reorg_test',
+            branch='master',
             submodules=True)
 
     variant("mpich",default=False,description="build with mpich")
