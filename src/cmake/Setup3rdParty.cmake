@@ -97,6 +97,11 @@ if(VTKM_DIR)
     # VTKm
     ################################
     include(cmake/thirdparty/SetupVTKm.cmake)
+
+    ################################
+    # VTKm
+    ################################
+    include(cmake/thirdparty/SetupVTKh.cmake)
 endif()
 
 
@@ -107,16 +112,5 @@ if(HDF5_DIR)
     include(cmake/thirdparty/SetupHDF5.cmake)
 endif()
 
-
-################################
-# Optional Features
-################################
-
-################################
-# IceT
-################################
-if(ENABLE_MPI AND VTKM_FOUND)
-    include(cmake/thirdparty/SetupIceT.cmake)
-endif()
 
 

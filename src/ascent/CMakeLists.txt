@@ -154,14 +154,13 @@ if(VTKM_FOUND)
     list(APPEND ascent_thirdparty_libs vtkm vtkh)
 endif()
 
-#if(CUDA_FOUND)
-#    list(APPEND ascent_thirdparty_libs cuda_runtime)
-#endif()
-#
-#
-#if(TBB_FOUND)
-#    list(APPEND ascent_thirdparty_libs tbb)
-#endif()
+if(CUDA_FOUND)
+    list(APPEND ascent_thirdparty_libs cuda_runtime)
+endif()
+
+if(TBB_FOUND)
+    list(APPEND ascent_thirdparty_libs tbb)
+endif()
 
 
 ##########################################
@@ -186,20 +185,9 @@ install(TARGETS ascent
 # Build Parallel (MPI) version of ascent
 ################################################
 if(MPI_FOUND)
-    if(VTKM_FOUND)
-        # we only need compositing if we are rendering with vtk-m
-        set(ascent_par_sources )
-                     
-        set(ascent_par_headers )
-    endif()
-   
+
     # req'd libs 
     set(ascent_par_thirdparty_libs mpi conduit_relay_mpi)
-
-    # optional libs
-    if(ICET_FOUND)
-        list(APPEND ascent_par_thirdparty_libs icet)
-    endif()
 
     list(APPEND ascent_par_thirdparty_libs ${ascent_thirdparty_libs})
 

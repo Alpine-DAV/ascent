@@ -42,7 +42,6 @@
 # 
 ###############################################################################
 
-
 cmake_minimum_required(VERSION 3.0)
 ################################
 # cmake policy selections
@@ -130,14 +129,6 @@ add_subdirectory(flow)
 
 add_subdirectory(ascent)
 
-
-################################
-# Add vtk-h 
-################################
-if(VTKM_FOUND)
-    add_subdirectory(vtk-h)
-endif()
-
 ################################
 # Add our tests
 ################################
@@ -156,10 +147,8 @@ add_subdirectory(examples)
 ################################
 add_subdirectory(docs)
 
-
 ################################
 # Create CMake importable 
 # exports for all of our targets
 ################################
 install(EXPORT ascent DESTINATION lib/cmake)
-

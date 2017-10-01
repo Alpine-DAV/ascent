@@ -49,8 +49,6 @@
 
 # add lodepng include dir
 include_directories(${PROJECT_SOURCE_DIR}/thirdparty_builtin/lodepng)
-# add DIY include dir
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty_builtin/diy/include)
 
 # add include dirs so units tests have access to the headers across
 # libs and in unit tests
@@ -62,35 +60,6 @@ include_directories(${PROJECT_SOURCE_DIR}/ascent/runtimes)
 include_directories(${PROJECT_SOURCE_DIR}/flow)
 include_directories(${PROJECT_SOURCE_DIR}/flow/filters)
 include_directories(${PROJECT_SOURCE_DIR}/ascent/runtimes/flow_filters)
-
-include_directories(${PROJECT_SOURCE_DIR}/vtk-h/)
-
-include_directories(${CONDUIT_INCLUDE_DIRS})
-
-if(VTKM_FOUND)
-    # tbb
-    if(TBB_FOUND)
-        include_directories(${TBB_INCLUDE_DIRS})
-    endif()
-    # VTK-m
-    include_directories(${VTKm_INCLUDE_DIRS})
-endif()
-
-
-if(MPI_FOUND)
-    include_directories(${ICET_INCLUDE_DIRS})
-    include_directories(${MPI_CXX_INCLUDE_PATH})
-endif()
-
-if(CUDA_FOUND)
-    include_directories(${CUDA_INCLUDE_DIRS})
-endif()
-
-
-if(HDF5_FOUND)
-    include_directories(${HDF5_INCLUDE_DIRS})
-endif()
-
 
 
 

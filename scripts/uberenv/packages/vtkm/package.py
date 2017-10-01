@@ -57,8 +57,7 @@ class Vtkm(Package):
 
     depends_on("cmake")
     depends_on("tbb")
-    #depends_on("boost-headers")
-    #patch('vtkm_patch.patch')
+
     def install(self, spec, prefix):
         os.environ["TBB_ROOT"] = spec["tbb"].prefix
         with working_dir('spack-build', create=True):

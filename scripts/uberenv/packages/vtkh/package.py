@@ -41,39 +41,61 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-
-
 from spack import *
-import shutil
-
 import os
-from os.path import join as pjoin
+import platform
 
-class BoostHeaders(Package):
-    """Boost provides free peer-reviewed portable C++ source
-       libraries, emphasizing libraries that work well with the C++
-       Standard Library.
+class Vtkh(Package):
+    homepage = "https://h.vtk.org/"
+    url      = "https://github.com/Alpine-DAV/vtk-h"
 
-       Boost libraries are intended to be widely useful, and usable
-       across a broad spectrum of applications. The Boost license
-       encourages both commercial and non-commercial use.
-    """
-    homepage = "http://www.boost.org"
-    url      = "http://downloads.sourceforge.net/project/boost/boost/1.58.0/boost_1_58_0.tar.bz2"
-    list_url = "http://sourceforge.net/projects/boost/files/boost/"
-    list_depth = 2
+    version('vtkh-reorg',
+            git='https://github.com/Alpine-DAV/vtk-h.git',
+            branch='master',
+            submodules=True)
 
-    version('1.58.0', 'b8839650e61e9c1c0a89f371dd475546')    
+    variant("mpich",default=False,description="build with mpich")
 
-    def url_for_version(self, version):
-        """Handle Boost's weird URLs, which write the version two different ways."""
-        parts = [str(p) for p in Version(version)]
-        dots = ".".join(parts)
-        underscores = "_".join(parts)
-        return "http://downloads.sourceforge.net/project/boost/boost/%s/boost_%s.tar.bz2" % (
-            dots, underscores)
+    depends_on("cmake")
+    depends_on("tbb")
+    depends_on("vtkm")
+
+    if "darwin" in platform.system().lower():
+        depends_on("mpich")
+
+    depends_on("mpich",when="+mpich")
 
     def install(self, spec, prefix):
-        # simply install the headers
-        mkdirp(prefix.include)
-        shutil.copytree('boost', pjoin(prefix.include,"boost"))
+        # spack version used doesn't support submodules, so manually update it
+        # here.
+        os.system("git submodule update --init")
+
+        with working_dir('spack-build', create=True):
+            cmake_args = ["../src",
+                          "-DVTKM_DIR=%s" % spec["vtkm"].prefix,
+                          "-DTBB_DIR=%s"  % spec["tbb"].prefix,
+                          "-DENABLE_TESTS=OFF",
+                          "-DBUILD_TESTING=OFF"]
+            if "+mpich" in spec:
+                mpicc  = which("mpicc")
+                mpicxx = which("mpicxx")
+                if mpicc is None or mpicxx is None:
+                    print "VTKh needs mpi ..."
+                    crash()
+                cmake_args.extend([
+                          "-DMPI_C_COMPILER=%s" % mpicc.command,
+                          "-DMPI_CXX_COMPILER=%s" % mpicxx.command])
+
+            # check for cuda support
+            nvcc = which("nvcc")
+            if not nvcc  is None:
+                cmake_args.append("-DENABLE_CUDA=ON")
+                # this fix is necessary if compiling platform has cuda, but no devices
+                # (this common for front end nodes on hpc clusters)
+                # we choose kepler for llnl surface and ornl titan
+                cmake_args.append("-DVTKm_CUDA_Architecture=kepler")
+            cmake_args.extend(std_cmake_args)
+            print cmake_args
+            cmake(*cmake_args)
+            make()
+            make("install",parallel=False)

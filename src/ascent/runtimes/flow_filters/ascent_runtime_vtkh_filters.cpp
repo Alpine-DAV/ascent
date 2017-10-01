@@ -68,13 +68,13 @@
 #include <flow_workspace.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
-#include <vtkh.hpp>
-#include <vtkh_data_set.hpp>
-#include <rendering/vtkh_renderer_ray_tracer.hpp>
-#include <rendering/vtkh_renderer_volume.hpp>
-#include <vtkh_clip.hpp>
-#include <vtkh_marching_cubes.hpp>
-#include <vtkh_threshold.hpp>
+#include <vtkh/vtkh.hpp>
+#include <vtkh/DataSet.hpp>
+#include <vtkh/rendering/RayTracer.hpp>
+#include <vtkh/rendering/VolumeRenderer.hpp>
+#include <vtkh/filters/Clip.hpp>
+#include <vtkh/filters/MarchingCubes.hpp>
+#include <vtkh/filters/Threshold.hpp>
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
