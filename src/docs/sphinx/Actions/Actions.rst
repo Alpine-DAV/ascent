@@ -45,13 +45,16 @@
 .. _ascent-actions:
 
 Ascent Actions Overview
-=========================
+=======================
 
 Actions are the mechanism that instruct Ascent to perform operations.
 The currently supported actions are:
 
-- ``add_plot``: adds a new plot for the mesh
-- ``draw_plots``: renders the current plot list to files or streams the images to a web browser
+- ``add_scenes``  : adds a list of scenes to create images 
+- ``add_extracts``: adds a list of extracts to move data out of Ascent
+- ``add_pipelines`` : adds a list of pipelines to transform mesh data
+- ``execute`` : executes the data flow network created by the actions
+- ``reset`` : resets all actions to an empty state
 
 Ascent actions can be specified within the integration using Conduit Nodes and can be read in through a file.
 Each time Ascent executes a set of actions, it will check for a file in the current working directory called ``ascent_actions.json``.
@@ -64,20 +67,33 @@ For example, if the existing actions in the Conduit Node contain:
 
 .. code-block:: json
   
-   [
-     {
-      "action" : "add_plot",
-      "field_name"  : "p",
-      "render_options": 
+  [
+    
+    {
+      "action": "add_scenes",
+      "scenes": 
       {
-        "width"  : 1024,
-        "height" : 1024
+        "scene1": 
+        {
+          "plots": 
+          {
+            "plt1": 
+            {
+              "type": "pseudocolor",
+              "params": 
+              {
+                "field": "zonal_noise"
+              }
+            }
+          }
+        }
       }
-     },
-     {
-      "action" : "draw_plots"
-     }
-   ]
+    },
+    
+    {
+      "action": "execute"
+    }
+  ]
 
 
 The contents of the file are:
@@ -85,16 +101,26 @@ The contents of the file are:
 .. code-block:: json
 
   [
+    
     {
-      "action" : "add_plot",
-      "field_name"  : "new_var"
-    },
-    {
-      "action" : "add_plot",
-      "field_name"  : "another_var"
-    },
-    {
-      "action" : "draw_plots"
+      "action": "add_scenes",
+      "scenes": 
+      {
+        "scene1": 
+        {
+          "plots": 
+          {
+            "plt2": 
+            {
+              "type": "pseudocolor",
+              "params": 
+              {
+                "field": "nodal_noise"
+              }
+            }
+          }
+        }
+      }
     }
   ]
 
@@ -103,24 +129,38 @@ The resulting actions that are executed by Ascent will be:
 
 .. code-block:: json
    
-   [
-     {
-      "action" : "add_plot",
-      "field_name" : "new_var"
-      "render_options": 
-       {
-        "width"  : 1024,
-        "height" : 1024
-       }
-     },
-     {
-        "action" : "add_plot",
-        "field_name"  : "another_var"
-     },
-     {
-        "action" : "draw_plots"
-     }
-   ]
+  [
+    
+    {
+      "action": "add_scenes",
+      "scenes": 
+      {
+        "scene1": 
+        {
+          "plots": 
+          {
+            "plt1": 
+            {
+              "type": "pseudocolor",
+              "params": 
+              {
+                "field": "zonal_noise"
+              }
+            },
+            "plt2": 
+            {
+              "type": "pseudocolor",
+              "params": 
+              {
+                "field": "nodal_noise"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+
 
 While the updating feature is convient, we encourage users to be as explicit as possible when creating action files to avoid unexpected behavior.
 A full example of an actions file can be found in ``/src/examples/proxies/lulesh2.0.3/ascent_actions.json``.

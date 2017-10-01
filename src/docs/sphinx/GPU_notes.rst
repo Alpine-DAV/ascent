@@ -59,4 +59,4 @@ A known issue with VTK-m is a possible long delay (60s) on the first execution.
 Even though the CMake configuration specifies the native GPU architecture, all kernels are recompiled at run-time for the intermediate code representation.
 With the general code of the rendering library, the number of potential kernels is large, given the number of possible combinations between cell sets, coordinate systems, and scalar fields.
 The compiled code is generally cached by CUDA in a hidden directory in the user's home folder, and subsequent executions will not incur  the overhead until the cache is deleted.
-This is a know issue, and there was no resolution at the time of the VTK-m 1.0 release.
+This is a know issue, and there was no resolution at this time.

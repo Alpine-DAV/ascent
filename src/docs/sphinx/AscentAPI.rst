@@ -54,17 +54,17 @@ The top level API for ascent consists of four calls:
 Open
 ----
 Open provides the initial setup of Ascent from a Conduit Node. 
-Options include pipeline type (e.g., VTK-m, Blueprint HDF5, or empty) and associated backend if available.
+Options include runtime type (e.g., main, flow, or empty) and associated backend if available.
 If running in parallel (i.e., MPI), then a MPI comm handle must be supplied.
 Ascent will always check the file system for a file called ``ascent_options.json`` that will override compiled in options, and for obvious reasons, a MPI communicator cannot be specified in the file.
-Here is a file that would set the pipeline to VTK-m using a TBB backend:
+Here is a file that would set the runtime to the main ascent runtime using a TBB backend (inside VTK-m):
 
 
 .. code-block:: json
 
   {
-    "pipeline/type"    : "vtkm",
-    "pipeline/backend" : "tbb"
+    "runtime/type"    : "ascent",
+    "runtine/backend" : "tbb"
   }
 
 A typical integration will include the following code:
@@ -77,16 +77,16 @@ A typical integration will include the following code:
   #if USE_MPI
   ascent_options["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
   #endif
-  ascent_options["pipeline/type"] = "vtkm";
-  ascent_options["pipeline/backend"] = "tbb";
+  ascent_options["runtime/type"] = "ascent";
+  ascent_options["runtime/backend"] = "tbb";
 
   ascent.Open(ascent_options);
 
-Valid pipelines include:
+Valid runtimes include:
 
-  - vtkm
+  - ascent
     
-  - hdf5
+  - flow
 
   - empty
   
@@ -141,7 +141,7 @@ Once the Conduit Node has been populated with data conforming to the mesh bluepr
 
 .. code-block:: c++
 
-  straman.Publish(mesh_data);
+  ascent.Publish(mesh_data);
 
 Publish is called each cycle where Ascent is used.
 
@@ -157,11 +157,19 @@ Here is a simple example of adding a plot using the C++ API:
             
       // In the main simulation loop
       conduit::Node actions;
-      conduit::Node &plot = actions.append();
-      plot["action"] = "add_plot";
-      plot["field_name"] = "p";
-      conduit::Node &draw = actions.append();
-      draw["action"] = "draw_plots";
+
+      // create a one scene with one plot
+      conduit::Node scenes;
+      scenes["s1/plots/p1/type"] = "pseudocolor";
+      scenes["s1/plots/p1/params/field"] = "braid";
+
+      // add the scenes and execute
+      conduit::Node &add_plots = actions.append();
+      add_plots["action"] = "add_scenes";
+      add_plots["scenes"] = scenes;
+      conduit::Node &execute = actions.append();
+      execute["action"] = "execute";
+
       ascent.Publish(mesh_data);
       ascent.Execute(actions);
 
