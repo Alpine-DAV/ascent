@@ -44,14 +44,15 @@
 
 
 Ascent Actions
-================
+==============
 
 .. toctree::
    :maxdepth: 2
 
    Actions
-   Add_Plot
-   Draw_Plots
+   Pipelines   
+   Scenes 
+   Extracts
 
-..   Add_Filter
+..  
 

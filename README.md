@@ -9,8 +9,7 @@ Documentation
 
 To get started building and using Ascent, check out the full documentation:
 
-http://software.llnl.gov/ascent/
-
+https://alpine-dav.github.io/ascent/
 
 Source Repo
 =================

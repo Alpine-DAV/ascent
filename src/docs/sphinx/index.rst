@@ -7,11 +7,11 @@
 .. #
 .. # All rights reserved.
 .. #
-.. # This file is part of Conduit.
+.. # This file is part of Ascent.
 .. #
-.. # For details, see: http://software.llnl.gov/alpine/.
+.. # For details, see: http://software.llnl.gov/ascent/.
 .. #
-.. # Please also read alpine/LICENSE
+.. # Please also read ascent/LICENSE
 .. #
 .. # Redistribution and use in source and binary forms, with or without
 .. # modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 
 
 ========
-Alpine
+Ascent
 ========
 
 A many-core capable lightweight in situ visualization and analysis infrastructure for multi-physics HPC simulations.
@@ -52,28 +52,28 @@ A many-core capable lightweight in situ visualization and analysis infrastructur
 Introduction
 ============
 
-Alpine is a system designed to explore the in situ visualization and analysis needs of simulation code teams running multi-physics calculations on many-core HPC architectures. It provides rendering pipelines that can leverage both many-core CPUs and GPUs to render images of simulation meshes. 
+Ascent is a system designed to explore the in situ visualization and analysis needs of simulation code teams running multi-physics calculations on many-core HPC architectures. It provides rendering runtimes that can leverage both many-core CPUs and GPUs to render images of simulation meshes. 
 
-Alpine focuses on ease of use and reduced integration burden for simulation code teams:
+Ascent focuses on ease of use and reduced integration burden for simulation code teams:
 
 - It does not require any GUI or system graphics libraries.
-- It includes integration examples which demonstrate how to use Alpine inside of three different HPC simulation proxy applications.
+- It includes integration examples which demonstrate how to use Ascent inside of three different HPC simulation proxy applications.
 - It provides a built-in web server that supports streaming rendered images directly to a web browser.
 
-Alpine Project Resources
+Ascent Project Resources
 ==========================
 
 **Online Documentation**
 
-http://software.llnl.gov/alpine
+https://alpine-dav.github.io/ascent/
 
 **Githib Source Repo**
 
-http://github.com/llnl/alpine
+http://github.com/alpine-dav/ascent
 
 **Issue Tracker**
 
-http://github.com/llnl/alpine/issues
+http://github.com/llnl/ascent/issues
 
 Contributors
 ============
@@ -84,13 +84,14 @@ Contributors
 - Jim Eliot (AWE)
 - Kevin Griffin (LLNL)
 - Hank Childs (LBL and UO)
+- Utkarsh Ayachit (Kitware, Inc)
 
-Alpine Documentation
+Ascent Documentation
 ======================
 
 .. toctree::
 
-   Alpine 
+   Ascent 
    Releases
    Publications
    Licenses

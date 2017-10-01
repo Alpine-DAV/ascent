@@ -62,19 +62,23 @@ The build dependencies vary according to which pipelines and proxy-applications 
 For a minimal build with no parallel components, the following are required:
     
     * Conduit
-    * VTK-m
-    * C++ and Fortran compilers
+    * C++ compilers
 
 
 Build Dependencies
 ------------------
 
+..  image:: images/AscentDependencies.png
+    :height: 600px
+    :align: center
+
 Ascent
 ^^^^^^^^
 
   * Conduit
-  * IceT
-  * One or more pipelines
+  * One or more runtimes 
+
+For Ascent, the Flow runtime is builtin, but for visualization functionality (filters and rendering), the VTK-h runtime is needed.
 
 Conduit
 """""""
@@ -83,28 +87,20 @@ Conduit
   * HDF5 (Optional)
   * Fortran compiler (Optional)
 
-IceT
-""""
-  IceT is only needed for the parallel version of Ascent.
-  
-  * MPI
-
-Pipelines
+VTK-h
 """""""""
 
-* VTK-m: 
+* VTK-h: 
   
-    * TBB (Optional)  Intel's Threaded Building Blocks
-    * CUDA 6.5+ (Optional)
+    * VTK-m: 
 
-* HDF5
-  
-    * Conduit with conduit_relay HDF5 support.
-    
+      * TBB (Optional)  Intel's Threaded Building Blocks
+      * CUDA 6.5+ (Optional)
+      * MPI (Optional)
 
 .. note:: 
 
-    When building VTK-m with Ascent which must be configured with rendering on, among other options. 
+    When building VTK-m with VTK-h which must be configured with rendering on, among other options. 
     For a full list of options that need to be set, consult `/uberenv_libs/spack/var/spack/repos/builtin/packages/vtkm/package.py`.
 
 
@@ -146,7 +142,7 @@ Build, test, and install Ascent:
 Build Options
 -------------
 
-Straman's build system supports the following CMake options:
+Ascent's build system supports the following CMake options:
 
 * **BUILD_SHARED_LIBS** - Controls if shared (ON) or static (OFF) libraries are built. *(default = ON)* 
 * **ENABLE_TESTS** - Controls if unit tests are built. *(default = ON)* 
@@ -167,8 +163,6 @@ Straman's build system supports the following CMake options:
  To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (for an example see: src/host-configs/chaos_5_x86_64.cmake)
 
 * **CONDUIT_DIR** - Path to an Conduit install *(required for parallel version)*. 
-
-* **ICET_DIR** - Path to an ICET install *(required for parallel version)*. 
 
 * **VTKM_DIR** - Path to an VTK-m install *(optional)*. 
 
@@ -263,10 +257,118 @@ Building with Spack
 Using Ascent in Another Project
 ---------------------------------
 
-Under ``src/examples`` there are examples demonstrating how to use Ascent in a CMake-based build system (``using-with-cmake``) and via a Makefile (``using-with-make``). Under ``src/examples/proxies``  you can find example integrations using ascent in the Lulesh, Kripke, and Cloverleaf3D proxy-applications.
+Under ``src/examples`` there are examples demonstrating how to use Ascent in a CMake-based build system (``using-with-cmake``) and via a Makefile (``using-with-make``). 
+Under ``src/examples/proxies``  you can find example integrations using ascent in the Lulesh, Kripke, and Cloverleaf3D proxy-applications.
+In ``src/examples/synthetic/noise`` you can find an example integration using our synthetic smooth noise application.
+
 
 Building Ascent in a Docker Container
 ---------------------------------------
 
 Under ``src/examples/docker/master/ubuntu`` there is an example ``Dockerfile`` which can be used to create an ubuntu-based docker image with a build of the Ascent github master branch. There is also a script that demonstrates how to build a Docker image from the Dockerfile (``example_build.sh``) and a script that runs this image in a Docker container (``example_run.sh``). The Ascent repo is cloned into the image's file system at ``/ascent``, the build directory is ``/ascent/build-debug``, and the install directory is ``/ascent/install-debug``.
 
+Building Ascent Dependencies Manually
+-------------------------------------
+
+In some environments, a spack build of Ascents dependencies can fail or a user may prefer to build the dependencies manually. 
+This section describes how to build Ascents components. 
+When building Ascents dependencies, it is **highly** recommended to fill out a host config file like the one located in ``/host-configs/boilerplate.cmake``.
+This is the best way to avoid problems that can easily arise from mixing c++ standard libraries conflicts, MPI library conflicts, and fortran module conflicts, all of which are difficult to spot.
+Use the same CMake host-config file for each of Ascent's dependencies, and while this may bring in unused cmake variables and clutter the ccmake curses interface, it will help avoid problems.
+In the host config, you can specify options such as ``ENABLE_PYTHON=OFF`` and ``ENABLE_FORTRAN=OFF`` that will be respected by both conduit and ascent.
+
+.. warning:: At this time, VTK-m cannot be built and linked to with Intel Compilers because of an issue with symbol visibility. Consequently, we only recommend building Ascent with GNU compilers with c++11 support.
+
+HDF5 (Optional)
+^^^^^^^^^^^^^^^
+
+The `HDF5 source tarball <https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.16/src/hdf5-1.8.16.tar.gz>`_ on the HDF5 group's website. While the source contains both an autotools configure and CMake build system, use the CMake build system with your host config file.
+Once you have built and installed HDF5 into a local directory, add the location of that directory to the declaration of the ``HDF5_DIR`` in the host config file.
+
+.. code:: bash
+    
+    curl https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.16/src/hdf5-1.8.16.tar.gz > hdf5.tar.gz
+    tar -xzf hdf5.tar.gz
+    cd hdf5-1.8.16/ 
+    mkdir build
+    mkdir install
+    cd build
+    cmake -C path_to_host_config/myhost_config.cmake . \
+      -DCMAKE_INSTALL_PREFIX=path_to_install -DCMAKE_BUILD_TYPE=Release
+    make install
+
+In the host config, add ``set(HDF5_DIR "/path/to/hdf5_install" CACHE PATH "")``.
+
+Conduit
+^^^^^^^
+The version of conduit we use is v0.3.0. If the ``HDF5_DIR`` is specified in the host config, conduit will build the relay io library.
+Once you have installed conduit, add the path to the install directory to your host config file in the cmake variable `CONDUIT_DIR`.
+
+.. code:: bash
+    
+    git clone --recursive https://github.com/LLNL/conduit.git
+    cd conduit
+    git checkout tags/v0.3.0
+    mkdir build
+    mkdir install
+    cd build
+    cmake -C path_to_host_config/myhost_config.cmake ../src \ 
+      -DCMAKE_INSTALL_PREFIX=path_to_install -DCMAKE_BUILD_TYPE=Release
+    make install 
+
+In the host config, add ``set(CONDUIT_DIR "/path/to/conduit_install" CACHE PATH "")``.
+
+VTK-m (Optional but recommended)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+We currently use the master branch of VTK-m, but in the future, we will checkout a specific commit or release for stability. 
+We recommend VTK-m since VTK-m and VTK-h provide the majority of Ascent's visualization and analysis functionality.
+The code below is minimal, and will only configure the serial device adapter. For instructions on building with TBB and CUDA, please consult the 
+`VTK-m repository <https://gitlab.kitware.com/vtk/vtk-m>`_. In Ascent, we require non-default configure options, so pay close attention to the extra cmake configure options.
+
+.. code:: bash
+    
+    git clone https://gitlab.kitware.com/vtk/vtk-m.git 
+    cd vtk-m 
+    mkdir install
+    cmake -C path_to_host_config/myhost_config.cmake . -DCMAKE_INSTALL_PREFIX=path_to_install \ 
+      -DCMAKE_BUILD_TYPE=Release -DVTKm_USE_64BIT_IDS=OFF -DVTKm_USE_DOUBLE_PRECISION=ON
+    make install
+
+
+In the host config, add ``set(VTKM_DIR "/path/to/vtkm_install" CACHE PATH "")``.
+
+VTK-h (Optional but recommended)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+We recommend VTK-h since VTK-m and VTK-h provide the majority of Ascent's visualization and analysis functionality.
+
+.. code:: bash
+    
+    git clone ://github.com/Alpine-DAV/vtk-h.git 
+    cd vtk-h 
+    mkdir build
+    mkdir install
+    cd build
+    cmake -C path_to_host_config/myhost_config.cmake . -DCMAKE_INSTALL_PREFIX=path_to_install  
+    make install
+
+
+In the host config, add ``set(VTKH_DIR "/path/to/vtkh_install" CACHE PATH "")``.
+
+Ascent
+^^^^^^
+Now that we have all the dependencies built and a host config file for our environment, we can now build Ascent.
+
+.. code:: bash
+    
+    git clone --recursive https://github.com/Alpine-DAV/ascent.git 
+    cd ascent 
+    mkdir build
+    mkdir install
+    cd build
+    cmake -C path_to_host_config/myhost_config.cmake . -DCMAKE_INSTALL_PREFIX=path_to_install \ 
+      -DCMAKE_BUILD_TYPE=Release 
+    make install
+    
+To run the unit tests to make sure everything works, do ``make test``. 
+If you install these dependencies in a public place in your environment, we encourage you to make you host config publicly available by submitting a pull request to the Ascent repo. 
+This will allow others to easily build on that system by only following the Ascent build instructions.

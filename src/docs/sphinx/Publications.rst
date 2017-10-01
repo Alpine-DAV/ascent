@@ -48,7 +48,7 @@ Publications and Presentations
 Publications
 ------------
 
-- `Ascent: A Batch In Situ Visualization and Analysis Infrastructure for Multi-Physics Simulation Codes <http://dl.acm.org/citation.cfm?id=2828625>`_ . This paper was presented at the `ISAV 2015 Workshop <http://vis.lbl.gov/Events/ISAV-2015/>`_, held in conjunction with SC 15, on November 16th 2015 in Austin, TX, USA.
+- `Strawman: A Batch In Situ Visualization and Analysis Infrastructure for Multi-Physics Simulation Codes <http://dl.acm.org/citation.cfm?id=2828625>`_ . This paper was presented at the `ISAV 2015 Workshop <http://vis.lbl.gov/Events/ISAV-2015/>`_, held in conjunction with SC 15, on November 16th 2015 in Austin, TX, USA.
 - Optimizing Multi-Image Sort-Last Parallel Rendering. This paper was presented at the `IEEE Symposium on Large Data and Analysis (LDAV) 2016 -  <http://www.ldav.org/>`_, held in conjunction with IEEE Vis, on October 23rd 2016 in Baltimore, MD, USA.
 - `Performance Modeling of In Situ Rendering <http://dl.acm.org/citation.cfm?id=3014936>`_ . This paper was presented at `SC16 <http://sc16.supercomputing.org/>`_.
 
