@@ -9,9 +9,9 @@
 .. #
 .. # This file is part of Conduit.
 .. #
-.. # For details, see: http://software.llnl.gov/strawman/.
+.. # For details, see: http://software.llnl.gov/ascent/.
 .. #
-.. # Please also read strawman/LICENSE
+.. # Please also read ascent/LICENSE
 .. #
 .. # Redistribution and use in source and binary forms, with or without
 .. # modification, are permitted provided that the following conditions are met:
@@ -43,15 +43,16 @@
 .. ############################################################################
 
 
-Strawman Actions
-================
+Ascent Actions
+==============
 
 .. toctree::
    :maxdepth: 2
 
    Actions
-   Add_Plot
-   Draw_Plots
+   Pipelines   
+   Scenes 
+   Extracts
 
-..   Add_Filter
+..  
 

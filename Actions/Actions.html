@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Strawman Actions Overview &mdash; Strawman 0.1.0 documentation</title>
+  <title>Ascent Actions Overview &mdash; Alpine 0.1.0 documentation</title>
   
 
   
@@ -30,10 +30,10 @@
   
 
   
-    <link rel="top" title="Strawman 0.1.0 documentation" href="../index.html"/>
-        <link rel="up" title="Strawman Actions" href="index.html"/>
-        <link rel="next" title="add_plot" href="Add_Plot.html"/>
-        <link rel="prev" title="Strawman Actions" href="index.html"/> 
+    <link rel="top" title="Alpine 0.1.0 documentation" href="../index.html"/>
+        <link rel="up" title="Ascent Actions" href="index.html"/>
+        <link rel="next" title="Pipelines" href="Pipelines.html"/>
+        <link rel="prev" title="Ascent Actions" href="index.html"/> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -51,7 +51,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home"> Strawman
+            <a href="../index.html" class="icon icon-home"> Alpine
           
 
           
@@ -82,21 +82,8 @@
           
             
             
-                <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="../Strawman.html">Strawman Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../Overview.html">Strawman Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ExampleIntegrations.html">Example Integrations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../BuildingStrawman.html">Building Strawman</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../StrawmanAPI.html">Strawman API</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="index.html">Strawman Actions</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Strawman Actions Overview</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Add_Plot.html">add_plot</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Draw_Plots.html">draw_plots</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../GPU_notes.html">Strawman GPU Notes</a></li>
-</ul>
-</li>
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../Ascent.html">Ascent Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Releases.html">Releases</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Publications.html">Publications and Presentations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Licenses.html">License Info</a></li>
@@ -113,7 +100,7 @@
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="../index.html">Strawman</a>
+        <a href="../index.html">Alpine</a>
       </nav>
 
 
@@ -130,11 +117,11 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../index.html">Docs</a> &raquo;</li>
       
-          <li><a href="../Strawman.html">Strawman Documentation</a> &raquo;</li>
+          <li><a href="../Ascent.html">Ascent Documentation</a> &raquo;</li>
       
-          <li><a href="index.html">Strawman Actions</a> &raquo;</li>
+          <li><a href="index.html">Ascent Actions</a> &raquo;</li>
       
-    <li>Strawman Actions Overview</li>
+    <li>Ascent Actions Overview</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -148,76 +135,115 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="strawman-actions-overview">
-<span id="strawman-actions"></span><h1>Strawman Actions Overview<a class="headerlink" href="#strawman-actions-overview" title="Permalink to this headline">¶</a></h1>
-<p>Actions are the mechanism that instruct Strawman to perform operations.
+  <div class="section" id="ascent-actions-overview">
+<span id="ascent-actions"></span><h1>Ascent Actions Overview<a class="headerlink" href="#ascent-actions-overview" title="Permalink to this headline">¶</a></h1>
+<p>Actions are the mechanism that instruct Ascent to perform operations.
 The currently supported actions are:</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">add_plot</span></code>: adds a new plot for the mesh</li>
-<li><code class="docutils literal"><span class="pre">draw_plots</span></code>: renders the current plot list to files or streams the images to a web browser</li>
+<li><code class="docutils literal"><span class="pre">add_scenes</span></code>  : adds a list of scenes to create images</li>
+<li><code class="docutils literal"><span class="pre">add_extracts</span></code>: adds a list of extracts to move data out of Ascent</li>
+<li><code class="docutils literal"><span class="pre">add_pipelines</span></code> : adds a list of pipelines to transform mesh data</li>
+<li><code class="docutils literal"><span class="pre">execute</span></code> : executes the data flow network created by the actions</li>
+<li><code class="docutils literal"><span class="pre">reset</span></code> : resets all actions to an empty state</li>
 </ul>
-<p>Strawman actions can be specified within the integration using Conduit Nodes and can be read in through a file.
-Each time Strawman executes a set of actions, it will check for a file in the current working directory called <code class="docutils literal"><span class="pre">strawman_actions.json</span></code>.
+<p>Ascent actions can be specified within the integration using Conduit Nodes and can be read in through a file.
+Each time Ascent executes a set of actions, it will check for a file in the current working directory called <code class="docutils literal"><span class="pre">ascent_actions.json</span></code>.
 If found, the current actions will be updated with the contents of the json file.
 If specific action exists in both the Conduit Node and the file, shared fields will be overridden with the contents of the file.
 If additional actions are present in the file, they will be appended to the current list of actions.
 The behavior is identical to a Python dictionary update.</p>
 <p>For example, if the existing actions in the Conduit Node contain:</p>
-<div class="highlight-json"><div class="highlight"><pre><span class="p">[</span>
+<div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">[</span>
+
   <span class="p">{</span>
-   <span class="nt">&quot;action&quot;</span> <span class="p">:</span> <span class="s2">&quot;add_plot&quot;</span><span class="p">,</span>
-   <span class="nt">&quot;field_name&quot;</span>  <span class="p">:</span> <span class="s2">&quot;p&quot;</span><span class="p">,</span>
-   <span class="nt">&quot;render_options&quot;</span><span class="p">:</span>
-   <span class="p">{</span>
-     <span class="nt">&quot;width&quot;</span>  <span class="p">:</span> <span class="mi">1024</span><span class="p">,</span>
-     <span class="nt">&quot;height&quot;</span> <span class="p">:</span> <span class="mi">1024</span>
-   <span class="p">}</span>
+    <span class="nt">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;add_scenes&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;scenes&quot;</span><span class="p">:</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;scene1&quot;</span><span class="p">:</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;plots&quot;</span><span class="p">:</span>
+        <span class="p">{</span>
+          <span class="nt">&quot;plt1&quot;</span><span class="p">:</span>
+          <span class="p">{</span>
+            <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;pseudocolor&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;params&quot;</span><span class="p">:</span>
+            <span class="p">{</span>
+              <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;zonal_noise&quot;</span>
+            <span class="p">}</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
   <span class="p">},</span>
+
   <span class="p">{</span>
-   <span class="nt">&quot;action&quot;</span> <span class="p">:</span> <span class="s2">&quot;draw_plots&quot;</span>
+    <span class="nt">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;execute&quot;</span>
   <span class="p">}</span>
 <span class="p">]</span>
 </pre></div>
 </div>
 <p>The contents of the file are:</p>
-<div class="highlight-json"><div class="highlight"><pre><span class="p">[</span>
+<div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">[</span>
+
   <span class="p">{</span>
-    <span class="nt">&quot;action&quot;</span> <span class="p">:</span> <span class="s2">&quot;add_plot&quot;</span><span class="p">,</span>
-    <span class="nt">&quot;field_name&quot;</span>  <span class="p">:</span> <span class="s2">&quot;new_var&quot;</span>
-  <span class="p">},</span>
-  <span class="p">{</span>
-    <span class="nt">&quot;action&quot;</span> <span class="p">:</span> <span class="s2">&quot;add_plot&quot;</span><span class="p">,</span>
-    <span class="nt">&quot;field_name&quot;</span>  <span class="p">:</span> <span class="s2">&quot;another_var&quot;</span>
-  <span class="p">},</span>
-  <span class="p">{</span>
-    <span class="nt">&quot;action&quot;</span> <span class="p">:</span> <span class="s2">&quot;draw_plots&quot;</span>
+    <span class="nt">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;add_scenes&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;scenes&quot;</span><span class="p">:</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;scene1&quot;</span><span class="p">:</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;plots&quot;</span><span class="p">:</span>
+        <span class="p">{</span>
+          <span class="nt">&quot;plt2&quot;</span><span class="p">:</span>
+          <span class="p">{</span>
+            <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;pseudocolor&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;params&quot;</span><span class="p">:</span>
+            <span class="p">{</span>
+              <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;nodal_noise&quot;</span>
+            <span class="p">}</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
   <span class="p">}</span>
 <span class="p">]</span>
 </pre></div>
 </div>
-<p>The resulting actions that are executed by Strawman will be:</p>
-<div class="highlight-json"><div class="highlight"><pre><span class="p">[</span>
+<p>The resulting actions that are executed by Ascent will be:</p>
+<div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">[</span>
+
   <span class="p">{</span>
-   <span class="nt">&quot;action&quot;</span> <span class="p">:</span> <span class="s2">&quot;add_plot&quot;</span><span class="p">,</span>
-   <span class="nt">&quot;field_name&quot;</span> <span class="p">:</span> <span class="s2">&quot;new_var&quot;</span>
-   <span class="s2">&quot;render_options&quot;</span><span class="p">:</span>
+    <span class="nt">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;add_scenes&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;scenes&quot;</span><span class="p">:</span>
     <span class="p">{</span>
-     <span class="nt">&quot;width&quot;</span>  <span class="p">:</span> <span class="mi">1024</span><span class="p">,</span>
-     <span class="nt">&quot;height&quot;</span> <span class="p">:</span> <span class="mi">1024</span>
+      <span class="nt">&quot;scene1&quot;</span><span class="p">:</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;plots&quot;</span><span class="p">:</span>
+        <span class="p">{</span>
+          <span class="nt">&quot;plt1&quot;</span><span class="p">:</span>
+          <span class="p">{</span>
+            <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;pseudocolor&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;params&quot;</span><span class="p">:</span>
+            <span class="p">{</span>
+              <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;zonal_noise&quot;</span>
+            <span class="p">}</span>
+          <span class="p">},</span>
+          <span class="nt">&quot;plt2&quot;</span><span class="p">:</span>
+          <span class="p">{</span>
+            <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;pseudocolor&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;params&quot;</span><span class="p">:</span>
+            <span class="p">{</span>
+              <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;nodal_noise&quot;</span>
+            <span class="p">}</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
     <span class="p">}</span>
-  <span class="p">},</span>
-  <span class="p">{</span>
-     <span class="nt">&quot;action&quot;</span> <span class="p">:</span> <span class="s2">&quot;add_plot&quot;</span><span class="p">,</span>
-     <span class="nt">&quot;field_name&quot;</span>  <span class="p">:</span> <span class="s2">&quot;another_var&quot;</span>
-  <span class="p">},</span>
-  <span class="p">{</span>
-     <span class="nt">&quot;action&quot;</span> <span class="p">:</span> <span class="s2">&quot;draw_plots&quot;</span>
   <span class="p">}</span>
 <span class="p">]</span>
 </pre></div>
 </div>
 <p>While the updating feature is convient, we encourage users to be as explicit as possible when creating action files to avoid unexpected behavior.
-A full example of an actions file can be found in <code class="docutils literal"><span class="pre">/src/examples/proxies/lulesh2.0.3/strawman_actions.json</span></code>.</p>
+A full example of an actions file can be found in <code class="docutils literal"><span class="pre">/src/examples/proxies/lulesh2.0.3/ascent_actions.json</span></code>.</p>
 </div>
 
 
@@ -227,10 +253,10 @@ A full example of an actions file can be found in <code class="docutils literal"
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="Add_Plot.html" class="btn btn-neutral float-right" title="add_plot" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="Pipelines.html" class="btn btn-neutral float-right" title="Pipelines" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="index.html" class="btn btn-neutral" title="Strawman Actions" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral" title="Ascent Actions" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

@@ -1,0 +1,319 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Ascent API &mdash; Alpine 0.1.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Alpine 0.1.0 documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Alpine
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="Ascent.html">Ascent Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Releases.html">Releases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Publications.html">Publications and Presentations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Licenses.html">License Info</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Alpine</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Ascent API</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/AlpineAPI.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="ascent-api">
+<h1>Ascent API<a class="headerlink" href="#ascent-api" title="Permalink to this headline">¶</a></h1>
+<p>The top level API for ascent consists of four calls:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Open(condiut::Node)</li>
+<li>Publish(conduit::Node)</li>
+<li>Execute(conduit::Node)</li>
+<li>Close()</li>
+</ul>
+</div></blockquote>
+<div class="section" id="open">
+<h2>Open<a class="headerlink" href="#open" title="Permalink to this headline">¶</a></h2>
+<p>Open provides the initial setup of Ascent from a Conduit Node.
+Options include pipeline type (e.g., VTK-m, Blueprint HDF5, or empty) and associated backend if available.
+If running in parallel (i.e., MPI), then a MPI comm handle must be supplied.
+Ascent will always check the file system for a file called <code class="docutils literal"><span class="pre">ascent_options.json</span></code> that will override compiled in options, and for obvious reasons, a MPI communicator cannot be specified in the file.
+Here is a file that would set the pipeline to VTK-m using a TBB backend:</p>
+<div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;pipeline/type&quot;</span>    <span class="p">:</span> <span class="s2">&quot;vtkm&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;pipeline/backend&quot;</span> <span class="p">:</span> <span class="s2">&quot;tbb&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>A typical integration will include the following code:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span></span><span class="n">Ascent</span> <span class="n">ascent</span><span class="p">;</span>
+<span class="n">conduit</span><span class="o">::</span><span class="n">Node</span> <span class="n">ascent_options</span><span class="p">;</span>
+
+<span class="cp">#if USE_MPI</span>
+<span class="n">ascent_options</span><span class="p">[</span><span class="s">&quot;mpi_comm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">MPI_Comm_c2f</span><span class="p">(</span><span class="n">MPI_COMM_WORLD</span><span class="p">);</span>
+<span class="cp">#endif</span>
+<span class="n">ascent_options</span><span class="p">[</span><span class="s">&quot;pipeline/type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;vtkm&quot;</span><span class="p">;</span>
+<span class="n">ascent_options</span><span class="p">[</span><span class="s">&quot;pipeline/backend&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;tbb&quot;</span><span class="p">;</span>
+
+<span class="n">ascent</span><span class="p">.</span><span class="n">Open</span><span class="p">(</span><span class="n">ascent_options</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Valid pipelines include:</p>
+<blockquote>
+<div><ul class="simple">
+<li>vtkm</li>
+<li>hdf5</li>
+<li>empty</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="publish">
+<h2>Publish<a class="headerlink" href="#publish" title="Permalink to this headline">¶</a></h2>
+<p>This call publishes data to Ascent through <a class="reference external" href="http://software.llnl.gov/blueprint_mesh.html">Conduit Blueprint</a> mesh descriptions.
+In the Lulesh prox-app, data is already in a form that is compatible with the blueprint conventions and the code to create the Conduit Node is straight-forward:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span></span><span class="c1">// provide state information</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;state/time&quot;</span><span class="p">].</span><span class="n">set_external</span><span class="p">(</span><span class="o">&amp;</span><span class="n">m_time</span><span class="p">);</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;state/cycle&quot;</span><span class="p">].</span><span class="n">set_external</span><span class="p">(</span><span class="o">&amp;</span><span class="n">m_cycle</span><span class="p">);</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;state/domain&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">myRank</span><span class="p">;</span>
+
+<span class="c1">// coordinate system data</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;coordsets/coords/type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;explicit&quot;</span><span class="p">;</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;coordsets/coords/x&quot;</span><span class="p">].</span><span class="n">set_external</span><span class="p">(</span><span class="n">m_x</span><span class="p">);</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;coordsets/coords/y&quot;</span><span class="p">].</span><span class="n">set_external</span><span class="p">(</span><span class="n">m_y</span><span class="p">);</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;coordsets/coords/z&quot;</span><span class="p">].</span><span class="n">set_external</span><span class="p">(</span><span class="n">m_z</span><span class="p">);</span>
+
+<span class="c1">// topology data</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;topologies/mesh/type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;unstructured&quot;</span><span class="p">;</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;topologies/mesh/coordset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;coords&quot;</span><span class="p">;</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;topologies/mesh/elements/shape&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;hexs&quot;</span><span class="p">;</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;topologies/mesh/elements/connectivity&quot;</span><span class="p">].</span><span class="n">set_external</span><span class="p">(</span><span class="n">m_nodelist</span><span class="p">);</span>
+
+<span class="c1">// one or more scalar fields</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;fields/p/type&quot;</span><span class="p">]</span>        <span class="o">=</span> <span class="s">&quot;scalar&quot;</span><span class="p">;</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;fields/p/topology&quot;</span><span class="p">]</span>    <span class="o">=</span> <span class="s">&quot;mesh&quot;</span><span class="p">;</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;fields/p/association&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;element&quot;</span><span class="p">;</span>
+<span class="n">mesh_data</span><span class="p">[</span><span class="s">&quot;fields/p/values&quot;</span><span class="p">].</span><span class="n">set_external</span><span class="p">(</span><span class="n">m_p</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>If the data does not match the blueprint mesh conventions, then you must transform the data into a compatible format.</p>
+<p>You can check if a node confirms to the mesh blueprint using the verify function provided by conduit.</p>
+<div class="highlight-c++"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;conduit_blueprint.hpp&gt;</span><span class="cp"></span>
+
+<span class="n">Node</span> <span class="n">verify_info</span><span class="p">;</span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">conduit</span><span class="o">::</span><span class="n">blueprint</span><span class="o">::</span><span class="n">mesh</span><span class="o">::</span><span class="n">verify</span><span class="p">(</span><span class="n">mesh_data</span><span class="p">,</span><span class="n">verify_info</span><span class="p">))</span>
+<span class="p">{</span>
+    <span class="c1">// verify failed, print error message</span>
+    <span class="n">ASCENT_INFO</span><span class="p">(</span><span class="s">&quot;Error: Mesh Blueprint Verify Failed!&quot;</span><span class="p">);</span>
+    <span class="c1">// show details of what went awry</span>
+    <span class="n">verify_info</span><span class="p">.</span><span class="n">print</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Once the Conduit Node has been populated with data conforming to the mesh blueprint, simply publish the data using the Publish call:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span></span><span class="n">straman</span><span class="p">.</span><span class="n">Publish</span><span class="p">(</span><span class="n">mesh_data</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Publish is called each cycle where Ascent is used.</p>
+</div>
+<div class="section" id="execute">
+<h2>Execute<a class="headerlink" href="#execute" title="Permalink to this headline">¶</a></h2>
+<p>Execute applies some number of actions to published data.
+Each action is described inside of a Conduit Node and passed to the Execute call.
+For a full description of supported actions see <a class="reference internal" href="Actions/Actions.html#ascent-actions"><span class="std std-ref">Ascent Actions Overview</span></a>.</p>
+<p>Here is a simple example of adding a plot using the C++ API:</p>
+<div class="highlight-c++"><div class="highlight"><pre><span></span><span class="c1">// In the main simulation loop</span>
+<span class="n">conduit</span><span class="o">::</span><span class="n">Node</span> <span class="n">actions</span><span class="p">;</span>
+<span class="n">conduit</span><span class="o">::</span><span class="n">Node</span> <span class="o">&amp;</span><span class="n">plot</span> <span class="o">=</span> <span class="n">actions</span><span class="p">.</span><span class="n">append</span><span class="p">();</span>
+<span class="n">plot</span><span class="p">[</span><span class="s">&quot;action&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;add_plot&quot;</span><span class="p">;</span>
+<span class="n">plot</span><span class="p">[</span><span class="s">&quot;field_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;p&quot;</span><span class="p">;</span>
+<span class="n">conduit</span><span class="o">::</span><span class="n">Node</span> <span class="o">&amp;</span><span class="n">draw</span> <span class="o">=</span> <span class="n">actions</span><span class="p">.</span><span class="n">append</span><span class="p">();</span>
+<span class="n">draw</span><span class="p">[</span><span class="s">&quot;action&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;draw_plots&quot;</span><span class="p">;</span>
+<span class="n">ascent</span><span class="p">.</span><span class="n">Publish</span><span class="p">(</span><span class="n">mesh_data</span><span class="p">);</span>
+<span class="n">ascent</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">actions</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="close">
+<h2>Close<a class="headerlink" href="#close" title="Permalink to this headline">¶</a></h2>
+<p>Close informs Ascent that all actions are complete, and the call performs the appropriate clean-up.</p>
+<div class="highlight-c++"><div class="highlight"><pre><span></span><span class="n">ascent</span><span class="p">.</span><span class="n">Close</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="error-handling">
+<h2>Error Handling<a class="headerlink" href="#error-handling" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div>Ascent uses Conduit&#8217;s error handling machinery. By default when errors occur
+C++ exceptions are thrown, but you can rewire Conduit&#8217;s handlers with your own callbacks. For more info
+see the <a class="reference external" href="http://software.llnl.gov/conduit/tutorial_errors.html">Conduit Error Handling Tutorial</a>.</div></blockquote>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015-2016, LLNS.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

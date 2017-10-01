@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Strawman GPU Notes &mdash; Strawman 0.1.0 documentation</title>
+  <title>Ascent GPU Notes &mdash; Alpine 0.1.0 documentation</title>
   
 
   
@@ -30,10 +30,10 @@
   
 
   
-    <link rel="top" title="Strawman 0.1.0 documentation" href="index.html"/>
-        <link rel="up" title="Strawman Documentation" href="Strawman.html"/>
+    <link rel="top" title="Alpine 0.1.0 documentation" href="index.html"/>
+        <link rel="up" title="Ascent Documentation" href="Ascent.html"/>
         <link rel="next" title="Releases" href="Releases.html"/>
-        <link rel="prev" title="draw_plots" href="Actions/Draw_Plots.html"/> 
+        <link rel="prev" title="Extracts" href="Actions/Extracts.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -51,7 +51,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home"> Strawman
+            <a href="index.html" class="icon icon-home"> Alpine
           
 
           
@@ -82,20 +82,8 @@
           
             
             
-                <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="Strawman.html">Strawman Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="Overview.html">Strawman Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ExampleIntegrations.html">Example Integrations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="BuildingStrawman.html">Building Strawman</a></li>
-<li class="toctree-l2"><a class="reference internal" href="StrawmanAPI.html">Strawman API</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Actions/index.html">Strawman Actions</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Strawman GPU Notes</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#number-of-ranks-per-node">Number of Ranks Per Node</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vtk-m-cuda-jit-compilation-delays">VTK-m CUDA JIT Compilation Delays</a></li>
-</ul>
-</li>
-</ul>
-</li>
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="Ascent.html">Ascent Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Releases.html">Releases</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Publications.html">Publications and Presentations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Licenses.html">License Info</a></li>
@@ -112,7 +100,7 @@
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">Strawman</a>
+        <a href="index.html">Alpine</a>
       </nav>
 
 
@@ -129,9 +117,9 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-          <li><a href="Strawman.html">Strawman Documentation</a> &raquo;</li>
+          <li><a href="Ascent.html">Ascent Documentation</a> &raquo;</li>
       
-    <li>Strawman GPU Notes</li>
+    <li>Ascent GPU Notes</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -145,8 +133,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="strawman-gpu-notes">
-<h1>Strawman GPU Notes<a class="headerlink" href="#strawman-gpu-notes" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="ascent-gpu-notes">
+<h1>Ascent GPU Notes<a class="headerlink" href="#ascent-gpu-notes" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="number-of-ranks-per-node">
 <h2>Number of Ranks Per Node<a class="headerlink" href="#number-of-ranks-per-node" title="Permalink to this headline">¶</a></h2>
 <p>On each node, it is important to only launch one MPI rank per GPU.
@@ -160,7 +148,7 @@ Collisions could result in a run-time failure or significant delays.</p>
 Even though the CMake configuration specifies the native GPU architecture, all kernels are recompiled at run-time for the intermediate code representation.
 With the general code of the rendering library, the number of potential kernels is large, given the number of possible combinations between cell sets, coordinate systems, and scalar fields.
 The compiled code is generally cached by CUDA in a hidden directory in the user&#8217;s home folder, and subsequent executions will not incur  the overhead until the cache is deleted.
-This is a know issue, and there was no resolution at the time of the VTK-m 1.0 release.</p>
+This is a know issue, and there was no resolution at this time.</p>
 </div>
 </div>
 
@@ -174,7 +162,7 @@ This is a know issue, and there was no resolution at the time of the VTK-m 1.0 r
         <a href="Releases.html" class="btn btn-neutral float-right" title="Releases" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="Actions/Draw_Plots.html" class="btn btn-neutral" title="draw_plots" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="Actions/Extracts.html" class="btn btn-neutral" title="Extracts" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
