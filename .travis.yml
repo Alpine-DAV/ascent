@@ -49,9 +49,9 @@ compiler:
   - gcc
 env:
   global:
-  - COMPILER_CC=gcc-4.8
-  - COMPILER_CXX=g++-4.8
-  - COMPILER_FC=gfortran-4.8
+  - COMPILER_CC=gcc-4.9
+  - COMPILER_CXX=g++-4.9
+  - COMPILER_FC=gfortran-4.9
   matrix:
     # we want to test both static and shared, w/ and w/o docs and vtkm.
     - BUILD_SHARED_LIBS=ON
@@ -69,9 +69,12 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
        - binutils
-       - gcc-4.8
-       - g++-4.8
-       - gfortran-4.8
+       - gcc-4.9
+       - g++-4.9
+       - gfortran-4.9
+cache:
+  directories:
+    - $HOME/uberenv_libs
 install:
   # none
 script:
@@ -83,12 +86,14 @@ script:
   - ${CC} --version
   - cd $TRAVIS_BUILD_DIR
   # setup spack spec based on our travis options
-  - export SPACK_SPEC="%gcc@4.8+mpich"
+  - export SPACK_SPEC="%gcc@4.9+mpich"
   - if [ $ENABLE_VTKM = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkm; fi
   - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~doc; fi
   - echo $SPACK_SPEC
   # build deps using uberenv
+    cd ..
   - python scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
+  - cd $TRAVIS_BUILD_DIR
   # create out-of-source build dir
   - mkdir build-debug
   - cd    build-debug
