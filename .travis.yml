@@ -92,7 +92,7 @@ script:
   - echo $SPACK_SPEC
   # build deps using uberenv
   - cd ..
-  - python scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
+  - python ascent/scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
   - cd $TRAVIS_BUILD_DIR
   # create out-of-source build dir
   - mkdir build-debug
