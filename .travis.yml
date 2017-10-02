@@ -74,7 +74,7 @@ addons:
        - gfortran-4.9
 cache:
   directories:
-    - ${TRAVIS_BUILD_DIR}/uberenv_libs
+    - /home/travis/build/Alpine-DAV/uberenv_libs
 install:
   # none
 script:
