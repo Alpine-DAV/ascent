@@ -74,7 +74,7 @@ addons:
        - gfortran-4.9
 cache:
   directories:
-    - $HOME/uberenv_libs
+    - ${TRAVIS_BUILD_DIR}/uberenv_libs
 install:
   # none
 script:
@@ -85,6 +85,7 @@ script:
   - export FC=${COMPILER_FC}
   - ${CC} --version
   - cd $TRAVIS_BUILD_DIR
+  - echo $TRAVIS_BUILD_DIR
   # setup spack spec based on our travis options
   - export SPACK_SPEC="%gcc@4.9+mpich"
   - if [ $ENABLE_VTKM = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkm; fi
