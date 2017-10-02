@@ -91,7 +91,7 @@ script:
   - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~doc; fi
   - echo $SPACK_SPEC
   # build deps using uberenv
-    cd ..
+  - cd ..
   - python scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
   - cd $TRAVIS_BUILD_DIR
   # create out-of-source build dir
