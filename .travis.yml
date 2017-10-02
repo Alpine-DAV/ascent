@@ -95,7 +95,7 @@ script:
   - cd ..
   - find uberenv_libs -type d | perl -lne 'print tr:/::, " $_"' | sort -n | cut -d' ' -f2
   #- travis_wait 40 python ascent/scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
-  - travis_wait 40 python ascent/scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
+  - python ascent/scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
   - cd $TRAVIS_BUILD_DIR
   # create out-of-source build dir
   #  - mkdir build-debug
