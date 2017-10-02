@@ -97,48 +97,48 @@ script:
   - python ascent/scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
   - cd $TRAVIS_BUILD_DIR
   # create out-of-source build dir
-  - mkdir build-debug
-  - cd    build-debug
-  # cmake options
-  # build type
-  - CMAKE_OPTS="-DCMAKE_BUILD_TYPE=Debug"
-  # shared or static libs
-  - CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-  # install path
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install-debug"
-  # make sure cmake is in our path
-  - export CMAKE_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-  - export PATH=${CMAKE_BIN_DIR}:$PATH
-  - echo $PATH
-  - which cmake
-  - cmake --version
-  - export HOST_CONFIG=`ls ../uberenv_libs/*.cmake`
-  - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
-  # build, test, and install
-  - make VERBOSE=1
-  - env CTEST_OUTPUT_ON_FAILURE=1 make test
-  - make install
-  # test our examples that demo using an installed ascent
-  - export CONDUIT_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/conduit*`
-  - export VTKM_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/vtkm*`
-  - export ASCENT_DIR=${TRAVIS_BUILD_DIR}/install-debug
-  # using with cmake example
-  - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
-  - mkdir build
-  - cd build
-  - export EXAMPLE_CFG="-DASCENT_DIR=${ASCENT_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
-  - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR}"; fi
-  - echo $EXAMPLE_CFG
-  - cmake  ${EXAMPLE_CFG} ../
-  - make VERBOSE=1
-  - ./example
-  # using with make example (still needs work for static builds)
-  #- cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
-  #- make
-  #- env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
-  # test run example apps
-  - cd ${TRAVIS_BUILD_DIR}
-  - if [ $ENABLE_VTKM = 'ON' ]; then ./scripts/test-run-examples.sh ; fi
+  #  - mkdir build-debug
+  #  - cd    build-debug
+  #  # cmake options
+  #  # build type
+  #  - CMAKE_OPTS="-DCMAKE_BUILD_TYPE=Debug"
+  #  # shared or static libs
+  #  - CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+  #  # install path
+  #  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install-debug"
+  #  # make sure cmake is in our path
+  #  - export CMAKE_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+  #  - export PATH=${CMAKE_BIN_DIR}:$PATH
+  #  - echo $PATH
+  #  - which cmake
+  #  - cmake --version
+  #  - export HOST_CONFIG=`ls ../uberenv_libs/*.cmake`
+  #  - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+  #  # build, test, and install
+  #  - make VERBOSE=1
+  #  - env CTEST_OUTPUT_ON_FAILURE=1 make test
+  #  - make install
+  #  # test our examples that demo using an installed ascent
+  #  - export CONDUIT_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/conduit*`
+  #  - export VTKM_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/vtkm*`
+  #  - export ASCENT_DIR=${TRAVIS_BUILD_DIR}/install-debug
+  #  # using with cmake example
+  #  - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
+  #  - mkdir build
+  #  - cd build
+  #  - export EXAMPLE_CFG="-DASCENT_DIR=${ASCENT_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
+  #  - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR}"; fi
+  #  - echo $EXAMPLE_CFG
+  #  - cmake  ${EXAMPLE_CFG} ../
+  #  - make VERBOSE=1
+  #  - ./example
+  #  # using with make example (still needs work for static builds)
+  #  #- cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
+  #  #- make
+  #  #- env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
+  #  # test run example apps
+  #  - cd ${TRAVIS_BUILD_DIR}
+  #  - if [ $ENABLE_VTKM = 'ON' ]; then ./scripts/test-run-examples.sh ; fi
   
 
 #cache:
