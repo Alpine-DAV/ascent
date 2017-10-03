@@ -49,9 +49,9 @@ compiler:
   - gcc
 env:
   global:
-  - COMPILER_CC=gcc-4.9
-  - COMPILER_CXX=g++-4.9
-  - COMPILER_FC=gfortran-4.9
+  - COMPILER_CC=gcc-5
+  - COMPILER_CXX=g++-5
+  - COMPILER_FC=gfortran-5
   matrix:
     # we want to test both static and shared, w/ and w/o docs and vtkm.
     - BUILD_SHARED_LIBS=ON
@@ -69,9 +69,9 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
        - binutils
-       - gcc-4.9
-       - g++-4.9
-       - gfortran-4.9
+       - gcc-5
+       - g++-5
+       - gfortran-5
 cache:
   directories:
     - /home/travis/build/Alpine-DAV/uberenv_libs
