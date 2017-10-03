@@ -98,5 +98,5 @@ class Vtkh(Package):
             cmake_args.extend(std_cmake_args)
             print cmake_args
             cmake(*cmake_args)
-            make()
+            make(parallel=False)
             make("install",parallel=False)
