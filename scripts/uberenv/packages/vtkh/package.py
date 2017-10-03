@@ -75,7 +75,8 @@ class Vtkh(Package):
                           "-DVTKM_DIR=%s" % spec["vtkm"].prefix,
                           "-DTBB_DIR=%s"  % spec["tbb"].prefix,
                           "-DENABLE_TESTS=OFF",
-                          "-DBUILD_TESTING=OFF"]
+                          "-DBUILD_TESTING=OFF",
+                          "-DCMAKE_VERBOSE_MAKEFILE=ON"]
             if "+mpich" in spec:
                 mpicc  = which("mpicc")
                 mpicxx = which("mpicxx")
@@ -97,5 +98,5 @@ class Vtkh(Package):
             cmake_args.extend(std_cmake_args)
             print cmake_args
             cmake(*cmake_args)
-            make("VERBOSE=1")
+            make()
             make("install",parallel=False)
