@@ -75,7 +75,12 @@ class Vtkm(Package):
                 # (this common for front end nodes on hpc clusters)
                 # we choose kepler for llnl surface and ornl titan
                 cmake_args.append("-DVTKm_CUDA_Architecture=kepler")
-            cmake_args.extend(std_cmake_args)
+            # use release, instead of release with debug symbols b/c vtkm + vtkh libs
+            # can overwhelm compilers with too many symbols
+            for arg in std_cmake_args:
+                if arg.count("CMAKE_BUILD_TYPE") == 0:
+                    cmake_args.extend(std_cmake_args)
+            cmake_args.append("-DCMAKE_BUILD_TYPE=Release")
             print cmake_args
             cmake(*cmake_args)
             make(parallel=False)
