@@ -93,7 +93,7 @@ script:
   - echo $SPACK_SPEC
   # build deps using uberenv
   - cd ..
-  - CACHE_ROOT = `pwd`
+  - export CACHE_ROOT=`pwd`
   #- find uberenv_libs -type d | perl -lne 'print tr:/::, " $_"' | sort -n | cut -d' ' -f2
   - python ascent/scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
   - cd $TRAVIS_BUILD_DIR
