@@ -129,7 +129,7 @@ script:
   - mkdir build
   - cd build
   - export EXAMPLE_CFG="-DASCENT_DIR=${ASCENT_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
-  - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR}"; fi
+  - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR} -DVTKH_DIR=${VTKH_DIR}"; fi
   - echo $EXAMPLE_CFG
   - cmake  ${EXAMPLE_CFG} ../
   - make VERBOSE=1
