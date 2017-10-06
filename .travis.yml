@@ -97,6 +97,7 @@ script:
   # clear the cache of vtkm and vtkh to rebuild critical dependencies
   - if [ -d "${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*" ]; then rm -rf ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*; fi
   - if [ -d "${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkh*" ]; then rm -rf ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkh*; fi
+  - if [ -d "${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/uberenv-ascent**" ]; then rm -rf ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/uberenv-ascent*; fi
   #- find uberenv_libs -type d | perl -lne 'print tr:/::, " $_"' | sort -n | cut -d' ' -f2
   - python ascent/scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
   - cd $TRAVIS_BUILD_DIR
