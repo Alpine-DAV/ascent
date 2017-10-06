@@ -122,6 +122,7 @@ script:
   # test our examples that demo using an installed ascent
   - export CONDUIT_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/conduit*`
   - export VTKM_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*`
+  - export VTKH_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkh*`
   - export ASCENT_DIR=${TRAVIS_BUILD_DIR}/install-debug
   # using with cmake example
   - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
