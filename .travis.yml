@@ -123,6 +123,7 @@ script:
   - export CONDUIT_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/conduit*`
   - export VTKM_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*`
   - export VTKH_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkh*`
+  - ls /home/travis/build/Alpine-DAV/uberenv_libs/spack/opt/spack/linux-x86_64/gcc-5.4.1/vtkh-vtkh-reorg-qxesvekcrrp4j3jxlm6kuwoe64cgoqah/lib/
   - export ASCENT_DIR=${TRAVIS_BUILD_DIR}/install-debug
   # using with cmake example
   - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
