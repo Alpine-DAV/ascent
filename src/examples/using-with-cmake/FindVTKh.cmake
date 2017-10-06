@@ -69,7 +69,7 @@ if(NOT VTKH_DIR)
   MESSAGE(FATAL_ERROR "Could not find VTKH_DIR. Conduit requires explicit VTKH_DIR.")
 endif()
 
-if(NOT EXISTS ${VTKM_DIR}/lib/VTKhConfig.cmake)
+if(NOT EXISTS ${VTKH_DIR}/lib/VTKhConfig.cmake)
   MESSAGE(FATAL_ERROR "Could not find VTKh CMake include file (${VTKH_DIR}/lib/VTKhConfig.cmake)")
 endif()
 
@@ -84,7 +84,7 @@ include(${VTKH_DIR}/lib/VTKhConfig.cmake)
 # we found VTKh
 set(VTKH_FOUND TRUE)
 # provide location of the headers in VTKM_INCLUDE_DIRS
-set(VTKH_INCLUDE_DIRS ${VTKH_DIR}/include/vtkh)
+set(VTKH_INCLUDE_DIRS ${VTKH_DIR}/include/)
 
 
 
