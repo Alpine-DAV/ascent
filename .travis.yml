@@ -139,6 +139,7 @@ script:
   #- env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
   # test run example apps
   - cd ${TRAVIS_BUILD_DIR}
+  - export PATH=$PATH:`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/mpich-*/bin/`
   - if [ $ENABLE_VTKM = 'ON' ]; then ./scripts/test-run-examples.sh ; fi
   
 
