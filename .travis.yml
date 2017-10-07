@@ -49,9 +49,9 @@ compiler:
   - gcc
 env:
   global:
-  - COMPILER_CC=gcc-4.8
-  - COMPILER_CXX=g++-4.8
-  - COMPILER_FC=gfortran-4.8
+  - COMPILER_CC=gcc-5
+  - COMPILER_CXX=g++-5
+  - COMPILER_FC=gfortran-5
   matrix:
     # we want to test both static and shared, w/ and w/o docs and vtkm.
     - BUILD_SHARED_LIBS=ON
@@ -69,9 +69,12 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
        - binutils
-       - gcc-4.8
-       - g++-4.8
-       - gfortran-4.8
+       - gcc-5
+       - g++-5
+       - gfortran-5
+cache:
+  directories:
+    - /home/travis/build/Alpine-DAV/uberenv_libs
 install:
   # none
 script:
@@ -82,14 +85,21 @@ script:
   - export FC=${COMPILER_FC}
   - ${CC} --version
   - cd $TRAVIS_BUILD_DIR
+  - echo $TRAVIS_BUILD_DIR
   # setup spack spec based on our travis options
-  - export SPACK_SPEC="%gcc@4.8+mpich"
+  - export SPACK_SPEC="%gcc@5+mpich"
   - if [ $ENABLE_VTKM = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkm; fi
   - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~doc; fi
   - echo $SPACK_SPEC
   # build deps using uberenv
-  - python scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
-  # create out-of-source build dir
+  - cd ..
+  - export CACHE_ROOT=`pwd`
+  # clear the cache of vtkm and vtkh to rebuild critical dependencies
+  - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*; do if [ -d $f ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents vtkm; fi; done;
+  #- find uberenv_libs -type d | perl -lne 'print tr:/::, " $_"' | sort -n | cut -d' ' -f2
+  - python ascent/scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
+  - cd $TRAVIS_BUILD_DIR
+   #create out-of-source build dir
   - mkdir build-debug
   - cd    build-debug
   # cmake options
@@ -100,27 +110,28 @@ script:
   # install path
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install-debug"
   # make sure cmake is in our path
-  - export CMAKE_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+  - export CMAKE_BIN_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
   - export PATH=${CMAKE_BIN_DIR}:$PATH
   - echo $PATH
   - which cmake
   - cmake --version
-  - export HOST_CONFIG=`ls ../uberenv_libs/*.cmake`
+  - export HOST_CONFIG=`ls ${CACHE_ROOT}/uberenv_libs/*.cmake`
   - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
   # build, test, and install
   - make VERBOSE=1
   - env CTEST_OUTPUT_ON_FAILURE=1 make test
   - make install
   # test our examples that demo using an installed ascent
-  - export CONDUIT_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/conduit*`
-  - export VTKM_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/vtkm*`
+  - export CONDUIT_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/conduit*`
+  - export VTKM_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*`
+  - export VTKH_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkh*`
   - export ASCENT_DIR=${TRAVIS_BUILD_DIR}/install-debug
   # using with cmake example
   - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
   - mkdir build
   - cd build
   - export EXAMPLE_CFG="-DASCENT_DIR=${ASCENT_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
-  - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR}"; fi
+  - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR} -DVTKH_DIR=${VTKH_DIR}"; fi
   - echo $EXAMPLE_CFG
   - cmake  ${EXAMPLE_CFG} ../
   - make VERBOSE=1
@@ -131,6 +142,7 @@ script:
   #- env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
   # test run example apps
   - cd ${TRAVIS_BUILD_DIR}
+  - export PATH=$PATH:`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/mpich-*/bin/`
   - if [ $ENABLE_VTKM = 'ON' ]; then ./scripts/test-run-examples.sh ; fi
   
 

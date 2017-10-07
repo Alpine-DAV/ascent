@@ -75,7 +75,8 @@ class Vtkh(Package):
                           "-DVTKM_DIR=%s" % spec["vtkm"].prefix,
                           "-DTBB_DIR=%s"  % spec["tbb"].prefix,
                           "-DENABLE_TESTS=OFF",
-                          "-DBUILD_TESTING=OFF"]
+                          "-DBUILD_TESTING=OFF",
+                          "-DCMAKE_VERBOSE_MAKEFILE=ON"]
             if "+mpich" in spec:
                 mpicc  = which("mpicc")
                 mpicxx = which("mpicxx")
@@ -94,8 +95,13 @@ class Vtkh(Package):
                 # (this common for front end nodes on hpc clusters)
                 # we choose kepler for llnl surface and ornl titan
                 cmake_args.append("-DVTKm_CUDA_Architecture=kepler")
-            cmake_args.extend(std_cmake_args)
+            # use release, instead of release with debug symbols b/c vtkm + vtkh libs
+            # can overwhelm compilers with too many symbols
+            for arg in std_cmake_args:
+                if arg.count("CMAKE_BUILD_TYPE") == 0:
+                    cmake_args.extend(std_cmake_args)
+            cmake_args.append("-DCMAKE_BUILD_TYPE=Release")
             print cmake_args
             cmake(*cmake_args)
-            make()
+            make(parallel=False)
             make("install",parallel=False)

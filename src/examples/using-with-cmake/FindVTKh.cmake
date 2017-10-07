@@ -44,40 +44,48 @@
 
 ###############################################################################
 #
-# Example that shows how to use an installed instance of Ascent in another
-# CMake-based build system.
+# Setup VTKm 
 #
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DASCENT_DIR={ascent install path}  \ 
-#   -DCONDUIT_DIR={conduit install path}    \ 
-#   -DVTKM_DIR={vtkm install path}          \
-#   ../
-# make
-# ./example
+###############################################################################
+#
+#  Expects VTKM_DIR to point to a Conduit installations.
+#
+# This file defines the following CMake variables:
+#  VTKM_FOUND - If Conduit was found
+#  VTKM_INCLUDE_DIRS - The Conduit include directories
+#
+#  If found, the vtkm CMake targets will also be imported.
+#  The main vtkm library targets are:
+#   vtkm 
+#   vtkm_cont
+#   vtkm_rendering
 #
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.0)
-
-project(using_with_cmake)
-
-include("FindAscent.cmake")
-include("FindConduit.cmake")
-if(VTKM_DIR)
-    include("FindVTKm.cmake")
-    include("FindVTKh.cmake")
+###############################################################################
+# Check for VTKM_DIR
+###############################################################################
+if(NOT VTKH_DIR)
+  MESSAGE(FATAL_ERROR "Could not find VTKH_DIR. Conduit requires explicit VTKH_DIR.")
 endif()
 
-# setup the ascent & conduit include paths
-include_directories(${ASCENT_INCLUDE_DIRS})
-include_directories(${CONDUIT_INCLUDE_DIRS})
+if(NOT EXISTS ${VTKH_DIR}/lib/VTKhConfig.cmake)
+  MESSAGE(FATAL_ERROR "Could not find VTKh CMake include file (${VTKH_DIR}/lib/VTKhConfig.cmake)")
+endif()
 
-# create our example 
-add_executable(example example.cpp)
+###############################################################################
+# Import VTKm CMake targets
+###############################################################################
+include(${VTKH_DIR}/lib/VTKhConfig.cmake)
 
-# link to ascent
-target_link_libraries(example ascent)
+###############################################################################
+# Set remaning CMake variables 
+###############################################################################
+# we found VTKh
+set(VTKH_FOUND TRUE)
+# provide location of the headers in VTKM_INCLUDE_DIRS
+set(VTKH_INCLUDE_DIRS ${VTKH_DIR}/include/)
+
+
+
 
