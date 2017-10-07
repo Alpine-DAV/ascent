@@ -95,7 +95,7 @@ script:
   - cd ..
   - export CACHE_ROOT=`pwd`
   # clear the cache of vtkm and vtkh to rebuild critical dependencies
-  - if [ -d "${CACHE_ROOT}/uberenv_libs/spack/bin/" ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents vtkm; fi
+  - if [ -d "${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*" ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents vtkm; fi
   #- find uberenv_libs -type d | perl -lne 'print tr:/::, " $_"' | sort -n | cut -d' ' -f2
   - python ascent/scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
   - cd $TRAVIS_BUILD_DIR
