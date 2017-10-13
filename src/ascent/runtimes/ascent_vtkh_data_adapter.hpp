@@ -111,7 +111,7 @@ public:
     // wraps a single VTKm data set into a VTKH dataset
     static vtkh::DataSet    *VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset);
 
-
+    static conduit::Node    *VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset);
 private:
     // helpers for specific conversion cases
     static vtkm::cont::DataSet  *UniformBlueprintToVTKmDataSet(const std::string &coords_name,
@@ -150,6 +150,8 @@ private:
                                           int neles,
                                           int nverts,
                                           vtkm::cont::DataSet *dset);
+    static void UniformVTkmToBluepirnt(conduit::Node &output,
+                                       const vtkm::cont::DataSet &data_set);
 
 };
 

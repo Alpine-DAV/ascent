@@ -68,6 +68,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_block_timer.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
+#include <vtkh/utils/vtkm_dataset_info.hpp>
 
 using namespace std;
 using namespace conduit;
@@ -763,6 +764,54 @@ VTKHDataAdapter::AddField(const std::string &field_name,
 
 }
 
+void 
+UniformVTkmToBluepirnt(conduit::Node &output,
+                       const vtkm::cont::DataSet &data_set)
+{
+  
+}
+
+conduit::Node*
+VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset)
+{
+  //
+  // with vtkm, we have no idea what the type is of anything inside
+  // dataset, so we have to ask all fields, cell sets anc coordinate systems.
+  //
+  conduit::Node *result = new conduit::Node(); const int default_cell_set = 0; int topo_dims;
+  conduit::Node &node = *result;
+  bool is_structured = vtkh::VTKMDataSetInfo::IsStructured(*dset, topo_dims, default_cell_set);
+  bool is_uniform = vtkh::VTKMDataSetInfo::IsUniform(*dset);
+  vtkm::cont::CoordinateSystem coords = dset->GetCoordinateSystem();
+  if(is_structured)
+  {
+    std::cout<<"Structured data set of topo dims "<<topo_dims<<"\n";
+    if(is_uniform)
+    {
+      std::cout<<"Uniform\n";
+      auto points = coords.GetData().Cast<vtkm::cont::ArrayHandleUniformPointCoordinates>();
+      auto portal = points.GetPortalConstControl();
+
+      auto origin = portal.GetOrigin();
+      auto spacing = portal.GetSpacing();
+      auto dims = portal.GetDimensions();
+      node["coordsets/coords/type"] = "uniform";  
+      node["coordsets/coords/dims/i"] = (int) dims[0];  
+      node["coordsets/coords/dims/j"] = (int) dims[1];  
+      node["coordsets/coords/dims/k"] = (int) dims[2];  
+      node["coordsets/coords/origin/x"] = (int) origin[0];  
+      node["coordsets/coords/origin/y"] = (int) origin[1];  
+      node["coordsets/coords/origin/z"] = (int) origin[2];  
+      node["coordsets/coords/spacing/x"] = (int) spacing[0];  
+      node["coordsets/coords/spacing/y"] = (int) spacing[1];  
+      node["coordsets/coords/spacing/z"] = (int) spacing[2];  
+      node.print();
+    }
+  }
+
+
+  return result;
+}
 
 };
 //-----------------------------------------------------------------------------
