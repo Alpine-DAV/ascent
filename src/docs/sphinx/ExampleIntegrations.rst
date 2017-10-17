@@ -45,14 +45,15 @@
 
 Example Integrations
 --------------------
-Ascent comes with three example integrations:
+Ascent comes with four example integrations:
 
   - Lulesh: a lagrangian shock hydrodynamics code 
   - Kripke: a deterministic neutron transport code
   - CloverLeaf3D: an eulerian hydrodynamics code
+  - Noise : an synthetic data source based on open simplex noise
 
 .. note::
-  All three example codes use both MPI and OpenMP for hybrid parallelism.
+  All four example codes use both MPI and OpenMP for hybrid parallelism.
 
 Lulesh
 ^^^^^^
@@ -137,7 +138,7 @@ Mesh data extraction can be found starting at line 20, and the API calls can be 
 
 Running Kripke
 """"""""""""""
-Kripke take many command line parameters, and there is an example script that is copied into the directory where Kripke is built.
+Kripke takes many command line parameters, and there is an example script that is copied into the directory where Kripke is built.
 
 .. code-block:: bash
 
@@ -150,3 +151,22 @@ The parameters that control the problem size and layout are:
   - ``--niter`` controls the number of iterations. Note: as the solver converges on a solution, the images will differ less and less.
   
 
+Noise
+^^^^^^
+Noise is a scalable synthetic application that generates data throughout the entire problem from the first time step.
+For large data sets, proxy applications such as Lulesh and Cloverleaf3D require significant time for shockwaves to propagate through a distributed data set, and Noise allows large scale distributed-memory testing from the first time step without having to wait for a simulation to progress. Noise uses a uniform grid and defines two fields (node centered and node centered) that are based on open simplex noise.
+
+Running Noise 
+""""""""""""""
+Noise takes several command line parameters.
+
+.. code-block:: bash
+
+  srun -n 8 noise_par  --dims=32,32,32 --time_steps=5 --time_delta=.5
+
+The parameters that control the problem size and cycle progression are:
+
+  - ``--dims`` controls total problem size.
+  - ``--time_steps`` controls the number of time steps.
+  - ``--time_delta`` controls the amount of time to advance the simulation each time step.
+  

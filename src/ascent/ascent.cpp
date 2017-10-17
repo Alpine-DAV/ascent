@@ -57,7 +57,7 @@
 
 #if defined(ASCENT_VTKH_ENABLED)
     #include <runtimes/ascent_main_runtime.hpp>
-    #include <vtkh.hpp>
+    #include <vtkh/vtkh.hpp>
 #endif
 
 using namespace conduit;

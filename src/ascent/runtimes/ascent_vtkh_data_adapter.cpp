@@ -63,12 +63,11 @@
 // VTKm includes
 #define VTKM_USE_DOUBLE_PRECISION
 #include <vtkm/cont/DataSet.h>
-#include <vtkh_data_set.hpp>
+#include <vtkh/DataSet.hpp>
 // other ascent includes
 #include <ascent_logging.hpp>
 #include <ascent_block_timer.hpp>
-
-#include <utils/vtkm_array_utils.hpp>
+#include <vtkh/utils/vtkm_array_utils.hpp>
 
 using namespace std;
 using namespace conduit;

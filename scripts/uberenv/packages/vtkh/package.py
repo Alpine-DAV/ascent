@@ -41,36 +41,56 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-
 from spack import *
 import os
+import platform
 
-class Vtkm(Package):
-    homepage = "https://m.vtk.org/"
-    url      = "http://m.vtk.org/images/8/87/Vtk-m-1.0.0.tar.gz"
+class Vtkh(Package):
+    homepage = "https://h.vtk.org/"
+    url      = "https://github.com/Alpine-DAV/vtk-h"
 
-    version('kitware-gitlab',
-            git='https://gitlab.kitware.com/vtk/vtk-m.git',
-            branch='master')
+    version('vtkh-reorg',
+            git='https://github.com/Alpine-DAV/vtk-h.git',
+            branch='master',
+            submodules=True)
 
-    #version('1.0.0',  '9d9d45e675d5b0628b19b32f5542ed9c')
+    variant("mpich",default=False,description="build with mpich")
 
     depends_on("cmake")
     depends_on("tbb")
+    depends_on("vtkm")
+
+    if "darwin" in platform.system().lower():
+        depends_on("mpich")
+
+    depends_on("mpich",when="+mpich")
 
     def install(self, spec, prefix):
-        os.environ["TBB_ROOT"] = spec["tbb"].prefix
+        # spack version used doesn't support submodules, so manually update it
+        # here.
+        os.system("git submodule update --init")
+
         with working_dir('spack-build', create=True):
-            cmake_args = ["../",
-                          "-DVTKm_ENABLE_TBB=ON",
-                          "-DVTKm_ENABLE_TESTING=OFF",
-                          "-DVTKm_BUILD_RENDERING=ON",
-                          "-DVTKm_USE_64BIT_IDS=OFF",
-                          "-DVTKm_USE_DOUBLE_PRECISION=ON"]
+            cmake_args = ["../src",
+                          "-DVTKM_DIR=%s" % spec["vtkm"].prefix,
+                          "-DTBB_DIR=%s"  % spec["tbb"].prefix,
+                          "-DENABLE_TESTS=OFF",
+                          "-DBUILD_TESTING=OFF",
+                          "-DCMAKE_VERBOSE_MAKEFILE=ON"]
+            if "+mpich" in spec:
+                mpicc  = which("mpicc")
+                mpicxx = which("mpicxx")
+                if mpicc is None or mpicxx is None:
+                    print "VTKh needs mpi ..."
+                    crash()
+                cmake_args.extend([
+                          "-DMPI_C_COMPILER=%s" % mpicc.command,
+                          "-DMPI_CXX_COMPILER=%s" % mpicxx.command])
+
             # check for cuda support
             nvcc = which("nvcc")
             if not nvcc  is None:
-                cmake_args.append("-DVTKm_ENABLE_CUDA=ON")
+                cmake_args.append("-DENABLE_CUDA=ON")
                 # this fix is necessary if compiling platform has cuda, but no devices
                 # (this common for front end nodes on hpc clusters)
                 # we choose kepler for llnl surface and ornl titan
@@ -85,6 +105,3 @@ class Vtkm(Package):
             cmake(*cmake_args)
             make(parallel=False)
             make("install",parallel=False)
-
-
-

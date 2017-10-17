@@ -42,24 +42,49 @@
 # 
 ###############################################################################
 
+###############################################################################
+#
+# Setup VTKm 
+#
+###############################################################################
+#
+#  Expects VTKM_DIR to point to a Conduit installations.
+#
+# This file defines the following CMake variables:
+#  VTKM_FOUND - If Conduit was found
+#  VTKM_INCLUDE_DIRS - The Conduit include directories
+#
+#  If found, the vtkm CMake targets will also be imported.
+#  The main vtkm library targets are:
+#   vtkm 
+#   vtkm_cont
+#   vtkm_rendering
+#
+###############################################################################
 
-################################
-#  Project Wide Includes
-################################
+###############################################################################
+# Check for VTKM_DIR
+###############################################################################
+if(NOT VTKH_DIR)
+  MESSAGE(FATAL_ERROR "Could not find VTKH_DIR. Conduit requires explicit VTKH_DIR.")
+endif()
 
-# add lodepng include dir
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty_builtin/lodepng)
+if(NOT EXISTS ${VTKH_DIR}/lib/VTKhConfig.cmake)
+  MESSAGE(FATAL_ERROR "Could not find VTKh CMake include file (${VTKH_DIR}/lib/VTKhConfig.cmake)")
+endif()
 
-# add include dirs so units tests have access to the headers across
-# libs and in unit tests
+###############################################################################
+# Import VTKm CMake targets
+###############################################################################
+include(${VTKH_DIR}/lib/VTKhConfig.cmake)
 
-include_directories(${PROJECT_SOURCE_DIR}/ascent/)
-include_directories(${PROJECT_BINARY_DIR}/ascent/)
-include_directories(${PROJECT_SOURCE_DIR}/ascent/utils)
-include_directories(${PROJECT_SOURCE_DIR}/ascent/runtimes)
-include_directories(${PROJECT_SOURCE_DIR}/flow)
-include_directories(${PROJECT_SOURCE_DIR}/flow/filters)
-include_directories(${PROJECT_SOURCE_DIR}/ascent/runtimes/flow_filters)
+###############################################################################
+# Set remaning CMake variables 
+###############################################################################
+# we found VTKh
+set(VTKH_FOUND TRUE)
+# provide location of the headers in VTKM_INCLUDE_DIRS
+set(VTKH_INCLUDE_DIRS ${VTKH_DIR}/include/)
 
 
 

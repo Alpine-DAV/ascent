@@ -68,6 +68,7 @@ include("FindAscent.cmake")
 include("FindConduit.cmake")
 if(VTKM_DIR)
     include("FindVTKm.cmake")
+    include("FindVTKh.cmake")
 endif()
 
 # setup the ascent & conduit include paths

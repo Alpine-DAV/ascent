@@ -46,10 +46,10 @@
 Ascent Overview
 =================
 
-This overview was distilled from `Ascent: A Batch In Situ Visualization and Analysis Infrastructure for Multi-Physics Simulation Codes <http://dl.acm.org/citation.cfm?id=2828625>`_ . This paper was presented at the `ISAV 2015 Workshop <http://vis.lbl.gov/Events/ISAV-2015/>`_, held in conjunction with SC 15, on November 16th 2015 in Austin, TX, USA.
+Ascent is an evolution of the system presented in `Strawman: A Batch In Situ Visualization and Analysis Infrastructure for Multi-Physics Simulation Codes <http://dl.acm.org/citation.cfm?id=2828625>`_ . This paper was presented at the `ISAV 2015 Workshop <http://vis.lbl.gov/Events/ISAV-2015/>`_, held in conjunction with SC 15, on November 16th 2015 in Austin, TX, USA.
 
 Requirements
--------------------
+------------
 To guide the development of Ascent, we focused on a set of important in situ visualization and analysis requirements extracted from our interactions and experiences with several simulation code teams. Here are Ascent's requirements broken out into three broader categories:
 
 Support a diverse set of simulations on many-core architectures.
@@ -69,16 +69,13 @@ Minimize  the  resource  impacts  on  host  simulations.
   - Efficient execution times that do not significantly slow down overall simulation time.
   - Minimal memory usage, including zero-copy usage when bringing data from simulation routines to visualization and analysis routines.
 
-
 System Architecture
 -------------------
 The Ascent sytem architecture is composed of several components:
-  * **Conduit**: `Conduit <http://software.llnl.gov/conduit/>`_  is used to describe and pass in-core mesh data and pipeline options from the simulation code to Ascent.
-  * **In Situ Pipelines**: Ascent contains a number of in situ pipelines that implement simple analysis, rendering, and I/O operations on the mesh data published to Ascent. At a high level, a pipeline is responsible for consuming the simulation data that is described using the Conduit Mesh Blueprint and performing a number of actions defined within Conduit Nodes, which create some form of output.
-  * **Data Adapters**: Simulation mesh data is described using Conduit's `Mesh Blueprint <http://software.llnl.gov/conduit/blueprint_mesh.html>`_, which outlines a set of conventions to describe different types of mesh-based scientific data. Ascent provides internal Data Adaptors that convert Mesh Blueprint data into a more a more specific data model, such as VTK-m's data model. Ascent will always zero-copy simulation data when possible. To simplify memory ownership semantics, the data provided to Ascent via Conduit Nodes is considered to be owned by the by the simulation.
-  * **IceT**: Ascent uses IceT for scalable distributed memory parallel image compositing.
+  * **Conduit**: `Conduit <http://software.llnl.gov/conduit/>`_  is used to describe and pass in-core mesh data and runtime options from the simulation code to Ascent.
+  * **Runtimes**: Ascent contains a number of runtimes that implement analysis, rendering, and I/O operations on the mesh data published to Ascent. At a high level, a runtime is responsible for consuming the simulation data that is described using the Conduit Mesh Blueprint and performing a number of actions defined within Conduit Nodes, which create some form of output.
+  * **Data Adapters**: Simulation mesh data is described using Conduit's `Mesh Blueprint <http://software.llnl.gov/conduit/blueprint_mesh.html>`_, which outlines a set of conventions to describe different types of mesh-based scientific data. Each Ascent runtime provides internal Data Adaptors that convert Mesh Blueprint data into a more a more specific data model, such as VTK-m's data model. Ascent will always zero-copy simulation data when possible. To simplify memory ownership semantics, the data provided to Ascent via Conduit Nodes is considered to be owned by the by the simulation.
   * **Embedded Web Server**: Ascent can stream images rendered from a running simulation to a web browser using the Conduit Relay's embedded web-server.
-
 
 System Diagram
 --------------
@@ -86,39 +83,56 @@ System Diagram
     :height: 600px
     :align: center
 
+Dependencies
+------------
+  This section describes some of Ascents key dependencies.
 
-Pipelines
------------------
-  Ascent can be configured with one or more of the following pipelines. 
-  When multiple pipelines are built with Ascent, available pipelines can be selected at runtime.
-  A pipeline has three main functions: consume simulation data, perfrom analysis (optional), and output data.
-  Data describing the simulation mesh is sent to the pipeline within a Conduit Node which is formatted according to `Conduit Blueprint <http://software.llnl.gov/conduit/blueprint.html>`_.
-  Once the data is in a compatible format, the pipeline can optionally perfrom some analysis operations, and then output the results. 
-  Currently, the VTK-m pipeline output images to either the file system or to the web browser, and the HDF5 pipeline creates and HDF5 file.
+..  image:: images/AscentDependencies.png
+    :height: 600px
+    :align: center
 
-
-
-
-VTK-m
+VTK-h
 """""
-  VTK-m v1.0 is a header only library (future versions will exist as a static or shared library) that uses a data-parallel programming model.
-  VTK-m was created from the merging of three efforts: DAX, EAVL, and PISTON.
-  While VTK-m's main focus is on scientific visualization, it can be used as a general purpose library for execution of supported architectures.
-  It uses template-meta programming to provide flexible and performant execution, and VTK-m is currently under active development.
-  The current version of Ascent uses the tagged 1.0 release that can be found at `Kitware <https://gitlab.kitware.com/vtk/vtk-m>`_ and the user guide can be found at `m.vtk.org <http://m.vtk.org/images/c/c8/VTKmUsersGuide.pdf>`_.
+  VTK-h is a stand alone library that implements a distributed-memory layer on top of the VTK-m library, which focuses on shared-memory parallelism.
+  The VTK-h library is a collection of distributed-memory algorithms, and VTK-h does not contain an execution model, such as the demand-driven data flow in VTK.
+  The design of VTK-h is intended to facilitate the wrapping of VTK-m algorithms so that they can be included in the execution models of other visualization tools including ALPINE Ascent, ParaView, and VisIt.
+  Consequently, VTK-h serves as a single point of development in which algorithms can be easily deployed into any toolkit that includes the VTK-h library.
+  VTK-h heavily leverages VTK-m, and the basic building block of the VTK-h data model is the VTK-m data set.
+  A VTK-h data set is a collection of VTK-m data sets along with supporting methods that handle distributed-memory queries (e.g., global scalar ranges).
+  Within VTK-h, most code will directly invoke VTK-m methods to implement algorithms, and while it is possible to directly implement new VTK-m functionality within VTK-h, that functionality is limited to distributed-memory features.
+  For distributed-memory parallelism, VTK-h uses MPI and also includes the DIY toolkit which encapsulates block-based abstractions that are common in distributed-memory problems, and VTK-h uses DIY to implement distributed-memory image compositing.
 
-  Supported operations: 
-
-  - Structured volume rendering 
-  - Ray tracing
-
-  Access to VTK-m filters are coming in a future release.
-
-
-Blueprint HDF5
-""""""""""""""""
-  This pipeline saves published mesh data to a set of hdf5 files that can be read by the  `VisIt  <https://wci.llnl.gov/simulation/computer-codes/visit/>`_ Blueprint plugin (planned to be released with VisIt 2.13).
+Flow
+""""
+  Recall from the prior section that VTK-h does not provide its own execution model. This choice simplifies the VTK-h API and makes it easy to leverage VTK-h within ParaView and VisIt`s existing full featured execution models. 
+  Since ALPINE Ascent does not leverage ParaView or VisIt's infrastructure, it needs a basic execution model to support using VTK-h algorithms to carry out the user's requested actions. 
   
+  Ascent uses a simple data flow library named Flow to efficiently compose and execute VTK-h filters. ALPINE's Flow library is a C++ evolution of the Python data flow network infrastructure used in `this implementation <http://ieeexplore.ieee.org/abstract/document/6495864/>`_. It supports declaration and execution of directed acyclic graphs (DAGs) of filters created from a menu of filter types that are registered at runtime. Filters declare a minimal interface, which includes the number of expected inputs and outputs, and a set of default parameters. Flow uses a topological sort to ensure proper filter execution order, tracks all intermediate results, and provides basic memory management capabilities. 
+  The VTK-h algorithms needed by Ascent are wrapped as Flow Filters so they can be executed as part of DAGs composed by Ascent.
+  
+  Like its Python predecessor, Flow provides support for generic inputs and outputs. Flow provides a mechanism for filters to check input data types at runtime if necessary. Because of this data-type agnostic design, the Flow library does not depend on VTK-h. This provides the flexibility to create filters which can process data in other data models and APIs. This design supports important future use cases, such as creating a filter to refine high-order MFEM meshes into VTK-h data sets for rendering.
+
+Runtimes
+-----------------
+  Ascent can be configured with one or more of the following runtimes. 
+  When multiple runtimes are built with Ascent, available runtimes can be selected at runtime.
+  A runtime has three main functions: consume simulation data, perfrom analysis (optional), and output data.
+  Data describing the simulation mesh is sent to the runtime within a Conduit Node which is formatted according to `Conduit Blueprint <http://software.llnl.gov/conduit/blueprint.html>`_.
+  Once the data is in a compatible format, the runtime can optionally perfrom some analysis operations, and then output the results. 
+  Currently, the Ascent runtime uses the  
+
+
+Ascent Runtime
+""""""""""""""
+The Ascent Runtime is the layer that sits on top of Flow and beneath the Ascent API.
+Ascent's responsibility is to translate a set of actions passed to the Ascent ''execute'' method into a Flow graph.
+Ascent loops through hierarchy of actions contained in a Conduit Node, and creates a series of Flow filters (i.e., graph nodes) and connects the Flow filters together (i.e., edges).
+
+Flow Runtime
+""""""""""""""
+The Flow runtime provides direct access to Flow. This lower access allows availible flow filters to be directly assembled into a DAG instead of relying of the Ascent runtime.
+By using the Flow runtime, developers can connect filters in advanced ways not directly supported by the Ascent API.
+
 Empty
 """""
-  The empty pipeline contains all the boilerplate code needed to started implementing a custom pipeline and is meant to serve as a staring place for those that wish to create a pipeline from scratch.
+  The empty runtime contains all the boilerplate code needed to started implementing a custom runtime and is meant to serve as a staring place for those that wish to create a runtime from scratch.

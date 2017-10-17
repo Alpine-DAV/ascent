@@ -42,25 +42,28 @@
 # 
 ###############################################################################
 
+if(NOT VTKH_DIR)
+  MESSAGE(FATAL_ERROR "VTKh support needs explicit VTKH_DIR")
+endif()
 
-################################
-#  Project Wide Includes
-################################
+MESSAGE(STATUS "Looking for VTKh using VTKH_DIR = ${VTKH_DIR}")
 
-# add lodepng include dir
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty_builtin/lodepng)
+set(VTKh_DIR ${VTKH_DIR}/lib)
 
-# add include dirs so units tests have access to the headers across
-# libs and in unit tests
+find_package(VTKh REQUIRED)
+message(STATUS "Found VTKh include dirs: ${VTKh_INCLUDE_DIRS}")
 
-include_directories(${PROJECT_SOURCE_DIR}/ascent/)
-include_directories(${PROJECT_BINARY_DIR}/ascent/)
-include_directories(${PROJECT_SOURCE_DIR}/ascent/utils)
-include_directories(${PROJECT_SOURCE_DIR}/ascent/runtimes)
-include_directories(${PROJECT_SOURCE_DIR}/flow)
-include_directories(${PROJECT_SOURCE_DIR}/flow/filters)
-include_directories(${PROJECT_SOURCE_DIR}/ascent/runtimes/flow_filters)
+set(VTKH_FOUND TRUE)
 
 
+blt_register_library(NAME vtkh 
+                     INCLUDES ${VTKh_INCLUDE_DIRS}
+                     LIBRARIES vtkh)
 
+if (MPI_FOUND)
+    blt_register_library(NAME vtkh_par
+                         DEFINES "-DPARALLEL"
+                         INCLUDES ${VTKh_INCLUDE_DIRS}
+                         LIBRARIES vtkh_par)
 
+endif()

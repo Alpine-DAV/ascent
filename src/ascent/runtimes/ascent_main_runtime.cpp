@@ -71,7 +71,7 @@
 #include <flow.hpp>
 #include <ascent_runtime_filters.hpp>
 
-#include <vtkh.hpp>
+#include <vtkh/vtkh.hpp>
 
 #ifdef VTKM_CUDA
 #include <vtkm/cont/cuda/ChooseCudaDevice.h>

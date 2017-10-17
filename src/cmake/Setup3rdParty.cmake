@@ -97,6 +97,11 @@ if(VTKM_DIR)
     # VTKm
     ################################
     include(cmake/thirdparty/SetupVTKm.cmake)
+
+    ################################
+    # VTKm
+    ################################
+    include(cmake/thirdparty/SetupVTKh.cmake)
 endif()
 
 
@@ -113,17 +118,6 @@ endif()
 if (ADIOS_DIR)
   include(cmake/thirdparty/SetupADIOS.cmake)
   include(${ADIOS_DIR}/etc/FindADIOS.cmake)
-endif()
-
-################################
-# Optional Features
-################################
-
-################################
-# IceT
-################################
-if(ENABLE_MPI AND VTKM_FOUND)
-    include(cmake/thirdparty/SetupIceT.cmake)
 endif()
 
 

@@ -212,11 +212,10 @@ void mesh_blueprint_save(const Node &data,
     else
         n_src = (int)0;
 
-    mpi::all_reduce(n_src,
-                    n_reduce,
-                    MPI_INT,
-                    MPI_MAX,
-                    mpi_comm);
+    mpi::sum_all_reduce(n_src,
+                        n_reduce,
+                        mpi_comm);
+
     dir_ok = (n_reduce.as_int() == 1);
 #endif
 

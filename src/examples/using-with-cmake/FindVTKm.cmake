@@ -69,14 +69,14 @@ if(NOT VTKM_DIR)
   MESSAGE(FATAL_ERROR "Could not find VTKM_DIR. Conduit requires explicit VTKM_DIR.")
 endif()
 
-if(NOT EXISTS ${VTKM_DIR}/lib/VTKmConfig.cmake)
-  MESSAGE(FATAL_ERROR "Could not find VTKm CMake include file (${VTKM_DIR}/lib/VTKmConfig.cmake)")
+if(NOT EXISTS ${VTKM_DIR}/lib/cmake/vtkm-1.0/VTKmConfig.cmake)
+  MESSAGE(FATAL_ERROR "Could not find VTKm CMake include file (${VTKM_DIR}/lib/cmake/vtkm-1.0/VTKmConfig.cmake)")
 endif()
 
 ###############################################################################
 # Import VTKm CMake targets
 ###############################################################################
-include(${VTKM_DIR}/lib/VTKmConfig.cmake)
+include(${VTKM_DIR}/lib/cmake/vtkm-1.0/VTKmConfig.cmake)
 
 ###############################################################################
 # Set remaning CMake variables 
