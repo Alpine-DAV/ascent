@@ -53,6 +53,9 @@
 #define ASCENT_FLOW_PIPELINE_ADIOS_FILTERS_HPP
 
 #include <flow_filter.hpp>
+#ifdef PARALLEL
+#include <mpi.h>
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -79,6 +82,7 @@ namespace filters
 ///
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
 class ADIOS : public ::flow::Filter
 {
 public:
@@ -89,6 +93,55 @@ public:
     virtual bool   verify_params(const conduit::Node &params,
                                  conduit::Node &info);
     virtual void   execute();
+
+private:
+    bool UniformMeshSchema(const conduit::Node &node);
+    bool RectilinearMeshSchema(const conduit::Node &node);
+    
+    bool FieldVariable(const std::string &fieldName, const conduit::Node &fieldNode);
+
+    bool CalcRectilinearMeshInfoOLD(const conduit::Node &node,
+                                 std::vector<std::vector<double>> &globalCoords);
+    bool CalcRectilinearMeshInfo(const conduit::Node &node,
+                                 std::vector<std::vector<double>> &globalCoords);    
+
+    int rank, numRanks;
+#ifdef PARALLEL
+    MPI_Comm mpi_comm;
+#else
+    int mpi_comm;
+#endif
+    
+    int64_t adiosGroup, adiosFile;
+    std::string transportType;
+    std::string fileName;
+    std::string meshName;
+
+    //var dimensions for this rank:
+    std::vector<int64_t> globalDims, localDims, offset;
+    //std::string globalDimensions, localDimensions, offsets;
+
+    template <typename T>
+    std::string dimsToStr(const std::vector<T> &d, bool pointCentered=true)
+    {
+        std::string str("");
+        if (d.size() > 0)
+        {
+            for (int i = 0; i < d.size()-1; i++)
+            {
+                T v = d[i];
+                if (!pointCentered && v > 0)
+                    v--;
+                str = str + std::to_string(v) + ",";
+            }
+
+            T v = d[d.size()-1];
+            if (!pointCentered && v > 0)
+                v--;
+            str = str + std::to_string(v);
+        }
+        return str;
+    }
 };
 
 //-----------------------------------------------------------------------------
