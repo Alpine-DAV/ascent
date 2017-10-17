@@ -79,7 +79,6 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_filters.cpp
     runtimes/flow_filters/ascent_runtime_relay_filters.cpp
     runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp
-    runtimes/flow_filters/ascent_runtime_adios_filters.cpp
     # utils
     utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
@@ -153,8 +152,7 @@ endif()
 set(ascent_thirdparty_libs 
     conduit
     flow
-    lodepng
-    adios)
+    lodepng)
 
 ##################
 # optional libs
@@ -171,6 +169,10 @@ if(TBB_FOUND)
     list(APPEND ascent_thirdparty_libs tbb)
 endif()
 
+
+if(ADIOS_FOUND)
+    list(APPEND ascent_thirdparty_libs adios)
+endif()
 
 ##########################################
 # Build a serial version of ascent

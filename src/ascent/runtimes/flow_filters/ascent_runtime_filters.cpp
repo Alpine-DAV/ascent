@@ -60,12 +60,14 @@
 
 #include <ascent_runtime_relay_filters.hpp>
 #include <ascent_runtime_blueprint_filters.hpp>
-#include <ascent_runtime_adios_filters.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
     #include <ascent_runtime_vtkh_filters.hpp>
 #endif
 
+#if defined(ASCENT_ADIOS_ENABLED)
+    #include <ascent_runtime_adios_filters.hpp>
+#endif
 
 
 
@@ -100,8 +102,6 @@ register_builtin()
     Workspace::register_filter_type<BlueprintVerify>(); 
     Workspace::register_filter_type<RelayIOSave>();
     Workspace::register_filter_type<RelayIOLoad>();
-
-    Workspace::register_filter_type<ADIOS>();
     
 #if defined(ASCENT_VTKM_ENABLED)
     Workspace::register_filter_type<DefaultRender>();
@@ -123,6 +123,11 @@ register_builtin()
     Workspace::register_filter_type<VTKHThreshold>();
     Workspace::register_filter_type<VTKHVolumeTracer>();
 #endif
+    
+#if defined(ASCENT_ADIOS_ENABLED)
+    Workspace::register_filter_type<ADIOS>();    
+#endif
+    
 
     
 }

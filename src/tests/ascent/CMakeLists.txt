@@ -61,7 +61,6 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_flow_runtime)
 
 set(MPI_TESTS  t_ascent_mpi_empty_runtime
-               t_ascent_mpi_adios_extract
                t_ascent_mpi_render_2d
                t_ascent_mpi_render_3d)
 
@@ -70,6 +69,11 @@ set(MPI_TESTS  t_ascent_mpi_empty_runtime
 if(VTKM_FOUND)
    list(APPEND BASIC_TESTS t_ascent_ascent_runtime)
    list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime)
+endif()
+
+# adios tests
+if(ADIOS_FOUND)
+   list(APPEND MPI_TESTS t_ascent_mpi_adios_extract)
 endif()
 
 
