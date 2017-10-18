@@ -58,7 +58,7 @@ MESSAGE(STATUS "Looking for ADIOS using ADIOS_DIR = ${ADIOS_DIR}")
 
 # CMake's FindADIOS module uses the ADIOS_ROOT env var
 set(ADIOS_ROOT ${ADIOS_DIR})
-set(ENV{ADIOS_ROOT} ${ADIOS_ROOT}/bin)
+set(ENV{ADIOS_ROOT} ${ADIOS_ROOT})
 
 # Use CMake's FindADIOS module, which uses hdf5's compiler wrappers to extract
 # all the info about the hdf5 install

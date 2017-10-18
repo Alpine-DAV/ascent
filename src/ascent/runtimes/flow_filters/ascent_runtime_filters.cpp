@@ -65,10 +65,11 @@
     #include <ascent_runtime_vtkh_filters.hpp>
 #endif
 
+#ifdef PARALLEL
 #if defined(ASCENT_ADIOS_ENABLED)
     #include <ascent_runtime_adios_filters.hpp>
 #endif
-
+#endif
 
 
 
@@ -123,9 +124,11 @@ register_builtin()
     Workspace::register_filter_type<VTKHThreshold>();
     Workspace::register_filter_type<VTKHVolumeTracer>();
 #endif
-    
+
+#ifdef PARALLEL
 #if defined(ASCENT_ADIOS_ENABLED)
-    Workspace::register_filter_type<ADIOS>();    
+    Workspace::register_filter_type<ADIOS>();
+#endif
 #endif
     
 

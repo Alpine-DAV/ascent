@@ -107,11 +107,6 @@ set(ascent_headers
     utils/ascent_png_encoder.hpp
     utils/ascent_web_interface.hpp)
 
-if (ADIOS_FOUND)
-  list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios_filters.hpp)
-  list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios_filters.cpp)
-endif()
-
 if(VTKM_FOUND)
 
     # data adapter
@@ -169,11 +164,6 @@ if(TBB_FOUND)
     list(APPEND ascent_thirdparty_libs tbb)
 endif()
 
-
-if(ADIOS_FOUND)
-    list(APPEND ascent_thirdparty_libs adios)
-endif()
-
 ##########################################
 # Build a serial version of ascent
 ##########################################
@@ -199,6 +189,13 @@ if(MPI_FOUND)
 
     # req'd libs 
     set(ascent_par_thirdparty_libs mpi conduit_relay_mpi)
+
+    # adios support is only in par (mpi ver)
+    if (ADIOS_FOUND)
+      list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios_filters.hpp)
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios_filters.cpp)
+       list(APPEND ascent_par_thirdparty_libs adios)
+    endif()
 
     list(APPEND ascent_par_thirdparty_libs ${ascent_thirdparty_libs})
 

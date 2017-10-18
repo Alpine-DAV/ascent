@@ -67,6 +67,8 @@
 #cmakedefine ASCENT_VTKM_USE_TBB      "@TBB_FOUND@"
 
 
+#cmakedefine ASCENT_ADIOS_ENABLED     "@ADIOS_FOUND@"
+
 #cmakedefine ASCENT_HDF5_ENABLED      "@HDF5_FOUND@"
 
 //-----------------------------------------------------------------------------

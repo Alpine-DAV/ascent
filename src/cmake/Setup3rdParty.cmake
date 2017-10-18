@@ -117,7 +117,6 @@ endif()
 ################################  
 if (ADIOS_DIR)
   include(cmake/thirdparty/SetupADIOS.cmake)
-  include(${ADIOS_DIR}/etc/FindADIOS.cmake)
 endif()
 
 
