@@ -96,7 +96,10 @@ private:
     void ConvertPlotToFlow(const conduit::Node &plot,
                            const std::string plot_name,
                            bool composite);
+    void ConvertExtractToFlow(const conduit::Node &plot,
+                              const std::string extract_name);
     void CreatePipelines(const conduit::Node &pipelines);
+    void CreateExtracts(const conduit::Node &extracts);
     void CreatePlots(const conduit::Node &plots);
     std::vector<std::string> GetPipelines(const conduit::Node &plots);
     void CreateScenes(const conduit::Node &scenes);

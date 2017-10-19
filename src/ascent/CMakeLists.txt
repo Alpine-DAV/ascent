@@ -55,6 +55,7 @@ set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
 set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
 
 set(ASCENT_HDF5_ENABLED ${HDF5_FOUND})
+set(ASCENT_ADIOS_ENABLED ${ADIOS_FOUND})
 
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
@@ -98,6 +99,7 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_filters.hpp
     runtimes/flow_filters/ascent_runtime_relay_filters.hpp
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
+
     # utils
     utils/ascent_logging.hpp
     utils/ascent_file_system.hpp
@@ -162,7 +164,6 @@ if(TBB_FOUND)
     list(APPEND ascent_thirdparty_libs tbb)
 endif()
 
-
 ##########################################
 # Build a serial version of ascent
 ##########################################
@@ -188,6 +189,13 @@ if(MPI_FOUND)
 
     # req'd libs 
     set(ascent_par_thirdparty_libs mpi conduit_relay_mpi)
+
+    # adios support is only in par (mpi ver)
+    if (ADIOS_FOUND)
+      list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios_filters.hpp)
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios_filters.cpp)
+       list(APPEND ascent_par_thirdparty_libs adios)
+    endif()
 
     list(APPEND ascent_par_thirdparty_libs ${ascent_thirdparty_libs})
 

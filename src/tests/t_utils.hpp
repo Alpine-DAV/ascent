@@ -226,8 +226,9 @@ create_3d_example_dataset(Node &data,
     //                    "must must divide evenly into " <<
     //                    "par_rank (" << par_rank << ")");
     // }
-        
-    int size = 32;
+
+    int cellsPerRank = 32;
+    int size = par_size * cellsPerRank;
     
     int nx = size / par_size;
     int ny = size;
