@@ -74,7 +74,7 @@ index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_data_adapter, vtkm_to_blueprint)
+TEST(ascent_data_adapter, vtkm_uniform_2d_to_blueprint)
 {
     // the ascent runtime is currently our only rendering runtime
     Node n;
@@ -90,8 +90,108 @@ TEST(ascent_data_adapter, vtkm_to_blueprint)
     vtkm::cont::testing::MakeTestDataSet maker; 
     vtkm::cont::DataSet ds = maker.Make2DUniformDataSet0(); 
     conduit::Node *blueprint = VTKHDataAdapter::VTKmToBlueprintDataSet(&ds);
+    conduit::Node info;
+    bool success = conduit::blueprint::verify("mesh",*blueprint,info);
+    if(!success) info.print();
+    EXPECT_TRUE(success);
+    delete blueprint;
+}
 
-    //EXPECT_TRUE(check_test_image(output_file));
+
+//-----------------------------------------------------------------------------
+TEST(ascent_data_adapter, vtkm_uniform_3d_to_blueprint)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+    vtkm::cont::testing::MakeTestDataSet maker; 
+    vtkm::cont::DataSet ds = maker.Make3DUniformDataSet0(); 
+    conduit::Node *blueprint = VTKHDataAdapter::VTKmToBlueprintDataSet(&ds);
+    conduit::Node info;
+    bool success = conduit::blueprint::verify("mesh",*blueprint,info);
+    if(!success) info.print();
+    EXPECT_TRUE(success);
+    delete blueprint;
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_data_adapter, vtkm_rectilinear_3d_to_blueprint)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+    vtkm::cont::testing::MakeTestDataSet maker; 
+    vtkm::cont::DataSet ds = maker.Make3DRectilinearDataSet0(); 
+    conduit::Node *blueprint = VTKHDataAdapter::VTKmToBlueprintDataSet(&ds);
+    conduit::Node info;
+    bool success = conduit::blueprint::verify("mesh",*blueprint,info);
+    if(!success) info.print();
+    EXPECT_TRUE(success);
+    delete blueprint;
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_data_adapter, vtkm_rectilinear_2d_to_blueprint)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+    vtkm::cont::testing::MakeTestDataSet maker; 
+    vtkm::cont::DataSet ds = maker.Make2DRectilinearDataSet0(); 
+    conduit::Node *blueprint = VTKHDataAdapter::VTKmToBlueprintDataSet(&ds);
+    conduit::Node info;
+    bool success = conduit::blueprint::verify("mesh",*blueprint,info);
+    if(!success) info.print();
+    EXPECT_TRUE(success);
+    delete blueprint;
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_data_adapter, vtkm_explicit_single_type_to_blueprint)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+    vtkm::cont::testing::MakeTestDataSet maker; 
+    vtkm::cont::DataSet ds = maker.Make3DExplicitDataSetCowNose(); 
+    conduit::Node *blueprint = VTKHDataAdapter::VTKmToBlueprintDataSet(&ds);
+    conduit::Node info;
+    bool success = conduit::blueprint::verify("mesh",*blueprint,info);
+    if(!success) info.print();
+    EXPECT_TRUE(success);
     delete blueprint;
 }
 
