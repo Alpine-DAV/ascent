@@ -45,7 +45,7 @@ class Adios(Package):
     variant('fortran', default=False,
             description='Enable Fortran bindings support')
 
-    variant('mpi', default=True, description='Enable MPI support')
+    variant('mpich', default=True, description='Enable MPI support')
     variant('infiniband', default=False, description='Enable infiniband support')
 
     variant('zlib', default=True, description='Enable szip transform support')
@@ -100,6 +100,9 @@ class Adios(Package):
 
         if '+mpich' in spec:
             extra_args.append('--with-mpi')
+            env['MPICC']  = spec['mpich'].mpicc
+            env['MPICXX'] = spec['mpich'].mpicxx
+            
         if '+infiniband' in spec:
             extra_args.append('--with-infiniband')
         else:
