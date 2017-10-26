@@ -71,6 +71,8 @@
 #include <vtkh/utils/vtkm_array_utils.hpp>
 #include <vtkh/utils/vtkm_dataset_info.hpp>
 
+#include <conduit_blueprint.hpp>
+
 using namespace std;
 using namespace conduit;
 
@@ -89,30 +91,103 @@ vtkh::DataSet *
 VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
                                     const std::string &topo_name)
 {   
-    // TODO: check for multi-domain case:
-
-    vtkm::cont::DataSet *dset = VTKHDataAdapter::BlueprintToVTKmDataSet(node,
-                                                                    topo_name);
-    
-    int domain_id = 0;
-    if(!node.has_path("state/domain_id"))
-    {
-        domain_id = node["state/domain_id"].to_int();
-    }
-#ifdef PARALLEL
-    else
-    {
-       domain_id = vtkh::GetMPIRank();
-    }
-#endif
+ 
+    // treat everything as a multi-domain data set 
+    conduit::Node multi_dom; 
+    blueprint::mesh::to_multi_domain(node, multi_dom);
 
     vtkh::DataSet *res = new vtkh::DataSet;
-    res->AddDomain(*dset,domain_id);
+
+
+    int num_domains = 0;
+    bool has_ids = true;
+    bool missing_ids = false;
+
+    // get the number of domains and check for id consistency
+    num_domains = multi_dom.number_of_children();
+
+    for(int i = 0; i < num_domains; ++i)
+    {
+      const conduit::Node &dom = multi_dom.child(i);
+      if(dom.has_path("state/domain_id"))
+      {
+        missing_ids = true; 
+      }
+      else
+      {
+        has_ids = false;
+      }
+    }
+#ifdef PARALLEL
+    int comm_size = vtkh::GetMPISize();
+    int *has_ids_array = new int[comm_size];
+    int *missing_ids_array = new int[comm_size];
+    int boolean = has_ids ? 1 : 0; 
+    MPI_Allgather(&boolean, 1, MPI_INT, has_ids_array, 1, MPI_INT, vtkh::GetMPIComm());
+    boolean = missing_ids ? 1 : 0; 
+    MPI_Allgather(&boolean, 1, MPI_INT, missing_ids_array, 1, MPI_INT, vtkh::GetMPIComm());
+
+    bool global_has_ids = true;
+    bool global_missing_ids = false;
+    for(int i = 0; i < comm_size; ++i)
+    {
+      if(has_ids_array[i] == 0)
+      {
+        global_has_ids = false;
+      }
+      if(missing_ids_array[i] == 1)
+      {
+        global_missing_ids = true;
+      }
+    }
+    has_ids = global_has_ids;
+    missing_ids = global_missing_ids;
+    delete[] has_ids_array;
+    delete[] missing_ids_array;
+#endif
+      
+    bool consistent_ids = (has_ids && !missing_ids) || !has_ids;
+
+    if(!consistent_ids)
+    {
+      ASCENT_ERROR("Inconsistent domain ids: all domains must either have an id "
+                  <<"or all domains do not have an id");
+    }
+
+    int domain_offset = 0;
+#ifdef PARALLEL
+    int *domains_per_rank = new int[comm_size];
+    int rank = vtkh::GetMPIRank();
+    MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, vtkh::GetMPIComm());
+    for(int i = 0; i < rank; ++i)
+    {
+      domain_offset += domains_per_rank[i];
+    }
+    delete[] domains_per_rank;  
+#endif
+    for(int i = 0; i < num_domains; ++i)
+    {
+      const conduit::Node &dom = multi_dom.child(i);      
+      vtkm::cont::DataSet *dset = VTKHDataAdapter::BlueprintToVTKmDataSet(dom,
+                                                                          topo_name);
+      int domain_id = domain_offset;
+      if(node.has_path("state/domain_id"))
+      {
+          domain_id = node["state/domain_id"].to_int();
+      }
+#ifdef PARALLEL
+      else
+      {
+         domain_id = domain_offset + i;
+      }
+#endif
+
+      res->AddDomain(*dset,domain_id);
+      // vtk-m will shallow copy the data assoced with dset
+      // clean up our copy
+      delete dset;
     
-    // vtk-m will shallow copy the data assoced with dset
-    // clean up our copy
-    delete dset;
-    
+    }    
     return res;
 }
 
@@ -1014,9 +1089,6 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         MixedType cells = dyn_cells.Cast<MixedType>(); 
       }
           
-      //bool single_type = data.GetCellSet
-      //output["topologies/topo/elements/connectivity/"] = ;
-      //output["topologies/topo/elements/shape/"] = ;
     }
   }
 }
