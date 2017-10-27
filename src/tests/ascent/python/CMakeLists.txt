@@ -46,7 +46,7 @@
 ####################################
 # Add Python Module Tests
 ####################################
-set(PYTHON_MODULE_TESTS t_python_ascent_smoke)
+set(PYTHON_MODULE_TESTS t_python_ascent_smoke t_python_ascent_render)
 
 message(STATUS "Adding ascent lib python interface unit tests")
 foreach(TEST ${PYTHON_MODULE_TESTS})
