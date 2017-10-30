@@ -330,6 +330,58 @@ AscentRuntime::CreatePipelines(const conduit::Node &pipelines)
 
 //-----------------------------------------------------------------------------
 void 
+AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
+                                    const std::string extract_name)
+{
+  std::string filter_name; 
+
+  if(!extract.has_path("type"))
+  {
+    ASCENT_ERROR("Extract must have a 'type'");
+  }
+ 
+  if(extract["type"].as_string() == "adios")
+  {
+    filter_name = "adios";
+
+  }
+  else
+  {
+    ASCENT_ERROR("Unrecognized extract type "<<extract["type"].as_string());
+  }
+ 
+  if(w.graph().has_filter(extract_name))
+  {
+    ASCENT_INFO("Duplicate extract name "<<extract_name
+                <<" original is being overwritted");
+  }
+
+  conduit::Node params = extract["params"];
+
+  w.graph().add_filter(filter_name,
+                       extract_name,           
+                       params);
+
+  //
+  // We can't connect the extract to the pipeline since
+  // we want to allow users to specify actions any any order 
+  //
+  std::string extract_source;
+  if(extract.has_path("pipeline"))
+  {
+    extract_source = extract["pipeline"].as_string();;
+  }
+  else
+  {
+    // this is the blueprint mesh 
+    extract_source = "source";
+  }
+  m_connections[extract_name] = extract_source;
+
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void 
 AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
                                  const std::string plot_name,
                                  bool composite)
@@ -402,6 +454,17 @@ AscentRuntime::CreatePlots(const conduit::Node &plots)
     conduit::Node plot = plots.child(i);
     bool composite = i == plots.number_of_children() - 1;
     ConvertPlotToFlow(plot, names[i], composite);
+  }
+}
+//-----------------------------------------------------------------------------
+void 
+AscentRuntime::CreateExtracts(const conduit::Node &extracts)
+{
+  std::vector<std::string> names = extracts.child_names(); 
+  for(int i = 0; i < extracts.number_of_children(); ++i)
+  {
+    conduit::Node extract = extracts.child(i);
+    ConvertExtractToFlow(extract, names[i]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -688,6 +751,11 @@ AscentRuntime::Execute(const conduit::Node &actions)
         if(action_name == "add_scenes")
         {
           CreateScenes(action["scenes"]);
+        }
+        
+        if(action_name == "add_extracts")
+        {
+          CreateExtracts(action["extracts"]);
         }
         
         else if( action_name == "execute")

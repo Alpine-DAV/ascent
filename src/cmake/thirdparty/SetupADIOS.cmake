@@ -42,75 +42,41 @@
 # 
 ###############################################################################
 
+###############################################################################
+#
+# Setup ADIOS
+#
+###############################################################################
 
-################################
-# Unit Tests
-################################
+# first Check for ADIOS_DIR
 
-################################
-# Core Ascent Unit Tests
-################################
-set(BASIC_TESTS t_ascent_smoke
-                t_ascent_empty_runtime
-                t_ascent_render_2d
-                t_ascent_render_3d
-                t_ascent_web
-                t_ascent_clip
-                t_ascent_contour
-                t_ascent_threshold
-                t_ascent_flow_runtime)
-
-set(MPI_TESTS  t_ascent_mpi_empty_runtime
-               t_ascent_mpi_render_2d
-               t_ascent_mpi_render_3d)
-
-
-# include the "ascent" pipeline
-if(VTKM_FOUND)
-   list(APPEND BASIC_TESTS t_ascent_ascent_runtime
-                           t_ascent_vtkh_data_adapter)
-   list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime)
+if(NOT ADIOS_DIR)
+    MESSAGE(FATAL_ERROR "ADIOS support needs explicit ADIOS_DIR")
 endif()
 
-# adios tests
-if(ADIOS_FOUND)
-   list(APPEND MPI_TESTS t_ascent_mpi_adios_extract)
+MESSAGE(STATUS "Looking for ADIOS using ADIOS_DIR = ${ADIOS_DIR}")
+
+# CMake's FindADIOS module uses the ADIOS_ROOT env var
+set(ADIOS_ROOT ${ADIOS_DIR})
+set(ENV{ADIOS_ROOT} ${ADIOS_ROOT})
+
+# Use CMake's FindADIOS module, which uses hdf5's compiler wrappers to extract
+# all the info about the hdf5 install
+include(${ADIOS_DIR}/etc/FindADIOS.cmake)
+
+# FindADIOS sets ADIOS_DIR to it's installed CMake info if it exists
+# we want to keep ADIOS_DIR as the root dir of the install to be 
+# consistent with other packages
+
+set(ADIOS_DIR ${ADIOS_ROOT} CACHE PATH "" FORCE)
+# not sure why we need to set this, but we do
+#set(ADIOS_FOUND TRUE CACHE PATH "" FORCE)
+
+if(NOT ADIOS_FOUND)
+    message(FATAL_ERROR "ADIOS_DIR is not a path to a valid ADIOS install")
 endif()
 
-
-################################
-# Add main tests
-################################
-message(STATUS "Adding ascent lib unit tests")
-foreach(TEST ${BASIC_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
-endforeach()
-
-################################
-# Add optional tests
-################################
-
-if(MPI_FOUND AND ENABLE_MPI)
-    message(STATUS "MPI enabled: Adding related unit tests")
-    foreach(TEST ${MPI_TESTS})
-        # this uses 2 procs
-        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON ascent_par) 
-    endforeach()
-else()
-    message(STATUS "MPI disabled: Skipping related tests")
-endif()
-
-if(PYTHON_FOUND AND ENABLE_PYTHON)
-    add_subdirectory("python")
-else()
-    message(STATUS "Python disabled: Skipping ascent python module tests")
-endif()
-
-
-if(FORTRAN_FOUND AND ENABLE_FORTRAN)
-     add_subdirectory("fortran")
-else()
-     message(STATUS "Fortran disabled: Skipping ascent fortran interface tests")
-endif()
-
+blt_register_library(NAME adios
+                     INCLUDES ${ADIOS_INCLUDE_DIRS}
+                     LIBRARIES ${ADIOS_LIBRARIES} )
 

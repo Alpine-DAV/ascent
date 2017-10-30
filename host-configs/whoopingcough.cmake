@@ -42,75 +42,83 @@
 # 
 ###############################################################################
 
+##################################
+# empty  host-config
+##################################
+# insert compiler name here
+##################################
 
-################################
-# Unit Tests
-################################
+#######
+# using [insert compiler name here] compiler spec
+#######
 
-################################
-# Core Ascent Unit Tests
-################################
-set(BASIC_TESTS t_ascent_smoke
-                t_ascent_empty_runtime
-                t_ascent_render_2d
-                t_ascent_render_3d
-                t_ascent_web
-                t_ascent_clip
-                t_ascent_contour
-                t_ascent_threshold
-                t_ascent_flow_runtime)
+# c compiler
+set(CMAKE_C_COMPILER "/usr/bin/mpicc" CACHE PATH "")
+set(C_COMPILE_FLAGS "-fPIC" CACHE PATH "")
 
-set(MPI_TESTS  t_ascent_mpi_empty_runtime
-               t_ascent_mpi_render_2d
-               t_ascent_mpi_render_3d)
+# cpp compiler
+set(CMAKE_CXX_COMPILER "/usr/bin/mpicxx" CACHE PATH "")
+set(CXX_COMPILE_FLAGS "-fPIC" CACHE PATH "")
 
+# fortran compiler (need for cloverleaf)
+set(CMAKE_Fortran_COMPILER  "/usr/bin/f95" CACHE PATH "")
 
-# include the "ascent" pipeline
-if(VTKM_FOUND)
-   list(APPEND BASIC_TESTS t_ascent_ascent_runtime
-                           t_ascent_vtkh_data_adapter)
-   list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime)
-endif()
+# OPENMP (optional: for proxy apps)
+set(ENABLE_OPENMP OFF CACHE PATH "")
 
-# adios tests
-if(ADIOS_FOUND)
-   list(APPEND MPI_TESTS t_ascent_mpi_adios_extract)
-endif()
+# MPI Support
+set(ENABLE_MPI  ON CACHE PATH "")
 
+set(MPI_C_COMPILER  "/usr/bin/mpicc" CACHE PATH "")
+set(MPI_C_COMPILE_FLAGS "-fPIC" CACHE PATH "")
 
-################################
-# Add main tests
-################################
-message(STATUS "Adding ascent lib unit tests")
-foreach(TEST ${BASIC_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
-endforeach()
+set(MPI_CXX_COMPILER "/usr/bin/mpicxx" CACHE PATH "")
+set(MPI_CXX_COMPILE_FLAGS "-fPIC" CACHE PATH "")
 
-################################
-# Add optional tests
-################################
+set(MPI_Fortran_COMPILER "/usr/bin/mpif90" CACHE PATH "")
 
-if(MPI_FOUND AND ENABLE_MPI)
-    message(STATUS "MPI enabled: Adding related unit tests")
-    foreach(TEST ${MPI_TESTS})
-        # this uses 2 procs
-        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON ascent_par) 
-    endforeach()
-else()
-    message(STATUS "MPI disabled: Skipping related tests")
-endif()
+set(MPIEXEC /usr/bin/mpirun CACHE PATH "")
 
-if(PYTHON_FOUND AND ENABLE_PYTHON)
-    add_subdirectory("python")
-else()
-    message(STATUS "Python disabled: Skipping ascent python module tests")
-endif()
+set(MPIEXEC_NUMPROC_FLAG -n CACHE PATH "")
+
+##Disable python
+set(ENABLE_PYTHON OFF)
 
 
-if(FORTRAN_FOUND AND ENABLE_FORTRAN)
-     add_subdirectory("fortran")
-else()
-     message(STATUS "Fortran disabled: Skipping ascent fortran interface tests")
-endif()
 
+# CUDA support
+#set(ENABLE_CUDA ON CACHE PATH "")
 
+# NO CUDA Support
+set(ENABLE_CUDA OFF CACHE PATH "")
+
+# conduit 
+set(CONDUIT_DIR "/home/pugmire/proj/alpine/conduit/install-debug" CACHE PATH "")
+
+# icet 
+set(ICET_DIR "/disk2TB/proj/alpine/icet/install" CACHE PATH "")
+
+#
+# vtkm
+#
+
+# tbb
+set(ASCENT_VTKM_USE_TBB OFF CACHE PATH "")
+#set(TBB_DIR "/usr/include" CACHE PATH "")
+
+# vtkm
+set(VTKM_DIR "/disk2TB/proj/alpine/vtkm/install" CACHE PATH "")
+
+# HDF5 support (optional)
+#
+# hdf5v
+set(HDF5_DIR "/apps/visit/thirdparty/visit/hdf5/1.8.14/linux-x86_64_gcc-5.4" CACHE PATH "")
+
+set(ADIOS_DIR "/apps/adios" CACHE PATH "")
+
+#SPHINX documentation building
+#set("SPHINX_EXECUTABLE" "/path/to/sphinx-build" CACHE PATH "")
+
+##################################
+# end boilerplate host-config
+##################################
