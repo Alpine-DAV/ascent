@@ -101,7 +101,7 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
 
     int num_domains = 0;
     bool has_ids = true;
-    bool missing_ids = false;
+    bool no_ids = true;
 
     // get the number of domains and check for id consistency
     num_domains = multi_dom.number_of_children();
@@ -109,9 +109,9 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
     for(int i = 0; i < num_domains; ++i)
     {
       const conduit::Node &dom = multi_dom.child(i);
-      if(dom.has_path("state/domain_id"))
+      if(dom.has_path("state/domain"))
       {
-        missing_ids = true; 
+        no_ids = false; 
       }
       else
       {
@@ -121,33 +121,33 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
 #ifdef PARALLEL
     int comm_size = vtkh::GetMPISize();
     int *has_ids_array = new int[comm_size];
-    int *missing_ids_array = new int[comm_size];
+    int *no_ids_array = new int[comm_size];
     int boolean = has_ids ? 1 : 0; 
     MPI_Allgather(&boolean, 1, MPI_INT, has_ids_array, 1, MPI_INT, vtkh::GetMPIComm());
-    boolean = missing_ids ? 1 : 0; 
-    MPI_Allgather(&boolean, 1, MPI_INT, missing_ids_array, 1, MPI_INT, vtkh::GetMPIComm());
+    boolean = no_ids ? 1 : 0; 
+    MPI_Allgather(&boolean, 1, MPI_INT, no_ids_array, 1, MPI_INT, vtkh::GetMPIComm());
 
     bool global_has_ids = true;
-    bool global_missing_ids = false;
+    bool global_no_ids = false;
     for(int i = 0; i < comm_size; ++i)
     {
       if(has_ids_array[i] == 0)
       {
         global_has_ids = false;
       }
-      if(missing_ids_array[i] == 1)
+      if(no_ids_array[i] == 1)
       {
-        global_missing_ids = true;
+        global_no_ids = true;
       }
     }
     has_ids = global_has_ids;
-    missing_ids = global_missing_ids;
+    no_ids = global_no_ids;
     delete[] has_ids_array;
-    delete[] missing_ids_array;
+    delete[] no_ids_array;
 #endif
       
-    bool consistent_ids = (has_ids && !missing_ids) || !has_ids;
-
+    bool consistent_ids = (has_ids || no_ids);
+     
     if(!consistent_ids)
     {
       ASCENT_ERROR("Inconsistent domain ids: all domains must either have an id "
@@ -171,9 +171,9 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
       vtkm::cont::DataSet *dset = VTKHDataAdapter::BlueprintToVTKmDataSet(dom,
                                                                           topo_name);
       int domain_id = domain_offset;
-      if(node.has_path("state/domain_id"))
+      if(node.has_path("state/domain"))
       {
-          domain_id = node["state/domain_id"].to_int();
+          domain_id = node["state/domain"].to_int();
       }
 #ifdef PARALLEL
       else
@@ -662,7 +662,6 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
                                         0,
                                         z_coords_handle,
                                         0)));
-    n_topo.print();
     int32 x_elems = n_topo["elements/dims/i"].as_int32(); 
     int32 y_elems = n_topo["elements/dims/j"].as_int32(); 
     if (ndims == 2)

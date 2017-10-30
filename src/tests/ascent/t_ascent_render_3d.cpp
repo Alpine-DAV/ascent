@@ -507,6 +507,82 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, render_3d_domain_overload)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with ascent support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D MPI "
+                      "Runtime test");
+
+        return;
+    }
+    
+
+    Node multi_dom;
+    Node &mesh1 = multi_dom.append();
+    Node &mesh2 = multi_dom.append();
+    //
+    // Create the data.
+    //
+    Node verify_info;
+    create_3d_example_dataset(mesh1,0,2);
+    create_3d_example_dataset(mesh2,1,2);
+    mesh1["state/domain"] = 0; 
+    mesh2["state/domain"] = 1; 
+    // There is a bug in conduit blueprint related to rectilinear 
+    // reenable this check after updating conduit 
+    // EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    conduit::blueprint::mesh::verify(multi_dom,verify_info);
+    verify_info.print();
+
+    // make sure the _output dir exists
+    string output_path = "";
+    output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_domain_overload");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+ 
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+    
+    actions.print();
+    
+    //
+    // Run Ascent
+    //
+  
+    Ascent ascent;
+
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(multi_dom);
+    ascent.execute(actions);
+    ascent.close();
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
 
 
 //-----------------------------------------------------------------------------

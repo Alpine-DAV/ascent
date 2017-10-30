@@ -197,6 +197,76 @@ TEST(ascent_data_adapter, vtkm_explicit_single_type_to_blueprint)
 
 
 //-----------------------------------------------------------------------------
+TEST(ascent_data_adapter, consistent_domain_ids_check)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+    
+    Node multi_dom; 
+    Node &mesh1 = multi_dom.append();
+    Node &mesh2 = multi_dom.append();
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              2,
+                                              2,
+                                              2,
+                                              mesh1);
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              2,
+                                              2,
+                                              2,
+                                              mesh2);
+    mesh1.remove("state");
+    bool consistent_ids = false;
+
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/params/field"] = "braid";
+ 
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+    
+    //
+    // Run Ascent
+    //
+    
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(multi_dom);
+    //
+    // Having inconsistent domain ids will throw an exception
+    //
+    try
+    {
+      ascent.execute(actions);
+      consistent_ids = true;
+    }
+    catch(const std::exception &e)
+    {
+      // do nothing 
+    }
+    ascent.close();
+    EXPECT_FALSE(consistent_ids);
+}
+
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
