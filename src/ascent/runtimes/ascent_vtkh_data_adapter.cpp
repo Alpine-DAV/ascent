@@ -662,6 +662,7 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
                                         0,
                                         z_coords_handle,
                                         0)));
+
     int32 x_elems = n_topo["elements/dims/i"].as_int32(); 
     int32 y_elems = n_topo["elements/dims/j"].as_int32(); 
     if (ndims == 2)
@@ -1228,17 +1229,16 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   }
 }
 
-conduit::Node*
-VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset)
+void 
+VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
+                                        conduit::Node &node)
 {
   //
   // with vtkm, we have no idea what the type is of anything inside
   // dataset, so we have to ask all fields, cell sets anc coordinate systems.
   //
-  conduit::Node *result = new conduit::Node(); 
   const int default_cell_set = 0; 
   int topo_dims;
-  conduit::Node &node = *result;
   
   VTKmTopologyToBlueprint(node, *dset);
 
@@ -1248,7 +1248,6 @@ VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset)
     vtkm::cont::Field field = dset->GetField(i);
     VTKmFieldToBlueprint(node, field);
   }
-  return result;
 }
 
 };

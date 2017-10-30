@@ -104,6 +104,7 @@ register_builtin()
     Workspace::register_filter_type<DefaultRender>();
     Workspace::register_filter_type<EnsureVTKH>();
     Workspace::register_filter_type<EnsureVTKM>();
+    Workspace::register_filter_type<EnsureBlueprint>();
 
     Workspace::register_filter_type<VTKHBounds>();
     Workspace::register_filter_type<VTKHUnionBounds>();

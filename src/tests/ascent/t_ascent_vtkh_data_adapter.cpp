@@ -89,12 +89,12 @@ TEST(ascent_data_adapter, vtkm_uniform_2d_to_blueprint)
     }
     vtkm::cont::testing::MakeTestDataSet maker; 
     vtkm::cont::DataSet ds = maker.Make2DUniformDataSet0(); 
-    conduit::Node *blueprint = VTKHDataAdapter::VTKmToBlueprintDataSet(&ds);
+    conduit::Node blueprint; 
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint);
     conduit::Node info;
-    bool success = conduit::blueprint::verify("mesh",*blueprint,info);
+    bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
     EXPECT_TRUE(success);
-    delete blueprint;
 }
 
 
@@ -114,12 +114,12 @@ TEST(ascent_data_adapter, vtkm_uniform_3d_to_blueprint)
     }
     vtkm::cont::testing::MakeTestDataSet maker; 
     vtkm::cont::DataSet ds = maker.Make3DUniformDataSet0(); 
-    conduit::Node *blueprint = VTKHDataAdapter::VTKmToBlueprintDataSet(&ds);
+    conduit::Node blueprint; 
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint);
     conduit::Node info;
-    bool success = conduit::blueprint::verify("mesh",*blueprint,info);
+    bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
     EXPECT_TRUE(success);
-    delete blueprint;
 }
 
 //-----------------------------------------------------------------------------
@@ -138,12 +138,12 @@ TEST(ascent_data_adapter, vtkm_rectilinear_3d_to_blueprint)
     }
     vtkm::cont::testing::MakeTestDataSet maker; 
     vtkm::cont::DataSet ds = maker.Make3DRectilinearDataSet0(); 
-    conduit::Node *blueprint = VTKHDataAdapter::VTKmToBlueprintDataSet(&ds);
+    conduit::Node blueprint; 
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint);
     conduit::Node info;
-    bool success = conduit::blueprint::verify("mesh",*blueprint,info);
+    bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
     EXPECT_TRUE(success);
-    delete blueprint;
 }
 
 
@@ -163,12 +163,12 @@ TEST(ascent_data_adapter, vtkm_rectilinear_2d_to_blueprint)
     }
     vtkm::cont::testing::MakeTestDataSet maker; 
     vtkm::cont::DataSet ds = maker.Make2DRectilinearDataSet0(); 
-    conduit::Node *blueprint = VTKHDataAdapter::VTKmToBlueprintDataSet(&ds);
+    conduit::Node blueprint; 
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint);
     conduit::Node info;
-    bool success = conduit::blueprint::verify("mesh",*blueprint,info);
+    bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
     EXPECT_TRUE(success);
-    delete blueprint;
 }
 
 //-----------------------------------------------------------------------------
@@ -187,12 +187,12 @@ TEST(ascent_data_adapter, vtkm_explicit_single_type_to_blueprint)
     }
     vtkm::cont::testing::MakeTestDataSet maker; 
     vtkm::cont::DataSet ds = maker.Make3DExplicitDataSetCowNose(); 
-    conduit::Node *blueprint = VTKHDataAdapter::VTKmToBlueprintDataSet(&ds);
+    conduit::Node blueprint;
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint);
     conduit::Node info;
-    bool success = conduit::blueprint::verify("mesh",*blueprint,info);
+    bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
     EXPECT_TRUE(success);
-    delete blueprint;
 }
 
 
