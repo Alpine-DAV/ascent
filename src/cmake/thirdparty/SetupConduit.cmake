@@ -86,7 +86,7 @@ if(PYTHON_FOUND)
                                     OUTPUT_STRIP_TRAILING_WHITESPACE)
             if(_FIND_CONDUIT_PYTHON_RESULT MATCHES 0)
                 # we will use this to make sure we can setup tests correctly 
-                set(EXTRA_PYTHON_MODULE_DIRS "${CONDUIT_DIR}/python-modules/" CACHE PATH "")
+                set(EXTRA_PYTHON_MODULE_DIRS "${CONDUIT_DIR}/python-modules/")
                 message(STATUS "FOUND conduit python module at: ${_FIND_CONDUIT_PYTHON_OUT}")
             else()
                 message(FATAL_ERROR
