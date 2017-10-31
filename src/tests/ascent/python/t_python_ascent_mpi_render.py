@@ -68,7 +68,6 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
         # if we don't have ascent, or mpi simply return
 
         info = ascent.about()
-        print info
         if info["runtimes/ascent/status"] != "enabled":
             print("ascent runtime not enabled, skipping mpi render test")
             return
@@ -77,7 +76,7 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
         obase = "tout_python_ascent_mpi_render_2d"
         ofile = obase + ".png"
         # clean up old results if they exist
-        if os.path.isfile(ofile):
+        if MPI.COMM_WORLD.rank == 0 and os.path.isfile(ofile):
             os.remove(ofile)
         
         # create example mesh
@@ -121,7 +120,6 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
         # if we don't have ascent, simply return
 
         info = ascent.about()
-        print info
         if info["runtimes/ascent/status"] != "enabled":
             print("ascent runtime not enabled, skipping mpi render test")
             return
@@ -129,20 +127,25 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
         obase = "tout_python_ascent_mpi_render_3d"
         ofile = obase + ".png"
         # clean up old results if they exist
-        if os.path.isfile(ofile):
+        if MPI.COMM_WORLD.rank == 0 and os.path.isfile(ofile):
             os.remove(ofile)
         
         
-        # create example mesh
+
+        # create example mesh using conduit blueprint
         n_mesh = conduit.Node()
         conduit.blueprint.mesh.examples.braid("uniform",
-                                              10,
-                                              10,
-                                              10,
+                                              20,
+                                              20,
+                                              20,
                                               n_mesh)
-
-
+        # shift data for rank > 1
+        x_origin = MPI.COMM_WORLD.rank * 40 - 10;
         
+        n_mesh["state/domain_id"] = MPI.COMM_WORLD.rank
+        n_mesh["coordsets/coords/origin/x"] = x_origin
+        print( n_mesh["coordsets/coords"] )
+        print( n_mesh["state"] )
 
         # open ascent
         a = Ascent()

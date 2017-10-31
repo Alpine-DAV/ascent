@@ -127,9 +127,9 @@ AscentRuntime::Initialize(const conduit::Node &options)
         ASCENT_ERROR("Missing Ascent::Open options missing MPI communicator (mpi_comm)");
     }
     
-    flow::Workspace::set_default_mpi_comm(options["mpi_comm"].as_int());
+    flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
    
-    MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].as_int());
+    MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
     vtkh::SetMPIComm(comm);
 #ifdef VTKM_CUDA
     //

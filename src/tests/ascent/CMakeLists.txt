@@ -88,7 +88,7 @@ if(MPI_FOUND AND ENABLE_MPI)
     message(STATUS "MPI enabled: Adding related unit tests")
     foreach(TEST ${MPI_TESTS})
         # this uses 2 procs
-        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON ascent_par) 
+        add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ascent_par) 
         set_target_properties( ${TEST} PROPERTIES COMPILE_FLAGS "-D PARALLEL")
     endforeach()
 else()
