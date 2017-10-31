@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -42,19 +42,69 @@
 # 
 ###############################################################################
 
-###############################################################################
-#
-# file: src/examples/CMakeLists.txt
-#
-###############################################################################
+"""
+ file: ascent_python_mpi_render_example.py
+ 
+ description:
+   Demonstrates using mpi-enabled ascent to render a pseudocolor plot.
+ 
 
-add_subdirectory(proxies/lulesh2.0.3)
-add_subdirectory(proxies/kripke)
-add_subdirectory(proxies/cloverleaf3d-ref)
-add_subdirectory(synthetic/noise)
+ example usage:
 
-# install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python
-        DESTINATION examples)
+ mpiexec -n 2 python ascent_python_mpi_render_example.py
 
+"""
+
+import conduit
+import conduit.blueprint
+import ascent.par
+
+from mpi4py import MPI
+
+
+# print details about ascent
+print(ascent.par.about())
+
+# open ascent
+a = ascent.par.Ascent()
+ascent_opts = conduit.Node()
+ascent_opts["mpi_comm"].set(MPI.COMM_WORLD.py2f())
+a.open(ascent_opts)
+
+
+# create example mesh using conduit blueprint
+n_mesh = conduit.Node()
+conduit.blueprint.mesh.examples.braid("uniform",
+                                      10,
+                                      10,
+                                      10,
+                                      n_mesh)
+# shift data for rank > 1
+x_origin = MPI.COMM_WORLD.rank * 20 - 10;
+n_mesh["coordsets/coords/origin/x"].set(x_origin)
+m_mesh["state/domain_id"] = MPI.COMM_WORLD.rank
+
+# publish mesh to ascent
+a.publish(n_mesh)
+
+# declare a scene to render the dataset
+scenes  = conduit.Node()
+scenes["s1/plots/p1/type"] = "pseudocolor"
+scenes["s1/plots/p1/params/field"] = "braid"
+# Set the output file name (ascent will add ".png")
+scenes["s1/image_prefix"] = "out_ascent_render_3d"
+
+# setup actions to 
+actions = conduit.Node()
+add_act =actions.append()
+add_act["action"] = "add_scenes"
+add_act["scenes"] = scenes
+
+actions.append()["action"] = "execute"
+
+# execute
+a.execute(actions)
+
+# close alpine
+a.close()
 

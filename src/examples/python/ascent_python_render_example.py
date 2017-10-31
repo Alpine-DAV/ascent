@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -42,19 +42,59 @@
 # 
 ###############################################################################
 
-###############################################################################
-#
-# file: src/examples/CMakeLists.txt
-#
-###############################################################################
 
-add_subdirectory(proxies/lulesh2.0.3)
-add_subdirectory(proxies/kripke)
-add_subdirectory(proxies/cloverleaf3d-ref)
-add_subdirectory(synthetic/noise)
+"""
+ file: ascent_python_render_example.py
 
-# install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python
-        DESTINATION examples)
+ description:
+   Demonstrates using ascent to render a pseudocolor plot.
+
+"""
+
+import conduit
+import conduit.blueprint
+import ascent
+
+# print details about ascent
+print(ascent.about())
+
+
+# open ascent
+a = ascent.Ascent()
+a.open()
+
+
+# create example mesh using conduit blueprint
+n_mesh = conduit.Node()
+conduit.blueprint.mesh.examples.braid("hexs",
+                                      10,
+                                      10,
+                                      10,
+                                      n_mesh)
+# publish mesh to ascent
+a.publish(n_mesh)
+
+# declare a scene to render the dataset
+scenes  = conduit.Node()
+scenes["s1/plots/p1/type"] = "pseudocolor"
+scenes["s1/plots/p1/params/field"] = "braid"
+# Set the output file name (ascent will add ".png")
+scenes["s1/image_prefix"] = "out_ascent_render_3d"
+
+# setup actions to 
+actions = conduit.Node()
+add_act =actions.append()
+add_act["action"] = "add_scenes"
+add_act["scenes"] = scenes
+
+actions.append()["action"] = "execute"
+
+# execute
+a.execute(actions)
+
+# close alpine
+a.close()
+
+
 
 
