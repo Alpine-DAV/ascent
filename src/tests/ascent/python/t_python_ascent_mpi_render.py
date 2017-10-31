@@ -57,8 +57,9 @@ import os
 import conduit
 import conduit.blueprint
 import ascent
-from ascent.par import Ascent
 
+from mpi4py import MPI
+from ascent.par import Ascent
 
 
 
@@ -94,7 +95,9 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
 
         # open ascent
         a = Ascent()
-        a.open()
+        ascent_opts = conduit.Node()
+        ascent_opts["mpi_comm"].set(MPI.COMM_WORLD.py2f())
+        a.open(ascent_opts)
 
         a.publish(n_mesh)
 
@@ -143,7 +146,9 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
 
         # open ascent
         a = Ascent()
-        a.open()
+        ascent_opts = conduit.Node()
+        ascent_opts["mpi_comm"].set(MPI.COMM_WORLD.py2f())
+        a.open(ascent_opts)
 
         a.publish(n_mesh)
 
