@@ -52,6 +52,7 @@
 import sys
 import unittest
 
+import conduit
 import ascent
 
 class Test_Ascent_Basic(unittest.TestCase):

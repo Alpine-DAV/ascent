@@ -47,9 +47,15 @@
 # Add Python Module Tests
 ####################################
 set(PYTHON_MODULE_TESTS t_python_ascent_smoke t_python_ascent_render)
+set(PYTHON_MODULE_MPI_TESTS t_python_ascent_mpi_render)
 
 message(STATUS "Adding ascent lib python interface unit tests")
 foreach(TEST ${PYTHON_MODULE_TESTS})
     add_python_test(${TEST})
 endforeach()
 
+if(MPI_FOUND)
+    foreach(TEST ${PYTHON_MODULE_MPI_TESTS})
+        add_python_mpi_test(${TEST} NUM_MPI_TASKS 2)
+    endforeach()
+endif()

@@ -42,37 +42,12 @@
 # 
 ###############################################################################
 
-# Specify the sources of the pure python and compiled portions of our module.
-SET(ascent_py_python_sources  py_src/__init__.py)
-#SET(ascent_py_headers        ascent_python.hpp)
-SET(ascent_py_cpp_sources     ascent_python.cpp)
+###############################################################################
+# file: __init__.py
+# Purpose: Main init for the ascent_par module.
+###############################################################################
+from .ascent_par_python import *
 
-
-# Setup our module
-PYTHON_ADD_HYBRID_MODULE(ascent_python
-                         python-modules
-                         ascent
-                         setup.py
-                         "${ascent_py_python_sources}"
-                         #${ascent_py_headers}
-                         ${ascent_py_cpp_sources})
-
-# link with the proper libs (beyond python)
-target_link_libraries(ascent_python ascent)
-
-
-# TODO: ADD SUPPORT FOR SUPPORT PYTHON_MODULE_INSTALL_PREFIX
-# install the capi header so other python modules can use it
-# support alt install dir for python module via PYTHON_MODULE_INSTALL_PREFIX
-# if(PYTHON_MODULE_INSTALL_PREFIX)
-#     install(FILES ${ascent_py_headers} DESTINATION ${PYTHON_MODULE_INSTALL_PREFIX}/ascent/)
-# else()
-#     install(FILES ${ascent_py_headers} DESTINATION python-modules/ascent/)
-# endif()
-
-if(MPI_FOUND)
-    add_subdirectory(par)
-endif()
 
 
 

@@ -57,15 +57,23 @@ import os
 import conduit
 import conduit.blueprint
 import ascent
+from ascent.par import Ascent
 
-class Test_Ascent_Render(unittest.TestCase):
-    def test_render_2d(self):
-        # if we don't have ascent, simply return
+
+
+
+class Test_Ascent_MPI_Render(unittest.TestCase):
+    def test_render_mpi_2d(self):
+        # if we don't have ascent, or mpi simply return
+
         info = ascent.about()
+        print info
         if info["runtimes/ascent/status"] != "enabled":
+            print("ascent runtime not enabled, skipping mpi render test")
             return
 
-        obase = "tout_python_ascent_render_2d"
+
+        obase = "tout_python_ascent_mpi_render_2d"
         ofile = obase + ".png"
         # clean up old results if they exist
         if os.path.isfile(ofile):
@@ -73,14 +81,19 @@ class Test_Ascent_Render(unittest.TestCase):
         
         # create example mesh
         n_mesh = conduit.Node()
-        conduit.blueprint.mesh.examples.braid("quads",
+        conduit.blueprint.mesh.examples.braid("uniform",
                                               10,
                                               10,
                                               0,
                                               n_mesh)
 
+        # shift x by?
+        
+        #if
+        
+
         # open ascent
-        a = ascent.Ascent()
+        a = Ascent()
         a.open()
 
         a.publish(n_mesh)
@@ -101,13 +114,16 @@ class Test_Ascent_Render(unittest.TestCase):
         a.close()
         self.assertTrue(os.path.isfile(ofile))
         
-    def test_render_3d(self):
+    def test_render_mpi_3d(self):
         # if we don't have ascent, simply return
+
         info = ascent.about()
+        print info
         if info["runtimes/ascent/status"] != "enabled":
+            print("ascent runtime not enabled, skipping mpi render test")
             return
-        
-        obase = "tout_python_ascent_render_3d"
+
+        obase = "tout_python_ascent_mpi_render_3d"
         ofile = obase + ".png"
         # clean up old results if they exist
         if os.path.isfile(ofile):
@@ -116,14 +132,17 @@ class Test_Ascent_Render(unittest.TestCase):
         
         # create example mesh
         n_mesh = conduit.Node()
-        conduit.blueprint.mesh.examples.braid("hexs",
+        conduit.blueprint.mesh.examples.braid("uniform",
                                               10,
                                               10,
                                               10,
                                               n_mesh)
 
+
+        
+
         # open ascent
-        a = ascent.Ascent()
+        a = Ascent()
         a.open()
 
         a.publish(n_mesh)
