@@ -107,12 +107,12 @@ endfunction()
 ##------------------------------------------------------------------------------
 ## - Builds and adds a test that uses gtest and mpi
 ##
-## add_cpp_mpi_test( TEST test NUM_PROCS 2 DEPENDS_ON dep1 dep2... )
+## add_cpp_mpi_test( TEST test NUM_MPI_TASKS 2 DEPENDS_ON dep1 dep2... )
 ##------------------------------------------------------------------------------
 function(add_cpp_mpi_test)
 
     set(options)
-    set(singleValueArgs TEST NUM_PROCS)
+    set(singleValueArgs TEST NUM_MPI_TASKS)
     set(multiValueArgs DEPENDS_ON)
 
     # parse our arguments
@@ -131,7 +131,7 @@ function(add_cpp_mpi_test)
                         
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${arg_TEST}
-                  NUM_PROCS ${arg_NUM_PROCS})
+                  NUM_MPI_TASKS ${arg_NUM_MPI_TASKS})
 
 endfunction()
 
@@ -142,9 +142,11 @@ endfunction()
 ## add_python_test( TEST test)
 ##------------------------------------------------------------------------------
 function(add_python_test TEST)
+            
     message(STATUS " [*] Adding Python-based Unit Test: ${TEST}")
-    add_test(NAME ${TEST} COMMAND 
-             ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
+    add_test( NAME ${TEST}
+              COMMAND ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
+
     # make sure python can pick up the modules we built
     set(PYTHON_TEST_PATH "${CMAKE_BINARY_DIR}/python-modules/:${CMAKE_CURRENT_SOURCE_DIR}")
     if(EXTRA_PYTHON_MODULE_DIRS)
@@ -152,6 +154,44 @@ function(add_python_test TEST)
     endif()
     set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
 endfunction(add_python_test)
+
+
+##------------------------------------------------------------------------------
+## - Builds and adds a test that uses gtest and mpi
+##
+## add_python_mpi_test( TEST test NUM_MPI_TASKS 2 )
+##------------------------------------------------------------------------------
+function(add_python_mpi_test TEST)
+
+    set(options)
+    set(singleValueArgs NUM_MPI_TASKS)
+
+    # parse our arguments
+    cmake_parse_arguments(arg
+                         "${options}" 
+                         "${singleValueArgs}" 
+                         "${multiValueArgs}" ${ARGN} )
+
+    message(STATUS " [*] Adding Python-based MPI Unit Test: ${TEST}")
+    set(test_command ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
+
+    # Handle mpi
+    if ( ${arg_NUM_MPI_TASKS} )
+          set(test_command ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${arg_NUM_MPI_TASKS} ${test_command} )
+    endif()
+
+    add_test(NAME ${TEST}
+             COMMAND ${test_command} )
+
+    # make sure python can pick up the modules we built
+    set(PYTHON_TEST_PATH "${CMAKE_BINARY_DIR}/python-modules/:${CMAKE_CURRENT_SOURCE_DIR}")
+    if(EXTRA_PYTHON_MODULE_DIRS)
+        set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}:${PYTHON_TEST_PATH}")
+    endif()
+    set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+
+endfunction()
+
 
 
 ##------------------------------------------------------------------------------

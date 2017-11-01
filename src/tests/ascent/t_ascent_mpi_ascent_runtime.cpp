@@ -151,6 +151,16 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_mpi_runtime, test_error_for_mpi_vs_non_mpi)
+{
+    Ascent ascent;
+    Node ascent_opts;
+    // we throw an error if an mpi_comm is NO provided to a mpi ver of ascent
+    EXPECT_THROW(ascent.open(),conduit::Error);
+}
+
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;

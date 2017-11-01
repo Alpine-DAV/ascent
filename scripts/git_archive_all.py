@@ -27,7 +27,23 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import logging
-from os import extsep, path, readlink, curdir
+
+########################################
+# 2017-09-09 cyrush: 
+# fix for readlink issue on windows
+########################################
+# old:
+#from os import extsep, path, readlink, curdir
+# new:
+from os import extsep, path, curdir
+import platform
+if platform.system() != "Windows":
+    from os import readlink
+else:
+    def readlink(path):
+        return path
+########################################
+
 from subprocess import CalledProcessError, Popen, PIPE
 import sys
 import tarfile
@@ -35,7 +51,6 @@ from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 import re
 
 __version__ = "1.16.4"
-
 
 class GitArchiver(object):
     """

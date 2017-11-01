@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -43,18 +43,11 @@
 ###############################################################################
 
 ###############################################################################
-#
-# file: src/examples/CMakeLists.txt
-#
+# file: __init__.py
+# Purpose: Main init for the ascent_mpi module.
 ###############################################################################
+from ascent_mpi import *
 
-add_subdirectory(proxies/lulesh2.0.3)
-add_subdirectory(proxies/kripke)
-add_subdirectory(proxies/cloverleaf3d-ref)
-add_subdirectory(synthetic/noise)
 
-# install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python
-        DESTINATION examples)
 
 

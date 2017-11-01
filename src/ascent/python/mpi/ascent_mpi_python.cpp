@@ -76,7 +76,7 @@
 //---------------------------------------------------------------------------//
 #include "conduit.hpp"
 #include "ascent.hpp"
-#include "ascent_python_exports.h"
+#include "ascent_mpi_python_exports.h"
 
 // conduit python module capi header
 #include "conduit_python.hpp"
@@ -183,7 +183,7 @@ PyInt_AsLong(PyObject *o)
 
 
 //---------------------------------------------------------------------------//
-struct PyAscent_Ascent
+struct PyAscent_MPI_Ascent
 {
     PyObject_HEAD
     Ascent *ascent; // NoteIterator is light weight, we can deal with copies
@@ -192,11 +192,11 @@ struct PyAscent_Ascent
 
 //---------------------------------------------------------------------------//
 static PyObject * 
-PyAscent_Ascent_new(PyTypeObject *type,
+PyAscent_MPI_Ascent_new(PyTypeObject *type,
                         PyObject*, // args -- unused
                         PyObject*) // kwds -- unused
 {
-    PyAscent_Ascent *self = (PyAscent_Ascent*)type->tp_alloc(type, 0);
+    PyAscent_MPI_Ascent *self = (PyAscent_MPI_Ascent*)type->tp_alloc(type, 0);
 
     if (self)
     {
@@ -208,7 +208,7 @@ PyAscent_Ascent_new(PyTypeObject *type,
 
 //---------------------------------------------------------------------------//
 static void
-PyAscent_Ascent_dealloc(PyAscent_Ascent *self)
+PyAscent_MPI_Ascent_dealloc(PyAscent_MPI_Ascent *self)
 {
     if(self->ascent != NULL)
     {
@@ -221,7 +221,7 @@ PyAscent_Ascent_dealloc(PyAscent_Ascent *self)
 
 //---------------------------------------------------------------------------//
 static int
-PyAscent_Ascent_init(PyAscent_Ascent *self,
+PyAscent_MPI_Ascent_init(PyAscent_MPI_Ascent *self,
                          PyObject *,// args -- unused
                          PyObject *) // kwds -- unused
 {
@@ -233,7 +233,7 @@ PyAscent_Ascent_init(PyAscent_Ascent *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyAscent_Ascent_open(PyAscent_Ascent *self,
+PyAscent_MPI_Ascent_open(PyAscent_MPI_Ascent *self,
                          PyObject *args,
                          PyObject *kwargs)
 {
@@ -280,7 +280,7 @@ PyAscent_Ascent_open(PyAscent_Ascent *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyAscent_Ascent_publish(PyAscent_Ascent *self,
+PyAscent_MPI_Ascent_publish(PyAscent_MPI_Ascent *self,
                             PyObject *args,
                             PyObject *kwargs)
 {
@@ -316,7 +316,7 @@ PyAscent_Ascent_publish(PyAscent_Ascent *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyAscent_Ascent_execute(PyAscent_Ascent *self,
+PyAscent_MPI_Ascent_execute(PyAscent_MPI_Ascent *self,
                             PyObject *args,
                             PyObject *kwargs)
 {
@@ -352,7 +352,7 @@ PyAscent_Ascent_execute(PyAscent_Ascent *self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyAscent_Ascent_close(PyAscent_Ascent *self)
+PyAscent_MPI_Ascent_close(PyAscent_MPI_Ascent *self)
 {
     self->ascent->close();
     Py_RETURN_NONE;
@@ -360,7 +360,7 @@ PyAscent_Ascent_close(PyAscent_Ascent *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyAscent_Ascent_str(PyAscent_Ascent *self)
+PyAscent_MPI_Ascent_str(PyAscent_MPI_Ascent *self)
 {
     return (Py_BuildValue("s", "{Ascent}"));
 }
@@ -368,25 +368,25 @@ PyAscent_Ascent_str(PyAscent_Ascent *self)
 //----------------------------------------------------------------------------//
 // Ascent methods table
 //----------------------------------------------------------------------------//
-static PyMethodDef PyAscent_Ascent_METHODS[] = {
+static PyMethodDef PyAscent_MPI_Ascent_METHODS[] = {
     //-----------------------------------------------------------------------//
     {"open",
-     (PyCFunction)PyAscent_Ascent_open,
+     (PyCFunction)PyAscent_MPI_Ascent_open,
      METH_VARARGS | METH_KEYWORDS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"publish",
-     (PyCFunction)PyAscent_Ascent_publish,
+     (PyCFunction)PyAscent_MPI_Ascent_publish,
      METH_VARARGS | METH_KEYWORDS,
      "{todo}"},
      //-----------------------------------------------------------------------//
      {"execute",
-      (PyCFunction)PyAscent_Ascent_execute,
+      (PyCFunction)PyAscent_MPI_Ascent_execute,
      METH_VARARGS | METH_KEYWORDS,
       "{todo}"},
     //-----------------------------------------------------------------------//
     {"close",
-     (PyCFunction)PyAscent_Ascent_close, 
+     (PyCFunction)PyAscent_MPI_Ascent_close, 
      METH_NOARGS,
      "{todo}"}, 
     //-----------------------------------------------------------------------//
@@ -396,12 +396,12 @@ static PyMethodDef PyAscent_Ascent_METHODS[] = {
 };
 
 //---------------------------------------------------------------------------//
-static PyTypeObject PyAscent_Ascent_TYPE = {
+static PyTypeObject PyAscent_MPI_Ascent_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Ascent",
-   sizeof(PyAscent_Ascent),  /* tp_basicsize */
+   sizeof(PyAscent_MPI_Ascent),  /* tp_basicsize */
    0, /* tp_itemsize */
-   (destructor)PyAscent_Ascent_dealloc,   /* tp_dealloc */
+   (destructor)PyAscent_MPI_Ascent_dealloc,   /* tp_dealloc */
    0, /* tp_print */
    0, /* tp_getattr */
    0, /* tp_setattr */
@@ -412,7 +412,7 @@ static PyTypeObject PyAscent_Ascent_TYPE = {
    0, /* as_mapping */
    0, /* hash */
    0, /* call */
-   (reprfunc)PyAscent_Ascent_str,                         /* str */
+   (reprfunc)PyAscent_MPI_Ascent_str,                         /* str */
    0, /* getattro */
    0, /* setattro */
    0, /* asbuffer */
@@ -424,7 +424,7 @@ static PyTypeObject PyAscent_Ascent_TYPE = {
    0, /* tp_weaklistoffset */
    0, /* iter */
    0, /* iternext */
-   PyAscent_Ascent_METHODS, /* METHODS */
+   PyAscent_MPI_Ascent_METHODS, /* METHODS */
    0, /* MEMBERS */
    0, /* get/set */
    0, /* tp_base */
@@ -432,9 +432,9 @@ static PyTypeObject PyAscent_Ascent_TYPE = {
    0, /* descr_get */
    0, /* gescr_set */
    0, /* dictoffset */
-   (initproc)PyAscent_Ascent_init,
+   (initproc)PyAscent_MPI_Ascent_init,
    0, /* alloc */
-   PyAscent_Ascent_new,   /* new */
+   PyAscent_MPI_Ascent_new,   /* new */
    0, /* tp_free */
    0, /* tp_is_gc */
    0, /* tp_bases */
@@ -452,7 +452,7 @@ static PyTypeObject PyAscent_Ascent_TYPE = {
 // ascent::about
 //---------------------------------------------------------------------------//
 static PyObject *
-PyAscent_about()
+PyAscent_MPI_about()
 {
     //create and return a node with the result of about
     PyObject *py_node_res = PyConduit_Node_python_create();
@@ -464,11 +464,11 @@ PyAscent_about()
 //---------------------------------------------------------------------------//
 // Python Module Method Defs
 //---------------------------------------------------------------------------//
-static PyMethodDef ascent_python_funcs[] =
+static PyMethodDef ascent_mpi_python_funcs[] =
 {
     //-----------------------------------------------------------------------//
     {"about",
-     (PyCFunction)PyAscent_about,
+     (PyCFunction)PyAscent_MPI_about,
       METH_NOARGS,
       NULL},
     //-----------------------------------------------------------------------//
@@ -503,7 +503,7 @@ static struct module_state _state;
 #if defined(IS_PY3K)
 //---------------------------------------------------------------------------//
 static int
-ascent_python_traverse(PyObject *m, visitproc visit, void *arg)
+ascent_mpi_python_traverse(PyObject *m, visitproc visit, void *arg)
 {
     Py_VISIT(GETSTATE(m)->error);
     return 0;
@@ -511,7 +511,7 @@ ascent_python_traverse(PyObject *m, visitproc visit, void *arg)
 
 //---------------------------------------------------------------------------//
 static int 
-ascent_python_clear(PyObject *m)
+ascent_mpi_python_clear(PyObject *m)
 {
     Py_CLEAR(GETSTATE(m)->error);
     return 0;
@@ -521,13 +521,13 @@ ascent_python_clear(PyObject *m)
 static struct PyModuleDef ascent_python_module_def = 
 {
         PyModuleDef_HEAD_INIT,
-        "ascent_python",
+        "ascent_mpi_python",
         NULL,
         sizeof(struct module_state),
-        ascent_python_funcs,
+        ascent_mpi_python_funcs,
         NULL,
-        ascent_python_traverse,
-        ascent_python_clear,
+        ascent_mpi_python_traverse,
+        ascent_mpi_python_clear,
         NULL
 };
 
@@ -552,9 +552,9 @@ static struct PyModuleDef ascent_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *ASCENT_PYTHON_API PyInit_ascent_python(void)
+PyObject *ASCENT_PAR_PYTHON_API PyInit_ascent_mpi_python(void)
 #else
-void ASCENT_PYTHON_API initascent_python(void)
+void ASCENT_PAR_PYTHON_API initascent_mpi_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    
@@ -565,8 +565,8 @@ void ASCENT_PYTHON_API initascent_python(void)
 #if defined(IS_PY3K)
     PyObject *py_module = PyModule_Create(&ascent_python_module_def);
 #else
-    PyObject *py_module = Py_InitModule((char*)"ascent_python",
-                                             ascent_python_funcs);
+    PyObject *py_module = Py_InitModule((char*)"ascent_mpi_python",
+                                             ascent_mpi_python_funcs);
 #endif
 
 
@@ -577,7 +577,7 @@ void ASCENT_PYTHON_API initascent_python(void)
 
     struct module_state *st = GETSTATE(py_module);
     
-    st->error = PyErr_NewException((char*)"ascent_python.Error",
+    st->error = PyErr_NewException((char*)"ascent_mpi_python.Error",
                                    NULL,
                                    NULL);
     if (st->error == NULL)
@@ -596,7 +596,7 @@ void ASCENT_PYTHON_API initascent_python(void)
     // init our custom types
     //-----------------------------------------------------------------------//
 
-    if (PyType_Ready(&PyAscent_Ascent_TYPE) < 0)
+    if (PyType_Ready(&PyAscent_MPI_Ascent_TYPE) < 0)
     {
         PY_MODULE_INIT_RETURN_ERROR;
     }
@@ -604,10 +604,10 @@ void ASCENT_PYTHON_API initascent_python(void)
     // add DataType
     //-----------------------------------------------------------------------//
     
-    Py_INCREF(&PyAscent_Ascent_TYPE);
+    Py_INCREF(&PyAscent_MPI_Ascent_TYPE);
     PyModule_AddObject(py_module,
                        "Ascent",
-                       (PyObject*)&PyAscent_Ascent_TYPE);
+                       (PyObject*)&PyAscent_MPI_Ascent_TYPE);
 
 
 #if defined(IS_PY3K)
