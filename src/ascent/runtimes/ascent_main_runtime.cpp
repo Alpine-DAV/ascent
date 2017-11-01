@@ -168,6 +168,16 @@ AscentRuntime::Initialize(const conduit::Node &options)
         ASCENT_ERROR("VTKm GPUs is enabled but none found");
     }
 #endif
+#else  // non mpi version
+    if(options.has_child("mpi_comm"))
+    {
+        // error if user tries to use mpi, but the version of ascent
+        // the loaded version is actually the non-mpi version.
+        ASCENT_ERROR("Ascent::Open MPI communicator (mpi_comm) passed to "
+                     "non-mpi ascent.\n Are you linking and loading the "
+                     "correct version of ascent?");
+    }
+    
 #endif
 
     m_runtime_options = options;

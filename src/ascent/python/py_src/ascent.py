@@ -42,37 +42,31 @@
 # 
 ###############################################################################
 
-# Specify the sources of the pure python and compiled portions of our module.
-SET(ascent_py_python_sources  py_src/__init__.py py_src/ascent.py )
-#SET(ascent_py_headers        ascent_python.hpp)
-SET(ascent_py_cpp_sources     ascent_python.cpp)
+###############################################################################
+# file: ascent_par.py
+# Purpose: Lazy loads the (non-mpi) ascent interface
+# 
+#  We use lazy loading b/c the aline and alpine_par libraries provide the 
+#  same symbols, and without this, on some platforms (OSX), importing
+#  ascent_python before ascent_par_python prevents us from getting the mpi 
+#  version.
+#
+###############################################################################
 
 
-# Setup our module
-PYTHON_ADD_HYBRID_MODULE(ascent_python
-                         python-modules
-                         ascent
-                         setup.py
-                         "${ascent_py_python_sources}"
-                         #${ascent_py_headers}
-                         ${ascent_py_cpp_sources})
-
-# link with the proper libs (beyond python)
-target_link_libraries(ascent_python ascent)
+def about():
+    from .ascent_python import about as ascent_about
+    return ascent_about()
 
 
-# TODO: ADD SUPPORT FOR SUPPORT PYTHON_MODULE_INSTALL_PREFIX
-# install the capi header so other python modules can use it
-# support alt install dir for python module via PYTHON_MODULE_INSTALL_PREFIX
-# if(PYTHON_MODULE_INSTALL_PREFIX)
-#     install(FILES ${ascent_py_headers} DESTINATION ${PYTHON_MODULE_INSTALL_PREFIX}/ascent/)
-# else()
-#     install(FILES ${ascent_py_headers} DESTINATION python-modules/ascent/)
-# endif()
+def Ascent():
+    from .ascent_python import Ascent as ascent_obj
+    return ascent_obj()
+    
 
-if(MPI_FOUND)
-    add_subdirectory(mpi)
-endif()
+
+
+
 
 
 

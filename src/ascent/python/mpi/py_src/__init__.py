@@ -44,9 +44,9 @@
 
 ###############################################################################
 # file: __init__.py
-# Purpose: Main init for the ascent_par module.
+# Purpose: Main init for the ascent_mpi module.
 ###############################################################################
-from .ascent_par_python import *
+from ascent_mpi import *
 
 
 

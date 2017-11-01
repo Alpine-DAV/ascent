@@ -46,7 +46,5 @@
 # file: __init__.py
 # Purpose: Main init for the ascent module.
 ###############################################################################
-from .ascent_python import *
-
-
+from ascent import *
 

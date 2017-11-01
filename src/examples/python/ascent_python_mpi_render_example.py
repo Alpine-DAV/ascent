@@ -57,16 +57,16 @@
 
 import conduit
 import conduit.blueprint
-import ascent.par
+import ascent.mpi
 
 from mpi4py import MPI
 
 
 # print details about ascent
-print(ascent.par.about())
+print(ascent.mpi.about())
 
 # open ascent
-a = ascent.par.Ascent()
+a = ascent.mpi.Ascent()
 ascent_opts = conduit.Node()
 ascent_opts["mpi_comm"].set(MPI.COMM_WORLD.py2f())
 a.open(ascent_opts)
@@ -75,14 +75,17 @@ a.open(ascent_opts)
 # create example mesh using conduit blueprint
 n_mesh = conduit.Node()
 conduit.blueprint.mesh.examples.braid("uniform",
-                                      10,
-                                      10,
-                                      10,
+                                      30,
+                                      30,
+                                      30,
                                       n_mesh)
 # shift data for rank > 1
 x_origin = MPI.COMM_WORLD.rank * 20 - 10;
-n_mesh["coordsets/coords/origin/x"].set(x_origin)
-m_mesh["state/domain_id"] = MPI.COMM_WORLD.rank
+n_mesh["coordsets/coords/origin/x"] = x_origin
+# provide proper domain id
+n_mesh["state/domain_id"] = MPI.COMM_WORLD.rank
+# overwrite example field with domain id
+n_mesh["fields/braid/values"][:] = MPI.COMM_WORLD.rank
 
 # publish mesh to ascent
 a.publish(n_mesh)
@@ -92,7 +95,7 @@ scenes  = conduit.Node()
 scenes["s1/plots/p1/type"] = "pseudocolor"
 scenes["s1/plots/p1/params/field"] = "braid"
 # Set the output file name (ascent will add ".png")
-scenes["s1/image_prefix"] = "out_ascent_render_3d"
+scenes["s1/image_prefix"] = "out_ascent_render_mpi_3d"
 
 # setup actions to 
 actions = conduit.Node()

@@ -56,18 +56,16 @@ import os
 
 import conduit
 import conduit.blueprint
-import ascent
+import ascent.mpi
 
 from mpi4py import MPI
-from ascent.par import Ascent
-
 
 
 class Test_Ascent_MPI_Render(unittest.TestCase):
     def test_render_mpi_2d(self):
         # if we don't have ascent, or mpi simply return
 
-        info = ascent.about()
+        info = ascent.mpi.about()
         if info["runtimes/ascent/status"] != "enabled":
             print("ascent runtime not enabled, skipping mpi render test")
             return
@@ -79,21 +77,23 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
         if MPI.COMM_WORLD.rank == 0 and os.path.isfile(ofile):
             os.remove(ofile)
         
-        # create example mesh
+        # create example mesh using conduit blueprint
         n_mesh = conduit.Node()
         conduit.blueprint.mesh.examples.braid("uniform",
                                               10,
                                               10,
                                               0,
                                               n_mesh)
-
-        # shift x by?
+        # shift data for rank > 1
+        x_origin = MPI.COMM_WORLD.rank * 20 - 10;
         
-        #if
+        n_mesh["state/domain_id"] = MPI.COMM_WORLD.rank
+        n_mesh["coordsets/coords/origin/x"] = x_origin
+        n_mesh["fields/braid/values"][:] = MPI.COMM_WORLD.rank
         
 
         # open ascent
-        a = Ascent()
+        a = ascent.mpi.Ascent()
         ascent_opts = conduit.Node()
         ascent_opts["mpi_comm"].set(MPI.COMM_WORLD.py2f())
         a.open(ascent_opts)
@@ -114,12 +114,17 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
 
         a.execute(actions)
         a.close()
+        
+        # use barrier to avoid problems
+        # some ranks may finish before file is written
+        MPI.COMM_WORLD.Barrier()
         self.assertTrue(os.path.isfile(ofile))
+
         
     def test_render_mpi_3d(self):
         # if we don't have ascent, simply return
 
-        info = ascent.about()
+        info = ascent.mpi.about()
         if info["runtimes/ascent/status"] != "enabled":
             print("ascent runtime not enabled, skipping mpi render test")
             return
@@ -130,25 +135,24 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
         if MPI.COMM_WORLD.rank == 0 and os.path.isfile(ofile):
             os.remove(ofile)
         
-        
+    
 
         # create example mesh using conduit blueprint
         n_mesh = conduit.Node()
         conduit.blueprint.mesh.examples.braid("uniform",
-                                              20,
-                                              20,
-                                              20,
+                                              10,
+                                              10,
+                                              10,
                                               n_mesh)
         # shift data for rank > 1
-        x_origin = MPI.COMM_WORLD.rank * 40 - 10;
+        x_origin = MPI.COMM_WORLD.rank * 20 - 10;
         
         n_mesh["state/domain_id"] = MPI.COMM_WORLD.rank
         n_mesh["coordsets/coords/origin/x"] = x_origin
-        print( n_mesh["coordsets/coords"] )
-        print( n_mesh["state"] )
-
+        n_mesh["fields/braid/values"][:] = MPI.COMM_WORLD.rank
+        
         # open ascent
-        a = Ascent()
+        a = ascent.mpi.Ascent()
         ascent_opts = conduit.Node()
         ascent_opts["mpi_comm"].set(MPI.COMM_WORLD.py2f())
         a.open(ascent_opts)
@@ -169,6 +173,10 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
 
         a.execute(actions)
         a.close()
+
+        # use barrier to avoid problems
+        # some ranks may finish before file is written
+        MPI.COMM_WORLD.Barrier()
         self.assertTrue(os.path.isfile(ofile))
 
 

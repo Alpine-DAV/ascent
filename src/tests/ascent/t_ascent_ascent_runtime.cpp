@@ -121,3 +121,14 @@ TEST(ascent_pipeline, test_render_2d_main_pipeline)
     // // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_pipeline, test_error_for_mpi_vs_non_mpi)
+{
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["mpi_comm"] = 1;
+    // we throw an error if an mpi_comm is provided to a non-mpi ver of ascent
+    EXPECT_THROW(ascent.open(ascent_opts),conduit::Error);
+}
