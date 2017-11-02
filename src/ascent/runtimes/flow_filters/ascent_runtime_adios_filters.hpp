@@ -96,14 +96,13 @@ public:
 
 private:
     bool UniformMeshSchema(const conduit::Node &node);
+    
     bool RectilinearMeshSchema(const conduit::Node &node);
     
     bool FieldVariable(const std::string &fieldName, const conduit::Node &fieldNode);
 
-    bool CalcRectilinearMeshInfoOLD(const conduit::Node &node,
-                                 std::vector<std::vector<double>> &globalCoords);
     bool CalcRectilinearMeshInfo(const conduit::Node &node,
-                                 std::vector<std::vector<double>> &globalCoords);    
+                                 std::vector<std::vector<double>> &globalCoords);
 
     int rank, numRanks;
 #ifdef PARALLEL
@@ -119,7 +118,6 @@ private:
 
     //var dimensions for this rank:
     std::vector<int64_t> globalDims, localDims, offset;
-    //std::string globalDimensions, localDimensions, offsets;
 
     template <typename T>
     std::string dimsToStr(const std::vector<T> &d, bool pointCentered=true)

@@ -89,6 +89,8 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     Node data, verify_info;
     create_3d_example_dataset(data,par_rank,par_size);
     
+    
+    
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
     
@@ -99,10 +101,6 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     conduit::Node extracts;
     extracts["e1/type"]  = "adios";
     // populate some param examples
-    extracts["e1/params/important_param"] = "dave";
-    extracts["e1/params/int"] = 1;
-    extracts["e1/params/float"] = 1.f;
-    extracts["e1/params/double"] = 1.;
     extracts["e1/params/transport"] = "file";
     extracts["e1/params/filename"] = "file.bp";
     

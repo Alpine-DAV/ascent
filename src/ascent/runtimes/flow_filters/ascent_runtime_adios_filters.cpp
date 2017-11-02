@@ -192,45 +192,44 @@ ADIOS::declare_interface(Node &i)
 bool
 ADIOS::verify_params(const conduit::Node &params,
                      conduit::Node &info)
-{
-    cout<<__FILE__<<" "<<__LINE__<<" ****************************** ADIOS::verify_params"<<endl;
-    cout<<"Params: "<<endl;
-    //params.print();
-    cout<<"info: "<<endl;
-    info.print();
-    
+{    
     bool res = true;
-    
-    if( !params.has_child("important_param") ) 
-    {
-        info["errors"].append() = "missing required entry 'important_param'";
-        res = false;
-    }
 
-    if (!params.has_child("transport"))
+    if (!params.has_child("transport") ||
+        !params["transport"].dtype().is_string())
     {
         info["errors"].append() = "missing required entry 'transport'";
         res = false;
     }
-    else
-        transportType = params["transport"].as_string();
 
-    if (!params.has_child("filename"))
+
+    if (!params.has_child("filename") || 
+        !params["transport"].dtype().is_string() )
     {
         info["errors"].append() = "missing required entry 'filename'";
         res = false;
     }
-    else
-        fileName = params["filename"].as_string();
     
     return res;
 }
+
 //-----------------------------------------------------------------------------
 void 
 ADIOS::execute()
 {
-    cout<<__FILE__<<" "<<__LINE__<<" ****************************** ADIOS::execute"<<endl;
+    ASCENT_INFO("execute");
 
+    if(!input("in").check_type<Node>())
+    {
+        // error
+        ASCENT_ERROR("adios filter requires a conduit::Node input");
+    }
+
+    transportType = params()["transport"].as_string();
+    fileName      = params()["filename"].as_string();
+
+    // get params
+    
     if (transportType == "file")
     {
         adios_init_noxml(mpi_comm);
@@ -239,21 +238,15 @@ ADIOS::execute()
         adios_select_method(adiosGroup, "MPI", "", "");
         adios_open(&adiosFile, "test_data", fileName.c_str(), "w", mpi_comm);
     }
-    else if (transportType == "staging")
+    else
     {
-        cout<<"Transport not supported!"<<endl;
-        return;
+        //  if (transportType == "staging")
+        ASCENT_ERROR("Transport type: " <<transportType << " not supported!");
     }
-
     adios_define_schema_version(adiosGroup, (char*)"1.1");
 
-
-    //Output the mesh.
+    //Fetch input data
     Node *blueprint_data = input<Node>("in");
-
-//    cout<<"DATA"<<endl;
-//    blueprint_data->print();
-//    cout<<"__DATA"<<endl;    
 
     NodeConstIterator itr = (*blueprint_data)["coordsets"].children();
     while (itr.has_next())
@@ -276,73 +269,27 @@ ADIOS::execute()
     if (blueprint_data->has_child("fields"))
     {
         const Node &fields = (*blueprint_data)["fields"];
-        vector<string> fieldNames = fields.child_names();
-        for (int i = 0; i < fieldNames.size(); i++)
-            FieldVariable(fieldNames[i], fields[fieldNames[i]]);
+        NodeConstIterator fields_itr = fields.children();
+
+        while(fields_itr.has_next())
+        {
+            const Node& field = fields_itr.next();
+            std::string field_name = fields_itr.name();
+            FieldVariable(field_name, field);
+        }
     }
-    
     adios_close(adiosFile);
 
-
-
-
-#if 0
-    std::string important_param;
-    important_param = params()["important_param"].as_string();
-    if(par_rank == 0)
-    {
-      std::cout<<"The important param is "<<important_param<<"\n";
-    }
-
-    if(params().has_child("int"))
-    {
-        int the_int = params()["int"].as_int32();
-    }
-
-    if(params().has_child("float"))
-    {
-        float the_float = params()["float"].as_float32();
-    }
-
-    if(params().has_child("double"))
-    {
-        double the_double = params()["double"].as_float64();
-    }
-
-    if(params().has_child("float_values"))
-    {
-       float *vals = params()["float_values"].as_float32_ptr();
-    }
-
-    if(params().has_child("double_values"))
-    {
-       double *vals = params()["double_values"].as_float64_ptr();
-    }
-
-    if(params().has_child("actions"))
-    {
-      const conduit::Node actions = params()["actions"];
-      if(par_rank == 0)
-      {
-        std::cout<<"Actions passed to adios filter:\n";
-        actions.print();
-      }
-    }
-
-    if(!input("in").check_type<Node>())
-    {
-        // error
-        ASCENT_ERROR("adios requires a conduit::Node input");
-    }
-#endif
 }
 
+//-----------------------------------------------------------------------------
 bool
 ADIOS::UniformMeshSchema(const Node &node)
 {
     return false;
 }
 
+//-----------------------------------------------------------------------------
 bool
 ADIOS::CalcRectilinearMeshInfo(const conduit::Node &node,
                                vector<vector<double>> &XYZ)
@@ -350,7 +297,10 @@ ADIOS::CalcRectilinearMeshInfo(const conduit::Node &node,
     const Node &X = node["x"];
     const Node &Y = node["y"];
     const Node &Z = node["z"];
-    const double *xyzPtr[3] = {X.as_float64_ptr(), Y.as_float64_ptr(), Z.as_float64_ptr()};
+    
+    const double *xyzPtr[3] = {X.as_float64_ptr(),
+                               Y.as_float64_ptr(),
+                               Z.as_float64_ptr()};
 
     localDims = {X.dtype().number_of_elements(),
                  Y.dtype().number_of_elements(),
@@ -430,184 +380,8 @@ ADIOS::CalcRectilinearMeshInfo(const conduit::Node &node,
 #endif
 }
 
-bool
-ADIOS::CalcRectilinearMeshInfoOLD(const conduit::Node &node,
-                               vector<vector<double>> &globalCoords)
-{
-    const Node &X = node["x"];
-    const Node &Y = node["y"];
-    const Node &Z = node["z"];
 
-    DataType dx(X.dtype()), dy(Y.dtype()), dz(Z.dtype());
-    int nx = dx.number_of_elements();
-    int ny = dy.number_of_elements();
-    int nz = dz.number_of_elements();
-
-    const double *xyzc[3] = {NULL,NULL,NULL};
-    xyzc[0] = X.as_float64_ptr();
-    xyzc[1] = Y.as_float64_ptr();
-    xyzc[2] = Z.as_float64_ptr();    
-
-    globalCoords.resize(3);
-
-    //Easy case. 
-    if (numRanks == 1)
-    {
-        offset = {0,0,0};
-        localDims = {nx,ny,nz};
-        globalDims = {nx,ny,nz};
-
-        for (int d = 0; d < 3; d++)
-        {
-            globalCoords[d].resize(globalDims[d]);
-            std::memcpy(&globalCoords[d][0], xyzc[d], globalDims[d]*sizeof(double));
-        }
-        
-        return true;
-    }
-#ifdef PARALLEL
-
-    // Have to figure out the indexing for each rank.
-    vector<double> ldims(10*numRanks, 0.0), buff(10*numRanks,0.0);
-    ldims[rank*10 + 0] = rank;
-    ldims[rank*10 + 1] = nx;
-    ldims[rank*10 + 2] = xyzc[0][0];
-    ldims[rank*10 + 3] = xyzc[0][nx-1];
-    ldims[rank*10 + 4] = ny;
-    ldims[rank*10 + 5] = xyzc[1][0];
-    ldims[rank*10 + 6] = xyzc[1][ny-1];
-    ldims[rank*10 + 7] = nz;
-    ldims[rank*10 + 8] = xyzc[2][0];
-    ldims[rank*10 + 9] = xyzc[2][nz-1];
-    MPI_Allreduce(&ldims[0], &buff[0], ldims.size(), MPI_DOUBLE, MPI_SUM, mpi_comm);
-    //if (rank == 0) cout<<"LDIMS: "<<buff<<endl;
-
-    //Put this data into a set to remove duplicates, AND keep them sorted (see operator< above).
-    set<coordInfo> xyzInfo[3];
-    for (int i = 0; i < numRanks; i++)
-    {
-        xyzInfo[0].insert(coordInfo((int)buff[i*10+0],
-                                    (int)buff[i*10+1],
-                                    buff[i*10+2],
-                                    buff[i*10+3]));
-        
-        xyzInfo[1].insert(coordInfo((int)buff[i*10+0],
-                                    (int)buff[i*10+4],
-                                    buff[i*10+5],
-                                    buff[i*10+6]));
-        
-        xyzInfo[2].insert(coordInfo((int)buff[i*10+0],
-                                    (int)buff[i*10+7],
-                                    buff[i*10+8],
-                                    buff[i*10+9]));
-    }
-    
-    //Now we can compute globalDims.
-    for (int i = 0; i < 3; i++)
-    {
-        globalDims[i] = 0;
-        for (auto it = xyzInfo[i].begin(); it != xyzInfo[i].end(); it++)
-            globalDims[i] += (*it).num;
-        globalDims[i] -= (xyzInfo[i].size()-1);
-    }
-
-    //Local dims is just {nx,ny,nz};
-    localDims = {nx,ny,nz};
-
-    //Compute offset.
-    vector<coordInfo> localCoords = {coordInfo(rank, nx, xyzc[0][0], xyzc[0][nx-1]),
-                                     coordInfo(rank, ny, xyzc[1][0], xyzc[1][ny-1]),
-                                     coordInfo(rank, nz, xyzc[2][0], xyzc[2][nz-1])};
-    for (int i = 0; i < 3; i++)
-    {
-        for (auto it = xyzInfo[i].begin(); it != xyzInfo[i].end(); it++)
-        {
-            if (localCoords[i].range[0] > (*it).range[0])
-                offset[i] += (*it).num;
-        }
-    }
-
-    //Get the coordinates onto rank 0.
-    for (int i = 0; i < 3; i++)
-    {
-        globalCoords[i].resize(globalDims[i]);
-        
-        //One rank has the whole coordinate array.
-        if (xyzInfo[i].size() == 1)
-        {
-            auto it = xyzInfo[i].begin();
-            if (it->rank == 0)
-                std::memcpy(&globalCoords[i][0], xyzc[i], globalDims[i]*sizeof(double));
-            else
-            {
-                int tag = 9382;
-                MPI_Status stat;
-                int sendRes = MPI_SUCCESS, recvRes = MPI_SUCCESS;
-                if (it->rank == rank)
-                    sendRes = MPI_Send(xyzc[i], globalDims[i], MPI_DOUBLE, 0, tag, mpi_comm);
-                else
-                    recvRes = MPI_Recv(&globalCoords[i], globalDims[i], MPI_DOUBLE, it->rank, tag, mpi_comm, &stat);
-                if (sendRes != MPI_SUCCESS || recvRes != MPI_SUCCESS)
-                {
-                    cerr<<"Error: rectilinear send/recv for single rank"<<endl;
-                    return false;
-                }
-            }
-        }
-        // Multiple ranks have the coordinate array.
-        // Not the most efficient way to do this, but the easiest...
-        else
-        {
-            vector<double> tmp(globalDims[i], -numeric_limits<double>::max());
-            int off = 0;
-            for (auto it = xyzInfo[i].begin(); it != xyzInfo[i].end(); it++)
-            {
-                if (it->rank == rank)
-                {
-                    for (int j = 0; j < localDims[i]; j++)
-                        tmp[off+j] = xyzc[i][j];
-                }
-                off += it->num-1;
-            }
-            //cout<<rank<<" tmp= "<<tmp<<" "<<count[i]<<endl;
-            int res = MPI_Reduce(&tmp[0], &globalCoords[i][0], tmp.size(), MPI_DOUBLE, MPI_MAX, 0, mpi_comm);
-            if (res != MPI_SUCCESS)
-            {
-                cerr<<"Error: rectilinear coordinate communication"<<endl;
-                return false;
-            }
-        }
-    }
-    if (rank == 1)
-        localDims[0]--;
-    
-    if (rank == 0)
-    {
-        cout<<"*****X: "<<globalCoords[0].size()<<": "<<globalCoords[0]<<endl;
-        cout<<"*****Y: "<<globalCoords[1].size()<<": "<<globalCoords[1]<<endl;
-        cout<<"*****Z: "<<globalCoords[2].size()<<": "<<globalCoords[2]<<endl;
-        cout<<"*****xinfo: "<<xyzInfo[0]<<endl;
-        cout<<"*****yinfo: "<<xyzInfo[1]<<endl;
-        cout<<"*****zinfo: "<<xyzInfo[2]<<endl;
-        cout<<"*****globalDims: "<<globalDims<<endl;
-        cout<<"***************************************"<<endl;
-    }
-    MPI_Barrier(mpi_comm);
-    for (int i = 0; i < numRanks; i++)
-    {
-        if (i == rank)
-        {
-            cout<<"  "<<rank<<": *****localDims:"<<localDims<<endl;
-            cout<<"  "<<rank<<": *****offset:"<<offset<<endl;
-            cout<<"***************************************"<<endl<<endl;
-        }
-        MPI_Barrier(mpi_comm);        
-    }
-#endif
-
-    return true;
-}
-    
+//-----------------------------------------------------------------------------
 bool
 ADIOS::RectilinearMeshSchema(const Node &node)
 {
@@ -659,10 +433,15 @@ ADIOS::RectilinearMeshSchema(const Node &node)
     return true;
 }
 
+//-----------------------------------------------------------------------------
 bool
 ADIOS::FieldVariable(const string &fieldName, const Node &node)
 {
-    if (!node.has_child("values") || !node.has_child("association") || !node.has_child("type"))
+    // TODO: we can assuem this is true if verify is true and this is a recti
+    // mesh.
+    if (!node.has_child("values") || 
+        !node.has_child("association") ||
+        !node.has_child("type"))
         return false;
 
     const string &fieldType = node["type"].as_string();
@@ -670,20 +449,24 @@ ADIOS::FieldVariable(const string &fieldName, const Node &node)
 
     if (fieldType != "scalar")
     {
-        cerr<<"Field type "<<fieldType<<" not supported at this time"<<endl;
+        ASCENT_INFO("Field type "
+                    << fieldType 
+                    << " not supported for ADIOS this time");
         return false;
     }
     if (fieldAssoc != "vertex" && fieldAssoc != "element")
     {
-        cerr<<"Field association "<<fieldAssoc<<" not supported at this time"<<endl;
-        return false;        
+        ASCENT_INFO("Field association "
+                    << fieldAssoc 
+                    <<" not supported for ADIOS this time");
+        return false;
     }
 
-    const Node &fieldNode = node["values"];
-    DataType dt(fieldNode.dtype());
-    const double *vals = fieldNode.as_float64_ptr();
-
+    const Node &field_values = node["values"];
+    const double *vals = field_values.as_double_ptr();
+    
     /*
+    DataType dt(fieldNode.dtype());
     cout<<"FIELD "<<fieldName<<" #= "<<dt.number_of_elements()<<endl;
     cout<<"localDims: "<<dimsToStr(localDims, (fieldAssoc=="vertex"))<<endl;
     cout<<"globalDims: "<<dimsToStr(globalDims, (fieldAssoc=="vertex"))<<endl;
