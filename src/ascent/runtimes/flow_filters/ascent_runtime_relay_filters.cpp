@@ -76,6 +76,9 @@
 #include <conduit_relay_mpi.hpp>
 #endif
 
+// std includes
+#include <limits>
+
 using namespace std;
 using namespace conduit;
 using namespace conduit::relay;
@@ -153,33 +156,52 @@ void mesh_blueprint_save(const Node &data,
                          const std::string &path,
                          const std::string &file_protocol)
 {
+    // The assumption here is that everything is multi domain    
+    Node multi_dom; 
+    blueprint::mesh::to_multi_domain(data, multi_dom);
     int par_rank = 0;  
     int par_size = 1;
-    
+    // we may not have any domains so init to max
+    int cycle = std::numeric_limits<int>::max();
 #ifdef PARALLEL
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     MPI_Comm_rank(mpi_comm, &par_rank);
     MPI_Comm_size(mpi_comm, &par_size);
 #endif
+    int num_domains = multi_dom.number_of_children();
     
-    // get cycle and domain id from the mesh
-    uint64 domain = data["state/domain_id"].to_value();
-    uint64 cycle  = data["state/cycle"].to_value();
+    // figure out what cycle we are
+    if(num_domains > 0)
+    {
+      Node dom = multi_dom.child(0);
+      if(!dom.has_path("state/cycle"))
+      {
+        ASCENT_ERROR("Cannot blueprint save without 'state/cycle'");
+      }
+      cycle = dom["state/cycle"].to_int();
+      std::cout<<"CYCLE "<<cycle<<"\n";
+    }
+    
+#ifdef PARALLEL
+    Node n_cycle, n_min;
+    
+    n_cycle = (int)cycle;
 
+    mpi::min_all_reduce(n_cycle,
+                        n_min,
+                        mpi_comm);
+
+    cycle = n_min.as_int();
+#endif
+    // setup the directory
     char fmt_buff[64];
-    snprintf(fmt_buff, sizeof(fmt_buff), "%06lu",cycle);
+    snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
     
     std::string output_base_path = path;
     
     ostringstream oss;
     oss << output_base_path << ".cycle_" << fmt_buff;
     string output_dir  =  oss.str();
-    
-    snprintf(fmt_buff, sizeof(fmt_buff), "%06lu",domain);
-    oss.str("");
-    oss << "domain_" << fmt_buff << "." << file_protocol;
-    string output_file  = conduit::utils::join_file_path(output_dir,oss.str());
-
 
     bool dir_ok = false;
 
@@ -194,11 +216,10 @@ void mesh_blueprint_save(const Node &data,
             dir_ok = create_directory(output_dir);
         }
     }
-    
-    int num_domains = 1;
+    int global_domains = num_domains;    
 #ifdef PARALLEL
     // TODO: Support domain overloaded.. 
-    num_domains = par_size;
+    //num_domains = par_size;
 
     // TODO:
     // This a reduce to check for an error ... 
@@ -217,20 +238,78 @@ void mesh_blueprint_save(const Node &data,
                         mpi_comm);
 
     dir_ok = (n_reduce.as_int() == 1);
+
+    n_src = num_domains;
+
+    mpi::sum_all_reduce(n_src,
+                        n_reduce,
+                        mpi_comm);
+
+    global_domains = n_reduce.as_int();
 #endif
+
+    if(global_domains == 0)
+    {
+      if(par_rank == 0)
+      {
+          ASCENT_WARN("There no data to save. Doing nothing");
+      }
+      return;
+    }
 
     if(!dir_ok)
     {
         ASCENT_ERROR("Error: failed to create directory " << output_dir);
     }
-
-
-    relay::io::save(data,output_file);
-
-    // let rank zero write out the root file
-    if(par_rank == 0)
+    std::cout<<"NUM CHILDS = "<<num_domains<<"\n"; 
+    // write out each domain
+    for(int i = 0; i < num_domains; ++i)
     {
-        snprintf(fmt_buff, sizeof(fmt_buff), "%06lu",cycle);
+        Node dom = multi_dom.child(i); 
+        //Node v_info;
+        //if(!conduit::blueprint::verify("mesh",
+        //                               dom,
+        //                               v_info))
+        //{
+        //    ASCENT_ERROR("blueprint verify failed for protocol"
+        //                  << "mesh" << std::endl
+        //                  << "details:" << std::endl
+        //                  << v_info.to_json());
+        //}
+        uint64 domain = dom["state/domain"].to_uint64();
+
+        snprintf(fmt_buff, sizeof(fmt_buff), "%06lu",domain);
+        oss.str("");
+        oss << "domain_" << fmt_buff << "." << file_protocol;
+        string output_file  = conduit::utils::join_file_path(output_dir,oss.str());
+        relay::io::save(dom, output_file);
+    }
+    
+    int root_file_writer = 0;
+#ifdef PARALLEL
+    // Rank 0 could have an empty domain, so we have to check
+    // to find someone with a data set to write out the root file.
+    Node out;
+    out["values/a"] = num_domains;
+    Node rcv;
+    mpi::all_gather(out, rcv, mpi_comm);
+    Node res;
+    res.set_external((int*) rcv.data_ptr(), par_size);
+    int* res_ptr = res.value();
+    for(int i = 0; i < par_size; ++i)
+    {
+        if(res_ptr[i] != 0)
+        {
+            root_file_writer = i;
+            break;
+        }
+    }
+    MPI_Barrier(mpi_comm);
+#endif
+    // let rank zero write out the root file
+    if(par_rank == root_file_writer)
+    {
+        snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
 
         oss.str("");
         oss << path
@@ -255,16 +334,18 @@ void mesh_blueprint_save(const Node &data,
         Node root;
         Node &bp_idx = root["blueprint_index"];
 
-        blueprint::mesh::generate_index(data,
+        blueprint::mesh::generate_index(multi_dom.child(0),
                                         "",
-                                        num_domains,
+                                        global_domains,
                                         bp_idx["mesh"]);
             
+        std::cout<<"saving root\n";
         root["protocol/name"]    = "conduit_" + file_protocol;
         root["protocol/version"] = "0.2.1";
 
-        root["number_of_files"]  = num_domains;
-        root["number_of_trees"]  = num_domains;
+        root["number_of_files"]  = global_domains;
+        // for now we will save one file per domain, so trees == files
+        root["number_of_trees"]  = global_domains;
         // TODO: make sure this is relative 
         root["file_pattern"]     = output_file_pattern;
         root["tree_pattern"]     = "/";
@@ -325,7 +406,7 @@ RelayIOSave::execute()
     }
     
     Node *in = input<Node>("in");
-    
+
     if(protocol.empty())
     {
         conduit::relay::io::save(*in,path);

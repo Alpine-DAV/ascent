@@ -44,10 +44,9 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_render_3d.cpp
+/// file: ascent_mpi_render_2d.cpp
 ///
 //-----------------------------------------------------------------------------
-
 
 #include "gtest/gtest.h"
 
@@ -55,66 +54,63 @@
 
 #include <iostream>
 #include <math.h>
+#include <mpi.h>
 
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
 
-
-
-
 using namespace std;
 using namespace conduit;
-using namespace ascent;
-
-
-index_t EXAMPLE_MESH_SIDE_DIM = 20;
-
+using ascent::Ascent;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_contour, test_single_contour_3d)
+TEST(ascent_mpi_runtime, test_relay_extract_iso)
 {
-    // the ascent runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
 
-        return;
-    }
-    
-    
     //
-    // Create an example mesh.
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+    
+    ASCENT_INFO("Rank "
+                  << par_rank 
+                  << " of " 
+                  << par_size
+                  << " reporting");
+    //
+    // Create the data.
     //
     Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
+    create_3d_example_dataset(data,par_rank,par_size);
+    data["state/cycle"] = 100; 
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
-
-    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
-
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_single_contour_3d");
     
-    // remove old images before rendering
+    // make sure the _output dir exists
+    string output_path = "";
+    if(par_rank == 0)
+    {
+        output_path = prepare_output_dir();
+    }
+    else
+    {
+        output_path = output_dir();
+    }
+
+    string output_file = conduit::utils::join_file_path(output_path,"tout_hd5f_iso");
+    // remove old files before rendering
     remove_test_image(output_file);
-
-
     //
     // Create the actions.
     //
-    
+
     conduit::Node pipelines;
     // pipeline 1
     pipelines["pl1/f1/type"] = "contour";
@@ -123,144 +119,148 @@ TEST(ascent_contour, test_single_contour_3d)
     contour_params["field"] = "braid";
     contour_params["iso_values"] = 0.;
 
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
- 
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"]  = "pl1";
+
+    extracts["e1/params/path"] = output_file;
+    
     conduit::Node actions;
     // add the pipeline
     conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
-    // execute
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
+    
+    actions.print();
     
     //
     // Run Ascent
     //
-    
+  
     Ascent ascent;
 
     Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["runtime"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+   
 }
-
+#if 0
 //-----------------------------------------------------------------------------
-TEST(ascent_contour, test_multi_contour_3d)
+TEST(ascent_mpi_runtime, test_relay_extract_mesh)
 {
-    // the ascent runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
 
-        return;
-    }
-    
-    
     //
-    // Create an example mesh.
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+    
+    ASCENT_INFO("Rank "
+                  << par_rank 
+                  << " of " 
+                  << par_size
+                  << " reporting");
+    //
+    // Create the data.
     //
     Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
+    create_3d_example_dataset(data,par_rank,par_size);
+    data["state/cycle"] = 101; 
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
-
-    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
-
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_multi_contour_3d");
     
-    // remove old images before rendering
+    // make sure the _output dir exists
+    string output_path = "";
+    if(par_rank == 0)
+    {
+        output_path = prepare_output_dir();
+    }
+    else
+    {
+        output_path = output_dir();
+    }
+
+    string output_file = conduit::utils::join_file_path(output_path,"tout_hd5f_mesh");
+    // remove old files before rendering
     remove_test_image(output_file);
-
-
     //
     // Create the actions.
     //
-    
+
     conduit::Node pipelines;
     // pipeline 1
     pipelines["pl1/f1/type"] = "contour";
     // filter knobs
     conduit::Node &contour_params = pipelines["pl1/f1/params"];
     contour_params["field"] = "braid";
-    double iso_vals[3] = {-0.4, 0.2, 0.4};
-    contour_params["iso_values"].set_external(iso_vals,3);
+    contour_params["iso_values"] = 0.;
 
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
- 
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"]  = "pl1";
+
+    extracts["e1/params/path"] = output_file;
+    
     conduit::Node actions;
     // add the pipeline
-    conduit::Node &add_pipelines= actions.append();
+    conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
-    // execute
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
+    
+    actions.print();
     
     //
     // Run Ascent
     //
-    
+  
     Ascent ascent;
 
     Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["runtime"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+   
 }
-
+#endif
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
 
     ::testing::InitGoogleTest(&argc, argv);
-    
-    // allow override of the data size via the command line
-    if(argc == 2)
-    { 
-        EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
-    }
-    
+    MPI_Init(&argc, &argv);
     result = RUN_ALL_TESTS();
+    MPI_Finalize();
+
     return result;
 }
 

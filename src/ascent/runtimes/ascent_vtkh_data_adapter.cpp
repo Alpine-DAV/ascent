@@ -90,7 +90,7 @@ namespace ascent
 vtkh::DataSet *
 VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
                                     const std::string &topo_name)
-{   
+{       
  
     // treat everything as a multi-domain data set 
     conduit::Node multi_dom; 
@@ -102,7 +102,7 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
     int num_domains = 0;
     bool has_ids = true;
     bool no_ids = true;
-
+  
     // get the number of domains and check for id consistency
     num_domains = multi_dom.number_of_children();
 
@@ -181,6 +181,11 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
          domain_id = domain_offset + i;
       }
 #endif
+      if(node.has_path("state/cycle"))
+      {
+        vtkm::UInt64 cycle = node["state/cycle"].to_uint64();
+        res->SetCycle(cycle);
+      }
 
       res->AddDomain(*dset,domain_id);
       // vtk-m will shallow copy the data assoced with dset
@@ -205,7 +210,7 @@ VTKHDataAdapter::VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset)
 //-----------------------------------------------------------------------------
 vtkm::cont::DataSet *
 VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
-                                    const std::string &topo_name_str)
+                                        const std::string &topo_name_str)
 {   
     vtkm::cont::DataSet * result = NULL;
 
@@ -303,7 +308,6 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
             }
         }
     }
-    
     return result;
 }
 
@@ -1238,8 +1242,7 @@ VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
   // dataset, so we have to ask all fields, cell sets anc coordinate systems.
   //
   const int default_cell_set = 0; 
-  int topo_dims;
-  
+
   VTKmTopologyToBlueprint(node, *dset);
 
   const vtkm::Id num_fields = dset->GetNumberOfFields();

@@ -335,6 +335,8 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
 {
   std::string filter_name; 
 
+  conduit::Node params = extract["params"];
+
   if(!extract.has_path("type"))
   {
     ASCENT_ERROR("Extract must have a 'type'");
@@ -343,7 +345,15 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   if(extract["type"].as_string() == "adios")
   {
     filter_name = "adios";
-
+  }
+  else if(extract["type"].as_string() == "relay")
+  {
+    filter_name = "relay_io_save";
+    // set the default protocol
+    if(!params.has_path("protocol"))
+    {
+      params["protocol"] = "blueprint/mesh/hdf5";
+    }
   }
   else
   {
@@ -356,7 +366,13 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
                 <<" original is being overwritted");
   }
 
-  conduit::Node params = extract["params"];
+
+  std::string ensure_name = "ensure_blueprint_" + extract_name;
+  conduit::Node empty_params; 
+  
+  w.graph().add_filter("ensure_blueprint",
+                       ensure_name,           
+                       empty_params);
 
   w.graph().add_filter(filter_name,
                        extract_name,           
@@ -376,7 +392,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     // this is the blueprint mesh 
     extract_source = "source";
   }
-  m_connections[extract_name] = extract_source;
+  std::cout<<"***** extract source :  "<<extract_source<<"\n";
+  m_connections[ensure_name] = extract_source;
+  m_connections[extract_name] = ensure_name;
 
 }
 //-----------------------------------------------------------------------------

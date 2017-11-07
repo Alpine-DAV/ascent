@@ -69,7 +69,8 @@ set(MPI_TESTS  t_ascent_mpi_empty_runtime
 if(VTKM_FOUND)
    list(APPEND BASIC_TESTS t_ascent_ascent_runtime
                            t_ascent_vtkh_data_adapter)
-   list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime)
+   list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime
+                           t_ascent_mpi_relay_extract)
 endif()
 
 # adios tests
