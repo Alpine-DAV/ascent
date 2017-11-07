@@ -53,7 +53,7 @@ endif()
 MESSAGE(STATUS "Looking for VTKm using VTKM_DIR = ${VTKM_DIR}")
 
 # use VTKM_DIR to setup the options that cmake's find VTKm needs
-set(VTKm_DIR ${VTKM_DIR}/lib/cmake/vtkm-1.0)
+set(VTKm_DIR ${VTKM_DIR}/lib/cmake/vtkm-1.1)
 
 #
 # VTKm will find TBB via the env var "TBB_ROOT"
