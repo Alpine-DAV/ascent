@@ -12,7 +12,7 @@
             "type": "volume",
             "params": 
             {
-              "field": "e"
+              "field": "energy"
             }
           }
         }
