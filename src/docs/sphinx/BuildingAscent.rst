@@ -242,15 +242,98 @@ For OSX, the defaults in ``compilers.yaml`` are clang from X-Code and gfortran f
     The bootstrapping process ignores ``~/.spack/compilers.yaml`` to avoid conflicts
     and surprises from a user's specific Spack settings on HPC platforms.
 
-Building with Spack
--------------------
-
 .. note::
   Ascent developers use ``scripts/uberenv/uberenv.py`` to setup third party libraries for Ascent 
   development.  Due to this, the process builds more libraries than necessary for most use cases.
   For example, we build independent installs of Python 2 and Python 3 to make it easy 
   to check Python C-API compatibility during development. In the near future, we plan to 
   provide a Spack package to simplify deployment.
+
+Building with Spack
+-------------------
+
+.. _building_with_spack:
+
+
+As of 11/10/2017, we have an ALPINE fork of Spack that includes a 
+`recipe <https://github.com/Alpine-DAV/spack/blob/task/2017_11_add_ascent/var/spack/repos/builtin/packages/ascent/package.py>`_ 
+to build and install Ascent. We are working to merge this into Spack's develop branch.
+
+To install Ascent with all options (and also build all of its dependencies as necessary) run:
+
+.. code:: bash
+  
+  spack install ascent
+
+To build and install Ascent with CUDA support:
+  
+.. code:: bash
+  
+  spack install ascent+cuda
+
+
+The Ascent Spack package provides several 
+`variants <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ 
+that customize the options and dependencies used to build Ascent:
+
+ ================== ==================================== ======================================
+  Variant             Description                          Default
+ ================== ==================================== ======================================
+  **shared**          Build Ascent  as shared libraries    ON (+shared)
+  **cmake**           Build CMake with Spack               ON (+cmake)
+  **python**          Enable Ascent Python support         ON (+python)
+  **mpi**             Enable Ascent MPI support            ON (+mpi)
+  **vtkh**            Enable Ascent VTK-h support          ON (+vtkh)
+  **tbb**             Enable VTK-h TBB support             ON (+tbb)
+  **cuda**            Enable VTK-h CUDA support            OFF (~cuda)
+  **doc**             Build Ascent's Documentation         OFF (~doc)
+ ================== ==================================== ======================================
+
+
+
+Variants are enabled using ``+`` and disabled using ``~``. For example, to build Conduit with the minimum set of options (and dependencies) run:
+
+.. code:: bash
+
+  spack install ascent+cuda~python~docs
+
+
+See `Spack's Compiler Configuration <https://spack.readthedocs.io/en/latest/getting_started.html#compiler-config>`_ to customize which compiler settings.
+
+
+Using system installs of dependencies with Spack
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Spack allows you to specify system installs of packages using a `packages.yaml
+<https://spack.readthedocs.io/en/latest/build_settings.html#build-settings>`_ file.
+
+
+Here is an example specifying system CUDA on MacOS:
+
+.. code:: yaml
+
+  # CUDA standard MacOS install
+    cuda:
+      paths:
+        cuda@8.0: /Developer/NVIDIA/CUDA-8.0
+    buildable: False
+
+
+Here is an example of specifying system MPI and CUDA on an LLNL Chaos 5 machine:
+
+.. code:: yaml
+
+  # LLNL chaos5 CUDA 
+    cuda:
+      paths:
+        cuda@8.0: /opt/cudatoolkit-8.0
+      buildable: False
+  # LLNL chaos5 mvapich for gcc
+    mvapich:
+      paths:
+        mvapich@2: /usr/local/tools/mvapich2-gnu-2.0/
+      buildable: False
+
 
 
 
