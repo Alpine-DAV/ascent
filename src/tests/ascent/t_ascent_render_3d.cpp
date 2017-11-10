@@ -554,7 +554,7 @@ TEST(ascent_render_3d, render_3d_domain_overload)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/params/field"] = "radial_vert";
     scenes["s1/image_prefix"] = output_file;
  
     conduit::Node actions;

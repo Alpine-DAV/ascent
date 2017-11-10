@@ -149,22 +149,22 @@ create_2d_example_dataset(Node &data,
     data["topologies/mesh/type"] = "rectilinear";
     data["topologies/mesh/coordset"] = "coords";
     
-    data["fields/braid/type"] = "scalar";
-    data["fields/braid/topology"] = "mesh";
-    data["fields/braid/association"] = "vertex";
-    data["fields/braid/values"].set(DataType::float64(npts));
+    data["fields/radial_vert/type"] = "scalar";
+    data["fields/radial_vert/topology"] = "mesh";
+    data["fields/radial_vert/association"] = "vertex";
+    data["fields/radial_vert/values"].set(DataType::float64(npts));
 
-    data["fields/radial/type"] = "scalar";    
-    data["fields/radial/topology"] = "mesh";
-    data["fields/radial/association"] = "element";
-    data["fields/radial/values"].set(DataType::float64(nele));
+    data["fields/radial_ele/type"] = "scalar";    
+    data["fields/radial_ele/topology"] = "mesh";
+    data["fields/radial_ele/association"] = "element";
+    data["fields/radial_ele/values"].set(DataType::float64(nele));
     
     
     float64 *x_vals =  data["coordsets/coords/values/x"].value();
     float64 *y_vals =  data["coordsets/coords/values/y"].value();
     
-    float64 *point_scalar   = data["fields/braid/values"].value();
-    float64 *element_scalar = data["fields/radial/values"].value();
+    float64 *point_scalar   = data["fields/radial_vert/values"].value();
+    float64 *element_scalar = data["fields/radial_ele/values"].value();
 
     float64 start = 0.0 - (float64)(size) / 2.0;
 
@@ -254,23 +254,23 @@ create_3d_example_dataset(Node &data,
     data["topologies/mesh/type"] = "rectilinear";
     data["topologies/mesh/coordset"] = "coords";
 
-    data["fields/braid/association"] = "vertex";
-    data["fields/braid/topology"] = "mesh";
-    data["fields/braid/type"] = "scalar";
-    data["fields/braid/values"].set(DataType::float64(npts));
+    data["fields/radial_vert/association"] = "vertex";
+    data["fields/radial_vert/topology"] = "mesh";
+    data["fields/radial_vert/type"] = "scalar";
+    data["fields/radial_vert/values"].set(DataType::float64(npts));
 
-    data["fields/radial/association"] = "element";
-    data["fields/radial/topology"] = "mesh";
-    data["fields/radial/type"] = "scalar";
-    data["fields/radial/values"].set(DataType::float64(nele));
+    data["fields/radial_ele/association"] = "element";
+    data["fields/radial_ele/topology"] = "mesh";
+    data["fields/radial_ele/type"] = "scalar";
+    data["fields/radial_ele/values"].set(DataType::float64(nele));
     
     
     float64 *x_vals =  data["coordsets/coords/values/x"].value();
     float64 *y_vals =  data["coordsets/coords/values/y"].value();
     float64 *z_vals =  data["coordsets/coords/values/z"].value();
     
-    float64 *point_scalar   = data["fields/braid/values"].value();
-    float64 *element_scalar = data["fields/radial/values"].value();
+    float64 *point_scalar   = data["fields/radial_vert/values"].value();
+    float64 *element_scalar = data["fields/radial_ele/values"].value();
 
     float64 start = 0.0 - (float64)(size) / 2.0;
     float64 rank_offset = start + (float)(par_rank * nx);

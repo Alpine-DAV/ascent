@@ -124,7 +124,7 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     //
     conduit::Node &contour = extracts["e1/params/actions"].append();
     contour["type"]  = "contour";
-    contour["params/field"] = "braid";
+    contour["params/field"] = "radial_vert";
     contour["params/iso_values"] = 0.3;
  
     conduit::Node actions;

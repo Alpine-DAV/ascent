@@ -132,7 +132,7 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_default_runtime)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/params/field"] = "radial_vert";
     scenes["s1/image_prefix"] = output_file;
  
     conduit::Node actions;
@@ -230,7 +230,7 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "volume";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/params/field"] = "radial_vert";
     scenes["s1/image_prefix"] = output_file;
  
     conduit::Node actions;

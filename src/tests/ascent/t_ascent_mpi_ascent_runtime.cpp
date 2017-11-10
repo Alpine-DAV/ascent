@@ -114,7 +114,7 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/params/field"] = "radial_vert";
     scenes["s1/image_prefix"] = output_file;
  
     conduit::Node actions;
