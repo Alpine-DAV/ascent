@@ -477,13 +477,6 @@ int main(int argc, char** argv)
   scenes["scene1/plots/plt2/type"]         = "volume";
   scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
 
-  conduit::Node extracts;
-  extracts["ex1/extract_type"] = "hdf5";
-  extracts["ex1/pipeline"]     = "pl2";
-
-  // use default pipeline (original data}
-  extracts["ex2/extract_type"] = "hdf5";
-  
   conduit::Node actions;
   conduit::Node &add_pipelines = actions.append();
   add_pipelines["action"] = "add_pipelines";
@@ -493,14 +486,8 @@ int main(int argc, char** argv)
   add_scenes["action"] = "add_scenes";
   add_scenes["scenes"] = scenes;
 
-
-  conduit::Node &add_extracts = actions.append();
-  add_extracts["action"] = "add_extracts";
-  add_extracts["add_extracts"] = extracts;
-
   conduit::Node &execute = actions.append();
   execute["action"] = "execute";
-  //ascent.execute(actions);
   
   conduit::Node reset;
   conduit::Node &reset_action = reset.append();
