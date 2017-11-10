@@ -2877,17 +2877,24 @@ int main(int argc, char *argv[])
 //      std::cout << "region" << i + 1<< "size" << locDom->regElemSize(i) <<std::endl;
 
    conduit::Node scenes;
-   scenes["s1/plots/p1/type"]         = "pseudocolor";
-   scenes["s1/plots/p1/params/field"] = "p";
  
+   scenes["s1/plots/p1/type"]         = "pseudocolor";
+   scenes["s1/plots/p1/params/field"] = "e";
+   double vec3[3];
+   vec3[0] = -0.6; vec3[1] = -0.6; vec3[2] = -0.8;
+   scenes["s1/renders/r1/camera/position"].set_float64_ptr(vec3,3);
+
    conduit::Node actions;
    conduit::Node &add_plots = actions.append();
    add_plots["action"] = "add_scenes";
    add_plots["scenes"] = scenes;   
+   conduit::Node &execute = actions.append();
+   execute["action"] = "execute";
    
-   ascent.publish(locDom->visitNode());
-   ascent.execute(actions);
-   actions.print();
+   conduit::Node reset;
+   conduit::Node &reset_action = reset.append();
+   reset_action["action"] = "reset";
+
    while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
      {
         ASCENT_BLOCK_TIMER(LULESH_MAIN_LOOP)
@@ -2907,10 +2914,8 @@ int main(int argc, char *argv[])
             // Create the actions.
             //
             ascent.publish(locDom->visitNode());
-            actions.reset();
-            conduit::Node &execute = actions.append();
-            execute["action"] = "execute";
             ascent.execute(actions);
+            ascent.execute(reset);
       }
    }
    ascent.close();

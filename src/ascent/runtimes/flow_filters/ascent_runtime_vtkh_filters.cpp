@@ -379,7 +379,7 @@ EnsureBlueprint::execute()
         vtkh::DataSet *in_dset = input<vtkh::DataSet>(0);
         const vtkm::Id num_domains = in_dset->GetNumberOfDomains();
         conduit::Node * res = new conduit::Node();
-        uint64 cycle = 0;//in_dset->GetCycle();
+        uint64 cycle = in_dset->GetCycle();
         for(vtkm::Id dom = 0; dom < num_domains; ++dom)
         {
             vtkm::cont::DataSet dset; 

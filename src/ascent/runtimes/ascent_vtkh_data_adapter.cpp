@@ -184,7 +184,7 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
       if(node.has_path("state/cycle"))
       {
         vtkm::UInt64 cycle = node["state/cycle"].to_uint64();
-        //res->SetCycle(cycle);
+        res->SetCycle(cycle);
       }
 
       res->AddDomain(*dset,domain_id);
