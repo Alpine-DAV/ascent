@@ -557,7 +557,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
   for(int i = 0; i < num_scenes; ++i)
   {
     conduit::Node scene = scenes.child(i);
-    scene.print();
     if(!scene.has_path("plots"))
     {
       ASCENT_ERROR("Default scene not implemented");
