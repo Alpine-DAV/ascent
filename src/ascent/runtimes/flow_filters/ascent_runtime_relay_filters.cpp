@@ -218,9 +218,6 @@ void mesh_blueprint_save(const Node &data,
     }
     int global_domains = num_domains;    
 #ifdef PARALLEL
-    // TODO: Support domain overloaded.. 
-    //num_domains = par_size;
-
     // TODO:
     // This a reduce to check for an error ... 
     // it will be a common pattern, how do we make this easy?
@@ -266,16 +263,6 @@ void mesh_blueprint_save(const Node &data,
     for(int i = 0; i < num_domains; ++i)
     {
         Node dom = multi_dom.child(i); 
-        //Node v_info;
-        //if(!conduit::blueprint::verify("mesh",
-        //                               dom,
-        //                               v_info))
-        //{
-        //    ASCENT_ERROR("blueprint verify failed for protocol"
-        //                  << "mesh" << std::endl
-        //                  << "details:" << std::endl
-        //                  << v_info.to_json());
-        //}
         uint64 domain = dom["state/domain"].to_uint64();
 
         snprintf(fmt_buff, sizeof(fmt_buff), "%06lu",domain);

@@ -778,7 +778,6 @@ AscentRuntime::Execute(const conduit::Node &actions)
         else if( action_name == "execute")
         {
           ConnectGraphs();
-          ASCENT_INFO(w.graph().to_dot());
           w.execute();
           w.registry().reset();
         }

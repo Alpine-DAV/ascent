@@ -385,13 +385,13 @@ EnsureBlueprint::execute()
             vtkm::cont::DataSet dset; 
             vtkm::Id domain_id;
             in_dset->GetDomain(dom, dset, domain_id);
+            dset.PrintSummary(std::cout);
             conduit::Node &bp = res->append();
             VTKHDataAdapter::VTKmToBlueprintDataSet(&dset, bp);
             bp["state/cycle"] = cycle;
         }
 
         set_output<conduit::Node>(res);
-        res->print();
     }
     else if(input(0).check_type<vtkm::cont::DataSet>())
     {

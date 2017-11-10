@@ -117,7 +117,7 @@ TEST(ascent_mpi_runtime, test_relay_extract_iso)
     // filter knobs
     conduit::Node &contour_params = pipelines["pl1/f1/params"];
     contour_params["field"] = "braid";
-    contour_params["iso_values"] = 0.;
+    contour_params["iso_values"] = 250.;
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
