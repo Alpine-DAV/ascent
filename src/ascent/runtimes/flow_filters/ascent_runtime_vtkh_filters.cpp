@@ -389,6 +389,7 @@ EnsureBlueprint::execute()
             conduit::Node &bp = res->append();
             VTKHDataAdapter::VTKmToBlueprintDataSet(&dset, bp);
             bp["state/cycle"] = cycle;
+            bp["state/domain_id"] = domain_id;
         }
 
         set_output<conduit::Node>(res);
