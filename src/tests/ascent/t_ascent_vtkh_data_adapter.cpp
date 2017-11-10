@@ -225,6 +225,7 @@ TEST(ascent_data_adapter, consistent_domain_ids_check)
                                               2,
                                               mesh2);
     mesh1.remove("state");
+    mesh2["state/domain_id"] = 1;
     bool consistent_ids = false;
 
 
@@ -249,20 +250,9 @@ TEST(ascent_data_adapter, consistent_domain_ids_check)
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(multi_dom);
-    //
-    // Having inconsistent domain ids will throw an exception
-    //
-    try
-    {
-      ascent.execute(actions);
-      consistent_ids = true;
-    }
-    catch(const std::exception &e)
-    {
-      // do nothing 
-    }
+    
+    EXPECT_THROW(ascent.execute(actions),conduit::Error);
     ascent.close();
-    EXPECT_FALSE(consistent_ids);
 }
 
 

@@ -109,7 +109,7 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
     for(int i = 0; i < num_domains; ++i)
     {
       const conduit::Node &dom = multi_dom.child(i);
-      if(dom.has_path("state/domain"))
+      if(dom.has_path("state/domain_id"))
       {
         no_ids = false; 
       }
@@ -171,9 +171,9 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
       vtkm::cont::DataSet *dset = VTKHDataAdapter::BlueprintToVTKmDataSet(dom,
                                                                           topo_name);
       int domain_id = domain_offset;
-      if(node.has_path("state/domain"))
+      if(node.has_path("state/domain_id"))
       {
-          domain_id = node["state/domain"].to_int();
+          domain_id = node["state/domain_id"].to_int();
       }
 #ifdef PARALLEL
       else

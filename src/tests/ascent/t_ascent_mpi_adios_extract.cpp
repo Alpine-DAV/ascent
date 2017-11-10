@@ -94,6 +94,25 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
     
+    // make sure the _output dir exists
+    string output_path = "";
+    if(par_rank == 0)
+    {
+        output_path = prepare_output_dir();
+    }
+    else
+    {
+        output_path = output_dir();
+    }
+
+    string output_file = conduit::utils::join_file_path(output_path,"tout_adios_extract.bp");
+
+    // remove old files before testing
+    if(conduit::utils::is_file(output_file))
+    {
+        conduit::utils::remove_file(output_file);
+    }
+    
     //
     // Create the actions.
     //
@@ -102,26 +121,14 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     extracts["e1/type"]  = "adios";
     // populate some param examples
     extracts["e1/params/transport"] = "file";
-    extracts["e1/params/filename"] = "file.bp";
-    
-    std::vector<float> values;
-    values.push_back(1.f);
-    values.push_back(2.f);
-    values.push_back(3.f);
-    //zero copy == set_external
-    extracts["e1/params/float_values"].set_external(values);
-    
-    const int num_vals = 3;
-    double d_values[num_vals] = {1., 2., 3.};
-    extracts["e1/params/double_values"].set_external(d_values, num_vals);
+    extracts["e1/params/filename"] = output_file;
   
-    
-    extracts["e1/params/actions"] = "actions";
     //
     // we can tell adios to do actions with the published data
     // if we use the same api as ascent all we have to do
     // is translate it in the adios filter
     //
+  
     conduit::Node &contour = extracts["e1/params/actions"].append();
     contour["type"]  = "contour";
     contour["params/field"] = "radial_vert";

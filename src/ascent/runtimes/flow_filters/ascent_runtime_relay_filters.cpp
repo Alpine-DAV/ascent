@@ -169,7 +169,8 @@ void mesh_blueprint_save(const Node &data,
     MPI_Comm_size(mpi_comm, &par_size);
 #endif
     int num_domains = multi_dom.number_of_children();
-    
+
+
     // figure out what cycle we are
     if(num_domains > 0)
     {
@@ -216,7 +217,7 @@ void mesh_blueprint_save(const Node &data,
             dir_ok = create_directory(output_dir);
         }
     }
-    int global_domains = num_domains;    
+    int global_domains = num_domains;
 #ifdef PARALLEL
     // TODO:
     // This a reduce to check for an error ... 
@@ -263,7 +264,7 @@ void mesh_blueprint_save(const Node &data,
     for(int i = 0; i < num_domains; ++i)
     {
         Node dom = multi_dom.child(i); 
-        uint64 domain = dom["state/domain"].to_uint64();
+        uint64 domain = dom["state/domain_id"].to_uint64();
 
         snprintf(fmt_buff, sizeof(fmt_buff), "%06lu",domain);
         oss.str("");

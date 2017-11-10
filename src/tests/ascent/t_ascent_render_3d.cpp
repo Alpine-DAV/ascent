@@ -532,8 +532,8 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     Node verify_info;
     create_3d_example_dataset(mesh1,0,2);
     create_3d_example_dataset(mesh2,1,2);
-    mesh1["state/domain"] = 0; 
-    mesh2["state/domain"] = 1; 
+    mesh1["state/domain_id"] = 0; 
+    mesh2["state/domain_id"] = 1; 
     // There is a bug in conduit blueprint related to rectilinear 
     // reenable this check after updating conduit 
     // EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));

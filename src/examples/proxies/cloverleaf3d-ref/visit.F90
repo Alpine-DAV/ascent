@@ -216,7 +216,7 @@ SUBROUTINE visit(my_ascent)
 
       sim_data = conduit_node_create()
       CALL conduit_node_set_path_float64(sim_data,"state/time", time)
-      CALL conduit_node_set_path_int32(sim_data,"state/domain", parallel%task)
+      CALL conduit_node_set_path_int32(sim_data,"state/domain_id", parallel%task)
       CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
       CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")
       CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", xcoords, nxv*1_8)
