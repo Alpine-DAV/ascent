@@ -157,7 +157,7 @@ TEST(ascent_mpi_runtime, test_relay_extract_iso)
     ascent.close();
    
 }
-#if 0
+//
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_runtime, test_relay_extract_mesh)
 {
@@ -204,25 +204,13 @@ TEST(ascent_mpi_runtime, test_relay_extract_mesh)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "contour";
-    // filter knobs
-    conduit::Node &contour_params = pipelines["pl1/f1/params"];
-    contour_params["field"] = "braid";
-    contour_params["iso_values"] = 0.;
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
-    extracts["e1/pipeline"]  = "pl1";
 
     extracts["e1/params/path"] = output_file;
     
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
     // add the extracts
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
@@ -250,7 +238,7 @@ TEST(ascent_mpi_runtime, test_relay_extract_mesh)
     ascent.close();
    
 }
-#endif
+//
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {

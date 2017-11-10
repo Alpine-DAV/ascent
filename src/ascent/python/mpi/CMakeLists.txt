@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -42,19 +42,31 @@
 # 
 ###############################################################################
 
-###############################################################################
-#
-# file: src/examples/CMakeLists.txt
-#
-###############################################################################
+# Specify the sources of the pure python and compiled portions of our module.
+SET(ascent_mpi_py_python_sources  py_src/__init__.py py_src/ascent_mpi.py)
+#SET(ascent_par_py_headers        ascent_python.hpp)
+SET(ascent_mpi_py_cpp_sources     ascent_mpi_python.cpp)
 
-add_subdirectory(proxies/lulesh2.0.3)
-add_subdirectory(proxies/kripke)
-add_subdirectory(proxies/cloverleaf3d-ref)
-add_subdirectory(synthetic/noise)
 
-# install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python
-        DESTINATION examples)
+# Setup our module
+PYTHON_ADD_HYBRID_MODULE(ascent_mpi_python
+                         python-modules
+                         ascent/mpi
+                         setup.py
+                         "${ascent_mpi_py_python_sources}"
+                         #${ascent_py_headers}
+                         ${ascent_mpi_py_cpp_sources})
 
+# link with the proper libs (beyond python)
+target_link_libraries(ascent_mpi_python ascent_par)
+
+
+# TODO: ADD SUPPORT FOR SUPPORT PYTHON_MODULE_INSTALL_PREFIX
+# install the capi header so other python modules can use it
+# support alt install dir for python module via PYTHON_MODULE_INSTALL_PREFIX
+# if(PYTHON_MODULE_INSTALL_PREFIX)
+#     install(FILES ${ascent_par_py_headers} DESTINATION ${PYTHON_MODULE_INSTALL_PREFIX}/ascent/par)
+# else()
+#     install(FILES ${ascent_par_py_headers} DESTINATION python-modules/ascent/par)
+# endif()
 

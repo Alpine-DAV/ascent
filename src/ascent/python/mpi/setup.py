@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -43,18 +43,24 @@
 ###############################################################################
 
 ###############################################################################
-#
-# file: src/examples/CMakeLists.txt
+# file: setup.py
+# Purpose: distutils setup for ascent par python module.
 #
 ###############################################################################
 
-add_subdirectory(proxies/lulesh2.0.3)
-add_subdirectory(proxies/kripke)
-add_subdirectory(proxies/cloverleaf3d-ref)
-add_subdirectory(synthetic/noise)
+import sys
+from distutils.core import setup
+from distutils.command.install_egg_info import install_egg_info
 
-# install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python
-        DESTINATION examples)
+# disable install_egg_info
+class SkipEggInfo(install_egg_info):
+    def run(self):
+        pass
+
+setup (name = 'ascent mpi',
+       description = 'mpi-enabled ascent',
+       package_dir = {'ascent.mpi':'py_src'},
+       packages=['ascent.mpi'],
+       cmdclass={'install_egg_info': SkipEggInfo})
 
 

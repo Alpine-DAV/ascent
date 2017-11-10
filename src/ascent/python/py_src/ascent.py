@@ -7,11 +7,11 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://software.llnl.gov/ascent/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -43,18 +43,30 @@
 ###############################################################################
 
 ###############################################################################
-#
-# file: src/examples/CMakeLists.txt
+# file: ascent_par.py
+# Purpose: Lazy loads the (non-mpi) ascent interface
+# 
+#  We use lazy loading b/c the aline and alpine_par libraries provide the 
+#  same symbols, and without this, on some platforms (OSX), importing
+#  ascent_python before ascent_par_python prevents us from getting the mpi 
+#  version.
 #
 ###############################################################################
 
-add_subdirectory(proxies/lulesh2.0.3)
-add_subdirectory(proxies/kripke)
-add_subdirectory(proxies/cloverleaf3d-ref)
-add_subdirectory(synthetic/noise)
 
-# install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python
-        DESTINATION examples)
+def about():
+    from .ascent_python import about as ascent_about
+    return ascent_about()
+
+
+def Ascent():
+    from .ascent_python import Ascent as ascent_obj
+    return ascent_obj()
+    
+
+
+
+
+
 
 

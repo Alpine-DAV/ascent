@@ -102,6 +102,7 @@ class UberenvAscent(Package):
         depends_on("mpich",when="+mpich")
         depends_on("conduit~doc~silo~python3+mpich", when="+mpich")
 
+    depends_on("py-mpi4py",when="+python")
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
