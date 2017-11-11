@@ -55,7 +55,7 @@ Publications
 
 - `Projecting Performance Data Over Simulation Geometry Using SOSflow and Alpine <https://vpa17.github.io/pdfs/VPA_2017_wood.pdf>`_ This paper will be presented at the `VPA 17 Workshop <https://vpa17.github.io/>`_, held in conjunction with SC 17, on November 17th 2017 in Denver, CO, USA.
 
-- `PaViz: A Power-Adaptive Framework for Optimal Power and Performance of Scientific Visualization Algorithms <https://www.osti.gov/scitech/biblio/1366964>`_ Presented at the `EGPGV 2017 Symboposim <http://www.vis.uni-stuttgart.de/egpgv/egpgv2017/>`_, held in conjunction with EuroVis 2017, on 12 June,  Barcelona, Spain
+- `PaViz: A Power-Adaptive Framework for Optimal Power and Performance of Scientific Visualization Algorithms <https://www.osti.gov/scitech/biblio/1366964>`_ Presented at the `EGPGV 2017 Symposium <http://www.vis.uni-stuttgart.de/egpgv/egpgv2017/>`_, held in conjunction with EuroVis 2017, on 12 June,  Barcelona, Spain
 
 - `Performance Modeling of In Situ Rendering <http://dl.acm.org/citation.cfm?id=3014936>`_ Presented at `SC16 <http://sc16.supercomputing.org/>`_.
 
