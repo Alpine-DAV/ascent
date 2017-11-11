@@ -7,7 +7,7 @@
 .. #
 .. # All rights reserved.
 .. #
-.. # This file is part of Conduit.
+.. # This file is part of Ascent.
 .. #
 .. # For details, see: http://software.llnl.gov/ascent/.
 .. #
