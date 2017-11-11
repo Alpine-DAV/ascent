@@ -76,6 +76,8 @@ public:
     void  Publish(const conduit::Node &data);
     void  Execute(const conduit::Node &actions);
     
+    void  Info(conduit::Node &out);
+        
     void  Cleanup();
 
 private:

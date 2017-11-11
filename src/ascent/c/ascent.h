@@ -80,15 +80,17 @@ void ascent_about(conduit_node *result);
 
 Ascent *ascent_create();
 
-void ascent_destroy(Ascent *sman);
+void ascent_destroy(Ascent *c_ascent);
 
-void ascent_open(Ascent *sman,  conduit_node *options);
+void ascent_open(Ascent *c_ascent,  conduit_node *options);
 
-void ascent_publish(Ascent *sman, conduit_node *data);
+void ascent_publish(Ascent *c_ascent, conduit_node *data);
 
-void ascent_execute(Ascent *sman, conduit_node *actions);
+void ascent_execute(Ascent *c_ascent, conduit_node *actions);
 
-void ascent_close(Ascent *sman);
+void ascent_info(Ascent *c_ascent, conduit_node *result);
+
+void ascent_close(Ascent *c_ascent);
 
 
 #ifdef __cplusplus

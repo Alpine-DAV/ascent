@@ -112,10 +112,14 @@ TEST(ascent_pipeline, test_render_2d_main_pipeline)
     Ascent ascent;
 
     Node ascent_opts;
+    Node ascent_info;
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
+    ascent.info(ascent_info);
+    EXPECT_EQ(ascent_info["runtime/type"].as_string(),"ascent");
+    ascent_info.print();
     ascent.close();
     //
     // // check that we created an image

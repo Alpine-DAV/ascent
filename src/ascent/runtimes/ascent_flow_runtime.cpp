@@ -94,6 +94,7 @@ FlowRuntime::FlowRuntime()
 :Runtime()
 {
     flow::filters::register_builtin();
+    ResetInfo();
 }
 
 //-----------------------------------------------------------------------------
@@ -133,6 +134,12 @@ FlowRuntime::Initialize(const conduit::Node &options)
     runtime::filters::register_builtin();
 }
 
+//-----------------------------------------------------------------------------
+void
+FlowRuntime::Info(conduit::Node &out)
+{
+    out.set(m_info);
+}
 
 //-----------------------------------------------------------------------------
 void
@@ -167,8 +174,19 @@ FlowRuntime::Publish(const conduit::Node &data)
 
 //-----------------------------------------------------------------------------
 void
+FlowRuntime::ResetInfo()
+{
+    m_info.reset();
+    m_info["runtime/type"] = "flow";
+}
+
+
+//-----------------------------------------------------------------------------
+void
 FlowRuntime::Execute(const conduit::Node &actions)
 {
+    ResetInfo();
+    
     // Loop over the actions
     for (int i = 0; i < actions.number_of_children(); ++i)
     {
@@ -231,6 +249,7 @@ FlowRuntime::Execute(const conduit::Node &actions)
         }
         else if( action_name == "execute")
         {
+            w.info(m_info["flow_graph"]);
             w.execute();
             w.registry().reset();
         }

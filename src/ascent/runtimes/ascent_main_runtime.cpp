@@ -100,6 +100,7 @@ AscentRuntime::AscentRuntime()
 :Runtime()
 {
     flow::filters::register_builtin();
+    ResetInfo();
 }
 
 //-----------------------------------------------------------------------------
@@ -186,6 +187,22 @@ AscentRuntime::Initialize(const conduit::Node &options)
     flow::filters::register_builtin();
     // filters for ascent flow runtime.
     runtime::filters::register_builtin();
+}
+
+
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::Info(conduit::Node &out)
+{
+    out.set(m_info);
+}
+
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::ResetInfo()
+{
+    m_info.reset();
+    m_info["runtime/type"] = "ascent";
 }
 
 
@@ -499,7 +516,7 @@ AscentRuntime::CreateExtracts(const conduit::Node &extracts)
 void 
 AscentRuntime::ConnectGraphs()
 {
-  //create plot + pipine graphs
+  //create plot + pipeline graphs
   std::vector<std::string> names = m_connections.child_names(); 
   for (int i = 0; i < m_connections.number_of_children(); ++i)
   { 
@@ -762,6 +779,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
 void
 AscentRuntime::Execute(const conduit::Node &actions)
 {
+    ResetInfo();
     // Loop over the actions
     for (int i = 0; i < actions.number_of_children(); ++i)
     {
@@ -788,6 +806,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         else if( action_name == "execute")
         {
           ConnectGraphs();
+          w.info(m_info["flow_graph"]);
           w.execute();
           w.registry().reset();
         }

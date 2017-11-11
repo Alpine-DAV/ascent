@@ -87,6 +87,7 @@ public:
     void   open(const conduit::Node &options);
     void   publish(const conduit::Node &data);
     void   execute(const conduit::Node &actions);
+    void   info(conduit::Node &info_out);
     void   close();
 
 private:

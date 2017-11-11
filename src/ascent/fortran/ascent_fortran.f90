@@ -67,54 +67,63 @@ module ascent
     end subroutine ascent_about
 
     !--------------------------------------------------------------------------
-    function ascent_create() result(csman) &
+    function ascent_create() result(cascent) &
             bind(C, name="ascent_create")
         use iso_c_binding
         implicit none
-        type(C_PTR) :: csman
+        type(C_PTR) :: cascent
     end function ascent_create
  
      !--------------------------------------------------------------------------
-    subroutine ascent_destroy(csman) &
+    subroutine ascent_destroy(cascent) &
             bind(C, name="ascent_destroy")
         use iso_c_binding
         implicit none
-        type(C_PTR), value, intent(IN) ::csman
+        type(C_PTR), value, intent(IN) ::cascent
     end subroutine ascent_destroy
  
     !--------------------------------------------------------------------------
-    subroutine ascent_open(csman,cnode) &
+    subroutine ascent_open(cascent,cnode) &
             bind(C, name="ascent_open")
         use iso_c_binding
         implicit none
-        type(C_PTR), value, intent(IN) ::csman
+        type(C_PTR), value, intent(IN) ::cascent
         type(C_PTR), value, intent(IN) ::cnode
     end subroutine ascent_open
  
     !--------------------------------------------------------------------------
-    subroutine ascent_publish(csman, cnode) &
+    subroutine ascent_publish(cascent, cnode) &
             bind(C, name="ascent_publish")
         use iso_c_binding
         implicit none
-        type(C_PTR), value, intent(IN) ::csman
+        type(C_PTR), value, intent(IN) ::cascent
         type(C_PTR), value, intent(IN) ::cnode
     end subroutine ascent_publish
  
     !--------------------------------------------------------------------------
-    subroutine ascent_execute(csman, cnode) &
+    subroutine ascent_execute(cascent, cnode) &
             bind(C, name="ascent_execute")
         use iso_c_binding
         implicit none
-        type(C_PTR), value, intent(IN) ::csman
+        type(C_PTR), value, intent(IN) ::cascent
         type(C_PTR), value, intent(IN) ::cnode
     end subroutine ascent_execute
  
     !--------------------------------------------------------------------------
-    subroutine ascent_close(csman) &
+    subroutine ascent_info(cascent, cnode) &
+            bind(C, name="ascent_info")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) ::cascent
+        type(C_PTR), value, intent(IN) ::cnode
+    end subroutine ascent_info
+ 
+    !--------------------------------------------------------------------------
+    subroutine ascent_close(cascent) &
             bind(C, name="ascent_close")
         use iso_c_binding
         implicit none
-        type(C_PTR), value, intent(IN) ::csman
+        type(C_PTR), value, intent(IN) ::cascent
     end subroutine ascent_close
  
     !--------------------------------------------------------------------------

@@ -212,6 +212,17 @@ Ascent::execute(const conduit::Node &actions)
     m_runtime->Execute(processed_actions);
 }
 
+
+//-----------------------------------------------------------------------------
+void
+Ascent::info(conduit::Node &info_out)
+{
+    if(m_runtime != NULL)
+    {
+        m_runtime->Info(info_out);
+    }
+}
+
 //-----------------------------------------------------------------------------
 void
 Ascent::close()

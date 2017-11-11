@@ -79,6 +79,8 @@ public:
     void  Publish(const conduit::Node &data);
     void  Execute(const conduit::Node &actions);
     
+    void  Info(conduit::Node &out);
+    
     void  Cleanup();
 
 private:
@@ -87,7 +89,11 @@ private:
     // conduit node that (externally) holds the data from the simulation
     conduit::Node     m_data; 
     conduit::Node     m_connections; 
-    conduit::Node     m_scene_connections; 
+    conduit::Node     m_scene_connections;
+    
+    conduit::Node     m_info;
+
+    void              ResetInfo();
 
     flow::Workspace w;
     std::string CreateDefaultFilters();
