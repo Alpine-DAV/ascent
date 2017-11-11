@@ -62,7 +62,7 @@
 #include <conduit_blueprint.hpp>
 
 // mpi related includes
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
 // -- conduit relay mpi
 #include <conduit_relay_mpi.hpp>
@@ -120,7 +120,7 @@ AscentRuntime::~AscentRuntime()
 void
 AscentRuntime::Initialize(const conduit::Node &options)
 {
-#if PARALLEL
+#if ASCENT_MPI_ENABLED
     if(!options.has_child("mpi_comm") ||
        !options["mpi_comm"].dtype().is_integer())
     {

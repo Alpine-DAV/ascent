@@ -53,7 +53,7 @@
 #define ASCENT_FLOW_PIPELINE_ADIOS_FILTERS_HPP
 
 #include <flow_filter.hpp>
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
 #endif
 
@@ -105,7 +105,7 @@ private:
                                  std::vector<std::vector<double>> &globalCoords);
 
     int rank, numRanks;
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm;
 #else
     int mpi_comm;

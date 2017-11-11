@@ -92,7 +92,7 @@ if(MPI_FOUND)
     include_directories("tools")
 
 
-    set(kripke_par_deps ascent_par mpi)
+    set(kripke_par_deps ascent_mpi mpi)
     if(OPENMP_FOUND)
            list(APPEND kripke_par_deps openmp)
     endif()

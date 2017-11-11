@@ -70,7 +70,7 @@
 #include <flow_workspace.hpp>
 
 // mpi related includes
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
 // -- conduit relay mpi
 #include <conduit_relay_mpi.hpp>
@@ -163,7 +163,7 @@ void mesh_blueprint_save(const Node &data,
     int par_size = 1;
     // we may not have any domains so init to max
     int cycle = std::numeric_limits<int>::max();
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     MPI_Comm_rank(mpi_comm, &par_rank);
     MPI_Comm_size(mpi_comm, &par_size);
@@ -183,7 +183,7 @@ void mesh_blueprint_save(const Node &data,
       std::cout<<"CYCLE "<<cycle<<"\n";
     }
     
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
     Node n_cycle, n_min;
     
     n_cycle = (int)cycle;
@@ -218,7 +218,7 @@ void mesh_blueprint_save(const Node &data,
         }
     }
     int global_domains = num_domains;
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
     // TODO:
     // This a reduce to check for an error ... 
     // it will be a common pattern, how do we make this easy?
@@ -274,7 +274,7 @@ void mesh_blueprint_save(const Node &data,
     }
     
     int root_file_writer = 0;
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
     // Rank 0 could have an empty domain, so we have to check
     // to find someone with a data set to write out the root file.
     Node out;

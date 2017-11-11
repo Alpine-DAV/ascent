@@ -118,7 +118,7 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
         has_ids = false;
       }
     }
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
     int comm_size = vtkh::GetMPISize();
     int *has_ids_array = new int[comm_size];
     int *no_ids_array = new int[comm_size];
@@ -155,7 +155,7 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
     }
 
     int domain_offset = 0;
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
     int *domains_per_rank = new int[comm_size];
     int rank = vtkh::GetMPIRank();
     MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, vtkh::GetMPIComm());
@@ -175,7 +175,7 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
       {
           domain_id = node["state/domain_id"].to_int();
       }
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
       else
       {
          domain_id = domain_offset + i;

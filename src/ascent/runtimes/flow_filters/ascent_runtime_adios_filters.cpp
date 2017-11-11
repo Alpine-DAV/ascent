@@ -74,7 +74,7 @@ TODO:
 
 // mpi related includes
 
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
 #else
 #include <mpidummy.h>
@@ -166,7 +166,7 @@ ADIOS::ADIOS()
     for (int i = 0; i < 3; i++)
         globalDims[i] = localDims[i] = offset[i] = 0;
     
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
     mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     MPI_Comm_rank(mpi_comm, &rank);
     MPI_Comm_size(mpi_comm, &numRanks);
@@ -322,7 +322,7 @@ ADIOS::CalcRectilinearMeshInfo(const conduit::Node &node,
         return true;
     }
 
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
     
     // Have to figure out the indexing for each rank.
     vector<int> ldims(3*numRanks, 0), buff(3*numRanks,0);

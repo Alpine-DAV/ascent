@@ -62,7 +62,7 @@
 #include <conduit_blueprint.hpp>
 
 // mpi related includes
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
 // -- conduit relay mpi
 #include <conduit_relay_mpi.hpp>
@@ -111,7 +111,7 @@ EmptyRuntime::~EmptyRuntime()
 void
 EmptyRuntime::Initialize(const conduit::Node &options)
 {
-#if PARALLEL
+#if ASCENT_MPI_ENABLED
     if(!options.has_child("mpi_comm") ||
        !options["mpi_comm"].dtype().is_integer())
     {
@@ -137,7 +137,7 @@ EmptyRuntime::Publish(const conduit::Node &data)
     Node verify_info;
     bool verify_ok = conduit::blueprint::mesh::verify(data,verify_info);
 
-#if PARALLEL
+#if ASCENT_MPI_ENABLED
 
     MPI_Comm mpi_comm = MPI_Comm_f2c(m_runtime_options["mpi_comm"].to_int());
 

@@ -78,7 +78,7 @@ blt_add_target_compile_flags(TO lulesh_ser FLAGS "-DUSE_MPI=0 ${lulesh_openmp_fl
 
 if(MPI_FOUND)
     
-    set(lulesh_par_deps ascent_par mpi)
+    set(lulesh_par_deps ascent_mpi mpi)
     if(OPENMP_FOUND)
            list(APPEND lulesh_par_deps openmp)
     endif()

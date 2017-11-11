@@ -70,7 +70,7 @@
 
 using namespace conduit;
 
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
 #include "conduit_relay_mpi.hpp"
 #include <mpi.h>
 using namespace conduit::relay::mpi;
@@ -133,7 +133,7 @@ parseLine(char *line)
 void
 BlockTimer::Start(const std::string &name)
 {
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
     MPI_Comm_rank(MPI_COMM_WORLD, &s_rank);
     MPI_Barrier(MPI_COMM_WORLD);
 #else
@@ -161,7 +161,7 @@ BlockTimer::Start(const std::string &name)
 void
 BlockTimer::Stop(const std::string &name)
 {
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
     //MPI_Barrier(MPI_COMM_WORLD);
 #endif
     if (s_global_depth <= MAX_DEPTH)
@@ -422,7 +422,7 @@ BlockTimer::AverageByCount(Node &node, int numRanks)
 void 
 BlockTimer::ReduceAll(Node &thisRanksNode)
 {
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
     int temp;
     MPI_Comm_size(MPI_COMM_WORLD, &temp);
     const unsigned int numProcesses = temp;

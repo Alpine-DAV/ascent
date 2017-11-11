@@ -277,36 +277,42 @@ void
 about(conduit::Node &n)
 {
     n.reset();
-    n["version"] = "0.Z.0";
+    n["version"] = "0.1.0";
+
+#if defined(ASCENT_MPI_ENABLED)
+    n["mpi"] = "enabled";
+#else
+    n["mpi"] = "disabled";
+#endif
 
 #if defined(ASCENT_VTKH_ENABLED)
-     n["runtimes/ascent/status"] = "enabled";
-     if(vtkh::IsSerialEnabled())
-     {
-       n["runtimes/ascent/backends/serial"] = "enabled";
-     }
-     else
-     {
-       n["runtimes/ascent/backends/serial"] = "disabled";
-     }
+    n["runtimes/ascent/status"] = "enabled";
+    if(vtkh::IsSerialEnabled())
+    {
+        n["runtimes/ascent/backends/serial"] = "enabled";
+    }
+    else
+    {
+        n["runtimes/ascent/backends/serial"] = "disabled";
+    }
 
-     if(vtkh::IsTBBEnabled())
-     {
-       n["runtimes/ascent/backends/tbb"] = "enabled";
-     }
-     else
-     {
-       n["runtimes/ascent/backends/tbb"] = "disabled";
-     }
+    if(vtkh::IsTBBEnabled())
+    {
+        n["runtimes/ascent/backends/tbb"] = "enabled";
+    }
+    else
+    {
+        n["runtimes/ascent/backends/tbb"] = "disabled";
+    }
 
-     if(vtkh::IsCUDAEnabled())
-     {
-       n["runtimes/ascent/backends/cuda"] = "enabled";
-     }
-     else
-     {
-       n["runtimes/ascent/backends/cuda"] = "disabled";
-     }
+    if(vtkh::IsCUDAEnabled())
+    {
+        n["runtimes/ascent/backends/cuda"] = "enabled";
+    }
+    else
+    {
+        n["runtimes/ascent/backends/cuda"] = "disabled";
+    }
 #else
      n["runtimes/ascent/status"] = "disabled";
 #endif

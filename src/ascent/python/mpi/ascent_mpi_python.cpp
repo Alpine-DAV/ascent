@@ -552,9 +552,9 @@ static struct PyModuleDef ascent_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *ASCENT_PAR_PYTHON_API PyInit_ascent_mpi_python(void)
+PyObject *ASCENT_MPI_PYTHON_API PyInit_ascent_mpi_python(void)
 #else
-void ASCENT_PAR_PYTHON_API initascent_mpi_python(void)
+void ASCENT_MPI_PYTHON_API initascent_mpi_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    

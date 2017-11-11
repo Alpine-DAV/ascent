@@ -54,7 +54,7 @@ Ascent uses CMake for its build system.
 Building Ascent creates two separate libraries:
 
     * libascent : a version for execution on a single node
-    * libascent_par : a version for distributed memory parallel
+    * libascent_mpi : a version for distributed memory parallel
 
 The CMake variable( ENABLE_MPI ON | OFF ) controls the building the parallel version of Ascent and included proxy-apps.
 
@@ -115,6 +115,17 @@ Clone the Ascent repo:
     git clone --recursive https://github.com/Ascent-DAV/ascent.git 
 
 
+``--recursive`` is necessary because we are using a git submodule to pull in BLT (https://github.com/llnl/blt). 
+If you cloned without ``--recursive``, you can checkout this submodule using:
+
+.. code:: bash
+    
+    cd ascent
+    git submodule init
+    git submodule update
+
+
+
 Configure a build:
 
 ``config-build.sh`` is a simple wrapper for the cmake call to configure ascent. 
@@ -167,6 +178,8 @@ Ascent's build system supports the following CMake options:
 * **VTKM_DIR** - Path to an VTK-m install *(optional)*. 
 
 * **HDF5_DIR** - Path to a HDF5 install *(optional)*. 
+
+* **ADIOS_DIR** - Path to a ADIOS install *(optional)*. 
 
 
 
