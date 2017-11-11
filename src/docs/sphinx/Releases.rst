@@ -45,16 +45,16 @@
 Releases
 ========
 
-Source distributions for Conduit are hosted on github:
+Source distributions for Ascent are hosted on github:
 
-https://github.com/llnl/ascent/releases
+https://github.com/Alpine-DAV/ascent/releases
 
 v0.1.0
 -------
 
 The initial release of Ascent.
 
-* `Source Tarball <https://github.com/LLNL/ascent/archive/v0.1.0.tar.gz>`_
+* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases>`_
 * `Docs <http://software.llnl.gov/ascent/v0.1.0>`_
 
 

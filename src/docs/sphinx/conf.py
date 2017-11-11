@@ -9,7 +9,7 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
 # For details, see: http://software.llnl.gov/alpine/.
 # 
@@ -44,7 +44,7 @@
 # 
 ###############################################################################
 #
-# Alpine documentation build configuration file, created by
+# Ascent documentation build configuration file, created by
 # sphinx-quickstart on Thu Oct 16 11:23:46 2014.
 #
 # This file is execfile()d with the current directory set to its
@@ -93,8 +93,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Alpine'
-copyright = u'2015-2016, LLNS'
+project = u'Ascent'
+copyright = u'2015-2017, LLNS'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -226,7 +226,7 @@ html_theme = 'default'
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Alpinedoc'
+htmlhelp_basename = 'Ascentdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -246,7 +246,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'Alpine.tex', u'Alpine Documentation',
+  ('index', 'Ascent.tex', u'Ascent Documentation',
    u'LLNS', 'manual'),
 ]
 
@@ -276,7 +276,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'Alpine', u'Alpine Documentation',
+    ('index', 'Ascent', u'Ascent Documentation',
      [u'LLNS'], 1)
 ]
 
@@ -290,8 +290,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Alpine', u'Alpine Documentation',
-   u'LLNS', 'Alpine', '{The Alpine}',
+  ('index', 'Ascent', u'Ascent Documentation',
+   u'LLNS', 'Ascent', '{Ascent}',
    'Miscellaneous'),
 ]
 
