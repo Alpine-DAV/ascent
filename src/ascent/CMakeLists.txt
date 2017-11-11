@@ -55,6 +55,7 @@ set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
 set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
 
 set(ASCENT_HDF5_ENABLED ${HDF5_FOUND})
+set(ASCENT_ADIOS_ENABLED ${ADIOS_FOUND})
 
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
@@ -98,6 +99,7 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_filters.hpp
     runtimes/flow_filters/ascent_runtime_relay_filters.hpp
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
+
     # utils
     utils/ascent_logging.hpp
     utils/ascent_file_system.hpp
@@ -162,7 +164,6 @@ if(TBB_FOUND)
     list(APPEND ascent_thirdparty_libs tbb)
 endif()
 
-
 ##########################################
 # Build a serial version of ascent
 ##########################################
@@ -187,26 +188,33 @@ install(TARGETS ascent
 if(MPI_FOUND)
 
     # req'd libs 
-    set(ascent_par_thirdparty_libs mpi conduit_relay_mpi)
+    set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi)
 
-    list(APPEND ascent_par_thirdparty_libs ${ascent_thirdparty_libs})
+    # adios support is only in par (mpi ver)
+    if (ADIOS_FOUND)
+      list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios_filters.hpp)
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios_filters.cpp)
+       list(APPEND ascent_mpi_thirdparty_libs adios)
+    endif()
+
+    list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
 
     if(VTKM_FOUND)
         # swap vtkh_par for vtkh
-        list(REMOVE_ITEM ascent_par_thirdparty_libs vtkh)
-        list(APPEND ascent_par_thirdparty_libs vtkh_par)
+        list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)
+        list(APPEND ascent_mpi_thirdparty_libs vtkh_par)
     endif()
 
     blt_add_library(
-        NAME        ascent_par
-        SOURCES     ${ascent_sources} ${ascent_par_sources}
-        HEADERS     ${ascent_headers} ${ascent_par_headers}
-        DEPENDS_ON  ${ascent_par_thirdparty_libs})
+        NAME        ascent_mpi
+        SOURCES     ${ascent_sources} ${ascent_mpi_sources}
+        HEADERS     ${ascent_headers} ${ascent_mpi_headers}
+        DEPENDS_ON  ${ascent_mpi_thirdparty_libs})
     
-    blt_add_target_compile_flags(TO ascent_par FLAGS "-D PARALLEL")
+    blt_add_target_compile_flags(TO ascent_mpi FLAGS "-D ASCENT_MPI_ENABLED")
 
     # install target for mpi ver
-    install(TARGETS ascent_par
+    install(TARGETS ascent_mpi
             EXPORT  ascent
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib

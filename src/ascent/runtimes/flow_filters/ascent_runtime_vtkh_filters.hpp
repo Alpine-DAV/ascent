@@ -104,6 +104,17 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class EnsureBlueprint : public ::flow::Filter
+{
+public:
+    EnsureBlueprint();
+   ~EnsureBlueprint();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class VTKHRayTracer : public ::flow::Filter
 {
 public:

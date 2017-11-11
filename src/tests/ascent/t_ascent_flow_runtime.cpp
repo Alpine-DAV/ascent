@@ -600,7 +600,10 @@ TEST(ascent_flow_runtime, test_flow_mesh_blueprint_hdf5_output)
     
     Node n;
     ascent::about(n);
-    
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path, 
+                                                        "tout_flow_mesh_bp_test");
     
     Node actions;
     actions.append();
@@ -612,7 +615,7 @@ TEST(ascent_flow_runtime, test_flow_mesh_blueprint_hdf5_output)
 
     graph["filters/save/type_name"] = "relay_io_save";
     graph["filters/save/params/protocol"]  = "blueprint/mesh/hdf5";
-    graph["filters/save/params/path"]      = "tout_flow_mesh_bp_test";
+    graph["filters/save/params/path"]      = output_file;
     
     graph["connections"].list_of(Schema(DataType::empty()),2);
     graph["connections"][0]["src"]  = "source";

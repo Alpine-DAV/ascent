@@ -61,6 +61,7 @@ namespace vtkm
 namespace cont
 {
 class DataSet;
+class Field;
 };
 };
 
@@ -111,7 +112,8 @@ public:
     // wraps a single VTKm data set into a VTKH dataset
     static vtkh::DataSet    *VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset);
 
-
+    static void              VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
+                                                    conduit::Node &node);
 private:
     // helpers for specific conversion cases
     static vtkm::cont::DataSet  *UniformBlueprintToVTKmDataSet(const std::string &coords_name,
@@ -150,6 +152,12 @@ private:
                                           int neles,
                                           int nverts,
                                           vtkm::cont::DataSet *dset);
+
+    static void VTKmTopologyToBlueprint(conduit::Node &output,
+                                        const vtkm::cont::DataSet &data_set);
+
+    static void VTKmFieldToBlueprint(conduit::Node &output,
+                                     const vtkm::cont::Field &field);
 
 };
 

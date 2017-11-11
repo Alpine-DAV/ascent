@@ -62,7 +62,7 @@
 #include <conduit_blueprint.hpp>
 
 // mpi related includes
-#ifdef PARALLEL
+#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
 // -- conduit relay mpi
 #include <conduit_relay_mpi.hpp>
@@ -120,7 +120,7 @@ AscentRuntime::~AscentRuntime()
 void
 AscentRuntime::Initialize(const conduit::Node &options)
 {
-#if PARALLEL
+#if ASCENT_MPI_ENABLED
     if(!options.has_child("mpi_comm") ||
        !options["mpi_comm"].dtype().is_integer())
     {
@@ -340,6 +340,76 @@ AscentRuntime::CreatePipelines(const conduit::Node &pipelines)
 
 //-----------------------------------------------------------------------------
 void 
+AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
+                                    const std::string extract_name)
+{
+  std::string filter_name; 
+
+  conduit::Node params = extract["params"];
+
+  if(!extract.has_path("type"))
+  {
+    ASCENT_ERROR("Extract must have a 'type'");
+  }
+ 
+  if(extract["type"].as_string() == "adios")
+  {
+    filter_name = "adios";
+  }
+  else if(extract["type"].as_string() == "relay")
+  {
+    filter_name = "relay_io_save";
+    // set the default protocol
+    if(!params.has_path("protocol"))
+    {
+      params["protocol"] = "blueprint/mesh/hdf5";
+    }
+  }
+  else
+  {
+    ASCENT_ERROR("Unrecognized extract type "<<extract["type"].as_string());
+  }
+ 
+  if(w.graph().has_filter(extract_name))
+  {
+    ASCENT_INFO("Duplicate extract name "<<extract_name
+                <<" original is being overwritted");
+  }
+
+
+  std::string ensure_name = "ensure_blueprint_" + extract_name;
+  conduit::Node empty_params; 
+  
+  w.graph().add_filter("ensure_blueprint",
+                       ensure_name,           
+                       empty_params);
+
+  w.graph().add_filter(filter_name,
+                       extract_name,           
+                       params);
+
+  //
+  // We can't connect the extract to the pipeline since
+  // we want to allow users to specify actions any any order 
+  //
+  std::string extract_source;
+  if(extract.has_path("pipeline"))
+  {
+    extract_source = extract["pipeline"].as_string();;
+  }
+  else
+  {
+    // this is the blueprint mesh 
+    extract_source = "source";
+  }
+  std::cout<<"***** extract source :  "<<extract_source<<"\n";
+  m_connections[ensure_name] = extract_source;
+  m_connections[extract_name] = ensure_name;
+
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void 
 AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
                                  const std::string plot_name,
                                  bool composite)
@@ -416,6 +486,17 @@ AscentRuntime::CreatePlots(const conduit::Node &plots)
 }
 //-----------------------------------------------------------------------------
 void 
+AscentRuntime::CreateExtracts(const conduit::Node &extracts)
+{
+  std::vector<std::string> names = extracts.child_names(); 
+  for(int i = 0; i < extracts.number_of_children(); ++i)
+  {
+    conduit::Node extract = extracts.child(i);
+    ConvertExtractToFlow(extract, names[i]);
+  }
+}
+//-----------------------------------------------------------------------------
+void 
 AscentRuntime::ConnectGraphs()
 {
   //create plot + pipine graphs
@@ -486,7 +567,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
   for(int i = 0; i < num_scenes; ++i)
   {
     conduit::Node scene = scenes.child(i);
-    scene.print();
     if(!scene.has_path("plots"))
     {
       ASCENT_ERROR("Default scene not implemented");
@@ -700,10 +780,14 @@ AscentRuntime::Execute(const conduit::Node &actions)
           CreateScenes(action["scenes"]);
         }
         
+        if(action_name == "add_extracts")
+        {
+          CreateExtracts(action["extracts"]);
+        }
+        
         else if( action_name == "execute")
         {
           ConnectGraphs();
-          ASCENT_INFO(w.graph().to_dot());
           w.execute();
           w.registry().reset();
         }

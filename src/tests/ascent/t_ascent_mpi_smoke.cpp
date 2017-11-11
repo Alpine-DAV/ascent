@@ -42,52 +42,74 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_config.h
+/// file: t_ascent_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_CONFIG_H
-#define ASCENT_CONFIG_H
+#include "gtest/gtest.h"
 
-// this path points to the web client js code tree
-#cmakedefine ASCENT_WEB_CLIENT_ROOT   "@ASCENT_WEB_CLIENT_ROOT@"
+#include <ascent.hpp>
 
-// defs for general openmp support
-#cmakedefine ASCENT_USE_OPENMP        "@OPENMP_FOUND@"
+#include <mpi.h>
 
-// defs for runtime support based on which 3rd-party libs we have 
+#include <iostream>
+#include <math.h>
 
-#cmakedefine ASCENT_VTKH_ENABLED      "@VTKM_FOUND@"
-
-#cmakedefine ASCENT_VTKM_ENABLED      "@VTKM_FOUND@"
-#cmakedefine ASCENT_VTKM_USE_CUDA     "@CUDA_FOUND@"
-#cmakedefine ASCENT_VTKM_USE_TBB      "@TBB_FOUND@"
+#include "t_config.hpp"
 
 
-#cmakedefine ASCENT_ADIOS_ENABLED     "@ADIOS_FOUND@"
+using namespace std;
+using namespace conduit;
+using namespace ascent;
 
-#cmakedefine ASCENT_HDF5_ENABLED      "@HDF5_FOUND@"
 
 //-----------------------------------------------------------------------------
-//
-// #define platform check helpers
-//
+TEST(ascent_smoke, ascent_about)
+{
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    ASCENT_INFO("Rank "
+                  << par_rank 
+                  << " of " 
+                  << par_size
+                  << " reporting");
+
+    if(par_rank == 0)
+    {
+        ASCENT_INFO(ascent::about());
+    }
+    
+    Node open_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    open_opts["mpi_comm"] = MPI_Comm_c2f(comm);    
+    //
+    // Open and close Ascent
+    //
+    Ascent ascent;
+    ascent.open(open_opts);
+    ascent.close();
+}
+
 //-----------------------------------------------------------------------------
+int main(int argc, char* argv[])
+{
+    int result = 0;
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+    ::testing::InitGoogleTest(&argc, argv);
+    MPI_Init(&argc, &argv);
+    result = RUN_ALL_TESTS();
+    MPI_Finalize();
 
-#define ASCENT_PLATFORM_WINDOWS
-#elif  defined(__APPLE__)
-#define ASCENT_PLATFORM_APPLE
-#else
-#define ASCENT_PLATFORM_UNIX
-#endif
-
-
-#endif
-
-
+    return result;
+}
 

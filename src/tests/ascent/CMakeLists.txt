@@ -60,15 +60,23 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_threshold
                 t_ascent_flow_runtime)
 
-set(MPI_TESTS  t_ascent_mpi_empty_runtime
+set(MPI_TESTS  t_ascent_mpi_smoke
+               t_ascent_mpi_empty_runtime
                t_ascent_mpi_render_2d
                t_ascent_mpi_render_3d)
 
 
 # include the "ascent" pipeline
 if(VTKM_FOUND)
-   list(APPEND BASIC_TESTS t_ascent_ascent_runtime)
-   list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime)
+   list(APPEND BASIC_TESTS t_ascent_ascent_runtime
+                           t_ascent_vtkh_data_adapter)
+   list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime
+                           t_ascent_mpi_relay_extract)
+endif()
+
+# adios tests
+if(ADIOS_FOUND)
+   list(APPEND MPI_TESTS t_ascent_mpi_adios_extract)
 endif()
 
 
@@ -88,7 +96,7 @@ if(MPI_FOUND AND ENABLE_MPI)
     message(STATUS "MPI enabled: Adding related unit tests")
     foreach(TEST ${MPI_TESTS})
         # this uses 2 procs
-        add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ascent_par) 
+        add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ascent_mpi) 
         set_target_properties( ${TEST} PROPERTIES COMPILE_FLAGS "-D PARALLEL")
     endforeach()
 else()

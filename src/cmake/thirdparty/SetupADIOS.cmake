@@ -44,87 +44,39 @@
 
 ###############################################################################
 #
-# Cloverleaf3D CMake Build for Ascent
+# Setup ADIOS
 #
 ###############################################################################
 
+# first Check for ADIOS_DIR
 
-set(CLOVER3D_SOURCES
-    PdV.f90
-    PdV_kernel.f90
-    accelerate.f90
-    accelerate_kernel.f90
-    advec_cell_driver.f90
-    advec_cell_kernel.f90
-    advec_mom_driver.f90
-    advec_mom_kernel.f90
-    advection.f90
-    build_field.f90
-    calc_dt.f90
-    calc_dt_kernel.f90
-    clover.F90
-    clover_leaf.f90
-    data.f90
-    definitions.f90
-    field_summary.f90
-    field_summary_kernel.f90
-    flux_calc.f90
-    flux_calc_kernel.f90
-    generate_chunk.f90
-    generate_chunk_kernel.f90
-    hydro.f90
-    ideal_gas.f90
-    ideal_gas_kernel.f90
-    initialise.f90
-    initialise_chunk.f90
-    initialise_chunk_kernel.f90
-    pack_kernel.f90
-    parse.f90
-    read_input.f90
-    report.f90
-    reset_field.f90
-    reset_field_kernel.f90
-    revert.f90
-    revert_kernel.f90
-    start.f90
-    timer.f90
-    timestep.f90
-    update_halo.f90
-    update_halo_kernel.f90
-    viscosity.f90
-    viscosity_kernel.f90
-    visit.F90
-    timer_c.c
-    clover_main.cpp)
-
-# cloverleaf3d reqs fortran and mpi
-if(MPI_FOUND AND FORTRAN_FOUND)
-    # copy over the input deck
-    configure_file(clover.in ${CMAKE_CURRENT_BINARY_DIR}/clover.in COPYONLY)
-    configure_file(ascent_actions.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_actions.json COPYONLY)
-    configure_file(ascent_options.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_options.json COPYONLY)
-
-    if(MPI_Fortran_USE_MODULE )
-        set(clover_compile_flags "-DUSE_MOD")
-    else()
-        set(clover_compile_flags "-DUSE_MPIF") 
-    endif()
-
-    set(clover_par_deps ascent_mpi mpi)
-    
-    blt_add_executable(
-        NAME        cloverleaf3d_par
-        SOURCES     ${CLOVER3D_SOURCES}
-        DEPENDS_ON  ${clover_par_deps}
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
-
-                          
-    blt_add_target_compile_flags(TO cloverleaf3d_par FLAGS "${clover_compile_flags}")
-
+if(NOT ADIOS_DIR)
+    MESSAGE(FATAL_ERROR "ADIOS support needs explicit ADIOS_DIR")
 endif()
 
+MESSAGE(STATUS "Looking for ADIOS using ADIOS_DIR = ${ADIOS_DIR}")
 
+# CMake's FindADIOS module uses the ADIOS_ROOT env var
+set(ADIOS_ROOT ${ADIOS_DIR})
+set(ENV{ADIOS_ROOT} ${ADIOS_ROOT})
 
+# Use CMake's FindADIOS module, which uses hdf5's compiler wrappers to extract
+# all the info about the hdf5 install
+include(${ADIOS_DIR}/etc/FindADIOS.cmake)
 
+# FindADIOS sets ADIOS_DIR to it's installed CMake info if it exists
+# we want to keep ADIOS_DIR as the root dir of the install to be 
+# consistent with other packages
 
+set(ADIOS_DIR ${ADIOS_ROOT} CACHE PATH "" FORCE)
+# not sure why we need to set this, but we do
+#set(ADIOS_FOUND TRUE CACHE PATH "" FORCE)
+
+if(NOT ADIOS_FOUND)
+    message(FATAL_ERROR "ADIOS_DIR is not a path to a valid ADIOS install")
+endif()
+
+blt_register_library(NAME adios
+                     INCLUDES ${ADIOS_INCLUDE_DIRS}
+                     LIBRARIES ${ADIOS_LIBRARIES} )
 

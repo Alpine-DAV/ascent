@@ -70,6 +70,7 @@ class UberenvAscent(Package):
              description="Build CMake (if off, attempt to use cmake from PATH)")
 
     variant("vtkm",default=True,description="build with vtkm pipeline support")
+    variant("adios",default=True,description="build with adios filter support")
     variant("doc",default=True,description="build third party dependencies for creating Ascent's docs")
     variant("python",default=True,description="build python 2")
     variant("mpich",default=False,description="build mpich as MPI lib for Ascent")
@@ -79,6 +80,8 @@ class UberenvAscent(Package):
     depends_on("vtkm",when="+vtkm")
     depends_on("vtkh~mpich",when="+vtkm~mpich")
     depends_on("vtkh+mpich",when="+vtkm+mpich")
+
+    depends_on("adios",when="+adios")
     
     # python2
     depends_on("python", when="+python")
@@ -276,6 +279,16 @@ class UberenvAscent(Package):
             #######################
             cfg.write("# vtkh from uberenv\n")
             cfg.write(cmake_cache_entry("VTKH_DIR", spec['vtkh'].prefix))
+
+
+        #######################
+        # adios
+        #######################
+        if "+adios" in spec:
+            cfg.write("\n# adios support\n\n")
+
+            cfg.write("# adios from uberenv\n")
+            cfg.write(cmake_cache_entry("ADIOS_DIR", spec['adios'].prefix))
 
 
         cfg.write("##################################\n")

@@ -47,7 +47,7 @@ void writeAscentData(Ascent &ascent, Grid_Data *grid_data, int timeStep)
     conduit::float64 *coords[3];
 
     data["state/time"]   = (conduit::float64)3.1415;
-    data["state/domain"] = (conduit::uint64) myid;
+    data["state/domain_id"] = (conduit::uint64) myid;
     data["state/cycle"]  = (conduit::uint64) timeStep;
 
     data["state/performance/incomingRequests"] = ParallelComm::getIncomingRequests();

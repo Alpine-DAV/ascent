@@ -87,7 +87,9 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     // Create the data.
     //
     Node data, verify_info;
-    create_2d_example_dataset(data,par_rank,par_size);
+    create_3d_example_dataset(data,par_rank,par_size);
+    
+    
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
@@ -102,32 +104,45 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     {
         output_path = output_dir();
     }
-    
-    string output_file = conduit::utils::join_file_path(output_path,"tout_render_mpi_2d_default_runtime");
-    
-    // remove old images before rendering
-    remove_test_image(output_file);
+
+    string output_file = conduit::utils::join_file_path(output_path,"tout_adios_extract.bp");
+
+    // remove old files before testing
+    if(conduit::utils::is_file(output_file))
+    {
+        conduit::utils::remove_file(output_file);
+    }
     
     //
     // Create the actions.
     //
 
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial_vert";
-    scenes["s1/image_prefix"] = output_file;
+    conduit::Node extracts;
+    extracts["e1/type"]  = "adios";
+    // populate some param examples
+    extracts["e1/params/transport"] = "file";
+    extracts["e1/params/filename"] = output_file;
+  
+    //
+    // we can tell adios to do actions with the published data
+    // if we use the same api as ascent all we have to do
+    // is translate it in the adios filter
+    //
+  
+    conduit::Node &contour = extracts["e1/params/actions"].append();
+    contour["type"]  = "contour";
+    contour["params/field"] = "radial_vert";
+    contour["params/iso_values"] = 0.3;
  
     conduit::Node actions;
-    conduit::Node &add_plots = actions.append();
-    add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
-    // todo add_scene, singular? to simplify
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-        
     
     actions.print();
-        
     
     //
     // Run Ascent
@@ -146,19 +161,7 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     ascent.close();
    
     MPI_Barrier(comm);
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
 }
-
-//-----------------------------------------------------------------------------
-TEST(ascent_mpi_runtime, test_error_for_mpi_vs_non_mpi)
-{
-    Ascent ascent;
-    Node ascent_opts;
-    // we throw an error if an mpi_comm is NO provided to a mpi ver of ascent
-    EXPECT_THROW(ascent.open(),conduit::Error);
-}
-
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

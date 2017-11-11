@@ -131,7 +131,7 @@ TEST(ascent_contour, test_single_contour_3d)
  
     conduit::Node actions;
     // add the pipeline
-    conduit::Node &add_pipelines= actions.append();
+    conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
     // add the scenes

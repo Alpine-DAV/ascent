@@ -45,32 +45,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_empty_runtime.cpp
+/// file: ascent_runtime_adios_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_empty_runtime.hpp"
+#ifndef ASCENT_FLOW_PIPELINE_ADIOS_FILTERS_HPP
+#define ASCENT_FLOW_PIPELINE_ADIOS_FILTERS_HPP
 
-// standard lib includes
-#include <string.h>
-
-//-----------------------------------------------------------------------------
-// thirdparty includes
-//-----------------------------------------------------------------------------
-
-// conduit includes
-#include <conduit_blueprint.hpp>
-
-// mpi related includes
+#include <flow_filter.hpp>
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
-// -- conduit relay mpi
-#include <conduit_relay_mpi.hpp>
 #endif
-
-using namespace conduit;
-using namespace std;
-
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -79,126 +64,96 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
+// -- begin ascent::runtime --
 //-----------------------------------------------------------------------------
-//
-// Creation and Destruction
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-EmptyRuntime::EmptyRuntime()
-:Runtime()
+namespace runtime
 {
 
-}
 
 //-----------------------------------------------------------------------------
-EmptyRuntime::~EmptyRuntime()
-{
-    Cleanup();
-}
-
+// -- begin ascent::runtime::filters --
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//
-// Main runtime interface methods called by the ascent interface.
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-void
-EmptyRuntime::Initialize(const conduit::Node &options)
-{
-#if ASCENT_MPI_ENABLED
-    if(!options.has_child("mpi_comm") ||
-       !options["mpi_comm"].dtype().is_integer())
-    {
-        ASCENT_ERROR("Missing Ascent::open options missing MPI communicator (mpi_comm)");
-    }
-#endif
-
-    m_runtime_options = options;
-}
-
-
-//-----------------------------------------------------------------------------
-void
-EmptyRuntime::Cleanup()
+namespace filters
 {
 
-}
-
 //-----------------------------------------------------------------------------
-void
-EmptyRuntime::Publish(const conduit::Node &data)
+///
+/// Filters Related to Conduit Relay IO
+///
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+class ADIOS : public ::flow::Filter
 {
-    Node verify_info;
-    bool verify_ok = conduit::blueprint::mesh::verify(data,verify_info);
-
-#if ASCENT_MPI_ENABLED
-
-    MPI_Comm mpi_comm = MPI_Comm_f2c(m_runtime_options["mpi_comm"].to_int());
-
-    // parallel reduce to find if there were any verify errors across mpi tasks
-    // use an mpi sum to check if all is ok
-    Node n_src, n_reduce;
-
-    if(verify_ok)
-        n_src = (int)0;
-    else
-        n_src = (int)1;
-
-    conduit::relay::mpi::sum_all_reduce(n_src,
-                                        n_reduce,
-                                        mpi_comm);
-
-    int num_failures = n_reduce.value();
-    if(num_failures != 0)
-    {
-        ASCENT_ERROR("Mesh Blueprint Verify failed on "  
-                       << num_failures
-                       << " MPI Tasks");
-        
-        // you could use mpi to find out where things went wrong ...
-    }
-
+public:
+    ADIOS();
+   ~ADIOS();
     
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+
+private:
+    bool UniformMeshSchema(const conduit::Node &node);
     
+    bool RectilinearMeshSchema(const conduit::Node &node);
+    
+    bool FieldVariable(const std::string &fieldName, const conduit::Node &fieldNode);
+
+    bool CalcRectilinearMeshInfo(const conduit::Node &node,
+                                 std::vector<std::vector<double>> &globalCoords);
+
+    int rank, numRanks;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm;
 #else
-    if(!verify_ok)
-    {
-         ASCENT_ERROR("Mesh Blueprint Verify failed!"
-                        << std::endl
-                        << verify_info.to_json());
-    }
+    int mpi_comm;
 #endif
+    
+    int64_t adiosGroup, adiosFile;
+    std::string transportType;
+    std::string fileName;
+    std::string meshName;
 
-    // create our own tree, with all data zero copied.
-    m_data.set_external(data);
-}
+    //var dimensions for this rank:
+    std::vector<int64_t> globalDims, localDims, offset;
+
+    template <typename T>
+    std::string dimsToStr(const std::vector<T> &d, bool pointCentered=true)
+    {
+        std::string str("");
+        if (d.size() > 0)
+        {
+            for (int i = 0; i < d.size()-1; i++)
+            {
+                T v = d[i];
+                if (!pointCentered && v > 0)
+                    v--;
+                str = str + std::to_string(v) + ",";
+            }
+
+            T v = d[d.size()-1];
+            if (!pointCentered && v > 0)
+                v--;
+            str = str + std::to_string(v);
+        }
+        return str;
+    }
+};
 
 //-----------------------------------------------------------------------------
-void
-EmptyRuntime::Execute(const conduit::Node &actions)
-{
-    // Loop over the actions
-    for (int i = 0; i < actions.number_of_children(); ++i)
-    {
-        const Node &action = actions.child(i);
-        string action_name = action["action"].as_string();
-
-        ASCENT_INFO("Executing " << action_name);
-
-        // implement action
-    }
-}
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime::filters --
+//-----------------------------------------------------------------------------
 
 
-
-
-
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime --
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 };
@@ -206,5 +161,10 @@ EmptyRuntime::Execute(const conduit::Node &actions)
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
+
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------
 
 

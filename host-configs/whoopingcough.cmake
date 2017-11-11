@@ -42,33 +42,83 @@
 # 
 ###############################################################################
 
-###############################################################################
-# Setup VTKm
-###############################################################################
+##################################
+# empty  host-config
+##################################
+# insert compiler name here
+##################################
 
-if(NOT VTKM_DIR)
-    MESSAGE(FATAL_ERROR "VTKm support needs explicit VTKM_DIR")
-endif()
+#######
+# using [insert compiler name here] compiler spec
+#######
 
-MESSAGE(STATUS "Looking for VTKm using VTKM_DIR = ${VTKM_DIR}")
+# c compiler
+set(CMAKE_C_COMPILER "/usr/bin/mpicc" CACHE PATH "")
+set(C_COMPILE_FLAGS "-fPIC" CACHE PATH "")
 
-# use VTKM_DIR to setup the options that cmake's find VTKm needs
-set(VTKm_DIR ${VTKM_DIR}/lib/cmake/vtkm-1.1)
+# cpp compiler
+set(CMAKE_CXX_COMPILER "/usr/bin/mpicxx" CACHE PATH "")
+set(CXX_COMPILE_FLAGS "-fPIC" CACHE PATH "")
+
+# fortran compiler (need for cloverleaf)
+set(CMAKE_Fortran_COMPILER  "/usr/bin/f95" CACHE PATH "")
+
+# OPENMP (optional: for proxy apps)
+set(ENABLE_OPENMP OFF CACHE PATH "")
+
+# MPI Support
+set(ENABLE_MPI  ON CACHE PATH "")
+
+set(MPI_C_COMPILER  "/usr/bin/mpicc" CACHE PATH "")
+set(MPI_C_COMPILE_FLAGS "-fPIC" CACHE PATH "")
+
+set(MPI_CXX_COMPILER "/usr/bin/mpicxx" CACHE PATH "")
+set(MPI_CXX_COMPILE_FLAGS "-fPIC" CACHE PATH "")
+
+set(MPI_Fortran_COMPILER "/usr/bin/mpif90" CACHE PATH "")
+
+set(MPIEXEC /usr/bin/mpirun CACHE PATH "")
+
+set(MPIEXEC_NUMPROC_FLAG -n CACHE PATH "")
+
+##Disable python
+set(ENABLE_PYTHON OFF)
+
+
+
+# CUDA support
+#set(ENABLE_CUDA ON CACHE PATH "")
+
+# NO CUDA Support
+set(ENABLE_CUDA OFF CACHE PATH "")
+
+# conduit 
+set(CONDUIT_DIR "/home/pugmire/proj/alpine/conduit/install-debug" CACHE PATH "")
+
+# icet 
+set(ICET_DIR "/disk2TB/proj/alpine/icet/install" CACHE PATH "")
 
 #
-# VTKm will find TBB via the env var "TBB_ROOT"
+# vtkm
 #
-if(TBB_DIR)
-    set(ENV{TBB_ROOT} ${TBB_DIR})
-endif()
 
-find_package(VTKm REQUIRED OPTIONAL_COMPONENTS Rendering Serial CUDA TBB)
-message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
+# tbb
+set(ASCENT_VTKM_USE_TBB OFF CACHE PATH "")
+#set(TBB_DIR "/usr/include" CACHE PATH "")
 
-set(VTKM_FOUND TRUE)
+# vtkm
+set(VTKM_DIR "/disk2TB/proj/alpine/vtkm/install" CACHE PATH "")
 
-blt_register_library(NAME vtkm
-                     INCLUDES ${VTKm_INCLUDE_DIRS}
-                     COMPILE_FLAGS ${VTKm_COMPILE_OPTIONS}
-                     LIBRARIES vtkm vtkm_cont vtkm_rendering
-                     )
+# HDF5 support (optional)
+#
+# hdf5v
+set(HDF5_DIR "/apps/visit/thirdparty/visit/hdf5/1.8.14/linux-x86_64_gcc-5.4" CACHE PATH "")
+
+set(ADIOS_DIR "/apps/adios" CACHE PATH "")
+
+#SPHINX documentation building
+#set("SPHINX_EXECUTABLE" "/path/to/sphinx-build" CACHE PATH "")
+
+##################################
+# end boilerplate host-config
+##################################

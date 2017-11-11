@@ -57,7 +57,7 @@
 #  If found, the ascent CMake targets will also be imported.
 #  The main ascent library targets are:
 #   ascent
-#   ascent_par (if ascent was built with mpi support)
+#   ascent_mpi (if ascent was built with mpi support)
 #
 ###############################################################################
 

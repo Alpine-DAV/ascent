@@ -348,6 +348,82 @@ EnsureVTKH::execute()
 }
 
 
+EnsureBlueprint::EnsureBlueprint()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+EnsureBlueprint::~EnsureBlueprint()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+EnsureBlueprint::declare_interface(Node &i)
+{
+    i["type_name"]   = "ensure_blueprint";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+void 
+EnsureBlueprint::execute()
+{
+    if(input(0).check_type<vtkh::DataSet>())
+    {
+        // convert from vtk-h to blueprint
+        vtkh::DataSet *in_dset = input<vtkh::DataSet>(0);
+        const vtkm::Id num_domains = in_dset->GetNumberOfDomains();
+        conduit::Node * res = new conduit::Node();
+        uint64 cycle = in_dset->GetCycle();
+        for(vtkm::Id dom = 0; dom < num_domains; ++dom)
+        {
+            vtkm::cont::DataSet dset; 
+            vtkm::Id domain_id;
+            in_dset->GetDomain(dom, dset, domain_id);
+            dset.PrintSummary(std::cout);
+            conduit::Node &bp = res->append();
+            VTKHDataAdapter::VTKmToBlueprintDataSet(&dset, bp);
+            bp["state/cycle"] = cycle;
+            bp["state/domain_id"] = domain_id;
+        }
+
+        set_output<conduit::Node>(res);
+    }
+    else if(input(0).check_type<vtkm::cont::DataSet>())
+    {
+        // wrap our vtk-m dataset in vtk-h
+        conduit::Node *res = new conduit::Node();
+        VTKHDataAdapter::VTKmToBlueprintDataSet(input<vtkm::cont::DataSet>(0), *res);
+        set_output<conduit::Node>(res);
+    }
+    else if(input(0).check_type<Node>())
+    {
+        // our data is already a node, pass though
+        conduit::Node *res = input<Node>(0);
+        conduit::Node info;
+        bool success = conduit::blueprint::verify("mesh",*res,info);
+
+        if(!success)
+        {
+          info.print();
+          ASCENT_ERROR("conduit::Node input to EnsureBlueprint is non-conforming") 
+        }
+
+        set_output(input(0));
+    }
+    else
+    {
+        ASCENT_ERROR("ensure_blueprint input must be a data set"
+                     "conforming conduit::Node, a vtk-m dataset, or vtk-h dataset");
+    }
+}
+
+
 //-----------------------------------------------------------------------------
 VTKHVolumeTracer::VTKHVolumeTracer()
 :Filter()

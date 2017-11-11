@@ -71,7 +71,7 @@ blt_add_target_compile_flags(TO noise_ser FLAGS "${noise_openmp_flags}")
 
 if(MPI_FOUND)
     
-    set(noise_par_deps ascent_par mpi)
+    set(noise_par_deps ascent_mpi mpi)
     if(OPENMP_FOUND)
            list(APPEND noise_par_deps openmp)
     endif()

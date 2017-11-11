@@ -100,7 +100,7 @@ In the Lulesh prox-app, data is already in a form that is compatible with the bl
       // provide state information
       mesh_data["state/time"].set_external(&m_time);
       mesh_data["state/cycle"].set_external(&m_cycle);
-      mesh_data["state/domain"] = myRank;
+      mesh_data["state/domain_id"] = myRank;
 
       // coordinate system data
       mesh_data["coordsets/coords/type"] = "explicit";
