@@ -268,9 +268,9 @@ Building with Spack
 .. _building_with_spack:
 
 
-As of 11/10/2017, we have an ALPINE fork of Spack that includes a 
-`recipe <https://github.com/Alpine-DAV/spack/blob/task/2017_11_add_ascent/var/spack/repos/builtin/packages/ascent/package.py>`_ 
-to build and install Ascent. We are working to merge this into Spack's develop branch.
+As of 11/10/2017,  Spack's develop branch includes a
+`recipe <https://github.com/spack/spack/blob/develop/var/spack/repos/builtin/packages/ascent/package.py>`_ 
+to build and install Ascent. 
 
 To install Ascent with all options (and also build all of its dependencies as necessary) run:
 
