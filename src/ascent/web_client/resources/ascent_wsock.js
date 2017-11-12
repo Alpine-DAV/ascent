@@ -99,14 +99,14 @@ function ascent_websocket_client()
             $("#info").html(highlight_json(msg));
         }
         
-        if(msg.scene)
+        if(msg.renders)
         {
             // loop over renders
-            var num_renders = msg.scene.renders.length;
+            var num_renders = msg.renders.length;
             var res = "";
             for (var i = 0; i < num_renders; i++)
             {
-                res += "<img src='" + msg.scene.renders.data + "' width=500 height=500/>"
+                res += "<img src='" + msg.renders[i].data + "' width=500 height=500/>"
             }
             
             $("#render_display").html(res);

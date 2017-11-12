@@ -112,7 +112,7 @@ WebInterface::Connection()
 
 //-----------------------------------------------------------------------------
 void
-WebInterface::PushMessage(Node &msg)
+WebInterface::PushMessage(const Node &msg)
 {
     //  Don't do any more work unless we have a valid client connection
     // (also handles case where stream is not enabled)
@@ -129,7 +129,7 @@ WebInterface::PushMessage(Node &msg)
 
 //-----------------------------------------------------------------------------
 void
-WebInterface::PushImage(PNGEncoder &png)
+WebInterface::PushRenders(const Node &renders)
 {
     //  Don't do any more work unless we have a valid client connection
     // (also handles case where stream is not enabled)
@@ -139,29 +139,50 @@ WebInterface::PushImage(PNGEncoder &png)
     {
         return;
     }
-    // create message with image data
-    png.Base64Encode();
     Node msg;
-    msg["type"] = "image";
-    msg["data"] = "data:image/png;base64," + png.Base64Node().as_string();
+    
+    NodeConstIterator itr = renders.children();
+    
+    while(itr.has_next())
+    {
+        const Node &curr = itr.next();
+        EncodeImage(curr.as_string(),
+                    msg["renders"].append());
+        
+    }
+    
+    
     // sent the message
     wsock->send(msg);
 }
 
+// //-----------------------------------------------------------------------------
+// void
+// WebInterface::PushImage(PNGEncoder &png)
+// {
+//     //  Don't do any more work unless we have a valid client connection
+//     // (also handles case where stream is not enabled)
+//     WebSocket *wsock = Connection();
+//
+//     if(wsock == NULL)
+//     {
+//         return;
+//     }
+//     // create message with image data
+//     png.Base64Encode();
+//     Node msg;
+//     msg["type"] = "image";
+//     msg["data"] = "data:image/png;base64," + png.Base64Node().as_string();
+//     // sent the message
+//     wsock->send(msg);
+// }
+
 //-----------------------------------------------------------------------------
 void
-WebInterface::PushImage(const std::string &png_image_path)
+WebInterface::EncodeImage(const std::string &png_image_path,
+                          conduit::Node &out)
 {
-    //  Don't do any more work unless we have a valid client connection
-    // (also handles case where stream is not enabled)
-    
-    WebSocket *wsock = Connection();
-
-    if(wsock == NULL)
-    {
-        return;
-    }
-    
+    out.reset();
     ASCENT_INFO("png path:" << png_image_path);
 
     std::ifstream file(png_image_path.c_str(),
@@ -191,13 +212,9 @@ WebInterface::PushImage(const std::string &png_image_path)
                          png_raw_bytes,
                          png_data["encoded"].data_ptr());
 
-    // create message with image data
-    Node msg;
-    msg["type"] = "image";
-    msg["data"] = "data:image/png;base64," + png_data["encoded"].as_string();
-    // send the message
-    wsock->send(msg);
+    out["data"] = "data:image/png;base64," + png_data["encoded"].as_string();
 }
+
 
 
 //-----------------------------------------------------------------------------

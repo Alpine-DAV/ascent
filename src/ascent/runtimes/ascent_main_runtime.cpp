@@ -121,6 +121,7 @@ AscentRuntime::~AscentRuntime()
 void
 AscentRuntime::Initialize(const conduit::Node &options)
 {
+    int rank = 0;
 #if ASCENT_MPI_ENABLED
     if(!options.has_child("mpi_comm") ||
        !options["mpi_comm"].dtype().is_integer())
@@ -132,6 +133,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
    
     MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
     vtkh::SetMPIComm(comm);
+    MPI_Comm_rank(comm,&rank);
 #ifdef VTKM_CUDA
     //
     //  If we are using cuda, figure out how many devices we have and
@@ -141,8 +143,6 @@ AscentRuntime::Initialize(const conduit::Node &options)
     cudaError_t err = cudaGetDeviceCount(&device_count);
     if (err == cudaSuccess && device_count > 0 && device_count <= 256)
     {
-        int rank;  
-        MPI_Comm_rank(comm,&rank);
         int rank_device = rank % device_count;
         err = cudaSetDevice(rank_device);
         if(err != cudaSuccess)
@@ -189,7 +189,8 @@ AscentRuntime::Initialize(const conduit::Node &options)
     runtime::filters::register_builtin();
     
     if(options.has_path("web/stream") && 
-       options["web/stream"].as_string() == "true")
+       options["web/stream"].as_string() == "true" &&
+       rank == 0)
     {
         std::cout << "Enabling Web" << std::endl;
         m_web_interface.Enable();
@@ -788,6 +789,27 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
                       1);                // default port
   }
 }
+
+void
+AscentRuntime::FindRenders(const conduit::Node &info, 
+                           conduit::Node &out)
+{
+    out.reset();    
+    NodeConstIterator itr = info["flow_graph/graph/filters"].children();
+    
+    while(itr.has_next())
+    {
+        const Node &curr_filter = itr.next();
+        ASCENT_INFO(curr_filter.to_json());
+        if(curr_filter.has_path("params/image_prefix"))
+        {
+            std::string img_path = curr_filter["params/image_prefix"].as_string() + ".png";
+            out.append() = img_path;
+        }
+    }
+    
+}
+
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::Execute(const conduit::Node &actions)
@@ -827,6 +849,9 @@ AscentRuntime::Execute(const conduit::Node &actions)
           this->Info(msg["info"]);
           ascent::about(msg["about"]);
           m_web_interface.PushMessage(msg);
+          Node renders;
+          FindRenders(msg["info"],renders);
+          m_web_interface.PushRenders(renders);
         }
         else if( action_name == "reset")
         {

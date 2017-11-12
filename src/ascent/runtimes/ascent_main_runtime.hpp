@@ -115,6 +115,8 @@ private:
     void ConnectGraphs();
     void ExecuteGraphs();
     std::string GetDefaultImagePrefix(const std::string scene);
+    
+    void FindRenders(const conduit::Node &info, conduit::Node &out);
 };
 
 //-----------------------------------------------------------------------------

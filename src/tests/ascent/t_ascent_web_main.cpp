@@ -87,7 +87,7 @@ TEST(ascent_web, test_ascent_main_web_launch)
     // Create example mesh.
     //
     Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
+    conduit::blueprint::mesh::examples::braid("hexs",100,100,100,data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();

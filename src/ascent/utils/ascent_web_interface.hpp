@@ -76,14 +76,15 @@ public:
 
     void                            Enable();
         
-    void                            PushMessage(conduit::Node &msg);
-    void                            PushImage(PNGEncoder &png);
-    void                            PushImage(const std::string &png_file_path);
+    void                            PushMessage(const conduit::Node &msg);
+    void                            PushRenders(const conduit::Node &renders);
         
 private:
 
     conduit::relay::web::WebSocket *Connection();
 
+    void                            EncodeImage(const std::string &png_file_path,
+                                                conduit::Node &out);
     bool                            m_enabled;
     conduit::relay::web::WebServer  m_server;
     int                             m_ms_poll;

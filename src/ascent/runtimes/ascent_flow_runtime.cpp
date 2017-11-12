@@ -115,6 +115,7 @@ FlowRuntime::~FlowRuntime()
 void
 FlowRuntime::Initialize(const conduit::Node &options)
 {
+    int rank = 0;
 #if ASCENT_MPI_ENABLED
     if(!options.has_child("mpi_comm") ||
        !options["mpi_comm"].dtype().is_integer())
@@ -123,7 +124,9 @@ FlowRuntime::Initialize(const conduit::Node &options)
     }
     
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].as_int());
-    
+    MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
+    MPI_Comm_rank(comm,&rank);
+
 #endif
 
     m_runtime_options = options;
@@ -134,7 +137,8 @@ FlowRuntime::Initialize(const conduit::Node &options)
     runtime::filters::register_builtin();
     
     if(options.has_path("web/stream") && 
-       options["web/stream"].as_string() == "true")
+       options["web/stream"].as_string() == "true" &&
+       rank == 0)
     {
         std::cout << "Enabling Web" << std::endl;
         m_web_interface.Enable();
