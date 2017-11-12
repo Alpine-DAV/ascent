@@ -187,6 +187,19 @@ AscentRuntime::Initialize(const conduit::Node &options)
     flow::filters::register_builtin();
     // filters for ascent flow runtime.
     runtime::filters::register_builtin();
+    
+    if(options.has_path("web/stream") && 
+       options["web/stream"].as_string() == "true")
+    {
+        std::cout << "Enabling Web" << std::endl;
+        m_web_interface.Enable();
+    }
+
+    Node msg;
+    this->Info(msg["info"]);
+    ascent::about(msg["about"]);
+    m_web_interface.PushMessage(msg);
+    
 }
 
 
@@ -809,6 +822,11 @@ AscentRuntime::Execute(const conduit::Node &actions)
           w.info(m_info["flow_graph"]);
           w.execute();
           w.registry().reset();
+          
+          Node msg;
+          this->Info(msg["info"]);
+          ascent::about(msg["about"]);
+          m_web_interface.PushMessage(msg);
         }
         else if( action_name == "reset")
         {

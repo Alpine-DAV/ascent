@@ -54,7 +54,7 @@
 
 #include <ascent.hpp>
 #include <ascent_runtime.hpp>
-
+#include <ascent_web_interface.hpp>
 #include <flow.hpp>
 
 
@@ -93,6 +93,8 @@ private:
     
     conduit::Node     m_info;
 
+    WebInterface      m_web_interface;
+    
     void              ResetInfo();
 
     flow::Workspace w;
