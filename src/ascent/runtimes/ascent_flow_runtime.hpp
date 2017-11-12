@@ -55,6 +55,8 @@
 #include <ascent.hpp>
 #include <ascent_runtime.hpp>
 
+#include <ascent_web_interface.hpp>
+
 #include <flow.hpp>
 
 
@@ -95,6 +97,10 @@ private:
     flow::Workspace w;
     
     void              ResetInfo();
+    
+    WebInterface      m_web_interface;
+    
+    
 };
 
 //-----------------------------------------------------------------------------

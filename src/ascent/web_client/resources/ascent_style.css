@@ -88,3 +88,11 @@ body {
     border-bottom: 0;
   }
 }
+
+pre {outline: 1px solid #ccc; padding: 5px; margin: 5px; }
+.string { color: green; }
+.number { color: orange; }
+.boolean { color: red; }
+.null { color: magenta; }
+.key { color: blue; }
+

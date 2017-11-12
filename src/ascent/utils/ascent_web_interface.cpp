@@ -69,20 +69,22 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
-WebInterface::WebInterface(int ms_poll,
-                           int ms_timeout)
-:m_server(NULL),
- m_ms_poll(ms_poll),
- m_ms_timeout(ms_timeout)
+WebInterface::WebInterface()
+:m_enabled(false),
+ m_ms_poll(100),
+ m_ms_timeout(100)
 {}
   
 //-----------------------------------------------------------------------------
 WebInterface::~WebInterface()
 {
-    if(m_server)
-    {
-        delete m_server;
-    }
+}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::Enable()
+{
+    m_enabled = true;
 }
 
 
@@ -90,18 +92,21 @@ WebInterface::~WebInterface()
 WebSocket *
 WebInterface::Connection()
 {
-    // start our web server if necessary 
-    if(m_server == NULL)
+    if(!m_enabled)
     {
-        m_server = new WebServer();
-        m_server->set_document_root(ASCENT_WEB_CLIENT_ROOT);
-        m_server->set_request_handler(new WebRequestHandler());
-        m_server->serve(false);
+        return NULL;
+    }
+    // start our web server if necessary 
+    if(!m_server.is_running())
+    {
+        m_server.set_port(8081);
+        m_server.set_document_root(ASCENT_WEB_CLIENT_ROOT);
+        m_server.serve();
     }
 
     //  Don't do any more work unless we have a valid client connection
-    WebSocket *wsock = m_server->websocket((index_t)m_ms_poll,
-                                           (index_t)m_ms_timeout);
+    WebSocket *wsock = m_server.websocket((index_t)m_ms_poll,
+                                          (index_t)m_ms_timeout);
     return wsock;
 }
 
@@ -110,6 +115,7 @@ void
 WebInterface::PushMessage(Node &msg)
 {
     //  Don't do any more work unless we have a valid client connection
+    // (also handles case where stream is not enabled)
     WebSocket *wsock = Connection();
 
     if(wsock == NULL)
@@ -126,6 +132,7 @@ void
 WebInterface::PushImage(PNGEncoder &png)
 {
     //  Don't do any more work unless we have a valid client connection
+    // (also handles case where stream is not enabled)
     WebSocket *wsock = Connection();
 
     if(wsock == NULL)
@@ -146,6 +153,8 @@ void
 WebInterface::PushImage(const std::string &png_image_path)
 {
     //  Don't do any more work unless we have a valid client connection
+    // (also handles case where stream is not enabled)
+    
     WebSocket *wsock = Connection();
 
     if(wsock == NULL)

@@ -70,6 +70,91 @@ const float64 PI_VALUE = 3.14159265359;
 
 bool launch_server = false;
 
+#include <flow.hpp>
+
+// ----- //
+// This tests that we can create a custom filter, register it and use it
+// in the flow runtime.
+class InspectFilter: public flow::Filter
+{
+public:
+    InspectFilter(): flow::Filter()
+    {}
+    ~InspectFilter()
+    {}
+        
+    void declare_interface(Node &i)
+    {
+        i["type_name"] = "inspect";
+        i["port_names"].append().set("in");
+        i["output_port"] = "true";
+    }
+    
+    
+    void execute()
+    {
+        if(!input(0).check_type<Node>())
+        {
+            ASCENT_ERROR("Error, input is not a conduit node!");
+        }
+        
+        Node *n = input<Node>(0);
+        
+        ASCENT_INFO("Total Strided Bytes = " << n->total_strided_bytes());
+        
+        set_output<Node>(n);
+    }
+
+};
+
+// //-----------------------------------------------------------------------------
+// TEST(ascent_web, test_ascent_web_launch)
+// {
+//     flow::Workspace::register_filter_type<InspectFilter>();
+//
+//
+//     //
+//     // Create example mesh.
+//     //
+//     Node data, verify_info;
+//     conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
+//
+//     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+//     verify_info.print();
+//
+//     Node actions;
+//     actions.append();
+//     actions[0]["action"] = "add_filter";
+//     actions[0]["type_name"]  = "inspect";
+//     actions[0]["name"] = "fi";
+//
+//     actions.append();
+//     actions[1]["action"] = "connect";
+//     actions[1]["src"]  = "source";
+//     actions[1]["dest"] = "fi";
+//     actions[1]["port"] = "in";
+//
+//     actions.append()["action"] = "execute";
+//     actions.print();
+//
+//     // we want the "flow" runtime
+//     Node open_opts;
+//     open_opts["runtime/type"] = "flow";
+//
+//     Node ascent_info;
+//     //
+//     // Run Ascent
+//     //
+//     Ascent ascent;
+//     ascent.open(open_opts);
+//     ascent.publish(data);
+//     ascent.execute(actions);
+//     ascent.info(ascent_info);
+//     EXPECT_EQ(ascent_info["runtime/type"].as_string(),"flow");
+//     ascent_info.print();
+//     ascent.close();
+// }
+
 //-----------------------------------------------------------------------------
 TEST(ascent_web, test_ascent_web_launch)
 {
@@ -80,52 +165,60 @@ TEST(ascent_web, test_ascent_web_launch)
         return;
     }
 
+    flow::Workspace::register_filter_type<InspectFilter>();
+
+
     //
-    // Create an example mesh.
+    // Create example mesh.
     //
     Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",100,100,100,data);
-    
+    conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
 
-
-    //
-    // Create the actions.
-    //
-
     Node actions;
-    
-    Node &plot = actions.append();
-    plot["action"]     = "add_plot";
-    plot["field_name"] = "braid";
-    
-    Node &opts = plot["render_options"];
-    opts["width"]  = 500;
-    opts["height"] = 500;
-    actions.append()["action"] = "draw_plots";
-    
-    //
-    // Launch ascent with webserver
-    //
+    actions.append();
+    actions[0]["action"] = "add_filter";
+    actions[0]["type_name"]  = "inspect";
+    actions[0]["name"] = "fi";
 
-    
+    actions.append();
+    actions[1]["action"] = "connect";
+    actions[1]["src"]  = "source";
+    actions[1]["dest"] = "fi";
+    actions[1]["port"] = "in";
+
+    actions.append()["action"] = "execute";
+    actions.print();
+
+    // we want the "flow" runtime
     Node open_opts;
+    open_opts["runtime/type"] = "flow";
     open_opts["web/stream"] = "true";
-
+    open_opts["ascent_info"] = "verbose";
+    
     Ascent ascent;
     ascent.open(open_opts);
     
     uint64  *cycle_ptr = data["state/cycle"].value();
     float64 *time_ptr  = data["state/time"].value();
+
+    ascent.publish(data);
+    ascent.execute(actions);
+
     while(true)
     {
-        // publish the same mesh data, but update the state info
-        ascent.publish(data);
-        ascent.execute(actions);
-        conduit::utils::sleep(100);
         cycle_ptr[0]+=1;
         time_ptr[0] = PI_VALUE * cycle_ptr[0];
+        ASCENT_INFO(data["state"].to_json());
+        // publish the same mesh data, but update the state info
+        actions.reset();
+        actions.append()["action"] = "execute";
+        ASCENT_INFO(actions.to_json());
+        ascent.publish(data);
+        ascent.execute(actions);
+        conduit::utils::sleep(1000);
     }
     
     ascent.close();

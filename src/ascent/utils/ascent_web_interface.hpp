@@ -67,18 +67,25 @@ class WebInterface
 {
 public:
     
-     WebInterface(int ms_poll = 1,
-                  int ms_timeout = 1);
-
+     WebInterface();
     ~WebInterface();
+    
+    
+    void                            SetPoll(int ms_poll);
+    void                            SetTimeout(int ms_timeout);
+
+    void                            Enable();
         
-    conduit::relay::web::WebSocket *Connection();
     void                            PushMessage(conduit::Node &msg);
     void                            PushImage(PNGEncoder &png);
     void                            PushImage(const std::string &png_file_path);
         
 private:
-    conduit::relay::web::WebServer *m_server;
+
+    conduit::relay::web::WebSocket *Connection();
+
+    bool                            m_enabled;
+    conduit::relay::web::WebServer  m_server;
     int                             m_ms_poll;
     int                             m_ms_timeout;
     
