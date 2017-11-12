@@ -60,12 +60,12 @@ class Hdf5(Package):
     version('1.8.14', 'a482686e733514a51cde12d6fe5c5d95')
 
 
-    depends_on("szip")
+    #depends_on("szip")
 
     def install(self, spec, prefix):
         configure(
             "--prefix=%s" % prefix,
-            "--with-szlib=%s" % spec['szip'].prefix,
+            #"--with-szlib=%s" % spec['szip'].prefix,
             "--enable-shared")
         make()
         make("install")
