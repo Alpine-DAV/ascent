@@ -84,7 +84,7 @@ function ascent_websocket_client()
         try
         {
             msg=JSON.parse(json.data);
-            console.log(msg);
+            //console.log(msg);
         }
         catch(e)
         {
@@ -111,30 +111,6 @@ function ascent_websocket_client()
             
             $("#render_display").html(res);
             $("#render_display").show();
-        }        
-        
-        // old messages
-        if(msg.type)
-        {
-        if(msg.type == "image")
-        {
-            $("#render_display").html("<img src='" + msg.data + "' width=500 height=500/>");
-            $("#render_display").show();
-        }
-        else if(msg.type == "status")
-        {
-            $("#status").html("<b>[Simulation State]</b><br><b>time:</b> " + msg.data.time.toFixed(6)  + " <br> <b>cycle:</b> " + msg.data.cycle);
-
-            if(msg.data.hasOwnProperty('info'))
-            {
-                $("#info").html("<h2>" + msg.data.info + "</h2>");
-            }
-            else
-            {
-                $("#info").html("");
-            }
-
-        }
         }
     }
       
@@ -142,7 +118,7 @@ function ascent_websocket_client()
     {
         console.log('WebSocket error');
         connection.close();
-        $("#connection_info").html('<span class="label label-warning">Not Connected</span>');
+        $("#connection_info").html('<span class="badge badge-pill badge-secondary">Not Connected</span>')
     }
     
     connection.onclose = function (error)
@@ -150,7 +126,7 @@ function ascent_websocket_client()
         console.log('WebSocket closed');
         console.log(error)
         connection.close();
-        $("#connection_info").html('<span class="label label-warning">Not Connected</span>');
+        $("#connection_info").html('<span class="badge badge-pill badge-secondary">Not Connected</span>')
         // this allows infinite reconnect ...
         ascent_websocket_client();
     }
