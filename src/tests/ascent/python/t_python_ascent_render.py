@@ -98,6 +98,11 @@ class Test_Ascent_Render(unittest.TestCase):
         actions.append()["action"] = "execute"
 
         a.execute(actions)
+        
+        ascent_info = conduit.Node()
+        a.info(ascent_info)
+        print(ascent_info)
+        
         a.close()
         self.assertTrue(os.path.isfile(ofile))
         

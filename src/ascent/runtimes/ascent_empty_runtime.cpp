@@ -122,6 +122,14 @@ EmptyRuntime::Initialize(const conduit::Node &options)
     m_runtime_options = options;
 }
 
+//-----------------------------------------------------------------------------
+void
+EmptyRuntime::Info(conduit::Node &out)
+{
+    out.reset();
+    out["runtime/type"] = "empty";
+}
+
 
 //-----------------------------------------------------------------------------
 void

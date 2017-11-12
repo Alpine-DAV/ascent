@@ -73,7 +73,7 @@ contains
     subroutine t_ascent_render_2d_basic
         type(C_PTR) cdata
         type(C_PTR) cverify_info
-        type(C_PTR) csman
+        type(C_PTR) cascent
         type(C_PTR) copen_opts
         type(C_PTR) cactions
         type(C_PTR) cadd_plot
@@ -85,7 +85,8 @@ contains
         
         cdata  = conduit_node_create()
         cverify_info = conduit_node_create()
-        csman = ascent_create()
+        cascent_info = conduit_node_create()
+        cascent = ascent_create()
 
         call conduit_blueprint_mesh_examples_braid("quads",10_8,10_8,0_8,cdata)
         call assert_true( conduit_blueprint_mesh_verify(ncdata,c_verify_info) .eqv. .true., "verify true on braid quads")
@@ -101,14 +102,16 @@ contains
         CALL conduit_node_set_path_char8_str(cdraw_plots,"action", "draw_plots")
 
         copen_opts = conduit_node_create()
-        call ascent_open(csman,copen_opts)
-        call ascent_publish(csman,cdata)
-        call ascent_execute(csman,cactions)
-        call ascent_close(csman)
+        call ascent_open(cascent,copen_opts)
+        call ascent_publish(cascent,cdata)
+        call ascent_execute(cascent,cactions)
+        call ascent_info(cascent,cascent_info)
+        call ascent_close(cascent)
 
-        call ascent_destroy(csman)
+        call ascent_destroy(cascent)
         call conduit_node_destroy(cactions)
         call conduit_node_destroy(cverify_info)
+        call conduit_node_destroy(cascent_info)
         call conduit_node_destroy(cdata)
 
     end subroutine t_ascent_render_2d_basic

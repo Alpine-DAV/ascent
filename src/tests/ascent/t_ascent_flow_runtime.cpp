@@ -141,6 +141,7 @@ TEST(ascent_flow_runtime, test_flow_runtime)
     Node open_opts;
     open_opts["runtime/type"] = "flow";
     
+    Node ascent_info;
     //
     // Run Ascent
     //
@@ -148,6 +149,9 @@ TEST(ascent_flow_runtime, test_flow_runtime)
     ascent.open(open_opts);
     ascent.publish(data);
     ascent.execute(actions);
+    ascent.info(ascent_info);
+    EXPECT_EQ(ascent_info["runtime/type"].as_string(),"flow");
+    ascent_info.print();
     ascent.close();
 }
 
@@ -188,6 +192,7 @@ TEST(ascent_flow_runtime, test_flow_runtime_reuse_network)
     Ascent ascent;
     ascent.open(open_opts);
 
+    Node ascent_info;
     //
     // Create example mesh.
     //
@@ -204,6 +209,10 @@ TEST(ascent_flow_runtime, test_flow_runtime_reuse_network)
 
     ascent.publish(data);
     ascent.execute(actions);
+    
+    ascent.info(ascent_info);
+    EXPECT_TRUE(ascent_info.has_child("flow_graph"));
+    ascent_info.print();
     
     ascent.close();
 }

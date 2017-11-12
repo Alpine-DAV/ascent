@@ -96,47 +96,57 @@ ascent_create()
 
 //---------------------------------------------------------------------------//
 void
-ascent_open(Ascent *c_sman,
+ascent_open(Ascent *c_ascent,
               conduit_node *c_options)
 {
-    ascent::Ascent *v = cpp_ascent(c_sman);
+    ascent::Ascent *v = cpp_ascent(c_ascent);
     Node  *n = static_cast<Node*>(c_options);
     v->open(*n);
 }
 
 //---------------------------------------------------------------------------//
 void
-ascent_publish(Ascent *c_sman,
+ascent_publish(Ascent *c_ascent,
                  conduit_node *c_data)
 {
-    ascent::Ascent *v = cpp_ascent(c_sman);
+    ascent::Ascent *v = cpp_ascent(c_ascent);
     Node  *n = static_cast<Node*>(c_data);
     v->publish(*n);
 }
 
 //---------------------------------------------------------------------------//
 void
-ascent_execute(Ascent *c_sman,
-                 conduit_node *c_actions)
+ascent_execute(Ascent *c_ascent,
+               conduit_node *c_actions)
 {
-    ascent::Ascent *v = cpp_ascent(c_sman);
+    ascent::Ascent *v = cpp_ascent(c_ascent);
     Node  *n = static_cast<Node*>(c_actions);
     v->execute(*n);
 }
 
 //---------------------------------------------------------------------------//
 void
-ascent_close(Ascent *c_sman)
+ascent_info(Ascent *c_ascent,
+            conduit_node *c_out)
 {
-    ascent::Ascent *v = cpp_ascent(c_sman);
+    ascent::Ascent *v = cpp_ascent(c_ascent);
+    Node  *n = static_cast<Node*>(c_out);
+    v->info(*n);
+}
+
+//---------------------------------------------------------------------------//
+void
+ascent_close(Ascent *c_ascent)
+{
+    ascent::Ascent *v = cpp_ascent(c_ascent);
     v->close();
 }
 
 //---------------------------------------------------------------------------//
 void
-ascent_destroy(Ascent *c_sman)
+ascent_destroy(Ascent *c_ascent)
 {
-   ascent::Ascent *v = cpp_ascent(c_sman);
+   ascent::Ascent *v = cpp_ascent(c_ascent);
     delete v;
 }
 

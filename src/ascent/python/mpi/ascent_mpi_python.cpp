@@ -350,6 +350,43 @@ PyAscent_MPI_Ascent_execute(PyAscent_MPI_Ascent *self,
     Py_RETURN_NONE; 
 }
 
+//-----------------------------------------------------------------------------
+static PyObject *
+PyAscent_MPI_Ascent_info(PyAscent_MPI_Ascent *self,
+                         PyObject *args,
+                         PyObject *kwargs)
+{
+
+    static const char *kwlist[] = {"out",
+                                    NULL};
+
+     PyObject *py_node = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return NULL;
+    }
+    
+     
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "Ascent::Info 'out' argument must be a "
+                        "conduit::Node");
+        return NULL;
+    }
+    
+    Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
+    self->ascent->info(*node);
+
+    Py_RETURN_NONE; 
+}
+
+
 //---------------------------------------------------------------------------//
 static PyObject *
 PyAscent_MPI_Ascent_close(PyAscent_MPI_Ascent *self)
@@ -379,11 +416,16 @@ static PyMethodDef PyAscent_MPI_Ascent_METHODS[] = {
      (PyCFunction)PyAscent_MPI_Ascent_publish,
      METH_VARARGS | METH_KEYWORDS,
      "{todo}"},
-     //-----------------------------------------------------------------------//
-     {"execute",
-      (PyCFunction)PyAscent_MPI_Ascent_execute,
+    //-----------------------------------------------------------------------//
+    {"execute",
+     (PyCFunction)PyAscent_MPI_Ascent_execute,
      METH_VARARGS | METH_KEYWORDS,
-      "{todo}"},
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"info",
+     (PyCFunction)PyAscent_MPI_Ascent_info,
+     METH_VARARGS | METH_KEYWORDS,
+     "{todo}"},
     //-----------------------------------------------------------------------//
     {"close",
      (PyCFunction)PyAscent_MPI_Ascent_close, 

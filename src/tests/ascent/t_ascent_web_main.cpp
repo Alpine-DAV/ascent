@@ -44,9 +44,10 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_flow_pipeline.cpp
+/// file: t_ascent_web.cpp
 ///
 //-----------------------------------------------------------------------------
+
 
 #include "gtest/gtest.h"
 
@@ -54,38 +55,49 @@
 
 #include <iostream>
 #include <math.h>
-#include <sstream>
 
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
 
-
-index_t EXAMPLE_MESH_SIDE_DIM = 50;
-
 using namespace std;
 using namespace conduit;
 using namespace ascent;
+
+
+const float64 PI_VALUE = 3.14159265359;
+
+bool launch_server = false;
+
+#include <flow.hpp>
+
 //-----------------------------------------------------------------------------
-TEST(ascent_pipeline, test_render_2d_main_pipeline)
+TEST(ascent_web, test_ascent_main_web_launch)
 {
+    // this test launches a web server and infinitely streams images from 
+    // ascent we  only run it if we passed proper command line arg
+    if(!launch_server)
+    {
+        return;
+    }
+
+
     //
     // Create example mesh.
     //
     Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,                                                                         EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-    
+    conduit::blueprint::mesh::examples::braid("hexs",100,100,100,data);
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
+
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path, 
-                                                        "tout_render_3d_ascent_pipeline");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_web_main_runtime");
+    
     // remove old images before rendering
     remove_test_image(output_file);
+
 
     //
     // Create the actions.
@@ -104,35 +116,57 @@ TEST(ascent_pipeline, test_render_2d_main_pipeline)
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
     actions.print();
-    
-    //
-    // Run Ascent
-    //
+
+    // we want the "flow" runtime
+    Node open_opts;
+    open_opts["runtime/type"] = "ascent";
+    open_opts["web/stream"] = "true";
+    open_opts["ascent_info"] = "verbose";
     
     Ascent ascent;
+    ascent.open(open_opts);
+    
+    uint64  *cycle_ptr = data["state/cycle"].value();
+    float64 *time_ptr  = data["state/time"].value();
 
-    Node ascent_opts;
-    Node ascent_info;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
-    ascent.info(ascent_info);
-    EXPECT_EQ(ascent_info["runtime/type"].as_string(),"ascent");
-    ascent_info.print();
+
+    while(true)
+    {
+        cycle_ptr[0]+=1;
+        time_ptr[0] = PI_VALUE * cycle_ptr[0];
+        ASCENT_INFO(data["state"].to_json());
+        // publish the same mesh data, but update the state info
+        actions.reset();
+        actions.append()["action"] = "execute";
+        ascent.publish(data);
+        ascent.execute(actions);
+        conduit::utils::sleep(1000);
+    }
+    
     ascent.close();
-    //
-    // // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
 }
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_pipeline, test_error_for_mpi_vs_non_mpi)
+int main(int argc, char* argv[])
 {
-    Ascent ascent;
-    Node ascent_opts;
-    ascent_opts["mpi_comm"] = 1;
-    // we throw an error if an mpi_comm is provided to a non-mpi ver of ascent
-    EXPECT_THROW(ascent.open(ascent_opts),conduit::Error);
+    int result = 0;
+
+    ::testing::InitGoogleTest(&argc, argv);
+
+    for(int i=0; i < argc ; i++)
+    {
+        std::string arg_str(argv[i]);
+        if(arg_str == "launch")
+        {
+            launch_server = true;;
+        }
+    }
+
+    result = RUN_ALL_TESTS();
+    return result;
 }
+
+

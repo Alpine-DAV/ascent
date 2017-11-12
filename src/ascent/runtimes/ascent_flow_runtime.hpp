@@ -55,6 +55,8 @@
 #include <ascent.hpp>
 #include <ascent_runtime.hpp>
 
+#include <ascent_web_interface.hpp>
+
 #include <flow.hpp>
 
 
@@ -80,6 +82,8 @@ public:
     void  Publish(const conduit::Node &data);
     void  Execute(const conduit::Node &actions);
     
+    void  Info(conduit::Node &out);
+    
     void  Cleanup();
 
 private:
@@ -88,7 +92,15 @@ private:
     // conduit node that (externally) holds the data from the simulation
     conduit::Node     m_data; 
     
+    conduit::Node     m_info;
+    
     flow::Workspace w;
+    
+    void              ResetInfo();
+    
+    WebInterface      m_web_interface;
+    
+    
 };
 
 //-----------------------------------------------------------------------------
