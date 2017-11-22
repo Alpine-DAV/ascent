@@ -43,32 +43,13 @@
 ###############################################################################
 
 
-################################
-# Unit Tests
-################################
+####################################
+# Add Python Module Tests
+####################################
+set(PYTHON_MODULE_TESTS t_python_flow_smoke)
 
-################################
-# Flow Unit Tests
-################################
-
-set(FLOW_TESTS  t_flow_data
-                t_flow_registry
-                t_flow_workspace)
-
-
-################################
-# Add tests
-################################
-
-#(tests depend on ascent b/c we are using some of its utils in the tests)
-
-message(STATUS "Adding flow lib unit tests")
-foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON flow)
+message(STATUS "Adding flow lib python interface unit tests")
+foreach(TEST ${PYTHON_MODULE_TESTS})
+    add_python_test(${TEST})
 endforeach()
 
-if(PYTHON_FOUND AND ENABLE_PYTHON)
-    add_subdirectory("python")
-else()
-    message(STATUS "Python disabled: Skipping ascent python module tests")
-endif()

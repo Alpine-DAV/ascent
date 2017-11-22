@@ -42,33 +42,9 @@
 # 
 ###############################################################################
 
+###############################################################################
+# file: __init__.py
+# Purpose: Main init for the flow module.
+###############################################################################
+from .flow_python import *
 
-################################
-# Unit Tests
-################################
-
-################################
-# Flow Unit Tests
-################################
-
-set(FLOW_TESTS  t_flow_data
-                t_flow_registry
-                t_flow_workspace)
-
-
-################################
-# Add tests
-################################
-
-#(tests depend on ascent b/c we are using some of its utils in the tests)
-
-message(STATUS "Adding flow lib unit tests")
-foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON flow)
-endforeach()
-
-if(PYTHON_FOUND AND ENABLE_PYTHON)
-    add_subdirectory("python")
-else()
-    message(STATUS "Python disabled: Skipping ascent python module tests")
-endif()

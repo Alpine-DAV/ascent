@@ -42,33 +42,26 @@
 # 
 ###############################################################################
 
+###############################################################################
+# file: setup.py
+# Purpose: disutils setup for flow python module.
+#
+###############################################################################
 
-################################
-# Unit Tests
-################################
+import sys
+from distutils.core import setup
+from distutils.command.install_egg_info import install_egg_info
 
-################################
-# Flow Unit Tests
-################################
-
-set(FLOW_TESTS  t_flow_data
-                t_flow_registry
-                t_flow_workspace)
+# disable install_egg_info
+class SkipEggInfo(install_egg_info):
+    def run(self):
+        pass
 
 
-################################
-# Add tests
-################################
+setup (name = 'flow',
+       description = 'flow',
+       package_dir = {'flow':'py_src'},
+       packages=['flow'],
+       cmdclass={'install_egg_info': SkipEggInfo})
 
-#(tests depend on ascent b/c we are using some of its utils in the tests)
 
-message(STATUS "Adding flow lib unit tests")
-foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON flow)
-endforeach()
-
-if(PYTHON_FOUND AND ENABLE_PYTHON)
-    add_subdirectory("python")
-else()
-    message(STATUS "Python disabled: Skipping ascent python module tests")
-endif()

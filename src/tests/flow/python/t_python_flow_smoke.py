@@ -43,32 +43,23 @@
 ###############################################################################
 
 
-################################
-# Unit Tests
-################################
+"""
+ file: t_python_ascent_smoke.py
+ description: Simple unit test for the basic ascent python module interface.
 
-################################
-# Flow Unit Tests
-################################
+"""
 
-set(FLOW_TESTS  t_flow_data
-                t_flow_registry
-                t_flow_workspace)
+import sys
+import unittest
+
+import conduit
+import flow
+
+class Test_Flow_Basic(unittest.TestCase):
+    def test_basic(self):
+        print(flow.Filter)
+
+if __name__ == '__main__':
+    unittest.main()
 
 
-################################
-# Add tests
-################################
-
-#(tests depend on ascent b/c we are using some of its utils in the tests)
-
-message(STATUS "Adding flow lib unit tests")
-foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON flow)
-endforeach()
-
-if(PYTHON_FOUND AND ENABLE_PYTHON)
-    add_subdirectory("python")
-else()
-    message(STATUS "Python disabled: Skipping ascent python module tests")
-endif()

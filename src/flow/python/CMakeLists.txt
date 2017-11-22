@@ -42,33 +42,34 @@
 # 
 ###############################################################################
 
-
-################################
-# Unit Tests
-################################
-
-################################
-# Flow Unit Tests
-################################
-
-set(FLOW_TESTS  t_flow_data
-                t_flow_registry
-                t_flow_workspace)
+# Specify the sources of the pure python and compiled portions of our module.
+SET(flow_py_python_sources  py_src/__init__.py)
+#SET(ascent_py_headers        flow_python.hpp)
+SET(flow_py_cpp_sources     flow_python.cpp)
 
 
-################################
-# Add tests
-################################
+# Setup our module
+PYTHON_ADD_HYBRID_MODULE(flow_python
+                         python-modules
+                         flow
+                         setup.py
+                         "${flow_py_python_sources}"
+                         #${flow_py_headers}
+                         ${flow_py_cpp_sources})
 
-#(tests depend on ascent b/c we are using some of its utils in the tests)
+# link with the proper libs (beyond python)
+target_link_libraries(flow_python flow)
 
-message(STATUS "Adding flow lib unit tests")
-foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON flow)
-endforeach()
 
-if(PYTHON_FOUND AND ENABLE_PYTHON)
-    add_subdirectory("python")
-else()
-    message(STATUS "Python disabled: Skipping ascent python module tests")
-endif()
+# TODO: ADD SUPPORT FOR SUPPORT PYTHON_MODULE_INSTALL_PREFIX
+# install the capi header so other python modules can use it
+# support alt install dir for python module via PYTHON_MODULE_INSTALL_PREFIX
+# if(PYTHON_MODULE_INSTALL_PREFIX)
+#     install(FILES ${flow_py_headers} DESTINATION ${PYTHON_MODULE_INSTALL_PREFIX}/flow/)
+# else()
+#     install(FILES ${flow_py_headers} DESTINATION python-modules/flow/)
+# endif()
+
+
+
+
