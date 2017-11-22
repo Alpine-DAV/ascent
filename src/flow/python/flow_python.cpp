@@ -174,6 +174,36 @@ PyInt_AsLong(PyObject *o)
 //-----------------------------------------------------------------------------
 
 
+
+    // ------------------------------------------------------------------------
+    /// Interface to set and obtain the MPI communicator.
+    ///
+    /// We use an integer handle from MPI_Comm_c2f to avoid
+    /// a header dependency of mpi just for the handle. 
+    ///
+    // ------------------------------------------------------------------------
+    void static set_default_mpi_comm(int mpi_comm_id);
+    int  static default_mpi_comm();
+
+    // ------------------------------------------------------------------------
+    /// filter factory interface
+    // ------------------------------------------------------------------------
+
+    /// register a new type 
+    static void register_filter_type(FilterFactoryMethod fr);
+    /// check if type with given name is registered
+    static bool supports_filter_type(const std::string &filter_type);
+    /// check if type with given factory is registered
+    static bool supports_filter_type(FilterFactoryMethod fr);
+    
+    /// remove type with given name if registered
+    static void remove_filter_type(const std::string &filter_type);
+    /// remove all registered types
+    static void clear_supported_filter_types();
+
+
+
+//---------------------------------------------------------------------------//
 class PyFlowFilter: public flow::Filter
 {
 public:
@@ -268,135 +298,326 @@ PyFlow_Filter_init(PyFlow_Filter *self,
 
 }
 
+//-----------------------------------------------------------------------------
+// filter interface properties
+//-----------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_type_name(PyFlow_Filter *self)
+{
+    return Py_BuildValue("s",self->filter->type_name().c_str());
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_output_port(PyFlow_Filter *self)
+{
+    if(self->filter->output_port())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_port_names(PyFlow_Filter *self)
+{
+    
+    PyObject *res = PyConduit_Node_python_create();
+    Node *node = PyConduit_Node_Get_Node_Ptr(res);
+    node->set(self->filter->port_names());
+    return res;
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_default_params(PyFlow_Filter *self)
+{
+    
+    PyObject *res = PyConduit_Node_python_create();
+    Node *node = PyConduit_Node_Get_Node_Ptr(res);
+    node->set(self->filter->default_params());
+    return res;
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_number_of_input_ports(PyFlow_Filter *self)
+{
+    return PyLong_FromSsize_t(
+                (Py_ssize_t)self->filter->number_of_input_ports());
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_has_port(PyFlow_Filter *self,
+                       PyObject *args)
+{
+    const char *port_name;
+    if (!PyArg_ParseTuple(args, "s", &port_name))
+    {
+        PyErr_SetString(PyExc_TypeError, "Port name must be a string");
+        return NULL;
+    }
+
+    
+    if(self->filter->has_port(std::string(port_name)))
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_port_index_to_name(PyFlow_Filter *self,
+                                 PyObject *args)
+{
+    Py_ssize_t idx;
+
+    if (!PyArg_ParseTuple(args, "n", &idx))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                "index must be a signed integer");
+        return NULL;
+    }
+
+    return Py_BuildValue("s",self->filter->port_index_to_name(idx).c_str());
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_name(PyFlow_Filter *self)
+{
+    return Py_BuildValue("s", self->filter->name().c_str());
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_detailed_name(PyFlow_Filter *self)
+{
+    return Py_BuildValue("s", self->filter->detailed_name().c_str());
+}
+
+
+//-----------------------------------------------------------------------------
+PyObject *
+PyFlow_Filter_verify_interface(PyObject *, // cls -- unused
+                               PyObject *args,
+                               PyObject *kwargs)
+{
+    static const char *kwlist[] = {"iface",
+                                   "info",
+                                   NULL};
+    
+    PyObject *py_iface = NULL;
+    PyObject *py_info  = NULL;
+
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "OO",
+                                     const_cast<char**>(kwlist),
+                                     &py_iface, &py_info))
+    {
+        return (NULL);
+    }
+        
+    
+    if(!PyConduit_Node_Check(py_iface))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "Filter::verify_interface 'iface' argument must be a "
+                        "Conduit::Node");
+        return NULL;
+    }
+
+    
+    if(!PyConduit_Node_Check(py_info))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "Filter::verify_interface 'info' argument must be a "
+                        "Conduit::Node");
+        return NULL;
+    }
+    
+    Node *iface_ptr = PyConduit_Node_Get_Node_Ptr(py_iface);
+    Node *info_ptr  = PyConduit_Node_Get_Node_Ptr(py_info);
+    
+    if(flow::Filter::verify_interface(*iface_ptr,*info_ptr))
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+
+}
+
+
+//----------------------------------------------------------------------------
+// filter instance  properties
+//----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_interface(PyFlow_Filter *self)
+{
+    
+    PyObject *res = PyConduit_Node_python_create();
+    Node *node = PyConduit_Node_Get_Node_Ptr(res);
+    
+    const flow::Filter *const_filt = (const flow::Filter*)self->filter;
+    const Node &iface = const_filt->interface();
+    node->set(iface);
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_params(PyFlow_Filter *self)
+{
+    // TODO: this copies for now, doesn't return ref
+    PyObject *res = PyConduit_Node_python_create();
+    Node *node = PyConduit_Node_Get_Node_Ptr(res);
+    node->set(self->filter->params());
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_input(PyFlow_Filter *self,
+                    PyObject *args)
+{
+    const char *port_name = NULL;
+    Py_ssize_t idx;
+    
+    if(!PyArg_ParseTuple(args, "s", &port_name))
+    {
+        if(!PyArg_ParseTuple(args, "n", &idx))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "Port must be a string or index");
+            return NULL;
+        }
+    }
+    
+    PyObject *res = NULL;
+    if( port_name != NULL)
+    {
+        res = (PyObject*) self->filter->input<PyObject>(std::string(port_name));
+    }
+    else
+    {
+        res = (PyObject*) self->filter->input<PyObject>(idx);
+    }
+    
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_set_output(PyFlow_Filter *self,
+                         PyObject *args)
+{
+    PyObject *py_data=NULL;
+    if(!PyArg_ParseTuple(args, "O", &py_data))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "Data must be a python object");
+        return NULL;
+    }
+    
+    self->filter->set_output<PyObject>(py_data);
+
+    Py_RETURN_NONE;
+}
+
+//-----------------------------------------------------------------------------
+// TODO:
+//-----------------------------------------------------------------------------
+
+// /// generic set of wrapped output data
+// void                   set_output(Data &data);
 //
+// /// generic access to wrapped output data
+// PyObject              *output();
+// /// access the filter's graph
+// PyObject              *graph();
 //
-// //-----------------------------------------------------------------------------
-// static PyObject *
-// PyFlow_Filter_open(PyFlow_Filter *self,
-//                    PyObject *args,
-//                    PyObject *kwargs)
-// {
+// /// connect helper
+// /// equiv to:
+// ///   graph().connect(f->name(),this->name(),port_name);
+// void                  connect_input_port(const std::string &port_name,
+//                                          Filter *filter);
 //
-//     static const char *kwlist[] = {"iface",
-//                                     NULL};
-//
-//      PyObject *py_node = NULL;
-//
-//     if (!PyArg_ParseTupleAndKeywords(args,
-//                                      kwargs,
-//                                      "O",
-//                                      const_cast<char**>(kwlist),
-//                                      &py_node))
-//     {
-//         return NULL;
-//     }
-//
-//
-//     if(py_node != NULL)
-//     {
-//         if(!PyConduit_Node_Check(py_node))
-//         {
-//             PyErr_SetString(PyExc_TypeError,
-//                             "Ascent::Open 'options' argument must be a "
-//                             "conduit::Node");
-//             return NULL;
-//         }
-//     }
-//
-//     if(py_node != NULL)
-//     {
-//         Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-//         self->ascent->open(*node);
-//     }
-//     else
-//     {
-//         self->ascent->open();
-//     }
-//
-//
-//     Py_RETURN_NONE;
-// }
-//
-// //-----------------------------------------------------------------------------
-// static PyObject *
-// PyAscent_Ascent_publish(PyAscent_Ascent *self,
-//                             PyObject *args,
-//                             PyObject *kwargs)
-// {
-//
-//     static const char *kwlist[] = {"data",
-//                                     NULL};
-//
-//      PyObject *py_node = NULL;
-//
-//     if (!PyArg_ParseTupleAndKeywords(args,
-//                                      kwargs,
-//                                      "O",
-//                                      const_cast<char**>(kwlist),
-//                                      &py_node))
-//     {
-//         return NULL;
-//     }
-//
-//
-//     if(!PyConduit_Node_Check(py_node))
-//     {
-//         PyErr_SetString(PyExc_TypeError,
-//                         "Ascent::Publish 'data' argument must be a "
-//                         "conduit::Node");
-//         return NULL;
-//     }
-//
-//     Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-//     self->ascent->publish(*node);
-//
-//     Py_RETURN_NONE;
-// }
-//
-// //-----------------------------------------------------------------------------
-// static PyObject *
-// PyAscent_Ascent_execute(PyAscent_Ascent *self,
-//                             PyObject *args,
-//                             PyObject *kwargs)
-// {
-//
-//     static const char *kwlist[] = {"actions",
-//                                     NULL};
-//
-//      PyObject *py_node = NULL;
-//
-//     if (!PyArg_ParseTupleAndKeywords(args,
-//                                      kwargs,
-//                                      "O",
-//                                      const_cast<char**>(kwlist),
-//                                      &py_node))
-//     {
-//         return NULL;
-//     }
-//
-//
-//     if(!PyConduit_Node_Check(py_node))
-//     {
-//         PyErr_SetString(PyExc_TypeError,
-//                         "Ascent::Execute 'actions' argument must be a "
-//                         "conduit::Node");
-//         return NULL;
-//     }
-//
-//     Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-//     self->ascent->execute(*node);
-//
-//     Py_RETURN_NONE;
-// }
-//
-// //---------------------------------------------------------------------------//
-// static PyObject *
-// PyAscent_Ascent_close(PyAscent_Ascent *self)
-// {
-//     self->ascent->close();
-//     Py_RETURN_NONE;
-// }
+// /// connect helper
+// /// equiv to:
+// ///   graph().connect(f->name(),this->name(),idx);
+// void                  connect_input_port(int idx,
+//                                          Filter *filter);
+
+
+//-----------------------------------------------------------------------------
+PyObject *
+PyFlow_Filter_info(PyFlow_Filter *self, 
+                   PyObject *args,
+                   PyObject *kwargs)
+{
+    static const char *kwlist[] = {"info",
+                                   NULL};
+    
+    PyObject *py_info  = NULL;
+
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_info))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_info))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "Filter::info 'info' argument must be a"
+                        " Conduit::Node");
+        return NULL;
+    }
+    
+    Node *info_ptr = PyConduit_Node_Get_Node_Ptr(py_info);
+    
+    self->filter->info(*info_ptr);
+
+    Py_RETURN_NONE;
+
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_to_json(PyFlow_Filter *self)
+{
+    return Py_BuildValue("s", self->filter->to_json().c_str());
+}
 
 
 //---------------------------------------------------------------------------//
@@ -412,36 +633,106 @@ PyFlow_Filter_print(PyFlow_Filter *self)
 static PyObject *
 PyFlow_Filter_str(PyFlow_Filter *self)
 {
-    // TODO: use to_json()
-    return (Py_BuildValue("s", "{Python Flow Filter}"));
+    return PyFlow_Filter_to_json(self);
 }
 
 //----------------------------------------------------------------------------//
-// Ascent methods table
+// flow::Filter methods table
 //----------------------------------------------------------------------------//
 static PyMethodDef PyFlow_Filter_METHODS[] = {
+    //-------------------------------------------------------------------------
+    // filter interface properties
+    //-------------------------------------------------------------------------
     //-----------------------------------------------------------------------//
-    // {"open",
-    //  (PyCFunction)PyAscent_Ascent_open,
-    //  METH_VARARGS | METH_KEYWORDS,
-    //  "{todo}"},
-    // //-----------------------------------------------------------------------//
-    // {"publish",
-    //  (PyCFunction)PyAscent_Ascent_publish,
-    //  METH_VARARGS | METH_KEYWORDS,
-    //  "{todo}"},
-    //  //-----------------------------------------------------------------------//
-    //  {"execute",
-    //   (PyCFunction)PyAscent_Ascent_execute,
-    //  METH_VARARGS | METH_KEYWORDS,
-    //   "{todo}"},
+     {"verify_interface",
+      (PyCFunction)PyFlow_Filter_verify_interface,
+      METH_VARARGS | METH_KEYWORDS | METH_STATIC,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"type_name",
+      (PyCFunction)PyFlow_Filter_type_name,
+      METH_NOARGS,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"port_names",
+      (PyCFunction)PyFlow_Filter_port_names,
+      METH_NOARGS,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"output_port",
+      (PyCFunction)PyFlow_Filter_output_port,
+      METH_NOARGS,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"default_params",
+      (PyCFunction)PyFlow_Filter_default_params,
+      METH_NOARGS,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"number_of_input_ports",
+      (PyCFunction)PyFlow_Filter_number_of_input_ports,
+      METH_NOARGS,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"has_port",
+      (PyCFunction)PyFlow_Filter_has_port,
+      METH_VARARGS,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"port_index_to_name",
+      (PyCFunction)PyFlow_Filter_port_index_to_name,
+      METH_VARARGS,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"name",
+      (PyCFunction)PyFlow_Filter_name,
+      METH_NOARGS,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"detailed_name",
+      (PyCFunction)PyFlow_Filter_detailed_name,
+      METH_NOARGS,
+      "{todo}"},
+    //-------------------------------------------------------------------------
+    // filter instance properties
+    //-------------------------------------------------------------------------
+    //-----------------------------------------------------------------------//
+     {"interface",
+     (PyCFunction)PyFlow_Filter_interface,
+     METH_NOARGS ,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"params",
+     (PyCFunction)PyFlow_Filter_params,
+     METH_NOARGS ,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"input",
+     (PyCFunction)PyFlow_Filter_input,
+     METH_VARARGS ,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"set_output",
+     (PyCFunction)PyFlow_Filter_set_output,
+     METH_VARARGS ,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+     {"info",
+      (PyCFunction)PyFlow_Filter_info,
+      METH_VARARGS | METH_KEYWORDS,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"to_json",
+     (PyCFunction)PyFlow_Filter_to_json,
+     METH_NOARGS,
+     "{todo}"},
     //-----------------------------------------------------------------------//
     {"print",
      (PyCFunction)PyFlow_Filter_print,
      METH_NOARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
-    // end Ascent methods table
+    // end flow::Filter methods table
     //-----------------------------------------------------------------------//
     {NULL, NULL, 0, NULL}
 };
