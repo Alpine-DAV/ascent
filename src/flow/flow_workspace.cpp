@@ -402,16 +402,16 @@ Workspace::print() const
 
 //-----------------------------------------------------------------------------
 Filter *
-Workspace::create_filter(const std::string &filter_type)
+Workspace::create_filter(const std::string &filter_type_name)
 {
-    if(!supports_filter_type(filter_type))
+    if(!supports_filter_type(filter_type_name))
     {
         CONDUIT_WARN("Cannot create unknown filter type: "
-                    << filter_type);
+                    << filter_type_name);
         return NULL;
     }
     
-    return FilterFactory::registered_types()[filter_type]();
+    return FilterFactory::registered_types()[filter_type_name](filter_type_name.c_str());
 }
 
 //-----------------------------------------------------------------------------
@@ -439,61 +439,60 @@ Workspace::default_mpi_comm()
 
 //-----------------------------------------------------------------------------
 bool
-Workspace::supports_filter_type(const std::string &filter_type)
+Workspace::supports_filter_type(const std::string &filter_type_name)
 {
     std::map<std::string,FilterFactoryMethod>::const_iterator itr;
-    itr = FilterFactory::registered_types().find(filter_type);
+    itr = FilterFactory::registered_types().find(filter_type_name);
     return (itr != FilterFactory::registered_types().end());
 }
-
 
 //-----------------------------------------------------------------------------
 bool
 Workspace::supports_filter_type(FilterFactoryMethod fr)
 {
-    Filter *f = fr();
+    Filter *f = fr("");
 
     Node iface;
     std::string f_type_name = "(type_name missing!)";
     f->declare_interface(iface);
     delete f;
-    
-    if(iface.has_child("type_name") && 
+
+    if(iface.has_child("type_name") &&
        iface["type_name"].dtype().is_string())
     {
         f_type_name = iface["type_name"].as_string();
     }
-    
+
     return supports_filter_type(f_type_name);
 }
 
 
 //-----------------------------------------------------------------------------
 void
-Workspace::remove_filter_type(const std::string &filter_type)
+Workspace::remove_filter_type(const std::string &filter_type_name)
 {
     std::map<std::string,FilterFactoryMethod>::const_iterator itr;
-    itr = FilterFactory::registered_types().find(filter_type);
+    itr = FilterFactory::registered_types().find(filter_type_name);
     if(itr != FilterFactory::registered_types().end())
     {
-        FilterFactory::registered_types().erase(filter_type);
+        FilterFactory::registered_types().erase(filter_type_name);
     }
 }
+
 //-----------------------------------------------------------------------------
 void
 Workspace::register_filter_type(FilterFactoryMethod fr)
 {
     if(supports_filter_type(fr))
     {
-        CONDUIT_INFO("TODO: Filter Already Registered");
+        // already registered 
         return;
     }
-        
     
     // check that filter is valid by creating
     // an instance
-    
-    Filter *f = fr();
+
+    Filter *f = fr("");
     
     // verify f provides proper interface declares
     
@@ -521,10 +520,10 @@ Workspace::register_filter_type(FilterFactoryMethod fr)
     }
         
     f_type_name =i_test["type_name"].as_string();
-    
+
     // we no longer need this instance ...
     delete f;
-    
+
     if(supports_filter_type(f_type_name))
     {
         CONDUIT_ERROR("filter type named:"
@@ -533,6 +532,64 @@ Workspace::register_filter_type(FilterFactoryMethod fr)
     }
     
     FilterFactory::registered_types()[f_type_name] = fr;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Workspace::register_filter_type(const std::string &filter_type_name,
+                                FilterFactoryMethod fr)
+{
+    if(supports_filter_type(filter_type_name))
+    {
+        CONDUIT_ERROR("filter type named:"
+                      << filter_type_name 
+                      << " is already registered");
+    }
+    
+    // check that filter is valid by creating
+    // an instance
+    
+    Filter *f = fr(filter_type_name.c_str());
+    
+    // verify f provides proper interface declares
+    
+    Node i_test;
+    Node v_info;
+    
+    std::string f_type_name = "(type_name missing!)";
+    
+    f->declare_interface(i_test);
+    if(!Filter::verify_interface(i_test,v_info))
+    {
+        // if  the type name was provided, that helps improve 
+        // the error message, so try to include it
+        if(i_test.has_child("type_name") && 
+           i_test["type_name"].dtype().is_string())
+        {
+            f_type_name = i_test["type_name"].as_string();
+        }
+        
+        // failed interface verify ... 
+        CONDUIT_ERROR("filter type interface verify failed." << std::endl
+                      << f_type_name   << std::endl
+                      << "Details:" << std::endl
+                      << v_info.to_json());
+    }
+        
+    f_type_name =i_test["type_name"].as_string();
+
+    // we no longer need this instance ...
+    delete f;
+
+    if(supports_filter_type(f_type_name))
+    {
+        CONDUIT_ERROR("filter type named:"
+                     << f_type_name 
+                    << " is already registered");
+    }
+    
+    FilterFactory::registered_types()[filter_type_name] = fr;
 }
 
 
