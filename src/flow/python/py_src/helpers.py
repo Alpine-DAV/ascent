@@ -42,34 +42,30 @@
 # 
 ###############################################################################
 
-# Specify the sources of the pure python and compiled portions of our module.
-SET(flow_py_python_sources  py_src/__init__.py py_src/helpers.py)
-#SET(ascent_py_headers        flow_python.hpp)
-SET(flow_py_cpp_sources     flow_python.cpp)
+###############################################################################
+# file: helpers.py
+# Purpose: TODO
+###############################################################################
 
+from .flow_python import Filter
+import inspect
 
-# Setup our module
-PYTHON_ADD_HYBRID_MODULE(flow_python
-                         python-modules
-                         flow
-                         setup.py
-                         "${flow_py_python_sources}"
-                         #${flow_py_headers}
-                         ${flow_py_cpp_sources})
-
-# link with the proper libs (beyond python)
-target_link_libraries(flow_python flow)
-
-
-# TODO: ADD SUPPORT FOR SUPPORT PYTHON_MODULE_INSTALL_PREFIX
-# install the capi header so other python modules can use it
-# support alt install dir for python module via PYTHON_MODULE_INSTALL_PREFIX
-# if(PYTHON_MODULE_INSTALL_PREFIX)
-#     install(FILES ${flow_py_headers} DESTINATION ${PYTHON_MODULE_INSTALL_PREFIX}/flow/)
-# else()
-#     install(FILES ${flow_py_headers} DESTINATION python-modules/flow/)
-# endif()
-
-
-
-
+def wrap_function(func):
+    """
+    Creates a filter class from a plain python function
+    """
+    class FilterWrap(Filter):
+        def __init__(self):
+             super(FilterWrap, self).__init__()
+        def declare_interface(self,i):
+            i.fetch("type_name").set(func.__name__);
+            i.fetch("output_port").set("true");
+            for arg in inspect.getargspec(func)[0]:
+                i["port_names"].append().set(arg)
+        def execute(self):
+            arg_vals = []
+            for arg in inspect.getargspec(func)[0]:
+                arg_vals.append(self.input(arg))
+            print func.__name__
+            self.set_output(func(*arg_vals))
+    return FilterWrap

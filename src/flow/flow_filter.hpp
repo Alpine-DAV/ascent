@@ -222,6 +222,8 @@ public:
         set_output(data);
     }
 
+    bool                  is_output_set();
+
     /// generic access to wrapped output data
     Data                  &output();
    
@@ -292,11 +294,11 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-typedef Filter *(*FilterFactoryMethod)(const char *filter_type);
+typedef Filter *(*FilterFactoryMethod)(const std::string &filter_type_name);
 
 //-----------------------------------------------------------------------------
 template <class T>
-Filter *CreateFilter(const char *filter_type)
+Filter *CreateFilter(const std::string &filter_type_name)
 {
     return new T;
 }

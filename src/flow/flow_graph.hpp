@@ -188,6 +188,8 @@ public:
 private:
     Graph(Workspace *w);
 
+    void                 init();
+    
     const conduit::Node &edges()  const;
     const conduit::Node &edges_in(const std::string &f_name)  const;
     const conduit::Node &edges_out(const std::string &f_name) const;

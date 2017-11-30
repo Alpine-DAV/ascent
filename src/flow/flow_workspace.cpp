@@ -339,7 +339,11 @@ Workspace::execute()
             // if has output, set output
             if(f->output_port())
             {
-                
+                if(!f->is_output_set())
+                {
+                    CONDUIT_ERROR("filter output is NULL, was set_output() called?");
+                }
+
                 registry().add(f_name,
                                f->output(),
                                uref);
@@ -489,9 +493,10 @@ Workspace::register_filter_type(FilterFactoryMethod fr)
         return;
     }
     
+    // obtain type name
+    
     // check that filter is valid by creating
     // an instance
-
     Filter *f = fr("");
     
     // verify f provides proper interface declares
@@ -523,15 +528,8 @@ Workspace::register_filter_type(FilterFactoryMethod fr)
 
     // we no longer need this instance ...
     delete f;
-
-    if(supports_filter_type(f_type_name))
-    {
-        CONDUIT_ERROR("filter type named:"
-                     << f_type_name 
-                    << " is already registered");
-    }
     
-    FilterFactory::registered_types()[f_type_name] = fr;
+    register_filter_type(f_type_name,fr);
 }
 
 
@@ -542,9 +540,10 @@ Workspace::register_filter_type(const std::string &filter_type_name,
 {
     if(supports_filter_type(filter_type_name))
     {
-        CONDUIT_ERROR("filter type named:"
+        CONDUIT_INFO("filter type named:"
                       << filter_type_name 
                       << " is already registered");
+        return;
     }
     
     // check that filter is valid by creating

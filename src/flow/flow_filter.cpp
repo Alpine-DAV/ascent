@@ -272,13 +272,7 @@ Filter::verify_interface(const Node &i,
         }
     }
 
-    if(!i.has_child("port_names"))
-    {
-        std::string msg = "interface missing 'port_names' = [ \"i0\" , ..., \"iN\" ]";
-        info["errors"].append().set(msg);
-        res = false;
-    }
-    else
+    if(i.has_child("port_names"))
     {
         NodeConstIterator itr(&i["port_names"]);
         int idx = 0;
@@ -365,6 +359,14 @@ Filter::set_output(Data &data)
     }
 
     m_out = data.wrap(data.data_ptr());
+}
+
+
+//-----------------------------------------------------------------------------
+bool
+Filter::is_output_set()
+{
+    return (m_out != NULL);
 }
 
 //-----------------------------------------------------------------------------

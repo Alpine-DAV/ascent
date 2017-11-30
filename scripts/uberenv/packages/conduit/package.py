@@ -59,10 +59,14 @@ class Conduit(Package):
     homepage = "http://software.llnl.gov/conduit/"
     url      = "https://github.com/LLNL/conduit/releases/download/v0.3.0/conduit-v0.3.0-src-with-blt.tar.gz"
 
-    version('0.3.0', '6396f1d1ca16594d7c66d4535d4f898e')
+    version('master',
+            git='https://github.com/LLNL/conduit.git',
+            branch='master')
+
+    #version('0.3.0', '6396f1d1ca16594d7c66d4535d4f898e')
     # note: checksums on github automatic release source tars changed ~9/17
-    version('0.2.1', 'ed7358af3463ba03f07eddd6a6e626ff')
-    version('0.2.0', 'a7b398d493fd71b881a217993a9a29d4')
+    #version('0.2.1', 'ed7358af3463ba03f07eddd6a6e626ff')
+    #version('0.2.0', 'a7b398d493fd71b881a217993a9a29d4')
 
     variant("cmake", default=True,
              description="Build CMake (if off, attempt to use cmake from PATH)")
@@ -302,6 +306,9 @@ class Conduit(Package):
         return host_cfg_fname
     
     def install(self, spec, prefix):
+        import subprocess
+        subprocess.call("git submodule init",shell=True)
+        subprocess.call("git submodule update",shell=True)
         with working_dir('spack-build', create=True):
             host_cfg_fname = self.create_host_config(spec,prefix)
             cmake_args = []
