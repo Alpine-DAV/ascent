@@ -339,7 +339,7 @@ Workspace::execute()
             // if has output, set output
             if(f->output_port())
             {
-                if(!f->is_output_set())
+                if(f->output().data_ptr() == NULL)
                 {
                     CONDUIT_ERROR("filter output is NULL, was set_output() called?");
                 }

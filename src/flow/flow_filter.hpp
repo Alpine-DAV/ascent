@@ -222,8 +222,6 @@ public:
         set_output(data);
     }
 
-    bool                  is_output_set();
-
     /// generic access to wrapped output data
     Data                  &output();
    

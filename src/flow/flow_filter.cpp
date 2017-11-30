@@ -80,7 +80,10 @@ Filter::Filter()
 : m_graph(NULL),
   m_out(NULL)
 {
-
+    // provide NULL as default data when output is not set
+    // null pointer won't be reaped, concrete type doesn't matter, 
+    // except that we can't use void
+    m_out = new DataWrapper<int>(NULL);
 }
 
 //-----------------------------------------------------------------------------
@@ -363,17 +366,9 @@ Filter::set_output(Data &data)
 
 
 //-----------------------------------------------------------------------------
-bool
-Filter::is_output_set()
-{
-    return (m_out != NULL);
-}
-
-//-----------------------------------------------------------------------------
 Data &
 Filter::output()
 {
-    // TODO GUARD NULL?
     return *m_out;
 }
 
