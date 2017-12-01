@@ -794,15 +794,6 @@ PyFlow_Filter_to_json(PyFlow_Filter *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyFlow_Filter_print(PyFlow_Filter *self)
-{
-    self->filter->print();
-    Py_RETURN_NONE;
-}
-
-
-//---------------------------------------------------------------------------//
-static PyObject *
 PyFlow_Filter_str(PyFlow_Filter *self)
 {
     return PyFlow_Filter_to_json(self);
@@ -913,11 +904,6 @@ static PyMethodDef PyFlow_Filter_METHODS[] = {
      (PyCFunction)PyFlow_Filter_to_json,
      METH_NOARGS,
      "returns a json sting with info about this filter"},
-    //-----------------------------------------------------------------------//
-    {"print",
-     (PyCFunction)PyFlow_Filter_print,
-     METH_NOARGS,
-     "prints info about this filter"},
     //-----------------------------------------------------------------------//
     // end flow.Filter methods table
     //-----------------------------------------------------------------------//
@@ -1265,15 +1251,6 @@ PyFlow_Registry_to_json(PyFlow_Registry *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyFlow_Registry_print(PyFlow_Registry *self)
-{
-    self->registry->print();
-    Py_RETURN_NONE;
-}
-
-
-//---------------------------------------------------------------------------//
-static PyObject *
 PyFlow_Registry_str(PyFlow_Registry *self)
 {
     return PyFlow_Registry_to_json(self);
@@ -1313,11 +1290,6 @@ static PyMethodDef PyFlow_Registry_METHODS[] = {
      (PyCFunction) PyFlow_Registry_to_json,
      METH_NOARGS,
      "returns a json sting with info about this registry"},
-    //-----------------------------------------------------------------------//
-    {"print",
-     (PyCFunction)PyFlow_Registry_print,
-     METH_NOARGS,
-     "prints info about this registry"},
     //-----------------------------------------------------------------------//
     // end flow.Registry methods table
     //-----------------------------------------------------------------------//
@@ -1791,14 +1763,6 @@ PyFlow_Graph_to_json(PyFlow_Graph *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyFlow_Graph_print(PyFlow_Graph *self)
-{
-    self->graph->print();
-    Py_RETURN_NONE;
-}
-
-//---------------------------------------------------------------------------//
-static PyObject *
 PyFlow_Graph_to_dot(PyFlow_Graph *self)
 {
     return Py_BuildValue("s", self->graph->to_dot().c_str());
@@ -1860,12 +1824,6 @@ static PyMethodDef PyFlow_Graph_METHODS[] = {
       (PyCFunction)PyFlow_Graph_to_json,
       METH_NOARGS,
       "returns a string with a grapviz dot style graph description"},
-    //-----------------------------------------------------------------------//
-     {"print",
-      (PyCFunction)PyFlow_Graph_print,
-      METH_NOARGS,
-      "prints info about this graph"},
-    //------------------------------------------------
     //-----------------------------------------------------------------------//
     // end flow.Graph methods table
     //-----------------------------------------------------------------------//
@@ -2141,16 +2099,6 @@ PyFlow_Workspace_to_json(PyFlow_Workspace *self)
     return Py_BuildValue("s", self->workspace->to_json().c_str());
 }
 
-
-//---------------------------------------------------------------------------//
-static PyObject *
-PyFlow_Workspace_print(PyFlow_Workspace *self)
-{
-    self->workspace->print();
-    Py_RETURN_NONE;
-}
-
-
 //---------------------------------------------------------------------------//
 static PyObject *
 PyFlow_Workspace_str(PyFlow_Workspace *self)
@@ -2359,11 +2307,6 @@ static PyMethodDef PyFlow_Workspace_METHODS[] = {
       (PyCFunction)PyFlow_Workspace_to_json,
       METH_NOARGS,
       "returns a json sting with info about this workspace"},
-    //-----------------------------------------------------------------------//
-     {"print",
-      (PyCFunction)PyFlow_Workspace_print,
-      METH_NOARGS,
-      "prints info about this workspace"},
     //------------------------------------------------
     //-----------------------------------------------------------------------//
     // end flow.Workspace methods table
