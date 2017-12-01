@@ -170,6 +170,7 @@ class Test_Flow_Basic(unittest.TestCase):
         flow.Workspace.register_filter_type(flow.wrap_function(prnt))
         w = flow.Workspace()
 
+        print(w.registry())
         # add our filters
         w.graph().add_filter("src","s");
 
@@ -177,17 +178,20 @@ class Test_Flow_Basic(unittest.TestCase):
         w.graph().add_filter("inc","b");
         w.graph().add_filter("inc","c");
         
-        w.graph().add_filter("prnt","p");
     
         # connect everything up
         w.graph().connect("s","a","i");
         w.graph().connect("a","b","i");
         w.graph().connect("b","c","i");
-        
-        w.graph().connect("c","p","i");
 
         print(w)
         w.execute();
+        print("Reg from Py")
+        print(w.registry())
+        
+        v = w.registry().fetch("c")
+        
+        self.assertEqual(v,4)
 
 
 

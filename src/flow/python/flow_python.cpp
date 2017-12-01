@@ -231,6 +231,7 @@ class DataWrapper<PyObject>: public Data
 
 //---------------------------------------------------------------------------//
 static PyObject *PyFlow_Graph_Python_Wrap(flow::Graph *graph);
+static PyObject *PyFlow_Registry_Python_Wrap(Registry *registry);
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
@@ -745,24 +746,6 @@ PyFlow_Filter_connect_input_port(PyFlow_Filter *self,
 }
 
 //-----------------------------------------------------------------------------
-// TODO:
-//-----------------------------------------------------------------------------
-
-//
-// /// connect helper
-// /// equiv to:
-// ///   graph().connect(f->name(),this->name(),port_name);
-// void                  connect_input_port(const std::string &port_name,
-//                                          Filter *filter);
-//
-// /// connect helper
-// /// equiv to:
-// ///   graph().connect(f->name(),this->name(),idx);
-// void                  connect_input_port(int idx,
-//                                          Filter *filter);
-
-
-//-----------------------------------------------------------------------------
 PyObject *
 PyFlow_Filter_info(PyFlow_Filter *self, 
                    PyObject *args,
@@ -826,7 +809,7 @@ PyFlow_Filter_str(PyFlow_Filter *self)
 }
 
 //----------------------------------------------------------------------------//
-// flow::Filter methods table
+// flow.Filter methods table
 //----------------------------------------------------------------------------//
 static PyMethodDef PyFlow_Filter_METHODS[] = {
     //-------------------------------------------------------------------------
@@ -936,7 +919,7 @@ static PyMethodDef PyFlow_Filter_METHODS[] = {
      METH_NOARGS,
      "prints info about this filter"},
     //-----------------------------------------------------------------------//
-    // end flow::Filter methods table
+    // end flow.Filter methods table
     //-----------------------------------------------------------------------//
     {NULL, NULL, 0, NULL}
 };
@@ -1016,6 +999,396 @@ PyFlow_Filter_Check_SubType(PyObject *obj)
 }
 
 
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//
+// flow.Registry
+//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+struct PyFlow_Registry
+{
+    PyObject_HEAD
+    flow::Registry *registry;
+};
+
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyFlow_Registry_new(PyTypeObject *type,
+                    PyObject *, // args -- unused
+                    PyObject *) // kwds -- unused
+{
+    PyFlow_Registry *self = (PyFlow_Registry*)type->tp_alloc(type, 0);
+
+    if (self)
+    {
+        self->registry = 0;
+    }
+
+    return ((PyObject*)self);
+}
+
+//---------------------------------------------------------------------------//
+static void
+PyFlow_Registry_dealloc(PyFlow_Registry *self)
+{
+    // never owns a registry...
+    Py_TYPE(self)->tp_free((PyObject*)self);
+}
+
+
+//---------------------------------------------------------------------------//
+static int
+PyFlow_Registry_init(PyFlow_Registry *self,
+                     PyObject *,// args -- unused
+                     PyObject *) // kwds -- unused
+{
+  
+    self->registry = 0;
+    return 0;
+
+}
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyFlow_Registry_add(PyFlow_Registry *self, 
+                      PyObject *args,
+                      PyObject *kwargs)
+{
+    static const char *kwlist[] = {"key",
+                                   NULL};
+    
+    const char *key_c_str  = NULL;
+    PyObject *py_obj = NULL;
+    Py_ssize_t num_refs = -1;
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "sO|n",
+                                     const_cast<char**>(kwlist),
+                                     &key_c_str,
+                                     &py_obj,
+                                     &num_refs))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "expects: key(string), data(Python Object)| "
+                        " refs_needed(integer)");
+        return NULL;
+    }
+
+    self->registry->add<PyObject>(std::string(key_c_str),
+                                  py_obj,
+                                  num_refs);
+    Py_RETURN_NONE;
+
+}
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyFlow_Registry_fetch(PyFlow_Registry *self, 
+                      PyObject *args,
+                      PyObject *kwargs)
+{
+    static const char *kwlist[] = {"key",
+                                   NULL};
+    
+    const char *key_c_str  = NULL;
+
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "s",
+                                     const_cast<char**>(kwlist),
+                                     &key_c_str))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'key' argument must be a string");
+        return NULL;
+    }
+
+    return self->registry->fetch<PyObject>(std::string(key_c_str));
+}
+
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyFlow_Registry_has_entry(PyFlow_Registry *self, 
+                          PyObject *args,
+                          PyObject *kwargs)
+{
+    static const char *kwlist[] = {"key",
+                                   NULL};
+    
+    const char *key_c_str  = NULL;
+
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "s",
+                                     const_cast<char**>(kwlist),
+                                     &key_c_str))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'key' argument must be a string");
+        return NULL;
+    }
+
+    if(self->registry->has_entry(std::string(key_c_str)))
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyFlow_Registry_consume(PyFlow_Registry *self, 
+                        PyObject *args,
+                        PyObject *kwargs)
+{
+    static const char *kwlist[] = {"key",
+                                   NULL};
+    
+    const char *key_c_str  = NULL;
+
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "s",
+                                     const_cast<char**>(kwlist),
+                                     &key_c_str))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'key' argument must be a string");
+        return NULL;
+    }
+
+    
+    self->registry->consume(std::string(key_c_str));
+
+    Py_RETURN_NONE;
+}
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyFlow_Registry_detach(PyFlow_Registry *self, 
+                       PyObject *args,
+                       PyObject *kwargs)
+{
+    static const char *kwlist[] = {"key",
+                                   NULL};
+    
+    const char *key_c_str  = NULL;
+
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "s",
+                                     const_cast<char**>(kwlist),
+                                     &key_c_str))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'key' argument must be a string");
+        return NULL;
+    }
+
+    
+    self->registry->detach(std::string(key_c_str));
+
+    Py_RETURN_NONE;
+}
+
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyFlow_Registry_info(PyFlow_Registry *self, 
+                     PyObject *args,
+                     PyObject *kwargs)
+{
+    static const char *kwlist[] = {"info",
+                                   NULL};
+    
+    PyObject *py_info  = NULL;
+
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_info))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_info))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "Filter.info 'info' argument must be a"
+                        " conduit.Node");
+        return NULL;
+    }
+    
+    Node *info_ptr = PyConduit_Node_Get_Node_Ptr(py_info);
+    
+    self->registry->info(*info_ptr);
+
+    Py_RETURN_NONE;
+
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Registry_reset(PyFlow_Registry *self)
+{
+    self->registry->reset();
+    Py_RETURN_NONE;
+}
+
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Registry_to_json(PyFlow_Registry *self)
+{
+    return Py_BuildValue("s", self->registry->to_json().c_str());
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Registry_print(PyFlow_Registry *self)
+{
+    self->registry->print();
+    Py_RETURN_NONE;
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Registry_str(PyFlow_Registry *self)
+{
+    return PyFlow_Registry_to_json(self);
+}
+
+//----------------------------------------------------------------------------//
+// flow.Registry methods table
+//----------------------------------------------------------------------------//
+static PyMethodDef PyFlow_Registry_METHODS[] = {
+    {"add",
+     (PyCFunction) PyFlow_Registry_add,
+      METH_VARARGS | METH_KEYWORDS,
+     "add entry to the registry"},
+    {"fetch",
+     (PyCFunction) PyFlow_Registry_fetch,
+      METH_VARARGS | METH_KEYWORDS,
+     "fetch an entry from the registry"},
+    {"consume",
+     (PyCFunction) PyFlow_Registry_consume,
+      METH_VARARGS | METH_KEYWORDS,
+     "consume an entry from the registry"},
+    {"detach",
+     (PyCFunction) PyFlow_Registry_detach,
+      METH_VARARGS | METH_KEYWORDS,
+     "detach an entry from the registry"},
+    {"reset",
+     (PyCFunction) PyFlow_Registry_reset,
+     METH_NOARGS,
+     "reset the registry"},
+    //-----------------------------------------------------------------------//
+     {"info",
+      (PyCFunction) PyFlow_Registry_info,
+      METH_VARARGS | METH_KEYWORDS,
+      "fills passed conduit.Node with info about this registry"},
+    //-----------------------------------------------------------------------//
+    {"to_json",
+     (PyCFunction) PyFlow_Registry_to_json,
+     METH_NOARGS,
+     "returns a json sting with info about this registry"},
+    //-----------------------------------------------------------------------//
+    {"print",
+     (PyCFunction)PyFlow_Registry_print,
+     METH_NOARGS,
+     "prints info about this registry"},
+    //-----------------------------------------------------------------------//
+    // end flow.Registry methods table
+    //-----------------------------------------------------------------------//
+    {NULL, NULL, 0, NULL}
+};
+
+//---------------------------------------------------------------------------//
+static PyTypeObject PyFlow_Registry_TYPE = {
+   PyVarObject_HEAD_INIT(NULL, 0)
+   "flow.Registry",
+   sizeof(PyFlow_Registry),  /* tp_basicsize */
+   0, /* tp_itemsize */
+   (destructor)PyFlow_Registry_dealloc,   /* tp_dealloc */
+   0, /* tp_print */
+   0, /* tp_getattr */
+   0, /* tp_setattr */
+   0, /* tp_compare */
+   0, /* tp_repr */
+   0, /* tp_as_number */
+   0, /* tp_as_sequence */
+   0, /* as_mapping */
+   0, /* hash */
+   0, /* call */
+   (reprfunc)PyFlow_Registry_str,                         /* str */
+   0, /* getattro */
+   0, /* setattro */
+   0, /* asbuffer */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,     /* flags */
+   "flow.Registry object",
+   0, /* traverse */
+   0, /* clear */
+   0, /* tp_richcompare */
+   0, /* tp_weaklistoffset */
+   0, /* iter */
+   0, /* iternext */
+   PyFlow_Registry_METHODS, /* METHODS */
+   0, /* MEMBERS */
+   0, /* get/set */
+   0, /* tp_base */
+   0, /* dict */
+   0, /* descr_get */
+   0, /* gescr_set */
+   0, /* dictoffset */
+   (initproc)PyFlow_Registry_init,
+   0, /* alloc */
+   PyFlow_Registry_new,   /* new */
+   0, /* tp_free */
+   0, /* tp_is_gc */
+   0, /* tp_bases */
+   0, /* tp_mro */
+   0, /* tp_cache */
+   0, /* tp_subclasses */
+   0,  /* tp_weaklist */
+   0,
+   0
+   PyVarObject_TAIL
+};
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Registry_Python_Wrap(Registry *registry)
+{
+    PyTypeObject *type = (PyTypeObject*)&PyFlow_Registry_TYPE;
+    PyFlow_Registry *res = (PyFlow_Registry*)type->tp_alloc(type, 0);
+
+    res->registry = registry;
+    return ((PyObject*)res);
+}
+
+
+//---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 //
@@ -1441,7 +1814,7 @@ PyFlow_Graph_str(PyFlow_Graph *self)
 
 
 //----------------------------------------------------------------------------//
-// flow::Workspace methods table
+// flow.Graph methods table
 //----------------------------------------------------------------------------//
 static PyMethodDef PyFlow_Graph_METHODS[] = {
     //-------------------------------------------------------------------------
@@ -1494,7 +1867,7 @@ static PyMethodDef PyFlow_Graph_METHODS[] = {
       "prints info about this graph"},
     //------------------------------------------------
     //-----------------------------------------------------------------------//
-    // end flow::Workspace methods table
+    // end flow.Graph methods table
     //-----------------------------------------------------------------------//
     {NULL, NULL, 0, NULL}
 };
@@ -1670,7 +2043,8 @@ PyFlow_Workspace_graph(PyFlow_Workspace *self)
 static PyObject *
 PyFlow_Workspace_registry(PyFlow_Workspace *self)
 {
-    Py_RETURN_NONE;
+    Registry *g = &self->workspace->registry();
+    return PyFlow_Registry_Python_Wrap(g);
 }
 
 //---------------------------------------------------------------------------//
@@ -1911,7 +2285,7 @@ PyFlow_Workspace_clear_supported_filter_types(PyObject *, // cls -- unused
 }
 
 //----------------------------------------------------------------------------//
-// flow::Workspace methods table
+// flow.Workspace methods table
 //----------------------------------------------------------------------------//
 static PyMethodDef PyFlow_Workspace_METHODS[] = {
     //-------------------------------------------------------------------------
@@ -1992,7 +2366,7 @@ static PyMethodDef PyFlow_Workspace_METHODS[] = {
       "prints info about this workspace"},
     //------------------------------------------------
     //-----------------------------------------------------------------------//
-    // end flow::Workspace methods table
+    // end flow.Workspace methods table
     //-----------------------------------------------------------------------//
     {NULL, NULL, 0, NULL}
 };
@@ -2173,6 +2547,12 @@ void FLOW_PYTHON_API initflow_python(void)
     {
         PY_MODULE_INIT_RETURN_ERROR;
     }
+
+    if (PyType_Ready(&PyFlow_Registry_TYPE) < 0)
+    {
+        PY_MODULE_INIT_RETURN_ERROR;
+    }
+
     
     if (PyType_Ready(&PyFlow_Graph_TYPE) < 0)
     {
@@ -2192,6 +2572,15 @@ void FLOW_PYTHON_API initflow_python(void)
     PyModule_AddObject(py_module,
                        "Filter",
                        (PyObject*)&PyFlow_Filter_TYPE);
+
+    //-----------------------------------------------------------------------//
+    // add Registry Type
+    //-----------------------------------------------------------------------//
+    
+    Py_INCREF(&PyFlow_Registry_TYPE);
+    PyModule_AddObject(py_module,
+                       "Registry",
+                       (PyObject*)&PyFlow_Registry_TYPE);
 
     //-----------------------------------------------------------------------//
     // add Graph Type
