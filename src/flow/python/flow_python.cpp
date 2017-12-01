@@ -232,6 +232,141 @@ class DataWrapper<PyObject>: public Data
 //---------------------------------------------------------------------------//
 static PyObject *PyFlow_Graph_Python_Wrap(flow::Graph *graph);
 static PyObject *PyFlow_Registry_Python_Wrap(Registry *registry);
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+// Built in filter types that help with C++ to Python Conduit case
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+class PyFlow_Ensure_Python: public flow::Filter
+{
+public:
+
+    //-------------------------------------------------------------------------
+    PyFlow_Ensure_Python()
+    : flow::Filter()
+    {
+        //empty
+    }
+
+    //-------------------------------------------------------------------------        
+    virtual ~PyFlow_Ensure_Python()
+    {
+        //empty
+    }
+    
+    //-------------------------------------------------------------------------
+    virtual void declare_interface(conduit::Node &iface)
+    {
+        iface["type_name"]   = "ensure_python";
+        iface["port_names"].append() = "in";
+        iface["output_port"] = "true";
+    }
+
+    //-------------------------------------------------------------------------
+    virtual void execute()
+    {
+        if(input(0).check_type<PyObject>())
+        {
+            // output is already python ... 
+            set_output(input(0));
+        }
+        else if(input(0).check_type<conduit::Node>())
+        {
+            // wrap into python
+            conduit::Node *n = input<conduit::Node>(0);
+            PyObject *res = PyConduit_Node_Python_Wrap(n,
+                                                       0);
+            set_output<PyObject>(res);
+        }
+        else
+        {
+            CONDUIT_ERROR("ensure_python input must be a python object "
+                          "or a conduit::Node");
+        }
+        
+    }
+
+};
+
+//---------------------------------------------------------------------------//
+class PyFlow_Ensure_Conduit: public flow::Filter
+{
+public:
+
+    //-------------------------------------------------------------------------
+    PyFlow_Ensure_Conduit()
+    : flow::Filter()
+    {
+        //empty
+    }
+        
+    virtual ~PyFlow_Ensure_Conduit()
+    {
+        //empty
+    }
+
+    //-------------------------------------------------------------------------    
+    virtual void declare_interface(conduit::Node &iface)
+    {
+        iface["type_name"]   = "ensure_conduit";
+        iface["port_names"].append() = "in";
+        iface["output_port"] = "true";
+    }
+
+    //-------------------------------------------------------------------------
+    virtual void execute()
+    {
+        if(input(0).check_type<conduit::Node>())
+        {
+            // output is already a Node ... 
+            set_output(input(0));
+        }
+        else if(input(0).check_type<PyObject>())
+        {
+            PyObject *py_obj = input<PyObject>(0);
+            
+            if(PyConduit_Node_Check(py_obj))
+            {
+                CONDUIT_ERROR("ensure_conduit input must be a python wrapped "
+                              "conduit::Node or a conduit::Node");
+            }
+
+            Node *node_ptr = PyConduit_Node_Get_Node_Ptr(py_obj);
+            
+            set_output<conduit::Node>(node_ptr);
+        }
+        else
+        {
+            CONDUIT_ERROR("ensure_conduit input must be a python wrapped "
+                          "conduit::Node or a conduit::Node");
+        }
+        
+    }
+
+};
+
+//---------------------------------------------------------------------------//
+void
+register_builtin_python_filter_types()
+{
+
+    if(!Workspace::supports_filter_type<PyFlow_Ensure_Python>())
+    {
+        Workspace::register_filter_type<PyFlow_Ensure_Python>();
+    }
+
+    if(!Workspace::supports_filter_type<PyFlow_Ensure_Conduit>())
+    {
+        Workspace::register_filter_type<PyFlow_Ensure_Conduit>();
+    }
+
+    
+}
+
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
@@ -241,6 +376,8 @@ static PyObject *PyFlow_Registry_Python_Wrap(Registry *registry);
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
+//---------------------------------------------------------------------------//
+// base class for python filter integration
 //---------------------------------------------------------------------------//
 class PyFlowFilter: public flow::Filter
 {
@@ -2220,8 +2357,7 @@ PyFlow_Workspace_remove_filter_type(PyObject *, // cls -- unused
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyFlow_Workspace_clear_supported_filter_types(PyObject *, // cls -- unused
-                                              PyObject *args)
+PyFlow_Workspace_clear_supported_filter_types(PyObject *) // cls -- unused
 {
     // TODO python specific map is only cleared here, not 
     // by other (say, c++ calls to Workspace::clear_supported_filter_types()
@@ -2231,6 +2367,16 @@ PyFlow_Workspace_clear_supported_filter_types(PyObject *, // cls -- unused
 
     Py_RETURN_NONE;
 }
+
+// TODO, we may not want this in Workspace, it doens't match cpp case
+static PyObject *
+PyFlow_Workspace_register_builtin_filter_types(PyObject *) // cls -- unused
+{
+    flow::filters::register_builtin();
+    register_builtin_python_filter_types();
+    Py_RETURN_NONE;
+}
+
 
 //----------------------------------------------------------------------------//
 // flow.Workspace methods table
@@ -2274,6 +2420,11 @@ static PyMethodDef PyFlow_Workspace_METHODS[] = {
       (PyCFunction)PyFlow_Workspace_clear_supported_filter_types,
       METH_NOARGS | METH_STATIC,
       "removes all registered filter types"},
+    //-----------------------------------------------------------------------//
+     {"register_builtin_filter_types",
+      (PyCFunction)PyFlow_Workspace_register_builtin_filter_types,
+      METH_NOARGS | METH_STATIC,
+      "registers all builtin filter types, including those specific to python"},
     //-------------------------------------------------------------------------
     // instance methods
     //-------------------------------------------------------------------------
