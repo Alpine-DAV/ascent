@@ -66,13 +66,13 @@ def inspect(val):
 
 class Test_Ascent_Flow(unittest.TestCase):
     def test_render_flow_inspect(self):
-        flow.Workspace.register_builtin_filter_types()
-        flow.Workspace.register_filter_type(flow.wrap_function(inspect));
-
         # if we don't have ascent, simply return
         info = ascent.about()
         if info["runtimes/ascent/status"] != "enabled":
             return
+        
+        flow.Workspace.register_builtin_filter_types()
+        flow.Workspace.register_filter_type(flow.wrap_function(inspect));
         
         # create example mesh
         n_mesh = conduit.Node()
