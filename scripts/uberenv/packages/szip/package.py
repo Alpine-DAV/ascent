@@ -47,7 +47,7 @@ class Szip(Package):
     homepage = "http://www.hdf5group.org"
     url      = "https://support.hdfgroup.org/ftp/lib-external/szip/2.1.1/src/szip-2.1.1.tar.gz"
 
-    version('2.1.1', 'dd579cf0f26d44afd10a0ad7291fc282')
+    version('2.1.1', '5addbf2a5b1bf928b92c47286e921f72')
 
     def install(self, spec, prefix):
         configure("--prefix=%s" % prefix)
