@@ -80,7 +80,10 @@ Filter::Filter()
 : m_graph(NULL),
   m_out(NULL)
 {
-
+    // provide NULL as default data when output is not set
+    // null pointer won't be reaped, concrete type doesn't matter, 
+    // except that we can't use void
+    m_out = new DataWrapper<int>(NULL);
 }
 
 //-----------------------------------------------------------------------------
@@ -272,13 +275,7 @@ Filter::verify_interface(const Node &i,
         }
     }
 
-    if(!i.has_child("port_names"))
-    {
-        std::string msg = "interface missing 'port_names' = [ \"i0\" , ..., \"iN\" ]";
-        info["errors"].append().set(msg);
-        res = false;
-    }
-    else
+    if(i.has_child("port_names"))
     {
         NodeConstIterator itr(&i["port_names"]);
         int idx = 0;
@@ -367,11 +364,11 @@ Filter::set_output(Data &data)
     m_out = data.wrap(data.data_ptr());
 }
 
+
 //-----------------------------------------------------------------------------
 Data &
 Filter::output()
 {
-    // TODO GUARD NULL?
     return *m_out;
 }
 

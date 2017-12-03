@@ -128,13 +128,20 @@ public:
 
     /// register a new type 
     static void register_filter_type(FilterFactoryMethod fr);
+
+    /// register a new type 
+    static void register_filter_type(const std::string &filter_type_name,
+                                     FilterFactoryMethod fr);
+
     /// check if type with given name is registered
-    static bool supports_filter_type(const std::string &filter_type);
-    /// check if type with given factory is registered
+    static bool supports_filter_type(const std::string &filter_type_name);
+
+    // /// check if type with given factory is registered
     static bool supports_filter_type(FilterFactoryMethod fr);
     
     /// remove type with given name if registered
-    static void remove_filter_type(const std::string &filter_type);
+    static void remove_filter_type(const std::string &filter_type_name);
+
     /// remove all registered types
     static void clear_supported_filter_types();
 

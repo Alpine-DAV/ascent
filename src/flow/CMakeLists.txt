@@ -94,3 +94,12 @@ install(TARGETS flow
 install(FILES ${flow_headers} DESTINATION include/ascent)
 
 
+################################
+# Add python wrappers if python
+# support was selected
+################################
+if(PYTHON_FOUND)
+    add_subdirectory(python)
+endif()
+
+

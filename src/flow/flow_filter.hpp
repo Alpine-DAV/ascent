@@ -292,11 +292,11 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-typedef Filter *(*FilterFactoryMethod)();
+typedef Filter *(*FilterFactoryMethod)(const std::string &filter_type_name);
 
 //-----------------------------------------------------------------------------
 template <class T>
-Filter *CreateFilter()
+Filter *CreateFilter(const std::string &filter_type_name)
 {
     return new T;
 }

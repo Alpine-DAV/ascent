@@ -137,6 +137,7 @@ template <class T>
 class DataWrapper: public Data
 {
  public:
+     
     DataWrapper(void *data)
     : Data(data)
     {

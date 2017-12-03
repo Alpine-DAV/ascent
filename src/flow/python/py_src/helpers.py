@@ -42,33 +42,30 @@
 # 
 ###############################################################################
 
+###############################################################################
+# file: helpers.py
+# Purpose: TODO
+###############################################################################
 
-################################
-# Unit Tests
-################################
+from .flow_python import Filter
+import inspect
 
-################################
-# Flow Unit Tests
-################################
-
-set(FLOW_TESTS  t_flow_data
-                t_flow_registry
-                t_flow_workspace)
-
-
-################################
-# Add tests
-################################
-
-#(tests depend on ascent b/c we are using some of its utils in the tests)
-
-message(STATUS "Adding flow lib unit tests")
-foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON flow)
-endforeach()
-
-if(PYTHON_FOUND AND ENABLE_PYTHON)
-    add_subdirectory("python")
-else()
-    message(STATUS "Python disabled: Skipping ascent python module tests")
-endif()
+def wrap_function(func):
+    """
+    Creates a filter class from a plain python function
+    """
+    class FilterWrap(Filter):
+        def __init__(self):
+             super(FilterWrap, self).__init__()
+        def declare_interface(self,i):
+            i.fetch("type_name").set(func.__name__);
+            i.fetch("output_port").set("true");
+            for arg in inspect.getargspec(func)[0]:
+                i["port_names"].append().set(arg)
+        def execute(self):
+            arg_vals = []
+            for arg in inspect.getargspec(func)[0]:
+                arg_vals.append(self.input(arg))
+            print func.__name__
+            self.set_output(func(*arg_vals))
+    return FilterWrap
