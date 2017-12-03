@@ -114,9 +114,15 @@ class Test_Ascent_Flow(unittest.TestCase):
         conn_ins["dest"] = "my_inspect";
 
         print(actions)
-
         actions.append()["action"] = "execute"
-        a.execute(actions)
+        # this will fail for static libs case
+        # b/c the py libs are still dynamic, and they each
+        # link their own static copy of flow
+        try:
+            a.execute(actions)
+        except RuntimeError as e:
+            if not e.message.count("ensure_python") > 0:
+                raise(e)
         a.close()
  
 if __name__ == '__main__':

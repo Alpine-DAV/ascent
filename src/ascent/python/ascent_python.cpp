@@ -58,6 +58,7 @@
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
 #include <iostream>
+#include <sstream>
 #include <vector>
 
 //-----------------------------------------------------------------------------
@@ -189,6 +190,17 @@ struct PyAscent_Ascent
     Ascent *ascent; // NoteIterator is light weight, we can deal with copies
 };
 
+//---------------------------------------------------------------------------//
+// Helper that promotes ascent error to python error
+//---------------------------------------------------------------------------//
+static void
+PyAscent_Ascent_Error_To_PyErr(const conduit::Error &e)
+{
+    std::ostringstream oss;
+    oss << "Ascent Error: " << e.message();
+    PyErr_SetString(PyExc_RuntimeError,
+                    oss.str().c_str());
+}
 
 //---------------------------------------------------------------------------//
 static PyObject * 
@@ -264,16 +276,23 @@ PyAscent_Ascent_open(PyAscent_Ascent *self,
         }
     }
     
-    if(py_node != NULL)
+    try
     {
-        Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-        self->ascent->open(*node);
+        if(py_node != NULL)
+        {
+            Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
+            self->ascent->open(*node);
+        }
+        else
+        {
+            self->ascent->open();
+        }
     }
-    else
+    catch(conduit::Error e)
     {
-        self->ascent->open();
+        PyAscent_Ascent_Error_To_PyErr(e);
+        return NULL;
     }
-
 
     Py_RETURN_NONE; 
 }
@@ -309,7 +328,16 @@ PyAscent_Ascent_publish(PyAscent_Ascent *self,
     }
     
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-    self->ascent->publish(*node);
+
+    try
+    {
+        self->ascent->publish(*node);
+    }
+    catch(conduit::Error e)
+    {
+        PyAscent_Ascent_Error_To_PyErr(e);
+        return NULL;
+    }
 
     Py_RETURN_NONE; 
 }
@@ -345,7 +373,15 @@ PyAscent_Ascent_execute(PyAscent_Ascent *self,
     }
     
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-    self->ascent->execute(*node);
+    try
+    {
+        self->ascent->execute(*node);
+    }
+    catch(conduit::Error e)
+    {
+        PyAscent_Ascent_Error_To_PyErr(e);
+        return NULL;
+    }
 
     Py_RETURN_NONE; 
 }
@@ -354,7 +390,15 @@ PyAscent_Ascent_execute(PyAscent_Ascent *self,
 static PyObject *
 PyAscent_Ascent_close(PyAscent_Ascent *self)
 {
-    self->ascent->close();
+    try
+    {
+        self->ascent->close();
+    }
+    catch(conduit::Error e)
+    {
+        PyAscent_Ascent_Error_To_PyErr(e);
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
