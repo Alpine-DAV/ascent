@@ -72,6 +72,8 @@ public:
 
     virtual void  Publish(const conduit::Node &data)=0;
     virtual void  Execute(const conduit::Node &actions)=0;
+
+    virtual void  Info(conduit::Node &info_out)=0;    
     
     virtual void  Cleanup()=0;
 };

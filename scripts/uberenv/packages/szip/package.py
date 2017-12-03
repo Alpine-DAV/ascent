@@ -45,9 +45,11 @@ class Szip(Package):
 
     # FIXME: Add a proper url for your package's homepage here.
     homepage = "http://www.hdf5group.org"
-    url      = "https://support.hdfgroup.org/ftp/lib-external/szip/2.1.1/src/szip-2.1.1.tar.gz"
+    #url      = "https://support.hdfgroup.org/ftp/lib-external/szip/2.1.1/src/szip-2.1.1.tar.gz"
+    url      = "http://visit.ilight.com/svn/visit/trunk/third_party/szip-2.1.tar.gz"
 
-    version('2.1.1', '5addbf2a5b1bf928b92c47286e921f72')
+    #version('2.1.1', 'dd579cf0f26d44afd10a0ad7291fc282')
+    version('2.1', '9cc9125a58b905a4148e4e2fda3fabc6')
 
     def install(self, spec, prefix):
         configure("--prefix=%s" % prefix)

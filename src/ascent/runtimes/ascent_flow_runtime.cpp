@@ -94,6 +94,7 @@ FlowRuntime::FlowRuntime()
 :Runtime()
 {
     flow::filters::register_builtin();
+    ResetInfo();
 }
 
 //-----------------------------------------------------------------------------
@@ -114,6 +115,7 @@ FlowRuntime::~FlowRuntime()
 void
 FlowRuntime::Initialize(const conduit::Node &options)
 {
+    int rank = 0;
 #if ASCENT_MPI_ENABLED
     if(!options.has_child("mpi_comm") ||
        !options["mpi_comm"].dtype().is_integer())
@@ -122,7 +124,9 @@ FlowRuntime::Initialize(const conduit::Node &options)
     }
     
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].as_int());
-    
+    MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
+    MPI_Comm_rank(comm,&rank);
+
 #endif
 
     m_runtime_options = options;
@@ -131,14 +135,32 @@ FlowRuntime::Initialize(const conduit::Node &options)
     flow::filters::register_builtin();
     // filters for ascent flow runtime.
     runtime::filters::register_builtin();
+    
+    if(options.has_path("web/stream") && 
+       options["web/stream"].as_string() == "true" &&
+       rank == 0)
+    {
+        std::cout << "Enabling Web" << std::endl;
+        m_web_interface.Enable();
+    }
+
+    Node msg;
+    this->Info(msg["info"]);
+    ascent::about(msg["about"]);
+    m_web_interface.PushMessage(msg);
 }
 
+//-----------------------------------------------------------------------------
+void
+FlowRuntime::Info(conduit::Node &out)
+{
+    out.set(m_info);
+}
 
 //-----------------------------------------------------------------------------
 void
 FlowRuntime::Cleanup()
 {
-
 }
 
 //-----------------------------------------------------------------------------
@@ -167,8 +189,20 @@ FlowRuntime::Publish(const conduit::Node &data)
 
 //-----------------------------------------------------------------------------
 void
+FlowRuntime::ResetInfo()
+{
+    m_info.reset();
+    m_info["runtime/type"] = "flow";
+    m_info["runtime/options"] = m_runtime_options;
+}
+
+
+//-----------------------------------------------------------------------------
+void
 FlowRuntime::Execute(const conduit::Node &actions)
 {
+    ResetInfo();
+    
     // Loop over the actions
     for (int i = 0; i < actions.number_of_children(); ++i)
     {
@@ -231,8 +265,14 @@ FlowRuntime::Execute(const conduit::Node &actions)
         }
         else if( action_name == "execute")
         {
+            w.info(m_info["flow_graph"]);
             w.execute();
             w.registry().reset();
+            
+            Node msg;
+            this->Info(msg["info"]);
+            ascent::about(msg["about"]);
+            m_web_interface.PushMessage(msg);
         }
         else if( action_name == "reset")
         {
