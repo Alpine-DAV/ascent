@@ -151,14 +151,7 @@ def uberenv_detect_platform():
         res = "darwin"
     elif "SYS_TYPE" in os.environ.keys():
         sys_type = os.environ["SYS_TYPE"].lower()
-        if "chaos" in sys_type:
-            res = "chaos_5"
-        elif "toss" in sys_type: 
-            res = "toss_3"
-        elif "bgq" in sys_type:
-            res = "bgqos_0"
-        elif "blueos" in sys_type:
-            res = "blueos_3"
+        res = sys_type
     return res
 
 def uberenv_spack_config_dir(opts, uberenv_dir):
@@ -167,7 +160,7 @@ def uberenv_spack_config_dir(opts, uberenv_dir):
     if spack_config_dir is None:
         uberenv_plat = uberenv_detect_platform()
         if not uberenv_plat is None:
-            spack_config_dir = os.path.abspath(pjoin(uberenv_dir,"spack-configs",uberenv_plat))
+            spack_config_dir = os.path.abspath(pjoin(uberenv_dir,"spack_configs",uberenv_plat))
     return spack_config_dir
 
 
@@ -194,7 +187,7 @@ def patch_spack(spack_dir,uberenv_dir,cfg_dir,pkgs):
     disable_spack_config_scopes(spack_dir)
     spack_etc_defaults_dir = pjoin(spack_dir,"etc","spack","defaults")
     # copy in default config.yaml
-    config_yaml = os.path.abspath(pjoin(uberenv_dir,"spack-configs","config.yaml"))
+    config_yaml = os.path.abspath(pjoin(uberenv_dir,"spack_configs","config.yaml"))
     sexe("cp %s %s/" % (config_yaml, spack_etc_defaults_dir ), echo=True)
     # copy in other settings per platform
     if not cfg_dir is None:

@@ -27,7 +27,7 @@ packages:
       lapack: [openblas]
       mkl: [intel-mkl]
       mpe: [mpe2]
-      mpi: [mvapich2]
+      mpi: [mvapich]
       opencl: [pocl]
       openfoam: [openfoam-com, openfoam-org, foam-extend]
       pil: [py-pillow]
@@ -41,7 +41,7 @@ packages:
       cuda@8.0: /opt/cudatoolkit-8.0
     buildable: False
 # LLNL chaos5 mvapich for gcc
-  mvapich2:
+  mvapich:
     paths:
-      mvapich2@2: /usr/local/tools/mvapich2-gnu-2.0/
+      mvapich@2: /usr/local/tools/mvapich2-gnu-2.0/
     buildable: False

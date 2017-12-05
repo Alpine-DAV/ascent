@@ -342,12 +342,14 @@ Here is an example of specifying system MPI and CUDA on an LLNL Chaos 5 machine:
         cuda@8.0: /opt/cudatoolkit-8.0
       buildable: False
   # LLNL chaos5 mvapich for gcc
-    mvapich:
+    mvapich2:
       paths:
-        mvapich@2: /usr/local/tools/mvapich2-gnu-2.0/
+        mvapich2@2: /usr/local/tools/mvapich2-gnu-2.0/
       buildable: False
 
-
+Settings for GCC 4.9.3 on LLNL Chaos 5 Systems:
+ * :download:`compilers.yaml <spack_configs/chaos_5_x86_64_ib/compilers.yaml>`
+ * :download:`packages.yaml <spack_configs/chaos_5_x86_64_ib/packages.yaml>`
 
 
 Using Ascent in Another Project
