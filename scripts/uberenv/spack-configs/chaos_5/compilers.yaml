@@ -1,0 +1,13 @@
+compilers:
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
+    operating_system: rhel6
+    paths:
+      cc: /usr/apps/gnu/4.9.3/bin/gcc
+      cxx: /usr/apps/gnu/4.9.3/bin/g++
+      f77: /usr/apps/gnu/4.9.3/bin/gfortran
+      fc: /usr/apps/gnu/4.9.3/bin/gfortran
+    spec: gcc@4.9.3
