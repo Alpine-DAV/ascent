@@ -86,7 +86,7 @@ class EnsureVTKH : public ::flow::Filter
 {
 public:
     EnsureVTKH();
-   ~EnsureVTKH();
+    virtual ~EnsureVTKH();
     
     virtual void   declare_interface(conduit::Node &i);
     virtual void   execute();
@@ -97,7 +97,7 @@ class EnsureVTKM : public ::flow::Filter
 {
 public:
     EnsureVTKM();
-   ~EnsureVTKM();
+    virtual ~EnsureVTKM();
 
     virtual void   declare_interface(conduit::Node &i);
     virtual void   execute();
@@ -108,35 +108,9 @@ class EnsureBlueprint : public ::flow::Filter
 {
 public:
     EnsureBlueprint();
-   ~EnsureBlueprint();
+    virtual ~EnsureBlueprint();
     
     virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHRayTracer : public ::flow::Filter
-{
-public:
-    VTKHRayTracer();
-   ~VTKHRayTracer();
-    
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHVolumeTracer : public ::flow::Filter
-{
-public:
-    VTKHVolumeTracer();
-   ~VTKHVolumeTracer();
-    
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -145,7 +119,7 @@ class VTKHMarchingCubes : public ::flow::Filter
 {
 public:
     VTKHMarchingCubes();
-   ~VTKHMarchingCubes();
+    virtual ~VTKHMarchingCubes();
     
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,
@@ -158,7 +132,7 @@ class VTKHThreshold : public ::flow::Filter
 {
 public:
     VTKHThreshold();
-   ~VTKHThreshold();
+    virtual ~VTKHThreshold();
     
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,
@@ -171,7 +145,7 @@ class VTKHClip: public ::flow::Filter
 {
 public:
     VTKHClip();
-   ~VTKHClip();
+    virtual ~VTKHClip();
     
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,
@@ -184,7 +158,7 @@ class DefaultRender : public ::flow::Filter
 {
 public:
     DefaultRender();
-   ~DefaultRender();
+    virtual ~DefaultRender();
     
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,
@@ -199,7 +173,7 @@ class VTKHBounds: public ::flow::Filter
 {
 public:
     VTKHBounds();
-   ~VTKHBounds();
+    virtual ~VTKHBounds();
     
     virtual void   declare_interface(conduit::Node &i);
     virtual void   execute();
@@ -210,7 +184,7 @@ class VTKHUnionBounds: public ::flow::Filter
 {
 public:
     VTKHUnionBounds();
-   ~VTKHUnionBounds();
+    virtual ~VTKHUnionBounds();
     
     virtual void   declare_interface(conduit::Node &i);
     virtual void   execute();
@@ -223,7 +197,7 @@ class VTKHDomainIds: public ::flow::Filter
 {
 public:
     VTKHDomainIds();
-   ~VTKHDomainIds();
+    virtual ~VTKHDomainIds();
     
     virtual void   declare_interface(conduit::Node &i);
     virtual void   execute();
@@ -234,7 +208,7 @@ class VTKHUnionDomainIds: public ::flow::Filter
 {
 public:
     VTKHUnionDomainIds();
-   ~VTKHUnionDomainIds();
+    virtual ~VTKHUnionDomainIds();
     
     virtual void   declare_interface(conduit::Node &i);
     virtual void   execute();
@@ -242,11 +216,11 @@ public:
 
 
 //-----------------------------------------------------------------------------
-class Scene: public ::flow::Filter
+class DefaultScene: public ::flow::Filter
 {
 public:
-    Scene();
-   ~Scene();
+    DefaultScene();
+    virtual ~DefaultScene();
     
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,
@@ -257,6 +231,56 @@ private:
     static int s_image_count;
 };
 
+//-----------------------------------------------------------------------------
+class CreatePlot : public ::flow::Filter
+{
+public:
+    CreatePlot();
+    virtual ~CreatePlot();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+
+};
+
+//-----------------------------------------------------------------------------
+class AddPlot : public ::flow::Filter
+{
+public:
+    AddPlot();
+    virtual ~AddPlot();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+
+};
+
+//-----------------------------------------------------------------------------
+class CreateScene : public ::flow::Filter
+{
+public:
+    CreateScene();
+    virtual ~CreateScene();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+
+};
+
+//-----------------------------------------------------------------------------
+class ExecScene : public ::flow::Filter
+{
+public:
+    ExecScene();
+
+   ~ExecScene();
+
+    virtual void declare_interface(conduit::Node &i);
+
+    virtual void execute();
+};
 //-----------------------------------------------------------------------------
 
 };

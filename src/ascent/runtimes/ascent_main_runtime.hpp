@@ -102,8 +102,7 @@ private:
     void ConvertToFlowGraph(const conduit::Node &pipeline,
                             const std::string pipeline_name);
     void ConvertPlotToFlow(const conduit::Node &plot,
-                           const std::string plot_name,
-                           bool composite);
+                           const std::string plot_name);
     void ConvertExtractToFlow(const conduit::Node &plot,
                               const std::string extract_name);
     void CreatePipelines(const conduit::Node &pipelines);

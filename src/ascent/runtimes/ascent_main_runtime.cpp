@@ -442,49 +442,19 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
 //-----------------------------------------------------------------------------
 void 
 AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
-                                 const std::string plot_name,
-                                 bool composite)
+                                 const std::string plot_name)
 {
-  std::string filter_name; 
+  std::string filter_name = "create_plot";; 
 
-  if(!plot.has_path("type"))
-  {
-    ASCENT_ERROR("Plot must have a 'type'");
-  }
- 
-  if(plot["type"].as_string() == "pseudocolor")
-  {
-    filter_name = "vtkh_raytracer";
-
-  }
-  else if(plot["type"].as_string() == "volume")
-  {
-    filter_name = "vtkh_volumetracer";
-
-  }
-  else
-  {
-    ASCENT_ERROR("Unrecognized plot type "<<plot["type"].as_string());
-  }
- 
   if(w.graph().has_filter(plot_name))
   {
     ASCENT_INFO("Duplicate plot name "<<plot_name
                 <<" original is being overwritted");
   }
-  //
-  // Plots are set to composite by default
-  // and only the last plot should perform
-  // compositing
-  //
-  conduit::Node params = plot["params"];
-  if(!composite)
-  {
-    params["composite"] = "false";
-  }
+
   w.graph().add_filter(filter_name,
                        plot_name,           
-                       params);
+                       plot);
 
   //
   // We can't connect the plot to the pipeline since
@@ -511,8 +481,7 @@ AscentRuntime::CreatePlots(const conduit::Node &plots)
   for(int i = 0; i < plots.number_of_children(); ++i)
   {
     conduit::Node plot = plots.child(i);
-    bool composite = i == plots.number_of_children() - 1;
-    ConvertPlotToFlow(plot, names[i], composite);
+    ConvertPlotToFlow(plot, names[i]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -609,6 +578,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     {
       render_params["renders"] = scene["renders"];
     } 
+
     int plot_count = scene["plots"].number_of_children();
     render_params["pipeline_count"] = plot_count;
 
@@ -628,9 +598,23 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     w.graph().add_filter("default_render",
                           renders_name,
                           render_params);
-    //
-    // TODO: detect if there is a volume plot, rendering it last
-    //
+
+    // ------------ NEW -----------------
+    w.graph().add_filter("create_scene",
+                          "create_scene_" + names[i]);
+
+    std::string exec_name = "exec_" + names[i];
+    w.graph().add_filter("exec_scene",
+                          exec_name);
+
+    // connect the renders to the scene exec
+    // on the second port
+    w.graph().connect(renders_name,   // src
+                      exec_name,      // dest
+                      1);             // default port
+
+    // ------------ NEW -----------------
+
     std::vector<std::string> pipelines = GetPipelines(scene["plots"]); 
     std::vector<std::string> plot_names = scene["plots"].child_names();
     
@@ -651,6 +635,14 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     std::vector<std::string> domain_ids_names;
     std::vector<std::string> union_domain_ids_names;
     
+    //
+    // as we add plots we aggregate them into the scene.
+    // each add_plot filter output the sene and we have to
+    // connect that to the next plot. At the end, we connect
+    // the final output to the ExecPlot filter that actually 
+    // calls render() on the scene.
+    //
+    std::string prev_add_plot_name = "";
     for(int p = 0; p < plot_count; ++p)
     {
       //
@@ -735,29 +727,30 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
                           union_domain_ids_name,  // dest
                           1);                     // default port
       }
+      
 
-      //
-      // Connect the render to the plots
-      //
-      if(p == 0)
-      {
-        //
-        // first plot connects to the render filter
-        // on the second port
-        w.graph().connect(renders_name,   // src
-                          plot_names[p],  // dest
-                          1);             // default port
-      }
-      else
-      {
-        //
-        // Connect plot output to the next plot
-        //
-        w.graph().connect(plot_names[p-1],   // src
-                          plot_names[p],     // dest
-                          1);                // default port
+      // connect the plot with the scene
+      std::string add_name = "add_plot_" + plot_names[p];
+      w.graph().add_filter("add_plot",
+                            add_name);
+    
+      std::string src_scene = prev_add_plot_name;
 
+      if(prev_add_plot_name == "")
+      {
+        src_scene = "create_scene_" + names[i];
       }
+      prev_add_plot_name = add_name; 
+      
+      // connect the plot to add_plot
+      w.graph().connect(plot_names[p], // src
+                        add_name,      // dest
+                        1);            // plot port
+      
+      // connect the scene to add_plot
+      w.graph().connect(src_scene,     // src
+                        add_name,      // dest
+                        0);            // scene port
       
     }
   
@@ -787,7 +780,17 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     w.graph().connect(domain_ids_output, // src
                       renders_name,      // dest
                       1);                // default port
-  }
+    
+    // connect Exec Scene to the output of the last
+    // add_plot and to the renders
+    w.graph().connect(prev_add_plot_name, // src
+                      exec_name,          // dest
+                      0);                 // default port
+
+    w.graph().connect(renders_name,       // src
+                      exec_name,          // dest
+                      1);                 // default port
+  } // each scene
 }
 
 void
