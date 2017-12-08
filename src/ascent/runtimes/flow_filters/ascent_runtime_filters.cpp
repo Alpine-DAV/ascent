@@ -116,14 +116,17 @@ register_builtin()
     Workspace::register_filter_type<VTKHDomainIds>();
     Workspace::register_filter_type<VTKHUnionDomainIds>();
     
-    Workspace::register_filter_type<Scene>();
+    Workspace::register_filter_type<DefaultScene>();
 
 
     Workspace::register_filter_type<VTKHClip>();
     Workspace::register_filter_type<VTKHMarchingCubes>();
-    Workspace::register_filter_type<VTKHRayTracer>();
     Workspace::register_filter_type<VTKHThreshold>();
-    Workspace::register_filter_type<VTKHVolumeTracer>();
+
+    Workspace::register_filter_type<AddPlot>();
+    Workspace::register_filter_type<CreatePlot>();
+    Workspace::register_filter_type<CreateScene>();
+    Workspace::register_filter_type<ExecScene>();
 #endif
 
 #ifdef ASCENT_MPI_ENABLED

@@ -404,7 +404,6 @@ TEST(ascent_flow_runtime, test_flow_vtkh_render)
         return;
     }
     
-    
     Node actions;
     actions.append();
     actions[0]["action"] = "add_graph";
@@ -417,13 +416,10 @@ TEST(ascent_flow_runtime, test_flow_vtkh_render)
 
     graph["filters/bounds/type_name"]     = "vtkh_bounds";
     graph["filters/domain_ids/type_name"] = "vtkh_domain_ids";
-    graph["filters/scene/type_name"]      = "vtkh_scene";
+    graph["filters/scene/type_name"]      = "vtkh_default_scene";
+    graph["filters/scene/params/field"]   = "braid";
 
 
-    graph["filters/vtkh_render/type_name"]  = "vtkh_raytracer";
-    graph["filters/vtkh_render/params/field"]  = "braid";
-
-    
     graph["connections"].append();
     graph["connections"][0]["src"] = "source";
     graph["connections"][0]["dest"] = "verify";
@@ -455,15 +451,8 @@ TEST(ascent_flow_runtime, test_flow_vtkh_render)
 
     graph["connections"].append();
     graph["connections"][6]["src"]  = "vtkh_data";
-    graph["connections"][6]["dest"] = "vtkh_render";
-    graph["connections"][6]["port"] = "in";
-
-    graph["connections"].append();
-    graph["connections"][7]["src"]  = "scene";
-    graph["connections"][7]["dest"] = "vtkh_render";
-    graph["connections"][7]["port"] = "renders";
-    
-    
+    graph["connections"][6]["dest"] = "scene";
+    graph["connections"][6]["port"] = "data_set";
 
     actions.append()["action"] = "execute";
     actions.print();
@@ -524,12 +513,11 @@ TEST(ascent_flow_runtime, test_flow_vtkh_filter)
 
     graph["filters/bounds/type_name"]     = "vtkh_bounds";
     graph["filters/domain_ids/type_name"] = "vtkh_domain_ids";
-    graph["filters/scene/type_name"]      = "vtkh_scene";
+    //graph["filters/scene/type_name"]      = "vtkh_scene";
 
 
-
-    graph["filters/vtkh_render/type_name"]  = "vtkh_raytracer";
-    graph["filters/vtkh_render/params/field"]  = "braid";
+    graph["filters/scene/type_name"]      = "vtkh_default_scene";
+    graph["filters/scene/params/field"]   = "braid";
 
     
     graph["connections"].append();
@@ -567,14 +555,8 @@ TEST(ascent_flow_runtime, test_flow_vtkh_filter)
 
     graph["connections"].append();
     graph["connections"][7]["src"]  = "vtkh_isov";
-    graph["connections"][7]["dest"] = "vtkh_render";
-    graph["connections"][7]["port"] = "in";
-
-    graph["connections"].append();
-    graph["connections"][8]["src"]  = "scene";
-    graph["connections"][8]["dest"] = "vtkh_render";
-    graph["connections"][8]["port"] = "renders";
-    
+    graph["connections"][7]["dest"] = "scene";
+    graph["connections"][7]["port"] = "data_set";
 
 
     actions.append()["action"] = "execute";

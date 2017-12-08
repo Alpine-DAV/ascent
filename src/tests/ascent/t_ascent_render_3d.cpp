@@ -99,7 +99,7 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
                                               data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
+    //verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -135,6 +135,7 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
     Ascent ascent;
 
     Node ascent_opts;
+    //ascent_opts["ascent_info"] = "verbose";
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
@@ -144,7 +145,6 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
-
 
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
@@ -391,7 +391,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     // Create an example mesh.
     //
     Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
+    conduit::blueprint::mesh::examples::braid("uniform",
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
@@ -421,7 +421,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     //
 
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/type"]         = "volume";
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
  
@@ -431,22 +431,22 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     scenes["s1/renders/r1/color_table/name"]   = "blue";
     
     // 
-    scenes["s1/renders/r2/image_width"]  = 300;
+    scenes["s1/renders/r2/image_width"]  = 400;
     scenes["s1/renders/r2/image_height"] = 400;
     scenes["s1/renders/r2/image_name"]   = output_file1;
     double vec3[3];
     vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
     scenes["s1/renders/r2/camera/look_at"].set_float64_ptr(vec3,3);
-    vec3[0] = 15.; vec3[1] = 17.; vec3[2] = 15.;
+    vec3[0] = 0.; vec3[1] = 25.; vec3[2] = 15.;
     scenes["s1/renders/r2/camera/position"].set_float64_ptr(vec3,3);
     vec3[0] = 0.; vec3[1] = -1.; vec3[2] = 0.;
     scenes["s1/renders/r2/camera/up"].set_float64_ptr(vec3,3);
-    scenes["s1/renders/r2/camera/fov"] = 45.;
-    scenes["s1/renders/r2/camera/xpan"] = 1.;
-    scenes["s1/renders/r2/camera/ypan"] = 1.;
-    scenes["s1/renders/r2/camera/zoom"] = 3.2;
+    scenes["s1/renders/r2/camera/fov"] = 60.;
+    scenes["s1/renders/r2/camera/xpan"] = 0.;
+    scenes["s1/renders/r2/camera/ypan"] = 0.;
+    scenes["s1/renders/r2/camera/zoom"] = 0.0;
     scenes["s1/renders/r2/camera/near_plane"] = 0.1;
-    scenes["s1/renders/r2/camera/far_plane"] = 33.1;
+    scenes["s1/renders/r2/camera/far_plane"] = 100.1;
      
     conduit::Node control_points;
     conduit::Node &point1 = control_points.append();
@@ -465,7 +465,8 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     conduit::Node &point3 = control_points.append();
     point3["type"] = "rgb";
     point3["position"] = 1.0;
-    color[1] = 0;
+    color[0] = 1.;
+    color[1] = 1.;
     color[2] = 1.;
     point3["color"].set_float64_ptr(color, 3);
 
@@ -505,7 +506,6 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file1));
 }
-
 
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, render_3d_domain_overload)
@@ -583,7 +583,6 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
-
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
