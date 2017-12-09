@@ -1,5 +1,5 @@
 {
-"spack_develop_commit": "9ad3b1a74749a3358175dbd41b1da7dfa9cb142e",
+"spack_develop_commit": "95a384f05107cc80e0da7d5e7a5b75380ebf76f3",
 "uberenv_package_name" : "uberenv-ascent",
 "spack_activate" : ["py-numpy", "py-sphinx", "conduit"]
 

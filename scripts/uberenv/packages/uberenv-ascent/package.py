@@ -70,10 +70,13 @@ class UberenvAscent(Package):
             default=True,
             description="Build Adios")
 
-
+    # stick with cmake 3.8 or 3.9 until we use MPIEXEC_EXECUTABLE for 3.10+
+    # in upstream spack package
+    depends_on("cmake@3.8.2:3.9.999", when="+cmake")
+    
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
-        dummy_tar_path = pjoin(dummy_tar_path,"uberenv-conduit.tar.gz")
+        dummy_tar_path = pjoin(dummy_tar_path,"uberenv-ascent.tar.gz")
         url      = "file://" + dummy_tar_path
         return url
 
