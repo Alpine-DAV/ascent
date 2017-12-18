@@ -120,11 +120,9 @@ WebInterface::PushMessage(const Node &msg)
 
     if(wsock == NULL)
     {
-        std::cout<<"*** no connection\n";
         return;
     }
     
-    std::cout<<"*** SENDING MESSAGE\n";
     // sent the message
     wsock->send(msg);
 }
