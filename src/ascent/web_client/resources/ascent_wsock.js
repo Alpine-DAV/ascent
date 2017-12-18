@@ -94,6 +94,7 @@ function ascent_websocket_client()
         num_msgs+=1;
         $("#status").html("# msgs: " +  num_msgs.toString());
         
+        console.log("*******************");
         if(msg.info)
         {
             $("#info").html(highlight_json(msg));
@@ -108,7 +109,7 @@ function ascent_websocket_client()
             {
                 res += "<img src='" + msg.renders[i].data + "' width=500 height=500/>"
             }
-            
+            console.log("resource ", res);
             $("#render_display").html(res);
             $("#render_display").show();
         }

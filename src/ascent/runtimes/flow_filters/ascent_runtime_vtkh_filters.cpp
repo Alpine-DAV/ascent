@@ -334,24 +334,33 @@ parse_color_table(const conduit::Node &color_table_node)
   return color_table;
 }
 
+void parse_image_dims(const conduit::Node &node, int &width, int &height)
+{
+  width = 1024; 
+  height = 1024;
+
+  if(node.has_path("image_width"))
+  {
+    width = node["image_width"].as_int32();
+  }
+
+  if(node.has_path("image_height"))
+  {
+    height = node["image_height"].as_int32();
+  }
+  
+}
+
 vtkh::Render parse_render(const conduit::Node &render_node, 
                           vtkm::Bounds &bounds, 
                           const std::vector<vtkm::Id> &domain_ids,
                           const std::string &image_name)
 {
-  int image_width = 1024; 
-  int image_height = 1024;
+  int image_width; 
+  int image_height;
 
-  if(render_node.has_path("image_width"))
-  {
-    image_width = render_node["image_width"].as_int32();
-  }
+  parse_image_dims(render_node, image_width, image_height);  
 
-  if(render_node.has_path("image_height"))
-  {
-    image_height = render_node["image_height"].as_int32();
-  }
-  
   //
   // for now, all the canvases we support are the same
   // so passing MakeRender a RayTracer is ok
@@ -379,6 +388,256 @@ vtkh::Render parse_render(const conduit::Node &render_node,
   }
   return render;
 }
+
+//
+// This class should manage the a cinema "a" database.
+// Considerations:
+//  1) Only support a single image (e.g., plot)
+//    - we could create several different databases for differt 
+//      plots/vars or at least support this by specifying sub-dirs
+//    - pattern {time}/{phi}/{theta}/image_name.png. Saving data in
+//      in this format would allow multiple data bases to co-exist inside the
+//      same dir structure. Alternatively, manage different sub-dirs for each***-> this
+//    - pattern could be {time}/{contour_val}/image.png 
+//      or {time}/{slice}/image.png
+//  2) Manage database based on database "key" / name. This manager could be kept in the registry
+//     if it could persist from time step to timestep. Alternatively, this could be a static Map that 
+//     manages the meta data. It is easier to re-write the meta data file each time than try to append.
+//     Enforcement of constant phi and theta values will be set by the constructor. Cannot be 
+//     overridden, that is, once the entry can be created, we can  only add times and can't
+//     change phi or theta
+//
+class CinemaManager
+{
+protected:  
+  std::vector<vtkm::rendering::Camera> m_cameras;
+  std::vector<std::string>             m_image_names;
+  std::vector<float>                   m_phi_values;
+  std::vector<float>                   m_theta_values;
+  std::vector<float>                   m_times;
+
+  vtkm::Bounds                         m_bounds;
+  const int                            m_phi;
+  const int                            m_theta;
+  std::string                          m_image_name;
+  std::string                          m_current_path;
+  float                                m_time;
+public:
+  CinemaManager(vtkm::Bounds bounds, 
+                const int phi, 
+                const int theta, 
+                const std::string image_name)
+    : m_bounds(bounds),
+      m_phi(phi),
+      m_theta(theta),
+      m_image_name(image_name),
+      m_time(0.f)
+  {
+    this->create_cinema_cameras(bounds);
+  }
+  
+  CinemaManager() 
+    : m_phi(0),
+      m_theta(0)
+  {
+    ASCENT_ERROR("Cannot create un-initialized CinemaManger"); 
+  }
+
+  void add_time_step()
+  {
+    m_times.push_back(m_time);
+    m_time += 1.f;
+
+    // add top level dir
+    string output_path = "cinema_databases";
+    
+    if(!conduit::utils::is_directory(output_path))
+    {
+        conduit::utils::create_directory(output_path);
+    }
+
+    // add a database path
+    output_path = conduit::utils::join_file_path(output_path, m_image_name);
+
+    if(!conduit::utils::is_directory(output_path))
+    {
+        conduit::utils::create_directory(output_path);
+    }
+    
+    std::stringstream ss;
+    ss<<m_time;
+    // add a time step path
+    output_path = conduit::utils::join_file_path(output_path,ss.str());
+
+    if(!conduit::utils::is_directory(output_path))
+    {
+        conduit::utils::create_directory(output_path);
+    }
+
+    m_current_path = output_path;
+  }
+
+  void fill_renders(std::vector<vtkh::Render> *renders, 
+                    const std::vector<vtkm::Id> &domain_ids,
+                    int width, 
+                    int height)
+  {
+    const int num_renders = m_image_names.size();    
+
+    for(int i = 0; i < num_renders; ++i)
+    {
+      std::string image_name = conduit::utils::join_file_path(m_current_path , m_image_names[i]);
+
+      vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(width,
+                                                              height,
+                                                              m_bounds,
+                                                              domain_ids,
+                                                              image_name);
+      render.SetCamera(m_cameras[i]);
+      renders->push_back(render);
+    }
+  }
+  
+  void write_metadata()
+  {
+    conduit::Node meta;
+    meta["type"] = "simple";
+    meta["version"] = "1.1";
+    meta["metadata/type"] = "parametric-image-stack";
+    meta["name_pattern"] = "{time}/{phi}_{theta}_" + m_image_name + ".png";
+
+    conduit::Node times; 
+    times["default"] = m_times[0];
+    times["label"] = "time";
+    times["type"] = "range";
+    times["values"].set_external(m_times);
+
+    meta["arguments/time"] = times;
+
+    conduit::Node phis; 
+    phis["default"] = m_phi_values[0];
+    phis["label"] = "phi";
+    phis["type"] = "range";
+    phis["values"].set_external(m_phi_values);
+
+    meta["arguments/phi"] = phis;
+
+    conduit::Node thetas; 
+    thetas["default"] = m_theta_values[0];
+    thetas["label"] = "theta";
+    thetas["type"] = "range";
+    thetas["values"].set_external(m_theta_values);
+
+    meta["arguments/theta"] = thetas;
+    meta.save("cinema_databases/" + m_image_name + "/info.json","json");
+  }
+
+private:
+  void create_cinema_cameras(vtkm::Bounds bounds)
+  {
+    using vtkmVec3f = vtkm::Vec<vtkm::Float32,3>;
+    vtkmVec3f center = bounds.Center();
+    vtkm::Vec<vtkm::Float32,3> totalExtent;   
+    totalExtent[0] = vtkm::Float32(bounds.X.Length());   
+    totalExtent[1] = vtkm::Float32(bounds.Y.Length());   
+    totalExtent[2] = vtkm::Float32(bounds.Z.Length());   
+  
+    vtkm::Float32 radius = vtkm::Magnitude(totalExtent) * 2.5 / 2.0;   
+      
+    const double pi = 3.141592653589793;
+    double phi_inc = 180.0 / double(m_phi);
+    double theta_inc = 360.0 / double(m_theta);
+    for(int p = 0; p < m_phi; ++p)
+    {
+      for(int t = 0; t < m_theta; ++t)
+      {
+        float phi  =  phi_inc * p;
+        float theta = -180 + theta_inc * t;
+  
+        const int i = p * m_theta + t;
+        
+        vtkm::rendering::Camera camera;
+        camera.ResetToBounds(bounds);
+  
+        //
+        //  spherical coords start (r=1, theta = 0, phi = 0)
+        //  (x = 0, y = 0, z = 1)
+        //  up is the x+, and right is y+
+        //
+  
+        vtkmVec3f pos(0.f,0.f,1.f);
+        vtkmVec3f up(1.f,0.f,0.f);
+  
+        vtkm::Matrix<vtkm::Float32,4,4> phi_rot;  
+        vtkm::Matrix<vtkm::Float32,4,4> theta_rot;  
+        vtkm::Matrix<vtkm::Float32,4,4> rot;  
+  
+        phi_rot = vtkm::Transform3DRotateY(phi); 
+        theta_rot = vtkm::Transform3DRotateZ(theta); 
+        rot = vtkm::MatrixMultiply(phi_rot, theta_rot); 
+  
+        up = vtkm::Transform3DVector(rot, up);
+        vtkm::Normalize(up);
+  
+        pos = vtkm::Transform3DPoint(rot, pos);
+        pos = pos * radius + center; 
+  
+        camera.SetViewUp(up);
+        camera.SetLookAt(center);
+        camera.SetPosition(pos);
+  
+        std::stringstream ss;
+        ss<<phi<<"_"<<theta<<"_";
+  
+        m_image_names.push_back(ss.str() + m_image_name);
+        m_cameras.push_back(camera);
+        m_phi_values.push_back(phi);
+        m_theta_values.push_back(theta);
+    
+      } // theta
+    } // phi 
+  
+  } 
+
+}; // CinemaManager
+
+class CinemaDatabases
+{
+private:
+  static std::map<std::string, CinemaManager> m_databases;
+public:
+
+  static bool db_exists(std::string db_name)
+  {
+    auto it = m_databases.find(db_name);
+    return it != m_databases.end();
+  }
+  
+  static void create_db(vtkm::Bounds bounds, 
+                        const int phi, 
+                        const int theta,
+                        std::string db_name)
+  {
+    if(db_exists(db_name))
+    {
+      ASCENT_ERROR("Creation failed: cinema database already exists");
+    }
+  
+    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, phi, theta, db_name)));
+  }
+
+  static CinemaManager& get_db(std::string db_name)
+  {
+    if(!db_exists(db_name))
+    {
+      ASCENT_ERROR("Cinema db '"<<db_name<<"' does not exist.");
+    }
+
+    return m_databases[db_name]; 
+  }
+};
+
+std::map<std::string, CinemaManager> CinemaDatabases::m_databases;
 
 //-----------------------------------------------------------------------------
 };
@@ -686,7 +945,6 @@ VTKHThreshold::execute()
     set_output<vtkh::DataSet>(thresh_output);
 }
 
-
 //-----------------------------------------------------------------------------
 DefaultRender::DefaultRender()
 :Filter()
@@ -732,7 +990,6 @@ DefaultRender::execute()
 {
 
     ASCENT_INFO("We be default rendering!");
-    std::cout<<"We be default rendering!\n";
     
     if(!input(0).check_type<vtkm::Bounds>())
     {
@@ -754,29 +1011,68 @@ DefaultRender::execute()
     if(params().has_path("renders"))
     {
       const conduit::Node renders_node = params()["renders"];
-      const int num_renders= renders_node.number_of_children();
+      const int num_renders = renders_node.number_of_children();
+      
       for(int i = 0; i < num_renders; ++i)
       {
         const conduit::Node render_node = renders_node.child(i);
         std::string image_name;
 
-        if(render_node.has_path("image_name"))
+        bool is_cinema = false;
+
+        if(render_node.has_path("type"))
         {
-          image_name = render_node["image_name"].as_string();
-        }
-        else
-        {
-          std::stringstream ss;
-          ss<<params()["image_prefix"].as_string();
-          ss<<"_"<<i;
-          image_name = ss.str(); 
+          if(render_node["type"].as_string() == "cinema")
+          {
+            is_cinema = true; 
+          }
         }
 
-        vtkh::Render render = detail::parse_render(render_node, 
-                                                   *bounds, 
-                                                   v_domain_ids, 
-                                                   image_name);
-        renders->push_back(render); 
+        if(is_cinema)
+        {
+          if(!render_node.has_path("phi") || !render_node.has_path("theta"))
+          {
+            ASCENT_ERROR("Cinema must have phi and theta");
+          }
+          int phi = render_node["phi"].to_int32(); 
+          int theta = render_node["theta"].to_int32(); 
+          std::string db_name = render_node["db_name"].as_string(); 
+          bool exists = detail::CinemaDatabases::db_exists(db_name);
+          if(!exists)
+          {
+            detail::CinemaDatabases::create_db(*bounds,phi,theta, db_name);
+          } 
+          detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
+
+          int image_width; 
+          int image_height;
+          detail::parse_image_dims(render_node, image_width, image_height);  
+
+          manager.add_time_step(); 
+          manager.fill_renders(renders, v_domain_ids, image_width, image_height);
+          manager.write_metadata();
+        }
+
+        else
+        {
+          if(render_node.has_path("image_name"))
+          {
+            image_name = render_node["image_name"].as_string();
+          }
+          else
+          {
+            std::stringstream ss;
+            ss<<params()["image_prefix"].as_string();
+            ss<<"_"<<i;
+            image_name = ss.str(); 
+          }
+          
+          vtkh::Render render = detail::parse_render(render_node, 
+                                                     *bounds, 
+                                                     v_domain_ids, 
+                                                     image_name);
+          renders->push_back(render); 
+        } 
       }
     }
     else

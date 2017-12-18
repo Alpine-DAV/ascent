@@ -198,6 +198,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
     Node msg;
     this->Info(msg["info"]);
+    //msg["db_name"] = "test_db";
     ascent::about(msg["about"]);
     m_web_interface.PushMessage(msg);
     
@@ -808,6 +809,7 @@ AscentRuntime::FindRenders(const conduit::Node &info,
         {
             std::string img_path = curr_filter["params/image_prefix"].as_string() + ".png";
             out.append() = img_path;
+            std::cout<<"image path "<<img_path<<"\n";
         }
     }
     

@@ -439,6 +439,7 @@ int main(int argc, char** argv)
   ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
   ascent_opts["runtime/type"] = "ascent";
+  //ascent_opts["web/stream"] = "true";
   ascent.open(ascent_opts);
 
   conduit::Node mesh_data;
@@ -453,7 +454,6 @@ int main(int argc, char** argv)
 #endif
   mesh_data["state/info"] = "simplex noise";
   data_set.PopulateNode(mesh_data);
-  //ascent.publish(ascent_node);
 
   conduit::Node pipelines;
   // pipeline 1
@@ -473,9 +473,13 @@ int main(int argc, char** argv)
   scenes["scene1/plots/plt1/type"]         = "pseudocolor";
   scenes["scene1/plots/plt1/pipeline"]     = "pl1";
   scenes["scene1/plots/plt1/params/field"] = "zonal_noise";
+  scenes["scene1/renders/r1/type"] = "cinema";
+  scenes["scene1/renders/r1/phi"] = 8;
+  scenes["scene1/renders/r1/theta"] = 8;
+  scenes["scene1/renders/r1/db_name"] = "test_db";
 
-  scenes["scene1/plots/plt2/type"]         = "volume";
-  scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
+  //scenes["scene1/plots/plt2/type"]         = "volume";
+  //scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
 
   conduit::Node actions;
   conduit::Node &add_pipelines = actions.append();
