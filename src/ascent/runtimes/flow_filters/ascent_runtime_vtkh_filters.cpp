@@ -432,8 +432,13 @@ public:
 
     // add top level dir
     string output_path = "cinema_databases";
-    
-    if(!conduit::utils::is_directory(output_path))
+  
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    if(rank == 0 && !conduit::utils::is_directory(output_path))
     {
         conduit::utils::create_directory(output_path);
     }
@@ -441,7 +446,7 @@ public:
     // add a database path
     output_path = conduit::utils::join_file_path(output_path, m_image_name);
 
-    if(!conduit::utils::is_directory(output_path))
+    if(rank == 0 && !conduit::utils::is_directory(output_path))
     {
         conduit::utils::create_directory(output_path);
     }
