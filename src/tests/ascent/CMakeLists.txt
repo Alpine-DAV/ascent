@@ -52,6 +52,7 @@
 ################################
 set(BASIC_TESTS t_ascent_smoke
                 t_ascent_empty_runtime
+                t_ascent_cinema_a
                 t_ascent_render_2d
                 t_ascent_render_3d
                 t_ascent_web_flow

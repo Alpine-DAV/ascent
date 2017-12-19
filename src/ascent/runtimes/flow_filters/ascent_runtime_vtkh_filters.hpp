@@ -166,8 +166,6 @@ public:
     virtual void   execute();
 };
 
-
-
 //-----------------------------------------------------------------------------
 class VTKHBounds: public ::flow::Filter
 {

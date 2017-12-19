@@ -439,6 +439,7 @@ int main(int argc, char** argv)
   ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
   ascent_opts["runtime/type"] = "ascent";
+  //ascent_opts["web/stream"] = "true";
   ascent.open(ascent_opts);
 
   conduit::Node mesh_data;
@@ -453,7 +454,6 @@ int main(int argc, char** argv)
 #endif
   mesh_data["state/info"] = "simplex noise";
   data_set.PopulateNode(mesh_data);
-  //ascent.publish(ascent_node);
 
   conduit::Node pipelines;
   // pipeline 1
