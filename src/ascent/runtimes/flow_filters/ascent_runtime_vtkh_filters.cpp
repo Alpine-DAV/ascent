@@ -389,24 +389,6 @@ vtkh::Render parse_render(const conduit::Node &render_node,
   return render;
 }
 
-//
-// This class should manage the a cinema "a" database.
-// Considerations:
-//  1) Only support a single image (e.g., plot)
-//    - we could create several different databases for differt 
-//      plots/vars or at least support this by specifying sub-dirs
-//    - pattern {time}/{phi}/{theta}/image_name.png. Saving data in
-//      in this format would allow multiple data bases to co-exist inside the
-//      same dir structure. Alternatively, manage different sub-dirs for each***-> this
-//    - pattern could be {time}/{contour_val}/image.png 
-//      or {time}/{slice}/image.png
-//  2) Manage database based on database "key" / name. This manager could be kept in the registry
-//     if it could persist from time step to timestep. Alternatively, this could be a static Map that 
-//     manages the meta data. It is easier to re-write the meta data file each time than try to append.
-//     Enforcement of constant phi and theta values will be set by the constructor. Cannot be 
-//     overridden, that is, once the entry can be created, we can  only add times and can't
-//     change phi or theta
-//
 class CinemaManager
 {
 protected:  
@@ -1032,10 +1014,15 @@ DefaultRender::execute()
         {
           if(!render_node.has_path("phi") || !render_node.has_path("theta"))
           {
-            ASCENT_ERROR("Cinema must have phi and theta");
+            ASCENT_ERROR("Cinema must have 'phi' and 'theta'");
           }
           int phi = render_node["phi"].to_int32(); 
           int theta = render_node["theta"].to_int32(); 
+
+          if(!render_node.has_path("db_name"))
+          {
+            ASCENT_ERROR("Cinema must specify a 'db_name'");
+          }
           std::string db_name = render_node["db_name"].as_string(); 
           bool exists = detail::CinemaDatabases::db_exists(db_name);
           if(!exists)
