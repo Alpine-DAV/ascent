@@ -57,12 +57,15 @@ env:
     - BUILD_SHARED_LIBS=ON
       ENABLE_VTKM=ON
       ENABLE_DOCS=ON
+      ENABLE_ADIOS=OFF
     - BUILD_SHARED_LIBS=OFF
       ENABLE_VTKM=ON
       ENABLE_DOCS=OFF
+      ENABLE_ADIOS=OFF
     - BUILD_SHARED_LIBS=ON
       ENABLE_VTKM=OFF
       ENABLE_DOCS=OFF
+      ENABLE_ADIOS=OFF
 addons:
   apt:
     sources:
@@ -87,9 +90,10 @@ script:
   - cd $TRAVIS_BUILD_DIR
   - echo $TRAVIS_BUILD_DIR
   # setup spack spec based on our travis options
-  - export SPACK_SPEC="%gcc@5+mpi"
-  - if [ $ENABLE_VTKM = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkm; fi
-  - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~doc; fi
+  - export SPACK_SPEC="%gcc@5"
+  - if [ $ENABLE_VTKM  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkm; fi
+  - if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~doc; fi
+  - if [ $ENABLE_ADIOS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~adios; fi
   - echo $SPACK_SPEC
   # build deps using uberenv
   - cd ..

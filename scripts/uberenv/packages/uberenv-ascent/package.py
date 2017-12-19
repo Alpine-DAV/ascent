@@ -49,11 +49,9 @@ import os
 import platform
 from os.path import join as pjoin
 
+from ascent import Ascent
 
-def cmake_cache_entry(name,value):
-    return 'set("%s" "%s" CACHE PATH "")\n\n' % (name,value)
-
-class UberenvAscent(Package):
+class UberenvAscent(Ascent):
     """Spack Based Uberenv Build for Ascent Thirdparty Libs """
 
     homepage = "https://github.com/alpine-DAV/ascent"
