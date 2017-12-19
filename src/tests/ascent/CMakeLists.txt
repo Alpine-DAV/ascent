@@ -60,6 +60,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_clip
                 t_ascent_contour
                 t_ascent_threshold
+                t_ascent_slice
                 t_ascent_flow_runtime)
 
 set(MPI_TESTS  t_ascent_mpi_smoke
