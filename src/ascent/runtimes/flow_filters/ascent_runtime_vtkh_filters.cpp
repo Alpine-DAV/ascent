@@ -871,7 +871,7 @@ VTKHSlice::verify_params(const conduit::Node &params,
 {
     info.reset();
     bool res = true;
-    params.print(); 
+
     if(! params.has_path("point/x") ||
        ! params["point/y"].dtype().is_number() )
     {
@@ -945,7 +945,6 @@ VTKHSlice::execute()
     slicer.Update();
 
     vtkh::DataSet *slice_output = slicer.GetOutput();
-    
     set_output<vtkh::DataSet>(slice_output);
 }
 
@@ -1102,7 +1101,7 @@ DefaultRender::execute()
     std::copy(domain_ids->begin(), domain_ids->end(), v_domain_ids.begin()); 
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
-
+    
     if(params().has_path("renders"))
     {
       const conduit::Node renders_node = params()["renders"];
@@ -1356,7 +1355,6 @@ VTKHBounds::execute()
 
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
     bounds->Include(data->GetGlobalBounds());
-
     set_output<vtkm::Bounds>(bounds);
 }
 
@@ -1404,7 +1402,6 @@ VTKHUnionBounds::execute()
     vtkm::Bounds *bounds_a = input<vtkm::Bounds>(0);
     vtkm::Bounds *bounds_b = input<vtkm::Bounds>(1);
     
-
     result->Include(*bounds_a);
     result->Include(*bounds_a);
     
@@ -1678,7 +1675,7 @@ CreatePlot::verify_params(const conduit::Node &params,
         info["errors"].append() = "Missing required string parameter 'type'";
         res = false;
     }
-    params.print();
+
     if(! params.has_child("params") )
     {
         info["errors"].append() = "Missing required parameter 'params'";
