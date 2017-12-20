@@ -312,7 +312,6 @@ AscentRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
       if(filter["type"].as_string() == "contour")
       {
         filter_name = "vtkh_marchingcubes";
-
       }
       else if(filter["type"].as_string() == "threshold")
       {
@@ -321,6 +320,10 @@ AscentRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
       else if(filter["type"].as_string() == "clip")
       {
         filter_name = "vtkh_clip";
+      }
+      else if(filter["type"].as_string() == "slice")
+      {
+        filter_name = "vtkh_slice";
       }
       else
       {

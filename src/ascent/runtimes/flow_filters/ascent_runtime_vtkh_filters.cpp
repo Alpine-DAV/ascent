@@ -75,6 +75,7 @@
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
+#include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkm/cont/DataSet.h>
 
@@ -839,6 +840,113 @@ VTKHMarchingCubes::execute()
     vtkh::DataSet *iso_output = marcher.GetOutput();
     
     set_output<vtkh::DataSet>(iso_output);
+}
+
+//-----------------------------------------------------------------------------
+VTKHSlice::VTKHSlice()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHSlice::~VTKHSlice()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHSlice::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_slice";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHSlice::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    params.print(); 
+    if(! params.has_path("point/x") ||
+       ! params["point/y"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'point/x'";
+        res = false;
+    }
+    if(! params.has_path("point/y") || 
+       ! params["point/y"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'point/y'";
+        res = false;
+    }
+    if(! params.has_path("point/z") || 
+       ! params["point/z"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'point/z'";
+        res = false;
+    }
+    
+    if(! params.has_path("normal/x") || 
+       ! params["normal/x"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'normal/x'";
+        res = false;
+    }
+    if(! params.has_path("normal/y") || 
+       ! params["normal/y"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'normal/y'";
+        res = false;
+    }
+    if(! params.has_path("normal/z") || 
+       ! params["normal/z"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'normal/z'";
+        res = false;
+    }
+    
+    
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHSlice::execute()
+{
+
+    ASCENT_INFO("Slicing!");
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_slice input must be a vtk-h dataset");
+    }
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Slice slicer;
+    
+    slicer.SetInput(data);
+
+    const Node &n_point = params()["point"];
+    const Node &n_normal = params()["normal"];
+
+    vtkm::Vec<vtkm::Float32,3> v_point(n_point["x"].to_float32(),
+                                       n_point["y"].to_float32(), 
+                                       n_point["z"].to_float32()); 
+
+    vtkm::Vec<vtkm::Float32,3> v_normal(n_normal["x"].to_float32(),
+                                        n_normal["y"].to_float32(), 
+                                        n_normal["z"].to_float32()); 
+
+    slicer.SetPlane(v_point, v_normal);
+    slicer.Update();
+
+    vtkh::DataSet *slice_output = slicer.GetOutput();
+    
+    set_output<vtkh::DataSet>(slice_output);
 }
 
 //-----------------------------------------------------------------------------
