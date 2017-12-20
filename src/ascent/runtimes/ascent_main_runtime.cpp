@@ -354,7 +354,7 @@ AscentRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
     // can connect to the end result by pipeline name
     w.graph().add_filter("alias",
                          pipeline_name);
-
+    
     w.graph().connect(prev_name,     // src
                       pipeline_name, // dest
                       0);            // default port
@@ -436,7 +436,7 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     // this is the blueprint mesh 
     extract_source = "source";
   }
-  std::cout<<"***** extract source :  "<<extract_source<<"\n";
+  
   m_connections[ensure_name] = extract_source;
   m_connections[extract_name] = ensure_name;
 
@@ -531,9 +531,9 @@ AscentRuntime::GetPipelines(const conduit::Node &plots)
   {
     conduit::Node plot = plots.child(i);
     std::string pipeline;
-    if(plot.has_path("params/pipeline"))
+    if(plot.has_path("pipeline"))
     {
-      pipeline = plot["params/pipeline"].as_string();
+      pipeline = plot["pipeline"].as_string();
     }
     else
     {
@@ -617,7 +617,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
                       1);             // default port
 
     // ------------ NEW -----------------
-
+    
     std::vector<std::string> pipelines = GetPipelines(scene["plots"]); 
     std::vector<std::string> plot_names = scene["plots"].child_names();
     
@@ -775,7 +775,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       bounds_output = union_bounds_names[union_size-1];
       domain_ids_output = union_domain_ids_names[union_size-1];
     }
-
+      
     w.graph().connect(bounds_output, // src
                       renders_name,  // dest
                       0);            // default port
