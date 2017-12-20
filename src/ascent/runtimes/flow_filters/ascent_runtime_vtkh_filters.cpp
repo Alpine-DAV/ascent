@@ -945,6 +945,7 @@ VTKHSlice::execute()
     slicer.Update();
 
     vtkh::DataSet *slice_output = slicer.GetOutput();
+
     set_output<vtkh::DataSet>(slice_output);
 }
 
