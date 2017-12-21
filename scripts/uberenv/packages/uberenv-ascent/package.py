@@ -63,11 +63,6 @@ class UberenvAscent(Ascent):
             default=True,
             description="Build deps needed to create Conduit's Docs")
 
-    # default to building adios when using uberenv
-    variant("adios",
-            default=True,
-            description="Build Adios")
-
     # stick with cmake 3.8 or 3.9 until we use MPIEXEC_EXECUTABLE for 3.10+
     # in upstream spack package
     depends_on("cmake@3.8.2:3.9.999", when="+cmake")

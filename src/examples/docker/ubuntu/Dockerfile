@@ -77,7 +77,7 @@ RUN tar -xzf ascent.docker.src.tar.gz
 # bootstrap third party libs using spack and uberenv
 #  for this example we use mpich for MPI b/c openmpi's mpiexec
 #  will not run for the root user
-RUN cd ascent && python scripts/uberenv/uberenv.py -k --spec "%gcc~doc~adios ^mpich"
+RUN cd ascent && python scripts/uberenv/uberenv.py -k --spec "%gcc+mpi~doc~adios ^mpich"
 
 # configure a debug build with cmake
 RUN cd ascent && mkdir build-debug

@@ -305,10 +305,10 @@ def main():
     print "[uberenv options: %s]" % str(opts)
     if "darwin" in platform.system().lower():
         dep_tgt = platform.mac_ver()[0]
-        dep_tgt = dep_tgt[:dep_tgt.rfind(".")]
         env["MACOSX_DEPLOYMENT_TARGET"] = dep_tgt
+        dep_tgt = dep_tgt[:dep_tgt.rfind(".")]
         env["SDKROOT"] = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" + str(dep_tgt) + ".sdk"
-        print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % dep_tgt
+        print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % env["MACOSX_DEPLOYMENT_TARGET"]
         print "[setting SDKROOT to %s]" % env[ "SDKROOT" ]
     # setup default spec
     if opts["spec"] is None:
