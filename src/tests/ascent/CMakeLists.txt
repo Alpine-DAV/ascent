@@ -52,6 +52,7 @@
 ################################
 set(BASIC_TESTS t_ascent_smoke
                 t_ascent_empty_runtime
+                t_ascent_cinema_a
                 t_ascent_render_2d
                 t_ascent_render_3d
                 t_ascent_web_flow
@@ -59,6 +60,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_clip
                 t_ascent_contour
                 t_ascent_threshold
+                t_ascent_slice
                 t_ascent_flow_runtime)
 
 set(MPI_TESTS  t_ascent_mpi_smoke
