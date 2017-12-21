@@ -1,3 +1,4 @@
+
 # -------------------------------------------------------------------------
 # This file controls default concretization preferences for Spack.
 #
@@ -35,14 +36,15 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
-# LLNL chaos5 CUDA 
+# LLNL toss3 CUDA 
   cuda:
     paths:
       cuda@8.0: /opt/cudatoolkit-8.0
     buildable: False
-# LLNL chaos5 mvapich2
+# LLNL toss3 mvapich2
   mvapich2:
     paths:
-      mvapich2@2.0%gcc@4.9.3: /usr/local/tools/mvapich2-gnu-2.0/
-      mvapich2@2.0%intel@16.0.109: /usr/local/tools/mvapich2-intel-2.0
+      mvapich2@2.2%gcc@4.9.3: /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+      mvapich2@2.2%intel@17.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.0
+      mvapich2@2.2%clang@3.9.0: /usr/tce/packages/mvapich2/mvapich2-2.2-clang-3.9.0
     buildable: False
