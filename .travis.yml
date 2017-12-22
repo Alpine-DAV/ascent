@@ -105,7 +105,7 @@ script:
   - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/conduit*; do if [ -d $f ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents --all conduit; fi; done;
   - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*; do if [ -d $f ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents vtkm; fi; done;
   #- find uberenv_libs -type d | perl -lne 'print tr:/::, " $_"' | sort -n | cut -d' ' -f2
-  - python ascent/scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
+  - python ascent/scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}"
   - cd $TRAVIS_BUILD_DIR
    #create out-of-source build dir
   - mkdir build-debug
