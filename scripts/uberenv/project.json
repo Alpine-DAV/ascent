@@ -1,4 +1,6 @@
 {
-"spack_develop_commit": "4a6ec6377d5101d44a73e99e1a67cfd8f5f8a694",
-"uberenv_package_name" : "uberenv-ascent"
+"spack_develop_commit": "95a384f05107cc80e0da7d5e7a5b75380ebf76f3",
+"uberenv_package_name" : "uberenv-ascent",
+"spack_activate" : ["py-numpy", "py-sphinx", "py-mpi4py", "conduit"]
+
 }

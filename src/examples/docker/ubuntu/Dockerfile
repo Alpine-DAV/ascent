@@ -55,6 +55,7 @@ RUN apt-get update && apt-get install -y \
     gfortran \
     zlib1g-dev \
     python \
+    unzip \
  && rm -rf /var/lib/apt/lists/*
 
 
@@ -74,8 +75,11 @@ RUN tar -xzf ascent.docker.src.tar.gz
 #RUN echo insecure >> ~/.curlrc
 
 # bootstrap third party libs using spack and uberenv
-#  for this example we use mpich for MPI
-RUN cd ascent && python scripts/uberenv/uberenv.py -k --spec %gcc+mpich~doc
+# for this example we use mpich for MPI b/c openmpi's mpiexec
+# will not run for the root user, also avoid mpi4py after 2.0, 
+# since it reqs cython and cython's src tarball has perms set
+# in a way that fails in docker
+RUN cd ascent && python scripts/uberenv/uberenv.py -k --spec "%gcc+mpi~doc~adios ^mpich"
 
 # configure a debug build with cmake
 RUN cd ascent && mkdir build-debug

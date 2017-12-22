@@ -133,6 +133,23 @@ Filter::init(Graph *g,
     m_graph = g;
     m_props["name"] = name;
     declare_interface(interface());
+
+    Node &n_iface = properties()["interface"];
+
+    // we need to fill in any missing props that
+    // interface may const fetch 
+
+    if( !n_iface.has_child("default_params") )
+    {
+        n_iface["default_params"] = DataType::empty();
+    }
+
+    if( !n_iface.has_child("port_names") )
+    {
+        n_iface["port_names"] = DataType::empty();
+    }
+
+
     params().update(default_params());
     params().update(p);
 }

@@ -55,14 +55,17 @@ env:
   matrix:
     # we want to test both static and shared, w/ and w/o docs and vtkm.
     - BUILD_SHARED_LIBS=ON
-      ENABLE_VTKM=ON
+      ENABLE_VTKH=ON
       ENABLE_DOCS=ON
+      ENABLE_ADIOS=OFF
     - BUILD_SHARED_LIBS=OFF
-      ENABLE_VTKM=ON
+      ENABLE_VTKH=ON
       ENABLE_DOCS=OFF
+      ENABLE_ADIOS=OFF
     - BUILD_SHARED_LIBS=ON
-      ENABLE_VTKM=OFF
+      ENABLE_VTKH=OFF
       ENABLE_DOCS=OFF
+      ENABLE_ADIOS=OFF
 addons:
   apt:
     sources:
@@ -87,9 +90,11 @@ script:
   - cd $TRAVIS_BUILD_DIR
   - echo $TRAVIS_BUILD_DIR
   # setup spack spec based on our travis options
-  - export SPACK_SPEC="%gcc@5+mpich"
-  - if [ $ENABLE_VTKM = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkm; fi
-  - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~doc; fi
+  - export SPACK_SPEC="%gcc@5+mpi"
+  - if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkh; fi
+  - if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~doc; fi
+  - if [ $ENABLE_ADIOS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~adios; fi
+  - export SPACK_SPEC="${SPACK_SPEC} ^mpich"
   - echo $SPACK_SPEC
   # build deps using uberenv
   - cd ..
@@ -100,7 +105,7 @@ script:
   - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/conduit*; do if [ -d $f ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents --all conduit; fi; done;
   - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*; do if [ -d $f ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents vtkm; fi; done;
   #- find uberenv_libs -type d | perl -lne 'print tr:/::, " $_"' | sort -n | cut -d' ' -f2
-  - python ascent/scripts/uberenv/uberenv.py --spec ${SPACK_SPEC}
+  - python ascent/scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}"
   - cd $TRAVIS_BUILD_DIR
    #create out-of-source build dir
   - mkdir build-debug
@@ -134,7 +139,7 @@ script:
   - mkdir build
   - cd build
   - export EXAMPLE_CFG="-DASCENT_DIR=${ASCENT_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
-  - if [ $ENABLE_VTKM = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR} -DVTKH_DIR=${VTKH_DIR}"; fi
+  - if [ $ENABLE_VTKH = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR} -DVTKH_DIR=${VTKH_DIR}"; fi
   - echo $EXAMPLE_CFG
   - cmake  ${EXAMPLE_CFG} ../
   - make VERBOSE=1
@@ -146,7 +151,7 @@ script:
   # test run example apps
   - cd ${TRAVIS_BUILD_DIR}
   - export PATH=$PATH:`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/mpich-*/bin/`
-  - if [ $ENABLE_VTKM = 'ON' ]; then ./scripts/test-run-examples.sh ; fi
+  - if [ $ENABLE_VTKH = 'ON' ]; then ./scripts/test-run-examples.sh ; fi
   
 
 #cache:
