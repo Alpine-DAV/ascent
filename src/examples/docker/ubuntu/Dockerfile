@@ -75,8 +75,10 @@ RUN tar -xzf ascent.docker.src.tar.gz
 #RUN echo insecure >> ~/.curlrc
 
 # bootstrap third party libs using spack and uberenv
-#  for this example we use mpich for MPI b/c openmpi's mpiexec
-#  will not run for the root user
+# for this example we use mpich for MPI b/c openmpi's mpiexec
+# will not run for the root user, also avoid mpi4py after 2.0, 
+# since it reqs cython and cython's src tarball has perms set
+# in a way that fails in docker
 RUN cd ascent && python scripts/uberenv/uberenv.py -k --spec "%gcc+mpi~doc~adios ^mpich"
 
 # configure a debug build with cmake
