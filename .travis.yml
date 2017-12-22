@@ -90,7 +90,7 @@ script:
   - cd $TRAVIS_BUILD_DIR
   - echo $TRAVIS_BUILD_DIR
   # setup spack spec based on our travis options
-  - export SPACK_SPEC="%gcc@5"
+  - export SPACK_SPEC="%gcc@5+mpi"
   - if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkh; fi
   - if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~doc; fi
   - if [ $ENABLE_ADIOS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~adios; fi
