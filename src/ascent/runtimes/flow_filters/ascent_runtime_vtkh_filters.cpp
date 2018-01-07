@@ -843,6 +843,112 @@ VTKHMarchingCubes::execute()
 }
 
 //-----------------------------------------------------------------------------
+VTKH3Slice::VTKH3Slice()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKH3Slice::~VTKH3Slice()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKH3Slice::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_3slice";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKH3Slice::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKH3Slice::execute()
+{
+
+    ASCENT_INFO("3 Slicing!");
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_3slice input must be a vtk-h dataset");
+    }
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Slice slicer;
+    
+    slicer.SetInput(data);
+
+    using Vec3f = vtkm::Vec<vtkm::Float32,3>; 
+    vtkm::Bounds bounds = data->GetGlobalBounds();
+    Vec3f center = bounds.Center(); 
+    Vec3f x_point = center;
+    Vec3f y_point = center;
+    Vec3f z_point = center;
+  
+    //
+    // We look for offsets for each slice plane. 
+    // Offset values are between -1 and 1 where -1 pushes the plane 
+    // to the min extent on the bounds and 1 pushes the plane to
+    // the max extent
+    //
+
+    const float eps = 1e-5; // ensure that the slice is always inside the data set
+    if(params().has_path("x_offset"))
+    {
+      float offset = params()["x_offset"].to_float32();
+      std::max(-1.f, std::min(1.f, offset));
+      float t = (offset + 1.f) / 2.f;
+      t = std::max(0.f + eps, std::min(1.f - eps, t));
+      x_point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
+    }
+
+    if(params().has_path("y_offset"))
+    {
+      float offset = params()["y_offset"].to_float32();
+      std::max(-1.f, std::min(1.f, offset));
+      float t = (offset + 1.f) / 2.f;
+      t = std::max(0.f + eps, std::min(1.f - eps, t));
+      y_point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
+    }
+
+    if(params().has_path("z_offset"))
+    {
+      float offset = params()["z_offset"].to_float32();
+      std::max(-1.f, std::min(1.f, offset));
+      float t = (offset + 1.f) / 2.f;
+      t = std::max(0.f + eps, std::min(1.f - eps, t));
+      z_point[2] = bounds.Z.Min + t * (bounds.Z.Max - bounds.Z.Min);
+    }
+
+    Vec3f x_normal(1.f, 0.f, 0.f);
+    Vec3f y_normal(0.f, 1.f, 0.f);
+    Vec3f z_normal(0.f, 0.f, 1.f);
+
+   
+    slicer.AddPlane(x_point, x_normal);
+    slicer.AddPlane(y_point, y_normal);
+    slicer.AddPlane(z_point, z_normal);
+    slicer.Update();
+
+    vtkh::DataSet *slice_output = slicer.GetOutput();
+
+    set_output<vtkh::DataSet>(slice_output);
+}
+
+//-----------------------------------------------------------------------------
 VTKHSlice::VTKHSlice()
 :Filter()
 {
@@ -941,7 +1047,7 @@ VTKHSlice::execute()
                                         n_normal["y"].to_float32(), 
                                         n_normal["z"].to_float32()); 
 
-    slicer.SetPlane(v_point, v_normal);
+    slicer.AddPlane(v_point, v_normal);
     slicer.Update();
 
     vtkh::DataSet *slice_output = slicer.GetOutput();
@@ -1404,8 +1510,7 @@ VTKHUnionBounds::execute()
     vtkm::Bounds *bounds_b = input<vtkm::Bounds>(1);
     
     result->Include(*bounds_a);
-    result->Include(*bounds_a);
-    
+    result->Include(*bounds_b);
     set_output<vtkm::Bounds>(result);
 }
 

@@ -276,20 +276,6 @@ SUBROUTINE visit(my_ascent)
       reset_act = conduit_node_append(sim_actions)
       CALL conduit_node_set_path_char8_str(reset_act,"action", "reset")
 
-      ! ---- old actions -- 
-!       add_plot = conduit_node_append(sim_actions)
-!       CALL conduit_node_set_path_char8_str(add_plot,"action", "add_plot")
-!       !CALL conduit_node_set_path_char8_str(add_plot,"field_name", "pressure")
-!       CALL conduit_node_set_path_char8_str(add_plot,"field_name", "velocity_y")
-!       CALL conduit_node_set_path_char8_str(add_plot,"render_options/file_name", savename)
-!       CALL conduit_node_set_path_char8_str(add_plot,"render_options/renderer","volume")
-!       CALL conduit_node_set_path_int32(add_plot,"render_options/width", 1024)
-!       CALL conduit_node_set_path_int32(add_plot,"render_options/height", 1024)
-!       draw_plots = conduit_node_append(sim_actions)
-!       CALL conduit_node_set_path_char8_str(draw_plots,"action", "draw_plots")
-
-      ! CALL sim_actions%print_detailed()
-
       CALL ascent_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
       CALL ascent_publish(my_ascent, sim_data)
       CALL ascent_execute(my_ascent, sim_actions)

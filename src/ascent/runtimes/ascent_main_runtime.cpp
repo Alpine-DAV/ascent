@@ -325,6 +325,10 @@ AscentRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
       {
         filter_name = "vtkh_slice";
       }
+      else if(filter["type"].as_string() == "3slice")
+      {
+        filter_name = "vtkh_3slice";
+      }
       else
       {
         ASCENT_ERROR("Unrecognized filter "<<filter["type"].as_string());
@@ -713,11 +717,11 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
           // the current plot and the output of the 
           // previous union
           //
-          w.graph().connect(union_bounds_names[p-1],  // src
+          w.graph().connect(union_bounds_names[p-2],  // src
                             union_bounds_name,        // dest
                             0);                       // default port
 
-          w.graph().connect(union_domain_ids_names[p-1],  // src
+          w.graph().connect(union_domain_ids_names[p-2],  // src
                             union_domain_ids_name,        // dest
                             0);                           // default port
         }
@@ -730,7 +734,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
                           union_domain_ids_name,  // dest
                           1);                     // default port
       }
-      
 
       // connect the plot with the scene
       std::string add_name = "add_plot_" + plot_names[p];
