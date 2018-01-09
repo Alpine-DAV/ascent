@@ -46,8 +46,8 @@
 Scenes
 ======
 A scene encapsulates the information required to generate one or more images.
-The user specifies a collection of plots (e.g., volume or surface rendering) and associated parameters such as camera definitions, light positions, and annotations.
-To define a scene, a user describes one or more plots. The simplest plot description requires only a plot type and scalar field name.
+To define a scene, the user specifies a collection of plots (e.g., volume or surface rendering) and associated parameters such as camera definitions, light positions, and annotations.
+The simplest plot description requires only a plot type and scalar field name.
 A scene defined in this way uses the default data source, which is all of the data published by the simulation, and default settings for camera position, image resolution, lighting, and annotations.
 
 Plots
@@ -70,6 +70,7 @@ The plot interface is simply:
   }
 
 In c++, the equivalent declarations would be as follows:
+
 .. code-block:: c++
 
   conduit::Node plot;
@@ -182,7 +183,7 @@ Now we add a second render to the same example using every available parameter:
 Color Tables
 ^^^^^^^^^^^^
 The color map translates normalized scalars to color values.
-Minimally, a color table name needs to be specified, but the ``color_table`` nodes allows you to specify RGB and Alpha (opacity) control points for complete customization of color maps. 
+Minimally, a color table name needs to be specified, but the ``color_table`` node allows you to specify RGB and Alpha (opacity) control points for complete customization of color maps. 
 Alpha control points are used when rendering volumes.
 Color map names names can be found in the `VTK-m repository <https://gitlab.kitware.com/vtk/vtk-m/blob/master/vtkm/rendering/ColorTable.cxx>`_.
 Colors are three double precision values between 0 and 1.
@@ -226,9 +227,9 @@ Building on the previous example, we now add a custom color table to the render 
   
 Cinema Databases
 ----------------
-The Cinema spefication is a image-based solution for post-hoc exploration of 
+The Cinema specification is a image-based solution for post-hoc exploration of 
 simulation data. The idea behind Cinema is images take many orders of magnitude
-less disc space than that of the entire simulation data. By saving images instead
+less disk space than that of the entire simulation data. By saving images instead
 of the full mesh, we can save data much more frequently, giving users access to
 more temporal fidelity than would be possible otherwise. For a complete overview,
 see the `SC 14 paper <https://datascience.lanl.gov/data/papers/SC14.pdf>`_. Other
@@ -237,11 +238,11 @@ Cinema resources can be found at `Cinema Science <http://cinemascience.org/>`_.
 Ascent currently supports the creation of the Astaire specification (spec A) which
 captures images of the scene from positions on a spherical camera. The number of 
 images are captured in the parameters ``phi`` and ``theta``. ``phi`` specifies 
-the number of division along the polar angle and ``theta`` specifies the number of
-division along the azimuth angle. For example, if ``phi = 4`` and ``theta = 8`` then 
+the number of divisions along the polar angle and ``theta`` specifies the number of
+divisions along the azimuth. For example, if ``phi = 4`` and ``theta = 8`` then 
 the resulting database will contain ``4 * 8`` images per time step. The Cinema
-database can then be explored in a supported viewer. In the future we hope to inclue
-a web-based view to enbale database exploration as the simulation is running.
+database can then be explored in a supported viewer. In the future we hope to integrate
+a web-based viewer to enable exploration of the Cinema database as the simulation is running.
 
 .. code-block:: c++
 

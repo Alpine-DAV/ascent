@@ -110,6 +110,7 @@ Our filter API consists of the type of filter and the parameters associated with
   }
 
 In c++, the equivalent declarations would be as follows:
+
 .. code-block:: c++
 
   conduit::Node filter;
@@ -182,12 +183,12 @@ The threshold filter removes cells that are not contained within a specified sca
 
     An example image of the threshold filter using the previous code sample.
 
-:numref:`Figure %s <thresholdfig>` shows an image produced from the threshold filter. 
+:numref:`Figure %s <thresholdfig>` shows an image produced from a threshold filter. 
 The full example is located in the file `threshold test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_threshold.cpp>`_.
 
 Slice
 ~~~~~
-The slice filter extracts a 2d plane from an input 3d data set. 
+The slice filter extracts a 2d plane from a 3d data set. 
 The plane is defined by a point (on the plane) and a normal vector (not required to be nomalized).
 
 .. code-block:: c++
@@ -223,7 +224,7 @@ Three slice is meant primarily for quick visual exploration of 3D data where the
 internal features cannot be readily observed from the outside. 
 
 The slice planes will automatically placed at the center of the data sets spatial extents. 
-Optionally, offsets for each plane can be specified. Offsets for each axit are specified 
+Optionally, offsets for each plane can be specified. Offsets for each axis are specified 
 by a floating point value in the range ``[-1.0, 1.0]``, where ``-1.0`` places the plane at the
 minimum spatial extent on the axis, ``1.0`` places the plane at the maximum spatial extent
 on the axis, and ``0.0`` places the plane at the center of the spatial extent. By default,
