@@ -119,14 +119,14 @@ TEST(ascent_slice, test_slice)
     // pipeline 1
     pipelines["pl1/f1/type"] = "slice";
     // filter knobs
-    conduit::Node &contour_params = pipelines["pl1/f1/params"];
-    contour_params["point/x"] = 0.f;
-    contour_params["point/y"] = 0.f;
-    contour_params["point/z"] = 0.f;
+    conduit::Node &slice_params = pipelines["pl1/f1/params"];
+    slice_params["point/x"] = 0.f;
+    slice_params["point/y"] = 0.f;
+    slice_params["point/z"] = 0.f;
 
-    contour_params["normal/x"] = 0.f;
-    contour_params["normal/y"] = 0.f;
-    contour_params["normal/z"] = 1.f;
+    slice_params["normal/x"] = 0.f;
+    slice_params["normal/y"] = 0.f;
+    slice_params["normal/z"] = 1.f;
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
@@ -211,10 +211,10 @@ TEST(ascent_slice, test_3slice)
     // pipeline 1
     pipelines["pl1/f1/type"] = "3slice";
     // filter knobs (all these are optional)
-    conduit::Node &contour_params = pipelines["pl1/f1/params"];
-    contour_params["x_offset"] = 1.f;   // largest value on the x-axis
-    contour_params["y_offset"] = 0.f;   // middle of the y-axis
-    contour_params["z_offset"] = -1.f;  // smalles value of the z-axis
+    conduit::Node &slice_params = pipelines["pl1/f1/params"];
+    slice_params["x_offset"] = 1.f;   // largest value on the x-axis
+    slice_params["y_offset"] = 0.f;   // middle of the y-axis
+    slice_params["z_offset"] = -1.f;  // smalles value of the z-axis
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";

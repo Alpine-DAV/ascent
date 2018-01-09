@@ -224,3 +224,34 @@ Building on the previous example, we now add a custom color table to the render 
   point5["alpha"] = 1.; 
   scenes["s1/renders/r2/color_table/control_points"] = control_points;
   
+Cinema Databases
+----------------
+The Cinema spefication is a image-based solution for post-hoc exploration of 
+simulation data. The idea behind Cinema is images take many orders of magnitude
+less disc space than that of the entire simulation data. By saving images instead
+of the full mesh, we can save data much more frequently, giving users access to
+more temporal fidelity than would be possible otherwise. For a complete overview,
+see the `SC 14 paper <https://datascience.lanl.gov/data/papers/SC14.pdf>`_. Other
+Cinema resources can be found at `Cinema Science <http://cinemascience.org/>`_.
+
+Ascent currently supports the creation of the Astaire specification (spec A) which
+captures images of the scene from positions on a spherical camera. The number of 
+images are captured in the parameters ``phi`` and ``theta``. ``phi`` specifies 
+the number of division along the polar angle and ``theta`` specifies the number of
+division along the azimuth angle. For example, if ``phi = 4`` and ``theta = 8`` then 
+the resulting database will contain ``4 * 8`` images per time step. The Cinema
+database can then be explored in a supported viewer. In the future we hope to inclue
+a web-based view to enbale database exploration as the simulation is running.
+
+.. code-block:: c++
+
+    conduit::Node scenes;
+    scenes["scene1/plots/plt1/type"]         = "pseudocolor";
+    scenes["scene1/plots/plt1/params/field"] = "braid";
+    // setup required cinema params
+    scenes["scene1/renders/r1/type"] = "cinema";
+    scenes["scene1/renders/r1/phi"] = 2;
+    scenes["scene1/renders/r1/theta"] = 2;
+    scenes["scene1/renders/r1/db_name"] = "example_db";
+
+A full code example can be found in the test suite's `Cinema test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_cinema_a.cpp>`_.

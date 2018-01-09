@@ -375,8 +375,6 @@ This is the best way to avoid problems that can easily arise from mixing c++ sta
 Use the same CMake host-config file for each of Ascent's dependencies, and while this may bring in unused cmake variables and clutter the ccmake curses interface, it will help avoid problems.
 In the host config, you can specify options such as ``ENABLE_PYTHON=OFF`` and ``ENABLE_FORTRAN=OFF`` that will be respected by both conduit and ascent.
 
-.. warning:: At this time, VTK-m cannot be built and linked to with Intel Compilers because of an issue with symbol visibility. Consequently, we only recommend building Ascent with GNU compilers with c++11 support.
-
 HDF5 (Optional)
 ^^^^^^^^^^^^^^^
 
