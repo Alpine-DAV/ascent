@@ -324,6 +324,7 @@ AscentRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
       {
         filter_name = "vtkh_slice";
       }
+
       else if(type == "3slice")
       {
         filter_name = "vtkh_3slice";

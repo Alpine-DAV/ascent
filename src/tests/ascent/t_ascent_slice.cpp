@@ -211,11 +211,12 @@ TEST(ascent_slice, test_3slice)
     // pipeline 1
     pipelines["pl1/f1/type"] = "3slice";
     // filter knobs (all these are optional)
+
     conduit::Node &slice_params = pipelines["pl1/f1/params"];
     slice_params["x_offset"] = 1.f;   // largest value on the x-axis
     slice_params["y_offset"] = 0.f;   // middle of the y-axis
     slice_params["z_offset"] = -1.f;  // smalles value of the z-axis
-
+  
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "radial";
