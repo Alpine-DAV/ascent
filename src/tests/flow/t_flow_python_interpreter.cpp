@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Alpine. 
+// This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/alpine/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -42,49 +42,53 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_filters.hpp
+/// file: t_flow_python_interpreter.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef FLOW_FILTERS_HPP
-#define FLOW_FILTERS_HPP
+#include "gtest/gtest.h"
 
-#include <flow_exports.h>
+#include <flow.hpp>
+#include <flow_python_interpreter.hpp>
+
+
+#include "t_config.hpp"
+
+using namespace std;
+using namespace flow;
 
 //-----------------------------------------------------------------------------
-// -- begin flow --
-//-----------------------------------------------------------------------------
-namespace flow
+TEST(flow_py_interp_exe, flow_python_interpreter)
 {
-
-//-----------------------------------------------------------------------------
-// -- begin flow::filters --
-//-----------------------------------------------------------------------------
-namespace filters
-{
+    PythonInterpreter py_interp;
     
-    // registers all built-in filter types.
-    void FLOW_API register_builtin();
+    EXPECT_TRUE(py_interp.initialize());
+    EXPECT_TRUE(py_interp.run_script("a = 42"));
+    
+    PyObject *py_a = py_interp.get_global_object("a");
+    
+    int a_cpp=0;
+    EXPECT_TRUE(PythonInterpreter::PyObject_to_int(py_a,a_cpp));
+    EXPECT_EQ(a_cpp,42);
 
-};
-//-----------------------------------------------------------------------------
-// -- end flow::filters --
-//-----------------------------------------------------------------------------
+    int mlt = 3;
+    PyObject *py_mlt = PyLong_FromLong(mlt);
+    EXPECT_TRUE(py_interp.set_global_object(py_mlt,"mlt"));
+
+    EXPECT_TRUE(py_interp.run_script("b = a * mlt"));
+    
+    PyObject *py_b = py_interp.get_global_object("b");
+    
+    int b_cpp=0;
+    EXPECT_TRUE(PythonInterpreter::PyObject_to_int(py_b,b_cpp));
+    EXPECT_EQ(b_cpp,42*3);
+
+    py_interp.shutdown();
+    
+}
 
 
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow --
-//-----------------------------------------------------------------------------
 
-
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
 

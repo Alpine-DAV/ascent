@@ -56,6 +56,9 @@ set(FLOW_TESTS  t_flow_data
                 t_flow_workspace
                 t_flow_workspace_adv_manage)
 
+if(PYTHON_FOUND)
+    list(APPEND FLOW_TESTS t_flow_python_interpreter)
+endif()
 
 ################################
 # Add tests

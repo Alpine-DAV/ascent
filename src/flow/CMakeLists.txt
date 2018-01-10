@@ -49,6 +49,11 @@
 #
 ###############################################################################
 
+set(FLOW_PYTHON_ENABLED ${PYHTON_FOUND})
+
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/flow_config.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/flow_config.h")
+
 set(flow_sources
     # flow interface
     flow_data.cpp
@@ -60,18 +65,39 @@ set(flow_sources
     filters/flow_builtin_filters.cpp)
     
 set(flow_headers
+    flow.hpp
+    flow_exports.h
+    ${CMAKE_CURRENT_BINARY_DIR}/flow_config.h
     flow_data.hpp
     flow_registry.hpp
     flow_filter.hpp
     flow_filters.hpp
     flow_graph.hpp
     flow_workspace.hpp
-    filters/flow_builtin_filters.hpp
-    flow.hpp)
+    filters/flow_builtin_filters.hpp)
 
 set(flow_thirdparty_libs 
     conduit
     conduit_relay)
+
+#
+# Flows python interpreter support enables
+# running python filters when the host code
+# does not provide a python interpreter
+#
+
+if(PYTHON_FOUND)
+   list(APPEND flow_sources
+        flow_python_interpreter.cpp)
+        #filters/flow_python_support.cpp)
+   
+   list(APPEND flow_headers
+        flow_python_interpreter.hpp)
+        #filters/flow_python_support.hpp)
+   # allow ascent to link with python
+   list(APPEND flow_thirdparty_libs python)
+
+endif()
 
 ##########################################
 # Build flow

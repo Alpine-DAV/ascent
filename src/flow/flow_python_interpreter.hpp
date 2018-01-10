@@ -45,16 +45,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_data.hpp
+/// file: flow_python_interpreter.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef FLOW_DATA_HPP
-#define FLOW_DATA_HPP
-
-#include <conduit.hpp>
+#ifndef FLOW_PYTHON_INTERPRETER_HPP
+#define FLOW_PYTHON_INTERPRETER_HPP
 
 #include <flow_exports.h>
+#include <string>
+#include <Python.h>
+#include <conduit.hpp>
 
 
 //-----------------------------------------------------------------------------
@@ -63,110 +64,76 @@
 namespace flow
 {
 
-
 //-----------------------------------------------------------------------------
-/// Container that  wrappers inputs and output datasets from filters so
-/// they can be managed by the registry. 
 ///
-/// Key features:
-///
-/// Provides easy access to specific wrapped data:
-///    (so far just a Conduit Node Pointer)
-///   Data can cast to conduit::Node *, or conduit::Node & .
-///
-///
-/// Provides a release() method used by the registry to manage result lifetimes.
-//
-//-----------------------------------------------------------------------------    
-
-// forward declare so we can use dynamic cast in our check_type() method.
-template <class T>
-class DataWrapper;
-
+/// Simple C++ Embeddable Python Interpreter.
+/// 
+/// Note: This is based on VisIt's Embedded Python Interpreter implementation:
+///          src/avt/PythonFilters/PythonInterpreter.{h,cpp}
 //-----------------------------------------------------------------------------
-class FLOW_API Data
+
+class FLOW_API PythonInterpreter
 {
 public:
-    Data(void *data);
+                 PythonInterpreter();
+    virtual     ~PythonInterpreter();
 
-    virtual ~Data();
+    /// instance lifetime control
+    bool         initialize(int argc=0, char **argv=NULL);
     
+    bool         is_running() { return m_running; }
+    void         reset();
+    void         shutdown();
+
+    /// helper to add a system path to access new modules
+    bool         add_system_path(const std::string &path);
+
+    /// script exec
+    bool         run_script(const std::string &script);
+    bool         run_script_file(const std::string &fname);
+
+    /// access to global dict
+    bool         set_global_object(PyObject *py_obj,
+                                   const std::string &name);
+
+    PyObject    *get_global_object(const std::string &name);
+
+    PyObject    *global_dict() { return m_py_global_dict; }
+
+    /// error checking 
+    bool         check_error();
+    void         clear_error();
+    std::string  error_message() const { return m_error_msg; }
+
+    /// helpers to obtain values from basic objects
+    static bool  PyObject_to_double(PyObject *py_obj,
+                                    double &res);
+
+    static bool  PyObject_to_string(PyObject *py_obj,
+                                    std::string &res);
     
-    // creates a new container for given data
-    virtual Data  *wrap(void *data)   = 0;
-    // actually delete the data
-    virtual void            release() = 0;
-    
-    void          *data_ptr();
-    const  void   *data_ptr() const;
-    
-    // access methods
-    template <class T>
-    T *value()
-    {
-        return static_cast<T*>(data_ptr());
-    }
-
-    template <class T>
-    bool check_type() const
-    {
-        const DataWrapper<T> *check = dynamic_cast<const DataWrapper<T>*>(this);
-        return check != NULL;
-    }
-
-
-    template <class T>
-    const T *value() const
-    {
-        return static_cast<T*>(data_ptr());
-    }
-
-    
-    void        info(conduit::Node &out) const;
-    std::string to_json() const;
-    void        print() const;
-
-protected:
-    void    set_data_ptr(void *);
+    static bool  PyObject_to_int(PyObject *py_obj,
+                                 int &res);
 
 private:
-    void *m_data_ptr;
+    bool         PyTraceback_to_string(PyObject *py_etype,
+                                       PyObject *py_eval,
+                                       PyObject *py_etrace,
+                                       std::string &res);
+
+    bool         m_running;
+    bool         m_error;
+    std::string  m_error_msg;
+
+    PyObject    *m_py_main_module;
+    PyObject    *m_py_global_dict;
+
+    PyObject    *m_py_trace_module;
+    PyObject    *m_py_sio_module;
+    PyObject    *m_py_trace_print_exception_func;
+    PyObject    *m_py_sio_class;
 
 };
-
-//-----------------------------------------------------------------------------
-template <class T>
-class FLOW_API DataWrapper: public Data
-{
- public:
-     
-    DataWrapper(void *data)
-    : Data(data)
-    {
-        // empty
-    }
-    
-    virtual ~DataWrapper()
-    {
-        // empty
-    }
-
-    Data *wrap(void *data)
-    {
-        return new DataWrapper<T>(data);
-    }
-
-    virtual void release()
-    {
-        if(data_ptr() != NULL)
-        {
-            T * t = static_cast<T*>(data_ptr());
-            delete t;
-            set_data_ptr(NULL);
-        }
-    }
-};
-
 
 
 //-----------------------------------------------------------------------------
@@ -174,8 +141,6 @@ class FLOW_API DataWrapper: public Data
 //-----------------------------------------------------------------------------
 // -- end flow:: --
 //-----------------------------------------------------------------------------
-
-
 
 #endif
 //-----------------------------------------------------------------------------

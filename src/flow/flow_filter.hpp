@@ -54,6 +54,7 @@
 
 #include <conduit.hpp>
 
+#include <flow_exports.h>
 #include <flow_data.hpp>
 #include <flow_registry.hpp>
 
@@ -132,7 +133,7 @@ class Graph;
 
 
 //-----------------------------------------------------------------------------
-class Filter
+class FLOW_API Filter
 {
 public:
     

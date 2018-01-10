@@ -93,8 +93,6 @@ endif()
 find_package_handle_standard_args(Python  DEFAULT_MSG
                                   PYTHON_LIBRARY PYTHON_INCLUDE_DIR)
 
-
-
 ##############################################################################
 # Macro to use a pure python distutils setup script
 ##############################################################################
@@ -216,5 +214,13 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
 
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
 
+#
+# Also register python as a BLT dep,to support the case were we link python, 
+# as opposed to creating python modules via the above macros. 
+#
+
+blt_register_library(NAME python
+                     INCLUDES ${PYTHON_INCLUDE_DIR}
+                     LIBRARIES ${PYTHON_LIBRARY} )
 
 
