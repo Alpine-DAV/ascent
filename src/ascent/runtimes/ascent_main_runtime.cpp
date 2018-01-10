@@ -303,35 +303,42 @@ AscentRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
         ASCENT_ERROR("Filter must declare a 'type'");
       }
 
-      if(!filter.has_path("params"))
-      {
-        filter.print();
-        ASCENT_ERROR("Filter must declare a 'params'");
-      }
+      std::string type = filter["type"].as_string();
+      
+      bool has_params = filter.has_path("params");
+      bool needs_params = true; 
 
-      if(filter["type"].as_string() == "contour")
+      if(type == "contour")
       {
         filter_name = "vtkh_marchingcubes";
       }
-      else if(filter["type"].as_string() == "threshold")
+      else if(type == "threshold")
       {
         filter_name = "vtkh_threshold";
       }
-      else if(filter["type"].as_string() == "clip")
+      else if(type == "clip")
       {
         filter_name = "vtkh_clip";
       }
-      else if(filter["type"].as_string() == "slice")
+      else if(type == "slice")
       {
         filter_name = "vtkh_slice";
       }
-      else if(filter["type"].as_string() == "3slice")
+
+      else if(type == "3slice")
       {
         filter_name = "vtkh_3slice";
+        needs_params = false;
       }
       else
       {
         ASCENT_ERROR("Unrecognized filter "<<filter["type"].as_string());
+      }
+
+      if(!has_params && needs_params)
+      {
+        filter.print();
+        ASCENT_ERROR("Filter "<<type<<" must  declare a 'params'");
       }
      
       // create a unique name for the filter

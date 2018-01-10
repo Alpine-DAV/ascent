@@ -90,6 +90,8 @@ As we stand up the infrastructure necessary to support a wide variety filter we 
 
   - Contour
   - Threshold
+  - Slice
+  - Three Slice 
   - Clip 
 
 Filters
@@ -108,6 +110,7 @@ Our filter API consists of the type of filter and the parameters associated with
   }
 
 In c++, the equivalent declarations would be as follows:
+
 .. code-block:: c++
 
   conduit::Node filter;
@@ -146,6 +149,17 @@ The code below provides examples creating a pipeline using both methods:
   double iso_vals[3] = {-0.4, 0.2, 0.4};
   contour_params["iso_values"].set_external(iso_vals,3);
 
+.. _contourfig:
+
+..  figure:: ../images/contour.png
+    :scale: 50 % 
+    :align: center
+
+    An example image of multiple contours produced using the previous code sample.
+    
+:numref:`Figure %s <contourfig>` shows an image produced from mulitple contours. 
+The full example is located in the `test_multi_contour_3d`  test in the file `contour test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_contour.cpp>`_.
+
 Threshold
 ~~~~~~~~~
 The threshold filter removes cells that are not contained within a specified scalar range.
@@ -160,6 +174,98 @@ The threshold filter removes cells that are not contained within a specified sca
   thresh_params["field"] = "braid";
   thresh_params["min_value"] = -0.2;
   thresh_params["max_value"] = 0.2;
+
+.. _thresholdfig:
+
+..  figure:: ../images/threshold.png
+    :scale: 50 % 
+    :align: center
+
+    An example image of the threshold filter using the previous code sample.
+
+:numref:`Figure %s <thresholdfig>` shows an image produced from a threshold filter. 
+The full example is located in the file `threshold test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_threshold.cpp>`_.
+
+Slice
+~~~~~
+The slice filter extracts a 2d plane from a 3d data set. 
+The plane is defined by a point (on the plane) and a normal vector (not required to be nomalized).
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  pipelines["pl1/f1/type"] = "slice";
+  // filter knobs
+  conduit::Node &slice_params = pipelines["pl1/f1/params"];
+  slice_params["point/x"] = 0.f;
+  slice_params["point/y"] = 0.f;
+  slice_params["point/z"] = 0.f;
+
+  slice_params["normal/x"] = 0.f;
+  slice_params["normal/y"] = 0.f;
+  slice_params["normal/z"] = 1.f;
+  
+.. _slicefig:
+
+..  figure:: ../images/slice.png
+    :scale: 50 % 
+    :align: center
+
+    An example image of the slice filter on a zone-centered variable using the previous code sample. 
+
+:numref:`Figure %s <slicefig>` shows an image produced from the slice filter. 
+The full example is located in the file `slice test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_slice.cpp>`_.
+
+Three Slice
+~~~~~~~~~~~
+The three slice filter slices 3d data sets using three axis-aligned slice planes and 
+leaves the resulting planes in 3d where they can all be viewed at the same time.
+Three slice is meant primarily for quick visual exploration of 3D data where the 
+internal features cannot be readily observed from the outside. 
+
+The slice planes will automatically placed at the center of the data sets spatial extents. 
+Optionally, offsets for each plane can be specified. Offsets for each axis are specified 
+by a floating point value in the range ``[-1.0, 1.0]``, where ``-1.0`` places the plane at the
+minimum spatial extent on the axis, ``1.0`` places the plane at the maximum spatial extent
+on the axis, and ``0.0`` places the plane at the center of the spatial extent. By default,
+all three offsets are ``0.0``.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  pipelines["pl1/f1/type"] = "3slice";
+  
+.. _threeslicefig:
+
+..  figure:: ../images/three_slice.png
+    :scale: 50 % 
+    :align: center
+
+    An example image of the three slice filter on a zone-centered variable using the 
+    previous code sample with automatic slice plane placement. 
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  pipelines["pl1/f1/type"] = "3slice";
+  
+  // filter knobs (all these are optional)
+  conduit::Node &slice_params = pipelines["pl1/f1/params"];
+  slice_params["x_offset"] = 1.f;   // largest value on the x-axis
+  slice_params["y_offset"] = 0.f;   // middle of the y-axis
+  slice_params["z_offset"] = -1.f;  // smalles value of the z-axis
+
+.. _threeslice2fig:
+
+..  figure:: ../images/three_slice2.png
+    :scale: 50 % 
+    :align: center
+
+    An example image of the three slice filter on a zone-centered variable using the 
+    previous code sample with user specified offsets for each axis. 
+
+:numref:`Figures %s <threeslicefig>` and :numref:`%s <threeslice2fig>` show an images produced from the three slice filter. 
+The full example is located in the file `slice test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_slice.cpp>`_.
 
 Clip
 ~~~~
@@ -179,3 +285,14 @@ Only the area outside of the implicit function remains.
   clip_params["sphere/center/y"] = 0.;
   clip_params["sphere/center/z"] = 0.;
   
+.. _clipfig:
+
+..  figure:: ../images/clip.png
+    :scale: 50 % 
+    :align: center
+
+    An example image of the clip filter using the previous code sample. 
+    The data set is a cube with extents from (-10, -10, -10) to (10, 10, 10), and the code removes a sphere centered at the origin with a radius of 11.
+
+:numref:`Figure %s <clipfig>` shows an image produced from the clip filter. 
+The full example is located in the file `clip test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_clip.cpp>`_.

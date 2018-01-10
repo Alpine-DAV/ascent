@@ -49,13 +49,21 @@ Source distributions for Ascent are hosted on github:
 
 https://github.com/Alpine-DAV/ascent/releases
 
+v0.2.0
+-------
+
+The second release of Ascent.
+
+* `v0.2.0 Source Tarball <https://github.com/Alpine-DAV/ascent/releases>`_
+* `v0.2.0 Docs <http://software.llnl.gov/ascent/v0.2.0>`_
+
 v0.1.0
 -------
 
 The initial release of Ascent.
 
-* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases>`_
-* `Docs <http://software.llnl.gov/ascent/v0.1.0>`_
+* `v0.1.0 Source Tarball <https://github.com/Alpine-DAV/ascent/releases>`_
+* `v0.1.0 Docs <http://software.llnl.gov/ascent/v0.1.0>`_
 
 
 

@@ -173,6 +173,10 @@ Ascent's build system supports the following CMake options:
 
  To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (for an example see: src/host-configs/chaos_5_x86_64.cmake)
 
+.. warning::
+  Starting in CMake 3.10, the FindMPI **MPIEXEC** variable was changed to **MPIEXEC_EXECUTABLE**. FindMPI will still set **MPIEXEC**, but any attempt to change it before calling FindMPI with your own cached value of **MPIEXEC** will not survive, so you need to set **MPIEXEC_EXECUTABLE** `[reference] <https://cmake.org/cmake/help/v3.10/module/FindMPI.html>`_. 
+
+
 * **CONDUIT_DIR** - Path to an Conduit install *(required for parallel version)*. 
 
 * **VTKM_DIR** - Path to an VTK-m install *(optional)*. 
@@ -181,7 +185,9 @@ Ascent's build system supports the following CMake options:
 
 * **ADIOS_DIR** - Path to a ADIOS install *(optional)*. 
 
+* **BLT_SOURCE_DIR** - Path to BLT.  *(default = "blt")*
 
+ Defaults to "blt", where we expect the blt submodule. The most compelling reason to override is to share a single instance of BLT across multiple projects.
 
 Host Config Files
 -----------------
@@ -374,8 +380,6 @@ When building Ascents dependencies, it is **highly** recommended to fill out a h
 This is the best way to avoid problems that can easily arise from mixing c++ standard libraries conflicts, MPI library conflicts, and fortran module conflicts, all of which are difficult to spot.
 Use the same CMake host-config file for each of Ascent's dependencies, and while this may bring in unused cmake variables and clutter the ccmake curses interface, it will help avoid problems.
 In the host config, you can specify options such as ``ENABLE_PYTHON=OFF`` and ``ENABLE_FORTRAN=OFF`` that will be respected by both conduit and ascent.
-
-.. warning:: At this time, VTK-m cannot be built and linked to with Intel Compilers because of an issue with symbol visibility. Consequently, we only recommend building Ascent with GNU compilers with c++11 support.
 
 HDF5 (Optional)
 ^^^^^^^^^^^^^^^
