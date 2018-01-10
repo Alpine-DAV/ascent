@@ -52,11 +52,11 @@
 #ifndef FLOW_PYTHON_INTERPRETER_HPP
 #define FLOW_PYTHON_INTERPRETER_HPP
 
+#include <Python.h>
+
 #include <flow_exports.h>
 #include <string>
-#include <Python.h>
 #include <conduit.hpp>
-
 
 //-----------------------------------------------------------------------------
 // -- begin flow:: --
