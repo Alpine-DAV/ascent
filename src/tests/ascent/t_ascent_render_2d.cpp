@@ -203,6 +203,75 @@ TEST(ascent_render_2d, test_render_2d_render_serial_backend)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_render_2d, test_render_2d_uniform_render_serial_backend)
+{
+    
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 2D Ascent Serial "
+                      "Pipeline test");
+        return;
+    }
+    
+    ASCENT_INFO("Testing 2D Ascent Runtime");
+    
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               0,
+                                               data);
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
+    
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_ascent_serial_backend");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+    Node actions;
+
+    conduit::Node scenes;
+    scenes["scene1/plots/plt1/type"]         = "pseudocolor";
+    scenes["scene1/plots/plt1/params/field"] = "braid";
+    scenes["scene1/image_prefix"] =  output_file;
+
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+    conduit::Node &execute = actions.append();
+    execute["action"] = "execute";
+    actions.print();
+    
+    //
+    // Run Ascent
+    //
+    
+    Ascent ascent;
+    Node ascent_opts;
+    // default is now ascent
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["runtime/backend"] = "serial";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
