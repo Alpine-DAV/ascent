@@ -235,7 +235,7 @@ After building these libraries and tools, it writes an initial *host-config* fil
     source bootstrap-env.sh
     
     #copy the generated host-config file into the standard location
-    cp uberenv_libs/`hostname`*.cmake to host-configs/
+    cp uberenv_libs/`hostname`*.cmake host-configs/
     
     # run the configure helper script
     ./config-build.sh
