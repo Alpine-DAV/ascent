@@ -121,6 +121,7 @@ private:
                                        PyObject *py_etrace,
                                        std::string &res);
 
+    bool         m_handled_init;
     bool         m_running;
     bool         m_error;
     std::string  m_error_msg;

@@ -75,8 +75,9 @@ namespace flow
 //-----------------------------------------------------------------------------
 PythonInterpreter::PythonInterpreter()
 {
-    m_running = false;
-    m_error   = false;
+    m_handled_init = false;
+    m_running      = false;
+    m_error        = false;
     
     m_py_main_module = NULL;
     m_py_global_dict = NULL;
@@ -114,22 +115,48 @@ PythonInterpreter::initialize(int argc, char **argv)
     if(m_running)
         return true;
 
-    // Init Python
-    Py_Initialize();
-    PyEval_InitThreads();
-
-    if(argc == 0 || argv == NULL)
+    // Check Py_IsInitialized(), some one else may have inited python
+    if(Py_IsInitialized())
     {
-        char *prog_name = (char*)"flow_embedded_py";
-        Py_SetProgramName(prog_name);
-        PySys_SetArgv(1, &prog_name);
+        // make sure we know we don't need to clean up the interp
+        m_handled_init = false;
     }
     else
     {
-        Py_SetProgramName(argv[0]);
-        PySys_SetArgv(argc, argv);
+        // set prog name
+        char *prog_name = (char*)"flow_embedded_py";
+        
+        if(argc == 0 || argv == NULL)
+        {
+            Py_SetProgramName(prog_name);
+        }
+        else
+        {
+            Py_SetProgramName(argv[0]);
+        }
+
+        // Init Python
+        Py_Initialize();
+        PyEval_InitThreads();
+
+        // set sys argvs
+        
+        if(argc == 0 || argv == NULL)
+        {
+            PySys_SetArgv(1, &prog_name);
+        }
+        else
+        {
+            PySys_SetArgv(argc, argv);
+        }
+        
+        // make sure we know we need to cleanup the interp
+        m_handled_init = true;
     }
 
+    
+    // do to setup b/c we need for c++ connection , even if python was already
+    // inited
 
     // setup up __main__ and capture StdErr
     PyRun_SimpleString("import os,sys,traceback,StringIO\n");
@@ -151,8 +178,9 @@ PythonInterpreter::initialize(int argc, char **argv)
     m_py_sio_module   = PyImport_AddModule("StringIO");
     PyObject *py_sio_dict= PyModule_GetDict(m_py_sio_module);
     m_py_sio_class = PyDict_GetItemString(py_sio_dict,"StringIO");
-    m_running = true;
     
+    m_running = true;
+
     return true;
 }
 
@@ -184,8 +212,13 @@ PythonInterpreter::shutdown()
 {
     if(m_running)
     {
-        Py_Finalize();
+        if(m_handled_init)
+        {
+            Py_Finalize();
+        }
+        
         m_running = false;
+        m_handled_init = false;
     }
 }
 
