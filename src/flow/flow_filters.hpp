@@ -53,6 +53,7 @@
 #define FLOW_FILTERS_HPP
 
 #include <flow_exports.h>
+#include <flow_config.h>
 
 //-----------------------------------------------------------------------------
 // -- begin flow --

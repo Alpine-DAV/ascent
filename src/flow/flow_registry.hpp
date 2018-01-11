@@ -55,6 +55,7 @@
 #include <conduit.hpp>
 
 #include <flow_exports.h>
+#include <flow_config.h>
 #include <flow_data.hpp>
 
 

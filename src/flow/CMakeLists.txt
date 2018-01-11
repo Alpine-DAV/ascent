@@ -49,7 +49,7 @@
 #
 ###############################################################################
 
-set(FLOW_PYTHON_ENABLED ${PYHTON_FOUND})
+set(FLOW_PYTHON_ENABLED ${PYTHON_FOUND})
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/flow_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/flow_config.h")
@@ -88,13 +88,14 @@ set(flow_thirdparty_libs
 
 if(PYTHON_FOUND)
    list(APPEND flow_sources
-        flow_python_interpreter.cpp)
-        #filters/flow_python_support.cpp)
+        flow_python_interpreter.cpp
+        filters/flow_python_script_filter.cpp)
    
    list(APPEND flow_headers
-        flow_python_interpreter.hpp)
-        #filters/flow_python_support.hpp)
-   # allow ascent to link with python
+        flow_python_interpreter.hpp
+        filters/flow_python_script_filter.hpp)
+
+   # allow flow to link with python
    list(APPEND flow_thirdparty_libs python)
 
 endif()
