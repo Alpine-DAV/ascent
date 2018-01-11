@@ -147,6 +147,77 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
+{
+    
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D serial test");
+        return;
+    }
+    
+    ASCENT_INFO("Testing 3D Rendering with Ascent runtime using Serial Backend");
+    
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path, "tout_render_3d_ascent_serial_backend_uniform");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+ 
+ 
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+    actions.print();
+    
+    //
+    // Run Ascent
+    //
+    
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["runtime/backend"] = "serial";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+    
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
 {
     
