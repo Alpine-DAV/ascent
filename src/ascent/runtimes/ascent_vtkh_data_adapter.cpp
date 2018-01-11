@@ -424,14 +424,19 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
     
     int dims_i = n_dims["i"].to_int();
     int dims_j = n_dims["j"].to_int();
-    int dims_k = 0;
+    int dims_k = 1;
+
+    bool is_2d = true;
 
     // check for 3d
     if(n_dims.has_path("k"))
     {
         dims_k = n_dims["k"].to_int();
+        is_2d = false;
     }
     
+    
+
     float64 origin_x = 0.0;
     float64 origin_y = 0.0;
     float64 origin_z = 0.0;
@@ -501,19 +506,28 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
                                                               dims,
                                                               origin,
                                                               spacing));
-    
-    vtkm::cont::CellSetStructured<3> cell_set(topo_name.c_str());
-    cell_set.SetPointDimensions(dims);
-    result->AddCellSet(cell_set);
+    if(is_2d)
+    {
+      vtkm::Id2 dims2(dims[0], dims[1]); 
+      vtkm::cont::CellSetStructured<2> cell_set(topo_name.c_str());
+      cell_set.SetPointDimensions(dims2);
+      result->AddCellSet(cell_set);
+    }
+    else
+    {
+      vtkm::cont::CellSetStructured<3> cell_set(topo_name.c_str());
+      cell_set.SetPointDimensions(dims);
+      result->AddCellSet(cell_set);
+    }
 
     neles =  (dims_i - 1) * (dims_j - 1);
-    if(dims_k > 0)
+    if(dims_k > 1)
     {
         neles *= (dims_k - 1);
     }
     
     nverts =  dims_i * dims_j;
-    if(dims_k > 0)
+    if(dims_k > 1)
     {
         nverts *= dims_k;
     }
