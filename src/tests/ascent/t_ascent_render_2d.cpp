@@ -232,7 +232,7 @@ TEST(ascent_render_2d, test_render_2d_uniform_render_serial_backend)
     verify_info.print();
     
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_ascent_serial_backend");
+    string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_uniform_ascent_serial_backend");
     // remove old images before rendering
     remove_test_image(output_file);
 
