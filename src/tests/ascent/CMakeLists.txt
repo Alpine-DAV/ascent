@@ -83,6 +83,10 @@ if(ADIOS_FOUND)
    list(APPEND MPI_TESTS t_ascent_mpi_adios_extract)
 endif()
 
+if(PYTHON_FOUND AND ENABLE_PYTHON)
+    list(APPEND BASIC_TESTS t_ascent_python_script_extract)
+endif()
+
 
 ################################
 # Add main tests

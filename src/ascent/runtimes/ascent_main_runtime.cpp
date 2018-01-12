@@ -410,6 +410,11 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
       params["protocol"] = "blueprint/mesh/hdf5";
     }
   }
+  else if(extract["type"].as_string() == "python")
+  {
+    filter_name = "python_script";
+    // todo, inspect args, if passed via file, read on root proc and broadcast
+  }
   else
   {
     ASCENT_ERROR("Unrecognized extract type "<<extract["type"].as_string());
@@ -417,8 +422,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
  
   if(w.graph().has_filter(extract_name))
   {
-    ASCENT_INFO("Duplicate extract name "<<extract_name
-                <<" original is being overwritted");
+    ASCENT_INFO("Duplicate extract filter named " 
+                << "\"" << extract_name << "\"" 
+                << " original is being overwritten");
   }
 
 
@@ -426,11 +432,11 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   conduit::Node empty_params; 
   
   w.graph().add_filter("ensure_blueprint",
-                       ensure_name,           
+                       ensure_name,
                        empty_params);
 
   w.graph().add_filter(filter_name,
-                       extract_name,           
+                       extract_name,
                        params);
 
   //
