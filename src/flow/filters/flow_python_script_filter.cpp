@@ -182,18 +182,33 @@ bool
 PythonScript::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
+    CONDUIT_INFO(params.to_json());
     info.reset();
     bool res = true;
     
-    if( !((params.has_child("source") && params["source"].dtype().is_string()) || 
-         (params.has_child("file")   && params["file"].dtype().is_string()))
-       )
+    if( params.has_child("source") )
+    {
+        if( !params["source"].dtype().is_string() )
+        {
+            info["errors"].append() = "parameter 'source' is not a string";
+            res = false;
+        }
+    }
+    else if( params.has_child("file") )
+    {
+        if( !params["file"].dtype().is_string() )
+        {
+            info["errors"].append() = "parameter 'file' is not a string";
+            res = false;
+        }
+    }
+    else
     {
         info["errors"].append() = "Missing required string parameter"
                                   " 'source' or 'file'";
         res = false;
     }
-    
+
     return res;
 }
 

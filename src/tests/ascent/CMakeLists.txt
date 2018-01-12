@@ -84,7 +84,8 @@ if(ADIOS_FOUND)
 endif()
 
 if(PYTHON_FOUND AND ENABLE_PYTHON)
-    list(APPEND BASIC_TESTS t_ascent_python_script_extract)
+    list(APPEND BASIC_TESTS t_ascent_python_extract)
+    list(APPEND MPI_TESTS t_ascent_mpi_python_extract)
 endif()
 
 
