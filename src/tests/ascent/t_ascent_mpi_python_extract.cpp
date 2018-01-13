@@ -67,71 +67,71 @@ using ascent::Ascent;
 std::string py_script = "\n"
 "v = input()\n"
 "print(v['state'])\n";
-//
-// //-----------------------------------------------------------------------------
-// TEST(ascent_mpi_runtime, test_pyhton_script_extract_src)
-// {
-//     //
-//     // Set Up MPI
-//     //
-//     int par_rank;
-//     int par_size;
-//     MPI_Comm comm = MPI_COMM_WORLD;
-//     MPI_Comm_rank(comm, &par_rank);
-//     MPI_Comm_size(comm, &par_size);
-//
-//     ASCENT_INFO("Rank "
-//                 << par_rank
-//                 << " of "
-//                 << par_size
-//                 << " reporting");
-//
-//     //
-//     // Create the data.
-//     //
-//     Node data, verify_info;
-//     create_3d_example_dataset(data,par_rank,par_size);
-//     data["state/cycle"] = 101;
-//
-//     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-//
-//     //
-//     // Create the actions.
-//     //
-//
-//     conduit::Node extracts;
-//     extracts["e1/type"]  = "python";
-//     extracts["e1/params/source"] = py_script;
-//
-//     conduit::Node actions;
-//     // add the extracts
-//     conduit::Node &add_extracts = actions.append();
-//     add_extracts["action"] = "add_extracts";
-//     add_extracts["extracts"] = extracts;
-//
-//     conduit::Node &execute  = actions.append();
-//     execute["action"] = "execute";
-//
-//     actions.print();
-//
-//     //
-//     // Run Ascent
-//     //
-//
-//
-//     Ascent ascent;
-//
-//     Node ascent_opts;
-//     // we use the mpi handle provided by the fortran interface
-//     // since it is simply an integer
-//     ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-//     ascent_opts["runtime"] = "ascent";
-//     ascent.open(ascent_opts);
-//     ascent.publish(data);
-//     ascent.execute(actions);
-//     ascent.close();
-//
-//}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_mpi_runtime, test_pyhton_script_extract_src)
+{
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    ASCENT_INFO("Rank "
+                << par_rank
+                << " of "
+                << par_size
+                << " reporting");
+
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    create_3d_example_dataset(data,par_rank,par_size);
+    data["state/cycle"] = 101;
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "python";
+    extracts["e1/params/source"] = py_script;
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+}
 
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_runtime, test_python_script_extract_file)
