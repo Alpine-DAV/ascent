@@ -415,6 +415,8 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     filter_name = "python_script";
 
 #ifdef ASCENT_MPI_ENABLED
+    // for MPI case, inspect args, if script is passed via file,
+    // read contents on root and broadcast to other tasks
     int comm_id =flow::Workspace::default_mpi_comm();
     MPI_Comm comm = MPI_Comm_f2c(comm_id);
     int rank = relay::mpi::rank(comm);
@@ -458,9 +460,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
  
   if(w.graph().has_filter(extract_name))
   {
-    ASCENT_INFO("Duplicate extract filter named " 
-                << "\"" << extract_name << "\"" 
-                << " original is being overwritten");
+    ASCENT_ERROR("Cannot add extract filter, extract named" 
+                 << " \"" << extract_name << "\""
+                 << " already exists");
   }
 
 
