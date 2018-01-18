@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Alpine. 
+// This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/alpine/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -42,75 +42,72 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_filters.cpp
+/// file: t_ascent_python_script_extract.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <flow_filters.hpp>
+#include "gtest/gtest.h"
+
+#include <ascent.hpp>
+
+#include <iostream>
+#include <conduit_blueprint.hpp>
+
+#include "t_config.hpp"
+#include "t_utils.hpp"
+
+using namespace std;
+using namespace conduit;
+using ascent::Ascent;
+
+std::string py_script = "\n"
+"v = input()\n"
+"print(v['state'])\n";
 
 //-----------------------------------------------------------------------------
-// flow includes
-//-----------------------------------------------------------------------------
-#include <flow_workspace.hpp>
-#include <flow_builtin_filters.hpp>
-
-#ifdef FLOW_PYTHON_ENABLED
-#include <flow_python_script_filter.hpp>
-#endif
-
-//-----------------------------------------------------------------------------
-// -- begin flow:: --
-//-----------------------------------------------------------------------------
-namespace flow
+TEST(ascent_runtime, test_pyhton_script_extract)
 {
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    create_3d_example_dataset(data,0,1);
+    data["state/cycle"] = 101; 
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
+    
+    //
+    // Create the actions.
+    //
 
-//-----------------------------------------------------------------------------
-// -- begin flow::filters --
-//-----------------------------------------------------------------------------
-namespace filters
-{
+    conduit::Node extracts;
+    extracts["e1/type"]  = "python";
+    extracts["e1/params/source"] = py_script;
+    
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
 
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+    
+    actions.print();
+    
+    //
+    // Run Ascent
+    //
 
-//-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
-{
-    if(!Workspace::supports_filter_type<RegistrySource>())
-    {
-        Workspace::register_filter_type<RegistrySource>();
-    }
-
-    if(!Workspace::supports_filter_type<Alias>())
-    {
-        Workspace::register_filter_type<Alias>();
-    }
-#ifdef FLOW_PYTHON_ENABLED
-    if(!Workspace::supports_filter_type<PythonScript>())
-    {
-        Workspace::register_filter_type<PythonScript>();
-    }
-#endif
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+   
 }
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow::filters --
-//-----------------------------------------------------------------------------
-
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow:: --
-//-----------------------------------------------------------------------------
-
 
 

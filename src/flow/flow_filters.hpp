@@ -52,6 +52,8 @@
 #ifndef FLOW_FILTERS_HPP
 #define FLOW_FILTERS_HPP
 
+#include <flow_exports.h>
+#include <flow_config.h>
 
 //-----------------------------------------------------------------------------
 // -- begin flow --
@@ -66,7 +68,7 @@ namespace filters
 {
     
     // registers all built-in filter types.
-    void register_builtin();
+    void FLOW_API register_builtin();
 
 };
 //-----------------------------------------------------------------------------

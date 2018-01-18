@@ -45,21 +45,26 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_filters.cpp
+/// file: flow_python_script_filter.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <flow_filters.hpp>
 
-//-----------------------------------------------------------------------------
-// flow includes
-//-----------------------------------------------------------------------------
-#include <flow_workspace.hpp>
-#include <flow_builtin_filters.hpp>
 
-#ifdef FLOW_PYTHON_ENABLED
-#include <flow_python_script_filter.hpp>
-#endif
+/// This support enables running python-based filter scripts
+/// in the case that the host code does not have python.
+/// if the host code is python, we don't need to bring our own
+/// python interpreter
+
+
+#ifndef FLOW_PYTHON_SCRIPT_FILTER_HPP
+#define FLOW_PYTHON_SCRIPT_FILTER_HPP
+
+#include <flow_exports.h>
+#include <flow_config.h>
+
+#include <flow_filter.hpp>
+
 
 //-----------------------------------------------------------------------------
 // -- begin flow:: --
@@ -67,35 +72,37 @@
 namespace flow
 {
 
+class PythonInterpreter;
+
 //-----------------------------------------------------------------------------
 // -- begin flow::filters --
 //-----------------------------------------------------------------------------
 namespace filters
 {
 
+//-----------------------------------------------------------------------------
+///
+/// PythonScript runs a given python source. 
+///
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
+class PythonScript : public ::flow::Filter
 {
-    if(!Workspace::supports_filter_type<RegistrySource>())
-    {
-        Workspace::register_filter_type<RegistrySource>();
-    }
+public:
+    PythonScript();
+   ~PythonScript();
 
-    if(!Workspace::supports_filter_type<Alias>())
-    {
-        Workspace::register_filter_type<Alias>();
-    }
-#ifdef FLOW_PYTHON_ENABLED
-    if(!Workspace::supports_filter_type<PythonScript>())
-    {
-        Workspace::register_filter_type<PythonScript>();
-    }
-#endif
-}
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+
+private:
+
+    static flow::PythonInterpreter *interpreter();
+    static flow::PythonInterpreter *m_interp;
+};
 
 
 //-----------------------------------------------------------------------------
@@ -105,12 +112,16 @@ register_builtin()
 //-----------------------------------------------------------------------------
 
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end flow:: --
 //-----------------------------------------------------------------------------
 
+
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------
 
 

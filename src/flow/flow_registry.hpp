@@ -54,6 +54,8 @@
 
 #include <conduit.hpp>
 
+#include <flow_exports.h>
+#include <flow_config.h>
 #include <flow_data.hpp>
 
 
@@ -117,7 +119,7 @@ namespace flow
 // output()->set(my_new_data)
 
 //-----------------------------------------------------------------------------
-class Registry
+class FLOW_API Registry
 {
 public:
 

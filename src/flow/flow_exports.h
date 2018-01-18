@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Alpine. 
+// This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/alpine/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,72 +45,39 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_filters.cpp
+/// file: flow_exports.h
 ///
 //-----------------------------------------------------------------------------
 
-#include <flow_filters.hpp>
+#ifndef FLOW_EXPORTS_H
+#define FLOW_EXPORTS_H
 
 //-----------------------------------------------------------------------------
-// flow includes
+// -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
-#include <flow_workspace.hpp>
-#include <flow_builtin_filters.hpp>
-
-#ifdef FLOW_PYTHON_ENABLED
-#include <flow_python_script_filter.hpp>
+#if defined(_WIN32)
+#if defined(FLOW_EXPORTS) || defined(flow_EXPORTS)
+#define ASCENT_API __declspec(dllexport)
+#else
+#define ASCENT_API __declspec(dllimport)
+#endif
+#if defined(_MSC_VER)
+// Turn off warning about lack of DLL interface
+#pragma warning(disable:4251)
+// Turn off warning non-dll class is base for dll-interface class.
+#pragma warning(disable:4275)
+// Turn off warning about identifier truncation
+#pragma warning(disable:4786)
+#endif
+#else
+# if __GNUC__ >= 4 && (defined(FLOW_EXPORTS) || defined(flow_EXPORTS))
+#   define FLOW_API __attribute__ ((visibility("default")))
+# else
+#   define FLOW_API /* hidden by default */
+# endif
 #endif
 
-//-----------------------------------------------------------------------------
-// -- begin flow:: --
-//-----------------------------------------------------------------------------
-namespace flow
-{
-
-//-----------------------------------------------------------------------------
-// -- begin flow::filters --
-//-----------------------------------------------------------------------------
-namespace filters
-{
-
-
-//-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
-{
-    if(!Workspace::supports_filter_type<RegistrySource>())
-    {
-        Workspace::register_filter_type<RegistrySource>();
-    }
-
-    if(!Workspace::supports_filter_type<Alias>())
-    {
-        Workspace::register_filter_type<Alias>();
-    }
-#ifdef FLOW_PYTHON_ENABLED
-    if(!Workspace::supports_filter_type<PythonScript>())
-    {
-        Workspace::register_filter_type<PythonScript>();
-    }
 #endif
-}
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow::filters --
-//-----------------------------------------------------------------------------
-
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow:: --
-//-----------------------------------------------------------------------------
 
 
 

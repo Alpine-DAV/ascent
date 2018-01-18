@@ -52,8 +52,9 @@
 #ifndef FLOW_GRAPH_HPP
 #define FLOW_GRAPH_HPP
 
+#include <flow_exports.h>
+#include <flow_config.h>
 #include <flow_filter.hpp>
-
 
 
 //-----------------------------------------------------------------------------
@@ -70,7 +71,7 @@ class Workspace;
 ///
 //-----------------------------------------------------------------------------
 
-class Graph
+class FLOW_API Graph
 {
 public:
     

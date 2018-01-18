@@ -410,6 +410,47 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
       params["protocol"] = "blueprint/mesh/hdf5";
     }
   }
+  else if(extract["type"].as_string() == "python")
+  {
+    filter_name = "python_script";
+
+#ifdef ASCENT_MPI_ENABLED
+    int comm_id =flow::Workspace::default_mpi_comm();
+    MPI_Comm comm = MPI_Comm_f2c(comm_id);
+    int rank = relay::mpi::rank(comm);
+    MPI_Comm_rank(comm,&rank);
+    
+     if(params.has_path("file"))
+     {
+       Node n_py_src;
+       // read script only on rank 0 
+       if(rank == 0)
+       {
+         std::string script_fname = params["file"].as_string();
+         ifstream ifs(script_fname.c_str());
+
+         ostringstream py_src;
+         py_src << "# script from: " << script_fname << std::endl;
+         copy(istreambuf_iterator<char>(ifs),
+              istreambuf_iterator<char>(),
+              ostreambuf_iterator<char>(py_src));
+         n_py_src.set(py_src.str());
+       }
+
+       relay::mpi::broadcast_using_schema(n_py_src,0,comm);
+       
+       if(!n_py_src.dtype().is_string())
+       {
+         ASCENT_ERROR("broadcast of python script source failed");
+       }
+       // replace file param with source that includes actual script
+       params.remove("file");
+       params["source"] = n_py_src;
+     }
+#endif
+  
+    // todo, inspect args, if passed via file, read on root proc and broadcast
+  }
   else
   {
     ASCENT_ERROR("Unrecognized extract type "<<extract["type"].as_string());
@@ -417,8 +458,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
  
   if(w.graph().has_filter(extract_name))
   {
-    ASCENT_INFO("Duplicate extract name "<<extract_name
-                <<" original is being overwritted");
+    ASCENT_INFO("Duplicate extract filter named " 
+                << "\"" << extract_name << "\"" 
+                << " original is being overwritten");
   }
 
 
@@ -426,11 +468,11 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   conduit::Node empty_params; 
   
   w.graph().add_filter("ensure_blueprint",
-                       ensure_name,           
+                       ensure_name,
                        empty_params);
 
   w.graph().add_filter(filter_name,
-                       extract_name,           
+                       extract_name,
                        params);
 
   //
@@ -467,7 +509,7 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
   }
 
   w.graph().add_filter(filter_name,
-                       plot_name,           
+                       plot_name,
                        plot);
 
   //

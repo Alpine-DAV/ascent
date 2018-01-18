@@ -45,21 +45,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_filters.cpp
+/// file: flow_python_interpreter.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <flow_filters.hpp>
+#ifndef FLOW_PYTHON_INTERPRETER_HPP
+#define FLOW_PYTHON_INTERPRETER_HPP
 
-//-----------------------------------------------------------------------------
-// flow includes
-//-----------------------------------------------------------------------------
-#include <flow_workspace.hpp>
-#include <flow_builtin_filters.hpp>
+#include <Python.h>
 
-#ifdef FLOW_PYTHON_ENABLED
-#include <flow_python_script_filter.hpp>
-#endif
+#include <flow_exports.h>
+#include <string>
+#include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin flow:: --
@@ -68,42 +65,76 @@ namespace flow
 {
 
 //-----------------------------------------------------------------------------
-// -- begin flow::filters --
+///
+/// Simple C++ Embeddable Python Interpreter.
+/// 
+/// Note: This is based on VisIt's Embedded Python Interpreter implementation:
+///          src/avt/PythonFilters/PythonInterpreter.{h,cpp}
 //-----------------------------------------------------------------------------
-namespace filters
+
+class FLOW_API PythonInterpreter
 {
+public:
+                 PythonInterpreter();
+    virtual     ~PythonInterpreter();
 
+    /// instance lifetime control
+    bool         initialize(int argc=0, char **argv=NULL);
+    
+    bool         is_running() { return m_running; }
+    void         reset();
+    void         shutdown();
 
-//-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
-{
-    if(!Workspace::supports_filter_type<RegistrySource>())
-    {
-        Workspace::register_filter_type<RegistrySource>();
-    }
+    /// helper to add a system path to access new modules
+    bool         add_system_path(const std::string &path);
 
-    if(!Workspace::supports_filter_type<Alias>())
-    {
-        Workspace::register_filter_type<Alias>();
-    }
-#ifdef FLOW_PYTHON_ENABLED
-    if(!Workspace::supports_filter_type<PythonScript>())
-    {
-        Workspace::register_filter_type<PythonScript>();
-    }
-#endif
-}
+    /// script exec
+    bool         run_script(const std::string &script);
+    bool         run_script_file(const std::string &fname);
 
+    /// access to global dict
+    bool         set_global_object(PyObject *py_obj,
+                                   const std::string &name);
 
-//-----------------------------------------------------------------------------
+    PyObject    *get_global_object(const std::string &name);
+
+    PyObject    *global_dict() { return m_py_global_dict; }
+
+    /// error checking 
+    bool         check_error();
+    void         clear_error();
+    std::string  error_message() const { return m_error_msg; }
+
+    /// helpers to obtain values from basic objects
+    static bool  PyObject_to_double(PyObject *py_obj,
+                                    double &res);
+
+    static bool  PyObject_to_string(PyObject *py_obj,
+                                    std::string &res);
+    
+    static bool  PyObject_to_int(PyObject *py_obj,
+                                 int &res);
+
+private:
+    bool         PyTraceback_to_string(PyObject *py_etype,
+                                       PyObject *py_eval,
+                                       PyObject *py_etrace,
+                                       std::string &res);
+
+    bool         m_handled_init;
+    bool         m_running;
+    bool         m_error;
+    std::string  m_error_msg;
+
+    PyObject    *m_py_main_module;
+    PyObject    *m_py_global_dict;
+
+    PyObject    *m_py_trace_module;
+    PyObject    *m_py_sio_module;
+    PyObject    *m_py_trace_print_exception_func;
+    PyObject    *m_py_sio_class;
+
 };
-//-----------------------------------------------------------------------------
-// -- end flow::filters --
-//-----------------------------------------------------------------------------
-
 
 
 //-----------------------------------------------------------------------------
@@ -112,5 +143,9 @@ register_builtin()
 // -- end flow:: --
 //-----------------------------------------------------------------------------
 
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------
 
 

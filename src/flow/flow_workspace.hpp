@@ -54,6 +54,8 @@
 
 #include <conduit.hpp>
 
+#include <flow_exports.h>
+#include <flow_config.h>
 #include <flow_data.hpp>
 #include <flow_registry.hpp>
 #include <flow_graph.hpp>
@@ -72,7 +74,7 @@ namespace flow
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class Workspace
+class FLOW_API Workspace
 {
 public:
 

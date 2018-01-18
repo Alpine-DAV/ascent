@@ -61,6 +61,8 @@
 #ifndef FLOW_HPP
 #define FLOW_HPP
 
+#include <flow_config.h>
+
 #include <conduit.hpp>
 
 #include <flow_data.hpp>

@@ -207,7 +207,6 @@ class DataWrapper<PyObject>: public Data
     {
         if(data_ptr() != NULL)
         {
-            std::cout << "DataWrapper<PyObject> Decref" << std::endl;
             PyObject *py_obj =(PyObject*) data_ptr();
             Py_DECREF(py_obj);
             set_data_ptr(NULL);
@@ -252,7 +251,7 @@ public:
         //empty
     }
 
-    //-------------------------------------------------------------------------        
+    //-------------------------------------------------------------------------
     virtual ~PyFlow_Ensure_Python()
     {
         //empty
@@ -309,7 +308,7 @@ public:
         //empty
     }
 
-    //-------------------------------------------------------------------------    
+    //-------------------------------------------------------------------------
     virtual void declare_interface(conduit::Node &iface)
     {
         iface["type_name"]   = "ensure_conduit";

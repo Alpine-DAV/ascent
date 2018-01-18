@@ -54,6 +54,9 @@
 
 #include <conduit.hpp>
 
+#include <flow_exports.h>
+#include <flow_config.h>
+
 
 //-----------------------------------------------------------------------------
 // -- begin flow:: --
@@ -82,7 +85,7 @@ template <class T>
 class DataWrapper;
 
 //-----------------------------------------------------------------------------
-class Data
+class FLOW_API Data
 {
 public:
     Data(void *data);
@@ -134,7 +137,7 @@ private:
 
 //-----------------------------------------------------------------------------
 template <class T>
-class DataWrapper: public Data
+class FLOW_API DataWrapper: public Data
 {
  public:
      

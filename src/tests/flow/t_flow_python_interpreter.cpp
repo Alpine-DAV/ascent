@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Alpine. 
+// This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/alpine/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -42,75 +42,81 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_filters.cpp
+/// file: t_flow_python_interpreter.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <flow_filters.hpp>
+#include "gtest/gtest.h"
+
+#include <flow.hpp>
+#include <flow_python_interpreter.hpp>
+
+
+#include "t_config.hpp"
+
+using namespace std;
+using namespace flow;
 
 //-----------------------------------------------------------------------------
-// flow includes
-//-----------------------------------------------------------------------------
-#include <flow_workspace.hpp>
-#include <flow_builtin_filters.hpp>
-
-#ifdef FLOW_PYTHON_ENABLED
-#include <flow_python_script_filter.hpp>
-#endif
-
-//-----------------------------------------------------------------------------
-// -- begin flow:: --
-//-----------------------------------------------------------------------------
-namespace flow
+TEST(flow_py_interp_exe, flow_python_interpreter)
 {
+    PythonInterpreter py_interp;
+    
+    EXPECT_TRUE(py_interp.initialize());
+    EXPECT_TRUE(py_interp.is_running());
+    
+    EXPECT_TRUE(py_interp.run_script("print(sys.path)"));
+    
+    // test simple script, and pulling out result
+    EXPECT_TRUE(py_interp.run_script("a = 42"));
+    
+    PyObject *py_a = py_interp.get_global_object("a");
+    
+    int a_cpp=0;
+    EXPECT_TRUE(PythonInterpreter::PyObject_to_int(py_a,a_cpp));
+    EXPECT_EQ(a_cpp,42);
 
-//-----------------------------------------------------------------------------
-// -- begin flow::filters --
-//-----------------------------------------------------------------------------
-namespace filters
-{
+    // test adding val from C++ and using 
+    int mlt = 3;
+    PyObject *py_mlt = PyLong_FromLong(mlt);
+    EXPECT_TRUE(py_interp.set_global_object(py_mlt,"mlt"));
+
+    EXPECT_TRUE(py_interp.run_script("b = a * mlt"));
+    
+    PyObject *py_b = py_interp.get_global_object("b");
+    
+    int b_cpp=0;
+    EXPECT_TRUE(PythonInterpreter::PyObject_to_int(py_b,b_cpp));
+    EXPECT_EQ(b_cpp,42*3);
+    
+    
+    // test error
+    EXPECT_FALSE(py_interp.run_script("badbadbad"));
+    CONDUIT_INFO(py_interp.error_message());
+    py_interp.clear_error();
+    
+    // test resume after error
+        
+    py_interp.run_script("print('ok')");
 
 
-//-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
-{
-    if(!Workspace::supports_filter_type<RegistrySource>())
-    {
-        Workspace::register_filter_type<RegistrySource>();
-    }
+    // clear dict
+    py_interp.reset();
+    
 
-    if(!Workspace::supports_filter_type<Alias>())
-    {
-        Workspace::register_filter_type<Alias>();
-    }
-#ifdef FLOW_PYTHON_ENABLED
-    if(!Workspace::supports_filter_type<PythonScript>())
-    {
-        Workspace::register_filter_type<PythonScript>();
-    }
-#endif
+    PyObject *py_a_after_clear = py_interp.get_global_object("a");
+    EXPECT_TRUE(py_a_after_clear == NULL);
+
+
+    // shutdown
+    py_interp.shutdown();
+    
+    EXPECT_FALSE(py_interp.is_running());
+    
 }
 
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow::filters --
-//-----------------------------------------------------------------------------
-
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow:: --
-//-----------------------------------------------------------------------------
 
 
 

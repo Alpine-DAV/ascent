@@ -7,11 +7,11 @@
 // 
 // All rights reserved.
 // 
-// This file is part of Alpine. 
+// This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/alpine/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -42,75 +42,93 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_filters.cpp
+/// file: t_flow_python_script_filter.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <flow_filters.hpp>
+#include "gtest/gtest.h"
 
-//-----------------------------------------------------------------------------
-// flow includes
-//-----------------------------------------------------------------------------
-#include <flow_workspace.hpp>
-#include <flow_builtin_filters.hpp>
-
-#ifdef FLOW_PYTHON_ENABLED
+#include <flow.hpp>
 #include <flow_python_script_filter.hpp>
-#endif
+
+#include <iostream>
+#include <math.h>
+
+#include "t_config.hpp"
+#include "t_utils.hpp"
+
+
+
+using namespace std;
+using namespace conduit;
+using namespace ascent;
+using namespace flow;
+
 
 //-----------------------------------------------------------------------------
-// -- begin flow:: --
-//-----------------------------------------------------------------------------
-namespace flow
+class SrcFilter: public Filter
 {
+public:
+    SrcFilter()
+    : Filter()
+    {}
+        
+    virtual ~SrcFilter()
+    {}
+
+
+    virtual void declare_interface(Node &i)
+    {
+        i["type_name"]   = "src";
+        i["output_port"] = "true";
+        i["port_names"] = DataType::empty();
+        i["default_params"]["value"].set((int)0);  
+    }
+        
+
+    virtual void execute()
+    {
+        int val = params()["value"].value();
+
+        // set output
+        Node *res = new Node();
+        res->set(val);
+        set_output<Node>(res);
+
+        // the registry will take care of deleting the data
+        // when all consuming filters have executed.
+        ASCENT_INFO("exec: " << name() << " result = " << res->to_json());
+    }
+};
+
 
 //-----------------------------------------------------------------------------
-// -- begin flow::filters --
-//-----------------------------------------------------------------------------
-namespace filters
+TEST(flow_python_script_filter, simple_execute)
 {
+    flow::filters::register_builtin();
 
+    Workspace::register_filter_type<SrcFilter>();
+    
+    Workspace w;
 
-//-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
-{
-    if(!Workspace::supports_filter_type<RegistrySource>())
-    {
-        Workspace::register_filter_type<RegistrySource>();
-    }
+    Node src_params;
+    src_params["value"] = 21;
 
-    if(!Workspace::supports_filter_type<Alias>())
-    {
-        Workspace::register_filter_type<Alias>();
-    }
-#ifdef FLOW_PYTHON_ENABLED
-    if(!Workspace::supports_filter_type<PythonScript>())
-    {
-        Workspace::register_filter_type<PythonScript>();
-    }
-#endif
+    w.graph().add_filter("src","v",src_params);
+    
+    Node py_params;
+    py_params["source"] = "val = input().value() * 2\nprint(val)\nset_output(val)";
+
+    w.graph().add_filter("python_script","py", py_params);
+    
+    // // src, dest, port
+    w.graph().connect("v","py","in");
+    //
+    w.print();
+    //
+    w.execute();
+    
+    Workspace::clear_supported_filter_types();
 }
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow::filters --
-//-----------------------------------------------------------------------------
-
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow:: --
-//-----------------------------------------------------------------------------
-
-
-
