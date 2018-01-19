@@ -51,6 +51,9 @@
 
 #include "flow_python_script_filter.hpp"
 
+// always include python's headers first
+#include <Python.h>
+
 // standard lib includes
 #include <iostream>
 #include <string.h>

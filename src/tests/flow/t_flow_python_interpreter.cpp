@@ -50,6 +50,9 @@
 
 #include "gtest/gtest.h"
 
+// always include python first
+#include <Python.h>
+
 #include <flow.hpp>
 #include <flow_python_interpreter.hpp>
 
