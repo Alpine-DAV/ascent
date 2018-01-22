@@ -48,6 +48,9 @@
 ///
 //-----------------------------------------------------------------------------
 
+// always include python first
+#include <Python.h>
+
 #include "gtest/gtest.h"
 
 #include <flow.hpp>

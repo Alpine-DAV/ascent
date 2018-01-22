@@ -49,6 +49,9 @@
 ///
 //-----------------------------------------------------------------------------
 
+// always include python's headers first
+#include <Python.h>
+
 #include "flow_python_script_filter.hpp"
 
 // standard lib includes
