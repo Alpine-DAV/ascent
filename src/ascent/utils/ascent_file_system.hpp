@@ -65,6 +65,17 @@ bool directory_exists(const std::string &path);
 // helper to create a directory
 bool create_directory(const std::string &path);
 
+// helper to copy a file to another path
+// always overwrites dest_path
+bool copy_file(const std::string &src_path,
+              const std::string &dest_path);
+
+// helper to copy a directory to another path
+// always overwrites contents of dest_path
+bool copy_directory(const std::string &src_path,
+                    const std::string &dest_path);
+
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

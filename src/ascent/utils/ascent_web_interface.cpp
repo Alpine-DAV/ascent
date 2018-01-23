@@ -51,6 +51,7 @@
 #include "ascent_web_interface.hpp"
 
 #include <ascent_config.h>
+#include <ascent_file_system.hpp>
 #include <ascent_logging.hpp>
 
 // thirdparty includes
@@ -72,7 +73,8 @@ namespace ascent
 WebInterface::WebInterface()
 :m_enabled(false),
  m_ms_poll(100),
- m_ms_timeout(100)
+ m_ms_timeout(100),
+ m_doc_root(ASCENT_WEB_CLIENT_ROOT)
 {}
   
 //-----------------------------------------------------------------------------
@@ -81,6 +83,27 @@ WebInterface::~WebInterface()
 }
 
 //-----------------------------------------------------------------------------
+void
+WebInterface::SetDocumentRoot(const std::string &path)
+{
+    m_doc_root = path;
+}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::SetPoll(int ms_poll)
+{
+    m_ms_poll = ms_poll;
+}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::SetTimeout(int ms_timeout)
+{
+    m_ms_timeout = ms_timeout;
+}
+
+
 void
 WebInterface::Enable()
 {
@@ -100,7 +123,16 @@ WebInterface::Connection()
     if(!m_server.is_running())
     {
         m_server.set_port(8081);
-        m_server.set_document_root(ASCENT_WEB_CLIENT_ROOT);
+
+        // if we aren't using the standard doc root loc, copy
+        // the necessary web client files to the requested doc root
+        if(m_doc_root != ASCENT_WEB_CLIENT_ROOT)
+        {
+            copy_directory(ASCENT_WEB_CLIENT_ROOT,
+                           m_doc_root);
+        }
+
+        m_server.set_document_root(m_doc_root);
         m_server.serve();
     }
 

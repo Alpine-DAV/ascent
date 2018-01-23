@@ -44,71 +44,46 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_web_interface.hpp
+/// file: t_ascent_utils.cpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ASCENT_WEB_INTERFACE_HPP
-#define ASCENT_WEB_INTERFACE_HPP
 
-#include <string>
+#include "gtest/gtest.h"
 
-#include <conduit.hpp>
-#include <conduit_relay.hpp>
+#include <ascent.hpp>
 
-#include <ascent_png_encoder.hpp>
+#include <iostream>
+#include <math.h>
+
+#include "t_config.hpp"
+#include "t_utils.hpp"
+
+
+using namespace std;
+using namespace conduit;
+using namespace ascent;
+
 
 //-----------------------------------------------------------------------------
-// -- begin ascent:: --
-//-----------------------------------------------------------------------------
-namespace ascent
+TEST(ascent_utils, ascent_copy_dir)
 {
-
-class WebInterface
-{
-public:
+    string output_path = conduit::utils::join_path(prepare_output_dir(),"my_folder");
     
-     WebInterface();
-    ~WebInterface();
+    string idx_fpath = conduit::utils::join_path(output_path,"index.html");
 
-    // Note: Set methods must be called before first call 
-    // to Push methods.
-
-    // if set, Ascent's web resources (html, js files, etc) are
-    // are copied to and server at the given path
-    // if not set, they are served out of ASCENT_WEB_CLIENT_ROOT
+    // for multiple runs of this test:
+    //  we don't have a util to kill the entire dir, so 
+    //  we simply remove a known file, and check that the copy restores it
     
-    void                            SetDocumentRoot(const std::string &path);
-    void                            SetPoll(int ms_poll);
-    void                            SetTimeout(int ms_timeout);
+    if(conduit::utils::is_file(idx_fpath))
+    {
+        conduit::utils::remove_file(idx_fpath);
+    }
 
-    void                            Enable();
-        
-    void                            PushMessage(const conduit::Node &msg);
-    void                            PushRenders(const conduit::Node &renders);
-        
-private:
-
-    conduit::relay::web::WebSocket *Connection();
-
-    void                            EncodeImage(const std::string &png_file_path,
-                                                conduit::Node &out);
-    bool                            m_enabled;
-    conduit::relay::web::WebServer  m_server;
-    int                             m_ms_poll;
-    int                             m_ms_timeout;
-    std::string                     m_doc_root;
-
-};
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end ascent:: --
-//-----------------------------------------------------------------------------
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
-
+    
+    ascent::copy_directory(ASCENT_WEB_CLIENT_ROOT, output_path);
+    
+    EXPECT_TRUE(directory_exists(conduit::utils::join_path(output_path,"resources")));
+    EXPECT_TRUE(conduit::utils::is_file(idx_fpath));
+}
 
