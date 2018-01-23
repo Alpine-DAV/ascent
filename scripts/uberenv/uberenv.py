@@ -288,6 +288,47 @@ def use_spack_mirror(spack_dir,
                 mirror_name, mirror_path), echo=True)
         print "[using mirror %s]" % mirror_path
 
+
+def find_osx_sdks():
+    """
+    Finds installed osx sdks, returns dict mapping version to file system path
+    """
+    res = {}
+    sdks = glob.glob("/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX*.sdk")
+    for sdk in sdks:
+        sdk_base = os.path.split(sdk)[1]
+        ver = sdk_base[len("MacOSX"):sdk_base.rfind(".")]
+        res[ver] = sdk
+    return res
+
+def setup_osx_sdk_env_vars():
+    """
+    Finds installed osx sdks, returns dict mapping version to file system path
+    """
+    # find current osx version (10.11.6)
+    dep_tgt = platform.mac_ver()[0]
+    # sdk file names use short version (ex: 10.11)
+    dep_tgt_short = dep_tgt[:dep_tgt.rfind(".")]
+    # find installed sdks, ideally we want the sdk that matches the current os
+    sdk_root = None
+    sdks = find_osx_sdks()
+    if dep_tgt_short in sdks.keys():
+        # matches our osx, use this one
+        sdk_root = sdks[dep_tgt_short]
+    elif len(sdks) > 0:
+        # for now, choose first one:
+        dep_tgt  = sdks.keys()[0]
+        sdk_root = sdks[dep_tgt]
+    else:
+        # no valid sdks, error out
+        print "[ERROR: Could not find OSX SDK @ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/]"
+        sys.exit(-1)
+    
+    env["MACOSX_DEPLOYMENT_TARGET"] = dep_tgt
+    env["SDKROOT"] = sdk_root
+    print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % env["MACOSX_DEPLOYMENT_TARGET"]
+    print "[setting SDKROOT to %s]" % env[ "SDKROOT" ]
+
 def main():
     """
     clones and runs spack to setup our third_party libs and
@@ -304,12 +345,7 @@ def main():
     # setup osx deployment target
     print "[uberenv options: %s]" % str(opts)
     if "darwin" in platform.system().lower():
-        dep_tgt = platform.mac_ver()[0]
-        env["MACOSX_DEPLOYMENT_TARGET"] = dep_tgt
-        dep_tgt = dep_tgt[:dep_tgt.rfind(".")]
-        env["SDKROOT"] = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" + str(dep_tgt) + ".sdk"
-        print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % env["MACOSX_DEPLOYMENT_TARGET"]
-        print "[setting SDKROOT to %s]" % env[ "SDKROOT" ]
+        setup_osx_sdk_env_vars()
     # setup default spec
     if opts["spec"] is None:
         if "darwin" in platform.system().lower():
