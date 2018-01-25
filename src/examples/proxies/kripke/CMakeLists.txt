@@ -105,6 +105,19 @@ if(MPI_FOUND)
 
     blt_add_target_compile_flags(TO kripke_par FLAGS "-D PARALLEL ${kripke_openmp_flags}")
 
+    # install target for kripke mpi
+    install(TARGETS kripke_par
+            EXPORT  ascent
+            LIBRARY DESTINATION examples/proxies/kripke
+            ARCHIVE DESTINATION examples/proxies/kripke
+            RUNTIME DESTINATION examples/proxies/kripke
+    )
+
+    install(FILES ASCENT_README.md 
+                  ascent_actions.json
+                  ascent_options.json
+            DESTINATION examples/proxies/kripke)
+
 endif()
 
 

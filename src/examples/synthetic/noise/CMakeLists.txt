@@ -55,6 +55,7 @@ set(noise_sources
 set(noise_header
     open_simplex_noise.h)
 
+
 if(OPENMP_FOUND)
   set(noise_openmp_flags "-DNOISE_USE_OPENMP")
 else()
@@ -68,6 +69,16 @@ blt_add_executable(
     OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 blt_add_target_compile_flags(TO noise_ser FLAGS "${noise_openmp_flags}")
+
+# install target for noise example
+install(TARGETS noise_ser
+        EXPORT  ascent
+        LIBRARY DESTINATION examples/synthetic/noise
+        ARCHIVE DESTINATION examples/synthetic/noise
+        RUNTIME DESTINATION examples/synthetic/noise
+)
+
+install(FILES ASCENT_README.md DESTINATION examples/synthetic/noise)
 
 if(MPI_FOUND)
     
@@ -83,6 +94,15 @@ if(MPI_FOUND)
         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
     blt_add_target_compile_flags(TO noise_par FLAGS "-DPARALLEL  ${noise_openmp_flags}")
+
+    # install target for mpi noise example
+    install(TARGETS noise_par
+            EXPORT  ascent
+            LIBRARY DESTINATION examples/synthetic/noise
+            ARCHIVE DESTINATION examples/synthetic/noise
+            RUNTIME DESTINATION examples/synthetic/noise
+    )
+
 
 endif()
 

@@ -49,7 +49,7 @@
 ###############################################################################
 
 
-set(CLOVER3D_SOURCES
+set(clover_sources
     PdV.f90
     PdV_kernel.f90
     accelerate.f90
@@ -114,12 +114,27 @@ if(MPI_FOUND AND FORTRAN_FOUND)
     
     blt_add_executable(
         NAME        cloverleaf3d_par
-        SOURCES     ${CLOVER3D_SOURCES}
+        SOURCES     ${clover_sources}
         DEPENDS_ON  ${clover_par_deps}
         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
                           
     blt_add_target_compile_flags(TO cloverleaf3d_par FLAGS "${clover_compile_flags}")
+
+
+    # install target for clover mpi
+    install(TARGETS cloverleaf3d_par
+            EXPORT  ascent
+            LIBRARY DESTINATION examples/proxies/cloverleaf3d
+            ARCHIVE DESTINATION examples/proxies/cloverleaf3d
+            RUNTIME DESTINATION examples/proxies/cloverleaf3d
+    )
+
+    install(FILES ASCENT_README.md
+                  clover.in
+                  ascent_actions.json
+                  ascent_options.json
+            DESTINATION examples/proxies/cloverleaf3d)
 
 endif()
 
