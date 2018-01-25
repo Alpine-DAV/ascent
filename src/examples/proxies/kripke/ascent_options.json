@@ -1,4 +1,3 @@
 {
-  "pipeline/type"    : "vtkm",
-  "pipeline/backend" : "serial"
+  "web" : {"stream" : "false"}
 }

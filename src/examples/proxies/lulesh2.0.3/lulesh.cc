@@ -2859,10 +2859,7 @@ int main(int argc, char *argv[])
 #if USE_MPI
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
-    // TODO:
-    ascent_opts["runtime/type"] = "ascent";
-    ascent_opts["ascent_info"] = "verbose";
-    
+
     ascent.open(ascent_opts);
    // BEGIN timestep to solution */
 #if USE_MPI   

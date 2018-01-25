@@ -76,6 +76,20 @@ blt_add_executable(
 
 blt_add_target_compile_flags(TO lulesh_ser FLAGS "-DUSE_MPI=0 ${lulesh_openmp_flags}")
 
+# install target for lulesh serial
+install(TARGETS lulesh_ser
+        EXPORT  ascent
+        LIBRARY DESTINATION examples/proxies/lulesh
+        ARCHIVE DESTINATION examples/proxies/lulesh
+        RUNTIME DESTINATION examples/proxies/lulesh
+)
+
+install(FILES ASCENT_README.md
+              ascent_actions.json
+              ascent_options.json
+        DESTINATION examples/proxies/lulesh)
+
+
 if(MPI_FOUND)
     
     set(lulesh_par_deps ascent_mpi mpi)
@@ -90,6 +104,16 @@ if(MPI_FOUND)
         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
     blt_add_target_compile_flags(TO lulesh_par FLAGS "-DUSE_MPI=1 ${lulesh_openmp_flags}")
+
+
+    # install target for lulesh mpi
+    install(TARGETS lulesh_par
+            EXPORT  ascent
+            LIBRARY DESTINATION examples/proxies/lulesh
+            ARCHIVE DESTINATION examples/proxies/lulesh
+            RUNTIME DESTINATION examples/proxies/lulesh
+    )
+
 
 endif()
 
