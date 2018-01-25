@@ -169,7 +169,21 @@ FlowRuntime::Publish(const conduit::Node &data)
 {
     // create our own tree, with all data zero copied.
     m_data.set_external(data);
-    
+}
+
+//-----------------------------------------------------------------------------
+void
+FlowRuntime::ResetInfo()
+{
+    m_info.reset();
+    m_info["runtime/type"] = "flow";
+    m_info["runtime/options"] = m_runtime_options;
+}
+
+//-----------------------------------------------------------------------------
+void 
+FlowRuntime::ConnectSource()
+{
     // note: if the reg entry for data was already added
     // the set_external updates everything,
     // we don't need to remove and re-add.
@@ -189,20 +203,11 @@ FlowRuntime::Publish(const conduit::Node &data)
 
 //-----------------------------------------------------------------------------
 void
-FlowRuntime::ResetInfo()
-{
-    m_info.reset();
-    m_info["runtime/type"] = "flow";
-    m_info["runtime/options"] = m_runtime_options;
-}
-
-
-//-----------------------------------------------------------------------------
-void
 FlowRuntime::Execute(const conduit::Node &actions)
 {
     ResetInfo();
-    
+    // make sure we always have our source data
+    ConnectSource();
     // Loop over the actions
     for (int i = 0; i < actions.number_of_children(); ++i)
     {

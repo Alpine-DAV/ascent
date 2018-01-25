@@ -97,6 +97,7 @@ private:
     flow::Workspace w;
     
     void              ResetInfo();
+    void              ConnectSource();
     
     WebInterface      m_web_interface;
     
