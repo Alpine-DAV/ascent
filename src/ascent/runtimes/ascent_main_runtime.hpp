@@ -111,6 +111,7 @@ private:
     std::vector<std::string> GetPipelines(const conduit::Node &plots);
     void CreateScenes(const conduit::Node &scenes);
     void ConvertSceneToFlow(const conduit::Node &scenes);
+    void ConnectSource();
     void ConnectGraphs();
     void ExecuteGraphs();
     std::string GetDefaultImagePrefix(const std::string scene);

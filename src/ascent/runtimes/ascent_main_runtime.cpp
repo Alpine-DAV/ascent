@@ -233,22 +233,6 @@ AscentRuntime::Publish(const conduit::Node &data)
 {
     // create our own tree, with all data zero copied.
     m_data.set_external(data);
-    
-    // note: if the reg entry for data was already added
-    // the set_external updates everything,
-    // we don't need to remove and re-add.
-    if(!w.registry().has_entry("_ascent_input_data"))
-    {
-        w.registry().add<Node>("_ascent_input_data",
-                               &m_data);
-    }
-
-    if(!w.graph().has_filter("source"))
-    {
-       Node p;
-       p["entry"] = "_ascent_input_data";
-       w.graph().add_filter("registry_source","source",p);
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -553,6 +537,28 @@ AscentRuntime::CreateExtracts(const conduit::Node &extracts)
     ConvertExtractToFlow(extract, names[i]);
   }
 }
+
+//-----------------------------------------------------------------------------
+void 
+AscentRuntime::ConnectSource()
+{
+    // note: if the reg entry for data was already added
+    // the set_external updates everything,
+    // we don't need to remove and re-add.
+    if(!w.registry().has_entry("_ascent_input_data"))
+    {
+        w.registry().add<Node>("_ascent_input_data",
+                               &m_data);
+    }
+
+    if(!w.graph().has_filter("source"))
+    {
+       Node p;
+       p["entry"] = "_ascent_input_data";
+       w.graph().add_filter("registry_source","source",p);
+    }
+}
+
 //-----------------------------------------------------------------------------
 void 
 AscentRuntime::ConnectGraphs()
@@ -875,6 +881,8 @@ void
 AscentRuntime::Execute(const conduit::Node &actions)
 {
     ResetInfo();
+    // make sure we always have our source data
+    ConnectSource();
     // Loop over the actions
     for (int i = 0; i < actions.number_of_children(); ++i)
     {
