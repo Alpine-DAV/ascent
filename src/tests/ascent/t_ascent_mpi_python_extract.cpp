@@ -66,7 +66,13 @@ using ascent::Ascent;
 
 std::string py_script = "\n"
 "v = input()\n"
-"print(v['state'])\n";
+"print(v['state'])\n"
+"\n"
+"from mpi4py import MPI\n"
+"print(ascent_mpi_comm_id())\n"
+"comm = MPI.Comm.f2py(ascent_mpi_comm_id())\n"
+"print('COMM SIZE = {}'.format(comm.Get_size()))\n"
+"\n";
 
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_runtime, test_pyhton_script_extract_src)

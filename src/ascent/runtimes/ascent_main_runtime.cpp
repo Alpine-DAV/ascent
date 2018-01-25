@@ -428,10 +428,10 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
        // read script only on rank 0 
        if(rank == 0)
        {
+         ostringstream py_src; 
          std::string script_fname = params["file"].as_string();
          ifstream ifs(script_fname.c_str());
-
-         ostringstream py_src;
+         
          py_src << "# script from: " << script_fname << std::endl;
          copy(istreambuf_iterator<char>(ifs),
               istreambuf_iterator<char>(),
@@ -449,6 +449,17 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
        params.remove("file");
        params["source"] = n_py_src;
      }
+
+     // inject helper that provides the mpi comm handle
+     ostringstream py_src_final;
+     py_src_final << "# ascent mpi comm helper function" << std::endl
+                  << "def ascent_mpi_comm_id():" << std::endl
+                  << "    return " << comm_id << std::endl
+                  << std::endl
+                  << params["source"].as_string(); // now include user's script
+
+     params["source"] = py_src_final.str();
+
 #endif
   
     // todo, inspect args, if passed via file, read on root proc and broadcast
