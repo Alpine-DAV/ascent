@@ -72,41 +72,87 @@ Demo 4: Custom Python Extracts
 
 * cloverleaf3d: custom python histogram
 
-Ascent's `python` extract provides a simple path to run python scripts for
-custom analysis. 
+Ascent's python extract provides a simple path to run python scripts for
+custom analysis. For this demo we use numpy and mpi4py to compute a histogram of Cloverleaf's 
+energy field. 
 
-For this demo we use numpy and mpi4py to compute a histogram of Cloverleaf's energy
-field. 
-
-First, since we will use the Cloverleaf3d ascent integration, make sure you are in 
-``examples/proxies/cloverleaf3d`` directory of your Ascent install.
-
-Edit the ``ascent_actions.json`` file to define a single python extract that runs a script file:
+First, since we will use the Cloverleaf3d Ascent integration, make sure you are in 
+``examples/proxies/cloverleaf3d`` directory of your Ascent install. Then edit the ``ascent_actions.json`` 
+file to define a single python extract that runs a script file:
 
 .. literalinclude:: ../../../src/examples/tutorial/demo_4/ascent_actions.json
    :language: json
 
-This adds a `python` extract that will use an embedded python to execute 
-``ascent_tutorial_demo_4_histogram.py``, specified using the ``file`` parameter. 
-The `python` extract also supports a ``source`` parameter that allows you to pass 
+This requests a python extract that will use an embedded python interpreter to execute 
+``ascent_tutorial_demo_4_histogram.py``, which is specified using the ``file`` parameter.
+The python extract also supports a ``source`` parameter that allows you to pass 
 a python script as a string. 
 
 
-Create ``ascent_tutorial_demo_4_histogram.py``
+Next, create our analysis script ``ascent_tutorial_demo_4_histogram.py``:
 
 
 .. literalinclude:: ../../../src/examples/tutorial/demo_4/ascent_tutorial_demo_4_histogram.py 
    :language: python
    :lines: 43-
 
+This script computes a basic histogram counting the number of energy field elements that
+fall into a set of uniform bins.  It uses numpy's histogram function and mpi4py to handle 
+distributed-memory coordination. 
 
+Note, there are only two functions provided by ascent:
 
-There are only two functions provided by ascent
+* ``ascent_data()``
+ 
+   Returns a Conduit tree with the data published to this MPI Task. 
 
-* ``ascent_mpi_comm_id()``  - returns the Fortran style MPI handle (an integer) of the MPI Communicator Ascent is using
-
-* ``ascent_data()`` - returns a Conduit tree with the data publish by this MPI Task
-
+   Conduit's Python API mirrors its C++ API, but with leaves returned as numpy.ndarrays.
+   For examples of how to use Conduit's Python API, see the 
+   `Conduit Python Tutorial <http://llnl-conduit.readthedocs.io/en/latest/tutorial_python.html>`_.
+   In this script, we simply fetch a ndarray that points to the values of a known field, energy. 
    
-   
+
+* ``ascent_mpi_comm_id()``
+
+   Returns the Fortran style MPI handle (an integer) of the MPI Communicator Ascent is using.
+
+   In this script, we use this handle and ``mpi4py.MPI.Comm.f2py()`` to obtain a mpi4py 
+   Communicator.
+
+
+
+Finally, run Cloverleaf:
+
+.. code::
+
+   mpiexec -n 2 ./cloverleaf3d_par 
+
+
+With the default ``clover.in`` settings, Ascent execute the python script every 10th cycle. 
+The script computes the histogram of the energy field and prints a summary like the following: 
+
+.. code::
+
+  Energy extents: 1.0 2.93874088025
+
+  Histogram of Energy:
+
+  Counts:
+  [159308   4041   1763   2441   2044   1516   1780   1712   1804   1299
+     1366   1959   1668   2176   1287   1066    962   2218   1282   1006
+     1606   2236   1115   1420   1185   1293   2495   1255   1191   1062
+     1435   1329   2371   1619   1067   2513   3066   2124   2755   3779
+     3955   4933   2666   3279   3318   3854   3123   4798   2604]
+
+  Bin Edges:
+  [ 1.          1.03956614  1.07913228  1.11869842  1.15826456  1.1978307
+    1.23739684  1.27696298  1.31652912  1.35609526  1.3956614   1.43522754
+    1.47479368  1.51435983  1.55392597  1.59349211  1.63305825  1.67262439
+    1.71219053  1.75175667  1.79132281  1.83088895  1.87045509  1.91002123
+    1.94958737  1.98915351  2.02871965  2.06828579  2.10785193  2.14741807
+    2.18698421  2.22655035  2.26611649  2.30568263  2.34524877  2.38481491
+    2.42438105  2.4639472   2.50351334  2.54307948  2.58264562  2.62221176
+    2.6617779   2.70134404  2.74091018  2.78047632  2.82004246  2.8596086
+    2.89917474  2.93874088]
+
 

@@ -47,39 +47,49 @@
 ###############################################################################
 
 import numpy as np
-
-# obtain mpi4py mpi comm
 from mpi4py import MPI
+
+# obtain a mpi4py mpi comm object
 comm = MPI.Comm.f2py(ascent_mpi_comm_id())
 
 # get this MPI task's published blueprint data
 mesh_data = ascent_data()
 
-# get the numpy array for the energy field
+# fetch the numpy array for the energy field values
 e_vals = mesh_data["fields/energy/values"]
 
 # find the data extents of the energy field using mpi
+
+# first get local extents
 e_min, e_max = e_vals.min(), e_vals.max()
 
+# declare vars for reduce results
 e_min_all = np.zeros(1)
 e_max_all = np.zeros(1)
 
+# reduce to get global extents
 comm.Allreduce(e_min, e_min_all, op=MPI.MIN)
 comm.Allreduce(e_max, e_max_all, op=MPI.MAX)
 
-print("min: {} max: {}".format(e_min_all,e_max_all))
-
-# compute bins on global range
+# compute bins on global extents 
 bins = np.linspace(e_min_all, e_max_all)
 
 # get histogram counts for local data
 hist, bin_edges = np.histogram(e_vals, bins = bins)
-print(hist)
 
-# sum histogram counts with MPI to get final histogram
-
+# declare var for reduce results
 hist_all = np.zeros_like(hist)
 
+# sum histogram counts with MPI to get final histogram
 comm.Allreduce(hist, hist_all, op=MPI.SUM)
 
-print(hist_all)
+# print result on mpi task 0
+if comm.Get_rank() == 0:
+    print("\nEnergy extents: {} {}\n".format(e_min_all[0], e_max_all[0]))
+    print("Histogram of Energy:\n")
+    print("Counts:")
+    print(hist_all)
+    print("\nBin Edges:")
+    print(bin_edges)
+    print("")
+
