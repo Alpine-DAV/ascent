@@ -65,7 +65,7 @@ using namespace conduit;
 using ascent::Ascent;
 
 std::string py_script = "\n"
-"v = input()\n"
+"v = ascent_data()\n"
 "print(v['state'])\n"
 "\n"
 "from mpi4py import MPI\n"

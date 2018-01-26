@@ -119,7 +119,7 @@ TEST(flow_python_script_filter, simple_execute)
     w.graph().add_filter("src","v",src_params);
     
     Node py_params;
-    py_params["source"] = "val = input().value() * 2\nprint(val)\nset_output(val)";
+    py_params["source"] = "val = flow_input().value() * 2\nprint(val)\nflow_set_output(val)";
 
     w.graph().add_filter("python_script","py", py_params);
     
@@ -132,3 +132,44 @@ TEST(flow_python_script_filter, simple_execute)
     
     Workspace::clear_supported_filter_types();
 }
+
+
+
+
+
+//-----------------------------------------------------------------------------
+TEST(flow_python_script_filter, exe_override_interface_func_names)
+{
+    flow::filters::register_builtin();
+
+    Workspace::register_filter_type<SrcFilter>();
+    
+    Workspace w;
+
+    Node src_params;
+    src_params["value"] = 21;
+
+    w.graph().add_filter("src","v",src_params);
+    
+    Node py_params;
+    // test customized input() and set_output() names
+    py_params["interface/input"] = "give_me_data";
+    py_params["interface/set_output"] = "here_is_some_data";
+    py_params["interpreter/reset"] = "true";
+    py_params["source"] = "val = give_me_data().value() * 2\nprint(val)\nhere_is_some_data(val)";
+    
+    //py_params["source"] = "val = give_me_data().value() * 2\nprint(val)\nhere_is_some_data(val)";
+    
+
+    w.graph().add_filter("python_script","py", py_params);
+    
+    // // src, dest, port
+    w.graph().connect("v","py","in");
+    //
+    w.print();
+    //
+    w.execute();
+    
+    Workspace::clear_supported_filter_types();
+}
+
