@@ -42,17 +42,43 @@
 .. #
 .. ############################################################################
 
-Ascent Documentation
-======================
+Tutorial Demos
+=================
 
-.. toctree::
-   :maxdepth: 2 
+.. note::
+   
+   WIP
 
-   Overview
-   ExampleIntegrations
-   BuildingAscent
-   AscentAPI
-   Tutorial
-   Actions/index
-   GPU_notes
+Demo 1: First Light
+-----------------------
+
+``examples/python/ascent_python_render_example.py``
+
+Demo 2: Using Pipelines and Scenes
+----------------------------------------
+
+* cloverleaf3d: volume rendering
+* cloverleaf3d: isosurface + pseudocolor
+* cloverleaf3d: isosurface + pseudocolor & volume rendering
+
+Demo 3: Creating Cinema Extracts
+----------------------------------
+
+* cloverleaf3d: cinema spec a
+
+
+Demo 4: Custom Python Extracts
+-----------------------------------
+
+* cloverleaf3d: custom python histogram
+
+.. literalinclude:: ../../../src/examples/tutorial/demo_4/ascent_actions.json
+   :language: json
+
+.. literalinclude:: ../../../src/examples/tutorial/demo_4/ascent_tutorial_demo_4_histogram.py 
+   :language: python
+
+   
+   
+   
 
