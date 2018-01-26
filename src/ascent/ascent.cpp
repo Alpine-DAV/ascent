@@ -77,7 +77,9 @@ quiet_handler(const std::string &,
 
 //-----------------------------------------------------------------------------
 Ascent::Ascent()
-: m_runtime(NULL)
+: m_runtime(NULL),
+  m_verbose_msgs(false),
+  m_forward_exceptions(true)
 {
 }
 
@@ -113,103 +115,172 @@ CheckForJSONFile(std::string file_name, conduit::Node &node)
 void
 Ascent::open(const conduit::Node &options)
 {
-    Node processed_opts(options);
-    CheckForJSONFile("ascent_options.json", processed_opts); 
-    if(m_runtime != NULL)
+    try
     {
-        ASCENT_ERROR("Ascent Runtime already exists.!");
-    }
-
-    bool quiet_output = true; 
-    if(options.has_path("ascent_info"))
-    {
-        if(options["ascent_info"].as_string() == "verbose")
+        if(m_runtime != NULL)
         {
-            quiet_output = false;
+            ASCENT_ERROR("Ascent Runtime already exists!");
         }
-    }
 
-    if(quiet_output)
-    {
-        conduit::utils::set_info_handler(quiet_handler);
-    }
+        Node processed_opts(options);
+        CheckForJSONFile("ascent_options.json", processed_opts); 
 
-    Node cfg;
-    ascent::about(cfg);
+        if(options.has_path("messages") && 
+           options["messages"].dtype().is_string() )
+        {
+            std::string msgs_opt = options["messages"].as_string();
+            if( msgs_opt == "verbose")
+            {
+                m_verbose_msgs = true;
+            }
+            else if(msgs_opt == "quite")
+            {
+                m_verbose_msgs = false;
+            }
+        }
+
+        if(options.has_path("exceptions") && 
+           options["exceptions"].dtype().is_string() )
+        {
+            std::string excp_opt = options["exceptions"].as_string();
+            if( excp_opt == "catch")
+            {
+                m_forward_exceptions = false;
+            }
+            else if(excp_opt == "throw")
+            {
+                m_forward_exceptions = true;
+            }
+        }
+        
+        // don't print info messages unless we are using verbose
+        if(!m_verbose_msgs)
+        {
+            conduit::utils::set_info_handler(quiet_handler);
+        }
+
+        Node cfg;
+        ascent::about(cfg);
     
-    std::string runtime_type = cfg["default_runtime"].as_string();
+        std::string runtime_type = cfg["default_runtime"].as_string();
     
-    if(processed_opts.has_path("runtime"))
-    {
-        if(processed_opts.has_path("runtime/type"))
+        if(processed_opts.has_path("runtime"))
         {
-            runtime_type = processed_opts["runtime/type"].as_string();
+            if(processed_opts.has_path("runtime/type"))
+            {
+                runtime_type = processed_opts["runtime/type"].as_string();
+            }
         }
-    }
 
-    ASCENT_INFO("Runtime Type = " << runtime_type);
+        ASCENT_INFO("Runtime Type = " << runtime_type);
 
-    if(runtime_type == "empty")
-    {
-        m_runtime = new EmptyRuntime();
-    }
-    else if(runtime_type == "ascent")
-    {
-#if defined(ASCENT_VTKH_ENABLED)
-        m_runtime = new AscentRuntime();
-        if(processed_opts.has_path("runtime/backend"))
+        if(runtime_type == "empty")
         {
-          std::string backend = processed_opts["runtime/backend"].as_string();
-          if(backend == "serial")
-          {
-            vtkh::ForceSerial();
-          }
-          else if(backend == "tbb")
-          {
-            vtkh::ForceTBB();
-          }
-          else if(backend == "cuda")
-          {
-            vtkh::ForceCUDA();
-          }
-          else
-          {
-            ASCENT_ERROR("Ascent unrecognized backend "<<backend);
-          }
+            m_runtime = new EmptyRuntime();
         }
-#else
-        ASCENT_ERROR("Ascent runtime is disabled. "
-                     "Ascent was not built with vtk-h support");
-#endif
-    }
-    else if(runtime_type == "flow")
-    {
-        m_runtime = new FlowRuntime();
-    }
-    else
-    {
-        ASCENT_ERROR("Unsupported Runtime type " 
-                       << "\"" << m_runtime << "\""
-                       << " passed via 'runtime' open option.");
-    }
+        else if(runtime_type == "ascent")
+        {
+    #if defined(ASCENT_VTKH_ENABLED)
+            m_runtime = new AscentRuntime();
+            if(processed_opts.has_path("runtime/backend"))
+            {
+              std::string backend = processed_opts["runtime/backend"].as_string();
+              if(backend == "serial")
+              {
+                vtkh::ForceSerial();
+              }
+              else if(backend == "tbb")
+              {
+                vtkh::ForceTBB();
+              }
+              else if(backend == "cuda")
+              {
+                vtkh::ForceCUDA();
+              }
+              else
+              {
+                ASCENT_ERROR("Ascent unrecognized backend "<<backend);
+              }
+            }
+    #else
+            ASCENT_ERROR("Ascent runtime is disabled. "
+                         "Ascent was not built with vtk-h support");
+    #endif
+        }
+        else if(runtime_type == "flow")
+        {
+            m_runtime = new FlowRuntime();
+        }
+        else
+        {
+            ASCENT_ERROR("Unsupported Runtime type " 
+                           << "\"" << runtime_type << "\""
+                           << " passed via 'runtime' open option.");
+        }
      
-    m_runtime->Initialize(processed_opts);
+        m_runtime->Initialize(processed_opts);
+    }
+    catch(conduit::Error &e)
+    {
+        if(m_forward_exceptions)
+        {
+            throw;
+        }
+        else
+        {
+            // NOTE: CONDUIT_INFO could be muted, so we use std::cout
+            std::cout << "[Error] Ascent::open " 
+                      << e.message() << std::endl;
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
 void
 Ascent::publish(const conduit::Node &data)
 {
-    m_runtime->Publish(data);
+    try
+    {
+        m_runtime->Publish(data);
+    }
+    catch(conduit::Error &e)
+    {
+        if(m_forward_exceptions)
+        {
+            throw;
+        }
+        else
+        {
+            // NOTE: CONDUIT_INFO could be muted, so we use std::cout
+            std::cout << "[Error] Ascent::publish " 
+                      << e.message() << std::endl;
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
 void
 Ascent::execute(const conduit::Node &actions)
 {
-    Node processed_actions(actions);
-    CheckForJSONFile("ascent_actions.json", processed_actions);
-    m_runtime->Execute(processed_actions);
+    try
+    {
+        Node processed_actions(actions);
+        CheckForJSONFile("ascent_actions.json", processed_actions);
+        m_runtime->Execute(processed_actions);
+    }
+    catch(conduit::Error &e)
+    {
+        if(m_forward_exceptions)
+        {
+            throw;
+        }
+        else
+        {
+            // NOTE: CONDUIT_INFO could be muted, so we use std::cout
+            std::cout << "[Error] Ascent::execute " 
+                      << e.message() << std::endl;
+        }
+    }
 }
 
 
@@ -217,9 +288,25 @@ Ascent::execute(const conduit::Node &actions)
 void
 Ascent::info(conduit::Node &info_out)
 {
-    if(m_runtime != NULL)
+    try
     {
-        m_runtime->Info(info_out);
+        if(m_runtime != NULL)
+        {
+            m_runtime->Info(info_out);
+        }
+    }
+    catch(conduit::Error &e)
+    {
+        if(m_forward_exceptions)
+        {
+            throw;
+        }
+        else
+        {
+            // NOTE: CONDUIT_INFO could be muted, so we use std::cout
+            std::cout << "[Error] Ascent::info " 
+                      << e.message() << std::endl;
+        }
     }
 }
 
@@ -227,11 +314,27 @@ Ascent::info(conduit::Node &info_out)
 void
 Ascent::close()
 {
-    if(m_runtime != NULL)
+    try
     {
-        m_runtime->Cleanup();
-        delete m_runtime;
-        m_runtime = NULL;
+        if(m_runtime != NULL)
+        {
+            m_runtime->Cleanup();
+            delete m_runtime;
+            m_runtime = NULL;
+        }
+    }
+    catch(conduit::Error &e)
+    {
+        if(m_forward_exceptions)
+        {
+            throw;
+        }
+        else
+        {
+            // NOTE: CONDUIT_INFO could be muted, so we use std::cout
+            std::cout << "[Error] Ascent::close " 
+                      << e.message() << std::endl;
+        }
     }
 }
 
@@ -288,7 +391,7 @@ void
 about(conduit::Node &n)
 {
     n.reset();
-    n["version"] = "0.1.0";
+    n["version"] = "0.2.1.pre";
 
 #if defined(ASCENT_MPI_ENABLED)
     n["mpi"] = "enabled";

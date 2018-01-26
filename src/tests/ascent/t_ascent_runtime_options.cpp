@@ -42,75 +42,135 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent.hpp
+/// file: t_ascent_empty_runtime.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_HPP
-#define ASCENT_HPP
+#include "gtest/gtest.h"
 
+#include <ascent.hpp>
 
-#include <ascent_config.h>
-#include <ascent_exports.h>
+#include <iostream>
+#include <math.h>
+#include <sstream>
 
-
-#include <ascent_logging.hpp>
-#include <ascent_file_system.hpp>
-#include <ascent_block_timer.hpp>
-
-#include <conduit.hpp>
 #include <conduit_blueprint.hpp>
 
+#include "t_config.hpp"
+
+
+using namespace std;
+using namespace conduit;
+using namespace ascent;
+
 
 //-----------------------------------------------------------------------------
-// -- begin ascent:: --
-//-----------------------------------------------------------------------------
-namespace ascent
+TEST(ascent_runtime_options, verbose_msgs)
 {
-
-// Forward Declare the ascent::Runtime interface class.
-class Runtime;
-
-//-----------------------------------------------------------------------------
-/// Ascent Interface
-//-----------------------------------------------------------------------------
-class ASCENT_API Ascent
-{
-public:
-           Ascent();
-          ~Ascent();
-
-    void   open(); // open with default options
-    void   open(const conduit::Node &options);
-    void   publish(const conduit::Node &data);
-    void   execute(const conduit::Node &actions);
-    void   info(conduit::Node &info_out);
-    void   close();
-
-private:
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
     
-    Runtime *m_runtime;
-    bool     m_verbose_msgs;
-    bool     m_forward_exceptions;
-};
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
+    
+    Node actions;
+    Node &hello = actions.append();
+    hello["action"]   = "hello!";
+    actions.print();
+
+    // we want the "empty" example pipeline
+    Node open_opts;
+    open_opts["runtime/type"] = "empty";
+    open_opts["messages"] = "verbose";
+    
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open(open_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime_options, quite_msgs)
+{
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
+    
+    Node actions;
+    Node &hello = actions.append();
+    hello["action"]   = "hello!";
+    actions.print();
+
+    // we want the "empty" example pipeline
+    Node open_opts;
+    open_opts["runtime/type"] = "empty";
+    open_opts["messages"] = "quite";
+    
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open(open_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+}
 
 
 //-----------------------------------------------------------------------------
-std::string ASCENT_API about();
+TEST(ascent_runtime_options, forward_exceptions)
+{
+
+
+    // invoke error by choosing bad runtime 
+    Node open_opts;
+    open_opts["exceptions"] = "forward";
+    open_opts["runtime/type"] = "BAD";
+
+    
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    EXPECT_THROW(ascent.open(open_opts),conduit::Error);
+    ascent.close();
+}
+
+
 
 //-----------------------------------------------------------------------------
-void        ASCENT_API about(conduit::Node &node);
+TEST(ascent_runtime_options, catch_exceptions)
+{
 
-};
-//-----------------------------------------------------------------------------
-// -- end ascent:: --
-//-----------------------------------------------------------------------------
 
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
+    // make sure bad runtime selection is caught
+    Node open_opts;
+    open_opts["exceptions"] = "catch";
+    open_opts["runtime/type"] = "BAD";
+
+    
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open(open_opts);
+    ascent.close();
+}
+
+
+
 
