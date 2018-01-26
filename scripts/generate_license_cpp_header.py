@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -9,7 +9,7 @@
 # 
 # This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/ascent/.
+# For details, see: http://ascent.readthedocs.io/.
 # 
 # Please also read ascent/LICENSE
 # 
@@ -69,7 +69,7 @@ def gen_lic_hpp(lic_file,hpp_out):
     hpp_f.write("\n")
     hpp_f.write("#ifndef ASCENT_LICENSE_TEXT_HPP\n")
     hpp_f.write("#define ASCENT_LICENSE_TEXT_HPP\n\n")
-    hpp_f.write("std::string CONDUIT_LICENSE_TEXT = ")
+    hpp_f.write("std::string ASCENT_LICENSE_TEXT = ")
     for l in lic_txt:
         ltxt = l.strip().replace("\"","\\\"")
         hpp_f.write("\"%s\\n\"\n" % (ltxt))

@@ -1,17 +1,17 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
-// LLNL-CODE-666778
+// LLNL-CODE-716457
 // 
 // All rights reserved.
 // 
-// This file is part of Conduit. 
+// This file is part of Ascent. 
 // 
-// For details, see https://lc.llnl.gov/conduit/.
+// For details, see: http://ascent.readthedocs.io/.
 // 
-// Please also read conduit/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -62,13 +62,12 @@
 //     herein do not necessarily state or reflect those of the United 
 //     States Government or Lawrence Livermore National Security, LLC, and
 //     shall not be used for advertising or product endorsement purposes.
-// 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #ifndef ASCENT_LICENSE_TEXT_HPP
 #define ASCENT_LICENSE_TEXT_HPP
 
-std::string ASCENT_LICENSE_TEXT = "Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.\n"
+std::string ASCENT_LICENSE_TEXT = "Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.\n"
 "\n"
 "Produced at the Lawrence Livermore National Laboratory\n"
 "\n"
@@ -78,9 +77,9 @@ std::string ASCENT_LICENSE_TEXT = "Copyright (c) 2014-2018, Lawrence Livermore N
 "\n"
 "This file is part of Ascent.\n"
 "\n"
-"For details, see http://ascent.readthedocs.io/.\n"
+"For details, see: http://ascent.readthedocs.io/.\n"
 "\n"
-"Please also read conduit/LICENSE\n"
+"Please also read alpine/LICENSE\n"
 "\n"
 "Redistribution and use in source and binary forms, with or without\n"
 "modification, are permitted provided that the following conditions are met:\n"
@@ -131,7 +130,7 @@ std::string ASCENT_LICENSE_TEXT = "Copyright (c) 2014-2018, Lawrence Livermore N
 "herein do not necessarily state or reflect those of the United\n"
 "States Government or Lawrence Livermore National Security, LLC, and\n"
 "shall not be used for advertising or product endorsement purposes.\n"
-"\n"
 "";
 
 #endif
+
