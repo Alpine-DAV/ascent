@@ -132,7 +132,7 @@ endif()
 # cmake to reconfigure.
 #
 # However, this limited approach will still be useful in many cases, 
-# including building and for installing  conduit as a tpl
+# including building and for installing ascent as a tpl
 #
 ##############################################################################
 find_package(Git)
@@ -143,6 +143,18 @@ if(GIT_FOUND)
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     OUTPUT_VARIABLE CONDUIT_GIT_SHA1
     ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-  message("Repo SHA1:" ${CONDUIT_GIT_SHA1})
+  message(STATUS "Repo SHA1:" ${CONDUIT_GIT_SHA1})
 endif()
+
+
+###############################################################################
+# This macro converts a cmake path to a platform specific string literal
+# usable in C++. (For example, on windows C:/Path will be come C:\\Path)
+###############################################################################
+
+macro(convert_to_native_escaped_file_path path output)
+    file(TO_NATIVE_PATH ${path} ${output})
+    string(REPLACE "\\" "\\\\"  ${output} "${${output}}")
+endmacro()
+
 

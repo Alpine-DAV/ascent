@@ -90,7 +90,7 @@ if(PYTHON_FOUND)
                 message(STATUS "FOUND conduit python module at: ${_FIND_CONDUIT_PYTHON_OUT}")
             else()
                 message(FATAL_ERROR
-                "conduit python import failure:\n${_CONDUIT_PYTHON_ERROR_VALUE}")
+                "conduit python import failure:\n${_FIND_CONDUIT_PYTHON_OUT}")
                 
             endif()
         endif()

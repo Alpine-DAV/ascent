@@ -49,6 +49,13 @@
 #
 ###############################################################################
 
+convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
+                                    ASCENT_INSTALL_PREFIX)
+
+if(FORTRAN_FOUND)
+    set(ASCENT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
+endif()
+
 set(ASCENT_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_client)
 
 set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
