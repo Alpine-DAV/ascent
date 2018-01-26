@@ -57,9 +57,9 @@ import flow
 
 
 py_script = """
-val = input() * 2
+val = flow_input() * 2
 print(val)
-set_output(val)
+flow_set_output(val)
 """
 
 def src():

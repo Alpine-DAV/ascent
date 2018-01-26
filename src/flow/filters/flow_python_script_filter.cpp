@@ -211,6 +211,64 @@ PythonScript::verify_params(const conduit::Node &params,
                                   " 'source' or 'file'";
         res = false;
     }
+    
+    if( params.has_child("interface") )
+    {
+        const Node &n_iface = params["interface"];
+        if( n_iface.has_child("input") )
+        {
+            if( !n_iface["input"].dtype().is_string() )
+            {
+                info["errors"].append() = "parameter 'interface/input' is not a string";
+                res = false;
+            }
+            else
+            {
+                info["info"].append().set("provides 'interface/input' function name override");
+            }
+        }
+        
+        if( n_iface.has_child("set_output") )
+        {
+            if( !n_iface["set_output"].dtype().is_string() )
+            {
+                info["errors"].append() = "parameter 'interface/set_output' is not a string";
+                res = false;
+            }
+            else
+            {
+                info["info"].append().set("provides 'interface/set_output' function name override");
+            }
+        }
+        
+    }
+    
+    
+    if( params.has_child("interpreter") )
+    {
+        const Node &n_interp = params["interpreter"];
+        if( n_interp.has_child("reset") )
+        {
+            if( !n_interp["reset"].dtype().is_string() )
+            {
+                info["errors"].append() = "parameter 'interpreter/reset' is not a string";
+                res = false;
+            }
+            else
+            {
+                std::string rset_str = n_interp["reset"].as_string();
+                if( rset_str == "true" || rset_str == "false" )
+                {
+                    info["info"].append().set("provides 'interpreter/reset'");
+                }
+                else
+                {
+                    info["errors"].append() = "parameter 'interpreter/reset' is not 'true' or 'false'";
+                    res = false;
+                }
+            }
+        }
+    }    
 
     return res;
 }
@@ -246,21 +304,54 @@ PythonScript::execute()
                       "or a conduit::Node");
     }
 
+    // check if filter options req us to reset the interp
+    bool rset_interp = false;
+    if( params().has_path("interpreter/reset") && 
+        params()["interpreter/reset"].as_string() == "true" )
+    {
+        rset_interp = true;
+    }
+    
+    // reset interp (clear global dict) if requested
+    if(rset_interp)
+    {
+        py_interp->reset();
+    }
+
     FLOW_CHECK_PYTHON_ERROR(py_interp->set_global_object(py_input,
                                                          "_flow_input"));
 
-std::string filter_setup_src = "\n"
-"_flow_output = None\n"
-"\n"
-"def input():\n"
-"    global _flow_input\n"
-"    return _flow_input\n"
-"\n"
-"def set_output(out):\n"
-"    global _flow_output\n"
-"    _flow_output = out\n";
 
-    FLOW_CHECK_PYTHON_ERROR(py_interp->run_script(filter_setup_src));
+    std::string input_func_name = "flow_input";
+    std::string set_output_func_name = "flow_set_output";
+
+    if( params().has_path("interface/input") )
+    {
+        input_func_name = params()["interface/input"].as_string();
+    }
+
+    if( params().has_path("interface/set_output") )
+    {
+        set_output_func_name = params()["interface/set_output"].as_string();
+    }
+
+    // run script to establish input and output helpers
+    std::ostringstream filter_setup_src_oss;
+    filter_setup_src_oss << "\n"
+                         << "_flow_output = None\n"
+                         << "\n"
+                         << "def "<< input_func_name << "():\n"
+                         << "    global _flow_input\n"
+                         << "    return _flow_input\n"
+                         << "\n"
+                         << "def " << set_output_func_name <<  "(out):\n"
+                         << "    global _flow_output\n"
+                         << "    _flow_output = out\n"
+                         << "\n";
+
+
+    FLOW_CHECK_PYTHON_ERROR(py_interp->run_script(filter_setup_src_oss.str()));
+    
 
     if( params().has_child("source") )
     {

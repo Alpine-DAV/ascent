@@ -54,7 +54,7 @@ add_subdirectory(proxies/cloverleaf3d-ref)
 add_subdirectory(synthetic/noise)
 
 # install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python
+install(DIRECTORY using-with-cmake using-with-make python tutorial
         DESTINATION examples)
 
 

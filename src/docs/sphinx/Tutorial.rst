@@ -72,13 +72,41 @@ Demo 4: Custom Python Extracts
 
 * cloverleaf3d: custom python histogram
 
+Ascent's `python` extract provides a simple path to run python scripts for
+custom analysis. 
+
+For this demo we use numpy and mpi4py to compute a histogram of Cloverleaf's energy
+field. 
+
+First, since we will use the Cloverleaf3d ascent integration, make sure you are in 
+``examples/proxies/cloverleaf3d`` directory of your Ascent install.
+
+Edit the ``ascent_actions.json`` file to define a single python extract that runs a script file:
+
 .. literalinclude:: ../../../src/examples/tutorial/demo_4/ascent_actions.json
    :language: json
 
+This adds a `python` extract that will use an embedded python to execute 
+``ascent_tutorial_demo_4_histogram.py``, specified using the ``file`` parameter. 
+The `python` extract also supports a ``source`` parameter that allows you to pass 
+a python script as a string. 
+
+
+Create ``ascent_tutorial_demo_4_histogram.py``
+
+
 .. literalinclude:: ../../../src/examples/tutorial/demo_4/ascent_tutorial_demo_4_histogram.py 
    :language: python
+   :lines: 43-
 
-   
+
+
+There are only two functions provided by ascent
+
+* ``ascent_mpi_comm_id()``  - returns the Fortran style MPI handle (an integer) of the MPI Communicator Ascent is using
+
+* ``ascent_data()`` - returns a Conduit tree with the data publish by this MPI Task
+
    
    
 

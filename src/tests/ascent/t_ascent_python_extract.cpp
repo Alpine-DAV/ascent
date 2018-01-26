@@ -63,8 +63,9 @@ using namespace conduit;
 using ascent::Ascent;
 
 std::string py_script = "\n"
-"v = input()\n"
-"print(v['state'])\n";
+"v = ascent_data()\n"
+"print(v['state'])\n"
+"\n";
 
 //-----------------------------------------------------------------------------
 TEST(ascent_runtime, test_pyhton_script_extract)
@@ -102,8 +103,11 @@ TEST(ascent_runtime, test_pyhton_script_extract)
     // Run Ascent
     //
 
+    Node ascent_opts;
+    ascent_opts["ascent_info"] = "verbose";
+
     Ascent ascent;
-    ascent.open();
+    ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
