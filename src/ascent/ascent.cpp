@@ -133,7 +133,7 @@ Ascent::open(const conduit::Node &options)
             {
                 m_verbose_msgs = true;
             }
-            else if(msgs_opt == "quite")
+            else if(msgs_opt == "quiet")
             {
                 m_verbose_msgs = false;
             }

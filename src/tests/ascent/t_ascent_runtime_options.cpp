@@ -99,7 +99,7 @@ TEST(ascent_runtime_options, verbose_msgs)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_runtime_options, quite_msgs)
+TEST(ascent_runtime_options, quiet_msgs)
 {
     //
     // Create example mesh.
@@ -118,7 +118,7 @@ TEST(ascent_runtime_options, quite_msgs)
     // we want the "empty" example pipeline
     Node open_opts;
     open_opts["runtime/type"] = "empty";
-    open_opts["messages"] = "quite";
+    open_opts["messages"] = "quiet";
     
     //
     // Run Ascent
