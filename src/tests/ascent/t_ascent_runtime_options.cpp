@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_empty_runtime.cpp
+/// file: t_ascent_runtime_options.cpp
 ///
 //-----------------------------------------------------------------------------
 
