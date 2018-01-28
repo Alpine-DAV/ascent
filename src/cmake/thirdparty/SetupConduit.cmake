@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -9,7 +9,7 @@
 # 
 # This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/ascent/.
+# For details, see: http://ascent.readthedocs.io/.
 # 
 # Please also read ascent/LICENSE
 # 
@@ -90,7 +90,7 @@ if(PYTHON_FOUND)
                 message(STATUS "FOUND conduit python module at: ${_FIND_CONDUIT_PYTHON_OUT}")
             else()
                 message(FATAL_ERROR
-                "conduit python import failure:\n${_CONDUIT_PYTHON_ERROR_VALUE}")
+                "conduit python import failure:\n${_FIND_CONDUIT_PYTHON_OUT}")
                 
             endif()
         endif()

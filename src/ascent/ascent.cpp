@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -9,7 +9,7 @@
 // 
 // This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/ascent/.
+// For details, see: http://ascent.readthedocs.io/.
 // 
 // Please also read ascent/LICENSE
 // 
@@ -50,6 +50,7 @@
 //-----------------------------------------------------------------------------
 
 #include <ascent.hpp>
+#include <ascent_license.hpp>
 #include <ascent_runtime.hpp>
 
 #include <ascent_empty_runtime.hpp>
@@ -288,7 +289,30 @@ void
 about(conduit::Node &n)
 {
     n.reset();
-    n["version"] = "0.1.0";
+    n["version"] = ASCENT_VERSION;
+
+#ifdef ASCENT_GIT_SHA1
+    n["git_sha1"] = CONDUIT_GIT_SHA1;
+#endif
+    
+    n["compilers/cpp"] = ASCENT_CPP_COMPILER;
+#ifdef ASCENT_FORTRAN_COMPILER
+    n["compilers/fortran"] = ASCENT_FORTRAN_COMPILER;
+#endif
+
+#if   defined(ASCENT_PLATFORM_WINDOWS)
+    n["platform"] = "windows";
+#elif defined(ASCENT_PLATFORM_APPLE)
+    n["platform"] = "apple";
+#else 
+    n["platform"] = "linux";
+#endif
+    
+    n["system"] = ASCENT_SYSTEM_TYPE;
+    n["install_prefix"] = ASCENT_INSTALL_PREFIX;
+    n["license"] = ASCENT_LICENSE_TEXT;
+    
+    
 
 #if defined(ASCENT_MPI_ENABLED)
     n["mpi"] = "enabled";
