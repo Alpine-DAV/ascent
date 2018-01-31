@@ -72,6 +72,7 @@
 #include <vtkh/DataSet.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
+#include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
@@ -315,14 +316,20 @@ parse_color_table(const conduit::Node &color_table_node)
       if (peg["type"].as_string() == "rgb")
       {
           const float64 *color = peg["color"].as_float64_ptr();
-          
+
           vtkm::rendering::Color ecolor(color[0], color[1], color[2]);
           
+          for(int i = 0; i < 3; ++i)
+          {
+            ecolor.Components[i] = std::min(1.f, std::max(ecolor.Components[i], 0.f));
+          }
+
           color_table.AddControlPoint(position, ecolor);
       }
       else if (peg["type"].as_string() == "alpha")
       {
           float64 alpha = peg["alpha"].to_float64();
+          alpha = std::min(1., std::max(alpha, 0.));
           color_table.AddAlphaControlPoint(position, alpha);
       }
       else
@@ -382,11 +389,6 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     render.SetCamera(camera);
   }
 
-  if(render_node.has_path("color_table"))
-  {
-    vtkm::rendering::ColorTable color_table =  parse_color_table(render_node["color_table"]);
-    render.SetColorTable(color_table);
-  }
   return render;
 }
 
@@ -1782,20 +1784,29 @@ CreatePlot::verify_params(const conduit::Node &params,
         res = false;
     }
 
-    if(! params.has_child("params") )
+    bool is_mesh = false;
+    if(params["type"].as_string() == "mesh")
     {
-        info["errors"].append() = "Missing required parameter 'params'";
-        res = false;
-        return res;
+      is_mesh = true;
     }
 
-    conduit::Node plot_params = params["params"];
-
-    if(! plot_params.has_child("field") || 
-       ! plot_params["field"].dtype().is_string() )
+    if(!is_mesh)
     {
-        info["errors"].append() = "Missing required string parameter 'params/field'";
-        res = false;
+      if(! params.has_child("params") )
+      {
+          info["errors"].append() = "Missing required parameter 'params'";
+          res = false;
+          return res;
+      }
+
+      conduit::Node plot_params = params["params"];
+      
+      if(! plot_params.has_child("field") || 
+         ! plot_params["field"].dtype().is_string() )
+      {
+          info["errors"].append() = "Missing required string parameter 'params/field'";
+          res = false;
+      }
     }
 
     return res;
@@ -1825,22 +1836,77 @@ CreatePlot::execute()
     {
       renderer = new vtkh::VolumeRenderer();
     }
+    else if(type == "mesh")
+    {
+      renderer = new vtkh::MeshRenderer();
+    }
     else
     {
         ASCENT_ERROR("create_plot unknown plot type '"<<type<<"'");
     }
 
-    renderer->SetInput(data);
      
+
     // get the plot params
     if(plot_params.has_path("color_table"))
     {
       vtkm::rendering::ColorTable color_table =  detail::parse_color_table(plot_params["color_table"]);
       renderer->SetColorTable(color_table);
     }
-    
-    renderer->SetField(plot_params["field"].as_string());
+
+    vtkm::Range scalar_range; 
+    if(plot_params.has_path("min_value"))
+    {
+      scalar_range.Min = plot_params["min_value"].to_float64();
+    }
+
+    if(plot_params.has_path("max_value"))
+    {
+      scalar_range.Max = plot_params["max_value"].to_float64();
+    }
+  
+    renderer->SetRange(scalar_range);
+
+    if(plot_params.has_path("field"))
+    {
+      renderer->SetField(plot_params["field"].as_string());
+    } 
+
+    if(type == "mesh")
+    {
+      vtkh::MeshRenderer *mesh = dynamic_cast<vtkh::MeshRenderer*>(renderer);
+      if(!plot_params.has_path("field"))
+      {
+        // The renderer needs a field, so add one if
+        // needed. This will eventually go away once
+        // the mesh mapper in vtkm can handle no field
+        const std::string fname = "constant_mesh_field";  
+        data->AddConstantPointField(0.f, fname);  
+        renderer->SetField(fname);
+        mesh->SetUseForegroundColor(true);
+      }
+
+      mesh->SetIsOverlay(true);
+      if(plot_params.has_path("overlay"))
+      {
+        if(plot_params["overlay"].as_string() == "false")
+        {
+          mesh->SetIsOverlay(false);
+        }
+      }
+
+      if(plot_params.has_path("show_internal"))
+      {
+        if(plot_params["show_internal"].as_string() == "true")
+        {
+          mesh->SetShowInternal(true);
+        }
+      }
+    } // is mesh
+
     std::string key = this->name() + "_cont";
+
+    renderer->SetInput(data);
 
     detail::RendererContainer *container = new detail::RendererContainer(key, 
                                                                          &graph().workspace().registry(), 

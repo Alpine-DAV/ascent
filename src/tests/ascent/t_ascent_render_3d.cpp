@@ -70,8 +70,6 @@ using namespace ascent;
 
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
-
-
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_default_runtime)
 {
@@ -146,6 +144,207 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
     EXPECT_TRUE(check_test_image(output_file));
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+    
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    //verify_info.print();
+
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_multi_default_runtime");
+    
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "contour";
+    // filter knobs
+    conduit::Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "braid";
+    contour_params["iso_values"] = 0.;
+
+    conduit::Node scenes;
+    // plot 1
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/params/field"] = "radial";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    //plot 2
+    scenes["s1/plots/p2/type"]         = "volume";
+    scenes["s1/plots/p2/params/field"] = "braid";
+    scenes["s1/plots/p2/params/min_value"]    = -.5;
+    scenes["s1/plots/p2/params/max_value"]    = .5;
+    scenes["s1/plots/p2/params/color_table/name"]  = "thermal";
+
+    conduit::Node control_points;
+
+    conduit::Node &point4 = control_points.append();
+    point4["type"] = "alpha";
+    point4["position"] = 0.;
+    point4["alpha"] = 0.0;
+
+    conduit::Node &point5 = control_points.append();
+    point5["type"] = "alpha";
+    point5["position"] = 1.0;
+    point5["alpha"] = .5; 
+
+    scenes["s1/plots/p2/params/color_table/control_points"]  = control_points;
+
+    scenes["s1/image_prefix"] = output_file;
+
+ 
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+    // execute
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    //
+    // Run Ascent
+    //
+    
+    Ascent ascent;
+
+    Node ascent_opts;
+    //ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+    
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+    
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    //verify_info.print();
+
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_multi_mesh");
+    
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "contour";
+    // filter knobs
+    conduit::Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "braid";
+    contour_params["iso_values"] = 0.;
+
+    conduit::Node scenes;
+    // plot 1
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/params/field"] = "radial";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    //plot 2
+    scenes["s1/plots/p2/type"] = "mesh";
+    scenes["s1/plots/p2/pipeline"] = "pl1";
+
+    scenes["s1/image_prefix"] = output_file;
+
+ 
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+    // execute
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    //
+    // Run Ascent
+    //
+    
+    Ascent ascent;
+
+    Node ascent_opts;
+    //ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+    
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
 {
