@@ -490,6 +490,15 @@ public:
   
   void write_metadata()
   {
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    if(rank != 0)
+    {
+      return;
+    }
     conduit::Node meta;
     meta["type"] = "simple";
     meta["version"] = "1.1";
