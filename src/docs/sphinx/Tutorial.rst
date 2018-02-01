@@ -45,17 +45,35 @@
 Tutorial Demos
 =================
 
-.. note::
-   
-   WIP
 
 Demo 1: First Light
 -----------------------
 
-``examples/python/ascent_python_render_example.py``
+*Render a sample dataset using Ascent from C++ and Python*
+
+For this demo, we run some of the "First Light" examples are installed with Ascent to enable users to quickly test ascent in their build system.
+
+C++ Example:
+
+.. literalinclude:: ../../../src/examples/using-with-make/ascent_render_example.cpp
+   :language: cpp
+   :lines: 45-
+
+Python Example:
+
+.. literalinclude:: ../../../src/examples/python/ascent_python_render_example.py
+   :language: python
+   :lines: 45-
+
+
+These examples render the same example data set using ray casting to create a pseudocolor plot. 
+The data set is one of the built-in Conduit Mesh Blueprint examples, in this case an unstructured mesh composed of hexagons. The Conduit C++ and Python interfaces are very similar, with the C++ interface heavily influenced by the ease of use of Python. 
+
 
 Demo 2: Using Pipelines and Scenes
 ----------------------------------------
+
+*Use Ascent's pipelines in Cloverleaf3D to transform data and render scenes in situ*
 
 * cloverleaf3d: volume rendering
 * cloverleaf3d: isosurface + pseudocolor
@@ -64,19 +82,26 @@ Demo 2: Using Pipelines and Scenes
 Demo 3: Creating Cinema Extracts
 ----------------------------------
 
+*Use Ascent to create a Cinema database from Cloverleaf3D that can be explored after the simulation finishes*
+
 * cloverleaf3d: cinema spec a
 
 
 Demo 4: Custom Python Extracts
 -----------------------------------
 
-* cloverleaf3d: custom python histogram
+*Use Ascent to run a Python script which computes a histogram of Cloverleaf3D's energy field in situ*
 
 Ascent's python extract provides a simple path to run python scripts for
-custom analysis. For this demo we use numpy and mpi4py to compute a histogram of Cloverleaf's 
+custom analysis. Ascent provides the python environment, so python extracts can 
+for any host code (even those without a Python interface).
+ 
+
+
+For this demo we use numpy and mpi4py to compute a histogram of Cloverleaf3D's 
 energy field. 
 
-First, since we will use the Cloverleaf3d Ascent integration, make sure you are in 
+First, since we will use the Cloverleaf3D Ascent integration, make sure you are in 
 ``examples/proxies/cloverleaf3d`` directory of your Ascent install. Then edit the ``ascent_actions.json`` 
 file to define a single python extract that runs a script file:
 
@@ -121,7 +146,7 @@ Note, there are only two functions provided by ascent:
 
 
 
-Finally, run Cloverleaf:
+Finally, run Cloverleaf3D:
 
 .. code::
 

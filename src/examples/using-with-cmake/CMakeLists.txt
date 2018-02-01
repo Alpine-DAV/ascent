@@ -54,9 +54,10 @@
 #   -DASCENT_DIR={ascent install path}  \ 
 #   -DCONDUIT_DIR={conduit install path}    \ 
 #   -DVTKM_DIR={vtkm install path}          \
+#   -DVTKH_DIR={vtkh install path}          \
 #   ../
 # make
-# ./example
+# ./ascent_render_example
 #
 ###############################################################################
 
@@ -66,18 +67,17 @@ project(using_with_cmake)
 
 include("FindAscent.cmake")
 include("FindConduit.cmake")
-if(VTKM_DIR)
-    include("FindVTKm.cmake")
-    include("FindVTKh.cmake")
-endif()
+include("FindVTKm.cmake")
+include("FindVTKh.cmake")
 
 # setup the ascent & conduit include paths
 include_directories(${ASCENT_INCLUDE_DIRS})
 include_directories(${CONDUIT_INCLUDE_DIRS})
+# note: vtkm/h headers are not exposed in the interface
 
 # create our example 
-add_executable(example example.cpp)
+add_executable(ascent_render_example ascent_render_example.cpp)
 
 # link to ascent
-target_link_libraries(example ascent)
+target_link_libraries(ascent_render_example ascent)
 

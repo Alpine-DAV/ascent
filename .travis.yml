@@ -143,7 +143,7 @@ script:
   - echo $EXAMPLE_CFG
   - cmake  ${EXAMPLE_CFG} ../
   - make VERBOSE=1
-  - ./example
+  - ./ascent_render_example
   # using with make example (still needs work for static builds)
   #- cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
   #- make
