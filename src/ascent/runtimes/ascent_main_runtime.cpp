@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -9,7 +9,7 @@
 // 
 // This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/ascent/.
+// For details, see: http://ascent.readthedocs.io/.
 // 
 // Please also read ascent/LICENSE
 // 
@@ -397,6 +397,10 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   else if(extract["type"].as_string() == "python")
   {
     filter_name = "python_script";
+    
+    // customize the names of the script integration funcs
+    params["interface/input"] = "ascent_data";
+    params["interface/set_output"] = "ascent_set_output";
 
 #ifdef ASCENT_MPI_ENABLED
     // for MPI case, inspect args, if script is passed via file,
@@ -446,7 +450,6 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
 
 #endif
   
-    // todo, inspect args, if passed via file, read on root proc and broadcast
   }
   else
   {

@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -7,9 +7,9 @@
 # 
 # All rights reserved.
 # 
-# This file is part of Alpine. 
+# This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/alpine/.
+# For details, see: http://ascent.readthedocs.io/.
 # 
 # Please also read alpine/LICENSE
 # 
@@ -54,7 +54,7 @@ add_subdirectory(proxies/cloverleaf3d-ref)
 add_subdirectory(synthetic/noise)
 
 # install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python
+install(DIRECTORY using-with-cmake using-with-make python tutorial
         DESTINATION examples)
 
 

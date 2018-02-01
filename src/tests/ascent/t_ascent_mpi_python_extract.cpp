@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -9,7 +9,7 @@
 // 
 // This file is part of Ascent. 
 // 
-// For details, see: http://software.llnl.gov/ascent/.
+// For details, see: http://ascent.readthedocs.io/.
 // 
 // Please also read ascent/LICENSE
 // 
@@ -65,7 +65,7 @@ using namespace conduit;
 using ascent::Ascent;
 
 std::string py_script = "\n"
-"v = input()\n"
+"v = ascent_data()\n"
 "print(v['state'])\n"
 "\n"
 "from mpi4py import MPI\n"
