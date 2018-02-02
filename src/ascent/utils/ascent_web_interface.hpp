@@ -69,8 +69,15 @@ public:
     
      WebInterface();
     ~WebInterface();
+
+    // Note: Set methods must be called before first call 
+    // to Push methods.
+
+    // if set, Ascent's web resources (html, js files, etc) are
+    // are copied to and server at the given path
+    // if not set, they are served out of ASCENT_WEB_CLIENT_ROOT
     
-    
+    void                            SetDocumentRoot(const std::string &path);
     void                            SetPoll(int ms_poll);
     void                            SetTimeout(int ms_timeout);
 
@@ -89,9 +96,7 @@ private:
     conduit::relay::web::WebServer  m_server;
     int                             m_ms_poll;
     int                             m_ms_timeout;
-    
-
-    
+    std::string                     m_doc_root;
 
 };
 

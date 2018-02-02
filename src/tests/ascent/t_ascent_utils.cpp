@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -9,7 +9,7 @@
 // 
 // This file is part of Ascent. 
 // 
-// For details, see: http://ascent.readthedocs.io/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
 // Please also read ascent/LICENSE
 // 
@@ -44,48 +44,46 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_file_system.hpp
+/// file: t_ascent_utils.cpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ASCENT_FILE_SYSTEM_HPP
-#define ASCENT_FILE_SYSTEM_HPP
 
-#include <string>
+#include "gtest/gtest.h"
+
+#include <ascent.hpp>
+
+#include <iostream>
+#include <math.h>
+
+#include "t_config.hpp"
+#include "t_utils.hpp"
+
+
+using namespace std;
+using namespace conduit;
+using namespace ascent;
 
 
 //-----------------------------------------------------------------------------
-// -- begin ascent:: --
-//-----------------------------------------------------------------------------
-namespace ascent
+TEST(ascent_utils, ascent_copy_dir)
 {
+    string output_path = conduit::utils::join_path(prepare_output_dir(),"my_folder");
+    
+    string idx_fpath = conduit::utils::join_path(output_path,"index.html");
 
+    // for multiple runs of this test:
+    //  we don't have a util to kill the entire dir, so 
+    //  we simply remove a known file, and check that the copy restores it
+    
+    if(conduit::utils::is_file(idx_fpath))
+    {
+        conduit::utils::remove_file(idx_fpath);
+    }
 
-// helper to check if a directory exists
-bool directory_exists(const std::string &path);
-// helper to create a directory
-bool create_directory(const std::string &path);
-
-// helper to copy a file to another path
-// always overwrites dest_path
-bool copy_file(const std::string &src_path,
-              const std::string &dest_path);
-
-// helper to copy a directory to another path
-// always overwrites contents of dest_path
-bool copy_directory(const std::string &src_path,
-                    const std::string &dest_path);
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end ascent:: --
-//-----------------------------------------------------------------------------
-
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
-
+    
+    ascent::copy_directory(ASCENT_WEB_CLIENT_ROOT, output_path);
+    
+    EXPECT_TRUE(directory_exists(conduit::utils::join_path(output_path,"resources")));
+    EXPECT_TRUE(conduit::utils::is_file(idx_fpath));
+}
 

@@ -69,6 +69,8 @@ using namespace ascent;
 const float64 PI_VALUE = 3.14159265359;
 
 bool launch_server = false;
+bool use_doc_root  = false;
+std::string doc_root = "";
 
 #include <flow.hpp>
 
@@ -107,53 +109,6 @@ public:
 
 };
 
-// //-----------------------------------------------------------------------------
-// TEST(ascent_web, test_ascent_web_launch)
-// {
-//     flow::Workspace::register_filter_type<InspectFilter>();
-//
-//
-//     //
-//     // Create example mesh.
-//     //
-//     Node data, verify_info;
-//     conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
-//
-//     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-//     verify_info.print();
-//
-//     Node actions;
-//     actions.append();
-//     actions[0]["action"] = "add_filter";
-//     actions[0]["type_name"]  = "inspect";
-//     actions[0]["name"] = "fi";
-//
-//     actions.append();
-//     actions[1]["action"] = "connect";
-//     actions[1]["src"]  = "source";
-//     actions[1]["dest"] = "fi";
-//     actions[1]["port"] = "in";
-//
-//     actions.append()["action"] = "execute";
-//     actions.print();
-//
-//     // we want the "flow" runtime
-//     Node open_opts;
-//     open_opts["runtime/type"] = "flow";
-//
-//     Node ascent_info;
-//     //
-//     // Run Ascent
-//     //
-//     Ascent ascent;
-//     ascent.open(open_opts);
-//     ascent.publish(data);
-//     ascent.execute(actions);
-//     ascent.info(ascent_info);
-//     EXPECT_EQ(ascent_info["runtime/type"].as_string(),"flow");
-//     ascent_info.print();
-//     ascent.close();
-// }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_web, test_ascent_web_launch)
@@ -196,6 +151,10 @@ TEST(ascent_web, test_ascent_web_launch)
     Node open_opts;
     open_opts["runtime/type"] = "flow";
     open_opts["web/stream"] = "true";
+    if(use_doc_root)
+    {
+        open_opts["web/document_root"] = doc_root;
+    }
     open_opts["ascent_info"] = "verbose";
     
     Ascent ascent;
@@ -238,6 +197,12 @@ int main(int argc, char* argv[])
         if(arg_str == "launch")
         {
             launch_server = true;;
+        }
+        else if(arg_str == "doc_root" && (i+1 < argc) )
+        {
+            use_doc_root = true;
+            doc_root = std::string(argv[i+1]);
+            i++;
         }
     }
 
