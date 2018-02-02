@@ -56,6 +56,8 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     python \
     unzip \
+    vim \
+    emacs \
  && rm -rf /var/lib/apt/lists/*
 
 
@@ -97,5 +99,7 @@ RUN cd ascent/build-debug && make install
 
 # open port 9000, for use by conduit relay
 EXPOSE 9000
+# open port 10000 for other apps (browse fs via http, etc)
+EXPOSE 10000
 
 CMD ["/bin/bash"]
