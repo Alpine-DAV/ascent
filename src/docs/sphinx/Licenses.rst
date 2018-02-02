@@ -67,7 +67,7 @@ Build System
 """"""""""""
 - *CMake*: http://www.cmake.org/licensing/ (BSD Style License)
 - *BLT*: From BLT - (BSD Style License)
-- *Spack*: http://software.llnl.gov/spack (LGPL License)
+- *Spack*: https://spack.io/ (LGPL License)
 
 Proxy Applications
 """"""""""""""""""

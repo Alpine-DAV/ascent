@@ -23,7 +23,7 @@ License
 
 Ascent is released under a BSD-style license - for detailed license info, refer to:
 
-http://software.llnl.gov/strawman/Licenses.html
+http://ascent.readthedocs.io/en/latest/Licenses.html
 
 or the following files in the Ascent source tree:
 - [LICENSE](/LICENSE)

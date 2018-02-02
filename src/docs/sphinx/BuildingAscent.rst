@@ -100,9 +100,8 @@ VTK-h
 
 .. note:: 
 
-    When building VTK-m with VTK-h which must be configured with rendering on, among other options. 
-    For a full list of options that need to be set, consult `/uberenv_libs/spack/var/spack/repos/builtin/packages/vtkm/package.py`.
-
+    When building VTK-m for use with VTK-h, VTK-m must be configured with rendering on, among other options.
+    See the VTK-h spack package for details. 
 
 Getting Started
 ---------------
@@ -225,7 +224,7 @@ Bootstrapping Third Party Dependencies
 --------------------------------------
 
 You can use ``bootstrap-env.sh`` (located at the root of the ascent repo) to help setup your development environment on OSX and Linux. 
-This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** (http://software.llnl.gov/spack) to build the external third party libraries and tools used by Ascent. 
+This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** (https://spack.io/) to build the external third party libraries and tools used by Ascent. 
 Fortran support in is optional, dependencies should build without fortran. 
 After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH, so can immediately call the ``config-build.sh`` helper script to configure a ascent build.
 
@@ -252,7 +251,7 @@ After building these libraries and tools, it writes an initial *host-config* fil
 Compiler Settings for Third Party Dependencies 
 ----------------------------------------------
 You can edit ``scripts/uberenv/compilers.yaml`` to change the compiler settings
-passed to Spack. See the `Spack Compiler Configuration <http://software.llnl.gov/spack/basic_usage.html#manual-compiler-configuration>`_   
+passed to Spack. See the `Spack Compiler Configuration <http://spack.readthedocs.io/en/latest/getting_started.html#compiler-configuration>`_
 documentation for details.
 
 For OSX, the defaults in ``compilers.yaml`` are clang from X-Code and gfortran from https://gcc.gnu.org/wiki/GFortranBinaries#MacOS. 
