@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -9,7 +9,7 @@
 // 
 // This file is part of Ascent. 
 // 
-// For details, see: http://ascent.readthedocs.io/.
+// For details, see: http://software.llnl.gov/ascent/.
 // 
 // Please also read ascent/LICENSE
 // 
@@ -42,75 +42,48 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent.hpp
+/// file: t_ascent_utils.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_HPP
-#define ASCENT_HPP
+#include "gtest/gtest.h"
+
+#include <ascent.hpp>
+
+#include <iostream>
+#include <math.h>
+
+#include "t_config.hpp"
+#include "t_utils.hpp"
 
 
-#include <ascent_config.h>
-#include <ascent_exports.h>
-
-
-#include <ascent_logging.hpp>
-#include <ascent_file_system.hpp>
-#include <ascent_block_timer.hpp>
-
-#include <conduit.hpp>
-#include <conduit_blueprint.hpp>
+using namespace std;
+using namespace conduit;
+using namespace ascent;
 
 
 //-----------------------------------------------------------------------------
-// -- begin ascent:: --
-//-----------------------------------------------------------------------------
-namespace ascent
+TEST(ascent_utils, ascent_copy_dir)
 {
-
-// Forward Declare the ascent::Runtime interface class.
-class Runtime;
-
-//-----------------------------------------------------------------------------
-/// Ascent Interface
-//-----------------------------------------------------------------------------
-class ASCENT_API Ascent
-{
-public:
-           Ascent();
-          ~Ascent();
-
-    void   open(); // open with default options
-    void   open(const conduit::Node &options);
-    void   publish(const conduit::Node &data);
-    void   execute(const conduit::Node &actions);
-    void   info(conduit::Node &info_out);
-    void   close();
-
-private:
+    string output_path = conduit::utils::join_path(prepare_output_dir(),"my_folder");
     
-    Runtime *m_runtime;
-    bool     m_verbose_msgs;
-    bool     m_forward_exceptions;
-};
+    string idx_fpath = conduit::utils::join_path(output_path,"index.html");
 
+    // for multiple runs of this test:
+    //  we don't have a util to kill the entire dir, so 
+    //  we simply remove a known file, and check that the copy restores it
+    
+    if(conduit::utils::is_file(idx_fpath))
+    {
+        conduit::utils::remove_file(idx_fpath);
+    }
 
-//-----------------------------------------------------------------------------
-std::string ASCENT_API about();
-
-//-----------------------------------------------------------------------------
-void        ASCENT_API about(conduit::Node &node);
-
-};
-//-----------------------------------------------------------------------------
-// -- end ascent:: --
-//-----------------------------------------------------------------------------
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
+    
+    ascent::copy_directory(ASCENT_WEB_CLIENT_ROOT, output_path);
+    
+    EXPECT_TRUE(directory_exists(conduit::utils::join_path(output_path,"resources")));
+    EXPECT_TRUE(conduit::utils::is_file(idx_fpath));
+}
 

@@ -69,6 +69,8 @@ using namespace ascent;
 const float64 PI_VALUE = 3.14159265359;
 
 bool launch_server = false;
+bool use_doc_root  = false;
+std::string doc_root = "";
 
 #include <flow.hpp>
 
@@ -121,6 +123,10 @@ TEST(ascent_web, test_ascent_main_web_launch)
     Node open_opts;
     open_opts["runtime/type"] = "ascent";
     open_opts["web/stream"] = "true";
+    if(use_doc_root)
+    {
+        open_opts["web/document_root"] = doc_root;
+    }
     open_opts["ascent_info"] = "verbose";
     
     Ascent ascent;
@@ -162,6 +168,12 @@ int main(int argc, char* argv[])
         if(arg_str == "launch")
         {
             launch_server = true;;
+        }
+        else if(arg_str == "doc_root" && (i+1 < argc) )
+        {
+            use_doc_root = true;
+            doc_root = std::string(argv[i+1]);
+            i++;
         }
     }
 

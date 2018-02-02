@@ -192,7 +192,12 @@ AscentRuntime::Initialize(const conduit::Node &options)
        options["web/stream"].as_string() == "true" &&
        rank == 0)
     {
-        std::cout << "Enabling Web" << std::endl;
+        
+        if(options.has_path("web/document_root"))
+        {
+            m_web_interface.SetDocumentRoot(options["web/document_root"].as_string());
+        }
+
         m_web_interface.Enable();
     }
 

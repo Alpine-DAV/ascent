@@ -51,10 +51,12 @@ The top level API for ascent consists of four calls:
   - Execute(conduit::Node)
   - Close()
 
+.. _ascent_api_open:
+
 Open
 ----
 Open provides the initial setup of Ascent from a Conduit Node. 
-Options include runtime type (e.g., main, flow, or empty) and associated backend if available.
+Options include runtime type (e.g., ascent, flow, or empty) and associated backend if available.
 If running in parallel (i.e., MPI), then a MPI comm handle must be supplied.
 Ascent will always check the file system for a file called ``ascent_options.json`` that will override compiled in options, and for obvious reasons, a MPI communicator cannot be specified in the file.
 Here is a file that would set the runtime to the main ascent runtime using a TBB backend (inside VTK-m):
@@ -84,11 +86,37 @@ A typical integration will include the following code:
 
 Valid runtimes include:
 
-  - ascent
+  - ``ascent``
     
-  - flow
+  - ``flow``
 
-  - empty
+  - ``empty``
+
+
+There are a few other options that control behaviors common to all runtimes:
+
+ * ``messages``
+
+   Controls if logged info messages are printed or muted.
+  
+   Supported values:
+   
+    - ``quiet`` (default if omitted) Logged info messages are muted 
+
+    - ``verbose``  Logged info messages are printed
+
+
+ * ``exceptions``
+ 
+   Controls if Ascent traps or forwards C++ exceptions that are thrown.
+   
+   Supported values:
+    
+    - ``forward`` (default if omitted) Exceptions thrown will propagate to the calling code 
+
+    -  ``catch`` Catches conduit::Error exceptions at the Ascent interface and prints info about the error to standard out. 
+       This case this provides an easy way to prevent host program crashes when something goes wrong in Ascent.
+  
   
 Publish
 -------
@@ -188,6 +216,7 @@ Error Handling
   Ascent uses Conduit's error handling machinery. By default when errors occur 
   C++ exceptions are thrown, but you can rewire Conduit's handlers with your own callbacks. For more info
   see the `Conduit Error Handling Tutorial <http://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp_errors.html>`_.
+  You can also stop exceptions at the Ascent interface using the ``exceptions`` option for :ref:`Ascent::open<ascent_api_open>` .
 
 
 
