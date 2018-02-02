@@ -55,13 +55,13 @@ Demo 1: First Light
 
 For this demo, we run some of the "First Light" examples are installed with Ascent to enable users to quickly test ascent in their build system.
 
-C++ Example (examples/using-with-make/ascent_render_example.cpp):
+C++ Example (`examples/using-with-make/ascent_render_example.cpp`):
 
 .. literalinclude:: ../../../src/examples/using-with-make/ascent_render_example.cpp
    :language: cpp
    :lines: 45-
 
-Python Example (examples/python/ascent_python_render_example.py):
+Python Example (`examples/python/ascent_python_render_example.py`):
 
 .. literalinclude:: ../../../src/examples/python/ascent_python_render_example.py
    :language: python
@@ -91,6 +91,8 @@ The default integration example for Cloverleaf3D sets up Ascent to volume render
 
 Ascent also allows you to override compiled in actions with a  ``ascent_actions.json`` file. In this case, the file we provide with Cloverleaf3D mirrors the compiled in actions:
 
+Cloverleaf3D default  ``ascent_actions.json`` file (`examples/proxies/cloverleaf3d-ref/ascent_actions.json`):
+
 .. literalinclude:: ../../../src/examples/proxies/cloverleaf3d-ref/ascent_actions.json
    :language: json
 
@@ -102,6 +104,7 @@ Edit the ``ascent_actions.json`` to create a pipeline that computes contours and
   
   * TODO JSON for cloverleaf3d: isosurface + pseudocolor
 
+(Also available in install directory: `examples/tutorial/demo_2/ascent_actions_1.json`)
 
 You can also compose more complex scenes that render both pipeline results and the published data. 
 To demonstrate this, we combine the pseudocolor rendering of the contour results with a volume rendering of the entire mesh:
@@ -111,7 +114,7 @@ To demonstrate this, we combine the pseudocolor rendering of the contour results
   
   * TODO JSON cloverleaf3d: isosurface + pseudocolor & volume rendering
 
-
+(Also available in install directory: `examples/tutorial/demo_2/ascent_actions_2.json`)
 
 Demo 3: Creating Cinema Extracts
 ----------------------------------
@@ -129,6 +132,8 @@ specification (Spec-A):
   
   
   * TODO JSON cloverleaf3d: cinema spec-a
+
+(Also available in install directory: `examples/tutorial/demo_3/ascent_actions.json`)
 
 Run Cloverleaf3D with this setup and it will render several viewpoints and construct Cinema database. 
 You can then open this database with a Cinema viewer and interactively explore views of data set 
@@ -153,8 +158,12 @@ Again, since we will use the Cloverleaf3D Ascent integration, make sure you are 
 ``examples/proxies/cloverleaf3d`` directory of your Ascent install. Then edit the ``ascent_actions.json`` 
 file to define a single python extract that runs a script file:
 
+
+
 .. literalinclude:: ../../../src/examples/tutorial/demo_4/ascent_actions.json
    :language: json
+
+(Also available in install directory: `examples/tutorial/demo_4/ascent_actions.json`)
 
 This requests a python extract that will use an embedded python interpreter to execute 
 ``ascent_tutorial_demo_4_histogram.py``, which is specified using the ``file`` parameter.
@@ -164,10 +173,12 @@ a python script as a string.
 
 Next, create our analysis script ``ascent_tutorial_demo_4_histogram.py``:
 
-
 .. literalinclude:: ../../../src/examples/tutorial/demo_4/ascent_tutorial_demo_4_histogram.py 
    :language: python
    :lines: 43-
+
+(Also available in install directory: `examples/tutorial/demo_4/ascent_tutorial_demo_4_histogram.py`)
+
 
 This script computes a basic histogram counting the number of energy field elements that
 fall into a set of uniform bins.  It uses numpy's histogram function and mpi4py to handle 
