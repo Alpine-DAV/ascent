@@ -134,21 +134,9 @@ script:
   - export VTKM_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*`
   - export VTKH_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkh*`
   - export ASCENT_DIR=${TRAVIS_BUILD_DIR}/install-debug
-  # using with cmake example
-  - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
-  - mkdir build
-  - cd build
-  - export EXAMPLE_CFG="-DASCENT_DIR=${ASCENT_DIR} -DCONDUIT_DIR=${CONDUIT_DIR}"
-  - if [ $ENABLE_VTKH = 'ON' ]; then export EXAMPLE_CFG="${EXAMPLE_CFG} -DVTKM_DIR=${VTKM_DIR} -DVTKH_DIR=${VTKH_DIR}"; fi
-  - echo $EXAMPLE_CFG
-  - cmake  ${EXAMPLE_CFG} ../
-  - make VERBOSE=1
-  - ./ascent_render_example
-  # using with make example (still needs work for static builds)
-  #- cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
-  #- make
-  #- env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
-  # test run example apps
+  # `using with` examples
+  - cd ${TRAVIS_BUILD_DIR}
+  - if [ $ENABLE_VTKH = 'ON' ]; then ./scripts/test-using-with-examples.sh ; fi
   - cd ${TRAVIS_BUILD_DIR}
   - export PATH=$PATH:`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/mpich-*/bin/`
   - if [ $ENABLE_VTKH = 'ON' ]; then ./scripts/test-run-examples.sh ; fi
