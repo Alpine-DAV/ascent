@@ -74,7 +74,7 @@ System Architecture
 The Ascent sytem architecture is composed of several components:
   * **Conduit**: `Conduit <http://software.llnl.gov/conduit/>`_  is used to describe and pass in-core mesh data and runtime options from the simulation code to Ascent.
   * **Runtimes**: Ascent contains a number of runtimes that implement analysis, rendering, and I/O operations on the mesh data published to Ascent. At a high level, a runtime is responsible for consuming the simulation data that is described using the Conduit Mesh Blueprint and performing a number of actions defined within Conduit Nodes, which create some form of output.
-  * **Data Adapters**: Simulation mesh data is described using Conduit's `Mesh Blueprint <http://software.llnl.gov/conduit/blueprint_mesh.html>`_, which outlines a set of conventions to describe different types of mesh-based scientific data. Each Ascent runtime provides internal Data Adaptors that convert Mesh Blueprint data into a more a more specific data model, such as VTK-m's data model. Ascent will always zero-copy simulation data when possible. To simplify memory ownership semantics, the data provided to Ascent via Conduit Nodes is considered to be owned by the by the simulation.
+  * **Data Adapters**: Simulation mesh data is described using Conduit's `Mesh Blueprint <http://llnl-conduit.readthedocs.io/en/latest/blueprint.html>`_, which outlines a set of conventions to describe different types of mesh-based scientific data. Each Ascent runtime provides internal Data Adaptors that convert Mesh Blueprint data into a more a more specific data model, such as VTK-m's data model. Ascent will always zero-copy simulation data when possible. To simplify memory ownership semantics, the data provided to Ascent via Conduit Nodes is considered to be owned by the by the simulation.
   * **Embedded Web Server**: Ascent can stream images rendered from a running simulation to a web browser using the Conduit Relay's embedded web-server.
 
 System Diagram
@@ -117,7 +117,7 @@ Runtimes
   Ascent can be configured with one or more of the following runtimes. 
   When multiple runtimes are built with Ascent, available runtimes can be selected at runtime.
   A runtime has three main functions: consume simulation data, perfrom analysis (optional), and output data.
-  Data describing the simulation mesh is sent to the runtime within a Conduit Node which is formatted according to `Conduit Blueprint <http://software.llnl.gov/conduit/blueprint.html>`_.
+  Data describing the simulation mesh is sent to the runtime within a Conduit Node which is formatted according to `Conduit Blueprint <http://llnl-conduit.readthedocs.io/en/latest/blueprint.html>`_.
   Once the data is in a compatible format, the runtime can optionally perfrom some analysis operations, and then output the results. 
   Currently, the Ascent runtime uses the  
 
@@ -135,4 +135,4 @@ By using the Flow runtime, developers can connect filters in advanced ways not d
 
 Empty
 """""
-  The empty runtime contains all the boilerplate code needed to started implementing a custom runtime and is meant to serve as a staring place for those that wish to create a runtime from scratch.
+The empty runtime contains all the boilerplate code needed to started implementing a custom runtime and is meant to serve as a staring place for those that wish to create a runtime from scratch.

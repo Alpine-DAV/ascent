@@ -83,6 +83,9 @@ The command below would launch Lulesh for 10 iterations with a problem size of 3
 
   srun -n 8 lulesh_par -i 10 -s 32
 
+
+.. _cloverleaf3d_integration:
+
 CloverLeaf3D
 ^^^^^^^^^^^^
 CloverLeaf3D is a proxy-application from the Atomic Weapons Establishment (AWE) that can be found at `http://uk-mac.github.io/CloverLeaf3D <http://uk-mac.github.io/CloverLeaf3D>`_.

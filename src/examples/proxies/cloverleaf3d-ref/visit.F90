@@ -262,13 +262,15 @@ SUBROUTINE visit(my_ascent)
       step_name(1:1) = "."
       savename = trim(trim(name) //trim(chunk_name)//trim(step_name))
 
+      CALL ascent_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
+
       sim_actions = conduit_node_create()
       add_scene_act = conduit_node_append(sim_actions)
       CALL conduit_node_set_path_char8_str(add_scene_act,"action", "add_scenes")
 
       scenes = conduit_node_fetch(add_scene_act,"scenes")
-      CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/type", "volume")      
-      CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/params/field", "velocity_y")
+      CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/type", "volume")
+      CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/params/field", "energy")
 
       execute_act = conduit_node_append(sim_actions)
       CALL conduit_node_set_path_char8_str(execute_act,"action", "execute")
@@ -276,9 +278,9 @@ SUBROUTINE visit(my_ascent)
       reset_act = conduit_node_append(sim_actions)
       CALL conduit_node_set_path_char8_str(reset_act,"action", "reset")
 
-      CALL ascent_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
       CALL ascent_publish(my_ascent, sim_data)
       CALL ascent_execute(my_ascent, sim_actions)
+
       CALL conduit_node_destroy(sim_actions)
       CALL conduit_node_destroy(sim_data)
 

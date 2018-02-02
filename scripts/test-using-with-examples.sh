@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 # Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 # 
@@ -42,42 +43,17 @@
 # 
 ###############################################################################
 
-###############################################################################
-#
-# Example that shows how to use an installed instance of Ascent in another
-# CMake-based build system.
-#
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DASCENT_DIR={ascent install path}  \ 
-#   -DCONDUIT_DIR={conduit install path}    \ 
-#   -DVTKM_DIR={vtkm install path}          \
-#   -DVTKH_DIR={vtkh install path}          \
-#   ../
-# make
-# ./ascent_render_example
-#
-###############################################################################
+cd ${ASCENT_DIR}/examples/using-with-cmake
+mkdir build
+cd build
+export EXAMPLE_CFG="-DASCENT_DIR=${ASCENT_DIR} -DCONDUIT_DIR=${CONDUIT_DIR} -DVTKM_DIR=${VTKM_DIR} -DVTKH_DIR=${VTKH_DIR}"
+cmake  ${EXAMPLE_CFG} ../
+make VERBOSE=1
+./ascent_render_example
 
-cmake_minimum_required(VERSION 3.0)
-
-project(using_with_cmake)
-
-include("FindAscent.cmake")
-include("FindConduit.cmake")
-include("FindVTKm.cmake")
-include("FindVTKh.cmake")
-
-# setup the ascent & conduit include paths
-include_directories(${ASCENT_INCLUDE_DIRS})
-include_directories(${CONDUIT_INCLUDE_DIRS})
-# note: vtkm/h headers are not exposed in the interface
-
-# create our example 
-add_executable(ascent_render_example ascent_render_example.cpp)
-
-# link to ascent
-target_link_libraries(ascent_render_example ascent)
+# using with make example (still needs work for static builds)
+#- cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
+#- make
+#- env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
+# test run example apps
 

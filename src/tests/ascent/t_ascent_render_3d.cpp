@@ -253,6 +253,81 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_render_mesh)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+    
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    //verify_info.print();
+
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_mesh");
+    
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    //plot 1
+    scenes["s1/plots/p1/type"] = "mesh";
+    scenes["s1/image_prefix"] = output_file;
+ 
+    conduit::Node actions;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+    // execute
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    //
+    // Run Ascent
+    //
+    
+    Ascent ascent;
+
+    Node ascent_opts;
+    //ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+    
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
+
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
 {

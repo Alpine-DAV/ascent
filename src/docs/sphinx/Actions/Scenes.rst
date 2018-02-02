@@ -225,6 +225,10 @@ Building on the previous example, we now add a custom color table to the render 
   point5["alpha"] = 1.; 
   scenes["s1/renders/r2/color_table/control_points"] = control_points;
   
+  
+.. _actions_cinema:
+  
+  
 Cinema Databases
 ----------------
 The Cinema specification is a image-based solution for post-hoc exploration of 

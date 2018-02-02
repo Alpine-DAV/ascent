@@ -120,7 +120,7 @@ There are a few other options that control behaviors common to all runtimes:
   
 Publish
 -------
-This call publishes data to Ascent through `Conduit Blueprint <http://software.llnl.gov/blueprint_mesh.html>`_ mesh descriptions.
+This call publishes data to Ascent through `Conduit Blueprint <http://llnl-conduit.readthedocs.io/en/latest/blueprint.html>`_ mesh descriptions.
 In the Lulesh prox-app, data is already in a form that is compatible with the blueprint conventions and the code to create the Conduit Node is straight-forward:
 
 .. code-block:: c++
@@ -215,7 +215,7 @@ Error Handling
 
   Ascent uses Conduit's error handling machinery. By default when errors occur 
   C++ exceptions are thrown, but you can rewire Conduit's handlers with your own callbacks. For more info
-  see the `Conduit Error Handling Tutorial <http://software.llnl.gov/conduit/tutorial_errors.html>`_.
+  see the `Conduit Error Handling Tutorial <http://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp_errors.html>`_.
   You can also stop exceptions at the Ascent interface using the ``exceptions`` option for :ref:`Ascent::open<ascent_api_open>` .
 
 

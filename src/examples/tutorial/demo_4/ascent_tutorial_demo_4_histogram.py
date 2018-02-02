@@ -9,7 +9,7 @@
 # 
 # This file is part of Ascent. 
 # 
-# For details, see: http://software.llnl.gov/ascent/.
+# For details, see: http://ascent.readthedocs.io/.
 # 
 # Please also read ascent/LICENSE
 # 

@@ -51,7 +51,7 @@
 #  env ASCENT_DIR={ascent install path} \
 #      CONDUIT_DIR={conduit install path}   \
 #   make
-#  ./example
+#  ./ascent_render_example
 # 
 #
 ###############################################################################
@@ -61,6 +61,6 @@ INC_FLAGS=-I$(ASCENT_DIR)/include/ascent -I$(CONDUIT_DIR)/include/conduit
 LINK_FLAGS=-L$(ASCENT_DIR)/lib/ -lascent -L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint
 
 main:
-	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example
+	$(CXX) $(INC_FLAGS) ascent_render_example.cpp $(LINK_FLAGS) -o ascent_render_example
 
 
