@@ -97,6 +97,8 @@ RUN cd ascent/build-debug && make
 RUN cd ascent/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
 RUN cd ascent/build-debug && make install
 
+COPY ascent_docker_setup_env.sh /
+
 # open port 9000, for use by conduit relay
 EXPOSE 9000
 # open port 10000 for other apps (browse fs via http, etc)

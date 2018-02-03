@@ -60,6 +60,7 @@ Ascent focuses on ease of use and reduced integration burden for simulation code
 - It includes integration examples which demonstrate how to use Ascent inside of three different HPC simulation proxy applications.
 - It provides a built-in web server that supports streaming rendered images directly to a web browser.
 
+
 Ascent Project Resources
 ==========================
 
