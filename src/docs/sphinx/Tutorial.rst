@@ -100,21 +100,19 @@ We will override the default actions to compute contours of the input data and r
 
 Edit the ``ascent_actions.json`` to create a pipeline that computes contours and renders them using a pseudocolor plot:
 
-.. code::
+.. literalinclude:: ../../../src/examples/tutorial/demo_2/contour.json
+   :language: json
   
-  * TODO JSON for cloverleaf3d: isosurface + pseudocolor
-
-(Also available in install directory: `examples/tutorial/demo_2/ascent_actions_1.json`)
+(Also available in install directory: `examples/tutorial/demo_2/contour.json`)
 
 You can also compose more complex scenes that render both pipeline results and the published data. 
 To demonstrate this, we combine the pseudocolor rendering of the contour results with a volume rendering of the entire mesh:
 
-.. code::
+.. literalinclude:: ../../../src/examples/tutorial/demo_2/volume_contour.json
+   :language: json
   
-  
-  * TODO JSON cloverleaf3d: isosurface + pseudocolor & volume rendering
 
-(Also available in install directory: `examples/tutorial/demo_2/ascent_actions_2.json`)
+(Also available in install directory: `examples/tutorial/demo_2/volume_contour.json`)
 
 Demo 3: Creating Cinema Extracts
 ----------------------------------
@@ -128,14 +126,13 @@ Make sure you are in ``examples/proxies/cloverleaf3d`` directory of your Ascent 
 Cloverleaf3D ``ascent_actions.json`` file to direct Ascent to render out a scene using the Cinema Astaire
 specification (Spec-A):
 
-.. code::
+.. literalinclude:: ../../../src/examples/tutorial/demo_3/ascent_actions.json
+   :language: json
   
-  
-  * TODO JSON cloverleaf3d: cinema spec-a
-
 (Also available in install directory: `examples/tutorial/demo_3/ascent_actions.json`)
 
-Run Cloverleaf3D with this setup and it will render several viewpoints and construct Cinema database. 
+Run Cloverleaf3D with this setup and it will render several viewpoints and construct Cinema database
+in the current directory. 
 You can then open this database with a Cinema viewer and interactively explore views of data set 
 after the simulation finishes. 
 
