@@ -42,11 +42,16 @@
 .. #
 .. ############################################################################
 
-Tutorial Demos
+Tutorial
 =================
 
 This page outlines how to run several demos included with Ascent.
 
+These demos assume you have an Ascent install. If you have access to Docker, the easiest way to test the waters is via the ``alpinedav/ascent`` Docker image. For more details about using this image see :ref:`demos_using_docker`. You can also build Ascent with `Spack <https://spack.io/>`_. For more details see :ref:`building_with_spack`.
+
+
+
+.. _tutorial_demo_1:
 
 Demo 1: First Light
 -----------------------
@@ -235,5 +240,59 @@ The script computes the histogram of the energy field and prints a summary like 
     2.42438105  2.4639472   2.50351334  2.54307948  2.58264562  2.62221176
     2.6617779   2.70134404  2.74091018  2.78047632  2.82004246  2.8596086
     2.89917474  2.93874088]
+
+.. _demos_using_docker:
+
+Running Demos using Docker
+-----------------------------------
+
+If you have Docker installed you can obtain a Docker image with a ready-to-use ascent install from `Docker Hub <https://hub.docker.com/r/alpinedav/ascent/>`_.
+
+Fetch the latest Ascent image:
+
+.. code::
+
+    docker pull alpinedav/ascent
+
+After the download completes, create and run a container using this image:
+
+.. code::
+
+    docker run -p 8000:8000 -p 10000:10000 -t -i alpinedav/ascent
+
+(The ``-p`` is used to forward ports between the container and your host machine, we use these ports to allow web servers on the container to serve data to the host.)
+
+
+You will now be at a bash prompt in you container. 
+
+To add the proper paths to Python and MPI to your environment run:
+
+.. code::
+
+    source ascent_docker_setup.sh
+
+The ascent source code is at ``/ascent/src/``, and the install is at ``/ascent/install-debug``.
+
+Next, try running the python example mentioned in :ref:`tutorial_demo_1`:
+
+.. code::
+
+    cd /ascent/install-debug/examples/python
+    python ascent_python_render_example.py
+
+You should see some verbose output and ``out_ascent_render_3d.png`` will be created. 
+
+
+To view output files you can use a simple Python web server to expose files from the container to your host machine:
+
+.. code::
+
+    python -m SimpleHTTPServer 10000
+
+
+With this server running, open up a web browser on your host machine and view localhost:10000. You should be able to click on ``out_ascent_render_3d.png`` and view the rendered result in your web browser. 
+
+You should now be ready to run the other demos, remember to use the Python web server to browse results.
+
 
 

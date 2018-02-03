@@ -267,11 +267,10 @@ For OSX, the defaults in ``compilers.yaml`` are clang from X-Code and gfortran f
   to check Python C-API compatibility during development. In the near future, we plan to 
   provide a Spack package to simplify deployment.
 
-Building with Spack
--------------------
-
 .. _building_with_spack:
 
+Building with Spack
+-------------------
 
 As of 11/10/2017,  Spack's develop branch includes a
 `recipe <https://github.com/spack/spack/blob/develop/var/spack/repos/builtin/packages/ascent/package.py>`_ 
