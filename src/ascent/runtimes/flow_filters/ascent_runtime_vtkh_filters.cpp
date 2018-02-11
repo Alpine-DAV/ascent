@@ -214,21 +214,27 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
     //
     if(camera_node.has_child("look_at"))
     {
-        const float64 *coords = camera_node["look_at"].as_float64_ptr();
+        conduit::Node n;
+        camera_node["look_at"].to_float64_array(n);
+        const float64 *coords = n.as_float64_ptr();
         vtkmVec3f look_at(coords[0], coords[1], coords[2]);
         camera.SetLookAt(look_at);  
     }
 
     if(camera_node.has_child("position"))
     {
-        const float64 *coords = camera_node["position"].as_float64_ptr();
+        conduit::Node n;
+        camera_node["position"].to_float64_array(n);
+        const float64 *coords = n.as_float64_ptr();
         vtkmVec3f position(coords[0], coords[1], coords[2]);
         camera.SetPosition(position);  
     }
     
     if(camera_node.has_child("up"))
     {
-        const float64 *coords = camera_node["up"].as_float64_ptr();
+        conduit::Node n;
+        camera_node["up"].to_float64_array(n);
+        const float64 *coords = n.as_float64_ptr();
         vtkmVec3f up(coords[0], coords[1], coords[2]);
         vtkm::Normalize(up);
         camera.SetViewUp(up);
@@ -304,7 +310,8 @@ parse_color_table(const conduit::Node &color_table_node)
       {
           ASCENT_WARN("Color map control point must have a position. Ignoring");
       }
-      float64 position = peg["position"].as_float64();
+
+      float64 position = peg["position"].to_float64();
       
       if(position > 1.0 || position < 0.0)
       {
@@ -315,7 +322,9 @@ parse_color_table(const conduit::Node &color_table_node)
 
       if (peg["type"].as_string() == "rgb")
       {
-          const float64 *color = peg["color"].as_float64_ptr();
+          conduit::Node n;
+          peg["color"].to_float64_array(n);
+          const float64 *color = n.as_float64_ptr();
 
           vtkm::rendering::Color ecolor(color[0], color[1], color[2]);
           
@@ -843,8 +852,8 @@ VTKHMarchingCubes::execute()
     Node n_iso_vals_dbls;
     n_iso_vals.to_float64_array(n_iso_vals_dbls);
     
-    marcher.SetIsoValues(n_iso_vals.as_double_ptr(),
-                         n_iso_vals.dtype().number_of_elements());
+    marcher.SetIsoValues(n_iso_vals_dbls.as_double_ptr(),
+                         n_iso_vals_dbls.dtype().number_of_elements());
 
     marcher.Update();
 
@@ -1144,8 +1153,8 @@ VTKHThreshold::execute()
     const Node &n_max_val = params()["max_value"];
 
     // convert to contig doubles
-    double min_val = n_min_val.as_float64(); 
-    double max_val = n_max_val.as_float64(); 
+    double min_val = n_min_val.to_float64(); 
+    double max_val = n_max_val.to_float64(); 
     thresher.SetUpperThreshold(max_val);
     thresher.SetLowerThreshold(min_val);
 
@@ -1373,10 +1382,10 @@ VTKHClip::execute()
     const Node &sphere = params()["sphere"];
     double center[3];
 
-    center[0] = sphere["center/x"].as_float64();
-    center[1] = sphere["center/y"].as_float64();
-    center[2] = sphere["center/z"].as_float64();
-    double radius = sphere["radius"].as_float64(); 
+    center[0] = sphere["center/x"].to_float64();
+    center[1] = sphere["center/y"].to_float64();
+    center[2] = sphere["center/z"].to_float64();
+    double radius = sphere["radius"].to_float64(); 
   
     clipper.SetSphereClip(center, radius);
     clipper.Update();
