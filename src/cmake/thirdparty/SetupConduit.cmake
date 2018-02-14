@@ -61,6 +61,17 @@ MESSAGE(STATUS "Looking for Conduit using CONDUIT_DIR = ${CONDUIT_DIR}")
 
 include(${CONDUIT_DIR}/lib/cmake/conduit.cmake)
 
+# if fortran is enabled, make sure conduit was built with fortran support
+if(FORTRAN_FOUND)
+    if(EXISTS ${CONDUIT_DIR}/include/conduit/conduit.mod)
+        message(STATUS "FOUND conduit fortran module at: ${CONDUIT_DIR}/include/conduit/conduit.mod")
+    else()
+        message(FATAL_ERROR "Failed to find conduit fortran module. \
+                             Ascent Fortran support requires Conduit with Fortran enabled.")
+    endif()
+endif() 
+
+
 set(CONDUIT_FOUND TRUE)
 set(CONDUIT_INCLUDE_DIRS ${CONDUIT_DIR}/include/conduit)
 
