@@ -401,14 +401,13 @@ In the host config, add ``set(HDF5_DIR "/path/to/hdf5_install" CACHE PATH "")``.
 
 Conduit
 ^^^^^^^
-The version of conduit we use is v0.3.0. If the ``HDF5_DIR`` is specified in the host config, conduit will build the relay io library.
+The version of conduit we use is on the master branch. If the ``HDF5_DIR`` is specified in the host config, conduit will build the relay io library.
 Once you have installed conduit, add the path to the install directory to your host config file in the cmake variable `CONDUIT_DIR`.
 
 .. code:: bash
     
     git clone --recursive https://github.com/LLNL/conduit.git
     cd conduit
-    git checkout tags/v0.3.0
     mkdir build
     mkdir install
     cd build
