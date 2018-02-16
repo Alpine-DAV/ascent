@@ -70,6 +70,7 @@
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
+#include <vtkh/rendering/Rasterizer.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/MeshRenderer.hpp>
@@ -1849,6 +1850,10 @@ CreatePlot::execute()
     if(type == "pseudocolor")
     {
       renderer = new vtkh::RayTracer();
+    }
+    else if(type == "rasterizer")
+    {
+      renderer = new vtkh::Rasterizer();
     }
     else if(type == "volume")
     {

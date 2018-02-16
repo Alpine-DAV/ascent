@@ -73,7 +73,7 @@
 #include <ascent_runtime_filters.hpp>
 
 #include <vtkh/vtkh.hpp>
-
+#include <vtkm/rendering/raytracing/Logger.h>
 #ifdef VTKM_CUDA
 #include <vtkm/cont/cuda/ChooseCudaDevice.h>
 #endif
@@ -241,6 +241,13 @@ AscentRuntime::Cleanup()
     filters.open(ss.str());
     filters<<w.get_timings();
     filters.close();
+
+    std::stringstream ssrender;
+    ssrender<<"render_times_"<<rank<<".csv";
+    std::ofstream rendering;
+    rendering.open(ssrender.str());
+    rendering<<vtkm::rendering::raytracing::Logger::GetInstance()->GetStream().str();
+    rendering.close();
 }
 
 //-----------------------------------------------------------------------------
