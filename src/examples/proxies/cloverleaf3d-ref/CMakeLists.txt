@@ -103,14 +103,14 @@ if(MPI_FOUND AND FORTRAN_FOUND)
     configure_file(clover.in ${CMAKE_CURRENT_BINARY_DIR}/clover.in COPYONLY)
     configure_file(ascent_actions.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_actions.json COPYONLY)
     configure_file(ascent_options.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_options.json COPYONLY)
-
+    
     if(MPI_Fortran_USE_MODULE )
-        set(clover_compile_flags "-DUSE_MOD")
+        set(clover_compile_flags "-DUSE_MOD -fopenmp")
     else()
-        set(clover_compile_flags "-DUSE_MPIF") 
+        set(clover_compile_flags "-DUSE_MPIF -fopenmp") 
     endif()
 
-    set(clover_par_deps ascent_mpi mpi)
+    set(clover_par_deps ascent_mpi mpi openmp)
     
     blt_add_executable(
         NAME        cloverleaf3d_par
