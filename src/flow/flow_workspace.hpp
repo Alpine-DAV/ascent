@@ -113,7 +113,7 @@ public:
     std::string    to_json() const;
     /// print json version of info
     void           print() const;
-
+    std::string    get_timings();
     // ------------------------------------------------------------------------
     /// Interface to set and obtain the MPI communicator.
     ///

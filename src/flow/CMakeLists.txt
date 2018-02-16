@@ -78,7 +78,8 @@ set(flow_headers
 
 set(flow_thirdparty_libs 
     conduit
-    conduit_relay)
+    conduit_relay
+    mpi)
 
 #
 # Flows python interpreter support enables

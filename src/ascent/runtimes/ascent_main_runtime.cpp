@@ -54,6 +54,7 @@
 // standard lib includes
 #include <string.h>
 
+#include <flow_workspace.hpp>
 //-----------------------------------------------------------------------------
 // thirdparty includes
 //-----------------------------------------------------------------------------
@@ -229,7 +230,17 @@ AscentRuntime::ResetInfo()
 void
 AscentRuntime::Cleanup()
 {
-
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    std::stringstream ss;
+    ss<<"filter_times_"<<rank<<".csv";
+    std::ofstream filters;
+    filters.open(ss.str());
+    filters<<w.get_timings();
+    filters.close();
 }
 
 //-----------------------------------------------------------------------------

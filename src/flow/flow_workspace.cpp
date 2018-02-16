@@ -56,6 +56,9 @@
 #include <string.h>
 #include <limits.h>
 #include <cstdlib>
+#include <chrono>
+#include <sstream>
+#include <mpi.h>
 
 using namespace conduit;
 using namespace std;
@@ -66,12 +69,33 @@ using namespace std;
 //-----------------------------------------------------------------------------
 namespace flow
 {
-    
+class Timer {
+   typedef std::chrono::high_resolution_clock high_resolution_clock;
+   typedef std::chrono::nanoseconds nanoseconds;
+   typedef std::chrono::duration<float> fsec;
+public:
+    explicit Timer()
+    {
+      Reset();
+    }
+    void Reset()
+    {
+      _start = high_resolution_clock::now();
+    }
+    fsec Elapsed() const
+    {
+       return std::chrono::duration_cast<fsec>(high_resolution_clock::now() - _start);
+    }
+private:
+    high_resolution_clock::time_point _start;
+};    
 // we init m_default_mpi_comm to -1, it's not clear if we can
 // pick a safe non-inited value w/o the mpi headers, but
 // we will try this strategy.
 int Workspace::m_default_mpi_comm = -1;
-
+static int g_exe_count = 0;
+static std::stringstream g_timings;
+static Timer g_timer;
 //-----------------------------------------------------------------------------
 class Workspace::ExecutionPlan
 {
@@ -302,11 +326,16 @@ Workspace::execute()
 {
     Node traversals;
     ExecutionPlan::generate(graph(),traversals);
-
     
     // execute traversals 
     NodeIterator travs_itr = traversals.children();
-    
+     
+    int rank = 0;
+    MPI_Comm mpi_comm = MPI_Comm_f2c(default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+    auto time_elapsed = g_timer.Elapsed();
+    g_timings<<g_exe_count<<" "<<rank<<" time_elapsed "<<std::fixed<<time_elapsed.count()<<"\n";
+
     while(travs_itr.has_next())
     {
         NodeIterator trav_itr(&travs_itr.next());
@@ -332,10 +361,11 @@ Workspace::execute()
                 f->set_input(port_name,&registry().fetch(f_input_name));
             }
 
-
+            Timer timer; 
             // execute 
             f->execute();
-
+            auto elapsed = timer.Elapsed();
+            g_timings<<g_exe_count<<" "<<rank<<" "<<f->name()<<" "<<std::fixed<<elapsed.count()<<"\n";
             // if has output, set output
             if(f->output_port())
             {
@@ -362,10 +392,14 @@ Workspace::execute()
         }
     }
     
-    
+    g_exe_count++; 
+    g_timer.Reset();
 }
 
-
+std::string Workspace::get_timings()
+{
+  return g_timings.str();
+}
 //-----------------------------------------------------------------------------
 void
 Workspace::reset()
