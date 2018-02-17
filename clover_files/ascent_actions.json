@@ -1,0 +1,91 @@
+[
+  
+  {
+    "action": "add_pipelines",
+    "pipelines": 
+    {
+      "pl1": 
+      {
+        "f1": 
+        {
+          "type": "contour",
+          "params": 
+          {
+            "field": "velocity_y",
+            "levels": 5
+          }
+        }
+      }
+    }
+  },
+  
+  {
+    "action": "add_scenes",
+    "scenes": 
+    {
+      "scene1": 
+      {
+        "plots": 
+        {
+          "plt1": 
+          {
+            "type": "pseudocolor",
+            "pipeline": "pl1",
+            "params": 
+            {
+              "field": "energy"
+            }
+          }
+        },
+        "renders": 
+        {
+          "r1": 
+          {
+            "type": "cinema",
+            "phi": 1,
+            "theta": 1,
+            "db_name": "test_db",
+            "image_width": 586,
+            "image_height": 586,
+            "zoom": 0.3
+          }
+        }
+      },
+      "scene2": 
+      {
+        "plots": 
+        {
+          "plt1": 
+          {
+            "type": "rasterizer",
+            "pipeline": "pl1",
+            "params": 
+            {
+              "field": "velocity_y"
+            }
+          }
+        },
+        "renders": 
+        {
+          "r1": 
+          {
+            "type": "cinema",
+            "phi": 1,
+            "theta": 1,
+            "db_name": "test_db_raster",
+            "image_width": 586,
+            "image_height": 586,
+            "zoom": 0.3
+          }
+        }
+      }
+    }
+  },
+  
+  {
+    "action": "execute"
+  },
+  {
+    "action": "reset"
+  }
+]
