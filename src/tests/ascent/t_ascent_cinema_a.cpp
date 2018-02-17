@@ -108,7 +108,16 @@ TEST(ascent_cinema_a, test_cinema_a)
     //
     Node actions;
 
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "contour";
+    // filter knobs
+    conduit::Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "braid";
+    double iso[3] = {0., 1., 2.};
+    contour_params["iso_values"].set(iso,3);
     conduit::Node scenes;
+
     scenes["scene1/plots/plt1/type"]         = "pseudocolor";
     scenes["scene1/plots/plt1/params/field"] = "braid";
     // setup required cinema params
@@ -116,6 +125,12 @@ TEST(ascent_cinema_a, test_cinema_a)
     scenes["scene1/renders/r1/phi"] = 2;
     scenes["scene1/renders/r1/theta"] = 2;
     scenes["scene1/renders/r1/db_name"] = "test_db";
+    scenes["scene1/renders/r1/image_width"] = 512;
+    scenes["scene1/renders/r1/image_height"] = 512;
+
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
 
     conduit::Node &add_scenes = actions.append();
     add_scenes["action"] = "add_scenes";

@@ -265,12 +265,12 @@ SUBROUTINE visit(my_ascent)
       CALL ascent_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
 
       sim_actions = conduit_node_create()
-      add_scene_act = conduit_node_append(sim_actions)
-      CALL conduit_node_set_path_char8_str(add_scene_act,"action", "add_scenes")
+      !add_scene_act = conduit_node_append(sim_actions)
+      !CALL conduit_node_set_path_char8_str(add_scene_act,"action", "add_scenes")
 
-      scenes = conduit_node_fetch(add_scene_act,"scenes")
-      CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/type", "volume")
-      CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/params/field", "energy")
+      !scenes = conduit_node_fetch(add_scene_act,"scenes")
+      !CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/type", "volume")
+      !CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/params/field", "energy")
 
       execute_act = conduit_node_append(sim_actions)
       CALL conduit_node_set_path_char8_str(execute_act,"action", "execute")

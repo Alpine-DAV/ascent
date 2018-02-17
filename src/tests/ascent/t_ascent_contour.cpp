@@ -121,7 +121,8 @@ TEST(ascent_contour, test_single_contour_3d)
     // filter knobs
     conduit::Node &contour_params = pipelines["pl1/f1/params"];
     contour_params["field"] = "braid";
-    contour_params["iso_values"] = 0.;
+    double iso[3] = {0., 1., 2.};
+    contour_params["iso_values"].set(iso,3);
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
@@ -141,7 +142,7 @@ TEST(ascent_contour, test_single_contour_3d)
     // execute
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+    actions.print(); 
     //
     // Run Ascent
     //

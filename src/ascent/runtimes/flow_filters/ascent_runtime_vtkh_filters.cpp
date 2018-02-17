@@ -359,12 +359,12 @@ void parse_image_dims(const conduit::Node &node, int &width, int &height)
 
   if(node.has_path("image_width"))
   {
-    width = node["image_width"].as_int32();
+    width = node["image_width"].to_int32();
   }
 
   if(node.has_path("image_height"))
   {
-    height = node["image_height"].as_int32();
+    height = node["image_height"].to_int32();
   }
   
 }
@@ -417,6 +417,7 @@ protected:
   std::string                          m_image_name;
   std::string                          m_current_path;
   float                                m_time;
+  bool m_do_zoom;
 public:
   CinemaManager(vtkm::Bounds bounds, 
                 const int phi, 
@@ -426,7 +427,8 @@ public:
       m_phi(phi),
       m_theta(theta),
       m_image_name(image_name),
-      m_time(0.f)
+      m_time(0.f),
+      m_do_zoom(true)
   {
     this->create_cinema_cameras(bounds);
   }
@@ -476,11 +478,12 @@ public:
 
     m_current_path = output_path;
   }
-
+  
   void fill_renders(std::vector<vtkh::Render> *renders, 
                     const std::vector<vtkm::Id> &domain_ids,
                     int width, 
-                    int height)
+                    int height,
+                    float zoom)
   {
     const int num_renders = m_image_names.size();    
 
@@ -493,6 +496,12 @@ public:
                                                               m_bounds,
                                                               domain_ids,
                                                               image_name);
+      if(m_do_zoom) 
+      {
+        m_cameras[i].Zoom(zoom);
+        m_do_zoom = false;
+      }
+
       render.SetCamera(m_cameras[i]);
       renders->push_back(render);
     }
@@ -818,12 +827,12 @@ VTKHMarchingCubes::verify_params(const conduit::Node &params,
         res = false;
     }
     
-    if(! params.has_child("iso_values") || 
-       ! params["iso_values"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'iso_values'";
-        res = false;
-    }
+    //if(! params.has_child("iso_values") || 
+    //   ! params["iso_values"].dtype().is_number() )
+    //{
+    //    info["errors"].append() = "Missing required numeric parameter 'iso_values'";
+    //    res = false;
+    //}
     
     return res;
 }
@@ -846,15 +855,22 @@ VTKHMarchingCubes::execute()
     
     marcher.SetInput(data);
     marcher.SetField(field_name);
+    if(params().has_path("levels"))
+    {
+      marcher.SetLevels(params()["levels"].to_int32());
+    }
+    else
+    {
 
-    const Node &n_iso_vals = params()["iso_values"];
+      const Node &n_iso_vals = params()["iso_values"];
 
-    // convert to contig doubles
-    Node n_iso_vals_dbls;
-    n_iso_vals.to_float64_array(n_iso_vals_dbls);
-    
-    marcher.SetIsoValues(n_iso_vals_dbls.as_double_ptr(),
-                         n_iso_vals_dbls.dtype().number_of_elements());
+      // convert to contig doubles
+      Node n_iso_vals_dbls;
+      n_iso_vals.to_float64_array(n_iso_vals_dbls);
+      
+      marcher.SetIsoValues(n_iso_vals_dbls.as_double_ptr(),
+                           n_iso_vals_dbls.dtype().number_of_elements());
+    }
 
     marcher.Update();
 
@@ -1258,6 +1274,11 @@ DefaultRender::execute()
           }
           int phi = render_node["phi"].to_int32(); 
           int theta = render_node["theta"].to_int32(); 
+          float zoom = 0.f;
+          if(render_node.has_path("zoom"))
+          {
+            zoom = render_node["zoom"].to_float32(); 
+          }
 
           if(!render_node.has_path("db_name"))
           {
@@ -1276,7 +1297,7 @@ DefaultRender::execute()
           detail::parse_image_dims(render_node, image_width, image_height);  
 
           manager.add_time_step(); 
-          manager.fill_renders(renders, v_domain_ids, image_width, image_height);
+          manager.fill_renders(renders, v_domain_ids, image_width, image_height, zoom);
           manager.write_metadata();
         }
 
