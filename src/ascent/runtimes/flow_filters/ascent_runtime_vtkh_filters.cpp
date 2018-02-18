@@ -430,10 +430,14 @@ public:
       m_time(0.f),
       m_do_zoom(true)
   {
+    if(!bounds.IsNonEmpty())
+    {
+      ASCENT_ERROR("Cannot create cinema cameras with empty bounds"); 
+    }
     this->create_cinema_cameras(bounds);
   }
   
-  CinemaManager() 
+  CinemaManager()
     : m_phi(0),
       m_theta(0)
   {
@@ -1240,6 +1244,11 @@ DefaultRender::execute()
     }
 
     vtkm::Bounds *bounds = input<vtkm::Bounds>(0);
+    if(!bounds->IsNonEmpty())
+    {
+       ASCENT_ERROR("Default Render bounds is empty");
+       // This is because of an error or there is nothing left to render
+    }
     std::set<vtkm::Id> *domain_ids = input<std::set<vtkm::Id>>(1);
     std::vector<vtkm::Id> v_domain_ids(domain_ids->size());
     std::copy(domain_ids->begin(), domain_ids->end(), v_domain_ids.begin()); 
