@@ -817,10 +817,13 @@ VTKHMarchingCubes::verify_params(const conduit::Node &params,
         res = false;
     }
     
-    if(! params.has_child("iso_values") || 
-       ! params["iso_values"].dtype().is_number() )
+    if((! params.has_child("iso_values") || 
+       ! params["iso_values"].dtype().is_number()) &&
+    (! params.has_child("levels") || 
+       ! params["levels"].dtype().is_number()) )
     {
-        info["errors"].append() = "Missing required numeric parameter 'iso_values'";
+        info["errors"].append() = "Missing required numeric parameter. Contour must"
+                                  " specify 'iso_values' or 'levels'.";
         res = false;
     }
     
@@ -845,15 +848,22 @@ VTKHMarchingCubes::execute()
     
     marcher.SetInput(data);
     marcher.SetField(field_name);
+  
+    if(params().has_path("iso_values"))
+    {
+      const Node &n_iso_vals = params()["iso_values"];
 
-    const Node &n_iso_vals = params()["iso_values"];
-
-    // convert to contig doubles
-    Node n_iso_vals_dbls;
-    n_iso_vals.to_float64_array(n_iso_vals_dbls);
-    
-    marcher.SetIsoValues(n_iso_vals_dbls.as_double_ptr(),
-                         n_iso_vals_dbls.dtype().number_of_elements());
+      // convert to contig doubles
+      Node n_iso_vals_dbls;
+      n_iso_vals.to_float64_array(n_iso_vals_dbls);
+      
+      marcher.SetIsoValues(n_iso_vals_dbls.as_double_ptr(),
+                           n_iso_vals_dbls.dtype().number_of_elements());
+    }
+    else
+    {
+      marcher.SetLevels(params()["levels"].to_int32());
+    }
 
     marcher.Update();
 
