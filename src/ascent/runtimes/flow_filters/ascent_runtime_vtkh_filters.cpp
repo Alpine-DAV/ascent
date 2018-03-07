@@ -358,12 +358,12 @@ void parse_image_dims(const conduit::Node &node, int &width, int &height)
 
   if(node.has_path("image_width"))
   {
-    width = node["image_width"].as_int32();
+    width = node["image_width"].to_int32();
   }
 
   if(node.has_path("image_height"))
   {
-    height = node["image_height"].as_int32();
+    height = node["image_height"].to_int32();
   }
   
 }
