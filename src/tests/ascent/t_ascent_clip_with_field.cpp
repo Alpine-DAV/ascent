@@ -73,7 +73,7 @@ index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_clip, test_clip_sphere)
+TEST(ascent_clip_with_field, test_clip_with_field)
 {
     // the ascent runtime is currently our only rendering runtime
     Node n;
@@ -105,7 +105,7 @@ TEST(ascent_clip, test_clip_sphere)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_clip_sphere");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_clip_with_field");
     
     // remove old images before rendering
     remove_test_image(output_file);
@@ -117,14 +117,11 @@ TEST(ascent_clip, test_clip_sphere)
     
     conduit::Node pipelines;
     // pipeline 1
-    pipelines["pl1/f1/type"] = "clip";
+    pipelines["pl1/f1/type"] = "clip_with_field";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
-    clip_params["sphere/radius"] = 11.;
-    clip_params["sphere/center/x"] = 0.;
-    clip_params["sphere/center/y"] = 0.;
-    clip_params["sphere/center/z"] = 0.;
+    clip_params["field"] = "braid";
+    clip_params["clip_value"] = 0.;
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
@@ -163,7 +160,7 @@ TEST(ascent_clip, test_clip_sphere)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_clip, test_clip_inverted_sphere)
+TEST(ascent_clip_with_field, test_clip_with_field_inverted)
 {
     // the ascent runtime is currently our only rendering runtime
     Node n;
@@ -195,7 +192,7 @@ TEST(ascent_clip, test_clip_inverted_sphere)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_clip_inverted_sphere");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_clip_with_field_inverted");
     
     // remove old images before rendering
     remove_test_image(output_file);
@@ -207,199 +204,12 @@ TEST(ascent_clip, test_clip_inverted_sphere)
     
     conduit::Node pipelines;
     // pipeline 1
-    pipelines["pl1/f1/type"] = "clip";
+    pipelines["pl1/f1/type"] = "clip_with_field";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
+    clip_params["field"] = "braid";
+    clip_params["clip_value"] = 0.;
     clip_params["invert"] = "true";
-    clip_params["sphere/radius"] = 11.;
-    clip_params["sphere/center/x"] = 0.;
-    clip_params["sphere/center/y"] = 0.;
-    clip_params["sphere/center/z"] = 0.;
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
- 
-    conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines= actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-    
-    //
-    // Run Ascent
-    //
-    
-    Ascent ascent;
-
-    Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
-    
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_clip, test_clip_box)
-{
-    // the ascent runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
-
-        return;
-    }
-    
-    
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
-
-    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
-
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_clip_box");
-    
-    // remove old images before rendering
-    remove_test_image(output_file);
-
-
-    //
-    // Create the actions.
-    //
-    
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "clip";
-    // filter knobs
-    conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
-    clip_params["box/min/x"] = 0.;
-    clip_params["box/min/y"] = 0.;
-    clip_params["box/min/z"] = 0.;
-    clip_params["box/max/x"] = 10.01; // <=
-    clip_params["box/max/y"] = 10.01;
-    clip_params["box/max/z"] = 10.01;
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
- 
-    conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines= actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-    
-    //
-    // Run Ascent
-    //
-    
-    Ascent ascent;
-
-    Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
-    
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_clip, test_clip_plane)
-{
-    // the ascent runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
-
-        return;
-    }
-    
-    
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
-
-    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
-
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_clip_plane");
-    
-    // remove old images before rendering
-    remove_test_image(output_file);
-
-
-    //
-    // Create the actions.
-    //
-    
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "clip";
-    // filter knobs
-    conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
-    clip_params["plane/point/x"] = 0.;
-    clip_params["plane/point/y"] = 0.;
-    clip_params["plane/point/z"] = 0.;
-    clip_params["plane/normal/x"] = 1.; 
-    clip_params["plane/normal/y"] = 0.;
-    clip_params["plane/normal/z"] = 0;
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";

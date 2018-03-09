@@ -75,6 +75,8 @@
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
+#include <vtkh/filters/ClipField.hpp>
+#include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Threshold.hpp>
@@ -1354,10 +1356,157 @@ VTKHClip::verify_params(const conduit::Node &params,
     info.reset();
     bool res = true;
     
-    if(! params.has_child("sphere"))
+    bool type_present = false;
+
+    if(params.has_child("sphere"))
     {
-        info["errors"].append() = "Missing required numeric parameter 'sphere'";
+      type_present = true; 
+    }
+    else if(params.has_child("box"))
+    {
+      type_present = true; 
+    }
+    else if(params.has_child("plane"))
+    {
+      type_present = true; 
+    }
+    
+    if(!type_present)
+    {
+        info["errors"].append() = "Missing required parameter. Clip must specify a 'sphere', 'box', or 'plane'";
         res = false;
+    }
+    else
+    {
+    
+      if(params.has_child("sphere"))
+      {
+         if(!params.has_path("sphere/center/x") ||
+            !params["sphere/center/x"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'sphere/center/x'";
+           res = false;
+         }
+
+         if(!params.has_path("sphere/center/y") ||
+            !params["sphere/center/y"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'sphere/center/y'";
+           res = false;
+         }
+
+         if(!params.has_path("sphere/center/z") ||
+            !params["sphere/center/z"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'sphere/center/z'";
+           res = false;
+         }
+
+         if(!params.has_path("sphere/radius") ||
+            !params["sphere/radius"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'sphere/radius'";
+           res = false;
+         }
+      }
+      else if(params.has_child("box"))
+      {
+         if(!params.has_path("box/min/x") ||
+            !params["box/min/x"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'box/min/x'";
+           res = false;
+         }
+
+         if(!params.has_path("box/min/y") ||
+            !params["box/min/y"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'box/min/y'";
+           res = false;
+         }
+
+         if(!params.has_path("box/min/z") ||
+            !params["box/min/z"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'box/min/z'";
+           res = false;
+         }
+
+         if(!params.has_path("box/max/x") ||
+            !params["box/max/x"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'box/max/x'";
+           res = false;
+         }
+
+         if(!params.has_path("box/max/y") ||
+            !params["box/max/y"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'box/max/y'";
+           res = false;
+         }
+
+         if(!params.has_path("box/max/z") ||
+            !params["box/max/z"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'box/max/z'";
+           res = false;
+         }
+      }
+      else if(params.has_child("plane"))
+      {
+         if(!params.has_path("plane/point/x") ||
+            !params["plane/point/x"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'plane/point/x'";
+           res = false;
+         }
+
+         if(!params.has_path("plane/point/y") ||
+            !params["plane/point/y"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'plane/point/y'";
+           res = false;
+         }
+
+         if(!params.has_path("plane/point/z") ||
+            !params["plane/point/z"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'plane/point/z'";
+           res = false;
+         }
+
+         if(!params.has_path("plane/normal/x") ||
+            !params["plane/normal/x"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'plane/normal/x'";
+           res = false;
+         }
+
+         if(!params.has_path("plane/normal/y") ||
+            !params["plane/normal/y"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'plane/normal/y'";
+           res = false;
+         }
+
+         if(!params.has_path("plane/normal/z") ||
+            !params["plane/normal/z"].dtype().is_number())
+         {
+           info["errors"].append() = "Missing required numeric parameter 'plane/normal/z'";
+           res = false;
+         }
+
+      }
+    }
+
+    if(params.has_child("invert")) 
+    {
+        if(!params["invert"].dtype().is_string() )
+        {
+          info["errors"].append() = "Optional string parameter 'invert' is the wrong type.";
+          res = false;
+        }
     }
     
     // TODO: check for other clip types 
@@ -1389,15 +1538,236 @@ VTKHClip::execute()
       clipper.SetCellSet(topology);
     }
 
-    const Node &sphere = params()["sphere"];
-    double center[3];
+    if(params().has_path("sphere"))
+    {
+      const Node &sphere = params()["sphere"];
+      double center[3];
 
-    center[0] = sphere["center/x"].to_float64();
-    center[1] = sphere["center/y"].to_float64();
-    center[2] = sphere["center/z"].to_float64();
-    double radius = sphere["radius"].to_float64(); 
+      center[0] = sphere["center/x"].to_float64();
+      center[1] = sphere["center/y"].to_float64();
+      center[2] = sphere["center/z"].to_float64();
+      double radius = sphere["radius"].to_float64(); 
+      clipper.SetSphereClip(center, radius);
+    }
+    else if(params().has_path("box"))
+    {
+      const Node &box = params()["box"];
+      vtkm::Bounds bounds;
+      bounds.X.Min= box["min/x"].to_float64();
+      bounds.Y.Min= box["min/y"].to_float64();
+      bounds.Z.Min= box["min/z"].to_float64();
+      bounds.X.Max = box["max/x"].to_float64();
+      bounds.Y.Max = box["max/y"].to_float64();
+      bounds.Z.Max = box["max/z"].to_float64();
+      clipper.SetBoxClip(bounds);
+    }
+    else if(params().has_path("plane"))
+    {
+      const Node &plane= params()["plane"];
+      double point[3], normal[3];;
+
+      point[0] = plane["point/x"].to_float64();
+      point[1] = plane["point/y"].to_float64();
+      point[2] = plane["point/z"].to_float64();
+      normal[0] = plane["normal/x"].to_float64();
+      normal[1] = plane["normal/y"].to_float64();
+      normal[2] = plane["normal/z"].to_float64();
+      clipper.SetPlaneClip(point, normal);
+    }
   
-    clipper.SetSphereClip(center, radius);
+    if(params().has_child("invert"))
+    {
+      std::string invert = params()["invert"].as_string();
+      if(invert == "true")
+      {
+        clipper.SetInvertClip(true);
+      }
+    }
+
+    clipper.Update();
+
+    vtkh::DataSet *clip_output = clipper.GetOutput();
+    
+    set_output<vtkh::DataSet>(clip_output);
+}
+
+//-----------------------------------------------------------------------------
+VTKHClipWithField::VTKHClipWithField()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHClipWithField::~VTKHClipWithField()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHClipWithField::declare_interface(Node &i)
+{
+    i["type_name"] = "vtkh_clip_with_field";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHClipWithField::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    
+    if(! params.has_child("clip_value") ||
+       ! params["clip_value"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'clip_value'";
+        res = false;
+    }
+    
+    if(! params.has_child("field") || 
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+        res = false;
+    }
+    
+    if(params.has_child("invert")) 
+    {
+        if(!params["invert"].dtype().is_string() )
+        {
+          info["errors"].append() = "Optional string parameter 'invert' is the wrong type.";
+          res = false;
+        }
+    }
+    
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+VTKHClipWithField::execute()
+{
+
+    ASCENT_INFO("We be clipping with a field!");
+    
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("VTKHClipWithField input must be a vtk-h dataset");
+    }
+
+    
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::ClipField clipper;
+    
+    clipper.SetInput(data);
+
+    if(params().has_child("invert"))
+    {
+      std::string invert = params()["invert"].as_string();
+      if(invert == "true")
+      {
+        clipper.SetInvertClip(true);
+      }
+    }
+
+    vtkm::Float64 clip_value = params()["clip_value"].to_float64();
+    std::string field_name = params()["field"].as_string();
+
+    clipper.SetField(field_name);
+    clipper.SetClipValue(clip_value);
+
+    clipper.Update();
+
+    vtkh::DataSet *clip_output = clipper.GetOutput();
+    
+    set_output<vtkh::DataSet>(clip_output);
+}
+
+//-----------------------------------------------------------------------------
+VTKHIsoVolume::VTKHIsoVolume()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHIsoVolume::~VTKHIsoVolume()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHIsoVolume::declare_interface(Node &i)
+{
+    i["type_name"] = "vtkh_iso_volume";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHIsoVolume::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    
+    if(! params.has_child("min_value") ||
+       ! params["min_value"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'min_value'";
+        res = false;
+    }
+    
+    if(! params.has_child("max_value") ||
+       ! params["max_value"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'max_value'";
+        res = false;
+    }
+    
+    if(! params.has_child("field") || 
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+        res = false;
+    }
+    
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+VTKHIsoVolume::execute()
+{
+
+    ASCENT_INFO("We be iso-voluming!");
+    
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("VTKHIsoVolume input must be a vtk-h dataset");
+    }
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::IsoVolume clipper;
+    
+    clipper.SetInput(data);
+
+    vtkm::Range clip_range;
+    clip_range.Min = params()["min_value"].to_float64();
+    clip_range.Max = params()["max_value"].to_float64();
+    std::string field_name = params()["field"].as_string();
+
+    clipper.SetField(field_name);
+    clipper.SetRange(clip_range);
+
     clipper.Update();
 
     vtkh::DataSet *clip_output = clipper.GetOutput();
