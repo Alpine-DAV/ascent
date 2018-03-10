@@ -462,7 +462,6 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
      params["source"] = py_src_final.str();
 
 #endif
-  
   }
   else
   {
