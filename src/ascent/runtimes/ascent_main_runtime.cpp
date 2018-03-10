@@ -309,6 +309,14 @@ AscentRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
       {
         filter_name = "vtkh_clip";
       }
+      else if(type == "clip_with_field")
+      {
+        filter_name = "vtkh_clip_with_field";
+      }
+      else if(type == "iso_volume")
+      {
+        filter_name = "vtkh_iso_volume";
+      }
       else if(type == "slice")
       {
         filter_name = "vtkh_slice";
@@ -454,7 +462,6 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
      params["source"] = py_src_final.str();
 
 #endif
-  
   }
   else
   {

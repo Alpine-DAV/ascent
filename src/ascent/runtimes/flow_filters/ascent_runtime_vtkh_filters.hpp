@@ -180,6 +180,32 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class VTKHClipWithField : public ::flow::Filter
+{
+public:
+    VTKHClipWithField();
+    virtual ~VTKHClipWithField();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class VTKHIsoVolume : public ::flow::Filter
+{
+public:
+    VTKHIsoVolume();
+    virtual ~VTKHIsoVolume();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class DefaultRender : public ::flow::Filter
 {
 public:

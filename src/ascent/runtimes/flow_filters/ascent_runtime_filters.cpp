@@ -120,6 +120,8 @@ register_builtin()
 
 
     Workspace::register_filter_type<VTKHClip>();
+    Workspace::register_filter_type<VTKHClipWithField>();
+    Workspace::register_filter_type<VTKHIsoVolume>();
     Workspace::register_filter_type<VTKHMarchingCubes>();
     Workspace::register_filter_type<VTKHThreshold>();
     Workspace::register_filter_type<VTKHSlice>();
