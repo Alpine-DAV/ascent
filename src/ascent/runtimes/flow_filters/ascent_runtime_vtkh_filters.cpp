@@ -1170,7 +1170,6 @@ VTKHThreshold::execute()
     thresher.SetUpperThreshold(max_val);
     thresher.SetLowerThreshold(min_val);
 
-    thresher.AddMapField(field_name);
     thresher.Update();
 
     vtkh::DataSet *thresh_output = thresher.GetOutput();
