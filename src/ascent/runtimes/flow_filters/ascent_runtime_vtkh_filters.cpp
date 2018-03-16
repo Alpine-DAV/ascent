@@ -278,6 +278,18 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
         clipping_range.Max = camera_node["far_plane"].to_float64();
         camera.SetClippingRange(clipping_range);
     }
+
+    // this is an offset from the current azimuth
+    if(camera_node.has_child("azimuth"))
+    {
+        vtkm::Float64 azimuth = camera_node["azimuth"].to_float64();
+        camera.Azimuth(azimuth);
+    }
+    if(camera_node.has_child("elevation"))
+    {
+        vtkm::Float64 elevation = camera_node["elevation"].to_float64();
+        camera.Azimuth(elevation);
+    }
 }
 
 vtkm::rendering::ColorTable 
