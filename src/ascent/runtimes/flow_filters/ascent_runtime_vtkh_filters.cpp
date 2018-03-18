@@ -396,11 +396,11 @@ vtkh::Render parse_render(const conduit::Node &render_node,
   // for now, all the canvases we support are the same
   // so passing MakeRender a RayTracer is ok
   //
-  vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(image_width,
-                                                          image_height, 
-                                                          bounds,
-                                                          domain_ids,
-                                                          image_name);
+  vtkh::Render render = vtkh::MakeRender(image_width,
+                                         image_height, 
+                                         bounds,
+                                         domain_ids,
+                                         image_name);
   //
   // render create a default camera. Now get it and check for 
   // values that override the default view
@@ -501,11 +501,11 @@ public:
     {
       std::string image_name = conduit::utils::join_file_path(m_current_path , m_image_names[i]);
 
-      vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(width,
-                                                              height,
-                                                              m_bounds,
-                                                              domain_ids,
-                                                              image_name);
+      vtkh::Render render = vtkh::MakeRender(width,
+                                             height,
+                                             m_bounds,
+                                             domain_ids,
+                                             image_name);
       render.SetCamera(m_cameras[i]);
       renders->push_back(render);
     }
@@ -1326,11 +1326,11 @@ DefaultRender::execute()
     }
     else
     {
-      vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(1024,
-                                                              1024, 
-                                                              *bounds,
-                                                              v_domain_ids,
-                                                              params()["image_prefix"].as_string());
+      vtkh::Render render = vtkh::MakeRender(1024,
+                                             1024, 
+                                             *bounds,
+                                             v_domain_ids,
+                                             params()["image_prefix"].as_string());
 
       renders->push_back(render); 
     }
@@ -2090,11 +2090,11 @@ DefaultScene::execute()
                                      domain_ids_set->end());
 
     
-    vtkh::Render render = vtkh::MakeRender<vtkh::RayTracer>(1024,
-                                                            1024, 
-                                                            bounds,
-                                                            domain_ids,
-                                                            ss.str());
+    vtkh::Render render = vtkh::MakeRender(1024,
+                                           1024, 
+                                           bounds,
+                                           domain_ids,
+                                           ss.str());
 
     std::vector<vtkh::Render> renders;
     renders.push_back(render);
