@@ -436,3 +436,29 @@ By default, all values below the clip value are removed from the data set. As wi
 
     An example of clipping all values above 0 in a data set. 
 
+IsoVolume
+~~~~~~~~~
+IsoVolume is a convenience filter based on clipping a data set based on a minimum 
+and maximum values of a scalar field. All value outside of the minminum and maximum 
+values are removed from the data set.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "iso_volume";
+  // filter knobs
+  conduit::Node &clip_params = pipelines["pl1/f1/params"];
+  clip_params["field"] = "braid";
+  clip_params["min_value"] = 5.;
+  clip_params["max_value"] = 10.;
+  
+.. _isovolume:
+
+..  figure:: ../images/iso_volume.png
+    :scale: 50 % 
+    :align: center
+
+    An example of creating a iso-volume of values between 5.0 and 10.0.. 
+
+
