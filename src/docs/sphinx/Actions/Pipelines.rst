@@ -128,7 +128,7 @@ This results in a surface if the iso-value is within the scalar field.
 ``iso_vals`` can contain a single double or an array of doubles. 
 Additionally, instead of specifying exact iso-values, a number of 'levels' can be entered.
 In this case, iso-values will automatically created by evenly spacing iso-values 
-throught the scalar range.
+through the scalar range.
 The code below provides examples creating a pipeline using all three methods:
 
 .. code-block:: c++
