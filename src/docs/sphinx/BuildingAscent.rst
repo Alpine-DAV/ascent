@@ -377,7 +377,7 @@ This section describes how to build Ascents components.
 When building Ascents dependencies, it is **highly** recommended to fill out a host config file like the one located in ``/host-configs/boilerplate.cmake``.
 This is the best way to avoid problems that can easily arise from mixing c++ standard libraries conflicts, MPI library conflicts, and fortran module conflicts, all of which are difficult to spot.
 Use the same CMake host-config file for each of Ascent's dependencies, and while this may bring in unused cmake variables and clutter the ccmake curses interface, it will help avoid problems.
-In the host config, you can specify options such as ``ENABLE_PYTHON=OFF`` and ``ENABLE_FORTRAN=OFF`` that will be respected by both conduit and ascent.
+In the host config, you can specify options such as ``ENABLE_PYTHON=OFF``, ``ENABLE_FORTRAN=OFF``, and ``ENABLE_MPI=ON`` that will be respected by both conduit and ascent.
 
 HDF5 (Optional)
 ^^^^^^^^^^^^^^^
@@ -401,13 +401,18 @@ In the host config, add ``set(HDF5_DIR "/path/to/hdf5_install" CACHE PATH "")``.
 
 Conduit
 ^^^^^^^
-The version of conduit we use is on the master branch. If the ``HDF5_DIR`` is specified in the host config, conduit will build the relay io library.
-Once you have installed conduit, add the path to the install directory to your host config file in the cmake variable `CONDUIT_DIR`.
+The version of conduit we use is `v0.3.1`. If the ``HDF5_DIR`` is specified in the host config, 
+then conduit will build the relay io library. 
+Likewise, if the config file has the entry ``ENABLE_MPI=ON``, then conduit will build 
+parallel versions of the libraries. 
+Once you have installed conduit, add the path to the install directory to your host 
+config file in the cmake variable ``CONDUIT_DIR``.
 
 .. code:: bash
     
     git clone --recursive https://github.com/LLNL/conduit.git
     cd conduit
+    git checkout tags/v0.3.1
     mkdir build
     mkdir install
     cd build

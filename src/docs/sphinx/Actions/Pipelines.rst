@@ -127,8 +127,9 @@ The contour filter evaluates a node-centered scalar field for all points at a gi
 This results in a surface if the iso-value is within the scalar field. 
 ``iso_vals`` can contain a single double or an array of doubles. 
 Additionally, instead of specifying exact iso-values, a number of 'levels' can be entered.
-In this case, iso-values will automatically created by evenly spacing iso-values 
-through the scalar range.
+In this case, iso-values will be created evenly spaced through the scalar range. For example,
+if the scalar range is `[0.0, 1.0]` and 'levels' is set to `3`, then the iso-values `(0.25, 0.5, 0.75)`
+will be created.
 The code below provides examples creating a pipeline using all three methods:
 
 .. code-block:: c++
@@ -438,8 +439,8 @@ By default, all values below the clip value are removed from the data set. As wi
 
 IsoVolume
 ~~~~~~~~~
-IsoVolume is a convenience filter based on clipping a data set based on a minimum 
-and maximum values of a scalar field. All value outside of the minminum and maximum 
+IsoVolume is a filter that clips a data set based on a minimum 
+and maximum value in a scalar field. All value outside of the minminum and maximum 
 values are removed from the data set.
 
 .. code-block:: c++
