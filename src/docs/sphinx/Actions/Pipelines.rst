@@ -126,7 +126,11 @@ Contour
 The contour filter evaluates a node-centered scalar field for all points at a given iso-value.
 This results in a surface if the iso-value is within the scalar field. 
 ``iso_vals`` can contain a single double or an array of doubles. 
-The code below provides examples creating a pipeline using both methods:
+Additionally, instead of specifying exact iso-values, a number of 'levels' can be entered.
+In this case, iso-values will be created evenly spaced through the scalar range. For example,
+if the scalar range is `[0.0, 1.0]` and 'levels' is set to `3`, then the iso-values `(0.25, 0.5, 0.75)`
+will be created.
+The code below provides examples creating a pipeline using all three methods:
 
 .. code-block:: c++
 
@@ -156,9 +160,27 @@ The code below provides examples creating a pipeline using both methods:
     :align: center
 
     An example image of multiple contours produced using the previous code sample.
-    
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "contour";
+  // filter knobs
+  conduit::Node &contour_params = pipelines["pl1/f1/params"];
+  contour_params["field"] = "braid";
+  contour_params["levels"] = 5;
+
+.. _contourlevelsfig:
+
+..  figure:: ../images/contour_levels.png
+    :scale: 50 % 
+    :align: center
+
+    An example of creating five evenly spaced iso-values through a scalar field.
+
 :numref:`Figure %s <contourfig>` shows an image produced from mulitple contours. 
-The full example is located in the `test_multi_contour_3d`  test in the file `contour test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_contour.cpp>`_.
+All contour examples are  located in the test in the file `contour test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_contour.cpp>`_.
 
 Threshold
 ~~~~~~~~~
@@ -270,10 +292,13 @@ The full example is located in the file `slice test <https://github.com/Alpine-D
 Clip
 ~~~~
 The clip filter removes cells from the specified topology using implicit functions. 
-Only the area outside of the implicit function remains.
+By default, only the area outside of the implicit function remains, but the clip
+can be inverted. There are three implicit functions that clip can use: sphere, box, 
+and plane. 
 
 .. code-block:: c++
 
+  // define a clip by a sphere
   conduit::Node pipelines;
   // pipeline 1
   pipelines["pl1/f1/type"] = "clip";
@@ -285,7 +310,7 @@ Only the area outside of the implicit function remains.
   clip_params["sphere/center/y"] = 0.;
   clip_params["sphere/center/z"] = 0.;
   
-.. _clipfig:
+.. _clipspherefig:
 
 ..  figure:: ../images/clip.png
     :scale: 50 % 
@@ -294,5 +319,147 @@ Only the area outside of the implicit function remains.
     An example image of the clip filter using the previous code sample. 
     The data set is a cube with extents from (-10, -10, -10) to (10, 10, 10), and the code removes a sphere centered at the origin with a radius of 11.
 
-:numref:`Figure %s <clipfig>` shows an image produced from the clip filter. 
-The full example is located in the file `clip test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_clip.cpp>`_.
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "clip";
+  // filter knobs
+  conduit::Node &clip_params = pipelines["pl1/f1/params"];
+  clip_params["topology"] = "mesh";
+  clip_params["invert"] = "true";
+  clip_params["sphere/radius"] = 11.;
+  clip_params["sphere/center/x"] = 0.;
+  clip_params["sphere/center/y"] = 0.;
+  clip_params["sphere/center/z"] = 0.;
+
+.. _clipsphereInvertedfig:
+
+..  figure:: ../images/clip_inverted.png
+    :scale: 50 % 
+    :align: center
+    
+    An example of the same sphere clip, but in this case, the clip is inverted.
+
+.. code-block:: c++
+
+  // define a clip by a box 
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "clip";
+  // filter knobs
+  conduit::Node &clip_params = pipelines["pl1/f1/params"];
+  clip_params["topology"] = "mesh";
+  clip_params["box/min/x"] = 0.;
+  clip_params["box/min/y"] = 0.;
+  clip_params["box/min/z"] = 0.;
+  clip_params["box/max/x"] = 10.01; // <=
+  clip_params["box/max/y"] = 10.01;
+  clip_params["box/max/z"] = 10.01;
+  
+.. _clipboxfig:
+
+..  figure:: ../images/box_clip.png
+    :scale: 50 % 
+    :align: center
+
+    A box clip of the same data set that removes the octant on the positive x, y, and z axes.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "clip";
+  // filter knobs
+  conduit::Node &clip_params = pipelines["pl1/f1/params"];
+  clip_params["topology"] = "mesh";
+  clip_params["plane/point/x"] = 0.;
+  clip_params["plane/point/y"] = 0.;
+  clip_params["plane/point/z"] = 0.;
+  clip_params["plane/normal/x"] = 1.; 
+  clip_params["plane/normal/y"] = 0.;
+  clip_params["plane/normal/z"] = 0;
+
+.. _clipplanefig:
+
+..  figure:: ../images/clip_plane.png
+    :scale: 50 % 
+    :align: center
+    
+    Clipping by a plane defined by a point on the plane and the plane normal.
+
+:numref:`Figures %s <clipspherefig>`, 
+:numref:`%s <clipsphereInvertedfig>`,  
+:numref:`%s <clipboxfig>`, and  
+:numref:`%s <clipplanefig>` show an images produced from the clip filter. 
+All of the clip  examples are located in the file `clip test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_clip.cpp>`_.
+
+Clip By Field
+~~~~~~~~~~~~~
+The clip by field filter removes cells from the specified topology using the values in a scalar field.
+By default, all values below the clip value are removed from the data set. As with clip by implicit function,
+ the clip can be inverted.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "clip_with_field";
+  // filter knobs
+  conduit::Node &clip_params = pipelines["pl1/f1/params"];
+  clip_params["field"] = "braid";
+  clip_params["clip_value"] = 0.;
+  
+.. _clipfieldfig:
+
+..  figure:: ../images/clip_field.png
+    :scale: 50 % 
+    :align: center
+
+    An example of clipping all values below 0 in a data set. 
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "clip_with_field";
+  // filter knobs
+  conduit::Node &clip_params = pipelines["pl1/f1/params"];
+  clip_params["field"] = "braid";
+  clip_params["invert"] = "true";
+  clip_params["clip_value"] = 0.;
+  
+.. _clipfieldinvertedfig:
+
+..  figure:: ../images/clip_field_inverted.png
+    :scale: 50 % 
+    :align: center
+
+    An example of clipping all values above 0 in a data set. 
+
+IsoVolume
+~~~~~~~~~
+IsoVolume is a filter that clips a data set based on a minimum 
+and maximum value in a scalar field. All value outside of the minminum and maximum 
+values are removed from the data set.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "iso_volume";
+  // filter knobs
+  conduit::Node &clip_params = pipelines["pl1/f1/params"];
+  clip_params["field"] = "braid";
+  clip_params["min_value"] = 5.;
+  clip_params["max_value"] = 10.;
+  
+.. _isovolume:
+
+..  figure:: ../images/iso_volume.png
+    :scale: 50 % 
+    :align: center
+
+    An example of creating a iso-volume of values between 5.0 and 10.0.. 
+
+
