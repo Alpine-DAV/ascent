@@ -57,7 +57,9 @@ set(lodepng_sources
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # we always build lodepng as lib 
-add_library(lodepng SHARED ${lodepng_sources} )
+blt_add_library(
+    NAME        lodepng 
+    SOURCES     ${lodepng_sources})
 
 # install target for serial ascent lib
 install(TARGETS lodepng 
