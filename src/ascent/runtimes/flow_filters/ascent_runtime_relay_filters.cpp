@@ -180,7 +180,6 @@ void mesh_blueprint_save(const Node &data,
         ASCENT_ERROR("Cannot blueprint save without 'state/cycle'");
       }
       cycle = dom["state/cycle"].to_int();
-      std::cout<<"CYCLE "<<cycle<<"\n";
     }
     
 #ifdef ASCENT_MPI_ENABLED
@@ -259,7 +258,6 @@ void mesh_blueprint_save(const Node &data,
     {
         ASCENT_ERROR("Error: failed to create directory " << output_dir);
     }
-    std::cout<<"NUM CHILDS = "<<num_domains<<"\n"; 
     // write out each domain
     for(int i = 0; i < num_domains; ++i)
     {
@@ -274,16 +272,20 @@ void mesh_blueprint_save(const Node &data,
     }
     
     int root_file_writer = 0;
+    if(num_domains == 0)
+    {
+      root_file_writer = -1; 
+    }
 #ifdef ASCENT_MPI_ENABLED
     // Rank 0 could have an empty domain, so we have to check
     // to find someone with a data set to write out the root file.
     Node out;
-    out["values/a"] = num_domains;
+    out = num_domains;
     Node rcv;
-    mpi::all_gather(out, rcv, mpi_comm);
-    Node res;
-    res.set_external((int*) rcv.data_ptr(), par_size);
-    int* res_ptr = res.value();
+     
+    mpi::all_gather_using_schema(out, rcv, mpi_comm);
+    root_file_writer = -1;
+    int* res_ptr = (int*)rcv.data_ptr();
     for(int i = 0; i < par_size; ++i)
     {
         if(res_ptr[i] != 0)
@@ -292,8 +294,13 @@ void mesh_blueprint_save(const Node &data,
             break;
         }
     }
+
     MPI_Barrier(mpi_comm);
 #endif
+    if(root_file_writer == -1)
+    {
+        ASCENT_WARN("Relay: there is no domains to write out");
+    }
     // let rank zero write out the root file
     if(par_rank == root_file_writer)
     {
@@ -327,7 +334,6 @@ void mesh_blueprint_save(const Node &data,
                                         global_domains,
                                         bp_idx["mesh"]);
             
-        std::cout<<"saving root\n";
         root["protocol/name"]    = "conduit_" + file_protocol;
         root["protocol/version"] = "0.2.1";
 
@@ -380,7 +386,6 @@ RelayIOSave::execute()
 {
     std::string path, protocol;
     path = params()["path"].as_string();
-    
     // TODO check if we need to expand the path (MPI) case for std protocols
     if(params().has_child("protocol"))
     {

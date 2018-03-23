@@ -157,7 +157,7 @@ TEST(ascent_mpi_runtime, test_relay_extract_iso)
     ascent.close();
    
 }
-//
+
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_runtime, test_relay_extract_mesh)
 {
@@ -238,6 +238,7 @@ TEST(ascent_mpi_runtime, test_relay_extract_mesh)
     ascent.close();
    
 }
+
 //
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

@@ -89,7 +89,7 @@ namespace ascent
 //-----------------------------------------------------------------------------
 vtkh::DataSet *
 VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
-                                    const std::string &topo_name)
+                                        const std::string &topo_name)
 {       
  
     // treat everything as a multi-domain data set 
