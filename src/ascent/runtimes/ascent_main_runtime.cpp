@@ -387,7 +387,8 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
 {
   std::string filter_name; 
 
-  conduit::Node params = extract["params"];
+  conduit::Node params;
+  if(extract.has_path("params")) params = extract["params"];
 
   if(!extract.has_path("type"))
   {
@@ -467,7 +468,6 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   {
     ASCENT_ERROR("Unrecognized extract type "<<extract["type"].as_string());
   }
- 
   if(w.graph().has_filter(extract_name))
   {
     ASCENT_ERROR("Cannot add extract filter, extract named" 
