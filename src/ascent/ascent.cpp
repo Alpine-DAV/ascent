@@ -148,7 +148,7 @@ Ascent::open(const conduit::Node &options)
             {
                 m_forward_exceptions = false;
             }
-            else if(excp_opt == "throw")
+            else if(excp_opt == "forward")
             {
                 m_forward_exceptions = true;
             }
