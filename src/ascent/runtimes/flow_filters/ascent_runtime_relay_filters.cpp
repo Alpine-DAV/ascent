@@ -121,10 +121,12 @@ bool clean_mesh(const conduit::Node &data, conduit::Node &output)
 {
   const int potential_doms = data.number_of_children();
   bool maybe_multi_dom = true;
+
   if(!data.dtype().is_object() && !data.dtype().is_list())
   {
     maybe_multi_dom = false;
   }
+
   if(maybe_multi_dom)
   {
     // check all the children for valid domains
@@ -140,7 +142,9 @@ bool clean_mesh(const conduit::Node &data, conduit::Node &output)
       }
     }
   }
-  else
+  // if there is nothing in the outut, lets see if it is a
+  // valid single domain
+  if(output.number_of_children() == 0)
   {
     // check to see if this is a single valid domain
     conduit::Node info;
@@ -246,7 +250,6 @@ void mesh_blueprint_save(const Node &data,
     }
 
     int num_domains = multi_dom.number_of_children();
-
     // figure out what cycle we are
     if(num_domains > 0 && is_valid)
     {
@@ -320,7 +323,7 @@ void mesh_blueprint_save(const Node &data,
 
     global_domains = n_reduce.as_int();
 #endif
-
+  
     if(global_domains == 0)
     {
       if(par_rank == 0)
