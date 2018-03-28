@@ -749,6 +749,7 @@ EnsureBlueprint::execute()
     {
         // convert from vtk-h to blueprint
         vtkh::DataSet *in_dset = input<vtkh::DataSet>(0);
+
         const vtkm::Id num_domains = in_dset->GetNumberOfDomains();
         conduit::Node * res = new conduit::Node();
         uint64 cycle = in_dset->GetCycle();
@@ -762,7 +763,6 @@ EnsureBlueprint::execute()
             bp["state/cycle"] = cycle;
             bp["state/domain_id"] = domain_id;
         }
-
         set_output<conduit::Node>(res);
     }
     else if(input(0).check_type<vtkm::cont::DataSet>())

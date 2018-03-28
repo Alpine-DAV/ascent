@@ -80,7 +80,7 @@ quiet_handler(const std::string &,
 Ascent::Ascent()
 : m_runtime(NULL),
   m_verbose_msgs(false),
-  m_forward_exceptions(true)
+  m_forward_exceptions(false)
 {
 }
 
@@ -148,7 +148,7 @@ Ascent::open(const conduit::Node &options)
             {
                 m_forward_exceptions = false;
             }
-            else if(excp_opt == "throw")
+            else if(excp_opt == "forward")
             {
                 m_forward_exceptions = true;
             }
@@ -225,7 +225,7 @@ Ascent::open(const conduit::Node &options)
     {
         if(m_forward_exceptions)
         {
-            throw;
+            throw e;
         }
         else
         {
@@ -248,7 +248,7 @@ Ascent::publish(const conduit::Node &data)
     {
         if(m_forward_exceptions)
         {
-            throw;
+            throw e;
         }
         else
         {
@@ -273,7 +273,7 @@ Ascent::execute(const conduit::Node &actions)
     {
         if(m_forward_exceptions)
         {
-            throw;
+            throw e;
         }
         else
         {
@@ -300,7 +300,7 @@ Ascent::info(conduit::Node &info_out)
     {
         if(m_forward_exceptions)
         {
-            throw;
+            throw e;
         }
         else
         {
@@ -328,7 +328,7 @@ Ascent::close()
     {
         if(m_forward_exceptions)
         {
-            throw;
+            throw e;
         }
         else
         {

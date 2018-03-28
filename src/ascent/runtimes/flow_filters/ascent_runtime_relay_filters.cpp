@@ -102,6 +102,67 @@ namespace runtime
 namespace filters
 {
 
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::detail --
+//-----------------------------------------------------------------------------
+namespace detail
+{
+// 
+// This expects a single or multi_domain blueprint mesh and will iterate
+// through all domains to see if they are valid. Returns true
+// if it contains valid data and false if there is no valid
+// data.
+//
+// This is needed because after pipelines, it is possible to
+// have no data left in a domain because of something like a 
+// clip
+//
+bool clean_mesh(const conduit::Node &data, conduit::Node &output)
+{
+  const int potential_doms = data.number_of_children();
+  bool maybe_multi_dom = true;
+
+  if(!data.dtype().is_object() && !data.dtype().is_list())
+  {
+    maybe_multi_dom = false;
+  }
+
+  if(maybe_multi_dom)
+  {
+    // check all the children for valid domains
+    for(int i = 0; i < potential_doms; ++i)
+    {
+      conduit::Node info;
+      const conduit::Node &child = data.child(i);
+      bool is_valid = blueprint::mesh::verify(child, info); 
+      if(is_valid)
+      {
+        conduit::Node &dest_dom = output.append();
+        dest_dom.set_external(child);
+      }
+    }
+  }
+  // if there is nothing in the outut, lets see if it is a
+  // valid single domain
+  if(output.number_of_children() == 0)
+  {
+    // check to see if this is a single valid domain
+    conduit::Node info;
+    bool is_valid = blueprint::mesh::verify(data, info); 
+    if(is_valid)
+    {
+      conduit::Node &dest_dom = output.append();
+      dest_dom.set_external(data);
+    }
+  }
+
+  return output.number_of_children() > 0;
+}
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime::detail --
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // helper shared by io save and load
@@ -157,22 +218,40 @@ void mesh_blueprint_save(const Node &data,
                          const std::string &file_protocol)
 {
     // The assumption here is that everything is multi domain    
+
     Node multi_dom; 
-    blueprint::mesh::to_multi_domain(data, multi_dom);
+    bool is_valid = detail::clean_mesh(data, multi_dom);
+    
     int par_rank = 0;  
     int par_size = 1;
     // we may not have any domains so init to max
     int cycle = std::numeric_limits<int>::max();
+
+    int local_boolean = is_valid ? 1 : 0; 
+    int global_boolean = local_boolean;
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     MPI_Comm_rank(mpi_comm, &par_rank);
     MPI_Comm_size(mpi_comm, &par_size);
+
+    // check to see if any valid data exist
+    MPI_Allreduce((void *)(&local_boolean),
+                  (void *)(&global_boolean),
+                  1,
+                  MPI_INT,
+                  MPI_SUM,
+                  mpi_comm);
 #endif
+    
+    if(global_boolean == 0)
+    {
+      ASCENT_INFO("Blueprint save: no valid data exists. Skipping save");
+      //return;
+    }
+
     int num_domains = multi_dom.number_of_children();
-
-
     // figure out what cycle we are
-    if(num_domains > 0)
+    if(num_domains > 0 && is_valid)
     {
       Node dom = multi_dom.child(0);
       if(!dom.has_path("state/cycle"))
@@ -180,7 +259,6 @@ void mesh_blueprint_save(const Node &data,
         ASCENT_ERROR("Cannot blueprint save without 'state/cycle'");
       }
       cycle = dom["state/cycle"].to_int();
-      std::cout<<"CYCLE "<<cycle<<"\n";
     }
     
 #ifdef ASCENT_MPI_ENABLED
@@ -245,7 +323,7 @@ void mesh_blueprint_save(const Node &data,
 
     global_domains = n_reduce.as_int();
 #endif
-
+  
     if(global_domains == 0)
     {
       if(par_rank == 0)
@@ -259,7 +337,6 @@ void mesh_blueprint_save(const Node &data,
     {
         ASCENT_ERROR("Error: failed to create directory " << output_dir);
     }
-    std::cout<<"NUM CHILDS = "<<num_domains<<"\n"; 
     // write out each domain
     for(int i = 0; i < num_domains; ++i)
     {
@@ -274,16 +351,20 @@ void mesh_blueprint_save(const Node &data,
     }
     
     int root_file_writer = 0;
+    if(num_domains == 0)
+    {
+      root_file_writer = -1; 
+    }
 #ifdef ASCENT_MPI_ENABLED
     // Rank 0 could have an empty domain, so we have to check
     // to find someone with a data set to write out the root file.
     Node out;
-    out["values/a"] = num_domains;
+    out = num_domains;
     Node rcv;
-    mpi::all_gather(out, rcv, mpi_comm);
-    Node res;
-    res.set_external((int*) rcv.data_ptr(), par_size);
-    int* res_ptr = res.value();
+     
+    mpi::all_gather_using_schema(out, rcv, mpi_comm);
+    root_file_writer = -1;
+    int* res_ptr = (int*)rcv.data_ptr();
     for(int i = 0; i < par_size; ++i)
     {
         if(res_ptr[i] != 0)
@@ -292,8 +373,15 @@ void mesh_blueprint_save(const Node &data,
             break;
         }
     }
+
     MPI_Barrier(mpi_comm);
 #endif
+
+    if(root_file_writer == -1)
+    {
+        // this should not happen. global doms is already 0
+        ASCENT_WARN("Relay: there are no domains to write out");
+    }
     // let rank zero write out the root file
     if(par_rank == root_file_writer)
     {
@@ -327,7 +415,6 @@ void mesh_blueprint_save(const Node &data,
                                         global_domains,
                                         bp_idx["mesh"]);
             
-        std::cout<<"saving root\n";
         root["protocol/name"]    = "conduit_" + file_protocol;
         root["protocol/version"] = "0.2.1";
 
@@ -380,7 +467,6 @@ RelayIOSave::execute()
 {
     std::string path, protocol;
     path = params()["path"].as_string();
-    
     // TODO check if we need to expand the path (MPI) case for std protocols
     if(params().has_child("protocol"))
     {

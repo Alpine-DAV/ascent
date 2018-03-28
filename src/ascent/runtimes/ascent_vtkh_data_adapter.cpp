@@ -89,7 +89,7 @@ namespace ascent
 //-----------------------------------------------------------------------------
 vtkh::DataSet *
 VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
-                                    const std::string &topo_name)
+                                        const std::string &topo_name)
 {       
  
     // treat everything as a multi-domain data set 
@@ -901,7 +901,7 @@ GetBlueprintCellName(vtkm::UInt8 shape_id)
   return name;
 }
 
-void 
+bool
 VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
                                          const vtkm::cont::DataSet &data_set)
 {
@@ -911,8 +911,21 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
   bool is_structured = vtkh::VTKMDataSetInfo::IsStructured(data_set, topo_dims, default_cell_set);
   bool is_uniform = vtkh::VTKMDataSetInfo::IsUniform(data_set);
   bool is_rectilinear = vtkh::VTKMDataSetInfo::IsRectilinear(data_set); 
-
   vtkm::cont::CoordinateSystem coords = data_set.GetCoordinateSystem();
+  // we cannot access an empty domain
+  bool is_empty = false;
+
+  if(data_set.GetCoordinateSystem().GetData().GetNumberOfValues() == 0 ||
+     data_set.GetCellSet().GetNumberOfCells() == 0)
+  {
+    is_empty = true;
+  }
+
+  if(is_empty)
+  {
+    return is_empty; 
+  }
+
   if(is_uniform)
   {
     auto points = coords.GetData().Cast<vtkm::cont::ArrayHandleUniformPointCoordinates>();
@@ -1101,6 +1114,28 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         output["topologies/topo/elements/connectivity"].set(vtkh::GetVTKMPointer(conn), 
                                                              conn.GetNumberOfValues());
       }
+      else if(vtkh::VTKMDataSetInfo::IsSingleCellShape(dyn_cells))
+      {
+        // If we are here, the we know that the cell set is explicit,
+        // but only a single cell shape
+        auto cells = dyn_cells.Cast<vtkm::cont::CellSetExplicit<>>(); 
+        auto shapes = cells.GetShapesArray(vtkm::TopologyElementTagPoint(), 
+                                           vtkm::TopologyElementTagCell());
+
+        vtkm::UInt8 shape_id = shapes.GetPortalControl().Get(0);
+
+        std::string conduit_name = GetBlueprintCellName(shape_id); 
+        output["topologies/topo/elements/shape"] = conduit_name;
+
+        static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints"); 
+
+        auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagPoint(), 
+                                               vtkm::TopologyElementTagCell());
+
+        output["topologies/topo/elements/connectivity"].set(vtkh::GetVTKMPointer(conn), 
+                                                             conn.GetNumberOfValues());
+
+      } 
       else
       {
         ASCENT_ERROR("Mixed explicit types not implemented");
@@ -1109,6 +1144,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
           
     }
   }
+  return is_empty;
 }
 
 template<typename T, int N>
@@ -1257,13 +1293,16 @@ VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
   //
   const int default_cell_set = 0; 
 
-  VTKmTopologyToBlueprint(node, *dset);
-
-  const vtkm::Id num_fields = dset->GetNumberOfFields();
-  for(vtkm::Id i = 0; i < num_fields; ++i)
+  bool is_empty = VTKmTopologyToBlueprint(node, *dset);
+  
+  if(!is_empty)
   {
-    vtkm::cont::Field field = dset->GetField(i);
-    VTKmFieldToBlueprint(node, field);
+    const vtkm::Id num_fields = dset->GetNumberOfFields();
+    for(vtkm::Id i = 0; i < num_fields; ++i)
+    {
+      vtkm::cont::Field field = dset->GetField(i);
+      VTKmFieldToBlueprint(node, field);
+    }
   }
 }
 

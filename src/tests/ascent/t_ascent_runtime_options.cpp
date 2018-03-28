@@ -151,7 +151,6 @@ TEST(ascent_runtime_options, forward_exceptions)
 }
 
 
-
 //-----------------------------------------------------------------------------
 TEST(ascent_runtime_options, catch_exceptions)
 {
@@ -170,7 +169,6 @@ TEST(ascent_runtime_options, catch_exceptions)
     ascent.open(open_opts);
     ascent.close();
 }
-
 
 
 

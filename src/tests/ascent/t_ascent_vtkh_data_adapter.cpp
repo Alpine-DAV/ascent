@@ -248,6 +248,7 @@ TEST(ascent_data_adapter, consistent_domain_ids_check)
 
     Node ascent_opts;
     ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
     ascent.publish(multi_dom);
     

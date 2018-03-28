@@ -105,7 +105,7 @@ public:
 };
 
 
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_flow_runtime, test_flow_runtime)
 {
@@ -584,7 +584,7 @@ TEST(ascent_flow_runtime, test_flow_vtkh_filter)
 }
 
 
-
+#endif
 //-----------------------------------------------------------------------------
 TEST(ascent_flow_runtime, test_flow_mesh_blueprint_hdf5_output)
 {   
@@ -639,7 +639,7 @@ TEST(ascent_flow_runtime, test_flow_mesh_blueprint_hdf5_output)
     
 }
 
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_flow_runtime, test_flow_bulk_actions_1)
 {
@@ -805,4 +805,4 @@ TEST(ascent_flow_runtime, test_flow_load_and_save_graph)
 }
 
 
-
+#endif

@@ -153,7 +153,7 @@ private:
                                           int nverts,
                                           vtkm::cont::DataSet *dset);
 
-    static void VTKmTopologyToBlueprint(conduit::Node &output,
+    static bool VTKmTopologyToBlueprint(conduit::Node &output,
                                         const vtkm::cont::DataSet &data_set);
 
     static void VTKmFieldToBlueprint(conduit::Node &output,
