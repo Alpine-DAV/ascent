@@ -111,7 +111,7 @@ Clone the Ascent repo:
 
 .. code:: bash
     
-    git clone --recursive https://github.com/Ascent-DAV/ascent.git 
+    git clone --recursive https://github.com/Alpine-DAV/ascent.git
 
 
 ``--recursive`` is necessary because we are using a git submodule to pull in BLT (https://github.com/llnl/blt). 
