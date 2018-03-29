@@ -231,6 +231,96 @@ TEST(ascent_mpi_runtime, test_python_script_extract_file)
 }
 
 
+// This demos using the ascent python api inside of ascent ... 
+std::string py_script_inception = "\n"
+"import conduit\n"
+"import ascent.mpi\n"
+"n_mesh = ascent_data()\n"
+"ascent_opts = conduit.Node()\n"
+"ascent_opts['mpi_comm'].set(ascent_mpi_comm_id())\n"
+"a = ascent.mpi.Ascent()\n"
+"a.open(ascent_opts)\n"
+"a.publish(n_mesh)\n"
+"actions = conduit.Node()\n"
+"scenes  = conduit.Node()\n"
+"scenes['s1/plots/p1/type'] = 'pseudocolor'\n"
+"scenes['s1/plots/p1/params/field'] = 'radial_vert'\n"
+"scenes['s1/image_prefix'] = 'tout_python_mpi_extract_inception' \n"
+"add_act =actions.append()\n"
+"add_act['action'] = 'add_scenes'\n"
+"add_act['scenes'] = scenes\n"
+"actions.append()['action'] = 'execute'\n"
+"a.execute(actions)\n"
+"a.close()\n"
+"\n";
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_mpi_runtime, test_python_extract_inception)
+{
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    ASCENT_INFO("Rank "
+                << par_rank
+                << " of "
+                << par_size
+                << " reporting");
+
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    create_3d_example_dataset(data,par_rank,par_size);
+    data["state/cycle"] = 101;
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "python";
+    extracts["e1/params/source"] = py_script_inception;
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+}
+
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {

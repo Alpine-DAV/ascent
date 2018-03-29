@@ -68,7 +68,7 @@ std::string py_script = "\n"
 "\n";
 
 //-----------------------------------------------------------------------------
-TEST(ascent_runtime, test_pyhton_script_extract)
+TEST(ascent_runtime, test_python_script_extract)
 {
     //
     // Create the data.
@@ -114,4 +114,72 @@ TEST(ascent_runtime, test_pyhton_script_extract)
    
 }
 
+// This demos using the ascent python api inside of ascent ... 
+std::string py_script_inception = "\n"
+"import conduit\n"
+"import ascent\n"
+"n_mesh = ascent_data()\n"
+"a = ascent.Ascent()\n"
+"a.open()\n"
+"a.publish(n_mesh)\n"
+"actions = conduit.Node()\n"
+"scenes  = conduit.Node()\n"
+"scenes['s1/plots/p1/type'] = 'pseudocolor'\n"
+"scenes['s1/plots/p1/params/field'] = 'radial_vert'\n"
+"scenes['s1/image_prefix'] = 'tout_python_extract_inception' \n"
+"add_act =actions.append()\n"
+"add_act['action'] = 'add_scenes'\n"
+"add_act['scenes'] = scenes\n"
+"actions.append()['action'] = 'execute'\n"
+"a.execute(actions)\n"
+"a.close()\n"
+"\n";
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime, test_python_extract_inception)
+{
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    create_3d_example_dataset(data,0,1);
+    data["state/cycle"] = 101; 
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
+    
+    //
+    // Create the actions.
+    //
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "python";
+    extracts["e1/params/source"] = py_script_inception;
+    
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+    
+    actions.print();
+    
+    //
+    // Run Ascent
+    //
+
+    Node ascent_opts;
+    ascent_opts["ascent_info"] = "verbose";
+
+    Ascent ascent;
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+}
 
