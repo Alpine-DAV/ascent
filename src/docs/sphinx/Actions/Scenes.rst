@@ -185,7 +185,7 @@ Color Tables
 The color map translates normalized scalars to color values.
 Minimally, a color table name needs to be specified, but the ``color_table`` node allows you to specify RGB and Alpha (opacity) control points for complete customization of color maps. 
 Alpha control points are used when rendering volumes.
-Color map names names can be found in the `VTK-m repository <https://gitlab.kitware.com/vtk/vtk-m/blob/master/vtkm/rendering/ColorTable.cxx>`_.
+The built-in Color map names are: ``Cool to Warm``, ``Black-Body Radiation``, ``Samsel Fire``, ``Inferno``, ``Linear YGB``, ``Cold and Hot``, ``Rainbow Desaturated``, ``Cool to Warm (Extended)``, ``X Ray``, ``Black, Blue and White``, ``Virdis``, ``Linear Green``, ``Jet``, and ``Rainbow``. 
 Colors are three double precision values between 0 and 1.
 Alphas and positions  are a single double precision values between 0 and 1.
 

@@ -292,7 +292,7 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
     }
 }
 
-vtkm::rendering::ColorTable 
+vtkm::cont::ColorTable 
 parse_color_table(const conduit::Node &color_table_node)
 {
   std::string color_map_name = "";
@@ -301,7 +301,7 @@ parse_color_table(const conduit::Node &color_table_node)
       color_map_name = color_table_node["name"].as_string();
   }
 
-  vtkm::rendering::ColorTable color_table(color_map_name);
+  vtkm::cont::ColorTable color_table(color_map_name);
 
   if(color_map_name == "")
   {
@@ -315,7 +315,7 @@ parse_color_table(const conduit::Node &color_table_node)
         ASCENT_ERROR("Error: a color table node was provided without a color map name or control points");
       return color_table;
   }
-  color_table.SetSmooth(true);  
+
   NodeConstIterator itr = color_table_node.fetch("control_points").children();
   while(itr.has_next())
   {
@@ -340,20 +340,20 @@ parse_color_table(const conduit::Node &color_table_node)
           peg["color"].to_float64_array(n);
           const float64 *color = n.as_float64_ptr();
 
-          vtkm::rendering::Color ecolor(color[0], color[1], color[2]);
+          vtkm::Vec<vtkm::Float64,3> ecolor(color[0], color[1], color[2]);
           
           for(int i = 0; i < 3; ++i)
           {
-            ecolor.Components[i] = std::min(1.f, std::max(ecolor.Components[i], 0.f));
+            ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
           }
 
-          color_table.AddControlPoint(position, ecolor);
+          color_table.AddPoint(position, ecolor);
       }
       else if (peg["type"].as_string() == "alpha")
       {
           float64 alpha = peg["alpha"].to_float64();
           alpha = std::min(1., std::max(alpha, 0.));
-          color_table.AddAlphaControlPoint(position, alpha);
+          color_table.AddPointAlpha(position, alpha);
       }
       else
       {
@@ -2259,7 +2259,7 @@ CreatePlot::execute()
     // get the plot params
     if(plot_params.has_path("color_table"))
     {
-      vtkm::rendering::ColorTable color_table =  detail::parse_color_table(plot_params["color_table"]);
+      vtkm::cont::ColorTable color_table =  detail::parse_color_table(plot_params["color_table"]);
       renderer->SetColorTable(color_table);
     }
 
