@@ -377,13 +377,13 @@ def main():
         clone_cmd ="git "
         if opts["ignore_ssl_errors"]:
             clone_cmd +="-c http.sslVerify=false "
-        clone_cmd += "clone -b develop https://github.com/spack/spack.git"
+        clone_cmd += "clone -b task/2018_04_update_ascent https://github.com/Alpine-DAV/spack.git"
         sexe(clone_cmd, echo=True)
-        if "spack_develop_commit" in project_opts:
-            sha1 = project_opts["spack_develop_commit"]
-            print "[info: using spack develop %s]" % sha1
-            os.chdir(pjoin(dest_dir,"spack"))
-            sexe("git reset --hard %s" % sha1)
+        #if "spack_develop_commit" in project_opts:
+        #    sha1 = project_opts["spack_develop_commit"]
+        #    print "[info: using spack develop %s]" % sha1
+        #    os.chdir(pjoin(dest_dir,"spack"))
+        #    sexe("git reset --hard %s" % sha1)
 
     os.chdir(dest_dir)
     # twist spack's arms 
@@ -416,9 +416,14 @@ def main():
             install_cmd += "-k "
         install_cmd += "install " + uberenv_pkg_name + opts["spec"]
         res = sexe(install_cmd, echo=True)
+
+        python_enabled = True
+        if "~python" in opts["spec"]:
+            python_enabled = False 
+
         if res != 0:
             return res
-        if "spack_activate" in project_opts:
+        if "spack_activate" in project_opts and python_enabled:
             for pkg_name in project_opts["spack_activate"]:
               activate_cmd = "spack/bin/spack activate " + pkg_name
               sexe(activate_cmd, echo=True)   
