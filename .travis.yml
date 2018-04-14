@@ -106,6 +106,7 @@ script:
   - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*; do if [ -d $f ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents vtkm; fi; done;
     # building this seperately
   - travis_wait 20 ${CACHE_ROOT}/uberenv_libs/spack/bin/spack install openblas 
+  - ${CACHE_ROOT}/uberenv_libs/spack/bin/spack install mpich
   #- find uberenv_libs -type d | perl -lne 'print tr:/::, " $_"' | sort -n | cut -d' ' -f2
   - python ascent/scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}"
   - cd $TRAVIS_BUILD_DIR
