@@ -125,6 +125,13 @@ def parse_args():
                       default=False,
                       help="Ignore SSL Errors")
 
+    # flag to use insecure curl + git
+    parser.add_option("--clone-only",
+                      action="store_true",
+                      dest="clone_only",
+                      default=False,
+                      help="Only clone spack and exit")
+
     ###############
     # parse args
     ###############
@@ -386,6 +393,8 @@ def main():
         #    sexe("git reset --hard %s" % sha1)
 
     os.chdir(dest_dir)
+    if opts["clone_only"]:
+        sys.exit(0)
     # twist spack's arms 
     cfg_dir = uberenv_spack_config_dir(opts, uberenv_path)
     patch_spack(dest_spack, uberenv_path, cfg_dir, pkgs)
