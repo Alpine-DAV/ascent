@@ -2432,6 +2432,18 @@ VTKHLagrangian::verify_params(const conduit::Node &params,
         info["errors"].append() = "Missing required string parameter 'field'";
         res = false;
     }
+    if(! params.has_child("step_size") || 
+       ! params["step_size"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'step_size'";
+        res = false;
+    }
+    if(! params.has_child("write_frequency") || 
+       ! params["write_frequency"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'write_frequency'";
+        res = false;
+    }
     
     return res;
 }
@@ -2444,22 +2456,26 @@ VTKHLagrangian::execute()
     ASCENT_INFO("Doing nothing");
     if(!input(0).check_type<vtkh::DataSet>())
     {
-        ASCENT_ERROR("vtkh_no_op input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_lagrangian input must be a vtk-h dataset");
     }
 
     std::string field_name = params()["field"].as_string();
-    
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
-    vtkh::Lagrangian noop;
-    
-    noop.SetInput(data);
-    noop.SetField(field_name);
-  
-    noop.Update();
+		double step_size = params()["step_size"].to_float64();    
+		int write_frequency = params()["write_frequency"].to_int32();    
 
-    vtkh::DataSet *noop_output = noop.GetOutput();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Lagrangian lagrangian;
     
-    set_output<vtkh::DataSet>(noop_output);
+    lagrangian.SetInput(data);
+    lagrangian.SetField(field_name);
+		lagrangian.SetStepSize(step_size);
+		lagrangian.SetWriteFrequency(write_frequency);  
+
+    lagrangian.Update();
+
+    vtkh::DataSet *lagrangian_output = lagrangian.GetOutput();
+    
+    set_output<vtkh::DataSet>(lagrangian_output);
 }
 
 //-----------------------------------------------------------------------------

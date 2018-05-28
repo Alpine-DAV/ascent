@@ -326,7 +326,7 @@ AscentRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
         filter_name = "vtkh_3slice";
         needs_params = false;
       }
-      else if(type == "Lagrangian")
+      else if(type == "lagrangian")
       {
         filter_name = "vtkh_lagrangian";
       }
