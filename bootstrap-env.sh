@@ -63,7 +63,7 @@ function info
 
 function uberenv
 {
-    python scripts/uberenv/uberenv.py "$@"
+    python scripts/uberenv/uberenv.py "$ALL_ARGS"
 }
 
 function main
