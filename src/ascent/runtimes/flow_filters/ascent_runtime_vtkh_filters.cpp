@@ -2444,6 +2444,30 @@ VTKHLagrangian::verify_params(const conduit::Node &params,
         info["errors"].append() = "Missing required numeric parameter 'write_frequency'";
         res = false;
     }
+    if(! params.has_child("cust_res") || 
+       ! params["cust_res"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'cust_res'";
+        res = false;
+    }
+    if(! params.has_child("x_res") || 
+       ! params["x_res"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'x_res'";
+        res = false;
+    }
+    if(! params.has_child("y_res") || 
+       ! params["y_res"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'y_res'";
+        res = false;
+    }
+    if(! params.has_child("z_res") || 
+       ! params["z_res"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'z_res'";
+        res = false;
+    }
     
     return res;
 }
@@ -2462,6 +2486,10 @@ VTKHLagrangian::execute()
     std::string field_name = params()["field"].as_string();
 		double step_size = params()["step_size"].to_float64();    
 		int write_frequency = params()["write_frequency"].to_int32();    
+		int cust_res = params()["cust_res"].to_int32();    
+		int x_res = params()["x_res"].to_int32();    
+		int y_res = params()["y_res"].to_int32();    
+		int z_res = params()["z_res"].to_int32();    
 
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
     vtkh::Lagrangian lagrangian;
@@ -2470,7 +2498,10 @@ VTKHLagrangian::execute()
     lagrangian.SetField(field_name);
 		lagrangian.SetStepSize(step_size);
 		lagrangian.SetWriteFrequency(write_frequency);  
-
+		lagrangian.SetCustomSeedResolution(cust_res);
+		lagrangian.SetSeedResolutionInX(x_res);
+		lagrangian.SetSeedResolutionInY(y_res);
+		lagrangian.SetSeedResolutionInZ(z_res);
     lagrangian.Update();
 
     vtkh::DataSet *lagrangian_output = lagrangian.GetOutput();
