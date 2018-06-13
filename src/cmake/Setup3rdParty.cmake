@@ -87,13 +87,6 @@ if(VTKM_DIR)
     set(VTKm_CUDA_Architecture "kepler" CACHE PATH "" FORCE)
 
     ################################
-    # TBB (for VTK-M)
-    ################################
-    if(TBB_DIR) # optional 
-        include(cmake/thirdparty/SetupTBB.cmake)
-    endif()
-
-    ################################
     # VTKm
     ################################
     include(cmake/thirdparty/SetupVTKm.cmake)

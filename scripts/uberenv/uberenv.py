@@ -377,13 +377,14 @@ def main():
         clone_cmd ="git "
         if opts["ignore_ssl_errors"]:
             clone_cmd +="-c http.sslVerify=false "
-        clone_cmd += "clone -b develop https://github.com/spack/spack.git"
+        #clone_cmd += "clone -b develop https://github.com/spack/spack.git"
+        clone_cmd += "clone -b task/2018_04_update_ascent https://github.com/Alpine-DAV/spack.git"
         sexe(clone_cmd, echo=True)
-        if "spack_develop_commit" in project_opts:
-            sha1 = project_opts["spack_develop_commit"]
-            print "[info: using spack develop %s]" % sha1
-            os.chdir(pjoin(dest_dir,"spack"))
-            sexe("git reset --hard %s" % sha1)
+        #if "spack_develop_commit" in project_opts:
+        #    sha1 = project_opts["spack_develop_commit"]
+        #    print "[info: using spack develop %s]" % sha1
+        #    os.chdir(pjoin(dest_dir,"spack"))
+        #    sexe("git reset --hard %s" % sha1)
 
     os.chdir(dest_dir)
     # twist spack's arms 

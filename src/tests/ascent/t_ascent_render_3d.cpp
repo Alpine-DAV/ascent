@@ -638,7 +638,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_render_3d, test_render_3d_render_acsent_tbb_backend)
+TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
 {
     
     Node n;
@@ -646,17 +646,17 @@ TEST(ascent_render_3d, test_render_3d_render_acsent_tbb_backend)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 3D Ascent-tbb test");
+        ASCENT_INFO("Ascent support disabled, skipping 3D Ascent-openmp test");
         return;
     }
     
-    if(n["runtimes/ascent/backends/tbb"].as_string() != "enabled")
+    if(n["runtimes/ascent/backends/openmp"].as_string() != "enabled")
     {
-        ASCENT_INFO("Ascent TBB support disabled, skipping 3D Ascent-tbb test");
+        ASCENT_INFO("Ascent openmp support disabled, skipping 3D Ascent-opemp test");
         return;
     }
     
-    ASCENT_INFO("Testing 3D Rendering with Ascent using TBB Backend");
+    ASCENT_INFO("Testing 3D Rendering with Ascent using OpenMP Backend");
     
     //
     // Create an example mesh.
@@ -673,7 +673,7 @@ TEST(ascent_render_3d, test_render_3d_render_acsent_tbb_backend)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path, "tout_render_3d_ascent_tbb_backend");
+    string output_file = conduit::utils::join_file_path(output_path, "tout_render_3d_ascent_openmp_backend");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -704,7 +704,7 @@ TEST(ascent_render_3d, test_render_3d_render_acsent_tbb_backend)
 
     Node ascent_opts;
     ascent_opts["runtime/type"] = "ascent";
-    ascent_opts["runtime/backend"] = "tbb";
+    ascent_opts["runtime/backend"] = "openmp";
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
