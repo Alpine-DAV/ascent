@@ -111,6 +111,9 @@ if(MPI_FOUND AND FORTRAN_FOUND)
     endif()
 
     set(clover_par_deps ascent_mpi mpi)
+    if(ENABLE_OPENMP)
+      list(APPEND clover_par_deps openmp)
+    endif()
     
     blt_add_executable(
         NAME        cloverleaf3d_par

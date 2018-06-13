@@ -93,7 +93,7 @@ install(FILES ASCENT_README.md
 if(MPI_FOUND)
     
     set(lulesh_par_deps ascent_mpi mpi)
-    if(OPENMP_FOUND)
+    if(ENABLE_OPENMP)
            list(APPEND lulesh_par_deps openmp)
     endif()
     
