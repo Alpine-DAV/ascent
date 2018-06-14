@@ -813,42 +813,109 @@ VTKHDataAdapter::AddField(const std::string &field_name,
 {
     ASCENT_INFO("nverts "  << nverts);
     ASCENT_INFO("neles "  << neles);
-    
-    
+
     // TODO: how do we deal with vector valued fields?, these will be mcarrays
-    
-    const float64 *values_ptr = n_field["values"].as_float64_ptr();
     string assoc              = n_field["association"].as_string();
+
+    
+    const Node &n_vals = n_field["values"];
+    
+    int num_vals = n_vals.dtype().number_of_elements();
+
+    // if(assoc == "vertex")
+    // {
+    //     check that num_vals == nverts);
+    // }
+    // else
+    // {
+    //     check that num_vals == neles)
+    // }
+
 
     try
     {
-        if(assoc == "vertex")
+        bool zero_copy = false;
+        
+        if(n_vals.is_compact())
         {
-            //This is the method for zero copy
-            vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr, nverts);
-            dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                             vtkm::cont::Field::ASSOC_POINTS,
-                                             vtkm_arr));
+            // we compile vtk-h with fp types
+            if(n_vals.dtype().is_float32())
+            {
+                const float32 *values_ptr = n_vals.value();
+                // zero copy into vtkm array handle
+                vtkm::cont::ArrayHandle<vtkm::Float32> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr,
+                                                                                               num_vals);
+                // add to dataset
+                if(assoc == "vertex")
+                {
+                    dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                                     vtkm::cont::Field::Association::POINTS,
+                                                     vtkm_arr));
+                }
+                else if( assoc == "element")
+                {
+                    dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                                     vtkm::cont::Field::Association::CELL_SET,
+                                                     topo_name.c_str(),
+                                                     vtkm_arr));
+                }
+
+                zero_copy = true;
+            }
+            else if(n_vals.dtype().is_float64())
+            {
+                const float64 *values_ptr = n_vals.value();
+                // zero copy into vtkm array handle
+                vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr,
+                                                                                               num_vals);
+                // add to dataset
+                if(assoc == "vertex")
+                {
+                    //zero copy into vtkm array handle
+                    vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr, num_vals);
+                    dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                                     vtkm::cont::Field::Association::POINTS,
+                                                     vtkm_arr));
+                }
+                else if( assoc == "element")
+                {
+                    //zero copy into vtkm array handle
+                    vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr, num_vals);
+                    dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                                     vtkm::cont::Field::Association::CELL_SET,
+                                                     topo_name.c_str(),
+                                                     vtkm_arr));
+                }
+
+                zero_copy = true;
+            }
         }
-        else if( assoc == "element")
+        
+        // vtk-m cant support zero copy for this layout or was not compiled to expose this datatype
+        // use float64 by default
+        if(!zero_copy) 
         {
-            // double minv = 1e24;
-            // double maxv = -minv;
-            // for(int i = 0; i < neles; ++i)
-            // {
-            //     double v = values_ptr[i];
-            //     minv = std::min(minv,v);
-            //     maxv= std::max(maxv,v);
-            // }
-            //
-            // std::cout<<"Min "<<minv<<" max "<<maxv<<"\n";
-            
-            //This is the method for zero copy
-            vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr, neles);
-            dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                             vtkm::cont::Field::ASSOC_CELL_SET,
-                                             topo_name.c_str(),
-                                             vtkm_arr));
+            Node n_vals_tmp;
+            n_vals.to_float64_array(n_vals_tmp);
+            const float64 *values_ptr = n_vals_tmp.value();
+            vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr_tmp = vtkm::cont::make_ArrayHandle(values_ptr,
+                                                                                               num_vals);
+            // copy into vtkm-owned array
+            vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+            vtkm::cont::ArrayCopy( vtkm_arr_tmp , vtkm_arr);
+            if(assoc == "vertex")
+            {
+                dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                                 vtkm::cont::Field::Association::POINTS,
+                                                 vtkm_arr));
+            }
+            else if( assoc == "element")
+            {
+                dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                                 vtkm::cont::Field::Association::CELL_SET,
+                                                 topo_name.c_str(),
+                                                 vtkm_arr));
+            }
         }
     }
     catch (vtkm::cont::Error error)

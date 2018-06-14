@@ -276,8 +276,8 @@ AscentRuntime::CreateDefaultFilters()
 }
 //-----------------------------------------------------------------------------
 void 
-AscentRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
-                                  const std::string pipeline_name)
+AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
+                                     const std::string pipeline_name)
 {
     std::string prev_name = CreateDefaultFilters(); 
 
@@ -356,8 +356,9 @@ AscentRuntime::ConvertToFlowGraph(const conduit::Node &pipeline,
     if(w.graph().has_filter(pipeline_name))
     {
       ASCENT_INFO("Duplicate pipeline name "<<pipeline_name
-                  <<" original is being overwritted");
+                  <<" over writing original");
     }
+    
     // create an alias passthrough filter so plots and extracts
     // can connect to the end result by pipeline name
     w.graph().add_filter("alias",
@@ -376,7 +377,7 @@ AscentRuntime::CreatePipelines(const conduit::Node &pipelines)
   for(int i = 0; i < pipelines.number_of_children(); ++i)
   {
     conduit::Node pipe = pipelines.child(i);
-    ConvertToFlowGraph(pipe, names[i]);
+    ConvertPipelineToFlow(pipe, names[i]);
   }
 }
 
@@ -517,7 +518,7 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
   if(w.graph().has_filter(plot_name))
   {
     ASCENT_INFO("Duplicate plot name "<<plot_name
-                <<" original is being overwritted");
+                <<" over writing original");
   }
 
   w.graph().add_filter(filter_name,
@@ -589,7 +590,7 @@ AscentRuntime::ConnectSource()
 void 
 AscentRuntime::ConnectGraphs()
 {
-  //create plot + pipeline graphs
+  //connect plot + pipeline graphs
   std::vector<std::string> names = m_connections.child_names(); 
   for (int i = 0; i < m_connections.number_of_children(); ++i)
   { 
@@ -609,6 +610,7 @@ AscentRuntime::ConnectGraphs()
   }
 }
 
+//-----------------------------------------------------------------------------
 std::vector<std::string>
 AscentRuntime::GetPipelines(const conduit::Node &plots)
 {
@@ -683,7 +685,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     }
 
     render_params["pipeline_count"] = plot_count;
-    std::string renders_name = names[i] + "_renders";           
+    std::string renders_name = names[i] + "_renders";
     
     w.graph().add_filter("default_render",
                           renders_name,

@@ -99,8 +99,8 @@ private:
 
     flow::Workspace w;
     std::string CreateDefaultFilters();
-    void ConvertToFlowGraph(const conduit::Node &pipeline,
-                            const std::string pipeline_name);
+    void ConvertPipelineToFlow(const conduit::Node &pipeline,
+                               const std::string pipeline_name);
     void ConvertPlotToFlow(const conduit::Node &plot,
                            const std::string plot_name);
     void ConvertExtractToFlow(const conduit::Node &plot,
