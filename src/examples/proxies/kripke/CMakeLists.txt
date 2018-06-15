@@ -82,7 +82,7 @@ if(MPI_FOUND)
     configure_file(ascent_actions.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_actions.json COPYONLY)
     configure_file(ascent_options.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_options.json COPYONLY)
 
-    if(OPENMP_FOUND)
+    if(ENABLE_OPENMP)
        set(kripke_openmp_flags "-DKRIPKE_USE_OPENMP")
     else()
        set(kripke_openmp_flags "")
@@ -93,7 +93,7 @@ if(MPI_FOUND)
 
 
     set(kripke_par_deps ascent_mpi mpi)
-    if(OPENMP_FOUND)
+    if(ENABLE_OPENMP)
            list(APPEND kripke_par_deps openmp)
     endif()
     

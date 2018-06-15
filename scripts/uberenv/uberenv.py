@@ -125,6 +125,13 @@ def parse_args():
                       default=False,
                       help="Ignore SSL Errors")
 
+    # flag to use insecure curl + git
+    parser.add_option("--clone-only",
+                      action="store_true",
+                      dest="clone_only",
+                      default=False,
+                      help="Only clone spack and exit")
+
     ###############
     # parse args
     ###############
@@ -377,15 +384,18 @@ def main():
         clone_cmd ="git "
         if opts["ignore_ssl_errors"]:
             clone_cmd +="-c http.sslVerify=false "
-        clone_cmd += "clone -b develop https://github.com/spack/spack.git"
+        #clone_cmd += "clone -b develop https://github.com/spack/spack.git"
+        clone_cmd += "clone -b task/2018_04_update_ascent https://github.com/Alpine-DAV/spack.git"
         sexe(clone_cmd, echo=True)
-        if "spack_develop_commit" in project_opts:
-            sha1 = project_opts["spack_develop_commit"]
-            print "[info: using spack develop %s]" % sha1
-            os.chdir(pjoin(dest_dir,"spack"))
-            sexe("git reset --hard %s" % sha1)
+        #if "spack_develop_commit" in project_opts:
+        #    sha1 = project_opts["spack_develop_commit"]
+        #    print "[info: using spack develop %s]" % sha1
+        #    os.chdir(pjoin(dest_dir,"spack"))
+        #    sexe("git reset --hard %s" % sha1)
 
     os.chdir(dest_dir)
+    if opts["clone_only"]:
+        sys.exit(0)
     # twist spack's arms 
     cfg_dir = uberenv_spack_config_dir(opts, uberenv_path)
     patch_spack(dest_spack, uberenv_path, cfg_dir, pkgs)
@@ -416,9 +426,14 @@ def main():
             install_cmd += "-k "
         install_cmd += "install " + uberenv_pkg_name + opts["spec"]
         res = sexe(install_cmd, echo=True)
+
+        python_enabled = True
+        if "~python" in opts["spec"]:
+            python_enabled = False 
+
         if res != 0:
             return res
-        if "spack_activate" in project_opts:
+        if "spack_activate" in project_opts and python_enabled:
             for pkg_name in project_opts["spack_activate"]:
               activate_cmd = "spack/bin/spack activate " + pkg_name
               sexe(activate_cmd, echo=True)   

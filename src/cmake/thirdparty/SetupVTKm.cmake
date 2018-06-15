@@ -55,20 +55,13 @@ MESSAGE(STATUS "Looking for VTKm using VTKM_DIR = ${VTKM_DIR}")
 # use VTKM_DIR to setup the options that cmake's find VTKm needs
 set(VTKm_DIR ${VTKM_DIR}/lib/cmake/vtkm-1.2)
 
-#
-# VTKm will find TBB via the env var "TBB_ROOT"
-#
-if(TBB_DIR)
-    set(ENV{TBB_ROOT} ${TBB_DIR})
-endif()
-
-find_package(VTKm REQUIRED OPTIONAL_COMPONENTS Rendering Serial CUDA TBB)
+set(VTKM_FOUND TRUE)
 message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
 
-set(VTKM_FOUND TRUE)
+set(VTKm_LIBRARIES vtkm_cont vtkm_rendering)
 
 blt_register_library(NAME vtkm
                      INCLUDES ${VTKm_INCLUDE_DIRS}
                      COMPILE_FLAGS ${VTKm_COMPILE_OPTIONS}
-                     LIBRARIES vtkm vtkm_cont vtkm_rendering
+                     LIBRARIES vtkm_cont vtkm_rendering
                      )
