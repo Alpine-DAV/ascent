@@ -78,6 +78,7 @@
 #include <vtkh/filters/ClipField.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
+#include <vtkh/filters/NoOp.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkm/cont/DataSet.h>
@@ -2393,6 +2394,72 @@ ExecScene::execute()
     scene->Execute(*renders);
 }
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+VTKHNoOp::VTKHNoOp()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHNoOp::~VTKHNoOp()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHNoOp::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_no_op";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHNoOp::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    
+    if(! params.has_child("field") || 
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+        res = false;
+    }
+    
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHNoOp::execute()
+{
+
+    ASCENT_INFO("Doing nothing");
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_no_op input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::NoOp noop;
+    
+    noop.SetInput(data);
+    noop.SetField(field_name);
+  
+    noop.Update();
+
+    vtkh::DataSet *noop_output = noop.GetOutput();
+    
+    set_output<vtkh::DataSet>(noop_output);
+}
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

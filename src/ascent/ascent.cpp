@@ -190,9 +190,9 @@ Ascent::open(const conduit::Node &options)
               {
                 vtkh::ForceSerial();
               }
-              else if(backend == "tbb")
+              else if(backend == "openmp")
               {
-                vtkh::ForceTBB();
+                vtkh::ForceOpenMP();
               }
               else if(backend == "cuda")
               {
@@ -433,13 +433,13 @@ about(conduit::Node &n)
         n["runtimes/ascent/backends/serial"] = "disabled";
     }
 
-    if(vtkh::IsTBBEnabled())
+    if(vtkh::IsOpenMPEnabled())
     {
-        n["runtimes/ascent/backends/tbb"] = "enabled";
+        n["runtimes/ascent/backends/openmp"] = "enabled";
     }
     else
     {
-        n["runtimes/ascent/backends/tbb"] = "disabled";
+        n["runtimes/ascent/backends/openmp"] = "disabled";
     }
 
     if(vtkh::IsCUDAEnabled())
@@ -461,10 +461,10 @@ about(conduit::Node &n)
     
     n["runtimes/vtkm/backends/serial"] = "enabled";
     
-#ifdef ASCENT_VTKM_USE_TBB
-    n["runtimes/vtkm/backends/tbb"] = "enabled";
+#ifdef ASCENT_VTKM_USE_OPENMP
+    n["runtimes/vtkm/backends/opemp"] = "enabled";
 #else
-    n["runtimes/vtkm/backends/tbb"] = "disabled";
+    n["runtimes/vtkm/backends/openmp"] = "disabled";
 #endif
 
 #ifdef ASCENT_VTKM_USE_CUDA

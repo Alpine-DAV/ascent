@@ -76,7 +76,7 @@
 
 #cmakedefine ASCENT_VTKM_ENABLED      "@VTKM_FOUND@"
 #cmakedefine ASCENT_VTKM_USE_CUDA     "@CUDA_FOUND@"
-#cmakedefine ASCENT_VTKM_USE_TBB      "@TBB_FOUND@"
+#cmakedefine ASCENT_VTKM_USE_OPENMP   "@ENABLE_OPENMP@"
 
 
 #cmakedefine ASCENT_ADIOS_ENABLED     "@ADIOS_FOUND@"

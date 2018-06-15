@@ -68,8 +68,6 @@ class UberenvAscent(Ascent):
     # in upstream spack package
     depends_on("cmake@3.8.2:3.9.999", when="+cmake")
 
-    # use old version of mpi4py to avoid build issues with cython
-    depends_on("py-mpi4py@2.0.0:2.9.999", when="+mpi")
     
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))

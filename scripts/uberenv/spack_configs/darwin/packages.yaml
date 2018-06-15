@@ -27,7 +27,7 @@ packages:
       lapack: [openblas]
       mkl: [intel-mkl]
       mpe: [mpe2]
-      mpi: [mpich, openmpi]
+      mpi: [openmpi, mpich]
       opencl: [pocl]
       openfoam: [openfoam-com, openfoam-org, foam-extend]
       pil: [py-pillow]
@@ -35,6 +35,7 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
+    variants: ~openmp
 # CUDA standard MacOS install
   cuda:
     paths:

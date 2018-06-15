@@ -675,11 +675,8 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
     result->AddCoordinateSystem(
       vtkm::cont::CoordinateSystem(coords_name.c_str(),
         make_ArrayHandleCompositeVector(x_coords_handle,
-                                        0,
                                         y_coords_handle,
-                                        0,
-                                        z_coords_handle,
-                                        0)));
+                                        z_coords_handle)));
 
     int32 x_elems = n_topo["elements/dims/i"].as_int32(); 
     int32 y_elems = n_topo["elements/dims/j"].as_int32(); 
@@ -756,11 +753,8 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     result->AddCoordinateSystem(
       vtkm::cont::CoordinateSystem(coords_name.c_str(),
         make_ArrayHandleCompositeVector(x_coords_handle,
-                                        0,
                                         y_coords_handle,
-                                        0,
-                                        z_coords_handle,
-                                        0)));
+                                        z_coords_handle)));
 
 
     // shapes, number of indices, and connectivity.
@@ -827,7 +821,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             //This is the method for zero copy
             vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr, nverts);
             dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                             vtkm::cont::Field::ASSOC_POINTS,
+                                             vtkm::cont::Field::Association::POINTS,
                                              vtkm_arr));
         }
         else if( assoc == "element")
@@ -846,7 +840,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             //This is the method for zero copy
             vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr, neles);
             dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                             vtkm::cont::Field::ASSOC_CELL_SET,
+                                             vtkm::cont::Field::Association::CELL_SET,
                                              topo_name.c_str(),
                                              vtkm_arr));
         }
@@ -987,13 +981,13 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     // This still could be structured, but this will always 
     // have an explicit coordinate system
     output["coordsets/coords/type"] = "explicit";  
-    using Coords32 = vtkm::cont::ArrayHandleCompositeVectorType<vtkm::cont::ArrayHandle<vtkm::Float32>,
-                                                                vtkm::cont::ArrayHandle<vtkm::Float32>,
-                                                                vtkm::cont::ArrayHandle<vtkm::Float32>>::type;
+    using Coords32 = vtkm::cont::ArrayHandleCompositeVector<vtkm::cont::ArrayHandle<vtkm::Float32>,
+                                                            vtkm::cont::ArrayHandle<vtkm::Float32>,
+                                                            vtkm::cont::ArrayHandle<vtkm::Float32>>;
 
-    using Coords64 = vtkm::cont::ArrayHandleCompositeVectorType<vtkm::cont::ArrayHandle<vtkm::Float64>,
-                                                                vtkm::cont::ArrayHandle<vtkm::Float64>,
-                                                                vtkm::cont::ArrayHandle<vtkm::Float64>>::type;
+    using Coords64 = vtkm::cont::ArrayHandleCompositeVector<vtkm::cont::ArrayHandle<vtkm::Float64>,
+                                                            vtkm::cont::ArrayHandle<vtkm::Float64>,
+                                                            vtkm::cont::ArrayHandle<vtkm::Float64>>;
     
     using CoordsVec32 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
     using CoordsVec64 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
@@ -1005,9 +999,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       Coords32 points = coords.GetData().Cast<Coords32>();
 
-      auto x_handle = points.GetStorage().GetArrays().GetParameter<1>();
-      auto y_handle = points.GetStorage().GetArrays().GetParameter<2>();
-      auto z_handle = points.GetStorage().GetArrays().GetParameter<3>();
+      auto x_handle = vtkmstd::get<0>(points.GetStorage().GetArrayTuple());
+      auto y_handle = vtkmstd::get<1>(points.GetStorage().GetArrayTuple());
+      auto z_handle = vtkmstd::get<2>(points.GetStorage().GetArrayTuple());
 
       point_dims[0] = x_handle.GetNumberOfValues();
       point_dims[1] = y_handle.GetNumberOfValues();
@@ -1043,9 +1037,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       Coords64 points = coords.GetData().Cast<Coords64>();
 
-      auto x_handle = points.GetStorage().GetArrays().GetParameter<1>();
-      auto y_handle = points.GetStorage().GetArrays().GetParameter<2>();
-      auto z_handle = points.GetStorage().GetArrays().GetParameter<3>();
+      auto x_handle = vtkmstd::get<0>(points.GetStorage().GetArrayTuple());
+      auto y_handle = vtkmstd::get<1>(points.GetStorage().GetArrayTuple());
+      auto z_handle = vtkmstd::get<2>(points.GetStorage().GetArrayTuple());
 
       point_dims[0] = x_handle.GetNumberOfValues();
       point_dims[1] = y_handle.GetNumberOfValues();
@@ -1178,8 +1172,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
 {
   std::string name = field.GetName();
   std::string path = "fields/" + name;
-  bool assoc_points = vtkm::cont::Field::ASSOC_POINTS == field.GetAssociation();
-  bool assoc_cells  = vtkm::cont::Field::ASSOC_CELL_SET == field.GetAssociation();
+  bool assoc_points = vtkm::cont::Field::Association::POINTS == field.GetAssociation();
+  bool assoc_cells  = vtkm::cont::Field::Association::CELL_SET == field.GetAssociation();
   //bool assoc_mesh  = vtkm::cont::Field::ASSOC_WHOLE_MESH == field.GetAssociation();
   if(!assoc_points && ! assoc_cells)
   {
