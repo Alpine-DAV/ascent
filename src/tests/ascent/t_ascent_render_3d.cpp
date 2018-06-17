@@ -1004,6 +1004,446 @@ TEST(ascent_render_3d, render_3d_domain_overload)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+    
+    
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              3,
+                                              3,
+                                              3,
+                                              data);
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    //verify_info.print();
+
+    ASCENT_INFO("Testing 3D Rendering of fields with different data types");
+
+    int num_vals = data["fields/braid/values"].dtype().number_of_elements();
+    //
+    // Create the actions.
+    //
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/params/field"] = "braid";
+    actions.append()["action"] = "execute";
+    actions.append()["action"] = "reset";
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    string output_path = prepare_output_dir();
+
+
+    // ints
+    
+    // int 8
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_int8");
+        // remove old images before rendering
+        remove_test_image(output_file);
+
+        data["fields/braid/values"].set(DataType::int8(num_vals));
+        int8_array varray = data["fields/braid/values"].value();
+        for(int i=0; i<num_vals; i++)
+        {
+            varray[i] = i;
+        }
+        
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+    // int 16
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_int16");
+        // remove old images before rendering
+        remove_test_image(output_file);
+        data["fields/braid/values"].set(DataType::int16(num_vals));
+        int16_array varray = data["fields/braid/values"].value();
+        for(int i=0; i<num_vals; i++)
+        {
+            varray[i] = i;
+        }
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+
+    // int 32
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_int32");
+        // remove old images before rendering
+        remove_test_image(output_file);
+
+        data["fields/braid/values"].set(DataType::int32(num_vals));
+        int32_array varray = data["fields/braid/values"].value();
+        for(int i=0; i<num_vals; i++)
+        {
+            varray[i] = i;
+        }
+        
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+    // int 64
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_int64");
+        // remove old images before rendering
+        remove_test_image(output_file);
+        data["fields/braid/values"].set(DataType::int64(num_vals));
+        int64_array varray = data["fields/braid/values"].value();
+        for(int i=0; i<num_vals; i++)
+        {
+            varray[i] = i;
+        }
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+
+
+    // uints
+
+    // uint 8
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_uint8");
+        // remove old images before rendering
+        remove_test_image(output_file);
+
+        data["fields/braid/values"].set(DataType::uint8(num_vals));
+        uint8_array varray = data["fields/braid/values"].value();
+        for(int i=0; i<num_vals; i++)
+        {
+            varray[i] = i;
+        }
+        
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+    // uint 16
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_uint16");
+        // remove old images before rendering
+        remove_test_image(output_file);
+        data["fields/braid/values"].set(DataType::uint16(num_vals));
+        uint16_array varray = data["fields/braid/values"].value();
+        for(int i=0; i<num_vals; i++)
+        {
+            varray[i] = i;
+        }
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+
+    // uint 32
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_uint32");
+        // remove old images before rendering
+        remove_test_image(output_file);
+
+        data["fields/braid/values"].set(DataType::uint32(num_vals));
+        uint32_array varray = data["fields/braid/values"].value();
+        for(int i=0; i<num_vals; i++)
+        {
+            varray[i] = i;
+        }
+        
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+    // uint 64
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_uint64");
+        // remove old images before rendering
+        remove_test_image(output_file);
+        data["fields/braid/values"].set(DataType::uint64(num_vals));
+        uint64_array varray = data["fields/braid/values"].value();
+        for(int i=0; i<num_vals; i++)
+        {
+            varray[i] = i;
+        }
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+
+
+    // fp types
+    
+    // float 32
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_float32");
+        // remove old images before rendering
+        remove_test_image(output_file);
+
+        data["fields/braid/values"].set(DataType::float32(num_vals));
+        float32_array varray = data["fields/braid/values"].value();
+        for(int i=0; i<num_vals; i++)
+        {
+            varray[i] = i;
+        }
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+
+    // float 64
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_float64");
+        // remove old images before rendering
+        remove_test_image(output_file);
+
+        data["fields/braid/values"].set(DataType::float64(num_vals));
+        float64_array varray = data["fields/braid/values"].value();
+        for(int i=0; i<num_vals; i++)
+        {
+            varray[i] = i;
+        }
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+
+
+    
+    ascent.close();
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+    
+    
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              3,
+                                              3,
+                                              3,
+                                              data);
+    
+    Node n_orig_coords = data["topologies/mesh/elements/connectivity"];
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    //verify_info.print();
+
+    ASCENT_INFO("Testing 3D Rendering of fields with different data types");
+
+    int num_vals = data["fields/braid/values"].dtype().number_of_elements();
+    //
+    // Create the actions.
+    //
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/params/field"] = "braid";
+    actions.append()["action"] = "execute";
+    actions.append()["action"] = "reset";
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    string output_path = prepare_output_dir();
+
+
+    // ints
+    
+    // int 8
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_int8_conn");
+        // remove old images before rendering
+        remove_test_image(output_file);
+
+        n_orig_coords.to_int8_array(data["topologies/mesh/elements/connectivity"]);
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+    // int 16
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_int16_conn");
+        // remove old images before rendering
+        remove_test_image(output_file);
+        n_orig_coords.to_int16_array(data["topologies/mesh/elements/connectivity"]);
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+
+    // int 32
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_int32_conn");
+        // remove old images before rendering
+        remove_test_image(output_file);
+        n_orig_coords.to_int32_array(data["topologies/mesh/elements/connectivity"]);
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+    // int 64
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_int64_conn");
+        // remove old images before rendering
+        remove_test_image(output_file);
+        n_orig_coords.to_int64_array(data["topologies/mesh/elements/connectivity"]);
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+
+
+    // uints
+
+    // uint 8
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_uint8_conn");
+        // remove old images before rendering
+        remove_test_image(output_file);
+
+        n_orig_coords.to_uint8_array(data["topologies/mesh/elements/connectivity"]);
+        
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+    // uint 16
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_uint16_conn");
+        // remove old images before rendering
+        remove_test_image(output_file);
+        n_orig_coords.to_uint16_array(data["topologies/mesh/elements/connectivity"]);
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+
+    // uint 32
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_uint32_conn");
+        // remove old images before rendering
+        remove_test_image(output_file);
+
+        n_orig_coords.to_uint32_array(data["topologies/mesh/elements/connectivity"]);
+        
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+    // uint 64
+    {
+        string output_file = conduit::utils::join_file_path(output_path,
+                                        "tout_render_3d_braid_uint64_conn");
+        // remove old images before rendering
+        remove_test_image(output_file);
+        n_orig_coords.to_uint64_array(data["topologies/mesh/elements/connectivity"]);
+        ascent.publish(data);
+        scenes["s1/image_prefix"] = output_file;
+        ascent.execute(actions);
+        // check that we created an image
+        EXPECT_TRUE(check_test_image(output_file));
+    }
+
+    ascent.close();
+}
+
+
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
