@@ -61,9 +61,8 @@ blt_register_library(NAME vtkh
                      LIBRARIES vtkh)
 
 if (MPI_FOUND)
-    blt_register_library(NAME vtkh_par
-                         DEFINES "-DPARALLEL"
+    blt_register_library(NAME vtkh_mpi
                          INCLUDES ${VTKh_INCLUDE_DIRS}
-                         LIBRARIES vtkh_par)
+                         LIBRARIES vtkh_mpi)
 
 endif()

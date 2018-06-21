@@ -207,9 +207,9 @@ if(MPI_FOUND)
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
 
     if(VTKM_FOUND)
-        # swap vtkh_par for vtkh
+        # swap vtkh_mpi for vtkh
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)
-        list(APPEND ascent_mpi_thirdparty_libs vtkh_par)
+        list(APPEND ascent_mpi_thirdparty_libs vtkh_mpi)
     endif()
 
     blt_add_library(
