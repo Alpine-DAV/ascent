@@ -23,7 +23,7 @@ packages:
     buildable: False
     paths:
       openblas: /usr
-  openssl:
+  zlib:
     buildable: False
     paths:
-      openssl: /usr
+      zlib: /usr
