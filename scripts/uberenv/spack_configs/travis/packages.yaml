@@ -1,0 +1,17 @@
+packages:
+  openmpi:
+    buildable: False
+    paths:
+      openmpi: /usr
+  python:
+    buildable: False
+    paths:
+      python: /usr
+  py-numpy:
+    buildable: False
+    paths:
+      py-numpy: /usr
+  py-mpi4py:
+    buildable: False
+    paths:
+      py-mpi4py: /usr
