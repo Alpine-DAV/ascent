@@ -7,11 +7,23 @@ packages:
     buildable: False
     paths:
       python: /usr
-  py-numpy:
+  ncurses:
     buildable: False
     paths:
-      py-numpy: /usr
-  py-mpi4py:
+      ncurses: /usr
+  pkg-confg:
     buildable: False
     paths:
-      py-mpi4py: /usr
+      pkg-confg: /usr
+  openssl:
+    buildable: False
+    paths:
+      openssl: /usr
+  openblas:
+    buildable: False
+    paths:
+      openblas: /usr
+  openssl:
+    buildable: False
+    paths:
+      openssl: /usr
