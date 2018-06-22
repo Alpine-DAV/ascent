@@ -217,29 +217,6 @@ def patch_spack(spack_dir,uberenv_dir,cfg_dir,pkgs):
     # hot-copy our packages into spack
     sexe("cp -Rf %s %s" % (pkgs,dest_spack_pkgs))
 
-
-# def patch_spack_old(spack_dir,compilers_yaml,pkgs):
-#     # force uberenv config
-#     spack_lib_config = pjoin(spack_dir,"lib","spack","spack","config.py")
-#     print "[disabling user config scope in: %s]" % spack_lib_config
-#     cfg_script = open(spack_lib_config).read()
-#     src = "ConfigScope('user', os.path.expanduser('~/.spack'))"
-#     cfg_script = cfg_script.replace(src, "#DISABLED BY UBERENV: " + src)
-#     open(spack_lib_config,"w").write(cfg_script)
-#     # copy in the compiler spec
-#     print "[copying uberenv compiler specs]"
-#     spack_etc = pjoin(spack_dir,"etc")
-#     if not os.path.isdir(spack_etc):
-#         os.mkdir(spack_etc)
-#     spack_etc = pjoin(spack_etc,"spack")
-#     if not os.path.isdir(spack_etc):
-#         os.mkdir(spack_etc)
-#     sexe("cp %s spack/etc/spack/compilers.yaml" % compilers_yaml, echo=True)
-#     dest_spack_pkgs = pjoin(spack_dir,"var","spack","repos","builtin","packages")
-#     # hot-copy our packages into spack
-#     sexe("cp -Rf %s %s" % (pkgs,dest_spack_pkgs))
-
-
 def create_spack_mirror(mirror_path,pkg_name,ignore_ssl_errors=False):
     """
     Creates a spack mirror for pkg_name at mirror_path.
