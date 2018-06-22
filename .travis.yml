@@ -99,7 +99,7 @@ script:
   - if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkh; fi
   - if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~doc; fi
   - if [ $ENABLE_ADIOS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~adios; fi
-  - export SPACK_SPEC="${SPACK_SPEC} ^mpich"
+  #- export SPACK_SPEC="${SPACK_SPEC} ^mpich"
   - echo $SPACK_SPEC
   # build deps using uberenv
   - cd ..
