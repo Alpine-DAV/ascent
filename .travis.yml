@@ -110,13 +110,13 @@ script:
   - cd ..
   - export CACHE_ROOT=`pwd`
   # remove stale host configs
-  - rm ${CACHE_ROOT}/uberenv_libs/*.cmake || true
+  #- rm ${CACHE_ROOT}/uberenv_libs/*.cmake || true
   # clear the cache of conduit, vtkm and vtkh to rebuild critical dependencies
-  - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/conduit*; do if [ -d $f ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents --all conduit; fi; done;
-  - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*; do if [ -d $f ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents vtkm; fi; done;
+  #- for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/conduit*; do if [ -d $f ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents --all conduit; fi; done;
+  #- for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*; do if [ -d $f ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents vtkm; fi; done;
     #make sure spack exits in case the cache was blown away
-  - python ascent/scripts/uberenv/uberenv.py --clone-only --spack-config-dir=ascent/scripts/uberenv/scripts/uberenv/spack_configs/travis/
-  - ${CACHE_ROOT}/uberenv_libs/spack/bin/spack  spec uberenv-ascent$SPACK_SPEC
+  #- python ascent/scripts/uberenv/uberenv.py --clone-only --spack-config-dir=ascent/scripts/uberenv/scripts/uberenv/spack_configs/travis/
+  #- ${CACHE_ROOT}/uberenv_libs/spack/bin/spack  spec uberenv-ascent$SPACK_SPEC
     # building these seperately to aviod travis time outs
   #- travis_wait 20 ${CACHE_ROOT}/uberenv_libs/spack/bin/spack install openblas 
   #- ${CACHE_ROOT}/uberenv_libs/spack/bin/spack install mpich
