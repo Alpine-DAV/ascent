@@ -119,7 +119,7 @@ script:
   #- travis_wait 20 ${CACHE_ROOT}/uberenv_libs/spack/bin/spack install openblas 
   #- ${CACHE_ROOT}/uberenv_libs/spack/bin/spack install mpich
   #- find uberenv_libs -type d | perl -lne 'print tr:/::, " $_"' | sort -n | cut -d' ' -f2
-  - python ascent/scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" --spack-config-dir=ascent/scripts/uberenv/scripts/uberenv/spack_configs/travis/
+  - python ascent/scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" --spack-config-dir=ascent/scripts/uberenv/spack_configs/travis/
   - cd $TRAVIS_BUILD_DIR
    #create out-of-source build dir
   - mkdir build-debug
