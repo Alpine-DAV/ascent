@@ -85,9 +85,9 @@ addons:
        - libreadline-dev
        - libsqlite3-dev
        - libbz2-dev
-cache:
-  directories:
-    - /home/travis/build/Alpine-DAV/uberenv_libs
+#cache:
+#  directories:
+#    - /home/travis/build/Alpine-DAV/uberenv_libs
 install:
   # none
 script:
@@ -109,8 +109,9 @@ script:
   # build deps using uberenv
   - cd ..
   - export CACHE_ROOT=`pwd`
-  # remove stale host configs
-  #- rm ${CACHE_ROOT}/uberenv_libs/*.cmake || true
+  # remove stale everything
+  - if [ -d /home/travis/build/Alpine-DAV/uberenv_libs ]; then rm -rf /home/travis/build/Alpine-DAV/uberenv_libs; fi;
+    #- rm ${CACHE_ROOT}/uberenv_libs/*.cmake || true
   # clear the cache of conduit, vtkm and vtkh to rebuild critical dependencies
   #- for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/conduit*; do if [ -d $f ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents --all conduit; fi; done;
   #- for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*; do if [ -d $f ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --dependents vtkm; fi; done;
@@ -157,10 +158,6 @@ script:
   - export PATH=$PATH:`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/mpich-*/bin/`
   - if [ $ENABLE_VTKH = 'ON' ]; then ./scripts/test-run-examples.sh ; fi
   
-
-#cache:
-#  directories:
-#    - ${TRAVIS_BUILD_DIR}/uberenv_libs
 notifications:
   email:
     recipients:
