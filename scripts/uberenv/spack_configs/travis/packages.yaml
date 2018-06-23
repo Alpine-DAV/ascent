@@ -3,10 +3,22 @@ packages:
     buildable: False
     paths:
       openmpi: /usr
-  python:
+  gdbm:
     buildable: False
     paths:
-      python: /usr
+      gdbm: /usr
+  bzip2:
+    buildable: False
+    paths:
+      bzip2: /usr
+  readline:
+    buildable: False
+    paths:
+      readline: /usr
+  sqlite:
+    buildable: False
+    paths:
+      sqlite: /usr
   ncurses:
     buildable: False
     paths:

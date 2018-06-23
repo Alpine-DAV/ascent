@@ -75,14 +75,16 @@ addons:
        - gcc-5
        - g++-5
        - gfortran-5
-       - python-dev
        - openmpi-bin
        - libopenmpi-dev
        - libncurses-dev
        - libssl-dev
        - libopenblas-dev
        - zlib1g-dev
-       
+       - libgdbm-dev
+       - libreadline-dev
+       - libsqlite3-dev
+       - libbz2-dev
 cache:
   directories:
     - /home/travis/build/Alpine-DAV/uberenv_libs
