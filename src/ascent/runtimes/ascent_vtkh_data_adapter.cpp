@@ -60,6 +60,11 @@
 
 // third party includes
 
+// mpi
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#endif
+
 // VTKm includes
 #define VTKM_USE_DOUBLE_PRECISION
 #include <vtkm/cont/DataSet.h>
@@ -123,9 +128,10 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
     int *has_ids_array = new int[comm_size];
     int *no_ids_array = new int[comm_size];
     int boolean = has_ids ? 1 : 0; 
-    MPI_Allgather(&boolean, 1, MPI_INT, has_ids_array, 1, MPI_INT, vtkh::GetMPIComm());
+    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+    MPI_Allgather(&boolean, 1, MPI_INT, has_ids_array, 1, MPI_INT, mpi_comm);
     boolean = no_ids ? 1 : 0; 
-    MPI_Allgather(&boolean, 1, MPI_INT, no_ids_array, 1, MPI_INT, vtkh::GetMPIComm());
+    MPI_Allgather(&boolean, 1, MPI_INT, no_ids_array, 1, MPI_INT, mpi_comm);
 
     bool global_has_ids = true;
     bool global_no_ids = false;
@@ -158,7 +164,7 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
 #ifdef ASCENT_MPI_ENABLED
     int *domains_per_rank = new int[comm_size];
     int rank = vtkh::GetMPIRank();
-    MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, vtkh::GetMPIComm());
+    MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
     for(int i = 0; i < rank; ++i)
     {
       domain_offset += domains_per_rank[i];

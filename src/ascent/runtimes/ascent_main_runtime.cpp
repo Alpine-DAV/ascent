@@ -130,9 +130,8 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
     
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
-   
+    vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
     MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
-    vtkh::SetMPIComm(comm);
     MPI_Comm_rank(comm,&rank);
 #ifdef VTKM_CUDA
     //

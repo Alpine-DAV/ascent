@@ -141,6 +141,9 @@ def parse_args():
     opts = vars(opts)
     if not opts["spack_config_dir"] is None:
         opts["spack_config_dir"] = os.path.abspath(opts["spack_config_dir"])
+        if not os.path.isdir(opts["spack_config_dir"]):
+            print "[ERROR: invalid spack config dir: %s ]" % opts["spack_config_dir"]
+            sys.exit(-1)
     return opts, extras
 
 
@@ -216,29 +219,6 @@ def patch_spack(spack_dir,uberenv_dir,cfg_dir,pkgs):
     dest_spack_pkgs = pjoin(spack_dir,"var","spack","repos","builtin","packages")
     # hot-copy our packages into spack
     sexe("cp -Rf %s %s" % (pkgs,dest_spack_pkgs))
-
-
-# def patch_spack_old(spack_dir,compilers_yaml,pkgs):
-#     # force uberenv config
-#     spack_lib_config = pjoin(spack_dir,"lib","spack","spack","config.py")
-#     print "[disabling user config scope in: %s]" % spack_lib_config
-#     cfg_script = open(spack_lib_config).read()
-#     src = "ConfigScope('user', os.path.expanduser('~/.spack'))"
-#     cfg_script = cfg_script.replace(src, "#DISABLED BY UBERENV: " + src)
-#     open(spack_lib_config,"w").write(cfg_script)
-#     # copy in the compiler spec
-#     print "[copying uberenv compiler specs]"
-#     spack_etc = pjoin(spack_dir,"etc")
-#     if not os.path.isdir(spack_etc):
-#         os.mkdir(spack_etc)
-#     spack_etc = pjoin(spack_etc,"spack")
-#     if not os.path.isdir(spack_etc):
-#         os.mkdir(spack_etc)
-#     sexe("cp %s spack/etc/spack/compilers.yaml" % compilers_yaml, echo=True)
-#     dest_spack_pkgs = pjoin(spack_dir,"var","spack","repos","builtin","packages")
-#     # hot-copy our packages into spack
-#     sexe("cp -Rf %s %s" % (pkgs,dest_spack_pkgs))
-
 
 def create_spack_mirror(mirror_path,pkg_name,ignore_ssl_errors=False):
     """
@@ -399,6 +379,11 @@ def main():
     # twist spack's arms 
     cfg_dir = uberenv_spack_config_dir(opts, uberenv_path)
     patch_spack(dest_spack, uberenv_path, cfg_dir, pkgs)
+    
+    # show the speck for what will be built
+    spec_cmd = "spack/bin/spack spec " + uberenv_pkg_name + opts["spec"]
+    res = sexe(spec_cmd, echo=True)
+
 
     ##########################################################
     # we now have an instance of spack configured how we 

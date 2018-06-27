@@ -67,6 +67,11 @@
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
+// mpi
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#endif
+
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>

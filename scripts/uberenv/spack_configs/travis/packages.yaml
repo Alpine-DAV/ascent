@@ -1,0 +1,41 @@
+packages:
+  openmpi:
+    buildable: False
+    paths:
+      openmpi: /usr
+  gdbm:
+    buildable: False
+    paths:
+      gdbm: /usr
+  bzip2:
+    buildable: False
+    paths:
+      bzip2: /usr
+  readline:
+    buildable: False
+    paths:
+      readline: /usr
+  sqlite:
+    buildable: False
+    paths:
+      sqlite: /usr
+  ncurses:
+    buildable: False
+    paths:
+      ncurses: /usr
+  pkg-confg:
+    buildable: False
+    paths:
+      pkg-confg: /usr
+  openssl:
+    buildable: False
+    paths:
+      openssl: /usr
+  openblas:
+    buildable: False
+    paths:
+      openblas: /usr
+  zlib:
+    buildable: False
+    paths:
+      zlib: /usr
