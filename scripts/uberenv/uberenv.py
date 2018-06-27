@@ -141,6 +141,9 @@ def parse_args():
     opts = vars(opts)
     if not opts["spack_config_dir"] is None:
         opts["spack_config_dir"] = os.path.abspath(opts["spack_config_dir"])
+        if not os.path.isdir(opts["spack_config_dir"]):
+            print "[ERROR: invalid spack config dir: %s ]" % opts["spack_config_dir"]
+            sys.exit(-1)
     return opts, extras
 
 

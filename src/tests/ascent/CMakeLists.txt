@@ -115,7 +115,6 @@ if(MPI_FOUND AND ENABLE_MPI)
     foreach(TEST ${MPI_TESTS})
         # this uses 2 procs
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ascent_mpi) 
-        set_target_properties( ${TEST} PROPERTIES COMPILE_FLAGS "-D PARALLEL")
         
         if(PYTHON_FOUND AND ENABLE_PYTHON)
             # this is needed for the inception tests ... 
