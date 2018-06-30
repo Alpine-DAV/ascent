@@ -46,12 +46,15 @@
 # Basic TPL Tests
 ################################
 
-# TODO: can we assume vtkh has handled vtkm tests, or should we include some 
-# here as well ?
-
-IF(VTKM_FOUND)
+IF(VTKH_FOUND)
     message(STATUS "Adding vtk-h lib unit tests")
     add_cpp_test(TEST t_vtkh_smoke DEPENDS_ON vtkh)
+endif()
+
+
+IF(MFEM_FOUND)
+    message(STATUS "Adding mfem lib unit tests")
+    add_cpp_test(TEST t_mfem_smoke DEPENDS_ON mfem)
 endif()
 
 

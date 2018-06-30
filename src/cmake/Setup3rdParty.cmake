@@ -106,6 +106,14 @@ if(HDF5_DIR)
 endif()
 
 ################################
+# Setup MFEM
+################################  
+if (MFEM_DIR)
+  include(cmake/thirdparty/SetupMFEM.cmake)
+endif()
+
+
+################################
 # Setup ADIOS
 ################################  
 if (ADIOS_DIR)
