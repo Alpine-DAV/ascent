@@ -136,7 +136,8 @@ endif()
 #############################
 
 if(FORTRAN_FOUND)
-    list(APPEND ascent_sources fortran/ascent_fortran.f90)
+    add_library(ascent_fortran OBJECT fortran/ascent_fortran.f90)
+    list(APPEND ascent_sources $<TARGET_OBJECTS:ascent_fortran>)
 endif()
 
 ################################
