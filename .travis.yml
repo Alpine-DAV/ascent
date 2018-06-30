@@ -113,7 +113,7 @@ script:
   # mfem support
   - if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem ^mfem~mpi~hypre"; fi
   - if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~mfem; fi
-    - echo $SPACK_SPEC
+  - echo $SPACK_SPEC
   # build deps using uberenv
   - cd ..
   - export CACHE_ROOT=`pwd`
