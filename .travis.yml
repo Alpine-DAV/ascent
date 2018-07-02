@@ -112,7 +112,7 @@ script:
   # adios support
   - if [ $ENABLE_ADIOS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~adios; fi
   # mfem support
-  - if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem ^mfem~mpi~hypre"; fi
+  - if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC=${SPACK_SPEC}+mfem; fi
   - if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~mfem; fi
   - echo $SPACK_SPEC
   # build deps using uberenv

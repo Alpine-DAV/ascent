@@ -1,4 +1,13 @@
 packages:
+  all:
+    compiler: [gcc]
+    providers:
+      blas: [netlib-lapack]
+      lapack: [netlib-lapack]
+  netlib-lapack:
+    buildable: False
+    paths:
+      netlib-lapack: /usr/
   openmpi:
     buildable: False
     paths:
@@ -31,14 +40,6 @@ packages:
     buildable: False
     paths:
       openssl: /usr
-  lapack:
-    buildable: False
-    paths:
-      openblas: /usr
-  blas:
-    buildable: False
-    paths:
-      blas: /usr
   zlib:
     buildable: False
     paths:
