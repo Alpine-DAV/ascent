@@ -82,7 +82,8 @@ addons:
        - libopenmpi-dev
        - libncurses-dev
        - libssl-dev
-       - libopenblas-dev
+       - libblas-dev
+       - liblapack-dev
        - zlib1g-dev
        - libgdbm-dev
        - libreadline-dev
