@@ -47,7 +47,7 @@ if(MPI_FOUND AND ENABLE_MPI)
       NAME        laghos_mpi
       HEADERS     ${laghos_headers_mpi}
       SOURCES     ${laghos_sources_mpi} 
-      DEPENDS_ON  ${laghos_thirdparty_deps}
+      DEPENDS_ON  ${laghos_thirdparty_deps} ascent_mpi
       OUTPUT_DIR  ${CMAKE_CURRENT_BINARY_DIR})
 
   # install target for laghos mpi 

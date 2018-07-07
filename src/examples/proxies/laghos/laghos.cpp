@@ -56,6 +56,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <ascent.hpp>
+
 using namespace std;
 using namespace mfem;
 using namespace mfem::hydrodynamics;
@@ -419,14 +421,15 @@ int main(int argc, char *argv[])
 
    // Save data for VisIt visualization.
    VisItDataCollection visit_dc(basename, pmesh);
+   ConduitDataCollection conduit_dc(basename, pmesh);
    if (visit)
    {
-      visit_dc.RegisterField("Density",  &rho_gf);
-      visit_dc.RegisterField("Velocity", &v_gf);
-      visit_dc.RegisterField("Specific Internal Energy", &e_gf);
-      visit_dc.SetCycle(0);
-      visit_dc.SetTime(0.0);
-      visit_dc.Save();
+      //visit_dc.RegisterField("Density",  &rho_gf);
+      //visit_dc.RegisterField("Velocity", &v_gf);
+      //visit_dc.RegisterField("Specific Internal Energy", &e_gf);
+      //visit_dc.SetCycle(0);
+      //visit_dc.SetTime(0.0);
+      //visit_dc.Save();
    }
 
    // Perform time-integration (looping over the time iterations, ti, with a
@@ -515,9 +518,38 @@ int main(int argc, char *argv[])
 
          if (visit)
          {
-            visit_dc.SetCycle(ti);
-            visit_dc.SetTime(t);
-            visit_dc.Save();
+            //visit_dc.SetCycle(ti);
+            //visit_dc.SetTime(t);
+            //visit_dc.Save();
+
+            conduit::Node n_dset;
+            ConduitDataCollection::MeshToBlueprintMesh(pmesh,n_dset);
+            ConduitDataCollection::GridFunctionToBlueprintField(&rho_gf, n_dset["fields"]["Density"]);
+            ConduitDataCollection::GridFunctionToBlueprintField(&v_gf, n_dset["fields"]["Velocity"]);
+            ConduitDataCollection::GridFunctionToBlueprintField(&e_gf, n_dset["fields"]["specific_internal_energy"]);
+            n_dset["state/cycle"] = ti;
+            n_dset["state/time"] = t;
+  
+            ascent::Ascent ascent;
+            conduit::Node ascent_opts;
+            ascent_opts["mpi_comm"] = MPI_Comm_c2f(pmesh->GetComm());
+            ascent.open(ascent_opts);
+            ascent.publish(n_dset);
+            std::cout<<"PUBLISHED\n";
+
+            conduit::Node scenes;
+            scenes["s1/plots/p1/type"]         = "pseudocolor";
+            scenes["s1/plots/p1/params/field"] = "Density";
+
+            conduit::Node actions;
+            conduit::Node &add_plots = actions.append();
+            add_plots["action"] = "add_scenes";
+            add_plots["scenes"] = scenes;   
+            conduit::Node &execute = actions.append();
+            execute["action"] = "execute";
+
+            ascent.execute(actions);
+
          }
 
          if (gfprint)
