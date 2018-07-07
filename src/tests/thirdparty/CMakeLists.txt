@@ -54,7 +54,14 @@ endif()
 
 IF(MFEM_FOUND)
     message(STATUS "Adding mfem lib unit tests")
-    add_cpp_test(TEST t_mfem_smoke DEPENDS_ON mfem)
+    set(mfem_smoke_deps mfem)
+    # mfem does not have both a serial version and an mpi
+    # version. So if we compiled with MPI on, the we need 
+    # to set the correct dependency
+    if(MPI_FOUND AND ENABLE_MPI)
+        list(APPEND mfem_smoke_deps mpi) 
+    endif()
+    add_cpp_test(TEST t_mfem_smoke DEPENDS_ON ${mfem_smoke_deps})
 endif()
 
 
