@@ -1,0 +1,66 @@
+
+# -------------------------------------------------------------------------
+# This file controls default concretization preferences for Spack.
+#
+# Settings here are versioned with Spack and are intended to provide
+# sensible defaults out of the box. Spack maintainers should edit this
+# file to keep it current.
+#
+# Users can override these settings by editing the following files.
+#
+# Per-spack-instance settings (overrides defaults):
+#   $SPACK_ROOT/etc/spack/packages.yaml
+#
+# Per-user settings (overrides default and site settings):
+#   ~/.spack/packages.yaml
+# -------------------------------------------------------------------------
+
+packages:
+    all:
+        providers:
+          mpi: [mpich]
+          blas: [intel-mkl]
+          lapack: [intel-mkl]
+        compiler: [intel@18.0.0.128]
+        variants: +mpi~shared~python  
+    openssl:
+        buildable: False
+        paths:
+            openssl%intel@18.0.0.128 arch=cray-cnl6-mic_knl: /usr
+    #cmake:
+    #    buildable: False
+    #    paths:
+    #        cmake@3.9.4: /projects/InSituVis2018/ascent/theta/cmake-3.9.4/spack/opt/spack/cray-cnl6-haswell/gcc-5.3.0/cmake-3.9.4-7fqa754442ykzwjncyuewbhukg235ajz/
+    python:
+        paths:
+            python@2.7.13%intel@18.0.0.128 arch=cray-cnl-mic_knl: /usr
+        buildable: False
+    pkg-config:
+        paths:
+             pkg-config@0.28%intel@18.0.0.128 arch=cray-cnl6-mic_knl: /usr
+        buildable: False
+    autoconf:
+        paths:
+            autoconf@2.69%intel@18.0.0.128 arch=cray-cnl6-mic_knl: /usr
+        buildable: False
+    automake:
+        paths:
+            automake@1.13.4%intel@18.0.0.128 arch=cray-cnl6-mic_knl: /usr
+        buildable: False
+    libtool:
+        paths:
+            libtool@2.4.2%intel@18.0.0.128 arch=cray-cnl6-mic_knl: /usr
+        buildable: False
+    m4:
+        paths:
+            m4@1.4.16%intel@18.0.0.128 arch=cray-cnl6-mic_knl: /usr
+        buildable: False
+    intel-mkl:
+        paths:
+            intel-mkl@18.0.0.128%intel@18.0.0.128 arch=cray-cnl6-mic_knl: /opt/intel
+        buildable: False
+    mpich:
+        modules:
+            # requires 'module load cce' otherwise gives parsing error
+            mpich@7.6.3%intel@18.0.0.128 arch=cray-cnl6-mic_knl: cray-mpich/7.6.3
+        buildable: False
