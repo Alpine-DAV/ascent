@@ -4,13 +4,14 @@ compilers:
     extra_rpaths: []
     flags: {}
     modules:
-    - PrgEnv-intel
-    - intel/18.0.0.128
+    - PrgEnv-gnu
+    - cce
+    - gcc/7.3.0
     operating_system: cnl6
     paths:
       cc: cc
       cxx: CC
       f77: ftn
       fc: ftn
-    spec: intel@18.0.0.128
+    spec: gcc@7.3.0
     target: any
