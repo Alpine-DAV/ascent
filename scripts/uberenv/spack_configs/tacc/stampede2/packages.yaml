@@ -43,8 +43,3 @@ packages:
     buildable: false
     modules:
         intel-mkl: mkl
-  #cmake:
-  #    version: [3.8.2]
-  #    buildable: False
-  #    modules:
-  #        cmake@3.8.2: cmake/3.8.2
