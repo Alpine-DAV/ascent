@@ -45,34 +45,30 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_filters.cpp
+/// file: ascent_runtime_hola_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <ascent_runtime_filters.hpp>
+#include "ascent_runtime_hola_filters.hpp"
 
+//-----------------------------------------------------------------------------
+// thirdparty includes
+//-----------------------------------------------------------------------------
+
+// conduit includes
+#include <conduit.hpp>
+#include <conduit_relay.hpp>
+#include <conduit_relay_mpi.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
-#include <ascent_runtime_relay_filters.hpp>
-#include <ascent_runtime_blueprint_filters.hpp>
-
-#if defined(ASCENT_VTKM_ENABLED)
-    #include <ascent_runtime_vtkh_filters.hpp>
-#endif
-
-#ifdef ASCENT_MPI_ENABLED
-    #include <ascent_runtime_hola_filters.hpp>
-#if defined(ASCENT_ADIOS_ENABLED)
-    #include <ascent_runtime_adios_filters.hpp>
-#endif
-#endif
-
-
+using namespace conduit;
+using namespace std;
 
 using namespace flow;
 
@@ -96,52 +92,67 @@ namespace filters
 
 
 //-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
+HolaMPIExtract::HolaMPIExtract()
+:Filter()
 {
-    Workspace::register_filter_type<BlueprintVerify>(); 
-    Workspace::register_filter_type<RelayIOSave>();
-    Workspace::register_filter_type<RelayIOLoad>();
+// empty
+}
+
+//-----------------------------------------------------------------------------
+HolaMPIExtract::~HolaMPIExtract()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+HolaMPIExtract::declare_interface(Node &i)
+{
+    i["type_name"]   = "hola_mpi";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+HolaMPIExtract::verify_params(const conduit::Node &params,
+                               conduit::Node &info)
+{
+    info.reset();   
+    bool res = true;
     
-#if defined(ASCENT_VTKM_ENABLED)
-    Workspace::register_filter_type<DefaultRender>();
-    Workspace::register_filter_type<EnsureVTKH>();
-    Workspace::register_filter_type<EnsureVTKM>();
-    Workspace::register_filter_type<EnsureBlueprint>();
+    if(! params.has_child("mpi_comm") || 
+       ! params["mpi_comm"].dtype().is_integer() )
+    {
+        info["errors"].append() = "Missing required integer parameter 'mpi_comm'";
+    }
 
-    Workspace::register_filter_type<VTKHBounds>();
-    Workspace::register_filter_type<VTKHUnionBounds>();
+    if(! params.has_child("rank_split") || 
+       ! params["rank_split"].dtype().is_integer() )
+    {
+        info["errors"].append() = "Missing required integer parameter 'rank_split'";
+    }
 
-    Workspace::register_filter_type<VTKHDomainIds>();
-    Workspace::register_filter_type<VTKHUnionDomainIds>();
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+HolaMPIExtract::execute()
+{
+
+    if(!input(0).check_type<Node>())
+    {
+        ASCENT_ERROR("hola_mpi input must be a conduit node");
+    }
+
+    int mpi_comm_hnd = params()["mpi_comm"].to_int();
+    int rank_split   = params()["rank_split"].to_int();
+
+    Node *n_input = input<Node>(0);
     
-    Workspace::register_filter_type<DefaultScene>();
-
-
-    Workspace::register_filter_type<VTKHClip>();
-    Workspace::register_filter_type<VTKHClipWithField>();
-    Workspace::register_filter_type<VTKHIsoVolume>();
-    Workspace::register_filter_type<VTKHMarchingCubes>();
-    Workspace::register_filter_type<VTKHThreshold>();
-    Workspace::register_filter_type<VTKHSlice>();
-    Workspace::register_filter_type<VTKH3Slice>();
-    Workspace::register_filter_type<VTKHNoOp>();
-
-    Workspace::register_filter_type<AddPlot>();
-    Workspace::register_filter_type<CreatePlot>();
-    Workspace::register_filter_type<CreateScene>();
-    Workspace::register_filter_type<ExecScene>();
-#endif
-
-#ifdef ASCENT_MPI_ENABLED
-    Workspace::register_filter_type<HolaMPIExtract>();
-#if defined(ASCENT_ADIOS_ENABLED)
-    Workspace::register_filter_type<ADIOS>();
-#endif
-#endif
-
+    // use rank_split to send all domains to subset of mpi ranks
 }
 
 
@@ -151,6 +162,7 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
@@ -164,4 +176,8 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
+
+
+
 

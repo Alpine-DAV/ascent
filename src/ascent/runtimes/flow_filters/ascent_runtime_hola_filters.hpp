@@ -45,36 +45,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_filters.cpp
+/// file: ascent_runtime_hola_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <ascent_runtime_filters.hpp>
+#ifndef ASCENT_RUNTIME_HOLA_FILTERS
+#define ASCENT_RUNTIME_HOLA_FILTERS
 
+#include <ascent.hpp>
 
-//-----------------------------------------------------------------------------
-// ascent includes
-//-----------------------------------------------------------------------------
-#include <ascent_logging.hpp>
-#include <flow_workspace.hpp>
+#include <flow_filter.hpp>
 
-#include <ascent_runtime_relay_filters.hpp>
-#include <ascent_runtime_blueprint_filters.hpp>
-
-#if defined(ASCENT_VTKM_ENABLED)
-    #include <ascent_runtime_vtkh_filters.hpp>
-#endif
-
-#ifdef ASCENT_MPI_ENABLED
-    #include <ascent_runtime_hola_filters.hpp>
-#if defined(ASCENT_ADIOS_ENABLED)
-    #include <ascent_runtime_adios_filters.hpp>
-#endif
-#endif
-
-
-
-using namespace flow;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -94,59 +75,26 @@ namespace runtime
 namespace filters
 {
 
+//-----------------------------------------------------------------------------
+///
+/// Filters Related to Hola
+///
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
+class HolaMPIExtract: public ::flow::Filter
 {
-    Workspace::register_filter_type<BlueprintVerify>(); 
-    Workspace::register_filter_type<RelayIOSave>();
-    Workspace::register_filter_type<RelayIOLoad>();
+public:
+    HolaMPIExtract();
+   ~HolaMPIExtract();
     
-#if defined(ASCENT_VTKM_ENABLED)
-    Workspace::register_filter_type<DefaultRender>();
-    Workspace::register_filter_type<EnsureVTKH>();
-    Workspace::register_filter_type<EnsureVTKM>();
-    Workspace::register_filter_type<EnsureBlueprint>();
-
-    Workspace::register_filter_type<VTKHBounds>();
-    Workspace::register_filter_type<VTKHUnionBounds>();
-
-    Workspace::register_filter_type<VTKHDomainIds>();
-    Workspace::register_filter_type<VTKHUnionDomainIds>();
-    
-    Workspace::register_filter_type<DefaultScene>();
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
 
 
-    Workspace::register_filter_type<VTKHClip>();
-    Workspace::register_filter_type<VTKHClipWithField>();
-    Workspace::register_filter_type<VTKHIsoVolume>();
-    Workspace::register_filter_type<VTKHMarchingCubes>();
-    Workspace::register_filter_type<VTKHThreshold>();
-    Workspace::register_filter_type<VTKHSlice>();
-    Workspace::register_filter_type<VTKH3Slice>();
-    Workspace::register_filter_type<VTKHNoOp>();
-
-    Workspace::register_filter_type<AddPlot>();
-    Workspace::register_filter_type<CreatePlot>();
-    Workspace::register_filter_type<CreateScene>();
-    Workspace::register_filter_type<ExecScene>();
-#endif
-
-#ifdef ASCENT_MPI_ENABLED
-    Workspace::register_filter_type<HolaMPIExtract>();
-#if defined(ASCENT_ADIOS_ENABLED)
-    Workspace::register_filter_type<ADIOS>();
-#endif
-#endif
-
-}
-
-
-
-//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
@@ -158,10 +106,14 @@ register_builtin()
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
+
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------

@@ -72,6 +72,17 @@ if(FORTRAN_FOUND)
 endif() 
 
 
+if(EXISTS ${CONDUIT_DIR}/include/conduit/conduit_relay_hdf5_api.hpp)
+    set(CONDUIT_HDF5_ENABLED TRUE)
+    message(STATUS "FOUND conduit HDF5 support")
+endif()
+
+
+if(EXISTS ${CONDUIT_DIR}/include/conduit/conduit_relay_adios_api.hpp)
+    set(CONDUIT_ADIOS_ENABLED TRUE)
+    message(STATUS "FOUND conduit ADIOS support")
+endif()
+
 set(CONDUIT_FOUND TRUE)
 set(CONDUIT_INCLUDE_DIRS ${CONDUIT_DIR}/include/conduit)
 

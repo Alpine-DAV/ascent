@@ -65,7 +65,8 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_iso_volume
                 t_ascent_threshold
                 t_ascent_slice
-                t_ascent_flow_runtime)
+                t_ascent_flow_runtime
+                t_ascent_hola)
 
 set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_empty_runtime

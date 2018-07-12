@@ -171,4 +171,25 @@ TEST(ascent_runtime_options, catch_exceptions)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime_options, test_errors)
+{
+    // invoke error cases caused by not initializing ascent
 
+    Ascent ascent;
+    Node n;
+    // these will error to std::out, but we want to check they dont cras
+    ascent.publish(n);
+    ascent.publish(n);
+    ascent.close();
+    
+    Node open_opts;
+    open_opts["exceptions"] = "forward";
+    ascent.open(open_opts);
+    ascent.close();
+    
+    EXPECT_THROW(ascent.publish(n),conduit::Error);
+    EXPECT_THROW(ascent.publish(n),conduit::Error);
+    ascent.close();
+
+}

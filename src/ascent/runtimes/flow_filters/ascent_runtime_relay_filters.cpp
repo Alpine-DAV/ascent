@@ -343,7 +343,7 @@ void mesh_blueprint_save(const Node &data,
         Node dom = multi_dom.child(i); 
         uint64 domain = dom["state/domain_id"].to_uint64();
 
-        snprintf(fmt_buff, sizeof(fmt_buff), "%06lu",domain);
+        snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain);
         oss.str("");
         oss << "domain_" << fmt_buff << "." << file_protocol;
         string output_file  = conduit::utils::join_file_path(output_dir,oss.str());
@@ -415,8 +415,8 @@ void mesh_blueprint_save(const Node &data,
                                         global_domains,
                                         bp_idx["mesh"]);
             
-        root["protocol/name"]    = "conduit_" + file_protocol;
-        root["protocol/version"] = "0.2.1";
+        root["protocol/name"]    =  file_protocol;
+        root["protocol/version"] = "0.4.0";
 
         root["number_of_files"]  = global_domains;
         // for now we will save one file per domain, so trees == files
@@ -488,6 +488,10 @@ RelayIOSave::execute()
     else if( protocol == "blueprint/mesh/hdf5")
     {
         mesh_blueprint_save(*in,path,"hdf5");
+    }
+    else if( protocol == "blueprint/mesh/json")
+    {
+        mesh_blueprint_save(*in,path,"json");
     }
     else
     {

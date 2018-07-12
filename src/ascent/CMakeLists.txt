@@ -90,7 +90,9 @@ set(ascent_sources
     utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
     utils/ascent_png_encoder.cpp
-    utils/ascent_web_interface.cpp)
+    utils/ascent_web_interface.cpp
+    # hola
+    hola/ascent_hola.cpp)
 
 set(ascent_headers
     # ascent interface
@@ -106,13 +108,14 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_filters.hpp
     runtimes/flow_filters/ascent_runtime_relay_filters.hpp
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
-
     # utils
     utils/ascent_logging.hpp
     utils/ascent_file_system.hpp
     utils/ascent_block_timer.hpp
     utils/ascent_png_encoder.hpp
-    utils/ascent_web_interface.hpp)
+    utils/ascent_web_interface.hpp
+    # hola
+    hola/ascent_hola.hpp)
 
 if(VTKM_FOUND)
 
@@ -198,10 +201,15 @@ if(MPI_FOUND)
     # req'd libs 
     set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi)
 
+    # hola mpi support is only in par (mpi ver)
+
+    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_hola_filters.hpp)
+    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_hola_filters.cpp)
+
     # adios support is only in par (mpi ver)
     if (ADIOS_FOUND)
-      list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios_filters.hpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios_filters.cpp)
+       list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios_filters.hpp)
+       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios_filters.cpp)
        list(APPEND ascent_mpi_thirdparty_libs adios)
     endif()
 
