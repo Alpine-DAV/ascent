@@ -30,15 +30,15 @@ packages:
     paths: {}
     providers:
       mpi:
-      - intel-mpi
+      - mvapich2
       blas:
       - intel-mkl
       lapack:
       - intel-mkl
-  intel-mpi:
+  mvapich2:
     buildable: false
     paths:
-        intel-mpi: /opt/intel/compilers_and_libraries_2017.4.196/linux/mpi/intel64/
+        mvapich2: /opt/intel/compilers_and_libraries_2017.4.196/linux/mpi/intel64/
   intel-mkl:
     buildable: false
     modules:
