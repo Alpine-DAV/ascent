@@ -74,6 +74,8 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_render_3d
                t_ascent_mpi_slice)
 
+# t_ascent_hola_mpi uses 8 mpi tasks, so its added manually  
+
 
 # include the "ascent" pipeline
 if(VTKM_FOUND)
@@ -122,6 +124,10 @@ if(MPI_FOUND AND ENABLE_MPI)
             set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/")
         endif()
     endforeach()
+
+    # add the hola mpi test which uses 8 ranks
+    add_cpp_mpi_test(TEST t_ascent_hola_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi) 
+    
 else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()

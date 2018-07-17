@@ -49,7 +49,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include <hola/ascent_hola.hpp>
+#include <ascent_hola.hpp>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -63,6 +63,10 @@
 #include <ascent_logging.hpp>
 
 #include <fstream>
+
+#if defined(ASCENT_MPI_ENABLED)
+    #include "ascent_hola_mpi.hpp"
+#endif
 
 using namespace conduit;
 using namespace std;
@@ -276,6 +280,14 @@ void hola(const std::string &source,
     if(source == "relay/blueprint/mesh")
     {
         relay_blueprint_mesh_read(options,data);
+    }
+    else if(source == "hola_mpi")
+    {
+#if defined(ASCENT_MPI_ENABLED)
+        hola_mpi(options,data);
+#else 
+        ASCENT_ERROR("mpi disabled: 'hola_mpi' can only be used in ascent_mpi" );
+#endif
     }
     else
     {

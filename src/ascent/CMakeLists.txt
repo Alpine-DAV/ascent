@@ -206,6 +206,9 @@ if(MPI_FOUND)
     list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_hola_filters.hpp)
     list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_hola_filters.cpp)
 
+    list(APPEND ascent_headers hola/ascent_hola_mpi.hpp)
+    list(APPEND ascent_sources hola/ascent_hola_mpi.cpp)
+
     # adios support is only in par (mpi ver)
     if (ADIOS_FOUND)
        list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios_filters.hpp)

@@ -51,6 +51,8 @@
 
 #include "ascent_runtime_hola_filters.hpp"
 
+#include "ascent_hola_mpi.hpp"
+
 //-----------------------------------------------------------------------------
 // thirdparty includes
 //-----------------------------------------------------------------------------
@@ -147,12 +149,12 @@ HolaMPIExtract::execute()
         ASCENT_ERROR("hola_mpi input must be a conduit node");
     }
 
-    int mpi_comm_hnd = params()["mpi_comm"].to_int();
-    int rank_split   = params()["rank_split"].to_int();
-
     Node *n_input = input<Node>(0);
-    
-    // use rank_split to send all domains to subset of mpi ranks
+
+    // assumes multi domain input
+
+    hola_mpi(params(),*n_input);
+
 }
 
 
