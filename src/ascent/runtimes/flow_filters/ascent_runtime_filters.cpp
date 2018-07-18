@@ -135,11 +135,13 @@ register_builtin()
     Workspace::register_filter_type<ExecScene>();
 #endif
 
-#ifdef ASCENT_MPI_ENABLED
+#if defined(ASCENT_MPI_ENABLED)
     Workspace::register_filter_type<HolaMPIExtract>();
+
 #if defined(ASCENT_ADIOS_ENABLED)
     Workspace::register_filter_type<ADIOS>();
 #endif
+
 #endif
 
 }

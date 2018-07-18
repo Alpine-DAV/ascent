@@ -204,7 +204,6 @@ AscentRuntime::Initialize(const conduit::Node &options)
     this->Info(msg["info"]);
     ascent::about(msg["about"]);
     m_web_interface.PushMessage(msg);
-    
 }
 
 
@@ -410,6 +409,10 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     {
       params["protocol"] = "blueprint/mesh/hdf5";
     }
+  }
+  else if(extract["type"].as_string() == "hola_mpi")
+  {
+    filter_name = "hola_mpi";
   }
   else if(extract["type"].as_string() == "python")
   {

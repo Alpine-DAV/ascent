@@ -263,7 +263,7 @@ TEST(ascent_hola_mpi, test_hola_mpi)
                                                   10,
                                                   data["domain"]);
 
-        EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+        EXPECT_TRUE(conduit::blueprint::mesh::verify(data["domain"],verify_info));
         int cycle = 101;
         data["state/cycle"] = cycle;
         ASCENT_INFO("rank " << world_rank << " gened data");
@@ -290,9 +290,7 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         Ascent ascent;
         Node ascent_opts;
         ascent_opts["mpi_comm"] = MPI_Comm_c2f(sub_comm);
-        ASCENT_INFO("rank " << world_rank << " is about to open");
         ascent.open(ascent_opts);
-        ASCENT_INFO("rank " << world_rank << " is about to publish data");
         ascent.publish(data);
         ascent.execute(actions);
         ascent.close();
@@ -300,11 +298,13 @@ TEST(ascent_hola_mpi, test_hola_mpi)
     else
     {
         // use hola to say hello to the extract data
-        conduit::Node actions;
-        Node data, hola_opts;
+        Node data, hola_opts, actions, verify_info;
         hola_opts["mpi_comm"]   = MPI_Comm_c2f(world_comm);
         hola_opts["rank_split"] = rank_split;
         ascent::hola("hola_mpi", hola_opts, data);
+
+        EXPECT_TRUE(conduit::blueprint::mesh::verify(data[0],verify_info));
+        
 
         string output_image = "tout_hola_mesh_render";
         // remove old image before rendering
