@@ -123,16 +123,10 @@ hola_mpi_comm_map(const conduit::Node &data,
     int src_size  = 0;
     int dest_size = 0;
     
-    bool sender = false;
-    
     for(int i=0; i < total_size; i++)
     {
         if(world_to_src[i] >=0)
         {
-            if( i == rank)
-            {
-                sender = true;
-            }
             src_size+=1;
         }
 
@@ -141,8 +135,12 @@ hola_mpi_comm_map(const conduit::Node &data,
             dest_size+=1;
         }
     }
+    
+    bool is_source_rank = world_to_src[rank] >= 0;
 
     res.reset();
+    
+    // maps from src and dest index spack to world ranks 
 
     res["src_to_world"]  = DataType::int32(src_size);
     res["dest_to_world"] = DataType::int32(dest_size);
@@ -169,9 +167,14 @@ hola_mpi_comm_map(const conduit::Node &data,
     }
     
     Node n_num_loc_doms, n_num_total_doms;
-    if(sender)
+    
+    if(is_source_rank)
     {
         n_num_loc_doms.set_int32(data.number_of_children());
+    }
+    else
+    {
+        n_num_loc_doms.set_int32(0);
     }
 
     relay::mpi::all_gather_using_schema(n_num_loc_doms,
@@ -229,9 +232,10 @@ hola_mpi_send(const conduit::Node &data,
     
     // responsible for sending src_offsets[src_idx] + src_counts[src_idx]
     // to who ever needs them
-    // assumes multi domain
+    // assumes multi domain mesh bp
+    // we expect: data.number_of_children() == src_counts[src_idx]
     NodeConstIterator itr = data.children();
-    // data.number_of_children() should == src_counts[src_idx]
+
     int dest_idx = 0;
     for(int i = src_offsets[src_idx];
         i < src_offsets[src_idx] + src_counts[src_idx];
@@ -246,10 +250,9 @@ hola_mpi_send(const conduit::Node &data,
 
         int32 dest_rank = dest_to_world[(int32)dest_idx];
 
-        std::cout << "src_idx " << src_idx << " send " << i << " to " 
-                  << dest_idx << " (rank: " << dest_rank <<  " )" << std::endl;
+        // std::cout << "src_idx " << src_idx << " send " << i << " to "
+        //           << dest_idx << " (rank: " << dest_rank <<  " )" << std::endl;
 
-        // send n_curr
         relay::mpi::send_using_schema(n_curr,dest_rank,0,comm);
     }
 
@@ -269,7 +272,7 @@ hola_mpi_recv(MPI_Comm comm,
     const int32 *dest_counts  = comm_map["dest_counts"].value();
     const int32 *dest_offsets = comm_map["dest_offsets"].value();
 
-    // responsible for receiving dest_offsets[rank] + dest_counts[rank]
+    // responsible for receiving dest_offsets[dest_idx] + dest_counts[dest_idx]
     // from who ever has them
     int src_idx = 0;
     for(int i = dest_offsets[dest_idx];
@@ -283,8 +286,8 @@ hola_mpi_recv(MPI_Comm comm,
         }
         
         int32 src_rank = src_to_world[(int32)src_idx];
-        std::cout << "dest_idx " << dest_idx << " rcv " 
-                  << i <<  " from " << src_idx << " ( rank: " << src_rank << ") " <<std::endl;
+        // std::cout << "dest_idx " << dest_idx << " rcv "
+        //           << i <<  " from " << src_idx << " ( rank: " << src_rank << ") " <<std::endl;
         Node &n_curr = data.append();
         // rcv n_curr
         relay::mpi::recv_using_schema(n_curr,src_rank,0,comm);
@@ -298,15 +301,18 @@ hola_mpi(const conduit::Node &options,
          conduit::Node &data)
 {    
     MPI_Comm comm  = MPI_Comm_f2c(options["mpi_comm"].to_int());
-    int rank_split = options["rank_split"].to_int();
-
     // get my rank
     int rank = relay::mpi::rank(comm);
     // get total size
     int total_size = relay::mpi::size(comm);
-    
-    ASCENT_INFO("rank: " << rank << " is in hola_mpi");
-    
+
+    int rank_split = options["rank_split"].to_int();
+
+    //
+    // TODO: We can enhance to also support the case
+    // where client code passes in world to src and world to dest maps
+    //
+
     // calc source size using split
     
     // source ranks are 0 to rank_split - 1
@@ -316,7 +322,7 @@ hola_mpi(const conduit::Node &options,
     // dest ranks are rank_split  to total_size -1
     int dest_size = total_size - rank_split;
 
-    
+
     Node my_maps;
     my_maps["wts"] = DataType::int32(total_size);
     my_maps["wtd"] = DataType::int32(total_size);
@@ -338,25 +344,38 @@ hola_mpi(const conduit::Node &options,
         }
     }
 
+    // we are a src if world to src is not neg
+    bool is_src_rank = world_to_src[rank] >= 0;
+
+    // if sender, make sure we have multi domain data
+    // if not, create a new node that zero copies the input data
+    // into a multi domain layout
+    Node *data_ptr = &data;
+    Node md_data;
+    
+    if(is_src_rank && !blueprint::mesh::is_multi_domain(data))
+    {
+        md_data.append().set_external(data);
+        data_ptr = &md_data;
+    }
+
     Node comm_map;
 
-    hola_mpi_comm_map(data,
+    hola_mpi_comm_map(*data_ptr,
                       comm,
                       world_to_src,
                       world_to_dest,
                       comm_map);
-    if(rank == 0)
-        comm_map.print();
 
-    if(rank < src_size)
+    if(is_src_rank )
     {
-        int src_idx = rank;
-        hola_mpi_send(data,comm,src_idx,comm_map);
+        int src_idx = world_to_src[rank];
+        hola_mpi_send(*data_ptr,comm,src_idx,comm_map);
     }
     else
     {
-        int dest_idx = rank - rank_split;
-        hola_mpi_recv(comm,dest_idx,comm_map,data);
+        int dest_idx = world_to_dest[rank];
+        hola_mpi_recv(comm,dest_idx,comm_map,*data_ptr);
     }
 }
 

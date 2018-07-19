@@ -242,8 +242,6 @@ void relay_blueprint_mesh_read(const Node &options,
         data_protocol = root_node["protocol/name"].as_string();
     }
     
-    mesh_index.print();
-
     // read the first mesh (all domains ...)
     
     int num_domains = root_node["number_of_trees"].to_int();
@@ -257,7 +255,7 @@ void relay_blueprint_mesh_read(const Node &options,
     
     std::ostringstream oss;
     
-    // todo: distrib over mpi tasks when MPI
+    // TODO: distrib over mpi tasks when MPI
     
     for(int i=0;i<num_domains;i++)
     {

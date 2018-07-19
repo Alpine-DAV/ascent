@@ -54,6 +54,7 @@
 #include <ascent_hola.hpp>
 #include <ascent_hola_mpi.hpp>
 #include <mpi.h>
+#include "conduit_relay.hpp"
 #include "conduit_relay_mpi.hpp"
 
 #include "t_config.hpp"
@@ -82,10 +83,9 @@ void hola_mpi_helpers_test_setup_src_data(int rank, Node &data)
     
     for(int i=0; i < num_local_doms; i++)
     {
-        Node payload;
+        Node &payload = data.append();
         payload["src_rank"] = rank;
         payload["src_local_domain_id"] = i;
-        payload.compact_to(data.append());
     }
 }
 
@@ -214,15 +214,8 @@ TEST(ascent_hola_mpi, test_hola_mpi)
     MPI_Comm_rank(world_comm, &world_rank);
     MPI_Comm_size(world_comm, &world_size);
 
-    ASCENT_INFO("Rank "
-                  << world_rank
-                  << " of "
-                  << world_size
-                  << " reporting");
-
     int color = 0;
     int rank_split = 5;
-    
     
     if(world_rank > 4)
     {
@@ -257,16 +250,20 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         // Create example data
         //
         Node data, verify_info;
-        conduit::blueprint::mesh::examples::braid("hexs",
-                                                  10,
-                                                  10,
-                                                  10,
-                                                  data["domain"]);
+        create_3d_example_dataset(data,world_rank,5);
 
-        EXPECT_TRUE(conduit::blueprint::mesh::verify(data["domain"],verify_info));
+        // hi-jack the radial_vert field and override it with rank
+        float64_array vals = data["fields/radial_vert/values"].value();
+        for(int i=0;i< vals.number_of_elements();i++)
+        {
+            vals[i] = world_rank;
+        }
+
+        EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+        
         int cycle = 101;
         data["state/cycle"] = cycle;
-        ASCENT_INFO("rank " << world_rank << " gened data");
+
 
         //
         // Create the actions to export the dataset
@@ -280,10 +277,6 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         add_extract["extracts/e1/params/mpi_comm"] = MPI_Comm_c2f(world_comm);
         add_extract["extracts/e1/params/rank_split"] = rank_split;
         actions.append()["action"] = "execute";
-        
-        ASCENT_INFO("rank " << world_rank << " setup actions");
-        
-        
         //
         // Run Ascent
         //
@@ -294,6 +287,13 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         ascent.publish(data);
         ascent.execute(actions);
         ascent.close();
+
+        //have all ranks check the output file
+        MPI_Barrier(world_comm);
+        
+        string output_image = conduit::utils::join_file_path(output_dir(),
+                                                            "tout_hola_mpi_test_render");
+        EXPECT_TRUE(utils::is_file(output_image + ".png"));
     }
     else
     {
@@ -303,29 +303,45 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         hola_opts["rank_split"] = rank_split;
         ascent::hola("hola_mpi", hola_opts, data);
 
-        EXPECT_TRUE(conduit::blueprint::mesh::verify(data[0],verify_info));
         
+        EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-        string output_image = "tout_hola_mesh_render";
-        // remove old image before rendering
-        //remove_test_image(output_image);
+        string output_image = conduit::utils::join_file_path(output_dir(),
+                                                             "tout_hola_mpi_test_render");
+
+
+        if(sub_rank == 0)
+        {
+            // make sure output dir exists
+            prepare_output_dir();
+            // remove old images before rendering
+            remove_test_image(output_image);
+        }
 
         Ascent ascent;
         Node ascent_opts;
+        //ascent_opts["messages"] = "verbose";
         ascent_opts["mpi_comm"] = MPI_Comm_c2f(sub_comm);
         ascent.open(ascent_opts);
         //
-        // Create rendering actions.
+        // render the result from hola
         //
         conduit::Node &add_scene = actions.append();
         add_scene["action"] = "add_scenes";
         add_scene["scenes/scene1/plots/plt1/type"]         = "pseudocolor";
-        add_scene["scenes/scene1/plots/plt1/params/field"] = "braid";
+        add_scene["scenes/scene1/plots/plt1/params/field"] = "radial_vert";
         add_scene["scenes/scene1/image_prefix"] = output_image;
+
+        conduit::Node &execute  = actions.append();
+        execute["action"] = "execute";
 
         ascent.publish(data);
         ascent.execute(actions);
         ascent.close();
+        
+        //have all ranks check the output file
+        MPI_Barrier(world_comm);
+        EXPECT_TRUE(utils::is_file(output_image + ".png"));
     }
 
     MPI_Comm_free(&sub_comm);
