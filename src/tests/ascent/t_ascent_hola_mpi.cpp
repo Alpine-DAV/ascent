@@ -205,6 +205,15 @@ TEST(ascent_hola_mpi, test_hola_mpi_helpers)
 //-----------------------------------------------------------------------------
 TEST(ascent_hola_mpi, test_hola_mpi)
 {
+    Node n_about;
+    ascent::about(n_about);
+    // only run this the test if ascent was built with vtkm support
+    if(n_about["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping render of hola_mpi data");
+        return;
+    }
+    
     //
     // Set Up MPI
     //

@@ -64,6 +64,7 @@ using ascent::Ascent;
 //-----------------------------------------------------------------------------
 TEST(ascent_hola, test_hola_relay_blueprint_mesh)
 {
+    
     //
     // Create example data
     //
@@ -123,8 +124,17 @@ TEST(ascent_hola, test_hola_relay_blueprint_mesh)
     hola_opts["root_file"] = output_root;
     ascent::hola("relay/blueprint/mesh", hola_opts, hola_data);
 
+    Node n_about;
+    ascent::about(n_about);
+    // only run this part of the test if ascent was built with vtkm support
+    if(n_about["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping render of hola data");
+        return;
+    }
+
     string output_image = conduit::utils::join_file_path(output_path,
-                                            "tout_hola_mesh_render");
+                                            "tout_hola_bp_test_render");
     // remove old image before rendering
     remove_test_image(output_image);
 
