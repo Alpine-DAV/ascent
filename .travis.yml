@@ -121,7 +121,7 @@ script:
   # make sure spack exists in case the cache was blown away
   #- python ascent/scripts/uberenv/uberenv.py --clone-only --spack-config-dir=ascent/scripts/uberenv/scripts/uberenv/spack_configs/travis/
   #- find uberenv_libs -type d | perl -lne 'print tr:/::, " $_"' | sort -n | cut -d' ' -f2
-  - python ascent/scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" --spack-config-dir=ascent/scripts/uberenv/spack_configs/travis/
+  - python ascent/scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=ascent/scripts/uberenv/spack_configs/travis/
   - cd $TRAVIS_BUILD_DIR
   # create out-of-source build dir
   - mkdir build-debug

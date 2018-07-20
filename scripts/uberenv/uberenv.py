@@ -125,6 +125,14 @@ def parse_args():
                       default=False,
                       help="Ignore SSL Errors")
 
+    # flag to use insecure curl + git
+    parser.add_option("--pull",
+                      action="store_true",
+                      dest="spack_pull",
+                      default=False,
+                      help="Pull if spack repo already exists")
+
+
     ###############
     # parse args
     ###############
@@ -379,10 +387,11 @@ def main():
             print "[info: using spack commit %s]" % sha1
             os.chdir(pjoin(dest_dir,"spack"))
             sexe("git reset --hard %s" % sha1,echo=True)
-    if not "spack_commit" in project_opts:
+    if opts["spack_pull"]:
         # do a pull to make sure we have the latest 
         os.chdir(pjoin(dest_dir,"spack"))
-        sexe("git pull",echo=True)
+        sexe("git stash", echo=True)
+        sexe("git pull", echo=True)
     os.chdir(dest_dir)
     # twist spack's arms 
     cfg_dir = uberenv_spack_config_dir(opts, uberenv_path)
