@@ -125,13 +125,6 @@ def parse_args():
                       default=False,
                       help="Ignore SSL Errors")
 
-    # flag to use insecure curl + git
-    parser.add_option("--clone-only",
-                      action="store_true",
-                      dest="clone_only",
-                      default=False,
-                      help="Only clone spack and exit")
-
     ###############
     # parse args
     ###############
@@ -216,9 +209,13 @@ def patch_spack(spack_dir,uberenv_dir,cfg_dir,pkgs):
 
         if os.path.isfile(packages_yaml):
             sexe("cp %s %s/" % (packages_yaml, spack_etc_defaults_dir ), echo=True)
+    else:
+        # let spack try to auto find compilers
+        sexe("spack/bin/spack compiler find", echo=True)
     dest_spack_pkgs = pjoin(spack_dir,"var","spack","repos","builtin","packages")
     # hot-copy our packages into spack
     sexe("cp -Rf %s %s" % (pkgs,dest_spack_pkgs))
+
 
 def create_spack_mirror(mirror_path,pkg_name,ignore_ssl_errors=False):
     """
@@ -317,6 +314,11 @@ def setup_osx_sdk_env_vars():
     print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % env["MACOSX_DEPLOYMENT_TARGET"]
     print "[setting SDKROOT to %s]" % env[ "SDKROOT" ]
 
+def read_spack_full_spec(pkg_name,spec):
+    rv, res = sexe("spack/bin/spack spec " + pkg_name + " " + spec, ret_output=True)
+    for l in res.split("\n"):
+        if l.startswith(pkg_name) and l.count("@") > 0 and l.count("arch=") > 0:
+            return l.strip()
 def main():
     """
     clones and runs spack to setup our third_party libs and
@@ -356,7 +358,7 @@ def main():
         print "[info: destination '%s' already exists]"  % dest_dir
     if os.path.isdir(dest_spack):
         print "[info: destination '%s' already exists]"  % dest_spack
-    # compilers_yaml = uberenv_compilers_yaml_file(opts)
+
     if not os.path.isdir(dest_spack):
         print "[info: cloning spack develop branch from github]"
         os.chdir(dest_dir)
@@ -364,23 +366,29 @@ def main():
         clone_cmd ="git "
         if opts["ignore_ssl_errors"]:
             clone_cmd +="-c http.sslVerify=false "
-        #clone_cmd += "clone -b develop https://github.com/spack/spack.git"
-        clone_cmd += "clone -b task/2018_04_update_ascent https://github.com/Alpine-DAV/spack.git"
+        spack_url = "https://github.com/spack/spack.git"
+        spack_branch = "develop"
+        if "spack_url" in project_opts:
+            spack_url = project_opts["spack_url"]
+        if "spack_branch" in project_opts:
+            spack_branch = project_opts["spack_branch"]
+        clone_cmd +=  "clone -b %s %s" % (spack_branch,spack_url)
         sexe(clone_cmd, echo=True)
-        #if "spack_develop_commit" in project_opts:
-        #    sha1 = project_opts["spack_develop_commit"]
-        #    print "[info: using spack develop %s]" % sha1
-        #    os.chdir(pjoin(dest_dir,"spack"))
-        #    sexe("git reset --hard %s" % sha1)
-
+        if "spack_commit" in project_opts:
+            sha1 = project_opts["spack_commit"]
+            print "[info: using spack commit %s]" % sha1
+            os.chdir(pjoin(dest_dir,"spack"))
+            sexe("git reset --hard %s" % sha1,echo=True)
+    if not "spack_commit" in project_opts:
+        # do a pull to make sure we have the latest 
+        os.chdir(pjoin(dest_dir,"spack"))
+        sexe("git pull",echo=True)
     os.chdir(dest_dir)
-    if opts["clone_only"]:
-        sys.exit(0)
     # twist spack's arms 
     cfg_dir = uberenv_spack_config_dir(opts, uberenv_path)
     patch_spack(dest_spack, uberenv_path, cfg_dir, pkgs)
-    
-    # show the speck for what will be built
+
+    # show the spec for what will be built
     spec_cmd = "spack/bin/spack spec " + uberenv_pkg_name + opts["spec"]
     res = sexe(spec_cmd, echo=True)
 
@@ -411,17 +419,22 @@ def main():
             install_cmd += "-k "
         install_cmd += "install " + uberenv_pkg_name + opts["spec"]
         res = sexe(install_cmd, echo=True)
-
-        python_enabled = True
-        if "~python" in opts["spec"]:
-            python_enabled = False 
-
         if res != 0:
             return res
-        if "spack_activate" in project_opts and python_enabled:
-            for pkg_name in project_opts["spack_activate"]:
-              activate_cmd = "spack/bin/spack activate " + pkg_name
-              sexe(activate_cmd, echo=True)   
+        if "spack_activate" in project_opts:
+            # get the full spack spec for our project
+            full_spec = read_spack_full_spec(uberenv_pkg_name,opts["spec"])
+            pkg_names = project_opts["spack_activate"].keys()
+            for pkg_name in pkg_names:
+                pkg_spec_requirements = project_opts["spack_activate"][pkg_name]
+                activate=True
+                for req in pkg_spec_requirements:
+                    if req not in full_spec:
+                        activate=False
+                        break
+                if activate:
+                    activate_cmd = "spack/bin/spack activate " + pkg_name
+                    sexe(activate_cmd, echo=True)
         return res
 
 if __name__ == "__main__":
