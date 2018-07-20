@@ -50,6 +50,7 @@
 //-----------------------------------------------------------------------------
 
 #include "flow_workspace.hpp"
+#include "flow_timer.hpp"
 
 // standard lib includes
 #include <iostream>
@@ -248,7 +249,10 @@ Workspace::ExecutionPlan::bf_topo_sort_visit(Graph &graph,
 
 //-----------------------------------------------------------------------------
 Workspace::Workspace()
-:m_graph(this)
+:m_graph(this),
+ m_registry(),
+ m_timing_exec_count(0),
+ m_timing_info()
 {
 
 }
@@ -300,10 +304,9 @@ Workspace::traversals(Node &traversals)
 void
 Workspace::execute()
 {
+    Timer t_total_exec;
     Node traversals;
     ExecutionPlan::generate(graph(),traversals);
-
-    
     // execute traversals 
     NodeIterator travs_itr = traversals.children();
     
@@ -332,9 +335,14 @@ Workspace::execute()
                 f->set_input(port_name,&registry().fetch(f_input_name));
             }
 
-
+            Timer t_flt_exec;
             // execute 
             f->execute();
+            
+            m_timing_info << m_timing_exec_count
+                          << " " << f->name() 
+                          << " " << std::fixed << t_flt_exec.elapsed()
+                          <<"\n";
 
             // if has output, set output
             if(f->output_port())
@@ -362,6 +370,13 @@ Workspace::execute()
         }
     }
     
+    m_timing_info << m_timing_exec_count
+                  << " [total] " 
+                  << std::fixed << t_total_exec.elapsed()
+                  <<"\n";
+    
+    
+    m_timing_exec_count++;
     
 }
 
@@ -383,6 +398,7 @@ Workspace::info(Node &out) const
     
     graph().info(out["graph"]);
     registry().info(out["registry"]);
+    out["timings"] = timing_info();
 }
 
 
@@ -402,6 +418,20 @@ void
 Workspace::print() const
 {
     CONDUIT_INFO(to_json());
+}
+
+//-----------------------------------------------------------------------------
+void
+Workspace::reset_timing_info()
+{
+    m_timing_exec_count = 0;
+    m_timing_info.str("");
+}
+//-----------------------------------------------------------------------------
+string
+Workspace::timing_info() const
+{
+    return m_timing_info.str();
 }
 
 //-----------------------------------------------------------------------------

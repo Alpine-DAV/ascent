@@ -59,6 +59,7 @@
 #include <flow_data.hpp>
 #include <flow_registry.hpp>
 #include <flow_graph.hpp>
+#include <sstream>
 
 
 //-----------------------------------------------------------------------------
@@ -113,6 +114,11 @@ public:
     std::string    to_json() const;
     /// print json version of info
     void           print() const;
+
+    /// resets state used to capture timing events
+    void           reset_timing_info();
+    /// return a string of recorded timing events
+    std::string    timing_info() const;
 
     // ------------------------------------------------------------------------
     /// Interface to set and obtain the MPI communicator.
@@ -172,11 +178,11 @@ private:
     class ExecutionPlan;
     class FilterFactory;
 
-    Graph       m_graph;
-    Registry    m_registry;
-   
+    Graph             m_graph;
+    Registry          m_registry;
+    int               m_timing_exec_count;
+    std::stringstream m_timing_info;
 
-   
 };
 
 //-----------------------------------------------------------------------------

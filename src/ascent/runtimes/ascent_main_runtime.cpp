@@ -227,7 +227,25 @@ AscentRuntime::ResetInfo()
 void
 AscentRuntime::Cleanup()
 {
-
+    if(m_runtime_options.has_child("timings") && 
+       m_runtime_options["timings"].as_string() == "enabled")
+    {
+        // save out timing info on close
+        std::stringstream fname;
+        fname << "ascent_filter_times";
+    
+#ifdef ASCENT_MPI_ENABLED
+        int rank = 0;
+        MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+        MPI_Comm_rank(mpi_comm, &rank);
+        fname << "_" << rank;
+#endif
+        fname << ".csv";
+        std::ofstream ftimings;
+        ftimings.open(fname.str());
+        ftimings << w.timing_info();
+        ftimings.close();
+    }
 }
 
 //-----------------------------------------------------------------------------
