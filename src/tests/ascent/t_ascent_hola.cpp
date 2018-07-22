@@ -64,6 +64,8 @@ using ascent::Ascent;
 //-----------------------------------------------------------------------------
 TEST(ascent_hola, test_hola_relay_blueprint_mesh)
 {
+    Node n_about;
+    ascent::about(n_about);
     // only run this test if ascent was built with vtkm support
     // TODO: this can work w/o vtkh support, but
     // we need to use the flow runtime and connect everything up
@@ -132,10 +134,6 @@ TEST(ascent_hola, test_hola_relay_blueprint_mesh)
     
     hola_opts["root_file"] = output_root;
     ascent::hola("relay/blueprint/mesh", hola_opts, hola_data);
-
-    Node n_about;
-    ascent::about(n_about);
-
 
     string output_image = conduit::utils::join_file_path(output_path,
                                             "tout_hola_bp_test_render");
