@@ -52,6 +52,7 @@
 ################################
 
 set(FLOW_TESTS  t_flow_data
+                t_flow_timer
                 t_flow_registry
                 t_flow_workspace
                 t_flow_workspace_adv_manage)

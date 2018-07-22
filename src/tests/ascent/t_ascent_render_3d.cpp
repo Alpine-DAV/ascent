@@ -134,6 +134,7 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
 
     Node ascent_opts;
     //ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["timings"] = "enabled";
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);

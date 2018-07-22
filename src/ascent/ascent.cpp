@@ -120,7 +120,7 @@ Ascent::open(const conduit::Node &options)
     {
         if(m_runtime != NULL)
         {
-            ASCENT_ERROR("Ascent Runtime already exists!");
+            ASCENT_ERROR("Ascent Runtime already initialized!");
         }
 
         Node processed_opts(options);
@@ -242,7 +242,14 @@ Ascent::publish(const conduit::Node &data)
 {
     try
     {
-        m_runtime->Publish(data);
+        if(m_runtime != NULL)
+        {
+            m_runtime->Publish(data);
+        }
+        else
+        {
+            ASCENT_ERROR("Ascent Runtime is not initialized");
+        }
     }
     catch(conduit::Error &e)
     {
@@ -265,9 +272,16 @@ Ascent::execute(const conduit::Node &actions)
 {
     try
     {
-        Node processed_actions(actions);
-        CheckForJSONFile("ascent_actions.json", processed_actions);
-        m_runtime->Execute(processed_actions);
+        if(m_runtime != NULL)
+        {
+            Node processed_actions(actions);
+            CheckForJSONFile("ascent_actions.json", processed_actions);
+            m_runtime->Execute(processed_actions);
+        }
+        else
+        {
+            ASCENT_ERROR("Ascent Runtime is not initialized");
+        }
     }
     catch(conduit::Error &e)
     {

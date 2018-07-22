@@ -204,7 +204,6 @@ AscentRuntime::Initialize(const conduit::Node &options)
     this->Info(msg["info"]);
     ascent::about(msg["about"]);
     m_web_interface.PushMessage(msg);
-    
 }
 
 
@@ -228,7 +227,25 @@ AscentRuntime::ResetInfo()
 void
 AscentRuntime::Cleanup()
 {
-
+    if(m_runtime_options.has_child("timings") && 
+       m_runtime_options["timings"].as_string() == "enabled")
+    {
+        // save out timing info on close
+        std::stringstream fname;
+        fname << "ascent_filter_times";
+    
+#ifdef ASCENT_MPI_ENABLED
+        int rank = 0;
+        MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+        MPI_Comm_rank(mpi_comm, &rank);
+        fname << "_" << rank;
+#endif
+        fname << ".csv";
+        std::ofstream ftimings;
+        ftimings.open(fname.str());
+        ftimings << w.timing_info();
+        ftimings.close();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -410,6 +427,10 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     {
       params["protocol"] = "blueprint/mesh/hdf5";
     }
+  }
+  else if(extract["type"].as_string() == "hola_mpi")
+  {
+    filter_name = "hola_mpi";
   }
   else if(extract["type"].as_string() == "python")
   {

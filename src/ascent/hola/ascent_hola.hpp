@@ -45,18 +45,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_ascent_runtime.hpp
+/// file: ascent_hola.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_ASCENT_RUNTIME_HPP
-#define ASCENT_ASCENT_RUNTIME_HPP
+#ifndef ASCENT_HOLA_HPP
+#define ASCENT_HOLA_HPP
 
-#include <ascent.hpp>
-#include <ascent_runtime.hpp>
-#include <ascent_web_interface.hpp>
-#include <flow.hpp>
+#include <ascent_config.h>
+#include <ascent_exports.h>
 
+#include <string>
+#include <conduit.hpp>
 
 
 //-----------------------------------------------------------------------------
@@ -64,62 +64,13 @@
 //-----------------------------------------------------------------------------
 namespace ascent
 {
-
-class AscentRuntime : public Runtime
-{
-public:
-    
-    // Creation and Destruction
-    AscentRuntime();
-    virtual ~AscentRuntime();
-
-    // Main runtime interface methods used by the ascent interface.
-    void  Initialize(const conduit::Node &options);
-
-    void  Publish(const conduit::Node &data);
-    void  Execute(const conduit::Node &actions);
-    
-    void  Info(conduit::Node &out);
-    
-    void  Cleanup();
-
-private:
-    // holds options passed to initialize
-    conduit::Node     m_runtime_options;
-    // conduit node that (externally) holds the data from the simulation
-    conduit::Node     m_data; 
-    conduit::Node     m_connections; 
-    conduit::Node     m_scene_connections;
-    
-    conduit::Node     m_info;
-
-    WebInterface      m_web_interface;
-
-    void              ResetInfo();
-
-    flow::Workspace w;
-    std::string CreateDefaultFilters();
-    void ConvertPipelineToFlow(const conduit::Node &pipeline,
-                               const std::string pipeline_name);
-    void ConvertPlotToFlow(const conduit::Node &plot,
-                           const std::string plot_name);
-    void ConvertExtractToFlow(const conduit::Node &plot,
-                              const std::string extract_name);
-    void CreatePipelines(const conduit::Node &pipelines);
-    void CreateExtracts(const conduit::Node &extracts);
-    void CreatePlots(const conduit::Node &plots);
-    std::vector<std::string> GetPipelines(const conduit::Node &plots);
-    void CreateScenes(const conduit::Node &scenes);
-    void ConvertSceneToFlow(const conduit::Node &scenes);
-    void ConnectSource();
-    void ConnectGraphs();
-    void ExecuteGraphs();
-    std::string GetDefaultImagePrefix(const std::string scene);
-    
-    void FindRenders(const conduit::Node &info, conduit::Node &out);
-};
-
 //-----------------------------------------------------------------------------
+// Hola is a way to say hello again to data captured using Ascent extracts.
+//-----------------------------------------------------------------------------
+void ASCENT_API hola(const std::string &source,
+                     const conduit::Node &options,
+                     conduit::Node &data);
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
@@ -129,5 +80,4 @@ private:
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
 

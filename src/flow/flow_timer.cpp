@@ -11,7 +11,7 @@
 // 
 // For details, see: http://ascent.readthedocs.io/.
 // 
-// Please also read ascent/LICENSE
+// Please also read alpine/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,89 +45,55 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_ascent_runtime.hpp
+/// file: flow_timer.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_ASCENT_RUNTIME_HPP
-#define ASCENT_ASCENT_RUNTIME_HPP
+#include "flow_timer.hpp"
 
-#include <ascent.hpp>
-#include <ascent_runtime.hpp>
-#include <ascent_web_interface.hpp>
-#include <flow.hpp>
 
+using namespace std::chrono;
+
+//-----------------------------------------------------------------------------
+// -- begin flow:: --
+//-----------------------------------------------------------------------------
+namespace flow
+{
 
 
 //-----------------------------------------------------------------------------
-// -- begin ascent:: --
+Timer::Timer()
+{
+    reset();
+}
+
 //-----------------------------------------------------------------------------
-namespace ascent
+Timer::~Timer()
 {
 
-class AscentRuntime : public Runtime
+}
+
+//-----------------------------------------------------------------------------
+void
+Timer::reset()
 {
-public:
-    
-    // Creation and Destruction
-    AscentRuntime();
-    virtual ~AscentRuntime();
+    m_start = high_resolution_clock::now();
+}
 
-    // Main runtime interface methods used by the ascent interface.
-    void  Initialize(const conduit::Node &options);
+//-----------------------------------------------------------------------------
+float
+Timer::elapsed() const
+{
+    return duration_cast<duration<float>>(high_resolution_clock::now() - m_start).count();
+}
 
-    void  Publish(const conduit::Node &data);
-    void  Execute(const conduit::Node &actions);
-    
-    void  Info(conduit::Node &out);
-    
-    void  Cleanup();
 
-private:
-    // holds options passed to initialize
-    conduit::Node     m_runtime_options;
-    // conduit node that (externally) holds the data from the simulation
-    conduit::Node     m_data; 
-    conduit::Node     m_connections; 
-    conduit::Node     m_scene_connections;
-    
-    conduit::Node     m_info;
-
-    WebInterface      m_web_interface;
-
-    void              ResetInfo();
-
-    flow::Workspace w;
-    std::string CreateDefaultFilters();
-    void ConvertPipelineToFlow(const conduit::Node &pipeline,
-                               const std::string pipeline_name);
-    void ConvertPlotToFlow(const conduit::Node &plot,
-                           const std::string plot_name);
-    void ConvertExtractToFlow(const conduit::Node &plot,
-                              const std::string extract_name);
-    void CreatePipelines(const conduit::Node &pipelines);
-    void CreateExtracts(const conduit::Node &extracts);
-    void CreatePlots(const conduit::Node &plots);
-    std::vector<std::string> GetPipelines(const conduit::Node &plots);
-    void CreateScenes(const conduit::Node &scenes);
-    void ConvertSceneToFlow(const conduit::Node &scenes);
-    void ConnectSource();
-    void ConnectGraphs();
-    void ExecuteGraphs();
-    std::string GetDefaultImagePrefix(const std::string scene);
-    
-    void FindRenders(const conduit::Node &info, conduit::Node &out);
-};
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end ascent:: --
+// -- end flow:: --
 //-----------------------------------------------------------------------------
 
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
 
 
