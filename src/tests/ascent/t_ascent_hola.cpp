@@ -64,6 +64,14 @@ using ascent::Ascent;
 //-----------------------------------------------------------------------------
 TEST(ascent_hola, test_hola_relay_blueprint_mesh)
 {
+    // only run this test if ascent was built with vtkm support
+    // TODO: this can work w/o vtkh support, but
+    // we need to use the flow runtime and connect everything up
+    if(n_about["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping hola bp mesh test");
+        return;
+    }
     
     //
     // Create example data
@@ -106,6 +114,7 @@ TEST(ascent_hola, test_hola_relay_blueprint_mesh)
     Ascent ascent;
 
     Node ascent_opts;
+    ascent_opts["messages"] = "verbose";
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
@@ -126,12 +135,7 @@ TEST(ascent_hola, test_hola_relay_blueprint_mesh)
 
     Node n_about;
     ascent::about(n_about);
-    // only run this part of the test if ascent was built with vtkm support
-    if(n_about["runtimes/ascent/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping render of hola data");
-        return;
-    }
+
 
     string output_image = conduit::utils::join_file_path(output_path,
                                             "tout_hola_bp_test_render");

@@ -196,7 +196,7 @@ void relay_blueprint_mesh_read(const Node &options,
     ifs.open(root_fname.c_str());
     if(!ifs.is_open())
     {
-       ASCENT_ERROR("failed to open relay root file");
+       ASCENT_ERROR("failed to open relay root file: " << root_fname);
     }
     ifs.read((char *)buff,5);
     ifs.close();
