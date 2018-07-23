@@ -38,7 +38,7 @@ packages:
 # LLNL chaos5 CUDA 
   cuda:
     paths:
-      cuda@8.0: /opt/cudatoolkit-8.0
+      cuda@9.1: /opt/cudatoolkit-9.1/
     buildable: False
 # LLNL chaos5 mvapich2
   mvapich2:
