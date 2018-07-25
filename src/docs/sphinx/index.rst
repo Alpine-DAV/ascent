@@ -13,17 +13,17 @@
 .. #
 .. # Please also read ascent/LICENSE
 .. #
-.. # Redistribution and use in source and binary forms, with or without
-.. # modification, are permitted provided that the following conditions are met:
+.. # Redistribution and use in source and binary forms are permitted, with or without
+.. # modification, provided that the following conditions are met:
 .. #
 .. # * Redistributions of source code must retain the above copyright notice,
-.. #   this list of conditions and the disclaimer below.
+.. #   this list of conditions, and the disclaimer below.
 .. #
 .. # * Redistributions in binary form must reproduce the above copyright notice,
-.. #   this list of conditions and the disclaimer (as noted below) in the
-.. #   documentation and/or other materials provided with the distribution.
+.. #   this list of conditions, and the disclaimer (as noted below) in the
+.. #   documentation and other materials provided with the distribution.
 .. #
-.. # * Neither the name of the LLNS/LLNL nor the names of its contributors may
+.. # * Neither the names LLNS and LLNL nor the names of their contributors may
 .. #   be used to endorse or promote products derived from this software without
 .. #   specific prior written permission.
 .. #
@@ -47,17 +47,17 @@
 Ascent
 ========
 
-A many-core capable lightweight in situ visualization and analysis infrastructure for multi-physics HPC simulations.
+A many-core capable lightweight in-situ visualization and analysis infrastructure for multiphysics HPC simulations.
 
 Introduction
 ============
 
-Ascent is a system designed to meet the in situ visualization and analysis needs of simulation code teams running multi-physics calculations on many-core HPC architectures. It provides rendering runtimes that can leverage both many-core CPUs and GPUs to render images of simulation meshes. 
+Ascent is a system designed to meet the in-situ visualization and analysis needs of simulation code teams running multi-physics calculations on many-core HPC architectures. It provides rendering runtimes that can leverage many-core CPUs and GPUs to render images of simulation meshes. 
 
-Ascent focuses on ease of use and reduced integration burden for simulation code teams:
+Ascent focuses on ease of use and reduced integration burden for simulation code teams.
 
-- It does not require any GUI or system graphics libraries.
-- It includes integration examples which demonstrate how to use Ascent inside of three different HPC simulation proxy applications.
+- It does not require GUI or system-graphics libraries.
+- It includes integration examples that demonstrate how to use Ascent inside  three HPC-simulation proxy applications.
 - It provides a built-in web server that supports streaming rendered images directly to a web browser.
 
 
