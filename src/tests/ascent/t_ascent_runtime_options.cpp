@@ -59,6 +59,7 @@
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
+#include "t_utils.hpp"
 
 
 using namespace std;
@@ -66,6 +67,7 @@ using namespace conduit;
 using namespace ascent;
 
 
+index_t EXAMPLE_MESH_SIDE_DIM = 20;
 //-----------------------------------------------------------------------------
 TEST(ascent_runtime_options, verbose_msgs)
 {
@@ -192,4 +194,105 @@ TEST(ascent_runtime_options, test_errors)
     EXPECT_THROW(ascent.publish(n),conduit::Error);
     ascent.close();
 
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime_options, test_actions_file)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+    
+    
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    //verify_info.print();
+
+    ASCENT_INFO("Testing custom actions file");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_actions_img");
+    string output_actions = conduit::utils::join_file_path(output_path,"tout_render_actions");
+    
+    // remove old images before rendering
+    remove_test_image(output_file);
+    remove_test_file(output_actions);
+
+
+    //
+    // Create the actions.
+    //
+    std::string actions_file = ""
+                              "  [\n"
+                              "    {\n"
+                              "      \"action\": \"add_scenes\",\n"
+                              "      \"scenes\": \n"
+                              "      {\n"
+                              "        \"s1\": \n"
+                              "        {\n"
+                              "          \"plots\":\n" 
+                              "          {\n"
+                              "            \"p1\": \n"
+                              "            {\n"
+                              "              \"type\": \"pseudocolor\",\n"
+                              "              \"params\": \n"
+                              "              {\n"
+                              "                \"field\": \"braid\"\n"
+                              "              }\n"
+                              "            }\n"
+                              "          },\n"
+                              "          \"renders\": \n"
+                              "          {\n"
+                              "            \"r1\": \n"
+                              "            {\n"
+                              "              \"image_name\": \"" + output_file + "\"\n"
+                              "            }\n"
+                              "          }\n"
+                              "        }\n"
+                              "      }\n"
+                              "    },\n"
+                              "    {\n"
+                              "      \"action\": \"execute\"\n"
+                              "    }\n"
+                              "  ]\n";
+
+    std::ofstream file(output_actions);
+    file<<actions_file;
+    file.close();
+    //
+    // Run Ascent
+    //
+    
+    Ascent ascent;
+
+    Node ascent_opts;
+    //ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["actions_file"] = output_actions; 
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    conduit::Node blank_actions;
+    ascent.execute(blank_actions);
+    ascent.close();
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_file(output_actions));
 }

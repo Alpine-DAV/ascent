@@ -78,6 +78,16 @@ remove_test_image(const std::string &path)
 }
 
 //-----------------------------------------------------------------------------
+void
+remove_test_file(const std::string &path)
+{    
+    if(conduit::utils::is_file(path))
+    {
+        conduit::utils::remove_file(path);
+    }
+}
+
+//-----------------------------------------------------------------------------
 std::string 
 prepare_output_dir()
 {
@@ -93,7 +103,7 @@ prepare_output_dir()
     return output_path;
 }
 
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 std::string 
 output_dir()
 {
@@ -106,6 +116,13 @@ check_test_image(const std::string &path)
 {    
     // for now, just check if the file exists.
     return conduit::utils::is_file(path + ".png");
+}
+
+bool
+check_test_file(const std::string &path)
+{    
+    // for now, just check if the file exists.
+    return conduit::utils::is_file(path);
 }
 
 
