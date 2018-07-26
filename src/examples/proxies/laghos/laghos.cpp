@@ -422,14 +422,22 @@ int main(int argc, char *argv[])
    // Save data for VisIt visualization.
    VisItDataCollection visit_dc(basename, pmesh);
    ConduitDataCollection conduit_dc(basename, pmesh);
+   conduit_dc.SetProtocol("conduit_bin");
    if (visit)
    {
-      //visit_dc.RegisterField("Density",  &rho_gf);
-      //visit_dc.RegisterField("Velocity", &v_gf);
-      //visit_dc.RegisterField("Specific Internal Energy", &e_gf);
-      //visit_dc.SetCycle(0);
-      //visit_dc.SetTime(0.0);
-      //visit_dc.Save();
+      //conduit_dc.RegisterField("Density",  &rho_gf);
+      //conduit_dc.RegisterField("Velocity", &v_gf);
+      //conduit_dc.RegisterField("Specific Internal Energy", &e_gf);
+      //conduit_dc.SetCycle(0);
+      //conduit_dc.SetTime(0.0);
+      //conduit_dc.Save();
+
+      visit_dc.RegisterField("Density",  &rho_gf);
+      visit_dc.RegisterField("Velocity", &v_gf);
+      visit_dc.RegisterField("Specific Internal Energy", &e_gf);
+      visit_dc.SetCycle(0);
+      visit_dc.SetTime(0.0);
+      visit_dc.Save();
    }
 
    // Perform time-integration (looping over the time iterations, ti, with a
@@ -518,14 +526,18 @@ int main(int argc, char *argv[])
 
          if (visit)
          {
-            //visit_dc.SetCycle(ti);
-            //visit_dc.SetTime(t);
-            //visit_dc.Save();
+            //conduit_dc.SetCycle(ti);
+            //conduit_dc.SetTime(t);
+            //conduit_dc.Save();
+            
+            visit_dc.SetCycle(ti);
+            visit_dc.SetTime(t);
+            visit_dc.Save();
 
             conduit::Node n_dset;
             ConduitDataCollection::MeshToBlueprintMesh(pmesh,n_dset);
-            ConduitDataCollection::GridFunctionToBlueprintField(&rho_gf, n_dset["fields"]["Density"]);
-            ConduitDataCollection::GridFunctionToBlueprintField(&v_gf, n_dset["fields"]["Velocity"]);
+            ConduitDataCollection::GridFunctionToBlueprintField(&rho_gf, n_dset["fields"]["density"]);
+            ConduitDataCollection::GridFunctionToBlueprintField(&v_gf, n_dset["fields"]["velocity"]);
             ConduitDataCollection::GridFunctionToBlueprintField(&e_gf, n_dset["fields"]["specific_internal_energy"]);
             n_dset["state/cycle"] = ti;
             n_dset["state/time"] = t;

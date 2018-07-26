@@ -89,6 +89,7 @@
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
+#include <ascent_mfem_data_adapter.hpp>
 
 #endif
 
@@ -703,9 +704,24 @@ EnsureVTKH::execute()
     {
         // convert from blueprint to vtk-h
         const Node *n_input = input<Node>(0);
-        vtkh::DataSet *res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
-        set_output<vtkh::DataSet>(res);
+        bool high_order = MFEMDataAdapter::IsHighOrder(*n_input);
 
+        vtkh::DataSet *res = nullptr;;
+        if(high_order)
+        {
+          std::cout<<"***************************\n"; 
+          const int ref_level = 4;
+          MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
+          conduit::Node lo_dset;
+          MFEMDataAdapter::Linearize(domains, lo_dset, ref_level);
+          delete domains;
+        }
+        else
+        {
+          vtkh::DataSet *res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
+        }
+
+        set_output<vtkh::DataSet>(res);
     }
     else if(input(0).check_type<vtkm::cont::DataSet>())
     {

@@ -98,98 +98,24 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
 {       
  
     // treat everything as a multi-domain data set 
-    conduit::Node multi_dom; 
-    blueprint::mesh::to_multi_domain(node, multi_dom);
 
     vtkh::DataSet *res = new vtkh::DataSet;
 
-
     int num_domains = 0;
-    bool has_ids = true;
-    bool no_ids = true;
   
     // get the number of domains and check for id consistency
-    num_domains = multi_dom.number_of_children();
+    num_domains = node.number_of_children();
 
     for(int i = 0; i < num_domains; ++i)
     {
-      const conduit::Node &dom = multi_dom.child(i);
-      if(dom.has_path("state/domain_id"))
-      {
-        no_ids = false; 
-      }
-      else
-      {
-        has_ids = false;
-      }
-    }
-#ifdef ASCENT_MPI_ENABLED
-    int comm_size = vtkh::GetMPISize();
-    int *has_ids_array = new int[comm_size];
-    int *no_ids_array = new int[comm_size];
-    int boolean = has_ids ? 1 : 0; 
-    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-    MPI_Allgather(&boolean, 1, MPI_INT, has_ids_array, 1, MPI_INT, mpi_comm);
-    boolean = no_ids ? 1 : 0; 
-    MPI_Allgather(&boolean, 1, MPI_INT, no_ids_array, 1, MPI_INT, mpi_comm);
-
-    bool global_has_ids = true;
-    bool global_no_ids = false;
-    for(int i = 0; i < comm_size; ++i)
-    {
-      if(has_ids_array[i] == 0)
-      {
-        global_has_ids = false;
-      }
-      if(no_ids_array[i] == 1)
-      {
-        global_no_ids = true;
-      }
-    }
-    has_ids = global_has_ids;
-    no_ids = global_no_ids;
-    delete[] has_ids_array;
-    delete[] no_ids_array;
-#endif
-      
-    bool consistent_ids = (has_ids || no_ids);
-     
-    if(!consistent_ids)
-    {
-      ASCENT_ERROR("Inconsistent domain ids: all domains must either have an id "
-                  <<"or all domains do not have an id");
-    }
-
-    int domain_offset = 0;
-#ifdef ASCENT_MPI_ENABLED
-    int *domains_per_rank = new int[comm_size];
-    int rank = vtkh::GetMPIRank();
-    MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
-    for(int i = 0; i < rank; ++i)
-    {
-      domain_offset += domains_per_rank[i];
-    }
-    delete[] domains_per_rank;  
-#endif
-    for(int i = 0; i < num_domains; ++i)
-    {
-      const conduit::Node &dom = multi_dom.child(i);      
+      const conduit::Node &dom = node.child(i);      
       vtkm::cont::DataSet *dset = VTKHDataAdapter::BlueprintToVTKmDataSet(dom,
                                                                           topo_name);
-      int domain_id = domain_offset;
-      if(node.has_path("state/domain_id"))
+      int domain_id = dom["state/domain_id"].to_int();
+
+      if(dom.has_path("state/cycle"))
       {
-          domain_id = node["state/domain_id"].to_int();
-      }
-#ifdef ASCENT_MPI_ENABLED
-      else
-      {
-         domain_id = domain_offset + i;
-      }
-#endif
-      if(node.has_path("state/cycle"))
-      {
-        vtkm::UInt64 cycle = node["state/cycle"].to_uint64();
+        vtkm::UInt64 cycle = dom["state/cycle"].to_uint64();
         res->SetCycle(cycle);
       }
 

@@ -236,7 +236,99 @@ void
 AscentRuntime::Publish(const conduit::Node &data)
 {
     // create our own tree, with all data zero copied.
-    m_data.set_external(data);
+    conduit::Node multi_dom;
+    blueprint::mesh::to_multi_domain(data, multi_dom);
+    m_data.set_external(multi_dom);
+    EnsureDomainIds();
+}
+
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::EnsureDomainIds()
+{
+    // if no domain ids were provided add them now
+    int num_domains = 0;
+    bool has_ids = true;
+    bool no_ids = true;
+  
+    // get the number of domains and check for id consistency
+    num_domains = m_data.number_of_children();
+
+    for(int i = 0; i < num_domains; ++i)
+    {
+      const conduit::Node &dom = m_data.child(i);
+      if(dom.has_path("state/domain_id"))
+      {
+        no_ids = false; 
+      }
+      else
+      {
+        has_ids = false;
+      }
+    }
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    int comm_id =flow::Workspace::default_mpi_comm();
+
+    MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+    MPI_Comm_rank(mpi_comm,&rank);
+
+    int comm_size = vtkh::GetMPISize();
+    int *has_ids_array = new int[comm_size];
+    int *no_ids_array = new int[comm_size];
+    int boolean = has_ids ? 1 : 0; 
+
+    MPI_Allgather(&boolean, 1, MPI_INT, has_ids_array, 1, MPI_INT, mpi_comm);
+    boolean = no_ids ? 1 : 0; 
+    MPI_Allgather(&boolean, 1, MPI_INT, no_ids_array, 1, MPI_INT, mpi_comm);
+
+    bool global_has_ids = true;
+    bool global_no_ids = false;
+    for(int i = 0; i < comm_size; ++i)
+    {
+      if(has_ids_array[i] == 0)
+      {
+        global_has_ids = false;
+      }
+      if(no_ids_array[i] == 1)
+      {
+        global_no_ids = true;
+      }
+    }
+    has_ids = global_has_ids;
+    no_ids = global_no_ids;
+    delete[] has_ids_array;
+    delete[] no_ids_array;
+#endif
+      
+    bool consistent_ids = (has_ids || no_ids);
+     
+    if(!consistent_ids)
+    {
+      ASCENT_ERROR("Inconsistent domain ids: all domains must either have an id "
+                  <<"or all domains do not have an id");
+    }
+
+    int domain_offset = 0;
+#ifdef ASCENT_MPI_ENABLED
+    int *domains_per_rank = new int[comm_size];
+    MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
+    for(int i = 0; i < rank; ++i)
+    {
+      domain_offset += domains_per_rank[i];
+    }
+    delete[] domains_per_rank;  
+#endif
+    for(int i = 0; i < num_domains; ++i)
+    {
+      conduit::Node &dom = m_data.child(i);      
+
+      int domain_id = domain_offset;
+      if(!dom.has_path("state/domain_id"))
+      {
+         dom["state/domain_id"] = domain_offset + i;
+      }
+    }
 }
 
 //-----------------------------------------------------------------------------
