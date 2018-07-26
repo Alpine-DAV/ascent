@@ -11,7 +11,7 @@
 // 
 // For details, see: http://ascent.readthedocs.io/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -42,43 +42,36 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: flow.hpp
+/// file: t_ascent_flow_timercpp
 ///
 //-----------------------------------------------------------------------------
 
+#include "gtest/gtest.h"
+
+#include <flow.hpp>
+
+#include <iostream>
+#include <math.h>
+
+#include "t_config.hpp"
+
+
+
+using namespace std;
+using namespace conduit;
+using namespace flow;
+
 
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-///
-/// Flow is a simple data flow network infrastructure. 
-///
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-#ifndef FLOW_HPP
-#define FLOW_HPP
-
-#include <flow_config.h>
-
-#include <conduit.hpp>
-
-#include <flow_data.hpp>
-#include <flow_registry.hpp>
-#include <flow_filter.hpp>
-#include <flow_graph.hpp>
-#include <flow_workspace.hpp>
-#include <flow_timer.hpp>
-
-// filters
-#include <flow_filters.hpp>
-
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
-
-
+TEST(ascent_flow_timer, time_passed)
+{
+    flow::Timer t;
+    float delta_1 = t.elapsed();
+    float delta_2 = t.elapsed();
+    std::cout << "d1 " << delta_1 << " d2 " << delta_2 << std::endl;
+    
+    EXPECT_GT(delta_2,delta_1);
+    
+}

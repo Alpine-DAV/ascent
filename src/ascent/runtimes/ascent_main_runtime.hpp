@@ -94,7 +94,7 @@ private:
     conduit::Node     m_info;
 
     WebInterface      m_web_interface;
-    
+
     void              ResetInfo();
 
     flow::Workspace w;

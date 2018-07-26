@@ -38,13 +38,13 @@ packages:
       jpeg: [libjpeg-turbo, libjpeg]
 # LLNL toss3 CUDA 
   cuda:
-    paths:
-      cuda@8.0: /opt/cudatoolkit-8.0
+    modules:
+       cuda@9.1: cuda/9.1.85
     buildable: False
 # LLNL toss3 mvapich2
   mvapich2:
     paths:
-      mvapich2@2.2%gcc@4.9.3: /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+      mvapich2@2.2%gcc@4.9.2:  /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
       mvapich2@2.2%intel@17.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.0
-      mvapich2@2.2%clang@3.9.0: /usr/tce/packages/mvapich2/mvapich2-2.2-clang-3.9.0
+      mvapich2@2.2%clang@4.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-clang-4.0.0
     buildable: False

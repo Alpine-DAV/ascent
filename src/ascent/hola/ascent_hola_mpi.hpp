@@ -11,7 +11,7 @@
 // 
 // For details, see: http://ascent.readthedocs.io/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,40 +45,59 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: flow.hpp
+/// file: ascent_hola_mpi.hpp
 ///
 //-----------------------------------------------------------------------------
 
+#ifndef ASCENT_HOLA_MPI_HPP
+#define ASCENT_HOLA_MPI_HPP
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-///
-/// Flow is a simple data flow network infrastructure. 
-///
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
+#include <ascent_config.h>
+#include <ascent_exports.h>
 
-#ifndef FLOW_HPP
-#define FLOW_HPP
-
-#include <flow_config.h>
-
+#include <string>
 #include <conduit.hpp>
 
-#include <flow_data.hpp>
-#include <flow_registry.hpp>
-#include <flow_filter.hpp>
-#include <flow_graph.hpp>
-#include <flow_workspace.hpp>
-#include <flow_timer.hpp>
+#include <mpi.h>
 
-// filters
-#include <flow_filters.hpp>
 
+//-----------------------------------------------------------------------------
+// -- begin ascent:: --
+//-----------------------------------------------------------------------------
+namespace ascent
+{
+    
+void ASCENT_API hola_mpi(const conduit::Node &options,
+                         conduit::Node &data);
+
+
+/// Creates maps used for book keeping to guide sending domains
+/// from source to destination ranks.
+void ASCENT_API hola_mpi_comm_map(const conduit::Node &data,
+                                  MPI_Comm comm,
+                                  const conduit::int32_array &world_to_src,
+                                  const conduit::int32_array &world_to_dest,
+                                  conduit::Node &res);
+
+/// executes a send
+void ASCENT_API hola_mpi_send(const conduit::Node &data,
+                              MPI_Comm comm,
+                              int src_idx,
+                              const conduit::Node &comm_map);
+
+/// executes a receive 
+void ASCENT_API hola_mpi_recv(MPI_Comm comm,
+                              int dest_idx,
+                              const conduit::Node &comm_map,
+                              conduit::Node &data);
+
+};
+//-----------------------------------------------------------------------------
+// -- end ascent:: --
+//-----------------------------------------------------------------------------
 
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
 

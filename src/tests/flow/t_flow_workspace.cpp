@@ -231,6 +231,8 @@ TEST(ascent_flow_workspace, linear_graph)
     w.registry().consume("c");
 
     w.print();
+    
+    ASCENT_INFO(w.timing_info());
 
     Workspace::clear_supported_filter_types();
 }

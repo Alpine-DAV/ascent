@@ -132,7 +132,15 @@ function(add_cpp_mpi_test)
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${arg_TEST}
                   NUM_MPI_TASKS ${arg_NUM_MPI_TASKS})
-
+                  
+    ###########################################################################
+    # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
+    # to run with more tasks than actual cores
+    # Since this is an OpenMPI specific env var, it shouldn't interfere
+    # with other mpi implementations.
+    ###########################################################################
+    set_property(TEST ${arg_TEST}
+                 PROPERTY ENVIRONMENT  "OMPI_MCA_rmaps_base_oversubscribe=1")
 endfunction()
 
 

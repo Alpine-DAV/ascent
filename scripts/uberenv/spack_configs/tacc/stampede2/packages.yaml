@@ -1,0 +1,45 @@
+# Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at
+# the Lawrence Livermore National Laboratory. LLNL-CODE-734707. All Rights
+# reserved. See files LICENSE and NOTICE for details.
+#
+# This file is part of CEED, a collection of benchmarks, miniapps, software
+# libraries and APIs for efficient high-order finite element and spectral
+# element discretizations for exascale applications. For more information and
+# source code availability see http://github.com/ceed.
+#
+# The CEED research is supported by the Exascale Computing Project 17-SC-20-SC,
+# a collaborative effort of two U.S. Department of Energy organizations (Office
+# of Science and the National Nuclear Security Administration) responsible for
+# the planning and preparation of a capable exascale ecosystem, including
+# software, applications, hardware, advanced system engineering and early
+# testbed platforms, in support of the nation's exascale computing imperative.
+#
+# By default, the Spack-based CEED installation will build all required packages
+# from scratch, which can take a long time. The file ~/.spack/packages.yaml, or
+# ~/.spack/<platform>/packages.yaml allows you to list packages already
+# installed on your system for Spack to use instead of compiling them itself.
+#
+# This is an example of a packages.yaml file for the Cori machine at NERSC,
+# arch=cray-CNL-haswell, using system modules.
+
+packages:
+  all:
+    compiler:
+    - gcc
+    modules: {}
+    paths: {}
+    providers:
+      mpi:
+      - mvapich2
+      blas:
+      - intel-mkl
+      lapack:
+      - intel-mkl
+  mvapich2:
+    buildable: false
+    paths:
+        mvapich2: /opt/intel/compilers_and_libraries_2017.4.196/linux/mpi/intel64/
+  intel-mkl:
+    buildable: false
+    modules:
+        intel-mkl: mkl

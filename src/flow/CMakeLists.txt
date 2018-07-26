@@ -62,6 +62,7 @@ set(flow_sources
     flow_filters.cpp
     flow_graph.cpp
     flow_workspace.cpp
+    flow_timer.cpp
     filters/flow_builtin_filters.cpp)
     
 set(flow_headers
@@ -74,6 +75,7 @@ set(flow_headers
     flow_filters.hpp
     flow_graph.hpp
     flow_workspace.hpp
+    flow_timer.hpp
     filters/flow_builtin_filters.hpp)
 
 set(flow_thirdparty_libs 
