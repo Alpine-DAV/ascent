@@ -45,35 +45,44 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: flow.hpp
+/// file: flow_timer.hpp
 ///
 //-----------------------------------------------------------------------------
 
+#ifndef FLOW_TIMER_HPP
+#define FLOW_TIMER_HPP
+
+#include <chrono>
 
 //-----------------------------------------------------------------------------
+// -- begin flow:: --
 //-----------------------------------------------------------------------------
-///
-/// Flow is a simple data flow network infrastructure. 
-///
+namespace flow
+{
+
+
 //-----------------------------------------------------------------------------
+class Timer
+{
+
+public:
+    
+    explicit Timer();
+            ~Timer();
+    void     reset();
+    float    elapsed() const;
+
+private:
+    std::chrono::high_resolution_clock::time_point m_start;
+}; 
+
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end flow:: --
 //-----------------------------------------------------------------------------
 
-#ifndef FLOW_HPP
-#define FLOW_HPP
-
-#include <flow_config.h>
-
-#include <conduit.hpp>
-
-#include <flow_data.hpp>
-#include <flow_registry.hpp>
-#include <flow_filter.hpp>
-#include <flow_graph.hpp>
-#include <flow_workspace.hpp>
-#include <flow_timer.hpp>
-
-// filters
-#include <flow_filters.hpp>
 
 
 #endif

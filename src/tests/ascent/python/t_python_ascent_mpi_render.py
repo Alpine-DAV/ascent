@@ -79,7 +79,7 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
         
         # create example mesh using conduit blueprint
         n_mesh = conduit.Node()
-        conduit.blueprint.mesh.examples.braid("uniform",
+        conduit.blueprint.mesh.examples.braid("quads",
                                               10,
                                               10,
                                               0,

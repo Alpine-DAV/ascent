@@ -251,6 +251,7 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
     Node ascent_opts;
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
+    ascent_opts["timings"] = "enabled";
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
     ascent_opts["runtime"] = "ascent";
     ascent.open(ascent_opts);

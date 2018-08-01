@@ -133,41 +133,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
     MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
     MPI_Comm_rank(comm,&rank);
-#ifdef VTKM_CUDA
-    //
-    //  If we are using cuda, figure out how many devices we have and
-    //  assign a GPU based on rank.
-    //
-    int device_count = 0;
-    cudaError_t err = cudaGetDeviceCount(&device_count);
-    if (err == cudaSuccess && device_count > 0 && device_count <= 256)
-    {
-        int rank_device = rank % device_count;
-        err = cudaSetDevice(rank_device);
-        if(err != cudaSuccess)
-        {
-            ASCENT_ERROR("Failed to set GPU " 
-                           <<rank_device
-                           <<" out of "<<device_count
-                           <<" GPUs. Make sure there"
-                           <<" are an equal amount of"
-                           <<" MPI ranks/gpus per node.");
-        }
-        else
-        {
 
-            char proc_name[100];
-            int length=0;
-            MPI_Get_processor_name(proc_name, &length);
-
-        }
-        cuda_device  = rank_device;
-    }
-    else
-    {
-        ASCENT_ERROR("VTKm GPUs is enabled but none found");
-    }
-#endif
 #else  // non mpi version
     if(options.has_child("mpi_comm"))
     {
@@ -178,6 +144,27 @@ AscentRuntime::Initialize(const conduit::Node &options)
                      "correct version of ascent?");
     }
     
+#endif
+
+#ifdef VTKM_CUDA
+ 
+    bool sel_cuda_device = true;
+    
+    if(options.has_path("cuda/init") &&
+       options["cuda/init"].as_string() == "false")
+    {
+        sel_cuda_device = false;
+    }
+    //
+    //  If we are using cuda, figure out how many devices we have and
+    //  assign a GPU based on rank.
+    //
+    if(sel_cuda_device)
+    {
+        int device_count = vtkh::CUDADeviceCount();
+        int rank_device = rank % device_count;
+        vtkh::SelectCUDADevice(rank_device);
+    }
 #endif
 
     m_runtime_options = options;
@@ -204,7 +191,6 @@ AscentRuntime::Initialize(const conduit::Node &options)
     this->Info(msg["info"]);
     ascent::about(msg["about"]);
     m_web_interface.PushMessage(msg);
-    
 }
 
 
@@ -228,7 +214,25 @@ AscentRuntime::ResetInfo()
 void
 AscentRuntime::Cleanup()
 {
-
+    if(m_runtime_options.has_child("timings") && 
+       m_runtime_options["timings"].as_string() == "enabled")
+    {
+        // save out timing info on close
+        std::stringstream fname;
+        fname << "ascent_filter_times";
+    
+#ifdef ASCENT_MPI_ENABLED
+        int rank = 0;
+        MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+        MPI_Comm_rank(mpi_comm, &rank);
+        fname << "_" << rank;
+#endif
+        fname << ".csv";
+        std::ofstream ftimings;
+        ftimings.open(fname.str());
+        ftimings << w.timing_info();
+        ftimings.close();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -502,6 +506,10 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     {
       params["protocol"] = "blueprint/mesh/hdf5";
     }
+  }
+  else if(extract["type"].as_string() == "hola_mpi")
+  {
+    filter_name = "hola_mpi";
   }
   else if(extract["type"].as_string() == "python")
   {

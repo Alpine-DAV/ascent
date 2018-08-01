@@ -1,0 +1,31 @@
+compilers:
+- compiler:
+    extra_rpaths: []
+    flags: {}
+    modules: []
+    operating_system: rhel7
+    paths:
+      cc: /soft/compilers/gcc/4.8.1/bin/gcc
+      cxx: /soft/compilers/gcc/4.8.1/bin/g++
+      f77: /soft/compilers/gcc/4.8.1/bin/gfortran
+      fc: /soft/compilers/gcc/4.8.1/bin/gfortran
+    environment: 
+      set:
+          LD_LIBRARY_PATH: LD_LIBRARY_PATH=/soft/libraries/mpi/mvapich2/gcc/lib:/soft/compilers/gcc/4.8.1/lib64:/soft/compilers/gcc/4.8.1/lib:/soft/visualization/cuda-9.1/lib64
+    spec: gcc@4.8.1
+    target: x86_64
+- compiler:
+    extra_rpaths: []
+    flags: {}
+    modules: []
+    operating_system: rhel7
+    paths:
+      cc: /soft/compilers/gcc/7.1.0/bin/gcc
+      cxx: /soft/compilers/gcc/7.1.0/bin/g++
+      f77: /soft/compilers/gcc/7.1.0/bin/gfortran
+      fc: /soft/compilers/gcc/7.1.0/bin/gfortran
+    environment:
+        set:
+          LD_LIBRARY_PATH : /soft/libraries/mpi/mvapich2/gcc/lib:/soft/compilers/gcc/7.1.0/lib64:/soft/visualization/cuda-9.1/lib64
+    spec: gcc@7.1.0
+    target: x86_64

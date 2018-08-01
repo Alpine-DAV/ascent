@@ -1,0 +1,14 @@
+compilers:
+- compiler:
+    extra_rpaths: []
+    flags: {}
+    modules:
+     - gcc/5.4.0 
+    operating_system: centos7
+    paths:
+      cc: /opt/apps/gcc/5.4.0/bin/gcc
+      cxx: /opt/apps/gcc/5.4.0/bin/g++
+      f77: /opt/apps/gcc/5.4.0/bin/gfortran
+      fc: /opt/apps/gcc/5.4.0/bin/gfortran
+    spec: gcc@5.4.0
+    target: x86_64

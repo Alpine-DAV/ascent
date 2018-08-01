@@ -11,7 +11,7 @@
 // 
 // For details, see: http://ascent.readthedocs.io/.
 // 
-// Please also read alpine/LICENSE
+// Please also read ascent/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -45,40 +45,39 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: flow.hpp
+/// file: ascent_hola.hpp
 ///
 //-----------------------------------------------------------------------------
 
+#ifndef ASCENT_HOLA_HPP
+#define ASCENT_HOLA_HPP
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-///
-/// Flow is a simple data flow network infrastructure. 
-///
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
+#include <ascent_config.h>
+#include <ascent_exports.h>
 
-#ifndef FLOW_HPP
-#define FLOW_HPP
-
-#include <flow_config.h>
-
+#include <string>
 #include <conduit.hpp>
 
-#include <flow_data.hpp>
-#include <flow_registry.hpp>
-#include <flow_filter.hpp>
-#include <flow_graph.hpp>
-#include <flow_workspace.hpp>
-#include <flow_timer.hpp>
 
-// filters
-#include <flow_filters.hpp>
+//-----------------------------------------------------------------------------
+// -- begin ascent:: --
+//-----------------------------------------------------------------------------
+namespace ascent
+{
+//-----------------------------------------------------------------------------
+// Hola is a way to say hello again to data captured using Ascent extracts.
+//-----------------------------------------------------------------------------
+void ASCENT_API hola(const std::string &source,
+                     const conduit::Node &options,
+                     conduit::Node &data);
 
+};
+//-----------------------------------------------------------------------------
+// -- end ascent:: --
+//-----------------------------------------------------------------------------
 
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
 
