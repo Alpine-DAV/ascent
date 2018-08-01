@@ -153,6 +153,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
         NodeConstIterator itr = node["topologies"].children();
         itr.next();
         topo_name = itr.name();
+        std::cout<<"Using topo "<<topo_name<<"\n";
     }
     else
     {
@@ -653,7 +654,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     
 
     int32 ndims = 2;
-    
+     
     const float64 *x_coords_ptr = n_coords["values/x"].as_float64_ptr();
     const float64 *y_coords_ptr = n_coords["values/y"].as_float64_ptr();
     const float64 *z_coords_ptr = NULL;
@@ -775,6 +776,9 @@ VTKHDataAdapter::AddField(const std::string &field_name,
                           vtkm::cont::DataSet *dset)
 {
     // TODO: how do we deal with vector valued fields?, these will be mcarrays
+  //std::cout<<"&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n";
+  //  n_field.print();
+  //std::cout<<"============================\n";
     string assoc_str = n_field["association"].as_string();
 
     const Node &n_vals = n_field["values"];

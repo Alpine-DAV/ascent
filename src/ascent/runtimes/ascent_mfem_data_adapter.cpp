@@ -102,7 +102,7 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
       int domain_id = dom["state/domain_id"].to_int();
       // insert domain conversion
 
-      bool zero_copy = true;
+      bool zero_copy = false;
       // TODO: tell collection not to delete it
       mfem::Mesh *mesh = nullptr;
       mesh = mfem::ConduitDataCollection::BlueprintMeshToMesh(dom, topo_name, zero_copy);
@@ -141,13 +141,11 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
       }
       if(dom.has_path("fields"))
       {
-        std::cout<<"fields!\n";
         const int num_fields = dom["fields"].number_of_children();
         std::vector<std::string> fnames = dom["fields"].child_names(); 
         for(int f = 0; f < num_fields; ++f)
         {
           const conduit::Node &field = dom["fields"].child(f);
-          field.print();
            
           // skip any field that has a unsupported basis type 
           //      (we only supprt H1 (continuos) and L2 (discon)
@@ -167,7 +165,6 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
               fnames[f].find("_attribute") == std::string::npos &&
               !unsupported) 
           {
-            std::cout<<"Field: "<<fnames[f]<<"\n";
             mfem::GridFunction *gf = mfem::ConduitDataCollection::BlueprintFieldToGridFunction(mesh, 
                                                                                                field, 
                                                                                                zero_copy);
@@ -247,7 +244,79 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
     // refine the mesh and convert to blueprint
     mfem::Mesh *lo_mesh = new mfem::Mesh(ho_mesh, refinement, mfem::BasisType::GaussLobatto); 
     mfem::ConduitDataCollection::MeshToBlueprintMesh (lo_mesh, n_dset);
+    std::ofstream lovtk("low.vtk"); 
+    lo_mesh->PrintVTK(lovtk);
+    //mfem::ConduitDataCollection::MeshToBlueprintMesh (ho_mesh, n_dset);
     
+    int conn_size = n_dset["topologies/main/elements/connectivity"].dtype().number_of_elements();
+    std::cout<<"conn size() "<<conn_size<<"\n";
+    int *conn = n_dset["topologies/main/elements/connectivity"].as_int32_ptr();
+
+    const mfem::Element *el = lo_mesh->GetElement(0);
+    const int *verts = el->GetVertices();
+    std::cout<<" ** ";
+    for(int x = 0; x < 8; x++)
+    {
+      std::cout<<verts[x]<<" ";
+      for(int y = 0; y < 3; y++) 
+      {
+        std::cout<<lo_mesh->GetVertex(verts[x])[0]<<" ";
+        std::cout<<lo_mesh->GetVertex(verts[x])[1]<<" ";
+        std::cout<<lo_mesh->GetVertex(verts[x])[2]<<"\n";
+      }
+    }
+    std::cout<<"\n";
+
+    std::map<int,int> hash;
+    for(int x = 0; x < conn_size; x++)
+    {
+      hash[conn[x]]++;
+    }
+
+    int first[8];
+    for(int x = 0; x < conn_size; x++)
+    {
+      if(x < 8) first[x] = conn[x];
+      hash[conn[x]]++;
+    }
+
+    int max = 0;
+    int min = 100;
+    int el_id = 0;
+    for(auto it = hash.begin(); it != hash.end(); it++)
+    {
+      if(it->second > max) 
+      {
+        el_id = it->first;
+        max = it->second;
+      }
+      if(it->second < min) 
+      {
+        min = it->second;
+      }
+    }
+    std::cout<<"Max count "<<max<<" conn "<<el_id<<"\n";
+    std::cout<<"Min count "<<min<<"\n";
+    double *cx = n_dset["coordsets/coords/values/x"].as_float64_ptr();
+    double *cy = n_dset["coordsets/coords/values/y"].as_float64_ptr();
+    double *cz = n_dset["coordsets/coords/values/z"].as_float64_ptr();
+    std::cout<<"X0 "<<cx[0]<<"\n";
+    std::cout<<"y0 "<<cy[0]<<"\n";
+    std::cout<<"z0 "<<cz[0]<<"\n";
+    std::ofstream obj("output.obj");
+    for(int x = 0; x < 8; x++)
+    {
+      obj<<"v "<<cx[first[x]]<<" "<<cy[first[x]]<<" "<<cz[first[x]]<<"\n";
+      std::cout<<" "<<first[x];
+    }
+    std::cout<<"\n";
+    obj<<"f 1 2 6 5\n";
+    obj<<"f 1 2 3 4\n";
+    obj<<"f 2 3 7 6\n";
+    obj<<"f 5 6 7 8\n";
+    obj<<"f 3 4 8 7\n";
+    obj<<"f 1 5 8 4\n";
+    obj.close();
     //int dims = ho_mesh->Dimension();
 
     conduit::Node &n_fields = n_dset["fields"];
@@ -261,22 +330,23 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
       {
         ASCENT_ERROR("Linearize: high order gf finite element space is null") 
       }
+      // create the low order grid function
       mfem::FiniteElementCollection *lo_col = new mfem::LinearFECollection;
       mfem::FiniteElementSpace *lo_fes = new mfem::FiniteElementSpace(lo_mesh, lo_col, ho_fes->GetVDim());
       mfem::GridFunction *lo_gf = new mfem::GridFunction(lo_fes);
-
+      // transform the higher order function to a low order function somehow
       mfem::OperatorHandle hi_to_lo;
       lo_fes->GetTransferOperator(*ho_fes, hi_to_lo);
       hi_to_lo.Ptr()->Mult(*ho_gf, *lo_gf);
-
+      // extract field
       conduit::Node &n_field = n_fields[it->first];;
       mfem::ConduitDataCollection::GridFunctionToBlueprintField(lo_gf, n_field);
       // all supported grid functions coming out of mfem end up being associtated with vertices
       n_field["association"] = "vertex";
       
-      delete lo_col;
-      delete lo_fes;
-      delete lo_gf;
+      //delete lo_col;
+      //delete lo_fes;
+      //delete lo_gf;
     }
     
     conduit::Node info;
@@ -286,10 +356,10 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
       info.print();
       ASCENT_ERROR("Linearize: failed to build a blueprint conforming data set from mfem") 
     }
-    delete lo_mesh;
-    //n_dset.print();
+    //delete lo_mesh;
 
   }
+  //output.print();
 }
 
 };

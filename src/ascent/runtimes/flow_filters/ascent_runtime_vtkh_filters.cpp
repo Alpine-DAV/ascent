@@ -710,15 +710,20 @@ EnsureVTKH::execute()
         if(high_order)
         {
           std::cout<<"***************************\n"; 
-          const int ref_level = 4;
+          //n_input->print(); exit(0);
+          const int ref_level = 2;
           MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
-          conduit::Node lo_dset;
-          MFEMDataAdapter::Linearize(domains, lo_dset, ref_level);
-          delete domains;
+          // TODO how do we handle this???
+          conduit::Node *lo_dset = new conduit::Node;
+          MFEMDataAdapter::Linearize(domains, *lo_dset, ref_level);
+          lo_dset->print();
+          res = VTKHDataAdapter::BlueprintToVTKHDataSet(*lo_dset);
+          //res->PrintSummary(std::cout);
+          //delete domains;
         }
         else
         {
-          vtkh::DataSet *res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
+          res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
         }
 
         set_output<vtkh::DataSet>(res);
