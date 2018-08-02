@@ -108,6 +108,14 @@ const float32* GetNodePointer<float32>(const conduit::Node &node)
   return node.as_float32_ptr();
 }
 
+template<typename T> 
+void CopyArray(vtkm::cont::ArrayHandle<T> &vtkm_handle, const T* vals_ptr, const int size)
+{
+  vtkm_handle.Allocate(size);
+  T *t = vtkh::GetVTKMPointer(vtkm_handle);
+  memcpy(t, vals_ptr, sizeof(T) * size);
+}
+
 template<typename T>
 vtkm::cont::CoordinateSystem 
 GetExplicitCoordinateSystem(const conduit::Node &n_coords, 
@@ -143,13 +151,8 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
       }
       else
       {
-        x_coords_handle.Allocate(nverts);
-        y_coords_handle.Allocate(nverts);
-
-        T *x = vtkh::GetVTKMPointer(x_coords_handle);
-        memcpy(x, x_coords_ptr, sizeof(T) * nverts);
-        T *y = vtkh::GetVTKMPointer(y_coords_handle);
-        memcpy(y, y_coords_ptr, sizeof(T) * nverts);
+        detail::CopyArray(x_coords_handle, x_coords_ptr, nverts);
+        detail::CopyArray(y_coords_handle, y_coords_ptr, nverts);
       }
 
       if(ndims == 3)
@@ -160,9 +163,7 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
           }
           else
           {
-            z_coords_handle.Allocate(nverts);
-            T *z = vtkh::GetVTKMPointer(z_coords_handle);
-            memcpy(z, z_coords_ptr, sizeof(T) * nverts);
+            detail::CopyArray(z_coords_handle, z_coords_ptr, nverts);
           }
       
       }
@@ -195,9 +196,11 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
         if(ndims == 3 || true) // TODO: need way to detect 3d interleaved compendents that has 
                                //       only has xy in conduit
         {
-          coords.Allocate(nverts);
-          T *ptr = (T*) vtkh::GetVTKMPointer(coords);
-          memcpy(ptr, x_coords_ptr, sizeof(T) * nverts * 3);
+        
+          detail::CopyArray(coords, (vtkm::Vec<T,3>*)x_coords_ptr, nverts);
+          //coords.Allocate(nverts);
+          //T *ptr = (T*) vtkh::GetVTKMPointer(coords);
+          //memcpy(ptr, x_coords_ptr, sizeof(T) * nverts * 3);
         }
         else 
         {
@@ -915,16 +918,22 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     
     if( sizeof(vtkm::Id) == 4)
     {
-         if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int32() && zero_copy)
+         if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int32())
          {
-             const void *ele_idx_ptr = n_topo_conn.data_ptr();
+           const void *ele_idx_ptr = n_topo_conn.data_ptr();
+           if(zero_copy)
+           {
              connectivity = vtkm::cont::make_ArrayHandle((const vtkm::Id*)ele_idx_ptr,
                                                          conn_size);
-             std::cout<<"ZERO COPY CONN\n";
+           }
+           else
+           {
+             detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size); 
+           }
+           
          }
          else
          {
-             std::cout<<"COPY CONN\n";
              // convert to int32
              connectivity.Allocate(conn_size);
              void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
@@ -935,16 +944,21 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     }
     else
     {
-        if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int64() && zero_copy)
+        if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int64())
         {
-            std::cout<<"ZERO COPY CONN 64\n";
             const void *ele_idx_ptr = n_topo_conn.data_ptr();
-            connectivity = vtkm::cont::make_ArrayHandle((const vtkm::Id*)ele_idx_ptr,
-                                                        conn_size);
+            if(zero_copy)
+            {
+              connectivity = vtkm::cont::make_ArrayHandle((const vtkm::Id*)ele_idx_ptr,
+                                                          conn_size);
+            }
+            else
+            {
+              detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size); 
+            }
         }
         else
         {
-            std::cout<<"COPY CONN 64\n";
              // convert to int64
              connectivity.Allocate(conn_size);
              void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
