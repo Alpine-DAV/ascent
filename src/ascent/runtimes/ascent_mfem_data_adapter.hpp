@@ -55,6 +55,7 @@
 
 // conduit includes
 #include <conduit.hpp>
+#include <mfem.hpp>
 
 namespace mfem
 {
@@ -68,9 +69,32 @@ namespace mfem
 namespace ascent
 {
 
+
+class MFEMDataSet
+{
+public:
+  using FieldMap = std::map<std::string, mfem::GridFunction*>;
+  MFEMDataSet();
+  ~MFEMDataSet();
+  MFEMDataSet(mfem::Mesh *mesh);
+
+  void set_mesh(mfem::Mesh *mesh);
+  mfem::Mesh* get_mesh();
+  
+  void add_field(mfem::GridFunction *field, const std::string &name);
+  bool has_field(const std::string &field_name);
+  mfem::GridFunction* get_field(const std::string &field_name);
+  int num_fields();
+  FieldMap get_field_map();
+protected:
+  FieldMap    m_fields;
+  mfem::Mesh *m_mesh;
+
+};
+
 struct MFEMDomains
 {
-  std::vector<mfem::ConduitDataCollection*> m_data_sets;
+  std::vector<MFEMDataSet*> m_data_sets;
   std::vector<int> m_domain_ids;
 };
 //-----------------------------------------------------------------------------
@@ -94,6 +118,10 @@ public:
     static bool IsHighOrder(const conduit::Node &n);
 
     static void Linearize(MFEMDomains *ho_domains, conduit::Node &output, const int refinement);
+
+    static void GridFunctionToBlueprintField(mfem::GridFunction *gf,
+                                            conduit::Node &out,
+                                            const std::string &main_topology_name = "main");
 };
 
 //-----------------------------------------------------------------------------

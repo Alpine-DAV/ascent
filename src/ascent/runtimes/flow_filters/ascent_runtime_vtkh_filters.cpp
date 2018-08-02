@@ -719,8 +719,9 @@ EnsureVTKH::execute()
           MFEMDataAdapter::Linearize(domains, *lo_dset, ref_level);
           //lo_dset->print();
           res = VTKHDataAdapter::BlueprintToVTKHDataSet(*lo_dset, zero_copy);
+          delete lo_dset; 
+          delete domains;
           //res->PrintSummary(std::cout);
-          //delete domains;
         }
         else
         {

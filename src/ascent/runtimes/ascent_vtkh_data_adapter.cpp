@@ -236,6 +236,56 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
 
 }
 
+template<typename T>
+vtkm::cont::Field GetField(const conduit::Node &node, 
+                           const std::string field_name, 
+                           const std::string assoc_str, 
+                           bool zero_copy)
+{
+  
+  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+  if(assoc_str == "vertex")
+  {
+    vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+  }
+  else if(assoc_str == "element")
+  {
+    vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+  }
+  vtkm::cont::Field field;
+
+  int num_vals = node.dtype().number_of_elements();
+
+  if(zero_copy)
+  {
+
+    std::cout<<"ZERO COPY field "<<field_name<<"\n";
+    const T *values_ptr = node.value();
+    // zero copy into vtkm array handle
+    vtkm::cont::ArrayHandle<T> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr,
+                                                                       num_vals);
+    field = vtkm::cont::Field(field_name,
+                              vtkm_assoc,
+                              vtkm_arr);
+  }
+  else
+  {
+    std::cout<<"COPY field "<<field_name<<"\n";
+    const T *values_ptr = node.value();
+    vtkm::cont::ArrayHandle<T> vtkm_arr;
+    vtkm_arr.Allocate(num_vals);
+
+    T * vtkm_ptr = vtkh::GetVTKMPointer(vtkm_arr);
+    memcpy(vtkm_ptr, values_ptr, sizeof(T) * num_vals);
+
+    field = vtkm::cont::Field(field_name,
+                              vtkm_assoc,
+                              vtkm_arr);
+  }
+  std::cout<<"returning field\n";
+  return field;
+}
+
 };
 //-----------------------------------------------------------------------------
 // -- end detail:: --
@@ -865,14 +915,16 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     
     if( sizeof(vtkm::Id) == 4)
     {
-         if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int32())
+         if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int32() && zero_copy)
          {
              const void *ele_idx_ptr = n_topo_conn.data_ptr();
              connectivity = vtkm::cont::make_ArrayHandle((const vtkm::Id*)ele_idx_ptr,
                                                          conn_size);
+             std::cout<<"ZERO COPY CONN\n";
          }
          else
          {
+             std::cout<<"COPY CONN\n";
              // convert to int32
              connectivity.Allocate(conn_size);
              void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
@@ -883,14 +935,16 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     }
     else
     {
-        if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int64())
+        if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int64() && zero_copy)
         {
+            std::cout<<"ZERO COPY CONN 64\n";
             const void *ele_idx_ptr = n_topo_conn.data_ptr();
             connectivity = vtkm::cont::make_ArrayHandle((const vtkm::Id*)ele_idx_ptr,
                                                         conn_size);
         }
         else
         {
+            std::cout<<"COPY CONN 64\n";
              // convert to int64
              connectivity.Allocate(conn_size);
              void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
@@ -937,7 +991,24 @@ VTKHDataAdapter::AddField(const std::string &field_name,
   //std::cout<<"&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n";
   //  n_field.print();
   //std::cout<<"============================\n";
+
     string assoc_str = n_field["association"].as_string();
+
+    vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+    if(assoc_str == "vertex")
+    {
+      vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+    }
+    else if(assoc_str == "element")
+    {
+      vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+    }
+    else
+    {
+      ASCENT_INFO("VTKm conversion does not support field assoc "<<assoc_str<<". Skipping");
+      std::cout<<"VTKm conversion does not support field assoc "<<assoc_str<<". Skipping\n";
+      return;
+    }
 
     const Node &n_vals = n_field["values"];
     int num_vals = n_vals.dtype().number_of_elements();
@@ -952,60 +1023,26 @@ VTKHDataAdapter::AddField(const std::string &field_name,
 
     try
     {
-        bool zero_copy = false;
+        bool supported_type = false;
         
         if(n_vals.is_compact())
         {
             // we compile vtk-h with fp types
             if(n_vals.dtype().is_float32())
             {
-                const float32 *values_ptr = n_vals.value();
-                // zero copy into vtkm array handle
-                vtkm::cont::ArrayHandle<vtkm::Float32> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr,
-                                                                                               num_vals);
-                // add field to dataset
-                if(assoc_str == "vertex")
-                {
-                    dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                     vtkm::cont::Field::Association::POINTS,
-                                                     vtkm_arr));
-                }
-                else if( assoc_str == "element")
-                {
-                    dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                     vtkm::cont::Field::Association::CELL_SET,
-                                                     topo_name.c_str(),
-                                                     vtkm_arr));
-                }
-                zero_copy = true;
+                dset->AddField(detail::GetField<float32>(n_vals, field_name, assoc_str, zero_copy));
+                supported_type = true;
             }
             else if(n_vals.dtype().is_float64())
             {
-                const float64 *values_ptr = n_vals.value();
-                // zero copy into vtkm array handle
-                vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr,
-                                                                                               num_vals);
-                // add field to dataset
-                if(assoc_str == "vertex")
-                {
-                    dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                     vtkm::cont::Field::Association::POINTS,
-                                                     vtkm_arr));
-                }
-                else if( assoc_str == "element")
-                {
-                    dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                     vtkm::cont::Field::Association::CELL_SET,
-                                                     topo_name.c_str(),
-                                                     vtkm_arr));
-                }
-                zero_copy = true;
+                dset->AddField(detail::GetField<float64>(n_vals, field_name, assoc_str, zero_copy));
+                supported_type = true;
             }
         }
         
         // vtk-m cant support zero copy for this layout or was not compiled to expose this datatype
         // use float64 by default
-        if(!zero_copy) 
+        if(!supported_type) 
         {
             // convert to float64, we use this as a comprise to cover the widest range
             vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;

@@ -77,8 +77,78 @@ using namespace conduit;
 namespace ascent
 {
 
+MFEMDataSet::MFEMDataSet()
+{
+
+}
+
+MFEMDataSet::~MFEMDataSet()
+{
+  delete m_mesh;
+
+  for(auto it = m_fields.begin(); it != m_fields.end(); ++it)
+  {
+    delete it->second;
+  }
+}
+
+MFEMDataSet::MFEMDataSet(mfem::Mesh *mesh)
+ : m_mesh(mesh)
+{
+
+}
+
+void 
+MFEMDataSet::set_mesh(mfem::Mesh *mesh)
+{
+  m_mesh = mesh;
+}
+
+mfem::Mesh*
+MFEMDataSet::get_mesh()
+{
+  return m_mesh;
+}
+
+void 
+MFEMDataSet::add_field(mfem::GridFunction *field, const std::string &name)
+{
+  m_fields[name] = field;
+}
+
+MFEMDataSet::FieldMap
+MFEMDataSet::get_field_map()
+{
+  return m_fields;
+}
+
+bool 
+MFEMDataSet::has_field(const std::string &field_name)
+{
+  auto it = m_fields.find(field_name);
+  return it != m_fields.end();
+}
+
+mfem::GridFunction*
+MFEMDataSet::get_field(const std::string &field_name)
+{
+  if(!has_field(field_name))
+  {
+    std::string msg = "MFEMDataSet: no field named : " + field_name;
+    ASCENT_ERROR(msg);
+  }
+  
+  return m_fields[field_name];
+}
+
+int 
+MFEMDataSet::num_fields()
+{
+  return m_fields.size();
+}
+
 //-----------------------------------------------------------------------------
-// VTKHDataAdapter public methods
+// MFEMDataAdapter public methods
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -97,24 +167,23 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
 
     for(int i = 0; i < num_domains; ++i)
     {
+      MFEMDataSet *dset = new MFEMDataSet();
       const conduit::Node &dom = node.child(i);      
       // this should exist
       int domain_id = dom["state/domain_id"].to_int();
       // insert domain conversion
 
       bool zero_copy = false;
-      // TODO: tell collection not to delete it
       mfem::Mesh *mesh = nullptr;
       mesh = mfem::ConduitDataCollection::BlueprintMeshToMesh(dom, topo_name, zero_copy);
+      dset->set_mesh(mesh);
 
       //dom.print();
       std::cout<<"MESH "<<mesh->GetNE()<<"\n";
-      mfem::ConduitDataCollection *col = new mfem::ConduitDataCollection("", mesh);
 
       if(node.has_path("state/cycle"))
       {
         int cycle = node["state/cycle"].to_int32();
-        col->SetCycle(cycle);
       }
   
       std::string t_name = topo_name;
@@ -168,12 +237,12 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
             mfem::GridFunction *gf = mfem::ConduitDataCollection::BlueprintFieldToGridFunction(mesh, 
                                                                                                field, 
                                                                                                zero_copy);
-            col->RegisterField(fnames[f], gf); 
+            dset->add_field(gf, fnames[f]); 
           }
         }
       }
 
-      res->m_data_sets.push_back(col);
+      res->m_data_sets.push_back(dset);
       res->m_domain_ids.push_back(domain_id);
     
     }    
@@ -238,7 +307,7 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
     n_dset["state/domain_id"] = int(ho_domains->m_domain_ids[i]);
 
     // get the high order data
-    mfem::Mesh *ho_mesh = ho_domains->m_data_sets[i]->GetMesh(); 
+    mfem::Mesh *ho_mesh = ho_domains->m_data_sets[i]->get_mesh(); 
     const mfem::FiniteElementSpace *ho_fes_space = ho_mesh->GetNodalFESpace();
     const mfem::FiniteElementCollection *ho_fes_col = ho_fes_space->FEColl();
     // refine the mesh and convert to blueprint
@@ -252,7 +321,7 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
     //int dims = ho_mesh->Dimension();
 
     conduit::Node &n_fields = n_dset["fields"];
-    auto field_map = ho_domains->m_data_sets[i]->GetFieldMap();
+    auto field_map = ho_domains->m_data_sets[i]->get_field_map();
 
     for(auto it = field_map.begin(); it != field_map.end(); ++it)
     {
@@ -273,7 +342,7 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
       // extract field
       conduit::Node &n_field = n_fields[it->first];;
       std::cout<<"IN\n";
-      mfem::ConduitDataCollection::GridFunctionToBlueprintField(lo_gf, n_field);
+      GridFunctionToBlueprintField(lo_gf, n_field);
       std::cout<<"OUT\n";
       // all supported grid functions coming out of mfem end up being associtated with vertices
       n_field["association"] = "vertex";
@@ -296,7 +365,54 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
   //output.print();
 }
 
+void
+MFEMDataAdapter::GridFunctionToBlueprintField(mfem::GridFunction *gf,
+                                              Node &n_field,
+                                              const std::string &main_topology_name)
+{
+   n_field["basis"] = gf->FESpace()->FEColl()->Name();
+   n_field["topology"] = main_topology_name;
+
+   int vdim  = gf->FESpace()->GetVDim();
+   int ndofs = gf->FESpace()->GetNDofs();
+
+   if (vdim == 1) // scalar case
+   {
+      //n_field["values"].set_external(gf->GetData(),
+      //                               ndofs);
+      n_field["values"].set(gf->GetData(),
+                            ndofs);
+   }
+   else // vector case
+   {
+      // deal with striding of all components
+
+     mfem::Ordering::Type ordering = gf->FESpace()->GetOrdering();
+
+      int entry_stride = (ordering == mfem::Ordering::byNODES ? 1 : vdim);
+      int vdim_stride  = (ordering == mfem::Ordering::byNODES ? ndofs : 1);
+
+      index_t offset = 0;
+      index_t stride = sizeof(double) * entry_stride;
+
+      for (int d = 0;  d < vdim; d++)
+      {
+         std::ostringstream oss;
+         oss << "v" << d;
+         std::string comp_name = oss.str();
+         //n_field["values"][comp_name].set_external(gf->GetData(),
+         //                                          ndofs,
+         //                                          offset,
+         //                                          stride);
+         n_field["values"][comp_name].set(gf->GetData(),
+                                          ndofs,
+                                          offset,
+                                          stride);
+         offset +=  sizeof(double) * vdim_stride;
+      }
+   }
+
+}
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
-//-----------------------------------------------------------------------------
