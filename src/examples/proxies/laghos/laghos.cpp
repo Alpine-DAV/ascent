@@ -550,9 +550,9 @@ int main(int argc, char *argv[])
             std::cout<<"PUBLISHED\n";
 
             conduit::Node scenes;
-            //scenes["s1/plots/p1/type"]         = "pseudocolor";
-            //scenes["s1/plots/p1/params/field"] = "density";
-            scenes["s1/plots/p1/type"]         = "mesh";
+            scenes["s1/plots/p1/type"]         = "pseudocolor";
+            scenes["s1/plots/p1/params/field"] = "density";
+            //scenes["s1/plots/p1/type"]         = "mesh";
 
             conduit::Node actions;
             conduit::Node &add_plots = actions.append();

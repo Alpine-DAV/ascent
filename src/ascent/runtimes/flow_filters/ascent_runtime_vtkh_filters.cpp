@@ -700,6 +700,7 @@ EnsureVTKH::declare_interface(Node &i)
 void 
 EnsureVTKH::execute()
 {
+    bool zero_copy = false;
     if(input(0).check_type<Node>())
     {
         // convert from blueprint to vtk-h
@@ -716,14 +717,14 @@ EnsureVTKH::execute()
           // TODO how do we handle this???
           conduit::Node *lo_dset = new conduit::Node;
           MFEMDataAdapter::Linearize(domains, *lo_dset, ref_level);
-          lo_dset->print();
-          res = VTKHDataAdapter::BlueprintToVTKHDataSet(*lo_dset);
+          //lo_dset->print();
+          res = VTKHDataAdapter::BlueprintToVTKHDataSet(*lo_dset, zero_copy);
           //res->PrintSummary(std::cout);
           //delete domains;
         }
         else
         {
-          res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
+          res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, zero_copy);
         }
 
         set_output<vtkh::DataSet>(res);
@@ -1850,9 +1851,10 @@ EnsureVTKM::execute()
     }
     else if(input(0).check_type<Node>())
     {
+        bool zero_copy = false;
         // convert from conduit to vtkm
         const Node *n_input = input<Node>(0);
-        vtkm::cont::DataSet  *res = VTKHDataAdapter::BlueprintToVTKmDataSet(*n_input);
+        vtkm::cont::DataSet  *res = VTKHDataAdapter::BlueprintToVTKmDataSet(*n_input, zero_copy);
         set_output<vtkm::cont::DataSet>(res);
     }
     else

@@ -244,79 +244,11 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
     // refine the mesh and convert to blueprint
     mfem::Mesh *lo_mesh = new mfem::Mesh(ho_mesh, refinement, mfem::BasisType::GaussLobatto); 
     mfem::ConduitDataCollection::MeshToBlueprintMesh (lo_mesh, n_dset);
-    std::ofstream lovtk("low.vtk"); 
-    lo_mesh->PrintVTK(lovtk);
-    //mfem::ConduitDataCollection::MeshToBlueprintMesh (ho_mesh, n_dset);
+    //n_dset.print();
+    //std::ofstream lovtk("low.vtk"); 
+    //lo_mesh->PrintVTK(lovtk);
     
     int conn_size = n_dset["topologies/main/elements/connectivity"].dtype().number_of_elements();
-    std::cout<<"conn size() "<<conn_size<<"\n";
-    int *conn = n_dset["topologies/main/elements/connectivity"].as_int32_ptr();
-
-    const mfem::Element *el = lo_mesh->GetElement(0);
-    const int *verts = el->GetVertices();
-    std::cout<<" ** ";
-    for(int x = 0; x < 8; x++)
-    {
-      std::cout<<verts[x]<<" ";
-      for(int y = 0; y < 3; y++) 
-      {
-        std::cout<<lo_mesh->GetVertex(verts[x])[0]<<" ";
-        std::cout<<lo_mesh->GetVertex(verts[x])[1]<<" ";
-        std::cout<<lo_mesh->GetVertex(verts[x])[2]<<"\n";
-      }
-    }
-    std::cout<<"\n";
-
-    std::map<int,int> hash;
-    for(int x = 0; x < conn_size; x++)
-    {
-      hash[conn[x]]++;
-    }
-
-    int first[8];
-    for(int x = 0; x < conn_size; x++)
-    {
-      if(x < 8) first[x] = conn[x];
-      hash[conn[x]]++;
-    }
-
-    int max = 0;
-    int min = 100;
-    int el_id = 0;
-    for(auto it = hash.begin(); it != hash.end(); it++)
-    {
-      if(it->second > max) 
-      {
-        el_id = it->first;
-        max = it->second;
-      }
-      if(it->second < min) 
-      {
-        min = it->second;
-      }
-    }
-    std::cout<<"Max count "<<max<<" conn "<<el_id<<"\n";
-    std::cout<<"Min count "<<min<<"\n";
-    double *cx = n_dset["coordsets/coords/values/x"].as_float64_ptr();
-    double *cy = n_dset["coordsets/coords/values/y"].as_float64_ptr();
-    double *cz = n_dset["coordsets/coords/values/z"].as_float64_ptr();
-    std::cout<<"X0 "<<cx[0]<<"\n";
-    std::cout<<"y0 "<<cy[0]<<"\n";
-    std::cout<<"z0 "<<cz[0]<<"\n";
-    std::ofstream obj("output.obj");
-    for(int x = 0; x < 8; x++)
-    {
-      obj<<"v "<<cx[first[x]]<<" "<<cy[first[x]]<<" "<<cz[first[x]]<<"\n";
-      std::cout<<" "<<first[x];
-    }
-    std::cout<<"\n";
-    obj<<"f 1 2 6 5\n";
-    obj<<"f 1 2 3 4\n";
-    obj<<"f 2 3 7 6\n";
-    obj<<"f 5 6 7 8\n";
-    obj<<"f 3 4 8 7\n";
-    obj<<"f 1 5 8 4\n";
-    obj.close();
     //int dims = ho_mesh->Dimension();
 
     conduit::Node &n_fields = n_dset["fields"];
@@ -340,7 +272,9 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
       hi_to_lo.Ptr()->Mult(*ho_gf, *lo_gf);
       // extract field
       conduit::Node &n_field = n_fields[it->first];;
+      std::cout<<"IN\n";
       mfem::ConduitDataCollection::GridFunctionToBlueprintField(lo_gf, n_field);
+      std::cout<<"OUT\n";
       // all supported grid functions coming out of mfem end up being associtated with vertices
       n_field["association"] = "vertex";
       
