@@ -72,6 +72,10 @@
 #include <ascent_vtkh_data_adapter.hpp>
 #endif
 
+#if defined(ASCENT_MFEM_ENABLED)
+#include <ascent_mfem_data_adapter.hpp>
+#endif
+
 using namespace conduit;
 using namespace std;
 
@@ -155,13 +159,119 @@ BlueprintVerify::execute()
                                    *n_input,
                                    v_info))
     {
+        n_input->print();
+        std::cout<<"PRINTING\n";
+        v_info.print();
+        std::cout<<"printed\n";
         ASCENT_ERROR("blueprint verify failed for protocol"
                       << protocol << std::endl
                       << "details:" << std::endl
-                      << v_info.to_json());
+                      << v_info["message"].as_string());
+                      //<< v_info.to_json());
     }
     
     set_output<Node>(n_input);
+}
+
+
+//-----------------------------------------------------------------------------
+EnsureLowOrder::EnsureLowOrder()
+:Filter(),
+ m_refinement_level(2)
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+EnsureLowOrder::~EnsureLowOrder()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+EnsureLowOrder::declare_interface(Node &i)
+
+{
+    i["type_name"]   = "ensure_low_order";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+bool 
+EnsureLowOrder::is_high_order(const conduit::Node &doms)
+{
+  // treat everything as a multi-domain data set 
+  const int num_domains = doms.number_of_children();
+  for(int i = 0; i < num_domains; ++i)
+  {
+    const conduit::Node &dom = doms.child(i);      
+    if(dom.has_path("fields"))
+    {
+      const conduit::Node &fields = dom["fields"];
+      const int num_fields= fields.number_of_children();
+      for(int t = 0; t < num_fields; ++t)
+      {
+        const conduit::Node &field = fields.child(i);      
+        if(field.has_path("basis")) return true;
+      }
+      
+    }
+  }
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool
+EnsureLowOrder::verify_params(const conduit::Node &params,
+                               conduit::Node &info)
+{
+    info.reset();   
+    bool res = true;
+    
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+EnsureLowOrder::execute()
+{
+
+    std::cout<<"ENSURE LOW\n"; 
+    if(!input(0).check_type<Node>())
+    {
+        ASCENT_ERROR("ensure_low order input must be a conduit node");
+    }
+
+    Node *n_input = input<Node>(0);
+
+    if(is_high_order(*n_input))
+    {
+#if defined(ASCENT_MFEM_ENABLED)
+      std::cout<<"CONVERTING high order\n"; 
+      MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
+      conduit::Node *lo_dset = new conduit::Node;
+      MFEMDataAdapter::Linearize(domains, *lo_dset, m_refinement_level);
+      //lo_dset->print();
+      delete domains;
+      set_output<Node>(lo_dset);
+
+      // add a second registry entry for the output so it can be zero copied.
+      const std::string key = "low_mesh_key";
+      graph().workspace().registry().add(key, lo_dset, 1);
+      //std::cout<<graph().workspace().registry().to_json();
+#else
+      ASCENT_ERROR("Unable to convert high order mesh when MFEM is not enabled");
+#endif
+    }
+    else
+    {
+      std::cout<<"PASS THROUGH\n"; 
+      // already low order just pass it through
+      set_output<Node>(n_input);
+    }
+
 }
 
 

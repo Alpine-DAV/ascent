@@ -80,7 +80,7 @@
 
 
 #cmakedefine ASCENT_ADIOS_ENABLED     "@ADIOS_FOUND@"
-
+#cmakedefine ASCENT_MFEM_ENABLED     "@ADIOS_FOUND@"
 #cmakedefine ASCENT_HDF5_ENABLED      "@HDF5_FOUND@"
 
 //-----------------------------------------------------------------------------

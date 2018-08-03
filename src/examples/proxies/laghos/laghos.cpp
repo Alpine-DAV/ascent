@@ -562,6 +562,7 @@ int main(int argc, char *argv[])
             execute["action"] = "execute";
 
             ascent.execute(actions);
+            ascent.close();
 
          }
 

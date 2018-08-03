@@ -239,11 +239,25 @@ AscentRuntime::Cleanup()
 void
 AscentRuntime::Publish(const conduit::Node &data)
 {
+    //data.print();
     // create our own tree, with all data zero copied.
-    conduit::Node multi_dom;
-    blueprint::mesh::to_multi_domain(data, multi_dom);
-    m_data.set_external(multi_dom);
+    
+    blueprint::mesh::to_multi_domain(data, m_data);
+    //std::cout<<"MULTI "<<blueprint::mesh::is_multi_domain(m_data)<<"\n";
+    //m_data.set_external(data);
+    conduit::Node info;
+    bool valid = conduit::blueprint::mesh::verify(m_data, info);
+    
+    if(!valid) std::cout<<info["message"].as_string();
+    else std::cout<<"VALID\n";
+
+   // if(blueprint::mesh::is_mulit_domain(m_data))
+   // {
+   //   
+   // }
+
     EnsureDomainIds();
+   // exit(0);
 }
 
 //-----------------------------------------------------------------------------
@@ -257,7 +271,7 @@ AscentRuntime::EnsureDomainIds()
   
     // get the number of domains and check for id consistency
     num_domains = m_data.number_of_children();
-
+    std::cout<<"Number of domains "<<num_domains<<"\n";
     for(int i = 0; i < num_domains; ++i)
     {
       const conduit::Node &dom = m_data.child(i);
@@ -359,11 +373,22 @@ AscentRuntime::CreateDefaultFilters()
     w.graph().connect("source",
                       "verify",
                       0);        // default port
-
-    w.graph().add_filter("ensure_vtkh",
-                         "vtkh_data");
-
+    // conver high order MFEM meshes to low order
+    w.graph().add_filter("ensure_low_order", 
+                         "low_order",
+                         params);
+    
     w.graph().connect("verify",
+                      "low_order",
+                      0);        // default port
+
+    conduit::Node vtkh_params;
+    vtkh_params["zero_copy"] = "true";
+    w.graph().add_filter("ensure_vtkh",
+                         "vtkh_data",
+                         vtkh_params);
+
+    w.graph().connect("low_order",
                       "vtkh_data",
                       0);        // default port
 

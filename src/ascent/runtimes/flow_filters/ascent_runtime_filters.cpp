@@ -102,6 +102,7 @@ void
 register_builtin()
 {
     Workspace::register_filter_type<BlueprintVerify>(); 
+    Workspace::register_filter_type<EnsureLowOrder>(); 
     Workspace::register_filter_type<RelayIOSave>();
     Workspace::register_filter_type<RelayIOLoad>();
     

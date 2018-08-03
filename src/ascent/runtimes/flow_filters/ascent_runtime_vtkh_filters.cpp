@@ -89,7 +89,6 @@
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
-#include <ascent_mfem_data_adapter.hpp>
 
 #endif
 
@@ -701,32 +700,22 @@ void
 EnsureVTKH::execute()
 {
     bool zero_copy = false;
+    if(params().has_path("zero_copy"))
+    {
+      if(params()["zero_copy"].as_string() == "true")
+      {
+        zero_copy = true;
+        std::cout<<"ZERO )))))))))))\n";
+      }
+    }
+
     if(input(0).check_type<Node>())
     {
         // convert from blueprint to vtk-h
         const Node *n_input = input<Node>(0);
-        bool high_order = MFEMDataAdapter::IsHighOrder(*n_input);
 
         vtkh::DataSet *res = nullptr;;
-        if(high_order)
-        {
-          std::cout<<"***************************\n"; 
-          //n_input->print(); exit(0);
-          const int ref_level = 2;
-          MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
-          // TODO how do we handle this???
-          conduit::Node *lo_dset = new conduit::Node;
-          MFEMDataAdapter::Linearize(domains, *lo_dset, ref_level);
-          //lo_dset->print();
-          res = VTKHDataAdapter::BlueprintToVTKHDataSet(*lo_dset, zero_copy);
-          delete lo_dset; 
-          delete domains;
-          //res->PrintSummary(std::cout);
-        }
-        else
-        {
-          res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, zero_copy);
-        }
+        res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, zero_copy);
 
         set_output<vtkh::DataSet>(res);
     }

@@ -57,12 +57,6 @@
 #include <conduit.hpp>
 #include <mfem.hpp>
 
-namespace mfem
-{
-  class Mesh;
-  class ConduitDataCollection;
-}
-
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -96,6 +90,13 @@ struct MFEMDomains
 {
   std::vector<MFEMDataSet*> m_data_sets;
   std::vector<int> m_domain_ids;
+  ~MFEMDomains()
+  {
+    for(int i = 0; i < m_data_sets.size(); ++i)
+    {
+      delete m_data_sets[i];
+    }
+  }
 };
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -122,6 +123,14 @@ public:
     static void GridFunctionToBlueprintField(mfem::GridFunction *gf,
                                             conduit::Node &out,
                                             const std::string &main_topology_name = "main");
+    static void MeshToBlueprintMesh(mfem::Mesh *m,
+                                    conduit::Node &out,
+                                    const std::string &coordset_name = "coords",
+                                    const std::string &main_topology_name = "main",
+                                    const std::string &boundary_topology_name = "boundary"); 
+
+    static std::string ElementTypeToShapeName(mfem::Element::Type element_type);
+
 };
 
 //-----------------------------------------------------------------------------

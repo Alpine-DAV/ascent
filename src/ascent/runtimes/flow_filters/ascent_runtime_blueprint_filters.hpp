@@ -95,6 +95,24 @@ public:
 };
 
 
+//-----------------------------------------------------------------------------
+class EnsureLowOrder : public ::flow::Filter
+{
+public:
+    EnsureLowOrder();
+   ~EnsureLowOrder();
+
+    bool is_high_order(const conduit::Node &data_set);
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+protected:
+    int m_refinement_level;
+};
+
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
