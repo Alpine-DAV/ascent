@@ -212,7 +212,7 @@ EnsureLowOrder::is_high_order(const conduit::Node &doms)
       const int num_fields= fields.number_of_children();
       for(int t = 0; t < num_fields; ++t)
       {
-        const conduit::Node &field = fields.child(i);      
+        const conduit::Node &field = fields.child(t);      
         if(field.has_path("basis")) return true;
       }
       
@@ -249,7 +249,6 @@ EnsureLowOrder::execute()
     if(is_high_order(*n_input))
     {
 #if defined(ASCENT_MFEM_ENABLED)
-      std::cout<<"CONVERTING high order\n"; 
       MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
       conduit::Node *lo_dset = new conduit::Node;
       MFEMDataAdapter::Linearize(domains, *lo_dset, m_refinement_level);

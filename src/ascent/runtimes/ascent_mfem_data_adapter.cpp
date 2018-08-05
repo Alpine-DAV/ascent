@@ -267,7 +267,7 @@ MFEMDataAdapter::IsHighOrder(const conduit::Node &n)
       const int num_fields= fields.number_of_children();
       for(int t = 0; t < num_fields; ++t)
       {
-        const conduit::Node &field = fields.child(i);      
+        const conduit::Node &field = fields.child(t);      
         if(field.has_path("basis")) return true;
       }
       

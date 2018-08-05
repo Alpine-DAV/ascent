@@ -248,8 +248,6 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   int num_vals = node.dtype().number_of_elements();
 
 
-  if(zero_copy) std::cout<<"ZERO COPY field "<<field_name<<"\n";
-  else std::cout<<"COPY field "<<field_name<<"\n";
   const T *values_ptr = node.value();
 
   vtkm::cont::Field field;
@@ -271,7 +269,6 @@ vtkm::cont::Field GetField(const conduit::Node &node,
                                    copy);
   }
 
-  std::cout<<"returning field\n";
   return field;
 }
 
@@ -427,6 +424,8 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
 
             // skip vector fields for now, we need to add
             // more logic to AddField
+            const int num_children = n_field["values"].number_of_children();
+
             if(n_field["values"].number_of_children() == 0 )
             {
             
@@ -971,9 +970,6 @@ VTKHDataAdapter::AddField(const std::string &field_name,
                           bool zero_copy)                 // attempt to zero copy
 {
     // TODO: how do we deal with vector valued fields?, these will be mcarrays
-  //std::cout<<"&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n";
-  //  n_field.print();
-  //std::cout<<"============================\n";
 
     string assoc_str = n_field["association"].as_string();
 
@@ -1003,7 +999,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
     ASCENT_INFO("number of field values: " << num_vals);
     ASCENT_INFO("number of vertices: "     << nverts);
     ASCENT_INFO("number of elements: "     << neles);
-
+    std::cout<<"***** field name "<<field_name<<"\n";
     try
     {
         bool supported_type = false;

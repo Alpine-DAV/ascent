@@ -547,7 +547,6 @@ int main(int argc, char *argv[])
             ascent_opts["mpi_comm"] = MPI_Comm_c2f(pmesh->GetComm());
             ascent.open(ascent_opts);
             ascent.publish(n_dset);
-            std::cout<<"PUBLISHED\n";
 
             conduit::Node scenes;
             scenes["s1/plots/p1/type"]         = "pseudocolor";
