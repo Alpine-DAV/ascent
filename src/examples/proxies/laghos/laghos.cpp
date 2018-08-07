@@ -58,12 +58,14 @@
 
 #include <ascent.hpp>
 
+// Choice for the problem setup.
+int problem;
+
+
 using namespace std;
 using namespace mfem;
 using namespace mfem::hydrodynamics;
 
-// Choice for the problem setup.
-int problem;
 
 void display_banner(ostream & os);
 
@@ -623,6 +625,17 @@ int main(int argc, char *argv[])
    return 0;
 }
 
+void display_banner(ostream & os)
+{
+   os << endl
+      << "       __                __                 " << endl
+      << "      / /   ____  ____  / /_  ____  _____   " << endl
+      << "     / /   / __ `/ __ `/ __ \\/ __ \\/ ___/ " << endl
+      << "    / /___/ /_/ / /_/ / / / / /_/ (__  )    " << endl
+      << "   /_____/\\__,_/\\__, /_/ /_/\\____/____/  " << endl
+      << "               /____/                       " << endl << endl;
+}
+
 namespace mfem
 {
 
@@ -708,14 +721,3 @@ double e0(const Vector &x)
 } // namespace hydrodynamics
 
 } // namespace mfem
-
-void display_banner(ostream & os)
-{
-   os << endl
-      << "       __                __                 " << endl
-      << "      / /   ____  ____  / /_  ____  _____   " << endl
-      << "     / /   / __ `/ __ `/ __ \\/ __ \\/ ___/ " << endl
-      << "    / /___/ /_/ / /_/ / / / / /_/ (__  )    " << endl
-      << "   /_____/\\__,_/\\__, /_/ /_/\\____/____/  " << endl
-      << "               /____/                       " << endl << endl;
-}
