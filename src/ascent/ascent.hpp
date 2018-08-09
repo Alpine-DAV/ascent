@@ -92,9 +92,10 @@ public:
 
 private:
     
-    Runtime *m_runtime;
-    bool     m_verbose_msgs;
-    bool     m_forward_exceptions;
+    Runtime    *m_runtime;
+    bool        m_verbose_msgs;
+    bool        m_forward_exceptions;
+    std::string m_actions_file;
 };
 
 

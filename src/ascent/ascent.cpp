@@ -80,7 +80,8 @@ quiet_handler(const std::string &,
 Ascent::Ascent()
 : m_runtime(NULL),
   m_verbose_msgs(false),
-  m_forward_exceptions(false)
+  m_forward_exceptions(false),
+  m_actions_file("ascent_actions.json")
 {
 }
 
@@ -152,6 +153,12 @@ Ascent::open(const conduit::Node &options)
             {
                 m_forward_exceptions = true;
             }
+        }
+
+        if(options.has_path("actions_file") && 
+           options["actions_file"].dtype().is_string() )
+        {
+            m_actions_file = options["actions_file"].as_string();
         }
         
         // don't print info messages unless we are using verbose
@@ -275,7 +282,7 @@ Ascent::execute(const conduit::Node &actions)
         if(m_runtime != NULL)
         {
             Node processed_actions(actions);
-            CheckForJSONFile("ascent_actions.json", processed_actions);
+            CheckForJSONFile(m_actions_file, processed_actions);
             m_runtime->Execute(processed_actions);
         }
         else
