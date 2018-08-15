@@ -226,7 +226,16 @@ EnsureLowOrder::verify_params(const conduit::Node &params,
 {
     info.reset();   
     bool res = true;
-    
+    if(params.has_path("refinement_level"))
+    {
+      m_refinement_level = params["refinement_level"].to_int32();
+      if(m_refinement_level < 2)
+      {
+        res = false;
+        ASCENT_ERROR("EnsureLowOrder: optional param 'refinement_level' must "<<
+                     "be larger than 1. Current value "<<m_refinement_level);
+      }
+    }
     return res;
 }
 
@@ -249,7 +258,6 @@ EnsureLowOrder::execute()
       MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
       conduit::Node *lo_dset = new conduit::Node;
       MFEMDataAdapter::Linearize(domains, *lo_dset, m_refinement_level);
-      //lo_dset->print();
       delete domains;
       set_output<Node>(lo_dset);
 

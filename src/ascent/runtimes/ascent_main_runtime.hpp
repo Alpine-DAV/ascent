@@ -94,6 +94,7 @@ private:
     conduit::Node     m_info;
 
     WebInterface      m_web_interface;
+    int               m_refinement_level;
 
     void              ResetInfo();
 

@@ -19,6 +19,15 @@ set(laghos_thirdparty_deps mfem)
 
 # copy over the data/files
 file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+# copy example laucnh scripts
+file(COPY run_taylor_green_2d.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY run_taylor_green_3d.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY run_tripple_point_2d.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY run_tripple_point_3d.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY run_sedov_2d.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY run_sedov_3d.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+# copy example laucnh scripts
+file(COPY ascent_options.json DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # mfem does not build with both serial and mpi
 if(MPI_FOUND AND ENABLE_MPI)

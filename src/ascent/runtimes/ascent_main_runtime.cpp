@@ -97,7 +97,8 @@ namespace ascent
 
 //-----------------------------------------------------------------------------
 AscentRuntime::AscentRuntime()
-:Runtime()
+:Runtime(),
+ m_refinement_level(2) // default refinement level for high order meshes
 {
     flow::filters::register_builtin();
     ResetInfo();
@@ -167,8 +168,18 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 #endif
 
+
+#ifdef ASCENT_MFEM_ENABLED
+    if(options.has_path("refinement_level"))
+    {
+      m_refinement_level = options["refinement_level"].to_int32();
+    }
+#endif
+
     m_runtime_options = options;
     
+
+
     // standard flow filters
     flow::filters::register_builtin();
     // filters for ascent flow runtime.
@@ -356,9 +367,11 @@ AscentRuntime::CreateDefaultFilters()
                       "verify",
                       0);        // default port
     // conver high order MFEM meshes to low order
+    conduit::Node low_params; 
+    low_params["refinement_level"] = m_refinement_level;
     w.graph().add_filter("ensure_low_order", 
                          "low_order",
-                         params);
+                         low_params);
     
     w.graph().connect("verify",
                       "low_order",
