@@ -63,7 +63,8 @@ using namespace conduit;
 using ascent::Ascent;
 
 std::string py_script = "\n"
-"v = ascent_data()\n"
+"# Treat everything is mutli domian so grab the state of the first\n"
+"v = ascent_data().child(0)\n"
 "print(v['state'])\n"
 "\n";
 
@@ -118,7 +119,8 @@ TEST(ascent_runtime, test_python_script_extract)
 std::string py_script_inception = "\n"
 "import conduit\n"
 "import ascent\n"
-"n_mesh = ascent_data()\n"
+"# we treat everything as a multi_domain in ascent so grab child 0\n"
+"n_mesh = ascent_data().child(0)\n"
 "a = ascent.Ascent()\n"
 "a.open()\n"
 "a.publish(n_mesh)\n"
