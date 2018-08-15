@@ -705,7 +705,6 @@ EnsureVTKH::execute()
       if(params()["zero_copy"].as_string() == "true")
       {
         zero_copy = true;
-        std::cout<<"ZERO )))))))))))\n";
       }
     }
 

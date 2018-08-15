@@ -74,7 +74,7 @@ std::string py_script = "\n"
 "comm = MPI.Comm.f2py(ascent_mpi_comm_id())\n"
 "print('COMM SIZE = {}'.format(comm.Get_size()))\n"
 "\n";
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_runtime, test_pyhton_script_extract_src)
 {
@@ -139,7 +139,6 @@ TEST(ascent_mpi_runtime, test_pyhton_script_extract_src)
     ascent.close();
 
 }
-
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_runtime, test_python_script_extract_file)
 {
@@ -230,7 +229,7 @@ TEST(ascent_mpi_runtime, test_python_script_extract_file)
     ascent.close();
    
 }
-
+#endif
 // This demos using the ascent python api inside of ascent ... 
 std::string py_script_inception = "\n"
 "import conduit\n"

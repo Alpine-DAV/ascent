@@ -160,9 +160,7 @@ BlueprintVerify::execute()
                                    v_info))
     {
         n_input->print();
-        std::cout<<"PRINTING\n";
         v_info.print();
-        std::cout<<"printed\n";
         ASCENT_ERROR("blueprint verify failed for protocol"
                       << protocol << std::endl
                       << "details:" << std::endl
@@ -238,7 +236,6 @@ void
 EnsureLowOrder::execute()
 {
 
-    std::cout<<"ENSURE LOW\n"; 
     if(!input(0).check_type<Node>())
     {
         ASCENT_ERROR("ensure_low order input must be a conduit node");
@@ -259,14 +256,12 @@ EnsureLowOrder::execute()
       // add a second registry entry for the output so it can be zero copied.
       const std::string key = "low_mesh_key";
       graph().workspace().registry().add(key, lo_dset, 1);
-      //std::cout<<graph().workspace().registry().to_json();
 #else
       ASCENT_ERROR("Unable to convert high order mesh when MFEM is not enabled");
 #endif
     }
     else
     {
-      std::cout<<"PASS THROUGH\n"; 
       // already low order just pass it through
       set_output<Node>(n_input);
     }

@@ -422,24 +422,23 @@ int main(int argc, char *argv[])
    }
 
    // Save data for VisIt visualization.
-   VisItDataCollection visit_dc(basename, pmesh);
-   ConduitDataCollection conduit_dc(basename, pmesh);
-   conduit_dc.SetProtocol("conduit_bin");
+   //VisItDataCollection visit_dc(basename, pmesh);
+
+   ascent::Ascent ascent;
+
    if (visit)
    {
-      //conduit_dc.RegisterField("Density",  &rho_gf);
-      //conduit_dc.RegisterField("Velocity", &v_gf);
-      //conduit_dc.RegisterField("Specific Internal Energy", &e_gf);
-      //conduit_dc.SetCycle(0);
-      //conduit_dc.SetTime(0.0);
-      //conduit_dc.Save();
 
-      visit_dc.RegisterField("Density",  &rho_gf);
-      visit_dc.RegisterField("Velocity", &v_gf);
-      visit_dc.RegisterField("Specific Internal Energy", &e_gf);
-      visit_dc.SetCycle(0);
-      visit_dc.SetTime(0.0);
-      visit_dc.Save();
+      conduit::Node ascent_opts;
+      ascent_opts["mpi_comm"] = MPI_Comm_c2f(pmesh->GetComm());
+      ascent.open(ascent_opts);
+
+      //visit_dc.RegisterField("Density",  &rho_gf);
+      //visit_dc.RegisterField("Velocity", &v_gf);
+      //visit_dc.RegisterField("Specific Internal Energy", &e_gf);
+      //visit_dc.SetCycle(0);
+      //visit_dc.SetTime(0.0);
+      //visit_dc.Save();
    }
 
    // Perform time-integration (looping over the time iterations, ti, with a
@@ -528,13 +527,10 @@ int main(int argc, char *argv[])
 
          if (visit)
          {
-            //conduit_dc.SetCycle(ti);
-            //conduit_dc.SetTime(t);
-            //conduit_dc.Save();
             
-            visit_dc.SetCycle(ti);
-            visit_dc.SetTime(t);
-            visit_dc.Save();
+            //visit_dc.SetCycle(ti);
+            //visit_dc.SetTime(t);
+            //visit_dc.Save();
 
             conduit::Node n_dset;
             ConduitDataCollection::MeshToBlueprintMesh(pmesh,n_dset);
@@ -544,10 +540,6 @@ int main(int argc, char *argv[])
             n_dset["state/cycle"] = ti;
             n_dset["state/time"] = t;
   
-            ascent::Ascent ascent;
-            conduit::Node ascent_opts;
-            ascent_opts["mpi_comm"] = MPI_Comm_c2f(pmesh->GetComm());
-            ascent.open(ascent_opts);
             ascent.publish(n_dset);
 
             conduit::Node scenes;
@@ -562,8 +554,10 @@ int main(int argc, char *argv[])
             conduit::Node &execute = actions.append();
             execute["action"] = "execute";
 
+            conduit::Node &reset = actions.append();
+            reset["action"] = "reset";
+            
             ascent.execute(actions);
-            ascent.close();
 
          }
 
@@ -617,6 +611,10 @@ int main(int argc, char *argv[])
       vis_e.close();
    }
 
+   if(visit)
+   {
+      ascent.close();
+   }
    // Free the used memory.
    delete ode_solver;
    delete pmesh;

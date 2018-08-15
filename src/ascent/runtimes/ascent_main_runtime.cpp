@@ -303,8 +303,6 @@ AscentRuntime::EnsureDomainIds()
 #endif
       
     bool consistent_ids = (has_ids || no_ids);
-    std::cout<<"Has ids = "<<has_ids<<"\n"; 
-    std::cout<<"no ids = "<<no_ids<<"\n"; 
     if(!consistent_ids)
     {
       ASCENT_ERROR("Inconsistent domain ids: all domains must either have an id "

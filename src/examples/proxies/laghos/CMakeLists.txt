@@ -29,7 +29,7 @@ blt_add_executable(
     NAME        laghos_ser
     HEADERS     ${laghos_headers}
     SOURCES     ${laghos_sources} 
-    DEPENDS_ON  ${laghos_thirdparty_deps}
+    DEPENDS_ON  ${laghos_thirdparty_deps} ascent
     OUTPUT_DIR  ${CMAKE_CURRENT_BINARY_DIR})
 
 

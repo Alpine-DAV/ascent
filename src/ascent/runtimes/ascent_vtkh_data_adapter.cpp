@@ -999,7 +999,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
     ASCENT_INFO("number of field values: " << num_vals);
     ASCENT_INFO("number of vertices: "     << nverts);
     ASCENT_INFO("number of elements: "     << neles);
-    std::cout<<"***** field name "<<field_name<<"\n";
+
     try
     {
         bool supported_type = false;

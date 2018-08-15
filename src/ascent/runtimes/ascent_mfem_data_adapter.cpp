@@ -178,9 +178,6 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
       mesh = mfem::ConduitDataCollection::BlueprintMeshToMesh(dom, topo_name, zero_copy);
       dset->set_mesh(mesh);
 
-      //dom.print();
-      std::cout<<"MESH "<<mesh->GetNE()<<"\n";
-
       if(node.has_path("state/cycle"))
       {
         int cycle = node["state/cycle"].to_int32();
@@ -341,9 +338,8 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
       hi_to_lo.Ptr()->Mult(*ho_gf, *lo_gf);
       // extract field
       conduit::Node &n_field = n_fields[it->first];;
-      std::cout<<"IN\n";
+
       GridFunctionToBlueprintField(lo_gf, n_field);
-      std::cout<<"OUT\n";
       // all supported grid functions coming out of mfem end up being associtated with vertices
       n_field["association"] = "vertex";
       
