@@ -61,5 +61,5 @@ mpiexec -n 8 build-debug/examples/proxies/lulesh2.0.3/lulesh_par -p -i 5
 
 
 if [ -d "build-debug/examples/proxies/laghos" ]; then
-  mpiexec -n 8 build-debug/examples/proxies/laghos/laghos_mpi -m build-debug/examples/proxies/laghos/data/square01_quad.mesh
+  mpiexec -n 8 build-debug/examples/proxies/laghos/laghos_mpi -m build-debug/examples/proxies/laghos/data/square01_quad.mesh --visit
 fi
