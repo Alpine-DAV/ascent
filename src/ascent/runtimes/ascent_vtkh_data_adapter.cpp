@@ -88,108 +88,226 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
+// -- begin detail:: --
+//-----------------------------------------------------------------------------
+namespace detail
+{
+
+template<typename T> 
+const T* GetNodePointer(const conduit::Node &node);
+
+template<> 
+const float64* GetNodePointer<float64>(const conduit::Node &node)
+{
+  return node.as_float64_ptr();
+}
+
+template<> 
+const float32* GetNodePointer<float32>(const conduit::Node &node)
+{
+  return node.as_float32_ptr();
+}
+
+template<typename T> 
+void CopyArray(vtkm::cont::ArrayHandle<T> &vtkm_handle, const T* vals_ptr, const int size, bool zero_copy)
+{
+  vtkm::CopyFlag copy = vtkm::CopyFlag::On; 
+  if(zero_copy) 
+  {
+    copy = vtkm::CopyFlag::Off;
+  }
+  
+  vtkm_handle = vtkm::cont::make_ArrayHandle(vals_ptr, size, copy);
+  //vtkm_handle.Allocate(size);
+  //T *t = vtkh::GetVTKMPointer(vtkm_handle);
+  //memcpy(t, vals_ptr, sizeof(T) * size);
+}
+
+template<typename T>
+vtkm::cont::CoordinateSystem 
+GetExplicitCoordinateSystem(const conduit::Node &n_coords, 
+                            const std::string name,
+                            int &ndims,
+                            bool zero_copy)
+{
+    int nverts = n_coords["values/x"].dtype().number_of_elements();
+    bool is_interleaved = blueprint::mcarray::is_interleaved(n_coords["values"]);
+
+    ndims = 2;
+    
+    const T* x_coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
+    const T* y_coords_ptr = GetNodePointer<T>(n_coords["values/y"]);
+    const T *z_coords_ptr = NULL;
+   
+    if(n_coords.has_path("values/z"))
+    {
+        ndims = 3;
+        z_coords_ptr = GetNodePointer<T>(n_coords["values/z"]);
+    }
+
+    if(!is_interleaved)
+    {
+      vtkm::cont::ArrayHandle<T> x_coords_handle;
+      vtkm::cont::ArrayHandle<T> y_coords_handle;
+      vtkm::cont::ArrayHandle<T> z_coords_handle;
+      
+      detail::CopyArray(x_coords_handle, x_coords_ptr, nverts, zero_copy);
+      detail::CopyArray(y_coords_handle, y_coords_ptr, nverts, zero_copy);
+
+      if(ndims == 3)
+      {
+        detail::CopyArray(z_coords_handle, z_coords_ptr, nverts, zero_copy);
+      }
+      else 
+      {
+          z_coords_handle.Allocate(nverts); 
+          // This does not get initialized to zero
+          T *z = vtkh::GetVTKMPointer(z_coords_handle);
+          memset(z, 0.0, nverts * sizeof(T));
+      }
+
+      return vtkm::cont::CoordinateSystem(name,
+                                          make_ArrayHandleCompositeVector(x_coords_handle,
+                                                                          y_coords_handle,
+                                                                          z_coords_handle));
+    }
+    else
+    {
+      // we have interleaved coordinates x0,y0,z0,x1,y1,z1...
+      const T* coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
+      vtkm::cont::ArrayHandle<vtkm::Vec<T, 3>> coords; 
+      // we cannot zero copy 2D interleaved arrays into vtkm
+      if(ndims == 3 || true) // TODO: need way to detect 3d interleaved compendents that has 
+                             //       only has xy in conduit
+      {
+      
+        detail::CopyArray(coords, (vtkm::Vec<T,3>*)coords_ptr, nverts, zero_copy);
+      }
+      else 
+      {
+        // 2D interleaved array case
+        vtkm::cont::ArrayHandle<T> x_coords_handle;
+        vtkm::cont::ArrayHandle<T> y_coords_handle;
+        vtkm::cont::ArrayHandle<T> z_coords_handle;
+
+        x_coords_handle.Allocate(nverts);
+        y_coords_handle.Allocate(nverts);
+        z_coords_handle.Allocate(nverts);
+
+        auto x_portal = x_coords_handle.GetPortalControl();
+        auto y_portal = y_coords_handle.GetPortalControl();
+
+        const T* coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
+        
+        T *z = (T*) vtkh::GetVTKMPointer(z_coords_handle);
+        memset(z, 0.0, nverts * sizeof(T));
+
+        for(int i = 0; i < nverts; ++i)
+        {
+          x_portal.Set(i, coords_ptr[i*2+0]);
+          y_portal.Set(i, coords_ptr[i*2+1]);
+        }
+
+        return vtkm::cont::CoordinateSystem(name,
+                                            make_ArrayHandleCompositeVector(x_coords_handle,
+                                                                            y_coords_handle,
+                                                                            z_coords_handle));
+      }
+
+      return vtkm::cont::CoordinateSystem(name, coords);
+    }
+
+}
+
+template<typename T>
+vtkm::cont::Field GetField(const conduit::Node &node, 
+                           const std::string field_name, 
+                           const std::string assoc_str, 
+                           const std::string topo_str, 
+                           bool zero_copy)
+{
+  vtkm::CopyFlag copy = vtkm::CopyFlag::On; 
+  if(zero_copy) 
+  {
+    copy = vtkm::CopyFlag::Off;
+  }
+  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+  if(assoc_str == "vertex")
+  {
+    vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+  }
+  else if(assoc_str == "element")
+  {
+    vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+  }
+  else
+  {
+    ASCENT_ERROR("Cannot add field association "<<assoc_str);
+  }
+
+  int num_vals = node.dtype().number_of_elements();
+
+
+  const T *values_ptr = node.value();
+
+  vtkm::cont::Field field;
+  if(assoc_str == "vertex")
+  {
+    field = vtkm::cont::make_Field(field_name,
+                                   vtkm_assoc,
+                                   values_ptr,
+                                   num_vals,
+                                   copy);
+  }
+  else
+  {
+    field = vtkm::cont::make_Field(field_name,
+                                   vtkm_assoc,
+                                   topo_str,
+                                   values_ptr,
+                                   num_vals,
+                                   copy);
+  }
+
+  return field;
+}
+
+};
+//-----------------------------------------------------------------------------
+// -- end detail:: --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // VTKHDataAdapter public methods
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 vtkh::DataSet *
 VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
+                                        bool zero_copy,
                                         const std::string &topo_name)
 {       
  
     // treat everything as a multi-domain data set 
-    conduit::Node multi_dom; 
-    blueprint::mesh::to_multi_domain(node, multi_dom);
 
     vtkh::DataSet *res = new vtkh::DataSet;
 
-
     int num_domains = 0;
-    bool has_ids = true;
-    bool no_ids = true;
   
     // get the number of domains and check for id consistency
-    num_domains = multi_dom.number_of_children();
+    num_domains = node.number_of_children();
 
     for(int i = 0; i < num_domains; ++i)
     {
-      const conduit::Node &dom = multi_dom.child(i);
-      if(dom.has_path("state/domain_id"))
-      {
-        no_ids = false; 
-      }
-      else
-      {
-        has_ids = false;
-      }
-    }
-#ifdef ASCENT_MPI_ENABLED
-    int comm_size = vtkh::GetMPISize();
-    int *has_ids_array = new int[comm_size];
-    int *no_ids_array = new int[comm_size];
-    int boolean = has_ids ? 1 : 0; 
-    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-    MPI_Allgather(&boolean, 1, MPI_INT, has_ids_array, 1, MPI_INT, mpi_comm);
-    boolean = no_ids ? 1 : 0; 
-    MPI_Allgather(&boolean, 1, MPI_INT, no_ids_array, 1, MPI_INT, mpi_comm);
-
-    bool global_has_ids = true;
-    bool global_no_ids = false;
-    for(int i = 0; i < comm_size; ++i)
-    {
-      if(has_ids_array[i] == 0)
-      {
-        global_has_ids = false;
-      }
-      if(no_ids_array[i] == 1)
-      {
-        global_no_ids = true;
-      }
-    }
-    has_ids = global_has_ids;
-    no_ids = global_no_ids;
-    delete[] has_ids_array;
-    delete[] no_ids_array;
-#endif
-      
-    bool consistent_ids = (has_ids || no_ids);
-     
-    if(!consistent_ids)
-    {
-      ASCENT_ERROR("Inconsistent domain ids: all domains must either have an id "
-                  <<"or all domains do not have an id");
-    }
-
-    int domain_offset = 0;
-#ifdef ASCENT_MPI_ENABLED
-    int *domains_per_rank = new int[comm_size];
-    int rank = vtkh::GetMPIRank();
-    MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
-    for(int i = 0; i < rank; ++i)
-    {
-      domain_offset += domains_per_rank[i];
-    }
-    delete[] domains_per_rank;  
-#endif
-    for(int i = 0; i < num_domains; ++i)
-    {
-      const conduit::Node &dom = multi_dom.child(i);      
+      const conduit::Node &dom = node.child(i);      
       vtkm::cont::DataSet *dset = VTKHDataAdapter::BlueprintToVTKmDataSet(dom,
+                                                                          zero_copy,
                                                                           topo_name);
-      int domain_id = domain_offset;
-      if(node.has_path("state/domain_id"))
+      int domain_id = dom["state/domain_id"].to_int();
+
+      if(dom.has_path("state/cycle"))
       {
-          domain_id = node["state/domain_id"].to_int();
-      }
-#ifdef ASCENT_MPI_ENABLED
-      else
-      {
-         domain_id = domain_offset + i;
-      }
-#endif
-      if(node.has_path("state/cycle"))
-      {
-        vtkm::UInt64 cycle = node["state/cycle"].to_uint64();
+        vtkm::UInt64 cycle = dom["state/cycle"].to_uint64();
         res->SetCycle(cycle);
       }
 
@@ -216,6 +334,7 @@ VTKHDataAdapter::VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset)
 //-----------------------------------------------------------------------------
 vtkm::cont::DataSet *
 VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
+                                        bool zero_copy,
                                         const std::string &topo_name_str)
 {   
     vtkm::cont::DataSet * result = NULL;
@@ -263,7 +382,8 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                                                    topo_name,
                                                    n_topo,
                                                    neles,
-                                                   nverts);
+                                                   nverts,
+                                                   zero_copy);
         
     }
     else if(mesh_type == "structured")
@@ -273,7 +393,8 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                                                    topo_name,
                                                    n_topo,
                                                    neles,
-                                                   nverts);
+                                                   nverts,
+                                                   zero_copy);
     }
     else if( mesh_type ==  "unstructured")
     {
@@ -282,7 +403,8 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                                                      topo_name,
                                                      n_topo,
                                                      neles,
-                                                     nverts);
+                                                     nverts,
+                                                     zero_copy);
     }
     else
     {
@@ -302,6 +424,8 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
 
             // skip vector fields for now, we need to add
             // more logic to AddField
+            const int num_children = n_field["values"].number_of_children();
+
             if(n_field["values"].number_of_children() == 0 )
             {
             
@@ -310,7 +434,8 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                          topo_name,
                          neles,
                          nverts,
-                         result);
+                         result,
+                         zero_copy);
             }
         }
     }
@@ -551,7 +676,8 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
      const std::string &topo_name,   // input string with topo name
      const Node &n_topo,             // input mesh bp topo
      int &neles,                     // output, number of eles
-     int &nverts)                    // output, number of verts
+     int &nverts,                    // output, number of verts
+     bool zero_copy)                 // attempt to zero copy
 {
     vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
 
@@ -577,12 +703,34 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
     vtkm::cont::ArrayHandle<vtkm::Float64> y_coords_handle;
     vtkm::cont::ArrayHandle<vtkm::Float64> z_coords_handle;
     
-    x_coords_handle = vtkm::cont::make_ArrayHandle(x_coords_ptr, x_npts);
-    y_coords_handle = vtkm::cont::make_ArrayHandle(y_coords_ptr, y_npts);
+    if(zero_copy)
+    {
+      x_coords_handle = vtkm::cont::make_ArrayHandle(x_coords_ptr, x_npts);
+      y_coords_handle = vtkm::cont::make_ArrayHandle(y_coords_ptr, y_npts);
+    }
+    else
+    {
+      x_coords_handle.Allocate(x_npts);
+      y_coords_handle.Allocate(y_npts);
+
+      vtkm::Float64 *x = vtkh::GetVTKMPointer(x_coords_handle);
+      memcpy(x, x_coords_ptr, sizeof(float64) * x_npts);
+      vtkm::Float64 *y = vtkh::GetVTKMPointer(y_coords_handle);
+      memcpy(y, y_coords_ptr, sizeof(float64) * y_npts);
+    }
 
     if(ndims == 3)
     {
+      if(zero_copy)
+      {
         z_coords_handle = vtkm::cont::make_ArrayHandle(z_coords_ptr, z_npts);
+      }
+      else
+      {
+        z_coords_handle.Allocate(z_npts);
+        vtkm::Float64 *z = vtkh::GetVTKMPointer(z_coords_handle);
+        memcpy(z, z_coords_ptr, sizeof(float64) * z_npts);
+      }
     }
     else
     {
@@ -641,48 +789,36 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
      const std::string &topo_name,   // input string with topo name
      const Node &n_topo,             // input mesh bp topo
      int &neles,                     // output, number of eles
-     int &nverts)                    // output, number of verts
+     int &nverts,                    // output, number of verts
+     bool zero_copy)                 // attempt to zero copy
 {
     vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
 
     nverts = n_coords["values/x"].dtype().number_of_elements();
-    
 
-    int32 ndims = 2;
-    
-    const float64 *x_coords_ptr = n_coords["values/x"].as_float64_ptr();
-    const float64 *y_coords_ptr = n_coords["values/y"].as_float64_ptr();
-    const float64 *z_coords_ptr = NULL;
-    
-    if(n_coords.has_path("values/z"))
+    int ndims = 0; 
+
+    vtkm::cont::CoordinateSystem coords;
+    if(n_coords["values/x"].dtype().is_float64())
     {
-        ndims = 3;
-        z_coords_ptr = n_coords["values/z"].as_float64_ptr();
+      coords = detail::GetExplicitCoordinateSystem<float64>(n_coords, 
+                                                            coords_name,
+                                                            ndims,
+                                                            zero_copy);
+    }
+    else if(n_coords["values/x"].dtype().is_float32())
+    {
+      coords = detail::GetExplicitCoordinateSystem<float32>(n_coords, 
+                                                            coords_name,
+                                                            ndims,
+                                                            zero_copy);
+    }
+    else
+    {
+      ASCENT_ERROR("Coordinate system must be floating point values");
     }
 
-    vtkm::cont::ArrayHandle<vtkm::Float64> x_coords_handle;
-    vtkm::cont::ArrayHandle<vtkm::Float64> y_coords_handle;
-    vtkm::cont::ArrayHandle<vtkm::Float64> z_coords_handle;
-    
-    x_coords_handle = vtkm::cont::make_ArrayHandle(x_coords_ptr, nverts);
-    y_coords_handle = vtkm::cont::make_ArrayHandle(y_coords_ptr, nverts);
-
-    if(ndims == 3)
-    {
-        z_coords_handle = vtkm::cont::make_ArrayHandle(z_coords_ptr, nverts);
-    }
-    else 
-    {
-        z_coords_handle.Allocate(nverts); 
-        // This does not get initialized to zero
-        vtkm::Float64 *z = vtkh::GetVTKMPointer(z_coords_handle);
-        memset(z, 0.0, nverts * sizeof(vtkm::Float64));
-    }
-    result->AddCoordinateSystem(
-      vtkm::cont::CoordinateSystem(coords_name.c_str(),
-        make_ArrayHandleCompositeVector(x_coords_handle,
-                                        y_coords_handle,
-                                        z_coords_handle)));
+    result->AddCoordinateSystem(coords);
 
     int32 x_elems = n_topo["elements/dims/i"].as_int32(); 
     int32 y_elems = n_topo["elements/dims/j"].as_int32(); 
@@ -719,49 +855,35 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
      const std::string &topo_name,   // input string with topo name
      const Node &n_topo,             // input mesh bp topo
      int &neles,                     // output, number of eles
-     int &nverts)                    // output, number of verts
+     int &nverts,                    // output, number of verts
+     bool zero_copy)                 // attempt to zero copy
 {
     vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
 
     nverts = n_coords["values/x"].dtype().number_of_elements();
-    
 
-    int32 ndims = 2;
-    
-    const float64 *x_coords_ptr = n_coords["values/x"].as_float64_ptr();
-    const float64 *y_coords_ptr = n_coords["values/y"].as_float64_ptr();
-    const float64 *z_coords_ptr = NULL;
-    
-    if(n_coords.has_path("values/z"))
+    int32 ndims; 
+    vtkm::cont::CoordinateSystem coords;
+    if(n_coords["values/x"].dtype().is_float64())
     {
-        ndims = 3;
-        z_coords_ptr = n_coords["values/z"].as_float64_ptr();
+      coords = detail::GetExplicitCoordinateSystem<float64>(n_coords, 
+                                                            coords_name,
+                                                            ndims,
+                                                            zero_copy);
+    }
+    else if(n_coords["values/x"].dtype().is_float32())
+    {
+      coords = detail::GetExplicitCoordinateSystem<float32>(n_coords, 
+                                                            coords_name,
+                                                            ndims,
+                                                            zero_copy);
+    }
+    else
+    {
+      ASCENT_ERROR("Coordinate system must be floating point values");
     }
 
-    vtkm::cont::ArrayHandle<vtkm::Float64> x_coords_handle;
-    vtkm::cont::ArrayHandle<vtkm::Float64> y_coords_handle;
-    vtkm::cont::ArrayHandle<vtkm::Float64> z_coords_handle;
-    
-    x_coords_handle = vtkm::cont::make_ArrayHandle(x_coords_ptr, nverts);
-    y_coords_handle = vtkm::cont::make_ArrayHandle(y_coords_ptr, nverts);
-
-    if(ndims == 3)
-    {
-        z_coords_handle = vtkm::cont::make_ArrayHandle(z_coords_ptr, nverts);
-    }
-    else 
-    {
-        z_coords_handle.Allocate(nverts); 
-        // This does not get initialized to zero
-        for(int i = 0; i < nverts; ++i)
-            z_coords_handle.GetPortalControl().Set(i,0.0);
-    }
-    result->AddCoordinateSystem(
-      vtkm::cont::CoordinateSystem(coords_name.c_str(),
-        make_ArrayHandleCompositeVector(x_coords_handle,
-                                        y_coords_handle,
-                                        z_coords_handle)));
-
+    result->AddCoordinateSystem(coords);
 
     // shapes, number of indices, and connectivity.
     // Will have to do something different if this is a "zoo"
@@ -783,9 +905,8 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     {
          if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int32())
          {
-             const void *ele_idx_ptr = n_topo_conn.data_ptr();
-             connectivity = vtkm::cont::make_ArrayHandle((const vtkm::Id*)ele_idx_ptr,
-                                                         conn_size);
+           const void *ele_idx_ptr = n_topo_conn.data_ptr();
+           detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size,zero_copy); 
          }
          else
          {
@@ -802,8 +923,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
         if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int64())
         {
             const void *ele_idx_ptr = n_topo_conn.data_ptr();
-            connectivity = vtkm::cont::make_ArrayHandle((const vtkm::Id*)ele_idx_ptr,
-                                                        conn_size);
+            detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size, zero_copy); 
         }
         else
         {
@@ -846,10 +966,28 @@ VTKHDataAdapter::AddField(const std::string &field_name,
                           const std::string &topo_name,
                           int neles,
                           int nverts,
-                          vtkm::cont::DataSet *dset)
+                          vtkm::cont::DataSet *dset,
+                          bool zero_copy)                 // attempt to zero copy
 {
     // TODO: how do we deal with vector valued fields?, these will be mcarrays
+
     string assoc_str = n_field["association"].as_string();
+
+    vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+    if(assoc_str == "vertex")
+    {
+      vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+    }
+    else if(assoc_str == "element")
+    {
+      vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+    }
+    else
+    {
+      ASCENT_INFO("VTKm conversion does not support field assoc "<<assoc_str<<". Skipping");
+      std::cout<<"VTKm conversion does not support field assoc "<<assoc_str<<". Skipping\n";
+      return;
+    }
 
     const Node &n_vals = n_field["values"];
     int num_vals = n_vals.dtype().number_of_elements();
@@ -864,60 +1002,26 @@ VTKHDataAdapter::AddField(const std::string &field_name,
 
     try
     {
-        bool zero_copy = false;
+        bool supported_type = false;
         
         if(n_vals.is_compact())
         {
             // we compile vtk-h with fp types
             if(n_vals.dtype().is_float32())
             {
-                const float32 *values_ptr = n_vals.value();
-                // zero copy into vtkm array handle
-                vtkm::cont::ArrayHandle<vtkm::Float32> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr,
-                                                                                               num_vals);
-                // add field to dataset
-                if(assoc_str == "vertex")
-                {
-                    dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                     vtkm::cont::Field::Association::POINTS,
-                                                     vtkm_arr));
-                }
-                else if( assoc_str == "element")
-                {
-                    dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                     vtkm::cont::Field::Association::CELL_SET,
-                                                     topo_name.c_str(),
-                                                     vtkm_arr));
-                }
-                zero_copy = true;
+                dset->AddField(detail::GetField<float32>(n_vals, field_name, assoc_str, topo_name, zero_copy));
+                supported_type = true;
             }
             else if(n_vals.dtype().is_float64())
             {
-                const float64 *values_ptr = n_vals.value();
-                // zero copy into vtkm array handle
-                vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr = vtkm::cont::make_ArrayHandle(values_ptr,
-                                                                                               num_vals);
-                // add field to dataset
-                if(assoc_str == "vertex")
-                {
-                    dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                     vtkm::cont::Field::Association::POINTS,
-                                                     vtkm_arr));
-                }
-                else if( assoc_str == "element")
-                {
-                    dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                     vtkm::cont::Field::Association::CELL_SET,
-                                                     topo_name.c_str(),
-                                                     vtkm_arr));
-                }
-                zero_copy = true;
+                dset->AddField(detail::GetField<float64>(n_vals, field_name, assoc_str, topo_name, zero_copy));
+                supported_type = true;
             }
         }
         
         // vtk-m cant support zero copy for this layout or was not compiled to expose this datatype
         // use float64 by default
-        if(!zero_copy) 
+        if(!supported_type) 
         {
             // convert to float64, we use this as a comprise to cover the widest range
             vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;

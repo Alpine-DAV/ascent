@@ -66,7 +66,7 @@ using ascent::Ascent;
 using namespace ascent;
 
 
-
+const int CELL_DIMS = 32;
 
 void hola_mpi_helpers_test_setup_src_data(int rank, Node &data)
 {
@@ -259,7 +259,7 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         // Create example data
         //
         Node data, verify_info;
-        create_3d_example_dataset(data,world_rank,5);
+        create_3d_example_dataset(data, CELL_DIMS, world_rank,5);
 
         // hi-jack the radial_vert field and override it with rank
         float64_array vals = data["fields/radial_vert/values"].value();

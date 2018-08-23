@@ -699,13 +699,24 @@ EnsureVTKH::declare_interface(Node &i)
 void 
 EnsureVTKH::execute()
 {
+    bool zero_copy = false;
+    if(params().has_path("zero_copy"))
+    {
+      if(params()["zero_copy"].as_string() == "true")
+      {
+        zero_copy = true;
+      }
+    }
+
     if(input(0).check_type<Node>())
     {
         // convert from blueprint to vtk-h
         const Node *n_input = input<Node>(0);
-        vtkh::DataSet *res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
-        set_output<vtkh::DataSet>(res);
 
+        vtkh::DataSet *res = nullptr;;
+        res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, zero_copy);
+
+        set_output<vtkh::DataSet>(res);
     }
     else if(input(0).check_type<vtkm::cont::DataSet>())
     {
@@ -1829,9 +1840,10 @@ EnsureVTKM::execute()
     }
     else if(input(0).check_type<Node>())
     {
+        bool zero_copy = false;
         // convert from conduit to vtkm
         const Node *n_input = input<Node>(0);
-        vtkm::cont::DataSet  *res = VTKHDataAdapter::BlueprintToVTKmDataSet(*n_input);
+        vtkm::cont::DataSet  *res = VTKHDataAdapter::BlueprintToVTKmDataSet(*n_input, zero_copy);
         set_output<vtkm::cont::DataSet>(res);
     }
     else

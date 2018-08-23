@@ -229,19 +229,8 @@ TEST(ascent_data_adapter, consistent_domain_ids_check)
     bool consistent_ids = false;
 
 
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
- 
-    conduit::Node actions;
-    conduit::Node &add_plots = actions.append();
-    add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-    
     //
-    // Run Ascent
+    // Publish inconsistent ids to Ascent
     //
     
     Ascent ascent;
@@ -250,9 +239,7 @@ TEST(ascent_data_adapter, consistent_domain_ids_check)
     ascent_opts["runtime/type"] = "ascent";
     ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
-    ascent.publish(multi_dom);
-    
-    EXPECT_THROW(ascent.execute(actions),conduit::Error);
+    EXPECT_THROW(ascent.publish(multi_dom),conduit::Error);
     ascent.close();
 }
 

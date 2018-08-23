@@ -58,14 +58,17 @@ env:
       ENABLE_VTKH=ON
       ENABLE_DOCS=ON
       ENABLE_ADIOS=OFF
+      ENABLE_MFEM=ON
     - BUILD_SHARED_LIBS=OFF
       ENABLE_VTKH=ON
       ENABLE_DOCS=OFF
       ENABLE_ADIOS=OFF
+      ENABLE_MFEM=ON
     - BUILD_SHARED_LIBS=ON
       ENABLE_VTKH=OFF
       ENABLE_DOCS=OFF
       ENABLE_ADIOS=OFF
+      ENABLE_MFEM=OFF
 addons:
   apt:
     sources:
@@ -79,7 +82,8 @@ addons:
        - libopenmpi-dev
        - libncurses-dev
        - libssl-dev
-       - libopenblas-dev
+       - libblas-dev
+       - liblapack-dev
        - zlib1g-dev
        - libgdbm-dev
        - libreadline-dev
@@ -101,9 +105,15 @@ script:
   - echo $TRAVIS_BUILD_DIR
   # setup spack spec based on our travis options
   - export SPACK_SPEC="%gcc@5+mpi"
-  - if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkh; fi
+  # docs 
   - if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~doc; fi
+    # vtkh support
+  - if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~vtkh; fi
+  # adios support
   - if [ $ENABLE_ADIOS = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~adios; fi
+  # mfem support
+  - if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC=${SPACK_SPEC}+mfem; fi
+  - if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC=${SPACK_SPEC}~mfem; fi
   - echo $SPACK_SPEC
   # build deps using uberenv
   - cd ..

@@ -96,7 +96,9 @@ public:
     //
     //  conduit::blueprint::mesh::verify(n,info) == true
     //
+    // zero copy means attempt to zero copy
     static vtkh::DataSet  *BlueprintToVTKHDataSet(const conduit::Node &n,
+                                                  bool zero_copy = false,
                                                   const std::string &topo_name="");
 
 
@@ -106,6 +108,7 @@ public:
     //  conduit::blueprint::mesh::verify(n,info) == true
     //
     static vtkm::cont::DataSet  *BlueprintToVTKmDataSet(const conduit::Node &n,
+                                                        bool zero_copy,
                                                         const std::string &topo_name="");
 
 
@@ -129,21 +132,24 @@ private:
                                                                    const std::string &topo_name,
                                                                    const conduit::Node &n_topo,
                                                                    int &neles,
-                                                                   int &nverts);
+                                                                   int &nverts,
+                                                                   bool zero_copy);
 
     static vtkm::cont::DataSet  *StructuredBlueprintToVTKmDataSet(const std::string &coords_name,
                                                                   const conduit::Node &n_coords,
                                                                   const std::string &topo_name,
                                                                   const conduit::Node &n_topo,
                                                                   int &neles,
-                                                                  int &nverts);
+                                                                  int &nverts,
+                                                                  bool zero_copy);
 
      static vtkm::cont::DataSet *UnstructuredBlueprintToVTKmDataSet(const std::string &coords_name,
                                                                     const conduit::Node &n_coords,
                                                                     const std::string &topo_name,
                                                                     const conduit::Node &n_topo,
                                                                     int &neles,
-                                                                    int &nverts);
+                                                                    int &nverts,
+                                                                    bool zero_copy);
 
     // helper for adding field data
     static void                  AddField(const std::string &field_name,
@@ -151,7 +157,8 @@ private:
                                           const std::string &topo_name,
                                           int neles,
                                           int nverts,
-                                          vtkm::cont::DataSet *dset);
+                                          vtkm::cont::DataSet *dset,
+                                          bool zero_copy);
 
     static bool VTKmTopologyToBlueprint(conduit::Node &output,
                                         const vtkm::cont::DataSet &data_set);

@@ -65,7 +65,8 @@ using namespace conduit;
 using ascent::Ascent;
 
 std::string py_script = "\n"
-"v = ascent_data()\n"
+"# Treat everything is mutli domian so grabe the state of the first\n"
+"v = ascent_data().child(0)\n"
 "print(v['state'])\n"
 "\n"
 "from mpi4py import MPI\n"
@@ -138,7 +139,6 @@ TEST(ascent_mpi_runtime, test_pyhton_script_extract_src)
     ascent.close();
 
 }
-
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_runtime, test_python_script_extract_file)
 {
@@ -229,13 +229,13 @@ TEST(ascent_mpi_runtime, test_python_script_extract_file)
     ascent.close();
    
 }
-
-
+//
 // This demos using the ascent python api inside of ascent ... 
 std::string py_script_inception = "\n"
 "import conduit\n"
 "import ascent.mpi\n"
-"n_mesh = ascent_data()\n"
+"# we treat everything as a multi_domain in ascent so grab child 0\n"
+"n_mesh = ascent_data().child(0)\n"
 "ascent_opts = conduit.Node()\n"
 "ascent_opts['mpi_comm'].set(ascent_mpi_comm_id())\n"
 "a = ascent.mpi.Ascent()\n"
@@ -319,7 +319,6 @@ TEST(ascent_mpi_runtime, test_python_extract_inception)
     ascent.close();
 
 }
-
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

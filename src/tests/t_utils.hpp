@@ -234,6 +234,7 @@ create_2d_example_dataset(Node &data,
 //-----------------------------------------------------------------------------
 void
 create_3d_example_dataset(Node &data,
+                          int cell_dim = 32,
                           int par_rank=0,
                           int par_size=1)
 {
@@ -244,7 +245,7 @@ create_3d_example_dataset(Node &data,
     //                    "par_rank (" << par_rank << ")");
     // }
 
-    int cellsPerRank = 32;
+    int cellsPerRank = cell_dim;
     int size = par_size * cellsPerRank;
     
     int nx = size / par_size;

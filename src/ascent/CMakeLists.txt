@@ -63,6 +63,7 @@ set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
 
 set(ASCENT_HDF5_ENABLED ${HDF5_FOUND})
 set(ASCENT_ADIOS_ENABLED ${ADIOS_FOUND})
+set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
 
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
@@ -134,6 +135,11 @@ if(VTKM_FOUND)
 
 endif()
 
+if(MFEM_FOUND)
+    # data adapter
+    list(APPEND ascent_headers runtimes/ascent_mfem_data_adapter.hpp)
+    list(APPEND ascent_sources runtimes/ascent_mfem_data_adapter.cpp)
+endif()
 ##############################
 # optional features
 #############################
@@ -165,6 +171,14 @@ set(ascent_thirdparty_libs
 ##################
 if(VTKM_FOUND)
     list(APPEND ascent_thirdparty_libs vtkm vtkh)
+endif()
+
+if(MFEM_FOUND)
+    list(APPEND ascent_thirdparty_libs mfem)
+    # workaround for MPI headers
+    if(ENABLE_MPI)
+        list(APPEND ascent_thirdparty_libs mpi)
+    endif()
 endif()
 
 if(CUDA_FOUND)

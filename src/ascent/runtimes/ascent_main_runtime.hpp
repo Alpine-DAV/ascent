@@ -94,6 +94,7 @@ private:
     conduit::Node     m_info;
 
     WebInterface      m_web_interface;
+    int               m_refinement_level;
 
     void              ResetInfo();
 
@@ -114,6 +115,7 @@ private:
     void ConnectSource();
     void ConnectGraphs();
     void ExecuteGraphs();
+    void EnsureDomainIds();
     std::string GetDefaultImagePrefix(const std::string scene);
     
     void FindRenders(const conduit::Node &info, conduit::Node &out);

@@ -42,64 +42,21 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_config.h
+/// file: t_mfem_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_CONFIG_H
-#define ASCENT_CONFIG_H
+#include "gtest/gtest.h"
+#include <iostream>
+#include "mfem/mfem.hpp"
+#include "mfem/fem/conduitdatacollection.hpp"
 
-#cmakedefine ASCENT_INSTALL_PREFIX "${ASCENT_INSTALL_PREFIX}"
-
-#define ASCENT_VERSION "@PROJECT_VERSION@"
-
-#cmakedefine ASCENT_GIT_SHA1 "${ASCENT_GIT_SHA1}"
-
-#define ASCENT_SYSTEM_TYPE "@CMAKE_SYSTEM@"
-
-#define ASCENT_CPP_COMPILER "@CMAKE_CXX_COMPILER@"
-
-#cmakedefine ASCENT_FORTRAN_COMPILER "${ASCENT_FORTRAN_COMPILER}"
-
-// this path points to the web client js code tree
-#cmakedefine ASCENT_WEB_CLIENT_ROOT   "@ASCENT_WEB_CLIENT_ROOT@"
-
-// defs for general openmp support
-#cmakedefine ASCENT_USE_OPENMP        "@OPENMP_FOUND@"
-
-// defs for runtime support based on which 3rd-party libs we have 
-
-#cmakedefine ASCENT_VTKH_ENABLED      "@VTKM_FOUND@"
-
-#cmakedefine ASCENT_VTKM_ENABLED      "@VTKM_FOUND@"
-#cmakedefine ASCENT_VTKM_USE_CUDA     "@CUDA_FOUND@"
-#cmakedefine ASCENT_VTKM_USE_OPENMP   "@ENABLE_OPENMP@"
-
-
-#cmakedefine ASCENT_ADIOS_ENABLED     "@ADIOS_FOUND@"
-#cmakedefine ASCENT_MFEM_ENABLED     "@ADIOS_FOUND@"
-#cmakedefine ASCENT_HDF5_ENABLED      "@HDF5_FOUND@"
 
 //-----------------------------------------------------------------------------
-//
-// #define platform check helpers
-//
-//-----------------------------------------------------------------------------
+TEST(mfem_smoke, mfem_basic)
+{
+  mfem::Mesh m;
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
-
-#define ASCENT_PLATFORM_WINDOWS
-#elif  defined(__APPLE__)
-#define ASCENT_PLATFORM_APPLE
-#else
-#define ASCENT_PLATFORM_UNIX
-#endif
-
-
-#endif
-
-
-
+}
