@@ -91,7 +91,6 @@ TEST(ascent_mpi_runtime, test_relay_extract_iso)
     data["state/cycle"] = 100; 
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
     
     // make sure the _output dir exists
     string output_path = "";
@@ -138,7 +137,6 @@ TEST(ascent_mpi_runtime, test_relay_extract_iso)
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
     
-    actions.print();
     
     //
     // Run Ascent
@@ -184,7 +182,6 @@ TEST(ascent_mpi_runtime, test_relay_extract_mesh)
     data["state/cycle"] = 101; 
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
     
     // make sure the _output dir exists
     string output_path = "";
@@ -209,6 +206,7 @@ TEST(ascent_mpi_runtime, test_relay_extract_mesh)
     extracts["e1/type"]  = "relay";
 
     extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
     
     conduit::Node actions;
     // add the extracts
@@ -219,7 +217,6 @@ TEST(ascent_mpi_runtime, test_relay_extract_mesh)
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
     
-    actions.print();
     
     //
     // Run Ascent
@@ -295,7 +292,6 @@ TEST(ascent_mpi_runtime, test_relay_partially_empty)
     }
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
     
     // make sure the _output dir exists
     string output_path = "";
@@ -343,7 +339,6 @@ TEST(ascent_mpi_runtime, test_relay_partially_empty)
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
     
-    actions.print();
     
     //
     // Run Ascent
@@ -409,7 +404,6 @@ TEST(ascent_mpi_runtime, test_relay_empty)
     }
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
     
     // make sure the _output dir exists
     string output_path = "";
@@ -456,8 +450,6 @@ TEST(ascent_mpi_runtime, test_relay_empty)
 
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
-    actions.print();
     
     //
     // Run Ascent

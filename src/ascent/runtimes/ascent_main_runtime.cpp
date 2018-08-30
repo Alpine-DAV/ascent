@@ -86,6 +86,8 @@ using namespace std;
 //-----------------------------------------------------------------------------
 namespace ascent
 {
+// node that holds tree of reg'd filter types
+Node AscentRuntime::s_reged_filter_types;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -218,6 +220,7 @@ AscentRuntime::ResetInfo()
 {
     m_info.reset();
     m_info["runtime/type"] = "ascent";
+    m_info["registered_filter_types"] = registered_filter_types();
 }
 
 
@@ -408,54 +411,16 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       }
 
       std::string type = filter["type"].as_string();
-      
-      bool has_params = filter.has_path("params");
-      bool needs_params = true; 
 
-      if(type == "contour")
+      if(registered_filter_types()["transforms"].has_child(type))
       {
-        filter_name = "vtkh_marchingcubes";
-      }
-      else if(type == "threshold")
-      {
-        filter_name = "vtkh_threshold";
-      }
-      else if(type == "clip")
-      {
-        filter_name = "vtkh_clip";
-      }
-      else if(type == "clip_with_field")
-      {
-        filter_name = "vtkh_clip_with_field";
-      }
-      else if(type == "iso_volume")
-      {
-        filter_name = "vtkh_iso_volume";
-      }
-      else if(type == "slice")
-      {
-        filter_name = "vtkh_slice";
-      }
-      else if(type == "3slice")
-      {
-        filter_name = "vtkh_3slice";
-        needs_params = false;
-      }
-      else if(type == "NoOp")
-      {
-        filter_name = "vtkh_no_op";
+          filter_name = registered_filter_types()["transforms"][type].as_string();
       }
       else
       {
         ASCENT_ERROR("Unrecognized filter "<<filter["type"].as_string());
       }
 
-      if(!has_params && needs_params)
-      {
-        filter.print();
-        ASCENT_ERROR("Filter "<<type<<" must  declare a 'params'");
-      }
-     
       // create a unique name for the filter
       std::stringstream ss;
       ss<<pipeline_name<<"_"<<i<<"_"<<filter_name;
@@ -514,24 +479,10 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     ASCENT_ERROR("Extract must have a 'type'");
   }
  
-  if(extract["type"].as_string() == "adios")
-  {
-    filter_name = "adios";
-  }
-  else if(extract["type"].as_string() == "relay")
-  {
-    filter_name = "relay_io_save";
-    // set the default protocol
-    if(!params.has_path("protocol"))
-    {
-      params["protocol"] = "blueprint/mesh/hdf5";
-    }
-  }
-  else if(extract["type"].as_string() == "hola_mpi")
-  {
-    filter_name = "hola_mpi";
-  }
-  else if(extract["type"].as_string() == "python")
+  std::string extract_type = extract["type"].as_string();
+ 
+  // current special case filter setup
+  if(extract_type == "python")
   {
     filter_name = "python_script";
     
@@ -542,7 +493,7 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
 #ifdef ASCENT_MPI_ENABLED
     // for MPI case, inspect args, if script is passed via file,
     // read contents on root and broadcast to other tasks
-    int comm_id =flow::Workspace::default_mpi_comm();
+    int comm_id = flow::Workspace::default_mpi_comm();
     MPI_Comm comm = MPI_Comm_f2c(comm_id);
     int rank = relay::mpi::rank(comm);
     MPI_Comm_rank(comm,&rank);
@@ -586,6 +537,11 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
      params["source"] = py_src_final.str();
 
 #endif
+  }
+  // generic extract support
+  else if(registered_filter_types()["extracts"].has_child(extract_type))
+  {
+     filter_name = registered_filter_types()["extracts"][extract_type].as_string();
   }
   else
   {
@@ -1078,6 +1034,34 @@ AscentRuntime::Execute(const conduit::Node &actions)
     }
 }
 
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::RegisterFilterType(const std::string  &role_path,
+                                  const std::string &api_name,
+                                  const std::string &filter_type_name)
+{
+    std::string path = role_path;
+    if(path == "")
+    {
+        path = "filters";
+    }
+
+    std::string f_name = api_name;
+
+    if(f_name == "")
+    {
+        f_name = filter_type_name;
+    }
+
+    if(s_reged_filter_types[path].has_child(f_name))
+    {
+        //ASCENT_ERROR("Filter " << f_name << " already registered at " << path);
+    }
+    else
+    {
+        s_reged_filter_types[path][f_name] = filter_type_name;
+    }
+}
 
 
 

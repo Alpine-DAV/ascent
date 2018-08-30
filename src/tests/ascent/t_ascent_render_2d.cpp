@@ -93,7 +93,6 @@ TEST(ascent_render_2d, test_render_2d_default_runtime)
                                                data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
                                              "tout_render_2d_default_runtime");
@@ -115,7 +114,6 @@ TEST(ascent_render_2d, test_render_2d_default_runtime)
     add_scenes["scenes"] = scenes;
     conduit::Node &execute = actions.append();
     execute["action"] = "execute";
-    actions.print();
     
     //
     // Run Ascent
@@ -161,7 +159,7 @@ TEST(ascent_render_2d, test_render_2d_uniform_default_runtime)
                                                data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
+
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
                                     "tout_render_2d_uniform_default_runtime");
@@ -183,7 +181,6 @@ TEST(ascent_render_2d, test_render_2d_uniform_default_runtime)
     add_scenes["scenes"] = scenes;
     conduit::Node &execute = actions.append();
     execute["action"] = "execute";
-    actions.print();
     
     //
     // Run Ascent
@@ -227,10 +224,8 @@ TEST(ascent_render_2d, test_render_2d_render_serial_backend)
                                                EXAMPLE_MESH_SIDE_DIM,
                                                0,
                                                data);
-    //conduit::blueprint::mesh::examples::braid("hexs",100,100,100,data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
     
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_ascent_serial_backend");
@@ -252,7 +247,6 @@ TEST(ascent_render_2d, test_render_2d_render_serial_backend)
     add_scenes["scenes"] = scenes;
     conduit::Node &execute = actions.append();
     execute["action"] = "execute";
-    actions.print();
     
     //
     // Run Ascent
@@ -299,7 +293,6 @@ TEST(ascent_render_2d, test_render_2d_uniform_render_serial_backend)
                                                data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
     
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_uniform_ascent_serial_backend");
@@ -321,7 +314,6 @@ TEST(ascent_render_2d, test_render_2d_uniform_render_serial_backend)
     add_scenes["scenes"] = scenes;
     conduit::Node &execute = actions.append();
     execute["action"] = "execute";
-    actions.print();
     
     //
     // Run Ascent

@@ -150,6 +150,9 @@ public:
     /// remove type with given name if registered
     static void remove_filter_type(const std::string &filter_type_name);
 
+    // /// returns the filter name for a registered filter 
+    static std::string filter_type_name(FilterFactoryMethod fr);
+
     /// remove all registered types
     static void clear_supported_filter_types();
 
@@ -166,6 +169,14 @@ public:
     static bool supports_filter_type()
     {
         return supports_filter_type(&CreateFilter<T>);
+    }
+    
+    
+    /// helper for checkeding if a filter type is registered
+    template <class T>
+    static std::string filter_type_name()
+    {
+        return filter_type_name(&CreateFilter<T>);
     }
 
 

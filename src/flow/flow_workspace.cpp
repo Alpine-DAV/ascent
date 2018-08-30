@@ -623,6 +623,32 @@ Workspace::register_filter_type(const std::string &filter_type_name,
 
 
 //-----------------------------------------------------------------------------
+std::string
+Workspace::filter_type_name(FilterFactoryMethod fr)
+{
+    Filter *f = fr("");
+
+    Node iface;
+    std::string f_type_name = "(type_name missing!)";
+    f->declare_interface(iface);
+    delete f;
+
+    if(iface.has_child("type_name") &&
+       iface["type_name"].dtype().is_string())
+    {
+        f_type_name = iface["type_name"].as_string();
+    }
+    
+    if(!supports_filter_type(f_type_name))
+    {
+        // TODO ERROR
+    }
+    
+    return f_type_name;
+}
+
+
+//-----------------------------------------------------------------------------
 void
 Workspace::clear_supported_filter_types()
 {

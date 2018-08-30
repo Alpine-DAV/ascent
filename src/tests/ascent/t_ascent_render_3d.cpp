@@ -97,7 +97,6 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
                                               data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -171,7 +170,6 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
                                               data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -245,7 +243,6 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
                                               data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -355,7 +352,6 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
                                               data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -428,8 +424,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
     
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));    
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -521,7 +516,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
                                               data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
+
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path, "tout_render_3d_ascent_serial_backend_uniform");
@@ -592,7 +587,6 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
                                               data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path, "tout_render_3d_ascent_serial_backend");
@@ -616,7 +610,6 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    actions.print();
     
     //
     // Run Ascent
@@ -670,7 +663,6 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
                                               data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
 
     string output_path = prepare_output_dir();
@@ -695,7 +687,6 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    actions.print();
     
     //
     // Run Ascent
@@ -748,7 +739,7 @@ TEST(ascent_render_3d, test_3d_render_ascent_runtime_cuda_backend)
                                               data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
+
 
     
     string output_path = prepare_output_dir();
@@ -818,7 +809,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
                                               data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
+
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -958,7 +949,6 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     // reenable this check after updating conduit 
     // EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     conduit::blueprint::mesh::verify(multi_dom,verify_info);
-    verify_info.print();
 
     // make sure the _output dir exists
     string output_path = "";
@@ -984,7 +974,6 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
     
-    actions.print();
     
     //
     // Run Ascent
@@ -1029,9 +1018,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
                                               3,
                                               3,
                                               data);
-    
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering of fields with different data types");
 
@@ -1295,7 +1282,6 @@ TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
     Node n_orig_coords = data["topologies/mesh/elements/connectivity"];
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering of fields with different data types");
 
