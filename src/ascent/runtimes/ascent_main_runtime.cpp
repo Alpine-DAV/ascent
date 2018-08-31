@@ -1029,7 +1029,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         }
         else if( action_name == "reset")
         {
-            w.reset();
+          w.reset();
         }
     }
 }
