@@ -52,6 +52,8 @@
 
 #include <ascent.hpp>
 
+#include <ascent_main_runtime.hpp>
+
 #include <iostream>
 #include <math.h>
 #include <sstream>
@@ -81,7 +83,6 @@ TEST(ascent_pipeline, test_render_3d_main_pipeline)
                                                data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path, 
                                                         "tout_render_3d_ascent_pipeline");
@@ -138,3 +139,170 @@ TEST(ascent_pipeline, test_error_for_mpi_vs_non_mpi)
     // we throw an error if an mpi_comm is provided to a non-mpi ver of ascent
     EXPECT_THROW(ascent.open(ascent_opts),conduit::Error);
 }
+
+//-----------------------------------------------------------------------------
+// Check that we can register and call extracts and transforms from outslide
+// of ascent, and use them.
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+class MyExtract: public ::flow::Filter
+{
+    public:
+        static bool s_was_called;
+
+        static void reset_was_called(){ s_was_called = false;}
+        static bool was_called(){ return s_was_called;}
+        
+        MyExtract():Filter()
+        {}
+        ~MyExtract()
+        {}
+        
+        void declare_interface(Node &i)
+        {
+            i["type_name"]   = "my_noop_extract";
+            i["port_names"].append() = "in";
+            i["output_port"] = "true";
+        }
+        
+        void execute()
+        {
+            s_was_called = true;
+            set_output(input(0));
+        }
+};
+
+bool MyExtract::s_was_called = false;
+
+//-----------------------------------------------------------------------------
+TEST(ascent_pipeline, test_register_extract)
+{
+    AscentRuntime::register_filter_type<MyExtract>("extracts","my_extract");
+    
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "my_extract";
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+    
+    Node data, info;
+    conduit::blueprint::mesh::examples::braid("quads",
+                                               5,
+                                               5,
+                                               0,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,info));
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    MyExtract::reset_was_called();
+    EXPECT_FALSE(MyExtract::was_called());
+    ascent.execute(actions);
+    EXPECT_TRUE(MyExtract::was_called());
+    ascent.info(info);
+    info.print();
+    ascent.close();
+    
+    
+}
+
+//-----------------------------------------------------------------------------
+class MyXForm: public ::flow::Filter
+{
+    public:
+        static bool s_was_called;
+
+        static void reset_was_called(){ s_was_called = false;}
+        static bool was_called(){ return s_was_called;}
+        
+        MyXForm():Filter()
+        {}
+        ~MyXForm()
+        {}
+        
+        void declare_interface(Node &i)
+        {
+            i["type_name"]   = "my_noop_xform";
+            i["port_names"].append() = "in";
+            i["output_port"] = "true";
+        }
+        
+        void execute()
+        {
+            s_was_called = true;
+            set_output(input(0));
+        }
+};
+
+bool MyXForm::s_was_called = false;
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_pipeline, test_register_transform)
+{
+    AscentRuntime::register_filter_type<MyXForm>("transforms","my_xform");
+    
+    Node data, info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               5,
+                                               5,
+                                               5,
+                                               data);
+    
+    
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_reg_xform");
+    
+    // remove old images before rendering
+    remove_test_image(output_file);
+    
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "my_xform";
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/params/field"] = "radial";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/image_prefix"] = output_file;
+ 
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines= actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+    // execute
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+    
+    
+    Ascent ascent;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,info));
+    ascent.open();
+    ascent.publish(data);
+    MyXForm::reset_was_called();
+    EXPECT_FALSE(MyXForm::was_called());
+    ascent.execute(actions);
+    EXPECT_TRUE(MyXForm::was_called());
+    ascent.info(info);
+    info.print();
+    ascent.close();
+    
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
+

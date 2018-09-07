@@ -99,7 +99,6 @@ TEST(ascent_iso_volume, test_iso_volume)
                                               data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -117,7 +116,7 @@ TEST(ascent_iso_volume, test_iso_volume)
     
     conduit::Node pipelines;
     // pipeline 1
-    pipelines["pl1/f1/type"] = "iso_volume";
+    pipelines["pl1/f1/type"] = "isovolume";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
     clip_params["field"] = "braid";

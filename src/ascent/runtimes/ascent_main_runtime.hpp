@@ -82,6 +82,15 @@ public:
     void  Info(conduit::Node &out);
     
     void  Cleanup();
+    
+    template <class FilterType>
+    static void register_filter_type(const std::string &role_path = "",
+                                     const std::string &api_name  = "")
+    {
+        flow::Workspace::register_filter_type<FilterType>(); 
+        std::string filter_type_name = flow::Workspace::filter_type_name<FilterType>();
+        RegisterFilterType(role_path, api_name, filter_type_name);
+    }
 
 private:
     // holds options passed to initialize
@@ -119,6 +128,20 @@ private:
     std::string GetDefaultImagePrefix(const std::string scene);
     
     void FindRenders(const conduit::Node &info, conduit::Node &out);
+    
+    
+    // internal reg helper
+    static void RegisterFilterType(const std::string &role_path,
+                                   const std::string &api_name,
+                                   const std::string &filter_type_name);
+    
+    // internal reg filter tracking
+    // use const method for access, to avoid adding to the tree
+    static const conduit::Node &registered_filter_types()
+                                    {return s_reged_filter_types;}
+
+    static conduit::Node s_reged_filter_types;    
+    
 };
 
 //-----------------------------------------------------------------------------
