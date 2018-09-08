@@ -118,6 +118,8 @@ set(ascent_headers
     # hola
     hola/ascent_hola.hpp)
 
+    list(APPEND ascent_headers runtimes/ascent_main_runtime.hpp)
+    list(APPEND ascent_sources runtimes/ascent_main_runtime.cpp)
 if(VTKM_FOUND)
 
     # data adapter

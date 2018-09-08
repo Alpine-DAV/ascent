@@ -112,6 +112,16 @@ protected:
     int m_refinement_level;
 };
 
+//-----------------------------------------------------------------------------
+class EnsureBlueprint : public ::flow::Filter
+{
+public:
+    EnsureBlueprint();
+    virtual ~EnsureBlueprint();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
 
 };
 //-----------------------------------------------------------------------------
