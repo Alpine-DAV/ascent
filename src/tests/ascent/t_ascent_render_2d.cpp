@@ -155,7 +155,7 @@ TEST(ascent_render_2d, test_render_2d_uniform_default_runtime)
     conduit::blueprint::mesh::examples::braid("uniform",
                                                10,
                                                10,
-                                               0,
+                                               1,
                                                data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
@@ -222,7 +222,7 @@ TEST(ascent_render_2d, test_render_2d_render_serial_backend)
     conduit::blueprint::mesh::examples::braid("quads",
                                                EXAMPLE_MESH_SIDE_DIM,
                                                EXAMPLE_MESH_SIDE_DIM,
-                                               0,
+                                               1,
                                                data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
@@ -289,7 +289,7 @@ TEST(ascent_render_2d, test_render_2d_uniform_render_serial_backend)
     conduit::blueprint::mesh::examples::braid("uniform",
                                                EXAMPLE_MESH_SIDE_DIM,
                                                EXAMPLE_MESH_SIDE_DIM,
-                                               0,
+                                               1,
                                                data);
     
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
