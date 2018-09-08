@@ -77,7 +77,7 @@
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
-#include <ascent_vtkh_data_adapter.hpp>
+#include <vtkh/DataSet.hpp>
 #endif
 
 using namespace conduit;
