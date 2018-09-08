@@ -71,6 +71,12 @@ option(ENABLE_MPI         "Build MPI Support"         ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
+
+################################
+# Populate the cmake gui  
+################################
+set(CONDUIT_DIR "" CACHE FILEPATH "path to conduit installation")
+
 ################################
 # Invoke CMake Fortran setup
 # if ENABLE_FORTRAN == ON
