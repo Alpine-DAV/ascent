@@ -36,6 +36,8 @@ packages:
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
     variants: ~openmp
+  conduit:
+    version: [master]
 # CUDA standard MacOS install
   cuda:
     paths:

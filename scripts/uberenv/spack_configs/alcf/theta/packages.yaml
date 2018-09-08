@@ -60,3 +60,5 @@ packages:
             # requires 'module load cce' otherwise gives parsing error
             mpich@7.6.3: cray-mpich/7.6.3
         buildable: False
+    conduit:
+        version: [master]

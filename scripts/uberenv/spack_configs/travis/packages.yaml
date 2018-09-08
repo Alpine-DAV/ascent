@@ -44,3 +44,5 @@ packages:
     buildable: False
     paths:
       zlib: /usr
+  conduit:
+    version: [master]
