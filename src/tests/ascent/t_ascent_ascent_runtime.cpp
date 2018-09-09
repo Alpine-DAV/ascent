@@ -250,6 +250,16 @@ bool MyXForm::s_was_called = false;
 //-----------------------------------------------------------------------------
 TEST(ascent_pipeline, test_register_transform)
 {
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+        return;
+    }
+
     AscentRuntime::register_filter_type<MyXForm>("transforms","my_xform");
     
     Node data, info;

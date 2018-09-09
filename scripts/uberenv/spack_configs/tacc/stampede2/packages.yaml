@@ -43,3 +43,5 @@ packages:
     buildable: false
     modules:
         intel-mkl: mkl
+  conduit:
+    version: [master]

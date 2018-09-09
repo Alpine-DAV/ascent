@@ -520,13 +520,15 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
 
     const vtkm::UInt8 shape_value = shape_id;
     const vtkm::IdComponent indices_value = indices;
+    auto shapes_portal = shapes.GetPortalControl();
+    auto num_indices_portal = num_indices.GetPortalControl();
 #ifdef ASCENT_USE_OPENMP
-    #pragma omp parrallel for
+    #pragma omp parallel for
 #endif
     for (int i = 0; i < num_shapes; ++i)
     {
-        shapes.GetPortalControl().Set(i, shape_value);
-        num_indices.GetPortalControl().Set(i, indices_value);
+        shapes_portal.Set(i, shape_value);
+        num_indices_portal.Set(i, indices_value);
     }
 }
 };

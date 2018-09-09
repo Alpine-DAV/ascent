@@ -62,7 +62,7 @@ class Test_Ascent_Render(unittest.TestCase):
     def test_render_2d(self):
         # if we don't have ascent, simply return
         info = ascent.about()
-        if info["runtimes/ascent/status"] != "enabled":
+        if info["runtimes/ascent/vtkm/status"] != "enabled":
             return
 
         obase = "tout_python_ascent_render_2d"
@@ -109,7 +109,7 @@ class Test_Ascent_Render(unittest.TestCase):
     def test_render_3d(self):
         # if we don't have ascent, simply return
         info = ascent.about()
-        if info["runtimes/ascent/status"] != "enabled":
+        if info["runtimes/ascent/vtkm/status"] != "enabled":
             return
         
         obase = "tout_python_ascent_render_3d"

@@ -133,5 +133,4 @@ endif()
 blt_register_library(NAME mfem
                      INCLUDES ${MFEM_INCLUDE_DIRS}
                      COMPILE_FLAGS ${mfem_tpl_inc_flags}
-                     LINK_FLAGS ${mfem_tpl_lnk_flags}
-                     LIBRARIES ${MFEM_LIBRARIES} )
+                     LIBRARIES ${MFEM_LIBRARIES} ${mfem_tpl_lnk_flags})

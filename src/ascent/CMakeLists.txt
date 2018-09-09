@@ -82,6 +82,7 @@ set(ascent_sources
     c/ascent_c.cpp
     # runtimes
     ascent_runtime.cpp
+    runtimes/ascent_main_runtime.cpp
     runtimes/ascent_empty_runtime.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
@@ -105,6 +106,7 @@ set(ascent_headers
     ascent_runtime.hpp
     runtimes/ascent_empty_runtime.hpp
     # flow
+    runtimes/ascent_main_runtime.hpp
     runtimes/ascent_flow_runtime.hpp
     runtimes/flow_filters/ascent_runtime_filters.hpp
     runtimes/flow_filters/ascent_runtime_relay_filters.hpp

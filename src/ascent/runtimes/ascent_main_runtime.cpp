@@ -71,12 +71,13 @@
 #include <flow.hpp>
 #include <ascent_runtime_filters.hpp>
 
+#if defined(ASCENT_VTKM_ENABLED)
 #include <vtkh/vtkh.hpp>
 
 #ifdef VTKM_CUDA
 #include <vtkm/cont/cuda/ChooseCudaDevice.h>
 #endif
-
+#endif
 using namespace conduit;
 using namespace std;
 
@@ -133,7 +134,9 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
     
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
+#if defined(ASCENT_VTKM_ENABLED)
     vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
+#endif
     MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
     MPI_Comm_rank(comm,&rank);
 
@@ -164,9 +167,11 @@ AscentRuntime::Initialize(const conduit::Node &options)
     //
     if(sel_cuda_device)
     {
+#if defined(ASCENT_VTKM_ENABLED)
         int device_count = vtkh::CUDADeviceCount();
         int rank_device = rank % device_count;
         vtkh::SelectCUDADevice(rank_device);
+#endif
     }
 #endif
 
@@ -288,7 +293,8 @@ AscentRuntime::EnsureDomainIds()
     MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
     MPI_Comm_rank(mpi_comm,&rank);
 
-    int comm_size = vtkh::GetMPISize();
+    int comm_size = 1;
+    MPI_Comm_size(mpi_comm, &comm_size);
     int *has_ids_array = new int[comm_size];
     int *no_ids_array = new int[comm_size];
     int boolean = has_ids ? 1 : 0; 

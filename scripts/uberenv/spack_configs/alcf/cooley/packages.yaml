@@ -36,6 +36,8 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
+  conduit:
+    version: [master]
 # Cooley Cuda
   cuda:
     paths:

@@ -71,6 +71,12 @@ option(ENABLE_MPI         "Build MPI Support"         ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
+
+################################
+# Populate the cmake gui  
+################################
+set(CONDUIT_DIR "" CACHE FILEPATH "path to conduit installation")
+
 ################################
 # Invoke CMake Fortran setup
 # if ENABLE_FORTRAN == ON
@@ -82,8 +88,6 @@ endif()
 ################################
 # Set BLT Options
 ################################
-# forward the build shared libs option to blt
-set(ENABLE_SHARED_LIBS ${BUILD_SHARED_LIBS} CACHE BOOL "")
 # don't use BLT's all warnings feature
 set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
 
