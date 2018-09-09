@@ -203,7 +203,7 @@ TEST(ascent_runtime_options, test_actions_file)
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");

@@ -55,9 +55,9 @@
 
 #include <ascent_empty_runtime.hpp>
 #include <ascent_flow_runtime.hpp>
+#include <runtimes/ascent_main_runtime.hpp>
 
 #if defined(ASCENT_VTKH_ENABLED)
-    #include <runtimes/ascent_main_runtime.hpp>
     #include <vtkh/vtkh.hpp>
 #endif
 
@@ -188,11 +188,11 @@ Ascent::open(const conduit::Node &options)
         }
         else if(runtime_type == "ascent")
         {
-    #if defined(ASCENT_VTKH_ENABLED)
             m_runtime = new AscentRuntime();
-            if(processed_opts.has_path("runtime/backend"))
+            if(processed_opts.has_path("runtime/vtkm/backend"))
             {
-              std::string backend = processed_opts["runtime/backend"].as_string();
+    #if defined(ASCENT_VTKH_ENABLED)
+              std::string backend = processed_opts["runtime/vtkm/backend"].as_string();
               if(backend == "serial")
               {
                 vtkh::ForceSerial();
@@ -209,11 +209,11 @@ Ascent::open(const conduit::Node &options)
               {
                 ASCENT_ERROR("Ascent unrecognized backend "<<backend);
               }
-            }
     #else
-            ASCENT_ERROR("Ascent runtime is disabled. "
-                         "Ascent was not built with vtk-h support");
+              ASCENT_ERROR("Ascent vtkm backend is disabled. "
+                          "Ascent was not built with vtk-m support");
     #endif
+            }
         }
         else if(runtime_type == "flow")
         {
@@ -442,70 +442,45 @@ about(conduit::Node &n)
 #else
     n["mpi"] = "disabled";
 #endif
-
-#if defined(ASCENT_VTKH_ENABLED)
+    // we will always have the main runtime available
     n["runtimes/ascent/status"] = "enabled";
+#if defined(ASCENT_VTKH_ENABLED)
+    // call this vtkm so people don't have to know
+    // about vtkh
+    n["runtimes/ascent/vtkm/status"] = "enabled";
     if(vtkh::IsSerialEnabled())
     {
-        n["runtimes/ascent/backends/serial"] = "enabled";
+        n["runtimes/ascent/vtkm/backends/serial"] = "enabled";
     }
     else
     {
-        n["runtimes/ascent/backends/serial"] = "disabled";
+        n["runtimes/ascent/vtkm/backends/serial"] = "disabled";
     }
 
     if(vtkh::IsOpenMPEnabled())
     {
-        n["runtimes/ascent/backends/openmp"] = "enabled";
+        n["runtimes/ascent/vtkm/backends/openmp"] = "enabled";
     }
     else
     {
-        n["runtimes/ascent/backends/openmp"] = "disabled";
+        n["runtimes/ascent/vtkm/backends/openmp"] = "disabled";
     }
 
     if(vtkh::IsCUDAEnabled())
     {
-        n["runtimes/ascent/backends/cuda"] = "enabled";
+        n["runtimes/ascent/vtkm/backends/cuda"] = "enabled";
     }
     else
     {
-        n["runtimes/ascent/backends/cuda"] = "disabled";
+        n["runtimes/ascent/vtkm/backends/cuda"] = "disabled";
     }
 #else
-     n["runtimes/ascent/status"] = "disabled";
+     n["runtimes/ascent/vtkm/status"] = "disabled";
 #endif
 
     n["runtimes/flow/status"] = "enabled";
 
-#if defined(ASCENT_VTKM_ENABLED)
-    n["runtimes/vtkm/status"] = "enabled";
-    
-    n["runtimes/vtkm/backends/serial"] = "enabled";
-    
-#ifdef ASCENT_VTKM_USE_OPENMP
-    n["runtimes/vtkm/backends/opemp"] = "enabled";
-#else
-    n["runtimes/vtkm/backends/openmp"] = "disabled";
-#endif
-
-#ifdef ASCENT_VTKM_USE_CUDA
-    n["runtimes/vtkm/backends/cuda"] = "enabled";
-#else
-    n["runtimes/vtkm/backends/cuda"] = "disabled";
-#endif    
-    
-#else
-    n["runtimes/vtkm/status"] = "disabled";
-#endif
-
-//
-// Select default runtime based on what is available.
-//
-#if defined(ASCENT_VTKH_ENABLED)
     n["default_runtime"] = "ascent";
-#else
-    n["default_runtime"] = "flow";
-#endif
 }
 
 

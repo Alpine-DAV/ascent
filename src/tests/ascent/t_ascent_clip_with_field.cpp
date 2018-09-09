@@ -75,18 +75,15 @@ index_t EXAMPLE_MESH_SIDE_DIM = 20;
 //-----------------------------------------------------------------------------
 TEST(ascent_clip_with_field, test_clip_with_field)
 {
-    // the ascent runtime is currently our only rendering runtime
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
-
+        ASCENT_INFO("Ascent support disabled, skipping test");
         return;
     }
-    
     
     //
     // Create an example mesh.
@@ -162,18 +159,15 @@ TEST(ascent_clip_with_field, test_clip_with_field)
 //-----------------------------------------------------------------------------
 TEST(ascent_clip_with_field, test_clip_with_field_inverted)
 {
-    // the ascent runtime is currently our only rendering runtime
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
-
+        ASCENT_INFO("Ascent support disabled, skipping test");
         return;
     }
-    
     
     //
     // Create an example mesh.

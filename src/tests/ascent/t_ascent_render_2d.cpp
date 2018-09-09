@@ -74,14 +74,12 @@ TEST(ascent_render_2d, test_render_2d_default_runtime)
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 2D default"
-                      "Pipeline test");
-
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
-    
+
     //
     // Create example mesh.
     //
@@ -140,11 +138,9 @@ TEST(ascent_render_2d, test_render_2d_uniform_default_runtime)
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 2D default"
-                      "Pipeline test");
-
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
     
@@ -203,13 +199,13 @@ TEST(ascent_render_2d, test_render_2d_uniform_default_runtime)
 TEST(ascent_render_2d, test_render_2d_render_serial_backend)
 {
     
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 2D Ascent Serial "
-                      "Pipeline test");
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
     
@@ -270,13 +266,13 @@ TEST(ascent_render_2d, test_render_2d_render_serial_backend)
 TEST(ascent_render_2d, test_render_2d_uniform_render_serial_backend)
 {
     
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 2D Ascent Serial "
-                      "Pipeline test");
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
     

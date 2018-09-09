@@ -69,6 +69,16 @@ using ascent::Ascent;
 TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
 {
 
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
     //
     // Set Up MPI
     //

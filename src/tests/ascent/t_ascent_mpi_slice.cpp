@@ -69,15 +69,13 @@ using namespace ascent;
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_slice, mpi_3slice)
 {
-    // the ascent runtime is currently our only rendering runtime
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with ascent support
-    if(n["runtimes/ascent/status"].as_string() == "disabled")
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 3D MPI "
-                      "Runtime test");
-
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
     
