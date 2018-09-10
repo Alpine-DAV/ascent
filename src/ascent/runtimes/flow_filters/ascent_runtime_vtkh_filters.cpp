@@ -92,6 +92,8 @@
 
 #endif
 
+#include <iomanip>
+
 using namespace conduit;
 using namespace std;
 
@@ -426,8 +428,8 @@ class CinemaManager
 protected:  
   std::vector<vtkm::rendering::Camera> m_cameras;
   std::vector<std::string>             m_image_names;
-  std::vector<float>                   m_phi_values;
-  std::vector<float>                   m_theta_values;
+  std::vector<int>                     m_phi_values;
+  std::vector<int>                     m_theta_values;
   std::vector<float>                   m_times;
 
   vtkm::Bounds                         m_bounds;
@@ -460,7 +462,6 @@ public:
   void add_time_step()
   {
     m_times.push_back(m_time);
-    m_time += 1.f;
 
     // add top level dir
     string output_path = "cinema_databases";
@@ -484,7 +485,8 @@ public:
     }
     
     std::stringstream ss;
-    ss<<m_time;
+    ss<<fixed<<showpoint;
+    ss<<std::setprecision(1)<<m_time;
     // add a time step path
     output_path = conduit::utils::join_file_path(output_path,ss.str());
 
@@ -494,6 +496,7 @@ public:
     }
 
     m_current_path = output_path;
+    m_time += 1.f;
   }
 
   void fill_renders(std::vector<vtkh::Render> *renders, 
@@ -573,14 +576,14 @@ private:
     vtkm::Float32 radius = vtkm::Magnitude(totalExtent) * 2.5 / 2.0;   
       
     const double pi = 3.141592653589793;
-    double phi_inc = 180.0 / double(m_phi);
-    double theta_inc = 360.0 / double(m_theta);
+    double phi_inc = 360.0 / double(m_phi);
+    double theta_inc = 180.0 / double(m_theta);
     for(int p = 0; p < m_phi; ++p)
     {
       for(int t = 0; t < m_theta; ++t)
       {
-        float phi  =  phi_inc * p;
-        float theta = -180 + theta_inc * t;
+        float phi  =  -180.f + phi_inc * p;
+        float theta = -90.f + theta_inc * t;
   
         const int i = p * m_theta + t;
         
@@ -600,8 +603,8 @@ private:
         vtkm::Matrix<vtkm::Float32,4,4> theta_rot;  
         vtkm::Matrix<vtkm::Float32,4,4> rot;  
   
-        phi_rot = vtkm::Transform3DRotateY(phi); 
-        theta_rot = vtkm::Transform3DRotateZ(theta); 
+        phi_rot = vtkm::Transform3DRotateZ(phi); 
+        theta_rot = vtkm::Transform3DRotateX(theta); 
         rot = vtkm::MatrixMultiply(phi_rot, theta_rot); 
   
         up = vtkm::Transform3DVector(rot, up);
@@ -615,7 +618,7 @@ private:
         camera.SetPosition(pos);
   
         std::stringstream ss;
-        ss<<phi<<"_"<<theta<<"_";
+        ss<<(int)phi<<"_"<<(int)theta<<"_";
   
         m_image_names.push_back(ss.str() + m_image_name);
         m_cameras.push_back(camera);
