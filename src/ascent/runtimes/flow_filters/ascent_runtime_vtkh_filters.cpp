@@ -93,7 +93,7 @@
 
 #endif
 
-#include <iomanip>
+#include <stdio.h>
 
 using namespace conduit;
 using namespace std;
@@ -123,7 +123,40 @@ namespace filters
 //-----------------------------------------------------------------------------
 namespace detail
 {
-//
+std::string expand_family_name(const std::string name)
+{
+  static std::map<std::string, int> s_file_family_map;
+  bool exists = s_file_family_map.find(name) != s_file_family_map.end();
+  int num = 0;
+  if(!exists)
+  {
+    s_file_family_map[name] = num;
+  }
+  else
+  {
+    num = s_file_family_map[name];
+    s_file_family_map[name] = num + 1;
+  }
+  std::string result; 
+  bool has_format = name.find("%") != std::string::npos;
+  if(has_format)
+  {
+    // allow for long file paths
+    char buffer[1000]; 
+    sprintf(buffer, name.c_str(), num);
+    result = std::string(buffer);
+  }
+  else
+  {
+    std::stringstream ss;
+    ss<<name<<num;
+    result = ss.str();
+  }
+  return result;
+}
+
+
+
 // A simple container to create registry entries for
 // renderer and the data set it renders. Without this,
 // pipeline results (data sets) would be deleted before 
@@ -1317,14 +1350,16 @@ DefaultRender::execute()
 
         else
         {
+          // this render has a unique name
           if(render_node.has_path("image_name"))
           {
-            image_name = render_node["image_name"].as_string();
+            image_name = detail::expand_family_name(render_node["image_name"].as_string());
           }
           else
           {
+            // this render has a unique name
             std::stringstream ss;
-            ss<<params()["image_prefix"].as_string();
+            ss<<detail::expand_family_name(params()["image_prefix"].as_string());
             ss<<"_"<<i;
             image_name = ss.str(); 
           }
@@ -1339,11 +1374,13 @@ DefaultRender::execute()
     }
     else
     {
+      std::string image_name =  params()["image_prefix"].as_string();
+      image_name = detail::expand_family_name(image_name);
       vtkh::Render render = vtkh::MakeRender(1024,
                                              1024, 
                                              *bounds,
                                              v_domain_ids,
-                                             params()["image_prefix"].as_string());
+                                             image_name);
 
       renders->push_back(render); 
     }
