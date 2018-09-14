@@ -78,6 +78,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/MeshRenderer.hpp>
+#include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
@@ -2186,7 +2187,32 @@ CreatePlot::execute()
 
     if(type == "pseudocolor")
     {
-      renderer = new vtkh::RayTracer();
+      bool is_point_mesh = data->IsPointMesh();
+      if(is_point_mesh)
+      {
+        vtkh::PointRenderer *p_renderer = new vtkh::PointRenderer();
+        p_renderer->UseCells();
+        if(plot_params.has_path("points/radius"))
+        {
+          float radius = plot_params["points/radius"].to_float32();
+          p_renderer->SetBaseRadius(radius);
+        }
+        // default is to use a constant radius
+        // if the radius delta is present, we will
+        // vary radii based on the scalar value
+        if(plot_params.has_path("points/radius_delta"))
+        {
+          float radius = plot_params["points/radius_delta"].to_float32();
+          p_renderer->UseVariableRadius(true);
+          p_renderer->SetRadiusDelta(radius);
+        }
+        renderer = p_renderer;
+      }
+      else
+      {
+        renderer = new vtkh::RayTracer();
+      }
+
     }
     else if(type == "volume")
     {
@@ -2227,7 +2253,7 @@ CreatePlot::execute()
     {
       renderer->SetField(plot_params["field"].as_string());
     } 
-
+  
     if(type == "mesh")
     {
       vtkh::MeshRenderer *mesh = dynamic_cast<vtkh::MeshRenderer*>(renderer);

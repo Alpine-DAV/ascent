@@ -272,6 +272,44 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   return field;
 }
 
+
+void VTKmCellShape(const std::string shape_type,
+                   vtkm::UInt8 &shape_id, 
+                   vtkm::IdComponent &num_indices)
+{
+  shape_id = 0;
+  num_indices = 0;
+  if(shape_type == "tri")
+  {
+      shape_id = 3;
+      num_indices = 3;
+  }
+  else if(shape_type == "quad")
+  {
+      shape_id = 9;
+      num_indices = 4;
+  }
+  else if(shape_type == "tet")
+  {
+      shape_id = 10;
+      num_indices = 4;
+  }
+  else if(shape_type == "hex")
+  {
+      shape_id = 12;
+      num_indices = 8;
+  }
+  else if(shape_type == "point")
+  {
+      shape_id = 1;
+      num_indices = 1;
+  }
+  else
+  {
+    ASCENT_ERROR("Unsupported cell type "<<shape_type);
+  }
+}
+
 };
 //-----------------------------------------------------------------------------
 // -- end detail:: --
@@ -482,6 +520,12 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
         shape_id = 12;
         indices = 8;
         dimensionality = 3; 
+    }
+    else if(shape_type == "points")
+    {
+        shape_id = 1;
+        indices = 1;
+        dimensionality = 1; 
     }
     // TODO: Not supported in blueprint yet ... 
     // else if(shape_type == "wedge")
@@ -937,23 +981,14 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
              n_topo_conn.to_int64_array(n_tmp);
         }
     }
-    
-    vtkm::cont::ArrayHandle<vtkm::UInt8> shapes;
-    vtkm::cont::ArrayHandle<vtkm::IdComponent> num_indices;
-    vtkm::IdComponent topo_dimensionality;
-    ExplicitArrayHelper array_creator;
-    array_creator.CreateExplicitArrays(shapes,
-                                       num_indices,
-                                       ele_shape,
-                                       conn_size,
-                                       topo_dimensionality,
-                                       neles);
-    
-    vtkm::cont::CellSetExplicit<> cell_set(topo_name.c_str());
+   
+    vtkm::UInt8 shape_id;
+    vtkm::IdComponent indices_per;
+    detail::VTKmCellShape(ele_shape, shape_id, indices_per);
+    vtkm::cont::CellSetSingleType<> cellset;
+    cellset.Fill(nverts, shape_id, indices_per, connectivity);
 
-    cell_set.Fill(nverts, shapes, num_indices, connectivity);
-    
-    result->AddCellSet(cell_set);
+    result->AddCellSet(cellset);
     
     ASCENT_INFO("neles "  << neles);
     
@@ -1281,7 +1316,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       coords.PrintSummary(std::cerr);
       ASCENT_ERROR("Unknown coords type");
     }
-
+    vtkm::UInt8 shape_id = 0;
     if(is_structured)
     {
       output["topologies/topo/coordset"] = "coords";
@@ -1313,15 +1348,13 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         output["topologies/topo/elements/connectivity"].set(vtkh::GetVTKMPointer(conn), 
                                                              conn.GetNumberOfValues());
       }
-      else if(vtkh::VTKMDataSetInfo::IsSingleCellShape(dyn_cells))
+      else if(vtkh::VTKMDataSetInfo::IsSingleCellShape(dyn_cells, shape_id))
       {
         // If we are here, the we know that the cell set is explicit,
         // but only a single cell shape
         auto cells = dyn_cells.Cast<vtkm::cont::CellSetExplicit<>>(); 
         auto shapes = cells.GetShapesArray(vtkm::TopologyElementTagPoint(), 
                                            vtkm::TopologyElementTagCell());
-
-        vtkm::UInt8 shape_id = shapes.GetPortalControl().Get(0);
 
         std::string conduit_name = GetBlueprintCellName(shape_id); 
         output["topologies/topo/elements/shape"] = conduit_name;
