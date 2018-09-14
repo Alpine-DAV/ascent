@@ -421,6 +421,72 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     render.SetCamera(camera);
   }
 
+  if(render_node.has_path("annotations"))
+  {
+    if(!render_node["annotations"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/annotations node must be a string value");
+    }
+    const std::string annot = render_node["annotations"].as_string();
+    // default is always render annotations
+    if(annot == "false")
+    {
+      render.DoRenderAnnotations(false);
+    }
+  }
+
+  if(render_node.has_path("render_bg"))
+  {
+    if(!render_node["render_bg"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/render_bg node must be a string value");
+    }
+    const std::string render_bg = render_node["render_bg"].as_string();
+    // default is always render the background 
+    // off will make the background transparent
+    if(render_bg == "false")
+    {
+      render.DoRenderBackground(false);
+    }
+  }
+
+  if(render_node.has_path("bg_color"))
+  {
+    if(!render_node["bg_color"].dtype().is_number() ||
+       render_node["bg_color"].dtype().number_of_elements() != 3)
+    {
+      ASCENT_ERROR("render/bg_color node must be an array of 3 values");
+    }
+    conduit::Node n;
+    render_node["bg_color"].to_float32_array(n);
+    const float32 *color = n.as_float32_ptr();
+    float32 color4f[4];
+    color4f[0] = color[0];
+    color4f[1] = color[1];
+    color4f[2] = color[2];
+    color4f[3] = 1.f;
+    render.SetBackgroundColor(color4f);
+  }
+
+  if(render_node.has_path("fg_color"))
+  {
+    if(!render_node["fg_color"].dtype().is_number() ||
+       render_node["fg_color"].dtype().number_of_elements() != 3)
+    {
+      ASCENT_ERROR("render/fg_color node must be an array of 3 values");
+    }
+    conduit::Node n;
+    render_node["fg_color"].to_float32_array(n);
+    const float32 *color = n.as_float32_ptr();
+    float32 color4f[4];
+    color4f[0] = color[0];
+    color4f[1] = color[1];
+    color4f[2] = color[2];
+    color4f[3] = 1.f;
+    render.SetForegroundColor(color4f);
+  }
+
+
   return render;
 }
 
