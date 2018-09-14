@@ -321,6 +321,18 @@ public:
     virtual void execute();
 };
 //-----------------------------------------------------------------------------
+class VTKHLagrangian : public ::flow::Filter
+{
+public:
+    VTKHLagrangian();
+    virtual ~VTKHLagrangian();
+    
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+//-----------------------------------------------------------------------------
 class VTKHNoOp : public ::flow::Filter
 {
 public:

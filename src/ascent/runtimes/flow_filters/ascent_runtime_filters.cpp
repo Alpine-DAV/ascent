@@ -125,6 +125,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
     AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");
     AscentRuntime::register_filter_type<VTKHIsoVolume>("transforms","isovolume");
+    AscentRuntime::register_filter_type<VTKHLagrangian>("transforms","lagrangian");
     AscentRuntime::register_filter_type<VTKHMarchingCubes>("transforms","contour");
     AscentRuntime::register_filter_type<VTKHThreshold>("transforms","threshold");
     AscentRuntime::register_filter_type<VTKHSlice>("transforms","slice");

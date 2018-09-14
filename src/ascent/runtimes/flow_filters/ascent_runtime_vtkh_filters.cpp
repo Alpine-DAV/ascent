@@ -84,6 +84,7 @@
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/NoOp.hpp>
+#include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkm/cont/DataSet.h>
@@ -2341,6 +2342,123 @@ ExecScene::execute()
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
+VTKHLagrangian::VTKHLagrangian()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHLagrangian::~VTKHLagrangian()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLagrangian::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_lagrangian";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHLagrangian::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    if(! params.has_child("field") ||
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+        res = false;
+    }
+    if(! params.has_child("step_size") ||
+       ! params["step_size"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'step_size'";
+        res = false;
+    }
+    if(! params.has_child("write_frequency") ||
+       ! params["write_frequency"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'write_frequency'";
+        res = false;
+    }
+    if(! params.has_child("cust_res") ||
+       ! params["cust_res"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'cust_res'";
+        res = false;
+    }
+    if(! params.has_child("x_res") ||
+       ! params["x_res"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'x_res'";
+        res = false;
+    }
+    if(! params.has_child("y_res") ||
+       ! params["y_res"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'y_res'";
+        res = false;
+    }
+    if(! params.has_child("z_res") ||
+       ! params["z_res"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'z_res'";
+        res = false;
+    }
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+VTKHLagrangian::execute()
+{
+
+    ASCENT_INFO("Doing nothing");
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_lagrangian input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    double step_size = params()["step_size"].to_float64();
+    int write_frequency = params()["write_frequency"].to_int32();
+    int cust_res = params()["cust_res"].to_int32();
+    int x_res = params()["x_res"].to_int32();
+    int y_res = params()["y_res"].to_int32();
+    int z_res = params()["z_res"].to_int32();
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Lagrangian lagrangian;
+
+    lagrangian.SetInput(data);
+    lagrangian.SetField(field_name);
+    lagrangian.SetStepSize(step_size);
+    lagrangian.SetWriteFrequency(write_frequency);
+    lagrangian.SetCustomSeedResolution(cust_res);
+    lagrangian.SetSeedResolutionInX(x_res);
+    lagrangian.SetSeedResolutionInY(y_res);
+    lagrangian.SetSeedResolutionInZ(z_res);
+    lagrangian.Update();
+
+    vtkh::DataSet *lagrangian_output = lagrangian.GetOutput();
+
+    set_output<vtkh::DataSet>(lagrangian_output);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 VTKHNoOp::VTKHNoOp()
 :Filter()
 {
@@ -2425,8 +2543,3 @@ VTKHNoOp::execute()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-
