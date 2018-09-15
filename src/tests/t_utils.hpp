@@ -63,16 +63,16 @@ using namespace conduit;
 
 //-----------------------------------------------------------------------------
 void
-remove_test_image(const std::string &path)
+remove_test_image(const std::string &path, const std::string num = "0")
 {    
-    if(conduit::utils::is_file(path + ".png"))
+    if(conduit::utils::is_file(path + num + ".png"))
     {
-        conduit::utils::remove_file(path + ".png");
+        conduit::utils::remove_file(path + num + ".png");
     }
     
-    if(conduit::utils::is_file(path + ".pnm"))
+    if(conduit::utils::is_file(path + num + ".pnm"))
     {
-        conduit::utils::remove_file(path + ".pnm");
+        conduit::utils::remove_file(path + num + ".pnm");
     }
     
 }
@@ -112,10 +112,10 @@ output_dir()
 
 //-----------------------------------------------------------------------------
 bool
-check_test_image(const std::string &path)
+check_test_image(const std::string &path, std::string num = "0")
 {    
     // for now, just check if the file exists.
-    return conduit::utils::is_file(path + ".png");
+    return conduit::utils::is_file(path + num + ".png");
 }
 
 bool

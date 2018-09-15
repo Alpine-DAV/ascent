@@ -78,6 +78,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/MeshRenderer.hpp>
+#include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
@@ -92,7 +93,7 @@
 
 #endif
 
-#include <iomanip>
+#include <stdio.h>
 
 using namespace conduit;
 using namespace std;
@@ -122,7 +123,40 @@ namespace filters
 //-----------------------------------------------------------------------------
 namespace detail
 {
-//
+std::string expand_family_name(const std::string name)
+{
+  static std::map<std::string, int> s_file_family_map;
+  bool exists = s_file_family_map.find(name) != s_file_family_map.end();
+  int num = 0;
+  if(!exists)
+  {
+    s_file_family_map[name] = num;
+  }
+  else
+  {
+    num = s_file_family_map[name];
+    s_file_family_map[name] = num + 1;
+  }
+  std::string result; 
+  bool has_format = name.find("%") != std::string::npos;
+  if(has_format)
+  {
+    // allow for long file paths
+    char buffer[1000]; 
+    sprintf(buffer, name.c_str(), num);
+    result = std::string(buffer);
+  }
+  else
+  {
+    std::stringstream ss;
+    ss<<name<<num;
+    result = ss.str();
+  }
+  return result;
+}
+
+
+
 // A simple container to create registry entries for
 // renderer and the data set it renders. Without this,
 // pipeline results (data sets) would be deleted before 
@@ -419,6 +453,72 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     parse_camera(render_node["camera"], camera);
     render.SetCamera(camera);
   }
+
+  if(render_node.has_path("annotations"))
+  {
+    if(!render_node["annotations"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/annotations node must be a string value");
+    }
+    const std::string annot = render_node["annotations"].as_string();
+    // default is always render annotations
+    if(annot == "false")
+    {
+      render.DoRenderAnnotations(false);
+    }
+  }
+
+  if(render_node.has_path("render_bg"))
+  {
+    if(!render_node["render_bg"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/render_bg node must be a string value");
+    }
+    const std::string render_bg = render_node["render_bg"].as_string();
+    // default is always render the background 
+    // off will make the background transparent
+    if(render_bg == "false")
+    {
+      render.DoRenderBackground(false);
+    }
+  }
+
+  if(render_node.has_path("bg_color"))
+  {
+    if(!render_node["bg_color"].dtype().is_number() ||
+       render_node["bg_color"].dtype().number_of_elements() != 3)
+    {
+      ASCENT_ERROR("render/bg_color node must be an array of 3 values");
+    }
+    conduit::Node n;
+    render_node["bg_color"].to_float32_array(n);
+    const float32 *color = n.as_float32_ptr();
+    float32 color4f[4];
+    color4f[0] = color[0];
+    color4f[1] = color[1];
+    color4f[2] = color[2];
+    color4f[3] = 1.f;
+    render.SetBackgroundColor(color4f);
+  }
+
+  if(render_node.has_path("fg_color"))
+  {
+    if(!render_node["fg_color"].dtype().is_number() ||
+       render_node["fg_color"].dtype().number_of_elements() != 3)
+    {
+      ASCENT_ERROR("render/fg_color node must be an array of 3 values");
+    }
+    conduit::Node n;
+    render_node["fg_color"].to_float32_array(n);
+    const float32 *color = n.as_float32_ptr();
+    float32 color4f[4];
+    color4f[0] = color[0];
+    color4f[1] = color[1];
+    color4f[2] = color[2];
+    color4f[3] = 1.f;
+    render.SetForegroundColor(color4f);
+  }
+
 
   return render;
 }
@@ -1250,14 +1350,16 @@ DefaultRender::execute()
 
         else
         {
+          // this render has a unique name
           if(render_node.has_path("image_name"))
           {
-            image_name = render_node["image_name"].as_string();
+            image_name = detail::expand_family_name(render_node["image_name"].as_string());
           }
           else
           {
+            // this render has a unique name
             std::stringstream ss;
-            ss<<params()["image_prefix"].as_string();
+            ss<<detail::expand_family_name(params()["image_prefix"].as_string());
             ss<<"_"<<i;
             image_name = ss.str(); 
           }
@@ -1272,11 +1374,13 @@ DefaultRender::execute()
     }
     else
     {
+      std::string image_name =  params()["image_prefix"].as_string();
+      image_name = detail::expand_family_name(image_name);
       vtkh::Render render = vtkh::MakeRender(1024,
                                              1024, 
                                              *bounds,
                                              v_domain_ids,
-                                             params()["image_prefix"].as_string());
+                                             image_name);
 
       renders->push_back(render); 
     }
@@ -2186,7 +2290,32 @@ CreatePlot::execute()
 
     if(type == "pseudocolor")
     {
-      renderer = new vtkh::RayTracer();
+      bool is_point_mesh = data->IsPointMesh();
+      if(is_point_mesh)
+      {
+        vtkh::PointRenderer *p_renderer = new vtkh::PointRenderer();
+        p_renderer->UseCells();
+        if(plot_params.has_path("points/radius"))
+        {
+          float radius = plot_params["points/radius"].to_float32();
+          p_renderer->SetBaseRadius(radius);
+        }
+        // default is to use a constant radius
+        // if the radius delta is present, we will
+        // vary radii based on the scalar value
+        if(plot_params.has_path("points/radius_delta"))
+        {
+          float radius = plot_params["points/radius_delta"].to_float32();
+          p_renderer->UseVariableRadius(true);
+          p_renderer->SetRadiusDelta(radius);
+        }
+        renderer = p_renderer;
+      }
+      else
+      {
+        renderer = new vtkh::RayTracer();
+      }
+
     }
     else if(type == "volume")
     {
@@ -2227,7 +2356,7 @@ CreatePlot::execute()
     {
       renderer->SetField(plot_params["field"].as_string());
     } 
-
+  
     if(type == "mesh")
     {
       vtkh::MeshRenderer *mesh = dynamic_cast<vtkh::MeshRenderer*>(renderer);

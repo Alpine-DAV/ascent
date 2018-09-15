@@ -358,7 +358,7 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
     delete lo_mesh;
 
   }
-  //output.print();
+  //output.schema().print();
 }
 
 void

@@ -15,7 +15,7 @@
             }
           }
         },
-        "image_prefix": "energy"
+        "image_prefix": "energy_%04d"
       }
     }
   }
