@@ -1261,9 +1261,7 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
     ASCENT_INFO("number of vertices: "     << nverts);
     ASCENT_INFO("number of elements: "     << neles);
     ASCENT_INFO("number of components: "   << num_components);
-    n_field.schema().print();
     const conduit::Node &u = n_field["values/u"];
-    //bool interleaved = conduit::blueprint::mcarray::is_interleaved(u);
     bool interleaved = conduit::blueprint::mcarray::is_interleaved(n_vals);
     try
     {
