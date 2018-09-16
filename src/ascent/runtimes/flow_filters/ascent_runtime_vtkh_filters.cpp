@@ -923,6 +923,14 @@ VTKHMarchingCubes::execute()
     else
     {
       marcher.SetLevels(params()["levels"].to_int32());
+      if(params().has_path("use_contour_tree"))
+      {
+        std::string use = params()["use_contour_tree"].as_string();
+        if(use == "true")
+        {
+          marcher.SetUseContourTree(true);
+        }
+      }
     }
 
     marcher.Update();
