@@ -745,7 +745,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     conduit::Node scene = scenes.child(i);
     if(!scene.has_path("plots"))
     {
-      ASCENT_ERROR("Default scene not implemented");
+      ASCENT_ERROR("Scene must have at least one plot");
     }
 
     // create the default render 
@@ -755,12 +755,9 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       render_params["renders"] = scene["renders"];
     } 
 
-    int plot_count = scene["plots"].number_of_children();
-    render_params["pipeline_count"] = plot_count;
-
     if(scene.has_path("image_prefix"))
     {
-      render_params["image_prefix"] = scene["image_prefix"].as_string();;
+      render_params["image_prefix"] = scene["image_prefix"].as_string();
     }
     else
     {
@@ -768,7 +765,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       render_params["image_prefix"] = image_prefix;
     }
 
-    render_params["pipeline_count"] = plot_count;
     std::string renders_name = names[i] + "_renders";
     
     w.graph().add_filter("default_render",
@@ -818,6 +814,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     // the final output to the ExecPlot filter that actually 
     // calls render() on the scene.
     //
+    int plot_count = scene["plots"].number_of_children();
     std::string prev_add_plot_name = "";
     for(int p = 0; p < plot_count; ++p)
     {

@@ -72,7 +72,7 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
 
 
         obase = "tout_python_ascent_mpi_render_2d"
-        ofile = obase + ".png"
+        ofile = obase + "0.png"
         # clean up old results if they exist
         if MPI.COMM_WORLD.rank == 0 and os.path.isfile(ofile):
             os.remove(ofile)
@@ -130,7 +130,7 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
             return
 
         obase = "tout_python_ascent_mpi_render_3d"
-        ofile = obase + ".png"
+        ofile = obase + "0.png"
         # clean up old results if they exist
         if MPI.COMM_WORLD.rank == 0 and os.path.isfile(ofile):
             os.remove(ofile)

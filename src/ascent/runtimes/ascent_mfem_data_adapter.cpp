@@ -323,13 +323,26 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
     for(auto it = field_map.begin(); it != field_map.end(); ++it)
     {
       mfem::GridFunction *ho_gf = it->second;
+      std::string basis(ho_gf->FESpace()->FEColl()->Name());
+      // we only have L2 or H2 at this point
+      bool node_centered = basis.find("H1_") != std::string::npos;
+
       mfem::FiniteElementSpace *ho_fes = ho_gf->FESpace();
       if(ho_fes == nullptr) 
       {
         ASCENT_ERROR("Linearize: high order gf finite element space is null") 
       }
       // create the low order grid function
-      mfem::FiniteElementCollection *lo_col = new mfem::LinearFECollection;
+      mfem::FiniteElementCollection *lo_col = nullptr;
+      if(node_centered)
+      {
+        lo_col = new mfem::LinearFECollection;
+      }
+      else
+      {
+        int  p = 0; // single scalar
+        lo_col = new mfem::L2_FECollection(p, ho_mesh->Dimension(), 1);
+      }
       mfem::FiniteElementSpace *lo_fes = new mfem::FiniteElementSpace(lo_mesh, lo_col, ho_fes->GetVDim());
       mfem::GridFunction *lo_gf = new mfem::GridFunction(lo_fes);
       // transform the higher order function to a low order function somehow
@@ -337,11 +350,17 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
       lo_fes->GetTransferOperator(*ho_fes, hi_to_lo);
       hi_to_lo.Ptr()->Mult(*ho_gf, *lo_gf);
       // extract field
-      conduit::Node &n_field = n_fields[it->first];;
-
+      conduit::Node &n_field = n_fields[it->first];
       GridFunctionToBlueprintField(lo_gf, n_field);
       // all supported grid functions coming out of mfem end up being associtated with vertices
-      n_field["association"] = "vertex";
+      if(node_centered)
+      {
+        n_field["association"] = "vertex";
+      }
+      else
+      {
+        n_field["association"] = "element";
+      }
       
       delete lo_col;
       delete lo_fes;
@@ -358,7 +377,7 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
     delete lo_mesh;
 
   }
-  //output.print();
+  //output.schema().print();
 }
 
 void

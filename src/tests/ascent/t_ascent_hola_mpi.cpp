@@ -302,7 +302,7 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         MPI_Barrier(world_comm);
         
         string output_image = conduit::utils::join_file_path(output_dir(),
-                                                            "tout_hola_mpi_test_render");
+                                                            "tout_hola_mpi_test_render0");
         EXPECT_TRUE(utils::is_file(output_image + ".png"));
     }
     else
@@ -351,7 +351,7 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         
         //have all ranks check the output file
         MPI_Barrier(world_comm);
-        EXPECT_TRUE(utils::is_file(output_image + ".png"));
+        EXPECT_TRUE(utils::is_file(output_image + "0.png"));
     }
 
     MPI_Comm_free(&sub_comm);
