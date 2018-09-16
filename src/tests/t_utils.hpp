@@ -339,6 +339,57 @@ create_3d_example_dataset(Node &data,
     }
 }
 
+void add_interleaved_vector(conduit::Node &dset)
+{
+  int dims = dset["fields/vel/values"].number_of_children();
+  if(dims != 2 && dims != 3)
+  {
+    return;
+  }
+
+  Node &in_field = dset["fields/vel/values"];
+
+  int nvals = in_field["u"].dtype().number_of_elements();
+
+  index_t stride = sizeof(conduit::float64) * dims;
+  Schema s;
+  index_t size = sizeof(conduit::float64);
+  s["u"].set(DataType::float64(nvals,0,stride));
+  s["v"].set(DataType::float64(nvals,size,stride));
+  if(dims == 3)
+  {
+    s["w"].set(DataType::float64(nvals,size*2,stride));
+  }
+ 
+  Node &res = dset["fields/vel_interleaved/values"];
+  dset["fields/vel_interleaved/association"] = dset["fields/vel/association"];
+  dset["fields/vel_interleaved/topology"] = dset["fields/vel/topology"];
+  // init the output
+  res.set(s);
+  
+  float64_array u_a = res["u"].value();
+  float64_array v_a = res["v"].value();
+  float64_array w_a;
+
+  float64_array u_in = in_field["u"].value();
+  float64_array v_in = in_field["v"].value();
+  float64_array w_in; 
+  if(dims == 3)
+  {
+    w_a = res["w"].value();
+    w_in = in_field["w"].value();
+  }
+  
+  for(index_t i=0;i<nvals;i++)
+  {
+      u_a[i] = u_in[i];
+      v_a[i] = v_in[i];
+      if(dims == 3)
+      {
+        w_a[i] = w_in[i]; 
+      }
+  }
+}
 //-----------------------------------------------------------------------------
 #endif
 //-----------------------------------------------------------------------------

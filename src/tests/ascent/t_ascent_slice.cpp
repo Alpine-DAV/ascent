@@ -182,7 +182,7 @@ TEST(ascent_slice, test_3slice)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+    add_interleaved_vector(data); 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
 
