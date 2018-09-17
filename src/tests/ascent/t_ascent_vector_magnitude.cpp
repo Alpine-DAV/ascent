@@ -71,11 +71,9 @@ using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
-
 //-----------------------------------------------------------------------------
-TEST(ascent_slice, test_slice)
+TEST(ascent_vector_mag, test_vector_mag)
 {
-    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
@@ -94,15 +92,14 @@ TEST(ascent_slice, test_slice)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
 
-    ASCENT_INFO("Testing slice");
+    ASCENT_INFO("Testing vector magnitude");
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_slice_3d");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_vec_mag");
     
     // remove old images before rendering
     remove_test_image(output_file);
@@ -114,21 +111,17 @@ TEST(ascent_slice, test_slice)
     
     conduit::Node pipelines;
     // pipeline 1
-    pipelines["pl1/f1/type"] = "slice";
-    // filter knobs
-    conduit::Node &slice_params = pipelines["pl1/f1/params"];
-    slice_params["point/x"] = 0.f;
-    slice_params["point/y"] = 0.f;
-    slice_params["point/z"] = 0.f;
-
-    slice_params["normal/x"] = 0.f;
-    slice_params["normal/y"] = 0.f;
-    slice_params["normal/z"] = 1.f;
+    pipelines["pl1/f1/type"] = "vector_magnitude";
+    // filter knobs (all these are optional)
+    conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "vel";         // name of the vector field
+    params["output_name"] = "mag";   // name of the output field
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
+    scenes["s1/plots/p1/params/field"] = "mag";
     scenes["s1/plots/p1/pipeline"] = "pl1";
+
     scenes["s1/image_prefix"] = output_file;
  
     conduit::Node actions;
@@ -161,8 +154,7 @@ TEST(ascent_slice, test_slice)
     EXPECT_TRUE(check_test_image(output_file));
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-TEST(ascent_slice, test_3slice)
+TEST(ascent_vector_mag, test_vector_mag_interleaved)
 {
     Node n;
     ascent::about(n);
@@ -182,15 +174,15 @@ TEST(ascent_slice, test_3slice)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-
+    add_interleaved_vector(data); 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
 
-    ASCENT_INFO("Testing 3slice");
+    ASCENT_INFO("Testing vector magnitude interleaved");
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_3slice_3d");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_vec_mag_interleaved");
     
     // remove old images before rendering
     remove_test_image(output_file);
@@ -202,17 +194,15 @@ TEST(ascent_slice, test_3slice)
     
     conduit::Node pipelines;
     // pipeline 1
-    pipelines["pl1/f1/type"] = "3slice";
+    pipelines["pl1/f1/type"] = "vector_magnitude";
     // filter knobs (all these are optional)
+    conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "vel_interleaved";  // name of the vector field
+    params["output_name"] = "mag";        // name of the output field
 
-    conduit::Node &slice_params = pipelines["pl1/f1/params"];
-    slice_params["x_offset"] = 1.f;   // largest value on the x-axis
-    slice_params["y_offset"] = 0.f;   // middle of the y-axis
-    slice_params["z_offset"] = -1.f;  // smalles value of the z-axis
-  
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
+    scenes["s1/plots/p1/params/field"] = "mag";
     scenes["s1/plots/p1/pipeline"] = "pl1";
 
     scenes["s1/image_prefix"] = output_file;

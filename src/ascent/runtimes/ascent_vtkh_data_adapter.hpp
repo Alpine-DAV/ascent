@@ -160,6 +160,14 @@ private:
                                           vtkm::cont::DataSet *dset,
                                           bool zero_copy);
 
+    static void                  AddVectorField(const std::string &field_name,
+                                                const conduit::Node &n_field,
+                                                const std::string &topo_name,
+                                                int neles,
+                                                int nverts,
+                                                vtkm::cont::DataSet *dset,
+                                                bool zero_copy);
+
     static bool VTKmTopologyToBlueprint(conduit::Node &output,
                                         const vtkm::cont::DataSet &data_set);
 
