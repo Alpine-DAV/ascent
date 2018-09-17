@@ -1232,8 +1232,6 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
                                 vtkm::cont::DataSet *dset,
                                 bool zero_copy)                 // attempt to zero copy
 {
-    // TODO: how do we deal with vector valued fields?, these will be mcarrays
-
     string assoc_str = n_field["association"].as_string();
 
     vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
@@ -1253,7 +1251,7 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
     }
 
     const Node &n_vals = n_field["values"];
-    int num_vals = n_vals["u"].dtype().number_of_elements();
+    int num_vals = n_vals.child(0).dtype().number_of_elements();
     int num_components = n_field["values"].number_of_children();
     std::cout<<"Number of components "<<num_components<<"\n";
     ASCENT_INFO("field association: "      << assoc_str);
@@ -1261,7 +1259,8 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
     ASCENT_INFO("number of vertices: "     << nverts);
     ASCENT_INFO("number of elements: "     << neles);
     ASCENT_INFO("number of components: "   << num_components);
-    const conduit::Node &u = n_field["values/u"];
+
+    const conduit::Node &u = n_field["values"].child(0);
     bool interleaved = conduit::blueprint::mcarray::is_interleaved(n_vals);
     try
     {
@@ -1305,8 +1304,8 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
           // While vtkm supports ArrayHandleCompositeVectors for 
           // coordinate systems, it does not support composites 
           // for fields. Thus we have to copy the data.
-          const conduit::Node &v = n_field["values/v"];
-          const conduit::Node &w = n_field["values/w"];
+          const conduit::Node &v = n_field["values"].child(1);
+          const conduit::Node &w = n_field["values"].child(2);
 
           if(u.dtype().is_float32())
           {

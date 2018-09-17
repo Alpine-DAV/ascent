@@ -240,20 +240,12 @@ SUBROUTINE visit(my_ascent)
       CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/type", "scalar")
       CALL conduit_node_set_path_float64_ptr(sim_data,"fields/pressure/values", pressure, ncells)
       ! velocity x 
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_x/association", "vertex")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_x/topology", "mesh")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_x/type", "scalar")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity_x/values", xvel, nnodes)
-      ! velocity y
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_y/association", "vertex")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_y/topology", "mesh")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_y/type", "scalar")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity_y/values", yvel, nnodes)
-      ! velocity z
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_z/association", "vertex")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_z/topology", "mesh")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity_z/type", "scalar")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity_z/values", zvel, nnodes)
+      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/association", "vertex")
+      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/topology", "mesh")
+      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/type", "scalar")
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/u", xvel, nnodes)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/v", xvel, nnodes)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/w", xvel, nnodes)
       ! CALL sim_data%print_detailed()
 
       WRITE(chunk_name, '(i6)') parallel%task+100001

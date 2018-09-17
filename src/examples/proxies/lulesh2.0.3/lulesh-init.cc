@@ -233,20 +233,31 @@ Domain::Domain(Int_t numRanks, Int_t myRank,
       m_ascent_node["fields/q/topology"]    = "mesh";
       m_ascent_node["fields/q/values"].set_external(m_q);
 
-      m_ascent_node["fields/xd/association"] = "vertex";
-      m_ascent_node["fields/xd/type"]        = "scalar";
-      m_ascent_node["fields/xd/topology"]    = "mesh";
-      m_ascent_node["fields/xd/values"].set_external(m_xd);
+      m_ascent_node["fields/velocity/association"] = "vertex";
+      m_ascent_node["fields/velocity/type"]        = "scalar";
+      m_ascent_node["fields/velocity/topology"]    = "mesh";
+      m_ascent_node["fields/velocity/values/u"].set_external(m_xd);
+      m_ascent_node["fields/velocity/values/v"].set_external(m_yd);
+      m_ascent_node["fields/velocity/values/w"].set_external(m_zd);
 
-      m_ascent_node["fields/yd/association"] = "vertex";
-      m_ascent_node["fields/yd/type"]        = "scalar";
-      m_ascent_node["fields/yd/topology"]    = "mesh";
-      m_ascent_node["fields/yd/values"].set_external(m_yd);
+      m_ascent_node["fields/acceleration/association"] = "vertex";
+      m_ascent_node["fields/acceleration/type"]        = "scalar";
+      m_ascent_node["fields/acceleration/topology"]    = "mesh";
+      m_ascent_node["fields/acceleration/values/u"].set_external(m_xdd);
+      m_ascent_node["fields/acceleration/values/v"].set_external(m_ydd);
+      m_ascent_node["fields/acceleration/values/w"].set_external(m_zdd);
 
-      m_ascent_node["fields/zd/association"] = "vertex";
-      m_ascent_node["fields/zd/type"]        = "scalar";
-      m_ascent_node["fields/zd/topology"]    = "mesh";
-      m_ascent_node["fields/zd/values"].set_external(m_yd);
+      m_ascent_node["fields/forces/association"] = "vertex";
+      m_ascent_node["fields/forces/type"]        = "scalar";
+      m_ascent_node["fields/forces/topology"]    = "mesh";
+      m_ascent_node["fields/forces/values/u"].set_external(m_fx);
+      m_ascent_node["fields/forces/values/v"].set_external(m_fy);
+      m_ascent_node["fields/forces/values/w"].set_external(m_fz);
+
+      m_ascent_node["fields/nodal_mass/association"] = "vertex";
+      m_ascent_node["fields/nodal_mass/type"]        = "scalar";
+      m_ascent_node["fields/nodal_mass/topology"]    = "mesh";
+      m_ascent_node["fields/nodal_mass/values"].set_external(m_nodalMass);
    }
     //------- end wrapping with Conduit here -------//
    conduit::Node verify_info;
