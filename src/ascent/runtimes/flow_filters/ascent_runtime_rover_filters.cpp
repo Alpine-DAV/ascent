@@ -45,37 +45,46 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_filters.cpp
+/// file: ascent_runtime_rover_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <ascent_runtime_filters.hpp>
+#include "ascent_runtime_rover_filters.hpp"
 
+//-----------------------------------------------------------------------------
+// thirdparty includes
+//-----------------------------------------------------------------------------
+
+// conduit includes
+#include <conduit.hpp>
+#include <conduit_relay.hpp>
+#include <conduit_blueprint.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
-#include <ascent_runtime_relay_filters.hpp>
-#include <ascent_runtime_blueprint_filters.hpp>
+// mpi
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#endif
 
 #if defined(ASCENT_VTKM_ENABLED)
-    #include <ascent_runtime_vtkh_filters.hpp>
-    #include <ascent_runtime_rover_filters.hpp>
+#include <rover.hpp>
+#include <ray_generators/camera_generator.hpp>
+#include <vtkh/vtkh.hpp>
+#include <vtkh/DataSet.hpp>
+#include <ascent_vtkh_data_adapter.hpp>
 #endif
 
-#ifdef ASCENT_MPI_ENABLED
-    #include <ascent_runtime_hola_filters.hpp>
-#if defined(ASCENT_ADIOS_ENABLED)
-    #include <ascent_runtime_adios_filters.hpp>
-#endif
-#endif
-
-
+using namespace conduit;
+using namespace std;
 
 using namespace flow;
+using namespace rover;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -94,68 +103,130 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace filters
 {
-
+;
 
 //-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
+RoverXRay::RoverXRay()
+:Filter()
 {
-    Workspace::register_filter_type<BlueprintVerify>(); 
-    Workspace::register_filter_type<RelayIOSave>();
-    Workspace::register_filter_type<RelayIOLoad>();
-    
-#if defined(ASCENT_VTKM_ENABLED)
-    Workspace::register_filter_type<DefaultRender>();
-    Workspace::register_filter_type<EnsureVTKH>();
-    Workspace::register_filter_type<EnsureVTKM>();
-    Workspace::register_filter_type<EnsureBlueprint>();
-
-    Workspace::register_filter_type<VTKHBounds>();
-    Workspace::register_filter_type<VTKHUnionBounds>();
-
-    Workspace::register_filter_type<VTKHDomainIds>();
-    Workspace::register_filter_type<VTKHUnionDomainIds>();
-    
-    Workspace::register_filter_type<DefaultScene>();
-
-
-    Workspace::register_filter_type<VTKHClip>();
-    Workspace::register_filter_type<VTKHClipWithField>();
-    Workspace::register_filter_type<VTKHIsoVolume>();
-    Workspace::register_filter_type<VTKHMarchingCubes>();
-    Workspace::register_filter_type<VTKHThreshold>();
-    Workspace::register_filter_type<VTKHSlice>();
-    Workspace::register_filter_type<VTKH3Slice>();
-    Workspace::register_filter_type<VTKHNoOp>();
-
-    Workspace::register_filter_type<RoverXRay>();
-
-    Workspace::register_filter_type<AddPlot>();
-    Workspace::register_filter_type<CreatePlot>();
-    Workspace::register_filter_type<CreateScene>();
-    Workspace::register_filter_type<ExecScene>();
-#endif
-
-#if defined(ASCENT_MPI_ENABLED)
-    Workspace::register_filter_type<HolaMPIExtract>();
-
-#if defined(ASCENT_ADIOS_ENABLED)
-    Workspace::register_filter_type<ADIOS>();
-#endif
-
-#endif
-
+// empty
 }
 
+//-----------------------------------------------------------------------------
+RoverXRay::~RoverXRay()
+{
+// empty
+}
 
+//-----------------------------------------------------------------------------
+void 
+RoverXRay::declare_interface(Node &i)
+{
+    i["type_name"]   = "xray";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+RoverXRay::verify_params(const conduit::Node &params,
+                                 conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    
+    if(! params.has_child("absorption") || 
+       ! params["absorption"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'absorption'";
+        res = false;
+    }
+
+    if( params.has_child("emission") &&
+       ! params["emission"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing optional string parameter 'emission'";
+        res = false;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void 
+RoverXRay::execute()
+{
+
+    ASCENT_INFO("XRay sees everything!");
+    vtkh::DataSet *dataset = nullptr;
+
+    if(input(0).check_type<Node>())
+    {
+        std::cout<<"Getting data set\n";
+        // convert from blueprint to vtk-h
+        const Node *n_input = input<Node>(0);
+        dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
+        std::cout<<"got data set\n";
+    }
+    
+    vtkmCamera camera;
+    camera.ResetToBounds(dataset->GetGlobalBounds());
+
+    CameraGenerator generator(camera, 512, 512);
+
+    Rover tracer;
+#ifdef ASCENT_MPI_ENABLED
+    int comm_id =flow::Workspace::default_mpi_comm();
+    tracer.set_mpi_comm_handle(comm_id);
+#endif
+    
+    //tracer.set_tracer_precision64();
+    
+    //
+    // Create some basic settings 
+    //
+    RenderSettings settings;
+    settings.m_primary_field = params()["absorption"].as_string();
+
+    if(params().has_path("emission"))
+    {
+       settings.m_secondary_field = params()["emission"].as_string();
+    }
+
+    settings.m_render_mode = rover::energy;
+    //settings.m_render_mode = rover::volume;
+    //vtkmColorTable color_table("cool to warm");
+    //color_table.AddPointAlpha(0.0, .01);
+    //color_table.AddPointAlpha(0.5, .02);
+    //color_table.AddPointAlpha(1.0, .01);
+    //settings.m_color_table = color_table;
+
+    tracer.set_render_settings(settings);
+    for(int i = 0; i < dataset->GetNumberOfDomains(); ++i)
+    {
+      //dataset->GetDomain(i).PrintSummary(std::cout);
+      tracer.add_data_set(dataset->GetDomain(i));
+    }
+    static int count = 0;
+    tracer.set_ray_generator(&generator);
+    tracer.execute();
+    std::stringstream ss;
+    ss<<"rover_"<<count;
+    std::cout<<"saving "<<ss.str()<<"\n";
+    count++;
+    //tracer.save_png("rover");
+    tracer.save_png(ss.str());
+    tracer.finalize();
+
+    delete dataset;
+}
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
@@ -169,4 +240,8 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
+
+
+
 

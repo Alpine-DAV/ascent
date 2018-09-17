@@ -393,7 +393,7 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
                                     const std::string extract_name)
 {
   std::string filter_name; 
-
+  
   conduit::Node params;
   if(extract.has_path("params")) params = extract["params"];
 
@@ -418,6 +418,10 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   else if(extract["type"].as_string() == "hola_mpi")
   {
     filter_name = "hola_mpi";
+  }
+  else if(extract["type"].as_string() == "xray")
+  {
+    filter_name = "xray";
   }
   else if(extract["type"].as_string() == "python")
   {
@@ -922,6 +926,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
     // make sure we always have our source data
     ConnectSource();
     // Loop over the actions
+    actions.print();
     for (int i = 0; i < actions.number_of_children(); ++i)
     {
         const Node &action = actions.child(i);
