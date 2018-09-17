@@ -69,9 +69,8 @@ using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
-
 //-----------------------------------------------------------------------------
-TEST(ascent_lagrangian, test_lagrangian)
+TEST(ascent_lagrangian, test_lagrangian_multistep)
 {
     // the vtkm runtime is currently our only rendering runtime
     Node n;
@@ -83,28 +82,30 @@ TEST(ascent_lagrangian, test_lagrangian)
         return;
     }
     
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("uniform",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
-
     ASCENT_INFO("Testing lagrangian");
-
+    
 
 //    string output_path = prepare_output_dir();
 //    string output_file = conduit::utils::join_file_path(output_path,"tout_lagrangian_3d");
+   
+    string output_path = ASCENT_T_BIN_DIR;
     
+    ASCENT_INFO("Execute test from folder: " + output_path + "/ascent");
+    output_path = conduit::utils::join_file_path(output_path,"ascent/output");
+    ASCENT_INFO("Creating output folder: " + output_path);
+    if(!conduit::utils::is_directory(output_path))
+    {   
+        conduit::utils::create_directory(output_path);
+    } 
+ 
     // remove old images before rendering
-//    remove_test_image(output_file);
+    string output_file1 = conduit::utils::join_file_path(output_path,"basisflows_1_5.vtk");
+    remove_test_file(output_file1);
+    string output_file2 = conduit::utils::join_file_path(output_path,"basisflows_1_10.vtk");
+    remove_test_file(output_file2);
 
+    ASCENT_INFO(output_file1);
+    ASCENT_INFO(output_file2);
 
     //
     // Create the actions.
@@ -117,31 +118,23 @@ TEST(ascent_lagrangian, test_lagrangian)
     conduit::Node &lagrangian_params = pipelines["pl1/f1/params"];
     lagrangian_params["field"] = "vel";
     lagrangian_params["step_size"] = 0.1;
-    lagrangian_params["write_frequency"] = 1;
+    lagrangian_params["write_frequency"] = 5;
     lagrangian_params["cust_res"] = 1;
     lagrangian_params["x_res"] = 2;
     lagrangian_params["y_res"] = 2;
     lagrangian_params["z_res"] = 2;
 
-/*    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "vel";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
-*/
- 
     conduit::Node actions;
     // add the pipeline
     conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-//    conduit::Node &add_scenes= actions.append();
-//    add_scenes["action"] = "add_scenes";
-//    add_scenes["scenes"] = scenes;
     // execute
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
+    // reset
+    conduit::Node &reset  = actions.append();
+    reset["action"] = "reset";
     
     //
     // Run Ascent
@@ -152,13 +145,34 @@ TEST(ascent_lagrangian, test_lagrangian)
     Node ascent_opts;
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
+    
+    for(int cycle = 1; cycle <= 10; cycle++)
+    {
+      //
+      // Create an example mesh.
+      //
+      Node data, verify_info;
+      conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    
+      EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+      ascent.publish(data);
+      ascent.execute(actions);
+    }
+    
     ascent.close();
     
-    // check that we created an image
-    EXPECT_TRUE(true);
-    //EXPECT_TRUE(check_test_image(output_file));
+    // check that we created the right output
+    EXPECT_TRUE(check_test_file(output_file1));
+    EXPECT_TRUE(check_test_file(output_file2));
+
+    // clean up 
+    remove_test_file(output_file1);
+    remove_test_file(output_file2);
+    conduit::utils::remove_directory(output_path);
 }
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
