@@ -1,5 +1,36 @@
 [
   {
+    "action": "add_pipelines",
+    "pipelines": 
+    {
+      "p1": 
+      {
+        "f1": 
+        {
+          "type" : "contour",
+          "params" :
+          {
+            "field" : "energy",
+            "levels": 10,
+            "use_contour_tree" : "true"
+          }
+        }
+      },
+      "p2": 
+      {
+        "f1": 
+        {
+          "type" : "contour",
+          "params" :
+          {
+            "field" : "energy",
+            "levels": 10
+          }
+        }
+      }
+    }
+  },
+  {
     "action": "add_scenes",
     "scenes":
     {
@@ -10,6 +41,32 @@
           "p1":
           {
             "type": "volume",
+            "field": "energy"
+          }
+        }
+      },
+      "s2": 
+      {
+        "image_prefix": "contour_tree_%04d",
+        "plots": 
+        {
+          "p1": 
+          {
+            "type": "pseudocolor",
+            "pipeline": "p1",
+            "field": "energy"
+          }
+        }
+      },
+      "s3": 
+      {
+        "image_prefix": "levels_%04d",
+        "plots": 
+        {
+          "p1": 
+          {
+            "type": "pseudocolor",
+            "pipeline": "p2",
             "field": "energy"
           }
         }
