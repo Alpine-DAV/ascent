@@ -87,6 +87,7 @@
 #include <vtkh/filters/NoOp.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Threshold.hpp>
+#include <vtkh/filters/VectorMagnitude.hpp>
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
@@ -930,6 +931,84 @@ VTKHMarchingCubes::execute()
     vtkh::DataSet *iso_output = marcher.GetOutput();
     
     set_output<vtkh::DataSet>(iso_output);
+}
+
+//-----------------------------------------------------------------------------
+VTKHVectorMagnitude::VTKHVectorMagnitude()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHVectorMagnitude::~VTKHVectorMagnitude()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHVectorMagnitude::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_vector_magnitude";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHVectorMagnitude::verify_params(const conduit::Node &params,
+                                 conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    
+    if(! params.has_child("field") || 
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+        res = false;
+    }
+    
+    if(params.has_child("output_name") && 
+       ! params["output_name"].dtype().is_string() )
+    {
+        info["errors"].append() = "Optional parameter 'output_name' must be a string";
+        res = false;
+    }
+    
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void 
+VTKHVectorMagnitude::execute()
+{
+
+    ASCENT_INFO("We be vector magnituding");
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_vector_magnitude input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::VectorMagnitude mag;
+    
+    mag.SetInput(data);
+    mag.SetField(field_name);
+    if(params().has_path("output_name"))
+    {
+      std::string output_name = params()["output_name"].as_string();
+      mag.SetResultName(output_name);
+    }
+
+    mag.Update();
+
+    vtkh::DataSet *mag_output = mag.GetOutput();
+    
+    set_output<vtkh::DataSet>(mag_output);
 }
 
 //-----------------------------------------------------------------------------
