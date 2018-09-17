@@ -1253,7 +1253,6 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
     const Node &n_vals = n_field["values"];
     int num_vals = n_vals.child(0).dtype().number_of_elements();
     int num_components = n_field["values"].number_of_children();
-    std::cout<<"Number of components "<<num_components<<"\n";
     ASCENT_INFO("field association: "      << assoc_str);
     ASCENT_INFO("number of field values: " << num_vals);
     ASCENT_INFO("number of vertices: "     << nverts);
