@@ -2631,12 +2631,20 @@ VTKHLagrangian::verify_params(const conduit::Node &params,
 void
 VTKHLagrangian::execute()
 {
-
-    ASCENT_INFO("Doing nothing");
-    if(!input(0).check_type<vtkh::DataSet>())
-    {
-        ASCENT_ERROR("vtkh_lagrangian input must be a vtk-h dataset");
-    }
+    vtkh::DataSet *data = nullptr;
+    if(input(0).check_type<vtkh::DataSet>())
+    {    
+      data = input<vtkh::DataSet>(0);
+    }    
+    else if(input(0).check_type<Node>())
+    {    
+      const Node *n_input = input<Node>(0);
+      data = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
+    }    
+    else 
+    {    
+        ASCENT_ERROR("vtkh_lagrangian input must be a< vtkh::DataSet> or <Node>");
+    }   
 
     std::string field_name = params()["field"].as_string();
     double step_size = params()["step_size"].to_float64();
@@ -2646,7 +2654,6 @@ VTKHLagrangian::execute()
     int y_res = params()["y_res"].to_int32();
     int z_res = params()["z_res"].to_int32();
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
     vtkh::Lagrangian lagrangian;
 
     lagrangian.SetInput(data);
