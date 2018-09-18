@@ -130,6 +130,9 @@ if(VTKM_FOUND)
     list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp)
     list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp)
 
+    # rover
+    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_rover_filters.hpp)
+    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_rover_filters.cpp)
 
     # main runtime 
     list(APPEND ascent_headers runtimes/ascent_main_runtime.hpp)
@@ -172,7 +175,7 @@ set(ascent_thirdparty_libs
 # optional libs
 ##################
 if(VTKM_FOUND)
-    list(APPEND ascent_thirdparty_libs vtkm vtkh)
+    list(APPEND ascent_thirdparty_libs vtkm vtkh rover)
 endif()
 
 if(MFEM_FOUND)
@@ -238,6 +241,8 @@ if(MPI_FOUND)
         # swap vtkh_mpi for vtkh
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)
         list(APPEND ascent_mpi_thirdparty_libs vtkh_mpi)
+        list(REMOVE_ITEM ascent_mpi_thirdparty_libs rover)
+        list(APPEND ascent_mpi_thirdparty_libs rover_par)
     endif()
 
     blt_add_library(

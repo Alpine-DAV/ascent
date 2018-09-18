@@ -91,7 +91,6 @@
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
-
 #endif
 
 #include <stdio.h>
