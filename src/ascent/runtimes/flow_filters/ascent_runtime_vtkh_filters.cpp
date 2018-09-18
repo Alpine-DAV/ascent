@@ -91,6 +91,7 @@
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
+#include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
 #endif
 
 #include <stdio.h>
@@ -249,180 +250,6 @@ public:
 }; // Ascent Scene
 
 //-----------------------------------------------------------------------------
-void 
-parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
-{
-    typedef vtkm::Vec<vtkm::Float32,3> vtkmVec3f;
-    //
-    // Get the optional camera parameters
-    //
-    if(camera_node.has_child("look_at"))
-    {
-        conduit::Node n;
-        camera_node["look_at"].to_float64_array(n);
-        const float64 *coords = n.as_float64_ptr();
-        vtkmVec3f look_at(coords[0], coords[1], coords[2]);
-        camera.SetLookAt(look_at);  
-    }
-
-    if(camera_node.has_child("position"))
-    {
-        conduit::Node n;
-        camera_node["position"].to_float64_array(n);
-        const float64 *coords = n.as_float64_ptr();
-        vtkmVec3f position(coords[0], coords[1], coords[2]);
-        camera.SetPosition(position);  
-    }
-    
-    if(camera_node.has_child("up"))
-    {
-        conduit::Node n;
-        camera_node["up"].to_float64_array(n);
-        const float64 *coords = n.as_float64_ptr();
-        vtkmVec3f up(coords[0], coords[1], coords[2]);
-        vtkm::Normalize(up);
-        camera.SetViewUp(up);
-    }
-    
-    if(camera_node.has_child("fov"))
-    {
-        camera.SetFieldOfView(camera_node["fov"].to_float64());
-    }
-
-    if(camera_node.has_child("xpan") || camera_node.has_child("ypan"))
-    {
-        vtkm::Float64 xpan = 0.;
-        vtkm::Float64 ypan = 0.;
-        if(camera_node.has_child("xpan")) xpan = camera_node["xpan"].to_float64();
-        if(camera_node.has_child("ypan")) xpan = camera_node["ypan"].to_float64();
-        camera.Pan(xpan, ypan);
-    }
-
-    if(camera_node.has_child("zoom"))
-    {
-        camera.Zoom(camera_node["zoom"].to_float64());
-    }
-    //
-    // With a new potential camera position. We need to reset the
-    // clipping plane as not to cut out part of the data set
-    //
-    
-    if(camera_node.has_child("near_plane"))
-    {
-        vtkm::Range clipping_range = camera.GetClippingRange();
-        clipping_range.Min = camera_node["near_plane"].to_float64();
-        camera.SetClippingRange(clipping_range);
-    }
-
-    if(camera_node.has_child("far_plane"))
-    {
-        vtkm::Range clipping_range = camera.GetClippingRange();
-        clipping_range.Max = camera_node["far_plane"].to_float64();
-        camera.SetClippingRange(clipping_range);
-    }
-
-    // this is an offset from the current azimuth
-    if(camera_node.has_child("azimuth"))
-    {
-        vtkm::Float64 azimuth = camera_node["azimuth"].to_float64();
-        camera.Azimuth(azimuth);
-    }
-    if(camera_node.has_child("elevation"))
-    {
-        vtkm::Float64 elevation = camera_node["elevation"].to_float64();
-        camera.Azimuth(elevation);
-    }
-}
-
-vtkm::cont::ColorTable 
-parse_color_table(const conduit::Node &color_table_node)
-{
-  std::string color_map_name = "";
-  if(color_table_node.has_child("name"))
-  {
-      color_map_name = color_table_node["name"].as_string();
-  }
-
-  vtkm::cont::ColorTable color_table(color_map_name);
-
-  if(color_map_name == "")
-  {
-      ASCENT_INFO("Color map name is empty. Ignoring");
-      color_table.Clear();
-  }
-  
-  if(!color_table_node.has_child("control_points"))
-  {
-      if(color_map_name == "") 
-        ASCENT_ERROR("Error: a color table node was provided without a color map name or control points");
-      return color_table;
-  }
-
-  NodeConstIterator itr = color_table_node.fetch("control_points").children();
-  while(itr.has_next())
-  {
-      const Node &peg = itr.next();
-      if(!peg.has_child("position"))
-      {
-          ASCENT_WARN("Color map control point must have a position. Ignoring");
-      }
-
-      float64 position = peg["position"].to_float64();
-      
-      if(position > 1.0 || position < 0.0)
-      {
-            ASCENT_WARN("Cannot add color map control point position "
-                          << position 
-                          << ". Must be a normalized scalar.");
-      }
-
-      if (peg["type"].as_string() == "rgb")
-      {
-          conduit::Node n;
-          peg["color"].to_float64_array(n);
-          const float64 *color = n.as_float64_ptr();
-
-          vtkm::Vec<vtkm::Float64,3> ecolor(color[0], color[1], color[2]);
-          
-          for(int i = 0; i < 3; ++i)
-          {
-            ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
-          }
-
-          color_table.AddPoint(position, ecolor);
-      }
-      else if (peg["type"].as_string() == "alpha")
-      {
-          float64 alpha = peg["alpha"].to_float64();
-          alpha = std::min(1., std::max(alpha, 0.));
-          color_table.AddPointAlpha(position, alpha);
-      }
-      else
-      {
-          ASCENT_WARN("Unknown color table control point type " << peg["type"].as_string()<<
-                      "\nValid types are 'alpha' and 'rgb'");
-      }
-  }
-
-  return color_table;
-}
-
-void parse_image_dims(const conduit::Node &node, int &width, int &height)
-{
-  width = 1024; 
-  height = 1024;
-
-  if(node.has_path("image_width"))
-  {
-    width = node["image_width"].to_int32();
-  }
-
-  if(node.has_path("image_height"))
-  {
-    height = node["image_height"].to_int32();
-  }
-  
-}
 
 vtkh::Render parse_render(const conduit::Node &render_node, 
                           vtkm::Bounds &bounds, 
@@ -1419,7 +1246,7 @@ DefaultRender::execute()
 
           int image_width; 
           int image_height;
-          detail::parse_image_dims(render_node, image_width, image_height);  
+          parse_image_dims(render_node, image_width, image_height);  
 
           manager.add_time_step(); 
           manager.fill_renders(renders, v_domain_ids, image_width, image_height);
@@ -2413,7 +2240,7 @@ CreatePlot::execute()
     // get the plot params
     if(plot_params.has_path("color_table"))
     {
-      vtkm::cont::ColorTable color_table =  detail::parse_color_table(plot_params["color_table"]);
+      vtkm::cont::ColorTable color_table =  parse_color_table(plot_params["color_table"]);
       renderer->SetColorTable(color_table);
     }
 

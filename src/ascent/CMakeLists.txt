@@ -134,6 +134,10 @@ if(VTKM_FOUND)
     list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_rover_filters.hpp)
     list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_rover_filters.cpp)
 
+    # parsing utils 
+    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp)
+    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp)
+
     # main runtime 
     list(APPEND ascent_headers runtimes/ascent_main_runtime.hpp)
     list(APPEND ascent_sources runtimes/ascent_main_runtime.cpp)
