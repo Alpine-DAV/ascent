@@ -51,6 +51,7 @@
 # Core Ascent Unit Tests
 ################################
 set(BASIC_TESTS t_ascent_smoke
+                t_ascent_catalyst
                 t_ascent_runtime_options
                 t_ascent_utils
                 t_ascent_empty_runtime
@@ -108,6 +109,12 @@ foreach(TEST ${BASIC_TESTS})
         set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/")
     endif()
 endforeach()
+
+# Hack in a paraview filter
+# Feel the wrongness coursing through you:
+find_package(ParaView REQUIRED)
+target_include_directories(t_ascent_catalyst PUBLIC ${PARAVIEW_INCLUDE_DIRS})
+target_link_libraries(t_ascent_catalyst PUBLIC vtkPVCatalyst)
 
 ################################
 # Add optional tests
