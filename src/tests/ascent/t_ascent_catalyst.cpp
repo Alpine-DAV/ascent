@@ -194,27 +194,40 @@ class CatalystExtract: public ::flow::Filter
             std::cerr << "\n\n=====\n\n";
             std::cerr << input(0).to_json();
             std::cerr << "\n\n=====\n\n";
-            if (!input(0).check_type<vtkh::DataSet>())
-            {
-              ASCENT_ERROR("input must be a vtk-h dataset");
-            }
-
             if(input(0).check_type<Node>())
             {
+              std::cerr << "\n\n===***%%%%%%\nWe have a blueprint?\n";
               // convert from blueprint to vtk-h
-              const Node& nn = *input<Node>(0);
-              NodeConstIterator itr = nn["topologies"].children();
-              itr.next();
-              std::string topo_name = itr.name();
+              const Node* nd = input<Node>(0);
+              std::cerr << "\nNode " << nd << "\n";
+              conduit::Node info;
+              bool success = conduit::blueprint::verify("mesh",*nd,info);
 
-              const Node &n_topo   = nn["topologies"][topo_name];
-              string mesh_type     = n_topo["type"].as_string();
+              if(!success)
+              {
+                info.print();
+                ASCENT_ERROR("conduit::Node input to EnsureBlueprint is non-conforming")
+              }
 
-              string coords_name   = n_topo["coordset"].as_string();
-              const Node &n_coords = nn["coordsets"][coords_name];
 
-              std::cout << "***\nExtract exec.. topo " << topo_name << " mesh_type " << mesh_type << " coordset name " << coords_name << "\n***\n";
+              auto nit = nd->children();
+              while (nit.has_next())
+              {
+                const Node& nn = nit.next();
+                NodeConstIterator itr = nn["topologies"].children();
+                itr.next();
+                std::string topo_name = itr.name();
+
+                const Node &n_topo   = nn["topologies"][topo_name];
+                string mesh_type     = n_topo["type"].as_string();
+
+                string coords_name   = n_topo["coordset"].as_string();
+                const Node &n_coords = nn["coordsets"][coords_name];
+
+                std::cout << "***\nExtract exec.. topo " << topo_name << " mesh_type " << mesh_type << " coordset name " << coords_name << "\n***\n";
+              }
             }
+
             set_output(input(0));
         }
 };
@@ -254,8 +267,8 @@ TEST(ascent_pipeline, test_register_extract)
     EXPECT_FALSE(CatalystExtract::was_called());
     ascent.execute(actions);
     EXPECT_TRUE(CatalystExtract::was_called());
-    ascent.info(info);
-    info.print();
+    // ascent.info(info);
+    // info.print();
     ascent.close();
 
 
