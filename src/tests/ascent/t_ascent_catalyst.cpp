@@ -54,6 +54,25 @@
 
 #include <ascent_main_runtime.hpp>
 
+#include "ascent_runtime_vtkh_filters.hpp"
+#include <vtkh/vtkh.hpp>
+#include <vtkh/DataSet.hpp>
+#include <vtkh/rendering/RayTracer.hpp>
+#include <vtkh/rendering/Scene.hpp>
+#include <vtkh/rendering/MeshRenderer.hpp>
+#include <vtkh/rendering/VolumeRenderer.hpp>
+#include <vtkh/filters/Clip.hpp>
+#include <vtkh/filters/ClipField.hpp>
+#include <vtkh/filters/IsoVolume.hpp>
+#include <vtkh/filters/MarchingCubes.hpp>
+#include <vtkh/filters/NoOp.hpp>
+#include <vtkh/filters/Slice.hpp>
+#include <vtkh/filters/Threshold.hpp>
+#include <vtkm/cont/DataSet.h>
+
+#include <ascent_vtkh_data_adapter.hpp>
+
+
 #include <iostream>
 #include <math.h>
 #include <sstream>
@@ -69,6 +88,7 @@ index_t EXAMPLE_MESH_SIDE_DIM = 50;
 using namespace std;
 using namespace conduit;
 using namespace ascent;
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_pipeline, test_render_3d_main_pipeline)
 {
@@ -145,42 +165,67 @@ TEST(ascent_pipeline, test_error_for_mpi_vs_non_mpi)
 // of ascent, and use them.
 //-----------------------------------------------------------------------------
 
-
+#endif
 //-----------------------------------------------------------------------------
-class MyExtract: public ::flow::Filter
+class CatalystExtract: public ::flow::Filter
 {
     public:
         static bool s_was_called;
 
         static void reset_was_called(){ s_was_called = false;}
         static bool was_called(){ return s_was_called;}
-        
-        MyExtract():Filter()
+
+        CatalystExtract():Filter()
         {}
-        ~MyExtract()
+        ~CatalystExtract()
         {}
-        
+
         void declare_interface(Node &i)
         {
             i["type_name"]   = "my_noop_extract";
             i["port_names"].append() = "in";
             i["output_port"] = "true";
         }
-        
+
         void execute()
         {
             s_was_called = true;
+            //ascent::about(input(0));
+            std::cerr << "\n\n=====\n\n";
+            std::cerr << input(0).to_json();
+            std::cerr << "\n\n=====\n\n";
+            if (!input(0).check_type<vtkh::DataSet>())
+            {
+              ASCENT_ERROR("input must be a vtk-h dataset");
+            }
+
+            if(input(0).check_type<Node>())
+            {
+              // convert from blueprint to vtk-h
+              const Node& nn = *input<Node>(0);
+              NodeConstIterator itr = nn["topologies"].children();
+              itr.next();
+              std::string topo_name = itr.name();
+
+              const Node &n_topo   = nn["topologies"][topo_name];
+              string mesh_type     = n_topo["type"].as_string();
+
+              string coords_name   = n_topo["coordset"].as_string();
+              const Node &n_coords = nn["coordsets"][coords_name];
+
+              std::cout << "***\nExtract exec.. topo " << topo_name << " mesh_type " << mesh_type << " coordset name " << coords_name << "\n***\n";
+            }
             set_output(input(0));
         }
 };
 
-bool MyExtract::s_was_called = false;
+bool CatalystExtract::s_was_called = false;
 
 //-----------------------------------------------------------------------------
 TEST(ascent_pipeline, test_register_extract)
 {
-    AscentRuntime::register_filter_type<MyExtract>("extracts","my_extract");
-    
+    AscentRuntime::register_filter_type<CatalystExtract>("extracts","my_extract");
+
 
     conduit::Node extracts;
     extracts["e1/type"]  = "my_extract";
@@ -205,17 +250,18 @@ TEST(ascent_pipeline, test_register_extract)
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
-    MyExtract::reset_was_called();
-    EXPECT_FALSE(MyExtract::was_called());
+    CatalystExtract::reset_was_called();
+    EXPECT_FALSE(CatalystExtract::was_called());
     ascent.execute(actions);
-    EXPECT_TRUE(MyExtract::was_called());
+    EXPECT_TRUE(CatalystExtract::was_called());
     ascent.info(info);
     info.print();
     ascent.close();
-    
-    
+
+
 }
 
+#if 0
 //-----------------------------------------------------------------------------
 class MyXForm: public ::flow::Filter
 {
@@ -315,4 +361,4 @@ TEST(ascent_pipeline, test_register_transform)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
-
+#endif
