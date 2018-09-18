@@ -41,94 +41,35 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-#include <sstream>
-#include <ascent_config.h>
+
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_compositor_base.hpp
+/// file: ascent_string_utils.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ASCENT_COMPOSITOR_BASE_HPP
-#define ASCENT_COMPOSITOR_BASE_HPP
+#ifndef ASCENT_STRING_UTILS_HPP
+#define ASCENT_STRING_UTILS_HPP
+
+#include <string>
+
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
 namespace ascent
 {
-
-class Compositor
-{
-public:
-     Compositor() {};
-     virtual ~Compositor() {};
-    
-    virtual void      Init(MPI_Comm mpi_comm) = 0;
-    
-    // composite with given visibility ordering.
-    
-    virtual unsigned char    *Composite(int                  width,
-                                        int                  height,
-                                        const unsigned char *color_buffer,
-                                        const int           *vis_order,
-                                        const float         *bg_color) = 0;
-
-    virtual unsigned char    *Composite(int                  width,
-                                        int                  height,
-                                        const float         *color_buffer,
-                                        const int           *vis_order,
-                                        const float         *bg_color) = 0;
-
-    // composite with using a depth buffer.
-    
-    virtual unsigned char    *Composite(int                  width,
-                                        int                  height,
-                                        const unsigned char *color_buffer,
-                                        const float         *depth_buffer,
-                                        const int           *viewport,
-                                        const float         *bg_color) = 0;
-
-    virtual unsigned char            *Composite(int                  width,
-                                                int                  height,
-                                                const float         *color_buffer,
-                                                const float         *depth_buffer,
-                                                const int           *viewport,
-                                                const float         *bg_color) = 0;
-
-
-    virtual void         Cleanup() = 0;
-    
-    std::string          GetLogString() 
-    { 
-        std::string res = m_log_stream.str(); 
-        m_log_stream.str("");
-        return res;
-    }     
-
-    unsigned char * ConvertBuffer(const float *buffer, const int size)
-    {
-        unsigned char *ubytes = new unsigned char[size];
-
-#ifdef ASCENT_USE_OPENMP
-        #pragma omp parallel for
-#endif
-        for(int i = 0; i < size; ++i)
-        {
-            ubytes[i] = static_cast<unsigned char>(buffer[i] * 255.f);
-        }
-
-        return ubytes;
-    }
-
-protected:
-    std::stringstream m_log_stream;    
-};
+// keeps track of static counters for a given key, i.e., name
+// c style print formatting is supported. For example, "file_%04d"
+// would expand to "file_0001", if the counter for that key is 1.
+// If no formatting is present, the count is appended to the name.
+std::string expand_family_name(const std::string name);
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
 
 #endif
 //-----------------------------------------------------------------------------

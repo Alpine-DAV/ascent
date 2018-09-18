@@ -78,6 +78,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <ascent_vtkh_data_adapter.hpp>
+#include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
 #endif
 
 using namespace conduit;
@@ -189,7 +190,16 @@ RoverXRay::execute()
     vtkmCamera camera;
     camera.ResetToBounds(dataset->GetGlobalBounds());
 
-    CameraGenerator generator(camera, 512, 512);
+    if(params().has_path("camera"))
+    {
+      const conduit::Node &n_camera = params()["camera"];
+      parse_camera(n_camera, camera);
+    }
+    
+    int width, height;
+    parse_image_dims(params(), width, height);
+
+    CameraGenerator generator(camera, width, height);
 
     Rover tracer;
 #ifdef ASCENT_MPI_ENABLED

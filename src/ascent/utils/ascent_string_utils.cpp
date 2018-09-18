@@ -44,48 +44,56 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_file_system.hpp
+/// file: ascent_string_utils.cpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ASCENT_FILE_SYSTEM_HPP
-#define ASCENT_FILE_SYSTEM_HPP
 
-#include <string>
-
-
+#include "ascent_string_utils.hpp"
+#include <map>
+#include <sstream>
+#include <stdio.h>
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
 namespace ascent
 {
 
-
-// helper to check if a directory exists
-bool directory_exists(const std::string &path);
-// helper to create a directory
-bool create_directory(const std::string &path);
-
-// helper to copy a file to another path
-// always overwrites dest_path
-bool copy_file(const std::string &src_path,
-               const std::string &dest_path);
-
-// helper to copy a directory to another path
-// always overwrites contents of dest_path
-bool copy_directory(const std::string &src_path,
-                    const std::string &dest_path);
-
-
+std::string expand_family_name(const std::string name)
+{
+  static std::map<std::string, int> s_file_family_map;
+  bool exists = s_file_family_map.find(name) != s_file_family_map.end();
+  int num = 0;
+  if(!exists)
+  {
+    s_file_family_map[name] = num;
+  }
+  else
+  {
+    num = s_file_family_map[name];
+    s_file_family_map[name] = num + 1;
+  }
+  std::string result; 
+  bool has_format = name.find("%") != std::string::npos;
+  if(has_format)
+  {
+    // allow for long file paths
+    char buffer[1000]; 
+    sprintf(buffer, name.c_str(), num);
+    result = std::string(buffer);
+  }
+  else
+  {
+    std::stringstream ss;
+    ss<<name<<num;
+    result = ss.str();
+  }
+  return result;
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
 
 

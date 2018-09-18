@@ -92,6 +92,7 @@ set(ascent_sources
     utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
     utils/ascent_png_encoder.cpp
+    utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp
     # hola
     hola/ascent_hola.cpp)
@@ -116,6 +117,7 @@ set(ascent_headers
     utils/ascent_file_system.hpp
     utils/ascent_block_timer.hpp
     utils/ascent_png_encoder.hpp
+    utils/ascent_string_utils.hpp
     utils/ascent_web_interface.hpp
     # hola
     hola/ascent_hola.hpp)
