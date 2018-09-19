@@ -80,7 +80,13 @@
 #include <vtkh/DataSet.hpp>
 #include <ascent_vtkh_data_adapter.hpp>
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
+#include <ascent_runtime_blueprint_filters.hpp>
 #endif
+
+#if defined(ASCENT_MFEM_ENABLED)
+#include <ascent_mfem_data_adapter.hpp>
+#endif
+
 
 using namespace conduit;
 using namespace std;
@@ -105,7 +111,39 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace filters
 {
-;
+
+namespace detail
+{
+vtkh::DataSet *
+transmogrify_source(const conduit::Node *n_input)
+{
+
+  EnsureLowOrder ensure;
+  vtkh::DataSet *dataset;
+  bool zero_copy = true;
+  if(ensure.is_high_order(*n_input))
+  {
+#if defined(ASCENT_MFEM_ENABLED)
+    MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
+    conduit::Node *lo_dset = new conduit::Node;
+    //MFEMDataAdapter::Linearize(domains, *lo_dset, m_refinement_level);
+    MFEMDataAdapter::Linearize(domains, *lo_dset, 2);
+    delete domains;
+
+    dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*lo_dset, zero_copy);
+#else
+    ASCENT_ERROR("Unable to convert high order mesh when MFEM is not enabled");
+#endif
+  }
+  else
+  {
+    dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, zero_copy);
+  }
+
+  return dataset;
+}
+
+}// namespace detail
 
 //-----------------------------------------------------------------------------
 RoverXRay::RoverXRay()
@@ -181,11 +219,12 @@ RoverXRay::execute()
     ASCENT_INFO("XRay sees everything!");
     vtkh::DataSet *dataset = nullptr;
 
+    bool zero_copy= true;
     if(input(0).check_type<Node>())
     {
         // convert from blueprint to vtk-h
         const Node *n_input = input<Node>(0);
-        dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
+        dataset = detail::transmogrify_source(n_input);
     }
     
     vtkmCamera camera;
@@ -230,12 +269,6 @@ RoverXRay::execute()
   
     
     settings.m_render_mode = rover::energy;
-    //settings.m_render_mode = rover::volume;
-    //vtkmColorTable color_table("cool to warm");
-    //color_table.AddPointAlpha(0.0, .01);
-    //color_table.AddPointAlpha(0.5, .02);
-    //color_table.AddPointAlpha(1.0, .01);
-    //settings.m_color_table = color_table;
 
     tracer.set_render_settings(settings);
     for(int i = 0; i < dataset->GetNumberOfDomains(); ++i)
@@ -313,7 +346,7 @@ RoverVolume::execute()
     {
         // convert from blueprint to vtk-h
         const Node *n_input = input<Node>(0);
-        dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
+        dataset = detail::transmogrify_source(n_input);
     }
     
     vtkmCamera camera;
