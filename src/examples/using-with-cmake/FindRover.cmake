@@ -44,41 +44,43 @@
 
 ###############################################################################
 #
-# Example that shows how to use an installed instance of Ascent in another
-# CMake-based build system.
+# Setup Rover
 #
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DASCENT_DIR={ascent install path}  \ 
-#   -DCONDUIT_DIR={conduit install path}    \ 
-#   -DVTKM_DIR={vtkm install path}          \
-#   -DVTKH_DIR={vtkh install path}          \
-#   ../
-# make
-# ./ascent_render_example
+###############################################################################
+#
+#  Expects ROVER_DIR to point to a Rover installations.
+#
+# This file defines the following CMake variables:
+#  ROVER_FOUND - If Conduit was found
+#  ROVER_INCLUDE_DIRS - The Conduit include directories
+#
+#  If found, the vtkm CMake targets will also be imported.
+#  The main vtkm library targets are:
+#   rover 
+#   rover_par
 #
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.0)
+###############################################################################
+# Check for ROVER_DIR
+###############################################################################
+if(NOT ROVER_DIR)
+  MESSAGE(FATAL_ERROR "Could not find ROVER_DIR. ASCENT requires explicit ROVER_DIR.")
+endif()
 
-project(using_with_cmake)
+if(NOT EXISTS ${ROVER_DIR}/lib/RoverConfig.cmake)
+  MESSAGE(FATAL_ERROR "Could not find Rover CMake include file (${ROVER_DIR}/lib/RoverConfig.cmake)")
+endif()
 
-include("FindAscent.cmake")
-include("FindConduit.cmake")
-include("FindVTKm.cmake")
-include("FindVTKh.cmake")
-include("FindRover.cmake")
+###############################################################################
+# Import Rover CMake targets
+###############################################################################
+include(${ROVER_DIR}/lib/RoverConfig.cmake)
 
-# setup the ascent & conduit include paths
-include_directories(${ASCENT_INCLUDE_DIRS})
-include_directories(${CONDUIT_INCLUDE_DIRS})
-# note: vtkm/h headers are not exposed in the interface
-
-# create our example 
-add_executable(ascent_render_example ascent_render_example.cpp)
-
-# link to ascent
-target_link_libraries(ascent_render_example ascent)
-
+###############################################################################
+# Set remaning CMake variables 
+###############################################################################
+# we found Rover
+set(ROVER_FOUND TRUE)
+# provide location of the headers in ROVER_INCLUDE_DIRS
+set(ROVER_INCLUDE_DIRS ${ROVER_DIR}/include/)
