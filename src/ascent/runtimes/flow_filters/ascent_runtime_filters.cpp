@@ -132,6 +132,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHNoOp>("transforms","noop");
     AscentRuntime::register_filter_type<VTKHVectorMagnitude>("transforms","vector_magnitude");
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
+    AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
 
     AscentRuntime::register_filter_type<AddPlot>();
     AscentRuntime::register_filter_type<CreatePlot>();

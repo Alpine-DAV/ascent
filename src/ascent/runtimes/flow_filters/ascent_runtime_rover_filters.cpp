@@ -64,6 +64,7 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <ascent_string_utils.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -247,8 +248,127 @@ RoverXRay::execute()
     tracer.execute();
 
     std::string filename = params()["filename"].as_string();
-    //tracer.save_png("rover");
-    tracer.save_png(filename);
+    tracer.save_png(expand_family_name(filename));
+    tracer.finalize();
+
+    delete dataset;
+}
+
+//-----------------------------------------------------------------------------
+RoverVolume::RoverVolume()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+RoverVolume::~RoverVolume()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void 
+RoverVolume::declare_interface(Node &i)
+{
+    i["type_name"]   = "rover_volume";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+RoverVolume::verify_params(const conduit::Node &params,
+                                 conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    
+    if(! params.has_child("field") || 
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+        res = false;
+    }
+
+    if(! params.has_child("filename") || 
+       ! params["filename"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'filename'";
+        res = false;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void 
+RoverVolume::execute()
+{
+
+    ASCENT_INFO("Volume mostly sees everything!");
+    vtkh::DataSet *dataset = nullptr;
+
+    if(input(0).check_type<Node>())
+    {
+        // convert from blueprint to vtk-h
+        const Node *n_input = input<Node>(0);
+        dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
+    }
+    
+    vtkmCamera camera;
+    camera.ResetToBounds(dataset->GetGlobalBounds());
+
+    if(params().has_path("camera"))
+    {
+      const conduit::Node &n_camera = params()["camera"];
+      parse_camera(n_camera, camera);
+    }
+    
+    int width, height;
+    parse_image_dims(params(), width, height);
+
+    CameraGenerator generator(camera, width, height);
+
+    Rover tracer;
+#ifdef ASCENT_MPI_ENABLED
+    int comm_id =flow::Workspace::default_mpi_comm();
+    tracer.set_mpi_comm_handle(comm_id);
+#endif
+    
+    if(params().has_path("precision"))
+    {
+      std::string prec = params()["precision"].as_string();
+      if(prec == "double")
+      {
+        tracer.set_tracer_precision64();
+      }
+    }
+    
+    //
+    // Create some basic settings 
+    //
+    RenderSettings settings;
+    settings.m_primary_field = params()["field"].as_string();
+
+    settings.m_render_mode = rover::volume;
+    vtkmColorTable color_table("cool to warm");
+    color_table.AddPointAlpha(0.0, .01);
+    color_table.AddPointAlpha(0.5, .02);
+    color_table.AddPointAlpha(1.0, .01);
+    settings.m_color_table = color_table;
+
+    tracer.set_render_settings(settings);
+    for(int i = 0; i < dataset->GetNumberOfDomains(); ++i)
+    {
+      tracer.add_data_set(dataset->GetDomain(i));
+    }
+
+    tracer.set_ray_generator(&generator);
+    tracer.execute();
+
+    std::string filename = params()["filename"].as_string();
+    tracer.save_png(expand_family_name(filename));
     tracer.finalize();
 
     delete dataset;
