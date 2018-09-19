@@ -155,7 +155,6 @@ script:
   - which cmake
   - cmake --version
   - export HOST_CONFIG=`ls ${CACHE_ROOT}/uberenv_libs/*.cmake`
-  - cat $HOST_CONFIG
   - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
   # build, test, and install
   - make VERBOSE=1
