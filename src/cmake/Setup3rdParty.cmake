@@ -97,6 +97,12 @@ if(VTKM_DIR)
     include(cmake/thirdparty/SetupVTKh.cmake)
 endif()
 
+################################
+# ParaView and supporting libs
+################################
+if(ParaView_DIR)
+  include(cmake/thirdparty/SetupCatalyst.cmake)
+endif()
 
 ################################
 # Setup HDF5

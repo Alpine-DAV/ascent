@@ -137,6 +137,18 @@ if(VTKM_FOUND)
 
 endif()
 
+if(ParaView_FOUND)
+
+    # data adapter
+    list(APPEND ascent_headers runtimes/ascent_catalyst_data_adapter.hpp)
+    list(APPEND ascent_sources runtimes/ascent_catalyst_data_adapter.cpp)
+
+    # catalyst filters
+    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_catalyst_filters.hpp)
+    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp)
+
+endif()
+
 if(MFEM_FOUND)
     # data adapter
     list(APPEND ascent_headers runtimes/ascent_mfem_data_adapter.hpp)
@@ -173,6 +185,10 @@ set(ascent_thirdparty_libs
 ##################
 if(VTKM_FOUND)
     list(APPEND ascent_thirdparty_libs vtkm vtkh)
+endif()
+
+if(ParaView_FOUND)
+    list(APPEND ascent_thirdparty_libs catalyst)
 endif()
 
 if(MFEM_FOUND)

@@ -54,7 +54,12 @@
 
 #include <ascent_main_runtime.hpp>
 
+#include "ascent_catalyst_data_adapter.hpp"
 #include "ascent_runtime_vtkh_filters.hpp"
+
+#include "vtkIndent.h"
+#include "vtkMultiBlockDataSet.h"
+
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
@@ -209,6 +214,19 @@ class CatalystExtract: public ::flow::Filter
                 ASCENT_ERROR("conduit::Node input to EnsureBlueprint is non-conforming")
               }
 
+#if 1
+              auto foo = VTKDataAdapter::BlueprintToVTKMultiBlock(
+                *nd, /*zero_copy*/ true, /*topo_name*/ "");
+              if (foo)
+              {
+                vtkIndent indent;
+                foo->PrintSelf(std::cout, indent);
+              }
+              else
+              {
+                std::cout << "No VTK conversion\n";
+              }
+#endif
 
               auto nit = nd->children();
               while (nit.has_next())
