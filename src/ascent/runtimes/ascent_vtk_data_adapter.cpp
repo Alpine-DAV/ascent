@@ -48,7 +48,7 @@
 /// file: ascent_data_adapter.cpp
 ///
 //-----------------------------------------------------------------------------
-#include "ascent_catalyst_data_adapter.hpp"
+#include "ascent_vtk_data_adapter.hpp"
 
 // standard lib includes
 #include <iostream>

@@ -54,12 +54,13 @@
 
 #include <ascent_main_runtime.hpp>
 
-#include "ascent_catalyst_data_adapter.hpp"
+#include "ascent_vtk_data_adapter.hpp"
 #include "ascent_runtime_vtkh_filters.hpp"
 
 #include "vtkIndent.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkNew.h"
+#include "vtkDataObject.h"
 #include "vtkXMLMultiBlockDataWriter.h"
 
 #include <vtkh/vtkh.hpp>
@@ -198,9 +199,6 @@ class CatalystExtract: public ::flow::Filter
         {
             s_was_called = true;
             //ascent::about(input(0));
-            std::cerr << "\n\n=====\n\n";
-            std::cerr << input(0).to_json();
-            std::cerr << "\n\n=====\n\n";
             if(input(0).check_type<Node>())
             {
               std::cerr << "\n\n===***%%%%%%\nWe have a blueprint?\n";
@@ -250,6 +248,10 @@ class CatalystExtract: public ::flow::Filter
 
                 std::cout << "***\nExtract exec.. topo " << topo_name << " mesh_type " << mesh_type << " coordset name " << coords_name << "\n***\n";
               }
+            }
+            else if (input(0).check_type<vtkDataObject>())
+            {
+              std::cout << "Got VTK data!\n";
             }
 
             set_output(input(0));

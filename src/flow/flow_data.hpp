@@ -57,6 +57,9 @@
 #include <flow_exports.h>
 #include <flow_config.h>
 
+#if defined(ASCENT_CATALYST_ENABLED)
+#  include "vtkDataObject.h"
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin flow:: --
@@ -167,6 +170,43 @@ class FLOW_API DataWrapper: public Data
         }
     }
 };
+
+
+#if defined(ASCENT_CATALYST_ENABLED)
+//-----------------------------------------------------------------------------
+// Specialization of DataWrapper for VTK data
+template <>
+class FLOW_API DataWrapper<vtkDataObject> : public Data
+{
+public:
+
+    DataWrapper(void *data)
+    : Data(data)
+    {
+        // empty
+    }
+
+    virtual ~DataWrapper()
+    {
+        // empty
+    }
+
+    Data* wrap(void* data)
+    {
+        return new DataWrapper<vtkDataObject>(data);
+    }
+
+    virtual void release()
+    {
+        if (data_ptr() != nullptr)
+        {
+            vtkDataObject* t = static_cast<vtkDataObject*>(data_ptr());
+            t->Delete();
+            set_data_ptr(NULL);
+        }
+    }
+};
+#endif // ASCENT_CATALYST_ENABLED
 
 
 

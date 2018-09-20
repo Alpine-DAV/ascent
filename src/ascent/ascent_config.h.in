@@ -70,7 +70,7 @@
 // defs for general openmp support
 #cmakedefine ASCENT_USE_OPENMP        "@OPENMP_FOUND@"
 
-// defs for runtime support based on which 3rd-party libs we have 
+// defs for runtime support based on which 3rd-party libs we have
 
 #cmakedefine ASCENT_VTKH_ENABLED      "@VTKM_FOUND@"
 
@@ -78,9 +78,10 @@
 #cmakedefine ASCENT_VTKM_USE_CUDA     "@CUDA_FOUND@"
 #cmakedefine ASCENT_VTKM_USE_OPENMP   "@ENABLE_OPENMP@"
 
+#cmakedefine ASCENT_CATALYST_ENABLED  "@ParaView_FOUND@"
 
 #cmakedefine ASCENT_ADIOS_ENABLED     "@ADIOS_FOUND@"
-#cmakedefine ASCENT_MFEM_ENABLED     "@ADIOS_FOUND@"
+#cmakedefine ASCENT_MFEM_ENABLED      "@ADIOS_FOUND@"
 #cmakedefine ASCENT_HDF5_ENABLED      "@HDF5_FOUND@"
 
 //-----------------------------------------------------------------------------

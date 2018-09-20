@@ -60,6 +60,7 @@ set(ASCENT_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_client)
 
 set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
 set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
+set(ASCENT_CATALYST_ENABLED ${ParaView_FOUND})
 
 set(ASCENT_HDF5_ENABLED ${HDF5_FOUND})
 set(ASCENT_ADIOS_ENABLED ${ADIOS_FOUND})
@@ -139,13 +140,21 @@ endif()
 
 if(ParaView_FOUND)
 
-    # data adapter
-    list(APPEND ascent_headers runtimes/ascent_catalyst_data_adapter.hpp)
-    list(APPEND ascent_sources runtimes/ascent_catalyst_data_adapter.cpp)
+    # VTK (and thus Catalyst) data adapter
+    list(APPEND ascent_headers runtimes/ascent_vtk_data_adapter.hpp)
+    list(APPEND ascent_sources runtimes/ascent_vtk_data_adapter.cpp)
 
-    # catalyst filters
-    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_catalyst_filters.hpp)
-    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp)
+    # VTK and Catalyst filters
+    # The sole VTK filter ensures the dataset is mapped to VTK
+    # The sole Catalyst filter runs a python script on the VTK data.
+    list(APPEND ascent_headers
+      runtimes/flow_filters/ascent_runtime_vtk_filters.hpp
+      runtimes/flow_filters/ascent_runtime_catalyst_filters.hpp
+    )
+    list(APPEND ascent_sources
+      runtimes/flow_filters/ascent_runtime_vtk_filters.cpp
+      runtimes/flow_filters/ascent_runtime_catalyst_filters.cpp
+    )
 
 endif()
 

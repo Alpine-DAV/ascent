@@ -45,12 +45,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_vtkh_filters.hpp
+/// file: ascent_runtime_catalyst_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_RUNTIME_VTKH_FILTERS
-#define ASCENT_RUNTIME_VTKH_FILTERS
+#ifndef ASCENT_RUNTIME_CATALYST_FILTERS
+#define ASCENT_RUNTIME_CATALYST_FILTERS
 
 #include <ascent.hpp>
 
@@ -77,38 +77,16 @@ namespace filters
 
 //-----------------------------------------------------------------------------
 ///
-/// VTK-H Filters
+/// VTK Filters
 ///
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class EnsureVTKH : public ::flow::Filter
+class CatalystPythonScript : public ::flow::Filter
 {
 public:
-    EnsureVTKH();
-    virtual ~EnsureVTKH();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class EnsureVTKM : public ::flow::Filter
-{
-public:
-    EnsureVTKM();
-    virtual ~EnsureVTKM();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHMarchingCubes : public ::flow::Filter
-{
-public:
-    VTKHMarchingCubes();
-    virtual ~VTKHMarchingCubes();
+    CatalystPythonScript();
+    virtual ~CatalystPythonScript();
 
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,
@@ -116,244 +94,22 @@ public:
     virtual void   execute();
 };
 
-//-----------------------------------------------------------------------------
-class VTKHSlice : public ::flow::Filter
-{
-public:
-    VTKHSlice();
-    virtual ~VTKHSlice();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKH3Slice : public ::flow::Filter
-{
-public:
-    VTKH3Slice();
-    virtual ~VTKH3Slice();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHThreshold : public ::flow::Filter
-{
-public:
-    VTKHThreshold();
-    virtual ~VTKHThreshold();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHClip: public ::flow::Filter
-{
-public:
-    VTKHClip();
-    virtual ~VTKHClip();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHClipWithField : public ::flow::Filter
-{
-public:
-    VTKHClipWithField();
-    virtual ~VTKHClipWithField();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHIsoVolume : public ::flow::Filter
-{
-public:
-    VTKHIsoVolume();
-    virtual ~VTKHIsoVolume();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class DefaultRender : public ::flow::Filter
-{
-public:
-    DefaultRender();
-    virtual ~DefaultRender();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHBounds: public ::flow::Filter
-{
-public:
-    VTKHBounds();
-    virtual ~VTKHBounds();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHUnionBounds: public ::flow::Filter
-{
-public:
-    VTKHUnionBounds();
-    virtual ~VTKHUnionBounds();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-
-
-//-----------------------------------------------------------------------------
-class VTKHDomainIds: public ::flow::Filter
-{
-public:
-    VTKHDomainIds();
-    virtual ~VTKHDomainIds();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHUnionDomainIds: public ::flow::Filter
-{
-public:
-    VTKHUnionDomainIds();
-    virtual ~VTKHUnionDomainIds();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-
-//-----------------------------------------------------------------------------
-class DefaultScene: public ::flow::Filter
-{
-public:
-    DefaultScene();
-    virtual ~DefaultScene();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-
-private:
-    static int s_image_count;
-};
-
-//-----------------------------------------------------------------------------
-class CreatePlot : public ::flow::Filter
-{
-public:
-    CreatePlot();
-    virtual ~CreatePlot();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-
-};
-
-//-----------------------------------------------------------------------------
-class AddPlot : public ::flow::Filter
-{
-public:
-    AddPlot();
-    virtual ~AddPlot();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-
-};
-
-//-----------------------------------------------------------------------------
-class CreateScene : public ::flow::Filter
-{
-public:
-    CreateScene();
-    virtual ~CreateScene();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-
-};
-
-//-----------------------------------------------------------------------------
-class ExecScene : public ::flow::Filter
-{
-public:
-    ExecScene();
-
-   ~ExecScene();
-
-    virtual void declare_interface(conduit::Node &i);
-
-    virtual void execute();
-};
-//-----------------------------------------------------------------------------
-class VTKHNoOp : public ::flow::Filter
-{
-public:
-    VTKHNoOp();
-    virtual ~VTKHNoOp();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-};
+}
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
 
 #endif
 //-----------------------------------------------------------------------------

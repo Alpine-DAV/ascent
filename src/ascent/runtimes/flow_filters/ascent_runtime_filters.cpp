@@ -65,6 +65,11 @@
     #include <ascent_runtime_vtkh_filters.hpp>
 #endif
 
+#if defined(ASCENT_CATALYST_ENABLED)
+    #include <ascent_runtime_vtk_filters.hpp>
+    #include <ascent_runtime_catalyst_filters.hpp>
+#endif
+
 #ifdef ASCENT_MPI_ENABLED
     #include <ascent_runtime_hola_filters.hpp>
 #if defined(ASCENT_ADIOS_ENABLED)
@@ -135,6 +140,11 @@ register_builtin()
     AscentRuntime::register_filter_type<CreatePlot>();
     AscentRuntime::register_filter_type<CreateScene>();
     AscentRuntime::register_filter_type<ExecScene>();
+#endif
+
+#if defined(ASCENT_CATALYST_ENABLED)
+    AscentRuntime::register_filter_type<EnsureVTK>();
+    AscentRuntime::register_filter_type<CatalystPythonScript>();
 #endif
 
 #if defined(ASCENT_MPI_ENABLED)
