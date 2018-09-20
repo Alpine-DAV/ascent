@@ -59,6 +59,8 @@
 
 #include "vtkIndent.h"
 #include "vtkMultiBlockDataSet.h"
+#include "vtkNew.h"
+#include "vtkXMLMultiBlockDataWriter.h"
 
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
@@ -221,6 +223,10 @@ class CatalystExtract: public ::flow::Filter
               {
                 vtkIndent indent;
                 foo->PrintSelf(std::cout, indent);
+                vtkNew<vtkXMLMultiBlockDataWriter> wri;
+                wri->SetInputDataObject(foo);
+                wri->SetFileName("/tmp/foob.vtm");
+                wri->Write();
               }
               else
               {

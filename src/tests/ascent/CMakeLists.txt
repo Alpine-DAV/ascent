@@ -114,7 +114,7 @@ endforeach()
 # Feel the wrongness coursing through you:
 find_package(ParaView REQUIRED)
 target_include_directories(t_ascent_catalyst PUBLIC ${PARAVIEW_INCLUDE_DIRS})
-target_link_libraries(t_ascent_catalyst PUBLIC vtkPVCatalyst)
+target_link_libraries(t_ascent_catalyst PUBLIC vtkPVCatalyst vtkIOXML)
 
 ################################
 # Add optional tests

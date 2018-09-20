@@ -188,6 +188,7 @@ void CopyNonInterleavedArray(
   auto array_soa = vtkSOADataArrayTemplate<T>::New();
   array_out = array_soa;
   array_soa->SetNumberOfComponents(vals_ptrs.size());
+  array_soa->SetNumberOfTuples(size);
   int ii = 0;
   for (auto val_ptr : vals_ptrs)
   {
@@ -899,6 +900,7 @@ VTKDataAdapter::UnstructuredBlueprintToVTKDataObject(
   {
     ASCENT_ERROR("Coordinate system must be floating point values");
   }
+  result->SetPoints(coords);
 
 #if 0
   // shapes, number of indices, and connectivity.
@@ -994,6 +996,7 @@ VTKDataAdapter::AddField(
   string assoc_str = n_field["association"].as_string();
   const Node& n_vals = n_field["values"];
   detail::CopyInterleavedArray(array, n_vals, zero_copy);
+  array->SetName(field_name.c_str());
 
   int assoc = vtkDataObject::FIELD_ASSOCIATION_NONE;
   if (assoc_str == "vertex")
