@@ -143,7 +143,7 @@ register_builtin()
 #endif
 
 #if defined(ASCENT_CATALYST_ENABLED)
-    AscentRuntime::register_filter_type<EnsureVTK>();
+    AscentRuntime::register_filter_type<EnsureVTK>("transforms", "ensure_vtk");
     AscentRuntime::register_filter_type<CatalystPythonScript>();
 #endif
 
