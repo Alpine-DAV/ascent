@@ -45,55 +45,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_catalyst_filters.cpp
+/// file: ascent_runtime_vtk_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_runtime_catalyst_filters.hpp"
+#ifndef ASCENT_RUNTIME_VTK_FILTERS
+#define ASCENT_RUNTIME_VTK_FILTERS
 
-//-----------------------------------------------------------------------------
-// thirdparty includes
-//-----------------------------------------------------------------------------
+#include <ascent.hpp>
 
-// conduit includes
-#include <conduit.hpp>
-#include <conduit_relay.hpp>
-#include <conduit_blueprint.hpp>
+#include <flow_filter.hpp>
 
-//-----------------------------------------------------------------------------
-// ascent includes
-//-----------------------------------------------------------------------------
-#include <ascent_logging.hpp>
-#include <flow_graph.hpp>
-#include <flow_workspace.hpp>
-
-// mpi
-#ifdef ASCENT_MPI_ENABLED
-#include <mpi.h>
-#endif
-
-#if defined(ASCENT_CATALYST_ENABLED)
-
-#include "vtkCommunicator.h"
-#include "vtkCPAdaptorAPI.h"
-#include "vtkCPDataDescription.h"
-#include "vtkCPInputDataDescription.h"
-#include "vtkCPProcessor.h"
-#include "vtkNew.h"
-#include "vtkMultiBlockDataSet.h"
-#include "vtkPVConfig.h"
-#ifdef PARAVIEW_ENABLE_PYTHON
-#  include "vtkCPPythonScriptPipeline.h"
-#endif
-
-#include <ascent_vtk_data_adapter.hpp>
-
-#endif
-
-using namespace conduit;
-using namespace std;
-
-using namespace flow;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -114,116 +76,40 @@ namespace filters
 {
 
 //-----------------------------------------------------------------------------
-CatalystPythonScript::CatalystPythonScript()
-:Filter()
-{
-// empty
-}
+///
+/// VTK-H Filters
+///
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-CatalystPythonScript::~CatalystPythonScript()
+class EnsureVTK : public ::flow::Filter
 {
-// empty
-}
+public:
+    EnsureVTK();
+    virtual ~EnsureVTK();
 
-//-----------------------------------------------------------------------------
-void
-CatalystPythonScript::declare_interface(Node &i)
-{
-    i["type_name"]   = "catalyst_python_script";
-    i["port_names"].append() = "in";
-    i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-CatalystPythonScript::verify_params(const conduit::Node &params,
-                                 conduit::Node &info)
-{
-  info.reset();
-#ifdef PARAVIEW_ENABLE_PYTHON
-  bool res = true;
-
-  if (
-    ! params.has_child("script") ||
-    ! params["script"].dtype().is_string())
-  {
-    info["errors"].append() = "Missing required string parameter 'script'";
-    res = false;
-  }
-#else
-  bool res = false;
-  info["errors"].append() = "Catalyst was compiled without python support.";
-#endif
-
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-CatalystPythonScript::execute()
-{
-#ifdef PARAVIEW_ENABLE_PYTHON
-  ASCENT_INFO("Running Catalyst Python script!");
-
-  // I. Get data in a VTK format (if it is not already)
-  vtkDataObject* data = nullptr;
-  if(input(0).check_type<Node>())
-  {
-    // We have been passed a conduit dataset.
-    const Node* node = input<Node>(0);
-    conduit::Node info;
-
-    // Verify the conduit schema is valid
-    bool success = conduit::blueprint::verify("mesh",*node,info);
-    if(!success)
-    {
-      info.print();
-      ASCENT_ERROR("conduit::Node input to EnsureBlueprint is non-conforming");
-      return;
-    }
-
-    data = VTKDataAdapter::BlueprintToVTKMultiBlock(
-      *node, /*zero_copy*/ true, /*topo_name*/ "");
-  }
-  else if (input(0).check_type<vtkDataObject>())
-  {
-    data = input<vtkDataObject>(0);
-  }
-  else
-  {
-    ASCENT_ERROR("catalyst_python_script input must be a conduit Node or a vtk dataset");
-  }
-
-  std::string script_name = params()["script"].as_string();
-
-  // Now initialize, run, and finalize the catalyst pipeline.
-  vtkCPAdaptorAPI::CoProcessorInitialize();
-
-  vtkNew<vtkCPPythonScriptPipeline> pythonPipeline;
-  pythonPipeline->Initialize(script_name.c_str());
-  vtkCPAdaptorAPI::GetCoProcessor()->AddPipeline(pythonPipeline);
-
-  vtkCPAdaptorAPI::CoProcessorFinalize();
-
-  set_output<vtkDataObject>(data); // pass-through to allow other scripts, etc.
-#endif // PARAVIEW_ENABLE_PYTHON
-}
-
-//-----------------------------------------------------------------------------
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
 };
+
+}
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
+//-----------------------------------------------------------------------------
+
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
 //-----------------------------------------------------------------------------

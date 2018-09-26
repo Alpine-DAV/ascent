@@ -45,11 +45,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_catalyst_filters.cpp
+/// file: ascent_runtime_vtk_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_runtime_catalyst_filters.hpp"
+#include "ascent_runtime_vtk_filters.hpp"
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -73,18 +73,7 @@
 #endif
 
 #if defined(ASCENT_CATALYST_ENABLED)
-
-#include "vtkCommunicator.h"
-#include "vtkCPAdaptorAPI.h"
-#include "vtkCPDataDescription.h"
-#include "vtkCPInputDataDescription.h"
-#include "vtkCPProcessor.h"
-#include "vtkNew.h"
 #include "vtkMultiBlockDataSet.h"
-#include "vtkPVConfig.h"
-#ifdef PARAVIEW_ENABLE_PYTHON
-#  include "vtkCPPythonScriptPipeline.h"
-#endif
 
 #include <ascent_vtk_data_adapter.hpp>
 
@@ -114,116 +103,81 @@ namespace filters
 {
 
 //-----------------------------------------------------------------------------
-CatalystPythonScript::CatalystPythonScript()
+EnsureVTK::EnsureVTK()
 :Filter()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
-CatalystPythonScript::~CatalystPythonScript()
+EnsureVTK::~EnsureVTK()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-CatalystPythonScript::declare_interface(Node &i)
+EnsureVTK::declare_interface(Node &i)
 {
-    i["type_name"]   = "catalyst_python_script";
+    i["type_name"]   = "ensure_vtk";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
-bool
-CatalystPythonScript::verify_params(const conduit::Node &params,
-                                 conduit::Node &info)
-{
-  info.reset();
-#ifdef PARAVIEW_ENABLE_PYTHON
-  bool res = true;
-
-  if (
-    ! params.has_child("script") ||
-    ! params["script"].dtype().is_string())
-  {
-    info["errors"].append() = "Missing required string parameter 'script'";
-    res = false;
-  }
-#else
-  bool res = false;
-  info["errors"].append() = "Catalyst was compiled without python support.";
-#endif
-
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
-CatalystPythonScript::execute()
+EnsureVTK::execute()
 {
-#ifdef PARAVIEW_ENABLE_PYTHON
-  ASCENT_INFO("Running Catalyst Python script!");
-
-  // I. Get data in a VTK format (if it is not already)
-  vtkDataObject* data = nullptr;
-  if(input(0).check_type<Node>())
+  // Note that zero-copy is on by default for vtk (unlike vtk-h/vtk-m)
+  // because VTK filters do not modify input data while vtk-h/vtk-m may.
+  bool zero_copy = true;
+  if(params().has_path("zero_copy"))
   {
-    // We have been passed a conduit dataset.
-    const Node* node = input<Node>(0);
-    conduit::Node info;
-
-    // Verify the conduit schema is valid
-    bool success = conduit::blueprint::verify("mesh",*node,info);
-    if(!success)
+    if(params()["zero_copy"].as_string() == "false")
     {
-      info.print();
-      ASCENT_ERROR("conduit::Node input to EnsureBlueprint is non-conforming");
-      return;
+      zero_copy = false;
     }
+  }
 
-    data = VTKDataAdapter::BlueprintToVTKMultiBlock(
-      *node, /*zero_copy*/ true, /*topo_name*/ "");
+  if (input(0).check_type<Node>())
+  {
+    std::cout << "  VTK conversion required\n";
+    // convert from blueprint to vtk-h
+    const Node* n_input = input<Node>(0);
+
+    vtkDataObject* res = nullptr;
+    res = VTKDataAdapter::BlueprintToVTKMultiBlock(*n_input, zero_copy);
+
+    set_output<vtkDataObject>(res);
   }
   else if (input(0).check_type<vtkDataObject>())
   {
-    data = input<vtkDataObject>(0);
+    std::cout << "  No conversion required\n";
+    // our data is already vtk, pass though
+    set_output(input(0));
   }
   else
   {
-    ASCENT_ERROR("catalyst_python_script input must be a conduit Node or a vtk dataset");
+    std::cout << "  No conversion possible\n";
+    ASCENT_ERROR("ensure_vtk input must be a mesh blueprint "
+      "conforming conduit::Node, or vtk dataset");
   }
-
-  std::string script_name = params()["script"].as_string();
-
-  // Now initialize, run, and finalize the catalyst pipeline.
-  vtkCPAdaptorAPI::CoProcessorInitialize();
-
-  vtkNew<vtkCPPythonScriptPipeline> pythonPipeline;
-  pythonPipeline->Initialize(script_name.c_str());
-  vtkCPAdaptorAPI::GetCoProcessor()->AddPipeline(pythonPipeline);
-
-  vtkCPAdaptorAPI::CoProcessorFinalize();
-
-  set_output<vtkDataObject>(data); // pass-through to allow other scripts, etc.
-#endif // PARAVIEW_ENABLE_PYTHON
 }
 
 //-----------------------------------------------------------------------------
-};
+}
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

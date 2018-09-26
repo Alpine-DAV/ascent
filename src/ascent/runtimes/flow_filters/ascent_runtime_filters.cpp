@@ -144,7 +144,7 @@ register_builtin()
 
 #if defined(ASCENT_CATALYST_ENABLED)
     AscentRuntime::register_filter_type<EnsureVTK>("transforms", "ensure_vtk");
-    AscentRuntime::register_filter_type<CatalystPythonScript>();
+    AscentRuntime::register_filter_type<CatalystPythonScript>("extracts", "catalyst_python_script");
 #endif
 
 #if defined(ASCENT_MPI_ENABLED)

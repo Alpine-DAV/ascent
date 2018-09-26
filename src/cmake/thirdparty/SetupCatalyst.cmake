@@ -52,14 +52,16 @@ endif()
 
 MESSAGE(STATUS "Looking for ParaView/Catalyst using ParaView_DIR = ${ParaView_DIR}")
 
-find_package(ParaView REQUIRED)
+find_package(ParaView REQUIRED COMPONENTS
+  vtkPVCatalyst vtkPVServerManagerRendering vtkPVPythonCatalyst
+)
 
 # TODO: Do we need this? ParaView can have a lot of libraries and
 #       which ones are available can vary widely depending on the
 #       platform and target user-base, hence Catalyst editions...
 blt_register_library(NAME catalyst
   INCLUDES ${PARAVIEW_INCLUDE_DIRS}
-  LIBRARIES vtkPVPythonCatalyst vtkCommonCore vtkCommonDataModel
+  LIBRARIES vtkPVPythonCatalyst vtkPVCatalyst vtkCommonDataModel vtkCommonCore
 )
 # TODO: Also, should we
 # include(${PARAVIEW_USE_FILE})
