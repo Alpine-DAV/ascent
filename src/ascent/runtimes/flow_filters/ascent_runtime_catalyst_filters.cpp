@@ -81,6 +81,9 @@
 #include "vtkCPProcessor.h"
 #include "vtkNew.h"
 #include "vtkMultiBlockDataSet.h"
+#include "vtkInformationDoubleKey.h"
+#include "vtkFieldData.h"
+#include "vtkTypeInt64Array.h"
 #include "vtkPVConfig.h"
 #ifdef PARAVIEW_ENABLE_PYTHON
 #  include "vtkCPPythonScriptPipeline.h"
@@ -202,8 +205,27 @@ CatalystPythonScript::execute()
 
   vtkNew<vtkCPPythonScriptPipeline> pythonPipeline;
   pythonPipeline->Initialize(script_name.c_str());
-  vtkCPAdaptorAPI::GetCoProcessor()->AddPipeline(pythonPipeline);
+  vtkCPProcessor* proc = vtkCPAdaptorAPI::GetCoProcessor();
+  proc->AddPipeline(pythonPipeline);
+  vtkNew<vtkCPDataDescription> dataDesc;
 
+  // Add data to catalyst "description":
+  double time = vtkDataObject::DATA_TIME_STEP()->Get(data->GetInformation());
+  auto fields = data ? data->GetFieldData() : nullptr;
+  vtkTypeInt64Array* tsarr = fields ? vtkTypeInt64Array::SafeDownCast(fields->GetArray("cycle")) : nullptr;
+  vtkTypeInt64 timeStep = (tsarr && tsarr->GetNumberOfTuples() > 0 ? tsarr->GetValue(0) : -1);
+
+  dataDesc->SetTimeData(time, timeStep);
+  // For now, just handle 1 data object:
+  constexpr const char* meshName = "simulation";
+  dataDesc->AddInput(meshName);
+  vtkCPInputDataDescription* inDesc = dataDesc->GetInputDescriptionByName(meshName);
+
+  inDesc->SetGrid(data);
+  // TODO: Set whole extent of **inDesc** if **data** is structured.
+  proc->CoProcess(dataDesc);
+
+  // Finalize catalyst each timestep
   vtkCPAdaptorAPI::CoProcessorFinalize();
 
   set_output<vtkDataObject>(data); // pass-through to allow other scripts, etc.
