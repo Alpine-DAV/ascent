@@ -201,6 +201,7 @@ TEST(ascent_mpi_render_2d, test_render_mpi_2d_uniform_default_runtime)
     double x_origin = par_rank * 20 - 10;
 
     data["state/domain_id"] = par_rank;
+    data["state/cycle"] = 100;
     data["coordsets/coords/origin/x"] = x_origin;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
