@@ -351,7 +351,7 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         
         //have all ranks check the output file
         MPI_Barrier(world_comm);
-        EXPECT_TRUE(utils::is_file(output_image + "101.png"));
+        EXPECT_TRUE(utils::is_file(output_image + "100.png"));
     }
 
     MPI_Comm_free(&sub_comm);
