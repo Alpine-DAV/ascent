@@ -151,6 +151,10 @@ endif()
 ################################
 add_subdirectory(examples)
 
+################################
+# Add utilites
+################################
+add_subdirectory(utilities)
 
 ################################
 # Add documentation targets
