@@ -63,7 +63,7 @@ using namespace conduit;
 
 //-----------------------------------------------------------------------------
 void
-remove_test_image(const std::string &path, const std::string num = "0")
+remove_test_image(const std::string &path, const std::string num = "100")
 {    
     if(conduit::utils::is_file(path + num + ".png"))
     {
@@ -112,7 +112,7 @@ output_dir()
 
 //-----------------------------------------------------------------------------
 bool
-check_test_image(const std::string &path, std::string num = "0")
+check_test_image(const std::string &path, std::string num = "100")
 {    
     // for now, just check if the file exists.
     return conduit::utils::is_file(path + num + ".png");
@@ -157,7 +157,7 @@ create_2d_example_dataset(Node &data,
 
     data["state/time"]   = (float64)3.1415;
     data["state/domain_id"] = (uint64) par_rank;
-    data["state/cycle"]  = (uint64) 0;
+    data["state/cycle"]  = (uint64) 100;
     
     data["coordsets/coords/type"] = "rectilinear";
     data["coordsets/coords/values/x"].set(DataType::float64(nx+1));
@@ -262,7 +262,7 @@ create_3d_example_dataset(Node &data,
 
     data["state/time"]   = (float64)3.1415;
     data["state/domain_id"] = (uint64) par_rank;
-    data["state/cycle"]  = (uint64) 0;
+    data["state/cycle"]  = (uint64) 100;
     data["coordsets/coords/type"] = "rectilinear";
 
     data["coordsets/coords/values/x"].set(DataType::float64(nx+1));

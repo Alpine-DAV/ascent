@@ -125,8 +125,37 @@ namespace filters
 //-----------------------------------------------------------------------------
 namespace detail
 {
+
+static long long unsigned s_cycle = 0;
+
+std::string expand_cycle(const std::string name)
+{
+  std::string result; 
+  bool has_format = name.find("%") != std::string::npos;
+  
+  if(has_format)
+  {
+    int cycle = (int) s_cycle;
+    // allow for long file paths
+    char buffer[1000]; 
+    sprintf(buffer, name.c_str(), cycle);
+    result = std::string(buffer);
+  }
+  else
+  {
+    std::stringstream ss;
+    ss<<name<<s_cycle;
+    result = ss.str();
+  }
+  return result;
+}
+
 std::string expand_family_name(const std::string name)
 {
+  if(s_cycle != 0)
+  {
+    return expand_cycle(name);
+  }
   static std::map<std::string, int> s_file_family_map;
   bool exists = s_file_family_map.find(name) != s_file_family_map.end();
   int num = 0;
@@ -156,6 +185,7 @@ std::string expand_family_name(const std::string name)
   }
   return result;
 }
+
 
 
 
@@ -1433,6 +1463,7 @@ DefaultRender::execute()
           // this render has a unique name
           if(render_node.has_path("image_name"))
           {
+            
             image_name = detail::expand_family_name(render_node["image_name"].as_string());
           }
           else
@@ -2363,6 +2394,18 @@ CreatePlot::execute()
 
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
     conduit::Node plot_params = params()["params"];
+    
+    const long long unsigned cycle = data->GetCycle();
+
+    if(cycle != 0)
+    {
+      detail::s_cycle = cycle;
+    }
+    else
+    {
+      detail::s_cycle = 0;
+    }
+
 
     std::string type = params()["type"].as_string();
     

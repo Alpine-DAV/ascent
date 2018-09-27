@@ -549,7 +549,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_name_format");
     
     // remove old images before rendering
-    remove_test_image(output_file, "0000");
+    remove_test_image(output_file, "0100");
 
 
     //
@@ -585,7 +585,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     ascent.close();
     
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, "0000"));
+    EXPECT_TRUE(check_test_image(output_file, "0100"));
 }
 
 TEST(ascent_render_3d, test_render_3d_no_bg)
