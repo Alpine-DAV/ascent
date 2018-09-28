@@ -59,14 +59,14 @@ Open provides the initial setup of Ascent from a Conduit Node.
 Options include runtime type (e.g., ascent, flow, or empty) and associated backend if available.
 If running in parallel (i.e., MPI), then a MPI comm handle must be supplied.
 Ascent will always check the file system for a file called ``ascent_options.json`` that will override compiled in options, and for obvious reasons, a MPI communicator cannot be specified in the file.
-Here is a file that would set the runtime to the main ascent runtime using a TBB backend (inside VTK-m):
+Here is a file that would set the runtime to the main ascent runtime using a OpenMP backend (inside VTK-m):
 
 
 .. code-block:: json
 
   {
     "runtime/type"    : "ascent",
-    "runtine/backend" : "tbb"
+    "runtine/backend" : "openmp"
   }
 
 A typical integration will include the following code:

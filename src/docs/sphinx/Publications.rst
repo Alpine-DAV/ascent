@@ -49,6 +49,8 @@ Publications and Presentations
 Publications
 ------------
 
+- A Flexible System For In Situ Triggers  This paper will be presented at the `ISAV 2018 Workshop <http://vis.lbl.gov/events/ISAV2018/>`_, held in conjunction with SC 18, on November 12th 2018 in Dallas, TX, USA.
+
 - `The ALPINE In Situ Infrastructure: Ascending from the Ashes of Strawman <https://dl.acm.org/citation.cfm?doid=3144769.3144778>`_  This paper will be presented at the `ISAV 2017 Workshop <http://vis.lbl.gov/Events/ISAV-2017/>`_, held in conjunction with SC 17, on November 12th 2017 in Denver, CO, USA.
 
 - `Performance Impacts of In Situ Wavelet Compression on Scientific Simulations <https://dl.acm.org/citation.cfm?doid=3144769.3144773>`_  This paper will be presented at the `ISAV 2017 Workshop <http://vis.lbl.gov/Events/ISAV-2017/>`_, held in conjunction with SC 17, on November 12th 2017 in Denver, CO, USA.
@@ -69,6 +71,8 @@ Publications
 Presentations
 -------------
 
+- `IXPUG Software-Defined Visualization Workshop <https://www.ixpug.org/events/swdvis-2018>`_ July 10, 2018, ANL.
+- DOE Computer Graphics Forum, April 24-26 2018, Savannah, GA.
 - `IXPUG Software-Defined Visualization Workshop <https://www.ixpug.org/events/swdvis-2017>`_ May 23, 2017, Austin, TX.
 - Panel: In Situ Efforts and Challenges in Large Data Analysis and Visualization, LDAV October 23rd 2016, Baltimore, MD.
 - DOE Computer Graphics Forum, April 26-28 2016, Monterey, CA.

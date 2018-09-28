@@ -80,28 +80,34 @@ Ascent
 
 For Ascent, the Flow runtime is builtin, but for visualization functionality (filters and rendering), the VTK-h runtime is needed.
 
-Conduit
-"""""""
+Conduit (Required)
+""""""""""""""""""
   * MPI
   * Python + NumPy (Optional)
   * HDF5 (Optional)
   * Fortran compiler (Optional)
 
-VTK-h
-"""""""""
+VTK-h (Optional)
+""""""""""""""""
 
 * VTK-h: 
   
     * VTK-m: 
 
-      * TBB (Optional)  Intel's Threaded Building Blocks
-      * CUDA 6.5+ (Optional)
+      * OpenMP (Optional) 
+      * CUDA 7.5+ (Optional)
       * MPI (Optional)
 
 .. note:: 
 
     When building VTK-m for use with VTK-h, VTK-m must be configured with rendering on, among other options.
     See the VTK-h spack package for details. 
+
+MFEM (Optional)
+"""""""""""""""
+  * MPI
+  * Metis
+  * HypreH
 
 Getting Started
 ---------------
@@ -181,6 +187,8 @@ Ascent's build system supports the following CMake options:
 * **VTKM_DIR** - Path to an VTK-m install *(optional)*. 
 
 * **HDF5_DIR** - Path to a HDF5 install *(optional)*. 
+
+* **MFEM_DIR** - Path to a MFEM install *(optional)*. 
 
 * **ADIOS_DIR** - Path to a ADIOS install *(optional)*. 
 
@@ -401,7 +409,7 @@ In the host config, add ``set(HDF5_DIR "/path/to/hdf5_install" CACHE PATH "")``.
 
 Conduit
 ^^^^^^^
-The version of conduit we use is `v0.3.1`. If the ``HDF5_DIR`` is specified in the host config, 
+The version of conduit we use is the master branch. If the ``HDF5_DIR`` is specified in the host config, 
 then conduit will build the relay io library. 
 Likewise, if the config file has the entry ``ENABLE_MPI=ON``, then conduit will build 
 parallel versions of the libraries. 
@@ -447,7 +455,7 @@ We recommend VTK-h since VTK-m and VTK-h provide the majority of Ascent's visual
 
 .. code:: bash
     
-    git clone ://github.com/Alpine-DAV/vtk-h.git 
+    git clone https://github.com/Alpine-DAV/vtk-h.git 
     cd vtk-h 
     mkdir build
     mkdir install

@@ -397,8 +397,8 @@ All of the clip  examples are located in the file `clip test <https://github.com
 Clip By Field
 ~~~~~~~~~~~~~
 The clip by field filter removes cells from the specified topology using the values in a scalar field.
-By default, all values below the clip value are removed from the data set. As with clip by implicit function,
- the clip can be inverted.
+By default, all values below the clip value are removed from the data set. As with clip by implicit function, 
+the clip can be inverted.
 
 .. code-block:: c++
 
