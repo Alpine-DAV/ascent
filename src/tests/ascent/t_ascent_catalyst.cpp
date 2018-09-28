@@ -195,7 +195,7 @@ TEST(ascent_pipeline, test_register_extract)
     conduit::Node pipelines;
 
     // pipeline 1
-    pipelines["pl1/f1/type"] = "ensure_vtk";
+    // pipelines["pl1/f1/type"] = "ensure_vtk";
 
     extracts["e1/type"]  = "my_extract";
     // extracts["e1/pipeline"]  = "pl1";

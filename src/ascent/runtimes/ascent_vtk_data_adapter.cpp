@@ -66,6 +66,7 @@
 #endif
 
 // VTK includes
+#include "vtkCellArray.h"
 #include "vtkDoubleArray.h"
 #include "vtkInformationDoubleKey.h"
 #include "vtkIntArray.h"
@@ -172,7 +173,7 @@ void CopyInterleavedArray(vtkDataArray*& arrayOut, const T* vals_ptr, const int 
   arrayOut->SetNumberOfComponents(components);
   if (zero_copy)
   {
-    arrayOut->SetVoidArray(const_cast<T*>(vals_ptr), static_cast<vtkIdType>(size), /*save*/ 0);
+    arrayOut->SetVoidArray(const_cast<T*>(vals_ptr), static_cast<vtkIdType>(size), /*save*/ 1);
   }
   else
   {
@@ -377,7 +378,140 @@ bool GetField(
   return true;
 }
 
-};
+int BlueprintToVTKCellType(const std::string& shape_name, int& indices, int& param_dimensions)
+{
+  int shape = VTK_EMPTY_CELL;
+  if (shape_name == "point")
+  {
+    shape = VTK_VERTEX;
+    indices = 1;
+    param_dimensions = 0;
+  }
+  else if (shape_name == "line")
+  {
+    shape = VTK_LINE;
+    indices = 2;
+    param_dimensions = 1;
+  }
+  else if (shape_name == "tri")
+  {
+    shape = VTK_TRIANGLE;
+    indices = 3;
+    param_dimensions = 2;
+  }
+  else if (shape_name == "quad")
+  {
+    shape = VTK_QUAD;
+    indices = 4;
+    param_dimensions = 2;
+  }
+  else if (shape_name == "tet")
+  {
+    shape = VTK_TETRA;
+    indices = 4;
+    param_dimensions = 3;
+  }
+  else if (shape_name == "hex")
+  {
+    shape = VTK_HEXAHEDRON;
+    indices = 8;
+    param_dimensions = 3;
+  }
+  else if (shape_name == "polygonal")
+  {
+    shape = VTK_POLYGON;
+    indices = -1; // no fixed number per cell
+    param_dimensions = 2;
+  }
+  else if (shape_name == "polyhedral")
+  {
+    shape = VTK_POLYHEDRON;
+    indices = -1; // no fixed number per cell
+    param_dimensions = 3;
+  }
+  // TODO: Not supported in blueprint yet ...
+  // else if (shape_name == "wedge")
+  // {
+  //   shape = VTK_WEDGE;
+  //   indices = 6;
+  //   param_dimensions = 3;
+  // }
+  // else if (shape_name == "pyramid")
+  // {
+  //   shape = VTK_PYRAMID;
+  //   indices = 5;
+  //   param_dimensions = 3;
+  // }
+  else
+  {
+    indices = -1;
+    param_dimensions = -1;
+    ASCENT_ERROR("Unsupported element shape " << shape_name);
+  }
+  return shape;
+}
+
+template<typename T>
+void CopyConnectivity(vtkIdType*& dest, const T* ele_idx_ptr, int conn_size, int conn_per_cell)
+{
+  if (conn_per_cell > 0)
+  {
+    for (int ii = 0; ii < conn_size / conn_per_cell; ++ii)
+    {
+      *dest++ = conn_per_cell;
+      for (int jj = 0; jj < conn_per_cell; ++jj)
+      {
+        *dest++ = static_cast<vtkIdType>(*ele_idx_ptr++);
+      }
+    }
+  }
+  else
+  {
+    for (int ii = 0; ii < conn_size; ++ii)
+    {
+      *dest++ = *ele_idx_ptr++;
+    }
+  }
+}
+
+template<typename T>
+vtkIdType CellCountFromConnectivity(
+  const T* ele_idx_ptr, vtkIdType conn_size, int vtk_cell_type, int conn_per_cell)
+{
+  vtkIdType num_cells;
+  if (conn_per_cell > 0)
+  {
+    num_cells = conn_size / conn_per_cell;
+  }
+  else if (vtk_cell_type == VTK_POLYGON)
+  {
+    const T* end = ele_idx_ptr + conn_size;
+    for (num_cells = 0; ele_idx_ptr < end; ++num_cells)
+    {
+      ele_idx_ptr += (*ele_idx_ptr + 1);
+    }
+  }
+  else if (vtk_cell_type == VTK_POLYHEDRON)
+  {
+    const T* end = ele_idx_ptr + conn_size;
+    for (num_cells = 0; ele_idx_ptr < end; ++num_cells)
+    {
+      int num_faces = *ele_idx_ptr++;
+      for (int ff = 0; ff < num_faces && ele_idx_ptr < end; ++ff)
+      {
+        ele_idx_ptr += (*ele_idx_ptr + 1);
+      }
+    }
+  }
+  else
+  {
+    num_cells = 0;
+    ASCENT_ERROR("Unsupported VTK cell type " << vtk_cell_type << " conn_per_cell " << conn_per_cell);
+  }
+  return num_cells;
+}
+
+}
 //-----------------------------------------------------------------------------
 // -- end detail:: --
 //-----------------------------------------------------------------------------
@@ -903,81 +1037,53 @@ VTKDataAdapter::UnstructuredBlueprintToVTKDataObject(
   }
   else
   {
-    ASCENT_ERROR("Coordinate system must be floating point values");
+    ASCENT_ERROR("Coordinate system must be floating point values.");
   }
   result->SetPoints(coords);
 
-#if 0
-  // shapes, number of indices, and connectivity.
-  // Will have to do something different if this is a "zoo"
-
-  // TODO: there is a special data set type for single cell types
-
+  // II. Connectivity and cell type arrays.
+  //
+  // Note that vtkUnstructuredGrid uses vtkCellArray to hold
+  // point IDs which also interleaves the number of points per
+  // cell, making it impossible to zero-copy the connectivity
+  // as provided by conduit/blueprint.
   const Node& n_topo_eles = n_topo["elements"];
   std::string ele_shape = n_topo_eles["shape"].as_string();
-
-  // TODO: assumes int32, and contiguous
-
   const Node& n_topo_conn = n_topo_eles["connectivity"];
-
-  vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
-
-  int conn_size = n_topo_conn.dtype().number_of_elements();
-
-  if ( sizeof(vtkm::Id) == 4)
+  vtkIdType conn_size = static_cast<vtkIdType>(n_topo_conn.dtype().number_of_elements());
+  int conn_per_cell;
+  int vtk_cell_type;
+  int dim;
+  if ((vtk_cell_type = detail::BlueprintToVTKCellType(ele_shape, conn_per_cell, dim)) == VTK_EMPTY_CELL)
   {
-    if (n_topo_conn.is_compact() && n_topo_conn.dtype().is_int32())
-    {
-      const void* ele_idx_ptr = n_topo_conn.data_ptr();
-      detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size,zero_copy);
-    }
-    else
-    {
-      // convert to int32
-      connectivity.Allocate(conn_size);
-      void* ptr = (void*) vtkh::GetVTKMPointer(connectivity);
-      Node n_tmp;
-      n_tmp.set_external(DataType::int32(conn_size),ptr);
-      n_topo_conn.to_int32_array(n_tmp);
-    }
+    return result;
+  }
+
+  auto conn = vtkSmartPointer<vtkCellArray>::New();
+  if (n_topo_conn.dtype().is_int32() && n_topo_conn.is_compact())
+  {
+    const auto ele_idx_ptr = static_cast<const int32_t*>(n_topo_conn.data_ptr());
+    vtkIdType cell_size = detail::CellCountFromConnectivity(ele_idx_ptr, conn_size, vtk_cell_type, conn_per_cell);
+    auto cptr = conn->WritePointer(cell_size, conn_size + cell_size);
+    detail::CopyConnectivity(cptr, ele_idx_ptr, conn_size, conn_per_cell);
+    neles = static_cast<int>(cell_size);
+  }
+  else if (n_topo_conn.dtype().is_int64() && n_topo_conn.is_compact())
+  {
+    const auto ele_idx_ptr = static_cast<const int64_t*>(n_topo_conn.data_ptr());
+    vtkIdType cell_size = detail::CellCountFromConnectivity(ele_idx_ptr, conn_size, vtk_cell_type, conn_per_cell);
+    auto cptr = conn->WritePointer(cell_size, conn_size + cell_size);
+    detail::CopyConnectivity(cptr, ele_idx_ptr, conn_size, conn_per_cell);
+    neles = static_cast<int>(cell_size);
   }
   else
   {
-    if (n_topo_conn.is_compact() && n_topo_conn.dtype().is_int64())
-    {
-      const void* ele_idx_ptr = n_topo_conn.data_ptr();
-      detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size, zero_copy);
-    }
-    else
-    {
-      // convert to int64
-      connectivity.Allocate(conn_size);
-      void* ptr = (void*) vtkh::GetVTKMPointer(connectivity);
-      Node n_tmp;
-      n_tmp.set_external(DataType::int64(conn_size),ptr);
-      n_topo_conn.to_int64_array(n_tmp);
-    }
+    ASCENT_ERROR("Unsupported connectivity size/storage.");
+    return result;
   }
 
-  vtkm::cont::ArrayHandle<vtkm::UInt8> shapes;
-  vtkm::cont::ArrayHandle<vtkm::IdComponent> num_indices;
-  vtkm::IdComponent topo_dimensionality;
-  ExplicitArrayHelper array_creator;
-  array_creator.CreateExplicitArrays(shapes,
-    num_indices,
-    ele_shape,
-    conn_size,
-    topo_dimensionality,
-    neles);
-
-  vtkm::cont::CellSetExplicit<> cell_set(topo_name.c_str());
-
-  cell_set.Fill(nverts, shapes, num_indices, connectivity);
-
-  result->AddCellSet(cell_set);
-
+  result->SetCells(vtk_cell_type, conn);
   ASCENT_INFO("neles "  << neles);
-#endif
 
   return result;
 }
