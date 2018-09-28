@@ -49,7 +49,6 @@ Building Ascent
 Overview
 --------
 
-
 Ascent uses CMake for its build system.
 Building Ascent creates two separate libraries:
 
@@ -63,6 +62,15 @@ For a minimal build with no parallel components, the following are required:
     
     * Conduit
     * C++ compilers
+
+We recognize that building on HPC systems can be difficult, and we have provid two seperate build strategies.
+
+    * A spack based build
+    * Manually compile depencies using a CMake configuration file to keep compilers and libraries consistent
+
+Most often, the spack based build should be attemted first. Spack will automatically download and build all
+the third party dependencies and create a CMake configuration file for Ascent. Should you encounter build issues
+that are not addressed here, please ask questions using our github `issue tracker <https://github.com/Alpine-DAV/ascent/issues>`_.
 
 
 Build Dependencies
@@ -312,6 +320,7 @@ that customize the options and dependencies used to build Ascent:
   **tbb**             Enable VTK-h TBB support             ON (+tbb)
   **cuda**            Enable VTK-h CUDA support            OFF (~cuda)
   **doc**             Build Ascent's Documentation         OFF (~doc)
+  **doc**             Enable MFEM support                  OFF (~mfem)
  ================== ==================================== ======================================
 
 
@@ -484,3 +493,47 @@ Now that we have all the dependencies built and a host config file for our envir
 To run the unit tests to make sure everything works, do ``make test``. 
 If you install these dependencies in a public place in your environment, we encourage you to make you host config publicly available by submitting a pull request to the Ascent repo. 
 This will allow others to easily build on that system by only following the Ascent build instructions.
+
+Asking Ascent how its configured
+--------------------------------
+Once built, Ascent has a number of unit tests. ``t_ascent_smoke``, located in the ``tests/ascent`` directory will print Ascent's
+build configuration:
+
+.. code-block:: json
+
+	{
+		"version": "0.4.0",
+		"compilers": 
+		{
+			"cpp": "/usr/tce/packages/gcc/gcc-4.9.3/bin/g++",
+			"fortran": "/usr/tce/packages/gcc/gcc-4.9.3/bin/gfortran"
+		},
+		"platform": "linux",
+		"system": "Linux-3.10.0-862.6.3.1chaos.ch6.x86_64",
+		"install_prefix": "/usr/local",
+		"mpi": "disabled",
+		"runtimes": 
+		{
+			"ascent": 
+			{
+				"status": "enabled",
+				"vtkm": 
+				{
+					"status": "enabled",
+					"backends": 
+					{
+						"serial": "enabled",
+						"openmp": "enabled",
+						"cuda": "disabled"
+					}
+				}
+			},
+			"flow": 
+			{
+				"status": "enabled"
+			}
+		},
+		"default_runtime": "ascent"
+	}
+
+In this case, the non-MPI version of Ascent was used, so MPI reportsa as disabled.
