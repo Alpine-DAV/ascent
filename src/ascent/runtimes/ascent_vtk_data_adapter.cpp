@@ -793,6 +793,11 @@ VTKDataAdapter::RectilinearBlueprintToVTKDataObject(
     z_coords = z_tmp;
   }
 
+  result->SetDimensions(
+    x_coords->GetNumberOfTuples(),
+    y_coords->GetNumberOfTuples(),
+    z_coords->GetNumberOfTuples());
+
   result->SetXCoordinates(x_coords);
   result->SetYCoordinates(y_coords);
   result->SetZCoordinates(z_coords);

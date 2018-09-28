@@ -83,6 +83,7 @@
 #include "vtkMultiBlockDataSet.h"
 #include "vtkInformationDoubleKey.h"
 #include "vtkFieldData.h"
+#include "vtkSmartPointer.h"
 #include "vtkTypeInt64Array.h"
 #include "vtkPVConfig.h"
 #ifdef PARAVIEW_ENABLE_PYTHON
@@ -92,6 +93,8 @@
 #include <ascent_vtk_data_adapter.hpp>
 
 #endif
+
+#include <stdlib.h> // for atexit
 
 using namespace conduit;
 using namespace std;
@@ -200,14 +203,27 @@ CatalystPythonScript::execute()
 
   std::string script_name = params()["script"].as_string();
 
-  // Now initialize, run, and finalize the catalyst pipeline.
-  vtkCPAdaptorAPI::CoProcessorInitialize();
-
-  vtkNew<vtkCPPythonScriptPipeline> pythonPipeline;
-  pythonPipeline->Initialize(script_name.c_str());
-  vtkCPProcessor* proc = vtkCPAdaptorAPI::GetCoProcessor();
-  proc->AddPipeline(pythonPipeline);
-  vtkNew<vtkCPDataDescription> dataDesc;
+  static bool once = false;
+  static vtkSmartPointer<vtkCPPythonScriptPipeline> pythonPipeline;
+  static vtkSmartPointer<vtkCPDataDescription> dataDesc;
+  constexpr const char* meshName = "simulation";
+  vtkCPProcessor* proc;
+  if (!once)
+  {
+    // Now initialize, run, and finalize the catalyst pipeline.
+    vtkCPAdaptorAPI::CoProcessorInitialize();
+    pythonPipeline = vtkSmartPointer<vtkCPPythonScriptPipeline>::New();
+    pythonPipeline->Initialize(script_name.c_str());
+    proc = vtkCPAdaptorAPI::GetCoProcessor();
+    proc->AddPipeline(pythonPipeline);
+    dataDesc = vtkSmartPointer<vtkCPDataDescription>::New();
+    dataDesc->AddInput(meshName);
+    once = true;
+  }
+  else
+  {
+    proc = vtkCPAdaptorAPI::GetCoProcessor();
+  }
 
   // Add data to catalyst "description":
   double time = vtkDataObject::DATA_TIME_STEP()->Get(data->GetInformation());
@@ -217,16 +233,24 @@ CatalystPythonScript::execute()
 
   dataDesc->SetTimeData(time, timeStep);
   // For now, just handle 1 data object:
-  constexpr const char* meshName = "simulation";
-  dataDesc->AddInput(meshName);
   vtkCPInputDataDescription* inDesc = dataDesc->GetInputDescriptionByName(meshName);
 
   inDesc->SetGrid(data);
   // TODO: Set whole extent of **inDesc** if **data** is structured.
   proc->CoProcess(dataDesc);
 
-  // Finalize catalyst each timestep
-  vtkCPAdaptorAPI::CoProcessorFinalize();
+  static bool onceAtExit = false;
+  if (!onceAtExit)
+  {
+    onceAtExit = true;
+    // Finalize catalyst each timestep
+    // FIXME: This causes problems because atexit() is called after MPI_Finalize.
+    //        But we do not know when CatalystPythonScript::execute is being
+    //        called for the last time and CatalystPythonScript instances are
+    //        created new each timestep, so putting it in the destructor will
+    //        do no good.
+    atexit(vtkCPAdaptorAPI::CoProcessorFinalize);
+  }
 
   set_output<vtkDataObject>(data); // pass-through to allow other scripts, etc.
 #endif // PARAVIEW_ENABLE_PYTHON
