@@ -144,7 +144,7 @@ Relay
 -----
 Relay extracts saves data to the file system. Currently, Relay supports saving files in two Blueprint formats: HDF5 and json (default).
 By default, Relay saves the published mesh data to the file system, but is a pipeline is specified, then the result of the
-pipeline is saved.
+pipeline is saved. Relay extracts can be opened by post-hoc tools such as VisIt.
 
 .. code-block:: c++ 
 
