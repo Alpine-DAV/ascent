@@ -289,12 +289,12 @@ struct DataSet
       node["fields/nodal_noise/association"] = "vertex";
       node["fields/nodal_noise/type"]        = "scalar";
       node["fields/nodal_noise/topology"]    = "mesh";
-      node["fields/nodal_noise/values"].set_external(m_nodal_scalars);
+      node["fields/nodal_noise/values"].set_external(m_nodal_scalars, m_point_size);
 
       node["fields/zonal_noise/association"] = "element";
       node["fields/zonal_noise/type"]        = "scalar";
       node["fields/zonal_noise/topology"]    = "mesh";
-      node["fields/zonal_noise/values"].set_external(m_zonal_scalars);
+      node["fields/zonal_noise/values"].set_external(m_zonal_scalars, m_cell_size);
    }
 
    void Print()
@@ -327,14 +327,13 @@ private:
 
 void Init(SpatialDivision &div, const Options &options)
 {
+  int rank = 0;
 #ifdef PARALLEL
 
   MPI_Init(NULL,NULL);
   int comm_size;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-  int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  if(rank == 0) options.Print(); 
   std::vector<SpatialDivision> divs; 
   divs.push_back(div);
   int avail = comm_size - 1;
@@ -391,7 +390,7 @@ void Init(SpatialDivision &div, const Options &options)
 
   div = divs.at(rank);
 #endif
-  options.Print();
+  if(rank == 0) options.Print(); 
 }
 
 void Finalize()
@@ -474,8 +473,31 @@ int main(int argc, char** argv)
   scenes["scene1/plots/plt1/pipeline"]     = "pl1";
   scenes["scene1/plots/plt1/params/field"] = "zonal_noise";
 
+  conduit::Node ctable;
+  ctable["name"] = "Black, Blue and White";
+  ctable["control_points/p1/type"] = "alpha";
+  ctable["control_points/p1/position"] = 0.0;
+  ctable["control_points/p1/alpha"] = 0.01;
+  ctable["control_points/p2/type"] = "alpha";
+  ctable["control_points/p2/position"] = 1.0;
+  ctable["control_points/p2/alpha"] = 0.3;
+
   scenes["scene1/plots/plt2/type"]         = "volume";
   scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
+  scenes["scene1/plots/plt2/params/color_table"] = ctable;
+
+  std::vector<double> bg_color;
+  bg_color.push_back(1.0);
+  bg_color.push_back(1.0);
+  bg_color.push_back(1.0);
+
+  std::vector<double> fg_color;
+  fg_color.push_back(0.0);
+  fg_color.push_back(0.0);
+  fg_color.push_back(0.0);
+
+  scenes["scene1/renders/r1/bg_color"].set(bg_color);
+  scenes["scene1/renders/r1/fg_color"].set(fg_color);
 
   conduit::Node actions;
   conduit::Node &add_pipelines = actions.append();
