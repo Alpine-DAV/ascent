@@ -124,6 +124,58 @@ An example of creating a scene with a user defined pipeline:
   add_scenes["action"] = "add_scenes";
   add_scenes["scenes"] = scenes;
 
+In addition to surfaces, this pseudocolor color plot can render point meshes 
+with no additional parameters.
+While there is a default point radius, the plot options allow for constant or 
+variable radii.
+
+
+.. _pnormalfig:
+
+..  figure:: ../images/points_normal.png
+    :scale: 50 % 
+    :align: center
+    
+    Default heuristic for points size
+
+.. code-block:: c++
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/params/points/radius"] = 1.f;
+
+.. _pconst:
+
+..  figure:: ../images/points_const.png
+    :scale: 50 % 
+    :align: center
+    
+    Point mesh rendered with a constant radius 
+
+For variable radii, the field values are used to scale each points radius
+relative to the global min and max scalar value. The inputs are the base 
+radius size, and the delta (multiplier) of the radius. In the example below, scalar
+values at the minimum of the scalar range will have a radius of ``0.25`` and scalar
+values at the max will have radii of ``0.25 + 0.5``.
+
+.. code-block:: c++
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/params/points/radius"] = 0.25f;
+    // this detla is relative to the base radius
+    scenes["s1/plots/p1/params/points/radius_delta"] = 2.0f;
+
+.. _pvariable:
+
+..  figure:: ../images/points_variable.png
+    :scale: 50 % 
+    :align: center
+    
+    Point mesh rendered with a variable radius 
+
 Volume Plot
 ^^^^^^^^^^^
 The volume plot produce a volume rendering of the provided scalar field.

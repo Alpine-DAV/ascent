@@ -45,15 +45,16 @@
 
 Example Integrations
 --------------------
-Ascent comes with four example integrations:
+Ascent comes with five example integrations:
 
   - Lulesh: a lagrangian shock hydrodynamics code 
   - Kripke: a deterministic neutron transport code
   - CloverLeaf3D: an eulerian hydrodynamics code
+  - Laghos : high-order finite element hydrodynamics code
   - Noise : an synthetic data source based on open simplex noise
 
 .. note::
-  All four example codes use both MPI and OpenMP for hybrid parallelism.
+  All example codes, except Laghos (MPI only), use both MPI and OpenMP for hybrid parallelism.
 
 Lulesh
 ^^^^^^

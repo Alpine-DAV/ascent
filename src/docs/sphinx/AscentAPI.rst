@@ -69,6 +69,20 @@ Here is a file that would set the runtime to the main ascent runtime using a Ope
     "runtine/backend" : "openmp"
   }
 
+If MFEM is enabled, one additional options argument, ``refinement`` can be specified.
+High-order meshes variable are continuous polynomial functions that cannot be captured
+by linear low-order meshes. In order to approximate the functions with less error,
+high-order zones are discretized into many linear zones. The minimum value for refinement 
+is ``2``. There is a memory-accuracy trade-off when using refinement. The higher the value,
+the more accurate the low-order representation is, but more discretization means more memory
+usage and more time tp process the additional elements.
+
+.. code-block:: json
+
+  {
+    "refinement" : 4
+  }
+
 A typical integration will include the following code:
 
 .. code-block:: c++
@@ -80,7 +94,7 @@ A typical integration will include the following code:
   ascent_options["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
   #endif
   ascent_options["runtime/type"] = "ascent";
-  ascent_options["runtime/backend"] = "tbb";
+  ascent_options["runtime/backend"] = "openmp";
 
   ascent.Open(ascent_options);
 
@@ -105,6 +119,8 @@ There are a few other options that control behaviors common to all runtimes:
 
     - ``verbose``  Logged info messages are printed
 
+If ascent is not behaving as expected, a good first step is to enable verbose messaging.
+There are often warnings and other information that can indicate potential issues.
 
  * ``exceptions``
  
@@ -116,12 +132,29 @@ There are a few other options that control behaviors common to all runtimes:
 
     -  ``catch`` Catches conduit::Error exceptions at the Ascent interface and prints info about the error to standard out. 
        This case this provides an easy way to prevent host program crashes when something goes wrong in Ascent.
+
+By default, Ascent looks for a file called ``ascent_actions.json`` that can append additional actions at runtime.
+This default file name can be overridden in the Ascent options:
+
+
+.. code-block:: c++
+
+    ascent_opts["actions_file"] = custom_ascent_actions_file; 
   
-  
+When running on the GPU, Ascent will automatically choose which GPU to run code on if there are 
+multiple available, unless told otherwise. In the default configuration, it is important to
+launch one MPI task per GPU. This default behavior can be overridden with the following option:
+
+.. code-block:: c++
+
+    ascent_opts["cuda/init"] = "false"; 
+
+By disabling CUDA GPU initialization, an application is free to set the active device.
+
 Publish
 -------
 This call publishes data to Ascent through `Conduit Blueprint <http://llnl-conduit.readthedocs.io/en/latest/blueprint.html>`_ mesh descriptions.
-In the Lulesh prox-app, data is already in a form that is compatible with the blueprint conventions and the code to create the Conduit Node is straight-forward:
+In the Lulesh proxy-app, data is already in a form that is compatible with the blueprint conventions and the code to create the Conduit Node is straight-forward:
 
 .. code-block:: c++
       
@@ -217,8 +250,4 @@ Error Handling
   C++ exceptions are thrown, but you can rewire Conduit's handlers with your own callbacks. For more info
   see the `Conduit Error Handling Tutorial <http://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp_errors.html>`_.
   You can also stop exceptions at the Ascent interface using the ``exceptions`` option for :ref:`Ascent::open<ascent_api_open>` .
-
-
-
-
 

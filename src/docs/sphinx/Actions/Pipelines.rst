@@ -93,6 +93,12 @@ As we stand up the infrastructure necessary to support a wide variety filter we 
   - Slice
   - Three Slice 
   - Clip 
+  - Clip by field
+  - Isovolume
+  - Vector magnitude 
+    
+In the following section we provide brief descriptions and code examples of the supported filters.
+For complete code examples, please consult the unit tests located in ``src/tests/ascent``..
 
 Filters
 -------
@@ -460,6 +466,30 @@ values are removed from the data set.
     :scale: 50 % 
     :align: center
 
-    An example of creating a iso-volume of values between 5.0 and 10.0.. 
+    An example of creating a iso-volume of values between 5.0 and 10.0.
+
+Vector Magnitude
+~~~~~~~~~~~~~~~~
+Vecotr magnitude creates a new field on the data set representing the magitude
+of a vector variable. The only parameters are the input vector field name
+and the name of the new field.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "vector_magnitude";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "vel";         // name of the vector field
+  params["output_name"] = "mag";   // name of the output field
+  
+.. _vecmag:
+
+..  figure:: ../images/vector_magnitude.png
+    :scale: 50 % 
+    :align: center
+
+    An example of creating a pseudocolor plot of vector magnitude 
 
 
