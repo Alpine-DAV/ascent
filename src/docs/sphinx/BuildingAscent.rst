@@ -115,7 +115,7 @@ MFEM (Optional)
 """""""""""""""
   * MPI
   * Metis
-  * HypreH
+  * Hypre
 
 Getting Started
 ---------------

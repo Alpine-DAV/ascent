@@ -86,6 +86,7 @@ Contributors
 - Kevin Griffin (LLNL)
 - Hank Childs (LBL and UO)
 - Utkarsh Ayachit (Kitware, Inc)
+- Sudhanshu Sane (UO)
 
 Ascent Documentation
 ======================

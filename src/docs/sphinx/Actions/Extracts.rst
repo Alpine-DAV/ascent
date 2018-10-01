@@ -169,3 +169,6 @@ To save the files in HDF5 format:
 
     extracts["e1/params/protocol"] = "blueprint/mesh/hd5f";
 
+ADIOS
+-----
+The current ADIOS extract is experimental and this section is under construction.

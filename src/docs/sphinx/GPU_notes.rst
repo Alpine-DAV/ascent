@@ -51,12 +51,6 @@ Number of Ranks Per Node
 On each node, it is important to only launch one MPI rank per GPU.
 If your cluster contains multiple GPUs per node, it is important that consecutive ranks be assigned to each node, which is the default behavior of most job schedulers.
 By default, each CUDA capable GPU device is queried, and a rank is assigned a device based on the rank number modulo the number of devices.
-Collisions could result in a run-time failure or significant delays.
+Collisions could result in a run-time failure or significant delays. 
+This default behavior can be overridden. Please see the Ascent options for more details.
 
-VTK-m CUDA JIT Compilation Delays
----------------------------------
-A known issue with VTK-m is a possible long delay (60s) on the first execution. 
-Even though the CMake configuration specifies the native GPU architecture, all kernels are recompiled at run-time for the intermediate code representation.
-With the general code of the rendering library, the number of potential kernels is large, given the number of possible combinations between cell sets, coordinate systems, and scalar fields.
-The compiled code is generally cached by CUDA in a hidden directory in the user's home folder, and subsequent executions will not incur  the overhead until the cache is deleted.
-This is a know issue, and there was no resolution at this time.
