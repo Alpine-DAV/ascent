@@ -45,10 +45,5 @@ packages:
       buildable: False
       paths:
           openssl@1.0.1i: /usr
-  cmake:
-      version: [3.8.2]
-      buildable: False
-      paths:
-          cmake@3.8.2: /usr/common/software/cmake/3.8.2
   conduit:
     version: [master]
