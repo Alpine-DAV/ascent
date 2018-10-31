@@ -22,11 +22,11 @@
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -39,7 +39,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
 // IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -115,7 +115,7 @@ namespace filters
 namespace detail
 {
 vtkh::DataSet *
-transmogrify_source(const conduit::Node *n_input)
+transmogrify_source(const conduit::Node *n_input, const int ref_level)
 {
 
   EnsureLowOrder ensure;
@@ -126,8 +126,7 @@ transmogrify_source(const conduit::Node *n_input)
 #if defined(ASCENT_MFEM_ENABLED)
     MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
     conduit::Node *lo_dset = new conduit::Node;
-    //MFEMDataAdapter::Linearize(domains, *lo_dset, m_refinement_level);
-    MFEMDataAdapter::Linearize(domains, *lo_dset, 2);
+    MFEMDataAdapter::Linearize(domains, *lo_dset, ref_level);
     delete domains;
 
     dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*lo_dset, zero_copy);
@@ -159,7 +158,7 @@ RoverXRay::~RoverXRay()
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 RoverXRay::declare_interface(Node &i)
 {
     i["type_name"]   = "xray";
@@ -174,15 +173,15 @@ RoverXRay::verify_params(const conduit::Node &params,
 {
     info.reset();
     bool res = true;
-    
-    if(! params.has_child("absorption") || 
+
+    if(! params.has_child("absorption") ||
        ! params["absorption"].dtype().is_string() )
     {
         info["errors"].append() = "Missing required string parameter 'absorption'";
         res = false;
     }
 
-    if(! params.has_child("filename") || 
+    if(! params.has_child("filename") ||
        ! params["filename"].dtype().is_string() )
     {
         info["errors"].append() = "Missing required string parameter 'filename'";
@@ -212,21 +211,28 @@ RoverXRay::verify_params(const conduit::Node &params,
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 RoverXRay::execute()
 {
 
     ASCENT_INFO("XRay sees everything!");
     vtkh::DataSet *dataset = nullptr;
 
+    int refinement = 2;
+
+    if(params().has_path("refinement"))
+    {
+      refinement = params()["refinement"].to_int32();
+    }
+
     bool zero_copy= true;
     if(input(0).check_type<Node>())
     {
         // convert from blueprint to vtk-h
         const Node *n_input = input<Node>(0);
-        dataset = detail::transmogrify_source(n_input);
+        dataset = detail::transmogrify_source(n_input, refinement);
     }
-    
+
     vtkmCamera camera;
     camera.ResetToBounds(dataset->GetGlobalBounds());
 
@@ -235,7 +241,7 @@ RoverXRay::execute()
       const conduit::Node &n_camera = params()["camera"];
       parse_camera(n_camera, camera);
     }
-    
+
     int width, height;
     parse_image_dims(params(), width, height);
 
@@ -243,10 +249,10 @@ RoverXRay::execute()
 
     Rover tracer;
 #ifdef ASCENT_MPI_ENABLED
-    int comm_id =flow::Workspace::default_mpi_comm();
+    int comm_id = flow::Workspace::default_mpi_comm();
     tracer.set_mpi_comm_handle(comm_id);
 #endif
-    
+
     if(params().has_path("precision"))
     {
       std::string prec = params()["precision"].as_string();
@@ -255,9 +261,9 @@ RoverXRay::execute()
         tracer.set_tracer_precision64();
       }
     }
-    
+
     //
-    // Create some basic settings 
+    // Create some basic settings
     //
     RenderSettings settings;
     settings.m_primary_field = params()["absorption"].as_string();
@@ -266,14 +272,18 @@ RoverXRay::execute()
     {
        settings.m_secondary_field = params()["emission"].as_string();
     }
-  
-    
+
+    if(params().has_path("unit_scalar"))
+    {
+       settings.m_energy_settings.m_unit_scalar = params()["unit_scalar"].to_float64();
+    }
+
+
     settings.m_render_mode = rover::energy;
 
     tracer.set_render_settings(settings);
     for(int i = 0; i < dataset->GetNumberOfDomains(); ++i)
     {
-      //dataset->GetDomain(i).PrintSummary(std::cout);
       tracer.add_data_set(dataset->GetDomain(i));
     }
 
@@ -316,18 +326,30 @@ RoverVolume::verify_params(const conduit::Node &params,
 {
     info.reset();
     bool res = true;
-    
-    if(! params.has_child("field") || 
+
+    if(! params.has_child("field") ||
        ! params["field"].dtype().is_string() )
     {
         info["errors"].append() = "Missing required string parameter 'field'";
         res = false;
     }
 
-    if(! params.has_child("filename") || 
+    if(! params.has_child("filename") ||
        ! params["filename"].dtype().is_string() )
     {
         info["errors"].append() = "Missing required string parameter 'filename'";
+        res = false;
+    }
+
+    if( params.has_child("precision") &&
+       ! params["precision"].dtype().is_string() )
+    {
+        info["errors"].append() = "Optional parameter 'precision' must be a string";
+        std::string prec = params["precision"].as_string();
+        if(prec != "single" || prec != "double")
+        {
+          info["errors"].append() = "Parameter 'precision' must be 'single' or 'double'";
+        }
         res = false;
     }
 
@@ -335,20 +357,25 @@ RoverVolume::verify_params(const conduit::Node &params,
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 RoverVolume::execute()
 {
-
     ASCENT_INFO("Volume mostly sees everything!");
     vtkh::DataSet *dataset = nullptr;
 
+    int refinement = 2;
+
+    if(params().has_path("refinement"))
+    {
+      refinement = params()["refinement"].to_int32();
+    }
     if(input(0).check_type<Node>())
     {
         // convert from blueprint to vtk-h
         const Node *n_input = input<Node>(0);
-        dataset = detail::transmogrify_source(n_input);
+        dataset = detail::transmogrify_source(n_input, refinement);
     }
-    
+
     vtkmCamera camera;
     camera.ResetToBounds(dataset->GetGlobalBounds());
 
@@ -357,7 +384,7 @@ RoverVolume::execute()
       const conduit::Node &n_camera = params()["camera"];
       parse_camera(n_camera, camera);
     }
-    
+
     int width, height;
     parse_image_dims(params(), width, height);
 
@@ -368,7 +395,7 @@ RoverVolume::execute()
     int comm_id =flow::Workspace::default_mpi_comm();
     tracer.set_mpi_comm_handle(comm_id);
 #endif
-    
+
     if(params().has_path("precision"))
     {
       std::string prec = params()["precision"].as_string();
@@ -377,19 +404,26 @@ RoverVolume::execute()
         tracer.set_tracer_precision64();
       }
     }
-    
+
     //
-    // Create some basic settings 
+    // Create some basic settings
     //
     RenderSettings settings;
     settings.m_primary_field = params()["field"].as_string();
 
     settings.m_render_mode = rover::volume;
-    vtkmColorTable color_table("cool to warm");
-    color_table.AddPointAlpha(0.0, .01);
-    color_table.AddPointAlpha(0.5, .02);
-    color_table.AddPointAlpha(1.0, .01);
-    settings.m_color_table = color_table;
+    if(params().has_path("color_table"))
+    {
+      settings.m_color_table = parse_color_table(params()["color_table"]);
+    }
+    else
+    {
+      vtkmColorTable color_table("cool to warm");
+      color_table.AddPointAlpha(0.0, .01);
+      color_table.AddPointAlpha(0.5, .02);
+      color_table.AddPointAlpha(1.0, .01);
+      settings.m_color_table = color_table;
+    }
 
     tracer.set_render_settings(settings);
     for(int i = 0; i < dataset->GetNumberOfDomains(); ++i)
