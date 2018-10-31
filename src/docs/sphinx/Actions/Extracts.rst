@@ -46,7 +46,129 @@
 Extracts
 ========
 Extracts are an abstraction that enables the user to specify how they want to capture their data.
-In terms of ALPINE, data capture sends data outside the ALPINE infrastructure.
+In terms of Ascent, data capture sends data outside the Ascent infrastructure.
 Examples include writing out the raw simulation data to the file system, creating HDF5 files, or sending the data off node (e.g., ADIOS).
 
-Under construction.
+Currently supported extracts include:
+    
+    * Python : use a python script with NumPy to analyze mesh data
+    * Relay : leverages Conduit's Relay library to do parallel I/O 
+    * ADIOS : use ADIOS to send data to a separate resource
+
+
+Python
+------
+Python extracts can execute arbitrary python code. Python code uses Conduit's python interface
+to interrogate and retrieve mesh data. Code is executed on each MPI rank, and mpi4py can be 
+used for collective communication.
+
+.. code-block:: c++
+
+  conduit::Node extracts;
+  extracts["e1/type"]  = "python";
+  extracts["e1/params/source"] = py_script;
+
+
+Python source code is loaded into Ascent via a string that could be loaded from the file system
+
+.. code-block:: c++
+
+  import numpy as np
+  from mpi4py import MPI
+  
+  # obtain a mpi4py mpi comm object
+  comm = MPI.Comm.f2py(ascent_mpi_comm_id())
+  
+  # get this MPI task's published blueprint data
+  mesh_data = ascent_data().child(0)
+  
+  # fetch the numpy array for the energy field values
+  e_vals = mesh_data["fields/energy/values"]
+  
+  # find the data extents of the energy field using mpi
+  
+  # first get local extents
+  e_min, e_max = e_vals.min(), e_vals.max()
+  
+  # declare vars for reduce results
+  e_min_all = np.zeros(1)
+  e_max_all = np.zeros(1)
+  
+  # reduce to get global extents
+  comm.Allreduce(e_min, e_min_all, op=MPI.MIN)
+  comm.Allreduce(e_max, e_max_all, op=MPI.MAX)
+  
+  # compute bins on global extents 
+  bins = np.linspace(e_min_all, e_max_all)
+  
+  # get histogram counts for local data
+  hist, bin_edges = np.histogram(e_vals, bins = bins)
+  
+  # declare var for reduce results
+  hist_all = np.zeros_like(hist)
+  
+  # sum histogram counts with MPI to get final histogram
+  comm.Allreduce(hist, hist_all, op=MPI.SUM)
+
+The example above shows how a python script could be used to create a distributed-memory
+histogram of a mesh variable that has been published by a simulation.
+
+
+.. code-block:: python 
+
+  import conduit
+  import ascent.mpi
+  # we treat everything as a multi_domain in ascent so grab child 0
+  n_mesh = ascent_data().child(0)
+  ascent_opts = conduit.Node()
+  ascent_opts['mpi_comm'].set(ascent_mpi_comm_id())
+  a = ascent.mpi.Ascent()
+  a.open(ascent_opts)
+  a.publish(n_mesh)
+  actions = conduit.Node()
+  scenes  = conduit.Node()
+  scenes['s1/plots/p1/type'] = 'pseudocolor'
+  scenes['s1/plots/p1/params/field'] = 'radial_vert'
+  scenes['s1/image_prefix'] = 'tout_python_mpi_extract_inception'
+  add_act =actions.append()
+  add_act['action'] = 'add_scenes'
+  add_act['scenes'] = scenes
+  actions.append()['action'] = 'execute'
+  a.execute(actions)
+  a.close()
+
+In addition to performing custom python analysis, your can create new data sets and plot them
+through a new instance of Ascent. We call this technique Inception. For 
+
+Relay
+-----
+Relay extracts saves data to the file system. Currently, Relay supports saving files in two Blueprint formats: HDF5 and json (default).
+By default, Relay saves the published mesh data to the file system, but is a pipeline is specified, then the result of the
+pipeline is saved. Relay extracts can be opened by post-hoc tools such as VisIt.
+
+.. code-block:: c++ 
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "contour";
+    // filter knobs
+    conduit::Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "radial_vert";
+    contour_params["iso_values"] = 250.;
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"]  = "pl1";
+
+    extracts["e1/params/path"] = output_file;
+
+In this example, a contour of a field is saved to the file system in json form. 
+To save the files in HDF5 format:
+
+.. code-block:: c++ 
+
+    extracts["e1/params/protocol"] = "blueprint/mesh/hd5f";
+
+ADIOS
+-----
+The current ADIOS extract is experimental and this section is under construction.

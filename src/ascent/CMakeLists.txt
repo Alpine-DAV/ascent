@@ -248,7 +248,7 @@ if(MPI_FOUND)
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)
         list(APPEND ascent_mpi_thirdparty_libs vtkh_mpi)
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs rover)
-        list(APPEND ascent_mpi_thirdparty_libs rover_par)
+        list(APPEND ascent_mpi_thirdparty_libs rover_mpi)
     endif()
 
     blt_add_library(

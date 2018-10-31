@@ -95,11 +95,6 @@ if(VTKM_DIR)
     # VTKh
     ################################
     include(cmake/thirdparty/SetupVTKh.cmake)
-
-    ################################
-    # VTKh
-    ################################
-    include(cmake/thirdparty/SetupRover.cmake)
 endif()
 
 

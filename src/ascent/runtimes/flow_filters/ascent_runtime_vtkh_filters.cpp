@@ -86,6 +86,7 @@
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/NoOp.hpp>
+#include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
@@ -127,7 +128,7 @@ namespace detail
 {
 // A simple container to create registry entries for
 // renderer and the data set it renders. Without this,
-// pipeline results (data sets) would be deleted before 
+// pipeline results (data sets) would be deleted before
 // the Scene can be executed.
 //
 class RendererContainer
@@ -138,7 +139,7 @@ protected:
   std::string m_data_set_key;
   RendererContainer() {};
 public:
-  RendererContainer(std::string key, 
+  RendererContainer(std::string key,
                     flow::Registry *r,
                     vtkh::Renderer *renderer)
     : m_key(key),
@@ -149,7 +150,7 @@ public:
     m_registry->add<vtkh::DataSet>(m_data_set_key, renderer->GetInput(),1);
   }
 
-  vtkh::Renderer * 
+  vtkh::Renderer *
   Fetch()
   {
     return m_registry->fetch<vtkh::Renderer>(m_key);
@@ -161,7 +162,7 @@ public:
     m_registry->consume(m_data_set_key);
   }
 };
- 
+
 
 class AscentScene
 {
@@ -184,10 +185,10 @@ public:
     ostringstream oss;
     oss << "key_" << m_renderer_count;
     m_registry->add<RendererContainer>(oss.str(),container,1);
-     
+
     m_renderer_count++;
   }
-  
+
   void Execute(std::vector<vtkh::Render> &renders)
   {
     vtkh::Scene scene;
@@ -1196,14 +1197,14 @@ DefaultRender::execute()
           {
             ASCENT_ERROR("Cinema must have 'phi' and 'theta'");
           }
-          int phi = render_node["phi"].to_int32(); 
-          int theta = render_node["theta"].to_int32(); 
+          int phi = render_node["phi"].to_int32();
+          int theta = render_node["theta"].to_int32();
 
           if(!render_node.has_path("db_name"))
           {
             ASCENT_ERROR("Cinema must specify a 'db_name'");
           }
-          std::string db_name = render_node["db_name"].as_string(); 
+          std::string db_name = render_node["db_name"].as_string();
           bool exists = detail::CinemaDatabases::db_exists(db_name);
           if(!exists)
           {
@@ -1211,11 +1212,11 @@ DefaultRender::execute()
           } 
           detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
 
-          int image_width; 
+          int image_width;
           int image_height;
-          parse_image_dims(render_node, image_width, image_height);  
+          parse_image_dims(render_node, image_width, image_height);
 
-          manager.add_time_step(); 
+          manager.add_time_step();
           manager.fill_renders(renders, v_domain_ids, image_width, image_height);
           manager.write_metadata();
         }
@@ -1233,15 +1234,15 @@ DefaultRender::execute()
             std::stringstream ss;
             ss<<expand_family_name(params()["image_prefix"].as_string());
             ss<<"_"<<i;
-            image_name = ss.str(); 
+            image_name = ss.str();
           }
-          
-          vtkh::Render render = detail::parse_render(render_node, 
-                                                     *bounds, 
-                                                     v_domain_ids, 
+
+          vtkh::Render render = detail::parse_render(render_node,
+                                                     *bounds,
+                                                     v_domain_ids,
                                                      image_name);
-          renders->push_back(render); 
-        } 
+          renders->push_back(render);
+        }
       }
     }
     else
@@ -1273,7 +1274,7 @@ VTKHClip::~VTKHClip()
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 VTKHClip::declare_interface(Node &i)
 {
     i["type_name"] = "vtkh_clip";
@@ -1288,7 +1289,7 @@ VTKHClip::verify_params(const conduit::Node &params,
 {
     info.reset();
     bool res = true;
-    
+
     bool type_present = false;
 
     if(params.has_child("sphere"))
@@ -1303,7 +1304,7 @@ VTKHClip::verify_params(const conduit::Node &params,
     {
       type_present = true; 
     }
-    
+
     if(!type_present)
     {
         info["errors"].append() = "Missing required parameter. Clip must specify a 'sphere', 'box', or 'plane'";
@@ -1311,7 +1312,7 @@ VTKHClip::verify_params(const conduit::Node &params,
     }
     else
     {
-    
+
       if(params.has_child("sphere"))
       {
          if(!params.has_path("sphere/center/x") ||
@@ -2157,7 +2158,7 @@ CreatePlot::execute()
     conduit::Node plot_params = params()["params"];
 
     std::string type = params()["type"].as_string();
-    
+
     vtkh::Renderer *renderer = nullptr;
 
     if(type == "pseudocolor")
@@ -2342,6 +2343,130 @@ ExecScene::execute()
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
+VTKHLagrangian::VTKHLagrangian()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHLagrangian::~VTKHLagrangian()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLagrangian::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_lagrangian";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHLagrangian::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    if(! params.has_child("field") ||
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+        res = false;
+    }
+    if(! params.has_child("step_size") ||
+       ! params["step_size"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'step_size'";
+        res = false;
+    }
+    if(! params.has_child("write_frequency") ||
+       ! params["write_frequency"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'write_frequency'";
+        res = false;
+    }
+    if(! params.has_child("cust_res") ||
+       ! params["cust_res"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'cust_res'";
+        res = false;
+    }
+    if(! params.has_child("x_res") ||
+       ! params["x_res"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'x_res'";
+        res = false;
+    }
+    if(! params.has_child("y_res") ||
+       ! params["y_res"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'y_res'";
+        res = false;
+    }
+    if(! params.has_child("z_res") ||
+       ! params["z_res"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numeric parameter 'z_res'";
+        res = false;
+    }
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+VTKHLagrangian::execute()
+{
+    vtkh::DataSet *data = nullptr;
+    if(input(0).check_type<vtkh::DataSet>())
+    {
+      data = input<vtkh::DataSet>(0);
+    }
+    else if(input(0).check_type<Node>())
+    {
+      const Node *n_input = input<Node>(0);
+      data = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
+    }
+    else
+    {
+        ASCENT_ERROR("vtkh_lagrangian input must be a< vtkh::DataSet> or <Node>");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    double step_size = params()["step_size"].to_float64();
+    int write_frequency = params()["write_frequency"].to_int32();
+    int cust_res = params()["cust_res"].to_int32();
+    int x_res = params()["x_res"].to_int32();
+    int y_res = params()["y_res"].to_int32();
+    int z_res = params()["z_res"].to_int32();
+
+    vtkh::Lagrangian lagrangian;
+
+    lagrangian.SetInput(data);
+    lagrangian.SetField(field_name);
+    lagrangian.SetStepSize(step_size);
+    lagrangian.SetWriteFrequency(write_frequency);
+    lagrangian.SetCustomSeedResolution(cust_res);
+    lagrangian.SetSeedResolutionInX(x_res);
+    lagrangian.SetSeedResolutionInY(y_res);
+    lagrangian.SetSeedResolutionInZ(z_res);
+    lagrangian.Update();
+
+    vtkh::DataSet *lagrangian_output = lagrangian.GetOutput();
+
+    set_output<vtkh::DataSet>(lagrangian_output);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 VTKHNoOp::VTKHNoOp()
 :Filter()
 {
@@ -2370,14 +2495,14 @@ VTKHNoOp::verify_params(const conduit::Node &params,
 {
     info.reset();
     bool res = true;
-    
-    if(! params.has_child("field") || 
+
+    if(! params.has_child("field") ||
        ! params["field"].dtype().is_string() )
     {
         info["errors"].append() = "Missing required string parameter 'field'";
         res = false;
     }
-    
+
     return res;
 }
 
@@ -2426,8 +2551,3 @@ VTKHNoOp::execute()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-

@@ -1118,7 +1118,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     detail::VTKmCellShape(ele_shape, shape_id, indices_per);
     vtkm::cont::CellSetSingleType<> cellset;
     cellset.Fill(nverts, shape_id, indices_per, connectivity);
-
+    neles = cellset.GetNumberOfCells();
     result->AddCellSet(cellset);
     
     ASCENT_INFO("neles "  << neles);
@@ -1160,8 +1160,19 @@ VTKHDataAdapter::AddField(const std::string &field_name,
     const Node &n_vals = n_field["values"];
     int num_vals = n_vals.dtype().number_of_elements();
 
-    // if assoc == "vertex"   check that num_vals == nverts;
-    // if assoc == "element"  check that num_vals == neles;
+    if(assoc_str == "vertex" && nverts != num_vals)
+    {
+      ASCENT_INFO("Field '"<<field_name<<"' number of values "<<num_vals<<
+                  " does not match the number of points "<<nverts<<". Skipping");
+      return;
+    }
+
+    if(assoc_str == "element" && neles != num_vals)
+    {
+      ASCENT_INFO("Field '"<<field_name<<"' number of values "<<num_vals<<
+                  " does not match the number of cells "<<nverts<<". Skipping");
+      return;
+    }
 
     ASCENT_INFO("field association: "      << assoc_str);
     ASCENT_INFO("number of field values: " << num_vals);

@@ -49,7 +49,6 @@ Building Ascent
 Overview
 --------
 
-
 Ascent uses CMake for its build system.
 Building Ascent creates two separate libraries:
 
@@ -63,6 +62,15 @@ For a minimal build with no parallel components, the following are required:
     
     * Conduit
     * C++ compilers
+
+We recognize that building on HPC systems can be difficult, and we have provid two seperate build strategies.
+
+    * A spack based build
+    * Manually compile depencies using a CMake configuration file to keep compilers and libraries consistent
+
+Most often, the spack based build should be attemted first. Spack will automatically download and build all
+the third party dependencies and create a CMake configuration file for Ascent. Should you encounter build issues
+that are not addressed here, please ask questions using our github `issue tracker <https://github.com/Alpine-DAV/ascent/issues>`_.
 
 
 Build Dependencies
@@ -80,28 +88,34 @@ Ascent
 
 For Ascent, the Flow runtime is builtin, but for visualization functionality (filters and rendering), the VTK-h runtime is needed.
 
-Conduit
-"""""""
+Conduit (Required)
+""""""""""""""""""
   * MPI
   * Python + NumPy (Optional)
   * HDF5 (Optional)
   * Fortran compiler (Optional)
 
-VTK-h
-"""""""""
+VTK-h (Optional)
+""""""""""""""""
 
 * VTK-h: 
   
     * VTK-m: 
 
-      * TBB (Optional)  Intel's Threaded Building Blocks
-      * CUDA 6.5+ (Optional)
+      * OpenMP (Optional) 
+      * CUDA 7.5+ (Optional)
       * MPI (Optional)
 
 .. note:: 
 
     When building VTK-m for use with VTK-h, VTK-m must be configured with rendering on, among other options.
     See the VTK-h spack package for details. 
+
+MFEM (Optional)
+"""""""""""""""
+  * MPI
+  * Metis
+  * Hypre
 
 Getting Started
 ---------------
@@ -181,6 +195,8 @@ Ascent's build system supports the following CMake options:
 * **VTKM_DIR** - Path to an VTK-m install *(optional)*. 
 
 * **HDF5_DIR** - Path to a HDF5 install *(optional)*. 
+
+* **MFEM_DIR** - Path to a MFEM install *(optional)*. 
 
 * **ADIOS_DIR** - Path to a ADIOS install *(optional)*. 
 
@@ -304,6 +320,7 @@ that customize the options and dependencies used to build Ascent:
   **tbb**             Enable VTK-h TBB support             ON (+tbb)
   **cuda**            Enable VTK-h CUDA support            OFF (~cuda)
   **doc**             Build Ascent's Documentation         OFF (~doc)
+  **doc**             Enable MFEM support                  OFF (~mfem)
  ================== ==================================== ======================================
 
 
@@ -401,7 +418,7 @@ In the host config, add ``set(HDF5_DIR "/path/to/hdf5_install" CACHE PATH "")``.
 
 Conduit
 ^^^^^^^
-The version of conduit we use is `v0.3.1`. If the ``HDF5_DIR`` is specified in the host config, 
+The version of conduit we use is the master branch. If the ``HDF5_DIR`` is specified in the host config, 
 then conduit will build the relay io library. 
 Likewise, if the config file has the entry ``ENABLE_MPI=ON``, then conduit will build 
 parallel versions of the libraries. 
@@ -447,7 +464,7 @@ We recommend VTK-h since VTK-m and VTK-h provide the majority of Ascent's visual
 
 .. code:: bash
     
-    git clone ://github.com/Alpine-DAV/vtk-h.git 
+    git clone https://github.com/Alpine-DAV/vtk-h.git 
     cd vtk-h 
     mkdir build
     mkdir install
@@ -476,3 +493,47 @@ Now that we have all the dependencies built and a host config file for our envir
 To run the unit tests to make sure everything works, do ``make test``. 
 If you install these dependencies in a public place in your environment, we encourage you to make you host config publicly available by submitting a pull request to the Ascent repo. 
 This will allow others to easily build on that system by only following the Ascent build instructions.
+
+Asking Ascent how its configured
+--------------------------------
+Once built, Ascent has a number of unit tests. ``t_ascent_smoke``, located in the ``tests/ascent`` directory will print Ascent's
+build configuration:
+
+.. code-block:: json
+
+	{
+		"version": "0.4.0",
+		"compilers": 
+		{
+			"cpp": "/usr/tce/packages/gcc/gcc-4.9.3/bin/g++",
+			"fortran": "/usr/tce/packages/gcc/gcc-4.9.3/bin/gfortran"
+		},
+		"platform": "linux",
+		"system": "Linux-3.10.0-862.6.3.1chaos.ch6.x86_64",
+		"install_prefix": "/usr/local",
+		"mpi": "disabled",
+		"runtimes": 
+		{
+			"ascent": 
+			{
+				"status": "enabled",
+				"vtkm": 
+				{
+					"status": "enabled",
+					"backends": 
+					{
+						"serial": "enabled",
+						"openmp": "enabled",
+						"cuda": "disabled"
+					}
+				}
+			},
+			"flow": 
+			{
+				"status": "enabled"
+			}
+		},
+		"default_runtime": "ascent"
+	}
+
+In this case, the non-MPI version of Ascent was used, so MPI reportsa as disabled.

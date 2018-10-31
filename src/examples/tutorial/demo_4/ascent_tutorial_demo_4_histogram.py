@@ -53,7 +53,7 @@ from mpi4py import MPI
 comm = MPI.Comm.f2py(ascent_mpi_comm_id())
 
 # get this MPI task's published blueprint data
-mesh_data = ascent_data()
+mesh_data = ascent_data().child(0)
 
 # fetch the numpy array for the energy field values
 e_vals = mesh_data["fields/energy/values"]

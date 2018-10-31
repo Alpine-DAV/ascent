@@ -271,7 +271,7 @@ TEST(ascent_hola_mpi, test_hola_mpi)
 
         EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
         
-        int cycle = 101;
+        int cycle = 100;
         data["state/cycle"] = cycle;
 
 
@@ -302,8 +302,8 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         MPI_Barrier(world_comm);
         
         string output_image = conduit::utils::join_file_path(output_dir(),
-                                                            "tout_hola_mpi_test_render0");
-        EXPECT_TRUE(utils::is_file(output_image + ".png"));
+                                                            "tout_hola_mpi_test_render");
+        EXPECT_TRUE(utils::is_file(output_image + "100.png"));
     }
     else
     {
@@ -351,7 +351,7 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         
         //have all ranks check the output file
         MPI_Barrier(world_comm);
-        EXPECT_TRUE(utils::is_file(output_image + "0.png"));
+        EXPECT_TRUE(utils::is_file(output_image + "100.png"));
     }
 
     MPI_Comm_free(&sub_comm);

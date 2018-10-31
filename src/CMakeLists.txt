@@ -73,7 +73,7 @@ option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
 
 ################################
-# Populate the cmake gui  
+# Populate the cmake gui
 ################################
 set(CONDUIT_DIR "" CACHE FILEPATH "path to conduit installation")
 
@@ -137,6 +137,8 @@ add_subdirectory(thirdparty_builtin)
 ################################
 add_subdirectory(flow)
 
+add_subdirectory(rover)
+
 add_subdirectory(ascent)
 
 ################################
@@ -151,6 +153,10 @@ endif()
 ################################
 add_subdirectory(examples)
 
+################################
+# Add utilites
+################################
+add_subdirectory(utilities)
 
 ################################
 # Add documentation targets
