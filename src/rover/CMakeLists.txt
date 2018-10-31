@@ -129,8 +129,6 @@ install(TARGETS rover
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION lib
-        INCLUDES DESTINATION include/rover  # this exports the includes into
-                                            # the RoverTargets.cmake
 )
 ###################################################
 #   Build parallel version
@@ -175,8 +173,6 @@ if(MPI_FOUND)
           LIBRARY DESTINATION lib
           ARCHIVE DESTINATION lib
           RUNTIME DESTINATION lib
-          INCLUDES DESTINATION include/rover  # this exports the includes into
-                                              # the RoverTargets.cmake
   )
   if(ENABLE_LOGGING)
     blt_add_compile_definitions(TO rover_mpi FLAGS " -D ROVER_ENABLE_LOGGING=1")

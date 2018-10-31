@@ -137,7 +137,9 @@ add_subdirectory(thirdparty_builtin)
 ################################
 add_subdirectory(flow)
 
-add_subdirectory(rover)
+if(VTKM_FOUND)
+  add_subdirectory(rover)
+endif()
 
 add_subdirectory(ascent)
 
@@ -164,7 +166,7 @@ add_subdirectory(utilities)
 add_subdirectory(docs)
 
 ################################
-# Create CMake importable 
+# Create CMake importable
 # exports for all of our targets
 ################################
 install(EXPORT ascent DESTINATION lib/cmake)

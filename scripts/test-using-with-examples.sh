@@ -46,7 +46,7 @@
 cd ${ASCENT_DIR}/examples/using-with-cmake
 mkdir build
 cd build
-export EXAMPLE_CFG="-DASCENT_DIR=${ASCENT_DIR} -DCONDUIT_DIR=${CONDUIT_DIR} -DVTKM_DIR=${VTKM_DIR} -DVTKH_DIR=${VTKH_DIR} -DROVER_DIR=${ROVER_DIR}"
+export EXAMPLE_CFG="-DASCENT_DIR=${ASCENT_DIR} -DCONDUIT_DIR=${CONDUIT_DIR} -DVTKM_DIR=${VTKM_DIR} -DVTKH_DIR=${VTKH_DIR}"
 cmake  ${EXAMPLE_CFG} ../
 make VERBOSE=1
 ./ascent_render_example

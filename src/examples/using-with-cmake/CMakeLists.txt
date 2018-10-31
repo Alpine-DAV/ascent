@@ -69,7 +69,6 @@ include("FindAscent.cmake")
 include("FindConduit.cmake")
 include("FindVTKm.cmake")
 include("FindVTKh.cmake")
-include("FindRover.cmake")
 
 # setup the ascent & conduit include paths
 include_directories(${ASCENT_INCLUDE_DIRS})

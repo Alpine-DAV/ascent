@@ -61,9 +61,9 @@ using namespace conduit;
 int main(int argc, char **argv)
 {
     std::cout << ascent::about() << std::endl;
-    
+
     Ascent a;
-    
+
     // open ascent
     a.open();
 
