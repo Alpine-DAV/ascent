@@ -52,13 +52,9 @@
 // std includes
 #include <memory>
 
-#ifdef PARALLEL
-#include <mpi.h>
-#endif
-
 namespace rover {
 
-class Rover 
+class Rover
 {
 public:
   Rover();
@@ -84,8 +80,8 @@ public:
   void get_result(Image<vtkm::Float64> &image);
 private:
   class InternalsType;
-  std::shared_ptr<InternalsType> m_internals; 
-}; // class strawman 
+  std::shared_ptr<InternalsType> m_internals;
+};
 
 }; // namespace rover
 

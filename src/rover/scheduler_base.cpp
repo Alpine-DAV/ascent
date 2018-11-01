@@ -62,19 +62,19 @@ SchedulerBase::set_render_settings(const RenderSettings render_settings)
   m_render_settings = render_settings;
 }
 
-void 
+void
 SchedulerBase::set_ray_generator(RayGenerator *ray_generator)
 {
   m_ray_generator = ray_generator;
 }
 
-void 
+void
 SchedulerBase::set_background(const std::vector<vtkm::Float64> &background)
 {
   m_background = background;
 }
 
-void 
+void
 SchedulerBase::set_background(const std::vector<vtkm::Float32> &background)
 {
   const size_t size = background.size();
@@ -87,19 +87,19 @@ SchedulerBase::set_background(const std::vector<vtkm::Float32> &background)
 
 }
 
-void 
+void
 SchedulerBase::clear_data_sets()
 {
   m_domains.clear();
 }
 
-std::vector<Domain> 
+std::vector<Domain>
 SchedulerBase::get_domains()
 {
-  return m_domains; 
+  return m_domains;
 }
 
-void 
+void
 SchedulerBase::add_data_set(vtkmDataSet &dataset)
 {
   ROVER_INFO("Adding domain "<<m_domains.size());
@@ -114,7 +114,7 @@ SchedulerBase::get_data_set(const int &domain)
   return m_domains.at(domain).get_data_set();
 }
 
-void 
+void
 SchedulerBase::create_default_background(const int num_channels)
 {
   m_background.resize(num_channels);
@@ -124,14 +124,14 @@ SchedulerBase::create_default_background(const int num_channels)
   }
 }
 
-void 
+void
 SchedulerBase::set_domains(std::vector<Domain> &domains)
 {
   m_domains = domains;
 }
 
-#ifdef PARALLEL
-void 
+#ifdef ROVER_PARALLEL
+void
 SchedulerBase::set_comm_handle(MPI_Comm comm_handle)
 {
   m_comm_handle = comm_handle;

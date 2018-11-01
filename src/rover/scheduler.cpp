@@ -50,6 +50,9 @@
 #include <ray_generators/camera_generator.hpp>
 #include <rover_exceptions.hpp>
 
+#ifdef ROVER_PARALLEL
+#include <mpi.h>
+#endif
 
 namespace rover {
 
@@ -74,7 +77,7 @@ Scheduler<FloatType>::get_global_channels()
   {
     num_channels = std::max(num_channels, m_domains[i].get_num_channels());
   }
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   vtkmTimer timer;
   double time = 0;
   (void) time;
@@ -107,7 +110,7 @@ Scheduler<FloatType>::set_global_scalar_range()
     vtkmRange local_range = m_domains[i].get_primary_range();
     global_range.Include(local_range);
   }
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   double rank_min = global_range.Min;
   double rank_max = global_range.Max;
   double mpi_min;
@@ -146,7 +149,7 @@ Scheduler<FloatType>::set_global_bounds()
     global_bounds.Include(local_bounds);
   }
 
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
 
   double x_min = global_bounds.X.Min;
   double x_max = global_bounds.X.Max;
@@ -245,7 +248,7 @@ void Scheduler<FloatType>::composite()
   {
     Compositor<VolumePartial<FloatType>> compositor;
     compositor.set_background(m_background);
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
     compositor.set_comm_handle(m_comm_handle);
 #endif
     m_result = compositor.composite(m_partial_images);
@@ -256,7 +259,7 @@ void Scheduler<FloatType>::composite()
     {
       Compositor<EmissionPartial<FloatType>> compositor;
       compositor.set_background(m_background);
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
       compositor.set_comm_handle(m_comm_handle);
 #endif
       m_result = compositor.composite(m_partial_images);
@@ -265,7 +268,7 @@ void Scheduler<FloatType>::composite()
     {
       Compositor<AbsorptionPartial<FloatType>> compositor;
       compositor.set_background(m_background);
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
         compositor.set_comm_handle(m_comm_handle);
 #endif
       m_result = compositor.composite(m_partial_images);

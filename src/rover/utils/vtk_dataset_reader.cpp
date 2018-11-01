@@ -45,7 +45,7 @@
 #include <fstream>
 #include <cstdlib>
 
-#ifdef PARALLEL 
+#ifdef ROVER_PARALLEL 
 #include <mpi.h>
 #endif
 
@@ -129,7 +129,7 @@ MultiDomainVTKReader::read_file(const std::string &directory, const std::string 
      
      int begining_domain = 0;
      int end_domain = number_of_domains - 1; 
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
      //
      // figure out which data sets to read
      //

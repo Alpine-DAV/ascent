@@ -44,7 +44,7 @@
 #include <iostream>
 #include <sstream>
 
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
 #include <mpi.h>
 #endif
 
@@ -56,7 +56,7 @@ Logger::Logger()
 {
   std::stringstream log_name;
   log_name<<"rover";
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   log_name<<"_"<<rank;
@@ -132,7 +132,7 @@ DataLogger::WriteLog()
   std::stringstream log_name;
   std::ofstream stream;
   log_name<<"rover_data";
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   log_name<<"_"<<rank;

@@ -48,7 +48,7 @@
 #include <compositing/emission_partial.hpp>
 #include <compositing/volume_partial.hpp>
 
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
 #include <mpi.h>
 #endif
 
@@ -64,7 +64,7 @@ public:
   composite(std::vector<PartialImage<typename PartialType::ValueType>> &partial_images);
   void set_background(std::vector<vtkm::Float32> &background_values);
   void set_background(std::vector<vtkm::Float64> &background_values);
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   void set_comm_handle(MPI_Comm comm_hanlde);
 #endif
 protected:
@@ -77,7 +77,7 @@ protected:
                           std::vector<PartialType> &output_partials);
 
   std::vector<typename PartialType::ValueType> m_background_values;
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   MPI_Comm m_comm_handle;
 #endif
 };

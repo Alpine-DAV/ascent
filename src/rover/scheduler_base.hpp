@@ -49,7 +49,7 @@
 #include <ray_generators/ray_generator.hpp>
 #include <vtkm_typedefs.hpp>
 
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
 #include <mpi.h>
 #endif
 //
@@ -84,7 +84,7 @@ public:
   void set_ray_generator(RayGenerator *ray_generator);
   void set_background(const std::vector<vtkm::Float32> &background);
   void set_background(const std::vector<vtkm::Float64> &background);
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   void set_comm_handle(MPI_Comm comm_handle);
 #endif
   //
@@ -101,7 +101,7 @@ protected:
   RayGenerator                             *m_ray_generator;
   std::vector<vtkm::Float64>                m_background;
   void create_default_background(const int num_channels);
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   MPI_Comm                                  m_comm_handle;
 #endif
 

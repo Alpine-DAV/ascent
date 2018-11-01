@@ -50,9 +50,6 @@
 #include <ray_generators/ray_generator.hpp>
 #include <vtkm_typedefs.hpp>
 
-#ifdef PARALLEL
-#include <mpi.h>
-#endif
 //
 // Scheduler types:
 //  static: all ranks gets all rays
@@ -63,7 +60,7 @@
 //    domain passing - 
 //      front to back: volume rendering and ray tracing
 //      back to front: both energy types.
-//      
+//
 //
 //
 namespace rover {

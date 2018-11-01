@@ -160,7 +160,7 @@ if(MPI_FOUND)
                         CXX_STANDARD_REQUIRED YES
                         CXX_EXTENTIONS NO)
 
-  blt_add_target_compile_flags(TO rover_mpi FLAGS "-D PARALLEL")
+                      blt_add_target_compile_flags(TO rover_mpi FLAGS "-D ROVER_PARALLEL")
 
   target_include_directories(rover_mpi PRIVATE ${DIY_DIR})
   target_include_directories(rover_mpi PRIVATE ${MPI_INCLUDE_PATH})

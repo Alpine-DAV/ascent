@@ -45,7 +45,7 @@
 #include <assert.h>
 #include <limits>
 
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
 #include <compositing/redistribute.hpp>
 #include <compositing/collect.hpp>
 #endif
@@ -336,7 +336,7 @@ Compositor<PartialType>::extract(std::vector<PartialImage<typename PartialType::
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("local_pixels",time); 
   timer.Reset();
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   int rank_min = global_min_pixel;
   int rank_max = global_max_pixel;
   int mpi_min;
@@ -526,7 +526,7 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
 {
   ROVER_INFO("Compsositor start");
   int global_partial_images = partial_images.size();
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   int local_partials = global_partial_images;
   MPI_Allreduce(&local_partials, &global_partial_images, 1, MPI_INT, MPI_SUM, m_comm_handle);
 #endif
@@ -538,7 +538,7 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
     has_path_lengths = partial_images[0].m_path_lengths.GetNumberOfValues() != 0;
   }
 
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   // we could have no data, but it could exist elsewhere 
 #endif
 
@@ -557,7 +557,7 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   ROVER_DATA_ADD("extract", time);
   timer.Reset();
 
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   //
   // Exchange partials with other ranks
   //
@@ -588,7 +588,7 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   time = timer.GetElapsedTime(); 
   ROVER_DATA_ADD("do_composite", time);
   timer.Reset();
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   //
   // Collect all of the distibuted pixels
   //
@@ -606,7 +606,7 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   PartialImage<typename PartialType::ValueType> output;
   output.m_width = partial_images[0].m_width;
   output.m_height= partial_images[0].m_height;
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   int rank;
   MPI_Comm_rank(m_comm_handle, &rank);
   if(rank != 0)
@@ -675,9 +675,9 @@ Compositor<PartialType>::set_background(std::vector<vtkm::Float64> &background_v
   }
 }
 
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
 template<typename PartialType>
-void 
+void
 Compositor<PartialType>::set_comm_handle(MPI_Comm comm_handle)
 {
   m_comm_handle = comm_handle;

@@ -45,6 +45,11 @@
 #include <vtkm_typedefs.hpp>
 #include <iostream>
 #include <utils/rover_logging.hpp>
+
+#ifdef ROVER_PARALLEL
+#include <mpi.h>
+#endif
+
 namespace rover {
 
 class Rover::InternalsType 
@@ -54,7 +59,7 @@ public:
 protected:
   SchedulerBase            *m_scheduler;
   TracePrecision            m_precision;
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   MPI_Comm                  m_comm_handle;
   int                       m_rank;
   int                       m_num_ranks;
@@ -71,7 +76,7 @@ public:
     m_precision = ROVER_FLOAT;
     m_scheduler = new Scheduler<vtkm::Float32>();
 
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
     m_rank = 1;
     m_num_ranks = -1;
 #endif
@@ -87,7 +92,7 @@ public:
   {
     ROVER_INFO("set_render_settings");
     // TODO: make copy constructors to get the members like ray_generator
-//#ifdef PARALLEL
+//#ifdef ROVER_PARALLEL
     // logic to create the appropriate parallel scheduler
     //
     // ray tracing = dynamic scheduler, scattering | no_scattering
@@ -132,7 +137,7 @@ public:
 
   void save_png(const std::string &file_name)
   {
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
     if(m_rank != 0)
     {
       return;
@@ -143,7 +148,7 @@ public:
 
   void execute()
   {
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
     //
     // Check to see if we have been initialized
     //
@@ -156,7 +161,7 @@ public:
 #endif
     m_scheduler->trace_rays();
   }
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   void set_comm_handle(MPI_Comm comm_handle)
   {
     m_comm_handle = comm_handle;
@@ -219,7 +224,7 @@ Rover::~Rover()
 void
 Rover::set_mpi_comm_handle(int mpi_comm_id)
 {
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   this->m_internals->set_comm_handle(MPI_Comm_f2c(mpi_comm_id));
 #else
   (void)mpi_comm_id;
@@ -230,7 +235,7 @@ Rover::set_mpi_comm_handle(int mpi_comm_id)
 int
 Rover::get_mpi_comm_handle()
 {
-#ifdef PARALLEL
+#ifdef ROVER_PARALLEL
   return MPI_Comm_c2f(this->m_internals->get_comm_handle());
 #else
   return -1;
