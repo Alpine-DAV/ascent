@@ -1,17 +1,15 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
-// LLNL-CODE-716457
+// LLNL-CODE-749865
 // 
 // All rights reserved.
 // 
-// This file is part of Ascent. 
+// This file is part of Rover. 
 // 
-// For details, see: http://ascent.readthedocs.io/.
-// 
-// Please also read ascent/LICENSE
+// Please also read rover/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -41,63 +39,55 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+#ifndef rover_scheduler_h
+#define rover_scheduler_h
 
-//-----------------------------------------------------------------------------
-///
-/// file: ascent_render_example.cpp
-///
-//-----------------------------------------------------------------------------
+#include <domain.hpp>
+#include <image.hpp>
+#include <engine.hpp>
+#include <scheduler_base.hpp>
+#include <rover_types.hpp>
+#include <ray_generators/ray_generator.hpp>
+#include <vtkm_typedefs.hpp>
 
-#include <iostream>
+//
+// Scheduler types:
+//  static: all ranks gets all rays
+//  normal compositing -
+//    back to front (energy): absorbtion, absorbtion + emmission
+//    front to back (volume): normal volume rendering
+//  dynamic(scattering):
+//    domain passing - 
+//      front to back: volume rendering and ray tracing
+//      back to front: both energy types.
+//
+//
+//
+namespace rover {
 
-#include "ascent.hpp"
-
-#include "conduit_blueprint.hpp"
-
-using namespace ascent;
-using namespace conduit;
-
-
-int main(int argc, char **argv)
+template<typename FloatType>
+class Scheduler : public SchedulerBase
 {
-    std::cout << ascent::about() << std::endl;
+public:
+  Scheduler();
+  virtual ~Scheduler();
+  void trace_rays() override;
+  void save_result(std::string file_name) override;
 
-    Ascent a;
+  virtual void get_result(Image<vtkm::Float32> &image);
+  virtual void get_result(Image<vtkm::Float64> &image);
+protected:
+  void composite();
+  void set_global_scalar_range();
+  void set_global_bounds();
+  int  get_global_channels();
+  Image<FloatType>                          m_result;
+  std::vector<PartialImage<FloatType>>      m_partial_images;
 
-    // open ascent
-    a.open();
+  void add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial, int width, int height);
+private:
 
-    // create example mesh using conduit blueprint
-    Node n_mesh;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              10,
-                                              10,
-                                              10,
-                                              n_mesh);
-    // publish mesh to ascent
-    a.publish(n_mesh);
+};
 
-    // declare a scene to render the dataset
-    Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
-    // Set the output file name (ascent will add ".png")
-    scenes["s1/image_prefix"] = "out_ascent_render_3d";
-
-    // setup actions 
-    Node actions;
-    Node &add_act = actions.append();
-    add_act["action"] = "add_scenes";
-    add_act["scenes"] = scenes;
-
-    actions.append()["action"] = "execute";
-
-    // execute
-    a.execute(actions);
-
-    // close alpine
-    a.close();
-}
-
-
-
+}; // namespace rover
+#endif 

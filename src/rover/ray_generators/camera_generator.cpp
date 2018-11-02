@@ -1,17 +1,15 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
-// LLNL-CODE-716457
+// LLNL-CODE-749865
 // 
 // All rights reserved.
 // 
-// This file is part of Ascent. 
+// This file is part of Rover. 
 // 
-// For details, see: http://ascent.readthedocs.io/.
-// 
-// Please also read ascent/LICENSE
+// Please also read rover/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -41,63 +39,66 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+#include <ray_generators/camera_generator.hpp>
+namespace rover {
 
-//-----------------------------------------------------------------------------
-///
-/// file: ascent_render_example.cpp
-///
-//-----------------------------------------------------------------------------
-
-#include <iostream>
-
-#include "ascent.hpp"
-
-#include "conduit_blueprint.hpp"
-
-using namespace ascent;
-using namespace conduit;
-
-
-int main(int argc, char **argv)
+CameraGenerator::CameraGenerator()
+ : RayGenerator()
 {
-    std::cout << ascent::about() << std::endl;
 
-    Ascent a;
-
-    // open ascent
-    a.open();
-
-    // create example mesh using conduit blueprint
-    Node n_mesh;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              10,
-                                              10,
-                                              10,
-                                              n_mesh);
-    // publish mesh to ascent
-    a.publish(n_mesh);
-
-    // declare a scene to render the dataset
-    Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
-    // Set the output file name (ascent will add ".png")
-    scenes["s1/image_prefix"] = "out_ascent_render_3d";
-
-    // setup actions 
-    Node actions;
-    Node &add_act = actions.append();
-    add_act["action"] = "add_scenes";
-    add_act["scenes"] = scenes;
-
-    actions.append()["action"] = "execute";
-
-    // execute
-    a.execute(actions);
-
-    // close alpine
-    a.close();
 }
 
+CameraGenerator::CameraGenerator(const vtkmCamera &camera, const int height, const int width)
+ : RayGenerator(height, width)
+{
+  m_camera = camera;
+}
 
+CameraGenerator::~CameraGenerator()
+{
 
+}
+
+void 
+CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays) 
+{
+  vtkm::rendering::CanvasRayTracer canvas(m_width, m_height);
+  vtkm::rendering::raytracing::Camera ray_gen;
+  ray_gen.SetParameters(m_camera, canvas);
+
+  ray_gen.CreateRays(rays, this->m_coordinates.GetBounds()); 
+  this->m_has_rays = false;
+  if(rays.NumRays == 0) std::cout<<"CameraGenerator Warning no rays were generated\n";
+}
+
+void
+CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays) 
+{
+  vtkm::rendering::CanvasRayTracer canvas(m_width, m_height);
+  vtkm::rendering::raytracing::Camera ray_gen;
+  ray_gen.SetParameters(m_camera, canvas);
+
+  ray_gen.CreateRays(rays, this->m_coordinates.GetBounds()); 
+  this->m_has_rays = false;
+  if(rays.NumRays == 0) std::cout<<"CameraGenerator Warning no rays were generated\n";
+}
+
+vtkmCamera 
+CameraGenerator::get_camera()
+{
+  return m_camera;
+}
+
+vtkmCoordinates 
+CameraGenerator::get_coordinates()
+{
+  return m_coordinates;
+}
+
+void
+CameraGenerator::set_coordinates(vtkmCoordinates coordinates)
+{
+  m_coordinates = coordinates;
+}
+
+} // namespace rover
