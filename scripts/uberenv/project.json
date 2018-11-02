@@ -1,4 +1,5 @@
 {
+"package_name" : "ascent",
 "uberenv_package_name" : "uberenv-ascent",
 "spack_url": "https://github.com/alpine-DAV/spack",
 "spack_branch": "task/2018_04_update_ascent",
