@@ -92,6 +92,7 @@ set(ascent_sources
     utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
     utils/ascent_png_encoder.cpp
+    utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp
     # hola
     hola/ascent_hola.cpp)
@@ -116,6 +117,7 @@ set(ascent_headers
     utils/ascent_file_system.hpp
     utils/ascent_block_timer.hpp
     utils/ascent_png_encoder.hpp
+    utils/ascent_string_utils.hpp
     utils/ascent_web_interface.hpp
     # hola
     hola/ascent_hola.hpp)
@@ -130,6 +132,13 @@ if(VTKM_FOUND)
     list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp)
     list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp)
 
+    # rover
+    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_rover_filters.hpp)
+    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_rover_filters.cpp)
+
+    # parsing utils 
+    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp)
+    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp)
 
     # main runtime 
     list(APPEND ascent_headers runtimes/ascent_main_runtime.hpp)
@@ -172,7 +181,7 @@ set(ascent_thirdparty_libs
 # optional libs
 ##################
 if(VTKM_FOUND)
-    list(APPEND ascent_thirdparty_libs vtkm vtkh)
+    list(APPEND ascent_thirdparty_libs vtkm vtkh rover)
 endif()
 
 if(MFEM_FOUND)
@@ -238,6 +247,8 @@ if(MPI_FOUND)
         # swap vtkh_mpi for vtkh
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)
         list(APPEND ascent_mpi_thirdparty_libs vtkh_mpi)
+        list(REMOVE_ITEM ascent_mpi_thirdparty_libs rover)
+        list(APPEND ascent_mpi_thirdparty_libs rover_mpi)
     endif()
 
     blt_add_library(

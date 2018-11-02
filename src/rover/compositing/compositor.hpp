@@ -1,17 +1,15 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
-// LLNL-CODE-716457
+// LLNL-CODE-749865
 // 
 // All rights reserved.
 // 
-// This file is part of Ascent. 
+// This file is part of Rover. 
 // 
-// For details, see: http://ascent.readthedocs.io/.
-// 
-// Please also read ascent/LICENSE
+// Please also read rover/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -41,63 +39,48 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-
-//-----------------------------------------------------------------------------
-///
-/// file: ascent_render_example.cpp
-///
-//-----------------------------------------------------------------------------
-
-#include <iostream>
-
-#include "ascent.hpp"
-
-#include "conduit_blueprint.hpp"
-
-using namespace ascent;
-using namespace conduit;
+#ifndef rover_compositor_h
+#define rover_compositor_h
+#include <rover_types.hpp>
 
 
-int main(int argc, char **argv)
+#include <compositing/absorption_partial.hpp>
+#include <compositing/emission_partial.hpp>
+#include <compositing/volume_partial.hpp>
+
+#ifdef ROVER_PARALLEL
+#include <mpi.h>
+#endif
+
+namespace rover {
+
+template<typename PartialType> 
+class Compositor
 {
-    std::cout << ascent::about() << std::endl;
+public:
+  Compositor();
+  ~Compositor();
+  PartialImage<typename PartialType::ValueType> 
+  composite(std::vector<PartialImage<typename PartialType::ValueType>> &partial_images);
+  void set_background(std::vector<vtkm::Float32> &background_values);
+  void set_background(std::vector<vtkm::Float64> &background_values);
+#ifdef ROVER_PARALLEL
+  void set_comm_handle(MPI_Comm comm_hanlde);
+#endif
+protected:
+  void extract(std::vector<PartialImage<typename PartialType::ValueType>> &partial_images, 
+               std::vector<PartialType> &partials,
+               int &global_min_pixel,
+               int &global_max_pixel);
 
-    Ascent a;
+  void composite_partials(std::vector<PartialType> &partials, 
+                          std::vector<PartialType> &output_partials);
 
-    // open ascent
-    a.open();
+  std::vector<typename PartialType::ValueType> m_background_values;
+#ifdef ROVER_PARALLEL
+  MPI_Comm m_comm_handle;
+#endif
+};
 
-    // create example mesh using conduit blueprint
-    Node n_mesh;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              10,
-                                              10,
-                                              10,
-                                              n_mesh);
-    // publish mesh to ascent
-    a.publish(n_mesh);
-
-    // declare a scene to render the dataset
-    Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
-    // Set the output file name (ascent will add ".png")
-    scenes["s1/image_prefix"] = "out_ascent_render_3d";
-
-    // setup actions 
-    Node actions;
-    Node &add_act = actions.append();
-    add_act["action"] = "add_scenes";
-    add_act["scenes"] = scenes;
-
-    actions.append()["action"] = "execute";
-
-    // execute
-    a.execute(actions);
-
-    // close alpine
-    a.close();
-}
-
-
-
+}; // namespace rover
+#endif

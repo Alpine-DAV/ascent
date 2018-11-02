@@ -1,17 +1,15 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
-// LLNL-CODE-716457
+// LLNL-CODE-749865
 // 
 // All rights reserved.
 // 
-// This file is part of Ascent. 
+// This file is part of Rover. 
 // 
-// For details, see: http://ascent.readthedocs.io/.
-// 
-// Please also read ascent/LICENSE
+// Please also read rover/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -42,62 +40,50 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-//-----------------------------------------------------------------------------
-///
-/// file: ascent_render_example.cpp
-///
-//-----------------------------------------------------------------------------
+#ifndef rover_png_encoder_h
+#define rover_png_encoder_h
 
-#include <iostream>
+#include <string>
+namespace rover {
 
-#include "ascent.hpp"
-
-#include "conduit_blueprint.hpp"
-
-using namespace ascent;
-using namespace conduit;
-
-
-int main(int argc, char **argv)
+class PNGEncoder
 {
-    std::cout << ascent::about() << std::endl;
+public:
+  PNGEncoder();
+  ~PNGEncoder();
+  
+  void           Encode(const unsigned char *rgba_in,
+                        const int width,
+                        const int height);
+  void           Encode(const float *rgba_in,
+                        const int width,
+                        const int height);
 
-    Ascent a;
+  void           Encode(const double *rgba_in,
+                        const int width,
+                        const int height);
 
-    // open ascent
-    a.open();
+  void           EncodeChannel(const float *buffer_in,
+                               const int width,
+                               const int height);
 
-    // create example mesh using conduit blueprint
-    Node n_mesh;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              10,
-                                              10,
-                                              10,
-                                              n_mesh);
-    // publish mesh to ascent
-    a.publish(n_mesh);
+  void           EncodeChannel(const double *buffer_in,
+                               const int width,
+                               const int height);
 
-    // declare a scene to render the dataset
-    Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
-    // Set the output file name (ascent will add ".png")
-    scenes["s1/image_prefix"] = "out_ascent_render_3d";
+  void           Save(const std::string &filename);
 
-    // setup actions 
-    Node actions;
-    Node &add_act = actions.append();
-    add_act["action"] = "add_scenes";
-    add_act["scenes"] = scenes;
+  void          *PngBuffer();
+  size_t         PngBufferSize();
 
-    actions.append()["action"] = "execute";
+  
+  void           Cleanup();
+  
+private:
+  unsigned char *m_buffer;
+  size_t         m_buffer_size;
+};
 
-    // execute
-    a.execute(actions);
+} // namespace rover
 
-    // close alpine
-    a.close();
-}
-
-
-
+#endif

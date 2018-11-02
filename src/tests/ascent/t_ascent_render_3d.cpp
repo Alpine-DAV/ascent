@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
+//
 // Please also read ascent/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 //-----------------------------------------------------------------------------
@@ -84,8 +84,8 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
 
         return;
     }
-    
-    
+
+
     //
     // Create an example mesh.
     //
@@ -95,7 +95,7 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
@@ -103,7 +103,7 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_default_runtime");
-    
+
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -116,19 +116,19 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
- 
- 
+
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -139,7 +139,7 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -157,8 +157,8 @@ TEST(ascent_render_3d, test_render_3d_points)
 
         return;
     }
-    
-    
+
+
     //
     // Create an example mesh.
     //
@@ -168,7 +168,7 @@ TEST(ascent_render_3d, test_render_3d_points)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering with points");
@@ -176,7 +176,7 @@ TEST(ascent_render_3d, test_render_3d_points)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_points");
-    
+
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -189,19 +189,19 @@ TEST(ascent_render_3d, test_render_3d_points)
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
- 
- 
+
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -212,7 +212,7 @@ TEST(ascent_render_3d, test_render_3d_points)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -230,8 +230,8 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
 
         return;
     }
-    
-    
+
+
     //
     // Create an example mesh.
     //
@@ -241,7 +241,7 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering with points");
@@ -249,7 +249,7 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_points_const_radius");
-    
+
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -263,19 +263,19 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/plots/p1/params/points/radius"] = 1.f;
     scenes["s1/image_prefix"] = output_file;
- 
- 
+
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -286,7 +286,7 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -304,8 +304,8 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
 
         return;
     }
-    
-    
+
+
     //
     // Create an example mesh.
     //
@@ -315,7 +315,7 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering with points");
@@ -323,7 +323,7 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_points_variable_radius");
-    
+
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -339,19 +339,19 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
     // this detla is relative to the base radius
     scenes["s1/plots/p1/params/points/radius_delta"] = 2.0f;
     scenes["s1/image_prefix"] = output_file;
- 
- 
+
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -362,7 +362,7 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -380,8 +380,8 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
 
         return;
     }
-    
-    
+
+
     //
     // Create an example mesh.
     //
@@ -391,7 +391,7 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering with custom bg/fg colors");
@@ -399,7 +399,7 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_bg_fg_colors");
-    
+
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -415,19 +415,19 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
     float bg_color[3] = {1.f, 1.f, 1.f};
     float fg_color[3] = {0.f, 0.f, 0.f};
     scenes["s1/renders/r1/bg_color"].set(bg_color,3);
-    scenes["s1/renders/r1/fg_color"].set(fg_color,3); 
- 
+    scenes["s1/renders/r1/fg_color"].set(fg_color,3);
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -438,7 +438,7 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -456,8 +456,8 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
 
         return;
     }
-    
-    
+
+
     //
     // Create an example mesh.
     //
@@ -467,7 +467,7 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering with no_annotations");
@@ -475,7 +475,7 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_no_annotations");
-    
+
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -488,19 +488,19 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/renders/r1/image_name"]  = output_file;
-    scenes["s1/renders/r1/annotations"] = "false"; 
- 
+    scenes["s1/renders/r1/annotations"] = "false";
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -511,7 +511,7 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -529,8 +529,8 @@ TEST(ascent_render_3d, test_render_3d_name_format)
 
         return;
     }
-    
-    
+
+
     //
     // Create an example mesh.
     //
@@ -540,14 +540,14 @@ TEST(ascent_render_3d, test_render_3d_name_format)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering with image name format");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_name_format");
-    
+
     // remove old images before rendering
     remove_test_image(output_file, "0100");
 
@@ -560,19 +560,19 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/renders/r1/image_name"]  = output_file + "%04d";
-    scenes["s1/renders/r1/annotations"] = "false"; 
- 
+    scenes["s1/renders/r1/annotations"] = "false";
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -583,7 +583,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file, "0100"));
 }
@@ -601,8 +601,8 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
 
         return;
     }
-    
-    
+
+
     //
     // Create an example mesh.
     //
@@ -612,7 +612,7 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering with no background");
@@ -620,7 +620,7 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_no_bg");
-    
+
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -633,19 +633,19 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/renders/r1/image_name"]  = output_file;
-    scenes["s1/renders/r1/render_bg"] = "false"; 
- 
+    scenes["s1/renders/r1/render_bg"] = "false";
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -656,7 +656,7 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -674,8 +674,8 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
 
         return;
     }
-    
-    
+
+
     //
     // Create an example mesh.
     //
@@ -685,7 +685,7 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
@@ -693,7 +693,7 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_azimuth");
-    
+
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -707,19 +707,19 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/renders/r1/camera/azimuth"] = 1.;
     scenes["s1/renders/r1/image_name"]   = output_file;
- 
- 
+
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -729,7 +729,7 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -748,7 +748,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
 
         return;
     }
-    
+
     //
     // Create an example mesh.
     //
@@ -758,7 +758,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
@@ -766,7 +766,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_multi_default_runtime");
-    
+
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -805,13 +805,13 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
     conduit::Node &point5 = control_points.append();
     point5["type"] = "alpha";
     point5["position"] = 1.0;
-    point5["alpha"] = .5; 
+    point5["alpha"] = .5;
 
     scenes["s1/plots/p2/params/color_table/control_points"]  = control_points;
 
     scenes["s1/image_prefix"] = output_file;
 
- 
+
     conduit::Node actions;
     // add the pipeline
     conduit::Node &add_pipelines = actions.append();
@@ -828,7 +828,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -838,7 +838,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -857,7 +857,7 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
 
         return;
     }
-    
+
     //
     // Create an example mesh.
     //
@@ -867,7 +867,7 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
@@ -875,7 +875,7 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_mesh");
-    
+
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -888,7 +888,7 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
     //plot 1
     scenes["s1/plots/p1/type"] = "mesh";
     scenes["s1/image_prefix"] = output_file;
- 
+
     conduit::Node actions;
     // add the scenes
     conduit::Node &add_scenes= actions.append();
@@ -901,7 +901,7 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -911,7 +911,7 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -930,7 +930,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
 
         return;
     }
-    
+
     //
     // Create an example mesh.
     //
@@ -940,15 +940,15 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));    
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_multi_mesh");
-    
+
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -976,7 +976,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
 
     scenes["s1/image_prefix"] = output_file;
 
- 
+
     conduit::Node actions;
     // add the pipeline
     conduit::Node &add_pipelines = actions.append();
@@ -993,7 +993,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -1003,14 +1003,14 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
 {
-    
+
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
@@ -1019,9 +1019,9 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
         ASCENT_INFO("Ascent support disabled, skipping 3D serial test");
         return;
     }
-    
+
     ASCENT_INFO("Testing 3D Rendering with Ascent runtime using Serial Backend");
-    
+
     //
     // Create an example mesh.
     //
@@ -1031,7 +1031,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
 
@@ -1049,8 +1049,8 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
- 
- 
+
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
@@ -1058,11 +1058,11 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
     actions.print();
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -1072,7 +1072,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -1081,7 +1081,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
 {
-    
+
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
@@ -1090,9 +1090,9 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
         ASCENT_INFO("Ascent support disabled, skipping 3D serial test");
         return;
     }
-    
+
     ASCENT_INFO("Testing 3D Rendering with Ascent runtime using Serial Backend");
-    
+
     //
     // Create an example mesh.
     //
@@ -1102,7 +1102,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     string output_path = prepare_output_dir();
@@ -1119,19 +1119,19 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
- 
- 
+
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -1141,7 +1141,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -1151,7 +1151,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
 {
-    
+
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
@@ -1160,15 +1160,15 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
         ASCENT_INFO("Ascent support disabled, skipping 3D Ascent-openmp test");
         return;
     }
-    
+
     if(n["runtimes/ascent/vtkm/backends/openmp"].as_string() != "enabled")
     {
         ASCENT_INFO("Ascent openmp support disabled, skipping 3D Ascent-opemp test");
         return;
     }
-    
+
     ASCENT_INFO("Testing 3D Rendering with Ascent using OpenMP Backend");
-    
+
     //
     // Create an example mesh.
     //
@@ -1178,7 +1178,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
 
@@ -1197,18 +1197,18 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
- 
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -1218,7 +1218,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -1227,7 +1227,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_3d_render_ascent_runtime_cuda_backend)
 {
-    
+
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
@@ -1236,15 +1236,15 @@ TEST(ascent_render_3d, test_3d_render_ascent_runtime_cuda_backend)
         ASCENT_INFO("Ascent support disabled, skipping 3D Ascent-cuda test");
         return;
     }
-    
+
     if(n["runtimes/ascent/vtkm/backends/cuda"].as_string() != "enabled")
     {
         ASCENT_INFO("Ascent CUDA support disabled, skipping 3D Ascent-cuda test");
         return;
     }
-    
+
     ASCENT_INFO("Testing 3D Rendering with Ascent runtime  using CUDA Backend");
-    
+
     //
     // Create an example mesh.
     //
@@ -1254,11 +1254,11 @@ TEST(ascent_render_3d, test_3d_render_ascent_runtime_cuda_backend)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
 
-    
+
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path, "tout_render_3d_vtkm_cuda_backend");
 
@@ -1273,18 +1273,18 @@ TEST(ascent_render_3d, test_3d_render_ascent_runtime_cuda_backend)
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
- 
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -1294,7 +1294,7 @@ TEST(ascent_render_3d, test_3d_render_ascent_runtime_cuda_backend)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
@@ -1313,8 +1313,8 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
 
         return;
     }
-    
-    
+
+
     //
     // Create an example mesh.
     //
@@ -1324,7 +1324,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
 
@@ -1333,13 +1333,13 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     string output_path = prepare_output_dir();
     string image_name0 = "render_0";
     string output_file = conduit::utils::join_file_path(output_path,image_name0);
-    
+
     // remove old images before rendering
     remove_test_image(output_file);
 
     string image_name1 = "render_1";
     string output_file1 = conduit::utils::join_file_path(output_path,image_name1);
-    
+
     // remove old images before rendering
     remove_test_image(output_file1);
 
@@ -1352,13 +1352,13 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     scenes["s1/plots/p1/type"]         = "volume";
     scenes["s1/plots/p1/params/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
- 
+
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
     scenes["s1/renders/r1/image_name"]   = output_file;
     scenes["s1/renders/r1/color_table/name"]   = "blue";
-    
-    // 
+
+    //
     scenes["s1/renders/r2/image_width"]  = 400;
     scenes["s1/renders/r2/image_height"] = 400;
     scenes["s1/renders/r2/image_name"]   = output_file1;
@@ -1375,7 +1375,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     scenes["s1/renders/r2/camera/zoom"] = 0.0;
     scenes["s1/renders/r2/camera/near_plane"] = 0.1;
     scenes["s1/renders/r2/camera/far_plane"] = 100.1;
-     
+
     conduit::Node control_points;
     conduit::Node &point1 = control_points.append();
     point1["type"] = "rgb";
@@ -1406,7 +1406,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     conduit::Node &point5 = control_points.append();
     point5["type"] = "alpha";
     point5["position"] = 1.0;
-    point5["alpha"] = 1.; 
+    point5["alpha"] = 1.;
     scenes["s1/renders/r2/color_table/control_points"] = control_points;
 
     conduit::Node actions;
@@ -1415,11 +1415,11 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     //
     // Run Ascent
     //
-    
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -1428,7 +1428,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
+
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
     // check that we created an image
@@ -1449,7 +1449,7 @@ TEST(ascent_render_3d, render_3d_domain_overload)
 
         return;
     }
-    
+
 
     Node multi_dom;
     Node &mesh1 = multi_dom.append();
@@ -1460,10 +1460,10 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     Node verify_info;
     create_3d_example_dataset(mesh1,0,2);
     create_3d_example_dataset(mesh2,1,2);
-    mesh1["state/domain_id"] = 0; 
-    mesh2["state/domain_id"] = 1; 
-    // There is a bug in conduit blueprint related to rectilinear 
-    // reenable this check after updating conduit 
+    mesh1["state/domain_id"] = 0;
+    mesh2["state/domain_id"] = 1;
+    // There is a bug in conduit blueprint related to rectilinear
+    // reenable this check after updating conduit
     // EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     conduit::blueprint::mesh::verify(multi_dom,verify_info);
 
@@ -1483,19 +1483,19 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/params/field"] = "radial_vert";
     scenes["s1/image_prefix"] = output_file;
- 
+
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
-    
+
+
     //
     // Run Ascent
     //
-  
+
     Ascent ascent;
 
     Node ascent_opts;
@@ -1524,8 +1524,8 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
 
         return;
     }
-    
-    
+
+
     //
     // Create an example mesh.
     //
@@ -1562,7 +1562,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
 
 
     // ints
-    
+
     // int 8
     {
         string output_file = conduit::utils::join_file_path(output_path,
@@ -1576,7 +1576,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
         {
             varray[i] = i;
         }
-        
+
         ascent.publish(data);
         scenes["s1/image_prefix"] = output_file;
         ascent.execute(actions);
@@ -1615,7 +1615,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
         {
             varray[i] = i;
         }
-        
+
         ascent.publish(data);
         scenes["s1/image_prefix"] = output_file;
         ascent.execute(actions);
@@ -1657,7 +1657,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
         {
             varray[i] = i;
         }
-        
+
         ascent.publish(data);
         scenes["s1/image_prefix"] = output_file;
         ascent.execute(actions);
@@ -1696,7 +1696,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
         {
             varray[i] = i;
         }
-        
+
         ascent.publish(data);
         scenes["s1/image_prefix"] = output_file;
         ascent.execute(actions);
@@ -1724,7 +1724,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
 
 
     // fp types
-    
+
     // float 32
     {
         string output_file = conduit::utils::join_file_path(output_path,
@@ -1766,7 +1766,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
     }
 
 
-    
+
     ascent.close();
 }
 
@@ -1784,8 +1784,8 @@ TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
 
         return;
     }
-    
-    
+
+
     //
     // Create an example mesh.
     //
@@ -1795,9 +1795,9 @@ TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
                                               3,
                                               3,
                                               data);
-    
+
     Node n_orig_coords = data["topologies/mesh/elements/connectivity"];
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing 3D Rendering of fields with different data types");
@@ -1825,7 +1825,7 @@ TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
 
 
     // ints
-    
+
     // int 8
     {
         string output_file = conduit::utils::join_file_path(output_path,
@@ -1892,7 +1892,7 @@ TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
         remove_test_image(output_file);
 
         n_orig_coords.to_uint8_array(data["topologies/mesh/elements/connectivity"]);
-        
+
         ascent.publish(data);
         scenes["s1/image_prefix"] = output_file;
         ascent.execute(actions);
@@ -1921,7 +1921,7 @@ TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
         remove_test_image(output_file);
 
         n_orig_coords.to_uint32_array(data["topologies/mesh/elements/connectivity"]);
-        
+
         ascent.publish(data);
         scenes["s1/image_prefix"] = output_file;
         ascent.execute(actions);
@@ -1953,13 +1953,13 @@ int main(int argc, char* argv[])
     int result = 0;
 
     ::testing::InitGoogleTest(&argc, argv);
-    
+
     // allow override of the data size via the command line
     if(argc == 2)
-    { 
+    {
         EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
     }
-    
+
     result = RUN_ALL_TESTS();
     return result;
 }

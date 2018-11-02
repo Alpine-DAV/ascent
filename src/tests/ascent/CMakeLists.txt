@@ -1,10 +1,10 @@
 ###############################################################################
 # Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-# 
+#
 # Produced at the Lawrence Livermore National Laboratory
-# 
+#
 # LLNL-CODE-716457
-# 
+#
 # All rights reserved.
 # 
 # This file is part of Ascent. 
@@ -67,6 +67,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_slice
                 t_ascent_vector_magnitude
                 t_ascent_flow_runtime
+                t_ascent_rover
                 t_ascent_lagrangian
                 t_ascent_hola)
 
@@ -76,7 +77,7 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_render_3d
                t_ascent_mpi_slice)
 
-# t_ascent_hola_mpi uses 8 mpi tasks, so its added manually  
+# t_ascent_hola_mpi uses 8 mpi tasks, so its added manually
 
 
 # include the "ascent" pipeline
@@ -104,7 +105,7 @@ endif()
 message(STATUS "Adding ascent lib unit tests")
 foreach(TEST ${BASIC_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
-    
+
     if(PYTHON_FOUND AND ENABLE_PYTHON)
         # this is needed for the inception tests ... 
         set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/")
@@ -120,7 +121,7 @@ if(MPI_FOUND AND ENABLE_MPI)
     foreach(TEST ${MPI_TESTS})
         # this uses 2 procs
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ascent_mpi) 
-        
+
         if(PYTHON_FOUND AND ENABLE_PYTHON)
             # this is needed for the inception tests ... 
             set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/")
@@ -129,7 +130,7 @@ if(MPI_FOUND AND ENABLE_MPI)
 
     # add the hola mpi test which uses 8 ranks
     add_cpp_mpi_test(TEST t_ascent_hola_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi) 
-    
+
 else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()

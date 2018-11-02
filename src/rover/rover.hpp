@@ -1,17 +1,15 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
-// LLNL-CODE-716457
+// LLNL-CODE-749865
 // 
 // All rights reserved.
 // 
-// This file is part of Ascent. 
+// This file is part of Rover. 
 // 
-// For details, see: http://ascent.readthedocs.io/.
-// 
-// Please also read ascent/LICENSE
+// Please also read rover/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -41,63 +39,50 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+#ifndef rover_h
+#define rover_h
 
-//-----------------------------------------------------------------------------
-///
-/// file: ascent_render_example.cpp
-///
-//-----------------------------------------------------------------------------
+#include <image.hpp>
+#include <rover_exports.h>
+#include <rover_types.hpp>
+#include <ray_generators/ray_generator.hpp>
+// vtk-m includes
+#include <vtkm_typedefs.hpp>
 
-#include <iostream>
+// std includes
+#include <memory>
 
-#include "ascent.hpp"
+namespace rover {
 
-#include "conduit_blueprint.hpp"
-
-using namespace ascent;
-using namespace conduit;
-
-
-int main(int argc, char **argv)
+class Rover
 {
-    std::cout << ascent::about() << std::endl;
+public:
+  Rover();
+  ~Rover();
 
-    Ascent a;
+  void set_mpi_comm_handle(int mpi_comm_id);
+  int  get_mpi_comm_handle();
 
-    // open ascent
-    a.open();
+  void finalize();
 
-    // create example mesh using conduit blueprint
-    Node n_mesh;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              10,
-                                              10,
-                                              10,
-                                              n_mesh);
-    // publish mesh to ascent
-    a.publish(n_mesh);
+  void add_data_set(vtkmDataSet &);
+  void set_render_settings(const RenderSettings render_settings);
+  void set_ray_generator(RayGenerator *);
+  void clear_data_sets();
+  void set_background(const std::vector<vtkm::Float32> &background);
+  void set_background(const std::vector<vtkm::Float64> &background);
+  void execute();
+  void about();
+  void save_png(const std::string &file_name);
+  void set_tracer_precision32();
+  void set_tracer_precision64();
+  void get_result(Image<vtkm::Float32> &image);
+  void get_result(Image<vtkm::Float64> &image);
+private:
+  class InternalsType;
+  std::shared_ptr<InternalsType> m_internals;
+};
 
-    // declare a scene to render the dataset
-    Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
-    // Set the output file name (ascent will add ".png")
-    scenes["s1/image_prefix"] = "out_ascent_render_3d";
+}; // namespace rover
 
-    // setup actions 
-    Node actions;
-    Node &add_act = actions.append();
-    add_act["action"] = "add_scenes";
-    add_act["scenes"] = scenes;
-
-    actions.append()["action"] = "execute";
-
-    // execute
-    a.execute(actions);
-
-    // close alpine
-    a.close();
-}
-
-
-
+#endif
