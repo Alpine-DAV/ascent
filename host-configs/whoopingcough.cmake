@@ -64,10 +64,10 @@ set(CXX_COMPILE_FLAGS "-fPIC" CACHE PATH "")
 set(CMAKE_Fortran_COMPILER  "/usr/bin/f95" CACHE PATH "")
 
 # OPENMP (optional: for proxy apps)
-set(ENABLE_OPENMP OFF CACHE PATH "")
+set(ENABLE_OPENMP OFF CACHE BOOL "")
 
 # MPI Support
-set(ENABLE_MPI  ON CACHE PATH "")
+set(ENABLE_MPI  ON CACHE BOOL "")
 
 set(MPI_C_COMPILER  "/usr/bin/mpicc" CACHE PATH "")
 set(MPI_C_COMPILE_FLAGS "-fPIC" CACHE PATH "")
