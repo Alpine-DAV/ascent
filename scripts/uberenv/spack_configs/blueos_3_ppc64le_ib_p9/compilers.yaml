@@ -19,11 +19,11 @@ compilers:
     modules: []
     operating_system: rhel7
     paths:
-      cc:  /usr/tcetmp/packages/clang/clang-4.0.0/bin/clang
-      cxx: /usr/tcetmp/packages/clang/clang-4.0.0/bin/clang++
+      cc:  /usr/tcetmp/bin/clang
+      cxx: /usr/tcetmp/bin/clang++
       f77: None 
       fc: None 
-    spec: clang@4.0.0
+    spec: clang@coral
     target: ppc64le
 - compiler:
     environment: {}
