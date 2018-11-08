@@ -121,8 +121,15 @@ if(MPI_FOUND AND FORTRAN_FOUND)
         DEPENDS_ON  ${clover_par_deps}
         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
+    # the intel compiler will auto create a fortran main, which will
+    # conflict with the cpp main, use -nofor_main to avoid this
+    blt_append_custom_compiler_flag(
+            FLAGS_VAR clover_link_flags
+            INTEL   "-nofor_main"
+        )
                           
     blt_add_target_compile_flags(TO cloverleaf3d_par FLAGS "${clover_compile_flags}")
+    blt_add_target_link_flags(TO cloverleaf3d_par FLAGS "${clover_link_flags}")
 
 
     # install target for clover mpi
