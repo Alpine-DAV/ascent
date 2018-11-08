@@ -24,19 +24,19 @@
 
 packages:
   all:
-    compiler:
-    - gcc
+    compiler: [gcc@5.3.0, intel@18.0.3.22]
     modules: {}
     paths: {}
     providers:
-      mpi:
-      - mpich
-    variants: +mpi~shared~python 
+      mpi: [mpich]
+      blas: [intel-mkl]
+      lapack: [intel-mkl]
+    variants: +mpi 
   mpich:
-    version: [7.4.4]
+    version: [7.7.0]
     buildable: false
     modules:
-        mpich@7.4.4: cray-mpich
+        mpich@7.7.0: cray-mpich
     paths: {}
     providers: {}
     compiler: []
@@ -45,5 +45,10 @@ packages:
       buildable: False
       paths:
           openssl@1.0.1i: /usr
+  intel-mkl:
+      buildable: false
+      paths:
+        intel-mkl%gcc@5.3.0: /opt/intel
+        intel-mkl%intel@18.0.3.222: /opt/intel  
   conduit:
     version: [master]
