@@ -396,7 +396,6 @@ def main():
             print "[info: using spack commit %s]" % sha1
             os.chdir(pjoin(dest_dir,"spack"))
             sexe("git reset --hard %s" % sha1,echo=True)
-
     if opts["spack_pull"]:
         # do a pull to make sure we have the latest 
         os.chdir(pjoin(dest_dir,"spack"))
