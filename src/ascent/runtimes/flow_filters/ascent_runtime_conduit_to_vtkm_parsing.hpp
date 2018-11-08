@@ -41,88 +41,63 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-#include <sstream>
-#include <ascent_config.h>
-//-----------------------------------------------------------------------------
-///
-/// file: ascent_compositor_base.hpp
-///
-//-----------------------------------------------------------------------------
-#ifndef ASCENT_COMPOSITOR_BASE_HPP
-#define ASCENT_COMPOSITOR_BASE_HPP
 
+
+//-----------------------------------------------------------------------------
+///
+/// file: ascent_runtime_conduit_to_vtkm_parsing.hpp
+///
+//-----------------------------------------------------------------------------
+
+#ifndef ASCENT_RUNTIME_CONDUIT_TO_VTKM_PARSING
+#define ASCENT_RUNTIME_CONDUIT_TO_VTKM_PARSING
+
+#include<conduit.hpp>
+
+#include<vtkm/rendering/Camera.h>
+#include<vtkm/cont/ColorTable.h>
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
 namespace ascent
 {
 
-class Compositor
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime --
+//-----------------------------------------------------------------------------
+namespace runtime
 {
-public:
-     Compositor() {};
-     virtual ~Compositor() {};
-    
-    virtual void      Init(MPI_Comm mpi_comm) = 0;
-    
-    // composite with given visibility ordering.
-    
-    virtual unsigned char    *Composite(int                  width,
-                                        int                  height,
-                                        const unsigned char *color_buffer,
-                                        const int           *vis_order,
-                                        const float         *bg_color) = 0;
 
-    virtual unsigned char    *Composite(int                  width,
-                                        int                  height,
-                                        const float         *color_buffer,
-                                        const int           *vis_order,
-                                        const float         *bg_color) = 0;
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::filters --
+//-----------------------------------------------------------------------------
+namespace filters
+{
 
-    // composite with using a depth buffer.
-    
-    virtual unsigned char    *Composite(int                  width,
-                                        int                  height,
-                                        const unsigned char *color_buffer,
-                                        const float         *depth_buffer,
-                                        const int           *viewport,
-                                        const float         *bg_color) = 0;
+void 
+parse_image_dims(const conduit::Node &node, int &width, int &height);
 
-    virtual unsigned char            *Composite(int                  width,
-                                                int                  height,
-                                                const float         *color_buffer,
-                                                const float         *depth_buffer,
-                                                const int           *viewport,
-                                                const float         *bg_color) = 0;
+//-----------------------------------------------------------------------------
+void
+parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera);
 
+//-----------------------------------------------------------------------------
+vtkm::cont::ColorTable 
+parse_color_table(const conduit::Node &color_table_node);
 
-    virtual void         Cleanup() = 0;
-    
-    std::string          GetLogString() 
-    { 
-        std::string res = m_log_stream.str(); 
-        m_log_stream.str("");
-        return res;
-    }     
-
-    unsigned char * ConvertBuffer(const float *buffer, const int size)
-    {
-        unsigned char *ubytes = new unsigned char[size];
-
-#ifdef ASCENT_USE_OPENMP
-        #pragma omp parallel for
-#endif
-        for(int i = 0; i < size; ++i)
-        {
-            ubytes[i] = static_cast<unsigned char>(buffer[i] * 255.f);
-        }
-
-        return ubytes;
-    }
-
-protected:
-    std::stringstream m_log_stream;    
+//-----------------------------------------------------------------------------
 };
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime::filters --
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime --
+//-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
@@ -130,9 +105,10 @@ protected:
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
+
+
+
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-

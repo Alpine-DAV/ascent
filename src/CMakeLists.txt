@@ -71,9 +71,11 @@ option(ENABLE_MPI         "Build MPI Support"         ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
+option(ENABLE_EXAMPLES    "Build Examples"            ON)
+
 
 ################################
-# Populate the cmake gui  
+# Populate the cmake gui
 ################################
 set(CONDUIT_DIR "" CACHE FILEPATH "path to conduit installation")
 
@@ -137,6 +139,10 @@ add_subdirectory(thirdparty_builtin)
 ################################
 add_subdirectory(flow)
 
+if(VTKM_FOUND)
+  add_subdirectory(rover)
+endif()
+
 add_subdirectory(ascent)
 
 ################################
@@ -149,7 +155,9 @@ endif()
 ################################
 # Add mini-app examples
 ################################
-add_subdirectory(examples)
+if(ENABLE_EXAMPLES)
+    add_subdirectory(examples)
+endif()
 
 ################################
 # Add utilites
@@ -162,7 +170,7 @@ add_subdirectory(utilities)
 add_subdirectory(docs)
 
 ################################
-# Create CMake importable 
+# Create CMake importable
 # exports for all of our targets
 ################################
 install(EXPORT ascent DESTINATION lib/cmake)

@@ -63,6 +63,5 @@ include_directories(${PROJECT_BINARY_DIR}/flow)
 include_directories(${PROJECT_SOURCE_DIR}/flow/filters)
 include_directories(${PROJECT_SOURCE_DIR}/ascent/runtimes/flow_filters)
 
-
-
+include_directories(${PROJECT_SOURCE_DIR}/rover)
 

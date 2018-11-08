@@ -1,17 +1,15 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
-// LLNL-CODE-716457
+// LLNL-CODE-749865
 // 
 // All rights reserved.
 // 
-// This file is part of Ascent. 
+// This file is part of Rover. 
 // 
-// For details, see: http://ascent.readthedocs.io/.
-// 
-// Please also read ascent/LICENSE
+// Please also read rover/LICENSE
 // 
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -42,62 +40,32 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-//-----------------------------------------------------------------------------
-///
-/// file: ascent_render_example.cpp
-///
-//-----------------------------------------------------------------------------
+#ifndef rover_vtk_dataset_reader_h
+#define rover_vtk_dataset_reader_h
+#include <string>
+#include <vector>
+#include <vtkm_typedefs.hpp>
+namespace rover {
 
-#include <iostream>
-
-#include "ascent.hpp"
-
-#include "conduit_blueprint.hpp"
-
-using namespace ascent;
-using namespace conduit;
-
-
-int main(int argc, char **argv)
+class VTKReader 
 {
-    std::cout << ascent::about() << std::endl;
+public:
+  VTKReader();
+  void read_file(const std::string &file_name);
+  vtkmDataSet get_data_set();
+protected:
+  vtkmDataSet m_dataset;
+};
 
-    Ascent a;
+class MultiDomainVTKReader 
+{
+public:
+  MultiDomainVTKReader();
+  void read_file(const std::string &directory, const std::string &file_name);
+  std::vector<vtkmDataSet> get_data_sets();
+protected:
+  std::vector<vtkmDataSet> m_datasets;
+};
+} // namespace rover
 
-    // open ascent
-    a.open();
-
-    // create example mesh using conduit blueprint
-    Node n_mesh;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              10,
-                                              10,
-                                              10,
-                                              n_mesh);
-    // publish mesh to ascent
-    a.publish(n_mesh);
-
-    // declare a scene to render the dataset
-    Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
-    // Set the output file name (ascent will add ".png")
-    scenes["s1/image_prefix"] = "out_ascent_render_3d";
-
-    // setup actions 
-    Node actions;
-    Node &add_act = actions.append();
-    add_act["action"] = "add_scenes";
-    add_act["scenes"] = scenes;
-
-    actions.append()["action"] = "execute";
-
-    // execute
-    a.execute(actions);
-
-    // close alpine
-    a.close();
-}
-
-
-
+#endif
