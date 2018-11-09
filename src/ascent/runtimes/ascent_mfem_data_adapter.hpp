@@ -114,7 +114,7 @@ public:
     //  conduit::blueprint::mesh::verify(n,info) == true
     //
     static MFEMDomains* BlueprintToMFEMDataSet(const conduit::Node &n,
-                                           const std::string &topo_name="");
+                                               const std::string &topo_name="");
 
     static bool IsHighOrder(const conduit::Node &n);
 
