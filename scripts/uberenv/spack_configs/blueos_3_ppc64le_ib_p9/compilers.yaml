@@ -21,8 +21,8 @@ compilers:
     paths:
       cc:  /usr/tcetmp/bin/clang
       cxx: /usr/tcetmp/bin/clang++
-      f77: None 
-      fc: None 
+      f77: /usr/tce/packages/xl/xl-2018.05.18/bin/xlf2003
+      fc:  /usr/tce/packages/xl/xl-2018.05.18/bin/xlf2003
     spec: clang@coral
     target: ppc64le
 - compiler:
