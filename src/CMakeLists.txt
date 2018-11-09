@@ -71,6 +71,8 @@ option(ENABLE_MPI         "Build MPI Support"         ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
+option(ENABLE_EXAMPLES    "Build Examples"            ON)
+
 
 ################################
 # Populate the cmake gui
@@ -153,7 +155,9 @@ endif()
 ################################
 # Add mini-app examples
 ################################
-add_subdirectory(examples)
+if(ENABLE_EXAMPLES)
+    add_subdirectory(examples)
+endif()
 
 ################################
 # Add utilites

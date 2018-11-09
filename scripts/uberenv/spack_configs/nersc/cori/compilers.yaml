@@ -32,6 +32,21 @@ compilers:
     extra_rpaths: []
     flags: {}
     modules:
+    - PrgEnv-intel
+    - intel/18.0.3.222
+    operating_system: cnl6
+    paths:
+      cc: cc
+      cxx: CC
+      f77: ftn
+      fc: ftn
+    spec: intel@18.0.3.222
+    target: any
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules:
     - PrgEnv-gnu
     operating_system: cnl6
     paths:
