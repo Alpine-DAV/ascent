@@ -155,6 +155,10 @@ script:
   - which cmake
   - cmake --version
   - export HOST_CONFIG=`ls ${CACHE_ROOT}/uberenv_libs/*.cmake`
+  # make sure we have a host-config, if not we don't want to go any further
+  - echo $HOST_CONFIG
+  - if [ ! -f  "$HOST_CONFIG" ]; then echo "ERROR -- Spack build failed (no host-config) -- exiting"; travis_terminate 0; fi;
+  # configure
   - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
   # build, test, and install
   - make VERBOSE=1
