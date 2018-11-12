@@ -60,13 +60,13 @@ Demo 1: First Light
 
 For this demo, we run some of the "First Light" examples are installed with Ascent to enable users to quickly test ascent in their build system.
 
-C++ Example (`examples/using-with-make/ascent_render_example.cpp`):
+C++ Example (`examples/ascent/using-with-make/ascent_render_example.cpp`):
 
 .. literalinclude:: ../../../src/examples/using-with-make/ascent_render_example.cpp
    :language: cpp
    :lines: 45-
 
-Python Example (`examples/python/ascent_python_render_example.py`):
+Python Example (`examples/ascent/python/ascent_python_render_example.py`):
 
 .. literalinclude:: ../../../src/examples/python/ascent_python_render_example.py
    :language: python
@@ -84,7 +84,7 @@ Demo 2: Using Pipelines and Scenes
 
 For this demo, we will use Ascent to process data from :ref:`Cloverleaf3D  <cloverleaf3d_integration>` in situ. 
 
-To begin, make sure you are in the ``examples/proxies/cloverleaf3d`` directory of your Ascent install.
+To begin, make sure you are in the ``examples/ascent/proxies/cloverleaf3d`` directory of your Ascent install.
 
 The default integration example for Cloverleaf3D sets up Ascent to volume render the ``energy`` field. Here is a snippet of the related Fortran code that specifies the default actions: 
 
@@ -96,7 +96,7 @@ The default integration example for Cloverleaf3D sets up Ascent to volume render
 
 Ascent also allows you to override compiled in actions with a  ``ascent_actions.json`` file. In this case, the file we provide with Cloverleaf3D mirrors the compiled in actions:
 
-Cloverleaf3D default  ``ascent_actions.json`` file (`examples/proxies/cloverleaf3d-ref/ascent_actions.json`):
+Cloverleaf3D default  ``ascent_actions.json`` file (`examples/ascent/proxies/cloverleaf3d-ref/ascent_actions.json`):
 
 .. literalinclude:: ../../../src/examples/proxies/cloverleaf3d-ref/ascent_actions.json
    :language: json
@@ -108,7 +108,7 @@ Edit the ``ascent_actions.json`` to create a pipeline that computes contours and
 .. literalinclude:: ../../../src/examples/tutorial/demo_2/contour.json
    :language: json
   
-(Also available in install directory: `examples/tutorial/demo_2/contour.json`)
+(Also available in install directory: `examples/ascent/tutorial/demo_2/contour.json`)
 
 You can also compose more complex scenes that render both pipeline results and the published data. 
 To demonstrate this, we combine the pseudocolor rendering of the contour results with a volume rendering of the entire mesh:
@@ -117,7 +117,7 @@ To demonstrate this, we combine the pseudocolor rendering of the contour results
    :language: json
   
 
-(Also available in install directory: `examples/tutorial/demo_2/volume_contour.json`)
+(Also available in install directory: `examples/ascent/tutorial/demo_2/volume_contour.json`)
 
 Demo 3: Creating Cinema Extracts
 ----------------------------------
@@ -127,14 +127,14 @@ Demo 3: Creating Cinema Extracts
 
 In this demo, we use Ascent to render out a :ref:`Cinema database  <actions_cinema>` of a plot in Cloverleaf3D.
 
-Make sure you are in ``examples/proxies/cloverleaf3d`` directory of your Ascent install. Edit the 
+Make sure you are in ``examples/ascent/proxies/cloverleaf3d`` directory of your Ascent install. Edit the 
 Cloverleaf3D ``ascent_actions.json`` file to direct Ascent to render out a scene using the Cinema Astaire
 specification (Spec-A):
 
 .. literalinclude:: ../../../src/examples/tutorial/demo_3/ascent_actions.json
    :language: json
   
-(Also available in install directory: `examples/tutorial/demo_3/ascent_actions.json`)
+(Also available in install directory: `examples/ascent/tutorial/demo_3/ascent_actions.json`)
 
 Run Cloverleaf3D with this setup and it will render several viewpoints and construct Cinema database
 in the current directory. 
@@ -157,7 +157,7 @@ For this demo we use numpy and mpi4py to compute a histogram of Cloverleaf3D's
 energy field. 
 
 Again, since we will use the Cloverleaf3D Ascent integration, make sure you are in 
-``examples/proxies/cloverleaf3d`` directory of your Ascent install. Then edit the ``ascent_actions.json`` 
+``examples/ascent/proxies/cloverleaf3d`` directory of your Ascent install. Then edit the ``ascent_actions.json`` 
 file to define a single python extract that runs a script file:
 
 
@@ -165,7 +165,7 @@ file to define a single python extract that runs a script file:
 .. literalinclude:: ../../../src/examples/tutorial/demo_4/ascent_actions.json
    :language: json
 
-(Also available in install directory: `examples/tutorial/demo_4/ascent_actions.json`)
+(Also available in install directory: `examples/ascent/tutorial/demo_4/ascent_actions.json`)
 
 This requests a python extract that will use an embedded python interpreter to execute 
 ``ascent_tutorial_demo_4_histogram.py``, which is specified using the ``file`` parameter.
@@ -179,7 +179,7 @@ Next, create our analysis script ``ascent_tutorial_demo_4_histogram.py``:
    :language: python
    :lines: 43-
 
-(Also available in install directory: `examples/tutorial/demo_4/ascent_tutorial_demo_4_histogram.py`)
+(Also available in install directory: `examples/ascent/tutorial/demo_4/ascent_tutorial_demo_4_histogram.py`)
 
 
 This script computes a basic histogram counting the number of energy field elements that
@@ -277,7 +277,7 @@ Next, try running the python example mentioned in :ref:`tutorial_demo_1`:
 
 .. code::
 
-    cd /ascent/install-debug/examples/python
+    cd /ascent/install-debug/examples/ascent/python
     python ascent_python_render_example.py
 
 You should see some verbose output and ``out_ascent_render_3d.png`` will be created. 
