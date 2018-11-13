@@ -45,9 +45,9 @@ blt_add_executable(
 # install target for laghos serial
 install(TARGETS laghos_ser
         EXPORT  ascent
-        LIBRARY DESTINATION examples/proxies/laghos
-        ARCHIVE DESTINATION examples/proxies/laghos
-        RUNTIME DESTINATION examples/proxies/laghos
+        LIBRARY DESTINATION examples/ascent/proxies/laghos
+        ARCHIVE DESTINATION examples/ascent/proxies/laghos
+        RUNTIME DESTINATION examples/ascent/proxies/laghos
 )
 
 if(MPI_FOUND AND ENABLE_MPI)
@@ -62,11 +62,11 @@ if(MPI_FOUND AND ENABLE_MPI)
   # install target for laghos mpi 
   install(TARGETS laghos_mpi
           EXPORT  ascent
-          LIBRARY DESTINATION examples/proxies/laghos
-          ARCHIVE DESTINATION examples/proxies/laghos
-          RUNTIME DESTINATION examples/proxies/laghos
+          LIBRARY DESTINATION examples/ascent/proxies/laghos
+          ARCHIVE DESTINATION examples/ascent/proxies/laghos
+          RUNTIME DESTINATION examples/ascent/proxies/laghos
   )
 endif()
 
 install(DIRECTORY data 
-        DESTINATION examples/proxies/laghos)
+        DESTINATION examples/ascent/proxies/laghos)

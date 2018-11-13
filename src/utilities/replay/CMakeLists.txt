@@ -66,9 +66,9 @@ blt_add_executable(
 # install target for replay serial
 install(TARGETS replay_ser
         EXPORT  ascent
-        LIBRARY DESTINATION utilities/replay
-        ARCHIVE DESTINATION utilities/replay
-        RUNTIME DESTINATION utilities/replay
+        LIBRARY DESTINATION utilities/ascent/replay
+        ARCHIVE DESTINATION utilities/ascent/replay
+        RUNTIME DESTINATION utilities/ascent/replay
 )
 
 if(MPI_FOUND)
@@ -89,9 +89,9 @@ if(MPI_FOUND)
     # install target for replay mpi
     install(TARGETS replay_mpi 
             EXPORT  ascent
-            LIBRARY DESTINATION utilities/replay
-            ARCHIVE DESTINATION utilities/replay
-            RUNTIME DESTINATION utilities/replay
+            LIBRARY DESTINATION utilities/ascent/replay
+            ARCHIVE DESTINATION utilities/ascent/replay
+            RUNTIME DESTINATION utilities/ascent/replay
     )
 
 

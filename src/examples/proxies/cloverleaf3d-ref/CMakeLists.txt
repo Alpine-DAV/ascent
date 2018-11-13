@@ -135,16 +135,16 @@ if(MPI_FOUND AND FORTRAN_FOUND)
     # install target for clover mpi
     install(TARGETS cloverleaf3d_par
             EXPORT  ascent
-            LIBRARY DESTINATION examples/proxies/cloverleaf3d
-            ARCHIVE DESTINATION examples/proxies/cloverleaf3d
-            RUNTIME DESTINATION examples/proxies/cloverleaf3d
+            LIBRARY DESTINATION examples/ascent/proxies/cloverleaf3d
+            ARCHIVE DESTINATION examples/ascent/proxies/cloverleaf3d
+            RUNTIME DESTINATION examples/ascent/proxies/cloverleaf3d
     )
 
     install(FILES ASCENT_README.md
                   clover.in
                   ascent_actions.json
                   ascent_options.json
-            DESTINATION examples/proxies/cloverleaf3d)
+            DESTINATION examples/ascent/proxies/cloverleaf3d)
 
 endif()
 
