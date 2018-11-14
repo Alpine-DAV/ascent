@@ -79,15 +79,15 @@ blt_add_target_compile_flags(TO lulesh_ser FLAGS "-DUSE_MPI=0 ${lulesh_openmp_fl
 # install target for lulesh serial
 install(TARGETS lulesh_ser
         EXPORT  ascent
-        LIBRARY DESTINATION examples/proxies/lulesh
-        ARCHIVE DESTINATION examples/proxies/lulesh
-        RUNTIME DESTINATION examples/proxies/lulesh
+        LIBRARY DESTINATION examples/ascent/proxies/lulesh
+        ARCHIVE DESTINATION examples/ascent/proxies/lulesh
+        RUNTIME DESTINATION examples/ascent/proxies/lulesh
 )
 
 install(FILES ASCENT_README.md
               ascent_actions.json
               ascent_options.json
-        DESTINATION examples/proxies/lulesh)
+        DESTINATION examples/ascent/proxies/lulesh)
 
 
 if(MPI_FOUND)
@@ -109,9 +109,9 @@ if(MPI_FOUND)
     # install target for lulesh mpi
     install(TARGETS lulesh_par
             EXPORT  ascent
-            LIBRARY DESTINATION examples/proxies/lulesh
-            ARCHIVE DESTINATION examples/proxies/lulesh
-            RUNTIME DESTINATION examples/proxies/lulesh
+            LIBRARY DESTINATION examples/ascent/proxies/lulesh
+            ARCHIVE DESTINATION examples/ascent/proxies/lulesh
+            RUNTIME DESTINATION examples/ascent/proxies/lulesh
     )
 
 

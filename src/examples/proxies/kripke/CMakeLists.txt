@@ -108,15 +108,15 @@ if(MPI_FOUND)
     # install target for kripke mpi
     install(TARGETS kripke_par
             EXPORT  ascent
-            LIBRARY DESTINATION examples/proxies/kripke
-            ARCHIVE DESTINATION examples/proxies/kripke
-            RUNTIME DESTINATION examples/proxies/kripke
+            LIBRARY DESTINATION examples/ascent/proxies/kripke
+            ARCHIVE DESTINATION examples/ascent/proxies/kripke
+            RUNTIME DESTINATION examples/ascent/proxies/kripke
     )
 
     install(FILES ASCENT_README.md 
                   ascent_actions.json
                   ascent_options.json
-            DESTINATION examples/proxies/kripke)
+            DESTINATION examples/ascent/proxies/kripke)
 
 endif()
 

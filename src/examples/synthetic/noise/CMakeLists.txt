@@ -73,12 +73,12 @@ blt_add_target_compile_flags(TO noise_ser FLAGS "${noise_openmp_flags}")
 # install target for noise example
 install(TARGETS noise_ser
         EXPORT  ascent
-        LIBRARY DESTINATION examples/synthetic/noise
-        ARCHIVE DESTINATION examples/synthetic/noise
-        RUNTIME DESTINATION examples/synthetic/noise
+        LIBRARY DESTINATION examples/ascent/synthetic/noise
+        ARCHIVE DESTINATION examples/ascent/synthetic/noise
+        RUNTIME DESTINATION examples/ascent/synthetic/noise
 )
 
-install(FILES ASCENT_README.md DESTINATION examples/synthetic/noise)
+install(FILES ASCENT_README.md DESTINATION examples/ascent/synthetic/noise)
 
 if(MPI_FOUND)
     
@@ -98,9 +98,9 @@ if(MPI_FOUND)
     # install target for mpi noise example
     install(TARGETS noise_par
             EXPORT  ascent
-            LIBRARY DESTINATION examples/synthetic/noise
-            ARCHIVE DESTINATION examples/synthetic/noise
-            RUNTIME DESTINATION examples/synthetic/noise
+            LIBRARY DESTINATION examples/ascent/synthetic/noise
+            ARCHIVE DESTINATION examples/ascent/synthetic/noise
+            RUNTIME DESTINATION examples/ascent/synthetic/noise
     )
 
 

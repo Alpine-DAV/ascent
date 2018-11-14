@@ -43,7 +43,7 @@
 # 
 ###############################################################################
 
-cd ${ASCENT_DIR}/examples/using-with-cmake
+cd ${ASCENT_DIR}/examples/ascent/using-with-cmake
 mkdir build
 cd build
 export EXAMPLE_CFG="-DASCENT_DIR=${ASCENT_DIR} -DCONDUIT_DIR=${CONDUIT_DIR} -DVTKM_DIR=${VTKM_DIR} -DVTKH_DIR=${VTKH_DIR}"

@@ -47,7 +47,7 @@
 echo "rm -f ascent.docker.src.tar.gz"
 rm -f ascent.docker.src.tar.gz
 
-# get current copy of the conduit source
+# get current copy of the ascent source
 echo "cd ../../../../ && python package.py src/examples/docker/ubuntu/ascent.docker.src.tar.gz"
 cd ../../../../ && python package.py src/examples/docker/ubuntu/ascent.docker.src.tar.gz
 
