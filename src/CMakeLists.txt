@@ -77,7 +77,7 @@ option(ENABLE_EXAMPLES    "Build Examples"            ON)
 ################################
 # Populate the cmake gui
 ################################
-set(CONDUIT_DIR "" CACHE FILEPATH "path to conduit installation")
+set(CONDUIT_DIR "" CACHE PATH "path to conduit installation")
 
 ################################
 # Invoke CMake Fortran setup

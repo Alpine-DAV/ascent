@@ -1,45 +1,45 @@
 ###############################################################################
 # Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-# 
+#
 # Produced at the Lawrence Livermore National Laboratory
-# 
+#
 # LLNL-CODE-716457
-# 
+#
 # All rights reserved.
-# 
-# This file is part of Ascent. 
-# 
+#
+# This file is part of Ascent.
+#
 # For details, see: http://ascent.readthedocs.io/.
-# 
+#
 # Please also read ascent/LICENSE
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
-# * Redistributions of source code must retain the above copyright notice, 
+#
+# * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the disclaimer below.
-# 
+#
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the disclaimer (as noted below) in the
 #   documentation and/or other materials provided with the distribution.
-# 
+#
 # * Neither the name of the LLNS/LLNL nor the names of its contributors may
 #   be used to endorse or promote products derived from this software without
 #   specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 ###############################################################################
 
 
@@ -50,43 +50,43 @@ endif()
 
 find_package(PythonInterp REQUIRED)
 if(PYTHONINTERP_FOUND)
-        
+
         MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
-        
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                 "import sys;from distutils.sysconfig import get_python_inc;sys.stdout.write(get_python_inc())"
                         OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
         MESSAGE(STATUS "PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR}")
 
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                 "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
                         OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
                         ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
         MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
 
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                 "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
                         OUTPUT_VARIABLE PYTHON_LIB_DIR
                         ERROR_VARIABLE ERROR_FINDING_LIB_DIR)
         MESSAGE(STATUS "PYTHON_LIB_DIR ${PYTHON_LIB_DIR}")
-        
+
         # check for python libs differs for windows python installs
         if(NOT WIN32)
             set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/libpython*")
         else()
             set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/python*.lib")
         endif()
-            
+
         FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
         get_filename_component(PYTHON_LIBRARY "${PYTHON_GLOB_RESULT}" ABSOLUTE)
         MESSAGE(STATUS "{PythonLibs from PythonInterp} using: PYTHON_LIBRARY=${PYTHON_LIBRARY}")
         find_package(PythonLibs)
-        
+
         if(NOT PYTHONLIBS_FOUND)
             MESSAGE(FATAL_ERROR "Failed to find Python Libraries using PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
         endif()
-        
+
 endif()
 
 
@@ -110,7 +110,7 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name
             DEPENDS  ${setup_file} ${ARGN}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-    add_custom_target(${target_name} ALL DEPENDS 
+    add_custom_target(${target_name} ALL DEPENDS
                       ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build)
 
     # also use distutils for the install ...
@@ -137,14 +137,14 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
             ")
     endif()
-    
+
 ENDFUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
 
 ##############################################################################
-# Macro to create a compiled python module 
+# Macro to create a compiled python module
 ##############################################################################
 #
-# we use this instead of the std ADD_PYTHON_MODULE cmake command 
+# we use this instead of the std ADD_PYTHON_MODULE cmake command
 # to setup proper install targets.
 #
 ##############################################################################
@@ -161,7 +161,7 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
     target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
 
     # support installing the python module components to an
-    # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX 
+    # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX
     set(py_install_dir ${dest_dir})
     if(PYTHON_MODULE_INSTALL_PREFIX)
         set(py_install_dir ${PYTHON_MODULE_INSTALL_PREFIX})
@@ -199,7 +199,7 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
     target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
 
     # support installing the python module components to an
-    # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX 
+    # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX
     set(py_install_dir ${dest_dir})
     if(PYTHON_MODULE_INSTALL_PREFIX)
         set(py_install_dir ${PYTHON_MODULE_INSTALL_PREFIX})
@@ -215,8 +215,8 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
 
 #
-# Also register python as a BLT dep,to support the case were we link python, 
-# as opposed to creating python modules via the above macros. 
+# Also register python as a BLT dep,to support the case were we link python,
+# as opposed to creating python modules via the above macros.
 #
 
 blt_register_library(NAME python

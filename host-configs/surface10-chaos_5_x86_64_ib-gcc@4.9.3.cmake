@@ -18,12 +18,12 @@ set("CMAKE_C_COMPILER" "/usr/apps/gnu/4.9.3/bin/gcc" CACHE PATH "")
 set("CMAKE_CXX_COMPILER" "/usr/apps/gnu/4.9.3/bin/g++" CACHE PATH "")
 
 # fortran compiler used by spack
-set("ENABLE_FORTRAN" "ON" CACHE PATH "")
+set("ENABLE_FORTRAN" "ON" CACHE BOOL "")
 
 set("CMAKE_Fortran_COMPILER" "/usr/apps/gnu/4.9.3/bin/gfortran" CACHE PATH "")
 
 # Enable python module builds
-set("ENABLE_PYTHON" "ON" CACHE PATH "")
+set("ENABLE_PYTHON" "ON" CACHE BOOL "")
 
 # python from uberenv
 set("PYTHON_EXECUTABLE" "/usr/workspace/wsa/visit/alpine/uberenv_libs/spack/opt/spack/chaos_5_x86_64_ib/gcc-4.9.3/python-2.7.11-eujx7frnxd5vpwolmye2fzq4tcylnbnv/bin/python" CACHE PATH "")
@@ -32,10 +32,10 @@ set("PYTHON_EXECUTABLE" "/usr/workspace/wsa/visit/alpine/uberenv_libs/spack/opt/
 set("SPHINX_EXECUTABLE" "/usr/workspace/wsa/visit/alpine/uberenv_libs/spack/opt/spack/chaos_5_x86_64_ib/gcc-4.9.3/python-2.7.11-eujx7frnxd5vpwolmye2fzq4tcylnbnv/bin/sphinx-build" CACHE PATH "")
 
 # OPENMP Support
-set("ENABLE_OPENMP" "OFF" CACHE PATH "")
+set("ENABLE_OPENMP" "OFF" CACHE BOOL "")
 
 # MPI Support
-set("ENABLE_MPI" "ON" CACHE PATH "")
+set("ENABLE_MPI" "ON" CACHE BOOL "")
 
 set("MPI_C_COMPILER" "/usr/local/tools/mvapich2-gnu-2.0/bin/mpicc" CACHE PATH "")
 
@@ -44,7 +44,7 @@ set("MPI_CXX_COMPILER" "/usr/local/tools/mvapich2-gnu-2.0/bin/mpicc" CACHE PATH 
 set("MPI_Fortran_COMPILER" "/usr/local/tools/mvapich2-gnu-2.0/bin/mpif90" CACHE PATH "")
 
 # CUDA support
-set("ENABLE_CUDA" "ON" CACHE PATH "")
+set("ENABLE_CUDA" "ON" CACHE BOOL "")
 
 set("CUDA_BIN_DIR" "/opt/cudatoolkit-8.0/bin" CACHE PATH "")
 

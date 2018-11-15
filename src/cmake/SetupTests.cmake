@@ -1,45 +1,45 @@
 ###############################################################################
 # Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-# 
+#
 # Produced at the Lawrence Livermore National Laboratory
-# 
+#
 # LLNL-CODE-716457
-# 
+#
 # All rights reserved.
-# 
-# This file is part of Ascent. 
-# 
+#
+# This file is part of Ascent.
+#
 # For details, see: http://ascent.readthedocs.io/.
-# 
+#
 # Please also read ascent/LICENSE
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
-# * Redistributions of source code must retain the above copyright notice, 
+#
+# * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the disclaimer below.
-# 
+#
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the disclaimer (as noted below) in the
 #   documentation and/or other materials provided with the distribution.
-# 
+#
 # * Neither the name of the LLNS/LLNL nor the names of its contributors may
 #   be used to endorse or promote products derived from this software without
 #   specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 ###############################################################################
 
 ##------------------------------------------------------------------------------
@@ -55,8 +55,8 @@ function(add_cpp_test)
 
     # parse our arguments
     cmake_parse_arguments(arg
-                         "${options}" 
-                         "${singleValueArgs}" 
+                         "${options}"
+                         "${singleValueArgs}"
                          "${multiValueArgs}" ${ARGN} )
 
     message(STATUS " [*] Adding Unit Test: ${arg_TEST}")
@@ -86,8 +86,8 @@ function(add_cuda_test)
 
     # parse our arguments
     cmake_parse_arguments(arg
-                         "${options}" 
-                         "${singleValueArgs}" 
+                         "${options}"
+                         "${singleValueArgs}"
                          "${multiValueArgs}" ${ARGN} )
 
     message(STATUS " [*] Adding CUDA Unit Test: ${arg_TEST}")
@@ -117,22 +117,22 @@ function(add_cpp_mpi_test)
 
     # parse our arguments
     cmake_parse_arguments(arg
-                         "${options}" 
-                         "${singleValueArgs}" 
+                         "${options}"
+                         "${singleValueArgs}"
                          "${multiValueArgs}" ${ARGN} )
 
     message(STATUS " [*] Adding Unit Test: ${arg_TEST}")
-    
-    
+
+
     blt_add_executable( NAME ${arg_TEST}
                         SOURCES ${arg_TEST}.cpp ${fortran_driver_source}
                         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
                         DEPENDS_ON "${arg_DEPENDS_ON}" gtest mpi)
-                        
+
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${arg_TEST}
                   NUM_MPI_TASKS ${arg_NUM_MPI_TASKS})
-                  
+
     ###########################################################################
     # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
     # to run with more tasks than actual cores
@@ -150,7 +150,7 @@ endfunction()
 ## add_python_test( TEST test)
 ##------------------------------------------------------------------------------
 function(add_python_test TEST)
-            
+
     message(STATUS " [*] Adding Python-based Unit Test: ${TEST}")
     add_test( NAME ${TEST}
               COMMAND ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
@@ -176,8 +176,8 @@ function(add_python_mpi_test TEST)
 
     # parse our arguments
     cmake_parse_arguments(arg
-                         "${options}" 
-                         "${singleValueArgs}" 
+                         "${options}"
+                         "${singleValueArgs}"
                          "${multiValueArgs}" ${ARGN} )
 
     message(STATUS " [*] Adding Python-based MPI Unit Test: ${TEST}")
@@ -214,8 +214,8 @@ macro(add_fortran_test)
 
     # parse our arguments
     cmake_parse_arguments(arg
-                         "${options}" 
-                         "${singleValueArgs}" 
+                         "${options}"
+                         "${singleValueArgs}"
                          "${multiValueArgs}" ${ARGN} )
 
     message(STATUS " [*] Adding Fortran Unit Test: ${arg_TEST}")

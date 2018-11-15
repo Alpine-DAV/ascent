@@ -65,10 +65,10 @@ set(CMAKE_CXX_COMPILER "/usr/local/bin/icpc" CACHE PATH "")
 set(CMAKE_Fortran_COMPILER  "/usr/local/bin/ifort" CACHE PATH "")
 
 # OPENMP Support
-set(ENABLE_OPENMP ON CACHE PATH "")
+set(ENABLE_OPENMP ON CACHE BOOL "")
 
 # MPI Support
-set(ENABLE_MPI  ON CACHE PATH "")
+set(ENABLE_MPI  ON CACHE BOOL "")
 
 set(MPI_C_COMPILER  "/usr/local/tools/mvapich2-intel-2.0/bin/mpicc" CACHE PATH "")
 
@@ -83,8 +83,8 @@ set(MPIEXEC_NUMPROC_FLAG -n CACHE PATH "")
 
 
 # CUDA support
-set(ENABLE_CUDA ON CACHE PATH "")
-#set(ENABLE_CUDA OFF CACHE PATH "")
+set(ENABLE_CUDA ON CACHE BOOL "")
+#set(ENABLE_CUDA OFF CACHE BOOL "")
 
 set(CUDA_BIN_DIR /opt/cudatoolkit-7.0/bin CACHE PATH "")
 
