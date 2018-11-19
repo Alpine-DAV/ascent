@@ -75,32 +75,22 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace filters
 {
-class ParamCheck
-{
-public:
 
-  ParamCheck(const std::string name);
+bool check_numeric(const std::string path,
+                   const conduit::Node &params,
+                   conduit::Node &info,
+                   bool required);
 
-  void add_numeric(const std::string path, bool required);
-
-  void add_string(const std::string path, bool required);
-
-  void add_string(const std::string path,
-                  const std::vector<std::string> &valid_values,
+bool check_string(const std::string path,
+                  const conduit::Node &params,
+                  conduit::Node &info,
                   bool required);
 
-  bool verify(const conduit::Node &params, conduit::Node &info);
+void path_helper(std::vector<std::string> &paths, const conduit::Node &params);
 
-protected:
+std::string surprise_check(const std::vector<std::string> &valid_paths,
+                           const conduit::Node &node);
 
-  std::string   m_name;
-  conduit::Node m_params;
-
-  ParamCheck();
-
-  bool has_param(const std::string &path);
-
-};
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
