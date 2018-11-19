@@ -42,7 +42,7 @@
 # 
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.9)
 ################################
 # cmake policy selections
 ################################
@@ -56,7 +56,7 @@ cmake_policy(SET CMP0048 NEW)
 # Ascent
 ################################
 
-project(ascent VERSION "0.2.1")
+project(ascent VERSION "0.4.1")
 
 ################################
 # Build Options
