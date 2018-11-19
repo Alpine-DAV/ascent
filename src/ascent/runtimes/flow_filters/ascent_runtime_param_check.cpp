@@ -51,6 +51,9 @@
 
 #include "ascent_runtime_param_check.hpp"
 #include <ascent_logging.hpp>
+
+#include <algorithm>
+
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
@@ -71,86 +74,94 @@ namespace runtime
 namespace filters
 {
 
-ParamCheck::ParamCheck()
+bool check_numeric(const std::string path,
+                   const conduit::Node &params,
+                   conduit::Node &info,
+                   bool required)
 {
+  bool res = true;
+  if(!params.has_path(path) && required)
+  {
+    info["errors"].append() = "Missing required numeric parameter '" + path + "'";
+    res = false;
+  }
 
+  if(params.has_path(path) && !params[path].dtype().is_number())
+  {
+    std::string msg = "Numeric parameter '" + path + " is not numeric'";
+    info["errors"].append() = msg;
+    res = false;
+  }
+  return res;
 }
 
-ParamCheck::ParamCheck(const std::string name)
-  : m_name(name)
+bool check_string(const std::string path,
+                  const conduit::Node &params,
+                  conduit::Node &info,
+                  bool required)
 {
+  bool res = true;
+  if(!params.has_path(path) && required)
+  {
+    info["errors"].append() = "Missing required string parameter '" + path + "'";
+    res = false;
+  }
 
+  if(params.has_path(path) && !params[path].dtype().is_string())
+  {
+    std::string msg = "String parameter '" + path + "' is not a string'";
+    info["errors"].append() = msg;
+    res = false;
+  }
+  return res;
 }
 
-void
-ParamCheck::add_numeric(const std::string path, bool required)
-{
-  conduit::Node &param = m_params.append();
-  param["path"] = path;
-  param["type"] = "numeric";
-  if(required)
-  {
-    param["required"] = "true";
-  }
-  else
-  {
-    param["required"] = "false";
-  }
-}
-
-void
-ParamCheck::add_string(const std::string path, bool required)
-{
-  conduit::Node &param = m_params.append();
-  param["path"] = path;
-  param["type"] = "string";
-  if(required)
-  {
-    param["required"] = "true";
-  }
-  else
-  {
-    param["required"] = "false";
-  }
-}
-
-void
-ParamCheck::add_string(const std::string path,
-                       const std::vector<std::string> &valid_values,
-                       bool required)
-{
-  conduit::Node &param = m_params.append();
-  param["path"] = path;
-  param["type"] = "multi_string";
-  if(required)
-  {
-    param["required"] = "true";
-  }
-  else
-  {
-    param["required"] = "false";
-  }
-  conduit::Node &values = param["values"];
-  size_t num_vals = valid_values.size();
-  for(size_t i = 0; i < num_vals; ++i)
-  {
-    conduit::Node &val = values.append();
-    val = valid_values[i];
-  }
-}
-
-bool
-ParamCheck::has_param(const std::string &path)
+std::string surprise_check(const std::vector<std::string> &valid_paths,
+                           const conduit::Node &params)
 {
 
-}
-
-bool
-ParamCheck::verify(const conduit::Node &params, conduit::Node &info)
-{
-  bool ret = true;
+  std::stringstream ss;
   std::vector<std::string> paths;
-  return ret;
+  path_helper(paths, params);
+  const int num_paths = static_cast<int>(paths.size());
+  const int num_valid_paths = static_cast<int>(valid_paths.size());
+  std::string curr_path = params.path() == "" ? "" :params.path() + "/";
+  for(int i = 0; i < num_paths; ++i)
+  {
+    bool found = false;
+    for(int f = 0; f < num_valid_paths; ++f)
+    {
+      if(curr_path + valid_paths[f] == paths[i])
+      {
+        found = true;
+        break;
+      }
+    }
+
+    if(!found)
+    {
+      ss<<"Surprise parameter '"<<paths[i]<<"'\n";
+    }
+  }
+
+  return ss.str();
+}
+
+void path_helper(std::vector<std::string> &paths, const conduit::Node &node)
+{
+  const int num_children = static_cast<int>(node.number_of_children());
+
+  if(num_children == 0)
+  {
+    paths.push_back(node.path());
+    return;
+  }
+  for(int i = 0; i < num_children; ++i)
+  {
+    const conduit::Node &child = node.child(i);
+    path_helper(paths, child);
+  }
+
 }
 
 //-----------------------------------------------------------------------------
