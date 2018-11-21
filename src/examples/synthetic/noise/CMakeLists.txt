@@ -55,9 +55,10 @@ set(noise_sources
 set(noise_header
     open_simplex_noise.h)
 
-
+set(noise_deps ascent)
 if(OPENMP_FOUND)
-  set(noise_openmp_flags "-DNOISE_USE_OPENMP")
+   set(noise_openmp_flags "-DNOISE_USE_OPENMP")
+   list(APPEND noise_deps openmp)
 else()
    set(noise_openmp_flags "")
 endif()
@@ -65,8 +66,8 @@ endif()
 blt_add_executable(
     NAME        noise_ser
     SOURCES     ${noise_sources}
-    DEPENDS_ON  ascent
-    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    DEPENDS_ON  ${noise_deps}
+    OUTPUT_DIR  ${CMAKE_CURRENT_BINARY_DIR})
 
 blt_add_target_compile_flags(TO noise_ser FLAGS "${noise_openmp_flags}")
 
