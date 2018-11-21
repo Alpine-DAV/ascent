@@ -220,7 +220,7 @@ macro(add_fortran_test)
 
     message(STATUS " [*] Adding Fortran Unit Test: ${arg_TEST}")
     blt_add_executable( NAME ${arg_TEST}
-                        SOURCES ${arg_TEST}.f
+                        SOURCES ${arg_TEST}.f90
                         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
                         DEPENDS_ON fruit "${arg_DEPENDS_ON}")
 
