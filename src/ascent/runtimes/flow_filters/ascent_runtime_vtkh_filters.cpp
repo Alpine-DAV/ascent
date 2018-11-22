@@ -1139,23 +1139,58 @@ DefaultRender::verify_params(const conduit::Node &params,
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("image_prefix");
-    std::string surprises = surprise_check(valid_paths, params);
 
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
+    std::vector<std::string> ignore_paths;
+    ignore_paths.push_back("renders");
 
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+
+    // parse render surprises
     if(params.has_path("renders"))
     {
       const conduit::Node renders_node = params["renders"];
       const int num_renders = renders_node.number_of_children();
 
+      std::vector<std::string> r_valid_paths;
+      r_valid_paths.push_back("image_name");
+      r_valid_paths.push_back("image_width");
+      r_valid_paths.push_back("image_height");
+      r_valid_paths.push_back("camera/look_at");
+      r_valid_paths.push_back("camera/position");
+      r_valid_paths.push_back("camera/up");
+      r_valid_paths.push_back("camera/fov");
+      r_valid_paths.push_back("camera/xpan");
+      r_valid_paths.push_back("camera/ypan");
+      r_valid_paths.push_back("camera/zoom");
+      r_valid_paths.push_back("camera/near_plane");
+      r_valid_paths.push_back("camera/far_plane");
+      r_valid_paths.push_back("type");
+      r_valid_paths.push_back("phi");
+      r_valid_paths.push_back("theta");
+      r_valid_paths.push_back("db_name");
+      // TODO: document
+      r_valid_paths.push_back("render_bg");
+      r_valid_paths.push_back("camera/azimuth");
+      r_valid_paths.push_back("annotations");
+      r_valid_paths.push_back("fg_color");
+      r_valid_paths.push_back("bg_color");
+
+
+      std::vector<std::string> r_ignore_paths;
+      r_ignore_paths.push_back("color_table");
+
       for(int i = 0; i < num_renders; ++i)
       {
-a        const conduit::Node &render_node = renders_node.child(i);
+        const conduit::Node &render_node = renders_node.child(i);
+        surprises = surprise_check(r_valid_paths, r_ignore_paths, render_node);
       }
+    }
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;

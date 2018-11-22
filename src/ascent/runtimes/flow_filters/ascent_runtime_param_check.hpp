@@ -88,7 +88,16 @@ bool check_string(const std::string path,
 
 void path_helper(std::vector<std::string> &paths, const conduit::Node &params);
 
+void path_helper(std::vector<std::string> &paths,
+                 const std::vector<std::string> &ignore,
+                 const conduit::Node &params,
+                 const std::string path_prefix);
+
 std::string surprise_check(const std::vector<std::string> &valid_paths,
+                           const conduit::Node &node);
+
+std::string surprise_check(const std::vector<std::string> &valid_paths,
+                           const std::vector<std::string> &ignore_paths,
                            const conduit::Node &node);
 
 //-----------------------------------------------------------------------------
