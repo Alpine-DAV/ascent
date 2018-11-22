@@ -117,9 +117,8 @@ TEST(ascent_contour, test_single_contour_3d)
     pipelines["pl1/f1/type"] = "contour";
     // filter knobs
     conduit::Node &contour_params = pipelines["pl1/f1/params"];
-//    contour_params["field"] = "braid";
+    contour_params["field"] = "braid";
     contour_params["iso_values"] = 0.;
-    contour_params["is_vaues"] = 0.;
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
