@@ -127,6 +127,83 @@ namespace filters
 //-----------------------------------------------------------------------------
 namespace detail
 {
+std::string
+check_color_table_surprises(const conduit::Node &color_table)
+{
+  std::string surprises;
+
+  std::vector<std::string> valid_paths;
+  valid_paths.push_back("name");
+
+  std::vector<std::string> ignore_paths;
+  ignore_paths.push_back("control_points");
+
+  surprises += surprise_check(valid_paths, ignore_paths, color_table);
+  if(color_table.has_path("control_points"))
+  {
+    std::vector<std::string> c_valid_paths;
+    c_valid_paths.push_back("type");
+    c_valid_paths.push_back("alpha");
+    c_valid_paths.push_back("color");
+    c_valid_paths.push_back("position");
+
+    const conduit::Node &control_points = color_table["control_points"];
+    const int num_points = control_points.number_of_children();
+    for(int i = 0; i < num_points; ++i)
+    {
+      const conduit::Node &point = control_points.child(i);
+      surprises += surprise_check(c_valid_paths, point);
+    }
+  }
+
+  return surprises;
+}
+
+std::string
+check_renders_surprises(const conduit::Node &renders_node)
+{
+  std::string surprises;
+  const int num_renders = renders_node.number_of_children();
+  // render paths
+  std::vector<std::string> r_valid_paths;
+  r_valid_paths.push_back("image_name");
+  r_valid_paths.push_back("image_width");
+  r_valid_paths.push_back("image_height");
+  r_valid_paths.push_back("camera/look_at");
+  r_valid_paths.push_back("camera/position");
+  r_valid_paths.push_back("camera/up");
+  r_valid_paths.push_back("camera/fov");
+  r_valid_paths.push_back("camera/xpan");
+  r_valid_paths.push_back("camera/ypan");
+  r_valid_paths.push_back("camera/zoom");
+  r_valid_paths.push_back("camera/near_plane");
+  r_valid_paths.push_back("camera/far_plane");
+  r_valid_paths.push_back("type");
+  r_valid_paths.push_back("phi");
+  r_valid_paths.push_back("theta");
+  r_valid_paths.push_back("db_name");
+  // TODO: document
+  r_valid_paths.push_back("render_bg");
+  r_valid_paths.push_back("camera/azimuth");
+  r_valid_paths.push_back("annotations");
+  r_valid_paths.push_back("fg_color");
+  r_valid_paths.push_back("bg_color");
+
+
+  std::vector<std::string> r_ignore_paths;
+  r_ignore_paths.push_back("color_table");
+
+  for(int i = 0; i < num_renders; ++i)
+  {
+    const conduit::Node &render_node = renders_node.child(i);
+    surprises += surprise_check(r_valid_paths, r_ignore_paths, render_node);
+    if(render_node.has_path("color_table"))
+    {
+      surprises += check_color_table_surprises(render_node["color_table"]);
+    }
+  }
+  return surprises;
+}
 // A simple container to create registry entries for
 // renderer and the data set it renders. Without this,
 // pipeline results (data sets) would be deleted before
@@ -1150,41 +1227,7 @@ DefaultRender::verify_params(const conduit::Node &params,
     if(params.has_path("renders"))
     {
       const conduit::Node renders_node = params["renders"];
-      const int num_renders = renders_node.number_of_children();
-
-      std::vector<std::string> r_valid_paths;
-      r_valid_paths.push_back("image_name");
-      r_valid_paths.push_back("image_width");
-      r_valid_paths.push_back("image_height");
-      r_valid_paths.push_back("camera/look_at");
-      r_valid_paths.push_back("camera/position");
-      r_valid_paths.push_back("camera/up");
-      r_valid_paths.push_back("camera/fov");
-      r_valid_paths.push_back("camera/xpan");
-      r_valid_paths.push_back("camera/ypan");
-      r_valid_paths.push_back("camera/zoom");
-      r_valid_paths.push_back("camera/near_plane");
-      r_valid_paths.push_back("camera/far_plane");
-      r_valid_paths.push_back("type");
-      r_valid_paths.push_back("phi");
-      r_valid_paths.push_back("theta");
-      r_valid_paths.push_back("db_name");
-      // TODO: document
-      r_valid_paths.push_back("render_bg");
-      r_valid_paths.push_back("camera/azimuth");
-      r_valid_paths.push_back("annotations");
-      r_valid_paths.push_back("fg_color");
-      r_valid_paths.push_back("bg_color");
-
-
-      std::vector<std::string> r_ignore_paths;
-      r_ignore_paths.push_back("color_table");
-
-      for(int i = 0; i < num_renders; ++i)
-      {
-        const conduit::Node &render_node = renders_node.child(i);
-        surprises = surprise_check(r_valid_paths, r_ignore_paths, render_node);
-      }
+      surprises += detail::check_renders_surprises(renders_node);
     }
 
     if(surprises != "")
