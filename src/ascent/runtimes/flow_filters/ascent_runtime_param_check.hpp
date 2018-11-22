@@ -95,7 +95,10 @@ void path_helper(std::vector<std::string> &paths,
 
 std::string surprise_check(const std::vector<std::string> &valid_paths,
                            const conduit::Node &node);
-
+//
+// Ignore paths only ignores top level paths, deffering lower level
+// paths to another surpise check.
+//
 std::string surprise_check(const std::vector<std::string> &valid_paths,
                            const std::vector<std::string> &ignore_paths,
                            const conduit::Node &node);
