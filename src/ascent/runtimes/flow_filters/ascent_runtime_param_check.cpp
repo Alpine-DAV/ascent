@@ -74,10 +74,11 @@ namespace runtime
 namespace filters
 {
 
-bool check_numeric(const std::string path,
-                   const conduit::Node &params,
-                   conduit::Node &info,
-                   bool required)
+bool
+check_numeric(const std::string path,
+              const conduit::Node &params,
+              conduit::Node &info,
+              bool required)
 {
   bool res = true;
   if(!params.has_path(path) && required)
@@ -95,10 +96,11 @@ bool check_numeric(const std::string path,
   return res;
 }
 
-bool check_string(const std::string path,
-                  const conduit::Node &params,
-                  conduit::Node &info,
-                  bool required)
+bool
+check_string(const std::string path,
+             const conduit::Node &params,
+             conduit::Node &info,
+             bool required)
 {
   bool res = true;
   if(!params.has_path(path) && required)
@@ -116,8 +118,42 @@ bool check_string(const std::string path,
   return res;
 }
 
-std::string surprise_check(const std::vector<std::string> &valid_paths,
-                           const conduit::Node &params)
+std::string
+surprise_check(const std::vector<std::string> &valid_paths,
+               const std::vector<std::string> &ignore_paths,
+               const conduit::Node &params)
+{
+
+  std::stringstream ss;
+  std::vector<std::string> paths;
+  std::string curr_path = params.path() == "" ? "" :params.path() + "/";
+  path_helper(paths, ignore_paths, params, curr_path);
+  const int num_paths = static_cast<int>(paths.size());
+  const int num_valid_paths = static_cast<int>(valid_paths.size());
+  for(int i = 0; i < num_paths; ++i)
+  {
+    bool found = false;
+    for(int f = 0; f < num_valid_paths; ++f)
+    {
+      if(curr_path + valid_paths[f] == paths[i])
+      {
+        found = true;
+        break;
+      }
+    }
+
+    if(!found)
+    {
+      ss<<"Surprise parameter '"<<paths[i]<<"'\n";
+    }
+  }
+
+  return ss.str();
+}
+
+std::string
+surprise_check(const std::vector<std::string> &valid_paths,
+               const conduit::Node &params)
 {
 
   std::stringstream ss;
@@ -147,7 +183,8 @@ std::string surprise_check(const std::vector<std::string> &valid_paths,
   return ss.str();
 }
 
-void path_helper(std::vector<std::string> &paths, const conduit::Node &node)
+void
+path_helper(std::vector<std::string> &paths, const conduit::Node &node)
 {
   const int num_children = static_cast<int>(node.number_of_children());
 
@@ -160,6 +197,37 @@ void path_helper(std::vector<std::string> &paths, const conduit::Node &node)
   {
     const conduit::Node &child = node.child(i);
     path_helper(paths, child);
+  }
+
+}
+
+void
+path_helper(std::vector<std::string> &paths,
+            const std::vector<std::string> &ignore,
+            const conduit::Node &params,
+            const std::string path_prefix)
+{
+  const int num_children = static_cast<int>(params.number_of_children());
+  const int num_ignore_paths = static_cast<int>(ignore.size());
+
+  for(int i = 0; i < num_children; ++i)
+  {
+    bool skip = false;
+    const conduit::Node &child = params.child(i);
+    for(int p = 0; p < num_ignore_paths; ++p)
+    {
+      const std::string ignore_path = path_prefix + ignore[p];
+      if(child.path().compare(0, ignore_path.length(), ignore_path) == 0)
+      {
+        skip = true;
+        break;
+      }
+    }
+
+    if(!skip)
+    {
+      path_helper(paths, child);
+    }
   }
 
 }
