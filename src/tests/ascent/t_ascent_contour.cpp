@@ -122,7 +122,7 @@ TEST(ascent_contour, test_single_contour_3d)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
+    scenes["s1/plots/p1/field"] = "radial";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
 
@@ -207,7 +207,7 @@ TEST(ascent_contour, test_multi_contour_3d)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
+    scenes["s1/plots/p1/field"] = "radial";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
 
@@ -291,7 +291,7 @@ TEST(ascent_contour, test_multi_contour_levels)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
+    scenes["s1/plots/p1/field"] = "radial";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
 

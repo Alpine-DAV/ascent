@@ -189,18 +189,10 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("fg_color");
   r_valid_paths.push_back("bg_color");
 
-
-  std::vector<std::string> r_ignore_paths;
-  r_ignore_paths.push_back("color_table");
-
   for(int i = 0; i < num_renders; ++i)
   {
     const conduit::Node &render_node = renders_node.child(i);
-    surprises += surprise_check(r_valid_paths, r_ignore_paths, render_node);
-    if(render_node.has_path("color_table"))
-    {
-      surprises += check_color_table_surprises(render_node["color_table"]);
-    }
+    surprises += surprise_check(r_valid_paths, render_node);
   }
   return surprises;
 }
@@ -2118,18 +2110,11 @@ CreatePlot::declare_interface(Node &i)
 //-----------------------------------------------------------------------------
 bool
 CreatePlot::verify_params(const conduit::Node &params,
-                                  conduit::Node &info)
+                          conduit::Node &info)
 {
     info.reset();
-    bool res = true;
 
-
-    if(! params.has_child("type") ||
-       ! params["type"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'type'";
-        res = false;
-    }
+    bool res = check_string("type",params, info, true);
 
     bool is_mesh = false;
     if(params["type"].as_string() == "mesh")
@@ -2139,21 +2124,32 @@ CreatePlot::verify_params(const conduit::Node &params,
 
     if(!is_mesh)
     {
-      if(! params.has_child("params") )
-      {
-          info["errors"].append() = "Missing required parameter 'params'";
-          res = false;
-          return res;
-      }
+      res &= check_string("field", params, info, true);
+    }
 
-      conduit::Node plot_params = params["params"];
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("type");
+    valid_paths.push_back("pipeline");
+    valid_paths.push_back("field");
+    valid_paths.push_back("points/radius");
+    valid_paths.push_back("points/radius_delta");
+    valid_paths.push_back("min_value");
+    valid_paths.push_back("max_value");
 
-      if(! plot_params.has_child("field") ||
-         ! plot_params["field"].dtype().is_string() )
-      {
-          info["errors"].append() = "Missing required string parameter 'params/field'";
-          res = false;
-      }
+    std::vector<std::string> ignore_paths;
+    ignore_paths.push_back("color_table");
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(params.has_path("color_table"))
+    {
+      surprises += detail::check_color_table_surprises(params["color_table"]);
+    }
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;
@@ -2169,7 +2165,7 @@ CreatePlot::execute()
     }
 
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
-    conduit::Node plot_params = params()["params"];
+    conduit::Node plot_params = params();
 
     std::string type = params()["type"].as_string();
 

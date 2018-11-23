@@ -1,41 +1,38 @@
 [
   {
     "action": "add_scenes",
-    "scenes": 
+    "scenes":
     {
-      "s1": 
+      "s1":
       {
-        "plots": 
+        "plots":
         {
-          "p1": 
+          "p1":
           {
             "type": "volume",
-            "params": 
-            {
-              "field": "energy",
-              "min_value" : 1,
-              "max_value" : 3
-            }
+            "field": "energy",
+            "min_value" : 1,
+            "max_value" : 3
           }
         },
         "renders":
         {
-          "r1" : 
+          "r1" :
           {
             "type" : "cinema",
             "phi" : 4,
             "theta" : 4,
             "db_name" : "clover_db"
           }
-        } 
+        }
       }
     }
   },
-  
+
   {
     "action": "execute"
   },
-  
+
   {
     "action": "reset"
   }
