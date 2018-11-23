@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
+//
 // Please also read ascent/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 #include "open_simplex_noise.h"
 
@@ -79,7 +79,7 @@ struct Options
       if(contains(argv[i], "--dims="))
       {
         std::string s_dims;
-        s_dims = GetArg(argv[i]); 
+        s_dims = GetArg(argv[i]);
         std::vector<std::string> dims;
         dims = split(s_dims, ',');
 
@@ -91,21 +91,21 @@ struct Options
         m_dims[0] = stoi(dims[0]);
         m_dims[1] = stoi(dims[1]);
         m_dims[2] = stoi(dims[2]);
-        SetSpacing(); 
+        SetSpacing();
       }
       else if(contains(argv[i], "--time_steps="))
       {
 
         std::string time_steps;
-        time_steps = GetArg(argv[i]); 
-        m_time_steps = stoi(time_steps); 
+        time_steps = GetArg(argv[i]);
+        m_time_steps = stoi(time_steps);
       }
       else if(contains(argv[i], "--time_delta="))
       {
 
         std::string time_delta;
-        time_delta= GetArg(argv[i]); 
-        m_time_delta = stof(time_delta); 
+        time_delta= GetArg(argv[i]);
+        m_time_delta = stof(time_delta);
       }
       else
       {
@@ -129,16 +129,16 @@ struct Options
     else
     {
       res = parse[1];
-    } 
+    }
     return res;
   }
   void Print() const
   {
     std::cout<<"======== Noise Options =========\n";
-    std::cout<<"dims       : ("<<m_dims[0]<<", "<<m_dims[1]<<", "<<m_dims[2]<<")\n"; 
-    std::cout<<"spacing    : ("<<m_spacing[0]<<", "<<m_spacing[1]<<", "<<m_spacing[2]<<")\n"; 
-    std::cout<<"time steps : "<<m_time_steps<<"\n"; 
-    std::cout<<"time delta : "<<m_time_delta<<"\n"; 
+    std::cout<<"dims       : ("<<m_dims[0]<<", "<<m_dims[1]<<", "<<m_dims[2]<<")\n";
+    std::cout<<"spacing    : ("<<m_spacing[0]<<", "<<m_spacing[1]<<", "<<m_spacing[2]<<")\n";
+    std::cout<<"time steps : "<<m_time_steps<<"\n";
+    std::cout<<"time delta : "<<m_time_delta<<"\n";
     std::cout<<"================================\n";
   }
 
@@ -152,26 +152,26 @@ struct Options
     exit(0);
   }
 
-	std::vector<std::string> &split(const std::string &s, 
-                                  char delim, 
+	std::vector<std::string> &split(const std::string &s,
+                                  char delim,
                                   std::vector<std::string> &elems)
-	{   
+	{
 		std::stringstream ss(s);
 		std::string item;
 
 		while (std::getline(ss, item, delim))
-		{   
+		{
 			 elems.push_back(item);
 		}
 		return elems;
 	 }
-	 
+
 	std::vector<std::string> split(const std::string &s, char delim)
-	{   
+	{
 		std::vector<std::string> elems;
 		split(s, delim, elems);
 		return elems;
-	} 
+	}
 
 	bool contains(const std::string haystack, std::string needle)
 	{
@@ -204,13 +204,13 @@ struct SpatialDivision
     r_split = *this;
     assert(CanSplit(dim));
     int size = m_maxs[dim] - m_mins[dim] + 1;
-    int left_offset = size / 2;   
-  
+    int left_offset = size / 2;
+
     //shrink the left side
     m_maxs[dim] = m_mins[dim] + left_offset - 1;
     //shrink the right side
     r_split.m_mins[dim] = m_maxs[dim] + 1;
-    return r_split;    
+    return r_split;
   }
 };
 
@@ -227,11 +227,11 @@ struct DataSet
    double     m_time_step;
 
    DataSet(const Options &options, const SpatialDivision &div)
-     : m_cell_dims{div.m_maxs[0] - div.m_mins[0] + 1, 
+     : m_cell_dims{div.m_maxs[0] - div.m_mins[0] + 1,
                    div.m_maxs[1] - div.m_mins[1] + 1,
                    div.m_maxs[2] - div.m_mins[2] + 1},
-       m_point_dims{m_cell_dims[0] + 1, 
-                    m_cell_dims[1] + 1, 
+       m_point_dims{m_cell_dims[0] + 1,
+                    m_cell_dims[1] + 1,
                     m_cell_dims[2] + 1},
        m_cell_size(m_cell_dims[0] * m_cell_dims[1] * m_cell_dims[2]),
        m_point_size(m_point_dims[0] * m_point_dims[1] * m_point_dims[2]),
@@ -243,30 +243,30 @@ struct DataSet
                 0. + double(div.m_mins[2]) * m_spacing[2]}
 
    {
-     m_nodal_scalars = new double[m_point_size]; 
-     m_zonal_scalars = new double[m_cell_size]; 
-   }    
+     m_nodal_scalars = new double[m_point_size];
+     m_zonal_scalars = new double[m_cell_size];
+   }
 
    inline void GetCoord(const int &x, const int &y, const int &z, double *coord)
    {
-      coord[0] = m_origin[0] + m_spacing[0] * double(x); 
-      coord[1] = m_origin[1] + m_spacing[1] * double(y); 
-      coord[2] = m_origin[2] + m_spacing[2] * double(z); 
-   }  
+      coord[0] = m_origin[0] + m_spacing[0] * double(x);
+      coord[1] = m_origin[1] + m_spacing[1] * double(y);
+      coord[2] = m_origin[2] + m_spacing[2] * double(z);
+   }
    inline void SetPoint(const double &val, const int &x, const int &y, const int &z)
    {
      const int offset = z * m_point_dims[0] * m_point_dims[1] +
                         y * m_point_dims[0] + x;
      m_nodal_scalars[offset] = val;
-   } 
+   }
 
    inline void SetCell(const double &val, const int &x, const int &y, const int &z)
    {
      const int offset = z * m_cell_dims[0] * m_cell_dims[1] +
                         y * m_cell_dims[0] + x;
      m_zonal_scalars[offset] = val;
-   } 
-    
+   }
+
    void PopulateNode(conduit::Node &node)
    {
       node["coordsets/coords/type"] = "uniform";
@@ -282,7 +282,7 @@ struct DataSet
       node["coordsets/coords/spacing/dx"] = m_spacing[0];
       node["coordsets/coords/spacing/dy"] = m_spacing[1];
       node["coordsets/coords/spacing/dz"] = m_spacing[2];
-    
+
       node["topologies/mesh/type"]     = "uniform";
       node["topologies/mesh/coordset"] = "coords";
 
@@ -309,8 +309,8 @@ struct DataSet
 
    ~DataSet()
    {
-     if(m_nodal_scalars) delete[] m_nodal_scalars; 
-     if(m_zonal_scalars) delete[] m_zonal_scalars; 
+     if(m_nodal_scalars) delete[] m_nodal_scalars;
+     if(m_zonal_scalars) delete[] m_zonal_scalars;
    }
 private:
   DataSet()
@@ -319,8 +319,8 @@ private:
     m_cell_size(1),
     m_point_size(8)
   {
-    m_nodal_scalars = NULL; 
-    m_zonal_scalars = NULL; 
+    m_nodal_scalars = NULL;
+    m_zonal_scalars = NULL;
   };
 };
 
@@ -334,7 +334,7 @@ void Init(SpatialDivision &div, const Options &options)
   int comm_size;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  std::vector<SpatialDivision> divs; 
+  std::vector<SpatialDivision> divs;
   divs.push_back(div);
   int avail = comm_size - 1;
   int current_dim = 0;
@@ -353,7 +353,7 @@ void Init(SpatialDivision &div, const Options &options)
       }
       divs.push_back(divs[i].Split(current_dim));
       --avail;
-    }      
+    }
     if(temp_avail == avail)
     {
       // dims were too small to make any spit
@@ -377,7 +377,7 @@ void Init(SpatialDivision &div, const Options &options)
                    <<" Adding "<<avail<<" empty data sets\n";
         }
 
-        avail = 0; 
+        avail = 0;
       }
     }
     else
@@ -390,7 +390,7 @@ void Init(SpatialDivision &div, const Options &options)
 
   div = divs.at(rank);
 #endif
-  if(rank == 0) options.Print(); 
+  if(rank == 0) options.Print();
 }
 
 void Finalize()
@@ -409,14 +409,14 @@ int main(int argc, char** argv)
   SpatialDivision div;
   //
   // Inclusive range. Ex cell dim = 32
-  // then the div is [0,31] 
+  // then the div is [0,31]
   //
-  div.m_maxs[0] = options.m_dims[0] - 1; 
-  div.m_maxs[1] = options.m_dims[1] - 1; 
-  div.m_maxs[2] = options.m_dims[2] - 1; 
+  div.m_maxs[0] = options.m_dims[0] - 1;
+  div.m_maxs[1] = options.m_dims[1] - 1;
+  div.m_maxs[2] = options.m_dims[2] - 1;
 
   Init(div, options);
-  DataSet data_set(options, div); 
+  DataSet data_set(options, div);
 
   double spatial_extents[3];
   spatial_extents[0] = options.m_spacing[0] * options.m_dims[0] + 1;
@@ -427,7 +427,7 @@ int main(int argc, char** argv)
   struct osn_context *ctx_nodal;
   open_simplex_noise(77374, &ctx_nodal);
   open_simplex_noise(59142, &ctx_zonal);
-  
+
   double time = 0;
   //
   //  Open and setup ascent
@@ -444,7 +444,7 @@ int main(int argc, char** argv)
   conduit::Node mesh_data;
   mesh_data["state/time"].set_external(&time);
   mesh_data["state/cycle"].set_external(&time);
-#ifdef PARALLEL  
+#ifdef PARALLEL
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   mesh_data["state/domain_id"] = rank;
@@ -467,11 +467,11 @@ int main(int argc, char** argv)
   conduit::Node &contour2_params = pipelines["pl2/f1/params"];
   contour2_params["field"] = "nodal_noise";
   contour2_params["iso_values"] = 0.3;
-  
+
   conduit::Node scenes;
   scenes["scene1/plots/plt1/type"]         = "pseudocolor";
   scenes["scene1/plots/plt1/pipeline"]     = "pl1";
-  scenes["scene1/plots/plt1/params/field"] = "zonal_noise";
+  scenes["scene1/plots/plt1/field"] = "zonal_noise";
 
   conduit::Node ctable;
   ctable["name"] = "Black, Blue and White";
@@ -483,8 +483,8 @@ int main(int argc, char** argv)
   ctable["control_points/p2/alpha"] = 0.3;
 
   scenes["scene1/plots/plt2/type"]         = "volume";
-  scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
-  scenes["scene1/plots/plt2/params/color_table"] = ctable;
+  scenes["scene1/plots/plt2/field"] = "zonal_noise";
+  scenes["scene1/plots/plt2/color_table"] = ctable;
 
   std::vector<double> bg_color;
   bg_color.push_back(1.0);
@@ -510,13 +510,13 @@ int main(int argc, char** argv)
 
   conduit::Node &execute = actions.append();
   execute["action"] = "execute";
-  
+
   conduit::Node reset;
   conduit::Node &reset_action = reset.append();
   reset_action["action"] = "reset";
   for(int t = 0; t < options.m_time_steps; ++t)
   {
-    // 
+    //
     // update scalars
     //
     for(int z = 0; z < data_set.m_point_dims[2]; ++z)
@@ -541,14 +541,14 @@ int main(int argc, char** argv)
         }
 
         time += options.m_time_delta;
-           
+
         ascent.publish(mesh_data);
         ascent.execute(actions);
         ascent.execute(reset);
       } //for each time step
-  
 
-  // 
+
+  //
   // cleanup
   //
   open_simplex_noise_free(ctx_nodal);

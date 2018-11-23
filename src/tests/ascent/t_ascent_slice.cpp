@@ -127,7 +127,7 @@ TEST(ascent_slice, test_slice)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
+    scenes["s1/plots/p1/field"] = "radial";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
 
@@ -212,7 +212,7 @@ TEST(ascent_slice, test_3slice)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
+    scenes["s1/plots/p1/field"] = "radial";
     scenes["s1/plots/p1/pipeline"] = "pl1";
 
     scenes["s1/image_prefix"] = output_file;

@@ -114,7 +114,7 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
 
 
@@ -187,7 +187,7 @@ TEST(ascent_render_3d, test_render_3d_points)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
 
 
@@ -260,8 +260,8 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
-    scenes["s1/plots/p1/params/points/radius"] = 1.f;
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/points/radius"] = 1.f;
     scenes["s1/image_prefix"] = output_file;
 
 
@@ -334,10 +334,10 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
-    scenes["s1/plots/p1/params/points/radius"] = 0.25f;
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/points/radius"] = 0.25f;
     // this detla is relative to the base radius
-    scenes["s1/plots/p1/params/points/radius_delta"] = 2.0f;
+    scenes["s1/plots/p1/points/radius_delta"] = 2.0f;
     scenes["s1/image_prefix"] = output_file;
 
 
@@ -410,7 +410,7 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/renders/r1/image_name"]   = output_file;
     float bg_color[3] = {1.f, 1.f, 1.f};
     float fg_color[3] = {0.f, 0.f, 0.f};
@@ -486,7 +486,7 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/renders/r1/image_name"]  = output_file;
     scenes["s1/renders/r1/annotations"] = "false";
 
@@ -558,7 +558,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/renders/r1/image_name"]  = output_file + "%04d";
     scenes["s1/renders/r1/annotations"] = "false";
 
@@ -631,7 +631,7 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/renders/r1/image_name"]  = output_file;
     scenes["s1/renders/r1/render_bg"] = "false";
 
@@ -704,7 +704,7 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/renders/r1/camera/azimuth"] = 1.;
     scenes["s1/renders/r1/image_name"]   = output_file;
 
@@ -786,14 +786,14 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
     conduit::Node scenes;
     // plot 1
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
+    scenes["s1/plots/p1/field"] = "radial";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     //plot 2
     scenes["s1/plots/p2/type"]         = "volume";
-    scenes["s1/plots/p2/params/field"] = "braid";
-    scenes["s1/plots/p2/params/min_value"]    = -.5;
-    scenes["s1/plots/p2/params/max_value"]    = .5;
-    scenes["s1/plots/p2/params/color_table/name"]  = "thermal";
+    scenes["s1/plots/p2/field"] = "braid";
+    scenes["s1/plots/p2/min_value"]    = -.5;
+    scenes["s1/plots/p2/max_value"]    = .5;
+    scenes["s1/plots/p2/color_table/name"]  = "thermal";
 
     conduit::Node control_points;
 
@@ -807,7 +807,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
     point5["position"] = 1.0;
     point5["alpha"] = .5;
 
-    scenes["s1/plots/p2/params/color_table/control_points"]  = control_points;
+    scenes["s1/plots/p2/color_table/control_points"]  = control_points;
 
     scenes["s1/image_prefix"] = output_file;
 
@@ -968,7 +968,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
     conduit::Node scenes;
     // plot 1
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial";
+    scenes["s1/plots/p1/field"] = "radial";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     //plot 2
     scenes["s1/plots/p2/type"] = "mesh";
@@ -1047,7 +1047,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
 
 
@@ -1117,7 +1117,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
 
 
@@ -1148,6 +1148,64 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
 
 
 
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_render_ascent_min_max)
+{
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path, "tout_render_3d_ascent_min_max");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/min_value"] = -0.5;
+    scenes["s1/plots/p1/max_value"] = 0.5;
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
 {
@@ -1195,7 +1253,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
@@ -1271,7 +1329,7 @@ TEST(ascent_render_3d, test_3d_render_ascent_runtime_cuda_backend)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
@@ -1348,34 +1406,6 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     // Create the actions.
     //
 
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "volume";
-    scenes["s1/plots/p1/params/field"] = "braid";
-    scenes["s1/image_prefix"] = output_file;
-
-    scenes["s1/renders/r1/image_width"]  = 512;
-    scenes["s1/renders/r1/image_height"] = 512;
-    scenes["s1/renders/r1/image_name"]   = output_file;
-    scenes["s1/renders/r1/color_table/name"]   = "blue";
-
-    //
-    scenes["s1/renders/r2/image_width"]  = 400;
-    scenes["s1/renders/r2/image_height"] = 400;
-    scenes["s1/renders/r2/image_name"]   = output_file1;
-    double vec3[3];
-    vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
-    scenes["s1/renders/r2/camera/look_at"].set_float64_ptr(vec3,3);
-    vec3[0] = 0.; vec3[1] = 25.; vec3[2] = 15.;
-    scenes["s1/renders/r2/camera/position"].set_float64_ptr(vec3,3);
-    vec3[0] = 0.; vec3[1] = -1.; vec3[2] = 0.;
-    scenes["s1/renders/r2/camera/up"].set_float64_ptr(vec3,3);
-    scenes["s1/renders/r2/camera/fov"] = 60.;
-    scenes["s1/renders/r2/camera/xpan"] = 0.;
-    scenes["s1/renders/r2/camera/ypan"] = 0.;
-    scenes["s1/renders/r2/camera/zoom"] = 0.0;
-    scenes["s1/renders/r2/camera/near_plane"] = 0.1;
-    scenes["s1/renders/r2/camera/far_plane"] = 100.1;
-
     conduit::Node control_points;
     conduit::Node &point1 = control_points.append();
     point1["type"] = "rgb";
@@ -1407,7 +1437,37 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     point5["type"] = "alpha";
     point5["position"] = 1.0;
     point5["alpha"] = 1.;
-    scenes["s1/renders/r2/color_table/control_points"] = control_points;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "volume";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/color_table/name"] = "blue";
+    scenes["s1/plots/p1/color_table/control_points"] = control_points;
+
+    scenes["s1/image_prefix"] = output_file;
+
+    scenes["s1/renders/r1/image_width"]  = 512;
+    scenes["s1/renders/r1/image_height"] = 512;
+    scenes["s1/renders/r1/image_name"]   = output_file;
+
+    //
+    scenes["s1/renders/r2/image_width"]  = 400;
+    scenes["s1/renders/r2/image_height"] = 400;
+    scenes["s1/renders/r2/image_name"]   = output_file1;
+    double vec3[3];
+    vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
+    scenes["s1/renders/r2/camera/look_at"].set_float64_ptr(vec3,3);
+    vec3[0] = 0.; vec3[1] = 25.; vec3[2] = 15.;
+    scenes["s1/renders/r2/camera/position"].set_float64_ptr(vec3,3);
+    vec3[0] = 0.; vec3[1] = -1.; vec3[2] = 0.;
+    scenes["s1/renders/r2/camera/up"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r2/camera/fov"] = 60.;
+    scenes["s1/renders/r2/camera/xpan"] = 0.;
+    scenes["s1/renders/r2/camera/ypan"] = 0.;
+    scenes["s1/renders/r2/camera/zoom"] = 0.0;
+    scenes["s1/renders/r2/camera/near_plane"] = 0.1;
+    scenes["s1/renders/r2/camera/far_plane"] = 100.1;
+
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
@@ -1480,8 +1540,8 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     //
 
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "radial_vert";
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "radial_vert";
     scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
@@ -1548,10 +1608,10 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     conduit::Node &scenes = add_plots["scenes"];
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
-    actions.append()["action"] = "execute";
-    actions.append()["action"] = "reset";
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    actions.append()["action"]  = "execute";
+    actions.append()["action"]  = "reset";
 
     Ascent ascent;
 
@@ -1811,8 +1871,8 @@ TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     conduit::Node &scenes = add_plots["scenes"];
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/params/field"] = "braid";
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
     actions.append()["action"] = "execute";
     actions.append()["action"] = "reset";
 
