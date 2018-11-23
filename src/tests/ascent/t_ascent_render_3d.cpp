@@ -1152,6 +1152,17 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
 TEST(ascent_render_3d, test_render_3d_render_ascent_min_max)
 {
 
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D serial test");
+        return;
+    }
+
+    ASCENT_INFO("Testing 3D Rendering with Ascent runtime");
+
     //
     // Create an example mesh.
     //

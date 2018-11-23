@@ -2117,6 +2117,11 @@ CreatePlot::verify_params(const conduit::Node &params,
     bool res = check_string("type",params, info, true);
 
     bool is_mesh = false;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("type");
+    valid_paths.push_back("pipeline");
+
     if(params["type"].as_string() == "mesh")
     {
       is_mesh = true;
@@ -2125,16 +2130,18 @@ CreatePlot::verify_params(const conduit::Node &params,
     if(!is_mesh)
     {
       res &= check_string("field", params, info, true);
+      valid_paths.push_back("field");
+      valid_paths.push_back("points/radius");
+      valid_paths.push_back("points/radius_delta");
+      valid_paths.push_back("min_value");
+      valid_paths.push_back("max_value");
+    }
+    else
+    {
+      valid_paths.push_back("overlay");
+      valid_paths.push_back("show_internal");
     }
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("type");
-    valid_paths.push_back("pipeline");
-    valid_paths.push_back("field");
-    valid_paths.push_back("points/radius");
-    valid_paths.push_back("points/radius_delta");
-    valid_paths.push_back("min_value");
-    valid_paths.push_back("max_value");
 
     std::vector<std::string> ignore_paths;
     ignore_paths.push_back("color_table");
@@ -2381,51 +2388,32 @@ VTKHLagrangian::verify_params(const conduit::Node &params,
                         conduit::Node &info)
 {
     info.reset();
-    bool res = true;
 
-    if(! params.has_child("field") ||
-       ! params["field"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
-    }
-    if(! params.has_child("step_size") ||
-       ! params["step_size"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'step_size'";
-        res = false;
-    }
-    if(! params.has_child("write_frequency") ||
-       ! params["write_frequency"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'write_frequency'";
-        res = false;
-    }
-    if(! params.has_child("cust_res") ||
-       ! params["cust_res"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'cust_res'";
-        res = false;
-    }
-    if(! params.has_child("x_res") ||
-       ! params["x_res"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'x_res'";
-        res = false;
-    }
-    if(! params.has_child("y_res") ||
-       ! params["y_res"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'y_res'";
-        res = false;
-    }
-    if(! params.has_child("z_res") ||
-       ! params["z_res"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'z_res'";
-        res = false;
-    }
+    bool res = check_string("field",params, info, true);
+    res &= check_numeric("step_size", params, info, true);
+    res &= check_numeric("write_frequency", params, info, true);
+    res &= check_numeric("cust_res", params, info, true);
+    res &= check_numeric("x_res", params, info, true);
+    res &= check_numeric("y_res", params, info, true);
+    res &= check_numeric("z_res", params, info, true);
 
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("step_size");
+    valid_paths.push_back("write_frequency");
+    valid_paths.push_back("cust_res");
+    valid_paths.push_back("x_res");
+    valid_paths.push_back("y_res");
+    valid_paths.push_back("z_res");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
     return res;
 }
 
@@ -2504,13 +2492,18 @@ VTKHNoOp::verify_params(const conduit::Node &params,
                         conduit::Node &info)
 {
     info.reset();
-    bool res = true;
 
-    if(! params.has_child("field") ||
-       ! params["field"].dtype().is_string() )
+    bool res = check_string("field",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
     {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;
