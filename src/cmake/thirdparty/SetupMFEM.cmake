@@ -80,6 +80,9 @@ string(REGEX REPLACE  "MFEM_TPLFLAGS +=" "" mfem_tpl_inc_flags ${mfem_tpl_inc_fl
 string(FIND  ${mfem_tpl_inc_flags} "\n" mfem_tpl_inc_flags_end_pos)
 string(SUBSTRING ${mfem_tpl_inc_flags} 0 ${mfem_tpl_inc_flags_end_pos} mfem_tpl_inc_flags)
 string(STRIP ${mfem_tpl_inc_flags} mfem_tpl_inc_flags)
+# this must b be a list style var, otherwise blt/cmake will quote it 
+# some where down the line and undermine the flags
+string (REPLACE " " ";" mfem_tpl_inc_flags "${mfem_tpl_inc_flags}")
 
 # parse link flags
 string(REGEX MATCHALL "MFEM_EXT_LIBS .+\n" mfem_tpl_lnk_flags ${mfem_cfg_file_txt})
