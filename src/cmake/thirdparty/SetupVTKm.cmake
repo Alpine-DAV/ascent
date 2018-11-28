@@ -53,7 +53,12 @@ endif()
 MESSAGE(STATUS "Looking for VTKm using VTKM_DIR = ${VTKM_DIR}")
 
 # use VTKM_DIR to setup the options that cmake's find VTKm needs
-set(VTKm_DIR ${VTKM_DIR}/lib/cmake/vtkm-1.2)
+file(GLOB VTKm_DIR "${VTKM_DIR}/lib/cmake/vtkm-*")
+if(NOT VTKm_DIR)
+    MESSAGE(FATAL_ERROR "Failed to find VTKm at VTKM_DIR=${VTKM_DIR}/lib/cmake/vtk-*")
+endif()
+
+find_package(VTKm REQUIRED)
 
 set(VTKM_FOUND TRUE)
 message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
