@@ -189,12 +189,9 @@ def disable_spack_config_scopes(spack_dir):
     spack_lib_config = pjoin(spack_dir,"lib","spack","spack","config.py")
     print "[disabling config scope (except default) in: %s]" % spack_lib_config
     cfg_script = open(spack_lib_config).read()
-    for cfg_scope_stmt in ["ConfigScope('system', _system_path)",
-                           "ConfigScope('system/%s' % _platform, os.path.join(_system_path, _platform))",
-                           "ConfigScope('site', _site_path)",
-                           "ConfigScope('site/%s' % _platform, os.path.join(_site_path, _platform))",
-                           "ConfigScope('user', _user_path)",
-                           "ConfigScope('user/%s' % _platform, os.path.join(_user_path, _platform))"]:
+    for cfg_scope_stmt in ["('system', os.path.join(spack.paths.system_etc_path, 'spack')),",
+                           "('site', os.path.join(spack.paths.etc_path, 'spack')),",
+                           "('user', spack.paths.user_config_path)"]:
         cfg_script = cfg_script.replace(cfg_scope_stmt,
                                         "#DISABLED BY UBERENV: " + cfg_scope_stmt)
     open(spack_lib_config,"w").write(cfg_script)
