@@ -1218,7 +1218,7 @@ DefaultRender::verify_params(const conduit::Node &params,
     // parse render surprises
     if(params.has_path("renders"))
     {
-      const conduit::Node renders_node = params["renders"];
+      const conduit::Node &renders_node = params["renders"];
       surprises += detail::check_renders_surprises(renders_node);
     }
 
