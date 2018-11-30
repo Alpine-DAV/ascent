@@ -1,23 +1,23 @@
 [
   {
     "action": "add_extracts",
-    "extracts": 
+    "extracts":
     {
-      "e1": 
+      "e1":
       {
         "type": "python",
-         "params": 
+         "params":
          {
            "file": "ascent_tutorial_demo_4_histogram.py"
          }
        }
     }
   },
-  
+
   {
     "action": "execute"
   },
-  
+
   {
     "action": "reset"
   }

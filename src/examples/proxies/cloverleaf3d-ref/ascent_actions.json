@@ -1,29 +1,26 @@
 [
   {
     "action": "add_scenes",
-    "scenes": 
+    "scenes":
     {
-      "s1": 
+      "s1":
       {
-        "plots": 
+        "plots":
         {
-          "p1": 
+          "p1":
           {
             "type": "volume",
-            "params": 
-            {
-              "field": "energy"
-            }
+            "field": "energy"
           }
         }
       }
     }
   },
-  
+
   {
     "action": "execute"
   },
-  
+
   {
     "action": "reset"
   }

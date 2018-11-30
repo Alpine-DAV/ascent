@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
+//
 // Please also read ascent/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 //-----------------------------------------------------------------------------
@@ -76,11 +76,11 @@ TEST(ascent_runtime, test_python_script_extract)
     //
     Node data, verify_info;
     create_3d_example_dataset(data,0,1);
-    data["state/cycle"] = 101; 
-    
+    data["state/cycle"] = 101;
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
-    
+
     //
     // Create the actions.
     //
@@ -88,7 +88,7 @@ TEST(ascent_runtime, test_python_script_extract)
     conduit::Node extracts;
     extracts["e1/type"]  = "python";
     extracts["e1/params/source"] = py_script;
-    
+
     conduit::Node actions;
     // add the extracts
     conduit::Node &add_extracts = actions.append();
@@ -97,9 +97,9 @@ TEST(ascent_runtime, test_python_script_extract)
 
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     actions.print();
-    
+
     //
     // Run Ascent
     //
@@ -112,10 +112,10 @@ TEST(ascent_runtime, test_python_script_extract)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-   
+
 }
 
-// This demos using the ascent python api inside of ascent ... 
+// This demos using the ascent python api inside of ascent ...
 std::string py_script_inception = "\n"
 "import conduit\n"
 "import ascent\n"
@@ -127,7 +127,7 @@ std::string py_script_inception = "\n"
 "actions = conduit.Node()\n"
 "scenes  = conduit.Node()\n"
 "scenes['s1/plots/p1/type'] = 'pseudocolor'\n"
-"scenes['s1/plots/p1/params/field'] = 'radial_vert'\n"
+"scenes['s1/plots/p1/field'] = 'radial_vert'\n"
 "scenes['s1/image_prefix'] = 'tout_python_extract_inception' \n"
 "add_act =actions.append()\n"
 "add_act['action'] = 'add_scenes'\n"
@@ -146,11 +146,11 @@ TEST(ascent_runtime, test_python_extract_inception)
     //
     Node data, verify_info;
     create_3d_example_dataset(data,0,1);
-    data["state/cycle"] = 101; 
-    
+    data["state/cycle"] = 101;
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     verify_info.print();
-    
+
     //
     // Create the actions.
     //
@@ -158,7 +158,7 @@ TEST(ascent_runtime, test_python_extract_inception)
     conduit::Node extracts;
     extracts["e1/type"]  = "python";
     extracts["e1/params/source"] = py_script_inception;
-    
+
     conduit::Node actions;
     // add the extracts
     conduit::Node &add_extracts = actions.append();
@@ -167,9 +167,9 @@ TEST(ascent_runtime, test_python_extract_inception)
 
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-    
+
     actions.print();
-    
+
     //
     // Run Ascent
     //

@@ -65,6 +65,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
 #include <ascent_string_utils.hpp>
+#include <ascent_runtime_param_check.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -126,6 +127,75 @@ namespace filters
 //-----------------------------------------------------------------------------
 namespace detail
 {
+std::string
+check_color_table_surprises(const conduit::Node &color_table)
+{
+  std::string surprises;
+
+  std::vector<std::string> valid_paths;
+  valid_paths.push_back("name");
+
+  std::vector<std::string> ignore_paths;
+  ignore_paths.push_back("control_points");
+
+  surprises += surprise_check(valid_paths, ignore_paths, color_table);
+  if(color_table.has_path("control_points"))
+  {
+    std::vector<std::string> c_valid_paths;
+    c_valid_paths.push_back("type");
+    c_valid_paths.push_back("alpha");
+    c_valid_paths.push_back("color");
+    c_valid_paths.push_back("position");
+
+    const conduit::Node &control_points = color_table["control_points"];
+    const int num_points = control_points.number_of_children();
+    for(int i = 0; i < num_points; ++i)
+    {
+      const conduit::Node &point = control_points.child(i);
+      surprises += surprise_check(c_valid_paths, point);
+    }
+  }
+
+  return surprises;
+}
+
+std::string
+check_renders_surprises(const conduit::Node &renders_node)
+{
+  std::string surprises;
+  const int num_renders = renders_node.number_of_children();
+  // render paths
+  std::vector<std::string> r_valid_paths;
+  r_valid_paths.push_back("image_name");
+  r_valid_paths.push_back("image_width");
+  r_valid_paths.push_back("image_height");
+  r_valid_paths.push_back("camera/look_at");
+  r_valid_paths.push_back("camera/position");
+  r_valid_paths.push_back("camera/up");
+  r_valid_paths.push_back("camera/fov");
+  r_valid_paths.push_back("camera/xpan");
+  r_valid_paths.push_back("camera/ypan");
+  r_valid_paths.push_back("camera/zoom");
+  r_valid_paths.push_back("camera/near_plane");
+  r_valid_paths.push_back("camera/far_plane");
+  r_valid_paths.push_back("type");
+  r_valid_paths.push_back("phi");
+  r_valid_paths.push_back("theta");
+  r_valid_paths.push_back("db_name");
+  // TODO: document
+  r_valid_paths.push_back("render_bg");
+  r_valid_paths.push_back("camera/azimuth");
+  r_valid_paths.push_back("annotations");
+  r_valid_paths.push_back("fg_color");
+  r_valid_paths.push_back("bg_color");
+
+  for(int i = 0; i < num_renders; ++i)
+  {
+    const conduit::Node &render_node = renders_node.child(i);
+    surprises += surprise_check(r_valid_paths, render_node);
+  }
+  return surprises;
+}
 // A simple container to create registry entries for
 // renderer and the data set it renders. Without this,
 // pipeline results (data sets) would be deleted before
@@ -663,23 +733,28 @@ VTKHMarchingCubes::verify_params(const conduit::Node &params,
                                  conduit::Node &info)
 {
     info.reset();
-    bool res = true;
 
-    if(! params.has_child("field") ||
-       ! params["field"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
-    }
+    bool res = check_string("field",params, info, true);
+    bool has_values = check_numeric("iso_values",params, info, false);
+    bool has_levels = check_numeric("levels",params, info, false);
 
-    if((! params.has_child("iso_values") ||
-       ! params["iso_values"].dtype().is_number()) &&
-    (! params.has_child("levels") ||
-       ! params["levels"].dtype().is_number()) )
+    if(!has_values && !has_levels)
     {
         info["errors"].append() = "Missing required numeric parameter. Contour must"
                                   " specify 'iso_values' or 'levels'.";
         res = false;
+    }
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("levels");
+    valid_paths.push_back("iso_values");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;
@@ -755,20 +830,19 @@ VTKHVectorMagnitude::verify_params(const conduit::Node &params,
                                  conduit::Node &info)
 {
     info.reset();
-    bool res = true;
 
-    if(! params.has_child("field") ||
-       ! params["field"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
-    }
+    bool res = check_string("field",params, info, true);
+    res = check_string("output_name",params, info, false) && res;
 
-    if(params.has_child("output_name") &&
-       ! params["output_name"].dtype().is_string() )
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
     {
-        info["errors"].append() = "Optional parameter 'output_name' must be a string";
-        res = false;
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;
@@ -833,8 +907,22 @@ VTKH3Slice::verify_params(const conduit::Node &params,
                          conduit::Node &info)
 {
     info.reset();
-    bool res = true;
 
+    bool res = check_numeric("x_offset",params, info, false);
+    res = check_numeric("y_offset",params, info, false) && res;
+    res = check_numeric("z_offset",params, info, false) && res;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("x_offset");
+    valid_paths.push_back("y_offset");
+    valid_paths.push_back("z_offset");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
     return res;
 }
 
@@ -939,46 +1027,29 @@ VTKHSlice::verify_params(const conduit::Node &params,
                          conduit::Node &info)
 {
     info.reset();
-    bool res = true;
 
-    if(! params.has_path("point/x") ||
-       ! params["point/y"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'point/x'";
-        res = false;
-    }
-    if(! params.has_path("point/y") ||
-       ! params["point/y"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'point/y'";
-        res = false;
-    }
-    if(! params.has_path("point/z") ||
-       ! params["point/z"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'point/z'";
-        res = false;
-    }
+    bool res = check_numeric("point/x",params, info, true);
 
-    if(! params.has_path("normal/x") ||
-       ! params["normal/x"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'normal/x'";
-        res = false;
-    }
-    if(! params.has_path("normal/y") ||
-       ! params["normal/y"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'normal/y'";
-        res = false;
-    }
-    if(! params.has_path("normal/z") ||
-       ! params["normal/z"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'normal/z'";
-        res = false;
-    }
+    res = check_numeric("point/y",params, info, true) && res;
+    res = check_numeric("point/z",params, info, true) && res;
+    res = check_numeric("normal/x",params, info, true) && res;
+    res = check_numeric("normal/y",params, info, true) && res;
+    res = check_numeric("normal/z",params, info, true) && res;
 
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("point/x");
+    valid_paths.push_back("point/y");
+    valid_paths.push_back("point/z");
+    valid_paths.push_back("normal/x");
+    valid_paths.push_back("normal/y");
+    valid_paths.push_back("normal/z");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
 
     return res;
 }
@@ -1046,26 +1117,22 @@ VTKHThreshold::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-    bool res = true;
 
-    if(! params.has_child("field") ||
-       ! params["field"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
-    }
+    bool res = check_string("field",params, info, true);
 
-    if(! params.has_child("min_value") ||
-       ! params["min_value"].dtype().is_number() )
+    res = check_numeric("min_value",params, info, true) && res;
+    res = check_numeric("max_value",params, info, true) && res;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("min_value");
+    valid_paths.push_back("max_value");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
     {
-        info["errors"].append() = "Missing required numeric parameter 'min_value'";
-        res = false;
-    }
-    if(! params.has_child("max_value") ||
-       ! params["max_value"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'max_value'";
-        res = false;
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;
@@ -1137,12 +1204,30 @@ DefaultRender::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-    bool res = true;
-    if(! params.has_child("image_prefix") )
+    bool res = check_string("image_prefix",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("image_prefix");
+
+    std::vector<std::string> ignore_paths;
+    ignore_paths.push_back("renders");
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+
+    // parse render surprises
+    if(params.has_path("renders"))
     {
-        info["errors"].append() = "Missing required string parameter 'image_prefix'";
-        res = false;
+      const conduit::Node &renders_node = params["renders"];
+      surprises += detail::check_renders_surprises(renders_node);
     }
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
     return res;
 }
 
@@ -1321,135 +1406,62 @@ VTKHClip::verify_params(const conduit::Node &params,
 
       if(params.has_child("sphere"))
       {
-         if(!params.has_path("sphere/center/x") ||
-            !params["sphere/center/x"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'sphere/center/x'";
-           res = false;
-         }
+         res = check_numeric("sphere/center/x",params, info, true) && res;
+         res = check_numeric("sphere/center/y",params, info, true) && res;
+         res = check_numeric("sphere/center/z",params, info, true) && res;
+         res = check_numeric("sphere/radius",params, info, true) && res;
 
-         if(!params.has_path("sphere/center/y") ||
-            !params["sphere/center/y"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'sphere/center/y'";
-           res = false;
-         }
-
-         if(!params.has_path("sphere/center/z") ||
-            !params["sphere/center/z"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'sphere/center/z'";
-           res = false;
-         }
-
-         if(!params.has_path("sphere/radius") ||
-            !params["sphere/radius"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'sphere/radius'";
-           res = false;
-         }
       }
       else if(params.has_child("box"))
       {
-         if(!params.has_path("box/min/x") ||
-            !params["box/min/x"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'box/min/x'";
-           res = false;
-         }
-
-         if(!params.has_path("box/min/y") ||
-            !params["box/min/y"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'box/min/y'";
-           res = false;
-         }
-
-         if(!params.has_path("box/min/z") ||
-            !params["box/min/z"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'box/min/z'";
-           res = false;
-         }
-
-         if(!params.has_path("box/max/x") ||
-            !params["box/max/x"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'box/max/x'";
-           res = false;
-         }
-
-         if(!params.has_path("box/max/y") ||
-            !params["box/max/y"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'box/max/y'";
-           res = false;
-         }
-
-         if(!params.has_path("box/max/z") ||
-            !params["box/max/z"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'box/max/z'";
-           res = false;
-         }
+         res = check_numeric("box/min/x",params, info, true) && res;
+         res = check_numeric("box/min/y",params, info, true) && res;
+         res = check_numeric("box/min/z",params, info, true) && res;
+         res = check_numeric("box/max/x",params, info, true) && res;
+         res = check_numeric("box/max/y",params, info, true) && res;
+         res = check_numeric("box/max/z",params, info, true) && res;
       }
       else if(params.has_child("plane"))
       {
-         if(!params.has_path("plane/point/x") ||
-            !params["plane/point/x"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'plane/point/x'";
-           res = false;
-         }
-
-         if(!params.has_path("plane/point/y") ||
-            !params["plane/point/y"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'plane/point/y'";
-           res = false;
-         }
-
-         if(!params.has_path("plane/point/z") ||
-            !params["plane/point/z"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'plane/point/z'";
-           res = false;
-         }
-
-         if(!params.has_path("plane/normal/x") ||
-            !params["plane/normal/x"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'plane/normal/x'";
-           res = false;
-         }
-
-         if(!params.has_path("plane/normal/y") ||
-            !params["plane/normal/y"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'plane/normal/y'";
-           res = false;
-         }
-
-         if(!params.has_path("plane/normal/z") ||
-            !params["plane/normal/z"].dtype().is_number())
-         {
-           info["errors"].append() = "Missing required numeric parameter 'plane/normal/z'";
-           res = false;
-         }
-
+         res = check_numeric("plane/point/x",params, info, true) && res;
+         res = check_numeric("plane/point/y",params, info, true) && res;
+         res = check_numeric("plane/point/z",params, info, true) && res;
+         res = check_numeric("plane/normal/x",params, info, true) && res;
+         res = check_numeric("plane/normal/y",params, info, true) && res;
+         res = check_numeric("plane/normal/z",params, info, true) && res;
       }
     }
 
-    if(params.has_child("invert"))
+    res = check_string("invert",params, info, false) && res;
+    res = check_string("topology",params, info, false) && res;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("invert");
+    valid_paths.push_back("sphere/center/x");
+    valid_paths.push_back("sphere/center/y");
+    valid_paths.push_back("sphere/center/z");
+    valid_paths.push_back("sphere/radius");
+    valid_paths.push_back("box/min/x");
+    valid_paths.push_back("box/min/y");
+    valid_paths.push_back("box/min/z");
+    valid_paths.push_back("box/max/x");
+    valid_paths.push_back("box/max/y");
+    valid_paths.push_back("box/max/z");
+    valid_paths.push_back("plane/point/x");
+    valid_paths.push_back("plane/point/y");
+    valid_paths.push_back("plane/point/z");
+    valid_paths.push_back("plane/normal/x");
+    valid_paths.push_back("plane/normal/y");
+    valid_paths.push_back("plane/normal/z");
+    valid_paths.push_back("topology");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
     {
-        if(!params["invert"].dtype().is_string() )
-        {
-          info["errors"].append() = "Optional string parameter 'invert' is the wrong type.";
-          res = false;
-        }
+      res = false;
+      info["errors"].append() = surprises;
     }
 
-    // TODO: check for other clip types
     return res;
 }
 
@@ -1559,29 +1571,20 @@ VTKHClipWithField::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-    bool res = true;
+    bool res = check_numeric("clip_value",params, info, true);
+    res = check_string("field",params, info, true) && res;
+    res = check_string("invert",params, info, false) && res;
 
-    if(! params.has_child("clip_value") ||
-       ! params["clip_value"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'clip_value'";
-        res = false;
-    }
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("clip_value");
+    valid_paths.push_back("invert");
+    valid_paths.push_back("field");
+    std::string surprises = surprise_check(valid_paths, params);
 
-    if(! params.has_child("field") ||
-       ! params["field"].dtype().is_string() )
+    if(surprises != "")
     {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
-    }
-
-    if(params.has_child("invert"))
-    {
-        if(!params["invert"].dtype().is_string() )
-        {
-          info["errors"].append() = "Optional string parameter 'invert' is the wrong type.";
-          res = false;
-        }
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;
@@ -1656,27 +1659,21 @@ VTKHIsoVolume::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-    bool res = true;
 
-    if(! params.has_child("min_value") ||
-       ! params["min_value"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'min_value'";
-        res = false;
-    }
+    bool res = check_numeric("min_value",params, info, true);
+    res = check_numeric("max_value",params, info, true) && res;
+    res = check_string("field",params, info, true) && res;
 
-    if(! params.has_child("max_value") ||
-       ! params["max_value"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'max_value'";
-        res = false;
-    }
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("min_value");
+    valid_paths.push_back("max_value");
+    valid_paths.push_back("field");
+    std::string surprises = surprise_check(valid_paths, params);
 
-    if(! params.has_child("field") ||
-       ! params["field"].dtype().is_string() )
+    if(surprises != "")
     {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;
@@ -1974,13 +1971,16 @@ DefaultScene::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-    bool res = true;
+    bool res = check_string("field",params, info, true);
 
-    if(! params.has_child("field") ||
-       ! params["field"].dtype().is_string() )
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
     {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
+      res = false;
+      info["errors"].append() = surprises;
     }
     return res;
 }
@@ -2110,20 +2110,18 @@ CreatePlot::declare_interface(Node &i)
 //-----------------------------------------------------------------------------
 bool
 CreatePlot::verify_params(const conduit::Node &params,
-                                  conduit::Node &info)
+                          conduit::Node &info)
 {
     info.reset();
-    bool res = true;
 
-
-    if(! params.has_child("type") ||
-       ! params["type"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'type'";
-        res = false;
-    }
+    bool res = check_string("type",params, info, true);
 
     bool is_mesh = false;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("type");
+    valid_paths.push_back("pipeline");
+
     if(params["type"].as_string() == "mesh")
     {
       is_mesh = true;
@@ -2131,21 +2129,34 @@ CreatePlot::verify_params(const conduit::Node &params,
 
     if(!is_mesh)
     {
-      if(! params.has_child("params") )
-      {
-          info["errors"].append() = "Missing required parameter 'params'";
-          res = false;
-          return res;
-      }
+      res &= check_string("field", params, info, true);
+      valid_paths.push_back("field");
+      valid_paths.push_back("points/radius");
+      valid_paths.push_back("points/radius_delta");
+      valid_paths.push_back("min_value");
+      valid_paths.push_back("max_value");
+    }
+    else
+    {
+      valid_paths.push_back("overlay");
+      valid_paths.push_back("show_internal");
+    }
 
-      conduit::Node plot_params = params["params"];
 
-      if(! plot_params.has_child("field") ||
-         ! plot_params["field"].dtype().is_string() )
-      {
-          info["errors"].append() = "Missing required string parameter 'params/field'";
-          res = false;
-      }
+    std::vector<std::string> ignore_paths;
+    ignore_paths.push_back("color_table");
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(params.has_path("color_table"))
+    {
+      surprises += detail::check_color_table_surprises(params["color_table"]);
+    }
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;
@@ -2161,7 +2172,7 @@ CreatePlot::execute()
     }
 
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
-    conduit::Node plot_params = params()["params"];
+    conduit::Node plot_params = params();
 
     std::string type = params()["type"].as_string();
 
@@ -2377,51 +2388,32 @@ VTKHLagrangian::verify_params(const conduit::Node &params,
                         conduit::Node &info)
 {
     info.reset();
-    bool res = true;
 
-    if(! params.has_child("field") ||
-       ! params["field"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
-    }
-    if(! params.has_child("step_size") ||
-       ! params["step_size"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'step_size'";
-        res = false;
-    }
-    if(! params.has_child("write_frequency") ||
-       ! params["write_frequency"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'write_frequency'";
-        res = false;
-    }
-    if(! params.has_child("cust_res") ||
-       ! params["cust_res"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'cust_res'";
-        res = false;
-    }
-    if(! params.has_child("x_res") ||
-       ! params["x_res"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'x_res'";
-        res = false;
-    }
-    if(! params.has_child("y_res") ||
-       ! params["y_res"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'y_res'";
-        res = false;
-    }
-    if(! params.has_child("z_res") ||
-       ! params["z_res"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numeric parameter 'z_res'";
-        res = false;
-    }
+    bool res = check_string("field",params, info, true);
+    res &= check_numeric("step_size", params, info, true);
+    res &= check_numeric("write_frequency", params, info, true);
+    res &= check_numeric("cust_res", params, info, true);
+    res &= check_numeric("x_res", params, info, true);
+    res &= check_numeric("y_res", params, info, true);
+    res &= check_numeric("z_res", params, info, true);
 
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("step_size");
+    valid_paths.push_back("write_frequency");
+    valid_paths.push_back("cust_res");
+    valid_paths.push_back("x_res");
+    valid_paths.push_back("y_res");
+    valid_paths.push_back("z_res");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
     return res;
 }
 
@@ -2500,13 +2492,18 @@ VTKHNoOp::verify_params(const conduit::Node &params,
                         conduit::Node &info)
 {
     info.reset();
-    bool res = true;
 
-    if(! params.has_child("field") ||
-       ! params["field"].dtype().is_string() )
+    bool res = check_string("field",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
     {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;

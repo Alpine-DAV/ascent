@@ -386,24 +386,24 @@ int main(int argc, char *argv[])
             ConduitDataCollection::GridFunctionToBlueprintField(&e_gf, n_dset["fields"]["specific_internal_energy"]);
             n_dset["state/cycle"] = ti;
             n_dset["state/time"] = t;
-  
+
             ascent.publish(n_dset);
 
             conduit::Node scenes;
             scenes["s1/plots/p1/type"]         = "pseudocolor";
-            scenes["s1/plots/p1/params/field"] = "density";
+            scenes["s1/plots/p1/field"] = "density";
             scenes["s1/plots/p2/type"]         = "mesh";
 
             conduit::Node actions;
             conduit::Node &add_plots = actions.append();
             add_plots["action"] = "add_scenes";
-            add_plots["scenes"] = scenes;   
+            add_plots["scenes"] = scenes;
             conduit::Node &execute = actions.append();
             execute["action"] = "execute";
 
             conduit::Node &reset = actions.append();
             reset["action"] = "reset";
-            
+
             ascent.execute(actions);
          }
 
