@@ -120,11 +120,11 @@ target_link_libraries(rover PUBLIC ${VTKm_LIBRARIES})
 target_include_directories(rover PUBLIC ${VTKm_INCLUDE_DIRS})
 
 if(ENABLE_LOGGING)
-  blt_add_compile_definitions(TO rover FLAGS " -D ROVER_ENABLE_LOGGING=1")
+  blt_add_target_compile_flags(TO rover FLAGS " -D ROVER_ENABLE_LOGGING=1")
 endif()
 
 if(ENABLE_OPENMP)
-  blt_add_compile_definitions(TO rover FLAGS " -D ROVER_ENABLE_OPENMP=1")
+  blt_add_target_compile_flags(TO rover FLAGS " -D ROVER_ENABLE_OPENMP=1")
 endif()
 
 # install target for mpi ver
@@ -179,10 +179,10 @@ if(MPI_FOUND)
           RUNTIME DESTINATION lib
   )
   if(ENABLE_LOGGING)
-    blt_add_compile_definitions(TO rover_mpi FLAGS " -D ROVER_ENABLE_LOGGING=1")
+    blt_add_target_compile_flags(TO rover_mpi FLAGS " -D ROVER_ENABLE_LOGGING=1")
   endif()
   if(ENABLE_OPENMP)
-    blt_add_compile_definitions(TO rover FLAGS " -D ROVER_ENABLE_OPENMP=1")
+    blt_add_target_compile_flags(TO rover FLAGS " -D ROVER_ENABLE_OPENMP=1")
   endif()
 
 endif()
