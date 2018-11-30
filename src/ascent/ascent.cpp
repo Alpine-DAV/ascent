@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
+//
 // Please also read ascent/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -69,7 +69,7 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
-void  
+void
 quiet_handler(const std::string &,
               const std::string &,
               int )
@@ -101,16 +101,23 @@ Ascent::open()
 
 //-----------------------------------------------------------------------------
 void
-CheckForJSONFile(std::string file_name, conduit::Node &node)
+CheckForJSONFile(std::string file_name, conduit::Node &node, bool merge)
 {
     if(!conduit::utils::is_file(file_name))
     {
         return;
     }
-    
-    conduit::Node file_node; 
+
+    conduit::Node file_node;
     file_node.load(file_name, "json");
-    node.update(file_node);
+    if(merge)
+    {
+      node.update(file_node);
+    }
+    else
+    {
+      node = file_node;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -125,9 +132,9 @@ Ascent::open(const conduit::Node &options)
         }
 
         Node processed_opts(options);
-        CheckForJSONFile("ascent_options.json", processed_opts); 
+        CheckForJSONFile("ascent_options.json", processed_opts, true);
 
-        if(options.has_path("messages") && 
+        if(options.has_path("messages") &&
            options["messages"].dtype().is_string() )
         {
             std::string msgs_opt = options["messages"].as_string();
@@ -141,7 +148,7 @@ Ascent::open(const conduit::Node &options)
             }
         }
 
-        if(options.has_path("exceptions") && 
+        if(options.has_path("exceptions") &&
            options["exceptions"].dtype().is_string() )
         {
             std::string excp_opt = options["exceptions"].as_string();
@@ -155,12 +162,12 @@ Ascent::open(const conduit::Node &options)
             }
         }
 
-        if(options.has_path("actions_file") && 
+        if(options.has_path("actions_file") &&
            options["actions_file"].dtype().is_string() )
         {
             m_actions_file = options["actions_file"].as_string();
         }
-        
+
         // don't print info messages unless we are using verbose
         if(!m_verbose_msgs)
         {
@@ -169,9 +176,9 @@ Ascent::open(const conduit::Node &options)
 
         Node cfg;
         ascent::about(cfg);
-    
+
         std::string runtime_type = cfg["default_runtime"].as_string();
-    
+
         if(processed_opts.has_path("runtime"))
         {
             if(processed_opts.has_path("runtime/type"))
@@ -221,11 +228,11 @@ Ascent::open(const conduit::Node &options)
         }
         else
         {
-            ASCENT_ERROR("Unsupported Runtime type " 
+            ASCENT_ERROR("Unsupported Runtime type "
                            << "\"" << runtime_type << "\""
                            << " passed via 'runtime' open option.");
         }
-     
+
         m_runtime->Initialize(processed_opts);
     }
     catch(conduit::Error &e)
@@ -237,7 +244,7 @@ Ascent::open(const conduit::Node &options)
         else
         {
             // NOTE: CONDUIT_INFO could be muted, so we use std::cout
-            std::cout << "[Error] Ascent::open " 
+            std::cout << "[Error] Ascent::open "
                       << e.message() << std::endl;
         }
     }
@@ -267,7 +274,7 @@ Ascent::publish(const conduit::Node &data)
         else
         {
             // NOTE: CONDUIT_INFO could be muted, so we use std::cout
-            std::cout << "[Error] Ascent::publish " 
+            std::cout << "[Error] Ascent::publish "
                       << e.message() << std::endl;
         }
     }
@@ -282,7 +289,7 @@ Ascent::execute(const conduit::Node &actions)
         if(m_runtime != NULL)
         {
             Node processed_actions(actions);
-            CheckForJSONFile(m_actions_file, processed_actions);
+            CheckForJSONFile(m_actions_file, processed_actions, false);
             m_runtime->Execute(processed_actions);
         }
         else
@@ -299,7 +306,7 @@ Ascent::execute(const conduit::Node &actions)
         else
         {
             // NOTE: CONDUIT_INFO could be muted, so we use std::cout
-            std::cout << "[Error] Ascent::execute " 
+            std::cout << "[Error] Ascent::execute "
                       << e.message() << std::endl;
         }
     }
@@ -326,7 +333,7 @@ Ascent::info(conduit::Node &info_out)
         else
         {
             // NOTE: CONDUIT_INFO could be muted, so we use std::cout
-            std::cout << "[Error] Ascent::info " 
+            std::cout << "[Error] Ascent::info "
                       << e.message() << std::endl;
         }
     }
@@ -354,7 +361,7 @@ Ascent::close()
         else
         {
             // NOTE: CONDUIT_INFO could be muted, so we use std::cout
-            std::cout << "[Error] Ascent::close " 
+            std::cout << "[Error] Ascent::close "
                       << e.message() << std::endl;
         }
     }
@@ -367,7 +374,7 @@ about()
     Node n;
     ascent::about(n);
 
-    
+
     std::string ASCENT_MASCOT = "\n"
     "                                       \n"
     "         &&&&&&&&&&&                   \n"
@@ -403,9 +410,9 @@ about()
     "\n"
     " Derived from:\n"
     "  https://www.thingiverse.com/thing:5340\n";
-    
+
     return n.to_json() + "\n" + ASCENT_MASCOT;
-    
+
 }
 
 //---------------------------------------------------------------------------//
@@ -419,7 +426,7 @@ about(conduit::Node &n)
 #ifdef ASCENT_GIT_SHA1
     n["git_sha1"] = CONDUIT_GIT_SHA1;
 #endif
-    
+
     n["compilers/cpp"] = ASCENT_CPP_COMPILER;
 #ifdef ASCENT_FORTRAN_COMPILER
     n["compilers/fortran"] = ASCENT_FORTRAN_COMPILER;
@@ -429,10 +436,10 @@ about(conduit::Node &n)
     n["platform"] = "windows";
 #elif defined(ASCENT_PLATFORM_APPLE)
     n["platform"] = "apple";
-#else 
+#else
     n["platform"] = "linux";
 #endif
-    
+
     n["system"] = ASCENT_SYSTEM_TYPE;
     n["install_prefix"] = ASCENT_INSTALL_PREFIX;
     n["license"] = ASCENT_LICENSE_TEXT;
