@@ -1,14 +1,14 @@
 [
    {
       "action": "add_pipelines",
-      "pipelines": 
+      "pipelines":
       {
-        "pl1": 
+        "pl1":
         {
-          "f1": 
+          "f1":
           {
             "type": "contour",
-            "params": 
+            "params":
             {
               "field": "velocity_x",
               "iso_values": 1.0
@@ -19,37 +19,31 @@
     },
    {
      "action": "add_scenes",
-     "scenes": 
+     "scenes":
      {
-       "scene1": 
+       "scene1":
        {
-         "plots": 
+         "plots":
          {
-           "plt1": 
+           "plt1":
            {
              "type": "pseudocolor",
              "pipeline": "pl1",
-             "params": 
-             {
-               "field": "pressure"
-             }
+             "field": "pressure"
            },
-           "plt2": 
+           "plt2":
            {
              "type": "volume",
-             "params": 
-             {
-               "field": "energy"
-             }
+             "field": "energy"
            }
          }
        }
      }
-   },  
+   },
    {
      "action": "execute"
    },
-   
+
    {
      "action": "reset"
    }

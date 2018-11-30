@@ -26,21 +26,21 @@ static int max_backlog = 0;
 
 void writeAscentData(Ascent &ascent, Grid_Data *grid_data, int timeStep)
 {
-  
+
   grid_data->kernel->LTimes(grid_data);
   conduit::Node data;
-  
+
   int mpi_size;
   MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   int num_zone_sets = grid_data->zs_to_sdomid.size();
 
-  // TODO: we don't support domain overloading ... 
+  // TODO: we don't support domain overloading ...
   for(int sdom_idx = 0; sdom_idx < grid_data->num_zone_sets; ++sdom_idx)
   {
     ASCENT_BLOCK_TIMER(COPY_DATA);
-    
+
     int sdom_id =  grid_data->zs_to_sdomid[sdom_idx];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
     //create coords array
@@ -78,18 +78,18 @@ void writeAscentData(Ascent &ascent, Grid_Data *grid_data, int timeStep)
     data["fields/phi/association"] = "element";
     data["fields/phi/topology"] = "mesh";
     data["fields/phi/type"] = "scalar";
-  
+
     data["fields/phi/values"].set(conduit::DataType::float64(sdom.num_zones));
     conduit::float64 * phi_scalars = data["fields/phi/values"].value();
 
     // TODO can we do this with strides and not copy?
     for(int i = 0; i < sdom.num_zones; i++)
     {
-      phi_scalars[i] = (*sdom.phi)(0,0,i);  
-    } 
+      phi_scalars[i] = (*sdom.phi)(0,0,i);
+    }
 
   }//each sdom
-  
+
    //------- end wrapping with Conduit here -------//
   conduit::Node verify_info;
   if(!conduit::blueprint::mesh::verify(data,verify_info))
@@ -101,17 +101,17 @@ void writeAscentData(Ascent &ascent, Grid_Data *grid_data, int timeStep)
       CONDUIT_INFO("blueprint verify succeeded");
   }
 
-  conduit::Node actions;   
+  conduit::Node actions;
   conduit::Node scenes;
   scenes["s1/plots/p1/type"]         = "volume";
-  scenes["s1/plots/p1/params/field"] = "phi";
+  scenes["s1/plots/p1/field"] = "phi";
 
 
   conduit::Node &add_plots = actions.append();
   add_plots["action"] = "add_scenes";
   add_plots["scenes"] = scenes;
 
-  actions.append()["action"] = "execute";  
+  actions.append()["action"] = "execute";
   actions.append()["action"] = "reset";
   ascent.publish(data);
   ascent.execute(actions);
@@ -137,11 +137,11 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
 
   BLOCK_TIMER(grid_data->timing, Solve);
   {
-  
+
   // Loop over iterations
   double part_last = 0.0;
  for(int iter = 0;iter < grid_data->niter;++ iter){
-   
+
    {//ascent block timer
      ASCENT_BLOCK_TIMER(KRIPKE_MAIN_LOOP);
     /*
@@ -212,28 +212,28 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
     }
     part_last = part;
   }
-  
+
   ascent.close();
   }//Solve block
-  
+
   //Ascent: we don't want to execute all loop orderings, so we will just exit;
   MPI_Finalize();
   exit(0);
   return(0);
-}   
-    
+}
+
 /*  --------------------------------------------------------------------------
  *  --------------------------------------------------------------------------
  *   End Ascent Integration
  *  --------------------------------------------------------------------------
  *  --------------------------------------------------------------------------*/
-    
-    
+
+
 /**
   Perform full parallel sweep algorithm on subset of subdomains.
-*/  
+*/
 void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi)
-{   
+{
   // Create a new sweep communicator object
   ParallelComm *comm = NULL;
   if(block_jacobi){
