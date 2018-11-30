@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
+//
 // Please also read ascent/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -98,7 +98,7 @@ MFEMDataSet::MFEMDataSet(mfem::Mesh *mesh)
 
 }
 
-void 
+void
 MFEMDataSet::set_mesh(mfem::Mesh *mesh)
 {
   m_mesh = mesh;
@@ -110,7 +110,7 @@ MFEMDataSet::get_mesh()
   return m_mesh;
 }
 
-void 
+void
 MFEMDataSet::add_field(mfem::GridFunction *field, const std::string &name)
 {
   m_fields[name] = field;
@@ -122,7 +122,7 @@ MFEMDataSet::get_field_map()
   return m_fields;
 }
 
-bool 
+bool
 MFEMDataSet::has_field(const std::string &field_name)
 {
   auto it = m_fields.find(field_name);
@@ -137,11 +137,11 @@ MFEMDataSet::get_field(const std::string &field_name)
     std::string msg = "MFEMDataSet: no field named : " + field_name;
     ASCENT_ERROR(msg);
   }
-  
+
   return m_fields[field_name];
 }
 
-int 
+int
 MFEMDataSet::num_fields()
 {
   return m_fields.size();
@@ -155,9 +155,9 @@ MFEMDataSet::num_fields()
 MFEMDomains*
 MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
                                         const std::string &topo_name)
-{       
- 
-    // treat everything as a multi-domain data set 
+{
+
+    // treat everything as a multi-domain data set
 
     MFEMDomains *res = new MFEMDomains;
 
@@ -168,12 +168,12 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
     for(int i = 0; i < num_domains; ++i)
     {
       MFEMDataSet *dset = new MFEMDataSet();
-      const conduit::Node &dom = node.child(i);      
+      const conduit::Node &dom = node.child(i);
       // this should exist
       int domain_id = dom["state/domain_id"].to_int();
       // insert domain conversion
 
-      bool zero_copy = false;
+      bool zero_copy = true;
       mfem::Mesh *mesh = nullptr;
       mesh = mfem::ConduitDataCollection::BlueprintMeshToMesh(dom, topo_name, zero_copy);
       dset->set_mesh(mesh);
@@ -182,12 +182,12 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
       {
         int cycle = node["state/cycle"].to_int32();
       }
-  
+
       std::string t_name = topo_name;
       // no topology name provied, use the first
       if(t_name == "")
       {
-        std::vector<std::string> tnames = dom["topologies"].child_names(); 
+        std::vector<std::string> tnames = dom["topologies"].child_names();
         if(tnames.size() > 0)
         {
           t_name = tnames[0];
@@ -208,12 +208,12 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
       if(dom.has_path("fields"))
       {
         const int num_fields = dom["fields"].number_of_children();
-        std::vector<std::string> fnames = dom["fields"].child_names(); 
+        std::vector<std::string> fnames = dom["fields"].child_names();
         for(int f = 0; f < num_fields; ++f)
         {
           const conduit::Node &field = dom["fields"].child(f);
-           
-          // skip any field that has a unsupported basis type 
+
+          // skip any field that has a unsupported basis type
           //      (we only supprt H1 (continuos) and L2 (discon)
           bool unsupported = false;
           if(field.has_child("basis"))
@@ -227,47 +227,47 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
           }
           // skip mesh nodes gf since they are already processed
           // skip attribute fields, they aren't grid functions
-          if ( fnames[f] != nodes_gf_name && 
+          if ( fnames[f] != nodes_gf_name &&
               fnames[f].find("_attribute") == std::string::npos &&
-              !unsupported) 
+              !unsupported)
           {
-            mfem::GridFunction *gf = mfem::ConduitDataCollection::BlueprintFieldToGridFunction(mesh, 
-                                                                                               field, 
+            mfem::GridFunction *gf = mfem::ConduitDataCollection::BlueprintFieldToGridFunction(mesh,
+                                                                                               field,
                                                                                                zero_copy);
-            dset->add_field(gf, fnames[f]); 
+            dset->add_field(gf, fnames[f]);
           }
         }
       }
 
       res->m_data_sets.push_back(dset);
       res->m_domain_ids.push_back(domain_id);
-    
-    }    
+
+    }
     return res;
 }
 
 // although is should probably never be the case that on domain
-// is high order and the others are not, this method will 
+// is high order and the others are not, this method will
 // return true if at least one domian is higher order
-bool 
+bool
 MFEMDataAdapter::IsHighOrder(const conduit::Node &n)
 {
-  
-  // treat everything as a multi-domain data set 
+
+  // treat everything as a multi-domain data set
   const int num_domains = n.number_of_children();
   for(int i = 0; i < num_domains; ++i)
   {
-    const conduit::Node &dom = n.child(i);      
+    const conduit::Node &dom = n.child(i);
     if(dom.has_path("fields"))
     {
       const conduit::Node &fields = dom["fields"];
       const int num_fields= fields.number_of_children();
       for(int t = 0; t < num_fields; ++t)
       {
-        const conduit::Node &field = fields.child(t);      
+        const conduit::Node &field = fields.child(t);
         if(field.has_path("basis")) return true;
       }
-      
+
     }
   }
 
@@ -300,20 +300,20 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
   for(int i = 0; i < n_doms; ++i)
   {
 
-    conduit::Node &n_dset = output.append(); 
+    conduit::Node &n_dset = output.append();
     n_dset["state/domain_id"] = int(ho_domains->m_domain_ids[i]);
 
     // get the high order data
-    mfem::Mesh *ho_mesh = ho_domains->m_data_sets[i]->get_mesh(); 
+    mfem::Mesh *ho_mesh = ho_domains->m_data_sets[i]->get_mesh();
     const mfem::FiniteElementSpace *ho_fes_space = ho_mesh->GetNodalFESpace();
     const mfem::FiniteElementCollection *ho_fes_col = ho_fes_space->FEColl();
     // refine the mesh and convert to blueprint
-    mfem::Mesh *lo_mesh = new mfem::Mesh(ho_mesh, refinement, mfem::BasisType::GaussLobatto); 
+    mfem::Mesh *lo_mesh = new mfem::Mesh(ho_mesh, refinement, mfem::BasisType::GaussLobatto);
     MeshToBlueprintMesh (lo_mesh, n_dset);
     //n_dset.print();
-    //std::ofstream lovtk("low.vtk"); 
+    //std::ofstream lovtk("low.vtk");
     //lo_mesh->PrintVTK(lovtk);
-    
+
     int conn_size = n_dset["topologies/main/elements/connectivity"].dtype().number_of_elements();
     //int dims = ho_mesh->Dimension();
 
@@ -328,9 +328,9 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
       bool node_centered = basis.find("H1_") != std::string::npos;
 
       mfem::FiniteElementSpace *ho_fes = ho_gf->FESpace();
-      if(ho_fes == nullptr) 
+      if(ho_fes == nullptr)
       {
-        ASCENT_ERROR("Linearize: high order gf finite element space is null") 
+        ASCENT_ERROR("Linearize: high order gf finite element space is null")
       }
       // create the low order grid function
       mfem::FiniteElementCollection *lo_col = nullptr;
@@ -361,18 +361,18 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
       {
         n_field["association"] = "element";
       }
-      
+
       delete lo_col;
       delete lo_fes;
       delete lo_gf;
     }
-    
+
     conduit::Node info;
     bool success = conduit::blueprint::verify("mesh",n_dset,info);
-    if(!success) 
+    if(!success)
     {
       info.print();
-      ASCENT_ERROR("Linearize: failed to build a blueprint conforming data set from mfem") 
+      ASCENT_ERROR("Linearize: failed to build a blueprint conforming data set from mfem")
     }
     delete lo_mesh;
 
@@ -634,7 +634,7 @@ MFEMDataAdapter::ElementTypeToShapeName(mfem::Element::Type element_type)
 
    return "unknown";
 }
- 
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
