@@ -1,43 +1,43 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-749865
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Rover. 
-// 
+//
+// This file is part of Rover.
+//
 // Please also read rover/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 #include <ray_generators/visit_generator.hpp>
 #include <utils/rover_logging.hpp>
@@ -66,8 +66,8 @@ VisitGenerator::~VisitGenerator()
 }
 
 template<typename T>
-void 
-VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays) 
+void
+VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
 {
   vtkmTimer timer;
   double time = 0;
@@ -76,16 +76,16 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
   const int size = m_width * m_height;
 
   rays.Resize(size, vtkm::cont::DeviceAdapterTagSerial());
-  
+
   vtkm::Vec<T,3> view_side;
 
-  view_side[0] = m_params.m_view_up[1] * m_params.m_normal[2] 
+  view_side[0] = m_params.m_view_up[1] * m_params.m_normal[2]
                  - m_params.m_view_up[2] * m_params.m_normal[1];
 
-  view_side[1] = -m_params.m_view_up[0] * m_params.m_normal[2] 
+  view_side[1] = -m_params.m_view_up[0] * m_params.m_normal[2]
                  + m_params.m_view_up[2] * m_params.m_normal[0];
 
-  view_side[2] = m_params.m_view_up[0] * m_params.m_normal[1] 
+  view_side[2] = m_params.m_view_up[0] * m_params.m_normal[1]
                  - m_params.m_view_up[1] * m_params.m_normal[0];
 
   T near_height, view_height, far_height;
@@ -128,17 +128,17 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
   far_dx  = (2. * far_width)   / m_width;
   far_dy  = (2. * far_height)  / m_height;
 
-  auto origin_x = rays.OriginX.GetPortalControl(); 
-  auto origin_y = rays.OriginY.GetPortalControl(); 
-  auto origin_z = rays.OriginZ.GetPortalControl(); 
+  auto origin_x = rays.OriginX.GetPortalControl();
+  auto origin_y = rays.OriginY.GetPortalControl();
+  auto origin_z = rays.OriginZ.GetPortalControl();
 
-  auto dir_x = rays.DirX.GetPortalControl(); 
-  auto dir_y = rays.DirY.GetPortalControl(); 
-  auto dir_z = rays.DirZ.GetPortalControl(); 
+  auto dir_x = rays.DirX.GetPortalControl();
+  auto dir_y = rays.DirY.GetPortalControl();
+  auto dir_z = rays.DirZ.GetPortalControl();
 
-  auto pixel_id = rays.PixelIdx.GetPortalControl(); 
-  const int x_size = m_width; 
-  const int y_size = m_height; 
+  auto pixel_id = rays.PixelIdx.GetPortalControl();
+  const int x_size = m_width;
+  const int y_size = m_height;
 
   const T x_factor = - (2. * m_params.m_image_pan[0] * m_params.m_image_zoom + 1.);
   const T x_start  = x_factor * near_width + near_dx / 2.;
@@ -152,10 +152,12 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
   {
     const T near_y = y_start + T(y) * near_dy;
     const T far_y = y_end + T(y) * far_dy;
+#ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for
+#endif
     for(int x = 0; x < x_size; ++x)
     {
-      const int id = y * x_size + x;    
+      const int id = y * x_size + x;
 
       T near_x = x_start + T(x) * near_dx;
       T far_x = x_end + T(x) * far_dx;
@@ -176,36 +178,38 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
       dir_x.Set(id, dir[0]);
       dir_y.Set(id, dir[1]);
       dir_z.Set(id, dir[2]);
-      
+
     }
   }
  auto hit_portal = rays.HitIdx.GetPortalControl();
  auto min_portal = rays.MinDistance.GetPortalControl();
  auto max_portal = rays.MaxDistance.GetPortalControl();
-  
+
   // set a couple other ray variables
   ROVER_INFO("Ray size "<<size);
+#ifdef ROVER_ENABLE_OPENMP
   #pragma omp parallel for
+#endif
   for(int i = 0; i < size; ++i)
   {
     hit_portal.Set(i, -2);
     min_portal.Set(i, 0.f);
     max_portal.Set(i, std::numeric_limits<T>::max());
   }
-  
+
   time = timer.GetElapsedTime();
   ROVER_DATA_CLOSE(time);
 
 }
 
-void 
-VisitGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays) 
+void
+VisitGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays)
 {
   gen_rays(rays);
 }
 
-void 
-VisitGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays) 
+void
+VisitGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays)
 {
   gen_rays(rays);
 }
@@ -217,7 +221,7 @@ VisitGenerator::set_params(const VisitParams &params)
 }
 
 void
-VisitGenerator::print_params() const 
+VisitGenerator::print_params() const
 {
   m_params.print();
 }
