@@ -1,43 +1,43 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-749865
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Rover. 
-// 
+//
+// This file is part of Rover.
+//
 // Please also read rover/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 #include <utils/rover_logging.hpp>
 #include <compositing/compositor.hpp>
@@ -54,7 +54,7 @@ namespace rover {
 namespace detail
 {
 template<template <typename> class PartialType, typename FloatType>
-void BlendPartials(const int &total_segments, 
+void BlendPartials(const int &total_segments,
                    const int &total_partial_comps,
                    std::vector<int> &pixel_work_ids,
                    std::vector<PartialType<FloatType>> &partials,
@@ -63,9 +63,11 @@ void BlendPartials(const int &total_segments,
 {
   ROVER_INFO("Blending partials volume or absoption");
   //
-  // Perform the compositing and output the result in the output 
+  // Perform the compositing and output the result in the output
   //
+#ifdef ROVER_ENABLE_OPENMP
   #pragma omp parallel for
+#endif
   for(int i = 0; i < total_segments; ++i)
   {
     int current_index = pixel_work_ids[i];
@@ -76,7 +78,7 @@ void BlendPartials(const int &total_segments,
     while(result.m_pixel_id == next.m_pixel_id)
     {
       result.blend(next);
-      if(current_index + 1 >= total_partial_comps) 
+      if(current_index + 1 >= total_partial_comps)
       {
         // we could break early for volumes,
         // but blending past 1.0 alpha is no op.
@@ -88,13 +90,13 @@ void BlendPartials(const int &total_segments,
     output_partials[output_offset + i] = result;
   }
 
-  //placeholder 
+  //placeholder
   //PartialType<FloatType>::composite_background(output_partials, background_values);
 
 }
 template<typename T>
 void
-BlendEmission(const int &total_segments, 
+BlendEmission(const int &total_segments,
               const int &total_partial_comps,
               std::vector<int> &pixel_work_ids,
               std::vector<EmissionPartial<T>> &partials,
@@ -103,11 +105,13 @@ BlendEmission(const int &total_segments,
 {
   ROVER_INFO("Blending partials with emission");
   //
-  // Perform the compositing and output the result in the output 
+  // Perform the compositing and output the result in the output
   // This code computes the optical depth (total absorption)
   // along each rays path.
   //
+#ifdef ROVER_ENABLE_OPENMP
   #pragma omp parallel for
+#endif
   for(int i = 0; i < total_segments; ++i)
   {
     int current_index = pixel_work_ids[i];
@@ -118,7 +122,7 @@ BlendEmission(const int &total_segments,
     while(result.m_pixel_id == next.m_pixel_id)
     {
       result.blend_absorption(next);
-      if(current_index == total_partial_comps - 1) 
+      if(current_index == total_partial_comps - 1)
       {
         break;
       }
@@ -128,19 +132,21 @@ BlendEmission(const int &total_segments,
     output_partials[output_offset + i] = result;
   }
 
-  //placeholder 
+  //placeholder
   //EmissionPartial::composite_background(output_partials);
-  // TODO: now blend source signature with output 
-  
+  // TODO: now blend source signature with output
+
   //
   //  Emission bins contain the amout of energy that leaves each
-  //  ray segment. To compute the amount of energy that reaches 
+  //  ray segment. To compute the amount of energy that reaches
   //  the detector, we must multiply the segments emissed energy
   //  by the optical depth of the remaining path to the detector.
   //  To calculate the optical depth of the remaining path, we
-  //  do perform a reverse scan of absorption for each pixel id 
+  //  do perform a reverse scan of absorption for each pixel id
   //
+#ifdef ROVER_ENABLE_OPENMP
   #pragma omp parallel for
+#endif
   for(int i = 0; i < total_segments; ++i)
   {
     const int segment_start = pixel_work_ids[i];
@@ -159,21 +165,21 @@ BlendEmission(const int &total_segments,
     //
     // set the intensity emerging out of the last segment
     //
-    output_partials[output_offset + i].m_emission_bins 
+    output_partials[output_offset + i].m_emission_bins
       = partials[current_index].m_emission_bins;
-   
+
     //
     // now move backwards accumulating absorption for each segment
-    // and then blending the intensity emerging from the previous 
+    // and then blending the intensity emerging from the previous
     // segment.
     //
     current_index--;
     while(current_index != segment_start - 1)
     {
-      partials[current_index].blend_absorption(partials[current_index + 1]);  
+      partials[current_index].blend_absorption(partials[current_index + 1]);
       // mult this segments emission by the absorption in front
-      partials[current_index].blend_emission(partials[current_index + 1]);  
-      // add remaining emissed engery to the output 
+      partials[current_index].blend_emission(partials[current_index + 1]);
+      // add remaining emissed engery to the output
       output_partials[output_offset + i].add_emission(partials[current_index]);
 
       --current_index;
@@ -183,7 +189,7 @@ BlendEmission(const int &total_segments,
 
 }
 template<>
-void BlendPartials<EmissionPartial, float>(const int &total_segments, 
+void BlendPartials<EmissionPartial, float>(const int &total_segments,
                                            const int &total_partial_comps,
                                            std::vector<int> &pixel_work_ids,
                                            std::vector<EmissionPartial<float>> &partials,
@@ -191,7 +197,7 @@ void BlendPartials<EmissionPartial, float>(const int &total_segments,
                                            const int output_offset)
 {
 
-  BlendEmission(total_segments, 
+  BlendEmission(total_segments,
                 total_partial_comps,
                 pixel_work_ids,
                 partials,
@@ -200,7 +206,7 @@ void BlendPartials<EmissionPartial, float>(const int &total_segments,
 }
 
 template<>
-void BlendPartials<EmissionPartial, double>(const int &total_segments, 
+void BlendPartials<EmissionPartial, double>(const int &total_segments,
                                             const int &total_partial_comps,
                                             std::vector<int> &pixel_work_ids,
                                             std::vector<EmissionPartial<double>> &partials,
@@ -208,7 +214,7 @@ void BlendPartials<EmissionPartial, double>(const int &total_segments,
                                             const int output_offset)
 {
 
-  BlendEmission(total_segments, 
+  BlendEmission(total_segments,
                 total_partial_comps,
                 pixel_work_ids,
                 partials,
@@ -236,14 +242,14 @@ Compositor<PartialType>::~Compositor()
 //--------------------------------------------------------------------------------------------
 
 template<typename PartialType>
-void 
-Compositor<PartialType>::extract(std::vector<PartialImage<typename PartialType::ValueType>> &partial_images, 
+void
+Compositor<PartialType>::extract(std::vector<PartialImage<typename PartialType::ValueType>> &partial_images,
                           std::vector<PartialType> &partials,
                           int &global_min_pixel,
                           int &global_max_pixel)
 {
-  vtkmTimer tot_timer;  
-  vtkmTimer timer;  
+  vtkmTimer tot_timer;
+  vtkmTimer timer;
   double time = 0;
   ROVER_DATA_OPEN("compositing_extract");
 
@@ -273,22 +279,26 @@ Compositor<PartialType>::extract(std::vector<PartialImage<typename PartialType::
     //  Extract the partial composites into a contiguous array
     //
 
-    vtkmTimer timer1;  
+    vtkmTimer timer1;
     const int image_size = partial_images[i].m_buffer.GetSize();
+#ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for
+#endif
     for(int j = 0; j < image_size; ++j)
     {
       int index = offsets[i] + j;
       partials[index].load_from_partial(partial_images[i], j);
     }
-    ROVER_DATA_ADD("load from partials",timer1.GetElapsedTime()); 
+    ROVER_DATA_ADD("load from partials",timer1.GetElapsedTime());
     timer1.Reset();
     //
     // Calculate the range of pixel ids each domain has
     //
     auto id_portal = partial_images[i].m_pixel_ids.GetPortalConstControl();
     int max_pixel = std::numeric_limits<int>::min();
+#ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for reduction(max:max_pixel)
+#endif
     for(int j = 0; j < image_size; ++j)
     {
       int val = static_cast<int>(id_portal.Get(j));
@@ -297,14 +307,16 @@ Compositor<PartialType>::extract(std::vector<PartialImage<typename PartialType::
         max_pixel = val;
       }
     }
-    ROVER_DATA_ADD("max_pixel",timer1.GetElapsedTime()); 
+    ROVER_DATA_ADD("max_pixel",timer1.GetElapsedTime());
     timer1.Reset();
 
     int min_pixel = std::numeric_limits<int>::max();
+#ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for reduction(min:min_pixel)
+#endif
     for(int j = 0; j < image_size; ++j)
     {
-      
+
       int val = static_cast<int>(id_portal.Get(j));
       if(val < min_pixel)
       {
@@ -316,25 +328,25 @@ Compositor<PartialType>::extract(std::vector<PartialImage<typename PartialType::
       pixel_maxs[i] = max_pixel;
     }
 
-    ROVER_DATA_ADD("min_pixel",timer1.GetElapsedTime()); 
+    ROVER_DATA_ADD("min_pixel",timer1.GetElapsedTime());
     timer1.Reset();
   }// for each partial image
   time = timer.GetElapsedTime();
-  ROVER_DATA_ADD("merge_partials",time); 
+  ROVER_DATA_ADD("merge_partials",time);
   timer.Reset();
-  // 
+  //
   // determine the global pixel mins and maxs
   //
   global_min_pixel = std::numeric_limits<int>::max();
   global_max_pixel = std::numeric_limits<int>::min();
   for(int i = 0; i < num_partial_images; ++i)
   {
-    global_min_pixel = std::min(global_min_pixel, pixel_mins[i]);   
-    global_max_pixel = std::max(global_max_pixel, pixel_maxs[i]);   
+    global_min_pixel = std::min(global_min_pixel, pixel_mins[i]);
+    global_max_pixel = std::max(global_max_pixel, pixel_maxs[i]);
   }
 
   time = timer.GetElapsedTime();
-  ROVER_DATA_ADD("local_pixels",time); 
+  ROVER_DATA_ADD("local_pixels",time);
   timer.Reset();
 #ifdef ROVER_PARALLEL
   int rank_min = global_min_pixel;
@@ -348,7 +360,7 @@ Compositor<PartialType>::extract(std::vector<PartialImage<typename PartialType::
 #endif
 
   time = timer.GetElapsedTime();
-  ROVER_DATA_ADD("global_pixels",time); 
+  ROVER_DATA_ADD("global_pixels",time);
 
   timer.Reset();
 
@@ -362,8 +374,8 @@ Compositor<PartialType>::extract(std::vector<PartialImage<typename PartialType::
 
 //--------------------------------------------------------------------------------------------
 template<typename PartialType>
-void 
-Compositor<PartialType>::composite_partials(std::vector<PartialType> &partials, 
+void
+Compositor<PartialType>::composite_partials(std::vector<PartialType> &partials,
                                             std::vector<PartialType> &output_partials)
 {
   const int total_partial_comps = partials.size();
@@ -375,9 +387,9 @@ Compositor<PartialType>::composite_partials(std::vector<PartialType> &partials,
   //
   // Sort the composites
   //
-  std::sort(partials.begin(), partials.end());  
+  std::sort(partials.begin(), partials.end());
   ROVER_INFO("Sorted partials");
-  // 
+  //
   // Find the number of unique pixel_ids with work
   //
   std::vector<unsigned char> work_flags;
@@ -408,7 +420,9 @@ Compositor<PartialType>::composite_partials(std::vector<PartialType> &partials,
   }
   const int n_minus_one =  total_partial_comps - 1;
 
+#ifdef ROVER_ENABLE_OPENMP
   #pragma omp parallel for
+#endif
   for(int i = 1; i < n_minus_one; ++i)
   {
     unsigned char work_flag = 0;
@@ -438,14 +452,19 @@ Compositor<PartialType>::composite_partials(std::vector<PartialType> &partials,
   }
   // count the number of of unique pixels
   int total_segments = 0;
+
+#ifdef ROVER_ENABLE_OPENMP
   #pragma omp parallel for shared(work_flags) reduction(+:total_segments)
+#endif
   for(int i = 0; i < total_partial_comps; ++i)
   {
     total_segments += work_flags[i];
   }
 
   int total_unique_pixels = 0;
+#ifdef ROVER_ENABLE_OPENMP
   #pragma omp parallel for shared(unique_flags) reduction(+:total_unique_pixels)
+#endif
   for(int i = 0; i < total_partial_comps; ++i)
   {
     total_unique_pixels += unique_flags[i];
@@ -458,7 +477,7 @@ Compositor<PartialType>::composite_partials(std::vector<PartialType> &partials,
   {
     //nothing to do
   }
- 
+
   //
   // find the pixel indexes that have compositing work
   //
@@ -494,22 +513,24 @@ Compositor<PartialType>::composite_partials(std::vector<PartialType> &partials,
   ROVER_INFO("Total output size "<<total_output_pixels);
 
   output_partials.resize(total_output_pixels);
-  
-  // 
+
+  //
   // Gather the unique pixels into the output
   //
-  #pragma omp parallel for 
+#ifdef ROVER_ENABLE_OPENMP
+  #pragma omp parallel for
+#endif
   for(int i = 0; i < total_unique_pixels; ++i)
   {
     PartialType result = partials[unique_ids[i]];
     output_partials[i] = result;
   }
-  
+
   //
   // perform compositing if there are more than
   // one segment per ray
   //
-  detail::BlendPartials(total_segments, 
+  detail::BlendPartials(total_segments,
                         total_partial_comps,
                         pixel_work_ids,
                         partials,
@@ -521,7 +542,7 @@ Compositor<PartialType>::composite_partials(std::vector<PartialType> &partials,
 //--------------------------------------------------------------------------------------------
 
 template<typename PartialType>
-PartialImage<typename PartialType::ValueType> 
+PartialImage<typename PartialType::ValueType>
 Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType::ValueType>> &partial_images)
 {
   ROVER_INFO("Compsositor start");
@@ -530,7 +551,7 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   int local_partials = global_partial_images;
   MPI_Allreduce(&local_partials, &global_partial_images, 1, MPI_INT, MPI_SUM, m_comm_handle);
 #endif
-  // there should always be at least one ray cast, 
+  // there should always be at least one ray cast,
   // so this should be a safe check
   bool has_path_lengths = false;
   if(partial_images.size() > 0)
@@ -539,12 +560,12 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   }
 
 #ifdef ROVER_PARALLEL
-  // we could have no data, but it could exist elsewhere 
+  // we could have no data, but it could exist elsewhere
 #endif
 
   ROVER_DATA_OPEN("compositing");
-  vtkmTimer tot_timer; 
-  vtkmTimer timer; 
+  vtkmTimer tot_timer;
+  vtkmTimer timer;
   double time = 0;
 
   std::vector<PartialType> partials;
@@ -553,7 +574,7 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
 
   ROVER_INFO("Extracing");
   extract(partial_images, partials, global_min_pixel, global_max_pixel);
-  time = timer.GetElapsedTime(); 
+  time = timer.GetElapsedTime();
   ROVER_DATA_ADD("extract", time);
   timer.Reset();
 
@@ -561,7 +582,7 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   //
   // Exchange partials with other ranks
   //
-  redistribute(partials, 
+  redistribute(partials,
                m_comm_handle,
                global_min_pixel,
                global_max_pixel);
@@ -569,7 +590,7 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   MPI_Barrier(m_comm_handle);
 #endif
 
-  time = timer.GetElapsedTime(); 
+  time = timer.GetElapsedTime();
   ROVER_DATA_ADD("redistribute", time);
   timer.Reset();
 
@@ -581,11 +602,11 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   // TODO: check to see if we have less than one
   //
   //assert(total_partial_comps > 1);
-  
+
   std::vector<PartialType> output_partials;
   composite_partials(partials, output_partials);
-   
-  time = timer.GetElapsedTime(); 
+
+  time = timer.GetElapsedTime();
   ROVER_DATA_ADD("do_composite", time);
   timer.Reset();
 #ifdef ROVER_PARALLEL
@@ -595,8 +616,8 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   collect(output_partials, m_comm_handle);
   MPI_Barrier(m_comm_handle);
 #endif
-  
-  time = timer.GetElapsedTime(); 
+
+  time = timer.GetElapsedTime();
   ROVER_DATA_ADD("collect", time);
   timer.Reset();
   //
@@ -632,7 +653,9 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
     output.m_path_lengths.Allocate(out_size);
   }
 
+#ifdef ROVER_ENABLE_OPENMP
   #pragma omp parallel for
+#endif
   for(int i = 0; i < out_size; ++i)
   {
     output_partials[i].store_into_partial(output, i, m_background_values);
@@ -640,10 +663,10 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
 
   ROVER_INFO("Compositing results in "<<out_size);
 
-  time = timer.GetElapsedTime(); 
+  time = timer.GetElapsedTime();
   ROVER_DATA_ADD("pack_partial", time);
 
-  time = tot_timer.GetElapsedTime(); 
+  time = tot_timer.GetElapsedTime();
   ROVER_DATA_CLOSE(time);
   output.m_source_sig = m_background_values;
   output.m_width = partial_images[0].m_width;
@@ -652,7 +675,7 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
 }
 
 template<typename PartialType>
-void 
+void
 Compositor<PartialType>::set_background(std::vector<vtkm::Float32> &background_values)
 {
   const size_t size = background_values.size();
@@ -664,7 +687,7 @@ Compositor<PartialType>::set_background(std::vector<vtkm::Float32> &background_v
 }
 
 template<typename PartialType>
-void 
+void
 Compositor<PartialType>::set_background(std::vector<vtkm::Float64> &background_values)
 {
   const size_t size = background_values.size();

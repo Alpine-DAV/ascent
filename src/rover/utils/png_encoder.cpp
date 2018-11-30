@@ -112,7 +112,9 @@ PNGEncoder::Encode(const float *rgba_in,
 
   for(int x = 0; x < width; ++x)
 
+#ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for
+#endif
     for (int y = 0; y < height; ++y)
     {
       int inOffset = (y * width + x) * 4;
@@ -153,7 +155,9 @@ PNGEncoder::Encode(const double *rgba_in,
 
   for(int x = 0; x < width; ++x)
 
+#ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for
+#endif
     for (int y = 0; y < height; ++y)
     {
       int inOffset = (y * width + x) * 4;
@@ -195,7 +199,9 @@ PNGEncoder::EncodeChannel(const double *buffer_in,
 
   for(int x = 0; x < width; ++x)
 
+#ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for
+#endif
     for (int y = 0; y < height; ++y)
     {
       int inOffset = (y * width + x);
@@ -236,7 +242,9 @@ PNGEncoder::EncodeChannel(const float *buffer_in,
 
   for(int x = 0; x < width; ++x)
 
+#ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for
+#endif
     for (int y = 0; y < height; ++y)
     {
       int inOffset = (y * width + x);
