@@ -908,20 +908,25 @@ VTKH3Slice::verify_params(const conduit::Node &params,
 {
     info.reset();
 
-    bool res = check_numeric("x_offset",params, info, false);
-    res = check_numeric("y_offset",params, info, false) && res;
-    res = check_numeric("z_offset",params, info, false) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("x_offset");
-    valid_paths.push_back("y_offset");
-    valid_paths.push_back("z_offset");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
+    bool res = true;
+    // this can have no parameters
+    if(params.number_of_children() != 0)
     {
-      res = false;
-      info["errors"].append() = surprises;
+      res &= check_numeric("x_offset",params, info, false);
+      res &= check_numeric("y_offset",params, info, false);
+      res &= check_numeric("z_offset",params, info, false);
+
+      std::vector<std::string> valid_paths;
+      valid_paths.push_back("x_offset");
+      valid_paths.push_back("y_offset");
+      valid_paths.push_back("z_offset");
+      std::string surprises = surprise_check(valid_paths, params);
+
+      if(surprises != "")
+      {
+        res = false;
+        info["errors"].append() = surprises;
+      }
     }
     return res;
 }

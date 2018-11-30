@@ -50,7 +50,7 @@ Ascent Actions Overview
 Actions are the mechanism that instruct Ascent to perform operations.
 The currently supported actions are:
 
-- ``add_scenes``  : adds a list of scenes to create images 
+- ``add_scenes``  : adds a list of scenes to create images
 - ``add_extracts``: adds a list of extracts to move data out of Ascent
 - ``add_pipelines`` : adds a list of pipelines to transform mesh data
 - ``execute`` : executes the data flow network created by the actions
@@ -58,29 +58,28 @@ The currently supported actions are:
 
 Ascent actions can be specified within the integration using Conduit Nodes and can be read in through a file.
 Each time Ascent executes a set of actions, it will check for a file in the current working directory called ``ascent_actions.json``.
-If found, the current actions will be updated with the contents of the json file.
-If specific action exists in both the Conduit Node and the file, shared fields will be overridden with the contents of the file.
-If additional actions are present in the file, they will be appended to the current list of actions.
-The behavior is identical to a Python dictionary update.
+If found, the current actions specified in code will be replaced with the contents of the json file.
+Then default name of the ascent actions file can be specified in the ``ascent_options.json`` or in the
+ascent options inside the simulation integration.
 
-For example, if the existing actions in the Conduit Node contain:
+Here is an example of an ascent actions json file:
 
 .. code-block:: json
-  
+
   [
-    
+
     {
       "action": "add_scenes",
-      "scenes": 
+      "scenes":
       {
-        "scene1": 
+        "scene1":
         {
-          "plots": 
+          "plots":
           {
-            "plt1": 
+            "plt1":
             {
               "type": "pseudocolor",
-              "params": 
+              "params":
               {
                 "field": "zonal_noise"
               }
@@ -89,80 +88,12 @@ For example, if the existing actions in the Conduit Node contain:
         }
       }
     },
-    
+
     {
       "action": "execute"
     }
   ]
 
-
-The contents of the file are:
-
-.. code-block:: json
-
-  [
-    
-    {
-      "action": "add_scenes",
-      "scenes": 
-      {
-        "scene1": 
-        {
-          "plots": 
-          {
-            "plt2": 
-            {
-              "type": "pseudocolor",
-              "params": 
-              {
-                "field": "nodal_noise"
-              }
-            }
-          }
-        }
-      }
-    }
-  ]
-
-The resulting actions that are executed by Ascent will be:
-
-
-.. code-block:: json
-   
-  [
-    
-    {
-      "action": "add_scenes",
-      "scenes": 
-      {
-        "scene1": 
-        {
-          "plots": 
-          {
-            "plt1": 
-            {
-              "type": "pseudocolor",
-              "params": 
-              {
-                "field": "zonal_noise"
-              }
-            },
-            "plt2": 
-            {
-              "type": "pseudocolor",
-              "params": 
-              {
-                "field": "nodal_noise"
-              }
-            }
-          }
-        }
-      }
-    }
-  ]
-
-
-While the updating feature is convient, we encourage users to be as explicit as possible when creating action files to avoid unexpected behavior.
 A full example of an actions file can be found in ``/src/examples/proxies/lulesh2.0.3/ascent_actions.json``.
 
 
