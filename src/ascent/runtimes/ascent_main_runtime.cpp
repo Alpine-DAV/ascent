@@ -1028,17 +1028,38 @@ AscentRuntime::Execute(const conduit::Node &actions)
 
         if(action_name == "add_pipelines")
         {
-          CreatePipelines(action["pipelines"]);
+          if(action.has_path("pipelines"))
+          {
+            CreatePipelines(action["pipelines"]);
+          }
+          else
+          {
+            ASCENT_ERROR("action 'add_pipelines' missing child 'pipelines'");
+          }
         }
 
         if(action_name == "add_scenes")
         {
-          CreateScenes(action["scenes"]);
+          if(action.has_path("scenes"))
+          {
+            CreateScenes(action["scenes"]);
+          }
+          else
+          {
+            ASCENT_ERROR("action 'add_scenes' missing child 'scenes'");
+          }
         }
 
         if(action_name == "add_extracts")
         {
-          CreateExtracts(action["extracts"]);
+          if(action.has_path("extracts"))
+          {
+            CreateExtracts(action["extracts"]);
+          }
+          else
+          {
+            ASCENT_ERROR("action 'add_extracts' missing child 'extracts'");
+          }
         }
 
         else if( action_name == "execute")
