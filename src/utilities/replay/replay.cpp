@@ -155,6 +155,9 @@ int main (int argc, char *argv[])
 #endif
 
   conduit::Node replay_data, replay_opts;
+#ifdef REPLAY_MPI
+  replay_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+#endif
   replay_opts["root_file"] = options.m_root_file;
   ascent::hola("relay/blueprint/mesh", replay_opts, replay_data);
   //replay_data.print();

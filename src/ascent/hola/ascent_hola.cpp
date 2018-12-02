@@ -66,6 +66,7 @@
 
 #if defined(ASCENT_MPI_ENABLED)
     #include "ascent_hola_mpi.hpp"
+    #include <conduit_relay_mpi.hpp>
 #endif
 
 using namespace conduit;
@@ -255,9 +256,52 @@ void relay_blueprint_mesh_read(const Node &options,
 
     std::ostringstream oss;
 
-    // TODO: distrib over mpi tasks when MPI
+    int domain_start = 0;
+    int domain_end = num_domains;
 
-    for(int i=0;i<num_domains;i++)
+#if defined(ASCENT_MPI_ENABLED)
+    MPI_Comm comm  = MPI_Comm_f2c(options["mpi_comm"].to_int());
+    int rank = relay::mpi::rank(comm);
+    int total_size = relay::mpi::size(comm);
+
+    if(num_domains < total_size)
+    {
+      if(rank == 0)
+      {
+        ASCENT_ERROR("hola: total domains "<<num_domains<<" must be equal to "
+                     <<"or greater than the number of ranks "<<total_size<<".");
+      }
+    }
+
+    int read_size = num_domains / total_size;
+    int rem = num_domains % total_size;
+    if(rank < rem)
+    {
+      read_size++;
+    }
+
+    conduit::Node n_read_size;
+    conduit::Node n_doms_per_rank;
+
+    n_read_size.set_int32(read_size);
+
+    relay::mpi::all_gather_using_schema(n_read_size,
+                                        n_doms_per_rank,
+                                        comm);
+    int *counts = (int*)n_doms_per_rank.data_ptr();
+
+    int rank_offset = 0;
+    for(int i = 0; i < rank; ++i)
+    {
+      rank_offset += counts[i];
+    }
+
+    domain_start = rank_offset;
+    domain_end = rank_offset + read_size;
+#endif
+
+
+    for(int i = domain_start ; i < domain_end; i++)
     {
         char domain_fmt_buff[64];
         snprintf(domain_fmt_buff, sizeof(domain_fmt_buff), "%06d",i);
