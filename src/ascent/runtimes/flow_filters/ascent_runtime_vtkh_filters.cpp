@@ -88,6 +88,7 @@
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/NoOp.hpp>
 #include <vtkh/filters/Lagrangian.hpp>
+#include <vtkh/filters/Log.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
@@ -185,6 +186,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   // TODO: document
   r_valid_paths.push_back("render_bg");
   r_valid_paths.push_back("camera/azimuth");
+  r_valid_paths.push_back("camera/elavation");
   r_valid_paths.push_back("annotations");
   r_valid_paths.push_back("fg_color");
   r_valid_paths.push_back("bg_color");
@@ -2468,6 +2470,83 @@ VTKHLagrangian::execute()
 }
 
 //-----------------------------------------------------------------------------
+
+VTKHLog::VTKHLog()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHLog::~VTKHLog()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLog::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_log";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHLog::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLog::execute()
+{
+
+    ASCENT_INFO("Log filter");
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_log input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Log logger;
+
+    logger.SetInput(data);
+    logger.SetField(field_name);
+    if(params().has_path("output_name"))
+    {
+      logger.SetResultField(params()["output_name"].as_string());
+    }
+
+    logger.Update();
+
+    vtkh::DataSet *log_output = logger.GetOutput();
+
+    set_output<vtkh::DataSet>(log_output);
+}
+
 //-----------------------------------------------------------------------------
 
 VTKHNoOp::VTKHNoOp()
