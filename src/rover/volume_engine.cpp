@@ -47,6 +47,7 @@ namespace rover {
 VolumeEngine::VolumeEngine()
 {
   m_tracer = NULL;
+  m_num_samples = 400;
 }
 
 VolumeEngine::~VolumeEngine()
@@ -112,7 +113,8 @@ VolumeEngine::partial_trace(Ray32 &rays)
 
   ROVER_INFO("tracing  rays");
   rays.Buffers.at(0).InitConst(0.);
-  m_tracer->SetColorMap(m_color_map);
+  vtkmColorMap corrected = correct_opacity();
+  m_tracer->SetColorMap(corrected);
   return m_tracer->PartialTrace(rays);
 }
 
@@ -135,7 +137,8 @@ VolumeEngine::partial_trace(Ray64 &rays)
 
   ROVER_INFO("tracing  rays");
   rays.Buffers.at(0).InitConst(0.);
-  m_tracer->SetColorMap(m_color_map);
+  vtkmColorMap corrected = correct_opacity();
+  m_tracer->SetColorMap(corrected);
   return m_tracer->PartialTrace(rays);
 }
 
@@ -143,6 +146,33 @@ vtkmRange
 VolumeEngine::get_primary_range()
 {
   return m_tracer->GetScalarFieldRange();
+}
+
+vtkmColorMap
+VolumeEngine::correct_opacity()
+{
+  const float correction_scalar = 10.f;
+  float samples = m_num_samples;
+
+  float ratio = correction_scalar / samples;
+  vtkmColorMap corrected;
+  corrected.Allocate(m_color_map.GetNumberOfValues());
+  
+  auto map_portal = m_color_map.GetPortalControl();
+  auto corr_portal = corrected.GetPortalControl();
+
+  const int num_points = m_color_map.GetNumberOfValues();
+#ifdef ROVER_ENABLE_OPENMP
+    #pragma omp parallel for
+#endif
+  for(int i = 0; i < num_points; i++)
+  {
+    vtkm::Vec<vtkm::Float32,4> color = map_portal.Get(i);
+    color[3] = 1.f - vtkm::Pow((1.f - color[3]), ratio); 
+    corr_portal.Set(i, color);
+  }
+
+  return corrected;
 }
 
 void 
@@ -167,6 +197,7 @@ VolumeEngine::set_samples(const vtkm::Bounds &global_bounds, const int &samples)
   totalExtent[2] = vtkm::Float32(global_bounds.Z.Max - global_bounds.Z.Min);
   vtkm::Float32 sample_distance = vtkm::Magnitude(totalExtent) / num_samples;
   m_tracer->SetSampleDistance(sample_distance);
+  m_num_samples = samples;
 }
   
 }; //namespace rover

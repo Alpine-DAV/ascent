@@ -411,6 +411,11 @@ RoverVolume::execute()
     RenderSettings settings;
     settings.m_primary_field = params()["field"].as_string();
 
+    if(params().has_path("samples"))
+    {
+      settings.m_volume_settings.m_num_samples = params()["samples"].to_int32();
+    }
+
     settings.m_render_mode = rover::volume;
     if(params().has_path("color_table"))
     {

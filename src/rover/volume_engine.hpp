@@ -50,10 +50,12 @@ class VolumeEngine : public Engine
 {
 protected:
   vtkm::rendering::ConnectivityProxy *m_tracer;
+  int m_num_samples;
 public:
   VolumeEngine();
   ~VolumeEngine();
 
+  vtkmColorMap correct_opacity();
   void set_data_set(vtkm::cont::DataSet &);
   PartialVector32 partial_trace(Ray32 &rays) override;
   PartialVector64 partial_trace(Ray64 &rays) override;

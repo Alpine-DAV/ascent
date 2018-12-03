@@ -76,7 +76,7 @@ public:
     m_secondary_field = secondary_field;
   }
 
-  void set_color_table(const vtkmColorTable &color_map, int samples = 1024)
+  virtual void set_color_table(const vtkmColorTable &color_map, int samples = 1024)
   {
     constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
     vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::UInt8, 4>> temp;
