@@ -90,7 +90,7 @@ struct Options
       {
         m_root_file = get_arg(argv[i]);
       }
-      if(contains(argv[i], "--cycles="))
+      else if(contains(argv[i], "--cycles="))
       {
         m_cycles_file = get_arg(argv[i]);
       }
