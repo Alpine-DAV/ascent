@@ -216,23 +216,11 @@ RoverXRay::execute()
 {
 
     ASCENT_INFO("XRay sees everything!");
-    vtkh::DataSet *dataset = nullptr;
-
-    int refinement = 2;
-
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
-    if(meta->has_path("refinement_level"))
+    if(!input(0).check_type<vtkh::DataSet>())
     {
-      refinement = (*meta)["refinement_level"].to_int32();
+        ASCENT_ERROR("vtkh_slice input must be a vtk-h dataset");
     }
-
-    bool zero_copy= true;
-    if(input(0).check_type<Node>())
-    {
-        // convert from blueprint to vtk-h
-        const Node *n_input = input<Node>(0);
-        dataset = detail::transmogrify_source(n_input, refinement);
-    }
+    vtkh::DataSet *dataset = input<vtkh::DataSet>(0);
 
     vtkmCamera camera;
     camera.ResetToBounds(dataset->GetGlobalBounds());
@@ -293,9 +281,14 @@ RoverXRay::execute()
 
     std::string filename = params()["filename"].as_string();
     tracer.save_png(expand_family_name(filename));
+    if(params().has_path("bov_filename"))
+    {
+      std::string bov_filename = params()["bov_filename"].as_string();
+      tracer.save_bov(expand_family_name(filename));
+    }
     tracer.finalize();
 
-    delete dataset;
+    //delete dataset;
 }
 
 //-----------------------------------------------------------------------------
@@ -362,22 +355,11 @@ void
 RoverVolume::execute()
 {
     ASCENT_INFO("Volume mostly sees everything!");
-    vtkh::DataSet *dataset = nullptr;
-
-
-    int refinement = 2;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
-    if(meta->has_path("refinement_level"))
+    if(!input(0).check_type<vtkh::DataSet>())
     {
-      refinement = (*meta)["refinement_level"].to_int32();
+        ASCENT_ERROR("vtkh_slice input must be a vtk-h dataset");
     }
-
-    if(input(0).check_type<Node>())
-    {
-        // convert from blueprint to vtk-h
-        const Node *n_input = input<Node>(0);
-        dataset = detail::transmogrify_source(n_input, refinement);
-    }
+    vtkh::DataSet *dataset = input<vtkh::DataSet>(0);
 
     vtkmCamera camera;
     camera.ResetToBounds(dataset->GetGlobalBounds());
@@ -457,7 +439,7 @@ RoverVolume::execute()
     tracer.save_png(expand_family_name(filename));
     tracer.finalize();
 
-    delete dataset;
+    //delete dataset;
 }
 
 //-----------------------------------------------------------------------------

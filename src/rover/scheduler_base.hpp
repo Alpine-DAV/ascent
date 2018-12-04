@@ -74,6 +74,7 @@ public:
   virtual ~SchedulerBase();
   virtual void trace_rays() = 0;
   virtual void save_result(std::string file_name) = 0;
+  virtual void save_bov(std::string file_name) = 0;
   void clear_data_sets();
   //
   // Setters

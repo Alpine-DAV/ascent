@@ -41,6 +41,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #include <assert.h>
+#include <fstream>
 #include <compositing/compositor.hpp>
 #include <scheduler.hpp>
 #include <utils/png_encoder.hpp>
@@ -110,7 +111,6 @@ Scheduler<FloatType>::set_global_scalar_range()
     {
       global_range = m_render_settings.m_volume_settings.m_scalar_range;
       ROVER_INFO("Provided scalar range "<<global_range);
-      std::cout<<" setting user defined range "<<global_range<<"\n";
     }
   }
   else
@@ -133,7 +133,6 @@ Scheduler<FloatType>::set_global_scalar_range()
 #endif
 
     ROVER_INFO("Global scalar range "<<global_range);
-    std::cout<<" setting global range "<<global_range<<"\n";
   }
 
   for(int i = 0; i < num_domains; ++i) 
@@ -525,6 +524,35 @@ void Scheduler<FloatType>::save_result(std::string file_name)
      encoder.Save(sstream.str());
   }
   
+}
+
+template<typename FloatType>
+void Scheduler<FloatType>::save_bov(std::string file_name) 
+{
+  int height = 0;
+  int width = 0;
+  m_ray_generator->get_dims(height, width);
+  assert( height > 0 );
+  assert( width > 0 );
+  ROVER_INFO("Saving bov file " << height << " "<<width);
+  PNGEncoder encoder;
+  const int size = height * width;
+  if(m_render_settings.m_render_mode == energy)
+  {
+    const int num_channels = m_result.get_num_channels();
+    ROVER_INFO("Saving bov"<<num_channels<<" channels ");
+    for(int i = 0; i < num_channels; ++i)
+    {
+      std::stringstream sstream;
+      sstream<<file_name<<"_"<<i<<".bov";
+      m_result.normalize_intensity(i);
+      FloatType * buffer 
+        = get_vtkm_ptr(m_result.get_intensity(i));
+      std::fstream bov(sstream.str(), std::ios::out | std::ios::binary);
+      bov.write((char*)buffer, sizeof(FloatType) * size);
+      bov.close();
+    }
+  }
 }
 
 

@@ -310,12 +310,8 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
     // refine the mesh and convert to blueprint
     mfem::Mesh *lo_mesh = new mfem::Mesh(ho_mesh, refinement, mfem::BasisType::GaussLobatto);
     MeshToBlueprintMesh (lo_mesh, n_dset);
-    //n_dset.print();
-    //std::ofstream lovtk("low.vtk");
-    //lo_mesh->PrintVTK(lovtk);
 
     int conn_size = n_dset["topologies/main/elements/connectivity"].dtype().number_of_elements();
-    //int dims = ho_mesh->Dimension();
 
     conduit::Node &n_fields = n_dset["fields"];
     auto field_map = ho_domains->m_data_sets[i]->get_field_map();

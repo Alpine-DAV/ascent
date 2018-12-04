@@ -563,13 +563,20 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
                  << " already exists");
   }
 
+  // currently these are special cases.
+  // TODO: 
+  bool special = false;
+  if(extract_type == "xray" ||
+     extract_type == "volume") special = true;
 
   std::string ensure_name = "ensure_blueprint_" + extract_name;
   conduit::Node empty_params;
-
-  w.graph().add_filter("ensure_blueprint",
-                       ensure_name,
-                       empty_params);
+  if(!special)
+  {
+    w.graph().add_filter("ensure_blueprint",
+                         ensure_name,
+                         empty_params);
+  }
 
   w.graph().add_filter(filter_name,
                        extract_name,
@@ -588,10 +595,23 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   {
     // this is the blueprint mesh
     extract_source = "source";
+    //current special case
+    if(special)
+    {
+      extract_source = "default";
+    }
+    
+    
   }
-
-  m_connections[ensure_name] = extract_source;
-  m_connections[extract_name] = ensure_name;
+  if(!special)
+  {
+    m_connections[ensure_name] = extract_source;
+    m_connections[extract_name] = ensure_name;
+  }
+  else
+  {
+    m_connections[extract_name] = extract_source;
+  }
 
 }
 //-----------------------------------------------------------------------------
@@ -671,7 +691,7 @@ AscentRuntime::PopulateMetadata()
   if(!w.registry().has_entry("metadata"))
   {
     conduit::Node *meta = new conduit::Node();
-    w.registry().add<Node>("metadata", meta);
+    w.registry().add<Node>("metadata", meta,1);
   }
 
   Node *meta = w.registry().fetch<Node>("metadata");
@@ -717,7 +737,6 @@ AscentRuntime::ConnectGraphs()
     {
       ASCENT_ERROR(names[i]<<"' references unknown pipeline: "<<pipeline);
     }
-
     w.graph().connect(pipeline, // src
                       names[i], // dest
                       0);       // default port
@@ -1071,6 +1090,8 @@ AscentRuntime::Execute(const conduit::Node &actions)
           ConnectGraphs();
           PopulateMetadata(); // add metadata so filters can access it
           w.info(m_info["flow_graph"]);
+          w.print();
+          w.graph().to_dot();
           w.execute();
           w.registry().reset();
 
