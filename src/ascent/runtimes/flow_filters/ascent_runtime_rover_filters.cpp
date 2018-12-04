@@ -220,9 +220,10 @@ RoverXRay::execute()
 
     int refinement = 2;
 
-    if(params().has_path("refinement"))
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    if(meta->has_path("refinement_level"))
     {
-      refinement = params()["refinement"].to_int32();
+      refinement = (*meta)["refinement_level"].to_int32();
     }
 
     bool zero_copy= true;
@@ -363,12 +364,14 @@ RoverVolume::execute()
     ASCENT_INFO("Volume mostly sees everything!");
     vtkh::DataSet *dataset = nullptr;
 
-    int refinement = 2;
 
-    if(params().has_path("refinement"))
+    int refinement = 2;
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    if(meta->has_path("refinement_level"))
     {
-      refinement = params()["refinement"].to_int32();
+      refinement = (*meta)["refinement_level"].to_int32();
     }
+
     if(input(0).check_type<Node>())
     {
         // convert from blueprint to vtk-h

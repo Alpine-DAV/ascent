@@ -180,6 +180,10 @@ AscentRuntime::Initialize(const conduit::Node &options)
     if(options.has_path("refinement_level"))
     {
       m_refinement_level = options["refinement_level"].to_int32();
+      if(m_refinement_level < 2)
+      {
+        ASCENT_ERROR("'refinement_level' must be greater than 1");
+      }
     }
 #endif
 
@@ -377,7 +381,6 @@ AscentRuntime::CreateDefaultFilters()
                       0);        // default port
     // conver high order MFEM meshes to low order
     conduit::Node low_params;
-    low_params["refinement_level"] = m_refinement_level;
     w.graph().add_filter("ensure_low_order",
                          "low_order",
                          low_params);
@@ -673,6 +676,7 @@ AscentRuntime::PopulateMetadata()
 
   Node *meta = w.registry().fetch<Node>("metadata");
   (*meta)["cycle"] = cycle;
+  (*meta)["refinement_level"] = m_refinement_level;
 
 }
 //-----------------------------------------------------------------------------
