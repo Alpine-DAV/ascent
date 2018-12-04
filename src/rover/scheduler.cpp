@@ -110,6 +110,7 @@ Scheduler<FloatType>::set_global_scalar_range()
     {
       global_range = m_render_settings.m_volume_settings.m_scalar_range;
       ROVER_INFO("Provided scalar range "<<global_range);
+      std::cout<<" setting user defined range "<<global_range<<"\n";
     }
   }
   else
@@ -132,6 +133,7 @@ Scheduler<FloatType>::set_global_scalar_range()
 #endif
 
     ROVER_INFO("Global scalar range "<<global_range);
+    std::cout<<" setting global range "<<global_range<<"\n";
   }
 
   for(int i = 0; i < num_domains; ++i) 

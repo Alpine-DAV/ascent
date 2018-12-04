@@ -437,9 +437,9 @@ RoverVolume::execute()
     else
     {
       vtkmColorTable color_table("cool to warm");
-      color_table.AddPointAlpha(0.0, .01);
-      color_table.AddPointAlpha(0.5, .02);
-      color_table.AddPointAlpha(1.0, .01);
+      color_table.AddPointAlpha(0.0, .1);
+      color_table.AddPointAlpha(0.5, .2);
+      color_table.AddPointAlpha(1.0, .3);
       settings.m_color_table = color_table;
     }
 
