@@ -72,6 +72,7 @@ enum RayScope
 struct VolumeSettings
 {
   int m_num_samples; // approximate number of samples per ray
+  vtkmRange m_scalar_range;
   VolumeSettings()
     : m_num_samples(400)
   {}

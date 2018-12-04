@@ -416,6 +416,16 @@ RoverVolume::execute()
       settings.m_volume_settings.m_num_samples = params()["samples"].to_int32();
     }
 
+    if(params().has_path("min_value"))
+    {
+      settings.m_volume_settings.m_scalar_range.Min = params()["min_value"].to_float32();
+    }
+
+    if(params().has_path("max_value"))
+    {
+      settings.m_volume_settings.m_scalar_range.Max = params()["max_value"].to_float32();
+    }
+
     settings.m_render_mode = rover::volume;
     if(params().has_path("color_table"))
     {

@@ -104,24 +104,35 @@ Scheduler<FloatType>::set_global_scalar_range()
   const int num_domains = static_cast<int>(m_domains.size());
 
   vtkmRange global_range;
-
-  for(int i = 0; i < num_domains; ++i) 
+  if(m_render_settings.m_render_mode == volume)
   {
-    vtkmRange local_range = m_domains[i].get_primary_range();
-    global_range.Include(local_range);
+    if(m_render_settings.m_volume_settings.m_scalar_range.IsNonEmpty())
+    {
+      global_range = m_render_settings.m_volume_settings.m_scalar_range;
+      ROVER_INFO("Provided scalar range "<<global_range);
+    }
   }
+  else
+  {
+
+    for(int i = 0; i < num_domains; ++i) 
+    {
+      vtkmRange local_range = m_domains[i].get_primary_range();
+      global_range.Include(local_range);
+    }
 #ifdef ROVER_PARALLEL
-  double rank_min = global_range.Min;
-  double rank_max = global_range.Max;
-  double mpi_min;
-  double mpi_max;
-  MPI_Allreduce(&rank_min, &mpi_min, 1, MPI_DOUBLE, MPI_MIN, m_comm_handle);
-  MPI_Allreduce(&rank_max, &mpi_max, 1, MPI_DOUBLE, MPI_MAX, m_comm_handle);
-  global_range.Min = mpi_min;
-  global_range.Max = mpi_max;
+    double rank_min = global_range.Min;
+    double rank_max = global_range.Max;
+    double mpi_min;
+    double mpi_max;
+    MPI_Allreduce(&rank_min, &mpi_min, 1, MPI_DOUBLE, MPI_MIN, m_comm_handle);
+    MPI_Allreduce(&rank_max, &mpi_max, 1, MPI_DOUBLE, MPI_MAX, m_comm_handle);
+    global_range.Min = mpi_min;
+    global_range.Max = mpi_max;
 #endif
 
-  ROVER_INFO("Global scalar range "<<global_range);
+    ROVER_INFO("Global scalar range "<<global_range);
+  }
 
   for(int i = 0; i < num_domains; ++i) 
   {
