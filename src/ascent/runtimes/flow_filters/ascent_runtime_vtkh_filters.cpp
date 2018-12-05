@@ -186,7 +186,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   // TODO: document
   r_valid_paths.push_back("render_bg");
   r_valid_paths.push_back("camera/azimuth");
-  r_valid_paths.push_back("camera/elavation");
+  r_valid_paths.push_back("camera/elevation");
   r_valid_paths.push_back("annotations");
   r_valid_paths.push_back("fg_color");
   r_valid_paths.push_back("bg_color");

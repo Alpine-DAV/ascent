@@ -105,13 +105,11 @@ Scheduler<FloatType>::set_global_scalar_range()
   const int num_domains = static_cast<int>(m_domains.size());
 
   vtkmRange global_range;
-  if(m_render_settings.m_render_mode == volume)
+  if(m_render_settings.m_render_mode == volume &&
+     m_render_settings.m_volume_settings.m_scalar_range.IsNonEmpty())
   {
-    if(m_render_settings.m_volume_settings.m_scalar_range.IsNonEmpty())
-    {
-      global_range = m_render_settings.m_volume_settings.m_scalar_range;
-      ROVER_INFO("Provided scalar range "<<global_range);
-    }
+    global_range = m_render_settings.m_volume_settings.m_scalar_range;
+    ROVER_INFO("Provided scalar range "<<global_range);
   }
   else
   {
