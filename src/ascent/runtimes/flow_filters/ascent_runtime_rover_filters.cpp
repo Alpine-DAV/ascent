@@ -279,12 +279,34 @@ RoverXRay::execute()
     tracer.set_ray_generator(&generator);
     tracer.execute();
 
+    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    int cycle = -1;;
+    if(meta->has_path("cycle"))
+    {
+      cycle = (*meta)["cycle"].as_int32();
+    }
+
     std::string filename = params()["filename"].as_string();
-    tracer.save_png(expand_family_name(filename));
+    if(cycle != -1)
+    {
+      tracer.save_png(expand_family_name(filename, cycle));
+    }
+    else
+    {
+      tracer.save_png(expand_family_name(filename));
+    }
+
     if(params().has_path("bov_filename"))
     {
       std::string bov_filename = params()["bov_filename"].as_string();
-      tracer.save_bov(expand_family_name(filename));
+      if(cycle != -1)
+      {
+        tracer.save_bov(expand_family_name(bov_filename, cycle));
+      }
+      else
+      {
+        tracer.save_bov(expand_family_name(bov_filename));
+      }
     }
     tracer.finalize();
 
@@ -435,8 +457,22 @@ RoverVolume::execute()
     tracer.set_ray_generator(&generator);
     tracer.execute();
 
+    int cycle = -1;;
+    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    if(meta->has_path("cycle"))
+    {
+      cycle = (*meta)["cycle"].as_int32();
+    }
+
     std::string filename = params()["filename"].as_string();
-    tracer.save_png(expand_family_name(filename));
+    if(cycle != -1)
+    {
+      tracer.save_png(expand_family_name(filename, cycle));
+    }
+    else
+    {
+      tracer.save_png(expand_family_name(filename));
+    }
     tracer.finalize();
 
     //delete dataset;
