@@ -41,6 +41,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #include <assert.h>
+#include <fstream>
 #include <compositing/compositor.hpp>
 #include <scheduler.hpp>
 #include <utils/png_encoder.hpp>
@@ -104,24 +105,35 @@ Scheduler<FloatType>::set_global_scalar_range()
   const int num_domains = static_cast<int>(m_domains.size());
 
   vtkmRange global_range;
-
-  for(int i = 0; i < num_domains; ++i) 
+  if(m_render_settings.m_render_mode == volume)
   {
-    vtkmRange local_range = m_domains[i].get_primary_range();
-    global_range.Include(local_range);
+    if(m_render_settings.m_volume_settings.m_scalar_range.IsNonEmpty())
+    {
+      global_range = m_render_settings.m_volume_settings.m_scalar_range;
+      ROVER_INFO("Provided scalar range "<<global_range);
+    }
   }
+  else
+  {
+
+    for(int i = 0; i < num_domains; ++i) 
+    {
+      vtkmRange local_range = m_domains[i].get_primary_range();
+      global_range.Include(local_range);
+    }
 #ifdef ROVER_PARALLEL
-  double rank_min = global_range.Min;
-  double rank_max = global_range.Max;
-  double mpi_min;
-  double mpi_max;
-  MPI_Allreduce(&rank_min, &mpi_min, 1, MPI_DOUBLE, MPI_MIN, m_comm_handle);
-  MPI_Allreduce(&rank_max, &mpi_max, 1, MPI_DOUBLE, MPI_MAX, m_comm_handle);
-  global_range.Min = mpi_min;
-  global_range.Max = mpi_max;
+    double rank_min = global_range.Min;
+    double rank_max = global_range.Max;
+    double mpi_min;
+    double mpi_max;
+    MPI_Allreduce(&rank_min, &mpi_min, 1, MPI_DOUBLE, MPI_MIN, m_comm_handle);
+    MPI_Allreduce(&rank_max, &mpi_max, 1, MPI_DOUBLE, MPI_MAX, m_comm_handle);
+    global_range.Min = mpi_min;
+    global_range.Max = mpi_max;
 #endif
 
-  ROVER_INFO("Global scalar range "<<global_range);
+    ROVER_INFO("Global scalar range "<<global_range);
+  }
 
   for(int i = 0; i < num_domains; ++i) 
   {
@@ -512,6 +524,35 @@ void Scheduler<FloatType>::save_result(std::string file_name)
      encoder.Save(sstream.str());
   }
   
+}
+
+template<typename FloatType>
+void Scheduler<FloatType>::save_bov(std::string file_name) 
+{
+  int height = 0;
+  int width = 0;
+  m_ray_generator->get_dims(height, width);
+  assert( height > 0 );
+  assert( width > 0 );
+  ROVER_INFO("Saving bov file " << height << " "<<width);
+  PNGEncoder encoder;
+  const int size = height * width;
+  if(m_render_settings.m_render_mode == energy)
+  {
+    const int num_channels = m_result.get_num_channels();
+    ROVER_INFO("Saving bov"<<num_channels<<" channels ");
+    for(int i = 0; i < num_channels; ++i)
+    {
+      std::stringstream sstream;
+      sstream<<file_name<<"_"<<i<<".bov";
+      m_result.normalize_intensity(i);
+      FloatType * buffer 
+        = get_vtkm_ptr(m_result.get_intensity(i));
+      std::fstream bov(sstream.str(), std::ios::out | std::ios::binary);
+      bov.write((char*)buffer, sizeof(FloatType) * size);
+      bov.close();
+    }
+  }
 }
 
 

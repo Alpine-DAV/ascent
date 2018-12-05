@@ -216,22 +216,11 @@ RoverXRay::execute()
 {
 
     ASCENT_INFO("XRay sees everything!");
-    vtkh::DataSet *dataset = nullptr;
-
-    int refinement = 2;
-
-    if(params().has_path("refinement"))
+    if(!input(0).check_type<vtkh::DataSet>())
     {
-      refinement = params()["refinement"].to_int32();
+        ASCENT_ERROR("vtkh_slice input must be a vtk-h dataset");
     }
-
-    bool zero_copy= true;
-    if(input(0).check_type<Node>())
-    {
-        // convert from blueprint to vtk-h
-        const Node *n_input = input<Node>(0);
-        dataset = detail::transmogrify_source(n_input, refinement);
-    }
+    vtkh::DataSet *dataset = input<vtkh::DataSet>(0);
 
     vtkmCamera camera;
     camera.ResetToBounds(dataset->GetGlobalBounds());
@@ -292,9 +281,14 @@ RoverXRay::execute()
 
     std::string filename = params()["filename"].as_string();
     tracer.save_png(expand_family_name(filename));
+    if(params().has_path("bov_filename"))
+    {
+      std::string bov_filename = params()["bov_filename"].as_string();
+      tracer.save_bov(expand_family_name(filename));
+    }
     tracer.finalize();
 
-    delete dataset;
+    //delete dataset;
 }
 
 //-----------------------------------------------------------------------------
@@ -361,20 +355,11 @@ void
 RoverVolume::execute()
 {
     ASCENT_INFO("Volume mostly sees everything!");
-    vtkh::DataSet *dataset = nullptr;
-
-    int refinement = 2;
-
-    if(params().has_path("refinement"))
+    if(!input(0).check_type<vtkh::DataSet>())
     {
-      refinement = params()["refinement"].to_int32();
+        ASCENT_ERROR("vtkh_slice input must be a vtk-h dataset");
     }
-    if(input(0).check_type<Node>())
-    {
-        // convert from blueprint to vtk-h
-        const Node *n_input = input<Node>(0);
-        dataset = detail::transmogrify_source(n_input, refinement);
-    }
+    vtkh::DataSet *dataset = input<vtkh::DataSet>(0);
 
     vtkmCamera camera;
     camera.ResetToBounds(dataset->GetGlobalBounds());
@@ -416,6 +401,17 @@ RoverVolume::execute()
       settings.m_volume_settings.m_num_samples = params()["samples"].to_int32();
     }
 
+
+    if(params().has_path("min_value"))
+    {
+      settings.m_volume_settings.m_scalar_range.Min = params()["min_value"].to_float32();
+    }
+
+    if(params().has_path("max_value"))
+    {
+      settings.m_volume_settings.m_scalar_range.Max = params()["max_value"].to_float32();
+    }
+
     settings.m_render_mode = rover::volume;
     if(params().has_path("color_table"))
     {
@@ -424,9 +420,9 @@ RoverVolume::execute()
     else
     {
       vtkmColorTable color_table("cool to warm");
-      color_table.AddPointAlpha(0.0, .01);
-      color_table.AddPointAlpha(0.5, .02);
-      color_table.AddPointAlpha(1.0, .01);
+      color_table.AddPointAlpha(0.0, .1);
+      color_table.AddPointAlpha(0.5, .2);
+      color_table.AddPointAlpha(1.0, .3);
       settings.m_color_table = color_table;
     }
 
@@ -443,7 +439,7 @@ RoverVolume::execute()
     tracer.save_png(expand_family_name(filename));
     tracer.finalize();
 
-    delete dataset;
+    //delete dataset;
 }
 
 //-----------------------------------------------------------------------------

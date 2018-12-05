@@ -74,6 +74,7 @@ public:
   void execute();
   void about();
   void save_png(const std::string &file_name);
+  void save_bov(const std::string &file_name);
   void set_tracer_precision32();
   void set_tracer_precision64();
   void get_result(Image<vtkm::Float32> &image);
