@@ -63,6 +63,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_clip_with_field
                 t_ascent_contour
                 t_ascent_iso_volume
+                t_ascent_pipelines_to_pipelines
                 t_ascent_threshold
                 t_ascent_slice
                 t_ascent_vector_magnitude

@@ -407,9 +407,29 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
                                      const std::string pipeline_name)
 {
     std::string prev_name = CreateDefaultFilters();
+  
+    bool has_pipeline = false;
+    std::string input_name;
+    // check to see if there is a non-default input to this pipeline
+    if(pipeline.has_path("pipeline"))
+    {
+      prev_name = pipeline["pipeline"].as_string();
+      input_name = prev_name;
+
+      has_pipeline = true;
+    }
+
+    const std::vector<std::string> &child_names = pipeline.child_names();
 
     for(int i = 0; i < pipeline.number_of_children(); ++i)
     {
+      const std::string cname = child_names[i];
+      if(cname == "pipeline")
+      {
+        // this is a child that is not a filter.
+        // It specifices the input to the pipeline itself
+        continue;
+      }
       conduit::Node filter = pipeline.child(i);
       std::string filter_name;
 
@@ -434,14 +454,21 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       std::stringstream ss;
       ss<<pipeline_name<<"_"<<i<<"_"<<filter_name;
       std::string name = ss.str();
-
       w.graph().add_filter(filter_name,
                            name,
                            filter["params"]);
+      if((input_name == prev_name) && has_pipeline)
+      {
+        // connect this later so we can specify them in any order 
+        m_connections[pipeline_name] = prev_name;
+      }
+      else
+      {
+        w.graph().connect(prev_name, // src
+                          name,      // dest
+                          0);        // default port
+      }
 
-      w.graph().connect(prev_name, // src
-                        name,      // dest
-                        0);        // default port
       prev_name = name;
     }
 
