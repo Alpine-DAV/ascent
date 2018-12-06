@@ -78,6 +78,7 @@
 
 // std includes
 #include <limits>
+#include <set>
 
 using namespace std;
 using namespace conduit;
@@ -158,6 +159,90 @@ bool clean_mesh(const conduit::Node &data, conduit::Node &output)
 
   return output.number_of_children() > 0;
 }
+// mfem needs these special fields so look for them
+void check_for_attributes(const conduit::Node &input,
+                          std::vector<std::string> &list)
+{
+  const int num_doms = input.number_of_children();
+  std::set<std::string> specials;
+  for(int d = 0; d < num_doms; ++d)
+  {
+    const conduit::Node &dom = input.child(d);     
+    if(dom.has_path("fields"))
+    {
+      const conduit::Node &fields = dom["fields"];
+      std::vector<std::string> fnames = fields.child_names();
+      for(int i = 0; i < fnames.size(); ++i)
+      {
+        if(fnames[i].find("_attribute") != std::string::npos)
+        {
+          specials.insert(fnames[i]);
+        }
+      }
+    }
+  }
+
+  for(auto it = specials.begin(); it != specials.end(); ++it)
+  {
+    list.push_back(*it);
+  }
+}
+
+void filter_fields(const conduit::Node &input, 
+                   conduit::Node &output, 
+                   std::vector<std::string> fields)
+{
+  // assume this is multi-domain
+  //
+  check_for_attributes(input, fields);
+
+  const int num_doms = input.number_of_children();
+  for(int d = 0; d < num_doms; ++d)
+  {
+    const conduit::Node &dom = input.child(d);     
+    conduit::Node &out_dom = output.append();     
+    for(int f = 0; f < fields.size(); ++f)
+    {
+      const std::string fname = fields[f];
+      if(dom.has_path("fields/" + fname))
+      {
+        const std::string fpath = "fields/" + fname;
+        out_dom[fpath].set_external(dom[fpath]);
+        // check for topologies
+        const std::string topo = dom[fpath + "/topology"].as_string();
+        const std::string tpath = "topologies/" + topo;
+        if(!out_dom.has_path(tpath))
+        {
+          out_dom[tpath].set_external(dom[tpath]);
+          if(dom.has_path(tpath + "/grid_function"))
+          {
+            const std::string gf_name = dom[tpath + "/grid_function"].as_string();
+            const std::string gf_path = "fields/" + gf_name;
+            out_dom[gf_path].set_external(dom[gf_path]);
+          }
+          if(dom.has_path(tpath + "/boundary_topology"))
+          {
+            const std::string bname = dom[tpath + "/boundary_topology"].as_string();
+            const std::string bpath = "topologies/" + bname;
+            out_dom[bpath].set_external(dom[bpath]);
+          }
+        }
+        // check for coord sets
+        const std::string coords = dom[tpath + "/coordset"].as_string();
+        const std::string cpath = "coordsets/" + coords;
+        if(!out_dom.has_path(cpath))
+        {
+          out_dom[cpath].set_external(dom[cpath]);
+        }
+      }
+    }
+    if(dom.has_path("state"))
+    {
+      out_dom["state"].set_external(dom["state"]);
+    }
+  }
+
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
@@ -221,6 +306,8 @@ void mesh_blueprint_save(const Node &data,
 
     Node multi_dom;
     bool is_valid = detail::clean_mesh(data, multi_dom);
+    if(is_valid) std::cout<<"VALID\n";
+    else std::cout<<"INVALID\n";
 
     int par_rank = 0;
     int par_size = 1;
@@ -480,22 +567,49 @@ RelayIOSave::execute()
     }
 
     Node *in = input<Node>("in");
-
-    if(protocol.empty())
+    Node selected;
+    conduit::Node test;
+    if(params().has_path("fields"))
     {
-        conduit::relay::io::save(*in,path);
-    }
-    else if( protocol == "blueprint/mesh/hdf5")
-    {
-        mesh_blueprint_save(*in,path,"hdf5");
-    }
-    else if( protocol == "blueprint/mesh/json")
-    {
-        mesh_blueprint_save(*in,path,"json");
+      std::vector<std::string> field_selection;
+      const conduit::Node &flist = params()["fields"];
+      const int num_fields = flist.number_of_children();
+      if(num_fields == 0)
+      {
+        ASCENT_ERROR("relay_io_save field selection list must be non-empty");
+      }
+      for(int i = 0; i < num_fields; ++i)
+      {
+        const conduit::Node &f = flist.child(i);
+        if(!f.dtype().is_string())
+        {
+           ASCENT_ERROR("relay_io_save field selection list values must be a string");
+        }
+        field_selection.push_back(f.as_string());
+      }
+      detail::filter_fields(*in, selected, field_selection);
     }
     else
     {
-        conduit::relay::io::save(*in,path,protocol);
+      // select all fields
+      selected.set_external(*in);
+    }
+
+    if(protocol.empty())
+    {
+        conduit::relay::io::save(selected,path);
+    }
+    else if( protocol == "blueprint/mesh/hdf5")
+    {
+        mesh_blueprint_save(selected,path,"hdf5");
+    }
+    else if( protocol == "blueprint/mesh/json")
+    {
+        mesh_blueprint_save(selected,path,"json");
+    }
+    else
+    {
+        conduit::relay::io::save(selected,path,protocol);
     }
 
 }
