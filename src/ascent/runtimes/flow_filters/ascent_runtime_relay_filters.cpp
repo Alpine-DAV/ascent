@@ -306,8 +306,6 @@ void mesh_blueprint_save(const Node &data,
 
     Node multi_dom;
     bool is_valid = detail::clean_mesh(data, multi_dom);
-    if(is_valid) std::cout<<"VALID\n";
-    else std::cout<<"INVALID\n";
 
     int par_rank = 0;
     int par_size = 1;
