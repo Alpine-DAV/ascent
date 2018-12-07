@@ -135,6 +135,7 @@ check_color_table_surprises(const conduit::Node &color_table)
 
   std::vector<std::string> valid_paths;
   valid_paths.push_back("name");
+  valid_paths.push_back("reverse");
 
   std::vector<std::string> ignore_paths;
   ignore_paths.push_back("control_points");
