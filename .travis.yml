@@ -132,11 +132,11 @@ script:
   - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/py-mpi4py*; do if [ -d $f ]; then export CLEAN_MPI4PY="TRUE"; fi; done;
   - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/py-numpy*; do if [ -d $f ];  then export CLEAN_NUMPY="TRUE"; fi; done;
   - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/py-sphinx*; do if [ -d $f ]; then export CLEAN_SPHINX="TRUE"; fi; done;
-  - if [ $CLEAN_CONDUIT  = "TRUE" ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all conduit; fi;
-  - if [ $CLEAN_VTKM  = "TRUE" ]; then echo "y"    | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all vtkm; fi;
-  - if [ $CLEAN_MPI4PY = "TRUE" ]; then echo "y"   | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-mpi4py; fi;
-  - if [ $CLEAN_NUMPY = "TRUE" ]; then echo "y"    | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-numpy; fi;
-  - if [ $CLEAN_SPHINX = "TRUE" ]; then echo "y"   | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-sphinx; fi;
+  - if [ "$CLEAN_CONDUIT"  = "TRUE" ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all conduit; fi;
+  - if [ "$CLEAN_VTKM"  = "TRUE" ]; then echo "y"    | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all vtkm; fi;
+  - if [ "$CLEAN_MPI4PY" = "TRUE" ]; then echo "y"   | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-mpi4py; fi;
+  - if [ "$CLEAN_NUMPY" = "TRUE" ]; then echo "y"    | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-numpy; fi;
+  - if [ "$CLEAN_SPHINX" = "TRUE" ]; then echo "y"   | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-sphinx; fi;
   - python ascent/scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=ascent/scripts/uberenv/spack_configs/travis/
   - cd $TRAVIS_BUILD_DIR
   # create out-of-source build dir
