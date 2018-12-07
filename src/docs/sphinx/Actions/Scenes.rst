@@ -231,6 +231,13 @@ Here is an example of specifying a color table by name:
   scenes["s1/plots/p1/field"] = "braid";
   scenes["s1/plots/p1/color_table/name"] = "Virdis";
 
+Color in the table can be reverse through an optional parameter:
+
+.. code-block:: c++
+
+  scenes["s1/plots/p1/color_table/reverse"] = "true";
+
+
 
 Volume plots are special since ray casting blends colors together.
 When no color table is specified, alpha values are automatically created,

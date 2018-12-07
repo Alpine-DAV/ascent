@@ -169,6 +169,14 @@ To save the files in HDF5 format:
 
     extracts["e1/params/protocol"] = "blueprint/mesh/hd5f";
 
+Additionally, Relay supports saving out only a subset of the data. The ``fields`` parameters is a list of
+strings that indicate which fields should be saves.
+
+.. code-block:: c++ 
+
+    extracts["e1/params/fields"].append("density");
+    extracts["e1/params/fields"].append("pressure");
+
 ADIOS
 -----
 The current ADIOS extract is experimental and this section is under construction.
