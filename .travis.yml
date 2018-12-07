@@ -138,6 +138,44 @@ script:
   - if [ "$CLEAN_NUMPY" = "TRUE" ]; then echo "y"    | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-numpy; fi;
   - if [ "$CLEAN_SPHINX" = "TRUE" ]; then echo "y"   | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-sphinx; fi;
   - python ascent/scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=ascent/scripts/uberenv/spack_configs/travis/
+  - cd $TRAVIS_BUILD_DIR
+  # create out-of-source build dir
+  - mkdir build-debug
+  - cd    build-debug
+  # cmake options
+  # build type
+  - CMAKE_OPTS="-DCMAKE_BUILD_TYPE=Debug"
+  # shared or static libs
+  - CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+  # install path
+  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install-debug"
+  # make sure cmake is in our path
+  - export CMAKE_BIN_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+  - export PATH=${CMAKE_BIN_DIR}:$PATH
+  - echo $PATH
+  - which cmake
+  - cmake --version
+  - export HOST_CONFIG=`ls ${CACHE_ROOT}/uberenv_libs/*.cmake`
+  # make sure we have a host-config, if not we don't want to go any further
+  - echo $HOST_CONFIG
+  - if [ ! -f  "$HOST_CONFIG" ]; then echo "ERROR -- Spack build failed (no host-config) -- exiting"; travis_terminate 0; fi;
+  # configure
+  - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+  # build, test, and install
+  - make VERBOSE=1
+  - env CTEST_OUTPUT_ON_FAILURE=1 make test
+  - make install
+  # test our examples that demo using an installed ascent
+  - export CONDUIT_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/conduit*`
+  - export VTKM_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*`
+  - export VTKH_DIR=`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkh*`
+  - export ASCENT_DIR=${TRAVIS_BUILD_DIR}/install-debug
+  # `using with` examples
+  - cd ${TRAVIS_BUILD_DIR}
+  - if [ $ENABLE_VTKH = 'ON' ]; then ./scripts/test-using-with-examples.sh ; fi
+  - cd ${TRAVIS_BUILD_DIR}
+  - export PATH=$PATH:`ls -d ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/mpich-*/bin/`
+  - if [ $ENABLE_VTKH = 'ON' ]; then ./scripts/test-run-examples.sh ; fi
   
 notifications:
   email:
