@@ -247,6 +247,13 @@ parse_color_table(const conduit::Node &color_table_node)
       }
   }
 
+  if(color_table_node.has_child("reverse"))
+  {
+    if(color_table_node["reverse"].as_string() == "true")
+    {
+      color_table.ReverseColors();
+    }
+  }
   return color_table;
 }
 
