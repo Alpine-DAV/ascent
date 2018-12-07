@@ -231,7 +231,7 @@ Here is an example of specifying a color table by name:
   scenes["s1/plots/p1/field"] = "braid";
   scenes["s1/plots/p1/color_table/name"] = "Virdis";
 
-Color in the table can be reverse through an optional parameter:
+Color in the table can be reversed through an optional parameter:
 
 .. code-block:: c++
 
