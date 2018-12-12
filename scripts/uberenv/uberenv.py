@@ -139,6 +139,16 @@ def parse_args():
                       default=False,
                       help="Pull if spack repo already exists")
 
+    # option to force a spack pull
+    parser.add_option("--macos-sdk-env-setup",
+                      action="store_true",
+                      dest="macos_sdk_env_setup",
+                      default=False,
+                      help="Set several env vars to select OSX SDK settings."
+                           "This was necessary for older versions of macOS "
+                           " but can cause issues with macOS versions >= 10.13. "
+                           " so it is disabled by default.")
+
 
     ###############
     # parse args
@@ -349,7 +359,10 @@ def main():
     # setup osx deployment target
     print "[uberenv options: %s]" % str(opts)
     if "darwin" in platform.system().lower():
-        setup_osx_sdk_env_vars()
+        if opts["macos_sdk_env_setup"]:
+            setup_osx_sdk_env_vars()
+        else:
+            print "[skipping MACOSX env var setup]"
     # setup default spec
     if opts["spec"] is None:
         if "darwin" in platform.system().lower():
