@@ -752,6 +752,7 @@ VTKHMarchingCubes::verify_params(const conduit::Node &params,
     valid_paths.push_back("field");
     valid_paths.push_back("levels");
     valid_paths.push_back("iso_values");
+    valid_paths.push_back("use_contour_tree");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -796,6 +797,14 @@ VTKHMarchingCubes::execute()
     else
     {
       marcher.SetLevels(params()["levels"].to_int32());
+      if(params().has_path("use_contour_tree"))
+      {
+        std::string use = params()["use_contour_tree"].as_string();
+        if(use == "true")
+        {
+          marcher.SetUseContourTree(true);
+        }
+      }
     }
 
     marcher.Update();
