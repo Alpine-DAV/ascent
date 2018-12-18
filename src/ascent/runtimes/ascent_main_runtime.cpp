@@ -347,7 +347,6 @@ AscentRuntime::EnsureDomainIds()
     {
       conduit::Node &dom = m_data.child(i);
 
-      int domain_id = domain_offset;
       if(!dom.has_path("state/domain_id"))
       {
          dom["state/domain_id"] = domain_offset + i;
@@ -407,7 +406,7 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
                                      const std::string pipeline_name)
 {
     std::string prev_name = CreateDefaultFilters();
-  
+
     bool has_pipeline = false;
     std::string input_name;
     // check to see if there is a non-default input to this pipeline
@@ -459,7 +458,7 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
                            filter["params"]);
       if((input_name == prev_name) && has_pipeline)
       {
-        // connect this later so we can specify them in any order 
+        // connect this later so we can specify them in any order
         m_connections[pipeline_name] = prev_name;
       }
       else
@@ -591,7 +590,7 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   }
 
   // currently these are special cases.
-  // TODO: 
+  // TODO:
   bool special = false;
   if(extract_type == "xray" ||
      extract_type == "volume") special = true;
@@ -627,8 +626,8 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     {
       extract_source = "default";
     }
-    
-    
+
+
   }
   if(!special)
   {
