@@ -2013,7 +2013,6 @@ DefaultScene::execute()
     vtkm::Bounds       *bounds_in     = input<vtkm::Bounds>(0);
     std::set<vtkm::Id> *domain_ids_set = input<std::set<vtkm::Id> >(1);
     vtkh::DataSet      *ds = input<vtkh::DataSet>(2);
-    ds->PrintSummary(std::cout);
     std::string field_name = params()["field"].as_string();
 
     std::stringstream ss;
