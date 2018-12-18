@@ -114,7 +114,7 @@ namespace detail
 //
 void make_domain_ids(conduit::Node &domains)
 {
-  const int num_domains = domains.number_of_children();
+  int num_domains = domains.number_of_children();
 
   int domain_offset = 0;
 
