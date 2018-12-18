@@ -109,6 +109,42 @@ namespace filters
 namespace detail
 {
 //
+// recalculate domain ids so that we are consistant.
+// Assumes that domains are valid
+//
+void make_domain_ids(conduit::Node &domains)
+{
+  int num_domains = domains.number_of_children();
+
+  int domain_offset = 0;
+
+#ifdef ASCENT_MPI_ENABLED
+  int comm_id = flow::Workspace::default_mpi_comm();
+  int comm_size = 1;
+  int rank = 0;
+
+  MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+  MPI_Comm_rank(mpi_comm,&rank);
+
+  MPI_Comm_size(mpi_comm, &comm_size);
+  int *domains_per_rank = new int[comm_size];
+
+  MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
+
+  for(int i = 0; i < rank; ++i)
+  {
+    domain_offset += domains_per_rank[i];
+  }
+  delete[] domains_per_rank;
+#endif
+
+  for(int i = 0; i < num_domains; ++i)
+  {
+    conduit::Node &dom = domains.child(i);
+    dom["state/domain_id"] = domain_offset + i;
+  }
+}
+//
 // This expects a single or multi_domain blueprint mesh and will iterate
 // through all domains to see if they are valid. Returns true
 // if it contains valid data and false if there is no valid
@@ -157,6 +193,7 @@ bool clean_mesh(const conduit::Node &data, conduit::Node &output)
     }
   }
 
+  make_domain_ids(output);
   return output.number_of_children() > 0;
 }
 // mfem needs these special fields so look for them
@@ -167,7 +204,7 @@ void check_for_attributes(const conduit::Node &input,
   std::set<std::string> specials;
   for(int d = 0; d < num_doms; ++d)
   {
-    const conduit::Node &dom = input.child(d);     
+    const conduit::Node &dom = input.child(d);
     if(dom.has_path("fields"))
     {
       const conduit::Node &fields = dom["fields"];
@@ -188,8 +225,8 @@ void check_for_attributes(const conduit::Node &input,
   }
 }
 
-void filter_fields(const conduit::Node &input, 
-                   conduit::Node &output, 
+void filter_fields(const conduit::Node &input,
+                   conduit::Node &output,
                    std::vector<std::string> fields)
 {
   // assume this is multi-domain
@@ -199,8 +236,8 @@ void filter_fields(const conduit::Node &input,
   const int num_doms = input.number_of_children();
   for(int d = 0; d < num_doms; ++d)
   {
-    const conduit::Node &dom = input.child(d);     
-    conduit::Node &out_dom = output.append();     
+    const conduit::Node &dom = input.child(d);
+    conduit::Node &out_dom = output.append();
     for(int f = 0; f < fields.size(); ++f)
     {
       const std::string fname = fields[f];
@@ -331,7 +368,7 @@ void mesh_blueprint_save(const Node &data,
     if(global_boolean == 0)
     {
       ASCENT_INFO("Blueprint save: no valid data exists. Skipping save");
-      //return;
+      return;
     }
 
     int num_domains = multi_dom.number_of_children();
@@ -357,6 +394,7 @@ void mesh_blueprint_save(const Node &data,
 
     cycle = n_min.as_int();
 #endif
+
     // setup the directory
     char fmt_buff[64];
     snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
