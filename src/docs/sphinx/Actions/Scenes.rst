@@ -85,7 +85,7 @@ Below is an example of creating a scene with a single pseudocolor plot with the 
 
   conduit::Node scenes;
   scenes["s1/plots/p1/type"]         = "pseudocolor";
-  scenes["s1/plots/p1/params/field"] = "braid";
+  scenes["s1/plots/p1/field"] = "braid";
   scenes["s1/image_prefix"] = output_file_name;
 
   conduit::Node actions;
@@ -344,9 +344,38 @@ Now we add a second render to the same example using every available parameter:
   scenes["s1/renders/r2/camera/fov"] = 45.;
   scenes["s1/renders/r2/camera/xpan"] = 1.;
   scenes["s1/renders/r2/camera/ypan"] = 1.;
+  scenes["s1/renders/r2/camera/azimuth"] = 10.0;
+  scenes["s1/renders/r2/camera/elevation"] = -10.0;
   scenes["s1/renders/r2/camera/zoom"] = 3.2;
   scenes["s1/renders/r2/camera/near_plane"] = 0.1;
   scenes["s1/renders/r2/camera/far_plane"] = 33.1;
+
+.. code-block:: json
+
+  "renders":
+  {
+    "r1":
+    {
+      "image_width": 300,
+      "image_height": 400,
+      "image_name": "some_image",
+      "camera":
+      {
+        "look_at": [1.0, 1.0, 1.0],
+        "position": [0.0, 25.0, 15.0],
+        "up": [0.0, -1.0, 0.0],
+        "fov": 60.0,
+        "xpan": 0.0,
+        "ypan": 0.0,
+        "elevation": 10.0,
+        "azimuth": -10.0,
+        "zoom": 0.0,
+        "near_plane": 0.1,
+        "far_plane": 100.1
+      }
+    }
+  }
+
 
 Additional Render Options
 -------------------------
