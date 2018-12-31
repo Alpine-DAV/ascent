@@ -402,7 +402,7 @@ void VTKmCellShape(const std::string shape_type,
   num_indices = 0;
   if(shape_type == "tri")
   {
-      shape_id = 3;
+      shape_id = 5;
       num_indices = 3;
   }
   else if(shape_type == "quad")
