@@ -52,7 +52,7 @@ A scene defined in this way uses the default data source, which is all of the da
 
 Plots
 -----
-We current have support for two plot types: pseudocolor and volume.
+We current have support for three plot types: pseudocolor, volume, and mesh.
 Both plots support node centered and element centered scalar fields.
 Plots optionally consume the result of a pipeline, but if none is specified, then the plot input is the published mesh data.
 Each scene can contain one or more plots.
