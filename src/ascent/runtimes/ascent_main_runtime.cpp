@@ -820,7 +820,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     conduit::Node scene = scenes.child(i);
     if(!scene.has_path("plots"))
     {
-      ASCENT_ERROR("Scene must have at least one plot");
+      ASCENT_ERROR("Scene must have at least one plot: "<<scene.to_json());
     }
 
     // create the default render
