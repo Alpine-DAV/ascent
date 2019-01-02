@@ -877,7 +877,6 @@ VTKHVectorMagnitude::execute()
     mag.Update();
 
     vtkh::DataSet *mag_output = mag.GetOutput();
-
     set_output<vtkh::DataSet>(mag_output);
 }
 
@@ -2528,10 +2527,8 @@ VTKHLog::execute()
     }
 
     std::string field_name = params()["field"].as_string();
-
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
     vtkh::Log logger;
-
     logger.SetInput(data);
     logger.SetField(field_name);
     if(params().has_path("output_name"))
