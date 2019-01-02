@@ -793,7 +793,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
     scenes["s1/plots/p2/field"] = "braid";
     scenes["s1/plots/p2/min_value"]    = -.5;
     scenes["s1/plots/p2/max_value"]    = .5;
-    scenes["s1/plots/p2/color_table/name"]  = "thermal";
+    scenes["s1/plots/p2/color_table/name"]  = "rainbow desaturated";
 
     conduit::Node control_points;
 
