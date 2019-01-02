@@ -406,7 +406,6 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
                                      const std::string pipeline_name)
 {
     std::string prev_name = CreateDefaultFilters();
-
     bool has_pipeline = false;
     std::string input_name;
     // check to see if there is a non-default input to this pipeline
@@ -456,10 +455,11 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       w.graph().add_filter(filter_name,
                            name,
                            filter["params"]);
+
       if((input_name == prev_name) && has_pipeline)
       {
         // connect this later so we can specify them in any order
-        m_connections[pipeline_name] = prev_name;
+        m_connections[name] = prev_name;
       }
       else
       {
@@ -763,6 +763,7 @@ AscentRuntime::ConnectGraphs()
     {
       ASCENT_ERROR(names[i]<<"' references unknown pipeline: "<<pipeline);
     }
+
     w.graph().connect(pipeline, // src
                       names[i], // dest
                       0);       // default port
@@ -1116,8 +1117,8 @@ AscentRuntime::Execute(const conduit::Node &actions)
           ConnectGraphs();
           PopulateMetadata(); // add metadata so filters can access it
           w.info(m_info["flow_graph"]);
-          w.print();
-          w.graph().to_dot();
+          //w.print();
+          //std::cout<<w.graph().to_dot();
           w.execute();
           w.registry().reset();
 

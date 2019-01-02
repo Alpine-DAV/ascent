@@ -52,8 +52,8 @@ A scene defined in this way uses the default data source, which is all of the da
 
 Plots
 -----
-We current have support for two plot types: pseudocolor and volume.
-Both plots support node centered and zone centered scalar fields.
+We current have support for three plot types: pseudocolor, volume, and mesh.
+Both plots support node centered and element centered scalar fields.
 Plots optionally consume the result of a pipeline, but if none is specified, then the plot input is the published mesh data.
 Each scene can contain one or more plots.
 The plot interface is simply:
@@ -218,7 +218,7 @@ The color map translates normalized scalars to color values. Color maps
 can be applied to each each plot in a scene.
 Minimally, a color table name needs to be specified, but the ``color_table`` node allows you to specify RGB and Alpha (opacity) control points for complete customization of color maps.
 Alpha control points are used when rendering volumes.
-The built-in Color map names are: ``Cool to Warm``, ``Black-Body Radiation``, ``Samsel Fire``, ``Inferno``, ``Linear YGB``, ``Cold and Hot``, ``Rainbow Desaturated``, ``Cool to Warm (Extended)``, ``X Ray``, ``Black, Blue and White``, ``Virdis``, ``Linear Green``, ``Jet``, and ``Rainbow``.
+The built-in Color map names are: ``Cool to Warm``, ``Black-Body Radiation``, ``Samsel Fire``, ``Inferno``, ``Linear YGB``, ``Cold and Hot``, ``Rainbow Desaturated``, ``Cool to Warm (Extended)``, ``X Ray``, ``Black, Blue and White``, ``Viridis``, ``Linear Green``, ``Jet``, and ``Rainbow``.
 Colors are three double precision values between 0 and 1.
 Alphas and positions  are a single double precision values between 0 and 1.
 
@@ -229,7 +229,7 @@ Here is an example of specifying a color table by name:
   conduit::Node scenes;
   scenes["s1/plots/p1/type"]  = "pseudocolor";
   scenes["s1/plots/p1/field"] = "braid";
-  scenes["s1/plots/p1/color_table/name"] = "Virdis";
+  scenes["s1/plots/p1/color_table/name"] = "Viridis";
 
 Color in the table can be reversed through an optional parameter:
 
