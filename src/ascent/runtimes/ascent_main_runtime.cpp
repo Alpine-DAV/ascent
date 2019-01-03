@@ -1119,6 +1119,11 @@ AscentRuntime::Execute(const conduit::Node &actions)
           w.info(m_info["flow_graph"]);
           //w.print();
           //std::cout<<w.graph().to_dot();
+
+#if defined(ASCENT_VTKM_ENABLED)
+          // we have vtkm enabled so catch any errors that
+          // come up here and forward them up as a conduit
+          // error
           try
           {
             w.execute();
@@ -1128,6 +1133,10 @@ AscentRuntime::Execute(const conduit::Node &actions)
           {
             ASCENT_ERROR("Execution failed with: "<<e.what());
           }
+#else
+          w.execute();
+          w.registry().reset();
+#endif
 
           Node msg;
           this->Info(msg["info"]);

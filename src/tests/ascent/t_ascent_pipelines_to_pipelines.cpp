@@ -119,7 +119,7 @@ TEST(ascent_pipelines_to_pipelines, test_pipelines_to_pipelines)
     pipelines["pl2/pipeline"] = "pl1";
     pipelines["pl2/f1/type"] = "log";
     conduit::Node &params2 = pipelines["pl2/f1/params"];
-    params2["field"] = "earmag";             // name of the input field
+    params2["field"] = "mag";             // name of the input field
     params2["output_name"] = "log_mag";   // name of the output field
 
     conduit::Node scenes;
