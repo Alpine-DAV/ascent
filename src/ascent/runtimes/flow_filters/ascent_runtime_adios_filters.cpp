@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
+//
 // Please also read ascent/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 /******************************************************
@@ -96,7 +96,7 @@ struct coordInfo
     coordInfo(int r, int n, double r0, double r1) : num(n), rank(r) {range[0]=r0; range[1]=r1;}
     coordInfo() {num=0; rank=-1; range[0]=range[1]=0;}
     coordInfo(const coordInfo &c) {num=c.num; rank=c.rank; range[0]=c.range[0]; range[1]=c.range[1];}
-    
+
     int num, rank;
     double range[2];
 };
@@ -124,7 +124,7 @@ inline std::ostream& operator<<(ostream& os, const vector<T>& v)
 }
 
 template <class T>
-inline ostream& operator<<(ostream& os, const set<T>& s) 
+inline ostream& operator<<(ostream& os, const set<T>& s)
 {
     os<<"{";
     auto it = s.begin();
@@ -165,7 +165,7 @@ ADIOS::ADIOS()
     offset.resize(3);
     for (int i = 0; i < 3; i++)
         globalDims[i] = localDims[i] = offset[i] = 0;
-    
+
 #ifdef ASCENT_MPI_ENABLED
     mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     MPI_Comm_rank(mpi_comm, &rank);
@@ -180,7 +180,7 @@ ADIOS::~ADIOS()
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 ADIOS::declare_interface(Node &i)
 {
     i["type_name"]   = "adios";
@@ -192,7 +192,7 @@ ADIOS::declare_interface(Node &i)
 bool
 ADIOS::verify_params(const conduit::Node &params,
                      conduit::Node &info)
-{    
+{
     bool res = true;
 
     if (!params.has_child("transport") ||
@@ -203,22 +203,20 @@ ADIOS::verify_params(const conduit::Node &params,
     }
 
 
-    if (!params.has_child("filename") || 
+    if (!params.has_child("filename") ||
         !params["transport"].dtype().is_string() )
     {
         info["errors"].append() = "missing required entry 'filename'";
         res = false;
     }
-    
+
     return res;
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 ADIOS::execute()
 {
-    ASCENT_INFO("execute");
-
     if(!input("in").check_type<Node>())
     {
         // error
@@ -229,7 +227,7 @@ ADIOS::execute()
     fileName      = params()["filename"].as_string();
 
     // get params
-    
+
     if (transportType == "file")
     {
         adios_init_noxml(mpi_comm);
@@ -253,7 +251,7 @@ ADIOS::execute()
     {
         const Node &coordSet = itr.next();
         std::string coordSetType = coordSet["type"].as_string();
-        
+
         if (coordSetType == "uniform")
         {
             UniformMeshSchema(coordSet);
@@ -297,7 +295,7 @@ ADIOS::CalcRectilinearMeshInfo(const conduit::Node &node,
     const Node &X = node["x"];
     const Node &Y = node["y"];
     const Node &Z = node["z"];
-    
+
     const double *xyzPtr[3] = {X.as_float64_ptr(),
                                Y.as_float64_ptr(),
                                Z.as_float64_ptr()};
@@ -323,7 +321,7 @@ ADIOS::CalcRectilinearMeshInfo(const conduit::Node &node,
     }
 
 #ifdef ASCENT_MPI_ENABLED
-    
+
     // Have to figure out the indexing for each rank.
     vector<int> ldims(3*numRanks, 0), buff(3*numRanks,0);
     ldims[3*rank + 0] = localDims[0];
@@ -343,20 +341,20 @@ ADIOS::CalcRectilinearMeshInfo(const conduit::Node &node,
         globalDims[1] += buff[i + 1];
         globalDims[2] += buff[i + 2];
     }
-    
+
     //And now for the offsets. It is the sum of all the localDims before me.
     offset = {0,0,0};
     for (int i = 0; i < rank; i++)
     {
         offset[0] += buff[i*3 + 0];
         offset[1] += buff[i*3 + 1];
-        offset[2] += buff[i*3 + 2];        
+        offset[2] += buff[i*3 + 2];
     }
 
 #if 0
     if (rank == 0)
     {
-        cout<<"***************************************"<<endl;        
+        cout<<"***************************************"<<endl;
         cout<<"*****globalDims: "<<globalDims<<endl;
     }
     MPI_Barrier(mpi_comm);
@@ -371,12 +369,12 @@ ADIOS::CalcRectilinearMeshInfo(const conduit::Node &node,
             cout<<"  Z: "<<rank<<XYZ[2]<<endl;
             cout<<"***************************************"<<endl<<endl;
         }
-        MPI_Barrier(mpi_comm);        
+        MPI_Barrier(mpi_comm);
     }
 #endif
-    
+
     return true;
-    
+
 #endif
 }
 
@@ -387,7 +385,7 @@ ADIOS::RectilinearMeshSchema(const Node &node)
 {
     if (!node.has_child("values"))
         return false;
-    
+
     const Node &coords = node["values"];
     if (!coords.has_child("x") || !coords.has_child("y") || !coords.has_child("z"))
         return false;
@@ -407,7 +405,7 @@ ADIOS::RectilinearMeshSchema(const Node &node)
         cout<<rank<<": localDims: "<<dimsToStr(localDims)<<endl;
         cout<<rank<<": offset: "<<dimsToStr(offset)<<endl;
         */
-        
+
         adios_define_mesh_timevarying("no", adiosGroup, meshName.c_str());
         adios_define_mesh_rectilinear((char*)dimsToStr(globalDims).c_str(),
                                       (char*)(coordNames[0]+","+coordNames[1]+","+coordNames[2]).c_str(),
@@ -429,7 +427,7 @@ ADIOS::RectilinearMeshSchema(const Node &node)
                                   to_string(offset[i]).c_str());
         adios_write_byid(adiosFile, ids[i], (void *)&(XYZ[i][0]));
     }
-    
+
     return true;
 }
 
@@ -439,7 +437,7 @@ ADIOS::FieldVariable(const string &fieldName, const Node &node)
 {
     // TODO: we can assuem this is true if verify is true and this is a recti
     // mesh.
-    if (!node.has_child("values") || 
+    if (!node.has_child("values") ||
         !node.has_child("association") ||
         !node.has_child("type"))
         return false;
@@ -450,29 +448,29 @@ ADIOS::FieldVariable(const string &fieldName, const Node &node)
     if (fieldType != "scalar")
     {
         ASCENT_INFO("Field type "
-                    << fieldType 
+                    << fieldType
                     << " not supported for ADIOS this time");
         return false;
     }
     if (fieldAssoc != "vertex" && fieldAssoc != "element")
     {
         ASCENT_INFO("Field association "
-                    << fieldAssoc 
+                    << fieldAssoc
                     <<" not supported for ADIOS this time");
         return false;
     }
 
     const Node &field_values = node["values"];
     const double *vals = field_values.as_double_ptr();
-    
+
     /*
     DataType dt(fieldNode.dtype());
     cout<<"FIELD "<<fieldName<<" #= "<<dt.number_of_elements()<<endl;
     cout<<"localDims: "<<dimsToStr(localDims, (fieldAssoc=="vertex"))<<endl;
     cout<<"globalDims: "<<dimsToStr(globalDims, (fieldAssoc=="vertex"))<<endl;
-    cout<<"offset: "<<dimsToStr(offset, (fieldAssoc=="vertex"))<<endl;    
+    cout<<"offset: "<<dimsToStr(offset, (fieldAssoc=="vertex"))<<endl;
     */
-    
+
     int64_t varId = adios_define_var(adiosGroup,
                                      (char*)fieldName.c_str(),
                                      "",

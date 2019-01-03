@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_slice.cpp
+/// file: t_ascent_render_3d.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -68,18 +68,26 @@ using namespace std;
 using namespace conduit;
 using namespace ascent;
 
+void
+throw_handler(const std::string &,
+              const std::string &,
+              int )
+{
+  ASCENT_ERROR("");
+}
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_pipelines_to_pipelines, test_pipelines_to_pipelines)
+TEST(ascent_error_handling, test_bad_filter_field)
 {
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent support disabled, skipping test");
         return;
     }
 
@@ -92,18 +100,14 @@ TEST(ascent_pipelines_to_pipelines, test_pipelines_to_pipelines)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
-    ASCENT_INFO("Testing pipelines to pipelines");
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing bad field name for filter");
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_pipelines");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
-
+    string output_file = conduit::utils::join_file_path(output_path,"tout_never_written");
 
     //
     // Create the actions.
@@ -111,22 +115,16 @@ TEST(ascent_pipelines_to_pipelines, test_pipelines_to_pipelines)
 
     conduit::Node pipelines;
     // pipeline 1
-    pipelines["pl1/f1/type"] = "vector_magnitude";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "vel";         // name of the vector field
-    params["output_name"] = "mag";   // name of the output field
-
-    pipelines["pl2/pipeline"] = "pl1";
-    pipelines["pl2/f1/type"] = "log";
-    conduit::Node &params2 = pipelines["pl2/f1/params"];
-    params2["field"] = "earmag";             // name of the input field
-    params2["output_name"] = "log_mag";   // name of the output field
+    pipelines["pl1/f1/type"] = "contour";
+    // filter knobs
+    conduit::Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "braid";
+    contour_params["iso_values"] = 0.;
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "log_mag";
-    scenes["s1/plots/p1/pipeline"] = "pl2";
-
+    scenes["s1/plots/p1/field"] = "bananas";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
@@ -150,23 +148,35 @@ TEST(ascent_pipelines_to_pipelines, test_pipelines_to_pipelines)
 
     Node ascent_opts;
     ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
     ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
 
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    bool error = false;
+    try
+    {
+      ascent.execute(actions);
+    }
+    catch(conduit::Error &e)
+    {
+      error = true;
+    }
+
+    ASSERT_TRUE(error);
+    ascent.close();
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_vector_mag, test_vector_mag_interleaved)
+TEST(ascent_error_handling, test_bad_plot_var_name)
 {
+
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
         return;
     }
 
@@ -179,19 +189,14 @@ TEST(ascent_vector_mag, test_vector_mag_interleaved)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    add_interleaved_vector(data);
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     //verify_info.print();
 
-    ASCENT_INFO("Testing vector magnitude interleaved");
-
+    ASCENT_INFO("Testing bad plot variable name");
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_vec_mag_interleaved");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
-
+    string output_file = conduit::utils::join_file_path(output_path,"tout_empty");
 
     //
     // Create the actions.
@@ -199,22 +204,26 @@ TEST(ascent_vector_mag, test_vector_mag_interleaved)
 
     conduit::Node pipelines;
     // pipeline 1
-    pipelines["pl1/f1/type"] = "vector_magnitude";
-    // filter knobs (all these are optional)
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "vel_interleaved";  // name of the vector field
-    params["output_name"] = "mag";        // name of the output field
+    pipelines["pl1/f1/type"] = "clip";
+    // filter knobs
+    conduit::Node &clip_params = pipelines["pl1/f1/params"];
+    clip_params["topology"] = "mesh";
+    clip_params["box/min/x"] = 0.1;
+    clip_params["box/min/y"] = 0.1;
+    clip_params["box/min/z"] = 0.1;
+    clip_params["box/max/x"] = 10.01; // <=
+    clip_params["box/max/y"] = 10.01;
+    clip_params["box/max/z"] = 10.01;
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "mag";
+    scenes["s1/plots/p1/field"] = "bananas";
     scenes["s1/plots/p1/pipeline"] = "pl1";
-
     scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
     // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
+    conduit::Node &add_pipelines= actions.append();
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
     // add the scenes
@@ -233,14 +242,121 @@ TEST(ascent_vector_mag, test_vector_mag_interleaved)
 
     Node ascent_opts;
     ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
     ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
 
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    bool error = false;
+    try
+    {
+      ascent.execute(actions);
+    }
+    catch(conduit::Error &e)
+    {
+      error = true;
+    }
+
+    ASSERT_TRUE(error);
+
+    ascent.close();
 }
+//-----------------------------------------------------------------------------
+TEST(ascent_error_handling, test_emtpy)
+{
+
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    //verify_info.print();
+
+    ASCENT_INFO("Testing 3D warning for no data to plot");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_empty");
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "clip";
+    // filter knobs
+    conduit::Node &clip_params = pipelines["pl1/f1/params"];
+    clip_params["topology"] = "mesh";
+    clip_params["box/min/x"] = -10.1;
+    clip_params["box/min/y"] = -10.1;
+    clip_params["box/min/z"] = -10.1;
+    clip_params["box/max/x"] = 10.01; // <=
+    clip_params["box/max/y"] = 10.01;
+    clip_params["box/max/z"] = 10.01;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "radial";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines= actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+    // execute
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+
+    conduit::utils::set_info_handler(throw_handler);
+    bool error = false;
+    try
+    {
+      ascent.execute(actions);
+    }
+    catch(conduit::Error &e)
+    {
+      error = true;
+    }
+
+    ASSERT_TRUE(error);
+
+    ascent.close();
+}
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {

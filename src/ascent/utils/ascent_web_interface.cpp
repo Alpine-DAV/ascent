@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
+//
 // Please also read ascent/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 //-----------------------------------------------------------------------------
@@ -76,7 +76,7 @@ WebInterface::WebInterface()
  m_ms_timeout(100),
  m_doc_root(ASCENT_WEB_CLIENT_ROOT)
 {}
-  
+
 //-----------------------------------------------------------------------------
 WebInterface::~WebInterface()
 {
@@ -119,7 +119,7 @@ WebInterface::Connection()
     {
         return NULL;
     }
-    // start our web server if necessary 
+    // start our web server if necessary
     if(!m_server.is_running())
     {
         m_server.set_port(8081);
@@ -154,7 +154,7 @@ WebInterface::PushMessage(const Node &msg)
     {
         return;
     }
-    
+
     // sent the message
     wsock->send(msg);
 }
@@ -172,18 +172,18 @@ WebInterface::PushRenders(const Node &renders)
         return;
     }
     Node msg;
-    
+
     NodeConstIterator itr = renders.children();
-    
+
     while(itr.has_next())
     {
         const Node &curr = itr.next();
         EncodeImage(curr.as_string(),
                     msg["renders"].append());
-        
+
     }
-    
-    
+
+
     // sent the message
     wsock->send(msg);
 }
@@ -215,7 +215,6 @@ WebInterface::EncodeImage(const std::string &png_image_path,
                           conduit::Node &out)
 {
     out.reset();
-    ASCENT_INFO("png path:" << png_image_path);
 
     std::ifstream file(png_image_path.c_str(),
                        std::ios::binary);
@@ -224,22 +223,22 @@ WebInterface::EncodeImage(const std::string &png_image_path,
     file.seekg(0, std::ios::end);
     std::streamsize png_raw_bytes = file.tellg();
     file.seekg(0, std::ios::beg);
-    
+
     // use a node to hold the buffers for raw and base64 encoded png data
     Node png_data;
     png_data["raw"].set(DataType::c_char(png_raw_bytes));
     char *png_raw_ptr = png_data["raw"].value();
-    
+
     // read in the raw png data
     if(!file.read(png_raw_ptr, png_raw_bytes))
     {
-        // ERROR ... 
+        // ERROR ...
         ASCENT_WARN("ERROR Reading png file " << png_image_path);
     }
 
     // base64 encode the raw png data
     png_data["encoded"].set(DataType::char8_str(png_raw_bytes*2));
-    
+
     utils::base64_encode(png_raw_ptr,
                          png_raw_bytes,
                          png_data["encoded"].data_ptr());

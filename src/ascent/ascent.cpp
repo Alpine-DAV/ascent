@@ -79,7 +79,7 @@ quiet_handler(const std::string &,
 //-----------------------------------------------------------------------------
 Ascent::Ascent()
 : m_runtime(NULL),
-  m_verbose_msgs(false),
+  m_verbose_msgs(true),
   m_forward_exceptions(false),
   m_actions_file("ascent_actions.json")
 {
@@ -187,7 +187,7 @@ Ascent::open(const conduit::Node &options)
             }
         }
 
-        ASCENT_INFO("Runtime Type = " << runtime_type);
+        //ASCENT_INFO("Runtime Type = " << runtime_type);
 
         if(runtime_type == "empty")
         {

@@ -73,6 +73,7 @@
 
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkh/vtkh.hpp>
+#include <vtkh/Error.hpp>
 
 #ifdef VTKM_CUDA
 #include <vtkm/cont/cuda/ChooseCudaDevice.h>
@@ -473,8 +474,9 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
 
     if(w.graph().has_filter(pipeline_name))
     {
-      ASCENT_INFO("Duplicate pipeline name "<<pipeline_name
-                  <<" over writing original");
+      ASCENT_INFO("Duplicate pipeline name '"<<pipeline_name
+                  <<"' this is usually the symptom of a larger problem."
+                  <<" Locate the first error message to find the root cause");
     }
 
     // create an alias passthrough filter so plots and extracts
@@ -650,8 +652,9 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
 
   if(w.graph().has_filter(plot_name))
   {
-    ASCENT_INFO("Duplicate plot name "<<plot_name
-                <<" over writing original");
+    ASCENT_INFO("Duplicate plot name '"<<plot_name
+                <<"' this is usually the symptom of a larger problem."
+                <<" Locate the first error message to find the root cause");
   }
 
   w.graph().add_filter(filter_name,
@@ -1051,7 +1054,6 @@ AscentRuntime::FindRenders(const conduit::Node &info,
     while(itr.has_next())
     {
         const Node &curr_filter = itr.next();
-        ASCENT_INFO(curr_filter.to_json());
         if(curr_filter.has_path("params/image_prefix"))
         {
             std::string img_path = curr_filter["params/image_prefix"].as_string() + ".png";
@@ -1073,8 +1075,6 @@ AscentRuntime::Execute(const conduit::Node &actions)
     {
         const Node &action = actions.child(i);
         string action_name = action["action"].as_string();
-
-        ASCENT_INFO("Executing " << action_name);
 
         if(action_name == "add_pipelines")
         {
@@ -1119,8 +1119,15 @@ AscentRuntime::Execute(const conduit::Node &actions)
           w.info(m_info["flow_graph"]);
           //w.print();
           //std::cout<<w.graph().to_dot();
-          w.execute();
-          w.registry().reset();
+          try
+          {
+            w.execute();
+            w.registry().reset();
+          }
+          catch(vtkh::Error &e)
+          {
+            ASCENT_ERROR("Execution failed with: "<<e.what());
+          }
 
           Node msg;
           this->Info(msg["info"]);
