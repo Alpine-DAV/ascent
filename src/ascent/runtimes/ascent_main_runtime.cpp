@@ -91,6 +91,26 @@ namespace ascent
 // node that holds tree of reg'd filter types
 Node AscentRuntime::s_reged_filter_types;
 
+class InfoHandler
+{
+  public:
+  static int m_rank;
+  static void
+  info_handler(const std::string &msg,
+               const std::string &file,
+               int line)
+  {
+    if(m_rank == 0)
+    {
+      std::cout << "[" << file
+                << " : " << line  << "]"
+                << "\n " << msg << std::endl;
+    }
+  }
+};
+
+int InfoHandler::m_rank = 0;
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //
@@ -102,7 +122,8 @@ Node AscentRuntime::s_reged_filter_types;
 //-----------------------------------------------------------------------------
 AscentRuntime::AscentRuntime()
 :Runtime(),
- m_refinement_level(2) // default refinement level for high order meshes
+ m_refinement_level(2), // default refinement level for high order meshes
+ m_rank(0)
 {
     flow::filters::register_builtin();
     ResetInfo();
@@ -126,7 +147,6 @@ AscentRuntime::~AscentRuntime()
 void
 AscentRuntime::Initialize(const conduit::Node &options)
 {
-    int rank = 0;
 #if ASCENT_MPI_ENABLED
     if(!options.has_child("mpi_comm") ||
        !options["mpi_comm"].dtype().is_integer())
@@ -139,8 +159,8 @@ AscentRuntime::Initialize(const conduit::Node &options)
     vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
 #endif
     MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
-    MPI_Comm_rank(comm,&rank);
-
+    MPI_Comm_rank(comm,&m_rank);
+    InfoHandler::m_rank = m_rank;
 #else  // non mpi version
     if(options.has_child("mpi_comm"))
     {
@@ -152,7 +172,8 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 
 #endif
-
+    // set a info handler so we only display messages on rank 0;
+    conduit::utils::set_info_handler(InfoHandler::info_handler);
 #ifdef VTKM_CUDA
 
     bool sel_cuda_device = true;
@@ -170,7 +191,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     {
 #if defined(ASCENT_VTKM_ENABLED)
         int device_count = vtkh::CUDADeviceCount();
-        int rank_device = rank % device_count;
+        int rank_device = m_rank % device_count;
         vtkh::SelectCUDADevice(rank_device);
 #endif
     }
@@ -199,7 +220,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
     if(options.has_path("web/stream") &&
        options["web/stream"].as_string() == "true" &&
-       rank == 0)
+       m_rank == 0)
     {
 
         if(options.has_path("web/document_root"))
@@ -246,10 +267,7 @@ AscentRuntime::Cleanup()
         fname << "ascent_filter_times";
 
 #ifdef ASCENT_MPI_ENABLED
-        int rank = 0;
-        MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-        MPI_Comm_rank(mpi_comm, &rank);
-        fname << "_" << rank;
+        fname << "_" << m_rank;
 #endif
         fname << ".csv";
         std::ofstream ftimings;
@@ -291,12 +309,10 @@ AscentRuntime::EnsureDomainIds()
         has_ids = false;
       }
     }
-    int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
     int comm_id =flow::Workspace::default_mpi_comm();
 
     MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
-    MPI_Comm_rank(mpi_comm,&rank);
 
     int comm_size = 1;
     MPI_Comm_size(mpi_comm, &comm_size);
@@ -338,7 +354,7 @@ AscentRuntime::EnsureDomainIds()
 #ifdef ASCENT_MPI_ENABLED
     int *domains_per_rank = new int[comm_size];
     MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
-    for(int i = 0; i < rank; ++i)
+    for(int i = 0; i < m_rank; ++i)
     {
       domain_offset += domains_per_rank[i];
     }
@@ -532,14 +548,12 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     // read contents on root and broadcast to other tasks
     int comm_id = flow::Workspace::default_mpi_comm();
     MPI_Comm comm = MPI_Comm_f2c(comm_id);
-    int rank = relay::mpi::rank(comm);
-    MPI_Comm_rank(comm,&rank);
 
      if(params.has_path("file"))
      {
        Node n_py_src;
        // read script only on rank 0
-       if(rank == 0)
+       if(m_rank == 0)
        {
          ostringstream py_src;
          std::string script_fname = params["file"].as_string();
@@ -1153,6 +1167,14 @@ AscentRuntime::Execute(const conduit::Node &actions)
     }
 }
 
+void
+AscentRuntime::DisplayError(const std::string &msg)
+{
+  if(m_rank == 0)
+  {
+    std::cerr<<msg;
+  }
+}
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::RegisterFilterType(const std::string  &role_path,

@@ -214,6 +214,12 @@ parse_color_table(const conduit::Node &color_table_node)
   // default name
   std::string color_map_name = "cool to warm";
 
+  if(color_table_node.number_of_children() == 0)
+  {
+    ASCENT_INFO("Color table node is empty (no children). Defaulting to "
+                <<color_map_name);
+  }
+
   if(color_table_node.has_child("name"))
   {
     std::string name = color_table_node["name"].as_string();

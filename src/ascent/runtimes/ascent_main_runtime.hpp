@@ -83,6 +83,8 @@ public:
 
     void  Cleanup();
 
+    void DisplayError(const std::string &msg) override;
+
     template <class FilterType>
     static void register_filter_type(const std::string &role_path = "",
                                      const std::string &api_name  = "")
@@ -104,6 +106,7 @@ private:
 
     WebInterface      m_web_interface;
     int               m_refinement_level;
+    int               m_rank;
 
     void              ResetInfo();
 
