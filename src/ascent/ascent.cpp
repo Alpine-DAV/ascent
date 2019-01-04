@@ -244,7 +244,6 @@ Ascent::open(const conduit::Node &options)
         }
         else
         {
-            // NOTE: CONDUIT_INFO could be muted, so we use std::cout
             std::cout << "[Error] Ascent::open "
                       << e.message() << std::endl;
         }
@@ -274,11 +273,18 @@ Ascent::publish(const conduit::Node &data)
         }
         else
         {
-            // NOTE: CONDUIT_INFO could be muted, so we use std::cout
-          std::stringstream msg;
-          msg << "[Error] Ascent::publish "
-              << e.message() << std::endl;
-          m_runtime->DisplayError(msg.str());
+          if(m_runtime != NULL)
+          {
+            std::stringstream msg;
+            msg << "[Error] Ascent::publish "
+                << e.message() << std::endl;
+            m_runtime->DisplayError(msg.str());
+          }
+          else
+          {
+            std::cerr<< "[Error] Ascent::publish "
+                    << e.message() << std::endl;
+          }
         }
     }
 }
@@ -308,10 +314,18 @@ Ascent::execute(const conduit::Node &actions)
         }
         else
         {
-          std::stringstream msg;
-          msg << "[Error] Ascent::execute "
-              << e.message() << std::endl;
-          m_runtime->DisplayError(msg.str());
+          if(m_runtime != NULL)
+          {
+            std::stringstream msg;
+            msg << "[Error] Ascent::execute "
+                << e.message() << std::endl;
+            m_runtime->DisplayError(msg.str());
+          }
+          else
+          {
+            std::cerr<< "[Error] Ascent::execute "
+                     << e.message() << std::endl;
+          }
         }
     }
 }
@@ -336,10 +350,18 @@ Ascent::info(conduit::Node &info_out)
         }
         else
         {
-          std::stringstream msg;
-          msg << "[Error] Ascent::info"
-              << e.message() << std::endl;
-          m_runtime->DisplayError(msg.str());
+          if(m_runtime != NULL)
+          {
+            std::stringstream msg;
+            msg << "[Error] Ascent::info"
+                << e.message() << std::endl;
+            m_runtime->DisplayError(msg.str());
+          }
+          else
+          {
+            std::cerr<< "[Error] Ascent::info"
+                     << e.message() << std::endl;
+          }
         }
     }
 }
@@ -365,8 +387,18 @@ Ascent::close()
         }
         else
         {
-            std::cout << "[Error] Ascent::close "
-                      << e.message() << std::endl;
+            if(m_runtime != NULL)
+            {
+              std::stringstream msg;
+              msg << "[Error] Ascent::close"
+                  << e.message() << std::endl;
+              m_runtime->DisplayError(msg.str());
+            }
+            else
+            {
+              std::cerr<< "[Error] Ascent::close "
+                        << e.message() << std::endl;
+            }
         }
     }
 }
