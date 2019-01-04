@@ -308,7 +308,6 @@ Ascent::execute(const conduit::Node &actions)
         }
         else
         {
-           // NOTE: CONDUIT_INFO could be muted, so we use std::cout
           std::stringstream msg;
           msg << "[Error] Ascent::execute "
               << e.message() << std::endl;
@@ -337,7 +336,6 @@ Ascent::info(conduit::Node &info_out)
         }
         else
         {
-          // NOTE: CONDUIT_INFO could be muted, so we use std::cout
           std::stringstream msg;
           msg << "[Error] Ascent::info"
               << e.message() << std::endl;
@@ -367,7 +365,6 @@ Ascent::close()
         }
         else
         {
-            // NOTE: CONDUIT_INFO could be muted, so we use std::cout
             std::cout << "[Error] Ascent::close "
                       << e.message() << std::endl;
         }
