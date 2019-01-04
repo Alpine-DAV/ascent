@@ -327,7 +327,6 @@ TEST(ascent_error_handling, test_bad_color_table)
 
     conduit::utils::set_info_handler(throw_handler);
     bool error = false;
-    ascent.execute(actions);
     try
     {
       ascent.execute(actions);
