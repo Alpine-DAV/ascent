@@ -93,7 +93,7 @@ TEST(ascent_pipelines_to_pipelines, test_pipelines_to_pipelines)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
+    //verify_info.print();
 
     ASCENT_INFO("Testing pipelines to pipelines");
 
@@ -181,7 +181,7 @@ TEST(ascent_vector_mag, test_vector_mag_interleaved)
                                               data);
     add_interleaved_vector(data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
+    //verify_info.print();
 
     ASCENT_INFO("Testing vector magnitude interleaved");
 
