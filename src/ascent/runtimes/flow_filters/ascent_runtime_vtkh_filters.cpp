@@ -2110,9 +2110,12 @@ CreatePlot::verify_params(const conduit::Node &params,
     valid_paths.push_back("type");
     valid_paths.push_back("pipeline");
 
-    if(params["type"].as_string() == "mesh")
+    if(res)
     {
-      is_mesh = true;
+      if(params["type"].as_string() == "mesh")
+      {
+        is_mesh = true;
+      }
     }
 
     if(!is_mesh)
@@ -2161,7 +2164,6 @@ CreatePlot::execute()
 
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
     conduit::Node plot_params = params();
-
     std::string type = params()["type"].as_string();
 
     if(data->GlobalIsEmpty(0))

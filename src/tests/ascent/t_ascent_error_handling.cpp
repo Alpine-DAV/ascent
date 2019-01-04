@@ -118,12 +118,12 @@ TEST(ascent_error_handling, test_bad_filter_field)
     pipelines["pl1/f1/type"] = "contour";
     // filter knobs
     conduit::Node &contour_params = pipelines["pl1/f1/params"];
-    contour_params["field"] = "braid";
+    contour_params["field"] = "bananas";
     contour_params["iso_values"] = 0.;
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "bananas";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
 
@@ -261,6 +261,88 @@ TEST(ascent_error_handling, test_bad_plot_var_name)
     ascent.close();
 }
 //-----------------------------------------------------------------------------
+TEST(ascent_error_handling, test_bad_color_table)
+{
+
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    //verify_info.print();
+
+    ASCENT_INFO("Testing 3D warning for no bad color table name");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_bananas");
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "radial";
+    scenes["s1/plots/p1/color_table/name"] = "bananas";
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    // add the pipeline
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+    // execute
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+
+    conduit::utils::set_info_handler(throw_handler);
+    bool error = false;
+    ascent.execute(actions);
+    try
+    {
+      ascent.execute(actions);
+    }
+    catch(conduit::Error &e)
+    {
+      error = true;
+    }
+
+    ASSERT_TRUE(error);
+
+    ascent.close();
+    conduit::utils::set_info_handler(conduit::utils::default_info_handler);
+}
+//-----------------------------------------------------------------------------
 TEST(ascent_error_handling, test_emtpy)
 {
 
@@ -355,6 +437,7 @@ TEST(ascent_error_handling, test_emtpy)
     ASSERT_TRUE(error);
 
     ascent.close();
+    conduit::utils::set_info_handler(conduit::utils::default_info_handler);
 }
 
 //-----------------------------------------------------------------------------

@@ -176,75 +176,108 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   }
 }
 
+bool is_valid_name(const std::string &name)
+{
+  std::string lower_name;
+  for(std::string::size_type i = 0; i < name.length(); ++i)
+  {
+    lower_name += std::tolower(name[i]);
+  }
+  bool valid = false;
+  if(lower_name == "default" ||
+     lower_name == "cool to warm" ||
+     lower_name == "cool to warm extended" ||
+     lower_name == "viridis" ||
+     lower_name == "inferno" ||
+     lower_name == "plasma" ||
+     lower_name == "black-body radiation" ||
+     lower_name == "x ray" ||
+     lower_name == "green" ||
+     lower_name == "black - blue - white" ||
+     lower_name == "blue to orange" ||
+     lower_name == "gray to red" ||
+     lower_name == "cool and hot" ||
+     lower_name == "blue - green - orange" ||
+     lower_name == "yellow - gray - blue" ||
+     lower_name == "rainbow uniform" ||
+     lower_name == "jet" ||
+     lower_name == "rainbow desaturated")
+  {
+    valid = true;
+  }
+  return valid;
+}
 //-----------------------------------------------------------------------------
 vtkm::cont::ColorTable
 parse_color_table(const conduit::Node &color_table_node)
 {
-  std::string color_map_name = "";
+  // default name
+  std::string color_map_name = "cool to warm";
+
   if(color_table_node.has_child("name"))
   {
-      color_map_name = color_table_node["name"].as_string();
+    std::string name = color_table_node["name"].as_string();
+    if(is_valid_name(name))
+    {
+      color_map_name = name;
+    }
+    else
+    {
+      ASCENT_INFO("Invalid color table name '"<<name
+                  <<"'. Defaulting to "<<color_map_name);
+    }
   }
 
   vtkm::cont::ColorTable color_table(color_map_name);
 
-  if(color_map_name == "")
+  if(color_table_node.has_child("control_points"))
   {
-      ASCENT_INFO("Color map name is empty. Ignoring");
-      color_table.Clear();
-  }
 
-  if(!color_table_node.has_child("control_points"))
-  {
-      if(color_map_name == "")
-        ASCENT_ERROR("Error: a color table node was provided without a color map name or control points");
-      return color_table;
-  }
+    NodeConstIterator itr = color_table_node.fetch("control_points").children();
+    while(itr.has_next())
+    {
+        const Node &peg = itr.next();
+        if(!peg.has_child("position"))
+        {
+            ASCENT_WARN("Color map control point must have a position");
+        }
 
-  NodeConstIterator itr = color_table_node.fetch("control_points").children();
-  while(itr.has_next())
-  {
-      const Node &peg = itr.next();
-      if(!peg.has_child("position"))
-      {
-          ASCENT_WARN("Color map control point must have a position. Ignoring");
-      }
+        float64 position = peg["position"].to_float64();
 
-      float64 position = peg["position"].to_float64();
+        if(position > 1.0 || position < 0.0)
+        {
+              ASCENT_WARN("Cannot add color map control point position "
+                            << position
+                            << ". Must be a normalized scalar.");
+        }
 
-      if(position > 1.0 || position < 0.0)
-      {
-            ASCENT_WARN("Cannot add color map control point position "
-                          << position
-                          << ". Must be a normalized scalar.");
-      }
+        if (peg["type"].as_string() == "rgb")
+        {
+            conduit::Node n;
+            peg["color"].to_float64_array(n);
+            const float64 *color = n.as_float64_ptr();
 
-      if (peg["type"].as_string() == "rgb")
-      {
-          conduit::Node n;
-          peg["color"].to_float64_array(n);
-          const float64 *color = n.as_float64_ptr();
+            vtkm::Vec<vtkm::Float64,3> ecolor(color[0], color[1], color[2]);
 
-          vtkm::Vec<vtkm::Float64,3> ecolor(color[0], color[1], color[2]);
+            for(int i = 0; i < 3; ++i)
+            {
+              ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
+            }
 
-          for(int i = 0; i < 3; ++i)
-          {
-            ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
-          }
-
-          color_table.AddPoint(position, ecolor);
-      }
-      else if (peg["type"].as_string() == "alpha")
-      {
-          float64 alpha = peg["alpha"].to_float64();
-          alpha = std::min(1., std::max(alpha, 0.));
-          color_table.AddPointAlpha(position, alpha);
-      }
-      else
-      {
-          ASCENT_WARN("Unknown color table control point type " << peg["type"].as_string()<<
-                      "\nValid types are 'alpha' and 'rgb'");
-      }
+            color_table.AddPoint(position, ecolor);
+        }
+        else if (peg["type"].as_string() == "alpha")
+        {
+            float64 alpha = peg["alpha"].to_float64();
+            alpha = std::min(1., std::max(alpha, 0.));
+            color_table.AddPointAlpha(position, alpha);
+        }
+        else
+        {
+            ASCENT_WARN("Unknown color table control point type " << peg["type"].as_string()<<
+                        "\nValid types are 'alpha' and 'rgb'");
+        }
+    }
   }
 
   if(color_table_node.has_child("reverse"))
