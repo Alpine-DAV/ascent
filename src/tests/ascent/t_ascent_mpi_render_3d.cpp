@@ -103,10 +103,6 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_default_runtime)
     // reenable this check after updating conduit
     // EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     conduit::blueprint::mesh::verify(data,verify_info);
-    if(par_rank == 0)
-    {
-        verify_info.print();
-    }
 
     // make sure the _output dir exists
     string output_path = "";
@@ -129,7 +125,7 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_default_runtime)
     //
 
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "radial_vert";
     scenes["s1/image_prefix"] = output_file;
 
@@ -139,8 +135,6 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_default_runtime)
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-
-    actions.print();
 
     //
     // Run Ascent
@@ -201,10 +195,6 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
     // reenable this check after updating conduit
     // EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     conduit::blueprint::mesh::verify(data,verify_info);
-    if(par_rank == 0)
-    {
-        verify_info.print();
-    }
 
     // make sure the _output dir exists
     string output_path = "";
@@ -237,8 +227,6 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
     add_plots["scenes"] = scenes;
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-
-    actions.print();
 
     //
     // Run Ascent

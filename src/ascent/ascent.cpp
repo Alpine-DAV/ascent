@@ -168,11 +168,6 @@ Ascent::open(const conduit::Node &options)
             m_actions_file = options["actions_file"].as_string();
         }
 
-        // don't print info messages unless we are using verbose
-        if(!m_verbose_msgs)
-        {
-            conduit::utils::set_info_handler(quiet_handler);
-        }
 
         Node cfg;
         ascent::about(cfg);
@@ -186,8 +181,6 @@ Ascent::open(const conduit::Node &options)
                 runtime_type = processed_opts["runtime/type"].as_string();
             }
         }
-
-        //ASCENT_INFO("Runtime Type = " << runtime_type);
 
         if(runtime_type == "empty")
         {
@@ -234,6 +227,14 @@ Ascent::open(const conduit::Node &options)
         }
 
         m_runtime->Initialize(processed_opts);
+
+        // don't print info messages unless we are using verbose
+        // Runtimes may set their own handlers in initialize, so
+        // make sure to do this after.
+        if(!m_verbose_msgs)
+        {
+            conduit::utils::set_info_handler(quiet_handler);
+        }
     }
     catch(conduit::Error &e)
     {
@@ -274,8 +275,10 @@ Ascent::publish(const conduit::Node &data)
         else
         {
             // NOTE: CONDUIT_INFO could be muted, so we use std::cout
-            std::cout << "[Error] Ascent::publish "
-                      << e.message() << std::endl;
+          std::stringstream msg;
+          msg << "[Error] Ascent::publish "
+              << e.message() << std::endl;
+          m_runtime->DisplayError(msg.str());
         }
     }
 }
@@ -305,9 +308,11 @@ Ascent::execute(const conduit::Node &actions)
         }
         else
         {
-            // NOTE: CONDUIT_INFO could be muted, so we use std::cout
-            std::cout << "[Error] Ascent::execute "
-                      << e.message() << std::endl;
+           // NOTE: CONDUIT_INFO could be muted, so we use std::cout
+          std::stringstream msg;
+          msg << "[Error] Ascent::execute "
+              << e.message() << std::endl;
+          m_runtime->DisplayError(msg.str());
         }
     }
 }
@@ -332,9 +337,11 @@ Ascent::info(conduit::Node &info_out)
         }
         else
         {
-            // NOTE: CONDUIT_INFO could be muted, so we use std::cout
-            std::cout << "[Error] Ascent::info "
-                      << e.message() << std::endl;
+          // NOTE: CONDUIT_INFO could be muted, so we use std::cout
+          std::stringstream msg;
+          msg << "[Error] Ascent::info"
+              << e.message() << std::endl;
+          m_runtime->DisplayError(msg.str());
         }
     }
 }
