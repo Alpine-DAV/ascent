@@ -138,7 +138,7 @@ histogram of a mesh variable that has been published by a simulation.
   a.close()
 
 In addition to performing custom python analysis, your can create new data sets and plot them
-through a new instance of Ascent. We call this technique Inception. For 
+through a new instance of Ascent. We call this technique Inception. 
 
 Relay
 -----
