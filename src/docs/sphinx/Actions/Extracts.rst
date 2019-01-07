@@ -167,7 +167,7 @@ To save the files in HDF5 format:
 
 .. code-block:: c++ 
 
-    extracts["e1/params/protocol"] = "blueprint/mesh/hd5f";
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
 
 Additionally, Relay supports saving out only a subset of the data. The ``fields`` parameters is a list of
 strings that indicate which fields should be saved.
