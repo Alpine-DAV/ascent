@@ -51,7 +51,7 @@ The resulting data from each Pipeline can be used as input to Scenes or Extracts
 Each pipeline contains one or more filters that transform the published mesh data.
 When more than one filter is specified, each successive filter consumes the result of the previous filter, and filters are executed in the order in which they are declared.
 
-The code below shows how to declaration two pipelines, and generate images of the pipeline results.
+The code below shows how to declare two pipelines, and generate images of the pipeline results.
 The first applies a contour filter to extract two isosurfaces of the scalar field ``noise``.
 The second pipeline applies a threshold filter to screen the ``noise`` field, and then a clip
 filter to extract the intersection of what remains from the threshold with a sphere.
