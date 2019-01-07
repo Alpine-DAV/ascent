@@ -63,7 +63,9 @@ The second pipeline applies a threshold filter to screen the ``noise`` field, an
   // filter parameters
   conduit::Node contour_params;
   contour_params["field"] = "noise";
-  contour_params["iso_values"] = {0.0, 0.5};
+  constexpr int num_iso_values = 2;
+  double iso_values[num_iso_values] = {0.0, 0.5};
+  contour_params["iso_values"].set_external(iso_values, num_iso_values);;
   pipelines["pl1/f1/params"] = contour_params;
 
   // pipeline 2
@@ -156,8 +158,9 @@ The code below provides examples creating a pipeline using all three methods:
   // filter knobs
   conduit::Node &contour_params = pipelines["pl1/f1/params"];
   contour_params["field"] = "braid";
-  double iso_vals[3] = {-0.4, 0.2, 0.4};
-  contour_params["iso_values"].set_external(iso_vals,3);
+  constexpr int num_iso_values = 3;
+  double iso_vals[num_iso_values] = {-0.4, 0.2, 0.4};
+  contour_params["iso_values"].set_external(iso_vals, num_iso_values);
 
 .. _contourfig:
 
