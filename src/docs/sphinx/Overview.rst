@@ -128,9 +128,9 @@ Runtimes
 -----------------
   Ascent can be configured with one or more of the following runtimes. 
   When multiple runtimes are built with Ascent, available runtimes can be selected at runtime.
-  A runtime has three main functions: consume simulation data, perfrom analysis (optional), and output data.
+  A runtime has three main functions: consume simulation data, perform analysis (optional), and output data.
   Data describing the simulation mesh is sent to the runtime within a Conduit Node which is formatted according to `Conduit Blueprint <http://llnl-conduit.readthedocs.io/en/latest/blueprint.html>`_.
-  Once the data is in a compatible format, the runtime can optionally perfrom some analysis operations, and then output the results. 
+  Once the data is in a compatible format, the runtime can optionally perform some analysis operations, and then output the results. 
   Currently, the Ascent runtime uses the  
 
 
@@ -142,9 +142,9 @@ Ascent loops through hierarchy of actions contained in a Conduit Node, and creat
 
 Flow Runtime
 """"""""""""""
-The Flow runtime provides direct access to Flow. This lower access allows availible flow filters to be directly assembled into a DAG instead of relying of the Ascent runtime.
+The Flow runtime provides direct access to Flow. This lower access allows available flow filters to be directly assembled into a DAG instead of relying of the Ascent runtime.
 By using the Flow runtime, developers can connect filters in advanced ways not directly supported by the Ascent API.
 
-Empty
-"""""
+Empty Runtime
+""""""""""""""
 The empty runtime contains all the boilerplate code needed to started implementing a custom runtime and is meant to serve as a staring place for those that wish to create a runtime from scratch.

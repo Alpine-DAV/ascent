@@ -49,13 +49,13 @@ Publications and Presentations
 Publications
 ------------
 
-- A Flexible System For In Situ Triggers  This paper will be presented at the `ISAV 2018 Workshop <http://vis.lbl.gov/events/ISAV2018/>`_, held in conjunction with SC 18, on November 12th 2018 in Dallas, TX, USA.
+- `A Flexible System For In Situ Triggers <https://sc18.supercomputing.org/proceedings/workshops/workshop_files/ws_isav110s3-file1.pdf>`_  Presented at the `ISAV 2018 Workshop <http://vis.lbl.gov/events/ISAV2018/>`_, held in conjunction with SC 18, on November 12th 2018 in Dallas, TX, USA.
 
-- `The ALPINE In Situ Infrastructure: Ascending from the Ashes of Strawman <https://dl.acm.org/citation.cfm?doid=3144769.3144778>`_  This paper will be presented at the `ISAV 2017 Workshop <http://vis.lbl.gov/Events/ISAV-2017/>`_, held in conjunction with SC 17, on November 12th 2017 in Denver, CO, USA.
+- `The ALPINE In Situ Infrastructure: Ascending from the Ashes of Strawman <https://dl.acm.org/citation.cfm?doid=3144769.3144778>`_  Presented at the `ISAV 2017 Workshop <http://vis.lbl.gov/Events/ISAV-2017/>`_, held in conjunction with SC 17, on November 12th 2017 in Denver, CO, USA.
 
-- `Performance Impacts of In Situ Wavelet Compression on Scientific Simulations <https://dl.acm.org/citation.cfm?doid=3144769.3144773>`_  This paper will be presented at the `ISAV 2017 Workshop <http://vis.lbl.gov/Events/ISAV-2017/>`_, held in conjunction with SC 17, on November 12th 2017 in Denver, CO, USA.
+- `Performance Impacts of In Situ Wavelet Compression on Scientific Simulations <https://dl.acm.org/citation.cfm?doid=3144769.3144773>`_  Presented at the `ISAV 2017 Workshop <http://vis.lbl.gov/Events/ISAV-2017/>`_, held in conjunction with SC 17, on November 12th 2017 in Denver, CO, USA.
 
-- `Projecting Performance Data Over Simulation Geometry Using SOSflow and Alpine <https://vpa17.github.io/pdfs/VPA_2017_wood.pdf>`_ This paper will be presented at the `VPA 17 Workshop <https://vpa17.github.io/>`_, held in conjunction with SC 17, on November 17th 2017 in Denver, CO, USA.
+- `Projecting Performance Data Over Simulation Geometry Using SOSflow and Alpine <https://vpa17.github.io/pdfs/VPA_2017_wood.pdf>`_ Presented at the `VPA 17 Workshop <https://vpa17.github.io/>`_, held in conjunction with SC 17, on November 17th 2017 in Denver, CO, USA.
 
 - `PaViz: A Power-Adaptive Framework for Optimal Power and Performance of Scientific Visualization Algorithms <https://www.osti.gov/scitech/biblio/1366964>`_ Presented at the `EGPGV 2017 Symposium <http://www.vis.uni-stuttgart.de/egpgv/egpgv2017/>`_, held in conjunction with EuroVis 2017, on 12 June,  Barcelona, Spain
 

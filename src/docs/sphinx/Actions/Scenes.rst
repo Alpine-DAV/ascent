@@ -384,7 +384,7 @@ allow the users to control the appearance of images. Below is a list of addition
 parameters:
 
 - ``bg_color`` : an array of three floating point values that controls the background color.
-- ``fg_color`` : an array of three floating point values that controls the forground color. Foreground colors indicte the color of annotations and mesh plot lines.
+- ``fg_color`` : an array of three floating point values that controls the foreground color. The foreground color is used to color annotations and mesh plot lines.
 - ``annotations`` : controls if annotations are rendered or not. Valid values are ``"true"`` and ``"false"``.
 - ``render_bg`` : controls if the background is rendered or not. If no background is rendered, the background will appear transparent. Valid values are ``"true"`` and ``"false"``.
 

@@ -185,7 +185,7 @@ The code below provides examples creating a pipeline using all three methods:
 
     An example of creating five evenly spaced iso-values through a scalar field.
 
-:numref:`Figure %s <contourfig>` shows an image produced from mulitple contours.
+:numref:`Figure %s <contourfig>` shows an image produced from multiple contours.
 All contour examples are  located in the test in the file `contour test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_contour.cpp>`_.
 
 Threshold
@@ -217,7 +217,7 @@ The full example is located in the file `threshold test <https://github.com/Alpi
 Slice
 ~~~~~
 The slice filter extracts a 2d plane from a 3d data set.
-The plane is defined by a point (on the plane) and a normal vector (not required to be nomalized).
+The plane is defined by a point (on the plane) and a normal vector (not required to be normalized).
 
 .. code-block:: c++
 
@@ -446,7 +446,7 @@ the clip can be inverted.
 IsoVolume
 ~~~~~~~~~
 IsoVolume is a filter that clips a data set based on a minimum
-and maximum value in a scalar field. All value outside of the minminum and maximum
+and maximum value in a scalar field. All value outside of the minimum and maximum
 values are removed from the data set.
 
 .. code-block:: c++
