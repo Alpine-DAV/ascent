@@ -87,6 +87,37 @@ The second pipeline applies a threshold filter to screen the ``noise`` field, an
   clip_params["sphere/radius"]   = .1;
   pipelines["pl2/f2/params/"] = clip_params;
 
+  // make some imaages of the data
+  conduit::Node scenes;
+  // add a plot of pipeline 1
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/plots/p1/field"] = "noise";
+
+  // add a plot of pipeline 2
+  scenes["s2/plots/p1/type"] = "pseudocolor";
+  scenes["s2/plots/p1/pipeline"] = "pl2";
+  scenes["s2/plots/p1/field"] = "noise";
+
+  // setup actions
+  conduit::Node actions;
+
+  conduit::Node add_pipelines = actions.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
+
+  conduit::Node add_scenes = actions.append();
+  add_scenes["action"] = "add_scenes";
+  add_scenes["scenes"] = scenes;
+
+  actions.append()["action"] = "execute";
+
+  Ascent ascent;
+  ascent.open();
+  ascent.publish(mesh); // mesh not shown
+  ascent.execute(actions);
+  ascent.close();
+
 Ascent and VTK-h are under heavy development and features are being added rapidly.
 As we stand up the infrastructure necessary to support a wide variety filter we created the following filters for the alpha release:
 
