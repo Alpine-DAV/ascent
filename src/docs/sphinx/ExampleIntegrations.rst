@@ -84,7 +84,7 @@ Lulesh takes several command line arguments, but the most useful are:
 .. note::
   When running lulesh in parallel, the number of MPI processes must be a perfect cube. For example, some valid numbers of MPI tasks would be 1, 2, 8, and 27.
 
-The command below would launch Lulesh for 10 iterations with a problem size of 32^3 elementss per node (8*32^3 = 262,144 total elements):
+The command below would launch Lulesh for 10 iterations with a problem size of 32^3 elements per node (8*32^3 = 262,144 total elements):
 
 .. code-block:: bash
 
@@ -98,7 +98,7 @@ CloverLeaf3D
 CloverLeaf3D is a proxy-application from the Atomic Weapons Establishment (AWE) that can be found at `http://uk-mac.github.io/CloverLeaf3D <http://uk-mac.github.io/CloverLeaf3D>`_.
 CloverLeaf is written in Fortran90.
 The data integration can be found in the file ``src/examples/proxies/cloverleaf3d-ref/visit.F90``, and the Ascent API in the main loop can be found at ``src/examples/proxies/cloverleaf3d-ref/hydro.F90`` starting at line 46.
-CloverLeaf3D uses ghost elementss, thus they have to be stripped each time step before being passed to Ascent.
+CloverLeaf3D uses ghost elements, thus they have to be stripped each time step before being passed to Ascent.
 
 .. _clover_exfig:
 
@@ -173,7 +173,7 @@ Kripke takes many command line parameters, and there is an example script that i
 The parameters that control the problem size and layout are:
 
   - ``--procs`` controls the layout of the MPI processes over the mesh. In the example, we launch 8 total MPI tasks and distribute them evenly in each coordinate direction. The cross product of this argument must equal the number of MPI tasks, e.g. 2x2x2 = 8. Another valid value for 8 MPI tasks is ``1,1,8``.
-  - ``--zones`` controls the number of elements(zones) in each coordinate direction of the problem mesh. In this case, the total mesh size is 32^3, and the number of elementss for each MPI task will be 16^3. This is simply  elements / procs, e.g. 32/2, 32/2, 32/2.
+  - ``--zones`` controls the number of elements(zones) in each coordinate direction of the problem mesh. In this case, the total mesh size is 32^3, and the number of elements for each MPI task will be 16^3. This is simply  elements / procs, e.g. 32/2, 32/2, 32/2.
   - ``--niter`` controls the number of iterations. Note: as the solver converges on a solution, the images will differ less and less.
 
 
@@ -211,7 +211,7 @@ Running Laghos
 """"""""""""""
 In the Laghos example directory, we provide scripts for running the different problem variants.
 We also provide both MPI parallel and serial versions of the application.
-More infomation about running Laghos can be found on the `Laghos github page <https://github.com/CEED/Laghos>`_,
+More information about running Laghos can be found on the `Laghos github page <https://github.com/CEED/Laghos>`_,
 but the basic parameters are:
 
   - ``-p``: problem setup
