@@ -29,8 +29,8 @@ packages:
     paths: {}
     providers:
       mpi: [mpich]
-      blas: [intel-mkl]
-      lapack: [intel-mkl]
+      blas: [intel-mkl, openblas]
+      lapack: [intel-mkl, openblas]
     variants: +mpi 
   mpich:
     version: [7.7.0]
@@ -46,9 +46,24 @@ packages:
       paths:
           openssl@1.0.1i: /usr
   intel-mkl:
-      buildable: false
+      buildable: False
       paths:
-        intel-mkl%gcc@5.3.0: /opt/intel
         intel-mkl%intel@18.0.3.222: /opt/intel  
+  perl:
+      buildable: False
+      paths:
+          perl: /usr
   conduit:
-    version: [master]
+      version: [master]
+  cmake:
+      version: [3.9.6]
+      variants: ~ncurses~openssl
+  python:
+      variants: ~dbm
+  py-numpy:
+      variants: ~blas~lapack
+  pkg-config:
+      buildable: False
+      paths:
+          pkg-config: /usr
+

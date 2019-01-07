@@ -38,6 +38,19 @@ packages:
       jpeg: [libjpeg-turbo, libjpeg]
   conduit:
     version: [master]
+  python:
+    variants: ~dbm
+  cmake:
+    version: [3.9.6]
+    variants: ~openssl~ncurses
+  perl:
+    buildable: False
+    paths:
+      perl: /usr
+  pkg-config:
+      buildable: False
+      paths:
+          pkg-config: /usr
 # LLNL toss3 CUDA 
   cuda:
     modules:

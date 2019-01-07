@@ -38,6 +38,21 @@ packages:
       jpeg: [libjpeg-turbo, libjpeg]
   conduit:
     version: [master]
+  python:
+    variants: ~dbm
+  cmake:
+    version: [3.9.6]
+    variants: ~openssl~ncurses
+  py-numpy:
+    variants: ~blas~lapack
+  perl:
+    buildable: False
+    paths:
+      perl: /usr
+  pkg-config:
+      buildable: False
+      paths:
+          pkg-config: /usr
 # LLNL blueos CUDA
   cuda:
     paths:
@@ -49,9 +64,9 @@ packages:
 # so even though this is spectrum mpi, we call it mvapich2
   mvapich2:
     paths:
-      mvapich2@2.2%gcc@4.9.3: /usr/tcetmp/packages/spectrum-mpi/spectrum-mpi-2017.04.03-gcc-4.9.3
-      mvapich2@2.2%clang@coral: /usr/tcetmp/packages/spectrum-mpi/spectrum-mpi-2017.04.03-clang-4.0.0
-      mvapich2@2.2%xl@coral : /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-xl-beta-2018.10.29/
+      mvapich2@2.2%gcc@4.9.3: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-4.9.3/ 
+      mvapich2@2.2%clang@coral: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-clang-upstream-2018.12.03/
+      mvapich2@2.2%xl@coral: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-xl-2018.11.26/ 
     buildable: False
 
 
