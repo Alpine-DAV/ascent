@@ -2,17 +2,17 @@
 !
 ! This file is part of CloverLeaf.
 !
-! CloverLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! CloverLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! CloverLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! CloverLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! CloverLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Main set up routine
@@ -37,7 +37,7 @@ SUBROUTINE start
   INTEGER :: x_cells,y_cells,z_cells
   INTEGER, ALLOCATABLE :: right(:),left(:),top(:),bottom(:),back(:),front(:)
 
-  INTEGER :: fields(NUM_FIELDS) !, chunk_task_responsible_for 
+  INTEGER :: fields(NUM_FIELDS) !, chunk_task_responsible_for
 
   LOGICAL :: profiler_off
 
@@ -67,7 +67,7 @@ SUBROUTINE start
   CALL clover_decompose(grid%x_cells,grid%y_cells,grid%z_cells,left,right,bottom,top,back,front)
 
   DO c=1,chunks_per_task
-      
+
     ! Needs changing so there can be more than 1 chunk per task
     chunks(c)%task = parallel%task
 
@@ -76,7 +76,7 @@ SUBROUTINE start
     x_cells = right(c) -left(c)  +1
     y_cells = top(c)   -bottom(c)+1
     z_cells = front(c) -back(c)  +1
-      
+
     IF(chunks(c)%task.EQ.parallel%task)THEN
       CALL build_field(c,x_cells,y_cells,z_cells)
     ENDIF

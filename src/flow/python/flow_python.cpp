@@ -1,50 +1,50 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
+//
 // Please also read ascent/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
 //-----------------------------------------------------------------------------
-// -- Python includes (these must be included first) -- 
+// -- Python includes (these must be included first) --
 //-----------------------------------------------------------------------------
 #include <Python.h>
 #include <structmember.h>
@@ -55,7 +55,7 @@
 #endif
 
 //-----------------------------------------------------------------------------
-// -- standard lib includes -- 
+// -- standard lib includes --
 //-----------------------------------------------------------------------------
 #include <iostream>
 #include <vector>
@@ -127,7 +127,7 @@ PyString_AsString(PyObject *py_obj)
     {
         // TODO: ERROR or auto convert?
     }
-    
+
     return res;
 }
 
@@ -182,7 +182,7 @@ namespace flow
 //-----------------------------------------------------------------------------
 // Template Specialization of Data Wrapper for PyObject *
 //-----------------------------------------------------------------------------
-    
+
 template<>
 class DataWrapper<PyObject>: public Data
 {
@@ -192,7 +192,7 @@ class DataWrapper<PyObject>: public Data
     {
         // empty
     }
-    
+
     virtual ~DataWrapper()
     {
         // empty
@@ -256,7 +256,7 @@ public:
     {
         //empty
     }
-    
+
     //-------------------------------------------------------------------------
     virtual void declare_interface(conduit::Node &iface)
     {
@@ -270,7 +270,7 @@ public:
     {
         if(input(0).check_type<PyObject>())
         {
-            // output is already python ... 
+            // output is already python ...
             set_output(input(0));
         }
         else if(input(0).check_type<conduit::Node>())
@@ -286,7 +286,7 @@ public:
             CONDUIT_ERROR("ensure_python input must be a python object "
                           "or a conduit::Node");
         }
-        
+
     }
 
 };
@@ -302,7 +302,7 @@ public:
     {
         //empty
     }
-        
+
     virtual ~PyFlow_Ensure_Conduit()
     {
         //empty
@@ -321,13 +321,13 @@ public:
     {
         if(input(0).check_type<conduit::Node>())
         {
-            // output is already a Node ... 
+            // output is already a Node ...
             set_output(input(0));
         }
         else if(input(0).check_type<PyObject>())
         {
             PyObject *py_obj = input<PyObject>(0);
-            
+
             if(PyConduit_Node_Check(py_obj))
             {
                 CONDUIT_ERROR("ensure_conduit input must be a python wrapped "
@@ -335,7 +335,7 @@ public:
             }
 
             Node *node_ptr = PyConduit_Node_Get_Node_Ptr(py_obj);
-            
+
             set_output<conduit::Node>(node_ptr);
         }
         else
@@ -343,7 +343,7 @@ public:
             CONDUIT_ERROR("ensure_conduit input must be a python wrapped "
                           "conduit::Node or a conduit::Node");
         }
-        
+
     }
 
 };
@@ -363,7 +363,7 @@ register_builtin_python_filter_types()
         Workspace::register_filter_type<PyFlow_Ensure_Conduit>();
     }
 
-    
+
 }
 
 
@@ -386,7 +386,7 @@ public:
     : flow::Filter(),
       m_py_obj(py_obj)
     {}
-        
+
     virtual ~PyFlowFilter()
     {
         // can we check for ref == 0 (already destructing)
@@ -398,12 +398,12 @@ public:
         //    }
 
     }
-    
+
     /// override and fill i with the info about the filter's interface
     virtual void declare_interface(conduit::Node &iface)
     {
         iface.reset();
-        
+
         // call on m_py_obj
         PyObject *py_iface = PyConduit_Node_Python_Wrap(&iface,
                                                         0);
@@ -431,7 +431,7 @@ public:
         PyObject *py_res = PyObject_CallMethod(m_py_obj,
                                                (char*)"execute",
                                                NULL);
-        
+
         if(py_res)
         {
             Py_DECREF(py_res);
@@ -441,7 +441,7 @@ public:
             // TODO throw conduit exception?
             PyErr_Print();
         }
-        
+
     }
 
     /// optionally override to allow filter to verify custom params
@@ -453,15 +453,15 @@ public:
         // new python object
         PyObject *py_params = PyConduit_Node_Python_Create();
         PyConduit_Node_Get_Node_Ptr(py_params)->set(params);
-        
+
         PyObject *py_info   = PyConduit_Node_Python_Wrap(&info,0);
 
         bool res = true;
-        
+
         if(PyObject_HasAttrString(m_py_obj,"verify_params"))
         {
 
-            // TODO CHECK AND CLEANUP RETURN 
+            // TODO CHECK AND CLEANUP RETURN
             PyObject *py_res = PyObject_CallMethod(m_py_obj,
                                                    (char*)"verify_params",
                                                    (char*)"OO",
@@ -488,7 +488,7 @@ public:
                 PyErr_Print();
             }
         }
-        
+
         return res;
     }
 
@@ -512,7 +512,7 @@ static int PyFlow_Filter_Check_SubType(PyObject* obj);
 
 
 //---------------------------------------------------------------------------//
-static PyObject * 
+static PyObject *
 PyFlow_Filter_new(PyTypeObject *type,
                   PyObject *, // args -- unused
                   PyObject *) // kwds -- unused
@@ -535,7 +535,7 @@ PyFlow_Filter_dealloc(PyFlow_Filter *self)
     {
         delete self->filter;
     }
-    
+
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -546,7 +546,7 @@ PyFlow_Filter_init(PyFlow_Filter *self,
                    PyObject *,// args -- unused
                    PyObject *) // kwds -- unused
 {
-  
+
     self->filter = new PyFlowFilter((PyObject *)self);
     return 0;
 
@@ -582,7 +582,7 @@ PyFlow_Filter_output_port(PyFlow_Filter *self)
 static PyObject *
 PyFlow_Filter_port_names(PyFlow_Filter *self)
 {
-    
+
     PyObject *res = PyConduit_Node_Python_Create();
     Node *node = PyConduit_Node_Get_Node_Ptr(res);
     node->set(self->filter->port_names());
@@ -594,7 +594,7 @@ PyFlow_Filter_port_names(PyFlow_Filter *self)
 static PyObject *
 PyFlow_Filter_default_params(PyFlow_Filter *self)
 {
-    
+
     PyObject *res = PyConduit_Node_Python_Create();
     Node *node = PyConduit_Node_Get_Node_Ptr(res);
     node->set(self->filter->default_params());
@@ -623,7 +623,7 @@ PyFlow_Filter_has_port(PyFlow_Filter *self,
         return NULL;
     }
 
-    
+
     if(self->filter->has_port(std::string(port_name)))
     {
         Py_RETURN_TRUE;
@@ -678,7 +678,7 @@ PyFlow_Filter_verify_interface(PyObject *, // cls -- unused
     static const char *kwlist[] = {"iface",
                                    "info",
                                    NULL};
-    
+
     PyObject *py_iface = NULL;
     PyObject *py_info  = NULL;
 
@@ -691,8 +691,8 @@ PyFlow_Filter_verify_interface(PyObject *, // cls -- unused
     {
         return (NULL);
     }
-        
-    
+
+
     if(!PyConduit_Node_Check(py_iface))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -701,7 +701,7 @@ PyFlow_Filter_verify_interface(PyObject *, // cls -- unused
         return NULL;
     }
 
-    
+
     if(!PyConduit_Node_Check(py_info))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -709,10 +709,10 @@ PyFlow_Filter_verify_interface(PyObject *, // cls -- unused
                         "Conduit::Node");
         return NULL;
     }
-    
+
     Node *iface_ptr = PyConduit_Node_Get_Node_Ptr(py_iface);
     Node *info_ptr  = PyConduit_Node_Get_Node_Ptr(py_info);
-    
+
     if(flow::Filter::verify_interface(*iface_ptr,*info_ptr))
     {
         Py_RETURN_TRUE;
@@ -734,15 +734,15 @@ PyFlow_Filter_verify_interface(PyObject *, // cls -- unused
 static PyObject *
 PyFlow_Filter_interface(PyFlow_Filter *self)
 {
-    
+
     PyObject *res = PyConduit_Node_Python_Create();
     Node *node = PyConduit_Node_Get_Node_Ptr(res);
-    
+
     const flow::Filter *const_filt = (const flow::Filter*)self->filter;
     const Node &iface = const_filt->interface();
-    
-    
-    
+
+
+
     node->set(iface);
     return res;
 }
@@ -764,7 +764,7 @@ PyFlow_Filter_input(PyFlow_Filter *self,
 {
     const char *port_name = NULL;
     Py_ssize_t idx;
-    
+
     if(!PyArg_ParseTuple(args, "s", &port_name))
     {
         if(!PyArg_ParseTuple(args, "n", &idx))
@@ -774,7 +774,7 @@ PyFlow_Filter_input(PyFlow_Filter *self,
             return NULL;
         }
     }
-    
+
     PyObject *res = NULL;
     if( port_name != NULL)
     {
@@ -784,7 +784,7 @@ PyFlow_Filter_input(PyFlow_Filter *self,
     {
         res = (PyObject*) self->filter->input<PyObject>(idx);
     }
-    
+
     return res;
 }
 
@@ -800,7 +800,7 @@ PyFlow_Filter_set_output(PyFlow_Filter *self,
                         "Data must be a python object");
         return NULL;
     }
-    
+
     self->filter->set_output<PyObject>(py_data);
 
     Py_RETURN_NONE;
@@ -822,14 +822,14 @@ PyFlow_Filter_graph(PyFlow_Filter *self)
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyFlow_Filter_connect_input_port(PyFlow_Filter *self, 
+PyFlow_Filter_connect_input_port(PyFlow_Filter *self,
                                  PyObject *args,
                                  PyObject *kwargs)
 {
     static const char *kwlist[] = {"port",
                                    "filter",
                                    NULL};
-    
+
     const char *port_name_c_str = NULL;
     int port_idx = -1;
     PyObject *py_filter = NULL;
@@ -853,10 +853,10 @@ PyFlow_Filter_connect_input_port(PyFlow_Filter *self,
                             "or "
                             "port(index), filter(flow.Filter)\n");
             return NULL;
-            
+
         }
     }
-    
+
     if(!PyFlow_Filter_Check(py_filter))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -877,19 +877,19 @@ PyFlow_Filter_connect_input_port(PyFlow_Filter *self,
     {
         self->filter->connect_input_port(port_idx,f);
     }
-    
+
     Py_RETURN_NONE;
 }
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyFlow_Filter_info(PyFlow_Filter *self, 
+PyFlow_Filter_info(PyFlow_Filter *self,
                    PyObject *args,
                    PyObject *kwargs)
 {
     static const char *kwlist[] = {"info",
                                    NULL};
-    
+
     PyObject *py_info  = NULL;
 
 
@@ -909,9 +909,9 @@ PyFlow_Filter_info(PyFlow_Filter *self,
                         " conduit.Node");
         return NULL;
     }
-    
+
     Node *info_ptr = PyConduit_Node_Get_Node_Ptr(py_info);
-    
+
     self->filter->info(*info_ptr);
 
     Py_RETURN_NONE;
@@ -1114,9 +1114,9 @@ PyFlow_Filter_Check_SubType(PyObject *obj)
     {
         return 0;
     }
-    
+
     PyTypeObject *ptype = (PyTypeObject *)obj;
-        
+
     return (PyType_IsSubtype(ptype, &PyFlow_Filter_TYPE));
 }
 
@@ -1139,7 +1139,7 @@ struct PyFlow_Registry
 };
 
 //---------------------------------------------------------------------------//
-static PyObject * 
+static PyObject *
 PyFlow_Registry_new(PyTypeObject *type,
                     PyObject *, // args -- unused
                     PyObject *) // kwds -- unused
@@ -1169,7 +1169,7 @@ PyFlow_Registry_init(PyFlow_Registry *self,
                      PyObject *,// args -- unused
                      PyObject *) // kwds -- unused
 {
-  
+
     self->registry = 0;
     return 0;
 
@@ -1177,13 +1177,13 @@ PyFlow_Registry_init(PyFlow_Registry *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyFlow_Registry_add(PyFlow_Registry *self, 
+PyFlow_Registry_add(PyFlow_Registry *self,
                       PyObject *args,
                       PyObject *kwargs)
 {
     static const char *kwlist[] = {"key",
                                    NULL};
-    
+
     const char *key_c_str  = NULL;
     PyObject *py_obj = NULL;
     Py_ssize_t num_refs = -1;
@@ -1211,13 +1211,13 @@ PyFlow_Registry_add(PyFlow_Registry *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyFlow_Registry_fetch(PyFlow_Registry *self, 
+PyFlow_Registry_fetch(PyFlow_Registry *self,
                       PyObject *args,
                       PyObject *kwargs)
 {
     static const char *kwlist[] = {"key",
                                    NULL};
-    
+
     const char *key_c_str  = NULL;
 
 
@@ -1238,13 +1238,13 @@ PyFlow_Registry_fetch(PyFlow_Registry *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyFlow_Registry_has_entry(PyFlow_Registry *self, 
+PyFlow_Registry_has_entry(PyFlow_Registry *self,
                           PyObject *args,
                           PyObject *kwargs)
 {
     static const char *kwlist[] = {"key",
                                    NULL};
-    
+
     const char *key_c_str  = NULL;
 
 
@@ -1272,13 +1272,13 @@ PyFlow_Registry_has_entry(PyFlow_Registry *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyFlow_Registry_consume(PyFlow_Registry *self, 
+PyFlow_Registry_consume(PyFlow_Registry *self,
                         PyObject *args,
                         PyObject *kwargs)
 {
     static const char *kwlist[] = {"key",
                                    NULL};
-    
+
     const char *key_c_str  = NULL;
 
 
@@ -1293,7 +1293,7 @@ PyFlow_Registry_consume(PyFlow_Registry *self,
         return NULL;
     }
 
-    
+
     self->registry->consume(std::string(key_c_str));
 
     Py_RETURN_NONE;
@@ -1301,13 +1301,13 @@ PyFlow_Registry_consume(PyFlow_Registry *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyFlow_Registry_detach(PyFlow_Registry *self, 
+PyFlow_Registry_detach(PyFlow_Registry *self,
                        PyObject *args,
                        PyObject *kwargs)
 {
     static const char *kwlist[] = {"key",
                                    NULL};
-    
+
     const char *key_c_str  = NULL;
 
 
@@ -1322,7 +1322,7 @@ PyFlow_Registry_detach(PyFlow_Registry *self,
         return NULL;
     }
 
-    
+
     self->registry->detach(std::string(key_c_str));
 
     Py_RETURN_NONE;
@@ -1331,13 +1331,13 @@ PyFlow_Registry_detach(PyFlow_Registry *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyFlow_Registry_info(PyFlow_Registry *self, 
+PyFlow_Registry_info(PyFlow_Registry *self,
                      PyObject *args,
                      PyObject *kwargs)
 {
     static const char *kwlist[] = {"info",
                                    NULL};
-    
+
     PyObject *py_info  = NULL;
 
 
@@ -1357,9 +1357,9 @@ PyFlow_Registry_info(PyFlow_Registry *self,
                         " conduit.Node");
         return NULL;
     }
-    
+
     Node *info_ptr = PyConduit_Node_Get_Node_Ptr(py_info);
-    
+
     self->registry->info(*info_ptr);
 
     Py_RETURN_NONE;
@@ -1517,7 +1517,7 @@ struct PyFlow_Graph
 
 
 //---------------------------------------------------------------------------//
-static PyObject * 
+static PyObject *
 PyFlow_Graph_new(PyTypeObject *type,
                  PyObject *, // args -- unused
                  PyObject *) // kwds -- unused
@@ -1589,7 +1589,7 @@ static PyObject *
 PyFlow_Graph_reset(PyFlow_Graph *self)
 {
     self->graph->reset();
-    
+
     Py_RETURN_NONE;
 }
 
@@ -1625,9 +1625,9 @@ PyFlow_Graph_add_filter(PyFlow_Graph *self,
 
 
     std::string f_type(filter_type_c_str);
-    
+
     Node *params_ptr = NULL;
-    
+
     if(py_params != NULL)
     {
         if(!PyConduit_Node_Check(py_params))
@@ -1639,8 +1639,8 @@ PyFlow_Graph_add_filter(PyFlow_Graph *self,
 
         params_ptr = PyConduit_Node_Get_Node_Ptr(py_params);
     }
-    
-    
+
+
     if(name_c_str == NULL)
     {
         if( py_params == NULL )
@@ -1661,7 +1661,7 @@ PyFlow_Graph_add_filter(PyFlow_Graph *self,
             self->graph->add_filter(f_type, f_name);
         }
         else
-        {   
+        {
             self->graph->add_filter(f_type, f_name, *params_ptr);
         }
     }
@@ -1673,7 +1673,7 @@ PyFlow_Graph_add_filter(PyFlow_Graph *self,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyFlow_Graph_connect(PyFlow_Graph *self, 
+PyFlow_Graph_connect(PyFlow_Graph *self,
                      PyObject *args,
                      PyObject *kwargs)
 {
@@ -1687,7 +1687,7 @@ PyFlow_Graph_connect(PyFlow_Graph *self,
 
     const char *port_c_str = NULL;
     int port_idx = -1;
-    
+
     // node case
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
@@ -1713,7 +1713,7 @@ PyFlow_Graph_connect(PyFlow_Graph *self,
             return NULL;
         }
     }
-    
+
     std::string src(src_c_str);
     std::string dest(dest_c_str);
 
@@ -1733,7 +1733,7 @@ PyFlow_Graph_connect(PyFlow_Graph *self,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyFlow_Graph_save(PyFlow_Graph *self, 
+PyFlow_Graph_save(PyFlow_Graph *self,
                   PyObject *args,
                   PyObject *kwargs)
 {
@@ -1741,11 +1741,11 @@ PyFlow_Graph_save(PyFlow_Graph *self,
                                    "protocol",
                                    "node",
                                    NULL};
-    
+
 
     const char *ofile_c_str = NULL;
     const char *protocol_c_str = NULL;
-    
+
     PyObject *py_node  = NULL;
 
     // node case
@@ -1762,7 +1762,7 @@ PyFlow_Graph_save(PyFlow_Graph *self,
                         " or node(conduit.Node)");
         return NULL;
     }
-    
+
     if(ofile_c_str!= NULL)
     {
         std::string ofile(ofile_c_str);
@@ -1775,7 +1775,7 @@ PyFlow_Graph_save(PyFlow_Graph *self,
             self->graph->save(ofile,std::string(protocol_c_str));
         }
     }
-    else 
+    else
     {
         if(!PyConduit_Node_Check(py_node))
         {
@@ -1794,7 +1794,7 @@ PyFlow_Graph_save(PyFlow_Graph *self,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyFlow_Graph_load(PyFlow_Graph *self, 
+PyFlow_Graph_load(PyFlow_Graph *self,
                   PyObject *args,
                   PyObject *kwargs)
 {
@@ -1802,11 +1802,11 @@ PyFlow_Graph_load(PyFlow_Graph *self,
                                    "protocol",
                                    "node",
                                    NULL};
-    
+
 
     const char *ofile_c_str = NULL;
     const char *protocol_c_str = NULL;
-    
+
     PyObject *py_node  = NULL;
 
     // node case
@@ -1823,7 +1823,7 @@ PyFlow_Graph_load(PyFlow_Graph *self,
                         " or node(conduit.Node)");
         return NULL;
     }
-    
+
     if(ofile_c_str!= NULL)
     {
         std::string ofile(ofile_c_str);
@@ -1847,7 +1847,7 @@ PyFlow_Graph_load(PyFlow_Graph *self,
         Node *node_ptr = PyConduit_Node_Get_Node_Ptr(py_node);
         self->graph->load(*node_ptr);
     }
-    
+
 
     Py_RETURN_NONE;
 
@@ -1855,13 +1855,13 @@ PyFlow_Graph_load(PyFlow_Graph *self,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyFlow_Graph_info(PyFlow_Graph *self, 
+PyFlow_Graph_info(PyFlow_Graph *self,
                       PyObject *args,
                       PyObject *kwargs)
 {
     static const char *kwlist[] = {"info",
                                    NULL};
-    
+
     PyObject *py_info  = NULL;
 
 
@@ -1880,9 +1880,9 @@ PyFlow_Graph_info(PyFlow_Graph *self,
                         "'info' argument must be a conduit.Node");
         return NULL;
     }
-    
+
     Node *info_ptr = PyConduit_Node_Get_Node_Ptr(py_info);
-    
+
     self->graph->info(*info_ptr);
 
     Py_RETURN_NONE;
@@ -2046,8 +2046,8 @@ public:
     {
         // TODO GUARD
         m_map[filter_type_name] = py_cls;
-    }    
-    
+    }
+
     static PyFlow_Filter *create_py(const std::string &filter_type_name)
     {
         PyObject *py_cls = m_map[filter_type_name];
@@ -2061,7 +2061,7 @@ public:
         PyFlow_Filter  *py_flow = create_py(filter_type_name);
         return py_flow->filter;
     }
-    
+
     static void clear()
     {
         m_map.clear();
@@ -2070,7 +2070,7 @@ public:
 
 private:
     static std::map<std::string,PyObject*> m_map;
-    
+
 };
 
 std::map<std::string,PyObject*> PyFlow_Workspace_Factory::m_map;
@@ -2085,7 +2085,7 @@ struct PyFlow_Workspace
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-static PyObject * 
+static PyObject *
 PyFlow_Workspace_new(PyTypeObject *type,
                      PyObject *, // args -- unused
                      PyObject *) // kwds -- unused
@@ -2109,7 +2109,7 @@ PyFlow_Workspace_dealloc(PyFlow_Workspace *self)
     {
         delete self->workspace;
     }
-    
+
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -2149,7 +2149,7 @@ PyFlow_Workspace_traversals(PyFlow_Workspace *self,
 {
     static const char *kwlist[] = {"out",
                                    NULL};
-    
+
     PyObject *py_out  = NULL;
 
 
@@ -2168,7 +2168,7 @@ PyFlow_Workspace_traversals(PyFlow_Workspace *self,
                         "'out' argument must be a conduit.Node");
         return NULL;
     }
-    
+
     Node *out_ptr = PyConduit_Node_Get_Node_Ptr(py_out);
     self->workspace->traversals(*out_ptr);
     Py_RETURN_NONE;
@@ -2194,13 +2194,13 @@ PyFlow_Workspace_reset(PyFlow_Workspace *self)
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyFlow_Workspace_info(PyFlow_Workspace *self, 
+PyFlow_Workspace_info(PyFlow_Workspace *self,
                       PyObject *args,
                       PyObject *kwargs)
 {
     static const char *kwlist[] = {"info",
                                    NULL};
-    
+
     PyObject *py_info  = NULL;
 
 
@@ -2219,9 +2219,9 @@ PyFlow_Workspace_info(PyFlow_Workspace *self,
                         "'info' argument must be a conduit.Node");
         return NULL;
     }
-    
+
     Node *info_ptr = PyConduit_Node_Get_Node_Ptr(py_info);
-    
+
     self->workspace->info(*info_ptr);
 
     Py_RETURN_NONE;
@@ -2255,7 +2255,7 @@ PyFlow_Workspace_set_default_mpi_comm(PyObject *, // cls -- unused
                 "index must be an integer");
         return NULL;
     }
-    
+
     Workspace::set_default_mpi_comm(comm_id);
     Py_RETURN_NONE;
 }
@@ -2275,7 +2275,7 @@ PyFlow_Workspace_register_filter_type(PyObject *, // cls -- unused
 {
     // get python object
     PyObject *py_cls = NULL;
-    if ( !PyArg_ParseTuple(args, "O", &py_cls) || 
+    if ( !PyArg_ParseTuple(args, "O", &py_cls) ||
          !PyFlow_Filter_Check_SubType(py_cls))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -2285,23 +2285,23 @@ PyFlow_Workspace_register_filter_type(PyObject *, // cls -- unused
 
     // create instance
     PyObject *py_inst = PyObject_CallObject(py_cls, NULL);
-    
+
     if(py_inst == NULL)
     {
         PyErr_Print();
     }
-    
+
     // obtain pointer to filter
     flow::Filter *f = ((PyFlow_Filter*)py_inst)->filter;
 
-    
+
     // TODO REMOVE:
     Node iface;
     f->declare_interface(iface);
-        
+
     // this deletes f as well.
     Py_XDECREF(py_inst);
-    
+
     std::string filter_type_name = iface["type_name"].as_string();
 
     PyFlow_Workspace_Factory::register_filter_type(filter_type_name,
@@ -2309,7 +2309,7 @@ PyFlow_Workspace_register_filter_type(PyObject *, // cls -- unused
 
     Workspace::register_filter_type(filter_type_name,
                                     &PyFlow_Workspace_Factory::create);
-    
+
     Py_RETURN_NONE;
 }
 
@@ -2358,7 +2358,7 @@ PyFlow_Workspace_remove_filter_type(PyObject *, // cls -- unused
 static PyObject *
 PyFlow_Workspace_clear_supported_filter_types(PyObject *) // cls -- unused
 {
-    // TODO python specific map is only cleared here, not 
+    // TODO python specific map is only cleared here, not
     // by other (say, c++ calls to Workspace::clear_supported_filter_types()
     // in a rare case this could cause confusion
     PyFlow_Workspace_Factory::clear();
@@ -2550,7 +2550,7 @@ flow_python_traverse(PyObject *m, visitproc visit, void *arg)
 }
 
 //---------------------------------------------------------------------------//
-static int 
+static int
 flow_python_clear(PyObject *m)
 {
     Py_CLEAR(GETSTATE(m)->error);
@@ -2558,7 +2558,7 @@ flow_python_clear(PyObject *m)
 }
 
 //---------------------------------------------------------------------------//
-static struct PyModuleDef flow_python_module_def = 
+static struct PyModuleDef flow_python_module_def =
 {
         PyModuleDef_HEAD_INIT,
         "flow_python",
@@ -2589,7 +2589,7 @@ static struct PyModuleDef flow_python_module_def =
 //---------------------------------------------------------------------------//
 // Main entry point
 //---------------------------------------------------------------------------//
-extern "C" 
+extern "C"
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
 PyObject *FLOW_PYTHON_API PyInit_flow_python(void)
@@ -2597,7 +2597,7 @@ PyObject *FLOW_PYTHON_API PyInit_flow_python(void)
 void FLOW_PYTHON_API initflow_python(void)
 #endif
 //---------------------------------------------------------------------------//
-{    
+{
     //-----------------------------------------------------------------------//
     // create our main module
     //-----------------------------------------------------------------------//
@@ -2616,7 +2616,7 @@ void FLOW_PYTHON_API initflow_python(void)
     }
 
     struct module_state *st = GETSTATE(py_module);
-    
+
     st->error = PyErr_NewException((char*)"flow_python.Error",
                                    NULL,
                                    NULL);
@@ -2646,7 +2646,7 @@ void FLOW_PYTHON_API initflow_python(void)
         PY_MODULE_INIT_RETURN_ERROR;
     }
 
-    
+
     if (PyType_Ready(&PyFlow_Graph_TYPE) < 0)
     {
         PY_MODULE_INIT_RETURN_ERROR;
@@ -2656,11 +2656,11 @@ void FLOW_PYTHON_API initflow_python(void)
     {
         PY_MODULE_INIT_RETURN_ERROR;
     }
-    
+
     //-----------------------------------------------------------------------//
     // add Filter Type
     //-----------------------------------------------------------------------//
-    
+
     Py_INCREF(&PyFlow_Filter_TYPE);
     PyModule_AddObject(py_module,
                        "Filter",
@@ -2669,7 +2669,7 @@ void FLOW_PYTHON_API initflow_python(void)
     //-----------------------------------------------------------------------//
     // add Registry Type
     //-----------------------------------------------------------------------//
-    
+
     Py_INCREF(&PyFlow_Registry_TYPE);
     PyModule_AddObject(py_module,
                        "Registry",
@@ -2678,7 +2678,7 @@ void FLOW_PYTHON_API initflow_python(void)
     //-----------------------------------------------------------------------//
     // add Graph Type
     //-----------------------------------------------------------------------//
-    
+
     Py_INCREF(&PyFlow_Graph_TYPE);
     PyModule_AddObject(py_module,
                        "Graph",
@@ -2687,7 +2687,7 @@ void FLOW_PYTHON_API initflow_python(void)
     //-----------------------------------------------------------------------//
     // add Workspace Type
     //-----------------------------------------------------------------------//
-    
+
     Py_INCREF(&PyFlow_Workspace_TYPE);
     PyModule_AddObject(py_module,
                        "Workspace",

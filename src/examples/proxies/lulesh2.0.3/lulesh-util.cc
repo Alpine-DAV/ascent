@@ -16,7 +16,7 @@ int StrToInt(const char *token, int *retVal)
 
    if (token == NULL)
       return 0 ;
-   
+
    c = token ;
    *retVal = (int)strtol(c, &endptr, decimal_base) ;
    if((endptr != c) && ((*endptr == ' ') || (*endptr == '\0')))
@@ -49,7 +49,7 @@ static void ParseError(const char *message, int myRank)
 {
    if (myRank == 0) {
       printf("%s\n", message);
-#if USE_MPI      
+#if USE_MPI
       MPI_Abort(MPI_COMM_WORLD, -1);
 #else
       exit(-1);
@@ -141,7 +141,7 @@ void ParseCommandLineOptions(int argc, char *argv[],
          }
          /* -v */
          else if (strcmp(argv[i], "-v") == 0) {
-#if VIZ_MESH            
+#if VIZ_MESH
             opts->viz = 1;
 #else
             ParseError("Use of -v requires compiling with -DVIZ_MESH\n", myRank);
@@ -151,7 +151,7 @@ void ParseCommandLineOptions(int argc, char *argv[],
          /* -h */
          else if (strcmp(argv[i], "-h") == 0) {
             PrintCommandLineOptions(argv[0], myRank);
-#if USE_MPI            
+#if USE_MPI
             MPI_Abort(MPI_COMM_WORLD, 0);
 #else
             exit(0);
@@ -176,7 +176,7 @@ void VerifyAndWriteFinalOutput(Real_t elapsed_time,
 {
    // GrindTime1 only takes a single domain into account, and is thus a good way to measure
    // processor speed indepdendent of MPI parallelism.
-   // GrindTime2 takes into account speedups from MPI parallelism 
+   // GrindTime2 takes into account speedups from MPI parallelism
    Real_t grindTime1 = ((elapsed_time*1e6)/locDom.cycle())/(nx*nx*nx);
    Real_t grindTime2 = ((elapsed_time*1e6)/locDom.cycle())/(nx*nx*nx*numRanks);
 

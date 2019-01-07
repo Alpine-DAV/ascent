@@ -2,17 +2,17 @@
 !
 ! This file is part of CloverLeaf.
 !
-! CloverLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! CloverLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! CloverLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! CloverLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! CloverLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Communication Utilities
@@ -21,7 +21,7 @@
 !>  environment, including initialisation, mesh decompostion, reductions and
 !>  halo exchange using explicit buffers.
 !>
-!>  Note the halo exchange is currently coded as simply as possible and no 
+!>  Note the halo exchange is currently coded as simply as possible and no
 !>  optimisations have been implemented, such as post receives before sends or packing
 !>  buffers with multiple data fields. This is intentional so the effect of these
 !>  optimisations can be measured on large systems, as and when they are added.
@@ -83,10 +83,10 @@ SUBROUTINE clover_init_comms
   rank=0
   size=1
 
-  CALL MPI_INIT(err) 
+  CALL MPI_INIT(err)
 
-  CALL MPI_COMM_RANK(MPI_COMM_WORLD,rank,err) 
-  CALL MPI_COMM_SIZE(MPI_COMM_WORLD,size,err) 
+  CALL MPI_COMM_RANK(MPI_COMM_WORLD,rank,err)
+  CALL MPI_COMM_SIZE(MPI_COMM_WORLD,size,err)
 
   parallel%parallel=.TRUE.
   parallel%task=rank
@@ -247,7 +247,7 @@ SUBROUTINE clover_allocate_buffers(chunk)
   IMPLICIT NONE
 
   INTEGER      :: chunk
-  
+
   ! Unallocated buffers for external boundaries caused issues on some systems so they are now
   !  all allocated
   IF(parallel%task.EQ.chunks(chunk)%task)THEN
@@ -283,7 +283,7 @@ SUBROUTINE clover_exchange(fields,depth)
     request=0
     message_count=0
 
-    chunk = 1 
+    chunk = 1
 
     end_pack_index_left_right=0
     end_pack_index_bottom_top=0
@@ -332,7 +332,7 @@ SUBROUTINE clover_exchange(fields,depth)
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
       CALL clover_unpack_left(fields, chunk, depth,                      &
                               chunks(chunk)%left_rcv_buffer,             &
-                              left_right_offset)                  
+                              left_right_offset)
     ENDIF
 
 
@@ -2586,7 +2586,7 @@ SUBROUTINE clover_pack_bottom(chunk, fields, depth, bottom_top_offset)
 END SUBROUTINE clover_pack_bottom
 
 SUBROUTINE clover_send_recv_message_bottom(bottom_snd_buffer, bottom_rcv_buffer,        &
-                                           chunk, total_size,                           &   
+                                           chunk, total_size,                           &
                                            tag_send, tag_recv,                          &
                                            req_send, req_recv)
 
@@ -3032,7 +3032,7 @@ SUBROUTINE clover_pack_back(chunk, fields, depth, back_front_offset)
                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,Z_FACE_DATA,&
                                     depth, VERTEX_DATA,                           &
                                     back_front_offset(FIELD_XVEL0))
-    ENDIF 
+    ENDIF
   ENDIF
   IF(fields(FIELD_XVEL1).EQ.1) THEN
     IF(use_fortran_kernels) THEN
@@ -3818,7 +3818,7 @@ SUBROUTINE clover_pack_front(chunk, fields, depth, back_front_offset)
 END SUBROUTINE clover_pack_front
 
 SUBROUTINE clover_send_recv_message_front(front_snd_buffer, front_rcv_buffer,        &
-                                          chunk, total_size,                         &   
+                                          chunk, total_size,                         &
                                           tag_send, tag_recv,                        &
                                           req_send, req_recv)
 

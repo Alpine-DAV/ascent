@@ -1,50 +1,50 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
+//
 // Please also read ascent/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
 //-----------------------------------------------------------------------------
-// -- Python includes (these must be included first) -- 
+// -- Python includes (these must be included first) --
 //-----------------------------------------------------------------------------
 #include <Python.h>
 #include <structmember.h>
@@ -55,7 +55,7 @@
 #endif
 
 //-----------------------------------------------------------------------------
-// -- standard lib includes -- 
+// -- standard lib includes --
 //-----------------------------------------------------------------------------
 #include <iostream>
 #include <vector>
@@ -127,7 +127,7 @@ PyString_AsString(PyObject *py_obj)
     {
         // TODO: ERROR or auto convert?
     }
-    
+
     return res;
 }
 
@@ -191,7 +191,7 @@ struct PyAscent_MPI_Ascent
 
 
 //---------------------------------------------------------------------------//
-static PyObject * 
+static PyObject *
 PyAscent_MPI_Ascent_new(PyTypeObject *type,
                         PyObject*, // args -- unused
                         PyObject*) // kwds -- unused
@@ -214,7 +214,7 @@ PyAscent_MPI_Ascent_dealloc(PyAscent_MPI_Ascent *self)
     {
         delete self->ascent;
     }
-    
+
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -225,7 +225,7 @@ PyAscent_MPI_Ascent_init(PyAscent_MPI_Ascent *self,
                          PyObject *,// args -- unused
                          PyObject *) // kwds -- unused
 {
-  
+
     self->ascent = new Ascent();
     return 0;
 
@@ -251,8 +251,8 @@ PyAscent_MPI_Ascent_open(PyAscent_MPI_Ascent *self,
     {
         return NULL;
     }
-    
-    
+
+
     if(py_node != NULL)
     {
         if(!PyConduit_Node_Check(py_node))
@@ -263,7 +263,7 @@ PyAscent_MPI_Ascent_open(PyAscent_MPI_Ascent *self,
             return NULL;
         }
     }
-    
+
     if(py_node != NULL)
     {
         Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
@@ -275,7 +275,7 @@ PyAscent_MPI_Ascent_open(PyAscent_MPI_Ascent *self,
     }
 
 
-    Py_RETURN_NONE; 
+    Py_RETURN_NONE;
 }
 
 //-----------------------------------------------------------------------------
@@ -298,8 +298,8 @@ PyAscent_MPI_Ascent_publish(PyAscent_MPI_Ascent *self,
     {
         return NULL;
     }
-    
-     
+
+
     if(!PyConduit_Node_Check(py_node))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -307,11 +307,11 @@ PyAscent_MPI_Ascent_publish(PyAscent_MPI_Ascent *self,
                         "conduit::Node");
         return NULL;
     }
-    
+
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
     self->ascent->publish(*node);
 
-    Py_RETURN_NONE; 
+    Py_RETURN_NONE;
 }
 
 //-----------------------------------------------------------------------------
@@ -334,8 +334,8 @@ PyAscent_MPI_Ascent_execute(PyAscent_MPI_Ascent *self,
     {
         return NULL;
     }
-    
-     
+
+
     if(!PyConduit_Node_Check(py_node))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -343,11 +343,11 @@ PyAscent_MPI_Ascent_execute(PyAscent_MPI_Ascent *self,
                         "conduit::Node");
         return NULL;
     }
-    
+
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
     self->ascent->execute(*node);
 
-    Py_RETURN_NONE; 
+    Py_RETURN_NONE;
 }
 
 //-----------------------------------------------------------------------------
@@ -370,8 +370,8 @@ PyAscent_MPI_Ascent_info(PyAscent_MPI_Ascent *self,
     {
         return NULL;
     }
-    
-     
+
+
     if(!PyConduit_Node_Check(py_node))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -379,11 +379,11 @@ PyAscent_MPI_Ascent_info(PyAscent_MPI_Ascent *self,
                         "conduit::Node");
         return NULL;
     }
-    
+
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
     self->ascent->info(*node);
 
-    Py_RETURN_NONE; 
+    Py_RETURN_NONE;
 }
 
 
@@ -428,9 +428,9 @@ static PyMethodDef PyAscent_MPI_Ascent_METHODS[] = {
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"close",
-     (PyCFunction)PyAscent_MPI_Ascent_close, 
+     (PyCFunction)PyAscent_MPI_Ascent_close,
      METH_NOARGS,
-     "{todo}"}, 
+     "{todo}"},
     //-----------------------------------------------------------------------//
     // end Ascent methods table
     //-----------------------------------------------------------------------//
@@ -552,7 +552,7 @@ ascent_mpi_python_traverse(PyObject *m, visitproc visit, void *arg)
 }
 
 //---------------------------------------------------------------------------//
-static int 
+static int
 ascent_mpi_python_clear(PyObject *m)
 {
     Py_CLEAR(GETSTATE(m)->error);
@@ -560,7 +560,7 @@ ascent_mpi_python_clear(PyObject *m)
 }
 
 //---------------------------------------------------------------------------//
-static struct PyModuleDef ascent_python_module_def = 
+static struct PyModuleDef ascent_python_module_def =
 {
         PyModuleDef_HEAD_INIT,
         "ascent_mpi_python",
@@ -591,7 +591,7 @@ static struct PyModuleDef ascent_python_module_def =
 //---------------------------------------------------------------------------//
 // Main entry point
 //---------------------------------------------------------------------------//
-extern "C" 
+extern "C"
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
 PyObject *ASCENT_MPI_PYTHON_API PyInit_ascent_mpi_python(void)
@@ -599,7 +599,7 @@ PyObject *ASCENT_MPI_PYTHON_API PyInit_ascent_mpi_python(void)
 void ASCENT_MPI_PYTHON_API initascent_mpi_python(void)
 #endif
 //---------------------------------------------------------------------------//
-{    
+{
     //-----------------------------------------------------------------------//
     // create our main module
     //-----------------------------------------------------------------------//
@@ -618,7 +618,7 @@ void ASCENT_MPI_PYTHON_API initascent_mpi_python(void)
     }
 
     struct module_state *st = GETSTATE(py_module);
-    
+
     st->error = PyErr_NewException((char*)"ascent_mpi_python.Error",
                                    NULL,
                                    NULL);
@@ -645,7 +645,7 @@ void ASCENT_MPI_PYTHON_API initascent_mpi_python(void)
     //-----------------------------------------------------------------------//
     // add DataType
     //-----------------------------------------------------------------------//
-    
+
     Py_INCREF(&PyAscent_MPI_Ascent_TYPE);
     PyModule_AddObject(py_module,
                        "Ascent",

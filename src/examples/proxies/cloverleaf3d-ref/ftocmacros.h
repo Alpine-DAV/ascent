@@ -1,6 +1,6 @@
 /*
-** Fortran to C index translation macros for Mark Govett's ctof for 
-** GPU kernels.  
+** Fortran to C index translation macros for Mark Govett's ctof for
+** GPU kernels.
 **
 ** Tom Henderson
 ** 9/25/08

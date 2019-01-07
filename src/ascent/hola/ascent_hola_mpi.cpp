@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
+//
 // Please also read ascent/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -84,7 +84,7 @@ calc_offsets(const int32_array &lst,
         offsets[i] = count;
         count += lst[i];
     }
-    
+
     return count;
 }
 
@@ -122,7 +122,7 @@ hola_mpi_comm_map(const conduit::Node &data,
     int total_size = relay::mpi::size(comm);
     int src_size  = 0;
     int dest_size = 0;
-    
+
     for(int i=0; i < total_size; i++)
     {
         if(world_to_src[i] >=0)
@@ -135,19 +135,19 @@ hola_mpi_comm_map(const conduit::Node &data,
             dest_size+=1;
         }
     }
-    
+
     bool is_source_rank = world_to_src[rank] >= 0;
 
     res.reset();
-    
-    // maps from src and dest index spack to world ranks 
+
+    // maps from src and dest index spack to world ranks
 
     res["src_to_world"]  = DataType::int32(src_size);
     res["dest_to_world"] = DataType::int32(dest_size);
-    
+
     int32 *src_to_world  = res["src_to_world"].value();
     int32 *dest_to_world = res["dest_to_world"].value();
-    
+
     int src_idx  = 0;
     int dest_idx = 0;
 
@@ -165,9 +165,9 @@ hola_mpi_comm_map(const conduit::Node &data,
             dest_idx++;
         }
     }
-    
+
     Node n_num_loc_doms, n_num_total_doms;
-    
+
     if(is_source_rank)
     {
         n_num_loc_doms.set_int32(data.number_of_children());
@@ -180,15 +180,15 @@ hola_mpi_comm_map(const conduit::Node &data,
     relay::mpi::all_gather_using_schema(n_num_loc_doms,
                                         n_num_total_doms,
                                         comm);
-    
+
     Node n_num_total_doms_acc;
-    
+
     n_num_total_doms_acc.set_external((int32*)n_num_total_doms.data_ptr(),total_size);
     int32_array num_doms = n_num_total_doms_acc.as_int32_array();
 
     res["src_counts"] = DataType::int32(src_size);
     int32_array src_counts =res["src_counts"].value();
-    
+
     for(int i=0;i<src_size;i++)
     {
         src_counts[i] = num_doms[src_to_world[i]];
@@ -225,11 +225,11 @@ hola_mpi_send(const conduit::Node &data,
 {
     const int32 *src_counts  = comm_map["src_counts"].value();
     const int32 *src_offsets = comm_map["src_offsets"].value();
-    
+
     const int32 *dest_counts   = comm_map["dest_counts"].value();
     const int32 *dest_offsets  = comm_map["dest_offsets"].value();
     const int32 *dest_to_world = comm_map["dest_to_world"].value();
-    
+
     // responsible for sending src_offsets[src_idx] + src_counts[src_idx]
     // to who ever needs them
     // assumes multi domain mesh bp
@@ -268,7 +268,7 @@ hola_mpi_recv(MPI_Comm comm,
     const int32 *src_counts  = comm_map["src_counts"].value();
     const int32 *src_offsets = comm_map["src_offsets"].value();
     const int32 *src_to_world = comm_map["src_to_world"].value();
-        
+
     const int32 *dest_counts  = comm_map["dest_counts"].value();
     const int32 *dest_offsets = comm_map["dest_offsets"].value();
 
@@ -284,7 +284,7 @@ hola_mpi_recv(MPI_Comm comm,
         {
             src_idx++;
         }
-        
+
         int32 src_rank = src_to_world[(int32)src_idx];
         // std::cout << "dest_idx " << dest_idx << " rcv "
         //           << i <<  " from " << src_idx << " ( rank: " << src_rank << ") " <<std::endl;
@@ -299,7 +299,7 @@ hola_mpi_recv(MPI_Comm comm,
 void
 hola_mpi(const conduit::Node &options,
          conduit::Node &data)
-{    
+{
     MPI_Comm comm  = MPI_Comm_f2c(options["mpi_comm"].to_int());
     // get my rank
     int rank = relay::mpi::rank(comm);
@@ -314,10 +314,10 @@ hola_mpi(const conduit::Node &options,
     //
 
     // calc source size using split
-    
+
     // source ranks are 0 to rank_split - 1
     int src_size = rank_split;
-    
+
     // calc dest size using split
     // dest ranks are rank_split  to total_size -1
     int dest_size = total_size - rank_split;
@@ -352,7 +352,7 @@ hola_mpi(const conduit::Node &options,
     // into a multi domain layout
     Node *data_ptr = &data;
     Node md_data;
-    
+
     if(is_src_rank && !blueprint::mesh::is_multi_domain(data))
     {
         md_data.append().set_external(data);

@@ -59,7 +59,7 @@ IF(MFEM_FOUND)
     # version. So if we compiled with MPI on, the we need
     # to set the correct dependency
     if(MPI_FOUND AND ENABLE_MPI)
-        list(APPEND mfem_smoke_deps mpi conduit) 
+        list(APPEND mfem_smoke_deps mpi conduit)
     endif()
     add_cpp_test(TEST t_mfem_smoke DEPENDS_ON ${mfem_smoke_deps})
 endif()

@@ -23,7 +23,7 @@ The concept of "regions" was added, although every region is the same ideal gas 
 
 Four of the LULESH routines are now performed on a region-by-region basis, making the memory access patterns non-unit stride
 
-Artificial load imbalances can be easily introduced that could impact parallelization strategies.  
+Artificial load imbalances can be easily introduced that could impact parallelization strategies.
    * The load balance flag changes region assignment.  Region number is raised to the power entered for assignment probability.  Most likely regions changes with MPI process id.
    * The cost flag raises the cost of ~45% of the regions to evaluate EOS by the entered multiple.  The cost of 5% is 10x the entered
  multiple.

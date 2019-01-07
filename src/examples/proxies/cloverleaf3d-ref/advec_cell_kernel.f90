@@ -2,17 +2,17 @@
 !
 ! This file is part of CloverLeaf.
 !
-! CloverLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! CloverLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! CloverLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! CloverLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! CloverLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Fortran cell advection kernel.
@@ -105,7 +105,7 @@ SUBROUTINE advec_cell_kernel(x_min,       &
             post_vol(j,k,l)=pre_vol(j,k,l)-(vol_flux_x(j+1,k  ,l  )-vol_flux_x(j,k,l))
           ENDDO
         ENDDO
-      ENDDO 
+      ENDDO
 !$OMP END DO
     ELSEIF(sweep_number.EQ.3) THEN
 !$OMP DO
@@ -116,7 +116,7 @@ SUBROUTINE advec_cell_kernel(x_min,       &
             post_vol(j,k,l)=volume(j,k,l)
           ENDDO
         ENDDO
-      ENDDO 
+      ENDDO
 !$OMP END DO
     ENDIF
 

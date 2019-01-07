@@ -154,7 +154,7 @@ function(add_python_test TEST)
     message(STATUS " [*] Adding Python-based Unit Test: ${TEST}")
     add_test( NAME ${TEST}
               COMMAND ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
-    
+
     # use proper env var path sep for current platform
     if(WIN32)
         set(ENV_PATH_SEP "\\;")
@@ -166,7 +166,7 @@ function(add_python_test TEST)
     # if python path is already set -- we need to append to it
     # this is important for running in spack's build-env
     set(PYTHON_TEST_PATH "")
-    
+
     if(DEFINED ENV{PYTHONPATH})
       set(PYTHON_TEST_PATH "$ENV{PYTHONPATH}${ENV_PATH_SEP}")
     endif()
