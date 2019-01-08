@@ -11,7 +11,7 @@
 # 
 # For details, see: http://ascent.readthedocs.io/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,20 +44,23 @@
 
 ###############################################################################
 #
-# file: src/examples/CMakeLists.txt
+# Example that shows how to use an installed instance of Ascent in Makefile
+# based build system.
+#
+# To build:
+#  env ASCENT_DIR={ascent install path} \
+#   make
+#  ./ascent_render_example
+#
 #
 ###############################################################################
-add_subdirectory(proxies/lulesh2.0.3)
-add_subdirectory(proxies/kripke)
-add_subdirectory(proxies/cloverleaf3d-ref)
-add_subdirectory(synthetic/noise)
 
-if(MFEM_FOUND) 
-  add_subdirectory(proxies/laghos)
-endif()
+include $(ASCENT_DIR)/share/ascent/ascent_config.mk
 
-# install using and python examples
-install(DIRECTORY using-with-cmake using-with-make using-with-make-cfg python tutorial
-        DESTINATION examples/ascent)
+main:
+	$(CXX) $(ASCENT_INCLUDE_FLAGS) ascent_render_example.cpp $(ASCENT_LIB_FLAGS) -o ascent_render_example
+
+# TODO: Add mpi render example?
+
 
 
