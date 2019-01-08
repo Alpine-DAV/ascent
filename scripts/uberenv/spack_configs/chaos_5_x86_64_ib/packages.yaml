@@ -37,7 +37,7 @@ packages:
       jpeg: [libjpeg-turbo, libjpeg]
   conduit:
     version: [master]
-# LLNL chaos5 CUDA 
+# LLNL chaos5 CUDA
   cuda:
     paths:
       cuda@9.1: /opt/cudatoolkit-9.1/

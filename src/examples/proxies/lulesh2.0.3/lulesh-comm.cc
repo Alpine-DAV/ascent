@@ -14,7 +14,7 @@
 
 /*
    There are coherence issues for packing and unpacking message
-   buffers.  Ideally, you would like a lot of threads to 
+   buffers.  Ideally, you would like a lot of threads to
    cooperate in the assembly/dissassembly of each message.
    To do that, each thread should really be operating in a
    different coherence zone.

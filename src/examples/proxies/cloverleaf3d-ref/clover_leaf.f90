@@ -69,9 +69,9 @@ subroutine clover_leaf() bind(C,name="clover_leaf")
   CALL initialise
 
   CALL hydro
-  
+
   ! Deallocate everything
-  
+
 end subroutine clover_leaf
 
 

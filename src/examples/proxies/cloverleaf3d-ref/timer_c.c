@@ -34,6 +34,6 @@ void timer_c_( double *elapsed_time)
    struct timeval t;
    gettimeofday(&t, (struct timezone *) NULL);
    *elapsed_time = t.tv_sec + t.tv_usec * 1.0E-6;
-         
+
 }
 

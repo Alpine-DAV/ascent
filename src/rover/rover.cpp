@@ -1,43 +1,43 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-749865
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Rover. 
-// 
+//
+// This file is part of Rover.
+//
 // Please also read rover/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 #include <scheduler.hpp>
 #include <rover.hpp>
@@ -52,9 +52,9 @@
 
 namespace rover {
 
-class Rover::InternalsType 
+class Rover::InternalsType
 {
-public: 
+public:
   enum TracePrecision {ROVER_FLOAT, ROVER_DOUBLE};
 protected:
   SchedulerBase            *m_scheduler;
@@ -67,10 +67,10 @@ protected:
 
   void reset_render_mode(RenderMode render_mode)
   {
-  
+
   }
 
-public: 
+public:
   InternalsType()
   {
     m_precision = ROVER_FLOAT;
@@ -96,11 +96,11 @@ public:
     // logic to create the appropriate parallel scheduler
     //
     // ray tracing = dynamic scheduler, scattering | no_scattering
-    // volume/engery = scattering + local_scope -> dynamic scheduler 
+    // volume/engery = scattering + local_scope -> dynamic scheduler
     //                 non_scattering + global_scope ->static scheduler
     //
-    // Note: I wanted to allow for the case of scattering + global scope. This could 
-    //       be benificial in the case where we may or may not scatter in a given 
+    // Note: I wanted to allow for the case of scattering + global scope. This could
+    //       be benificial in the case where we may or may not scatter in a given
     //       domain. Thus, avoid waiting for the ray to emerge or throw out the results
 //#else
      //if(render_settings compared to old means new schedular)
@@ -112,19 +112,19 @@ public:
 
   void set_ray_generator(RayGenerator *ray_generator)
   {
-    m_scheduler->set_ray_generator(ray_generator); 
+    m_scheduler->set_ray_generator(ray_generator);
   }
 
   void clear_data_sets()
   {
-    m_scheduler->clear_data_sets(); 
+    m_scheduler->clear_data_sets();
   }
 
   ~InternalsType()
   {
     if(m_scheduler) delete m_scheduler;
   }
-  
+
   void set_background(const std::vector<vtkm::Float32> &background)
   {
     m_scheduler->set_background(background);
@@ -203,20 +203,20 @@ public:
   {
     if(m_precision == ROVER_DOUBLE)
     {
-      std::vector<Domain> domains = m_scheduler->get_domains(); 
+      std::vector<Domain> domains = m_scheduler->get_domains();
       delete m_scheduler;
       m_scheduler = new Scheduler<vtkm::Float32>();
-    } 
+    }
   }
 
   void set_tracer_precision64()
   {
     if(m_precision == ROVER_FLOAT)
     {
-      std::vector<Domain> domains = m_scheduler->get_domains(); 
+      std::vector<Domain> domains = m_scheduler->get_domains();
       delete m_scheduler;
       m_scheduler = new Scheduler<vtkm::Float64>();
-    } 
+    }
   }
 
 }; //Internals Type
@@ -229,7 +229,7 @@ Rover::Rover()
 
 Rover::~Rover()
 {
-  
+
 }
 
 void
@@ -240,7 +240,7 @@ Rover::set_mpi_comm_handle(int mpi_comm_id)
 #else
   (void)mpi_comm_id;
 #endif
-  
+
 }
 
 int
@@ -264,7 +264,7 @@ Rover::finalize()
 void
 Rover::add_data_set(vtkmDataSet &dataset)
 {
-  m_internals->add_data_set(dataset); 
+  m_internals->add_data_set(dataset);
 }
 
 void
@@ -284,7 +284,7 @@ Rover::set_ray_generator(RayGenerator *ray_generator)
 {
   if(ray_generator == nullptr)
   {
-    throw RoverException("Ray generator cannot  be null");    
+    throw RoverException("Ray generator cannot  be null");
   }
   m_internals->set_ray_generator(ray_generator);
 }
@@ -292,21 +292,21 @@ Rover::set_ray_generator(RayGenerator *ray_generator)
 void
 Rover::execute()
 {
-  m_internals->execute(); 
+  m_internals->execute();
 }
 
-template<typename T> 
+template<typename T>
 bool
 is_float(T );
 
-template<> 
+template<>
 bool
 is_float<vtkm::Float32>(vtkm::Float32 )
 {
   return true;
 }
 
-template<> 
+template<>
 bool
 is_float<vtkm::Float64>(vtkm::Float64)
 {
@@ -317,59 +317,59 @@ void
 Rover::about()
 {
   std::cout<<"rover version: xx.xx.xx\n";
-  
+
   //if(is_float(FloatType())) std::cout<<"Single precision\n";
   //else std::cout<<"Double precision\n";
-  std::cout<<"Other important information\n"; 
-  std::cout<<"                                 *@@                                    \n";    
-  std::cout<<"       @@@@@@@@@@@@@@,          @@&@@              %@@@                 \n";    
-  std::cout<<"       @@@@@%  #@@@@@,         &@* @@,              @@@#                \n";    
-  std::cout<<"       @@@@ @    @@@@,         @@   @@             @@ .@@               \n";    
-  std::cout<<"       @@@@@    #@@@@,        .@&    @@           @@(   @@@             \n";    
-  std::cout<<"       @@@@@@@@@@@@@@,         @@    %@&         .@@      @@            \n";    
-  std::cout<<"       &&&&@@&&@@&&&&.     @@@@@@%    @@         @@        @@@          \n";    
-  std::cout<<"           %@, @@          @@   &@@    @@       @@           @@.        \n";    
-  std::cout<<"           %@, @@          @@     @@@  ,@@     *@&            (@@       \n";    
-  std::cout<<"           %@, @@          @@       ,@@@@@     @@               @@(     \n";    
-  std::cout<<"          *&@(*@@*         @@                 @@                 (@@@#  \n";    
-  std::cout<<"          @@@@@@@@         @@                @@%                  @@.@@ \n";    
-  std::cout<<"          @@    @@         @@                @@                   @@  @@\n";    
-  std::cout<<"          @@    @@        @@@@              @@                    @@ @@.\n";    
-  std::cout<<"          @@    @@        @@@@             @@                     @@@%  \n";    
-  std::cout<<"          @@    @@        @@@@         /@@@@@@@@@@@&                    \n";    
-  std::cout<<"   ,,,,,,,@@,,,,@@,,,,,,,,@@@@,,,,,,,,,(@#,,,,,,,,@@@,,,,,,,,,,,,,,.    \n";    
-  std::cout<<"  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    \n";    
-  std::cout<<"  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    \n";    
-  std::cout<<"     /@@*                                                     @@%       \n";    
-  std::cout<<"       .@@*                                                .@@%         \n";    
-  std::cout<<"         *@@.                                             @@#           \n";    
-  std::cout<<"           ,@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(             \n";    
-  std::cout<<"           #@(                                 @@                       \n";    
-  std::cout<<"           @@                     /@@@@@@@@@@@@@@@@@@@@@@@@@@@          \n";    
-  std::cout<<"          @@                      /@/                       @@          \n";    
-  std::cout<<"      @@@@@@@@(                &@@@@@@@&                #@@@@@@@@       \n";    
-  std::cout<<"   &@@@@@@@@@@@@@           /@@@@@@@@@@@@@            @@@@@@@@@@@@@%    \n";    
-  std::cout<<"  @@@@@   @  #@@@@#        @@@@@   @  ,@@@@@        %@@@@(  @   @@@@@   \n";    
-  std::cout<<" @@@@,@/,@@@ @%@@@@,      %@@@%@( @@@ %@@@@@%      ,@@@@%@ @@@,/@#@@@@  \n";    
-  std::cout<<" @@@@  .@& @@  *@@@@      @@@@  .@@ @@   @@@@      @@@@   @@ &@.  @@@@  \n";    
-  std::cout<<" @@@@ #@@@@@@@.@@@@(      @@@@.*@@@@@@@*(@@@@      (@@@# @@@@@@@#.@@@@  \n";    
-  std::cout<<"  @@@@*   @   @@@@@        @@@@&   @   &@@@@        @@@@@   @   /@@@@   \n";    
-  std::cout<<"   @@@@@@@@@@@@@@#          @@@@@@@@@@@@@@@          @@@@@@@@@@@@@@@    \n";    
-  std::cout<<"     @@@@@@@@@@*              &@@@@@@@@@#              #@@@@@@@@@@      \n";    
-                                                                             
+  std::cout<<"Other important information\n";
+  std::cout<<"                                 *@@                                    \n";
+  std::cout<<"       @@@@@@@@@@@@@@,          @@&@@              %@@@                 \n";
+  std::cout<<"       @@@@@%  #@@@@@,         &@* @@,              @@@#                \n";
+  std::cout<<"       @@@@ @    @@@@,         @@   @@             @@ .@@               \n";
+  std::cout<<"       @@@@@    #@@@@,        .@&    @@           @@(   @@@             \n";
+  std::cout<<"       @@@@@@@@@@@@@@,         @@    %@&         .@@      @@            \n";
+  std::cout<<"       &&&&@@&&@@&&&&.     @@@@@@%    @@         @@        @@@          \n";
+  std::cout<<"           %@, @@          @@   &@@    @@       @@           @@.        \n";
+  std::cout<<"           %@, @@          @@     @@@  ,@@     *@&            (@@       \n";
+  std::cout<<"           %@, @@          @@       ,@@@@@     @@               @@(     \n";
+  std::cout<<"          *&@(*@@*         @@                 @@                 (@@@#  \n";
+  std::cout<<"          @@@@@@@@         @@                @@%                  @@.@@ \n";
+  std::cout<<"          @@    @@         @@                @@                   @@  @@\n";
+  std::cout<<"          @@    @@        @@@@              @@                    @@ @@.\n";
+  std::cout<<"          @@    @@        @@@@             @@                     @@@%  \n";
+  std::cout<<"          @@    @@        @@@@         /@@@@@@@@@@@&                    \n";
+  std::cout<<"   ,,,,,,,@@,,,,@@,,,,,,,,@@@@,,,,,,,,,(@#,,,,,,,,@@@,,,,,,,,,,,,,,.    \n";
+  std::cout<<"  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    \n";
+  std::cout<<"  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    \n";
+  std::cout<<"     /@@*                                                     @@%       \n";
+  std::cout<<"       .@@*                                                .@@%         \n";
+  std::cout<<"         *@@.                                             @@#           \n";
+  std::cout<<"           ,@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(             \n";
+  std::cout<<"           #@(                                 @@                       \n";
+  std::cout<<"           @@                     /@@@@@@@@@@@@@@@@@@@@@@@@@@@          \n";
+  std::cout<<"          @@                      /@/                       @@          \n";
+  std::cout<<"      @@@@@@@@(                &@@@@@@@&                #@@@@@@@@       \n";
+  std::cout<<"   &@@@@@@@@@@@@@           /@@@@@@@@@@@@@            @@@@@@@@@@@@@%    \n";
+  std::cout<<"  @@@@@   @  #@@@@#        @@@@@   @  ,@@@@@        %@@@@(  @   @@@@@   \n";
+  std::cout<<" @@@@,@/,@@@ @%@@@@,      %@@@%@( @@@ %@@@@@%      ,@@@@%@ @@@,/@#@@@@  \n";
+  std::cout<<" @@@@  .@& @@  *@@@@      @@@@  .@@ @@   @@@@      @@@@   @@ &@.  @@@@  \n";
+  std::cout<<" @@@@ #@@@@@@@.@@@@(      @@@@.*@@@@@@@*(@@@@      (@@@# @@@@@@@#.@@@@  \n";
+  std::cout<<"  @@@@*   @   @@@@@        @@@@&   @   &@@@@        @@@@@   @   /@@@@   \n";
+  std::cout<<"   @@@@@@@@@@@@@@#          @@@@@@@@@@@@@@@          @@@@@@@@@@@@@@@    \n";
+  std::cout<<"     @@@@@@@@@@*              &@@@@@@@@@#              #@@@@@@@@@@      \n";
+
 }
 
-void 
+void
 Rover::set_background(const std::vector<vtkm::Float64> &background)
 {
   m_internals->set_background(background);
-} 
+}
 
-void 
+void
 Rover::set_background(const std::vector<vtkm::Float32> &background)
 {
   m_internals->set_background(background);
-} 
+}
 
 void
 Rover::save_png(const std::string &file_name)
@@ -395,13 +395,13 @@ Rover::get_result(Image<vtkm::Float64> &image)
   m_internals->get_result(image);
 }
 
-void 
+void
 Rover::set_tracer_precision32()
 {
   m_internals->set_tracer_precision32();
 }
 
-void 
+void
 Rover::set_tracer_precision64()
 {
   m_internals->set_tracer_precision64();

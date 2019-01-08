@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
-// Please also read alpine/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Please also read ascent/LICENSE
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -92,7 +92,7 @@ namespace flow
 {
 
 //-----------------------------------------------------------------------------
-// Make sure we treat cleanup of python objects correctly 
+// Make sure we treat cleanup of python objects correctly
 //-----------------------------------------------------------------------------
 template<>
 class DataWrapper<PyObject>: public Data
@@ -103,7 +103,7 @@ class DataWrapper<PyObject>: public Data
     {
         // empty
     }
-    
+
     virtual ~DataWrapper()
     {
         // empty
@@ -171,7 +171,7 @@ PythonScript::~PythonScript()
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 PythonScript::declare_interface(Node &i)
 {
     i["type_name"] = "python_script";
@@ -188,7 +188,7 @@ PythonScript::verify_params(const conduit::Node &params,
     CONDUIT_INFO(params.to_json());
     info.reset();
     bool res = true;
-    
+
     if( params.has_child("source") )
     {
         if( !params["source"].dtype().is_string() )
@@ -211,7 +211,7 @@ PythonScript::verify_params(const conduit::Node &params,
                                   " 'source' or 'file'";
         res = false;
     }
-    
+
     if( params.has_child("interface") )
     {
         const Node &n_iface = params["interface"];
@@ -227,7 +227,7 @@ PythonScript::verify_params(const conduit::Node &params,
                 info["info"].append().set("provides 'interface/input' function name override");
             }
         }
-        
+
         if( n_iface.has_child("set_output") )
         {
             if( !n_iface["set_output"].dtype().is_string() )
@@ -240,10 +240,10 @@ PythonScript::verify_params(const conduit::Node &params,
                 info["info"].append().set("provides 'interface/set_output' function name override");
             }
         }
-        
+
     }
-    
-    
+
+
     if( params.has_child("interpreter") )
     {
         const Node &n_interp = params["interpreter"];
@@ -268,7 +268,7 @@ PythonScript::verify_params(const conduit::Node &params,
                 }
             }
         }
-    }    
+    }
 
     return res;
 }
@@ -276,20 +276,20 @@ PythonScript::verify_params(const conduit::Node &params,
 
 
 //-----------------------------------------------------------------------------
-void 
+void
 PythonScript::execute()
 {
-    // make sure we have our interpreter setup b/c 
+    // make sure we have our interpreter setup b/c
     // we need the python env ready
-    
+
     PythonInterpreter *py_interp = interpreter();
-    
-    
+
+
     PyObject *py_input = NULL;
-    
+
     if(input(0).check_type<PyObject>())
     {
-        // input is already have python 
+        // input is already have python
         py_input = input<PyObject>(0);
     }
     else if(input(0).check_type<conduit::Node>())
@@ -306,12 +306,12 @@ PythonScript::execute()
 
     // check if filter options req us to reset the interp
     bool rset_interp = false;
-    if( params().has_path("interpreter/reset") && 
+    if( params().has_path("interpreter/reset") &&
         params()["interpreter/reset"].as_string() == "true" )
     {
         rset_interp = true;
     }
-    
+
     // reset interp (clear global dict) if requested
     if(rset_interp)
     {
@@ -351,7 +351,7 @@ PythonScript::execute()
 
 
     FLOW_CHECK_PYTHON_ERROR(py_interp->run_script(filter_setup_src_oss.str()));
-    
+
 
     if( params().has_child("source") )
     {
@@ -361,9 +361,9 @@ PythonScript::execute()
     {
         FLOW_CHECK_PYTHON_ERROR(py_interp->run_script_file(params()["file"].as_string()));
     }
-    
+
     PyObject *py_res = py_interp->get_global_object("_flow_output");
-    
+
     if(py_res == NULL)
     {
         // bad!, it should at least be python's None

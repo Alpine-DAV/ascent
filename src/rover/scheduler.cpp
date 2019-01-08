@@ -114,7 +114,7 @@ Scheduler<FloatType>::set_global_scalar_range()
   else
   {
 
-    for(int i = 0; i < num_domains; ++i) 
+    for(int i = 0; i < num_domains; ++i)
     {
       vtkmRange local_range = m_domains[i].get_primary_range();
       global_range.Include(local_range);
@@ -133,7 +133,7 @@ Scheduler<FloatType>::set_global_scalar_range()
     ROVER_INFO("Global scalar range "<<global_range);
   }
 
-  for(int i = 0; i < num_domains; ++i) 
+  for(int i = 0; i < num_domains; ++i)
   {
     m_domains[i].set_primary_range(global_range);
   }
@@ -153,7 +153,7 @@ Scheduler<FloatType>::set_global_bounds()
 
   vtkm::Bounds global_bounds;
 
-  for(int i = 0; i < num_domains; ++i) 
+  for(int i = 0; i < num_domains; ++i)
   {
     vtkm::Bounds local_bounds = m_domains[i].get_domain_bounds();
     global_bounds.Include(local_bounds);
@@ -175,7 +175,7 @@ Scheduler<FloatType>::set_global_bounds()
   double global_z_max = 0;
 
   MPI_Allreduce((void *)(&x_min),
-                (void *)(&global_x_min), 
+                (void *)(&global_x_min),
                 1,
                 MPI_DOUBLE,
                 MPI_MIN,
@@ -313,7 +313,7 @@ Scheduler<FloatType>::trace_rays()
   int width = 0;
 
   m_ray_generator->get_dims(height, width);
-  
+
   //
   // ensure that the render settings are set
   //
@@ -321,11 +321,11 @@ Scheduler<FloatType>::trace_rays()
   //       volume to energy and vice versa
   const int num_domains = static_cast<int>(m_domains.size());
   ROVER_INFO("scheduer set render settings for "<<num_domains<<" domains ");
-  for(int i = 0; i < num_domains; ++i) 
+  for(int i = 0; i < num_domains; ++i)
   {
     m_domains[i].set_render_settings(m_render_settings);
   }
-  
+
   ROVER_INFO("done scheduer set render settings for "<<num_domains<<" domains ");
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("setup", time);
@@ -353,7 +353,7 @@ Scheduler<FloatType>::trace_rays()
     ROVER_INFO("Generating rays for domian "<<i);
 
     timer.Reset();
-  
+
     vtkmRayTracing::Ray<FloatType> rays;
     m_ray_generator->get_rays(rays);
 
@@ -436,12 +436,12 @@ Scheduler<FloatType>::trace_rays()
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("mid", t1.GetElapsedTime());
   timer.Reset();
-  
-  // 
+
+  //
   // Composite the results
-  // 
+  //
   timer.Reset();
-  composite(); 
+  composite();
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("compositing", time);
   timer.Reset();
@@ -471,7 +471,7 @@ Scheduler<FloatType>::get_result(Image<vtkm::Float64> &image)
 }
 
 template<typename FloatType>
-void Scheduler<FloatType>::save_result(std::string file_name) 
+void Scheduler<FloatType>::save_result(std::string file_name)
 {
   int height = 0;
   int width = 0;
@@ -490,7 +490,7 @@ void Scheduler<FloatType>::save_result(std::string file_name)
       std::stringstream sstream;
       sstream<<file_name<<"_"<<i<<".png";
       m_result.normalize_intensity(i);
-      FloatType * buffer 
+      FloatType * buffer
         = get_vtkm_ptr(m_result.get_intensity(i));
 
       encoder.EncodeChannel(buffer, width, height);
@@ -499,13 +499,13 @@ void Scheduler<FloatType>::save_result(std::string file_name)
   }
   else
   {
-     
+
     assert(m_result.get_num_channels() == 4);
     vtkm::cont::ArrayHandle<FloatType> colors;
     colors = m_result.flatten_intensities();
-    FloatType * buffer 
+    FloatType * buffer
       = get_vtkm_ptr(colors);
-    
+
     encoder.Encode(buffer, width, height);
     encoder.Save(file_name + ".png");
   }
@@ -515,17 +515,17 @@ void Scheduler<FloatType>::save_result(std::string file_name)
      std::stringstream sstream;
      sstream<<file_name<<"_paths"<<".png";
      m_result.normalize_paths();
-     FloatType * buffer 
+     FloatType * buffer
        = get_vtkm_ptr(m_result.get_path_lengths());
 
      encoder.EncodeChannel(buffer, width, height);
      encoder.Save(sstream.str());
   }
-  
+
 }
 
 template<typename FloatType>
-void Scheduler<FloatType>::save_bov(std::string file_name) 
+void Scheduler<FloatType>::save_bov(std::string file_name)
 {
   int height = 0;
   int width = 0;
@@ -544,7 +544,7 @@ void Scheduler<FloatType>::save_bov(std::string file_name)
       std::stringstream sstream;
       sstream<<file_name<<"_"<<i<<".bov";
       m_result.normalize_intensity(i);
-      FloatType * buffer 
+      FloatType * buffer
         = get_vtkm_ptr(m_result.get_intensity(i));
       std::fstream bov(sstream.str(), std::ios::out | std::ios::binary);
       bov.write((char*)buffer, sizeof(FloatType) * size);
@@ -556,6 +556,6 @@ void Scheduler<FloatType>::save_bov(std::string file_name)
 
 //
 // Explicit instantiation
-template class Scheduler<vtkm::Float32>; 
+template class Scheduler<vtkm::Float32>;
 template class Scheduler<vtkm::Float64>;
 }; // namespace rover
