@@ -76,7 +76,7 @@ set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.h")
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/cmake/ascent_config.mk.in"
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.mk.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk")
 
 

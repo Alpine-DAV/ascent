@@ -62,22 +62,16 @@ ASCENT_DIR = @ASCENT_INSTALL_PREFIX@
 
 ASCENT_CONDUIT_DIR = @CONDUIT_DIR@
 
-# TODO HOW TO FIND HDF5 Dir and Zlib DIR From Conduit?
-
-ASCENT_HDF5_DIR = @HDF5_DIR@
-ASCENT_ZLIB_DIR = @ZLIB_DIR@
-
 ASCENT_VTKH_DIR = @VTKH_DIR@
 ASCENT_VTKM_DIR = @VTKM_DIR@
 ASCENT_VTKM_VERSION = @VTKm_VERSION@
 
 ASCENT_MFEM_DIR = @MFEM_DIR@
 
-#################
-# Include Flags
-#################
-ASCENT_INCLUDE_FLAGS = -I $(ASCENT_CONDUIT_DIR)/include/conduit \
-                       -I $(ASCENT_DIR)/include/ascent
+# include vars from conduit_config.mk
+include $(ASCENT_CONDUIT_DIR)/share/conduit/conduit_config.mk
+
+
 
 #################
 # Linking Flags
@@ -86,29 +80,15 @@ ASCENT_INCLUDE_FLAGS = -I $(ASCENT_CONDUIT_DIR)/include/conduit \
 ##########
 # Conduit
 ##########
-# If using Conduit build without MPI
-ASCENT_CONDUIT_LIB_FLAGS = -L $(ASCENT_CONDUIT_DIR)/lib \
-                           -lconduit_blueprint \
-                           -lconduit_relay \
-                           -lconduit
 
-# If using Conduit build with MPI
-ASCENT_CONDUIT_MPI_LIB_FLAGS = -L $(ASCENT_CONDUIT_DIR)/lib \
-                               -lconduit_relay_mpi_io \
-                               -lconduit_relay_mpi \
-                               -lconduit_blueprint \
-                               -lconduit_relay \
-                               -lconduit 
 
-##########
-# HDF5
-##########
-ASCENT_HDF5_LIB_FLAGS = -L $(ASCENT_HDF5_DIR)/lib -lhdf5
+# Note: Conduit's conduit_config.mk handles hdf5 and zlib
 
-##########
-# ZLIB
-##########
-ASCENT_ZLIB_LIB_FLAGS = -L $(ASCENT_ZLIB_DIR)/lib -lz
+# For Conduit without MPI
+ASCENT_CONDUIT_LIB_FLAGS = $(CONDUIT_LIB_FLAGS)
+
+# For using Conduit build with MPI
+ASCENT_CONDUIT_MPI_LIB_FLAGS = $(CONDUIT_MPI_LIB_FLAGS)
 
 ##########
 # VTKH
@@ -139,19 +119,26 @@ ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
 ##########
 # MFEM
 ##########
-# Include flags from the mfem config.mk file
+
+# Include make vars from the mfem config.mk file
+
+if($(ASCENT_MFEM_DIR))
+   include $(ASCENT_MFEM_DIR)/share/mfem/config.mk
+endif
+
+# MFEM isn't in the interface, so we don't need include flags
+ASCENT_MFEM_LIB_FLAGS = $(if $(ASCENT_MFEM_DIR),-L $(ASCENT_MFEM_DIR)/lib -lmfem $(MFEM_EXT_LIBS))
+
+#######################
+# Ascent Include Flags
+#######################
+ASCENT_INCLUDE_FLAGS = $(CONDUIT_INCLUDE_FLAGS) \
+                       -I $(ASCENT_DIR)/include/ascent 
 
 
-# TODO: 
-#include $(ASCENT_MFEM_DIR)/share/mfem/config.mk
-
-#ASCENT_MFEM_INCLUDE_FLAGS = -I $(ASCENT_MFEM_DIR)/include $(MFEM_TPLFLAGS)
-#ASCENT_MFEM_LINK_FLAGS = -L $(ASCENT_MFEM_DIR)/lib -lmfem $(MFEM_EXT_LIBS)
-
-
-##########
-# Ascent
-##########
+####################
+# Ascent Lib Flags
+####################
 # if using Ascent without mpi
 ASCENT_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
                    -lascent \
@@ -160,8 +147,7 @@ ASCENT_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
                    $(ASCENT_VTKH_LIB_FLAGS) \
                    $(ASCENT_VTKM_LIB_FLAGS) \
                    $(ASCENT_CONDUIT_LIB_FLAGS) \
-                   $(ASCENT_HDF5_LIB_FLAGS) \
-                   $(ASCENT_ZLIB_LIB_FLAGS)
+                   $(ASCENT_MFEM_LIB_FLAGS) 
 
 # if using Ascent with mpi
 ASCENT_MPI_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
@@ -171,5 +157,4 @@ ASCENT_MPI_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
                        $(ASCENT_VTKH_MPI_LIB_FLAGS) \
                        $(ASCENT_VTKM_LIB_FLAGS) \
                        $(ASCENT_CONDUIT_MPI_LIB_FLAGS) \
-                       $(ASCENT_HDF5_LIB_FLAGS) \
-                       $(ASCENT_ZLIB_LIB_FLAGS)
+                       $(ASCENT_MFEM_LIB_FLAGS) 
