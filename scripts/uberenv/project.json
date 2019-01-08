@@ -6,5 +6,6 @@
 "spack_activate" : { "py-numpy"  : ["+python"],
                      "py-mpi4py" : ["+python", "+mpi"],
                      "conduit"   : ["+python"],
-                     "py-sphinx" : ["+python", "+doc"]}
+                     "py-sphinx" : ["+python", "+doc"]},
+"spack_clean_packages" : ["vtkm", "vtkh","conduit"]
 }

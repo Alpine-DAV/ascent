@@ -139,6 +139,14 @@ def parse_args():
                       default=False,
                       help="Pull if spack repo already exists")
 
+    # option to force for clean of packages specified to
+    # be cleaned in the project.json
+    parser.add_option("--clean",
+                      action="store_true",
+                      dest="spack_clean",
+                      default=False,
+                      help="Force uninstall of packages specified in project.json")
+
     # option to tell spack to run tests
     parser.add_option("--run_tests",
                       action="store_true",
@@ -439,6 +447,14 @@ def main():
     # clean out any temporary spack build stages
     cln_cmd = "spack/bin/spack clean "
     res = sexe(cln_cmd, echo=True)
+
+    # check if we need to force uninstall of selected packages
+    if opts["spack_clean"]:
+        if project_opts.has_key("spack_clean_packages"):
+            for cln_pkg in project_opts["spack_clean_packages"]:
+                if not find_spack_pkg_path(cln_pkg) is None:
+                    unist_cmd = "spack/bin/spack uninstall -f -y --all --dependents " + cln_pkg
+                    res = sexe(unist_cmd, echo=True)
 
     ##########################################################
     # we now have an instance of spack configured how we 
