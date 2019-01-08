@@ -81,7 +81,7 @@ CMake-based build system example (see: ``examples/ascent/using-with-cmake``):
 Makefile-based build system example (see: ``examples/ascent/using-with-make``):
 
 .. literalinclude:: ../../examples/using-with-make/Makefile
-   :lines: 46-55
+   :lines: 46-53
    :dedent: 2
 
 
