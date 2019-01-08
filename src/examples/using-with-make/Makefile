@@ -50,9 +50,19 @@
 # To build:
 #  env ASCENT_DIR={ascent install path} make
 #  ./ascent_render_example
-# 
+#
+# From within an ascent install:
+#  make 
+#  ./example
+#
+# Which corresponds to:
+#
+#  make ASCENT_DIR=../../../ 
+#  ./example
 #
 ###############################################################################
+
+ASCENT_DIR ?= ../../..
 
 # See $(ASCENT_DIR)/share/ascent/ascent_config.mk for detailed linking info 
 include $(ASCENT_DIR)/share/ascent/ascent_config.mk
