@@ -38,7 +38,7 @@ packages:
       jpeg: [libjpeg-turbo, libjpeg]
   conduit:
     version: [master]
-# LLNL toss3 CUDA 
+# LLNL toss3 CUDA
   cuda:
     modules:
        cuda@9.1: cuda/9.1.85

@@ -31,7 +31,7 @@ packages:
       mpi: [mpich]
       blas: [intel-mkl]
       lapack: [intel-mkl]
-    variants: +mpi 
+    variants: +mpi
   mpich:
     version: [7.7.0]
     buildable: false
@@ -49,6 +49,6 @@ packages:
       buildable: false
       paths:
         intel-mkl%gcc@5.3.0: /opt/intel
-        intel-mkl%intel@18.0.3.222: /opt/intel  
+        intel-mkl%intel@18.0.3.222: /opt/intel
   conduit:
     version: [master]

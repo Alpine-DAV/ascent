@@ -1,52 +1,52 @@
 ###############################################################################
-# Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-# 
+# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+#
 # Produced at the Lawrence Livermore National Laboratory
-# 
+#
 # LLNL-CODE-716457
-# 
+#
 # All rights reserved.
-# 
-# This file is part of Ascent. 
-# 
+#
+# This file is part of Ascent.
+#
 # For details, see: http://ascent.readthedocs.io/.
-# 
+#
 # Please also read ascent/LICENSE
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
-# * Redistributions of source code must retain the above copyright notice, 
+#
+# * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the disclaimer below.
-# 
+#
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the disclaimer (as noted below) in the
 #   documentation and/or other materials provided with the distribution.
-# 
+#
 # * Neither the name of the LLNS/LLNL nor the names of its contributors may
 #   be used to endorse or promote products derived from this software without
 #   specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 ###############################################################################
 """
 file: update_source_license_txt.py
 description:
- Simple python script to help with update license header text in files  
+ Simple python script to help with update license header text in files
  throughout the source tree.
- 
+
  usage: python update_source_license_txt.py [old lic] [new lic] [exec]"
 
 """
@@ -60,25 +60,25 @@ patterns = {
     "hdr":"""
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 """,
-    "st": "// "},
+    "st": "//"},
 # pound prefixed style headers (python + cmake)
 "pnd":{
     "hdr":"""
 ###############################################################################
 """,
-    "st":"# "},
+    "st":"#"},
 # ReStructured Text style headers
 "rst":{
     "hdr":"""
 .. ############################################################################
 """,
-    "st":".. # "},
+    "st":".. #"},
 # Fortran Text style headers
 "fortran":{
     "hdr":"""
 !*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*!
 """,
-    "st":"!* "}}
+    "st":"!*"}}
 
 
 def gen_formatted(lic_txt,hdr,st):
@@ -88,7 +88,10 @@ def gen_formatted(lic_txt,hdr,st):
         if l.count("Additional BSD Notice") > 0:
             keep = False
         if keep:
-            res += st + l
+            if l == "\n":
+              res += st + l
+            else:
+              res += st + " " + l
     res += hdr
     return res
 
@@ -98,7 +101,7 @@ def update_lic(lic_file_old,lic_file_new,modify_files):
     for k,v in patterns.items():
         v["full"] = gen_formatted(old_lic_txt,
                                   v["hdr"][1:],
-                                  v["st"])    
+                                  v["st"])
     all_files = []
     for root_path in ["../src",
                       "../scripts",
