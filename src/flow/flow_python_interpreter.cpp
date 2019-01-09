@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
-// Please also read alpine/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Please also read ascent/LICENSE
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -78,15 +78,15 @@ PythonInterpreter::PythonInterpreter()
     m_handled_init = false;
     m_running      = false;
     m_error        = false;
-    
+
     m_py_main_module = NULL;
     m_py_global_dict = NULL;
-    
+
     m_py_trace_module = NULL;
     m_py_sio_module = NULL;
     m_py_trace_print_exception_func = NULL;
     m_py_sio_class = NULL;
-    
+
 }
 
 //-----------------------------------------------------------------------------
@@ -125,7 +125,7 @@ PythonInterpreter::initialize(int argc, char **argv)
     {
         // set prog name
         char *prog_name = (char*)"flow_embedded_py";
-        
+
         if(argc == 0 || argv == NULL)
         {
             Py_SetProgramName(prog_name);
@@ -140,7 +140,7 @@ PythonInterpreter::initialize(int argc, char **argv)
         PyEval_InitThreads();
 
         // set sys argvs
-        
+
         if(argc == 0 || argv == NULL)
         {
             PySys_SetArgv(1, &prog_name);
@@ -149,12 +149,12 @@ PythonInterpreter::initialize(int argc, char **argv)
         {
             PySys_SetArgv(argc, argv);
         }
-        
+
         // make sure we know we need to cleanup the interp
         m_handled_init = true;
     }
 
-    
+
     // do to setup b/c we need for c++ connection , even if python was already
     // inited
 
@@ -178,7 +178,7 @@ PythonInterpreter::initialize(int argc, char **argv)
     m_py_sio_module   = PyImport_AddModule("StringIO");
     PyObject *py_sio_dict= PyModule_GetDict(m_py_sio_module);
     m_py_sio_class = PyDict_GetItemString(py_sio_dict,"StringIO");
-    
+
     m_running = true;
 
     return true;
@@ -216,7 +216,7 @@ PythonInterpreter::shutdown()
         {
             Py_Finalize();
         }
-        
+
         m_running = false;
         m_handled_init = false;
     }
@@ -311,12 +311,12 @@ PythonInterpreter::get_global_object(const string &py_name)
 /// python scripts & calls to the C-API. The difference between these
 /// to cases is the existence of a python traceback.
 ///
-/// Note: This method clears the python error state, but it will continue 
+/// Note: This method clears the python error state, but it will continue
 /// to return "true" indicating an error until clear_error() is called.
 ///
 /// Note: Adapted from VisIt: src/avt/PythonFilters/PythonInterpreter.cpp
 //-----------------------------------------------------------------------------
-bool 
+bool
 PythonInterpreter::check_error()
 {
     if(PyErr_Occurred())
@@ -330,7 +330,7 @@ PythonInterpreter::check_error()
         PyObject *py_etrace;
 
         PyErr_Fetch(&py_etype, &py_eval, &py_etrace);
-        
+
         if(py_etype)
         {
             PyErr_NormalizeException(&py_etype, &py_eval, &py_etrace);
@@ -347,7 +347,7 @@ PythonInterpreter::check_error()
                     m_error_msg += sval;
                 }
             }
-            
+
             if(py_etrace)
             {
                 if(PyTraceback_to_string(py_etype, py_eval, py_etrace, sval))
@@ -356,7 +356,7 @@ PythonInterpreter::check_error()
                 }
             }
         }
-        
+
         PyErr_Restore(py_etype, py_eval, py_etrace);
         PyErr_Clear();
     }
@@ -370,7 +370,7 @@ PythonInterpreter::check_error()
 ///
 /// Note: Adapted from VisIt: src/avt/PythonFilters/PythonInterpreter.cpp
 //-----------------------------------------------------------------------------
-void 
+void
 PythonInterpreter::clear_error()
 {
     if(m_error)
@@ -514,7 +514,7 @@ PythonInterpreter::PyTraceback_to_string(PyObject *py_etype,
 
     // call buffer.getvalue() to get python string object
     PyObject *py_str = PyObject_CallMethod(py_buffer,(char*)"getvalue",NULL);
-    
+
 
     if(!py_str)
     {

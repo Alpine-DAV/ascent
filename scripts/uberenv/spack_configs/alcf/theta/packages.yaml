@@ -22,7 +22,7 @@ packages:
           blas: [intel-mkl]
           lapack: [intel-mkl]
         compiler: [gcc@7.3.0]
-        variants: +mpi~shared~python  
+        variants: +mpi~shared~python
     openssl:
         buildable: False
         paths:

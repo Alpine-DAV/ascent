@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 //
 // Produced at the Lawrence Livermore National Laboratory
 //
@@ -768,7 +768,6 @@ void
 VTKHMarchingCubes::execute()
 {
 
-    ASCENT_INFO("Marching the cubes!");
     if(!input(0).check_type<vtkh::DataSet>())
     {
         ASCENT_ERROR("vtkh_marchingcubes input must be a vtk-h dataset");
@@ -855,7 +854,6 @@ void
 VTKHVectorMagnitude::execute()
 {
 
-    ASCENT_INFO("We be vector magnituding");
     if(!input(0).check_type<vtkh::DataSet>())
     {
         ASCENT_ERROR("vtkh_vector_magnitude input must be a vtk-h dataset");
@@ -937,7 +935,6 @@ void
 VTKH3Slice::execute()
 {
 
-    ASCENT_INFO("3 Slicing!");
     if(!input(0).check_type<vtkh::DataSet>())
     {
         ASCENT_ERROR("vtkh_3slice input must be a vtk-h dataset");
@@ -1065,7 +1062,6 @@ void
 VTKHSlice::execute()
 {
 
-    ASCENT_INFO("Slicing!");
     if(!input(0).check_type<vtkh::DataSet>())
     {
         ASCENT_ERROR("vtkh_slice input must be a vtk-h dataset");
@@ -1150,7 +1146,6 @@ void
 VTKHThreshold::execute()
 {
 
-    ASCENT_INFO("Thresholding!");
 
     if(!input(0).check_type<vtkh::DataSet>())
     {
@@ -1243,7 +1238,6 @@ void
 DefaultRender::execute()
 {
 
-    ASCENT_INFO("We be default rendering!");
 
     if(!input(0).check_type<vtkm::Bounds>())
     {
@@ -1477,8 +1471,6 @@ void
 VTKHClip::execute()
 {
 
-    ASCENT_INFO("We be clipping!");
-
     if(!input(0).check_type<vtkh::DataSet>())
     {
         ASCENT_ERROR("VTKHClip input must be a vtk-h dataset");
@@ -1602,8 +1594,6 @@ void
 VTKHClipWithField::execute()
 {
 
-    ASCENT_INFO("We be clipping with a field!");
-
     if(!input(0).check_type<vtkh::DataSet>())
     {
         ASCENT_ERROR("VTKHClipWithField input must be a vtk-h dataset");
@@ -1690,8 +1680,6 @@ VTKHIsoVolume::verify_params(const conduit::Node &params,
 void
 VTKHIsoVolume::execute()
 {
-
-    ASCENT_INFO("We be iso-voluming!");
 
     if(!input(0).check_type<vtkh::DataSet>())
     {
@@ -1796,7 +1784,6 @@ VTKHBounds::declare_interface(Node &i)
 void
 VTKHBounds::execute()
 {
-    ASCENT_INFO("VTK-h bounds");
     vtkm::Bounds *bounds = new vtkm::Bounds;
 
     if(!input(0).check_type<vtkh::DataSet>())
@@ -1887,8 +1874,6 @@ VTKHDomainIds::declare_interface(Node &i)
 void
 VTKHDomainIds::execute()
 {
-    ASCENT_INFO("VTK-h domain_ids");
-
     if(!input(0).check_type<vtkh::DataSet>())
     {
         ASCENT_ERROR("'in' must be a vtk-h dataset");
@@ -2006,8 +1991,6 @@ DefaultScene::declare_interface(Node &i)
 void
 DefaultScene::execute()
 {
-    ASCENT_INFO("Creating a scene default renderer!");
-
     // inputs are bounds and set of domains
     vtkm::Bounds       *bounds_in     = input<vtkm::Bounds>(0);
     std::set<vtkm::Id> *domain_ids_set = input<std::set<vtkm::Id> >(1);
@@ -2127,9 +2110,12 @@ CreatePlot::verify_params(const conduit::Node &params,
     valid_paths.push_back("type");
     valid_paths.push_back("pipeline");
 
-    if(params["type"].as_string() == "mesh")
+    if(res)
     {
-      is_mesh = true;
+      if(params["type"].as_string() == "mesh")
+      {
+        is_mesh = true;
+      }
     }
 
     if(!is_mesh)
@@ -2178,8 +2164,12 @@ CreatePlot::execute()
 
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
     conduit::Node plot_params = params();
-
     std::string type = params()["type"].as_string();
+
+    if(data->GlobalIsEmpty(0))
+    {
+      ASCENT_INFO(type<<" plot yielded no data, i.e., no cells remain");
+    }
 
     vtkh::Renderer *renderer = nullptr;
 
@@ -2225,8 +2215,6 @@ CreatePlot::execute()
         ASCENT_ERROR("create_plot unknown plot type '"<<type<<"'");
     }
 
-
-
     // get the plot params
     if(plot_params.has_path("color_table"))
     {
@@ -2249,7 +2237,12 @@ CreatePlot::execute()
 
     if(plot_params.has_path("field"))
     {
-      renderer->SetField(plot_params["field"].as_string());
+      std::string field_name = plot_params["field"].as_string();
+      if(!data->GlobalFieldExists(field_name))
+      {
+        ASCENT_WARN("Plot variable '"<<field_name<<"' does not exist");
+      }
+      renderer->SetField(field_name);
     }
 
     if(type == "mesh")
@@ -2520,7 +2513,6 @@ void
 VTKHLog::execute()
 {
 
-    ASCENT_INFO("Log filter");
     if(!input(0).check_type<vtkh::DataSet>())
     {
         ASCENT_ERROR("vtkh_log input must be a vtk-h dataset");
@@ -2594,7 +2586,6 @@ void
 VTKHNoOp::execute()
 {
 
-    ASCENT_INFO("Doing nothing");
     if(!input(0).check_type<vtkh::DataSet>())
     {
         ASCENT_ERROR("vtkh_no_op input must be a vtk-h dataset");

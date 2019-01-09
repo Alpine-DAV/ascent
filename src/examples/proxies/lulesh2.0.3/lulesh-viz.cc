@@ -18,7 +18,7 @@
 #endif
 
 // Function prototypes
-static void 
+static void
 DumpDomainToVisit(DBfile *db, Domain& domain, int myRank);
 static
 
@@ -28,7 +28,7 @@ static
 // put the 'static' qualifier on this prototype, even if it's done
 // consistently in the prototype and definition
 void
-DumpMultiblockObjects(DBfile *db, PMPIO_baton_t *bat, 
+DumpMultiblockObjects(DBfile *db, PMPIO_baton_t *bat,
                       char basename[], int numRanks);
 
 // Callback prototypes for PMPIO interface (only useful if we're
@@ -52,7 +52,7 @@ DumpMultiblockObjects(DBfile *db, char basename[], int numRanks);
 
 
 /**********************************************************************/
-void DumpToVisit(Domain& domain, int numFiles, int myRank, int numRanks) 
+void DumpToVisit(Domain& domain, int numFiles, int myRank, int numRanks)
 {
   char subdirName[32];
   char basename[32];
@@ -76,8 +76,8 @@ void DumpToVisit(Domain& domain, int numFiles, int myRank, int numRanks)
   int myiorank = PMPIO_GroupRank(bat, myRank);
 
   char fileName[64];
-  
-  if (myiorank == 0) 
+
+  if (myiorank == 0)
     strcpy(fileName, basename);
   else
     sprintf(fileName, "%s.%03d", basename, myiorank);
@@ -116,11 +116,11 @@ void DumpToVisit(Domain& domain, int numFiles, int myRank, int numRanks)
 
 /**********************************************************************/
 
-static void 
+static void
 DumpDomainToVisit(DBfile *db, Domain& domain, int myRank)
 {
    int ok = 0;
-   
+
    /* Create an option list that will give some hints to VisIt for
     * printing out the cycle and time in the annotations */
    DBoptlist *optlist;
@@ -172,7 +172,7 @@ DumpDomainToVisit(DBfile *db, Domain& domain, int myRank)
    int dims[1] = {domain.numElem()}; // No mixed elements
    for(int i=0 ; i<domain.numReg() ; ++i)
       matnums[i] = i+1;
-   
+
    ok += DBPutMaterial(db, "regions", "mesh", domain.numReg(),
                        matnums, domain.regNumList(), dims, 1,
                        NULL, NULL, NULL, NULL, 0, DB_FLOAT, NULL);
@@ -180,7 +180,7 @@ DumpDomainToVisit(DBfile *db, Domain& domain, int myRank)
 
    /* Write out pressure, energy, relvol, q */
 
-   float *e = new float[domain.numElem()] ; 
+   float *e = new float[domain.numElem()] ;
    for (int ei=0; ei < domain.numElem(); ++ei) {
       e[ei] = float(domain.e(ei)) ;
    }
@@ -190,7 +190,7 @@ DumpDomainToVisit(DBfile *db, Domain& domain, int myRank)
    delete [] e ;
 
 
-   float *p = new float[domain.numElem()] ; 
+   float *p = new float[domain.numElem()] ;
    for (int ei=0; ei < domain.numElem(); ++ei) {
       p[ei] = float(domain.p(ei)) ;
    }
@@ -199,7 +199,7 @@ DumpDomainToVisit(DBfile *db, Domain& domain, int myRank)
                       NULL);
    delete [] p ;
 
-   float *v = new float[domain.numElem()] ; 
+   float *v = new float[domain.numElem()] ;
    for (int ei=0; ei < domain.numElem(); ++ei) {
       v[ei] = float(domain.v(ei)) ;
    }
@@ -208,7 +208,7 @@ DumpDomainToVisit(DBfile *db, Domain& domain, int myRank)
                       NULL);
    delete [] v ;
 
-   float *q = new float[domain.numElem()] ; 
+   float *q = new float[domain.numElem()] ;
    for (int ei=0; ei < domain.numElem(); ++ei) {
       q[ei] = float(domain.q(ei)) ;
    }
@@ -258,9 +258,9 @@ DumpDomainToVisit(DBfile *db, Domain& domain, int myRank)
 
 /**********************************************************************/
 
-#if USE_MPI     
+#if USE_MPI
 void
-   DumpMultiblockObjects(DBfile *db, PMPIO_baton_t *bat, 
+   DumpMultiblockObjects(DBfile *db, PMPIO_baton_t *bat,
                          char basename[], int numRanks)
 #else
 void
@@ -291,7 +291,7 @@ void
   for(int v=0 ; v<numvars ; ++v) {
      multivarObjs[v] = new char*[numRanks];
   }
-  
+
   for(int i=0 ; i<numRanks ; ++i) {
      multimeshObjs[i] = new char[64];
      multimatObjs[i] = new char[64];
@@ -301,10 +301,10 @@ void
      blockTypes[i] = DB_UCDMESH;
      varTypes[i] = DB_UCDVAR;
   }
-      
+
   // Build up the multiobject names
   for(int i=0 ; i<numRanks ; ++i) {
-#if USE_MPI     
+#if USE_MPI
     int iorank = PMPIO_GroupRank(bat, i);
 #else
     int iorank = 0;
@@ -317,15 +317,15 @@ void
       for(int v=0 ; v<numvars ; ++v) {
 	snprintf(multivarObjs[v][i], 64, "/data_%d/%s", i, vars[v]);
       }
-     
+
     }
     else {
       snprintf(multimeshObjs[i], 64, "%s.%03d:/data_%d/mesh",
                basename, iorank, i);
-      snprintf(multimatObjs[i], 64, "%s.%03d:/data_%d/regions", 
+      snprintf(multimatObjs[i], 64, "%s.%03d:/data_%d/regions",
 	       basename, iorank, i);
       for(int v=0 ; v<numvars ; ++v) {
-         snprintf(multivarObjs[v][i], 64, "%s.%03d:/data_%d/%s", 
+         snprintf(multivarObjs[v][i], 64, "%s.%03d:/data_%d/%s",
                   basename, iorank, i, vars[v]);
       }
     }
@@ -385,7 +385,7 @@ LULESH_PMPIO_Create(const char *fname,
    return (void*)db;
 }
 
-   
+
 /**********************************************************************/
 
 static void *
@@ -406,7 +406,7 @@ LULESH_PMPIO_Open(const char *fname,
    return (void*)db;
 }
 
-   
+
 /**********************************************************************/
 
 static void
@@ -418,7 +418,7 @@ LULESH_PMPIO_Close(void *file, void *udata)
 }
 # endif
 
-   
+
 #else
 
 void DumpToVisit(Domain& domain, int numFiles, int myRank, int numRanks)

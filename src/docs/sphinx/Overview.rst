@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 .. #
 .. # Produced at the Lawrence Livermore National Laboratory
 .. #
@@ -45,8 +45,15 @@
 
 Ascent Overview
 =================
+The Ascent in situ infrastructure is designed for leading-edge supercomputers,
+and has support for both distributed-memory and shared-memory parallelism.
+Ascent can take advantage of computing power on both conventional CPU architectures
+and on many-core architectures such as NVIDIA GPUs or Intel many-core CPUs.
+Further, it has a flexible design that supports for integration of new visualization
+and analysis routines and libraries. The Ascent infrastructure was first presented at
+the ISAV 2017 Workshop, held in conjuction with SC 17, in the paper `The ALPINE In Situ
+Infrastructure: Ascending from the Ashes of Strawman <https://dl.acm.org/citation.cfm?doid=3144769.3144778>`_.
 
-Ascent is an evolution of the system presented in `Strawman: A Batch In Situ Visualization and Analysis Infrastructure for Multi-Physics Simulation Codes <http://dl.acm.org/citation.cfm?id=2828625>`_ . This paper was presented at the `ISAV 2015 Workshop <http://vis.lbl.gov/Events/ISAV-2015/>`_, held in conjunction with SC 15, on November 16th 2015 in Austin, TX, USA.
 
 Requirements
 ------------
@@ -57,13 +64,13 @@ Support a diverse set of simulations on many-core architectures.
   - Support  usage  within  a  batch  environment (i.e.,no simulation user involvement once the simulation has begun running).
   - Support the four most common languages used by simulation code teams:  C, C++, Python, and Fortran.
   - Support for multiple data models, including uniform, rectilinear, and unstructured grids.
-  
+
 Provide a streamlined interface to improve usability.
   - Provide  straight  forward  data  ownership  semantics between simulation routines and visualization and analysis routines
   - Provide a low-barrier to entry with respect to developer time for integration.
   - Ease-of-use in terms of directing visualization and analysis actions to occur during runtime.
   - Ease-of-use in terms of consuming visualization results, including delivery mechanisms both for images on a file system and for streaming to a web browser.
-  
+
 Minimize  the  resource  impacts  on  host  simulations.
   - Synchronous in situ processing, meaning that visualization and analysis routines can directly access the memory of a simulation code.
   - Efficient execution times that do not significantly slow down overall simulation time.
@@ -109,29 +116,29 @@ VTK-h (Optional but recommended)
 
 Flow (Builtin)
 """"""""""""""
-  Recall from the prior section that VTK-h does not provide its own execution model. This choice simplifies the VTK-h API and makes it easy to leverage VTK-h within ParaView and VisIt`s existing full featured execution models. 
-  Since ALPINE Ascent does not leverage ParaView or VisIt's infrastructure, it needs a basic execution model to support using VTK-h algorithms to carry out the user's requested actions. 
-  
-  Ascent uses a simple data flow library named Flow to efficiently compose and execute VTK-h filters. Ascent's Flow library is a C++ evolution of the Python data flow network infrastructure used in `this implementation <http://ieeexplore.ieee.org/abstract/document/6495864/>`_. It supports declaration and execution of directed acyclic graphs (DAGs) of filters created from a menu of filter types that are registered at runtime. Filters declare a minimal interface, which includes the number of expected inputs and outputs, and a set of default parameters. Flow uses a topological sort to ensure proper filter execution order, tracks all intermediate results, and provides basic memory management capabilities. 
+  Recall from the prior section that VTK-h does not provide its own execution model. This choice simplifies the VTK-h API and makes it easy to leverage VTK-h within ParaView and VisIt`s existing full featured execution models.
+  Since ALPINE Ascent does not leverage ParaView or VisIt's infrastructure, it needs a basic execution model to support using VTK-h algorithms to carry out the user's requested actions.
+
+  Ascent uses a simple data flow library named Flow to efficiently compose and execute VTK-h filters. Ascent's Flow library is a C++ evolution of the Python data flow network infrastructure used in `this implementation <http://ieeexplore.ieee.org/abstract/document/6495864/>`_. It supports declaration and execution of directed acyclic graphs (DAGs) of filters created from a menu of filter types that are registered at runtime. Filters declare a minimal interface, which includes the number of expected inputs and outputs, and a set of default parameters. Flow uses a topological sort to ensure proper filter execution order, tracks all intermediate results, and provides basic memory management capabilities.
   The VTK-h algorithms needed by Ascent are wrapped as Flow Filters so they can be executed as part of DAGs composed by Ascent.
-  
+
   Like its Python predecessor, Flow provides support for generic inputs and outputs. Flow provides a mechanism for filters to check input data types at runtime if necessary. Because of this data-type agnostic design, the Flow library does not depend on VTK-h. This provides the flexibility to create filters which can process data in other data models and APIs. This design supports important future use cases, such as creating a filter to refine high-order MFEM meshes into VTK-h data sets for rendering.
 
 MFEM (Optional)
 """""""""""""""
   The `MFEM <http://mfem.org/>`_ is a lightweight C++ library for finite element methods with support for high-order meshes.
   When enabled, Ascent supports MFEM meshes and can convert high-order meshes to low-order through refinement. Once in low-order
-  form, meshes can be transformed and rendered through the main Ascent runtime. 
+  form, meshes can be transformed and rendered through the main Ascent runtime.
   Additionally, Ascent incudes the `Laghos proxy-application <https://github.com/CEED/Laghos>`_.
 
 Runtimes
 -----------------
-  Ascent can be configured with one or more of the following runtimes. 
+  Ascent can be configured with one or more of the following runtimes.
   When multiple runtimes are built with Ascent, available runtimes can be selected at runtime.
-  A runtime has three main functions: consume simulation data, perfrom analysis (optional), and output data.
+  A runtime has three main functions: consume simulation data, perform analysis (optional), and output data.
   Data describing the simulation mesh is sent to the runtime within a Conduit Node which is formatted according to `Conduit Blueprint <http://llnl-conduit.readthedocs.io/en/latest/blueprint.html>`_.
-  Once the data is in a compatible format, the runtime can optionally perfrom some analysis operations, and then output the results. 
-  Currently, the Ascent runtime uses the  
+  Once the data is in a compatible format, the runtime can optionally perform some analysis operations, and then output the results.
+  Currently, the Ascent runtime uses the
 
 
 Ascent Runtime
@@ -142,9 +149,9 @@ Ascent loops through hierarchy of actions contained in a Conduit Node, and creat
 
 Flow Runtime
 """"""""""""""
-The Flow runtime provides direct access to Flow. This lower access allows availible flow filters to be directly assembled into a DAG instead of relying of the Ascent runtime.
+The Flow runtime provides direct access to Flow. This lower access allows available flow filters to be directly assembled into a DAG instead of relying of the Ascent runtime.
 By using the Flow runtime, developers can connect filters in advanced ways not directly supported by the Ascent API.
 
-Empty
-"""""
+Empty Runtime
+""""""""""""""
 The empty runtime contains all the boilerplate code needed to started implementing a custom runtime and is meant to serve as a staring place for those that wish to create a runtime from scratch.

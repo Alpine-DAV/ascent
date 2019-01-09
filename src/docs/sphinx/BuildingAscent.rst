@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 .. #
 .. # Produced at the Lawrence Livermore National Laboratory
 .. #
@@ -42,9 +42,18 @@
 .. #
 .. ############################################################################
 
+.. _building:
 
 Building Ascent
 =================
+
+This page provides details on several ways to build Ascent from source.
+
+For the shortest path from zero to Ascent, see :doc:`quick_start`.
+
+To build third party dependencies we recommend using :ref:`uberenv <building_with_uberenv>` which leverages Spack or :ref:`Spack directly<building_with_spack>`. 
+We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>`.
+and a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
 Overview
 --------
@@ -63,12 +72,12 @@ For a minimal build with no parallel components, the following are required:
     * Conduit
     * C++ compilers
 
-We recognize that building on HPC systems can be difficult, and we have provid two seperate build strategies.
+We recognize that building on HPC systems can be difficult, and we have provide two separate build strategies.
 
     * A spack based build
-    * Manually compile depencies using a CMake configuration file to keep compilers and libraries consistent
+    * Manually compile decencies using a CMake configuration file to keep compilers and libraries consistent
 
-Most often, the spack based build should be attemted first. Spack will automatically download and build all
+Most often, the spack based build should be attempted first. Spack will automatically download and build all
 the third party dependencies and create a CMake configuration file for Ascent. Should you encounter build issues
 that are not addressed here, please ask questions using our github `issue tracker <https://github.com/Alpine-DAV/ascent/issues>`_.
 
@@ -236,8 +245,121 @@ It is  possible to create your own configure file, and an boilerplate example is
 .. warning:: If compiling all of the dependencies yourself, it is important that you use the same compilers for all dependencies. For
              example, different MPI and Fortran compilers (e.g., Intel and GCC) are not compatible with one another.
 
-Bootstrapping Third Party Dependencies
---------------------------------------
+
+.. _building_with_uberenv:
+
+Building Ascent and Third Party Dependencies
+--------------------------------------------------
+We use **Spack** (http://spack.io) to help build Ascent's third party dependencies on OSX and Linux.
+
+Uberenv (``scripts/uberenv/uberenv.py``) automates fetching spack, building and installing third party dependencies, and can optionally install Ascent as well.  To automate the full install process, Uberenv uses the Ascent Spack package along with extra settings such as Spack compiler and external third party package details for common HPC platforms.
+
+
+Uberenv Options for Building Third Party Dependencies
+------------------------------------------------------
+
+``uberenv.py`` has a few options that allow you to control how dependencies are built:
+
+ ==================== ============================================== ================================================
+  Option               Description                                     Default
+ ==================== ============================================== ================================================
+  --prefix             Destination directory                          ``uberenv_libs``
+  --spec               Spack spec                                     linux: **%gcc**
+                                                                      osx: **%clang**
+  --spack-config-dir   Folder with Spack settings files               linux: (empty)
+                                                                      osx: ``scripts/uberenv/spack_configs/darwin/``
+  -k                   Ignore SSL Errors                              **False**
+  --install            Fully install conduit, not just dependencies   **False**
+  --run_tests          Invoke tests during build and against install  **False** 
+ ==================== ============================================== ================================================
+
+The ``-k`` option exists for sites where SSL certificate interception undermines fetching
+from github and https hosted source tarballs. When enabled, ``uberenv.py`` clones spack using:
+
+.. code:: bash
+
+    git -c http.sslVerify=false clone https://github.com/llnl/spack.git
+
+And passes ``-k`` to any spack commands that may fetch via https.
+
+
+Default invocation on Linux:
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --prefix uberenv_libs \
+                                      --spec %gcc 
+
+Default invocation on OSX:
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --prefix uberenv_libs \
+                                      --spec %clang \
+                                      --spack-config-dir scripts/uberenv/spack_configs/darwin/
+
+
+The uberenv `--install` installs conduit\@master (not just the development dependencies):
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --install
+
+
+To run tests during the build process to validate the build and install, you can use the ``--run_tests`` option:
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --install \
+                                      --run_tests
+
+For details on Spack's spec syntax, see the `Spack Specs & dependencies <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ documentation.
+
+ 
+Compiler Settings for Third Party Dependencies
+----------------------------------------------
+
+You can edit yaml files under ``scripts/uberenv/spack_config/{platform}`` or use the **--spack-config-dir** option to specify a directory with compiler and packages yaml files to use with Spack. See the `Spack Compiler Configuration <http://spack.readthedocs.io/en/latest/getting_started.html#manual-compiler-configuration>`_
+and `Spack System Packages
+<http://spack.readthedocs.io/en/latest/getting_started.html#system-packages>`_
+documentation for details.
+
+For OSX, the defaults in ``spack_configs/darwin/compilers.yaml`` are X-Code's clang and gfortran from https://gcc.gnu.org/wiki/GFortranBinaries#MacOS. 
+
+.. note::
+    The bootstrapping process ignores ``~/.spack/compilers.yaml`` to avoid conflicts
+    and surprises from a user's specific Spack settings on HPC platforms.
+
+When run, ``uberenv.py`` checkouts a specific version of Spack from github as ``spack`` in the 
+destination directory. It then uses Spack to build and install Conduit's dependencies into 
+``spack/opt/spack/``. Finally, it generates a host-config file ``{hostname}.cmake`` in the 
+destination directory that specifies the compiler settings and paths to all of the dependencies.
+
+
+.. _building_known_hpc:
+
+Building with Uberenv on Known HPC Platforms 
+--------------------------------------------------
+
+To support testing and installing on common platforms, we maintain sets of Spack compiler and package settings
+for a few known HPC platforms.  Here are the commonly tested configurations:
+
+ ================== ====================== ======================================
+  System             OS                     Tested Configurations (Spack Specs)
+ ================== ====================== ======================================
+  pascal.llnl.gov     Linux: TOSS3          %gcc
+                                            
+                                            %gcc~shared
+  lassen.llnl.gov     Linux: BlueOS         %clang\@coral~python~fortran
+  cori.nersc.gov      Linux: SUSE / CNL     %gcc
+ ================== ====================== ======================================
+
+
+See ``scripts/spack_build_tests/`` for the exact invocations used to test on these platforms.
+
+
+Building Third Party Dependencies for Development
+--------------------------------------------------
 
 You can use ``bootstrap-env.sh`` (located at the root of the ascent repo) to help setup your development environment on OSX and Linux.
 This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** (https://spack.io/) to build the external third party libraries and tools used by Ascent.
@@ -264,24 +386,6 @@ After building these libraries and tools, it writes an initial *host-config* fil
 ..     There is a known issue on some OSX systems when building with Fortran dependencies.
 ..     This is caused by the native compilers being 64-bit while the Fortran compiler is 32-bit.
 
-Compiler Settings for Third Party Dependencies
-----------------------------------------------
-You can edit ``scripts/uberenv/compilers.yaml`` to change the compiler settings
-passed to Spack. See the `Spack Compiler Configuration <http://spack.readthedocs.io/en/latest/getting_started.html#compiler-configuration>`_
-documentation for details.
-
-For OSX, the defaults in ``compilers.yaml`` are clang from X-Code and gfortran from https://gcc.gnu.org/wiki/GFortranBinaries#MacOS.
-
-.. note::
-    The bootstrapping process ignores ``~/.spack/compilers.yaml`` to avoid conflicts
-    and surprises from a user's specific Spack settings on HPC platforms.
-
-.. note::
-  Ascent developers use ``scripts/uberenv/uberenv.py`` to setup third party libraries for Ascent
-  development.  Due to this, the process builds more libraries than necessary for most use cases.
-  For example, we build independent installs of Python 2 and Python 3 to make it easy
-  to check Python C-API compatibility during development. In the near future, we plan to
-  provide a Spack package to simplify deployment.
 
 .. _building_with_spack:
 
@@ -349,7 +453,7 @@ Here is an example specifying system CUDA on MacOS:
   # CUDA standard MacOS install
     cuda:
       paths:
-        cuda@8.0: /Developer/NVIDIA/CUDA-8.0
+        cuda@9.0: /Developer/NVIDIA/CUDA-9.0
     buildable: False
 
 
@@ -357,20 +461,22 @@ Here is an example of specifying system MPI and CUDA on an LLNL Chaos 5 machine:
 
 .. code:: yaml
 
-  # LLNL chaos5 CUDA
-    cuda:
-      paths:
-        cuda@8.0: /opt/cudatoolkit-8.0
-      buildable: False
-  # LLNL chaos5 mvapich for gcc
-    mvapich2:
-      paths:
-        mvapich2@2: /usr/local/tools/mvapich2-gnu-2.0/
-      buildable: False
+    # LLNL toss3 CUDA 
+      cuda:
+        modules:
+           cuda@9.1: cuda/9.1.85
+        buildable: False
+    # LLNL toss3 mvapich2
+      mvapich2:
+        paths:
+          mvapich2@2.2%gcc@4.9.3:  /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+          mvapich2@2.2%intel@17.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.0
+          mvapich2@2.2%clang@4.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-clang-4.0.0
+        buildable: False
 
-Settings for GCC 4.9.3 on LLNL Chaos 5 Systems:
- * :download:`compilers.yaml <spack_configs/chaos_5_x86_64_ib/compilers.yaml>`
- * :download:`packages.yaml <spack_configs/chaos_5_x86_64_ib/packages.yaml>`
+Settings for LLNL TOSS 3 Systems:
+ * :download:`compilers.yaml <spack_configs/toss_3_x86_64_ib/compilers.yaml>`
+ * :download:`packages.yaml <spack_configs/toss_3_x86_64_ib/packages.yaml>`
 
 
 Using Ascent in Another Project
@@ -380,6 +486,8 @@ Under ``src/examples`` there are examples demonstrating how to use Ascent in a C
 Under ``src/examples/proxies``  you can find example integrations using ascent in the Lulesh, Kripke, and Cloverleaf3D proxy-applications.
 In ``src/examples/synthetic/noise`` you can find an example integration using our synthetic smooth noise application.
 
+
+.. _building_with_docker:
 
 Building Ascent in a Docker Container
 ---------------------------------------

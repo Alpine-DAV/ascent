@@ -2,17 +2,17 @@
 !
 ! This file is part of CloverLeaf.
 !
-! CloverLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! CloverLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! CloverLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! CloverLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! CloverLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Fortran mpi buffer packing kernel
@@ -41,7 +41,7 @@ SUBROUTINE clover_pack_message_left(x_min,x_max,y_min,y_max,z_min,z_max,field,  
   INTEGER      :: depth,field_type,x_min,x_max,y_min,y_max,z_min,z_max
   INTEGER      :: j,k,l,x_inc,y_inc,z_inc,index,buffer_offset
 
-  ! Pack 
+  ! Pack
 
   ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
   IF(field_type.EQ.CELL_DATA) THEN
@@ -98,7 +98,7 @@ SUBROUTINE clover_unpack_message_left(x_min,x_max,y_min,y_max,z_min,z_max,field,
   INTEGER      :: depth,field_type,x_min,x_max,y_min,y_max,z_min,z_max
   INTEGER      :: j,k,l,x_inc,y_inc,z_inc,index,buffer_offset
 
-  ! Unpack 
+  ! Unpack
 
   ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
   IF(field_type.EQ.CELL_DATA) THEN
@@ -155,7 +155,7 @@ SUBROUTINE clover_pack_message_right(x_min,x_max,y_min,y_max,z_min,z_max,field, 
   INTEGER      :: depth,field_type,x_min,x_max,y_min,y_max,z_min,z_max
   INTEGER      :: j,k,l,x_inc,y_inc,z_inc,index,buffer_offset
 
-  ! Pack 
+  ! Pack
 
   ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
   IF(field_type.EQ.CELL_DATA) THEN
@@ -212,7 +212,7 @@ SUBROUTINE clover_unpack_message_right(x_min,x_max,y_min,y_max,z_min,z_max,field
   INTEGER      :: depth,field_type,x_min,x_max,y_min,y_max,z_min,z_max
   INTEGER      :: j,k,l,x_inc,y_inc,z_inc,index,buffer_offset
 
-  ! Unpack 
+  ! Unpack
 
   ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
   IF(field_type.EQ.CELL_DATA) THEN
@@ -269,7 +269,7 @@ SUBROUTINE clover_pack_message_top(x_min,x_max,y_min,y_max,z_min,z_max,field,   
   INTEGER      :: depth,field_type,x_min,x_max,y_min,y_max,z_min,z_max
   INTEGER      :: j,k,l,x_inc,y_inc,z_inc,index,buffer_offset
 
-  ! Pack 
+  ! Pack
 
   ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
   IF(field_type.EQ.CELL_DATA) THEN
@@ -326,7 +326,7 @@ SUBROUTINE clover_unpack_message_top(x_min,x_max,y_min,y_max,z_min,z_max,field, 
   INTEGER      :: depth,field_type,x_min,x_max,y_min,y_max,z_min,z_max
   INTEGER      :: j,k,l,x_inc,y_inc,z_inc,index,buffer_offset
 
-  ! Unpack 
+  ! Unpack
 
   ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
   IF(field_type.EQ.CELL_DATA) THEN
@@ -383,7 +383,7 @@ SUBROUTINE clover_pack_message_bottom(x_min,x_max,y_min,y_max,z_min,z_max,field,
   INTEGER      :: depth,field_type,x_min,x_max,y_min,y_max,z_min,z_max
   INTEGER      :: j,k,l,x_inc,y_inc,z_inc,index,buffer_offset
 
-  ! Pack 
+  ! Pack
 
   ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
   IF(field_type.EQ.CELL_DATA) THEN
@@ -440,7 +440,7 @@ SUBROUTINE clover_unpack_message_bottom(x_min,x_max,y_min,y_max,z_min,z_max,fiel
   INTEGER      :: depth,field_type,x_min,x_max,y_min,y_max,z_min,z_max
   INTEGER      :: j,k,l,x_inc,y_inc,z_inc,index,buffer_offset
 
-  ! Unpack 
+  ! Unpack
 
   ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
   IF(field_type.EQ.CELL_DATA) THEN
@@ -497,7 +497,7 @@ SUBROUTINE clover_pack_message_back(x_min,x_max,y_min,y_max,z_min,z_max,field,  
   INTEGER      :: depth,field_type,x_min,x_max,y_min,y_max,z_min,z_max
   INTEGER      :: j,k,l,x_inc,y_inc,z_inc,index,buffer_offset
 
-  ! Pack 
+  ! Pack
 
   ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
   IF(field_type.EQ.CELL_DATA) THEN
@@ -554,7 +554,7 @@ SUBROUTINE clover_unpack_message_back(x_min,x_max,y_min,y_max,z_min,z_max,field,
   INTEGER      :: depth,field_type,x_min,x_max,y_min,y_max,z_min,z_max
   INTEGER      :: j,k,l,x_inc,y_inc,z_inc,index,buffer_offset
 
-  ! Unpack 
+  ! Unpack
 
   ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
   IF(field_type.EQ.CELL_DATA) THEN
@@ -610,7 +610,7 @@ SUBROUTINE clover_pack_message_front(x_min,x_max,y_min,y_max,z_min,z_max,field, 
   INTEGER      :: depth,field_type,x_min,x_max,y_min,y_max,z_min,z_max
   INTEGER      :: j,k,l,x_inc,y_inc,z_inc,index,buffer_offset
 
-  ! Pack 
+  ! Pack
 
   ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
   IF(field_type.EQ.CELL_DATA) THEN
@@ -666,7 +666,7 @@ SUBROUTINE clover_unpack_message_front(x_min,x_max,y_min,y_max,z_min,z_max,field
   INTEGER      :: depth,field_type,x_min,x_max,y_min,y_max,z_min,z_max
   INTEGER      :: j,k,l,x_inc,y_inc,z_inc,index,buffer_offset
 
-  ! Unpack 
+  ! Unpack
 
   ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
   IF(field_type.EQ.CELL_DATA) THEN

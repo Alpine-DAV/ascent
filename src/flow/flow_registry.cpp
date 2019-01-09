@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
-// Please also read alpine/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Please also read ascent/LICENSE
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -92,7 +92,7 @@ public:
              int  pending() const;
              int  dec();
              int  inc(int amt=0);
-             
+
              void set_pending(int pending);
 
         private:
@@ -109,9 +109,9 @@ public:
 
             Data *data();
             Ref           *ref();
- 
+
             void          *data_ptr();
- 
+
         private:
             Ref            m_ref;
             Data *m_data;
@@ -131,10 +131,10 @@ public:
             Ref    m_ref;
             Value *m_value;
 
-        
+
     };
 
- 
+
     Map();
    ~Map();
 
@@ -144,19 +144,19 @@ public:
 
     bool   has_entry(const std::string &key);
     bool   has_value(void *data_ptr);
-        
+
     Entry *fetch_entry(const std::string &key);
-    
+
     Value *fetch_value(void *data_ptr);
-    
+
     void   dec(const std::string &key);
-    
+
     void   detach(const std::string &key);
-    
+
     void   info(Node &out) const;
-    
+
     void   reset();
-    
+
 private:
 
     std::map<void*,Value*>         m_values;
@@ -350,7 +350,7 @@ Registry::Map::Entry::data()
 
 Registry::Map::Map()
 {
-    
+
 }
 
 //-----------------------------------------------------------------------------
@@ -387,7 +387,7 @@ Registry::Map::add(const std::string &key,
     {
         // if we aren't already tracking it, we can create a
         // new value and entry
-    
+
         Value *val = new Value(data,refs_needed);
         m_values[data_ptr] = val;
 
@@ -437,13 +437,11 @@ Registry::Map::dec(const std::string &key)
 
     Entry *ent   = fetch_entry(key);
     Value *value = ent->value();
-    
+
     int ent_refs = ent->ref()->dec();
-    
+
     if(ent_refs == 0)
     {
-        CONDUIT_INFO("Registry Removing: " << key);
-
         // clean up bookkeeping obj
         delete ent;
         m_entries.erase(key);
@@ -453,19 +451,17 @@ Registry::Map::dec(const std::string &key)
 
     if(val_refs == 0)
     {
-        
+
         void *data_ptr = value->data_ptr();
-        
+
         Node rel_info;
         ostringstream oss;
         oss << data_ptr;
-        
+
         rel_info[oss.str()]["pending"] = value->ref()->pending();
 
-        CONDUIT_INFO("Registry Releasing: " << rel_info.to_json());
-
         value->data()->release();
-                
+
         // clean up bookkeeping obj
         delete value;
         m_values.erase(data_ptr);
@@ -480,8 +476,6 @@ Registry::Map::detach(const std::string &key)
     // to avoid any deletes
     Entry *ent   = fetch_entry(key);
     Value *value = ent->value();
-    
-    CONDUIT_INFO("Registry Removing: " << key);
 
     // clean up bookkeeping obj
     delete ent;
@@ -499,7 +493,7 @@ Registry::Map::info(Node &out) const
 
     Node &ents = out["entries"];
     std::map<std::string,Entry*>::const_iterator eitr;
-    
+
     for(eitr = m_entries.begin(); eitr != m_entries.end(); eitr++)
     {
         Entry *ent = eitr->second;
@@ -549,7 +543,7 @@ Registry::Map::reset()
     }
     m_entries.clear();
 
-    
+
     // std::map<void*,Value*>::iterator vitr;
     for(vitr = m_values.begin(); vitr != m_values.end(); vitr++)
     {
@@ -579,7 +573,7 @@ Registry::~Registry()
 }
 
 //-----------------------------------------------------------------------------
-bool 
+bool
 Registry::has_entry(const std::string &key)
 {
     return m_map->has_entry(key);
@@ -641,7 +635,7 @@ Registry::print() const
 
 //-----------------------------------------------------------------------------
 // private helper
-    
+
 //-----------------------------------------------------------------------------
 Data &
 Registry::fetch(const std::string &key)
@@ -651,7 +645,7 @@ Registry::fetch(const std::string &key)
         print();
         CONDUIT_ERROR("Attempt to fetch unknown key: " << key);
     }
-    
+
     return *m_map->fetch_entry(key)->value()->data();
 }
 

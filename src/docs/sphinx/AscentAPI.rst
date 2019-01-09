@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 .. #
 .. # Produced at the Lawrence Livermore National Laboratory
 .. #
@@ -72,7 +72,7 @@ Here is a file that would set the runtime to the main ascent runtime using a Ope
 If MFEM is enabled, one additional options argument, ``refinement`` can be specified.
 High-order meshes variable are continuous polynomial functions that cannot be captured
 by linear low-order meshes. In order to approximate the functions with less error,
-high-order elements are discretized into many linear elementss. The minimum value for refinement
+high-order elements are discretized into many linear elements. The minimum value for refinement
 is ``2``. There is a memory-accuracy trade-off when using refinement. The higher the value,
 the more accurate the low-order representation is, but more discretization means more memory
 usage and more time tp process the additional elements.

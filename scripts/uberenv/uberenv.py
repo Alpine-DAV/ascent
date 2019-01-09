@@ -1,51 +1,51 @@
 ###############################################################################
 # Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
-# 
+#
 # Produced at the Lawrence Livermore National Laboratory
-# 
+#
 # LLNL-CODE-666778
-# 
+#
 # All rights reserved.
-# 
-# This file is part of Conduit. 
-# 
+#
+# This file is part of Conduit.
+#
 # For details, see https://lc.llnl.gov/conduit/.
-# 
+#
 # Please also read conduit/LICENSE
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
-# * Redistributions of source code must retain the above copyright notice, 
+#
+# * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the disclaimer below.
-# 
+#
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the disclaimer (as noted below) in the
 #   documentation and/or other materials provided with the distribution.
-# 
+#
 # * Neither the name of the LLNS/LLNL nor the names of its contributors may
 #   be used to endorse or promote products derived from this software without
 #   specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 ###############################################################################
 
 """
  file: uberenv.py
 
- description: automates using spack to install a project. 
+ description: automates using spack to install a project.
 
 """
 
@@ -116,8 +116,8 @@ def parse_args():
                       default=None,
                       help="dir with spack settings files (compilers.yaml, packages.yaml, etc)")
 
-    # a file that holds settings for a specific project 
-    # using uberenv.py 
+    # a file that holds settings for a specific project
+    # using uberenv.py
     parser.add_option("--project-json",
                       dest="project_json",
                       default=pjoin(uberenv_script_dir(),"project.json"),
@@ -169,7 +169,7 @@ def parse_args():
     # parse args
     ###############
     opts, extras = parser.parse_args()
-    # we want a dict b/c the values could 
+    # we want a dict b/c the values could
     # be passed without using optparse
     opts = vars(opts)
     if not opts["spack_config_dir"] is None:
@@ -209,7 +209,7 @@ def uberenv_spack_config_dir(opts, uberenv_dir):
 
 
 def disable_spack_config_scopes(spack_dir):
-    # disables all config scopes except "default", which we will 
+    # disables all config scopes except "default", which we will
     # force our settings into
     spack_lib_config = pjoin(spack_dir,"lib","spack","spack","config.py")
     print "[disabling config scope (except default) in: %s]" % spack_lib_config
@@ -240,7 +240,7 @@ def patch_spack(spack_dir,uberenv_dir,cfg_dir,pkgs):
 
         if os.path.isfile(config_yaml):
             sexe("cp %s %s/" % (config_yaml , spack_etc_defaults_dir ), echo=True)
-                    
+
         if os.path.isfile(compilers_yaml):
             sexe("cp %s %s/" % (compilers_yaml, spack_etc_defaults_dir ), echo=True)
 
@@ -262,7 +262,7 @@ def create_spack_mirror(mirror_path,pkg_name,ignore_ssl_errors=False):
         print "[--create-mirror requires a mirror directory]"
         sys.exit(-1)
     mirror_path = os.path.abspath(mirror_path)
-    
+
     mirror_cmd = "spack/bin/spack "
     if ignore_ssl_errors:
         mirror_cmd += "-k "
@@ -272,7 +272,7 @@ def create_spack_mirror(mirror_path,pkg_name,ignore_ssl_errors=False):
 
 def find_spack_mirror(spack_dir, mirror_name):
     """
-    Returns the path of a site scoped spack mirror with the 
+    Returns the path of a site scoped spack mirror with the
     given name, or None if no mirror exists.
     """
     rv, res = sexe("spack/bin/spack mirror list", ret_output=True)
@@ -298,7 +298,7 @@ def use_spack_mirror(spack_dir,
         print "[removing existing spack mirror `%s` @ %s]" % (mirror_name,
                                                               existing_mirror_path)
         #
-        # Note: In this case, spack says it removes the mirror, but we still 
+        # Note: In this case, spack says it removes the mirror, but we still
         # get errors when we try to add a new one, sounds like a bug
         #
         sexe("spack/bin/spack mirror remove --scope=site {} ".format(
@@ -345,7 +345,7 @@ def setup_osx_sdk_env_vars():
         # no valid sdks, error out
         print "[ERROR: Could not find OSX SDK @ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/]"
         sys.exit(-1)
-    
+
     env["MACOSX_DEPLOYMENT_TARGET"] = dep_tgt
     env["SDKROOT"] = sdk_root
     print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % env["MACOSX_DEPLOYMENT_TARGET"]
@@ -366,11 +366,12 @@ def read_spack_full_spec(pkg_name,spec):
 def main():
     """
     clones and runs spack to setup our third_party libs and
-    creates a host-config.cmake file that can be used by 
+    creates a host-config.cmake file that can be used by
     our project.
-    """ 
+    """
     # parse args from command line
     opts, extras = parse_args()
+
     # load project settings
     project_opts = load_json_file(opts["project_json"])
     if opts["install"]:
@@ -392,7 +393,7 @@ def main():
         else:
             opts["spec"] = "%gcc"
     print "[spack spec: %s]" % opts["spec"]
-    # get the current working path, and the glob used to identify the 
+    # get the current working path, and the glob used to identify the
     # package files we want to hot-copy to spack
     uberenv_path = os.path.split(os.path.abspath(__file__))[0]
     pkgs = pjoin(uberenv_path, "packages","*")
@@ -430,13 +431,13 @@ def main():
             sexe("git reset --hard %s" % sha1,echo=True)
 
     if opts["spack_pull"]:
-        # do a pull to make sure we have the latest 
+        # do a pull to make sure we have the latest
         os.chdir(pjoin(dest_dir,"spack"))
         sexe("git stash", echo=True)
         sexe("git pull", echo=True)
 
     os.chdir(dest_dir)
-    # twist spack's arms 
+    # twist spack's arms
     cfg_dir = uberenv_spack_config_dir(opts, uberenv_path)
     patch_spack(dest_spack, uberenv_path, cfg_dir, pkgs)
 
@@ -457,14 +458,14 @@ def main():
                     res = sexe(unist_cmd, echo=True)
 
     ##########################################################
-    # we now have an instance of spack configured how we 
+    # we now have an instance of spack configured how we
     # need it to build our tpls at this point there are two
     # possible next steps:
     #
-    # *) create a mirror of the packages 
+    # *) create a mirror of the packages
     #   OR
     # *) build
-    # 
+    #
     ##########################################################
     if opts["create_mirror"]:
         return create_spack_mirror(opts["mirror"],
@@ -475,7 +476,7 @@ def main():
             use_spack_mirror(dest_spack,
                              uberenv_pkg_name,
                              opts["mirror"])
-        # use the uberenv package to trigger the right builds 
+        # use the uberenv package to trigger the right builds
         # and build an host-config.cmake file
         install_cmd = "spack/bin/spack "
         if opts["ignore_ssl_errors"]:

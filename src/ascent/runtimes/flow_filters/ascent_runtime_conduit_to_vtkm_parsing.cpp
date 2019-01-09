@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
+//
 // Please also read ascent/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -72,10 +72,10 @@ namespace runtime
 namespace filters
 {
 
-void 
+void
 parse_image_dims(const conduit::Node &node, int &width, int &height)
 {
-  width = 1024; 
+  width = 1024;
   height = 1024;
 
   if(node.has_path("image_width"))
@@ -87,7 +87,7 @@ parse_image_dims(const conduit::Node &node, int &width, int &height)
   {
     height = node["image_height"].to_int32();
   }
-  
+
 }
 
 //-----------------------------------------------------------------------------
@@ -104,7 +104,7 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       camera_node["look_at"].to_float64_array(n);
       const float64 *coords = n.as_float64_ptr();
       vtkmVec3f look_at(coords[0], coords[1], coords[2]);
-      camera.SetLookAt(look_at);  
+      camera.SetLookAt(look_at);
   }
 
   if(camera_node.has_child("position"))
@@ -113,9 +113,9 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       camera_node["position"].to_float64_array(n);
       const float64 *coords = n.as_float64_ptr();
       vtkmVec3f position(coords[0], coords[1], coords[2]);
-      camera.SetPosition(position);  
+      camera.SetPosition(position);
   }
-  
+
   if(camera_node.has_child("up"))
   {
       conduit::Node n;
@@ -125,7 +125,7 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       vtkm::Normalize(up);
       camera.SetViewUp(up);
   }
-  
+
   if(camera_node.has_child("fov"))
   {
       camera.SetFieldOfView(camera_node["fov"].to_float64());
@@ -148,7 +148,7 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   // With a new potential camera position. We need to reset the
   // clipping plane as not to cut out part of the data set
   //
-  
+
   if(camera_node.has_child("near_plane"))
   {
       vtkm::Range clipping_range = camera.GetClippingRange();
@@ -176,75 +176,114 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   }
 }
 
+bool is_valid_name(const std::string &name)
+{
+  std::string lower_name;
+  for(std::string::size_type i = 0; i < name.length(); ++i)
+  {
+    lower_name += std::tolower(name[i]);
+  }
+  bool valid = false;
+  if(lower_name == "default" ||
+     lower_name == "cool to warm" ||
+     lower_name == "cool to warm extended" ||
+     lower_name == "viridis" ||
+     lower_name == "inferno" ||
+     lower_name == "plasma" ||
+     lower_name == "black-body radiation" ||
+     lower_name == "x ray" ||
+     lower_name == "green" ||
+     lower_name == "black - blue - white" ||
+     lower_name == "blue to orange" ||
+     lower_name == "gray to red" ||
+     lower_name == "cool and hot" ||
+     lower_name == "blue - green - orange" ||
+     lower_name == "yellow - gray - blue" ||
+     lower_name == "rainbow uniform" ||
+     lower_name == "jet" ||
+     lower_name == "rainbow desaturated")
+  {
+    valid = true;
+  }
+  return valid;
+}
 //-----------------------------------------------------------------------------
-vtkm::cont::ColorTable 
+vtkm::cont::ColorTable
 parse_color_table(const conduit::Node &color_table_node)
 {
-  std::string color_map_name = "";
+  // default name
+  std::string color_map_name = "cool to warm";
+
+  if(color_table_node.number_of_children() == 0)
+  {
+    ASCENT_INFO("Color table node is empty (no children). Defaulting to "
+                <<color_map_name);
+  }
+
   if(color_table_node.has_child("name"))
   {
-      color_map_name = color_table_node["name"].as_string();
+    std::string name = color_table_node["name"].as_string();
+    if(is_valid_name(name))
+    {
+      color_map_name = name;
+    }
+    else
+    {
+      ASCENT_INFO("Invalid color table name '"<<name
+                  <<"'. Defaulting to "<<color_map_name);
+    }
   }
 
   vtkm::cont::ColorTable color_table(color_map_name);
 
-  if(color_map_name == "")
+  if(color_table_node.has_child("control_points"))
   {
-      ASCENT_INFO("Color map name is empty. Ignoring");
-      color_table.Clear();
-  }
-  
-  if(!color_table_node.has_child("control_points"))
-  {
-      if(color_map_name == "") 
-        ASCENT_ERROR("Error: a color table node was provided without a color map name or control points");
-      return color_table;
-  }
 
-  NodeConstIterator itr = color_table_node.fetch("control_points").children();
-  while(itr.has_next())
-  {
-      const Node &peg = itr.next();
-      if(!peg.has_child("position"))
-      {
-          ASCENT_WARN("Color map control point must have a position. Ignoring");
-      }
+    NodeConstIterator itr = color_table_node.fetch("control_points").children();
+    while(itr.has_next())
+    {
+        const Node &peg = itr.next();
+        if(!peg.has_child("position"))
+        {
+            ASCENT_WARN("Color map control point must have a position");
+        }
 
-      float64 position = peg["position"].to_float64();
-      
-      if(position > 1.0 || position < 0.0)
-      {
-            ASCENT_WARN("Cannot add color map control point position "
-                          << position 
-                          << ". Must be a normalized scalar.");
-      }
+        float64 position = peg["position"].to_float64();
 
-      if (peg["type"].as_string() == "rgb")
-      {
-          conduit::Node n;
-          peg["color"].to_float64_array(n);
-          const float64 *color = n.as_float64_ptr();
+        if(position > 1.0 || position < 0.0)
+        {
+              ASCENT_WARN("Cannot add color map control point position "
+                            << position
+                            << ". Must be a normalized scalar.");
+        }
 
-          vtkm::Vec<vtkm::Float64,3> ecolor(color[0], color[1], color[2]);
-          
-          for(int i = 0; i < 3; ++i)
-          {
-            ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
-          }
+        if (peg["type"].as_string() == "rgb")
+        {
+            conduit::Node n;
+            peg["color"].to_float64_array(n);
+            const float64 *color = n.as_float64_ptr();
 
-          color_table.AddPoint(position, ecolor);
-      }
-      else if (peg["type"].as_string() == "alpha")
-      {
-          float64 alpha = peg["alpha"].to_float64();
-          alpha = std::min(1., std::max(alpha, 0.));
-          color_table.AddPointAlpha(position, alpha);
-      }
-      else
-      {
-          ASCENT_WARN("Unknown color table control point type " << peg["type"].as_string()<<
-                      "\nValid types are 'alpha' and 'rgb'");
-      }
+            vtkm::Vec<vtkm::Float64,3> ecolor(color[0], color[1], color[2]);
+
+            for(int i = 0; i < 3; ++i)
+            {
+              ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
+            }
+
+            color_table.AddPoint(position, ecolor);
+        }
+        else if (peg["type"].as_string() == "alpha")
+        {
+            float64 alpha = peg["alpha"].to_float64();
+            alpha = std::min(1., std::max(alpha, 0.));
+            color_table.AddPointAlpha(position, alpha);
+        }
+        else
+        {
+            ASCENT_WARN("Unknown color table control point type " << peg["type"].as_string()<<
+                        "\nValid types are 'alpha' and 'rgb'");
+        }
+    }
   }
 
   if(color_table_node.has_child("reverse"))

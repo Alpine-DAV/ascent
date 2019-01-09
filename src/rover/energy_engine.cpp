@@ -1,43 +1,43 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2018, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-749865
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Rover. 
-// 
+//
+// This file is part of Rover.
+//
 // Please also read rover/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 #include <energy_engine.hpp>
 #include <rover_exceptions.hpp>
@@ -88,7 +88,7 @@ EnergyEngine::get_num_channels()
 }
 
 
-void 
+void
 EnergyEngine::set_primary_field(const std::string &primary_field)
 {
   ROVER_INFO("Energy Engine setting primary field "<<primary_field);
@@ -96,7 +96,7 @@ EnergyEngine::set_primary_field(const std::string &primary_field)
   m_tracer->SetScalarField(this->m_primary_field);
 }
 
-void 
+void
 EnergyEngine::set_secondary_field(const std::string &field)
 {
   m_secondary_field = field;
@@ -108,7 +108,7 @@ EnergyEngine::set_secondary_field(const std::string &field)
 }
 
 template<typename Precision>
-void 
+void
 EnergyEngine::init_emission(vtkm::rendering::raytracing::Ray<Precision> &rays,
                             const int num_bins)
 {
@@ -127,7 +127,7 @@ EnergyEngine::partial_trace(Ray32 &rays)
   {
     std::cout<<"Engery Engine Error: must set the data set before tracing\n";
   }
-  
+
   if(this->m_primary_field == "")
   {
     throw RoverException("Energy Engine : primary field is not set. Unable to render\n");
@@ -136,7 +136,7 @@ EnergyEngine::partial_trace(Ray32 &rays)
   ROVER_INFO("Energy Engine trace32");
 
   init_rays(rays);
-    
+
   m_tracer->SetUnitScalar(m_unit_scalar);
   m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::ENERGY_MODE);
   m_tracer->SetColorMap(m_color_map);
@@ -144,27 +144,27 @@ EnergyEngine::partial_trace(Ray32 &rays)
 
 }
 
-void 
+void
 EnergyEngine::set_unit_scalar(vtkm::Float32 unit_scalar)
 {
     ROVER_INFO("Energy Engine setting unit scalar "<<unit_scalar);
     m_unit_scalar = unit_scalar;
 }
 
-void 
+void
 EnergyEngine::init_rays(Ray32 &rays)
 {
-  
+
   int num_bins = detect_num_bins();
   rays.Buffers.at(0).SetNumChannels(num_bins);
   rays.Buffers.at(0).InitConst(1.);
   init_emission(rays, num_bins);
 }
 
-void 
+void
 EnergyEngine::init_rays(Ray64 &rays)
 {
-  
+
   int num_bins = detect_num_bins();
   rays.Buffers.at(0).SetNumChannels(num_bins);
   rays.Buffers.at(0).InitConst(1.);
@@ -194,7 +194,7 @@ EnergyEngine::partial_trace(Ray64 &rays)
   return m_tracer->PartialTrace(rays);
 }
 
-int 
+int
 EnergyEngine::detect_num_bins()
 {
   vtkm::Id absorption_size = 0;
@@ -207,7 +207,7 @@ EnergyEngine::detect_num_bins()
   if(num_cells == 0)
   {
     ROVER_ERROR("detect bins failed. num cells is 0"
-                <<"\n        num cells "<<num_cells 
+                <<"\n        num cells "<<num_cells
                 <<"\n        field size "<<absorption_size);
     m_data_set.PrintSummary(std::cerr);
     throw RoverException("Failed to detect bins. Num cells cannot be 0\n");
@@ -216,7 +216,7 @@ EnergyEngine::detect_num_bins()
   if(modulo != 0)
   {
     ROVER_ERROR("Absoption does not evenly divided the number of cells. Mod = "<<modulo
-                <<"\n        num cells "<<num_cells 
+                <<"\n        num cells "<<num_cells
                 <<"\n        field size "<<absorption_size);
 
     throw RoverException("absorption field size invalid (Is not evenly divided by number of cells\n");
@@ -236,7 +236,7 @@ EnergyEngine::get_primary_range()
   return m_tracer->GetScalarFieldRange();
 }
 
-void 
+void
 EnergyEngine::set_composite_background(bool on)
 {
   if(m_tracer == NULL)

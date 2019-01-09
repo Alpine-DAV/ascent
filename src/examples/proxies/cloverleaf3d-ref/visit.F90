@@ -76,20 +76,6 @@ SUBROUTINE visit(my_ascent)
   REAL(8), ALLOCATABLE :: xvel(:,:,:), yvel(:,:,:), zvel(:,:,:)
 
   name = 'clover'
-  IF ( parallel%boss ) THEN
-    IF(first_call) THEN
-
-      nblocks=number_of_chunks
-      filename = "clover.visit"
-      u=get_unit(dummy)
-      OPEN(UNIT=u,FILE=filename,STATUS='UNKNOWN',IOSTAT=err)
-      WRITE(u,'(a,i5)')'!NBLOCKS ',nblocks
-      CLOSE(u)
-
-      first_call=.FALSE.
-
-    ENDIF
-  ENDIF
 
   IF(profiler_on) kernel_time=timer()
   DO c=1,chunks_per_task
@@ -109,23 +95,6 @@ SUBROUTINE visit(my_ascent)
   IF(profiler_on) kernel_time=timer()
   CALL viscosity()
   IF(profiler_on) profiler%viscosity=profiler%viscosity+(timer()-kernel_time)
-  IF ( parallel%boss ) THEN
-
-    filename = "clover.visit"
-    u=get_unit(dummy)
-    OPEN(UNIT=u,FILE=filename,STATUS='UNKNOWN',POSITION='APPEND',IOSTAT=err)
-
-    DO c = 1, number_of_chunks
-      WRITE(chunk_name, '(i6)') c+100000
-      chunk_name(1:1) = "."
-      WRITE(step_name, '(i6)') step+100000
-      step_name(1:1) = "."
-      filename = trim(trim(name) //trim(chunk_name)//trim(step_name))//".vtk"
-      WRITE(u,'(a)')TRIM(filename)
-    ENDDO
-    CLOSE(u)
-
-  ENDIF
 
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

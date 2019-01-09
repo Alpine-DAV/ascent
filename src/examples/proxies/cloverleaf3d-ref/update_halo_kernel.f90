@@ -2,17 +2,17 @@
 !
 ! This file is part of CloverLeaf.
 !
-! CloverLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! CloverLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! CloverLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! CloverLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! CloverLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Fortran kernel to update the external halo cells in a chunk.
@@ -88,9 +88,9 @@ CONTAINS
                             ,FIELD_YVEL1      =11         &
                             ,FIELD_ZVEL0      =12         &
                             ,FIELD_ZVEL1      =13         &
-                            ,FIELD_VOL_FLUX_X =14         & 
-                            ,FIELD_VOL_FLUX_Y =15         & 
-                            ,FIELD_VOL_FLUX_Z =16         & 
+                            ,FIELD_VOL_FLUX_X =14         &
+                            ,FIELD_VOL_FLUX_Y =15         &
+                            ,FIELD_VOL_FLUX_Z =16         &
                             ,FIELD_MASS_FLUX_X=17         &
                             ,FIELD_MASS_FLUX_Y=18         &
                             ,FIELD_MASS_FLUX_Z=19

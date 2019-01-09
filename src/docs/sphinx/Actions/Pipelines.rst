@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 .. #
 .. # Produced at the Lawrence Livermore National Laboratory
 .. #
@@ -51,9 +51,10 @@ The resulting data from each Pipeline can be used as input to Scenes or Extracts
 Each pipeline contains one or more filters that transform the published mesh data.
 When more than one filter is specified, each successive filter consumes the result of the previous filter, and filters are executed in the order in which they are declared.
 
-The code below shows the declaration of two pipelines.
+The code below shows how to declare two pipelines, and generate images of the pipeline results.
 The first applies a contour filter to extract two isosurfaces of the scalar field ``noise``.
-The second pipeline applies a threshold filter to screen the ``noise`` field, and then a clip filter to extract the intersection of what remains from the threshold with a sphere.
+The second pipeline applies a threshold filter to screen the ``noise`` field, and then a clip
+filter to extract the intersection of what remains from the threshold with a sphere.
 
 .. code-block:: c++
 
@@ -63,7 +64,9 @@ The second pipeline applies a threshold filter to screen the ``noise`` field, an
   // filter parameters
   conduit::Node contour_params;
   contour_params["field"] = "noise";
-  contour_params["iso_values"] = {0.0, 0.5};
+  constexpr int num_iso_values = 2;
+  double iso_values[num_iso_values] = {0.0, 0.5};
+  contour_params["iso_values"].set_external(iso_values, num_iso_values);
   pipelines["pl1/f1/params"] = contour_params;
 
   // pipeline 2
@@ -84,6 +87,37 @@ The second pipeline applies a threshold filter to screen the ``noise`` field, an
   clip_params["sphere/center/z"] = 0.0;
   clip_params["sphere/radius"]   = .1;
   pipelines["pl2/f2/params/"] = clip_params;
+
+  // make some imaages of the data
+  conduit::Node scenes;
+  // add a plot of pipeline 1
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/plots/p1/field"] = "noise";
+
+  // add a plot of pipeline 2
+  scenes["s2/plots/p1/type"] = "pseudocolor";
+  scenes["s2/plots/p1/pipeline"] = "pl2";
+  scenes["s2/plots/p1/field"] = "noise";
+
+  // setup actions
+  conduit::Node actions;
+
+  conduit::Node add_pipelines = actions.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
+
+  conduit::Node add_scenes = actions.append();
+  add_scenes["action"] = "add_scenes";
+  add_scenes["scenes"] = scenes;
+
+  actions.append()["action"] = "execute";
+
+  Ascent ascent;
+  ascent.open();
+  ascent.publish(mesh); // mesh not shown
+  ascent.execute(actions);
+  ascent.close();
 
 Ascent and VTK-h are under heavy development and features are being added rapidly.
 As we stand up the infrastructure necessary to support a wide variety filter we created the following filters for the alpha release:
@@ -156,8 +190,9 @@ The code below provides examples creating a pipeline using all three methods:
   // filter knobs
   conduit::Node &contour_params = pipelines["pl1/f1/params"];
   contour_params["field"] = "braid";
-  double iso_vals[3] = {-0.4, 0.2, 0.4};
-  contour_params["iso_values"].set_external(iso_vals,3);
+  constexpr int num_iso_values = 3;
+  double iso_vals[num_iso_values] = {-0.4, 0.2, 0.4};
+  contour_params["iso_values"].set_external(iso_vals, num_iso_values);
 
 .. _contourfig:
 
@@ -185,7 +220,7 @@ The code below provides examples creating a pipeline using all three methods:
 
     An example of creating five evenly spaced iso-values through a scalar field.
 
-:numref:`Figure %s <contourfig>` shows an image produced from mulitple contours.
+:numref:`Figure %s <contourfig>` shows an image produced from multiple contours.
 All contour examples are  located in the test in the file `contour test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_contour.cpp>`_.
 
 Threshold
@@ -217,7 +252,7 @@ The full example is located in the file `threshold test <https://github.com/Alpi
 Slice
 ~~~~~
 The slice filter extracts a 2d plane from a 3d data set.
-The plane is defined by a point (on the plane) and a normal vector (not required to be nomalized).
+The plane is defined by a point (on the plane) and a normal vector (not required to be normalized).
 
 .. code-block:: c++
 
@@ -446,7 +481,7 @@ the clip can be inverted.
 IsoVolume
 ~~~~~~~~~
 IsoVolume is a filter that clips a data set based on a minimum
-and maximum value in a scalar field. All value outside of the minminum and maximum
+and maximum value in a scalar field. All value outside of the minimum and maximum
 values are removed from the data set.
 
 .. code-block:: c++

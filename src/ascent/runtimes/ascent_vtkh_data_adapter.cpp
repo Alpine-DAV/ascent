@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 //
 // Produced at the Lawrence Livermore National Laboratory
 //
@@ -1121,8 +1121,6 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     neles = cellset.GetNumberOfCells();
     result->AddCellSet(cellset);
 
-    ASCENT_INFO("neles "  << neles);
-
     return result;
 }
 
@@ -1153,7 +1151,6 @@ VTKHDataAdapter::AddField(const std::string &field_name,
     else
     {
       ASCENT_INFO("VTKm conversion does not support field assoc "<<assoc_str<<". Skipping");
-      std::cout<<"VTKm conversion does not support field assoc "<<assoc_str<<". Skipping\n";
       return;
     }
 
@@ -1173,11 +1170,6 @@ VTKHDataAdapter::AddField(const std::string &field_name,
                   " does not match the number of cells "<<nverts<<". Skipping");
       return;
     }
-
-    ASCENT_INFO("field association: "      << assoc_str);
-    ASCENT_INFO("number of field values: " << num_vals);
-    ASCENT_INFO("number of vertices: "     << nverts);
-    ASCENT_INFO("number of elements: "     << neles);
 
     try
     {
@@ -1257,18 +1249,12 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
     else
     {
       ASCENT_INFO("VTKm conversion does not support field assoc "<<assoc_str<<". Skipping");
-      std::cout<<"VTKm conversion does not support field assoc "<<assoc_str<<". Skipping\n";
       return;
     }
 
     const Node &n_vals = n_field["values"];
     int num_vals = n_vals.child(0).dtype().number_of_elements();
     int num_components = n_field["values"].number_of_children();
-    ASCENT_INFO("field association: "      << assoc_str);
-    ASCENT_INFO("number of field values: " << num_vals);
-    ASCENT_INFO("number of vertices: "     << nverts);
-    ASCENT_INFO("number of elements: "     << neles);
-    ASCENT_INFO("number of components: "   << num_components);
 
     const conduit::Node &u = n_field["values"].child(0);
     bool interleaved = conduit::blueprint::mcarray::is_interleaved(n_vals);

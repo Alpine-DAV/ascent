@@ -3,7 +3,7 @@ compilers:
     extra_rpaths: []
     flags: {}
     modules:
-     - gcc/5.4.0 
+     - gcc/5.4.0
     operating_system: centos7
     paths:
       cc: /opt/apps/gcc/5.4.0/bin/gcc

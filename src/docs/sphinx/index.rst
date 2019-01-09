@@ -47,7 +47,7 @@
 Ascent
 ========
 
-A many-core capable lightweight in-situ visualization and analysis infrastructure for multiphysics HPC simulations.
+A many-core capable lightweight in-situ visualization and analysis infrastructure for multi-physics HPC simulations.
 
 Introduction
 ============
@@ -61,12 +61,17 @@ Ascent focuses on ease of use and reduced integration burden for simulation code
 - It provides a built-in web server that supports streaming rendered images directly to a web browser.
 
 
+Getting Started
+----------------
+
+To get started building and using Ascent, see the :doc:`Quick Start Guide <QuickStart>`  and :doc:`Ascent Tutorials Info <Tutorials>`. For more details about building Ascent see the :doc:`Building documentation <BuildingAscent>`.
+
 Ascent Project Resources
 ==========================
 
-**Online Documentation**
+**Website and Online Documentation**
 
-https://alpine-dav.github.io/ascent/
+http://www.ascent-dav.org
 
 **Githib Source Repo**
 
@@ -75,6 +80,10 @@ http://github.com/alpine-dav/ascent
 **Issue Tracker**
 
 http://github.com/llnl/ascent/issues
+
+**Help Email**
+
+help@ascent-dav.org
 
 Contributors
 ============
@@ -93,7 +102,9 @@ Ascent Documentation
 
 .. toctree::
 
-   Ascent 
+   QuickStart
+   Ascent
+   Tutorials
    Releases
    Publications
    Licenses

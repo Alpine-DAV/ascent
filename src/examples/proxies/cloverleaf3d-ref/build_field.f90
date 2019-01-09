@@ -2,17 +2,17 @@
 !
 ! This file is part of CloverLeaf.
 !
-! CloverLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! CloverLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! CloverLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! CloverLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! CloverLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief  Allocates the data for each mesh chunk
@@ -167,14 +167,14 @@ SUBROUTINE build_field(chunk,x_cells,y_cells,z_cells)
    chunks(chunk)%field%pressure=0.0
    chunks(chunk)%field%viscosity=0.0
    chunks(chunk)%field%soundspeed=0.0
-   
+
    chunks(chunk)%field%xvel0=0.0
    chunks(chunk)%field%xvel1=0.0
    chunks(chunk)%field%yvel0=0.0
    chunks(chunk)%field%yvel1=0.0
    chunks(chunk)%field%zvel0=0.0
    chunks(chunk)%field%zvel1=0.0
-   
+
    chunks(chunk)%field%vol_flux_x=0.0
    chunks(chunk)%field%mass_flux_x=0.0
    chunks(chunk)%field%vol_flux_y=0.0
@@ -198,7 +198,7 @@ SUBROUTINE build_field(chunk,x_cells,y_cells,z_cells)
    chunks(chunk)%field%yarea=0.0
    chunks(chunk)%field%zarea=0.0
 !$OMP END PARALLEL
-  
+
 END SUBROUTINE build_field
 
 END MODULE build_field_module

@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 .. #
 .. # Produced at the Lawrence Livermore National Laboratory
 .. #
@@ -138,7 +138,7 @@ histogram of a mesh variable that has been published by a simulation.
   a.close()
 
 In addition to performing custom python analysis, your can create new data sets and plot them
-through a new instance of Ascent. We call this technique Inception. For 
+through a new instance of Ascent. We call this technique Inception. 
 
 Relay
 -----
@@ -167,7 +167,7 @@ To save the files in HDF5 format:
 
 .. code-block:: c++ 
 
-    extracts["e1/params/protocol"] = "blueprint/mesh/hd5f";
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
 
 Additionally, Relay supports saving out only a subset of the data. The ``fields`` parameters is a list of
 strings that indicate which fields should be saved.
