@@ -2,17 +2,17 @@
 !
 ! This file is part of CloverLeaf.
 !
-! CloverLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! CloverLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! CloverLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! CloverLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! CloverLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Driver for the timestep kernels
@@ -90,7 +90,7 @@ SUBROUTINE calc_dt(chunk,local_dt,local_control,xl_pos,yl_pos,zl_pos,jldt,kldt,l
                         lldt,                          &
                         small                          )
 
-  ENDIF 
+  ENDIF
 
   IF(l_control.EQ.1) local_control='sound'
   IF(l_control.EQ.2) local_control='xvel'

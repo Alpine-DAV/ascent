@@ -29,7 +29,7 @@ from __future__ import unicode_literals
 import logging
 
 ########################################
-# 2017-09-09 cyrush: 
+# 2017-09-09 cyrush:
 # fix for readlink issue on windows
 ########################################
 # old:

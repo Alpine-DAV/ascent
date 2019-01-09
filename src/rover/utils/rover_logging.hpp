@@ -7,7 +7,7 @@
 
 namespace rover {
 
-class Logger 
+class Logger
 {
 public:
   ~Logger();
@@ -21,7 +21,7 @@ protected:
   static class Logger* m_instance;
 };
 
-class DataLogger 
+class DataLogger
 {
 public:
   ~DataLogger();
@@ -58,13 +58,13 @@ protected:
 #define ROVER_DATA_ADD(key,value) rover::DataLogger::GetInstance()->AddLogData(key, value);
 
 #else
-#define ROVER_INFO(msg)  
-#define ROVER_WARN(msg) 
+#define ROVER_INFO(msg)
+#define ROVER_WARN(msg)
 #define ROVER_ERROR(msg)
 
-#define ROVER_DATA_OPEN(name) 
-#define ROVER_DATA_CLOSE(name) 
-#define ROVER_DATA_ADD(key,value) 
+#define ROVER_DATA_OPEN(name)
+#define ROVER_DATA_CLOSE(name)
+#define ROVER_DATA_ADD(key,value)
 #endif
 } // namespace rover
 

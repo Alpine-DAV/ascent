@@ -2,17 +2,17 @@
 !
 ! This file is part of CloverLeaf.
 !
-! CloverLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! CloverLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! CloverLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! CloverLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! CloverLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Fortran flux kernel.
@@ -57,7 +57,7 @@ SUBROUTINE flux_calc_kernel(x_min,x_max,y_min,y_max,z_min,z_max,dt, &
 !$OMP DO
   DO l=z_min,z_max
     DO k=y_min,y_max
-      DO j=x_min,x_max+1 
+      DO j=x_min,x_max+1
         vol_flux_x(j,k,l)=0.125_8*dt*xarea(j,k,l)                  &
                          *(xvel0(j,k,l)+xvel0(j,k+1,l)+xvel0(j,k,l+1)+xvel0(j,k+1,l+1) &
                           +xvel1(j,k,l)+xvel1(j,k+1,l)+xvel1(j,k,l+1)+xvel1(j,k+1,l+1))

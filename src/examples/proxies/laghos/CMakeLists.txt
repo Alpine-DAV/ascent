@@ -37,7 +37,7 @@ endif()
 blt_add_executable(
     NAME        laghos_ser
     HEADERS     ${laghos_headers}
-    SOURCES     ${laghos_sources} 
+    SOURCES     ${laghos_sources}
     DEPENDS_ON  ${laghos_thirdparty_deps} ascent
     OUTPUT_DIR  ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -55,11 +55,11 @@ if(MPI_FOUND AND ENABLE_MPI)
   blt_add_executable(
       NAME        laghos_mpi
       HEADERS     ${laghos_headers_mpi}
-      SOURCES     ${laghos_sources_mpi} 
+      SOURCES     ${laghos_sources_mpi}
       DEPENDS_ON  ${laghos_thirdparty_deps} ascent_mpi
       OUTPUT_DIR  ${CMAKE_CURRENT_BINARY_DIR})
 
-  # install target for laghos mpi 
+  # install target for laghos mpi
   install(TARGETS laghos_mpi
           EXPORT  ascent
           LIBRARY DESTINATION examples/ascent/proxies/laghos
@@ -68,5 +68,5 @@ if(MPI_FOUND AND ENABLE_MPI)
   )
 endif()
 
-install(DIRECTORY data 
+install(DIRECTORY data
         DESTINATION examples/ascent/proxies/laghos)

@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -226,7 +226,6 @@ function(add_python_test TEST)
     message(STATUS " [*] Adding Python-based Unit Test: ${TEST}")
     add_test( NAME ${TEST}
               COMMAND ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
-    
     # make sure python can pick up the modules we built
     # use proper env var path sep for current platform
     if(WIN32)

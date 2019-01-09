@@ -2,17 +2,17 @@
 !
 ! This file is part of CloverLeaf.
 !
-! CloverLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! CloverLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! CloverLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! CloverLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! CloverLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Controls the main hydro cycle.
@@ -37,12 +37,12 @@ SUBROUTINE hydro
 
   INTEGER         :: loc(1)
   REAL(KIND=8)    :: timer,timerstart,wall_clock,step_clock
-  
+
   REAL(KIND=8)    :: grind_time,cells,rstep
   REAL(KIND=8)    :: step_time,step_grind
   REAL(KIND=8)    :: first_step,second_step
   REAL(KIND=8)    :: kernel_total,totals(parallel%max_task)
-  
+
   TYPE(C_PTR) my_ascent
   TYPE(C_PTR) ascent_opts
 
@@ -77,11 +77,11 @@ SUBROUTINE hydro
     CALL reset_field()
 
     advect_x = .NOT. advect_x
-  
+
     time = time + dt
-    
+
     CALL ascent_timer_stop(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
-    
+
     IF(summary_frequency.NE.0) THEN
       IF(MOD(step, summary_frequency).EQ.0) CALL field_summary()
     ENDIF
@@ -102,7 +102,7 @@ SUBROUTINE hydro
       CALL field_summary()
      ! IF(visit_frequency.NE.0) CALL visit()
 
-      
+
       wall_clock=timer() - timerstart
       IF ( parallel%boss ) THEN
         WRITE(g_out,*)

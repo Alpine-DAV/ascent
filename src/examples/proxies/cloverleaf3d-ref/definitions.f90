@@ -2,17 +2,17 @@
 !
 ! This file is part of CloverLeaf.
 !
-! CloverLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! CloverLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! CloverLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! CloverLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! CloverLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Holds the high level Fortran data types
@@ -26,7 +26,7 @@
 MODULE definitions_module
 
    USE data_module
-   
+
    IMPLICIT NONE
 
    TYPE state_type
@@ -59,7 +59,7 @@ MODULE definitions_module
                           ,xmax            &
                           ,ymax            &
                           ,zmax
-                     
+
      INTEGER            :: x_cells              &
                           ,y_cells              &
                           ,z_cells
@@ -92,7 +92,7 @@ MODULE definitions_module
                           ,revert          &
                           ,flux            &
                           ,halo_exchange
-                     
+
    END TYPE profiler_type
    TYPE(profiler_type)  :: profiler
 
@@ -182,7 +182,7 @@ MODULE definitions_module
                                                  ,zarea
 
    END TYPE field_type
-   
+
    TYPE chunk_type
 
      INTEGER         :: task   !mpi task
@@ -191,7 +191,7 @@ MODULE definitions_module
 
      ! Idealy, create an array to hold the buffers for each field so a commuincation only needs
      !  one send and one receive per face, rather than per field.
-     ! If chunks are overloaded, i.e. more chunks than tasks, might need to pack for a task to task comm 
+     ! If chunks are overloaded, i.e. more chunks than tasks, might need to pack for a task to task comm
      !  rather than a chunk to chunk comm. See how performance is at high core counts before deciding
      REAL(KIND=8),ALLOCATABLE:: left_rcv_buffer(:),right_rcv_buffer(:)
      REAL(KIND=8),ALLOCATABLE:: bottom_rcv_buffer(:),top_rcv_buffer(:)

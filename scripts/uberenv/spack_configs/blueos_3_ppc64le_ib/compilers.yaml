@@ -21,8 +21,8 @@ compilers:
     paths:
       cc:  /usr/tcetmp/packages/clang/clang-4.0.0/bin/clang
       cxx: /usr/tcetmp/packages/clang/clang-4.0.0/bin/clang++
-      f77: None 
-      fc: None 
+      f77: None
+      fc: None
     spec: clang@4.0.0
     target: ppc64le
 - compiler:
@@ -40,4 +40,4 @@ compilers:
     target: ppc64le
 
 
- 
+

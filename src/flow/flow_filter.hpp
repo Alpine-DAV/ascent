@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
-// Please also read alpine/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Please also read ascent/LICENSE
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -79,11 +79,11 @@ class Graph;
 /// Filters optionally provide:
 ///   - A set of named input ports
 ///   - output
-///   - A set of default parameters 
+///   - A set of default parameters
 ///
 ///  To create a new filter, create a new subclass of Filter and:
 ///
-///  1) Implement declare_interface(), and adding the following entires 
+///  1) Implement declare_interface(), and adding the following entires
 ///  to a conduit Node.
 ///
 ///  void MyFilter::declare_interface(conduit::Node &i)
@@ -95,7 +95,7 @@ class Graph;
 ///    i["output_port"] = {"true" | "false"};
 ///
 ///    // declare the names of this filters input ports
-///    // Provide a conduit list of strings with the names of the input ports 
+///    // Provide a conduit list of strings with the names of the input ports
 ///    // or DataType::empty() if there are no input ports.
 ///    i["port_names"].append().set("in");
 ///
@@ -117,7 +117,7 @@ class Graph;
 
 ///     // you can also check the type of an input using
 ///     // if(input("in").check_type<Node>) ...
-///  
+///
 ///     // You can access filter parameters via params()
 ///     int val = params()["my_knob"].value();
 ///
@@ -127,9 +127,9 @@ class Graph;
 ///     // the registry manages result lifetimes.
 ///
 ///  }
-/// 
+///
 ///  TODO: talk about optional verify_params()
-/// 
+///
 //-----------------------------------------------------------------------------
 
 
@@ -137,10 +137,10 @@ class Graph;
 class FLOW_API Filter
 {
 public:
-    
+
     friend class Graph;
     friend class Workspace;
-    
+
     virtual ~Filter();
 
     //-------------------------------------------------------------------------
@@ -163,18 +163,18 @@ public:
     // filter interface properties
     //-------------------------------------------------------------------------
 
-    /// static method that checks if conduit node passed conforms to what 
+    /// static method that checks if conduit node passed conforms to what
     /// is needed to declare a filter interface.
     /// (used as a guard when a filter type is registered)
     static bool           verify_interface(const conduit::Node &i,
                                            conduit::Node &info);
-  
+
     /// helpers that provide access to the specific parts
-    /// of the filter interface 
+    /// of the filter interface
     std::string           type_name()   const;
     const conduit::Node  &port_names()  const;
     bool                  output_port() const;
-    
+
     const conduit::Node  &default_params() const;
 
     int                   number_of_input_ports() const;
@@ -216,7 +216,7 @@ public:
     /// generic set of wrapped output data
     void                   set_output(Data &data);
 
-    /// templated set of wrapped output data 
+    /// templated set of wrapped output data
     template <class T>
     void set_output(T *data_ptr)
     {
@@ -226,8 +226,8 @@ public:
 
     /// generic access to wrapped output data
     Data                  &output();
-   
-    /// templated access to  wrapped output data 
+
+    /// templated access to  wrapped output data
     template <class T>
     T *output()
     {
@@ -249,7 +249,7 @@ public:
     void                  connect_input_port(int idx,
                                              Filter *filter);
 
-    
+
     /// create human understandable tree that describes the state
     /// of the filter
     void           info(conduit::Node &out) const;
@@ -284,9 +284,9 @@ private:
     conduit::Node           &properties();
     const conduit::Node     &properties() const;
 
-    
+
     Graph                        *m_graph;
-    
+
     conduit::Node                 m_props;
     Data                         *m_out;
     std::map<std::string,Data*>   m_inputs;

@@ -12,3 +12,5 @@ uberenv_libs
 *.tar.gz
 *.tar
 s_env.sh
+_uberenv_test*
+

@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-// 
+// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-716457
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Ascent. 
-// 
+//
+// This file is part of Ascent.
+//
 // For details, see: http://ascent.readthedocs.io/.
-// 
+//
 // Please also read ascent/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 //-----------------------------------------------------------------------------
@@ -122,10 +122,10 @@ parseLine(char *line)
     {
         line++;
     }
-    
+
     line[i-3] = '\0';
     i = atoi(line);
-    
+
     return i;
 }
 
@@ -139,7 +139,7 @@ BlockTimer::Start(const std::string &name)
 #else
     s_rank = 0;
 #endif
-    
+
     ++s_global_depth;
 
     if (s_global_depth <= MAX_DEPTH)
@@ -178,7 +178,7 @@ BlockTimer::Stop(const std::string &name)
 
         // Update time spent at current location. added after max (changed)
         double newval = curr["value"].as_float64() + elapsed_time;
-        
+
         curr["value"] = newval;
         curr["min"]   = newval;
         curr["avg"]   = newval;
@@ -186,8 +186,8 @@ BlockTimer::Stop(const std::string &name)
         //increment the counter
         unsigned int count = curr["count"].as_uint32() + 1;
         curr["count"] = count;
-       
-        // 
+
+        //
         // Get system memory info and average
         //
 
@@ -199,11 +199,11 @@ BlockTimer::Stop(const std::string &name)
         memUsed *= system_info.mem_unit;
         memUsed = memUsed / 1024 / 1024;
         unsigned int cSysMem = curr["sysMemUsed"].as_uint64();
-        
+
         cSysMem = ((cSysMem * (count - 1) + memUsed) )/ count;
         curr["sysMemUsed"] = uint64(cSysMem);
-        
-        // 
+
+        //
         // Get process memory usage and average
         //
         FILE* file = fopen("/proc/self/status", "r");
@@ -218,9 +218,9 @@ BlockTimer::Stop(const std::string &name)
             }
         }
         fclose(file);
-        
+
         kb = kb / 1024;
-        
+
         int cProcUsage = curr["procMemMB"].as_int32();
         cProcUsage = ((cProcUsage * (count - 1) + kb ))  / count;
         curr["procMemMB"] = cProcUsage;
@@ -231,7 +231,7 @@ BlockTimer::Stop(const std::string &name)
 #endif
         GoUp();
     }
-    
+
     // Update current location.
     --s_global_depth;
 
@@ -307,10 +307,10 @@ BlockTimer::GoUp()
         s_current_path = "";
         return;
     }
-    
+
     unsigned int ctr = 1;
     unsigned int numslashes = 0;
-  
+
     std::string::iterator striter = s_current_path.end();
     --striter;
 
@@ -325,44 +325,44 @@ BlockTimer::GoUp()
                 return;
             }
         }
-        
+
         --striter;
         ++ctr;
     }
-    
+
     s_current_path = "";
     return;
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 //-----------------------------------------------------------------------------
 BlockTimer::Reduce(Node &a, Node &b)
 {
     // If a has it
-    if (a.dtype().is_object() && a.has_path("value")) 
+    if (a.dtype().is_object() && a.has_path("value"))
     {
       // Update (reduce) data
       a["count"] = a["count"].as_uint32() + b["count"].as_uint32();
-      
+
       if (b["value"].as_float64() > a["value"].as_float64())
       {
           a["value"] = b["value"];
           a["id"] = b["id"];
       }
-      
+
       // added after max
       if (a["min"].as_float64() > b["min"].as_float64())
       {
           a["min"] = b["min"];
           a["minid"] = b["minid"];
       }
-      
+
       unsigned int count_a = a["count"].as_uint32();
       unsigned int count_b = b["count"].as_uint32();
       a["avg"] = (a["avg"].as_float64() * count_a + b["avg"].as_float64() * count_b) / (count_a + count_b);
     }
-  
+
     NodeIterator itr_b(&b);
 
     while(itr_b.has_next())
@@ -371,13 +371,13 @@ BlockTimer::Reduce(Node &a, Node &b)
         std::string bpath = itr_b.name();
         //
         // If we don't know the path then
-        // it is a timer that needs processing 
+        // it is a timer that needs processing
         //
         if(CheckForKnownPath(bpath))
         {
             continue;
         }
-        
+
         if (a.dtype().is_object() &&  a.has_path(bpath))
         {
             Reduce(a[bpath], b[bpath]);
@@ -387,7 +387,7 @@ BlockTimer::Reduce(Node &a, Node &b)
     return;
 }
 //-----------------------------------------------------------------------------
-void 
+void
 BlockTimer::AverageByCount(Node &node, int numRanks)
 {
     if(node.dtype().is_object() && node.has_path("value"))
@@ -398,11 +398,11 @@ BlockTimer::AverageByCount(Node &node, int numRanks)
         node["avg"]   = node["avg"].as_float64()   / count;
         node["count"] = uint32(count);
     }
-  
-  
+
+
     NodeIterator itr = node.children();
 
-    while(itr.has_next()) 
+    while(itr.has_next())
     {
         Node &curr_node = itr.next();
         std::string curr_path = itr.name();
@@ -411,7 +411,7 @@ BlockTimer::AverageByCount(Node &node, int numRanks)
         {
             continue;
         }
-        
+
         AverageByCount(curr_node, numRanks);
     }
 
@@ -419,7 +419,7 @@ BlockTimer::AverageByCount(Node &node, int numRanks)
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 BlockTimer::ReduceAll(Node &thisRanksNode)
 {
 #ifdef ASCENT_MPI_ENABLED
@@ -442,8 +442,8 @@ BlockTimer::ReduceAll(Node &thisRanksNode)
                );
            }
      }
-     else 
-     { 
+     else
+     {
          send(thisRanksNode, // node
               0, // dest
               42, // tag
@@ -459,7 +459,7 @@ BlockTimer::ReduceAll(Node &thisRanksNode)
                    recvNodes[i].fetch("children"));
         }
     }
-  
+
     // Get the average time per iteration
     if(rank == 0)
     {
@@ -483,9 +483,9 @@ void BlockTimer::WriteLogFile()
     BlockTimer::ReduceGlobalRoot();
 
     std::string logfile = "ascent.log";
-    
+
     if(s_rank == 0 )
-    {   
+    {
         GlobalRoot().print();
         GlobalRoot().to_json_stream(logfile.c_str(), "json", 2, 5);
     }

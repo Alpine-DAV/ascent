@@ -2,7 +2,7 @@
 ####################################
 # env setup for Ascent docker build
 ####################################
-# to use run: 
+# to use run:
 # >source ascent_docker_setup.sh
 ####################################
 
