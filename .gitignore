@@ -11,3 +11,4 @@ visitlog.py
 uberenv_libs
 *.tar.gz
 *.tar
+_uberenv_test*

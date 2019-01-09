@@ -139,6 +139,21 @@ def parse_args():
                       default=False,
                       help="Pull if spack repo already exists")
 
+    # option to force for clean of packages specified to
+    # be cleaned in the project.json
+    parser.add_option("--clean",
+                      action="store_true",
+                      dest="spack_clean",
+                      default=False,
+                      help="Force uninstall of packages specified in project.json")
+
+    # option to tell spack to run tests
+    parser.add_option("--run_tests",
+                      action="store_true",
+                      dest="run_tests",
+                      default=False,
+                      help="Invoke build tests during spack install")
+
     # option to force a spack pull
     parser.add_option("--macos-sdk-env-setup",
                       action="store_true",
@@ -336,6 +351,13 @@ def setup_osx_sdk_env_vars():
     print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % env["MACOSX_DEPLOYMENT_TARGET"]
     print "[setting SDKROOT to %s]" % env[ "SDKROOT" ]
 
+
+def find_spack_pkg_path(pkg_name):
+    r,rout = sexe("spack/bin/spack find -p " + pkg_name,ret_output = True)
+    for l in rout.split("\n"):
+        if l.startswith(" "):
+            return {"name": pkg_name, "path": l.split()[-1]}
+
 def read_spack_full_spec(pkg_name,spec):
     rv, res = sexe("spack/bin/spack spec " + pkg_name + " " + spec, ret_output=True)
     for l in res.split("\n"):
@@ -350,16 +372,17 @@ def main():
     # parse args from command line
     opts, extras = parse_args()
 
-    project_opts  = load_json_file(opts["project_json"])
-    print project_opts
+    # load project settings
+    project_opts = load_json_file(opts["project_json"])
     if opts["install"]:
         uberenv_pkg_name = project_opts["package_name"]
     else:
         uberenv_pkg_name = project_opts["uberenv_package_name"]
-    # setup osx deployment target
+    print "[uberenv project settings: %s]" % str(project_opts)
     print "[uberenv options: %s]" % str(opts)
     if "darwin" in platform.system().lower():
         if opts["macos_sdk_env_setup"]:
+            # setup osx deployment target and sdk settings
             setup_osx_sdk_env_vars()
         else:
             print "[skipping MACOSX env var setup]"
@@ -426,6 +449,14 @@ def main():
     cln_cmd = "spack/bin/spack clean "
     res = sexe(cln_cmd, echo=True)
 
+    # check if we need to force uninstall of selected packages
+    if opts["spack_clean"]:
+        if project_opts.has_key("spack_clean_packages"):
+            for cln_pkg in project_opts["spack_clean_packages"]:
+                if not find_spack_pkg_path(cln_pkg) is None:
+                    unist_cmd = "spack/bin/spack uninstall -f -y --all --dependents " + cln_pkg
+                    res = sexe(unist_cmd, echo=True)
+
     ##########################################################
     # we now have an instance of spack configured how we
     # need it to build our tpls at this point there are two
@@ -450,11 +481,15 @@ def main():
         install_cmd = "spack/bin/spack "
         if opts["ignore_ssl_errors"]:
             install_cmd += "-k "
-        install_cmd += "install " + uberenv_pkg_name + opts["spec"]
+        install_cmd += "install " 
+        if opts["run_tests"]:
+            install_cmd += "--test=root "
+        install_cmd += uberenv_pkg_name + opts["spec"]
         res = sexe(install_cmd, echo=True)
         if res != 0:
             return res
         if "spack_activate" in project_opts:
+            print "[activating dependent packages]"
             # get the full spack spec for our project
             full_spec = read_spack_full_spec(uberenv_pkg_name,opts["spec"])
             pkg_names = project_opts["spack_activate"].keys()
@@ -473,6 +508,30 @@ def main():
         if opts["install"] and "+python" in full_spec:
             activate_cmd = "spack/bin/spack activate " + uberenv_pkg_name
             sexe(activate_cmd, echo=True)
+        # if user opt'd for an install, we want to symlink the final ascent 
+        # install to an easy place:
+        if opts["install"]:
+            pkg_path = find_spack_pkg_path(uberenv_pkg_name)
+            if uberenv_pkg_name != pkg_path["name"]:
+                print "[ERROR: Could not find install of %s]" % uberenv_pkg_name
+                return -1
+            else:
+                pkg_lnk_dir = "%s-install" % uberenv_pkg_name
+                if os.path.islink(pkg_lnk_dir):
+                    os.unlink(pkg_lnk_dir)
+                print ""
+                print "[symlinking install to %s]" % pjoin(dest_dir,pkg_lnk_dir)
+                os.symlink(pkg_path["path"],os.path.abspath(pkg_lnk_dir))
+                hcfg_glob = glob.glob(pjoin(pkg_lnk_dir,"*.cmake"))
+                if len(hcfg_glob) > 0:
+                    hcfg_path  = hcfg_glob[0]
+                    hcfg_fname = os.path.split(hcfg_path)[1]
+                    if os.path.islink(hcfg_fname):
+                        os.unlink(hcfg_fname)
+                    print "[symlinking host config file to %s]" % pjoin(dest_dir,hcfg_fname)
+                    os.symlink(hcfg_path,hcfg_fname)
+                print ""
+                print "[install complete!]"
         return res
 
 if __name__ == "__main__":

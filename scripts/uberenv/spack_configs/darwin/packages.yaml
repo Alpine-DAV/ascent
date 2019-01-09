@@ -15,7 +15,7 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    compiler: [gcc, intel, pgi, clang, xl, nag]
+    compiler: [clang, gcc, intel, pgi, xl, nag]
     providers:
       awk: [gawk]
       blas: [openblas]
@@ -36,10 +36,24 @@ packages:
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
     variants: ~openmp
+# custom variants
   conduit:
     version: [master]
-# CUDA standard MacOS install
+  python:
+    variants: +shared~dbm
+  cmake:
+    version: [3.9.6]
+    variants: ~openssl~ncurses
+  hwloc:
+    variants: ~libxml2
+  perl:
+    paths:
+      perl: /usr/
+    buildable: False
+# CUDA standard MacOS install paths
   cuda:
     paths:
       cuda@8.0: /Developer/NVIDIA/CUDA-8.0
+      cuda@9.0: /Developer/NVIDIA/CUDA-9.0
     buildable: False
+
