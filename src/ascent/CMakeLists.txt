@@ -76,6 +76,10 @@ set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.h")
 
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.mk.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk")
+
+
 set(ascent_sources
     # ascent interface
     ascent.cpp
@@ -274,6 +278,8 @@ endif()
 ########################################
 # Extra Install Targets for ascent
 ########################################
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk" DESTINATION share/ascent)
 
 install(FILES ${ascent_headers} DESTINATION include/ascent)
 

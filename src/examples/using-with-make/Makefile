@@ -48,19 +48,30 @@
 # based build system.
 #
 # To build:
-#  env ASCENT_DIR={ascent install path} \
-#      CONDUIT_DIR={conduit install path}   \
-#   make
+#  env ASCENT_DIR={ascent install path} make
 #  ./ascent_render_example
 #
+# From within an ascent install:
+#  make 
+#  ./example
+#
+# Which corresponds to:
+#
+#  make ASCENT_DIR=../../../ 
+#  ./example
 #
 ###############################################################################
 
+ASCENT_DIR ?= ../../..
 
-INC_FLAGS=-I$(ASCENT_DIR)/include/ascent -I$(CONDUIT_DIR)/include/conduit
-LINK_FLAGS=-L$(ASCENT_DIR)/lib/ -lascent -L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint
+# See $(ASCENT_DIR)/share/ascent/ascent_config.mk for detailed linking info 
+include $(ASCENT_DIR)/share/ascent/ascent_config.mk
+
 
 main:
-	$(CXX) $(INC_FLAGS) ascent_render_example.cpp $(LINK_FLAGS) -o ascent_render_example
+	$(CXX) $(ASCENT_INCLUDE_FLAGS) ascent_render_example.cpp $(ASCENT_LIB_FLAGS) -o ascent_render_example
+
+# TODO: Add mpi render example
+
 
 

@@ -43,6 +43,7 @@
 #
 ###############################################################################
 
+# using with cmake example
 cd ${ASCENT_DIR}/examples/ascent/using-with-cmake
 mkdir build
 cd build
@@ -51,9 +52,8 @@ cmake  ${EXAMPLE_CFG} ../
 make VERBOSE=1
 ./ascent_render_example
 
-# using with make example (still needs work for static builds)
-#- cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
-#- make
-#- env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
-# test run example apps
+# using with make example
+cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
+make
+env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
 
