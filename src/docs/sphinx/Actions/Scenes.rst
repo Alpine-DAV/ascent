@@ -351,7 +351,8 @@ Now we add a second render to the same example using every available parameter:
   scenes["s1/renders/r2/camera/far_plane"] = 33.1;
 
 .. code-block:: json
-
+  
+  {
   "renders":
   {
     "r1":
@@ -374,6 +375,7 @@ Now we add a second render to the same example using every available parameter:
         "far_plane": 100.1
       }
     }
+  }
   }
 
 
