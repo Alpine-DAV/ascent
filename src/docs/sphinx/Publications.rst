@@ -71,9 +71,9 @@ Publications
 Presentations
 -------------
 
-- `IXPUG Software-Defined Visualization Workshop <https://www.ixpug.org/events/swdvis-2018>`_ July 10, 2018, ANL.
+- `IXPUG Software-Defined Visualization Workshop 2018 <https://www.ixpug.org/events/swdvis-2018>`_ July 10, 2018, ANL.
 - DOE Computer Graphics Forum, April 24-26 2018, Savannah, GA.
-- `IXPUG Software-Defined Visualization Workshop <https://www.ixpug.org/events/swdvis-2017>`_ May 23, 2017, Austin, TX.
+- `IXPUG Software-Defined Visualization Workshop 2017 <https://www.ixpug.org/events/swdvis-2017>`_ May 23, 2017, Austin, TX.
 - Panel: In Situ Efforts and Challenges in Large Data Analysis and Visualization, LDAV October 23rd 2016, Baltimore, MD.
 - DOE Computer Graphics Forum, April 26-28 2016, Monterey, CA.
 

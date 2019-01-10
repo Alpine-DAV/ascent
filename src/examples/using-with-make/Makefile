@@ -71,6 +71,11 @@ include $(ASCENT_DIR)/share/ascent/ascent_config.mk
 main:
 	$(CXX) $(ASCENT_INCLUDE_FLAGS) ascent_render_example.cpp $(ASCENT_LIB_FLAGS) -o ascent_render_example
 
+
+clean:
+	rm -f ascent_render_example
+
+
 # TODO: Add mpi render example
 
 

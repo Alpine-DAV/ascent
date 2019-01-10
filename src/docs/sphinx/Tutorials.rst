@@ -66,12 +66,51 @@ In situ visualization and analysis is an important capability for addressing slo
 
 **Slides:** Coming soon ... 
 
+Tutorial Setup
+----------------------------------------
 
-Basic Web Tutorial
---------------------
+Build and Install
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. toctree::
-   :maxdepth: 2 
+To build and install Ascent yourself see :doc:`QuickStart`.
 
-   Tutorial
+Using Docker
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have Docker installed you can obtain a Docker image with a ready-to-use ascent install from `Docker Hub <https://hub.docker.com/r/alpinedav/ascent/>`_.
+
+Fetch the latest Ascent image:
+
+.. code::
+
+    docker pull alpinedav/ascent
+
+After the download completes, create and run a container using this image:
+
+.. code::
+
+    docker run -p 8000:8000 -p 10000:10000 -t -i alpinedav/ascent
+
+(The ``-p`` is used to forward ports between the container and your host machine, we use these ports to allow web servers on the container to serve data to the host.)
+
+
+You will now be at a bash prompt in you container. 
+
+To add the proper paths to Python and MPI to your environment run:
+
+.. code::
+
+    source ascent_docker_setup.sh
+
+The ascent source code is at ``/ascent/src/``, and the install is at ``/ascent/install-debug``.
+
+NERSC Cori Install
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Example Programs
+----------------------------------------
+
+You can find the tutorial example source code and a Makefile in your Ascent install 
+in the ``examples/ascent/tutorial/ecp_2019`` directory.
+
 
