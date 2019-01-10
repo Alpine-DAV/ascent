@@ -1,8 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 //
-// Produced at the Lawrence Livermore National Laboratory
-//
+// Produced at the Lawrence Livermore National Laboratory //
 // LLNL-CODE-716457
 //
 // All rights reserved.
@@ -396,8 +395,8 @@ class CinemaManager
 protected:
   std::vector<vtkm::rendering::Camera> m_cameras;
   std::vector<std::string>             m_image_names;
-  std::vector<int>                     m_phi_values;
-  std::vector<int>                     m_theta_values;
+  std::vector<float>                   m_phi_values;
+  std::vector<float>                   m_theta_values;
   std::vector<float>                   m_times;
 
   vtkm::Bounds                         m_bounds;
@@ -488,6 +487,13 @@ public:
     }
   }
 
+  std::string get_string(const float value)
+  {
+    std::stringstream ss;
+    ss<<std::fixed<<std::setprecision(1)<<value;
+    return ss.str();
+  }
+
   void write_metadata()
   {
     int rank = 0;
@@ -506,26 +512,39 @@ public:
     meta["name_pattern"] = "{time}/{phi}_{theta}_" + m_image_name + ".png";
 
     conduit::Node times;
-    times["default"] = m_times[0];
+    times["default"] = get_string(m_times[0]);
     times["label"] = "time";
     times["type"] = "range";
-    times["values"].set_external(m_times);
+    // we have to make sure that this maps to a json array
+    const int t_size = m_times.size();
+    for(int i = 0; i < t_size; ++i)
+    {
+      times["values"].append().set(get_string(m_times[i]));
+    }
 
     meta["arguments/time"] = times;
 
     conduit::Node phis;
-    phis["default"] = m_phi_values[0];
+    phis["default"] = get_string(m_phi_values[0]);
     phis["label"] = "phi";
     phis["type"] = "range";
-    phis["values"].set_external(m_phi_values);
+    const int phi_size = m_phi_values.size();
+    for(int i = 0; i < phi_size; ++i)
+    {
+      phis["values"].append().set(get_string(m_phi_values[i]));
+    }
 
     meta["arguments/phi"] = phis;
 
     conduit::Node thetas;
-    thetas["default"] = m_theta_values[0];
+    thetas["default"] = get_string(m_theta_values[0]);
     thetas["label"] = "theta";
     thetas["type"] = "range";
-    thetas["values"].set_external(m_theta_values);
+    const int theta_size = m_theta_values.size();
+    for(int i = 0; i < theta_size; ++i)
+    {
+      thetas["values"].append().set(get_string(m_theta_values[i]));
+    }
 
     meta["arguments/theta"] = thetas;
     meta.save("cinema_databases/" + m_image_name + "/info.json","json");
@@ -586,7 +605,7 @@ private:
         camera.SetPosition(pos);
 
         std::stringstream ss;
-        ss<<(int)phi<<"_"<<(int)theta<<"_";
+        ss<<get_string(phi)<<"_"<<get_string(theta)<<"_";
 
         m_image_names.push_back(ss.str() + m_image_name);
         m_cameras.push_back(camera);
