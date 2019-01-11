@@ -398,6 +398,7 @@ protected:
   std::vector<float>                   m_phi_values;
   std::vector<float>                   m_theta_values;
   std::vector<float>                   m_times;
+  std::string                          m_csv;
 
   vtkm::Bounds                         m_bounds;
   const int                            m_phi;
@@ -417,6 +418,7 @@ public:
       m_time(0.f)
   {
     this->create_cinema_cameras(bounds);
+    m_csv = "phi, theta, time, FILE\n";
   }
 
   CinemaManager()
@@ -548,6 +550,31 @@ public:
 
     meta["arguments/theta"] = thetas;
     meta.save("cinema_databases/" + m_image_name + "/info.json","json");
+
+
+    //append current data to our csv file
+    std::stringstream csv;
+
+    csv<<m_csv;
+    std::string current_time = get_string(m_times[t_size - 1]);
+    for(int p = 0; p < phi_size; ++p)
+    {
+      std::string phi = get_string(m_phi_values[p]);
+      for(int t = 0; t < theta_size; ++t)
+      {
+        std::string theta = get_string(m_theta_values[t]);
+        csv<<phi<<",";
+        csv<<theta<<",";
+        csv<<current_time<<",";
+        csv<<current_time<<"/"<<phi<<"_"<<theta<<"_"<<m_image_name<<".png\n";
+      }
+    }
+
+    m_csv = csv.str();
+    std::ofstream out("cinema_databases/" + m_image_name + "/data.csv");
+    out<<m_csv;
+    out.close();
+
   }
 
 private:
@@ -580,11 +607,10 @@ private:
         //
         //  spherical coords start (r=1, theta = 0, phi = 0)
         //  (x = 0, y = 0, z = 1)
-        //  up is the x+, and right is y+
         //
 
         vtkmVec3f pos(0.f,0.f,1.f);
-        vtkmVec3f up(1.f,0.f,0.f);
+        vtkmVec3f up(0.f,1.f,0.f);
 
         vtkm::Matrix<vtkm::Float32,4,4> phi_rot;
         vtkm::Matrix<vtkm::Float32,4,4> theta_rot;
@@ -609,11 +635,21 @@ private:
 
         m_image_names.push_back(ss.str() + m_image_name);
         m_cameras.push_back(camera);
-        m_phi_values.push_back(phi);
-        m_theta_values.push_back(theta);
 
       } // theta
     } // phi
+
+    for(int p = 0; p < m_phi; ++p)
+    {
+      float phi  =  -180.f + phi_inc * p;
+      m_phi_values.push_back(phi);
+    }
+
+    for(int t = 0; t < m_theta; ++t)
+    {
+      float theta = -90.f + theta_inc * t;
+      m_theta_values.push_back(theta);
+    }
 
   }
 

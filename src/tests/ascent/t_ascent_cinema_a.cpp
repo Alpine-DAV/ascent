@@ -65,7 +65,7 @@ using namespace std;
 using namespace conduit;
 using namespace ascent;
 
-index_t EXAMPLE_MESH_SIDE_DIM = 50;
+index_t EXAMPLE_MESH_SIDE_DIM = 32;
 
 //-----------------------------------------------------------------------------
 TEST(ascent_cinema_a, test_cinema_a)
@@ -84,10 +84,10 @@ TEST(ascent_cinema_a, test_cinema_a)
     // Create example mesh.
     //
     Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("quads",
+    conduit::blueprint::mesh::examples::braid("hexs",
                                                EXAMPLE_MESH_SIDE_DIM,
                                                EXAMPLE_MESH_SIDE_DIM,
-                                               0,
+                                               EXAMPLE_MESH_SIDE_DIM,
                                                data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
