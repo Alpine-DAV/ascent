@@ -42,44 +42,15 @@
 #
 ###############################################################################
 
-###############################################################################
-#
-# Example that shows how to use an installed instance of Ascent in Makefile
-# based build system.
-#
-# To build:
-#  env ASCENT_DIR={ascent install path} make
-#  ./ascent_render_example
-#
-# From within an ascent install:
-#  make 
-#  ./example
-#
-# Which corresponds to:
-#
-#  make ASCENT_DIR=../../../ 
-#  ./example
-#
-###############################################################################
 
-ASCENT_DIR ?= ../../..
+set(ASCENT_INSTALL_PREFIX "@ASCENT_INSTALL_PREFIX@")
+set(ASCENT_CONDUIT_DIR  "@CONDUIT_DIR@")
+if(EXISTS ${ASCENT_CONDUIT_DIR}/lib/cmake/conduit-deps-paths.cmake)
+    include(${ASCENT_CONDUIT_DIR}/lib/cmake/conduit-deps-paths.cmake)
+endif()
 
-# See $(ASCENT_DIR)/share/ascent/ascent_config.mk for detailed linking info 
-include $(ASCENT_DIR)/share/ascent/ascent_config.mk
-
-
-INC_FLAGS = $(ASCENT_INCLUDE_FLAGS) 
-LNK_FLAGS = $(ASCENT_LINK_RPATH) $(ASCENT_LIB_FLAGS)
-
-main:
-	$(CXX) $(INC_FLAGS) ascent_render_example.cpp $(LNK_FLAGS) -o ascent_render_example
-
-
-clean:
-	rm -f ascent_render_example
-
-
-# TODO: Add mpi render example
-
+set(ASCENT_VTKM_DIR "@VTKM_DIR@")
+set(ASCENT_VTKH_DIR "@VTKH_DIR@")
+set(ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
 
 

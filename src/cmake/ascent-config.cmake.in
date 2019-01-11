@@ -42,44 +42,19 @@
 #
 ###############################################################################
 
-###############################################################################
-#
-# Example that shows how to use an installed instance of Ascent in Makefile
-# based build system.
-#
-# To build:
-#  env ASCENT_DIR={ascent install path} make
-#  ./ascent_render_example
-#
-# From within an ascent install:
-#  make 
-#  ./example
-#
-# Which corresponds to:
-#
-#  make ASCENT_DIR=../../../ 
-#  ./example
-#
-###############################################################################
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
-ASCENT_DIR ?= ../../..
+@PACKAGE_INIT@
 
-# See $(ASCENT_DIR)/share/ascent/ascent_config.mk for detailed linking info 
-include $(ASCENT_DIR)/share/ascent/ascent_config.mk
+# Conduit version number
+set(ASCENT_VERSION "@ASCENT_VERSION@")
 
+set(ASCENT_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/include/ascent")
 
-INC_FLAGS = $(ASCENT_INCLUDE_FLAGS) 
-LNK_FLAGS = $(ASCENT_LINK_RPATH) $(ASCENT_LIB_FLAGS)
+get_filename_component(ASCENT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+include(${ASCENT_CMAKE_CONFIG_DIR}/ascent-deps-paths.cmake)
+include(${ASCENT_CMAKE_CONFIG_DIR}/ascent.cmake)
 
-main:
-	$(CXX) $(INC_FLAGS) ascent_render_example.cpp $(LNK_FLAGS) -o ascent_render_example
-
-
-clean:
-	rm -f ascent_render_example
-
-
-# TODO: Add mpi render example
 
 
 

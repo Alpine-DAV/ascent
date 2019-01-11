@@ -59,11 +59,24 @@
 # make
 # ./ascent_render_example
 #
+# If run in sub directory of a ascent install, 
+# ASCENT_DIR will be defaulted to ../../..
+# 
+#  mkdir build
+#  cd build
+#  cmake ..
+#  make
+#  ./ascent_render_example
+#
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.9)
 
 project(using_with_cmake)
+
+if(NOT ASCENT_DIR)
+    set(ASCENT_DIR "../../..")
+endif()
 
 include("FindAscent.cmake")
 include("FindConduit.cmake")

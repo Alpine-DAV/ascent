@@ -52,6 +52,8 @@
 convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
                                     ASCENT_INSTALL_PREFIX)
 
+set(ASCENT_INSTALL_PREFIX ${ASCENT_INSTALL_PREFIX} CACHE STRING "" FORCE )
+
 if(FORTRAN_FOUND)
     set(ASCENT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
 endif()
@@ -75,10 +77,6 @@ set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.h")
-
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.mk.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk")
-
 
 set(ascent_sources
     # ascent interface
@@ -278,9 +276,6 @@ endif()
 ########################################
 # Extra Install Targets for ascent
 ########################################
-
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk" DESTINATION share/ascent)
-
 install(FILES ${ascent_headers} DESTINATION include/ascent)
 
 

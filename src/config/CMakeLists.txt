@@ -42,44 +42,70 @@
 #
 ###############################################################################
 
+
 ###############################################################################
 #
-# Example that shows how to use an installed instance of Ascent in Makefile
-# based build system.
-#
-# To build:
-#  env ASCENT_DIR={ascent install path} make
-#  ./ascent_render_example
-#
-# From within an ascent install:
-#  make 
-#  ./example
-#
-# Which corresponds to:
-#
-#  make ASCENT_DIR=../../../ 
-#  ./example
+# file: src/config/CMakeLists.txt
 #
 ###############################################################################
 
-ASCENT_DIR ?= ../../..
-
-# See $(ASCENT_DIR)/share/ascent/ascent_config.mk for detailed linking info 
-include $(ASCENT_DIR)/share/ascent/ascent_config.mk
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.mk.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk")
 
 
-INC_FLAGS = $(ASCENT_INCLUDE_FLAGS) 
-LNK_FLAGS = $(ASCENT_LINK_RPATH) $(ASCENT_LIB_FLAGS)
+if (NOT DEFINED ASCENT_INSTALL_INCLUDE_DIR)
+  set(ASCENT_INSTALL_INCLUDE_DIR "include")
+endif()
 
-main:
-	$(CXX) $(INC_FLAGS) ascent_render_example.cpp $(LNK_FLAGS) -o ascent_render_example
+if (NOT DEFINED ASCENT_INSTALL_CONFIG_DIR)
+  set(ASCENT_INSTALL_CONFIG_DIR "lib")
+endif()
+
+if (NOT DEFINED ASCENT_INSTALL_LIB_DIR)
+  set(ASCENT_INSTALL_LIB_DIR "lib")
+endif()
+
+if (NOT DEFINED ASCENT_INSTALL_BIN_DIR)
+  set(ASCENT_INSTALL_BIN_DIR "bin")
+endif()
+
+if (NOT DEFINED ASCENT_INSTALL_SHARED_RESOURCES_DIR)
+  set(ASCENT_INSTALL_SHARED_RESOURCES_DIR "share/ascent")
+endif()
+
+if (NOT DEFINED ASCENT_INSTALL_CMAKE_MODULE_DIR)
+  set(ASCENT_INSTALL_CMAKE_MODULE_DIR "${ASCENT_INSTALL_CONFIG_DIR}/cmake")
+endif()
+
+include(CMakePackageConfigHelpers)
+# setup cmake exports
+configure_package_config_file(
+  ${PROJECT_SOURCE_DIR}/cmake/ascent-config.cmake.in
+  ${PROJECT_BINARY_DIR}/${ASCENT_INSTALL_CMAKE_MODULE_DIR}/ascent-config.cmake
+  INSTALL_DESTINATION ${ASCENT_INSTALL_CONFIG_DIR}
+  PATH_VARS
+    ASCENT_INSTALL_INCLUDE_DIR
+    ASCENT_INSTALL_LIB_DIR
+    ASCENT_INSTALL_BIN_DIR
+    ASCENT_INSTALL_SHARED_RESOURCES_DIR
+    ASCENT_INSTALL_CMAKE_MODULE_DIR
+    )
+
+configure_file (${PROJECT_SOURCE_DIR}/cmake/ascent-deps-paths.cmake.in 
+                ${PROJECT_BINARY_DIR}/${ASCENT_INSTALL_CMAKE_MODULE_DIR}/ascent-deps-paths.cmake @ONLY)
+
+install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk"
+        DESTINATION share/ascent/)
+
+install(FILES
+        ${PROJECT_BINARY_DIR}/${ASCENT_INSTALL_CMAKE_MODULE_DIR}/ascent-config.cmake
+        ${PROJECT_BINARY_DIR}/${ASCENT_INSTALL_CMAKE_MODULE_DIR}/ascent-deps-paths.cmake
+        DESTINATION ${ASCENT_INSTALL_CMAKE_MODULE_DIR})
 
 
-clean:
-	rm -f ascent_render_example
 
-
-# TODO: Add mpi render example
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk" DESTINATION share/ascent)
 
 
 
