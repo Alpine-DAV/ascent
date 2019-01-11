@@ -42,55 +42,15 @@
 #
 ###############################################################################
 
-###############################################################################
-#
-# Example that shows how to use an installed instance of Ascent in another
-# CMake-based build system.
-#
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DASCENT_DIR={ascent install path}  \
-#   -DCONDUIT_DIR={conduit install path}    \
-#   -DVTKM_DIR={vtkm install path}          \
-#   -DVTKH_DIR={vtkh install path}          \
-#   ../
-# make
-# ./ascent_render_example
-#
-# If run in sub directory of a ascent install, 
-# ASCENT_DIR will be defaulted to ../../..
-# 
-#  mkdir build
-#  cd build
-#  cmake ..
-#  make
-#  ./ascent_render_example
-#
-###############################################################################
 
-cmake_minimum_required(VERSION 3.9)
-
-project(using_with_cmake)
-
-if(NOT ASCENT_DIR)
-    set(ASCENT_DIR "../../..")
+set(ASCENT_INSTALL_PREFIX "@ASCENT_INSTALL_PREFIX@")
+set(ASCENT_CONDUIT_DIR  "@CONDUIT_DIR@")
+if(EXISTS ${ASCENT_CONDUIT_DIR}/lib/cmake/conduit-deps-paths.cmake)
+    include(${ASCENT_CONDUIT_DIR}/lib/cmake/conduit-deps-paths.cmake)
 endif()
 
-include("FindAscent.cmake")
-include("FindConduit.cmake")
-include("FindVTKm.cmake")
-include("FindVTKh.cmake")
+set(ASCENT_VTKM_DIR "@VTKM_DIR@")
+set(ASCENT_VTKH_DIR "@VTKH_DIR@")
+set(ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
 
-# setup the ascent & conduit include paths
-include_directories(${ASCENT_INCLUDE_DIRS})
-include_directories(${CONDUIT_INCLUDE_DIRS})
-# note: vtkm/h headers are not exposed in the interface
-
-# create our example
-add_executable(ascent_render_example ascent_render_example.cpp)
-
-# link to ascent
-target_link_libraries(ascent_render_example ascent)
 

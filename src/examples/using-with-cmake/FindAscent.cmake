@@ -68,6 +68,8 @@ if(NOT ASCENT_DIR)
     MESSAGE(FATAL_ERROR "Could not find Ascent. Ascent requires explicit ASCENT_DIR.")
 endif()
 
+get_filename_component(ASCENT_DIR ${ASCENT_DIR} ABSOLUTE)
+
 if(NOT EXISTS ${ASCENT_DIR}/lib/cmake/ascent.cmake)
     MESSAGE(FATAL_ERROR "Could not find Ascent CMake include file (${ASCENT_DIR}/lib/cmake/ascent.cmake)")
 endif()
@@ -75,15 +77,27 @@ endif()
 ###############################################################################
 # Import Ascent's CMake targets
 ###############################################################################
-include(${ASCENT_DIR}/lib/cmake/ascent.cmake)
+include(${ASCENT_DIR}/lib/cmake/ascent-config.cmake)
 
 ###############################################################################
 # Set remaning CMake variables
 ###############################################################################
 # we found Ascent
 set(ASCENT_FOUND TRUE)
-# provide location of the headers in ASCENT_INCLUDE_DIRS
-set(ASCENT_INCLUDE_DIRS ${ASCENT_DIR}/include/ascent)
+
+# If ZZZ_DIR not set, use known install path for Conduit, VTK-h and VTK-m
+# This will be picked up in by FindZZZ
+if(NOT CONDUIT_DIR)
+    set(CONDUIT_DIR ${ASCENT_CONDUIT_DIR})
+endif()
+
+if(NOT VTKH_DIR)
+    set(VTKH_DIR ${ASCENT_VTKH_DIR})
+endif()
+
+if(NOT VTKM_DIR)
+    set(VTKM_DIR ${ASCENT_VTKM_DIR})
+endif()
 
 
 
