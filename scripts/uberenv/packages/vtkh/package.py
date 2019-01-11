@@ -37,6 +37,8 @@ class Vtkh(Package):
     git      = "https://github.com/Alpine-DAV/vtk-h.git"
     maintainers = ['cyrush']
 
+
+    version('ascent_ver', commit='dc12240', submodules=True, preferred=True)
     version('develop', branch='develop', submodules=True)
     version('0.1.0', branch='develop', tag='v0.1.0', submodules=True)
 
@@ -58,29 +60,29 @@ class Vtkh(Package):
     depends_on("vtkm@1.2.0+cuda", when="@0.1.0+cuda")
     depends_on("vtkm@1.2.0~shared", when="@0.1.0~shared")
 
-    # depends_on("vtkm@master~tbb+openmp", when="@develop+openmp")
-    # depends_on("vtkm@master~tbb~openmp", when="@develop~openmp")
-    #
-    # depends_on("vtkm@master+cuda~tbb+openmp", when="@develop+cuda+openmp")
-    # depends_on("vtkm@master+cuda~tbb~openmp", when="@develop+cuda~openmp")
-    #
-    # depends_on("vtkm@master~tbb+openmp~shared", when="@develop+openmp~shared")
-    # depends_on("vtkm@master~tbb~openmp~shared", when="@develop~openmp~shared")
-    #
-    # depends_on("vtkm@master+cuda~tbb+openmp~shared", when="@develop+cuda+openmp~shared")
-    # depends_on("vtkm@master+cuda~tbb~openmp~shared", when="@develop+cuda~openmp~shared")
+    depends_on("vtkm@master~tbb+openmp", when="@develop+openmp")
+    depends_on("vtkm@master~tbb~openmp", when="@develop~openmp")
 
-    depends_on("vtkm@ascent_ver~tbb+openmp", when="@develop+openmp")
-    depends_on("vtkm@ascent_ver~tbb~openmp", when="@develop~openmp")
+    depends_on("vtkm@master+cuda~tbb+openmp", when="@develop+cuda+openmp")
+    depends_on("vtkm@master+cuda~tbb~openmp", when="@develop+cuda~openmp")
 
-    depends_on("vtkm@ascent_ver+cuda~tbb+openmp", when="@develop+cuda+openmp")
-    depends_on("vtkm@ascent_ver+cuda~tbb~openmp", when="@develop+cuda~openmp")
+    depends_on("vtkm@master~tbb+openmp~shared", when="@develop+openmp~shared")
+    depends_on("vtkm@master~tbb~openmp~shared", when="@develop~openmp~shared")
 
-    depends_on("vtkm@ascent_ver~tbb+openmp~shared", when="@develop+openmp~shared")
-    depends_on("vtkm@ascent_ver~tbb~openmp~shared", when="@develop~openmp~shared")
+    depends_on("vtkm@master+cuda~tbb+openmp~shared", when="@develop+cuda+openmp~shared")
+    depends_on("vtkm@master+cuda~tbb~openmp~shared", when="@develop+cuda~openmp~shared")
 
-    depends_on("vtkm@ascent_ver+cuda~tbb+openmp~shared", when="@develop+cuda+openmp~shared")
-    depends_on("vtkm@ascent_ver+cuda~tbb~openmp~shared", when="@develop+cuda~openmp~shared")
+    depends_on("vtkm@ascent_ver~tbb+openmp", when="@ascent_ver+openmp")
+    depends_on("vtkm@ascent_ver~tbb~openmp", when="@ascent_ver~openmp")
+
+    depends_on("vtkm@ascent_ver+cuda~tbb+openmp", when="@ascent_ver+cuda+openmp")
+    depends_on("vtkm@ascent_ver+cuda~tbb~openmp", when="@ascent_ver+cuda~openmp")
+
+    depends_on("vtkm@ascent_ver~tbb+openmp~shared", when="@ascent_ver+openmp~shared")
+    depends_on("vtkm@ascent_ver~tbb~openmp~shared", when="@ascent_ver~openmp~shared")
+
+    depends_on("vtkm@ascent_ver+cuda~tbb+openmp~shared", when="@ascent_ver+cuda+openmp~shared")
+    depends_on("vtkm@ascent_ver+cuda~tbb~openmp~shared", when="@ascent_ver+cuda~openmp~shared")
 
 
     patch('vtkm_lagrange_cuda_fix.patch')
