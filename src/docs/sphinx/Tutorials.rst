@@ -72,7 +72,7 @@ Tutorial Setup
 Build and Install
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To build and install Ascent yourself see :doc:`QuickStart`.
+To build and install Ascent see :doc:`QuickStart`.
 
 Using Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
