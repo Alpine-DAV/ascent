@@ -54,7 +54,7 @@ ECP 2019 Annual Meeting
 
 **Time:** 8:30am - 12:00pm
 
-**Location:** TBD
+**Location:** Champions VII
 
 **Authors:**
 
@@ -64,7 +64,9 @@ Hank Childs (University of Oregon); Matthew Larsen (Lawrence Livermore National 
 
 In situ visualization and analysis is an important capability for addressing slow I/O on modern supercomputers. With this 3-hour tutorial, we will spend the majority of our time (two hours) going into detail on Ascent, an in situ visualization and analysis library being developed by ECP ALPINE. Ascent is from the makers of ParaView Catalyst and VisIt LibSim, and it will soon be able to directly connect with both of those products. The tutorial will be practical in nature: how to integrate Ascent into a simulation code, Ascent’s data model, build and linking issues, and capabilities. The remaining hour will be spent highlighting other visualization efforts in ECP, such as in situ-specific visualization algorithms, VTK-m, and CINEMA. 
 
-**Slides:** Coming soon ... 
+**Slides:** 
+`2019_01_17_alpine_ecp_tutorial.pdf  <http://portal.nersc.gov/project/visit/docs/2019_01_17_alpine_ecp_tutorial.pdf>`_
+
 
 Tutorial Setup
 ----------------------------------------
@@ -72,7 +74,22 @@ Tutorial Setup
 Build and Install
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To build and install Ascent see :doc:`QuickStart`.
+To build and install Ascent yourself see :doc:`QuickStart`.
+
+NERSC Cori Install
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We have a public ascent install for use on NERSC's Cori System. This install was built with the default
+intel compiler (18.0.1.163).
+ 
+The install is located at ``/project/projectdirs/alpine/software/ascent/ecp_2019/ascent-install``.
+You can copy the tutorial examples from this install and build them as follows:
+ 
+.. code::
+
+    cp -r /project/projectdirs/alpine/software/ascent/ecp_2019/ascent-install/examples/ascent/tutorial/ecp_2019 . 
+    cd ecp_2019
+    make ASCENT_DIR=/project/projectdirs/alpine/software/ascent/ecp_2019/ascent-install/
 
 Using Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,13 +121,50 @@ To add the proper paths to Python and MPI to your environment run:
 
 The ascent source code is at ``/ascent/src/``, and the install is at ``/ascent/install-debug``.
 
-NERSC Cori Install
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Example Programs
+Example Program Sources
 ----------------------------------------
 
-You can find the tutorial example source code and a Makefile in your Ascent install 
-in the ``examples/ascent/tutorial/ecp_2019`` directory.
+You can find the tutorial example source code and a Makefile in your Ascent install directory
+under ``examples/ascent/tutorial/ecp_2019``.
+
+
+Example Makefile:
+ * :download:`Makefile <../../examples/tutorial/ecp_2019/Makefile>`
+
+Basic Example:
+ * :download:`ascent_example1.cpp <../../examples/tutorial/ecp_2019/ascent_example1.cpp>`
+
+
+Conduit Examples:
+ * :download:`conduit_example1.cpp <../../examples/tutorial/ecp_2019/conduit_example1.cpp>`
+ * :download:`conduit_example2.cpp <../../examples/tutorial/ecp_2019/conduit_example2.cpp>`
+ * :download:`conduit_example3.cpp <../../examples/tutorial/ecp_2019/conduit_example3.cpp>`
+ * :download:`conduit_example4.cpp <../../examples/tutorial/ecp_2019/conduit_example4.cpp>`
+ * :download:`conduit_example5.cpp <../../examples/tutorial/ecp_2019/conduit_example5.cpp>`
+
+
+Conduit Blueprint Examples:
+ * :download:`blueprint_example2.cpp <../../examples/tutorial/ecp_2019/blueprint_example2.cpp>`
+ * :download:`blueprint_example2.cpp <../../examples/tutorial/ecp_2019/blueprint_example2.cpp>`
+
+
+Scene Examples:
+ * :download:`ascent_scene_example1.cpp <../../examples/tutorial/ecp_2019/ascent_scene_example1.cpp>`
+ * :download:`ascent_scene_example2.cpp <../../examples/tutorial/ecp_2019/ascent_scene_example2.cpp>`
+ * :download:`ascent_scene_example3.cpp <../../examples/tutorial/ecp_2019/ascent_scene_example3.cpp>`
+ * :download:`ascent_scene_example4.cpp <../../examples/tutorial/ecp_2019/ascent_scene_example4.cpp>`
+
+
+Pipeline Examples:
+ * :download:`ascent_pipeline_example1.cpp <../../examples/tutorial/ecp_2019/ascent_pipeline_example1.cpp>`
+ * :download:`ascent_pipeline_example2.cpp <../../examples/tutorial/ecp_2019/ascent_pipeline_example2.cpp>`
+ * :download:`ascent_pipeline_example3.cpp <../../examples/tutorial/ecp_2019/ascent_pipeline_example3.cpp>`
+
+
+Extract Examples:
+ * :download:`ascent_extract_example1.cpp <../../examples/tutorial/ecp_2019/ascent_extract_example1.cpp>`
+ * :download:`ascent_extract_example2.cpp <../../examples/tutorial/ecp_2019/ascent_extract_example2.cpp>`
+
 
 

@@ -125,8 +125,18 @@ ascent_scene_example4:
 	$(CXX) $(INC_FLAGS) ascent_scene_example4.cpp $(LNK_FLAGS) -o ascent_scene_example4
 
 #ascent pipeline examples (1-3)
+ascent_pipeline_examples: ascent_pipeline_example1 ascent_pipeline_example2 ascent_pipeline_example3
+	echo "[done building pipeline examples]"
+
 ascent_pipeline_example1:
 	$(CXX) $(INC_FLAGS) ascent_pipeline_example1.cpp $(LNK_FLAGS) -o ascent_pipeline_example1
+
+ascent_pipeline_example2:
+	$(CXX) $(INC_FLAGS) ascent_pipeline_example2.cpp $(LNK_FLAGS) -o ascent_pipeline_example2
+
+ascent_pipeline_example3:
+	$(CXX) $(INC_FLAGS) ascent_pipeline_example3.cpp $(LNK_FLAGS) -o ascent_pipeline_example3
+
 
 #ascent extract examples (1-2)
 ascent_extract_examples: ascent_extract_example1 ascent_extract_example2
@@ -139,7 +149,7 @@ ascent_extract_example2:
 	$(CXX) $(INC_FLAGS) ascent_extract_example2.cpp $(LNK_FLAGS) -o ascent_extract_example2
 
 
-all:  ascent_example1 conduit_examples ascent_scene_examples ascent_extract_examples
+all:  ascent_example1 conduit_examples blueprint_examples ascent_scene_examples ascent_pipeline_examples ascent_extract_examples
 	echo "[done building all examples]"
 
 clean:
