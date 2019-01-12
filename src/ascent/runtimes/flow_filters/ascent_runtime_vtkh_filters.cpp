@@ -487,7 +487,7 @@ public:
     const int num_renders = m_image_names.size();
 
     for(int i = 0; i < num_renders; ++i)
-      {
+    {
       std::string image_name = conduit::utils::join_file_path(m_current_path , m_image_names[i]);
 
       render.SetImageName(image_name);
