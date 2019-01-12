@@ -405,8 +405,9 @@ protected:
   const int                            m_phi;
   const int                            m_theta;
   std::string                          m_image_name;
-  std::string                          m_current_path;
-  std::string                          m_path;
+  std::string                          m_image_path;
+  std::string                          m_db_path;
+  std::string                          m_base_path;
   float                                m_time;
 public:
   CinemaManager(vtkm::Bounds bounds,
@@ -418,11 +419,12 @@ public:
       m_phi(phi),
       m_theta(theta),
       m_image_name(image_name),
-      m_time(0.f),
-      m_path(path)
+      m_time(0.f)
   {
     this->create_cinema_cameras(bounds);
     m_csv = "phi, theta, time, FILE\n";
+
+    m_base_path = conduit::utils::join_file_path(path, "cinema_databases");
   }
 
   CinemaManager()
@@ -436,47 +438,35 @@ public:
   {
     m_times.push_back(m_time);
 
-    // add top level dir
-    string output_path;
-    if(m_path != "") 
-    {
-      output_path = m_path + "cinema_databases";
-    }
-    else
-    {
-      output_path = "cinema_databases";
-    }
-
     int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     MPI_Comm_rank(mpi_comm, &rank);
 #endif
-    if(rank == 0 && !conduit::utils::is_directory(output_path))
+    if(rank == 0 && !conduit::utils::is_directory(m_base_path))
     {
-        conduit::utils::create_directory(output_path);
+        conduit::utils::create_directory(m_base_path);
     }
 
     // add a database path
-    output_path = conduit::utils::join_file_path(output_path, m_image_name);
+    m_db_path = conduit::utils::join_file_path(m_base_path, m_image_name);
 
-    if(rank == 0 && !conduit::utils::is_directory(output_path))
+    if(rank == 0 && !conduit::utils::is_directory(m_db_path))
     {
-        conduit::utils::create_directory(output_path);
+        conduit::utils::create_directory(m_db_path);
     }
 
     std::stringstream ss;
     ss<<fixed<<showpoint;
     ss<<std::setprecision(1)<<m_time;
     // add a time step path
-    output_path = conduit::utils::join_file_path(output_path,ss.str());
+    m_image_path = conduit::utils::join_file_path(m_db_path,ss.str());
 
-    if(!conduit::utils::is_directory(output_path))
+    if(!conduit::utils::is_directory(m_image_path))
     {
-        conduit::utils::create_directory(output_path);
+        conduit::utils::create_directory(m_image_path);
     }
 
-    m_current_path = output_path;
     m_time += 1.f;
   }
 
@@ -500,7 +490,7 @@ public:
 
     for(int i = 0; i < num_renders; ++i)
     {
-      std::string image_name = conduit::utils::join_file_path(m_current_path , m_image_names[i]);
+      std::string image_name = conduit::utils::join_file_path(m_image_path , m_image_names[i]);
 
       render.SetImageName(image_name);
       render.SetCamera(m_cameras[i]);
@@ -568,8 +558,7 @@ public:
     }
 
     meta["arguments/theta"] = thetas;
-    meta.save(m_current_path + "/" + m_image_name + "/info.json","json");
-
+    meta.save(m_db_path + "/info.json","json");
 
     //append current data to our csv file
     std::stringstream csv;
@@ -590,7 +579,7 @@ public:
     }
 
     m_csv = csv.str();
-    std::ofstream out(m_current_path + "/" + m_image_name + "/data.csv");
+    std::ofstream out(m_db_path + "/data.csv");
     out<<m_csv;
     out.close();
 
@@ -648,6 +637,7 @@ private:
         camera.SetViewUp(up);
         camera.SetLookAt(center);
         camera.SetPosition(pos);
+        camera.Zoom(0.2);
 
         std::stringstream ss;
         ss<<get_string(phi)<<"_"<<get_string(theta)<<"_";
