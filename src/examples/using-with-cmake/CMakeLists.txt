@@ -59,7 +59,7 @@
 # make
 # ./ascent_render_example
 #
-# If run in sub directory of a ascent install, 
+# If run in sub directory below using-with-cmake in an ascent install, 
 # ASCENT_DIR will be defaulted to ../../..
 # 
 #  mkdir build

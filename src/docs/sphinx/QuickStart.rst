@@ -74,14 +74,14 @@ The install includes examples that demonstrate how to use Ascent in a CMake-base
 CMake-based build system example (see: ``examples/ascent/using-with-cmake``):
 
 .. literalinclude:: ../../examples/using-with-cmake/CMakeLists.txt 
-   :lines: 46-61
+   :lines: 46-69
    :dedent: 2
 
 
 Makefile-based build system example (see: ``examples/ascent/using-with-make``):
 
 .. literalinclude:: ../../examples/using-with-make/Makefile
-   :lines: 46-56
+   :lines: 46-61
    :dedent: 2
 
 

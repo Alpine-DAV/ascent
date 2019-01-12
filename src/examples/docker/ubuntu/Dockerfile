@@ -97,7 +97,9 @@ RUN cd ascent/build-debug && make
 RUN cd ascent/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
 RUN cd ascent/build-debug && make install
 
-COPY ascent_docker_setup_env.sh /
+# gen env script that points to spack installs of tpls
+RUN cd ascent && python scripts/gen_spack_env_script.py cmake mpi python
+RUN cp ascent/s_env.sh ascent_docker_setup_env.sh
 
 # open port 9000, for use by conduit relay
 EXPOSE 9000

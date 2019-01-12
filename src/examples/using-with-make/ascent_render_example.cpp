@@ -95,7 +95,7 @@ int main(int argc, char **argv)
     // execute
     a.execute(actions);
 
-    // close alpine
+    // close ascent
     a.close();
 }
 
