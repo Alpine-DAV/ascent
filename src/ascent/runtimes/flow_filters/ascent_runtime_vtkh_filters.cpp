@@ -188,6 +188,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("camera/azimuth");
   r_valid_paths.push_back("camera/elevation");
   r_valid_paths.push_back("annotations");
+  r_valid_paths.push_back("output_path");
   r_valid_paths.push_back("fg_color");
   r_valid_paths.push_back("bg_color");
 
@@ -405,17 +406,20 @@ protected:
   const int                            m_theta;
   std::string                          m_image_name;
   std::string                          m_current_path;
+  std::string                          m_path;
   float                                m_time;
 public:
   CinemaManager(vtkm::Bounds bounds,
                 const int phi,
                 const int theta,
-                const std::string image_name)
+                const std::string image_name,
+                const std::string path)
     : m_bounds(bounds),
       m_phi(phi),
       m_theta(theta),
       m_image_name(image_name),
-      m_time(0.f)
+      m_time(0.f),
+      m_path(path)
   {
     this->create_cinema_cameras(bounds);
     m_csv = "phi, theta, time, FILE\n";
@@ -433,7 +437,15 @@ public:
     m_times.push_back(m_time);
 
     // add top level dir
-    string output_path = "cinema_databases";
+    string output_path;
+    if(m_path != "") 
+    {
+      output_path = m_path + "cinema_databases";
+    }
+    else
+    {
+      output_path = "cinema_databases";
+    }
 
     int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
@@ -556,7 +568,7 @@ public:
     }
 
     meta["arguments/theta"] = thetas;
-    meta.save("cinema_databases/" + m_image_name + "/info.json","json");
+    meta.save(m_current_path + "/" + m_image_name + "/info.json","json");
 
 
     //append current data to our csv file
@@ -578,7 +590,7 @@ public:
     }
 
     m_csv = csv.str();
-    std::ofstream out("cinema_databases/" + m_image_name + "/data.csv");
+    std::ofstream out(m_current_path + "/" + m_image_name + "/data.csv");
     out<<m_csv;
     out.close();
 
@@ -677,14 +689,15 @@ public:
   static void create_db(vtkm::Bounds bounds,
                         const int phi,
                         const int theta,
-                        std::string db_name)
+                        std::string db_name,
+                        std::string path)
   {
     if(db_exists(db_name))
     {
       ASCENT_ERROR("Creation failed: cinema database already exists");
     }
 
-    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, phi, theta, db_name)));
+    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, phi, theta, db_name, path)));
   }
 
   static CinemaManager& get_db(std::string db_name)
@@ -1358,11 +1371,23 @@ DefaultRender::execute()
           {
             ASCENT_ERROR("Cinema must specify a 'db_name'");
           }
+
+          std::string output_path = "";
+
+          if(render_node.has_path("output_path"))
+          {
+            output_path = render_node["output_path"].as_string();
+          }
+
+          if(!render_node.has_path("db_name"))
+          {
+            ASCENT_ERROR("Cinema must specify a 'db_name'");
+          }
           std::string db_name = render_node["db_name"].as_string();
           bool exists = detail::CinemaDatabases::db_exists(db_name);
           if(!exists)
           {
-            detail::CinemaDatabases::create_db(*bounds,phi,theta, db_name);
+            detail::CinemaDatabases::create_db(*bounds,phi,theta, db_name, output_path);
           }
           detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
 
