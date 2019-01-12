@@ -470,20 +470,27 @@ public:
 
   void fill_renders(std::vector<vtkh::Render> *renders,
                     const std::vector<vtkm::Id> &domain_ids,
-                    int width,
-                    int height)
+                    const conduit::Node &render_node)
   {
+    conduit::Node render_copy = render_node; 
+    // cinema is controlling the camera so get
+    // rid of it
+    if(render_copy.has_path("camera"))
+    {
+      render_copy["camera"].reset();
+    }
+    std::string tmp_name = "";
+    vtkh::Render render = detail::parse_render(render_copy,
+                                               m_bounds,
+                                               domain_ids,
+                                               tmp_name);
     const int num_renders = m_image_names.size();
 
     for(int i = 0; i < num_renders; ++i)
-    {
+      {
       std::string image_name = conduit::utils::join_file_path(m_current_path , m_image_names[i]);
 
-      vtkh::Render render = vtkh::MakeRender(width,
-                                             height,
-                                             m_bounds,
-                                             domain_ids,
-                                             image_name);
+      render.SetImageName(image_name);
       render.SetCamera(m_cameras[i]);
       renders->push_back(render);
     }
@@ -1364,7 +1371,7 @@ DefaultRender::execute()
           parse_image_dims(render_node, image_width, image_height);
 
           manager.add_time_step();
-          manager.fill_renders(renders, v_domain_ids, image_width, image_height);
+          manager.fill_renders(renders, v_domain_ids, render_node);
           manager.write_metadata();
         }
 

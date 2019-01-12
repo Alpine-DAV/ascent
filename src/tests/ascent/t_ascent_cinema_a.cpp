@@ -114,6 +114,7 @@ TEST(ascent_cinema_a, test_cinema_a)
     scenes["scene1/renders/r1/phi"] = 2;
     scenes["scene1/renders/r1/theta"] = 2;
     scenes["scene1/renders/r1/db_name"] = "test_db";
+    scenes["scene1/renders/r1/annotations"] = "false";
 
     conduit::Node &add_scenes = actions.append();
     add_scenes["action"] = "add_scenes";
