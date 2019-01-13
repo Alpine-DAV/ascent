@@ -1,8 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 //
-// Produced at the Lawrence Livermore National Laboratory
-//
+// Produced at the Lawrence Livermore National Laboratory //
 // LLNL-CODE-716457
 //
 // All rights reserved.
@@ -189,6 +188,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("camera/azimuth");
   r_valid_paths.push_back("camera/elevation");
   r_valid_paths.push_back("annotations");
+  r_valid_paths.push_back("output_path");
   r_valid_paths.push_back("fg_color");
   r_valid_paths.push_back("bg_color");
 
@@ -396,21 +396,25 @@ class CinemaManager
 protected:
   std::vector<vtkm::rendering::Camera> m_cameras;
   std::vector<std::string>             m_image_names;
-  std::vector<int>                     m_phi_values;
-  std::vector<int>                     m_theta_values;
+  std::vector<float>                   m_phi_values;
+  std::vector<float>                   m_theta_values;
   std::vector<float>                   m_times;
+  std::string                          m_csv;
 
   vtkm::Bounds                         m_bounds;
   const int                            m_phi;
   const int                            m_theta;
   std::string                          m_image_name;
-  std::string                          m_current_path;
+  std::string                          m_image_path;
+  std::string                          m_db_path;
+  std::string                          m_base_path;
   float                                m_time;
 public:
   CinemaManager(vtkm::Bounds bounds,
                 const int phi,
                 const int theta,
-                const std::string image_name)
+                const std::string image_name,
+                const std::string path)
     : m_bounds(bounds),
       m_phi(phi),
       m_theta(theta),
@@ -418,6 +422,9 @@ public:
       m_time(0.f)
   {
     this->create_cinema_cameras(bounds);
+    m_csv = "phi, theta, time, FILE\n";
+
+    m_base_path = conduit::utils::join_file_path(path, "cinema_databases");
   }
 
   CinemaManager()
@@ -431,61 +438,71 @@ public:
   {
     m_times.push_back(m_time);
 
-    // add top level dir
-    string output_path = "cinema_databases";
-
     int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     MPI_Comm_rank(mpi_comm, &rank);
 #endif
-    if(rank == 0 && !conduit::utils::is_directory(output_path))
+    if(rank == 0 && !conduit::utils::is_directory(m_base_path))
     {
-        conduit::utils::create_directory(output_path);
+        conduit::utils::create_directory(m_base_path);
     }
 
     // add a database path
-    output_path = conduit::utils::join_file_path(output_path, m_image_name);
+    m_db_path = conduit::utils::join_file_path(m_base_path, m_image_name);
 
-    if(rank == 0 && !conduit::utils::is_directory(output_path))
+    if(rank == 0 && !conduit::utils::is_directory(m_db_path))
     {
-        conduit::utils::create_directory(output_path);
+        conduit::utils::create_directory(m_db_path);
     }
 
     std::stringstream ss;
     ss<<fixed<<showpoint;
     ss<<std::setprecision(1)<<m_time;
     // add a time step path
-    output_path = conduit::utils::join_file_path(output_path,ss.str());
+    m_image_path = conduit::utils::join_file_path(m_db_path,ss.str());
 
-    if(!conduit::utils::is_directory(output_path))
+    if(!conduit::utils::is_directory(m_image_path))
     {
-        conduit::utils::create_directory(output_path);
+        conduit::utils::create_directory(m_image_path);
     }
 
-    m_current_path = output_path;
     m_time += 1.f;
   }
 
   void fill_renders(std::vector<vtkh::Render> *renders,
                     const std::vector<vtkm::Id> &domain_ids,
-                    int width,
-                    int height)
+                    const conduit::Node &render_node)
   {
+    conduit::Node render_copy = render_node; 
+    // cinema is controlling the camera so get
+    // rid of it
+    if(render_copy.has_path("camera"))
+    {
+      render_copy["camera"].reset();
+    }
+    std::string tmp_name = "";
+    vtkh::Render render = detail::parse_render(render_copy,
+                                               m_bounds,
+                                               domain_ids,
+                                               tmp_name);
     const int num_renders = m_image_names.size();
 
     for(int i = 0; i < num_renders; ++i)
     {
-      std::string image_name = conduit::utils::join_file_path(m_current_path , m_image_names[i]);
+      std::string image_name = conduit::utils::join_file_path(m_image_path , m_image_names[i]);
 
-      vtkh::Render render = vtkh::MakeRender(width,
-                                             height,
-                                             m_bounds,
-                                             domain_ids,
-                                             image_name);
+      render.SetImageName(image_name);
       render.SetCamera(m_cameras[i]);
       renders->push_back(render);
     }
+  }
+
+  std::string get_string(const float value)
+  {
+    std::stringstream ss;
+    ss<<std::fixed<<std::setprecision(1)<<value;
+    return ss.str();
   }
 
   void write_metadata()
@@ -506,29 +523,66 @@ public:
     meta["name_pattern"] = "{time}/{phi}_{theta}_" + m_image_name + ".png";
 
     conduit::Node times;
-    times["default"] = m_times[0];
+    times["default"] = get_string(m_times[0]);
     times["label"] = "time";
     times["type"] = "range";
-    times["values"].set_external(m_times);
+    // we have to make sure that this maps to a json array
+    const int t_size = m_times.size();
+    for(int i = 0; i < t_size; ++i)
+    {
+      times["values"].append().set(get_string(m_times[i]));
+    }
 
     meta["arguments/time"] = times;
 
     conduit::Node phis;
-    phis["default"] = m_phi_values[0];
+    phis["default"] = get_string(m_phi_values[0]);
     phis["label"] = "phi";
     phis["type"] = "range";
-    phis["values"].set_external(m_phi_values);
+    const int phi_size = m_phi_values.size();
+    for(int i = 0; i < phi_size; ++i)
+    {
+      phis["values"].append().set(get_string(m_phi_values[i]));
+    }
 
     meta["arguments/phi"] = phis;
 
     conduit::Node thetas;
-    thetas["default"] = m_theta_values[0];
+    thetas["default"] = get_string(m_theta_values[0]);
     thetas["label"] = "theta";
     thetas["type"] = "range";
-    thetas["values"].set_external(m_theta_values);
+    const int theta_size = m_theta_values.size();
+    for(int i = 0; i < theta_size; ++i)
+    {
+      thetas["values"].append().set(get_string(m_theta_values[i]));
+    }
 
     meta["arguments/theta"] = thetas;
-    meta.save("cinema_databases/" + m_image_name + "/info.json","json");
+    meta.save(m_db_path + "/info.json","json");
+
+    //append current data to our csv file
+    std::stringstream csv;
+
+    csv<<m_csv;
+    std::string current_time = get_string(m_times[t_size - 1]);
+    for(int p = 0; p < phi_size; ++p)
+    {
+      std::string phi = get_string(m_phi_values[p]);
+      for(int t = 0; t < theta_size; ++t)
+      {
+        std::string theta = get_string(m_theta_values[t]);
+        csv<<phi<<",";
+        csv<<theta<<",";
+        csv<<current_time<<",";
+        csv<<current_time<<"/"<<phi<<"_"<<theta<<"_"<<m_image_name<<".png\n";
+      }
+    }
+
+    m_csv = csv.str();
+    std::ofstream out(m_db_path + "/data.csv");
+    out<<m_csv;
+    out.close();
+
   }
 
 private:
@@ -561,11 +615,10 @@ private:
         //
         //  spherical coords start (r=1, theta = 0, phi = 0)
         //  (x = 0, y = 0, z = 1)
-        //  up is the x+, and right is y+
         //
 
         vtkmVec3f pos(0.f,0.f,1.f);
-        vtkmVec3f up(1.f,0.f,0.f);
+        vtkmVec3f up(0.f,1.f,0.f);
 
         vtkm::Matrix<vtkm::Float32,4,4> phi_rot;
         vtkm::Matrix<vtkm::Float32,4,4> theta_rot;
@@ -584,17 +637,28 @@ private:
         camera.SetViewUp(up);
         camera.SetLookAt(center);
         camera.SetPosition(pos);
+        camera.Zoom(0.2);
 
         std::stringstream ss;
-        ss<<(int)phi<<"_"<<(int)theta<<"_";
+        ss<<get_string(phi)<<"_"<<get_string(theta)<<"_";
 
         m_image_names.push_back(ss.str() + m_image_name);
         m_cameras.push_back(camera);
-        m_phi_values.push_back(phi);
-        m_theta_values.push_back(theta);
 
       } // theta
     } // phi
+
+    for(int p = 0; p < m_phi; ++p)
+    {
+      float phi  =  -180.f + phi_inc * p;
+      m_phi_values.push_back(phi);
+    }
+
+    for(int t = 0; t < m_theta; ++t)
+    {
+      float theta = -90.f + theta_inc * t;
+      m_theta_values.push_back(theta);
+    }
 
   }
 
@@ -615,14 +679,15 @@ public:
   static void create_db(vtkm::Bounds bounds,
                         const int phi,
                         const int theta,
-                        std::string db_name)
+                        std::string db_name,
+                        std::string path)
   {
     if(db_exists(db_name))
     {
       ASCENT_ERROR("Creation failed: cinema database already exists");
     }
 
-    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, phi, theta, db_name)));
+    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, phi, theta, db_name, path)));
   }
 
   static CinemaManager& get_db(std::string db_name)
@@ -1296,11 +1361,23 @@ DefaultRender::execute()
           {
             ASCENT_ERROR("Cinema must specify a 'db_name'");
           }
+
+          std::string output_path = "";
+
+          if(render_node.has_path("output_path"))
+          {
+            output_path = render_node["output_path"].as_string();
+          }
+
+          if(!render_node.has_path("db_name"))
+          {
+            ASCENT_ERROR("Cinema must specify a 'db_name'");
+          }
           std::string db_name = render_node["db_name"].as_string();
           bool exists = detail::CinemaDatabases::db_exists(db_name);
           if(!exists)
           {
-            detail::CinemaDatabases::create_db(*bounds,phi,theta, db_name);
+            detail::CinemaDatabases::create_db(*bounds,phi,theta, db_name, output_path);
           }
           detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
 
@@ -1309,7 +1386,7 @@ DefaultRender::execute()
           parse_image_dims(render_node, image_width, image_height);
 
           manager.add_time_step();
-          manager.fill_renders(renders, v_domain_ids, image_width, image_height);
+          manager.fill_renders(renders, v_domain_ids, render_node);
           manager.write_metadata();
         }
 
