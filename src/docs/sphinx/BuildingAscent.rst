@@ -86,7 +86,7 @@ Build Dependencies
 ------------------
 
 ..  image:: images/AscentDependencies.png
-    :height: 600px
+    :width: 85%
     :align: center
 
 Ascent

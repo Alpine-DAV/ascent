@@ -87,20 +87,20 @@ The Ascent sytem architecture is composed of several components:
 System Diagram
 --------------
 ..  image:: images/AscentSystemDiagram.png
-    :height: 600px
+    :width: 85%
     :align: center
 
 Dependencies
 ------------
-  This section describes some of Ascents key dependencies.
+  This section describes Ascent's key dependencies.
 
 ..  image:: images/AscentDependencies.png
-    :height: 600px
+    :width: 85%
     :align: center
 
 Conduit (Required)
 """"""""""""""""""
-  Conduit is an open source project from Lawrence Livermore National Laboratory that provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python. It is used for data coupling between packages in-core, serialization, and I/O tasks.
+  `Conduit <http://software.llnl.gov/conduit/>`_ is an open source project from Lawrence Livermore National Laboratory that provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python. It is used for data coupling between packages in-core, serialization, and I/O tasks.
   Ascent leverages Conduit as its from facing API, since it can be used to describe simulation data in multiple programming languages.
 
 VTK-h (Optional but recommended)
