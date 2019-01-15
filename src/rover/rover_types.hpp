@@ -229,6 +229,5 @@ struct PartialImage
     }
 };
 
-
 } // namespace rover
 #endif

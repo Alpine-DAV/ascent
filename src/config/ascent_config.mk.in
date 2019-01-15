@@ -72,7 +72,7 @@ ASCENT_MFEM_DIR = @MFEM_DIR@
 include $(ASCENT_CONDUIT_DIR)/share/conduit/conduit_config.mk
 
 # setup rpath helper
-ASCENT_LINK_RPATH = -Wl,-rpath,$(ASCENT_DIR) $(CONDUIT_LINK_RPATH)
+ASCENT_LINK_RPATH = -Wl,-rpath,$(ASCENT_DIR)/lib $(CONDUIT_LINK_RPATH)
 
 # two steps are used b/c there are commas in the linker commands
 # which will undermine parsing of the makefile

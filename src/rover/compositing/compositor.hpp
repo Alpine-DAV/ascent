@@ -43,7 +43,6 @@
 #define rover_compositor_h
 #include <rover_types.hpp>
 
-
 #include <compositing/absorption_partial.hpp>
 #include <compositing/emission_partial.hpp>
 #include <compositing/volume_partial.hpp>

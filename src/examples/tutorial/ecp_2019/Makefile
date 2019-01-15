@@ -71,38 +71,41 @@ include $(ASCENT_DIR)/share/ascent/ascent_config.mk
 .PHONY: default
 default: all
 
+INC_FLAGS = $(ASCENT_INCLUDE_FLAGS)
+LNK_FLAGS = $(ASCENT_LINK_RPATH) $(ASCENT_LIB_FLAGS)
+
 # ascent examples (1)
 ascent_example1:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) ascent_example1.cpp $(ASCENT_LIB_FLAGS) -o ascent_example1
+	$(CXX) $(INC_FLAGS) ascent_example1.cpp $(LNK_FLAGS) -o ascent_example1
 
 # conduit examples (1-5)
 conduit_examples: conduit_example1 conduit_example2 conduit_example3 conduit_example4 conduit_example5
 	echo "[done building conduit examples]"
 
 conduit_example1:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) conduit_example1.cpp $(ASCENT_LIB_FLAGS) -o conduit_example1
+	$(CXX) $(INC_FLAGS) conduit_example1.cpp $(LNK_FLAGS) -o conduit_example1
 
 conduit_example2:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) conduit_example2.cpp $(ASCENT_LIB_FLAGS) -o conduit_example2
+	$(CXX) $(INC_FLAGS) conduit_example2.cpp $(LNK_FLAGS) -o conduit_example2
 
 conduit_example3:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) conduit_example3.cpp $(ASCENT_LIB_FLAGS) -o conduit_example3
+	$(CXX) $(INC_FLAGS) conduit_example3.cpp $(LNK_FLAGS) -o conduit_example3
 
 conduit_example4:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) conduit_example4.cpp $(ASCENT_LIB_FLAGS) -o conduit_example4
+	$(CXX) $(INC_FLAGS) conduit_example4.cpp $(LNK_FLAGS) -o conduit_example4
 
 conduit_example5:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) conduit_example5.cpp $(ASCENT_LIB_FLAGS) -o conduit_example5
+	$(CXX) $(INC_FLAGS) conduit_example5.cpp $(LNK_FLAGS) -o conduit_example5
 
 # blueprint examples (1-2)
 blueprint_examples: blueprint_example1 blueprint_example2
-	echo "[done building blueprit examples]"
+	echo "[done building blueprint examples]"
 
 blueprint_example1:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) blueprint_example1.cpp $(ASCENT_LIB_FLAGS) -o blueprint_example1
+	$(CXX) $(INC_FLAGS) blueprint_example1.cpp $(LNK_FLAGS) -o blueprint_example1
 
 blueprint_example2:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) blueprint_example2.cpp $(ASCENT_LIB_FLAGS) -o blueprint_example2
+	$(CXX) $(INC_FLAGS) blueprint_example2.cpp $(LNK_FLAGS) -o blueprint_example2
 
 
 #ascent scene examples (1-4)
@@ -110,33 +113,43 @@ ascent_scene_examples: ascent_scene_example1 ascent_scene_example2 ascent_scene_
 	echo "[done building scene examples]"
 
 ascent_scene_example1:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) ascent_scene_example1.cpp $(ASCENT_LIB_FLAGS) -o ascent_scene_example1
+	$(CXX) $(INC_FLAGS) ascent_scene_example1.cpp $(LNK_FLAGS) -o ascent_scene_example1
 
 ascent_scene_example2:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) ascent_scene_example2.cpp $(ASCENT_LIB_FLAGS) -o ascent_scene_example2
+	$(CXX) $(INC_FLAGS) ascent_scene_example2.cpp $(LNK_FLAGS) -o ascent_scene_example2
 
 ascent_scene_example3:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) ascent_scene_example3.cpp $(ASCENT_LIB_FLAGS) -o ascent_scene_example3
+	$(CXX) $(INC_FLAGS) ascent_scene_example3.cpp $(LNK_FLAGS) -o ascent_scene_example3
 
 ascent_scene_example4:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) ascent_scene_example4.cpp $(ASCENT_LIB_FLAGS) -o ascent_scene_example4
+	$(CXX) $(INC_FLAGS) ascent_scene_example4.cpp $(LNK_FLAGS) -o ascent_scene_example4
 
 #ascent pipeline examples (1-3)
+ascent_pipeline_examples: ascent_pipeline_example1 ascent_pipeline_example2 ascent_pipeline_example3
+	echo "[done building pipeline examples]"
+
 ascent_pipeline_example1:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) ascent_pipeline_example1.cpp $(ASCENT_LIB_FLAGS) -o ascent_pipeline_example1
+	$(CXX) $(INC_FLAGS) ascent_pipeline_example1.cpp $(LNK_FLAGS) -o ascent_pipeline_example1
+
+ascent_pipeline_example2:
+	$(CXX) $(INC_FLAGS) ascent_pipeline_example2.cpp $(LNK_FLAGS) -o ascent_pipeline_example2
+
+ascent_pipeline_example3:
+	$(CXX) $(INC_FLAGS) ascent_pipeline_example3.cpp $(LNK_FLAGS) -o ascent_pipeline_example3
+
 
 #ascent extract examples (1-2)
 ascent_extract_examples: ascent_extract_example1 ascent_extract_example2
 	echo "[done building extract examples]"
 
 ascent_extract_example1:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) ascent_extract_example1.cpp $(ASCENT_LIB_FLAGS) -o ascent_extract_example1
+	$(CXX) $(INC_FLAGS) ascent_extract_example1.cpp $(LNK_FLAGS) -o ascent_extract_example1
 
 ascent_extract_example2:
-	$(CXX) $(ASCENT_INCLUDE_FLAGS) ascent_extract_example2.cpp $(ASCENT_LIB_FLAGS) -o ascent_extract_example2
+	$(CXX) $(INC_FLAGS) ascent_extract_example2.cpp $(LNK_FLAGS) -o ascent_extract_example2
 
 
-all:  ascent_example1 conduit_examples ascent_scene_examples ascent_extract_examples
+all:  ascent_example1 conduit_examples blueprint_examples ascent_scene_examples ascent_pipeline_examples ascent_extract_examples
 	echo "[done building all examples]"
 
 clean:
@@ -161,5 +174,4 @@ clean:
 	rm -f ascent_extract_example1
 	rm -f ascent_extract_example2
 
- 
 
