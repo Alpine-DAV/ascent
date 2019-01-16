@@ -44,25 +44,55 @@
 
 ###############################################################################
 #
-# Setup Conduit
+# Setup Ascent
 #
 ###############################################################################
 #
-#  Expects CONDUIT_DIR to point to a Conduit installations.
+#  Expects ASCENT_DIR to point to a Ascent installation.
 #
 # This file defines the following CMake variables:
-#  CONDUIT_FOUND - If Conduit was found
-#  CONDUIT_INCLUDE_DIRS - The Conduit include directories
+#  ASCENT_FOUND - If Ascent was found
+#  ASCENT_INCLUDE_DIRS - The Conduit include directories
 #
-#  If found, the conduit CMake targets will also be imported.
-#  The main conduit library targets are:
-#   conduit
-#   conduit_relay
-#   conduit_relay_mpi (if conduit was built with mpi support)
-#   conduit_blueprint
+#  If found, the ascent CMake targets will also be imported.
+#  The main ascent library targets are:
+#   ascent
+#   ascent_mpi (if ascent was built with mpi support)
 #
 ###############################################################################
 
+###############################################################################
+# Check for ASCENT_DIR
+###############################################################################
+if(NOT ASCENT_DIR)
+    MESSAGE(FATAL_ERROR "Could not find Ascent. Ascent requires explicit ASCENT_DIR.")
+endif()
+
+get_filename_component(ASCENT_DIR ${ASCENT_DIR} ABSOLUTE)
+
+if(NOT EXISTS ${ASCENT_DIR}/lib/cmake/ascent.cmake)
+    MESSAGE(FATAL_ERROR "Could not find Ascent CMake include file (${ASCENT_DIR}/lib/cmake/ascent.cmake)")
+endif()
+
+###############################################################################
+# Import Ascent's CMake targets
+###############################################################################
+include(${ASCENT_DIR}/lib/cmake/ascent-config.cmake)
+
+
+# If ZZZ_DIR not set, use known install path for Conduit, VTK-h and VTK-m
+# This will be picked up in by FindZZZ
+if(NOT CONDUIT_DIR)
+    set(CONDUIT_DIR ${ASCENT_CONDUIT_DIR})
+endif()
+
+if(NOT VTKH_DIR)
+    set(VTKH_DIR ${ASCENT_VTKH_DIR})
+endif()
+
+###############################################################################
+# Setup Conduit
+###############################################################################
 ###############################################################################
 # Check for CONDUIT_DIR
 ###############################################################################
@@ -80,13 +110,36 @@ endif()
 include(${CONDUIT_DIR}/lib/cmake/conduit.cmake)
 
 ###############################################################################
-# Set remaning CMake variables
+# Set remaining CMake variables
 ###############################################################################
-# we found Conduit
-set(CONDUIT_FOUND TRUE)
 # provide location of the headers in CONDUIT_INCLUDE_DIRS
 set(CONDUIT_INCLUDE_DIRS ${CONDUIT_DIR}/include/conduit)
 
+###############################################################################
+# Setup VTKH if VTKM_DIR is set
+###############################################################################
+if(VTKH_DIR)
+    if(NOT EXISTS ${VTKH_DIR}/lib/VTKhConfig.cmake)
+        MESSAGE(FATAL_ERROR "Could not find VTKh CMake include file (${VTKH_DIR}/lib/VTKhConfig.cmake)")
+    endif()
 
+    ###############################################################################
+    # Import vtk-h CMake targets
+    ###############################################################################
+    include(${VTKH_DIR}/lib/VTKhConfig.cmake)
+
+    ###############################################################################
+    # Set remaning CMake variables
+    ###############################################################################
+    # provide location of the headers in VTKH_INCLUDE_DIRS
+    set(VTKH_INCLUDE_DIRS ${VTKH_DIR}/include/)
+endif()
+
+
+###############################################################################
+# Set remaining CMake variables
+###############################################################################
+# we found Ascent
+set(ASCENT_FOUND TRUE)
 
 
