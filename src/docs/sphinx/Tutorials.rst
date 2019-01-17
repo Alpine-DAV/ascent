@@ -65,7 +65,7 @@ Hank Childs (University of Oregon); Matthew Larsen (Lawrence Livermore National 
 In situ visualization and analysis is an important capability for addressing slow I/O on modern supercomputers. With this 3-hour tutorial, we will spend the majority of our time (two hours) going into detail on Ascent, an in situ visualization and analysis library being developed by ECP ALPINE. Ascent is from the makers of ParaView Catalyst and VisIt LibSim, and it will soon be able to directly connect with both of those products. The tutorial will be practical in nature: how to integrate Ascent into a simulation code, Ascent’s data model, build and linking issues, and capabilities. The remaining hour will be spent highlighting other visualization efforts in ECP, such as in situ-specific visualization algorithms, VTK-m, and CINEMA. 
 
 **Slides:** 
-`2019_01_17_alpine_ecp_tutorial.pdf  <http://portal.nersc.gov/project/visit/docs/2019_01_17_alpine_ecp_tutorial.pdf>`_
+`http://portal.nersc.gov/project/alpine/docs/ecp_2019_ahm/  <http://portal.nersc.gov/project/alpine/docs/ecp_2019_ahm/>`_
 
 
 Tutorial Setup
