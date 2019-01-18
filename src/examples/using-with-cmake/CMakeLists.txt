@@ -51,10 +51,9 @@
 #  mkdir build
 #  cd build
 #  cmake \
-#   -DASCENT_DIR={ascent install path}  \
-#   -DCONDUIT_DIR={conduit install path}    \
-#   -DVTKM_DIR={vtkm install path}          \
-#   -DVTKH_DIR={vtkh install path}          \
+#   -DASCENT_DIR={ascent install path}   \
+#   -DCONDUIT_DIR={conduit install path} \
+#   -DVTKH_DIR={vtkh install path}          
 #   ../
 # make
 # ./ascent_render_example
@@ -78,10 +77,7 @@ if(NOT ASCENT_DIR)
     set(ASCENT_DIR "../../..")
 endif()
 
-include("FindAscent.cmake")
-include("FindConduit.cmake")
-include("FindVTKm.cmake")
-include("FindVTKh.cmake")
+include("SetupAscent.cmake")
 
 # setup the ascent & conduit include paths
 include_directories(${ASCENT_INCLUDE_DIRS})
