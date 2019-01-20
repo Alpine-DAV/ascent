@@ -92,5 +92,6 @@ typedef union YYSTYPE YYSTYPE;
 extern YYSTYPE yylval;
 
 int yyparse (void);
+ASTExpression* get_result();
 
 #endif /* !YY_YY_PARSER_HPP_INCLUDED  */

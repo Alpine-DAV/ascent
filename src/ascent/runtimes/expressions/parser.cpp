@@ -72,6 +72,7 @@
   extern int yylex();
   extern void scan_string(const char *);
   void yyerror(const char *s) { std::printf("Error: %s\n", s);std::exit(1); }
+  ASTExpression* get_result() {return expression;}
 
 #line 77 "parser.cpp" /* yacc.c:339  */
 
