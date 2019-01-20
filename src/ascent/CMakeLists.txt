@@ -86,6 +86,10 @@ set(ascent_sources
     ascent_runtime.cpp
     runtimes/ascent_main_runtime.cpp
     runtimes/ascent_empty_runtime.cpp
+    runtimes/ascent_expression_eval.cpp
+    runtimes/expressions/ast.cpp
+    runtimes/expressions/tokens.cpp
+    runtimes/expressions/parser.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
     runtimes/flow_filters/ascent_runtime_param_check.cpp
@@ -109,6 +113,10 @@ set(ascent_headers
     # runtimes
     ascent_runtime.hpp
     runtimes/ascent_empty_runtime.hpp
+    runtimes/ascent_expression_eval.hpp
+    runtimes/expressions/ast.hpp
+    runtimes/expressions/tokens.hpp
+    runtimes/expressions/parser.hpp
     # flow
     runtimes/ascent_main_runtime.hpp
     runtimes/ascent_flow_runtime.hpp
