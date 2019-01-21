@@ -75,34 +75,23 @@ std::string ASTIdentifier::build_graph(flow::Workspace &w)
 
 void ASTMethodCall::access()
 {
-  //Function *function = context.module->getFunction(id.name.c_str());
-  //if (function == NULL)
-  //{
-  //  std::cerr << "no such function " << id.name << endl;
-  //}
-  std::vector<void*> args;
-  ExpressionList::const_iterator it;
-  for (it = arguments.begin(); it != arguments.end(); it++)
+  const size_t size = arguments->size();
+  for(size_t i = 0; i < size; ++i)
   {
-    //args.push_back((**it).codeGen(context));
-    (**it).access();
+    (*arguments)[i]->access();
   }
-  //CallInst *call = CallInst::Create(function, makeArrayRef(args), "", context.currentBlock());
-  std::cout << "Creating method call: " << m_id.m_name << endl;
-  //return call;
+  std::cout << "Creating method call: " << m_id->m_name << endl;
 }
 
 std::string ASTMethodCall::build_graph(flow::Workspace &w)
 {
-  std::vector<void*> args;
-  ExpressionList::const_iterator it;
-  for (it = arguments.begin(); it != arguments.end(); it++)
+  const size_t size = arguments->size();
+  for(size_t i = 0; i < size; ++i)
   {
-    //args.push_back((**it).codeGen(context));
-    (**it).access();
+    (*arguments)[i]->access();
   }
 
-  std::cout << "Flow method call: " << m_id.m_name << endl;
+  std::cout << "Flow method call: " << m_id->m_name << endl;
   return "";
 }
 
@@ -127,9 +116,9 @@ void ASTBinaryOp::access()
 
   }
 
-  m_rhs.access();
+  m_rhs->access();
   std::cout<<" op "<<op_str<<"\n";
-  m_lhs.access();
+  m_lhs->access();
 
 }
 
@@ -155,9 +144,9 @@ std::string ASTBinaryOp::build_graph(flow::Workspace &w)
 
   }
 
-  std::string r_in = m_rhs.build_graph(w);
+  std::string r_in = m_rhs->build_graph(w);
   std::cout<<" flow op "<<op_str<<"\n";
-  std::string l_in  = m_lhs.build_graph(w);
+  std::string l_in  = m_lhs->build_graph(w);
 
   static int ast_op_counter = 0;
   // create a unique name for the filter
@@ -182,22 +171,10 @@ std::string ASTBinaryOp::build_graph(flow::Workspace &w)
 void ASTMeshVar::access()
 {
   std::cout << "Creating mesh var " << m_name << endl;
-//  if (context.locals().find(lhs.name) == context.locals().end())
-//  {
-//    std::cerr << "undeclared variable " << lhs.name << endl;
-//    return NULL;
-//  }
-//  return new StoreInst(rhs.codeGen(context), context.locals()[lhs.name], false, context.currentBlock());
 }
 
 std::string ASTMeshVar::build_graph(flow::Workspace &w)
 {
   std::cout << "Flow mesh var " << m_name << endl;
-//  if (context.locals().find(lhs.name) == context.locals().end())
-//  {
-//    std::cerr << "undeclared variable " << lhs.name << endl;
-//    return NULL;
-//  }
-//  return new StoreInst(rhs.codeGen(context), context.locals()[lhs.name], false, context.currentBlock());
   return "";
 }

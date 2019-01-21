@@ -1,3 +1,5 @@
+#ifndef ASCENT_RUNTIME_AST
+#define ASCENT_RUNTIME_AST
 #include <iostream>
 #include <vector>
 #include "flow_workspace.hpp"
@@ -51,22 +53,39 @@ public:
 
 class ASTMethodCall : public ASTExpression {
 public:
-  const ASTIdentifier& m_id;
-  ExpressionList arguments;
-  ASTMethodCall(const ASTIdentifier& id, ExpressionList& arguments) :
+  ASTIdentifier *m_id;
+  ExpressionList *arguments;
+  ASTMethodCall(ASTIdentifier *id, ExpressionList *arguments) :
     m_id(id), arguments(arguments) { }
-  ASTMethodCall(const ASTIdentifier& id) : m_id(id) { }
+  ASTMethodCall(ASTIdentifier *id) : m_id(id) { }
   virtual void access();
   virtual std::string build_graph(flow::Workspace &w);
+
+  virtual ~ASTMethodCall()
+  {
+    const size_t size = arguments->size();
+    for(size_t i = 0; i < size; ++i)
+    {
+      delete (*arguments)[i];
+    }
+    delete arguments;
+    delete m_id;
+  }
 };
 
 class ASTBinaryOp : public ASTExpression {
 public:
   int m_op;
-  ASTExpression& m_lhs;
-  ASTExpression& m_rhs;
-  ASTBinaryOp(ASTExpression& lhs, int op, ASTExpression& rhs) :
+  ASTExpression *m_lhs;
+  ASTExpression *m_rhs;
+  ASTBinaryOp(ASTExpression *lhs, int op, ASTExpression *rhs) :
     m_lhs(lhs), m_rhs(rhs), m_op(op) { }
   virtual void access();
   virtual std::string build_graph(flow::Workspace &w);
+  virtual ~ASTBinaryOp()
+  {
+    delete m_lhs;
+    delete m_rhs;
+  }
 };
+#endif

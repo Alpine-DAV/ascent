@@ -82,7 +82,6 @@ ExpressionEval::evaluate(const std::string expr)
   flow::Workspace::register_filter_type<expressions::BinaryOp>();
 
   scan_string(expr.c_str());
-  yyparse();
   ASTExpression *expression = get_result();
 
   std::cout<<"Expresion "<<expression<<"\n";
@@ -104,6 +103,7 @@ ExpressionEval::evaluate(const std::string expr)
   }
 
   conduit::Node res;
+  delete expression;
   return res;
 }
 

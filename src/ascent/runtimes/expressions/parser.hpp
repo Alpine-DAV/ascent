@@ -61,7 +61,8 @@ extern int yydebug;
     TPLUS = 271,
     TMINUS = 272,
     TMUL = 273,
-    TDIV = 274
+    TDIV = 274,
+    TNEG = 275
   };
 #endif
 
@@ -70,7 +71,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 13 "parser.y" /* yacc.c:1909  */
+#line 12 "parser.y" /* yacc.c:1909  */
 
  ASTNode                     *node;
  ASTExpression               *expr;
@@ -80,7 +81,7 @@ union YYSTYPE
  std::string                 *string;
  int token;
 
-#line 84 "parser.hpp" /* yacc.c:1909  */
+#line 85 "parser.hpp" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -92,6 +93,6 @@ typedef union YYSTYPE YYSTYPE;
 extern YYSTYPE yylval;
 
 int yyparse (void);
-ASTExpression* get_result();
+ASTExpression *get_result();
 
 #endif /* !YY_YY_PARSER_HPP_INCLUDED  */

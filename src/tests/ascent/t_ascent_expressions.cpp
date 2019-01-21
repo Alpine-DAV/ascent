@@ -97,7 +97,7 @@ TEST(ascent_clip, test_clip_sphere)
                                               data);
 
     runtime::ExpressionEval eval(&data);
-    std::string expr = "3<=3.1";
+    std::string expr = "-3.1e2 + 1";
     conduit::Node res = eval.evaluate(expr);
 }
 
