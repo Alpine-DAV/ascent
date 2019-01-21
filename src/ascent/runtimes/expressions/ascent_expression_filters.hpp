@@ -45,16 +45,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_expression_eval.hpp
+/// file: ascent_expression_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_expression_eval.hpp"
-#include "flow_workspace.hpp"
-#include "expressions/ascent_expression_filters.hpp"
-#include "expressions/ast.hpp"
-#include "expressions/parser.hpp"
-#include "expressions/tokens.hpp"
+#ifndef ASCENT_EXPRESSION_FILTERS
+#define ASCENT_EXPRESSION_FILTERS
+
+#include <ascent.hpp>
+
+#include <flow_filter.hpp>
+
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -67,45 +68,61 @@ namespace ascent
 //-----------------------------------------------------------------------------
 namespace runtime
 {
-extern ASTExpression *expression;
-ExpressionEval::ExpressionEval(conduit::Node *data)
-  : m_data(data)
+
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::expressions--
+//-----------------------------------------------------------------------------
+namespace expressions
 {
 
-}
+//-----------------------------------------------------------------------------
+///
+/// Filters for expressions
+///
+//-----------------------------------------------------------------------------
 
-conduit::Node
-ExpressionEval::evaluate(const std::string expr)
+//-----------------------------------------------------------------------------
+class Integer : public ::flow::Filter
 {
-  flow::Workspace::register_filter_type<expressions::Double>();
-  flow::Workspace::register_filter_type<expressions::Integer>();
-  flow::Workspace::register_filter_type<expressions::BinaryOp>();
+public:
+    Integer();
+   ~Integer();
 
-  scan_string(expr.c_str());
-  yyparse();
-  ASTExpression *expression = get_result();
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
 
-  std::cout<<"Expresion "<<expression<<"\n";
-  expression->access();
-  flow::Workspace w;
-  std::string root = expression->build_graph(w);
-  std::cout<<w.graph().to_dot()<<"\n";
-  w.execute();
-  std::cout<<"root filter "<<root<<"\n";
-  conduit::Node *n_res = w.registry().fetch<conduit::Node>(root);
+class Double : public ::flow::Filter
+{
+public:
+    Double();
+   ~Double();
 
-  if(n_res->dtype().is_floating_point())
-  {
-    std::cout<<"Result "<<n_res->as_float64()<<"\n";
-  }
-  else
-  {
-    std::cout<<"Result "<<n_res->as_int32()<<"\n";
-  }
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
 
-  conduit::Node res;
-  return res;
-}
+class BinaryOp : public ::flow::Filter
+{
+public:
+    BinaryOp();
+   ~BinaryOp();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime::expressions--
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 };
@@ -117,4 +134,10 @@ ExpressionEval::evaluate(const std::string expr)
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
+//-----------------------------------------------------------------------------
+
+
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
 //-----------------------------------------------------------------------------
