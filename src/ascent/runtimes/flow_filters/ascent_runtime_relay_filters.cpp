@@ -538,6 +538,17 @@ void mesh_blueprint_save(const Node &data,
                                         global_domains,
                                         bp_idx["mesh"]);
 
+        // work around conduit and manually add state fields
+        if(multi_dom.child(0).has_path("state/cycle"))
+        {
+          bp_idx["mesh/state/cycle"] = multi_dom.child(0)["state/cycle"].to_int32();
+        }
+
+        if(multi_dom.child(0).has_path("state/time"))
+        {
+          bp_idx["mesh/state/time"] = multi_dom.child(0)["state/time"].to_double();
+        }
+
         root["protocol/name"]    =  file_protocol;
         root["protocol/version"] = "0.4.0";
 
@@ -547,6 +558,7 @@ void mesh_blueprint_save(const Node &data,
         // TODO: make sure this is relative
         root["file_pattern"]     = output_file_pattern;
         root["tree_pattern"]     = "/";
+
         relay::io::save(root,root_file,file_protocol);
     }
 }
