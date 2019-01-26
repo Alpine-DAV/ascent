@@ -243,28 +243,27 @@ Compositor<PartialType>::~Compositor()
 
 template<typename PartialType>
 void
-Compositor<PartialType>::extract(std::vector<PartialImage<typename PartialType::ValueType>> &partial_images,
-                          std::vector<PartialType> &partials,
-                          int &global_min_pixel,
-                          int &global_max_pixel)
+Compositor<PartialType>::merge(const std::vector<std::vector<PartialType>> &in_partials,
+                               std::vector<PartialType> &partials,
+                               int &global_min_pixel,
+                               int &global_max_pixel)
 {
   vtkmTimer tot_timer;
   vtkmTimer timer;
   double time = 0;
-  ROVER_DATA_OPEN("compositing_extract");
+  ROVER_DATA_OPEN("compositing_merge");
 
   int total_partial_comps = 0;
-  const int num_partial_images = static_cast<int>(partial_images.size());
+  const int num_partial_images = static_cast<int>(in_partials.size());
   int *offsets = new int[num_partial_images];
   int *pixel_mins =  new int[num_partial_images];
   int *pixel_maxs =  new int[num_partial_images];
 
   for(int i = 0; i < num_partial_images; ++i)
   {
-    //assert(partial_images[i].m_buffer.GetNumChannels() == 4);
     offsets[i] = total_partial_comps;
-    total_partial_comps += partial_images[i].m_buffer.GetSize();
-    ROVER_INFO("Domain : image  "<<i<<" with "<<partial_images[i].m_buffer.GetSize());
+    total_partial_comps += in_partials[i].size();
+    ROVER_INFO("Domain : image  "<<i<<" with "<<in_partials[i].size());
   }
 
   ROVER_INFO("Total number of partial composites "<<total_partial_comps);
@@ -273,77 +272,54 @@ Compositor<PartialType>::extract(std::vector<PartialImage<typename PartialType::
 
   timer.Reset();
 
+#ifdef ROVER_ENABLE_OPENMP
+  #pragma omp parallel for
+#endif
   for(int i = 0; i < num_partial_images; ++i)
   {
     //
     //  Extract the partial composites into a contiguous array
     //
+    std::copy(in_partials[i].begin(), in_partials[i].end(), partials.begin() + offsets[i]);
+  }// for each partial image
 
-    vtkmTimer timer1;
-    const int image_size = partial_images[i].m_buffer.GetSize();
-#ifdef ROVER_ENABLE_OPENMP
-    #pragma omp parallel for
-#endif
-    for(int j = 0; j < image_size; ++j)
-    {
-      int index = offsets[i] + j;
-      partials[index].load_from_partial(partial_images[i], j);
-    }
-    ROVER_DATA_ADD("load from partials",timer1.GetElapsedTime());
-    timer1.Reset();
-    //
-    // Calculate the range of pixel ids each domain has
-    //
-    auto id_portal = partial_images[i].m_pixel_ids.GetPortalConstControl();
-    int max_pixel = std::numeric_limits<int>::min();
+  //
+  // Calculate the range of pixel ids
+  //
+  int max_pixel = std::numeric_limits<int>::min();
 #ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for reduction(max:max_pixel)
 #endif
-    for(int j = 0; j < image_size; ++j)
+  for(int i = 0; i < total_partial_comps; ++i)
+  {
+    int val = partials[i].m_pixel_id;
+    if(val > max_pixel)
     {
-      int val = static_cast<int>(id_portal.Get(j));
-      if(val > max_pixel)
-      {
-        max_pixel = val;
-      }
+      max_pixel = val;
     }
-    ROVER_DATA_ADD("max_pixel",timer1.GetElapsedTime());
-    timer1.Reset();
+  }
 
-    int min_pixel = std::numeric_limits<int>::max();
+   int min_pixel = std::numeric_limits<int>::max();
 #ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for reduction(min:min_pixel)
 #endif
-    for(int j = 0; j < image_size; ++j)
+  for(int i = 0; i < total_partial_comps; ++i)
+  {
+    int val = partials[i].m_pixel_id;
+    if(val < min_pixel)
     {
-
-      int val = static_cast<int>(id_portal.Get(j));
-      if(val < min_pixel)
-      {
-        min_pixel = val;
-      }
-
-      assert(min_pixel > -1);
-      pixel_mins[i] = min_pixel;
-      pixel_maxs[i] = max_pixel;
+      min_pixel = val;
     }
+  }
 
-    ROVER_DATA_ADD("min_pixel",timer1.GetElapsedTime());
-    timer1.Reset();
-  }// for each partial image
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("merge_partials",time);
   timer.Reset();
   //
   // determine the global pixel mins and maxs
   //
-  global_min_pixel = std::numeric_limits<int>::max();
-  global_max_pixel = std::numeric_limits<int>::min();
-  for(int i = 0; i < num_partial_images; ++i)
-  {
-    global_min_pixel = std::min(global_min_pixel, pixel_mins[i]);
-    global_max_pixel = std::max(global_max_pixel, pixel_maxs[i]);
-  }
+  global_min_pixel = min_pixel;
+  global_max_pixel = max_pixel;
 
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("local_pixels",time);
@@ -542,8 +518,9 @@ Compositor<PartialType>::composite_partials(std::vector<PartialType> &partials,
 //--------------------------------------------------------------------------------------------
 
 template<typename PartialType>
-PartialImage<typename PartialType::ValueType>
-Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType::ValueType>> &partial_images)
+void
+Compositor<PartialType>::composite(std::vector<std::vector<PartialType>> &partial_images,
+                                   std::vector<PartialType> &output_partials)
 {
   ROVER_INFO("Compsositor start");
   int global_partial_images = partial_images.size();
@@ -566,9 +543,9 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   int global_max_pixel;
 
   ROVER_INFO("Extracing");
-  extract(partial_images, partials, global_min_pixel, global_max_pixel);
+  merge(partial_images, partials, global_min_pixel, global_max_pixel);
   time = timer.GetElapsedTime();
-  ROVER_DATA_ADD("extract", time);
+  ROVER_DATA_ADD("merge", time);
   timer.Reset();
 
 #ifdef ROVER_PARALLEL
@@ -596,7 +573,6 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   //
   //assert(total_partial_comps > 1);
 
-  std::vector<PartialType> output_partials;
   composite_partials(partials, output_partials);
 
   time = timer.GetElapsedTime();
@@ -616,49 +592,28 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   //
   // pack the output back into a channel buffer
   //
-  const int num_channels = partial_images[0].m_buffer.GetNumChannels();
-  PartialImage<typename PartialType::ValueType> output;
-  output.m_width = partial_images[0].m_width;
-  output.m_height= partial_images[0].m_height;
+  //const int num_channels = partial_images[0].m_buffer.GetNumChannels();
+  //PartialImage<typename PartialType::ValueType> output;
+  //output.m_width = partial_images[0].m_width;
+  //output.m_height= partial_images[0].m_height;
 #ifdef ROVER_PARALLEL
   int rank;
   MPI_Comm_rank(m_comm_handle, &rank);
   if(rank != 0)
   {
     ROVER_INFO("Bailing out of compositing");
-    return output;
   }
 #endif
-  const int out_size = output_partials.size();
-  //TODO make parital image init/allocate method
-  ROVER_INFO("Allocating out buffers size "<<out_size);
-  output.m_pixel_ids.Allocate(out_size);
-  output.m_distances.Allocate(out_size);
-  output.m_buffer.SetNumChannels(num_channels);
-  output.m_buffer.Resize(out_size);
-
-  output.m_intensities.SetNumChannels(num_channels);
-  output.m_intensities.Resize(out_size);
-
-#ifdef ROVER_ENABLE_OPENMP
-  #pragma omp parallel for
-#endif
-  for(int i = 0; i < out_size; ++i)
-  {
-    output_partials[i].store_into_partial(output, i, m_background_values);
-  }
-
-  ROVER_INFO("Compositing results in "<<out_size);
 
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("pack_partial", time);
 
   time = tot_timer.GetElapsedTime();
   ROVER_DATA_CLOSE(time);
-  output.m_source_sig = m_background_values;
-  output.m_width = partial_images[0].m_width;
-  output.m_height = partial_images[0].m_height;
-  return output;
+  //output.m_source_sig = m_background_values;
+  //output.m_width = partial_images[0].m_width;
+  //output.m_height = partial_images[0].m_height;
+  //return output;
 }
 
 template<typename PartialType>

@@ -44,10 +44,10 @@
 
 #include <vector>
 
-//#include <vtkm/cont/ArrayHandle.h>
-//#include <compositing/absorption_partial.hpp>
-//#include <compositing/emission_partial.hpp>
-//#include <compositing/volume_partial.hpp>
+#include <vtkm/cont/ArrayHandle.h>
+#include <compositing/absorption_partial.hpp>
+#include <compositing/emission_partial.hpp>
+#include <compositing/volume_partial.hpp>
 
 namespace rover
 {
@@ -66,7 +66,206 @@ struct PartialImage
 
   void allocate(const vtkm::Id &size, const vtkm::Id &channels)
   {
+    m_pixel_ids.Allocate(size);
+    m_distances.Allocate(size);
+    m_buffer.SetNumChannels(channels);
+    m_buffer.Resize(size);
 
+    m_intensities.SetNumChannels(channels);
+    m_intensities.Resize(size);
+  }
+
+  void extract_partials(std::vector<VolumePartial<FloatType>> &partials)
+  {
+    auto id_portal = m_pixel_ids.GetPortalConstControl();
+    auto buffer_portal = m_buffer.Buffer.GetPortalConstControl();
+    auto depth_portal = m_distances.GetPortalConstControl();
+    const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
+    partials.resize(size);
+
+#ifdef ROVER_ENABLE_OPENMP
+    #pragma omp parallel for
+#endif
+    for(int i = 0; i < size; ++i)
+    {
+      partials[i].m_pixel_id = static_cast<int>(id_portal.Get(i));
+      partials[i].m_depth = static_cast<float>(depth_portal.Get(i));
+
+      partials[i].m_pixel[0] = static_cast<float>(buffer_portal.Get(i*4+0));
+      partials[i].m_pixel[1] = static_cast<float>(buffer_portal.Get(i*4+1));
+      partials[i].m_pixel[2] = static_cast<float>(buffer_portal.Get(i*4+2));
+
+      partials[i].m_alpha = static_cast<float>(buffer_portal.Get(i*4+3));
+    }
+  }
+
+  void extract_partials(std::vector<AbsorptionPartial<FloatType>> &partials)
+  {
+    const int num_bins = m_buffer.GetNumChannels();
+    auto id_portal = m_pixel_ids.GetPortalConstControl();
+    auto buffer_portal = m_buffer.Buffer.GetPortalConstControl();
+    auto depth_portal = m_distances.GetPortalConstControl();
+    const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
+    partials.resize(size);
+
+#ifdef ROVER_ENABLE_OPENMP
+    #pragma omp parallel for
+#endif
+    for(int index = 0; index < size; ++index)
+    {
+      partials[index].m_pixel_id = static_cast<int>(id_portal.Get(index));
+      partials[index].m_depth = depth_portal.Get(index);
+      partials[index].m_bins.resize(num_bins);
+
+      const int starting_index = index * num_bins;
+      for(int i = 0; i < num_bins; ++i)
+      {
+        partials[index].m_bins[i] = buffer_portal.Get(starting_index + i);
+      }
+    }
+  }
+
+  void extract_partials(std::vector<EmissionPartial<FloatType>> &partials)
+  {
+    const int num_bins = m_buffer.GetNumChannels();
+    auto id_portal = m_pixel_ids.GetPortalConstControl();
+    auto buffer_portal = m_buffer.Buffer.GetPortalConstControl();
+    auto intensity_portal = m_intensities.Buffer.GetPortalConstControl();
+
+    auto depth_portal = m_distances.GetPortalConstControl();
+    const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
+    partials.resize(size);
+
+#ifdef ROVER_ENABLE_OPENMP
+    #pragma omp parallel for
+#endif
+    for(int index = 0; index < size; ++index)
+    {
+      partials[index].m_pixel_id = static_cast<int>(id_portal.Get(index));
+      partials[index].m_depth = depth_portal.Get(index);
+      partials[index].m_bins.resize(num_bins);
+      partials[index].m_emission_bins.resize(num_bins);
+
+      const int starting_index = index * num_bins;
+      for(int i = 0; i < num_bins; ++i)
+      {
+        partials[index].m_bins[i] = buffer_portal.Get(starting_index + i);
+        partials[index].m_emission_bins[i] = intensity_portal.Get(starting_index + i);
+      }
+    }
+  }
+
+  void store(std::vector<VolumePartial<FloatType>> &partials,
+             const std::vector<double> &background,
+             const int width,
+             const int height)
+  {
+    m_width = width;
+    m_height = height;
+    const int size = static_cast<int>(partials.size());
+    allocate(size,4);
+
+    auto id_portal = m_pixel_ids.GetPortalControl();
+    auto buffer_portal = m_buffer.Buffer.GetPortalControl();
+    auto depth_portal = m_distances.GetPortalControl();
+    auto intensity_portal = m_intensities.Buffer.GetPortalControl();
+
+    VolumePartial<FloatType> bg_color;
+    bg_color.m_pixel[0] = static_cast<FloatType>(background[0]);
+    bg_color.m_pixel[1] = static_cast<FloatType>(background[1]);
+    bg_color.m_pixel[2] = static_cast<FloatType>(background[2]);
+    bg_color.m_alpha    = static_cast<FloatType>(background[3]);
+
+#ifdef ROVER_ENABLE_OPENMP
+    #pragma omp parallel for
+#endif
+    for(int i = 0; i < size; ++i)
+    {
+      id_portal.Set(i, partials[i].m_pixel_id );
+      depth_portal.Set(i, partials[i].m_depth );
+      const int starting_index = i * 4;
+
+      buffer_portal.Set(starting_index + 0, static_cast<FloatType>(partials[i].m_pixel[0]));
+      buffer_portal.Set(starting_index + 1, static_cast<FloatType>(partials[i].m_pixel[1]));
+      buffer_portal.Set(starting_index + 2, static_cast<FloatType>(partials[i].m_pixel[2]));
+      buffer_portal.Set(starting_index + 4, static_cast<FloatType>(partials[i].m_alpha));
+
+      partials[i].blend(bg_color);
+
+      intensity_portal.Set(starting_index + 0, static_cast<FloatType>(partials[i].m_pixel[0]));
+      intensity_portal.Set(starting_index + 1, static_cast<FloatType>(partials[i].m_pixel[1]));
+      intensity_portal.Set(starting_index + 2, static_cast<FloatType>(partials[i].m_pixel[2]));
+      intensity_portal.Set(starting_index + 4, static_cast<FloatType>(partials[i].m_alpha));
+    }
+
+  }
+
+  void store(std::vector<AbsorptionPartial<FloatType>> &partials,
+             const std::vector<double> &background,
+             const int width,
+             const int height)
+  {
+    m_width = width;
+    m_height = height;
+    const int size = static_cast<int>(partials.size());
+    const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
+    allocate(size,4);
+
+    auto id_portal = m_pixel_ids.GetPortalControl();
+    auto buffer_portal = m_buffer.Buffer.GetPortalControl();
+    auto depth_portal = m_distances.GetPortalControl();
+    auto intensity_portal = m_intensities.Buffer.GetPortalControl();
+
+#ifdef ROVER_ENABLE_OPENMP
+    #pragma omp parallel for
+#endif
+    for(int i = 0; i < size; ++i)
+    {
+      id_portal.Set(i, partials[i].m_pixel_id );
+      depth_portal.Set(i, partials[i].m_depth );
+      const int starting_index = i * num_bins;
+
+      for(int ii = 0; ii < num_bins; ++ii)
+      {
+        buffer_portal.Set(starting_index + ii, partials[i].m_bins[ii]);
+        intensity_portal.Set( starting_index + ii, partials[i].m_bins[ii] * background[ii]);
+      }
+    }
+  }
+
+  void store(std::vector<EmissionPartial<FloatType>> &partials,
+             const std::vector<double> &background,
+             const int width,
+             const int height)
+  {
+    m_width = width;
+    m_height = height;
+    const int size = static_cast<int>(partials.size());
+    const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
+    allocate(size,4);
+
+    auto id_portal = m_pixel_ids.GetPortalControl();
+    auto buffer_portal = m_buffer.Buffer.GetPortalControl();
+    auto depth_portal = m_distances.GetPortalControl();
+    auto intensity_portal = m_intensities.Buffer.GetPortalControl();
+
+#ifdef ROVER_ENABLE_OPENMP
+    #pragma omp parallel for
+#endif
+    for(int i = 0; i < size; ++i)
+    {
+      id_portal.Set(i, partials[i].m_pixel_id );
+      depth_portal.Set(i, partials[i].m_depth );
+      const int starting_index = i * num_bins;
+
+      for(int ii = 0; ii < num_bins; ++ii)
+      {
+        buffer_portal.Set(starting_index + ii, partials[i].m_bins[ii]);
+        FloatType out_intensity;
+        out_intensity = partials[i].m_emission_bins[ii] +  partials[i].m_bins[ii] * background[ii];
+        intensity_portal.Set( starting_index + ii, out_intensity);
+      }
+    }
   }
 
   void add_source_sig()

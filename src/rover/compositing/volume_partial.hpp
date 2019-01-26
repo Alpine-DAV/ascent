@@ -42,7 +42,6 @@
 #ifndef rover_volume_block_h
 #define rover_volume_block_h
 
-#include <partial_image.hpp>
 #include <limits>
 namespace rover {
 
@@ -93,45 +92,6 @@ struct VolumePartial
     m_pixel[2] +=  opacity * other.m_pixel[2];
     m_alpha += opacity * other.m_alpha;
     m_alpha = m_alpha > 1.f ? 1.f : m_alpha;
-  }
-
-  inline void load_from_partial(const PartialImage<ValueType> &partial_image, const int &index)
-  {
-
-    m_pixel_id = static_cast<int>(partial_image.m_pixel_ids.GetPortalConstControl().Get(index));
-    m_depth = static_cast<float>(partial_image.m_distances.GetPortalConstControl().Get(index));
-
-    m_pixel[0] = static_cast<float>(partial_image.m_buffer.Buffer.GetPortalConstControl().Get(index*4+0));
-    m_pixel[1] = static_cast<float>(partial_image.m_buffer.Buffer.GetPortalConstControl().Get(index*4+1));
-    m_pixel[2] = static_cast<float>(partial_image.m_buffer.Buffer.GetPortalConstControl().Get(index*4+2));
-
-    m_alpha = static_cast<float>(partial_image.m_buffer.Buffer.GetPortalConstControl().Get(index*4+3));
-  }
-
-  inline void store_into_partial(PartialImage<FloatType> &output,
-                                 const int &index,
-                                 const std::vector<FloatType> &background)
-  {
-    output.m_pixel_ids.GetPortalControl().Set(index, m_pixel_id );
-    output.m_distances.GetPortalControl().Set(index, m_depth );
-    const int starting_index = index * 4;
-    output.m_buffer.Buffer.GetPortalControl().Set(starting_index + 0, static_cast<FloatType>(m_pixel[0]));
-    output.m_buffer.Buffer.GetPortalControl().Set(starting_index + 1, static_cast<FloatType>(m_pixel[1]));
-    output.m_buffer.Buffer.GetPortalControl().Set(starting_index + 2, static_cast<FloatType>(m_pixel[2]));
-    output.m_buffer.Buffer.GetPortalControl().Set(starting_index + 3, static_cast<FloatType>(m_alpha));
-
-    VolumePartial bg_color;
-    bg_color.m_pixel[0] = static_cast<float>(background[0]);
-    bg_color.m_pixel[1] = static_cast<float>(background[1]);
-    bg_color.m_pixel[2] = static_cast<float>(background[2]);
-    bg_color.m_alpha    = static_cast<float>(background[3]);
-
-    this->blend(bg_color);
-
-    output.m_intensities.Buffer.GetPortalControl().Set(starting_index + 0, static_cast<FloatType>(m_pixel[0]));
-    output.m_intensities.Buffer.GetPortalControl().Set(starting_index + 1, static_cast<FloatType>(m_pixel[1]));
-    output.m_intensities.Buffer.GetPortalControl().Set(starting_index + 2, static_cast<FloatType>(m_pixel[2]));
-    output.m_intensities.Buffer.GetPortalControl().Set(starting_index + 3, static_cast<FloatType>(m_alpha));
   }
 
   static void composite_background(std::vector<VolumePartial> &partials,

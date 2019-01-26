@@ -260,7 +260,20 @@ void Scheduler<FloatType>::composite()
 #ifdef ROVER_PARALLEL
     compositor.set_comm_handle(m_comm_handle);
 #endif
-    m_result = compositor.composite(m_partial_images);
+    const int num_partials = m_partial_images.size();
+    int width = m_partial_images[0].m_width;
+    int height = m_partial_images[0].m_height;
+    std::vector<std::vector<VolumePartial<FloatType>>> partials;
+    partials.resize(num_partials);
+    for(int i = 0; i < num_partials; ++i)
+    {
+      m_partial_images[i].extract_partials(partials[i]);
+    }
+    std::vector<VolumePartial<FloatType>> result;
+    compositor.composite(partials, result);
+    PartialImage<FloatType> p_result;
+    p_result.store(result,m_background, width, height);
+    m_result = p_result;
   }
   else
   {
@@ -271,7 +284,20 @@ void Scheduler<FloatType>::composite()
 #ifdef ROVER_PARALLEL
       compositor.set_comm_handle(m_comm_handle);
 #endif
-      m_result = compositor.composite(m_partial_images);
+      const int num_partials = m_partial_images.size();
+      int width = m_partial_images[0].m_width;
+      int height = m_partial_images[0].m_height;
+      std::vector<std::vector<EmissionPartial<FloatType>>> partials;
+      partials.resize(num_partials);
+      for(int i = 0; i < num_partials; ++i)
+      {
+        m_partial_images[i].extract_partials(partials[i]);
+      }
+      std::vector<EmissionPartial<FloatType>> result;
+      compositor.composite(partials, result);
+      PartialImage<FloatType> p_result;
+      p_result.store(result,m_background, width, height);
+      m_result = p_result;
     }
     else
     {
@@ -280,7 +306,20 @@ void Scheduler<FloatType>::composite()
 #ifdef ROVER_PARALLEL
         compositor.set_comm_handle(m_comm_handle);
 #endif
-      m_result = compositor.composite(m_partial_images);
+      const int num_partials = m_partial_images.size();
+      int width = m_partial_images[0].m_width;
+      int height = m_partial_images[0].m_height;
+      std::vector<std::vector<AbsorptionPartial<FloatType>>> partials;
+      partials.resize(num_partials);
+      for(int i = 0; i < num_partials; ++i)
+      {
+        m_partial_images[i].extract_partials(partials[i]);
+      }
+      std::vector<AbsorptionPartial<FloatType>> result;
+      compositor.composite(partials, result);
+      PartialImage<FloatType> p_result;
+      p_result.store(result,m_background, width, height);
+      m_result = p_result;
     }
   }
   ROVER_INFO("Schedule: compositing complete");

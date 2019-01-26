@@ -59,18 +59,19 @@ class Compositor
 public:
   Compositor();
   ~Compositor();
-  PartialImage<typename PartialType::ValueType>
-  composite(std::vector<PartialImage<typename PartialType::ValueType>> &partial_images);
+  void
+  composite(std::vector<std::vector<PartialType>> &partial_images,
+            std::vector<PartialType> &output_partials);
   void set_background(std::vector<vtkm::Float32> &background_values);
   void set_background(std::vector<vtkm::Float64> &background_values);
 #ifdef ROVER_PARALLEL
   void set_comm_handle(MPI_Comm comm_hanlde);
 #endif
 protected:
-  void extract(std::vector<PartialImage<typename PartialType::ValueType>> &partial_images,
-               std::vector<PartialType> &partials,
-               int &global_min_pixel,
-               int &global_max_pixel);
+  void merge(const std::vector<std::vector<PartialType>> &in_partials,
+             std::vector<PartialType> &partials,
+             int &global_min_pixel,
+             int &global_max_pixel);
 
   void composite_partials(std::vector<PartialType> &partials,
                           std::vector<PartialType> &output_partials);
