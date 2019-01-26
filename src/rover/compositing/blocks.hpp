@@ -205,44 +205,6 @@ struct Serialization<rover::EmissionPartial<float>>
   }
 };
 
-//template<>
-//struct Serialization<rover::VolumePartial<double>>
-//{
-//
-//  static void save(BinaryBuffer& bb, const rover::VolumePartial<double> &partial)
-//  {
-//    diy::save(bb, partial.m_bins);
-//    diy::save(bb, partial.m_pixel_id);
-//    diy::save(bb, partial.m_depth);
-//  }
-//
-//  static void load(BinaryBuffer& bb, rover::VolumePartial<double> &partial)
-//  {
-//    diy::load(bb, partial.m_bins);
-//    diy::load(bb, partial.m_pixel_id);
-//    diy::load(bb, partial.m_depth);
-//  }
-//};
-//
-//template<>
-//struct Serialization<rover::VolumePartial<float>>
-//{
-//
-//  static void save(BinaryBuffer& bb, const rover::VolumePartial<float> &partial)
-//  {
-//    diy::save(bb, partial.m_bins);
-//    diy::save(bb, partial.m_pixel_id);
-//    diy::save(bb, partial.m_depth);
-//  }
-//
-//  static void load(BinaryBuffer& bb, rover::VolumePartial<float> &partial)
-//  {
-//    diy::load(bb, partial.m_bins);
-//    diy::load(bb, partial.m_pixel_id);
-//    diy::load(bb, partial.m_depth);
-//  }
-//};
-
 } // namespace diy
 
 #endif
