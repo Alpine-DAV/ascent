@@ -42,7 +42,7 @@
 #ifndef rover_volume_block_h
 #define rover_volume_block_h
 
-#include <rover_types.hpp>
+#include <partial_image.hpp>
 #include <limits>
 namespace rover {
 

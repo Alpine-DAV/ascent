@@ -47,6 +47,7 @@ set(rover_thirdparty_deps vtkh_lodepng vtkm vtkh)
 set(rover_headers
     domain.hpp
     image.hpp
+    partial_image.hpp
     rover_exports.h
     rover_exceptions.hpp
     rover_types.hpp

@@ -243,7 +243,6 @@ void Scheduler<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatTyp
   partial_image.m_distances = partial.Distances;
   partial_image.m_buffer = partial.Buffer;
   partial_image.m_intensities = partial.Intensities;
-  partial_image.m_path_lengths = partial.PathLengths;
 
   partial_image.m_width = width;
   partial_image.m_height = height;
@@ -359,14 +358,6 @@ Scheduler<FloatType>::trace_rays()
 
     ROVER_INFO("Generated "<<rays.NumRays<<" rays");
     m_domains[i].init_rays(rays);
-    //
-    // add path lengths if they were requested
-    //
-    if(m_render_settings.m_path_lengths)
-    {
-      rays.AddBuffer(1, "path_lengths");
-      rays.GetBuffer("path_lengths").InitConst(0);
-    }
     time = timer.GetElapsedTime();
     ROVER_DATA_ADD("domain_init_rays", time);
 
@@ -508,18 +499,6 @@ void Scheduler<FloatType>::save_result(std::string file_name)
 
     encoder.Encode(buffer, width, height);
     encoder.Save(file_name + ".png");
-  }
-
-  if(m_render_settings.m_path_lengths)
-  {
-     std::stringstream sstream;
-     sstream<<file_name<<"_paths"<<".png";
-     m_result.normalize_paths();
-     FloatType * buffer
-       = get_vtkm_ptr(m_result.get_path_lengths());
-
-     encoder.EncodeChannel(buffer, width, height);
-     encoder.Save(sstream.str());
   }
 
 }

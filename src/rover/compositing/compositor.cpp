@@ -551,13 +551,6 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
   int local_partials = global_partial_images;
   MPI_Allreduce(&local_partials, &global_partial_images, 1, MPI_INT, MPI_SUM, m_comm_handle);
 #endif
-  // there should always be at least one ray cast,
-  // so this should be a safe check
-  bool has_path_lengths = false;
-  if(partial_images.size() > 0)
-  {
-    has_path_lengths = partial_images[0].m_path_lengths.GetNumberOfValues() != 0;
-  }
 
 #ifdef ROVER_PARALLEL
   // we could have no data, but it could exist elsewhere
@@ -646,12 +639,6 @@ Compositor<PartialType>::composite(std::vector<PartialImage<typename PartialType
 
   output.m_intensities.SetNumChannels(num_channels);
   output.m_intensities.Resize(out_size);
-
-  if(has_path_lengths)
-  {
-    ROVER_INFO("Allocating path lengths "<<out_size);
-    output.m_path_lengths.Allocate(out_size);
-  }
 
 #ifdef ROVER_ENABLE_OPENMP
   #pragma omp parallel for
