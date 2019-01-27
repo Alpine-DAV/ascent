@@ -42,7 +42,7 @@
 
 #include <assert.h>
 #include <fstream>
-#include <compositing/compositor.hpp>
+#include <vtkh/rendering/PartialCompositor.hpp>
 #include <scheduler.hpp>
 #include <utils/png_encoder.hpp>
 #include <utils/rover_logging.hpp>
@@ -255,7 +255,7 @@ void Scheduler<FloatType>::composite()
 {
   if(m_render_settings.m_render_mode == volume)
   {
-    Compositor<VolumePartial<FloatType>> compositor;
+    vtkh::PartialCompositor<vtkh::VolumePartial<FloatType>> compositor;
     compositor.set_background(m_background);
 #ifdef ROVER_PARALLEL
     compositor.set_comm_handle(m_comm_handle);
@@ -263,13 +263,13 @@ void Scheduler<FloatType>::composite()
     const int num_partials = m_partial_images.size();
     int width = m_partial_images[0].m_width;
     int height = m_partial_images[0].m_height;
-    std::vector<std::vector<VolumePartial<FloatType>>> partials;
+    std::vector<std::vector<vtkh::VolumePartial<FloatType>>> partials;
     partials.resize(num_partials);
     for(int i = 0; i < num_partials; ++i)
     {
       m_partial_images[i].extract_partials(partials[i]);
     }
-    std::vector<VolumePartial<FloatType>> result;
+    std::vector<vtkh::VolumePartial<FloatType>> result;
     compositor.composite(partials, result);
     PartialImage<FloatType> p_result;
     p_result.store(result,m_background, width, height);
@@ -279,7 +279,7 @@ void Scheduler<FloatType>::composite()
   {
     if(m_render_settings.m_secondary_field != "")
     {
-      Compositor<EmissionPartial<FloatType>> compositor;
+      vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
       compositor.set_background(m_background);
 #ifdef ROVER_PARALLEL
       compositor.set_comm_handle(m_comm_handle);
@@ -287,13 +287,13 @@ void Scheduler<FloatType>::composite()
       const int num_partials = m_partial_images.size();
       int width = m_partial_images[0].m_width;
       int height = m_partial_images[0].m_height;
-      std::vector<std::vector<EmissionPartial<FloatType>>> partials;
+      std::vector<std::vector<vtkh::EmissionPartial<FloatType>>> partials;
       partials.resize(num_partials);
       for(int i = 0; i < num_partials; ++i)
       {
         m_partial_images[i].extract_partials(partials[i]);
       }
-      std::vector<EmissionPartial<FloatType>> result;
+      std::vector<vtkh::EmissionPartial<FloatType>> result;
       compositor.composite(partials, result);
       PartialImage<FloatType> p_result;
       p_result.store(result,m_background, width, height);
@@ -301,7 +301,7 @@ void Scheduler<FloatType>::composite()
     }
     else
     {
-      Compositor<AbsorptionPartial<FloatType>> compositor;
+      vtkh::PartialCompositor<vtkh::AbsorptionPartial<FloatType>> compositor;
       compositor.set_background(m_background);
 #ifdef ROVER_PARALLEL
         compositor.set_comm_handle(m_comm_handle);
@@ -309,13 +309,13 @@ void Scheduler<FloatType>::composite()
       const int num_partials = m_partial_images.size();
       int width = m_partial_images[0].m_width;
       int height = m_partial_images[0].m_height;
-      std::vector<std::vector<AbsorptionPartial<FloatType>>> partials;
+      std::vector<std::vector<vtkh::AbsorptionPartial<FloatType>>> partials;
       partials.resize(num_partials);
       for(int i = 0; i < num_partials; ++i)
       {
         m_partial_images[i].extract_partials(partials[i]);
       }
-      std::vector<AbsorptionPartial<FloatType>> result;
+      std::vector<vtkh::AbsorptionPartial<FloatType>> result;
       compositor.composite(partials, result);
       PartialImage<FloatType> p_result;
       p_result.store(result,m_background, width, height);

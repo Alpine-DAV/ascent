@@ -45,9 +45,9 @@
 #include <vector>
 
 #include <vtkm/cont/ArrayHandle.h>
-#include <compositing/absorption_partial.hpp>
-#include <compositing/emission_partial.hpp>
-#include <compositing/volume_partial.hpp>
+#include <vtkh/rendering/AbsorptionPartial.hpp>
+#include <vtkh/rendering/EmissionPartial.hpp>
+#include <vtkh/rendering/VolumePartial.hpp>
 
 namespace rover
 {
@@ -76,7 +76,7 @@ struct PartialImage
     m_source_sig.resize(channels);
   }
 
-  void extract_partials(std::vector<VolumePartial<FloatType>> &partials)
+  void extract_partials(std::vector<vtkh::VolumePartial<FloatType>> &partials)
   {
     auto id_portal = m_pixel_ids.GetPortalConstControl();
     auto buffer_portal = m_buffer.Buffer.GetPortalConstControl();
@@ -100,7 +100,7 @@ struct PartialImage
     }
   }
 
-  void extract_partials(std::vector<AbsorptionPartial<FloatType>> &partials)
+  void extract_partials(std::vector<vtkh::AbsorptionPartial<FloatType>> &partials)
   {
     const int num_bins = m_buffer.GetNumChannels();
     auto id_portal = m_pixel_ids.GetPortalConstControl();
@@ -126,7 +126,7 @@ struct PartialImage
     }
   }
 
-  void extract_partials(std::vector<EmissionPartial<FloatType>> &partials)
+  void extract_partials(std::vector<vtkh::EmissionPartial<FloatType>> &partials)
   {
     const int num_bins = m_buffer.GetNumChannels();
     auto id_portal = m_pixel_ids.GetPortalConstControl();
@@ -157,7 +157,7 @@ struct PartialImage
     }
   }
 
-  void store(std::vector<VolumePartial<FloatType>> &partials,
+  void store(std::vector<vtkh::VolumePartial<FloatType>> &partials,
              const std::vector<double> &background,
              const int width,
              const int height)
@@ -172,7 +172,7 @@ struct PartialImage
     auto depth_portal = m_distances.GetPortalControl();
     auto intensity_portal = m_intensities.Buffer.GetPortalControl();
 
-    VolumePartial<FloatType> bg_color;
+    vtkh::VolumePartial<FloatType> bg_color;
     bg_color.m_pixel[0] = static_cast<FloatType>(background[0]);
     bg_color.m_pixel[1] = static_cast<FloatType>(background[1]);
     bg_color.m_pixel[2] = static_cast<FloatType>(background[2]);
@@ -207,7 +207,7 @@ struct PartialImage
 
   }
 
-  void store(std::vector<AbsorptionPartial<FloatType>> &partials,
+  void store(std::vector<vtkh::AbsorptionPartial<FloatType>> &partials,
              const std::vector<double> &background,
              const int width,
              const int height)
@@ -245,7 +245,7 @@ struct PartialImage
     }
   }
 
-  void store(std::vector<EmissionPartial<FloatType>> &partials,
+  void store(std::vector<vtkh::EmissionPartial<FloatType>> &partials,
              const std::vector<double> &background,
              const int width,
              const int height)

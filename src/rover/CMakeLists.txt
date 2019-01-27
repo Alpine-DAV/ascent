@@ -40,8 +40,6 @@
 ##
 ###############################################################################
 
-#add_subdirectory(../thirdparty_builtin/lodepng/ ${CMAKE_CURRENT_SOURCE_DIR}/utils/lodepng)
-
 set(rover_thirdparty_deps vtkh_lodepng vtkm vtkh)
 
 set(rover_headers
@@ -55,10 +53,6 @@ set(rover_headers
     scheduler.hpp
     scheduler_base.hpp
     static_scheduler.hpp
-    # compositing
-    compositing/compositor.hpp
-    compositing/volume_partial.hpp
-    compositing/absorption_partial.hpp
     # engines
     engine.hpp
     energy_engine.hpp
@@ -80,8 +74,6 @@ set(rover_sources
     rover.cpp
     scheduler.cpp
     scheduler_base.cpp
-    # compositing
-    compositing/compositor.cpp
     # engines
     energy_engine.cpp
     volume_engine.cpp
@@ -141,19 +133,13 @@ install(TARGETS rover
 
 if(MPI_FOUND)
 
-  set(compositing_headers compositing/blocks.hpp
-                          compositing/collect.hpp
-                          compositing/redistribute.hpp)
-
-  list(APPEND rover_headers ${compositing_headers})
-  set(DIY_DIR "../thirdparty_builtin/diy2/include")
-  list(APPEND rover_thirdparty_deps mpi)
+  set(rover_mpi_thirdparty_deps mpi vtkh_lodepng vtkm vtkh_mpi)
 
   blt_add_library(
                   NAME rover_mpi
                   SOURCES ${rover_sources}
                   HEADERS ${rover_headers}
-                  DEPENDS_ON ${rover_thirdparty_deps}
+                  DEPENDS_ON ${rover_mpi_thirdparty_deps}
                   )
 
   ##########################################
@@ -167,7 +153,6 @@ if(MPI_FOUND)
 
                       blt_add_target_compile_flags(TO rover_mpi FLAGS "-D ROVER_PARALLEL")
 
-  target_include_directories(rover_mpi PRIVATE ${DIY_DIR})
   target_include_directories(rover_mpi PRIVATE ${MPI_INCLUDE_PATH})
   target_include_directories(rover_mpi PUBLIC ${VTKm_INCLUDE_DIRS})
 
