@@ -62,6 +62,8 @@ void BlendPartials(const int &total_segments,
                    const int output_offset)
 {
   ROVER_INFO("Blending partials volume or absoption");
+  ROVER_INFO("Total segments "<<total_segments);
+  ROVER_INFO("Total total partial comps "<<total_partial_comps);
   //
   // Perform the compositing and output the result in the output
   //

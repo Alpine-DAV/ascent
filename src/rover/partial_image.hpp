@@ -73,6 +73,7 @@ struct PartialImage
 
     m_intensities.SetNumChannels(channels);
     m_intensities.Resize(size);
+    m_source_sig.resize(channels);
   }
 
   void extract_partials(std::vector<VolumePartial<FloatType>> &partials)
@@ -134,6 +135,7 @@ struct PartialImage
 
     auto depth_portal = m_distances.GetPortalConstControl();
     const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
+
     partials.resize(size);
 
 #ifdef ROVER_ENABLE_OPENMP
@@ -188,14 +190,19 @@ struct PartialImage
       buffer_portal.Set(starting_index + 0, static_cast<FloatType>(partials[i].m_pixel[0]));
       buffer_portal.Set(starting_index + 1, static_cast<FloatType>(partials[i].m_pixel[1]));
       buffer_portal.Set(starting_index + 2, static_cast<FloatType>(partials[i].m_pixel[2]));
-      buffer_portal.Set(starting_index + 4, static_cast<FloatType>(partials[i].m_alpha));
+      buffer_portal.Set(starting_index + 3, static_cast<FloatType>(partials[i].m_alpha));
 
       partials[i].blend(bg_color);
 
       intensity_portal.Set(starting_index + 0, static_cast<FloatType>(partials[i].m_pixel[0]));
       intensity_portal.Set(starting_index + 1, static_cast<FloatType>(partials[i].m_pixel[1]));
       intensity_portal.Set(starting_index + 2, static_cast<FloatType>(partials[i].m_pixel[2]));
-      intensity_portal.Set(starting_index + 4, static_cast<FloatType>(partials[i].m_alpha));
+      intensity_portal.Set(starting_index + 3, static_cast<FloatType>(partials[i].m_alpha));
+    }
+
+    for(int i = 0; i < 4; ++i)
+    {
+      m_source_sig[i] = background[i];
     }
 
   }
@@ -209,7 +216,7 @@ struct PartialImage
     m_height = height;
     const int size = static_cast<int>(partials.size());
     const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
-    allocate(size,4);
+    allocate(size,num_bins);
 
     auto id_portal = m_pixel_ids.GetPortalControl();
     auto buffer_portal = m_buffer.Buffer.GetPortalControl();
@@ -231,6 +238,11 @@ struct PartialImage
         intensity_portal.Set( starting_index + ii, partials[i].m_bins[ii] * background[ii]);
       }
     }
+
+    for(int i = 0; i < num_bins; ++i)
+    {
+      m_source_sig[i] = background[i];
+    }
   }
 
   void store(std::vector<EmissionPartial<FloatType>> &partials,
@@ -242,7 +254,7 @@ struct PartialImage
     m_height = height;
     const int size = static_cast<int>(partials.size());
     const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
-    allocate(size,4);
+    allocate(size,num_bins);
 
     auto id_portal = m_pixel_ids.GetPortalControl();
     auto buffer_portal = m_buffer.Buffer.GetPortalControl();
@@ -265,6 +277,11 @@ struct PartialImage
         out_intensity = partials[i].m_emission_bins[ii] +  partials[i].m_bins[ii] * background[ii];
         intensity_portal.Set( starting_index + ii, out_intensity);
       }
+    }
+
+    for(int i = 0; i < num_bins; ++i)
+    {
+      m_source_sig[i] = background[i];
     }
   }
 
