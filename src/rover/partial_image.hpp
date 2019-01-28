@@ -61,7 +61,6 @@ struct PartialImage
   vtkmRayTracing::ChannelBuffer<FloatType> m_buffer;          // holds either color or absorption
   vtkmRayTracing::ChannelBuffer<FloatType> m_intensities;     // holds the intensity emerging from each ray
   vtkm::cont::ArrayHandle<FloatType>       m_distances;
-  vtkm::cont::ArrayHandle<FloatType>       m_path_lengths;
   std::vector<FloatType>                   m_source_sig;
 
   void allocate(const vtkm::Id &size, const vtkm::Id &channels)
@@ -74,6 +73,13 @@ struct PartialImage
     m_intensities.SetNumChannels(channels);
     m_intensities.Resize(size);
     m_source_sig.resize(channels);
+  }
+
+  PartialImage()
+    : m_height(0),
+      m_width(0)
+  {
+
   }
 
   void extract_partials(std::vector<vtkh::VolumePartial<FloatType>> &partials)
