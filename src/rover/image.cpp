@@ -253,6 +253,7 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
 
   m_height = partial.m_height;
   m_width  = partial.m_width;
+
   assert(m_width >= 0);
   assert(m_height >= 0);
 

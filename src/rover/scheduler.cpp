@@ -276,11 +276,13 @@ void Scheduler<FloatType>::composite()
     std::vector<vtkh::VolumePartial<FloatType>> result;
     compositor.composite(partials, result);
     PartialImage<FloatType> p_result;
+
     if(rank == 0)
     {
       // data only valid on rank = 0
       p_result.store(result,m_background, width, height);
     }
+
     m_result = p_result;
   }
   else
@@ -304,11 +306,13 @@ void Scheduler<FloatType>::composite()
       std::vector<vtkh::EmissionPartial<FloatType>> result;
       compositor.composite(partials, result);
       PartialImage<FloatType> p_result;
+
       if(rank == 0)
       {
         // data only valid on rank = 0
         p_result.store(result,m_background, width, height);
       }
+
       m_result = p_result;
     }
     else
@@ -330,11 +334,13 @@ void Scheduler<FloatType>::composite()
       std::vector<vtkh::AbsorptionPartial<FloatType>> result;
       compositor.composite(partials, result);
       PartialImage<FloatType> p_result;
+
       if(rank == 0)
       {
         // data only valid on rank = 0
         p_result.store(result,m_background, width, height);
       }
+
       m_result = p_result;
     }
   }
