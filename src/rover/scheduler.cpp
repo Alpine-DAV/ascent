@@ -253,6 +253,10 @@ void Scheduler<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatTyp
 template<typename FloatType>
 void Scheduler<FloatType>::composite()
 {
+  int rank = 0;
+#ifdef ROVER_PARALLEL
+  MPI_Comm_rank(m_comm_handle, &rank);
+#endif
   if(m_render_settings.m_render_mode == volume)
   {
     vtkh::PartialCompositor<vtkh::VolumePartial<FloatType>> compositor;
@@ -272,7 +276,13 @@ void Scheduler<FloatType>::composite()
     std::vector<vtkh::VolumePartial<FloatType>> result;
     compositor.composite(partials, result);
     PartialImage<FloatType> p_result;
-    p_result.store(result,m_background, width, height);
+
+    if(rank == 0)
+    {
+      // data only valid on rank = 0
+      p_result.store(result,m_background, width, height);
+    }
+
     m_result = p_result;
   }
   else
@@ -296,7 +306,13 @@ void Scheduler<FloatType>::composite()
       std::vector<vtkh::EmissionPartial<FloatType>> result;
       compositor.composite(partials, result);
       PartialImage<FloatType> p_result;
-      p_result.store(result,m_background, width, height);
+
+      if(rank == 0)
+      {
+        // data only valid on rank = 0
+        p_result.store(result,m_background, width, height);
+      }
+
       m_result = p_result;
     }
     else
@@ -318,7 +334,13 @@ void Scheduler<FloatType>::composite()
       std::vector<vtkh::AbsorptionPartial<FloatType>> result;
       compositor.composite(partials, result);
       PartialImage<FloatType> p_result;
-      p_result.store(result,m_background, width, height);
+
+      if(rank == 0)
+      {
+        // data only valid on rank = 0
+        p_result.store(result,m_background, width, height);
+      }
+
       m_result = p_result;
     }
   }
