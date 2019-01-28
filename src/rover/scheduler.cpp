@@ -258,7 +258,7 @@ void Scheduler<FloatType>::composite()
     vtkh::PartialCompositor<vtkh::VolumePartial<FloatType>> compositor;
     compositor.set_background(m_background);
 #ifdef ROVER_PARALLEL
-    compositor.set_comm_handle(m_comm_handle);
+    compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
 #endif
     const int num_partials = m_partial_images.size();
     int width = m_partial_images[0].m_width;
@@ -282,7 +282,7 @@ void Scheduler<FloatType>::composite()
       vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
       compositor.set_background(m_background);
 #ifdef ROVER_PARALLEL
-      compositor.set_comm_handle(m_comm_handle);
+      compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
 #endif
       const int num_partials = m_partial_images.size();
       int width = m_partial_images[0].m_width;
@@ -304,7 +304,7 @@ void Scheduler<FloatType>::composite()
       vtkh::PartialCompositor<vtkh::AbsorptionPartial<FloatType>> compositor;
       compositor.set_background(m_background);
 #ifdef ROVER_PARALLEL
-        compositor.set_comm_handle(m_comm_handle);
+      compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
 #endif
       const int num_partials = m_partial_images.size();
       int width = m_partial_images[0].m_width;
