@@ -107,6 +107,8 @@ private:
     WebInterface      m_web_interface;
     int               m_refinement_level;
     int               m_rank;
+    std::string       m_ghost_field_name;
+    bool              m_has_ghosts;
 
     void              ResetInfo();
 
@@ -129,6 +131,7 @@ private:
     void ExecuteGraphs();
     void EnsureDomainIds();
     void PopulateMetadata();
+    void GhostCheck();
     std::string GetDefaultImagePrefix(const std::string scene);
 
     void FindRenders(const conduit::Node &info, conduit::Node &out);

@@ -123,7 +123,9 @@ int InfoHandler::m_rank = 0;
 AscentRuntime::AscentRuntime()
 :Runtime(),
  m_refinement_level(2), // default refinement level for high order meshes
- m_rank(0)
+ m_rank(0),
+ m_ghost_field_name("ascent_ghosts"),
+ m_has_ghosts(false)
 {
     flow::filters::register_builtin();
     ResetInfo();
@@ -284,6 +286,43 @@ AscentRuntime::Publish(const conduit::Node &data)
     // create our own tree, with all data zero copied.
     blueprint::mesh::to_multi_domain(data, m_data);
     EnsureDomainIds();
+    GhostCheck();
+}
+
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::GhostCheck()
+{
+  bool has_ghosts = false;
+  int ndoms = m_data.number_of_children();
+  for(int i = 0; i < ndoms; ++i)
+  {
+    const conduit::Node &dom = m_data.child(i);
+    if(dom.has_path("fields") && dom.has_path("fields/" + m_ghost_field_name))
+    {
+      has_ghosts = true;
+    }
+  }
+#ifdef ASCENT_MPI_ENABLED
+  int comm_id = flow::Workspace::default_mpi_comm();
+  int local_boolean = has_ghosts ? 1 : 0;
+  int global_boolean;
+  MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+  MPI_Allreduce((void *)(&local_boolean),
+                (void *)(&global_boolean),
+                1,
+                MPI_INT,
+                MPI_SUM,
+                mpi_comm);
+
+  if(global_boolean > 0)
+  {
+    // some rank has ghosts
+    has_ghosts = true;
+  }
+#endif
+  m_has_ghosts = has_ghosts;
+  if(m_has_ghosts) ASCENT_INFO("*** HAS GHOSTS ***");
 }
 
 //-----------------------------------------------------------------------------
@@ -309,8 +348,10 @@ AscentRuntime::EnsureDomainIds()
         has_ids = false;
       }
     }
+
+
 #ifdef ASCENT_MPI_ENABLED
-    int comm_id =flow::Workspace::default_mpi_comm();
+    int comm_id = flow::Workspace::default_mpi_comm();
 
     MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
 
@@ -375,7 +416,7 @@ AscentRuntime::EnsureDomainIds()
 std::string
 AscentRuntime::CreateDefaultFilters()
 {
-    const std::string end_filter = "vtkh_data";
+    std::string end_filter = "vtkh_data";
     if(w.graph().has_filter(end_filter))
     {
       return end_filter;
@@ -407,6 +448,8 @@ AscentRuntime::CreateDefaultFilters()
 
     conduit::Node vtkh_params;
     vtkh_params["zero_copy"] = "true";
+
+
     w.graph().add_filter("ensure_vtkh",
                          "vtkh_data",
                          vtkh_params);
@@ -414,6 +457,25 @@ AscentRuntime::CreateDefaultFilters()
     w.graph().connect("low_order",
                       "vtkh_data",
                       0);        // default port
+    if(m_has_ghosts)
+    {
+      const std::string strip_name = "strip_garbage_ghosts";
+      // garbage zones have a value of 2
+      conduit::Node threshold_params;
+      threshold_params["field"] = m_ghost_field_name;
+      threshold_params["min_value"] = 0;
+      threshold_params["min_value"] = 1;
+
+      w.graph().add_filter("vtkh_threshold",
+                           strip_name,
+                           threshold_params);
+
+      w.graph().connect("vtkh_data",
+                        strip_name,
+                        0);        // default port
+
+      end_filter = strip_name;
+    }
 
     return end_filter;
 }
