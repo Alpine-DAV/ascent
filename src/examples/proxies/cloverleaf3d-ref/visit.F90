@@ -42,6 +42,8 @@ SUBROUTINE visit(my_ascent)
 
   INTEGER :: j,k,l,c,err,get_unit,u,dummy,jmin,kmin,lmin
   INTEGER :: nxc,nyc,nzc,nxv,nyv,nzv,nblocks
+  INTEGER :: gnxc,gnyc,gnzc,gnxv,gnyv,gnzv
+  INTEGER :: ghost_flag
   REAL(KIND=8)    :: temp_var
 
   CHARACTER(len=80)           :: name
@@ -72,7 +74,7 @@ SUBROUTINE visit(my_ascent)
 
   INTEGER(8) :: nnodes, ncells
   REAL(8), ALLOCATABLE :: xcoords(:), ycoords(:), zcoords(:)
-  REAL(8), ALLOCATABLE :: density(:,:,:), energy(:,:,:), pressure(:,:,:)
+  REAL(8), ALLOCATABLE :: density(:,:,:), energy(:,:,:), pressure(:,:,:), ghost_flags(:,:,:)
   REAL(8), ALLOCATABLE :: xvel(:,:,:), yvel(:,:,:), zvel(:,:,:)
 
   name = 'clover'
@@ -111,8 +113,16 @@ SUBROUTINE visit(my_ascent)
       nxv=nxc+1
       nyv=nyc+1
       nzv=nzc+1
-      ncells = nxc * nyc * nzc
-      nnodes = nxv * nyv * nzv
+
+      ! dimensions with ghosts
+      gnxc=nxc+4
+      gnyc=nyc+4
+      gnzc=nzc+4
+      gnxv=gnxc+1
+      gnyv=gnyc+1
+      gnzv=gnzc+1
+      ncells = gnxc * gnyc * gnzc
+      nnodes = gnxv * gnyv * gnzv
 
       !
       ! Ascent in situ visualization
@@ -135,6 +145,24 @@ SUBROUTINE visit(my_ascent)
       ALLOCATE(density(0:nxc-1,0:nyc-1,0:nzc-1))
       ALLOCATE(energy(0:nxc-1,0:nyc-1,0:nzc-1))
       ALLOCATE(pressure(0:nxc-1,0:nyc-1,0:nzc-1))
+      ALLOCATE(ghost_flags(0:gnxc-1,0:gnyc-1,0:gnzc-1))
+      DO l=0,gnzc-1
+        DO k=0, gnyc-1
+          DO j=0, gnxc-1
+            ghost_flag=0
+            IF(l < 2 .OR. l > gnzc - 3) THEN
+              ghost_flag = 1
+            END IF
+            IF(k < 2 .OR. k > gnyc - 3) THEN
+              ghost_flag = 1
+            END IF
+            IF(j < 2 .OR. j > gnxc - 3) THEN
+              ghost_flag = 1
+            END IF
+            ghost_flags(j,k,l)=ghost_flag
+          ENDDO
+        ENDDO
+      ENDDO
       DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
         DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
           DO j=chunks(c)%field%x_min,chunks(c)%field%x_max
@@ -188,33 +216,38 @@ SUBROUTINE visit(my_ascent)
       CALL conduit_node_set_path_int32(sim_data,"state/domain_id", parallel%task)
       CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
       CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", xcoords, nxv*1_8)
-      CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", ycoords, nyv*1_8)
-      CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", zcoords, nzv*1_8)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", chunks(c)%field%vertexx, gnxv*1_8)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", chunks(c)%field%vertexy, gnyv*1_8)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", chunks(c)%field%vertexz, gnzv*1_8)
       CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/type", "rectilinear")
       CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/coordset", "coords")
+      ! ghost zone flags
+      CALL conduit_node_set_path_char8_str(sim_data,"fields/ascent_ghosts/association", "element")
+      CALL conduit_node_set_path_char8_str(sim_data,"fields/ascent_ghosts/topology", "mesh")
+      CALL conduit_node_set_path_char8_str(sim_data,"fields/ascent_ghosts/type", "scalar")
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/ascent_ghosts/values", ghost_flags, ncells)
       ! density
       CALL conduit_node_set_path_char8_str(sim_data,"fields/density/association", "element")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/density/topology", "mesh")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/density/type", "scalar")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/density/values", density, ncells)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/density/values", chunks(c)%field%density0, ncells)
       ! energy
       CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/association", "element")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/topology", "mesh")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/type", "scalar")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/energy/values", energy, ncells)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/energy/values", chunks(c)%field%energy0, ncells)
       ! pressure
       CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/association", "element")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/topology", "mesh")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/type", "scalar")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/pressure/values", pressure, ncells)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/pressure/values", chunks(c)%field%pressure, ncells)
       ! velocity x
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/association", "vertex")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/topology", "mesh")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/type", "scalar")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/u", xvel, nnodes)
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/v", xvel, nnodes)
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/w", xvel, nnodes)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/u", chunks(c)%field%xvel0, nnodes)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/v", chunks(c)%field%yvel0, nnodes)
+      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/w", chunks(c)%field%zvel0, nnodes)
       ! CALL sim_data%print_detailed()
 
       WRITE(chunk_name, '(i6)') parallel%task+100001
@@ -248,6 +281,7 @@ SUBROUTINE visit(my_ascent)
       DEALLOCATE(xvel, yvel, zvel)
       DEALLOCATE(density, energy, pressure)
       DEALLOCATE(xcoords, ycoords, zcoords)
+      DEALLOCATE(ghost_flags)
 
 
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

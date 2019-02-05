@@ -464,7 +464,7 @@ AscentRuntime::CreateDefaultFilters()
       conduit::Node threshold_params;
       threshold_params["field"] = m_ghost_field_name;
       threshold_params["min_value"] = 0;
-      threshold_params["min_value"] = 1;
+      threshold_params["max_value"] = 1;
 
       w.graph().add_filter("vtkh_threshold",
                            strip_name,
