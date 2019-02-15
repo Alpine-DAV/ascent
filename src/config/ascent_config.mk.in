@@ -131,10 +131,11 @@ ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
 ##########
 # MFEM
 ##########
-
 # Include make vars from the mfem config.mk file
 ifeq ($(ASCENT_MFEM_DIR),)
-include $(ASCENT_MFEM_DIR)/share/mfem/config.mk
+   # not set, do not include config.mk
+else
+   include $(ASCENT_MFEM_DIR)/share/mfem/config.mk
 endif
 
 # MFEM isn't in the interface, so we don't need include flags
