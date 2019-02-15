@@ -55,5 +55,5 @@ make VERBOSE=1
 # using with make example
 cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
 make
-env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
+env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./ascent_render_example
 
