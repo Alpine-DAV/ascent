@@ -53,7 +53,7 @@ make VERBOSE=1
 ./ascent_render_example
 
 # using with make example
-#cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
-#make
-#env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
+cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
+make
+env LD_LIBRARY_PATH=${ASCENT_DIR}/lib/:${CONDUIT_DIR}/lib/ ./example
 
