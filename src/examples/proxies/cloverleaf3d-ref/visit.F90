@@ -73,9 +73,7 @@ SUBROUTINE visit(my_ascent)
   TYPE(C_PTR) reset_act
 
   INTEGER(8) :: nnodes, ncells
-  REAL(8), ALLOCATABLE :: xcoords(:), ycoords(:), zcoords(:)
-  REAL(8), ALLOCATABLE :: density(:,:,:), energy(:,:,:), pressure(:,:,:), ghost_flags(:,:,:)
-  REAL(8), ALLOCATABLE :: xvel(:,:,:), yvel(:,:,:), zvel(:,:,:)
+  REAL(8), ALLOCATABLE :: ghost_flags(:,:,:)
 
   name = 'clover'
 
@@ -128,19 +126,6 @@ SUBROUTINE visit(my_ascent)
       ! Ascent in situ visualization
       !
       CALL ascent_timer_start(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
-      ALLOCATE(xcoords(0:nxv-1), ycoords(0:nyv-1), zcoords(0:nzv-1))
-      jmin=chunks(c)%field%x_min
-      DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
-        xcoords(j-jmin)=chunks(c)%field%vertexx(j)
-      ENDDO
-      kmin=chunks(c)%field%y_min
-      DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
-        ycoords(k-kmin)=chunks(c)%field%vertexy(k)
-      ENDDO
-      lmin=chunks(c)%field%z_min
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
-        zcoords(l-lmin)=chunks(c)%field%vertexz(l)
-      ENDDO
 
       ALLOCATE(ghost_flags(0:gnxc-1,0:gnyc-1,0:gnzc-1))
       DO l=0,gnzc-1
@@ -160,7 +145,6 @@ SUBROUTINE visit(my_ascent)
           ENDDO
         ENDDO
       ENDDO
-
 
       sim_data = conduit_node_create()
       CALL conduit_node_set_path_float64(sim_data,"state/time", time)
@@ -192,7 +176,7 @@ SUBROUTINE visit(my_ascent)
       CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/topology", "mesh")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/type", "scalar")
       CALL conduit_node_set_path_float64_ptr(sim_data,"fields/pressure/values", chunks(c)%field%pressure, ncells)
-      ! velocity x
+      ! velocity x,y,z
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/association", "vertex")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/topology", "mesh")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/type", "scalar")
