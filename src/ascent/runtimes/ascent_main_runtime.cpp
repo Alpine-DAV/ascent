@@ -213,6 +213,10 @@ AscentRuntime::Initialize(const conduit::Node &options)
     m_runtime_options = options;
 
 
+    if(options.has_path("ghost_field_name"))
+    {
+      m_ghost_field_name = options["ghost_field_name"].as_string();
+    }
 
     // standard flow filters
     flow::filters::register_builtin();
