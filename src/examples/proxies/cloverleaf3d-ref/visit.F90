@@ -142,9 +142,6 @@ SUBROUTINE visit(my_ascent)
         zcoords(l-lmin)=chunks(c)%field%vertexz(l)
       ENDDO
 
-      ALLOCATE(density(0:nxc-1,0:nyc-1,0:nzc-1))
-      ALLOCATE(energy(0:nxc-1,0:nyc-1,0:nzc-1))
-      ALLOCATE(pressure(0:nxc-1,0:nyc-1,0:nzc-1))
       ALLOCATE(ghost_flags(0:gnxc-1,0:gnyc-1,0:gnzc-1))
       DO l=0,gnzc-1
         DO k=0, gnyc-1
@@ -160,52 +157,6 @@ SUBROUTINE visit(my_ascent)
               ghost_flag = 1
             END IF
             ghost_flags(j,k,l)=ghost_flag
-          ENDDO
-        ENDDO
-      ENDDO
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max
-            density(j-jmin,k-kmin,l-lmin)=chunks(c)%field%density0(j,k,l)
-          ENDDO
-        ENDDO
-      ENDDO
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max
-            energy(j-jmin,k-kmin,l-lmin)=chunks(c)%field%energy0(j,k,l)
-          ENDDO
-        ENDDO
-      ENDDO
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max
-            pressure(j-jmin,k-kmin,l-lmin)=chunks(c)%field%pressure(j,k,l)
-          ENDDO
-        ENDDO
-      ENDDO
-
-      ALLOCATE(xvel(0:nxv-1,0:nyv-1,0:nzv-1))
-      ALLOCATE(yvel(0:nxv-1,0:nyv-1,0:nzv-1))
-      ALLOCATE(zvel(0:nxv-1,0:nyv-1,0:nzv-1))
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
-            xvel(j-jmin,k-kmin,l-lmin)=chunks(c)%field%xvel0(j,k,l)
-          ENDDO
-        ENDDO
-      ENDDO
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
-            yvel(j-jmin,k-kmin,l-lmin)=chunks(c)%field%yvel0(j,k,l)
-          ENDDO
-        ENDDO
-      ENDDO
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
-            zvel(j-jmin,k-kmin,l-lmin)=chunks(c)%field%zvel0(j,k,l)
           ENDDO
         ENDDO
       ENDDO
@@ -278,9 +229,6 @@ SUBROUTINE visit(my_ascent)
       CALL conduit_node_destroy(sim_actions)
       CALL conduit_node_destroy(sim_data)
 
-      DEALLOCATE(xvel, yvel, zvel)
-      DEALLOCATE(density, energy, pressure)
-      DEALLOCATE(xcoords, ycoords, zcoords)
       DEALLOCATE(ghost_flags)
 
 
