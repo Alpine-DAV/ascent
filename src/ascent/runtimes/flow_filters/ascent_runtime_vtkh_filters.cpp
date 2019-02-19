@@ -83,6 +83,7 @@
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
+#include <vtkh/filters/GhostStripper.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/NoOp.hpp>
@@ -474,7 +475,7 @@ public:
                     const std::vector<vtkm::Id> &domain_ids,
                     const conduit::Node &render_node)
   {
-    conduit::Node render_copy = render_node; 
+    conduit::Node render_copy = render_node;
     // cinema is controlling the camera so get
     // rid of it
     if(render_copy.has_path("camera"))
@@ -1154,6 +1155,102 @@ VTKHSlice::execute()
     vtkh::DataSet *slice_output = slicer.GetOutput();
 
     set_output<vtkh::DataSet>(slice_output);
+}
+
+//-----------------------------------------------------------------------------
+VTKHGhostStripper::VTKHGhostStripper()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHGhostStripper::~VTKHGhostStripper()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHGhostStripper::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_ghost_stripper";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHGhostStripper::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+
+    res = check_numeric("min_value",params, info, true) && res;
+    res = check_numeric("max_value",params, info, true) && res;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("min_value");
+    valid_paths.push_back("max_value");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHGhostStripper::execute()
+{
+
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("VTKHGhostStripper input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+
+    // Check to see of the ghost field even exists
+    bool do_strip = data->GlobalFieldExists(field_name);
+
+    if(do_strip)
+    {
+      vtkh::GhostStripper stripper;
+
+      stripper.SetInput(data);
+      stripper.SetField(field_name);
+
+      const Node &n_min_val = params()["min_value"];
+      const Node &n_max_val = params()["max_value"];
+
+      int min_val = n_min_val.to_int32();
+      int max_val = n_max_val.to_int32();
+
+      stripper.SetMaxValue(max_val);
+      stripper.SetMinValue(min_val);
+
+      stripper.Update();
+
+      vtkh::DataSet *stripper_output = stripper.GetOutput();
+
+      stripper_output->PrintSummary(std::cout);
+      set_output<vtkh::DataSet>(stripper_output);
+    }
+    else
+    {
+      set_output<vtkh::DataSet>(data);
+    }
 }
 
 //-----------------------------------------------------------------------------
