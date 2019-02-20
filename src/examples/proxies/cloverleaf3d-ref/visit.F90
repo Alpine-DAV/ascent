@@ -164,22 +164,18 @@ SUBROUTINE visit(my_ascent)
       ! density
       CALL conduit_node_set_path_char8_str(sim_data,"fields/density/association", "element")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/density/topology", "mesh")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/density/type", "scalar")
       CALL conduit_node_set_path_float64_ptr(sim_data,"fields/density/values", chunks(c)%field%density0, ncells)
       ! energy
       CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/association", "element")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/topology", "mesh")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/type", "scalar")
       CALL conduit_node_set_path_float64_ptr(sim_data,"fields/energy/values", chunks(c)%field%energy0, ncells)
       ! pressure
       CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/association", "element")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/topology", "mesh")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/type", "scalar")
       CALL conduit_node_set_path_float64_ptr(sim_data,"fields/pressure/values", chunks(c)%field%pressure, ncells)
       ! velocity x,y,z
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/association", "vertex")
       CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/topology", "mesh")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/type", "scalar")
       CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/u", chunks(c)%field%xvel0, nnodes)
       CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/v", chunks(c)%field%yvel0, nnodes)
       CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/w", chunks(c)%field%zvel0, nnodes)

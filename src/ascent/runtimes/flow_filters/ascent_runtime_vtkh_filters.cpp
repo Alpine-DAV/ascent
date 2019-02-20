@@ -1211,7 +1211,6 @@ void
 VTKHGhostStripper::execute()
 {
 
-
     if(!input(0).check_type<vtkh::DataSet>())
     {
         ASCENT_ERROR("VTKHGhostStripper input must be a vtk-h dataset");
@@ -1244,7 +1243,6 @@ VTKHGhostStripper::execute()
 
       vtkh::DataSet *stripper_output = stripper.GetOutput();
 
-      stripper_output->PrintSummary(std::cout);
       set_output<vtkh::DataSet>(stripper_output);
     }
     else
@@ -2337,6 +2335,7 @@ CreatePlot::execute()
     }
 
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
+
     conduit::Node plot_params = params();
     std::string type = params()["type"].as_string();
 
@@ -2414,7 +2413,7 @@ CreatePlot::execute()
       std::string field_name = plot_params["field"].as_string();
       if(!data->GlobalFieldExists(field_name))
       {
-        ASCENT_WARN("Plot variable '"<<field_name<<"' does not exist");
+        ASCENT_INFO("Plot variable '"<<field_name<<"' does not exist");
       }
       renderer->SetField(field_name);
     }
