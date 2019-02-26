@@ -441,15 +441,15 @@ PythonScript::execute()
     PyObject *py_res = py_interp->get_dict_object(py_mod_dict,
                                                   "_flow_output");
 
-    // we need to incref b/c py_res is borrowed, and flow will decref 
-    // when it is done with the python object
-    Py_INCREF(py_res);
-
     if(py_res == NULL)
     {
         // bad!, it should at least be python's None
         CONDUIT_ERROR("python_script failed to fetch output");
     }
+
+    // we need to incref b/c py_res is borrowed, and flow will decref 
+    // when it is done with the python object
+    Py_INCREF(py_res);
 
     set_output<PyObject>(py_res);
 }
