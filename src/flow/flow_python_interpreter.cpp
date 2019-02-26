@@ -154,7 +154,6 @@ PythonInterpreter::initialize(int argc, char **argv)
         m_handled_init = true;
     }
 
-
     // do to setup b/c we need for c++ connection , even if python was already
     // inited
 
@@ -167,7 +166,7 @@ PythonInterpreter::initialize(int argc, char **argv)
     m_py_main_module = PyImport_AddModule((char*)"__main__");
     m_py_global_dict = PyModule_GetDict(m_py_main_module);
 
-    // get objects that help us print an exception.
+    // get objects that help us print exceptions
 
     // get ref to traceback.print_exception method
     m_py_trace_module = PyImport_AddModule("traceback");
@@ -244,14 +243,39 @@ PythonInterpreter::add_system_path(const std::string &path)
 bool
 PythonInterpreter::run_script(const std::string &script)
 {
+    return run_script(script, m_py_global_dict);
+}
+
+//-----------------------------------------------------------------------------
+///
+/// Executes passed python script in the interpreter
+///
+/// Note: Adapted from VisIt: src/avt/PythonFilters/PythonInterpreter.cpp
+//-----------------------------------------------------------------------------
+bool
+PythonInterpreter::run_script_file(const std::string &fname)
+{
+    return run_script_file(fname, m_py_global_dict);
+}
+
+//-----------------------------------------------------------------------------
+///
+/// Executes passed python script in the interpreter
+///
+/// Note: Adapted from VisIt: src/avt/PythonFilters/PythonInterpreter.cpp
+//-----------------------------------------------------------------------------
+bool
+PythonInterpreter::run_script(const std::string &script,
+                              PyObject *py_dict)
+{
     bool res = false;
     if(m_running)
     {
         CONDUIT_INFO("PythonInterpreter::run_script " << script);
         PyRun_String((char*)script.c_str(),
                      Py_file_input,
-                     m_py_global_dict,
-                     m_py_global_dict);
+                     py_dict,
+                     py_dict);
         if(!check_error())
             res = true;
     }
@@ -265,14 +289,17 @@ PythonInterpreter::run_script(const std::string &script)
 /// Note: Adapted from VisIt: src/avt/PythonFilters/PythonInterpreter.cpp
 //-----------------------------------------------------------------------------
 bool
-PythonInterpreter::run_script_file(const std::string &fname)
+PythonInterpreter::run_script_file(const std::string &fname,
+                                   PyObject *py_dict)
 {
     ifstream ifs(fname.c_str());
     string py_script((istreambuf_iterator<char>(ifs)),
                      istreambuf_iterator<char>());
     ifs.close();
-    return run_script(py_script);
+    return run_script(py_script, py_dict);
 }
+
+
 
 //-----------------------------------------------------------------------------
 ///
@@ -284,8 +311,7 @@ bool
 PythonInterpreter::set_global_object(PyObject *py_obj,
                                      const string &py_name)
 {
-    PyDict_SetItemString(m_py_global_dict, py_name.c_str(), py_obj);
-    return !check_error();
+    return set_dict_object(m_py_global_dict, py_obj, py_name);
 }
 
 //-----------------------------------------------------------------------------
@@ -297,12 +323,40 @@ PythonInterpreter::set_global_object(PyObject *py_obj,
 PyObject *
 PythonInterpreter::get_global_object(const string &py_name)
 {
-    PyObject *res = PyDict_GetItemString(m_py_global_dict, py_name.c_str());
+    return get_dict_object(m_py_global_dict, py_name);
+}
+
+
+//-----------------------------------------------------------------------------
+///
+/// Adds C python object to the global dictionary.
+///
+/// Note: Adapted from VisIt: src/avt/PythonFilters/PythonInterpreter.cpp
+//-----------------------------------------------------------------------------
+bool
+PythonInterpreter::set_dict_object(PyObject *py_dict,
+                                   PyObject *py_obj,
+                                   const string &py_name)
+{
+    PyDict_SetItemString(py_dict, py_name.c_str(), py_obj);
+    return !check_error();
+}
+
+//-----------------------------------------------------------------------------
+///
+/// Get C python object from the global dictionary.
+///
+/// Note: Adapted from VisIt: src/avt/PythonFilters/PythonInterpreter.cpp
+//-----------------------------------------------------------------------------
+PyObject *
+PythonInterpreter::get_dict_object(PyObject *py_dict,
+                                   const string &py_name)
+{
+    PyObject *res = PyDict_GetItemString(py_dict, py_name.c_str());
     if(check_error())
         res = NULL;
     return res;
 }
-
 
 //-----------------------------------------------------------------------------
 ///
