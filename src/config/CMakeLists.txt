@@ -65,7 +65,7 @@ if(MPI_FOUND)
     foreach(_lib ${MPI_Fortran_LIBRARIES})
         set(ASCENT_CONFIG_MK_MPI_LINK_FLAGS "${ASCENT_CONFIG_MK_MPI_LINK_FLAGS} ${_lib}")
     endforeach()
-endif(endif)
+endif()
 
 # static builds require python 
 set(ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS "")
@@ -73,7 +73,7 @@ if(PYTHON_FOUND)
     foreach(_lib ${PYTHON_LIBRARY})
         set(ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS "${ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS} ${_lib}")
     endforeach()
-endif(endif)
+endif()
 
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.mk.in"
