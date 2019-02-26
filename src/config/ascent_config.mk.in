@@ -70,7 +70,7 @@ ASCENT_MFEM_DIR = @MFEM_DIR@
 
 ASCENT_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
 
-ASCENT_MPI_LIBS   = @MPI_C_LIBRARIES@ @MPI_CXX_LIBRARIES@ @MPI_Fortran_LIBRARIES@
+ASCENT_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
 
 # include vars from conduit_config.mk
 include $(ASCENT_CONDUIT_DIR)/share/conduit/conduit_config.mk
