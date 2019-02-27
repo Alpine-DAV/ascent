@@ -49,6 +49,33 @@
 #
 ###############################################################################
 
+
+# special handling for mpi libs, due to possible transitive mpi dep from mfem
+
+set(ASCENT_CONFIG_MK_MPI_LINK_FLAGS "")
+if(MPI_FOUND)
+    foreach(_lib ${MPI_C_LIBRARIES})
+        set(ASCENT_CONFIG_MK_MPI_LINK_FLAGS "${ASCENT_CONFIG_MK_MPI_LINK_FLAGS} ${_lib}")
+    endforeach()
+
+    foreach(_lib ${MPI_CXX_LIBRARIES})
+        set(ASCENT_CONFIG_MK_MPI_LINK_FLAGS "${ASCENT_CONFIG_MK_MPI_LINK_FLAGS} ${_lib}")
+    endforeach()
+
+    foreach(_lib ${MPI_Fortran_LIBRARIES})
+        set(ASCENT_CONFIG_MK_MPI_LINK_FLAGS "${ASCENT_CONFIG_MK_MPI_LINK_FLAGS} ${_lib}")
+    endforeach()
+endif()
+
+# static builds require python 
+set(ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS "")
+if(PYTHON_FOUND)
+    foreach(_lib ${PYTHON_LIBRARY})
+        set(ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS "${ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS} ${_lib}")
+    endforeach()
+endif()
+
+
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.mk.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk")
 
