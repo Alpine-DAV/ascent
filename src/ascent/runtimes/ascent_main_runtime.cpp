@@ -539,8 +539,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   {
     filter_name = "python_script";
 
-    // customize the names of the script integration funcs
-    params["interface/input"] = "ascent_data";
+    // customize the names of the script integration module and funcs
+    params["interface/module"] = "ascent_extract";
+    params["interface/input"]  = "ascent_data";
     params["interface/set_output"] = "ascent_set_output";
 
 #ifdef ASCENT_MPI_ENABLED
@@ -582,6 +583,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
      py_src_final << "# ascent mpi comm helper function" << std::endl
                   << "def ascent_mpi_comm_id():" << std::endl
                   << "    return " << comm_id << std::endl
+                  << std::endl
+                  // bind ascent_mpi_comm_id into the module
+                  << "ascent_extract.ascent_mpi_comm_id = ascent_mpi_comm_id"
                   << std::endl
                   << params["source"].as_string(); // now include user's script
 
