@@ -256,36 +256,7 @@ PythonScript::verify_params(const conduit::Node &params,
         }
 
     }
-
-    // NOTE: reset via this interface is disabled b/c full reset of 
-    // interpreter is dangerous ... 
-    //
-    // if( params.has_child("interpreter") )
-    // {
-    //     const Node &n_interp = params["interpreter"];
-    //     if( n_interp.has_child("reset") )
-    //     {
-    //         if( !n_interp["reset"].dtype().is_string() )
-    //         {
-    //             info["errors"].append() = "parameter 'interpreter/reset' is not a string";
-    //             res = false;
-    //         }
-    //         else
-    //         {
-    //             std::string rset_str = n_interp["reset"].as_string();
-    //             if( rset_str == "true" || rset_str == "false" )
-    //             {
-    //                 info["info"].append().set("provides 'interpreter/reset'");
-    //             }
-    //             else
-    //             {
-    //                 info["errors"].append() = "parameter 'interpreter/reset' is not 'true' or 'false'";
-    //                 res = false;
-    //             }
-    //         }
-    //     }
-    // }
-
+    
     return res;
 }
 
@@ -319,23 +290,6 @@ PythonScript::execute()
         CONDUIT_ERROR("python_script input must be a python object "
                       "or a conduit::Node");
     }
-
-    // NOTE: reset via this interface is disabled b/c full reset of 
-    // interpreter is dangerous ... 
-    //
-    // // check if filter options req us to reset the interp
-    // bool rset_interp = false;
-    // if( params().has_path("interpreter/reset") &&
-    //     params()["interpreter/reset"].as_string() == "true" )
-    // {
-    //     rset_interp = true;
-    // }
-    //
-    // // reset interp (clear global dict) if requested
-    // // if(rset_interp)
-    // // {
-    // //     py_interp->reset();
-    // // }
 
     std::string module_name = "flow_script_filter";
     std::string input_func_name = "flow_input";
