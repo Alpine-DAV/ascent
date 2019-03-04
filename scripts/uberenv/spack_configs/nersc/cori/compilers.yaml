@@ -5,7 +5,7 @@ compilers:
     flags: {}
     modules:
     - PrgEnv-gnu
-    operating_system: cnl6
+    operating_system: cnl9
     paths:
       cc: cc
       cxx: CC
@@ -19,7 +19,7 @@ compilers:
     flags: {}
     modules:
     - PrgEnv-gnu
-    operating_system: cnl6
+    operating_system: cnl9
     paths:
       cc: cc
       cxx: CC
@@ -34,7 +34,7 @@ compilers:
     modules:
     - PrgEnv-intel
     - intel/18.0.1.163
-    operating_system: cnl6
+    operating_system: cnl9
     paths:
       cc: cc
       cxx: CC
@@ -48,7 +48,7 @@ compilers:
     flags: {}
     modules:
     - PrgEnv-gnu
-    operating_system: cnl6
+    operating_system: cnl9
     paths:
       cc: cc
       cxx: CC
@@ -62,7 +62,7 @@ compilers:
     flags: {}
     modules:
     - PrgEnv-gnu
-    operating_system: cnl6
+    operating_system: cnl9
     paths:
       cc: cc
       cxx: CC
@@ -76,7 +76,7 @@ compilers:
     flags: {}
     modules:
     - PrgEnv-gnu
-    operating_system: cnl6
+    operating_system: cnl9
     paths:
       cc: cc
       cxx: CC
@@ -90,7 +90,7 @@ compilers:
     flags: {}
     modules:
     - PrgEnv-gnu
-    operating_system: cnl6
+    operating_system: cnl9
     paths:
       cc: cc
       cxx: CC
