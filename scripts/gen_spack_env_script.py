@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -75,16 +75,27 @@ def spack_exe(spath=None):
     if spath is None:
         to_try = [pjoin("uberenv_libs","spack"), "spack"]
         for p in to_try:
-            if os.path.isdir(p):
-                return os.path.abspath(pjoin(p,"bin","spack"))
+            abs_p = os.path.abspath(p)
+            print "[looking for spack directory at: %s]" % abs_p
+            if os.path.isdir(abs_p):
+                print "[FOUND spack directory at: %s]" % abs_p
+                return os.path.abspath(pjoin(abs_p,"bin","spack"))
+        print "[ERROR: failed to find spack directory!]" 
+        sys.exit(-1)
     else:
-        return os.path.abspath(spath,"bin","spack")
+        spack_exe = os.path.abspath(spath,"bin","spack")
+        if not os.path.isfile(spack_exec):
+            print "[ERROR: failed to find spack directory at spath=%s]"  % spath
+            sys.exit(-1)
+        return spack_exe
 
 def find_pkg(pkg_name):
     r,rout = sexe(spack_exe() + " find -p " + pkg_name,ret_output = True)
     for l in rout.split("\n"):
         if l.startswith(" "):
             return {"name": pkg_name, "path": l.split()[-1]}
+    print "[ERROR: failed to find package named '%s']" % pkg_name
+    sys.exit(-1)
 
 def path_cmd(pkg):
     return 'export PATH=%s:$PATH\n' % (pjoin(pkg["path"],"bin"))
@@ -102,7 +113,7 @@ def main():
     if len(pkgs) > 0:
         write_env_script(pkgs)
     else:
-        print "[error, did not find any packages]"
+        print "usage: python gen_spack_env_script.py spack_pkg_1 spack_pkg_2 ..."
 
 if __name__ == "__main__":
     main()
