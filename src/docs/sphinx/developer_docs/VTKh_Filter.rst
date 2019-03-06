@@ -68,4 +68,52 @@ with extra meta data like the cycle and domain ids.
 
 Implementing A New Filter
 -------------------------
-I
+As a convenience, we have created the `NoOp <https://github.com/Alpine-DAV/vtk-h/blob/develop/src/vtkh/filters/NoOp.hpp>`_
+filter as staring point. Its recommended that you copy and rename the header and source code
+files and use that as a base. The NoOp filter demonstrates how to loop through all the domains
+in the input data set, retrieve the underlying VTK-m data set, and where the interesting stuff
+goes.
+
+.. code-block:: c++
+
+  void NoOp::DoExecute()
+  {
+    this->m_output = new DataSet();
+    const int num_domains = this->m_input->GetNumberOfDomains();
+
+    for(int i = 0; i < num_domains; ++i)
+    {
+      vtkm::Id domain_id;
+      vtkm::cont::DataSet dom;
+      this->m_input->GetDomain(i, dom, domain_id);
+      // insert interesting stuff
+      m_output->AddDomain(dom, domain_id);
+    }
+  }
+
+Inside of the source file, you are free to create new and invoke existing VTK-m worklets that will
+execute on supported devices. For a more fully functional example, consult the `Marching Cubes <https://github.com/Alpine-DAV/vtk-h/blob/develop/src/vtkh/filters/MarchingCubes.cpp>`_
+filter.
+
+Using MPI Inside VTK-h
+----------------------
+VTK-h and Ascent both create two separate libraries for MPI and non-MPI (i.e., serial).
+In order to maintain the same interface for both version of the library, ``MPI_Comm`` handles
+are represented by integers and are converted to the MPI implementations underlying representation
+by using the ``MPI_Comm_f2c`` function.
+
+Code containing calls to MPI are protected by the define ``VTKH_PARALLEL`` and calls to MPI API calls
+must be guarded inside the code. Here is an example.
+
+.. code-block:: c++
+
+    #ifdef VTKH_PARALLEL
+      MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+      int rank;
+      MPI_Comm_rank(comm, &rank);
+    #endif
+
+.. note::
+    ``vtkh::GetMPICommHandle()`` will throw an exception if called outside of a ``VTKH_PARALLEL``
+    block.
+
