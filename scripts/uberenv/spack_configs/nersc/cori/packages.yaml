@@ -57,7 +57,7 @@ packages:
       version: [master]
   cmake:
       version: [3.9.6]
-      variants: ~ncurses~openssl
+      variants: ~ncurses~openssl+ownlibs
   python:
       variants: ~dbm
   py-numpy:
