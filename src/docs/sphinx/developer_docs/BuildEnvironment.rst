@@ -46,27 +46,27 @@ Setting Up A Development Environment
 ====================================
 The type of development environment needed depends on the use case.
 In most cases, all that is needed is a build of Ascent. The exception
-is vtkm filter development, which requires separate builds of vtk-m
-and vtk-h.
+is VTK-m filter development, which requires separate builds of VTK-m
+and VTK-h.
 
 The list of common development use cases:
-  * c++ and pythhon  filter development using Conduit Mesh Blueprint
-  * connecting an new library to Ascent
-  * vtkm filter development
+  * C++ and python filter development using Conduit Mesh Blueprint data
+  * Connecting an new library to Ascent
+  * VTK-m filter development
 
 
 I Want Develop C++ and Python Code Directly In Ascent
 -----------------------------------------------------
 C++ and python filter can be directly developed inside of an Ascent build.
 All that is required is a development build of Ascent. Please see :ref:`building`
-for an overview of the differnet ways to build Ascent.
+for an overview of the different ways to build Ascent.
 
 Manual Build
 """"""""""""
 An guide to building Ascent's dependencies manually can be found at
 :ref:`building_manually`.
-When building manually, its recommended to create a CMake configure file like the
-shown below rather than specifiying all the CMake options at the command line.
+When building manually, we recommended you create a CMake configure file like the
+example shown below rather than specifying all the CMake options on the command line.
 
 
 Spack-Based Build
@@ -90,7 +90,7 @@ Ascent is using this script.
     options.
 
 If the uberenv script succeeds, then a CMake configure file is created in the `uberenv_libs`
-directory that can be used to create a build of Ascent. The file name is a derivitive of
+directory that can be used to create a build of Ascent. The file name is a combination of
 the system name, system type, and compiler used. For example, on an OSX system the following
 file was created that contains the CMake variables need for an Ascent build:
 
@@ -172,7 +172,7 @@ I Want To Develop VTK-m and VTK-h Code
 --------------------------------------
 In addition to the steps in the previous section, builds and installs of VTK-m and
 VTK-h are needed to develop codes in Ascent. This following information builds on the
-previous section for altering a spack-based build to point to manually build versions
+previous section for altering a spack-based build to point to manually built versions
 of VTK-m and VTK-h. If all the dependencies were built  manually, then this section
 can be safely skipped.
 
