@@ -143,4 +143,7 @@ maintains the build system that manages CUDA, including GPU device selection, Op
 Serial compilation. This inherently complicates the build system and generates very long
 compile times, thus VTK-h insulates Ascent from this additional complexity.
 
+In the future, VTK-m will transition to a fully compiled library, and as distributed-memory
+functionality comes online inside VTK-m, we will transition away from VTK-h at some point in
+the future.
 
