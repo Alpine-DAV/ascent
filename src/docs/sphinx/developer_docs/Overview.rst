@@ -48,7 +48,7 @@ Ascent Developement Overview
 Ascent's architecture is divided into two main components:
 
   * Flow: a simple and flexible data flow network
-  * Runtime: code that creates and assembles the data flow netork
+  * Runtime: code that creates and assembles the data flow network
 
 Flow
 ----
@@ -56,7 +56,7 @@ Ascent uses a simple data flow library named Flow to efficiently
 compose and execute flow filters. Ascent's Flow library is a C++
 evolution of the Python data flow network infrastructure used in
 `Efficient Dynamic Derived Field Generation on Many-Core Architectures Using Python <https://ieeexplore.ieee.org/document/6495864>`_.
-It supports declaration and execution of directed acyclic
+Flow supports declaration and execution of directed acyclic
 graphs (DAGs) of filters Filters declare a minimal interface, which
 includes the number of expected inputs and outputs, and a set of default
 parameters. Flow uses a topological sort to ensure proper filter
@@ -120,8 +120,27 @@ The following mesh types are supported in Ascent:
   * High-Order (Blueprint and MFEM)
 
 High-order mesh can be converted to low-order through a filter. By default,
-all mesh data for tranforms is already converted to low-order meshes.
+all mesh data for transforms is already converted to low-order meshes.
 
-Ghost Zone
-""""""""""
-Ascent supported ghost zones.
+VTK-m
+-----
+Ascent's ability to perform visualization operations on exascale architectures
+is underpinned by VTK-m. Currently, pipelines in Ascent are constructed with various
+VTK-m filters wrapped by VTK-h and then by a flow filter. Although strongly encouraged,
+Ascent does not need to be compiled with VTK-m support.
+
+VTK-h
+-----
+At the beginning of Ascent development, there was no support for MPI inside of
+VTK-m. To augment VTK-m with distributed-memory capabilities, we created VTK-h,
+where the `h` stands for hybrid-parallel. Inside of VTK-h, we added a distributed-
+memory image compositing component and functions that ask global (across all MPI ranks)
+questions of the data set such as the range of a scalar field.
+
+Additionally, VTK-m began as a header only library and VTK-m does not currently build
+a library of filters. VTK-h acts as a stand-in for library of VTK-m filters, and VTK-h
+maintains the build system that manages CUDA, including GPU device selection, OpenMP, and
+Serial compilation. This inherently complicates the build system and generates very long
+compile times, thus VTK-h insulates Ascent from this additional complexity.
+
+
