@@ -43,7 +43,7 @@ packages:
     variants: +shared~dbm
   cmake:
     version: [3.9.6]
-    variants: ~openssl~ncurses
+    variants: ~openssl~ncurses+ownlibs
   hwloc:
     variants: ~libxml2
   perl:
