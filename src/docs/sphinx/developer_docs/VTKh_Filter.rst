@@ -43,15 +43,29 @@
 .. ############################################################################
 
 
-Developer Documentation
-=======================
+VTK-h Filter Anatomy
+====================
+A VTK-h filter interface is straight-forward:
 
-.. toctree::
-   :maxdepth: 2
+.. code-block:: c++
 
-   Overview
-   BuildEnvironment
-   VTKh_Filter
+  public:
+    Filter();
+    virtual ~Filter();
+    void SetInput(DataSet *input);
+    virtual std::string GetName() const = 0;
+    DataSet* GetOutput();
+    DataSet* Update();
 
-..
+  protected:
+    virtual void DoExecute() = 0;
+    virtual void PreExecute();
+    virtual void PostExecute();
 
+A new VTK-h filter must minimally implement two methods: ``GetName()`` and ``DoExecute``.
+A filter's input is a VTK-h data set which is a collection (a std::vector)  of VTK-m data set
+with extra meta data like the cycle and domain ids.
+
+Implementing A New Filter
+-------------------------
+I
