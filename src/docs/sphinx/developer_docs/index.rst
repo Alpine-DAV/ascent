@@ -42,17 +42,15 @@
 .. #
 .. ############################################################################
 
-Ascent User Documentation
-=========================
+
+Developer Documentation
+=======================
 
 .. toctree::
    :maxdepth: 2
 
    Overview
-   ExampleIntegrations
-   BuildingAscent
-   AscentAPI
-   Actions/index
-   GPU_notes
-   Tutorial
+   BuildEnvironment
+
+..
 

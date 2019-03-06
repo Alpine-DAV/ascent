@@ -52,7 +52,7 @@ A many-core capable lightweight in-situ visualization and analysis infrastructur
 Introduction
 ============
 
-Ascent is a system designed to meet the in-situ visualization and analysis needs of simulation code teams running multi-physics calculations on many-core HPC architectures. It provides rendering runtimes that can leverage many-core CPUs and GPUs to render images of simulation meshes. 
+Ascent is a system designed to meet the in-situ visualization and analysis needs of simulation code teams running multi-physics calculations on many-core HPC architectures. It provides rendering runtimes that can leverage many-core CPUs and GPUs to render images of simulation meshes.
 
 Ascent focuses on ease of use and reduced integration burden for simulation code teams.
 
@@ -104,6 +104,7 @@ Ascent Documentation
 
    QuickStart
    Ascent
+   developer_docs/index.rst
    Tutorials
    Releases
    Publications
