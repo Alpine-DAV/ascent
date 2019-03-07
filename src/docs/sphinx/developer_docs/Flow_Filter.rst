@@ -276,11 +276,19 @@ is of the same type as the template paramter. Alternatively, we could
 referene the input port by its decalared interface name:
 ``input("in").check_type<SomeType>()``.
 
+.. warning::
+    If you perfom input data type conversion, the temporary converted
+    data must be deleted before exiting the execute method.
+
+Once the filter input type is known it is safe to call ``input<KnownType>(0)``
+to retreive the pointer to the input (line 12).
+
 Flow filters have a member function ``params()`` that returns a reference
 to the Conduit node containing the filter parameter that were previously
 verified. Since we already verified the existance of the string parameter
 ``field``, it is safe to grab that parameter without checking the type or
 path.
+
 
 For optional parameters, care should be used when accessing node paths.
 Conduit nodes paths can be checked with ``params().has_path("some_path")``
@@ -293,7 +301,97 @@ between these two calls are very different:
 * ``node["path"].to_int32()``: I am expecting an int32 and please convert if for me
   whatever type it is can be converted to what I am expecting
 
+Filter Output
+^^^^^^^^^^^^^
+A filter's output is a pointer to a data sets. In the case of `tranforms` this type is
+expected to be a VTK-h data set. Output pointers are reference counted by Flow's registry
+and will be deleted when no downstream filter needs the output of the current filter.
 
+In the case of an `extract`, no output needs to be set.
+
+Registering Filters With Ascent
+"""""""""""""""""""""""""""""""
+Newly created filters need to be registered with the Ascent runtime.
+The file
+`ascent_runtime_filters.cpp <https://github.com/Alpine-DAV/ascent/blob/develop/src/ascent/runtimes/flow_filters/ascent_runtime_filters.cpp>`_
+is where all builtin filter are registered. Following the NoOp example:
+
+.. code-block:: c++
+    :caption: Ascent runtime filter registration
+
+    AscentRuntime::register_filter_type<VTKHNoOp>("transforms","noop");
+
+Filter registration is templated on the filter type and takes two arguments.
+
+* arg1: the type of the fitler. Valid values are ``transforms`` and ``extracts``
+* arg2: the front-facing API name of the filter. This is what a user would declare in an actions file
+
+Accessing Metadata
+------------------
+We currently populate a limited set of metadata that is accessable to flow filters.
+We place a conduit node containing the metadata inside the registry which can be
+retreived in the folloing manner:
+
+.. code-block:: c++
+    :caption: Accessing the regsitry metadata inside a flow filter
+
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    int cycle = -1;
+    float time = -1.f;
+    if(meta->has_path("cycle"))
+    {
+      cycle = (*meta)["cycle"].to_int32();
+    }
+    if(meta->has_path("time"))
+    {
+       time = (*meta)["time"].to_int32();
+    }
+
+The above code is conservative, checking to see if the paths exist. The current metadata values
+Ascent populates are:
+
+* cycle: simulation cycle
+* time: simulation time
+* refinement_level: number of times a high-order mesh is refined
+
+If these values are not provided by the simulation, then defaults are used.
+
+Using the Registry (state)
+--------------------------
+Filter are created and destroyed every time the graph is executed. Filters might
+want to keep state associated with a particular execution of the filter. A conduit node
+is a convnient container for arbitrary data, but there is no restriction on the type
+of data that can go inside the registry.
+
+.. code-block:: c++
+    :caption: Accessing the regsitry metadata inside a flow filter
+
+    conduit::Node *my_state_data = new conduit::Node();
+    // insert some data to the node
+
+    // adding the  node to the registry
+    graph().workspace().registry().add<conduit::Node>("my_state", my_state_data, 1);
+
+    // check for existance and retreive
+    if(graph().workspace().registry().has_entry("my_state"))
+    {
+      conduit::Node *data = graph().workspace().registry().fetch<conduit::Node>("my_state"))
+      // do more stuff
+    }
+
+Data kept in the registry will be destroyed when Ascent is torn down, but will persist otherwise.
+A problem that arises is how to tell different invocations of the same filter apart, since
+a filter can be called an arbitry number of times every time ascent is executed. The Ascent
+runtime gives unique names to filters that can be accessed by a filter member function
+``this->detailed_name()``. One possible solution is to use this name to differentiate
+filter invocations. This approach is reasonable if the actions remain the same throughout
+the simulation, but if they might change, all bets are off.
+
+.. note::
+    Advanced support of registry and workspace usage is only supported through
+    the Ascent developers platinum support contract, which can be purchased with the tears
+    of a unicorn. Alternatively, you are encouraged to look at the flow source code, unit tests,
+    and ask questions.
 
 Using MPI Inside Ascent
 -----------------------
