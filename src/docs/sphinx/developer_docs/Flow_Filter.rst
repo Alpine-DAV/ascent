@@ -390,7 +390,7 @@ the simulation, but if they might change, all bets are off.
 .. note::
     Advanced support of registry and workspace usage is only supported through
     the Ascent developers platinum support contract, which can be purchased with the tears
-    of a unicorn. Alternatively, you are encouraged to look at the flow source code, unit tests,
+    of a baby unicorn. Alternatively, you are encouraged to look at the flow source code, unit tests,
     and ask questions.
 
 Using MPI Inside Ascent
