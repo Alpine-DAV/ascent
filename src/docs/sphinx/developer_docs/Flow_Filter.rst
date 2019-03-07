@@ -229,9 +229,17 @@ filters to perform hierarchical surprise checking.
 
 Execute
 """""""
-The `execute()` method does the real work.
+The `execute()` method does the real work. In our example, we are wrapping the
+``VTKHNoOp`` filter which is a `transform`, i.e., a filter that can be called
+inside of a pipeline. Be default, `transforms` are passed VTK-h data sets and
+`extracts` are called with either Conduit Blueprint data sets (i.e., the data
+published by the simulation) or VTK-h data sets, when the `extract` consumes
+the result of a pipeline. The data type can be checked by the filter and converted
+by one of Ascent's data adapters located in the ``src/ascent/runtimes`` directory.
 
 .. code-block:: c++
+    :caption: An example execute method
+    :linenos:
 
     void
     VTKHNoOp::execute()
@@ -256,6 +264,35 @@ The `execute()` method does the real work.
 
         set_output<vtkh::DataSet>(noop_output);
     }
+
+
+Filter Inputs
+^^^^^^^^^^^^^
+
+Inputs to filters are always pointers.
+Lines 5-8 demonstrate how to check the type of data to the filter.
+``input(0).check_type<SomeType>()`` returns true if the input pointer
+is of the same type as the template paramter. Alternatively, we could
+referene the input port by its decalared interface name:
+``input("in").check_type<SomeType>()``.
+
+Flow filters have a member function ``params()`` that returns a reference
+to the Conduit node containing the filter parameter that were previously
+verified. Since we already verified the existance of the string parameter
+``field``, it is safe to grab that parameter without checking the type or
+path.
+
+For optional parameters, care should be used when accessing node paths.
+Conduit nodes paths can be checked with ``params().has_path("some_path")``
+Other methods exist to verify or convert their underlying types such as
+``node["path"].is_numeric()``. If you are expecting an integer the semantics
+between these two calls are very different:
+
+* ``node["path"].as_int32()``: I am positive this is an int32 and I alone
+  except the consequences if it is not
+* ``node["path"].to_int32()``: I am expecting an int32 and please convert if for me
+  whatever type it is can be converted to what I am expecting
+
 
 
 Using MPI Inside Ascent
