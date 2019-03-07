@@ -45,7 +45,9 @@
 
 VTK-h Filter Anatomy
 ====================
-A VTK-h filter interface is straight-forward:
+VTK-h filters can be found in the ``src/vtkh/filters`` directory of the
+`VTK-h github repsository <https://github.com/Alpine-DAV/vtk-h>`_.
+The VTK-h filter interface is straight-forward:
 
 .. code-block:: c++
 
@@ -95,6 +97,12 @@ Inside of the source file, you are free to create new and invoke existing VTK-m 
 execute on supported devices. For a more fully functional example, consult the `Marching Cubes <https://github.com/Alpine-DAV/vtk-h/blob/develop/src/vtkh/filters/MarchingCubes.cpp>`_
 filter.
 
+Updating the CMakeLists.txt
+---------------------------
+Once you have copied the header and source file, add the new file names to the CMakeLists file in
+the filters directory. The header should be added to the ``vtkh_filters_headers`` list and the
+source file to the ``vtkh_filters_sources`` list.
+
 Using MPI Inside VTK-h
 ----------------------
 VTK-h and Ascent both create two separate libraries for MPI and non-MPI (i.e., serial).
@@ -116,4 +124,5 @@ must be guarded inside the code. Here is an example.
 .. note::
     ``vtkh::GetMPICommHandle()`` will throw an exception if called outside of a ``VTKH_PARALLEL``
     block.
+
 
