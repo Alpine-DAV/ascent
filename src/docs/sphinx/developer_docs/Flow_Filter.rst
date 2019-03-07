@@ -126,8 +126,8 @@ Parameters are passed through Ascent and passed to the filters. For detailed
 examples of filter in Ascent see the :ref:`pipelines` section.
 
 
-How Are Parameters Passed
-^^^^^^^^^^^^^^^^^^^^^^^^^
+How Are Parameters Passed?
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 The parameters are passed to the Ascent API through Conduit nodes. A simple filters
 interface looks like this in c++:
 
@@ -228,29 +228,56 @@ declare a set of known parameters and check for the existence of surprises.
 filters to perform hierarchical surprise checking.
 
 Execute
--------
+"""""""
+The `execute()` method does the real work.
+
+.. code-block:: c++
+
+    void
+    VTKHNoOp::execute()
+    {
+
+        if(!input(0).check_type<vtkh::DataSet>())
+        {
+            ASCENT_ERROR("vtkh_no_op input must be a vtk-h dataset");
+        }
+
+        std::string field_name = params()["field"].as_string();
+
+        vtkh::DataSet *data = input<vtkh::DataSet>(0);
+        vtkh::NoOp noop;
+
+        noop.SetInput(data);
+        noop.SetField(field_name);
+
+        noop.Update();
+
+        vtkh::DataSet *noop_output = noop.GetOutput();
+
+        set_output<vtkh::DataSet>(noop_output);
+    }
+
 
 Using MPI Inside Ascent
 -----------------------
 
-VTK-h and Ascent both create two separate libraries for MPI and non-MPI (i.e., serial).
+Ascent creates two separate libraries for MPI and non-MPI (i.e., serial).
 In order to maintain the same interface for both version of the library, ``MPI_Comm`` handles
 are represented by integers and are converted to the MPI implementations underlying representation
 by using the ``MPI_Comm_f2c`` function.
 
-Code containing calls to MPI are protected by the define ``VTKH_PARALLEL`` and calls to MPI API calls
-must be guarded inside the code. Here is an example.
+Code containing calls to MPI are protected by the define ``ASCENT_MPI_ENABLED`` and calls to MPI API calls
+must be guarded inside the code. In Ascent, the MPI comm handle is stored in and can be
+retrieved from the ``flow::Workspace`` which is accessible from inside a flow filter.
 
 .. code-block:: c++
+    :caption: Example of code inside a filter that retreives the MPI comm handle from the workspace
 
-    #ifdef VTKH_PARALLEL
-      MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+    #ifdef ASCENT_MPI_ENABLED
+      int comm_id = flow::Workspace::default_mpi_comm();
+      MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
       int rank;
       MPI_Comm_rank(comm, &rank);
     #endif
-
-.. note::
-    ``vtkh::GetMPICommHandle()`` will throw an exception if called outside of a ``VTKH_PARALLEL``
-    block.
 
 
