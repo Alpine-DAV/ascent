@@ -66,7 +66,7 @@ endif()
 ###############################################################################
 # Import Conduit's CMake targets
 ###############################################################################
-find_dependency(conduit REQUIRED
+find_dependency(Conduit REQUIRED
                 NO_DEFAULT_PATH 
                 PATHS ${CONDUIT_DIR}/lib/cmake)
 
