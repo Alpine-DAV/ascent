@@ -44,8 +44,8 @@
 
 ###############################################################################
 # Note:
-# This file is named AscentConfig.cmake because once upon a time 
-# when it was named ascent-config.cmake, we found that CMake's exported 
+# This file is named AscentConfig.cmake because once upon a time
+# when it was named ascent-config.cmake, we found that CMake's exported
 # targets script includes all "ascent-*.cmake" files. This logic would
 # cause this script to be included more than once, seeding instability
 # that caused great harm to the kingdom.
@@ -55,8 +55,7 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 @PACKAGE_INIT@
 
-# Ascent version number
-set(ASCENT_VERSION "@ASCENT_VERSION@")
+set(ASCENT_VERSION "@PROJECT_VERSION@")
 set(ASCENT_INSTALL_PREFIX "@ASCENT_INSTALL_PREFIX@")
 set(ASCENT_CONDUIT_DIR  "@CONDUIT_DIR@")
 
