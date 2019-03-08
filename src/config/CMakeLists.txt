@@ -105,10 +105,13 @@ if (NOT DEFINED ASCENT_INSTALL_CMAKE_MODULE_DIR)
 endif()
 
 include(CMakePackageConfigHelpers)
+
+# TODO ADD VERSION!
+
 # setup cmake exports
 configure_package_config_file(
-  ${PROJECT_SOURCE_DIR}/cmake/ascent-config.cmake.in
-  ${PROJECT_BINARY_DIR}/${ASCENT_INSTALL_CMAKE_MODULE_DIR}/ascent-config.cmake
+  AscentConfig.cmake.in
+  ${PROJECT_BINARY_DIR}/${ASCENT_INSTALL_CMAKE_MODULE_DIR}/AscentConfig.cmake
   INSTALL_DESTINATION ${ASCENT_INSTALL_CONFIG_DIR}
   PATH_VARS
     ASCENT_INSTALL_INCLUDE_DIR
@@ -118,18 +121,11 @@ configure_package_config_file(
     ASCENT_INSTALL_CMAKE_MODULE_DIR
     )
 
-configure_file (${PROJECT_SOURCE_DIR}/cmake/ascent-deps-paths.cmake.in 
-                ${PROJECT_BINARY_DIR}/${ASCENT_INSTALL_CMAKE_MODULE_DIR}/ascent-deps-paths.cmake @ONLY)
-
-install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk"
-        DESTINATION share/ascent/)
-
-install(FILES
-        ${PROJECT_BINARY_DIR}/${ASCENT_INSTALL_CMAKE_MODULE_DIR}/ascent-config.cmake
-        ${PROJECT_BINARY_DIR}/${ASCENT_INSTALL_CMAKE_MODULE_DIR}/ascent-deps-paths.cmake
+    install(FILES
+        ${PROJECT_BINARY_DIR}/${ASCENT_INSTALL_CMAKE_MODULE_DIR}/AscentConfig.cmake
+        ascent_setup_deps.cmake
+        ascent_setup_targets.cmake
         DESTINATION ${ASCENT_INSTALL_CMAKE_MODULE_DIR})
-
 
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk" DESTINATION share/ascent)
