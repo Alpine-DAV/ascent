@@ -55,28 +55,39 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 @PACKAGE_INIT@
 
-set(ASCENT_VERSION "@PROJECT_VERSION@")
-set(ASCENT_INSTALL_PREFIX "@ASCENT_INSTALL_PREFIX@")
-set(ASCENT_CONDUIT_DIR  "@CONDUIT_DIR@")
 
-# old style ... (remove eventually)
-if(EXISTS ${ASCENT_CONDUIT_DIR}/lib/cmake/conduit-deps-paths.cmake)
-    include(${ASCENT_CONDUIT_DIR}/lib/cmake/conduit-deps-paths.cmake)
+if(NOT ASCENT_FOUND)
+
+    set(ASCENT_VERSION "@PROJECT_VERSION@")
+    set(ASCENT_INSTALL_PREFIX "@ASCENT_INSTALL_PREFIX@")
+    set(ASCENT_CONDUIT_DIR  "@CONDUIT_DIR@")
+
+    # advertise if vtk-h support is enabled
+    set(ASCENT_VTKH_ENABLED @VTKH_FOUND@)
+    set(ASCENT_VTKH_DIR "@VTKH_DIR@")
+    set(ASCENT_VTKM_DIR "@VTKM_DIR@")
+    
+    # advertise if mfem support is enabled
+    set(ASCENT_MFEM_ENABLED @MFEM_FOUND@)
+    set(ASCENT_MFEM_DIR "@MFEM_DIR@")
+
+
+    set(ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
+    
+    set(ASCENT_MPI_ENABLED @ENABLE_MPI@)
+
+    # pull in vars with details about configured paths
+    get_filename_component(ASCENT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+    # setup dependent pkgs (conduit + vtk-h)
+    include(${ASCENT_CMAKE_CONFIG_DIR}/ascent_setup_deps.cmake)
+
+    # include the main exported targets
+    include("${ASCENT_CMAKE_CONFIG_DIR}/ascent.cmake")
+
+    # finish setup
+    include("${ASCENT_CMAKE_CONFIG_DIR}/ascent_setup_targets.cmake")
+    
+    set(ASCENT_FOUND TRUE)
+
 endif()
-
-set(ASCENT_VTKM_DIR "@VTKM_DIR@")
-set(ASCENT_VTKH_DIR "@VTKH_DIR@")
-set(ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
-
-# pull in vars with details about configured paths
-get_filename_component(ASCENT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-
-# setup dependent pkgs (conduit + vtk-h)
-include(${ASCENT_CMAKE_CONFIG_DIR}/ascent_setup_deps.cmake)
-
-# include the main exported targets
-include("${ASCENT_CMAKE_CONFIG_DIR}/ascent.cmake")
-
-# finish setup
-include("${ASCENT_CMAKE_CONFIG_DIR}/ascent_setup_targets.cmake")
-

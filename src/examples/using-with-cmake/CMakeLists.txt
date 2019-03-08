@@ -91,7 +91,7 @@ endif()
 #
 # Use CMake's find_package to import ascent's targets
 #
-find_package(ascent REQUIRED
+find_package(Ascent REQUIRED
              NO_DEFAULT_PATH 
              PATHS ${ASCENT_DIR}/lib/cmake)
 

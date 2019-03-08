@@ -125,20 +125,22 @@ if(ASCENT_MPI_ENABLED)
     
 endif()
 
-message(STATUS "FOUND Ascent")
-message(STATUS "ASCENT_VERSION             = ${ASCENT_VERSION}")
-message(STATUS "ASCENT_INSTALL_PREFIX      = ${ASCENT_INSTALL_PREFIX}")
-message(STATUS "ASCENT_INCLUDE_DIRS        = ${ASCENT_INCLUDE_DIRS}")
-message(STATUS "ASCENT_FORTRAN_ENABLED     = ${ASCENT_FORTRAN_ENABLED}")
-message(STATUS "ASCENT_PYTHON_EXECUTABLE   = ${ASCENT_PYTHON_EXECUTABLE}")
+if(NOT Ascent_FIND_QUIETLY)
 
-set(_print_targets "ascent::ascent ")
-if(ASCENT_MPI_ENABLED)
-    set(_print_targets "${_print_targets} ascent::ascent_mpi")
+    message(STATUS "ASCENT_VERSION             = ${ASCENT_VERSION}")
+    message(STATUS "ASCENT_INSTALL_PREFIX      = ${ASCENT_INSTALL_PREFIX}")
+    message(STATUS "ASCENT_INCLUDE_DIRS        = ${ASCENT_INCLUDE_DIRS}")
+    message(STATUS "ASCENT_FORTRAN_ENABLED     = ${ASCENT_FORTRAN_ENABLED}")
+    message(STATUS "ASCENT_PYTHON_EXECUTABLE   = ${ASCENT_PYTHON_EXECUTABLE}")
+
+    set(_print_targets "ascent::ascent")
+    if(ASCENT_MPI_ENABLED)
+        set(_print_targets "${_print_targets} ascent::ascent_mpi")
+    endif()
+
+    message(STATUS "Ascent imported targets: ${_print_targets}")
+    unset(_print_targets)
+
 endif()
-
-message(STATUS "Ascent imported targets: ${_print_targets}")
-unset(_print_targets)
-
 
 

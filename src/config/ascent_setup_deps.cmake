@@ -87,11 +87,9 @@ if(VTKH_DIR)
     ###############################################################################
     # Import vtk-h CMake targets
     ###############################################################################
-    include(${VTKH_DIR}/lib/VTKhConfig.cmake)
-    # TODO:
-    #find_dependency(conduit REQUIRED
-    #                NO_DEFAULT_PATH 
-    #                PATHS ${VTKH_DIR}/lib/)
+    find_dependency(VTKh REQUIRED
+                   NO_DEFAULT_PATH
+                   PATHS ${VTKH_DIR}/lib/)
 endif()
 
 
