@@ -42,10 +42,12 @@
 .. #
 .. ############################################################################
 
+.. _flow_filter:
 
 Flow Filter Anatomy
 ===================
-The full interface to a Flow filter can be found in the
+Flow filters are the basic unit of execution inside of Ascent, and all functionality
+is implemented as a Flow filter. The full interface to a Flow filter can be found in the
 `Flow filter header file <https://github.com/Alpine-DAV/ascent/blob/develop/src/flow/flow_filter.hpp>`_.
 Here is a summary of the functions relevant to a filter developer:
 
@@ -389,9 +391,9 @@ the simulation, but if they might change, all bets are off.
 
 .. note::
     Advanced support of registry and workspace usage is only supported through
-    the Ascent developers platinum support contract, which can be purchased with the tears
-    of a baby unicorn. Alternatively, you are encouraged to look at the flow source code, unit tests,
-    and ask questions.
+    the Ascent developers platinum support contract, which can be purchased with
+    baby unicorn tears. Alternatively, you are encouraged to look at the flow
+    source code, unit tests, and ask questions.
 
 Using MPI Inside Ascent
 -----------------------

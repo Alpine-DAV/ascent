@@ -43,12 +43,14 @@
 .. ############################################################################
 
 
+.. _dev_overview:
+
 Ascent Developement Overview
 ============================
 Ascent's architecture is divided into two main components:
 
   * Flow: a simple and flexible data flow network
-  * Runtime: code that assembles and runs data flow networks to process data 
+  * Runtime: code that assembles and runs data flow networks to process data
 
 Flow
 ----
@@ -69,6 +71,8 @@ There are three main components to Flow:
   * Graph: contains the filter graph and manages the adding of filters
   * Workspace: contains both the registry and filter graph
 
+Flow filters are the basic unit of execution inside of Ascent, and all functionality
+is implemented as a Flow filter.
 
 Ascent Runtime
 --------------
@@ -97,7 +101,7 @@ Ascent supports several different data types, and has adapters for converting be
   * MFEM: high-order finite element meshes
 
 Implementers of Flow filters must check the input data type and apply the
-appropriate conversions if the data does not match what is required. 
+appropriate conversions if the data does not match what is required.
 
 Mesh Types
 """"""""""

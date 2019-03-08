@@ -49,6 +49,7 @@ Developer Documentation
 .. toctree::
    :maxdepth: 2
 
+   Contributing
    Overview
    BuildEnvironment
    VTKh_Filter

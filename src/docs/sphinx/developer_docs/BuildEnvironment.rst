@@ -42,6 +42,8 @@
 .. #
 .. ############################################################################
 
+.. _build_env:
+
 Setting Up A Development Environment
 ====================================
 The type of development environment needed depends on the use case.
