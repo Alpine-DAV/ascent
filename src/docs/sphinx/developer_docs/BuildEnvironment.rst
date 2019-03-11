@@ -53,7 +53,7 @@ and VTK-h.
 
 The list of common development use cases:
   * C++ and python filter development using Conduit Mesh Blueprint data
-  * Connecting an new library to Ascent
+  * Connecting a new library to Ascent
   * VTK-m filter development
 
 

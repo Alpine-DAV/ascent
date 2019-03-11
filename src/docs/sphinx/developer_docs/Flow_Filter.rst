@@ -130,7 +130,7 @@ examples of filter in Ascent see the :ref:`pipelines` section.
 
 How Are Parameters Passed?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-The parameters are passed to the Ascent API through Conduit nodes. A simple filters
+The parameters are passed to the Ascent API through Conduit nodes. A simple filter
 interface looks like this in c++:
 
 .. code-block:: c++
@@ -299,9 +299,9 @@ Other methods exist to verify or convert their underlying types such as
 between these two calls are very different:
 
 * ``node["path"].as_int32()``: I am positive this is an int32 and I alone
-  except the consequences if it is not
+  accept the consequences if it is not
 * ``node["path"].to_int32()``: I am expecting an int32 and please convert if for me
-  whatever type it is can be converted to what I am expecting
+  assuming whatever type it is can be converted to what I am expecting
 
 Filter Output
 ^^^^^^^^^^^^^
@@ -332,7 +332,7 @@ Accessing Metadata
 ------------------
 We currently populate a limited set of metadata that is accessable to flow filters.
 We place a conduit node containing the metadata inside the registry which can be
-retreived in the folloing manner:
+retreived in the following manner:
 
 .. code-block:: c++
     :caption: Accessing the regsitry metadata inside a flow filter
@@ -360,7 +360,7 @@ If these values are not provided by the simulation, then defaults are used.
 
 Using the Registry (state)
 --------------------------
-Filter are created and destroyed every time the graph is executed. Filters might
+Filters are created and destroyed every time the graph is executed. Filters might
 want to keep state associated with a particular execution of the filter. A conduit node
 is a convnient container for arbitrary data, but there is no restriction on the type
 of data that can go inside the registry.

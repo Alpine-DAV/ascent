@@ -92,7 +92,7 @@ registered with the Ascent runtime by declaring the type of the filter
 .. note::
     Flow filters can also be registered with the Ascent runtime by applications outside of Ascent.
 
-What Types of Mesh Data Does Ascent Does Ascent Use?
+What Types of Mesh Data Does Ascent Use?
 ----------------------------------------------------
 Ascent supports several different data types, and has adapters for converting between them.
 
@@ -133,12 +133,12 @@ VTK-h
 -----
 At the beginning of Ascent development, there was no support for MPI inside of
 VTK-m. To augment VTK-m with distributed-memory capabilities, we created VTK-h,
-where the `h` stands for hybrid-parallel. Inside of VTK-h, we added a distributed-
-memory image compositing component and functions that answer global (across all MPI ranks)
+where the `h` stands for hybrid-parallel. Inside of VTK-h, we added a distributed-memory
+image compositing component and functions that answer global (across all MPI ranks)
 questions about data sets such as obtaining the range of a scalar field.
 
 Additionally, VTK-m began as a header only library and VTK-m does not currently build
-a library of filters. VTK-h acts as a stand-in for library of VTK-m filters, and VTK-h
+a library of filters. VTK-h acts as a stand-in for a library of VTK-m filters, and VTK-h
 maintains the build system that manages CUDA, including GPU device selection, OpenMP, and
 Serial compilation. Supporting the range of VTK-m features needed leads to very long
 compile times, thus VTK-h insulates Ascent from this additional complexity.
