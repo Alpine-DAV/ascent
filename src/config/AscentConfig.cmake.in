@@ -42,19 +42,52 @@
 #
 ###############################################################################
 
+###############################################################################
+# Note:
+# This file is named AscentConfig.cmake because once upon a time
+# when it was named ascent-config.cmake, we found that CMake's exported
+# targets script includes all "ascent-*.cmake" files. This logic would
+# cause this script to be included more than once, seeding instability
+# that caused great harm to the kingdom.
+###############################################################################
+
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 @PACKAGE_INIT@
 
-# Conduit version number
-set(ASCENT_VERSION "@ASCENT_VERSION@")
 
-set(ASCENT_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/include/ascent")
+if(NOT ASCENT_FOUND)
 
-get_filename_component(ASCENT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-include(${ASCENT_CMAKE_CONFIG_DIR}/ascent-deps-paths.cmake)
-include(${ASCENT_CMAKE_CONFIG_DIR}/ascent.cmake)
+    set(ASCENT_VERSION "@PROJECT_VERSION@")
+    set(ASCENT_INSTALL_PREFIX "@ASCENT_INSTALL_PREFIX@")
+    set(ASCENT_CONDUIT_DIR  "@CONDUIT_DIR@")
+
+    # advertise if vtk-h support is enabled
+    set(ASCENT_VTKH_ENABLED @VTKH_FOUND@)
+    set(ASCENT_VTKH_DIR "@VTKH_DIR@")
+    set(ASCENT_VTKM_DIR "@VTKM_DIR@")
+    
+    # advertise if mfem support is enabled
+    set(ASCENT_MFEM_ENABLED @MFEM_FOUND@)
+    set(ASCENT_MFEM_DIR "@MFEM_DIR@")
 
 
+    set(ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
+    
+    set(ASCENT_MPI_ENABLED @ENABLE_MPI@)
 
+    # pull in vars with details about configured paths
+    get_filename_component(ASCENT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
+    # setup dependent pkgs (conduit + vtk-h)
+    include(${ASCENT_CMAKE_CONFIG_DIR}/ascent_setup_deps.cmake)
+
+    # include the main exported targets
+    include("${ASCENT_CMAKE_CONFIG_DIR}/ascent.cmake")
+
+    # finish setup
+    include("${ASCENT_CMAKE_CONFIG_DIR}/ascent_setup_targets.cmake")
+    
+    set(ASCENT_FOUND TRUE)
+
+endif()
