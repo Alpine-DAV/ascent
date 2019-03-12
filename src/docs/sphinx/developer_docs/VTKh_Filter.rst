@@ -71,7 +71,7 @@ with extra meta data like the cycle and domain ids.
 
 Implementing A New Filter
 -------------------------
-As a convenience, we have created the `NoOp <https://github.com/Alpine-DAV/vtk-h/blob/develop/src/vtkh/filters/NoOp.hpp>`_
+As a convenience, we provide a `NoOp <https://github.com/Alpine-DAV/vtk-h/blob/develop/src/vtkh/filters/NoOp.hpp>`_
 filter as staring point. Its recommended that you copy and rename the header and source code
 files and use that as a base. The NoOp filter demonstrates how to loop through all the domains
 in the input data set, retrieve the underlying VTK-m data set, and where the interesting stuff
@@ -107,7 +107,7 @@ source file to the ``vtkh_filters_sources`` list.
 Using MPI Inside VTK-h
 ----------------------
 VTK-h and Ascent both create two separate libraries for MPI and non-MPI (i.e., serial).
-In order to maintain the same interface for both version of the library, ``MPI_Comm`` handles
+In order to maintain the same interface for both versions of the library, ``MPI_Comm`` handles
 are represented by integers and are converted to the MPI implementations underlying representation
 by using the ``MPI_Comm_f2c`` function.
 

@@ -71,11 +71,11 @@ Here is a summary of the functions relevant to a filter developer:
 
 A derived filter must minimally implement the ``declare_interface`` and ``execute``
 methods, but it is highly encouraged that a new filter implement ``verify_params``
-as well. ``verify_params`` alerts uses to errors and unexpected parameters.
+as well. ``verify_params`` alerts users to input errors and unexpected parameters.
 
 .. note::
 
-    Developing a flow filter will require a working knowledge of the Conduit API.
+    Developing a flow filter requires a working knowledge of the Conduit API.
     In the :ref:`tutorials` section under ``Conduit Examples``, there are several
     examples of basic Conduit usage. More Conduit tutorial resources can be found in the
     `Conduit documentation <https://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp.html>`_.
@@ -104,7 +104,7 @@ Interface Declaration
 
 
 * ``type_name``: declares the name of the filter to flow, and the only requirement is that this name be unique.
-* ``port_names``: declares a list input port names.
+* ``port_names``: declares a list of input port names.
 * ``output_port``: declares if this filter has an output of not. Valid values are ``true`` and ``false``.
 
 The ``port_names`` parameter is a list of input port names that can be referenced by name or index
@@ -124,7 +124,7 @@ the ``output_port`` should be declared ``false`` indicating that this filter is 
 
 Parameter Verification
 """"""""""""""""""""""
-Parameters are passed through Ascent and passed to the filters. For detailed
+Parameters are passed through Ascent and then to filters. For detailed
 examples of filter in Ascent see the :ref:`pipelines` section.
 
 
@@ -155,15 +155,15 @@ or equivalently in json:
     }
 
 The Ascent runtime looks for the ``params`` node and passes it to the filter
-upon creation. Parameter are verified at the time of the filter execution.
+upon creation. Parameters are verified when the filter is created during execution.
 
 Filter Parameter Verification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The ``verify_params`` method allow the filter creator to verify the expected parameters
 and parameter types before the filter is executed. If the verification fails, error messages
-are shown to the users. The method has two parameters: the parameters of the filter and a
-conduit node that is populated with error information that flow will show if the result
-of the verification is false (error state).
+are shown to the user. The method has two parameters: a Conduit node holding the parameters
+of the filter and a Conduit node that is populated with error information that flow will
+show if the result of the verification is false (error state).
 
 .. code-block:: c++
     :caption: Example parameter verification
@@ -198,6 +198,7 @@ While you can use the Conduit API to check for expected paths and types of value
 provide a number of methods to streamline common checks. These
 `parameter checking helpers <https://github.com/Alpine-DAV/ascent/blob/develop/src/ascent/runtimes/flow_filters/ascent_runtime_param_check.hpp>`_
 provide two basic checking mechanisms:
+
 * ``check_string``: checks for the presence of a string parameter
 * ``check_numeric``: checks for the presence of a numeric parameter
 
@@ -211,7 +212,7 @@ Both functions have the same signature:
                        bool required);
 
 * ``path``: the expected path to the parameter in the Conduit node
-* ``params``: the parameters pass into verify
+* ``params``: the parameters passed into verify
 * ``info``: the info node passed into verify
 * ``required``: indication that the parameter is required or optional
 
@@ -219,15 +220,15 @@ These helper functions return ``false`` if the parameter check fails.
 
 Surprises
 +++++++++
-A common user error is to set the path to a parameter in the wrong node path.
+A common user error is to set a parameter at the wrong path.
 For example the filter expects a parameter ``field`` but the user
 adds the path ``field_name``, the verification will fail and complain about a
 missing parameter. In order to provide a better error message, we provide
 a surprise parameter checking mechanism that reports unknown paths.
-Lines 9-18 in :ref:`verify` shows how to use the surprise_check function to
+Lines 9-18 in :ref:`verify` show how to use the surprise_check function to
 declare a set of known parameters and check for the existence of surprises.
-``surpise_check`` also provides a means to ignore certain paths, which enables
-filters to perform hierarchical surprise checking.
+``surpise_check`` also allows you to ignore certain paths, which enables
+hierarchical surprise checking.
 
 Execute
 """""""
@@ -274,20 +275,20 @@ Filter Inputs
 Inputs to filters are always pointers.
 Lines 5-8 demonstrate how to check the type of data to the filter.
 ``input(0).check_type<SomeType>()`` returns true if the input pointer
-is of the same type as the template paramter. Alternatively, we could
-referene the input port by its decalared interface name:
+is of the same type as the template parameter. Alternatively, we could
+reference the input port by its declared interface name:
 ``input("in").check_type<SomeType>()``.
 
 .. warning::
-    If you perfom input data type conversion, the temporary converted
+    If you perform input data type conversion, the temporary converted
     data must be deleted before exiting the execute method.
 
 Once the filter input type is known it is safe to call ``input<KnownType>(0)``
-to retreive the pointer to the input (line 12).
+to retrieve the pointer to the input (line 12).
 
 Flow filters have a member function ``params()`` that returns a reference
-to the Conduit node containing the filter parameter that were previously
-verified. Since we already verified the existance of the string parameter
+to the Conduit node containing the filter parameters that were previously
+verified. Since we already verified the existence of the string parameter
 ``field``, it is safe to grab that parameter without checking the type or
 path.
 
@@ -326,13 +327,13 @@ is where all builtin filter are registered. Following the NoOp example:
 Filter registration is templated on the filter type and takes two arguments.
 
 * arg1: the type of the fitler. Valid values are ``transforms`` and ``extracts``
-* arg2: the front-facing API name of the filter. This is what a user would declare in an actions file
+* arg2: the front-facing API name of the filter. This is what a user would declare in an actions file.
 
 Accessing Metadata
 ------------------
 We currently populate a limited set of metadata that is accessable to flow filters.
-We place a conduit node containing the metadata inside the registry which can be
-retreived in the following manner:
+We place a Conduit node containing the metadata inside the registry which can be
+accessed in the following manner:
 
 .. code-block:: c++
     :caption: Accessing the regsitry metadata inside a flow filter
@@ -362,11 +363,11 @@ Using the Registry (state)
 --------------------------
 Filters are created and destroyed every time the graph is executed. Filters might
 want to keep state associated with a particular execution of the filter. A conduit node
-is a convnient container for arbitrary data, but there is no restriction on the type
+is a convenient container for arbitrary data, but there is no restriction on the type
 of data that can go inside the registry.
 
 .. code-block:: c++
-    :caption: Accessing the regsitry metadata inside a flow filter
+    :caption: Accessing the registry metadata inside a flow filter
 
     conduit::Node *my_state_data = new conduit::Node();
     // insert some data to the node
@@ -374,7 +375,7 @@ of data that can go inside the registry.
     // adding the  node to the registry
     graph().workspace().registry().add<conduit::Node>("my_state", my_state_data, 1);
 
-    // check for existance and retreive
+    // check for existence and retrieve
     if(graph().workspace().registry().has_entry("my_state"))
     {
       conduit::Node *data = graph().workspace().registry().fetch<conduit::Node>("my_state"))
@@ -383,11 +384,11 @@ of data that can go inside the registry.
 
 Data kept in the registry will be destroyed when Ascent is torn down, but will persist otherwise.
 A problem that arises is how to tell different invocations of the same filter apart, since
-a filter can be called an arbitry number of times every time ascent is executed. The Ascent
+a filter can be called an arbitrary number of times every time ascent is executed. The Ascent
 runtime gives unique names to filters that can be accessed by a filter member function
 ``this->detailed_name()``. One possible solution is to use this name to differentiate
 filter invocations. This approach is reasonable if the actions remain the same throughout
-the simulation, but if they might change, all bets are off.
+the simulation, but if they might change, all bets are o ff.
 
 .. note::
     Advanced support of registry and workspace usage is only supported through
@@ -399,7 +400,7 @@ Using MPI Inside Ascent
 -----------------------
 
 Ascent creates two separate libraries for MPI and non-MPI (i.e., serial).
-In order to maintain the same interface for both version of the library, ``MPI_Comm`` handles
+In order to maintain the same interface for both versions of the library, ``MPI_Comm`` handles
 are represented by integers and are converted to the MPI implementations underlying representation
 by using the ``MPI_Comm_f2c`` function.
 
@@ -408,7 +409,7 @@ must be guarded inside the code. In Ascent, the MPI comm handle is stored in and
 retrieved from the ``flow::Workspace`` which is accessible from inside a flow filter.
 
 .. code-block:: c++
-    :caption: Example of code inside a filter that retreives the MPI comm handle from the workspace
+    :caption: Example of code inside a filter that retrieves the MPI comm handle from the workspace
 
     #ifdef ASCENT_MPI_ENABLED
       int comm_id = flow::Workspace::default_mpi_comm();

@@ -172,13 +172,14 @@ file was created that contains the CMake variables need for an Ascent build:
 
 I Want To Develop VTK-m and VTK-h Code
 --------------------------------------
-In addition to the steps in the previous section, builds and installs of VTK-m and
-VTK-h are needed to develop codes in Ascent. This following information builds on the
-previous section for altering a spack-based build to point to manually built versions
-of VTK-m and VTK-h. If all the dependencies were built  manually, then this section
+If you want to add new features to VTK-m and VTK-h, and expose those features in 
+Ascent. In addition to the steps in the previous section, you will need to build
+and install VTK-m and VTK-h. The following information builds on the
+previous section, altering a spack-based build to instead use manually built versions
+of VTK-m and VTK-h. If all the dependencies were built manually, then this section
 can be safely skipped.
 
-Follow the instructions in :ref:`building_vtkm` and
+First follow the instructions in :ref:`building_vtkm` and
 :ref:`building_vtkh`.
 
 Once built and installed, update the CMake configure file with the locations
