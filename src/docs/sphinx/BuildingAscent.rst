@@ -62,7 +62,7 @@ Ascent uses CMake for its build system.
 Building Ascent creates two separate libraries:
 
     * libascent : a version for execution on a single node
-    * libascent_mpi : a version for distributed memory parallel
+    * libascent_mpi : a version for distributed-memory parallel
 
 The CMake variable( ENABLE_MPI ON | OFF ) controls the building the parallel version of Ascent and included proxy-apps.
 

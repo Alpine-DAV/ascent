@@ -53,6 +53,7 @@ Ascent User Documentation
    BuildingAscent
    AscentAPI
    Actions/index
+   Utilities
    GPU_notes
    Tutorial
 
