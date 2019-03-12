@@ -55,7 +55,7 @@ Currently, Ascent provides two main utilities:
 
 Generate Spack Eviromnent Script
 --------------------------------
-The uberenv spack-based build can create a large number of libraries that exist in
+The uberenv spack-based build installs libraries into 
 difficult to locate paths. The ``gen_spack_env_script.py`` is a utility program that
 searches the uberenv build for user specified dependencies and creates shell script that
 loads these locations into your path.
@@ -96,7 +96,7 @@ Replay
 ------
 Replay is a utility that allows the user to 'replay' Conduit Blueprint HDF5
 files saved by Ascent or exported by VisIt (starting in version 3.0 beta) back into
-Ascent. Simulation often take a significant amount of time to develop into a meaningful
+Ascent. Simulations often take a significant amount of time to develop into a meaningful
 or interesting state. Replay enables the user or developer to cherry-pick specific time steps
 and load them into Ascent.
 
@@ -111,20 +111,20 @@ There are several use cases for using replay:
 When creating in situ actions, a common strategy for scripting actions a priori is to
 get a smaller representation of the simulation data a user expects to see in situ and
 create visualization actions that can then be applied to the full data set in situ.
-Replay enables the user to load in data into Ascent without using a fully integrated
+Replay enables the user to load data into Ascent without using a fully integrated
 simulation workflow.
 
 Additionally, replay can be used for Ascent and algorithm development. Replay
-can load specific data set or time steps into Ascent. With replay, loading various test cases
+can load specific data sets or time steps into Ascent. With replay, loading various test cases
 and iterating over development cycles is straight forward.
 
 How Do I Get Blueprint Files?
 """""""""""""""""""""""""""""
-To use replay, you first need compatible data and there are two methods for obtaining it.
+To use replay, you first need compatible data and there are two methods to obtaining it.
 
 Using Ascent
 ^^^^^^^^^^^^
-The ``relay`` extract saves out the Conduit Blueprint HDF5 files that replay consumes.
+The ``relay`` extract saves out Conduit Blueprint HDF5 files that replay consumes.
 Simply add the extract to the actions in the code or actions file. The ``relay`` extract can
 also sub-select the fields that are saved to reduce the total data set size. For more information see
 the :ref:`relay` section.
@@ -139,11 +139,11 @@ the :ref:`relay` section.
 
 Using VisIt
 ^^^^^^^^^^^
-Starting with 3.0 beta, VisIt supports exporting databases in Conduit Blueprint HDF5 format.
-With this support, VisIt can serve file format converter from any of the many supported
+Starting with 3.0 beta, VisIt supports exporting databases to the Conduit Blueprint HDF5 format.
+With this support, VisIt can serve as file format converter from any of the many supported
 database reader formats to the format that replay can consume.
 
-To export in Blueprint format, select export from the file menu:
+To export in Blueprint format, select export from VisIt's File Menu:
 
 ..  image:: images/export_menu.png
     :width: 50%
@@ -157,7 +157,7 @@ Then from the **Export to** drop-down, select Blueprint:
 
 How Do I Use It?
 """"""""""""""""
-Replay is built in the ``utilities/replay`` directory of the installation or build.
+Replay executables are created in the ``utilities/replay`` directory of the installation or build.
 There are two versions of replay:
 
 * ``replay_ser``: a serial (non-MPI) version
@@ -166,8 +166,8 @@ There are two versions of replay:
 The options for replay are:
 
 * ``--root``: specifies Blueprint root file to load
-* ``--cycles``: specifies a text file containing a list Blueprint root file to load
-* ``--actions``: specifies the name of the  actions file to use (default: ``ascent_actions.json``)
+* ``--cycles``: specifies a text file containing a list of Blueprint root files to load
+* ``--actions``: specifies the name of the actions file to use (default: ``ascent_actions.json``)
 
 Example launches:
 
