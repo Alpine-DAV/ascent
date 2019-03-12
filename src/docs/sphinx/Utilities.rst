@@ -149,7 +149,7 @@ To export in Blueprint format, select export from the file menu:
     :width: 50%
     :align: center
 
-Then from the **Export to** dropdown, select Blueprint:
+Then from the **Export to** drop-down, select Blueprint:
 
 ..  image:: images/blueprint_export.png
     :width: 50%
