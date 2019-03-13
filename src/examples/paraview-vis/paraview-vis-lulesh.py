@@ -22,9 +22,9 @@ paraview.options.symmetric = True
 from paraview.simple import *
 import ascent_extract
 
-json = ascent_extract.ascent_data().child(0)
-domain_id = json["state/domain_id"]
-cycle = json["state/cycle"]
+node = ascent_extract.ascent_data().child(0)
+domain_id = node["state/domain_id"]
+cycle = node["state/cycle"]
 imageName = "image_{0:04d}.png".format(int(cycle))
 dataName = "paraviewdata_{0:04d}".format(int(cycle))
 scriptName = "/home/danlipsa/projects/ascent/src/examples/paraview-vis/paraview_ascent_source.py"
@@ -67,12 +67,12 @@ writer.UpdatePipeline()
 # from ascent_to_vtk import AscentSource, write_data
 # ascentSource = AscentSource()
 # ascentSource.Update()
-# write_data("vtkdata", ascentSource.GetJson(), ascentSource.GetOutputDataObject(0))
+# write_data("vtkdata", ascentSource.GetNode(), ascentSource.GetOutputDataObject(0))
 
 
 # # Python API
 # from ascent_to_vtk import ascent_to_vtk, write_data, write_json
-# json = ascent_data().child(0)
-# write_json(json)
-# data = ascent_to_vtk(json)
-# write_data("pythondata", json, data)
+# node = ascent_data().child(0)
+# write_json(node)
+# data = ascent_to_vtk(node)
+# write_data("pythondata", node, data)

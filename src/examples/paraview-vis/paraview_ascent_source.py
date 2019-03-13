@@ -22,11 +22,11 @@ import ascent_extract
 _keep_around = []
 
 
-def read_fields(json, topology, data):
+def read_fields(node, topology, data):
     '''
-    Read fields form Ascent 'json' into VTK 'data'
+    Read fields form Ascent 'node' into VTK 'data'
     '''
-    for fieldIt in json["fields"].children():
+    for fieldIt in node["fields"].children():
         field = fieldIt.node()
         if (field["topology"] != topology):
             continue
@@ -53,45 +53,45 @@ def read_fields(json, topology, data):
             continue
 
 
-def topology_names(json):
+def topology_names(node):
     '''
     Read children names for 'topologies'
     '''
     parent = "topologies"
     children = []
-    for c in json[parent].children():
+    for c in node[parent].children():
         children.append(c.name())
     return children
 
 
-def ascent_to_vtk(json, topology=None, extent=None):
+def ascent_to_vtk(node, topology=None, extent=None):
     '''
-    Read from Ascent json ("topologies/" + topology) into VTK data.
-    topology is one of the names returned by topology_names(json) or
-    topology_names(json)[0] if the parameter is None
+    Read from Ascent node ("topologies/" + topology) into VTK data.
+    topology is one of the names returned by topology_names(node) or
+    topology_names(node)[0] if the parameter is None
     '''
     global _keep_around
     # we use the same Python interpreter between time steps
     _keep_around = []
     if topology is None:
-        topology = topology_names(json)[0]
+        topology = topology_names(node)[0]
     data = None
-    coords = json["topologies/" + topology + "/coordset"]
-    if (json["topologies/" + topology + "/type"] == "uniform"):
+    coords = node["topologies/" + topology + "/coordset"]
+    if (node["topologies/" + topology + "/type"] == "uniform"):
         # tested with noise
         data = vtkImageData()
         origin = np.array([float(o) for o in
-                           [json["coordsets/" + coords + "/origin/x"],
-                            json["coordsets/" + coords + "/origin/y"],
-                            json["coordsets/" + coords + "/origin/z"]]])
+                           [node["coordsets/" + coords + "/origin/x"],
+                            node["coordsets/" + coords + "/origin/y"],
+                            node["coordsets/" + coords + "/origin/z"]]])
         spacing = np.array([float(s) for s in
-                            [json["coordsets/" + coords + "/spacing/dx"],
-                             json["coordsets/" + coords + "/spacing/dy"],
-                             json["coordsets/" + coords + "/spacing/dz"]]])
+                            [node["coordsets/" + coords + "/spacing/dx"],
+                             node["coordsets/" + coords + "/spacing/dy"],
+                             node["coordsets/" + coords + "/spacing/dz"]]])
         if extent is None:
-            data.SetDimensions(json["coordsets/" + coords + "/dims/i"],
-                               json["coordsets/" + coords + "/dims/j"],
-                               json["coordsets/" + coords + "/dims/k"])
+            data.SetDimensions(node["coordsets/" + coords + "/dims/i"],
+                               node["coordsets/" + coords + "/dims/j"],
+                               node["coordsets/" + coords + "/dims/k"])
             data.SetOrigin(origin)
         else:
             data.SetExtent(extent)
@@ -99,18 +99,18 @@ def ascent_to_vtk(json, topology=None, extent=None):
                 [extent[0], extent[2], extent[4]]) * spacing
             data.SetOrigin(origin)
         data.SetSpacing(spacing)
-    elif (json["topologies/" + topology + "/type"] == "rectilinear"):
+    elif (node["topologies/" + topology + "/type"] == "rectilinear"):
         # tested on cloverleaf3d and kripke
         data = vtkRectilinearGrid()
-        xn = json["coordsets/" + coords + "/values/x"]
+        xn = node["coordsets/" + coords + "/values/x"]
         xa = numpy_support.numpy_to_vtk(xn)
         data.SetXCoordinates(xa)
 
-        yn = json["coordsets/" + coords + "/values/y"]
+        yn = node["coordsets/" + coords + "/values/y"]
         ya = numpy_support.numpy_to_vtk(yn)
         data.SetYCoordinates(ya)
 
-        zn = json["coordsets/" + coords + "/values/z"]
+        zn = node["coordsets/" + coords + "/values/z"]
         za = numpy_support.numpy_to_vtk(zn)
         data.SetZCoordinates(za)
         if (extent is None):
@@ -119,30 +119,30 @@ def ascent_to_vtk(json, topology=None, extent=None):
                                za.GetNumberOfTuples())
         else:
             data.SetExtent(extent)
-    elif (json["coordsets/" + coords + "/type"] == "explicit"):
-        xn = json["coordsets/" + coords + "/values/x"]
-        yn = json["coordsets/" + coords + "/values/y"]
-        zn = json["coordsets/" + coords + "/values/z"]
+    elif (node["coordsets/" + coords + "/type"] == "explicit"):
+        xn = node["coordsets/" + coords + "/values/x"]
+        yn = node["coordsets/" + coords + "/values/y"]
+        zn = node["coordsets/" + coords + "/values/z"]
         xyzn = np.stack((xn, yn, zn), axis=1)
         _keep_around.append(xyzn)
         xyza = numpy_support.numpy_to_vtk(xyzn)
         points = vtkPoints()
         points.SetData(xyza)
-        if (json["topologies/" + topology + "/type"] == "structured"):
+        if (node["topologies/" + topology + "/type"] == "structured"):
             # tested on lulesh
             data = vtkStructuredGrid()
             data.SetPoints(points)
             # elements are one less than points
-            nx = json["topologies/" + topology + "/elements/dims/i"] + 1
-            ny = json["topologies/" + topology + "/elements/dims/j"] + 1
-            nz = json["topologies/" + topology + "/elements/dims/k"] + 1
+            nx = node["topologies/" + topology + "/elements/dims/i"] + 1
+            ny = node["topologies/" + topology + "/elements/dims/j"] + 1
+            nz = node["topologies/" + topology + "/elements/dims/k"] + 1
             data.SetDimensions(nx, ny, nz)
-        elif (json["topologies/" + topology + "/type"] == "unstructured"):
+        elif (node["topologies/" + topology + "/type"] == "unstructured"):
             # tested with laghos
             data = vtkUnstructuredGrid()
             data.SetPoints(points)
-            shape = json["topologies/" + topology + "/elements/shape"]
-            c = json["topologies/" + topology +
+            shape = node["topologies/" + topology + "/elements/shape"]
+            c = node["topologies/" + topology +
                      "/elements/connectivity"]
             # vtkIdType is int64
             c = c.astype(np.int64)
@@ -165,27 +165,27 @@ def ascent_to_vtk(json, topology=None, extent=None):
             cells = vtkCellArray()
             cells.SetCells(ncells, ita)
             data.SetCells((cellType), cells)
-    read_fields(json, topology, data)
+    read_fields(node, topology, data)
     return data
 
 
-def write_json(json, prefix="blueprint"):
+def write_json(node, prefix="blueprint"):
     '''
-    Write the Ascent json object into a json file
+    Write the Ascent node object into a json file
     '''
     # MPI domain
-    domain_id = json["state/domain_id"]
+    domain_id = node["state/domain_id"]
     # time step
-    cycle = json["state/cycle"]
+    cycle = node["state/cycle"]
     fileNoExt = (prefix + "_" + str(domain_id) +
                  "_{0:04d}").format(int(cycle))
     with open(fileNoExt + ".json", "w") as f:
-        f.write("{}".format(json))
+        f.write("{}".format(node))
 
 
-def write_data(prefix, json, data):
+def write_data(prefix, node, data):
     '''
-    Write the VTK data (read from an Ascent json object) to disk.
+    Write the VTK data (read from an Ascent node object) to disk.
     Note that data is not written to a parallel file, each node writes its
     own data.
     '''
@@ -210,9 +210,9 @@ def write_data(prefix, json, data):
         print("Error: Unknown datatype.")
         return
     # MPI domain
-    domain_id = json["state/domain_id"]
+    domain_id = node["state/domain_id"]
     # time step
-    cycle = json["state/cycle"]
+    cycle = node["state/cycle"]
     fileNoExt = (prefix + "_" + str(domain_id) +
                  "_{0:04d}").format(int(cycle))
     writer.SetFileName(fileNoExt + "." + extension)
@@ -266,32 +266,32 @@ def extents(originDims, comm, mpi_size, mpi_rank, topology):
     return (whole_extent, extent)
 
 
-def extents_rectilinear(json, comm, mpi_size, mpi_rank, topology):
+def extents_rectilinear(node, comm, mpi_size, mpi_rank, topology):
     '''
     Computes whole_extent and extent for the current node for a rectilinear
-    dataset described in json.
+    dataset described in node.
     '''
-    coords = json["topologies/" + topology + "/coordset"]
-    xn = json["coordsets/" + coords + "/values/x"]
-    yn = json["coordsets/" + coords + "/values/y"]
-    zn = json["coordsets/" + coords + "/values/z"]
+    coords = node["topologies/" + topology + "/coordset"]
+    xn = node["coordsets/" + coords + "/values/x"]
+    yn = node["coordsets/" + coords + "/values/y"]
+    zn = node["coordsets/" + coords + "/values/z"]
     originDims = np.array([xn[0], len(xn), yn[0], len(yn), zn[0], len(zn)],
                           dtype=np.float32)
     return extents(originDims, comm, mpi_size, mpi_rank, topology)
 
 
-def extents_uniform(json, comm, mpi_size, mpi_rank, topology):
+def extents_uniform(node, comm, mpi_size, mpi_rank, topology):
     '''
     Computes whole_extent and extent for the current node for an uniform
-    dataset described in json.
+    dataset described in node.
     '''
-    coords = json["topologies/" + topology + "/coordset"]
-    o = [json["coordsets/" + coords + "/origin/x"],
-         json["coordsets/" + coords + "/origin/y"],
-         json["coordsets/" + coords + "/origin/z"]]
-    dims = [json["coordsets/" + coords + "/dims/i"],
-            json["coordsets/" + coords + "/dims/j"],
-            json["coordsets/" + coords + "/dims/k"]]
+    coords = node["topologies/" + topology + "/coordset"]
+    o = [node["coordsets/" + coords + "/origin/x"],
+         node["coordsets/" + coords + "/origin/y"],
+         node["coordsets/" + coords + "/origin/z"]]
+    dims = [node["coordsets/" + coords + "/dims/i"],
+            node["coordsets/" + coords + "/dims/j"],
+            node["coordsets/" + coords + "/dims/k"]]
     originDims = np.array([o[0], dims[0], o[1], dims[1], o[2], dims[2]],
                           dtype=np.float32)
     return extents(originDims, comm, mpi_size, mpi_rank, topology)
@@ -308,7 +308,7 @@ class AscentSource(VTKPythonAlgorithmBase):
         # WARNING: this does not work inside the plugin
         #          unless you have the same import in paraview-vis.py
         from mpi4py import MPI
-        self._json = ascent_extract.ascent_data().child(0)
+        self._node = ascent_extract.ascent_data().child(0)
         # topology and coords are set only if there is only one topology,
         # otherwise they are none.
         self._topology = None
@@ -320,7 +320,7 @@ class AscentSource(VTKPythonAlgorithmBase):
         self._mpi_size = self._comm.Get_size()
         self._whole_extent = np.zeros(6, dtype=int)
         self._extent = np.zeros(6, dtype=int)
-        self._topologies = topology_names(self._json)
+        self._topologies = topology_names(self._node)
         # setup VTK / ParaView global controler
         vtkComm = vtkMPI4PyCommunicator.ConvertToVTK(self._comm)
         controller = vtkMultiProcessController.GetGlobalController()
@@ -333,8 +333,8 @@ class AscentSource(VTKPythonAlgorithmBase):
             self, nInputPorts=0, nOutputPorts=len(self._topologies),
             outputType=None)
 
-    def GetJson(self):
-        return self._json
+    def GetNode(self):
+        return self._node
 
     def RequestData(self, request, inVector, outVector):
         for outputPort in range(self.GetNumberOfOutputPorts()):
@@ -352,7 +352,7 @@ class AscentSource(VTKPythonAlgorithmBase):
                           "piece numbers {} != {}".format(self._mpi_rank,
                                                           requestedPiece))
             output = oi.Get(vtkDataObject.DATA_OBJECT())
-            data = ascent_to_vtk(self._json, self._topologies[outputPort],
+            data = ascent_to_vtk(self._node, self._topologies[outputPort],
                                  self._extent)
             output.ShallowCopy(data)
         return 1
@@ -364,35 +364,35 @@ class AscentSource(VTKPythonAlgorithmBase):
                 dims = (0, 0, 0)
                 if (self._outputType == vtkConstants.VTK_IMAGE_DATA):
                     dims = (
-                        self._json["coordsets/" + self._coords + "/dims/i"],
-                        self._json["coordsets/" + self._coords + "/dims/j"],
-                        self._json["coordsets/" + self._coords + "/dims/k"])
+                        self._node["coordsets/" + self._coords + "/dims/i"],
+                        self._node["coordsets/" + self._coords + "/dims/j"],
+                        self._node["coordsets/" + self._coords + "/dims/k"])
                     origin = (
-                        self._json["coordsets/" + self._coords + "/origin/x"],
-                        self._json["coordsets/" + self._coords + "/origin/y"],
-                        self._json["coordsets/" + self._coords + "/origin/z"])
+                        self._node["coordsets/" + self._coords + "/origin/x"],
+                        self._node["coordsets/" + self._coords + "/origin/y"],
+                        self._node["coordsets/" + self._coords + "/origin/z"])
                     spacing = (
-                        self._json["coordsets/" +
+                        self._node["coordsets/" +
                                    self._coords + "/spacing/dx"],
-                        self._json["coordsets/" +
+                        self._node["coordsets/" +
                                    self._coords + "/spacing/dy"],
-                        self._json["coordsets/" +
+                        self._node["coordsets/" +
                                    self._coords + "/spacing/dz"])
                     oi.Set(vtkDataObject.ORIGIN(), origin, 3)
                     oi.Set(vtkDataObject.SPACING(), spacing, 3)
                     (self._whole_extent, self._extent) = extents_uniform(
-                        self._json, self._comm, self._mpi_size, self._mpi_rank,
+                        self._node, self._comm, self._mpi_size, self._mpi_rank,
                         self._topology)
                 elif (self._outputType == vtkConstants.VTK_RECTILINEAR_GRID):
                     (self._whole_extent, self._extent) = extents_rectilinear(
-                        self._json, self._comm, self._mpi_size, self._mpi_rank,
+                        self._node, self._comm, self._mpi_size, self._mpi_rank,
                         self._topology)
                 elif (self._outputType == vtkConstants.VTK_STRUCTURED_GRID):
-                    dims = (self._json["topologies/" + self._topology +
+                    dims = (self._node["topologies/" + self._topology +
                                        "/elements/dims/i"] + 1,
-                            self._json["topologies/" + self._topology +
+                            self._node["topologies/" + self._topology +
                                        "/elements/dims/j"] + 1,
-                            self._json["topologies/" + self._topology +
+                            self._node["topologies/" + self._topology +
                                        "/elements/dims/k"] + 1)
                     self._extent = (
                         0, dims[0] - 1, 0, dims[1] - 1, 0, dims[2] - 1)
@@ -405,9 +405,9 @@ class AscentSource(VTKPythonAlgorithmBase):
     def FillOutputPortInformation(self, port, info):
         self._outputType = None
         self._topology = self._topologies[port]
-        self._coords = self._json["topologies/" + self._topology +
+        self._coords = self._node["topologies/" + self._topology +
                                   "/coordset"]
-        topologyType = self._json["topologies/" + self._topology + "/type"]
+        topologyType = self._node["topologies/" + self._topology + "/type"]
         if topologyType == "uniform":
             self._outputType = vtkConstants.VTK_IMAGE_DATA
             self._extension = "vti"

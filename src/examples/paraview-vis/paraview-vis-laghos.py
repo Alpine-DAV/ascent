@@ -25,9 +25,9 @@ from paraview.simple import LoadPlugin, Show, ColorBy,\
     GetScalarBar, Render, WriteImage, CreateWriter
 import ascent_extract
 
-json = ascent_extract.ascent_data().child(0)
-domain_id = json["state/domain_id"]
-cycle = json["state/cycle"]
+node = ascent_extract.ascent_data().child(0)
+domain_id = node["state/domain_id"]
+cycle = node["state/cycle"]
 imageName = "image_{0:04d}.png".format(int(cycle))
 dataName = "paraviewdata_{0:04d}".format(int(cycle))
 scriptName = "/home/danlipsa/projects/ascent/src/examples/paraview-vis/paraview_ascent_source.py"
@@ -65,15 +65,15 @@ writer.UpdatePipeline()
 # from ascent_to_vtk import AscentSource, write_data
 # ascentSource = AscentSource()
 # ascentSource.Update()
-# write_data("vtkdata-main", ascentSource.GetJson(),
+# write_data("vtkdata-main", ascentSource.GetNode(),
 #            ascentSource.GetOutputDataObject(0))
 
 
 # # Python API
 # from ascent_to_vtk import ascent_to_vtk, write_data, write_json
-# json = ascent_data().child(0)
-# write_json(json)
-# data = ascent_to_vtk(json, "main")
-# write_data("pythondata-main", json, data)
-# data = ascent_to_vtk(json, "boundary")
-# write_data("pythondata-boundary", json, data)
+# node = ascent_data().child(0)
+# write_json(node)
+# data = ascent_to_vtk(node, "main")
+# write_data("pythondata-main", node, data)
+# data = ascent_to_vtk(node, "boundary")
+# write_data("pythondata-boundary", node, data)
