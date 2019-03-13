@@ -430,18 +430,3 @@ class AscentSource(VTKPythonAlgorithmBase):
             return 0
         info.Set(vtkDataObject.DATA_TYPE_NAME(), outputTypeName)
         return 1
-
-    def GetOutputType(self):
-        ''' Returns the output vtkDataObject type.
-        '''
-        return self._outputType
-
-    @smproperty.xml("""
-        <StringVectorProperty
-            name="OutputFileExtension"
-            number_of_elements="1"
-            information_only="1"
-            command="GetOutputFileExtension">
-        </StringVectorProperty>""")
-    def GetOutputFileExtension(self):
-        return self._extension
