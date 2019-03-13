@@ -42,18 +42,18 @@
 .. #
 .. ############################################################################
 
-Ascent User Documentation
-=========================
+
+Developer Documentation
+=======================
 
 .. toctree::
    :maxdepth: 2
 
+   Contributing
    Overview
-   ExampleIntegrations
-   BuildingAscent
-   AscentAPI
-   Actions/index
-   Utilities
-   GPU_notes
-   Tutorial
+   BuildEnvironment
+   VTKh_Filter
+   Flow_Filter
+
+..
 
