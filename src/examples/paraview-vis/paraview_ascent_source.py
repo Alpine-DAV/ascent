@@ -17,7 +17,7 @@ from vtkmodules.vtkParallelCore import vtkMultiProcessController
 from paraview.util.vtkAlgorithm import smproxy, smproperty
 import ascent_extract
 
-# keep arounds a reference to python arrays passed to VTK so that
+# keeps around a reference to python arrays passed to VTK so that
 # they don't get deleted
 _keep_around = []
 
@@ -26,6 +26,7 @@ def read_fields(node, topology, data):
     '''
     Read fields form Ascent 'node' into VTK 'data'
     '''
+    global _keep_around
     for fieldIt in node["fields"].children():
         field = fieldIt.node()
         if (field["topology"] != topology):
