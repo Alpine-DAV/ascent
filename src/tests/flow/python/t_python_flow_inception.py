@@ -76,6 +76,7 @@ class Test_Flow_Python_Inception(unittest.TestCase):
         w.graph().add_filter("src","s");
         #
         py_params = conduit.Node()
+        #py_params["interface/module"] = "mymod"
         py_params["source"] = py_script
 
         w.graph().add_filter("python_script","py",py_params);

@@ -2179,7 +2179,16 @@ PyFlow_Workspace_traversals(PyFlow_Workspace *self,
 static PyObject *
 PyFlow_Workspace_execute(PyFlow_Workspace *self)
 {
-    self->workspace->execute();
+    try
+    {
+        self->workspace->execute();
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_Exception,
+                        e.message().c_str());
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 

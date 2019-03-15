@@ -2874,7 +2874,6 @@ int main(int argc, char *argv[])
 //      std::cout << "region" << i + 1<< "size" << locDom->regElemSize(i) <<std::endl;
 
    conduit::Node scenes;
-
    scenes["s1/plots/p1/type"]  = "pseudocolor";
    scenes["s1/plots/p1/field"] = "e";
    double vec3[3];
@@ -2888,8 +2887,7 @@ int main(int argc, char *argv[])
    conduit::Node &execute = actions.append();
    execute["action"] = "execute";
 
-   conduit::Node reset;
-   conduit::Node &reset_action = reset.append();
+   conduit::Node &reset_action = actions.append();
    reset_action["action"] = "reset";
 
    while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
@@ -2912,7 +2910,6 @@ int main(int argc, char *argv[])
             //
             ascent.publish(locDom->visitNode());
             ascent.execute(actions);
-            ascent.execute(reset);
       }
    }
    ascent.close();

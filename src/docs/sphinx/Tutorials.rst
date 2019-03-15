@@ -42,6 +42,8 @@
 .. #
 .. ############################################################################
 
+.. _tutorials:
+
 Tutorials
 ==============================
 
@@ -58,13 +60,13 @@ ECP 2019 Annual Meeting
 
 **Authors:**
 
-Hank Childs (University of Oregon); Matthew Larsen (Lawrence Livermore National Laboratory); Cyrus Harrison (Lawrence Livermore National Laboratory); Kenneth Moreland (Sandia National Laboratories); David Rogers (Los Alamos National Laboratory) 
+Hank Childs (University of Oregon); Matthew Larsen (Lawrence Livermore National Laboratory); Cyrus Harrison (Lawrence Livermore National Laboratory); Kenneth Moreland (Sandia National Laboratories); David Rogers (Los Alamos National Laboratory)
 
 **Abstract:**
 
-In situ visualization and analysis is an important capability for addressing slow I/O on modern supercomputers. With this 3-hour tutorial, we will spend the majority of our time (two hours) going into detail on Ascent, an in situ visualization and analysis library being developed by ECP ALPINE. Ascent is from the makers of ParaView Catalyst and VisIt LibSim, and it will soon be able to directly connect with both of those products. The tutorial will be practical in nature: how to integrate Ascent into a simulation code, Ascent’s data model, build and linking issues, and capabilities. The remaining hour will be spent highlighting other visualization efforts in ECP, such as in situ-specific visualization algorithms, VTK-m, and CINEMA. 
+In situ visualization and analysis is an important capability for addressing slow I/O on modern supercomputers. With this 3-hour tutorial, we will spend the majority of our time (two hours) going into detail on Ascent, an in situ visualization and analysis library being developed by ECP ALPINE. Ascent is from the makers of ParaView Catalyst and VisIt LibSim, and it will soon be able to directly connect with both of those products. The tutorial will be practical in nature: how to integrate Ascent into a simulation code, Ascent’s data model, build and linking issues, and capabilities. The remaining hour will be spent highlighting other visualization efforts in ECP, such as in situ-specific visualization algorithms, VTK-m, and CINEMA.
 
-**Slides:** 
+**Slides:**
 `http://portal.nersc.gov/project/alpine/docs/ecp_2019_ahm/  <http://portal.nersc.gov/project/alpine/docs/ecp_2019_ahm/>`_
 
 
@@ -81,13 +83,13 @@ NERSC Cori Install
 
 We have a public ascent install for use on NERSC's Cori System. This install was built with the default
 intel compiler (18.0.1.163).
- 
+
 The install is located at ``/project/projectdirs/alpine/software/ascent/ecp_2019/ascent-install``.
 You can copy the tutorial examples from this install and build them as follows:
- 
+
 .. code::
 
-    cp -r /project/projectdirs/alpine/software/ascent/ecp_2019/ascent-install/examples/ascent/tutorial/ecp_2019 . 
+    cp -r /project/projectdirs/alpine/software/ascent/ecp_2019/ascent-install/examples/ascent/tutorial/ecp_2019 .
     cd ecp_2019
     make ASCENT_DIR=/project/projectdirs/alpine/software/ascent/ecp_2019/ascent-install/
 
@@ -111,7 +113,7 @@ After the download completes, create and run a container using this image:
 (The ``-p`` is used to forward ports between the container and your host machine, we use these ports to allow web servers on the container to serve data to the host.)
 
 
-You will now be at a bash prompt in you container. 
+You will now be at a bash prompt in you container.
 
 To add the proper paths to Python and MPI to your environment run:
 

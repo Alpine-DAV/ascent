@@ -58,7 +58,7 @@ PYTHON_ADD_HYBRID_MODULE(flow_python
                          ${flow_py_cpp_sources})
 
 # link with the proper libs (beyond python)
-target_link_libraries(flow_python flow)
+target_link_libraries(flow_python ascent_flow)
 
 
 # TODO: ADD SUPPORT FOR SUPPORT PYTHON_MODULE_INSTALL_PREFIX

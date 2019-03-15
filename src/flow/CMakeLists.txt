@@ -107,13 +107,13 @@ endif()
 ##########################################
 
 blt_add_library(
-    NAME        flow
+    NAME        ascent_flow
     SOURCES     ${flow_sources}
     HEADERS     ${flow_headers}
     DEPENDS_ON  ${flow_thirdparty_libs})
 
 # install target for serial ascent lib
-install(TARGETS flow
+install(TARGETS ascent_flow
         EXPORT  ascent
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib

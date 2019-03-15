@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
@@ -41,20 +42,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
+set -ev
 
-cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+##########################################################
+# test our installed python example
+##########################################################
 
-@PACKAGE_INIT@
-
-# Conduit version number
-set(ASCENT_VERSION "@ASCENT_VERSION@")
-
-set(ASCENT_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/include/ascent")
-
-get_filename_component(ASCENT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-include(${ASCENT_CMAKE_CONFIG_DIR}/ascent-deps-paths.cmake)
-include(${ASCENT_CMAKE_CONFIG_DIR}/ascent.cmake)
-
-
+if [ "${ENABLE_PYTHON}" == "ON" ]; then
+    if [ "${BUILD_SHARED_LIBS}" == "ON" ]; then
+        cd ${TRAVIS_BUILD_DIR}/travis-debug-install/
+        env LD_LIBRARY_PATH=${RUN_LIB_PATH} ./bin/run_python_with_ascent.sh < examples/ascent/python/ascent_python_render_example.py
+    fi
+fi
 
 
