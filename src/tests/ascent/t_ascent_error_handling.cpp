@@ -246,6 +246,7 @@ TEST(ascent_error_handling, test_bad_plot_var_name)
     ascent.open(ascent_opts);
     ascent.publish(data);
 
+    conduit::utils::set_info_handler(throw_handler);
     bool error = false;
     try
     {
@@ -259,6 +260,7 @@ TEST(ascent_error_handling, test_bad_plot_var_name)
     ASSERT_TRUE(error);
 
     ascent.close();
+    conduit::utils::set_info_handler(conduit::utils::default_info_handler);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_error_handling, test_bad_color_table)
