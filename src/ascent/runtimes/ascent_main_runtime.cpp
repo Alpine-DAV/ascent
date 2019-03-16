@@ -123,7 +123,8 @@ int InfoHandler::m_rank = 0;
 AscentRuntime::AscentRuntime()
 :Runtime(),
  m_refinement_level(2), // default refinement level for high order meshes
- m_rank(0)
+ m_rank(0),
+ m_ghost_field_name("ascent_ghosts")
 {
     flow::filters::register_builtin();
     ResetInfo();
@@ -212,6 +213,10 @@ AscentRuntime::Initialize(const conduit::Node &options)
     m_runtime_options = options;
 
 
+    if(options.has_path("ghost_field_name"))
+    {
+      m_ghost_field_name = options["ghost_field_name"].as_string();
+    }
 
     // standard flow filters
     flow::filters::register_builtin();
@@ -309,8 +314,10 @@ AscentRuntime::EnsureDomainIds()
         has_ids = false;
       }
     }
+
+
 #ifdef ASCENT_MPI_ENABLED
-    int comm_id =flow::Workspace::default_mpi_comm();
+    int comm_id = flow::Workspace::default_mpi_comm();
 
     MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
 
@@ -375,7 +382,7 @@ AscentRuntime::EnsureDomainIds()
 std::string
 AscentRuntime::CreateDefaultFilters()
 {
-    const std::string end_filter = "vtkh_data";
+    static std::string end_filter = "vtkh_data";
     if(w.graph().has_filter(end_filter))
     {
       return end_filter;
@@ -407,6 +414,8 @@ AscentRuntime::CreateDefaultFilters()
 
     conduit::Node vtkh_params;
     vtkh_params["zero_copy"] = "true";
+
+
     w.graph().add_filter("ensure_vtkh",
                          "vtkh_data",
                          vtkh_params);
@@ -414,6 +423,25 @@ AscentRuntime::CreateDefaultFilters()
     w.graph().connect("low_order",
                       "vtkh_data",
                       0);        // default port
+    //if(m_has_ghosts)
+    //{
+      const std::string strip_name = "strip_garbage_ghosts";
+      // garbage zones have a value of 2
+      conduit::Node threshold_params;
+      threshold_params["field"] = m_ghost_field_name;
+      threshold_params["min_value"] = 0;
+      threshold_params["max_value"] = 1;
+
+      w.graph().add_filter("vtkh_ghost_stripper",
+                           strip_name,
+                           threshold_params);
+
+      w.graph().connect("vtkh_data",
+                        strip_name,
+                        0);        // default port
+
+      end_filter = strip_name;
+    //}
 
     return end_filter;
 }
@@ -691,8 +719,31 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
   else
   {
     // default pipeline: directly connect to published data
-    plot_source = "default";
+    plot_source = CreateDefaultFilters();
   }
+
+
+  // we need to make sure that ghost zones don't make it into rendering
+  // so we will create new filters that attach to the pipeline outputs
+  std::string strip_name = plot_source + "_strip_real_ghosts";
+  if(!w.graph().has_filter(strip_name))
+  {
+    conduit::Node threshold_params;
+    threshold_params["field"] = m_ghost_field_name;
+    threshold_params["min_value"] = 0;
+    threshold_params["max_value"] = 0;
+
+    w.graph().add_filter("vtkh_ghost_stripper",
+                         strip_name,
+                         threshold_params);
+
+    w.graph().connect(plot_source,
+                      strip_name,
+                      0);        // default port
+  }
+
+  plot_source = strip_name;
+
   m_connections[plot_name] = plot_source;
 
 }
@@ -798,6 +849,7 @@ AscentRuntime::ConnectGraphs()
 }
 
 //-----------------------------------------------------------------------------
+// This function is used to feed renders (domain ids and bounds)
 std::vector<std::string>
 AscentRuntime::GetPipelines(const conduit::Node &plots)
 {
@@ -815,8 +867,13 @@ AscentRuntime::GetPipelines(const conduit::Node &plots)
     {
       pipeline = CreateDefaultFilters();
     }
+
+    // we are always adding a ghost filter so append the name
+    // so bounds and domain ids get the right input
+    pipeline = pipeline + "_strip_real_ghosts";
     pipelines.push_back(pipeline);
   }
+
   return pipelines;
 }
 
