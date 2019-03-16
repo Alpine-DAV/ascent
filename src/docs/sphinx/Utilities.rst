@@ -173,9 +173,9 @@ Example launches:
 
 .. code:: bash
 
-   ./relay_ser --root=clover.cycle_000060.root --actions=my_actions.json
-   srun -n 8 ./relay_mpi --root=clover.cycle_000060.root --actions=my_actions.json
-   srun -n 8 ./relay_mpi --cycles=cycles_list.txt --actions=my_actions.json
+   ./replay_ser --root=clover.cycle_000060.root --actions=my_actions.json
+   srun -n 8 ./replay_mpi --root=clover.cycle_000060.root --actions=my_actions.json
+   srun -n 8 ./replay_mpi --cycles=cycles_list.txt --actions=my_actions.json
 
 The cycles files list is a text file containing one root file per line:
 
