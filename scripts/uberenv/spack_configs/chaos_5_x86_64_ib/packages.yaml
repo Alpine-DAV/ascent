@@ -37,14 +37,7 @@ packages:
       jpeg: [libjpeg-turbo, libjpeg]
   conduit:
     version: [master]
-# LLNL chaos5 CUDA
-  cuda:
+  perl:
     paths:
-      cuda@9.1: /opt/cudatoolkit-9.1/
-    buildable: False
-# LLNL chaos5 mvapich2
-  mvapich2:
-    paths:
-      mvapich2@2.0%gcc@4.9.3: /usr/local/tools/mvapich2-gnu-2.0/
-      mvapich2@2.0%intel@16.0.109: /usr/local/tools/mvapich2-intel-2.0
+      perl@%gcc@5.18.2: /usr/local/tools/mvapich2-gnu-2.0/
     buildable: False

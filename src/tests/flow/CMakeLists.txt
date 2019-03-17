@@ -70,7 +70,7 @@ endif()
 
 message(STATUS "Adding flow lib unit tests")
 foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON flow ascent)
+    add_cpp_test(TEST ${TEST} DEPENDS_ON ascent_flow ascent)
 endforeach()
 
 if(PYTHON_FOUND AND ENABLE_PYTHON)

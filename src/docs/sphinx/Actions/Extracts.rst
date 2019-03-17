@@ -50,16 +50,16 @@ In terms of Ascent, data capture sends data outside the Ascent infrastructure.
 Examples include writing out the raw simulation data to the file system, creating HDF5 files, or sending the data off node (e.g., ADIOS).
 
 Currently supported extracts include:
-    
+
     * Python : use a python script with NumPy to analyze mesh data
-    * Relay : leverages Conduit's Relay library to do parallel I/O 
+    * Relay : leverages Conduit's Relay library to do parallel I/O
     * ADIOS : use ADIOS to send data to a separate resource
 
 
 Python
 ------
 Python extracts can execute arbitrary python code. Python code uses Conduit's python interface
-to interrogate and retrieve mesh data. Code is executed on each MPI rank, and mpi4py can be 
+to interrogate and retrieve mesh data. Code is executed on each MPI rank, and mpi4py can be
 used for collective communication.
 
 .. code-block:: c++
@@ -75,38 +75,38 @@ Python source code is loaded into Ascent via a string that could be loaded from 
 
   import numpy as np
   from mpi4py import MPI
-  
+
   # obtain a mpi4py mpi comm object
   comm = MPI.Comm.f2py(ascent_mpi_comm_id())
-  
+
   # get this MPI task's published blueprint data
   mesh_data = ascent_data().child(0)
-  
+
   # fetch the numpy array for the energy field values
   e_vals = mesh_data["fields/energy/values"]
-  
+
   # find the data extents of the energy field using mpi
-  
+
   # first get local extents
   e_min, e_max = e_vals.min(), e_vals.max()
-  
+
   # declare vars for reduce results
   e_min_all = np.zeros(1)
   e_max_all = np.zeros(1)
-  
+
   # reduce to get global extents
   comm.Allreduce(e_min, e_min_all, op=MPI.MIN)
   comm.Allreduce(e_max, e_max_all, op=MPI.MAX)
-  
-  # compute bins on global extents 
+
+  # compute bins on global extents
   bins = np.linspace(e_min_all, e_max_all)
-  
+
   # get histogram counts for local data
   hist, bin_edges = np.histogram(e_vals, bins = bins)
-  
+
   # declare var for reduce results
   hist_all = np.zeros_like(hist)
-  
+
   # sum histogram counts with MPI to get final histogram
   comm.Allreduce(hist, hist_all, op=MPI.SUM)
 
@@ -114,7 +114,7 @@ The example above shows how a python script could be used to create a distribute
 histogram of a mesh variable that has been published by a simulation.
 
 
-.. code-block:: python 
+.. code-block:: python
 
   import conduit
   import ascent.mpi
@@ -138,7 +138,10 @@ histogram of a mesh variable that has been published by a simulation.
   a.close()
 
 In addition to performing custom python analysis, your can create new data sets and plot them
-through a new instance of Ascent. We call this technique Inception. 
+through a new instance of Ascent. We call this technique Inception.
+
+
+.. _relay:
 
 Relay
 -----
@@ -146,7 +149,7 @@ Relay extracts saves data to the file system. Currently, Relay supports saving f
 By default, Relay saves the published mesh data to the file system, but is a pipeline is specified, then the result of the
 pipeline is saved. Relay extracts can be opened by post-hoc tools such as VisIt.
 
-.. code-block:: c++ 
+.. code-block:: c++
 
     conduit::Node pipelines;
     // pipeline 1
@@ -162,17 +165,17 @@ pipeline is saved. Relay extracts can be opened by post-hoc tools such as VisIt.
 
     extracts["e1/params/path"] = output_file;
 
-In this example, a contour of a field is saved to the file system in json form. 
+In this example, a contour of a field is saved to the file system in json form.
 To save the files in HDF5 format:
 
-.. code-block:: c++ 
+.. code-block:: c++
 
     extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
 
 Additionally, Relay supports saving out only a subset of the data. The ``fields`` parameters is a list of
 strings that indicate which fields should be saved.
 
-.. code-block:: c++ 
+.. code-block:: c++
 
     extracts["e1/params/fields"].append("density");
     extracts["e1/params/fields"].append("pressure");

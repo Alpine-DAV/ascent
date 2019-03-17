@@ -182,8 +182,8 @@ endif()
 
 set(ascent_thirdparty_libs
     conduit
-    flow
-    lodepng)
+    ascent_flow
+    ascent_lodepng)
 
 ##################
 # optional libs

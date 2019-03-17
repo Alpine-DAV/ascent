@@ -42,6 +42,7 @@
 .. #
 .. ############################################################################
 
+.. _Pipelines:
 
 Pipelines
 =========
@@ -133,6 +134,7 @@ As we stand up the infrastructure necessary to support a wide variety filter we 
 
 In the following section we provide brief descriptions and code examples of the supported filters.
 For complete code examples, please consult the unit tests located in ``src/tests/ascent``..
+
 
 Filters
 -------

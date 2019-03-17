@@ -65,7 +65,7 @@ typedef vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32, 4> > vtkmColorBuffer;
 typedef vtkm::rendering::Camera                               vtkmCamera;
 typedef vtkm::cont::ArrayHandle<vtkm::Id>                     IdHandle;
 typedef vtkm::Vec<vtkm::Float32,3>                            vtkmVec3f;
-typedef vtkm::cont::Timer<>                                   vtkmTimer;
+typedef vtkm::cont::Timer                                     vtkmTimer;
 typedef vtkm::rendering::raytracing::Logger                   vtkmLogger;
 
 using PartialVector64 = std::vector<vtkm::rendering::raytracing::PartialComposite<vtkm::Float64>>;
