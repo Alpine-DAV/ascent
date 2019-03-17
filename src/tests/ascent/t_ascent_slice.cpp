@@ -61,7 +61,8 @@
 #include "t_config.hpp"
 #include "t_utils.hpp"
 
-#include <utils/ascent_png_decoder.hpp>
+
+
 
 using namespace std;
 using namespace conduit;
@@ -95,6 +96,7 @@ TEST(ascent_slice, test_slice)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
 
     ASCENT_INFO("Testing slice");
 
@@ -157,12 +159,7 @@ TEST(ascent_slice, test_slice)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    unsigned char * buf = nullptr;
-    int w,h;
-    ascent::PNGDecoder decoder;
-    decoder.Decode(buf,w,h,output_file+"100.png");
 }
-#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_slice, test_slice_off_axis)
 {
@@ -335,7 +332,8 @@ TEST(ascent_slice, test_3slice)
     ascent.close();
 
     // check that we created an image
-#endif
+    EXPECT_TRUE(check_test_image(output_file));
+}
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
