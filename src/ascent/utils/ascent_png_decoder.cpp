@@ -92,7 +92,6 @@ PNGDecoder::Decode(unsigned char *&rgba,
   {
     ASCENT_ERROR("Error decoding png "<<file_name<<"  code "<<res);
   }
-  std::cout<<"width "<<w<<" height "<<h<<"\n";
 }
 
 //-----------------------------------------------------------------------------

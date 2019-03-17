@@ -155,6 +155,11 @@ check_test_image(const std::string &path, std::string num = "100")
 
     res &= compare.Compare(png_path, baseline, info, tolerance);
 
+    if(!res)
+    {
+      info.print();
+    }
+
     return res;
 }
 
