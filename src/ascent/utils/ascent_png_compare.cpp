@@ -124,6 +124,7 @@ PNGCompare::DiffImage(const unsigned char *buff_1,
 bool
 PNGCompare::Compare(const std::string &img1,
                     const std::string &img2,
+                    conduit::Node &info,
                     const float tolerance)
 {
 
@@ -138,8 +139,12 @@ PNGCompare::Compare(const std::string &img1,
 
   if(w1 != w2 || h1 != h2)
   {
-    std::cout<<"Image dims mismatch\n";
+    info["dims_match"] = "false";
     res = false;
+  }
+  else
+  {
+    info["dims_match"] = "true";
   }
 
   if(res)
@@ -160,10 +165,23 @@ PNGCompare::Compare(const std::string &img1,
     }
 
     float percent_diff = float(diff)/float(image_size);
+    info["percent_diff"] = percent_diff;
+    info["tolerance"] = tolerance;
+    info["pass"] = "true";
 
     if(percent_diff > tolerance)
     {
-      DiffImage(buff_1, buff_2, w1, h1, "diff.png");
+      info["pass"] = "false";
+      std::string file_name;
+      std::string path;
+
+      conduit::utils::rsplit_file_path(img1,
+                                       file_name,
+                                       path);
+
+      std::string diff_name = conduit::utils::join_file_path(path,"diff_" + file_name);
+      info["diff_image"] = diff_name;
+      DiffImage(buff_1, buff_2, w1, h1, diff_name);
       res = false;
     }
   }

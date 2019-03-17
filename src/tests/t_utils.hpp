@@ -56,7 +56,9 @@
 #include <iostream>
 #include <math.h>
 
+#include "t_config.hpp"
 #include <ascent.hpp>
+#include <utils/ascent_png_compare.hpp>
 
 using namespace std;
 using namespace conduit;
@@ -114,8 +116,46 @@ output_dir()
 bool
 check_test_image(const std::string &path, std::string num = "100")
 {
+    Node info;
+    std::string png_path = path + num + ".png";
     // for now, just check if the file exists.
-    return conduit::utils::is_file(path + num + ".png");
+    bool res = conduit::utils::is_file(png_path);
+    info["test_file/path"] = png_path;
+    if(res)
+    {
+      info["test_file/exists"] = "true";
+    }
+    else
+    {
+      info["test_file/exists"] = "false";
+    }
+
+    std::string file_name;
+    std::string path_b;
+
+    conduit::utils::rsplit_file_path(png_path,
+                                     file_name,
+                                     path_b);
+
+    string baseline_dir = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"baseline_images");
+    string baseline = conduit::utils::join_file_path(baseline_dir,file_name);
+
+    info["baseline_file/path"] = baseline;
+    if(conduit::utils::is_file(baseline))
+    {
+      info["baseline_file/exists"] = "true";
+    }
+    else
+    {
+      info["baseline_file/exists"] = "false";
+    }
+
+    ascent::PNGCompare compare;
+    float tolerance = 0.0001f;
+
+    res &= compare.Compare(png_path, baseline, info, tolerance);
+
+    return res;
 }
 
 bool

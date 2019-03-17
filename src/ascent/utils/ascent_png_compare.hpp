@@ -51,6 +51,7 @@
 #define ASCENT_PNG_COMPARE_HPP
 
 #include <string>
+#include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -65,6 +66,7 @@ public:
     ~PNGCompare();
     bool Compare(const std::string &img1,
                  const std::string &img2,
+                 conduit::Node &info,
                  const float tolarance = 0.001f);
 private:
     void DiffImage(const unsigned char *buff_1,
