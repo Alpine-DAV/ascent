@@ -913,7 +913,7 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
     ascent.close();
 
     // check that we created an image
-    float tolerance = 0.001f;
+    float tolerance = 0.01f;
     EXPECT_TRUE(check_test_image(output_file, tolerance));
 }
 
@@ -1006,7 +1006,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
     ascent.close();
 
     // check that we created an image
-    float tolerance = 0.001f;
+    float tolerance = 0.01f;
     EXPECT_TRUE(check_test_image(output_file, tolerance));
 }
 //-----------------------------------------------------------------------------
