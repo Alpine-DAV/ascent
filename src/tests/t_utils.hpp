@@ -114,7 +114,7 @@ output_dir()
 
 //-----------------------------------------------------------------------------
 bool
-check_test_image(const std::string &path, std::string num = "100")
+check_test_image(const std::string &path, const float tolerance = 0.0001f, std::string num = "100")
 {
     Node info;
     std::string png_path = path + num + ".png";
@@ -151,7 +151,6 @@ check_test_image(const std::string &path, std::string num = "100")
     }
 
     ascent::PNGCompare compare;
-    float tolerance = 0.0001f;
 
     res &= compare.Compare(png_path, baseline, info, tolerance);
 

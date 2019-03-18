@@ -585,7 +585,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, "0100"));
+    EXPECT_TRUE(check_test_image(output_file, 0.0001f, "0100"));
 }
 
 TEST(ascent_render_3d, test_render_3d_no_bg)
@@ -913,7 +913,8 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    float tolerance = 0.001f;
+    EXPECT_TRUE(check_test_image(output_file, tolerance));
 }
 
 //-----------------------------------------------------------------------------
@@ -1005,7 +1006,8 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    float tolerance = 0.001f;
+    EXPECT_TRUE(check_test_image(output_file, tolerance));
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
