@@ -1126,8 +1126,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
 }
 
 void
-AscentRuntime::FindRenders(const conduit::Node &info,
-                           conduit::Node &out)
+AscentRuntime::FindRenders(conduit::Node &out)
 {
     out.reset();
 
@@ -1143,8 +1142,6 @@ AscentRuntime::FindRenders(const conduit::Node &info,
     {
       out.append() = image_list->child(i).as_string();
     }
-
-    out.print();
 
     image_list->reset();
 
@@ -1227,8 +1224,11 @@ AscentRuntime::Execute(const conduit::Node &actions)
           this->Info(msg["info"]);
           ascent::about(msg["about"]);
           m_web_interface.PushMessage(msg);
+
           Node renders;
-          FindRenders(msg["info"],renders);
+          FindRenders(renders);
+          m_info["images"] = renders;
+
           m_web_interface.PushRenders(renders);
 
           w.registry().reset();
