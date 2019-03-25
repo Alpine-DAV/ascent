@@ -1130,17 +1130,23 @@ AscentRuntime::FindRenders(const conduit::Node &info,
                            conduit::Node &out)
 {
     out.reset();
-    NodeConstIterator itr = info["flow_graph/graph/filters"].children();
 
-    while(itr.has_next())
+    if(!w.registry().has_entry("image_list"))
     {
-        const Node &curr_filter = itr.next();
-        if(curr_filter.has_path("params/image_prefix"))
-        {
-            std::string img_path = curr_filter["params/image_prefix"].as_string() + ".png";
-            out.append() = img_path;
-        }
+      return;
     }
+
+    Node *image_list = w.registry().fetch<Node>("image_list");
+
+    const int size = image_list->number_of_children();
+    for(int i = 0; i < size; i++)
+    {
+      out.append() = image_list->child(i).as_string();
+    }
+
+    out.print();
+
+    image_list->reset();
 
 }
 
@@ -1208,7 +1214,6 @@ AscentRuntime::Execute(const conduit::Node &actions)
           try
           {
             w.execute();
-            w.registry().reset();
           }
           catch(vtkh::Error &e)
           {
@@ -1216,7 +1221,6 @@ AscentRuntime::Execute(const conduit::Node &actions)
           }
 #else
           w.execute();
-          w.registry().reset();
 #endif
 
           Node msg;
@@ -1226,6 +1230,8 @@ AscentRuntime::Execute(const conduit::Node &actions)
           Node renders;
           FindRenders(msg["info"],renders);
           m_web_interface.PushRenders(renders);
+
+          w.registry().reset();
         }
         else if( action_name == "reset")
         {
