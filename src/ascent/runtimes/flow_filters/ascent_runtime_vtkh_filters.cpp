@@ -1417,7 +1417,9 @@ DefaultRender::execute()
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
     Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+
     int cycle = 0;
+
     if(meta->has_path("cycle"))
     {
       cycle = (*meta)["cycle"].as_int32();
@@ -2113,95 +2115,6 @@ VTKHUnionDomainIds::execute()
 }
 
 //-----------------------------------------------------------------------------
-int DefaultScene::s_image_count = 0;
-
-DefaultScene::DefaultScene()
-:Filter()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-DefaultScene::~DefaultScene()
-{
-// empty
-}
-
-
-//-----------------------------------------------------------------------------
-bool
-DefaultScene::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-    bool res = check_string("field",params, info, true);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-DefaultScene::declare_interface(Node &i)
-{
-    i["type_name"] = "vtkh_default_scene";
-    i["port_names"].append() = "bounds";
-    i["port_names"].append() = "domain_ids";
-    i["port_names"].append() = "data_set";
-    i["output_port"] = "false";
-}
-
-//-----------------------------------------------------------------------------
-void
-DefaultScene::execute()
-{
-    // inputs are bounds and set of domains
-    vtkm::Bounds       *bounds_in     = input<vtkm::Bounds>(0);
-    std::set<vtkm::Id> *domain_ids_set = input<std::set<vtkm::Id> >(1);
-    vtkh::DataSet      *ds = input<vtkh::DataSet>(2);
-    std::string field_name = params()["field"].as_string();
-
-    std::stringstream ss;
-    ss<<"default_image_"<<s_image_count;
-    s_image_count++;
-
-    vtkm::Bounds bounds;
-    bounds.Include(*bounds_in);
-
-    std::vector<vtkm::Id> domain_ids(domain_ids_set->begin(),
-                                     domain_ids_set->end());
-
-
-    vtkh::Render render = vtkh::MakeRender(1024,
-                                           1024,
-                                           bounds,
-                                           domain_ids,
-                                           ss.str());
-
-    std::vector<vtkh::Render> renders;
-    renders.push_back(render);
-
-    detail::AscentScene scene(&graph().workspace().registry());
-    vtkh::Renderer *renderer = new vtkh::RayTracer();
-
-    detail::RendererContainer *cont = new detail::RendererContainer(this->name() + "_cont",
-                                                                    &graph().workspace().registry(),
-                                                                    renderer);
-    renderer->SetInput(ds);
-    renderer->SetField(field_name);
-    scene.AddRenderer(cont);
-    scene.Execute(renders);
-}
-
-//-----------------------------------------------------------------------------
 AddPlot::AddPlot()
 :Filter()
 {
@@ -2528,6 +2441,23 @@ ExecScene::execute()
     detail::AscentScene *scene = input<detail::AscentScene>(0);
     std::vector<vtkh::Render> * renders = input<std::vector<vtkh::Render>>(1);
     scene->Execute(*renders);
+
+    // the images should exist now so add them to the image list
+    // this can be used for the web server or jupyter
+
+    if(!graph().workspace().registry().has_entry("image_list"))
+    {
+      conduit::Node *image_list = new conduit::Node();
+      graph().workspace().registry().add<Node>("image_list", image_list,1);
+    }
+
+    conduit::Node *image_list = graph().workspace().registry().fetch<Node>("image_list");
+    for(int i = 0; i < renders->size(); ++i)
+    {
+      const std::string image_name = renders->at(i).GetImageName() + ".png";
+      image_list->append() = image_name;
+    }
+
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

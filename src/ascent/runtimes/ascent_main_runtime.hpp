@@ -133,7 +133,7 @@ private:
 
     std::string GetDefaultImagePrefix(const std::string scene);
 
-    void FindRenders(const conduit::Node &info, conduit::Node &out);
+    void FindRenders(conduit::Node &out);
 
 
     // internal reg helper
