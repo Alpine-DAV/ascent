@@ -8,9 +8,58 @@
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
 
+
 using namespace std;
 /* -- Code Generation -- */
 
+namespace detail
+{
+std::string print_match_error(const std::string &fname,
+                              const std::vector<conduit::Node> &args,
+                              const conduit::Node &overload_list)
+{
+  std::stringstream ss;
+  ss<<"Could not match function : ";
+  ss<<fname<<"(";
+  for(int i = 0; i < args.size(); ++i)
+  {
+    ss<<args[i]["type"].as_string();
+
+    if(i == args.size() - 1)
+    {
+      ss<<")\n";
+    }
+    else
+    {
+      ss<<", ";
+    }
+
+  }
+
+  ss<<"Known function signatures :\n";
+  for(int i = 0; i < overload_list.number_of_children(); ++i)
+  {
+    ss<<" "<<fname<<"(";
+    const conduit::Node &n_args = overload_list.child(i)["args"];
+    for(int a = 0; a < n_args.number_of_children(); ++a)
+    {
+      ss<<n_args.child(a)["type"].as_string();
+      if(a == n_args.number_of_children() - 1)
+      {
+        ss<<")\n";
+      }
+      else
+      {
+        ss<<", ";
+      }
+    }
+
+  }
+
+  return ss.str();
+
+}
+} // namespace detail
 void ASTInteger::access()
 {
   std::cout << "Creating integer: " << m_value << endl;
@@ -132,9 +181,10 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
   for(int i = 0; i < overload_list.number_of_children(); ++i)
   {
     const conduit::Node &func = overload_list.child(i);
-    bool valid = true;
+    bool valid = false;
     if(arg_list.size() == func["args"].number_of_children())
     {
+      valid = true;
       // validate the types
       for(int a = 0; a < arg_list.size(); ++a)
       {
@@ -184,8 +234,9 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
   }
   else
   {
-    overload_list.print();
-    ASCENT_ERROR("Could to match function call "<<m_id->m_name);
+    ASCENT_ERROR( detail::print_match_error(m_id->m_name,
+                                            arg_list,
+                                            overload_list));
   }
 
   return res;
