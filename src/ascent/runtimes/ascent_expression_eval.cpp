@@ -87,11 +87,12 @@ ExpressionEval::evaluate(const std::string expr)
   std::cout<<"Expresion "<<expression<<"\n";
   expression->access();
   flow::Workspace w;
-  std::string root = expression->build_graph(w);
+  conduit::Node root = expression->build_graph(w);
   std::cout<<w.graph().to_dot()<<"\n";
   w.execute();
-  std::cout<<"root filter "<<root<<"\n";
-  conduit::Node *n_res = w.registry().fetch<conduit::Node>(root);
+  std::cout<<"root node \n";
+  root.print();
+  conduit::Node *n_res = w.registry().fetch<conduit::Node>(root["filter_name"].as_string());
 
   if(n_res->dtype().is_floating_point())
   {

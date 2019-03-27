@@ -2,6 +2,12 @@
 //#include "codegen.h"
 #include "parser.hpp"
 #include <typeinfo>
+
+//-----------------------------------------------------------------------------
+// ascent includes
+//-----------------------------------------------------------------------------
+#include <ascent_logging.hpp>
+
 using namespace std;
 /* -- Code Generation -- */
 
@@ -10,7 +16,7 @@ void ASTInteger::access()
   std::cout << "Creating integer: " << m_value << endl;
 }
 
-std::string ASTInteger::build_graph(flow::Workspace &w)
+conduit::Node ASTInteger::build_graph(flow::Workspace &w)
 {
   static int ast_int_counter = 0;
   std::cout << "Flow integer: " << m_value << endl;
@@ -27,7 +33,10 @@ std::string ASTInteger::build_graph(flow::Workspace &w)
                        name,
                        params);
   ast_int_counter++;
-  return name;
+  conduit::Node res;
+  res["filter_name"] = name;
+  res["type"] = "scalar";
+  return res;
 }
 
 void ASTDouble::access()
@@ -35,7 +44,7 @@ void ASTDouble::access()
   std::cout << "Creating double: " << m_value << endl;
 }
 
-std::string ASTDouble::build_graph(flow::Workspace &w)
+conduit::Node ASTDouble::build_graph(flow::Workspace &w)
 {
   std::cout << "Flow double: " << m_value << endl;
   static int ast_double_counter = 0;
@@ -52,7 +61,11 @@ std::string ASTDouble::build_graph(flow::Workspace &w)
                        name,
                        params);
   ast_double_counter++;
-  return name;
+
+  conduit::Node res;
+  res["filter_name"] = name;
+  res["type"] = "scalar";
+  return res;
 }
 
 
@@ -67,10 +80,11 @@ void ASTIdentifier::access()
   //return new LoadInst(context.locals()[name], "", false, context.currentBlock());
 }
 
-std::string ASTIdentifier::build_graph(flow::Workspace &w)
+conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
 {
   std::cout << "Flow indt : " << m_name<< endl;
-  return "";
+  conduit::Node res;
+  return res;
 }
 
 void ASTMethodCall::access()
@@ -84,19 +98,23 @@ void ASTMethodCall::access()
   }
 }
 
-std::string ASTMethodCall::build_graph(flow::Workspace &w)
+conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
 {
   const size_t size = arguments->size();
-  std::vector<std::string> arg_list;
+  std::vector<conduit::Node> arg_list;
   arg_list.resize(size);
   for(size_t i = 0; i < size; ++i)
   {
     arg_list[i] = (*arguments)[i]->build_graph(w);
-    std::cout<<"flow arg "<<arg_list[i]<<"\n";
+    std::cout<<"flow arg :\n";
+    arg_list[i].print();
+    std::cout<<"\n";
   }
 
   std::cout << "Flow method call: " << m_id->m_name << endl;
-  return "";
+
+  conduit::Node res;
+  return res;
 }
 
 void ASTBinaryOp::access()
@@ -127,10 +145,9 @@ void ASTBinaryOp::access()
 }
 
 
-std::string ASTBinaryOp::build_graph(flow::Workspace &w)
+conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
 {
   std::cout << "Creating binary operation " << m_op << endl;
-  //Instruction::BinaryOps instr;
   std::string op_str;
   switch (m_op)
   {
@@ -148,9 +165,26 @@ std::string ASTBinaryOp::build_graph(flow::Workspace &w)
 
   }
 
-  std::string r_in = m_rhs->build_graph(w);
+  conduit::Node r_in = m_rhs->build_graph(w);
   std::cout<<" flow op "<<op_str<<"\n";
-  std::string l_in  = m_lhs->build_graph(w);
+  conduit::Node l_in = m_lhs->build_graph(w);
+
+  // Validate types
+  // right now this is easy since we only have scalars and
+  // mesh vars. When we have attributes(like position)
+  // and vectors this validation will get more complicated
+  const std::string l_type = l_in["type"].as_string();
+  const std::string r_type = r_in["type"].as_string();
+  if(l_type == "meshvar" || r_type == "meshvar")
+  {
+    std::stringstream msg;
+    msg<<"' "<<l_type<<" "<<m_op<<" "<<r_type<"'";
+    ASCENT_ERROR("binary operation with mesh variable not supported: "<<msg.str());
+  }
+
+  // evaluate what the return type will be
+  // For now, only scalar
+  std::string res_type = "scalar";
 
   static int ast_op_counter = 0;
   // create a unique name for the filter
@@ -167,11 +201,14 @@ std::string ASTBinaryOp::build_graph(flow::Workspace &w)
                        params);
 
   // // src, dest, port
-  w.graph().connect(r_in,name,"rhs");
-  w.graph().connect(l_in,name,"lhs");
+  w.graph().connect(r_in["filter_name"].as_string(),name,"rhs");
+  w.graph().connect(l_in["filter_name"].as_string(),name,"lhs");
 
   ast_op_counter++;
-  return name;
+  conduit::Node res;
+  res["filter_name"] = name;
+  res["type"] = res_type;
+  return res;
 }
 
 void ASTMeshVar::access()
@@ -179,7 +216,7 @@ void ASTMeshVar::access()
   std::cout << "Creating mesh var " << m_name << endl;
 }
 
-std::string ASTMeshVar::build_graph(flow::Workspace &w)
+conduit::Node ASTMeshVar::build_graph(flow::Workspace &w)
 {
 
   // strip the quotes from the variable name
@@ -192,5 +229,10 @@ std::string ASTMeshVar::build_graph(flow::Workspace &w)
   }
 
   std::cout << "Flow mesh var " << m_name << " "<< stripped <<endl;
-  return "meshvar_" + stripped;
+  conduit::Node res;
+
+  res["type"] = "meshvar";
+
+  //return "meshvar_" + stripped;
+  return res;
 }
