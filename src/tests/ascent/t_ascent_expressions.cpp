@@ -73,7 +73,7 @@ index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_clip, test_clip_sphere)
+TEST(ascent_expressions, test_expression)
 {
     // the vtkm runtime is currently our only rendering runtime
     Node n;
@@ -97,7 +97,10 @@ TEST(ascent_clip, test_clip_sphere)
                                               data);
 
     runtime::ExpressionEval eval(&data);
-    std::string expr = "-3.1e2 + 1";
+    //std::string expr = "max(1,\"p\")";
+    std::string expr = "max(1+2)";
+    //std::string expr = "(2.0 + 1) / 0.5" ;
+    //std::string expr = "1+\"p\"" ;
     conduit::Node res = eval.evaluate(expr);
 }
 

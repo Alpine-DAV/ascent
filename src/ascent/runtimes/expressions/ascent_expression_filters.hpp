@@ -106,6 +106,18 @@ public:
     virtual void   execute();
 };
 
+class MeshVar : public ::flow::Filter
+{
+public:
+    MeshVar();
+   ~MeshVar();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 class BinaryOp : public ::flow::Filter
 {
 public:

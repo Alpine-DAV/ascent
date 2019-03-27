@@ -256,6 +256,52 @@ Double::execute()
 }
 
 //-----------------------------------------------------------------------------
+MeshVar::MeshVar()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+MeshVar::~MeshVar()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+MeshVar::declare_interface(Node &i)
+{
+    i["type_name"]   = "expr_meshvar";
+    i["port_names"] = DataType::empty();
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+MeshVar::verify_params(const conduit::Node &params,
+                       conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    if(!params.has_path("value"))
+    {
+       info["errors"].append() = "Missing required string parameter 'value'";
+       res = false;
+    }
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+MeshVar::execute()
+{
+   conduit::Node *output = new conduit::Node();
+   *output = params()["value"].as_string();
+   set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 BinaryOp::BinaryOp()
 :Filter()
 {
@@ -299,36 +345,20 @@ void
 BinaryOp::execute()
 {
 
-  Node *lhs= input<Node>("lhs");
-  Node *rhs= input<Node>("rhs");
+  Node *lhs = input<Node>("lhs");
+  Node *rhs = input<Node>("rhs");
+
+
+
   lhs->print();
   rhs->print();
+
   bool has_float = false;
 
   if(lhs->dtype().is_floating_point() ||
      rhs->dtype().is_floating_point())
   {
     has_float = true;
-  }
-
-  if(lhs->dtype().is_integer())
-  {
-    std::cout<<"lhs is int\n";
-  }
-
-  if(rhs->dtype().is_integer())
-  {
-    std::cout<<"rhs is int\n";
-  }
-
-  if(lhs->dtype().is_floating_point())
-  {
-    std::cout<<"lhs is double\n";
-  }
-
-  if(rhs->dtype().is_floating_point())
-  {
-    std::cout<<"rhs is float\n";
   }
 
   conduit::Node *output = new conduit::Node();

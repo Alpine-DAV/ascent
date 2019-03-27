@@ -76,19 +76,23 @@ std::string ASTIdentifier::build_graph(flow::Workspace &w)
 void ASTMethodCall::access()
 {
   const size_t size = arguments->size();
+  std::cout << "Creating method call: " << m_id->m_name << endl;
   for(size_t i = 0; i < size; ++i)
   {
+    std::cout<<"arg "<<i<<" = ";
     (*arguments)[i]->access();
   }
-  std::cout << "Creating method call: " << m_id->m_name << endl;
 }
 
 std::string ASTMethodCall::build_graph(flow::Workspace &w)
 {
   const size_t size = arguments->size();
+  std::vector<std::string> arg_list;
+  arg_list.resize(size);
   for(size_t i = 0; i < size; ++i)
   {
-    (*arguments)[i]->access();
+    arg_list[i] = (*arguments)[i]->build_graph(w);
+    std::cout<<"flow arg "<<arg_list[i]<<"\n";
   }
 
   std::cout << "Flow method call: " << m_id->m_name << endl;
@@ -151,7 +155,8 @@ std::string ASTBinaryOp::build_graph(flow::Workspace &w)
   static int ast_op_counter = 0;
   // create a unique name for the filter
   std::stringstream ss;
-  ss<<"binary_op"<<"_"<<ast_op_counter<<"_"<<op_str;
+  //ss<<"binary_op"<<"_"<<ast_op_counter<<"_"<<op_str;
+  ss<<"binary_op"<<"_"<<ast_op_counter<<"_"<<m_op;
   std::string name = ss.str();
 
   conduit::Node params;
@@ -168,6 +173,7 @@ std::string ASTBinaryOp::build_graph(flow::Workspace &w)
   ast_op_counter++;
   return name;
 }
+
 void ASTMeshVar::access()
 {
   std::cout << "Creating mesh var " << m_name << endl;
@@ -175,6 +181,16 @@ void ASTMeshVar::access()
 
 std::string ASTMeshVar::build_graph(flow::Workspace &w)
 {
-  std::cout << "Flow mesh var " << m_name << endl;
-  return "";
+
+  // strip the quotes from the variable name
+  std::string stripped = m_name;
+  int pos = stripped.find("\"");
+  while (pos != std::string::npos)
+  {
+    stripped.erase(pos,1);
+    pos = stripped.find("\"");
+  }
+
+  std::cout << "Flow mesh var " << m_name << " "<< stripped <<endl;
+  return "meshvar_" + stripped;
 }
