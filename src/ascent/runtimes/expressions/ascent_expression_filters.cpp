@@ -399,6 +399,79 @@ BinaryOp::execute()
   set_output<conduit::Node>(output);
 }
 
+//-----------------------------------------------------------------------------
+ScalarMax::ScalarMax()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+ScalarMax::~ScalarMax()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ScalarMax::declare_interface(Node &i)
+{
+    i["type_name"]   = "scalar_max";
+    i["port_names"].append() = "arg1";
+    i["port_names"].append() = "arg2";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ScalarMax::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+ScalarMax::execute()
+
+{
+
+  Node *arg1 = input<Node>("arg1");
+  Node *arg2 = input<Node>("arg2");
+
+
+  arg1->print();
+  arg2->print();
+
+  bool has_float = false;
+
+  if(arg1->dtype().is_floating_point() ||
+     arg2->dtype().is_floating_point())
+  {
+    has_float = true;
+  }
+
+  conduit::Node *output = new conduit::Node();
+
+  if(has_float)
+  {
+    double d_rhs = arg1->to_float64();
+    double d_lhs = arg2->to_float64();
+    *output = std::max(d_lhs, d_rhs);
+  }
+  else
+  {
+    int i_rhs = arg1->to_int32();
+    int i_lhs = arg2->to_int32();
+    *output = std::max(i_lhs, i_rhs);
+  }
+
+  set_output<conduit::Node>(output);
+}
+
 
 
 //-----------------------------------------------------------------------------

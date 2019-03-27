@@ -98,8 +98,8 @@ TEST(ascent_expressions, test_expression)
 
     runtime::ExpressionEval eval(&data);
     //std::string expr = "max(1,\"p\")";
-    //std::string expr = "max(1+2)";
-    std::string expr = "(2.0 + 1) / 0.5" ;
+    std::string expr = "max(1,2)";
+    //std::string expr = "(2.0 + 1) / 0.5" ;
     //std::string expr = "1+\"p\"" ;
     conduit::Node res = eval.evaluate(expr);
 }

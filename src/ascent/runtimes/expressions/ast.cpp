@@ -113,7 +113,81 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
 
   std::cout << "Flow method call: " << m_id->m_name << endl;
 
+  if(!w.registry().has_entry("function_table"))
+  {
+    ASCENT_ERROR("Missing function table");
+  }
+
+  conduit::Node *f_table = w.registry().fetch<conduit::Node>("function_table");
+  // resolve the function
+  if(!f_table->has_path(m_id->m_name))
+  {
+    ASCENT_ERROR("unknown function "<<m_id->m_name);
+  }
+
+  // resolve overloaded function names
+  const conduit::Node &overload_list = (*f_table)[m_id->m_name];
+
+  int matched_index = -1;
+  for(int i = 0; i < overload_list.number_of_children(); ++i)
+  {
+    const conduit::Node &func = overload_list.child(i);
+    bool valid = true;
+    if(arg_list.size() == func["args"].number_of_children())
+    {
+      // validate the types
+      for(int a = 0; a < arg_list.size(); ++a)
+      {
+        if(arg_list[a]["type"].as_string() != func["args"].child(a)["type"].as_string())
+        {
+          valid = false;
+        }
+      }
+    }
+    if(valid)
+    {
+      matched_index = i;
+    }
+  }
+
   conduit::Node res;
+
+  if(matched_index != -1)
+  {
+    const conduit::Node &func = overload_list.child(matched_index);
+    std::cout<<"Function matched\n";
+    func.print();
+
+    static int ast_method_counter = 0;
+    // create a unique name for the filter
+    std::stringstream ss;
+    ss<<"method_"<<"_"<<ast_method_counter<<"_"<<m_id->m_name;;
+    std::string name = ss.str();
+
+    conduit::Node params;
+
+    w.graph().add_filter(func["filter_name"].as_string(),
+                         name,
+                         params);
+
+    // connecting incoming ports to args
+    std::vector<std::string> arg_names = func["args"].child_names();
+    // src, dest, port
+    for(int a = 0; a < arg_list.size(); ++a)
+    {
+      const conduit::Node &arg = arg_list[a];
+      w.graph().connect(arg["filter_name"].as_string(),name,arg_names[a]);
+    }
+
+    res["filter_name"] = name;
+    res["type"] = func["return_type"].as_string();
+  }
+  else
+  {
+    overload_list.print();
+    ASCENT_ERROR("Could to match function call "<<m_id->m_name);
+  }
+
   return res;
 }
 

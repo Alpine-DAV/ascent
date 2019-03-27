@@ -77,16 +77,31 @@ ExpressionEval::ExpressionEval(conduit::Node *data)
 conduit::Node
 ExpressionEval::evaluate(const std::string expr)
 {
+  flow::Workspace w;
+
   flow::Workspace::register_filter_type<expressions::Double>();
   flow::Workspace::register_filter_type<expressions::Integer>();
   flow::Workspace::register_filter_type<expressions::BinaryOp>();
+  flow::Workspace::register_filter_type<expressions::MeshVar>();
+  flow::Workspace::register_filter_type<expressions::ScalarMax>();
+
+
+  conduit::Node* functions = new conduit::Node();;
+
+  conduit::Node &scalar_max_sig = (*functions)["max"].append();
+  scalar_max_sig["return_type"] = "scalar";
+  scalar_max_sig["filter_name"] = "scalar_max";
+  scalar_max_sig["args/arg1/type"] = "scalar"; // arg names match input port names
+  scalar_max_sig["args/arg2/type"] = "scalar";
+
+  w.registry().add<conduit::Node>("function_table", functions, 1);
+
 
   scan_string(expr.c_str());
   ASTExpression *expression = get_result();
 
   std::cout<<"Expresion "<<expression<<"\n";
   expression->access();
-  flow::Workspace w;
   conduit::Node root = expression->build_graph(w);
   std::cout<<w.graph().to_dot()<<"\n";
   w.execute();

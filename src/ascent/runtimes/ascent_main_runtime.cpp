@@ -734,7 +734,7 @@ AscentRuntime::PopulateMetadata()
   if(!w.registry().has_entry("metadata"))
   {
     conduit::Node *meta = new conduit::Node();
-    w.registry().add<Node>("metadata", meta,1);
+    w.registry().add<conduit::Node>("metadata", meta,1);
   }
 
   Node *meta = w.registry().fetch<Node>("metadata");
