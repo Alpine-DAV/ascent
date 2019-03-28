@@ -472,6 +472,68 @@ ScalarMax::execute()
   set_output<conduit::Node>(output);
 }
 
+//-----------------------------------------------------------------------------
+FieldMax::FieldMax()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+FieldMax::~FieldMax()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+FieldMax::declare_interface(Node &i)
+{
+    i["type_name"]   = "field_max";
+    i["port_names"].append() = "arg1";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+FieldMax::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+FieldMax::execute()
+
+{
+
+  Node *arg1 = input<Node>("arg1");
+
+
+  arg1->print();
+
+  const std::string field = arg1->as_string();
+
+  conduit::Node *output = new conduit::Node();
+
+  if(!graph().workspace().registry().has_entry("dataset"))
+  {
+    ASCENT_ERROR("FieldMax: Missing dataset");
+  }
+
+  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+
+  dataset->print();
+
+  *output = 1.0;
+
+  set_output<conduit::Node>(output);
+}
+
 
 
 //-----------------------------------------------------------------------------
