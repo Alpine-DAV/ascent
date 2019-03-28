@@ -87,6 +87,7 @@ set(ascent_sources
     runtimes/ascent_main_runtime.cpp
     runtimes/ascent_empty_runtime.cpp
     runtimes/ascent_expression_eval.cpp
+    runtimes/expressions/ascent_conduit_reductions.cpp
     runtimes/expressions/ascent_expression_filters.cpp
     runtimes/expressions/ast.cpp
     runtimes/expressions/tokens.cpp
@@ -115,6 +116,7 @@ set(ascent_headers
     ascent_runtime.hpp
     runtimes/ascent_empty_runtime.hpp
     runtimes/ascent_expression_eval.hpp
+    runtimes/expressions/ascent_conduit_reductions.hpp
     runtimes/expressions/ascent_expression_filters.hpp
     runtimes/expressions/ast.hpp
     runtimes/expressions/tokens.hpp

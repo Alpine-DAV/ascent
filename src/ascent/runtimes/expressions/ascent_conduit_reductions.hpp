@@ -42,87 +42,59 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_render_3d.cpp
+/// file: ascent_conduit_reductions.hpp
 ///
 //-----------------------------------------------------------------------------
 
+#ifndef ASCENT_CONDUIT_REDUCTIONS
+#define ASCENT_CONDUIT_REDUCTIONS
 
-#include "gtest/gtest.h"
-
-#include <ascent_expression_eval.hpp>
-
-#include <iostream>
-#include <math.h>
-
-#include <conduit_blueprint.hpp>
-
-#include "t_config.hpp"
-#include "t_utils.hpp"
-
-
-
-
-using namespace std;
-using namespace conduit;
-using namespace ascent;
-
-
-index_t EXAMPLE_MESH_SIDE_DIM = 20;
+#include <ascent.hpp>
+#include <conduit.hpp>
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_expressions, test_expression)
+// -- begin ascent:: --
+//-----------------------------------------------------------------------------
+namespace ascent
 {
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping test");
-        return;
-    }
-
-
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    Node multi_dom;
-    blueprint::mesh::to_multi_domain(data, multi_dom);
-
-    runtime::ExpressionEval eval(&multi_dom);
-    //std::string expr = "max(1,\"p\")";
-    std::string expr = "max(\"braid\")";
-    //std::string expr = "max(1,2)";
-    //std::string expr = "max(2)";
-    //std::string expr = "(2.0 + 1) / 0.5" ;
-    //std::string expr = "1+\"p\"" ;
-    conduit::Node res = eval.evaluate(expr);
-}
 
 //-----------------------------------------------------------------------------
-int main(int argc, char* argv[])
+// -- begin ascent::runtime --
+//-----------------------------------------------------------------------------
+namespace runtime
 {
-    int result = 0;
 
-    ::testing::InitGoogleTest(&argc, argv);
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::expressions--
+//-----------------------------------------------------------------------------
+namespace expressions
+{
 
-    // allow override of the data size via the command line
-    if(argc == 2)
-    {
-        EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
-    }
+conduit::Node array_max(const conduit::Node &values);
 
-    result = RUN_ALL_TESTS();
-    return result;
-}
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime::expressions--
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent:: --
+//-----------------------------------------------------------------------------
 
 
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------

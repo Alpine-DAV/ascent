@@ -62,8 +62,11 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include "ascent_conduit_reductions.hpp"
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
+
+#include <limits>
 
 using namespace conduit;
 using namespace std;
@@ -513,7 +516,6 @@ FieldMax::execute()
 
   Node *arg1 = input<Node>("arg1");
 
-
   arg1->print();
 
   const std::string field = arg1->as_string();
@@ -527,9 +529,61 @@ FieldMax::execute()
 
   conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
 
-  dataset->print();
+  //dataset->print();
+  bool has_field = false;
+  bool is_scalar = false;
+  for(int i = 0; i < dataset->number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset->child(i);
+    if(!has_field && dom.has_path("fields/"+field))
+    {
+      has_field = true;
+      const conduit::Node &n_field = dom["fields/"+field];
+      const int num_children = n_field["values"].number_of_children();
+      if(num_children == 0)
+      {
+        is_scalar = true;
+      }
+    }
+  }
 
-  *output = 1.0;
+  double max_val;
+
+  if(!has_field)
+  {
+    ASCENT_ERROR("FieldMax: dataset does not contain field '"<<field<<"'");
+  }
+
+  if(!is_scalar)
+  {
+    ASCENT_ERROR("FieldMax: field '"<<field<<"' is not a scalar");
+  }
+
+  double max_value = std::numeric_limits<double>::min();
+
+  int domain = -1;
+  int index = -1;
+
+  for(int i = 0; i < dataset->number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset->child(i);
+    if(dom.has_path("fields/"+field))
+    {
+      const std::string path = "fields/" + field + "/values";
+      conduit::Node res;
+      res = array_max(dom[path]);
+      res.print();
+      double a_max = res["value"].as_float64();
+      if(a_max > max_value)
+      {
+        max_value = a_max;
+        index = res["index"].as_int32();
+        domain = i;
+      }
+    }
+  }
+
+  *output = max_value;
 
   set_output<conduit::Node>(output);
 }

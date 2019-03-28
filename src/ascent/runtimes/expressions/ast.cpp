@@ -216,12 +216,10 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
     ast_method_counter++;
 
     conduit::Node params;
-    std::cout<<"1\n";
     w.graph().add_filter(func["filter_name"].as_string(),
                          name,
                          params);
 
-    std::cout<<"2\n";
     // connecting incoming ports to args
     std::vector<std::string> arg_names = func["args"].child_names();
     // src, dest, port
@@ -230,7 +228,6 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
       const conduit::Node &arg = arg_list[a];
       w.graph().connect(arg["filter_name"].as_string(),name,arg_names[a]);
     }
-    std::cout<<"3\n";
 
     res["filter_name"] = name;
     res["type"] = func["return_type"].as_string();
@@ -242,7 +239,6 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
                                             overload_list));
   }
 
- std::cout<<"4\n";
   return res;
 }
 
