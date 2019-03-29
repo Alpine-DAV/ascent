@@ -115,18 +115,19 @@ ExpressionEval::evaluate(const std::string expr)
   w.execute();
   std::cout<<"root node \n";
   root.print();
+  std::cout<<"end root node \n";
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(root["filter_name"].as_string());
 
-  if(n_res->dtype().is_floating_point())
+  const conduit::Node res = (*n_res)["value"];
+  if(res.dtype().is_floating_point())
   {
-    std::cout<<"Result "<<n_res->as_float64()<<"\n";
+    std::cout<<"Result "<<res.as_float64()<<"\n";
   }
   else
   {
-    std::cout<<"Result "<<n_res->as_int32()<<"\n";
+    std::cout<<"Result "<<res.as_int32()<<"\n";
   }
 
-  conduit::Node res;
   delete expression;
   return res;
 }

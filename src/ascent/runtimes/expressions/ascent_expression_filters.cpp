@@ -207,7 +207,8 @@ Integer::execute()
 {
 
    conduit::Node *output = new conduit::Node();
-   *output = params()["value"].to_int32();
+   (*output)["value"] = params()["value"].to_float64();
+   (*output)["type"] = "numeric";
    set_output<conduit::Node>(output);
 }
 
@@ -255,7 +256,8 @@ Double::execute()
 {
 
    conduit::Node *output = new conduit::Node();
-   *output = params()["value"].to_float64();
+   (*output)["value"] = params()["value"].to_float64();
+   (*output)["type"] = "numeric";
    set_output<conduit::Node>(output);
 }
 
@@ -301,7 +303,9 @@ void
 MeshVar::execute()
 {
    conduit::Node *output = new conduit::Node();
-   *output = params()["value"].as_string();
+
+   (*output)["value"] = params()["value"].as_string();
+   (*output)["type"] = "meshvar";
    set_output<conduit::Node>(output);
 }
 
@@ -349,18 +353,20 @@ void
 BinaryOp::execute()
 {
 
-  Node *lhs = input<Node>("lhs");
-  Node *rhs = input<Node>("rhs");
+  Node *n_lhs = input<Node>("lhs");
+  Node *n_rhs = input<Node>("rhs");
+
+  const Node &lhs = (*n_lhs)["value"];
+  const Node &rhs = (*n_rhs)["value"];
 
 
-
-  lhs->print();
-  rhs->print();
+  n_lhs->print();
+  n_rhs->print();
 
   bool has_float = false;
 
-  if(lhs->dtype().is_floating_point() ||
-     rhs->dtype().is_floating_point())
+  if(lhs.dtype().is_floating_point() ||
+     rhs.dtype().is_floating_point())
   {
     has_float = true;
   }
@@ -373,29 +379,31 @@ BinaryOp::execute()
 
   if(has_float)
   {
-    double d_rhs = rhs->to_float64();
-    double d_lhs = lhs->to_float64();
+    double d_rhs = rhs.to_float64();
+    double d_lhs = lhs.to_float64();
     if(is_math)
     {
-      *output = detail::math_op(d_lhs, d_rhs, op);
+      (*output)["value"] = detail::math_op(d_lhs, d_rhs, op);
     }
     else
     {
-      *output = detail::comp_op(d_lhs, d_rhs, op);
+      (*output)["value"] = detail::comp_op(d_lhs, d_rhs, op);
     }
+    (*output)["type"] = "numeric";
   }
   else
   {
-    int i_rhs = rhs->to_int32();
-    int i_lhs = lhs->to_int32();
+    int i_rhs = rhs.to_int32();
+    int i_lhs = lhs.to_int32();
     if(is_math)
     {
-      *output = detail::math_op(i_lhs, i_rhs, op);
+      (*output)["value"] = detail::math_op(i_lhs, i_rhs, op);
     }
     else
     {
-      *output = detail::comp_op(i_lhs, i_rhs, op);
+      (*output)["value"] = detail::comp_op(i_lhs, i_rhs, op);
     }
+    (*output)["type"] = "boolean";
   }
 
   std::cout<<" operation "<<op<<"\n";
@@ -464,15 +472,16 @@ ScalarMax::execute()
   {
     double d_rhs = arg1->to_float64();
     double d_lhs = arg2->to_float64();
-    *output = std::max(d_lhs, d_rhs);
+    (*output)["value"] = std::max(d_lhs, d_rhs);
   }
   else
   {
     int i_rhs = arg1->to_int32();
     int i_lhs = arg2->to_int32();
-    *output = std::max(i_lhs, i_rhs);
+    (*output)["value"] = std::max(i_lhs, i_rhs);
   }
 
+  (*output)["type"] = "numeric";
   set_output<conduit::Node>(output);
 }
 
@@ -519,7 +528,7 @@ FieldMax::execute()
 
   arg1->print();
 
-  const std::string field = arg1->as_string();
+  const std::string field = (*arg1)["value"].as_string();
 
   conduit::Node *output = new conduit::Node();
 
@@ -587,7 +596,10 @@ FieldMax::execute()
   conduit::Node loc = point_location(dataset->child(domain),index);
   loc.print();
 
-  *output = max_value;
+  (*output)["value"] = max_value;
+  (*output)["type"] = "numeric";
+  (*output)["atts/point"] = loc;
+
 
   set_output<conduit::Node>(output);
 }
