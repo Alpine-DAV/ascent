@@ -63,6 +63,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
 #include "ascent_conduit_reductions.hpp"
+#include "ascent_blueprint_architect.hpp"
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -582,6 +583,9 @@ FieldMax::execute()
       }
     }
   }
+
+  conduit::Node loc = point_location(dataset->child(domain),index);
+  loc.print();
 
   *output = max_value;
 
