@@ -78,6 +78,8 @@ conduit::Node point_location(const conduit::Node &domain,
                              const int &index,
                              const std::string topo_name = "");
 
+// TODO: add cell version that returns the centroid
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

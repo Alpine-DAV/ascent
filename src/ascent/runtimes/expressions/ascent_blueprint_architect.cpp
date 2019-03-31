@@ -195,6 +195,69 @@ get_explicit_point(const conduit::Node &n_coords, const int &index)
   return res;
 }
 
+conduit::Node
+get_rectilinear_point(const conduit::Node &n_coords, const int &index)
+{
+  bool is_float64 = true;
+
+  int dims[3] = {0,0,0};
+  dims[0] = n_coords["values/x"].dtype().number_of_elements();
+  dims[1] = n_coords["values/y"].dtype().number_of_elements();
+
+  if(n_coords.has_path("values/z"))
+  {
+    dims[2] = n_coords["values/z"].dtype().number_of_elements();
+  }
+
+  if(n_coords["values/x"].dtype().is_float32())
+  {
+    is_float64 = false;
+  }
+  double point[3] = {0., 0., 0.};
+
+
+  int logical_index[3] = {0, 0, 0};
+
+  if(dims[2] == 0)
+  {
+    logical_index_2d(logical_index, index, dims);
+  }
+  else
+  {
+    logical_index_3d(logical_index, index, dims);
+  }
+
+  if(is_float64)
+  {
+    conduit::float64_array x_a = n_coords["values/x"].value();
+    conduit::float64_array y_a = n_coords["values/y"].value();
+    point[0] = x_a[logical_index[0]];
+    point[1] = y_a[logical_index[1]];
+    if(dims[2] != 0)
+    {
+      conduit::float64_array z_a = n_coords["values/z"].value();
+      point[2] = z_a[logical_index[2]];
+    }
+  }
+  else
+  {
+    conduit::float32_array x_a = n_coords["values/x"].value();
+    conduit::float32_array y_a = n_coords["values/y"].value();
+    point[0] = x_a[index];
+    point[1] = y_a[index];
+    if(dims[2] != 0)
+    {
+      conduit::float32_array z_a = n_coords["values/z"].value();
+      point[2] = z_a[logical_index[2]];
+    }
+
+  }
+
+  conduit::Node res;
+  res.set(point,3);
+  return res;
+}
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
@@ -226,15 +289,18 @@ point_location(const conduit::Node &domain,
   {
     res = detail::get_uniform_point(n_coords, index);
   }
+  else if(mesh_type == "rectilinear")
+  {
+    res = detail::get_rectilinear_point(n_coords, index);
+  }
   else if(mesh_type == "unstructured" || mesh_type == "structured")
   {
     res = detail::get_explicit_point(n_coords, index);
   }
   else
   {
-    ASCENT_ERROR("NOT YET "<<mesh_type);
+    ASCENT_ERROR("The Architect: unknown mesh type: '"<<mesh_type<<"'");
   }
-
 
   return res;
 }

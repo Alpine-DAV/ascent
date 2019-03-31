@@ -69,6 +69,9 @@
 
 #include <limits>
 
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#endif
 using namespace conduit;
 using namespace std;
 
@@ -561,7 +564,16 @@ FieldMax::execute()
 
   if(!has_field)
   {
-    ASCENT_ERROR("FieldMax: dataset does not contain field '"<<field<<"'");
+    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+    std::stringstream ss;
+    ss<<"[";
+    for(int i = 0; i < names.size(); ++i)
+    {
+      ss<<" "<<names[i];
+    }
+    ss<<"]";
+    ASCENT_ERROR("FieldMax: dataset does not contain field '"<<field<<"'"
+                 <<" known = "<<ss.str());
   }
 
   if(!is_scalar)
@@ -593,18 +605,97 @@ FieldMax::execute()
     }
   }
 
+  std::cout<<"max value "<<max_value<<"\n";
+  std::cout<<"index "<<index<<"\n";
+
   conduit::Node loc = point_location(dataset->child(domain),index);
   loc.print();
 
+  int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+  struct MaxLoc
+  {
+    double value;
+    int rank;
+  };
+
+  MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+  MPI_Comm_rank(mpi_comm, &rank);
+
+  MaxLoc maxloc = {max_value, rank};
+  MaxLoc maxloc_res;
+  MPI_Allreduce( &maxloc, &maxloc_res, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mpi_comm);
+  double * ploc = loc.as_float64_ptr();
+  MPI_Bcast(ploc, 3, MPI_DOUBLE, maxloc_res.rank, mpi_comm);
+  loc.set(ploc, 3);
+  if(rank == 0)
+  {
+    std::cout<<"Winning rank = "<<maxloc_res.rank<<"\n";
+    std::cout<<"loc ";
+    loc.print();
+  }
+#endif
+
   (*output)["value"] = max_value;
   (*output)["type"] = "numeric";
-  (*output)["atts/point"] = loc;
-
+  (*output)["atts/position"] = loc;
 
   set_output<conduit::Node>(output);
 }
 
 
+//-----------------------------------------------------------------------------
+Position::Position()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Position::~Position()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Position::declare_interface(Node &i)
+{
+    i["type_name"]   = "expr_position";
+    i["port_names"].append() = "arg1";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Position::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Position::execute()
+{
+
+  Node *n_in = input<Node>("arg1");
+
+  if(!n_in->has_path("atts/position"))
+  {
+    ASCENT_ERROR("Position: input does not have 'position' attribute");
+  }
+
+  conduit::Node *output = new conduit::Node();
+
+  (*output)["value"] = (*n_in)["atts/position"];
+  (*output)["type"] = "vector";
+
+  set_output<conduit::Node>(output);
+}
 
 //-----------------------------------------------------------------------------
 };

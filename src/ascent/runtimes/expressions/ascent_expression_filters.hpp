@@ -155,6 +155,18 @@ public:
     virtual void   execute();
 };
 
+class Position : public ::flow::Filter
+{
+public:
+    Position();
+   ~Position();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 
 };
 //-----------------------------------------------------------------------------
