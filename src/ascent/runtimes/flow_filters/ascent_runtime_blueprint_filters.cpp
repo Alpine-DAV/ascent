@@ -148,7 +148,6 @@ BlueprintVerify::verify_params(const conduit::Node &params,
 void
 BlueprintVerify::execute()
 {
-
     if(!input(0).check_type<Node>())
     {
         ASCENT_ERROR("blueprint_verify input must be a conduit node");

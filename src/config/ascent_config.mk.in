@@ -68,6 +68,12 @@ ASCENT_VTKM_VERSION = @VTKm_VERSION@
 
 ASCENT_MFEM_DIR = @MFEM_DIR@
 
+ASCENT_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
+
+ASCENT_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
+
+ASCENT_PYTHON_LIBS =@ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS@
+
 # include vars from conduit_config.mk
 include $(ASCENT_CONDUIT_DIR)/share/conduit/conduit_config.mk
 
@@ -131,18 +137,28 @@ ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
 ##########
 # MFEM
 ##########
-
 # Include make vars from the mfem config.mk file
-$(if $(ASCENT_MFEM_DIR), include $(ASCENT_MFEM_DIR)/share/mfem/config.mk)
+ifeq ($(ASCENT_MFEM_DIR),)
+   # not set, do not include config.mk
+else
+   include $(ASCENT_MFEM_DIR)/share/mfem/config.mk
+endif
 
 # MFEM isn't in the interface, so we don't need include flags
 ASCENT_MFEM_LIB_FLAGS = $(if $(ASCENT_MFEM_DIR),-L $(ASCENT_MFEM_DIR)/lib -lmfem $(MFEM_EXT_LIBS))
+
+# if we build mfem w/ mpi support (which we do to support laghos) serial static builds need to 
+# link mpi, or fail due to unresolved symbols
+#
+# If mfem was built with MPI support, add ASCENT_MPI_LIBS to avoid errors with static serial builds
+ASCENT_MFEM_LIB_FLAGS += $(if $(MFEM_USE_MPI), $(ASCENT_MPI_LIBS) )
+
 
 #######################
 # Ascent Include Flags
 #######################
 ASCENT_INCLUDE_FLAGS = $(CONDUIT_INCLUDE_FLAGS) \
-                       -I $(ASCENT_DIR)/include/ascent 
+                       -I $(ASCENT_DIR)/include/ascent
 
 
 ####################
@@ -151,13 +167,13 @@ ASCENT_INCLUDE_FLAGS = $(CONDUIT_INCLUDE_FLAGS) \
 # if using Ascent without mpi
 ASCENT_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
                    -lascent \
-                   -lflow \
-                   -lrover $(ASCENT_VTKH_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS)
+                   -lascent_flow \
+                   -lrover $(ASCENT_VTKH_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS)
 
 # if using Ascent with mpi
 ASCENT_MPI_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
                        -lascent_mpi \
-                       -lflow \
-                       -lrover_mpi $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS)
+                       -lascent_flow \
+                       -lrover_mpi $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS)
 
 

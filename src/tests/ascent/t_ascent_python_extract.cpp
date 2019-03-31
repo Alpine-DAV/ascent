@@ -63,7 +63,7 @@ using namespace conduit;
 using ascent::Ascent;
 
 std::string py_script = "\n"
-"# Treat everything is mutli domian so grab the state of the first\n"
+"# we treat everything as a multi_domain in ascent so grab child 0\n"
 "v = ascent_data().child(0)\n"
 "print(v['state'])\n"
 "\n";
@@ -106,6 +106,7 @@ TEST(ascent_runtime, test_python_script_extract)
 
     Node ascent_opts;
     ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["exceptions"] = "forward";
 
     Ascent ascent;
     ascent.open(ascent_opts);
@@ -114,6 +115,133 @@ TEST(ascent_runtime, test_python_script_extract)
     ascent.close();
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime, test_python_script_extract_from_file)
+{
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    create_3d_example_dataset(data,0,1);
+    data["state/cycle"] = 101;
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
+
+    //
+    // Create the actions.
+    //
+
+    // write out the test module to a file
+    std::ofstream ofs;
+    ofs.open("t_my_test_script.py");
+    ofs << py_script;
+    ofs.close();
+
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "python";
+    extracts["e1/params/file"] = "t_my_test_script.py";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Node ascent_opts;
+    ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["exceptions"] = "forward";
+
+    Ascent ascent;
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+}
+
+
+
+
+std::string py_script_mod_driver = "\n"
+"import tout_my_test_module\n"
+"print ('calling go from test module')\n"
+"tout_my_test_module.go()\n";
+
+std::string py_script_mod_src = "\n"
+"import ascent_extract\n"
+"\n"
+"def go():\n"
+"# we treat everything as a multi_domain in ascent so grab child 0\n"
+"    v = ascent_extract.ascent_data().child(0)\n"
+"    print(v['state'])\n"
+"\n";
+
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime, test_python_script_extract_import)
+{
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    create_3d_example_dataset(data,0,1);
+    data["state/cycle"] = 101;
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
+
+    // write out the test module to a file
+    std::ofstream ofs;
+    ofs.open("tout_my_test_module.py");
+    ofs << py_script_mod_src;
+    ofs.close();
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "python";
+    extracts["e1/params/source"] = py_script_mod_driver;
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Node ascent_opts;
+    ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["exceptions"] = "forward";
+
+    Ascent ascent;
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+}
+
 
 // This demos using the ascent python api inside of ascent ...
 std::string py_script_inception = "\n"
@@ -176,6 +304,7 @@ TEST(ascent_runtime, test_python_extract_inception)
 
     Node ascent_opts;
     ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["exceptions"] = "forward";
 
     Ascent ascent;
     ascent.open(ascent_opts);

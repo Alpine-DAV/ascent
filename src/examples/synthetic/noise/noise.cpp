@@ -429,6 +429,7 @@ int main(int argc, char** argv)
   open_simplex_noise(59142, &ctx_zonal);
 
   double time = 0;
+  int cycle = 0;
   //
   //  Open and setup ascent
   //
@@ -443,7 +444,7 @@ int main(int argc, char** argv)
 
   conduit::Node mesh_data;
   mesh_data["state/time"].set_external(&time);
-  mesh_data["state/cycle"].set_external(&time);
+  mesh_data["state/cycle"].set_external(&cycle);
 #ifdef PARALLEL
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -541,6 +542,7 @@ int main(int argc, char** argv)
         }
 
         time += options.m_time_delta;
+        cycle++;
 
         ascent.publish(mesh_data);
         ascent.execute(actions);

@@ -38,7 +38,7 @@ class Vtkh(Package):
     maintainers = ['cyrush']
 
 
-    version('ascent_ver', commit='dc12240', submodules=True, preferred=True)
+    version('ascent_ver', commit='21cbdfe', submodules=True, preferred=True)
     version('develop', branch='develop', submodules=True)
     version('0.1.0', branch='develop', tag='v0.1.0', submodules=True)
 
@@ -49,7 +49,7 @@ class Vtkh(Package):
     variant("openmp", default=(sys.platform != 'darwin'),
             description="build openmp support")
 
-    depends_on("cmake@3.8.2:")
+    depends_on("cmake@3.9.2:")
 
     depends_on("mpi", when="+mpi")
     depends_on("intel-tbb", when="@0.1.0+tbb")

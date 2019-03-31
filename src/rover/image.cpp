@@ -120,7 +120,6 @@ template<typename T, typename O> void init_from_image(Image<T> &left, Image<O> &
 {
   left.m_height = right.m_height;
   left.m_width = right.m_width;
-  left.m_has_path_lengths = right.m_has_path_lengths;
   left.m_valid_intensities = right.m_valid_intensities;
   left.m_valid_optical_depths = right.m_valid_optical_depths;
 
@@ -131,19 +130,16 @@ template<typename T, typename O> void init_from_image(Image<T> &left, Image<O> &
     cast_array_handle(left.m_optical_depths[i], right.m_optical_depths[i]);
   }
 
-  cast_array_handle(left.m_path_lengths,right.m_path_lengths);
 }
 template<> void init_from_image<vtkm::Float32, vtkm::Float32>(Image<vtkm::Float32> &left,
                                                               Image<vtkm::Float32> &right)
 {
   left.m_height = right.m_height;;
   left.m_width = right.m_width;
-  left.m_has_path_lengths = right.m_has_path_lengths;
   left.m_intensities = right.m_intensities;
   left.m_optical_depths = right.m_optical_depths;
   left.m_valid_intensities = right.m_valid_intensities;
   left.m_valid_optical_depths = right.m_valid_optical_depths;
-  left.m_path_lengths = right.m_path_lengths;
 }
 
 template<> void init_from_image<vtkm::Float64, vtkm::Float64>(Image<vtkm::Float64> &left,
@@ -151,12 +147,10 @@ template<> void init_from_image<vtkm::Float64, vtkm::Float64>(Image<vtkm::Float6
 {
   left.m_height = right.m_height;;
   left.m_width = right.m_width;
-  left.m_has_path_lengths = right.m_has_path_lengths;
   left.m_intensities = right.m_intensities;
   left.m_optical_depths = right.m_optical_depths;
   left.m_valid_intensities = right.m_valid_intensities;
   left.m_valid_optical_depths = right.m_valid_optical_depths;
-  left.m_path_lengths = right.m_path_lengths;
 }
 
 template<typename FloatType>
@@ -206,54 +200,6 @@ Image<FloatType>::has_optical_depth(const int &channel_num) const
   }
 
   return true;
-}
-
-template<typename FloatType>
-vtkm::cont::ArrayHandle<FloatType>
-Image<FloatType>::get_path_lengths()
-{
-  if(!m_has_path_lengths)
-  {
-    throw RoverException("Rover Image: cannot get paths. They dont exist or have already been stolen.");
-  }
-
-  return m_path_lengths;
-}
-
-template<typename FloatType>
-void
-Image<FloatType>::normalize_paths()
-{
-  if(!m_has_path_lengths)
-  {
-    throw RoverException("Rover Image: cannot get paths. They dont exist or have already been stolen.");
-  }
-  bool invert = false;
-  normalize_handle(m_path_lengths, false);
-}
-
-template<typename FloatType>
-FloatType *
-Image<FloatType>::steal_path_lengths()
-{
-  if(!m_has_path_lengths)
-  {
-    throw RoverException("Rover Image: cannot steal paths. They dont exist or have already been stolen.");
-  }
-
-  m_path_lengths.SyncControlArray();
-  using StoreType = vtkm::cont::internal::Storage<FloatType, vtkm::cont::StorageTagBasic>;
-  StoreType *storage = reinterpret_cast<StoreType*>(m_path_lengths.Internals->ControlArray);
-  FloatType *ptr = reinterpret_cast<FloatType*>(storage->StealArray());
-  m_has_path_lengths = false;
-  return ptr;
-}
-
-template<typename FloatType>
-bool
-Image<FloatType>::has_path_lengths() const
-{
-  return m_has_path_lengths;
 }
 
 template<typename FloatType>
@@ -307,9 +253,9 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
 
   m_height = partial.m_height;
   m_width  = partial.m_width;
-  assert(m_width > 0);
-  assert(m_height > 0);
-  m_has_path_lengths = partial.m_path_lengths.GetNumberOfValues() != 0;
+
+  assert(m_width >= 0);
+  assert(m_height >= 0);
 
   const int num_channels = partial.m_buffer.GetNumChannels();
   for(int i = 0; i < num_channels; ++i)
@@ -342,30 +288,6 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
 
   }
 
-  if(m_has_path_lengths)
-  {
-    const int size = m_width * m_height;
-    m_path_lengths.Allocate(size);
-    auto portal = m_path_lengths.GetPortalControl();
-#ifdef ROVER_ENABLE_OPENMP
-    #pragma omp parallel for
-#endif
-    for(int i = 0; i < size; ++i)
-    {
-      portal.Set(i, 0.0f);
-    }
-    const int num_ids = static_cast<int>(partial.m_pixel_ids.GetNumberOfValues());
-    auto id_portal = partial.m_pixel_ids.GetPortalControl();
-    auto path_portal = partial.m_path_lengths.GetPortalControl();
-#ifdef ROVER_ENABLE_OPENMP
-    #pragma omp parallel for
-#endif
-    for(int i = 0; i < num_ids; ++i)
-    {
-      const int index = id_portal.Get(i);
-      portal.Set(index, path_portal.Get(i));
-    }
-  }
 }
 
 template<typename FloatType>

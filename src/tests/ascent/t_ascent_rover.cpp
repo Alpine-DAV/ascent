@@ -141,9 +141,8 @@ TEST(ascent_rover, test_xray_serial)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, "100_0"));
+    EXPECT_TRUE(check_test_image(output_file, 0.0001f, "100_0"));
 }
-
 //
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_volume_min_max)

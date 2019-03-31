@@ -74,14 +74,14 @@ public:
     virtual ~AscentRuntime();
 
     // Main runtime interface methods used by the ascent interface.
-    void  Initialize(const conduit::Node &options);
+    void  Initialize(const conduit::Node &options) override;
 
-    void  Publish(const conduit::Node &data);
-    void  Execute(const conduit::Node &actions);
+    void  Publish(const conduit::Node &data) override;
+    void  Execute(const conduit::Node &actions) override;
 
-    void  Info(conduit::Node &out);
+    void  Info(conduit::Node &out) override;
 
-    void  Cleanup();
+    void  Cleanup() override;
 
     void DisplayError(const std::string &msg) override;
 
@@ -107,6 +107,7 @@ private:
     WebInterface      m_web_interface;
     int               m_refinement_level;
     int               m_rank;
+    std::string       m_ghost_field_name;
 
     void              ResetInfo();
 
@@ -129,9 +130,10 @@ private:
     void ExecuteGraphs();
     void EnsureDomainIds();
     void PopulateMetadata();
+
     std::string GetDefaultImagePrefix(const std::string scene);
 
-    void FindRenders(const conduit::Node &info, conduit::Node &out);
+    void FindRenders(conduit::Node &out);
 
 
     // internal reg helper

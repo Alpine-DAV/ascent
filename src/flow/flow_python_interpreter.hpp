@@ -82,6 +82,9 @@ public:
     bool         initialize(int argc=0, char **argv=NULL);
 
     bool         is_running() { return m_running; }
+
+    /// Note: blows away everything in the main dict
+    /// use with caution!
     void         reset();
     void         shutdown();
 
@@ -91,14 +94,28 @@ public:
     /// script exec
     bool         run_script(const std::string &script);
     bool         run_script_file(const std::string &fname);
+    
+    /// script exec in specific dict
+    bool         run_script(const std::string &script,
+                            PyObject *py_dict);
+    bool         run_script_file(const std::string &fname,
+                                 PyObject *py_dict);
 
-    /// access to global dict
+    /// set into global dict
     bool         set_global_object(PyObject *py_obj,
                                    const std::string &name);
-
+    /// fetch from global dict, returns borrowed reference
     PyObject    *get_global_object(const std::string &name);
-
+    /// access global dict object
     PyObject    *global_dict() { return m_py_global_dict; }
+
+    /// set into given dict
+    bool         set_dict_object(PyObject *py_dict,
+                                 PyObject *py_obj,
+                                 const std::string &name);
+    /// fetch from given dict, returns borrowed reference
+    PyObject    *get_dict_object(PyObject *py_dict, 
+                                 const std::string &name);
 
     /// error checking
     bool         check_error();

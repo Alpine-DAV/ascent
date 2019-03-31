@@ -169,6 +169,19 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class VTKHGhostStripper: public ::flow::Filter
+{
+public:
+    VTKHGhostStripper();
+    virtual ~VTKHGhostStripper();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class VTKHClip: public ::flow::Filter
 {
 public:
@@ -264,23 +277,6 @@ public:
 
     virtual void   declare_interface(conduit::Node &i);
     virtual void   execute();
-};
-
-
-//-----------------------------------------------------------------------------
-class DefaultScene: public ::flow::Filter
-{
-public:
-    DefaultScene();
-    virtual ~DefaultScene();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-
-private:
-    static int s_image_count;
 };
 
 //-----------------------------------------------------------------------------

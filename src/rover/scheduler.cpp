@@ -42,7 +42,7 @@
 
 #include <assert.h>
 #include <fstream>
-#include <compositing/compositor.hpp>
+#include <vtkh/rendering/PartialCompositor.hpp>
 #include <scheduler.hpp>
 #include <utils/png_encoder.hpp>
 #include <utils/rover_logging.hpp>
@@ -243,7 +243,6 @@ void Scheduler<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatTyp
   partial_image.m_distances = partial.Distances;
   partial_image.m_buffer = partial.Buffer;
   partial_image.m_intensities = partial.Intensities;
-  partial_image.m_path_lengths = partial.PathLengths;
 
   partial_image.m_width = width;
   partial_image.m_height = height;
@@ -254,34 +253,95 @@ void Scheduler<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatTyp
 template<typename FloatType>
 void Scheduler<FloatType>::composite()
 {
+  int rank = 0;
+#ifdef ROVER_PARALLEL
+  MPI_Comm_rank(m_comm_handle, &rank);
+#endif
   if(m_render_settings.m_render_mode == volume)
   {
-    Compositor<VolumePartial<FloatType>> compositor;
+    vtkh::PartialCompositor<vtkh::VolumePartial<FloatType>> compositor;
     compositor.set_background(m_background);
 #ifdef ROVER_PARALLEL
-    compositor.set_comm_handle(m_comm_handle);
+    compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
 #endif
-    m_result = compositor.composite(m_partial_images);
+    const int num_partials = m_partial_images.size();
+    int width = m_partial_images[0].m_width;
+    int height = m_partial_images[0].m_height;
+    std::vector<std::vector<vtkh::VolumePartial<FloatType>>> partials;
+    partials.resize(num_partials);
+    for(int i = 0; i < num_partials; ++i)
+    {
+      m_partial_images[i].extract_partials(partials[i]);
+    }
+    std::vector<vtkh::VolumePartial<FloatType>> result;
+    compositor.composite(partials, result);
+    PartialImage<FloatType> p_result;
+
+    if(rank == 0)
+    {
+      // data only valid on rank = 0
+      p_result.store(result,m_background, width, height);
+    }
+
+    m_result = p_result;
   }
   else
   {
     if(m_render_settings.m_secondary_field != "")
     {
-      Compositor<EmissionPartial<FloatType>> compositor;
+      vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
       compositor.set_background(m_background);
 #ifdef ROVER_PARALLEL
-      compositor.set_comm_handle(m_comm_handle);
+      compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
 #endif
-      m_result = compositor.composite(m_partial_images);
+      const int num_partials = m_partial_images.size();
+      int width = m_partial_images[0].m_width;
+      int height = m_partial_images[0].m_height;
+      std::vector<std::vector<vtkh::EmissionPartial<FloatType>>> partials;
+      partials.resize(num_partials);
+      for(int i = 0; i < num_partials; ++i)
+      {
+        m_partial_images[i].extract_partials(partials[i]);
+      }
+      std::vector<vtkh::EmissionPartial<FloatType>> result;
+      compositor.composite(partials, result);
+      PartialImage<FloatType> p_result;
+
+      if(rank == 0)
+      {
+        // data only valid on rank = 0
+        p_result.store(result,m_background, width, height);
+      }
+
+      m_result = p_result;
     }
     else
     {
-      Compositor<AbsorptionPartial<FloatType>> compositor;
+      vtkh::PartialCompositor<vtkh::AbsorptionPartial<FloatType>> compositor;
       compositor.set_background(m_background);
 #ifdef ROVER_PARALLEL
-        compositor.set_comm_handle(m_comm_handle);
+      compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
 #endif
-      m_result = compositor.composite(m_partial_images);
+      const int num_partials = m_partial_images.size();
+      int width = m_partial_images[0].m_width;
+      int height = m_partial_images[0].m_height;
+      std::vector<std::vector<vtkh::AbsorptionPartial<FloatType>>> partials;
+      partials.resize(num_partials);
+      for(int i = 0; i < num_partials; ++i)
+      {
+        m_partial_images[i].extract_partials(partials[i]);
+      }
+      std::vector<vtkh::AbsorptionPartial<FloatType>> result;
+      compositor.composite(partials, result);
+      PartialImage<FloatType> p_result;
+
+      if(rank == 0)
+      {
+        // data only valid on rank = 0
+        p_result.store(result,m_background, width, height);
+      }
+
+      m_result = p_result;
     }
   }
   ROVER_INFO("Schedule: compositing complete");
@@ -359,14 +419,6 @@ Scheduler<FloatType>::trace_rays()
 
     ROVER_INFO("Generated "<<rays.NumRays<<" rays");
     m_domains[i].init_rays(rays);
-    //
-    // add path lengths if they were requested
-    //
-    if(m_render_settings.m_path_lengths)
-    {
-      rays.AddBuffer(1, "path_lengths");
-      rays.GetBuffer("path_lengths").InitConst(0);
-    }
     time = timer.GetElapsedTime();
     ROVER_DATA_ADD("domain_init_rays", time);
 
@@ -508,18 +560,6 @@ void Scheduler<FloatType>::save_result(std::string file_name)
 
     encoder.Encode(buffer, width, height);
     encoder.Save(file_name + ".png");
-  }
-
-  if(m_render_settings.m_path_lengths)
-  {
-     std::stringstream sstream;
-     sstream<<file_name<<"_paths"<<".png";
-     m_result.normalize_paths();
-     FloatType * buffer
-       = get_vtkm_ptr(m_result.get_path_lengths());
-
-     encoder.EncodeChannel(buffer, width, height);
-     encoder.Save(sstream.str());
   }
 
 }
