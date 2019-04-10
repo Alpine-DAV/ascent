@@ -65,6 +65,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_expression_eval.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -1011,12 +1012,44 @@ VTKH3Slice::execute()
 
     slicer.SetInput(data);
 
+    conduit::Node n_data;
+    const int num_doms = data->GetNumberOfDomains();
+    for(int i = 0; i < num_doms; ++i)
+    {
+      conduit::Node &dom = n_data.append();
+      vtkm::cont::DataSet vtkm_dom =  data->GetDomain(i);
+      VTKHDataAdapter:: VTKmToBlueprintDataSet(&vtkm_dom,dom);
+    }
+
     using Vec3f = vtkm::Vec<vtkm::Float32,3>;
+
+    runtime::ExpressionEval eval(&n_data);
+    //std::string expr = "position(max(\"velocity_x\"))";
+    std::string expr = "position(max(\"p\"))";
+    conduit::Node res = eval.evaluate(expr);
+    double * p = res.as_float64_ptr();
+    Vec3f maxpoint(p[0],p[1],p[2]);
+    std::cout<<"MaxPoint "<<maxpoint<<"\n";
+
     vtkm::Bounds bounds = data->GetGlobalBounds();
     Vec3f center = bounds.Center();
     Vec3f x_point = center;
     Vec3f y_point = center;
     Vec3f z_point = center;
+
+    maxpoint[0] = std::max((double)maxpoint[0], bounds.X.Min + 0.00001);
+    maxpoint[0] = std::min((double)maxpoint[0], bounds.X.Max - 0.00001);
+
+    maxpoint[1] = std::max((double)maxpoint[1], bounds.Y.Min + 0.00001);
+    maxpoint[1] = std::min((double)maxpoint[1], bounds.Y.Max - 0.00001);
+
+    maxpoint[2] = std::max((double)maxpoint[2], bounds.Z.Min + 0.00001);
+    maxpoint[2] = std::min((double)maxpoint[2], bounds.Z.Max - 0.00001);
+
+    x_point = maxpoint;
+    y_point = maxpoint;
+    z_point = maxpoint;
+
 
     //
     // We look for offsets for each slice plane.

@@ -127,7 +127,7 @@ struct MaxFunctor
   {
     MaxCompare mcomp;
 
-    mcomp.value = std::numeric_limits<double>::min();
+    mcomp.value = std::numeric_limits<double>::lowest();
     mcomp.index = 0;
 #ifdef ASCENT_USE_OPENMP
     #pragma omp parrallel for reduction(maximum:mcomp)

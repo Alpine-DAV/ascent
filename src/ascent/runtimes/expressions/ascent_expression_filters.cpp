@@ -581,7 +581,11 @@ FieldMax::execute()
     ASCENT_ERROR("FieldMax: field '"<<field<<"' is not a scalar");
   }
 
-  double max_value = std::numeric_limits<double>::min();
+  const std::string assoc_str = dataset->child(0)["fields/" + field + "/association"].as_string();
+
+  double max_value = std::numeric_limits<double>::lowest();
+
+  std::cout<<"init max "<<max_value<<"\n";
 
   int domain = -1;
   int index = -1;
@@ -595,7 +599,8 @@ FieldMax::execute()
       conduit::Node res;
       res = array_max(dom[path]);
       res.print();
-      double a_max = res["value"].as_float64();
+      double a_max = res["value"].to_float64();
+      std::cout<<"max "<<max_value<<"  current "<<a_max<<"\n";
       if(a_max > max_value)
       {
         max_value = a_max;
@@ -608,7 +613,20 @@ FieldMax::execute()
   std::cout<<"max value "<<max_value<<"\n";
   std::cout<<"index "<<index<<"\n";
 
-  conduit::Node loc = point_location(dataset->child(domain),index);
+  conduit::Node loc;
+  if(assoc_str == "vertex")
+  {
+    loc = point_location(dataset->child(domain),index);
+  }
+  else if(assoc_str == "element")
+  {
+    loc = cell_location(dataset->child(domain),index);
+  }
+  else
+  {
+    ASCENT_ERROR("Location for "<<assoc_str<<" not implemented");
+  }
+
   loc.print();
 
   int rank = 0;

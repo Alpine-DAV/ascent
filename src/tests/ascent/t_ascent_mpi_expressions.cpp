@@ -42,67 +42,93 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_blueprint_architect.hpp
+/// file: ascent_mpi_slice.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_BLUEPRINT_ARCHITECT
-#define ASCENT_BLUEPRINT_ARCHITECT
+#include "gtest/gtest.h"
 
 #include <ascent.hpp>
-#include <conduit.hpp>
+#include <iostream>
+#include <math.h>
 
 
+#include <ascent_expression_eval.hpp>
+
+#include <mpi.h>
+
+#include <conduit_blueprint.hpp>
+
+#include "t_config.hpp"
+#include "t_utils.hpp"
+
+using namespace std;
+using namespace conduit;
+using namespace ascent;
+
 //-----------------------------------------------------------------------------
-// -- begin ascent:: --
-//-----------------------------------------------------------------------------
-namespace ascent
+TEST(ascent_mpi_expressions, mpi_expressoins)
 {
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
 
-//-----------------------------------------------------------------------------
-// -- begin ascent::runtime --
-//-----------------------------------------------------------------------------
-namespace runtime
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    ASCENT_INFO("Rank "
+                  << par_rank
+                  << " of "
+                  << par_size
+                  << " reporting");
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    int dims = 32;
+    create_3d_example_dataset(data,dims,par_rank,par_size);
+    Node multi_dom;
+    blueprint::mesh::to_multi_domain(data, multi_dom);
+
+    conduit::blueprint::mesh::verify(data,verify_info);
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+
+    runtime::ExpressionEval eval(&multi_dom);
+    //std::string expr = "max(1,\"p\")";
+    std::string expr = "max(\"radial_vert\")";
+    //std::string expr = "max(1,2)";
+    //std::string expr = "max(2)";
+    //std::string expr = "(2.0 + 1) / 0.5" ;
+    //std::string expr = "1+\"p\"" ;
+    conduit::Node res = eval.evaluate(expr);
+}
+
+int main(int argc, char* argv[])
 {
+    int result = 0;
+    ::testing::InitGoogleTest(&argc, argv);
+    MPI_Init(&argc, &argv);
+    result = RUN_ALL_TESTS();
+    MPI_Finalize();
 
-//-----------------------------------------------------------------------------
-// -- begin ascent::runtime::expressions--
-//-----------------------------------------------------------------------------
-namespace expressions
-{
-
-conduit::Node point_location(const conduit::Node &domain,
-                             const int &index,
-                             const std::string topo_name = "");
-
-conduit::Node cell_location(const conduit::Node &domain,
-                            const int &index,
-                            const std::string topo_name = "");
-
-// TODO: add cell version that returns the centroid
-
-};
-//-----------------------------------------------------------------------------
-// -- end ascent::runtime::expressions--
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end ascent::runtime --
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end ascent:: --
-//-----------------------------------------------------------------------------
-
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
+    return result;
+}
