@@ -1019,7 +1019,8 @@ VTKH3Slice::execute()
 
     runtime::ExpressionEval eval(&n_data);
     //std::string expr = "position(max(\"velocity_x\"))";
-    std::string expr = "position(max(\"p\"))";
+    std::string expr = "position(min(\"p\"))";
+    //std::string expr = "position(max(\"p\"))";
     conduit::Node res = eval.evaluate(expr);
     double * p = res.as_float64_ptr();
     Vec3f maxpoint(p[0],p[1],p[2]);

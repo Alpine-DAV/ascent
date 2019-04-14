@@ -489,6 +489,88 @@ ScalarMax::execute()
 }
 
 //-----------------------------------------------------------------------------
+FieldMin::FieldMin()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+FieldMin::~FieldMin()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+FieldMin::declare_interface(Node &i)
+{
+    i["type_name"]   = "field_min";
+    i["port_names"].append() = "arg1";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+FieldMin::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+FieldMin::execute()
+
+{
+
+  Node *arg1 = input<Node>("arg1");
+
+  arg1->print();
+
+  const std::string field = (*arg1)["value"].as_string();
+
+  conduit::Node *output = new conduit::Node();
+
+  if(!graph().workspace().registry().has_entry("dataset"))
+  {
+    ASCENT_ERROR("FieldMin: Missing dataset");
+  }
+
+  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+
+  if(!has_field(*dataset, field))
+  {
+    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+    std::stringstream ss;
+    ss<<"[";
+    for(int i = 0; i < names.size(); ++i)
+    {
+      ss<<" "<<names[i];
+    }
+    ss<<"]";
+    ASCENT_ERROR("FieldMin: dataset does not contain field '"<<field<<"'"
+                 <<" known = "<<ss.str());
+  }
+
+  if(!is_scalar_field(*dataset, field))
+  {
+    ASCENT_ERROR("FieldMin: field '"<<field<<"' is not a scalar");
+  }
+
+  conduit::Node n_min = field_min(*dataset, field);
+
+  (*output)["value"] = n_min["value"];
+  (*output)["type"] = "numeric";
+  (*output)["atts/position"] = n_min["position"];
+
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 FieldMax::FieldMax()
 :Filter()
 {

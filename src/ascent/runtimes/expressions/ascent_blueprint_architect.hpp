@@ -85,6 +85,9 @@ conduit::Node cell_location(const conduit::Node &domain,
 conduit::Node field_max(const conduit::Node &dataset,
                         const std::string &field_name);
 
+conduit::Node field_min(const conduit::Node &dataset,
+                        const std::string &field_name);
+
 bool is_scalar_field(const conduit::Node &dataset,
                      const std::string &field_name);
 

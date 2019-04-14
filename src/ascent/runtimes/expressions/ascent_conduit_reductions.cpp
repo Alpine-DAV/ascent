@@ -130,12 +130,52 @@ struct MaxFunctor
     mcomp.value = std::numeric_limits<double>::lowest();
     mcomp.index = 0;
 #ifdef ASCENT_USE_OPENMP
-    #pragma omp parrallel for reduction(maximum:mcomp)
+    #pragma omp parallel for reduction(maximum:mcomp)
 #endif
     for(int v = 0; v < size; ++v)
     {
       double val = static_cast<double>(values[v]);
       if(val > mcomp.value)
+      {
+        mcomp.value = val;
+        mcomp.index = v;
+      }
+    }
+    std::cout<<"ARRAY SIZE "<<size<<"\n";
+    conduit::Node res;
+    res["value"] = mcomp.value;
+    res["index"] = mcomp.index;
+    return res;
+  }
+};
+
+struct MinCompare
+{
+  double value;
+  int index;
+};
+
+#ifdef ASCENT_USE_OPENMP
+    #pragma omp declare reduction(minimum: struct MinCompare : \
+        omp_out = omp_in.value < omp_out.value ? omp_in : omp_out)
+#endif
+
+struct MinFunctor
+{
+  template<typename T>
+  conduit::Node operator()(const T* values, const int &size) const
+  {
+    MinCompare mcomp;
+
+    mcomp.value = std::numeric_limits<double>::max();
+    mcomp.index = 0;
+#ifdef ASCENT_USE_OPENMP
+    #pragma omp parallel for reduction(minimum:mcomp)
+#endif
+    for(int v = 0; v < size; ++v)
+    {
+      double val = static_cast<double>(values[v]);
+      if(val < mcomp.value)
       {
         mcomp.value = val;
         mcomp.index = v;
@@ -158,6 +198,12 @@ conduit::Node
 array_max(const conduit::Node &values)
 {
   return detail::type_dispatch(values, detail::MaxFunctor());
+}
+
+conduit::Node
+array_min(const conduit::Node &values)
+{
+  return detail::type_dispatch(values, detail::MinFunctor());
 }
 
 //-----------------------------------------------------------------------------

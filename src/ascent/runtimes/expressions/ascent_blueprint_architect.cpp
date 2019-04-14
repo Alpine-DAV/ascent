@@ -649,6 +649,95 @@ bool has_field(const conduit::Node &dataset, const std::string &field_name)
 }
 
 conduit::Node
+field_min(const conduit::Node &dataset,
+          const std::string &field)
+{
+  double min_value = std::numeric_limits<double>::max();
+
+  int domain = -1;
+  int domain_id = -1;
+  int index = -1;
+
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/"+field))
+    {
+      const std::string path = "fields/" + field + "/values";
+      conduit::Node res;
+      res = array_min(dom[path]);
+      res.print();
+      double a_min = res["value"].to_float64();
+      std::cout<<"min "<<min_value<<"  current "<<a_min<<"\n";
+      if(a_min < min_value)
+      {
+        min_value = a_min;
+        index = res["index"].as_int32();
+        domain = i;
+        domain_id = dom["state/domain_id"].to_int32();
+      }
+    }
+  }
+
+  std::cout<<"max value "<<min_value<<"\n";
+  std::cout<<"index "<<index<<"\n";
+
+  const std::string assoc_str = dataset.child(0)["fields/"
+                                + field + "/association"].as_string();
+
+  conduit::Node loc;
+  if(assoc_str == "vertex")
+  {
+    loc = point_location(dataset.child(domain),index);
+  }
+  else if(assoc_str == "element")
+  {
+    loc = cell_location(dataset.child(domain),index);
+  }
+  else
+  {
+    ASCENT_ERROR("Location for "<<assoc_str<<" not implemented");
+  }
+
+  int rank = 0;
+  conduit::Node res;
+#ifdef ASCENT_MPI_ENABLED
+  struct MinLoc
+  {
+    double value;
+    int rank;
+  };
+
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Comm_rank(mpi_comm, &rank);
+
+  MinLoc minloc = {min_value, rank};
+  MinLoc minloc_res;
+  MPI_Allreduce( &minloc, &minloc_res, 1, MPI_DOUBLE_INT, MPI_MINLOC, mpi_comm);
+  min_value = minloc.value;
+
+  double * ploc = loc.as_float64_ptr();
+  MPI_Bcast(ploc, 3, MPI_DOUBLE, minloc_res.rank, mpi_comm);
+  MPI_Bcast(&domain_id, 1, MPI_INT, minloc_res.rank, mpi_comm);
+
+  loc.set(ploc, 3);
+  if(rank == 0)
+  {
+    std::cout<<"Winning rank = "<<minloc_res.rank<<"\n";
+    std::cout<<"loc ";
+    loc.print();
+  }
+  rank = minloc_res.rank;
+#endif
+  res["rank"] = rank;
+  res["domain_id"] = domain_id;
+  res["position"] = loc;
+  res["value"] = min_value;
+
+  return res;
+}
+
+conduit::Node
 field_max(const conduit::Node &dataset,
           const std::string &field)
 {

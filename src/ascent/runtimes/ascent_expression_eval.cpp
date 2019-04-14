@@ -89,6 +89,7 @@ ExpressionEval::evaluate(const std::string expr)
   flow::Workspace::register_filter_type<expressions::MeshVar>();
   flow::Workspace::register_filter_type<expressions::ScalarMax>();
   flow::Workspace::register_filter_type<expressions::FieldMax>();
+  flow::Workspace::register_filter_type<expressions::FieldMin>();
   flow::Workspace::register_filter_type<expressions::Position>();
 
   conduit::Node* functions = new conduit::Node();;
@@ -103,6 +104,11 @@ ExpressionEval::evaluate(const std::string expr)
   field_max_sig["return_type"] = "scalar";
   field_max_sig["filter_name"] = "field_max";
   field_max_sig["args/arg1/type"] = "meshvar"; // arg names match input port names
+
+  conduit::Node &field_min_sig = (*functions)["min"].append();
+  field_min_sig["return_type"] = "scalar";
+  field_min_sig["filter_name"] = "field_min";
+  field_min_sig["args/arg1/type"] = "meshvar"; // arg names match input port names
 
   conduit::Node &pos_sig = (*functions)["position"].append();
   pos_sig["return_type"] = "scalar";
