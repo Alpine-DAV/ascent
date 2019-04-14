@@ -542,27 +542,7 @@ FieldMax::execute()
 
   conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
 
-  //dataset->print();
-  bool has_field = false;
-  bool is_scalar = false;
-  for(int i = 0; i < dataset->number_of_children(); ++i)
-  {
-    const conduit::Node &dom = dataset->child(i);
-    if(!has_field && dom.has_path("fields/"+field))
-    {
-      has_field = true;
-      const conduit::Node &n_field = dom["fields/"+field];
-      const int num_children = n_field["values"].number_of_children();
-      if(num_children == 0)
-      {
-        is_scalar = true;
-      }
-    }
-  }
-
-  double max_val;
-
-  if(!has_field)
+  if(!has_field(*dataset, field))
   {
     std::vector<std::string> names = dataset->child(0)["fields"].child_names();
     std::stringstream ss;
@@ -576,87 +556,16 @@ FieldMax::execute()
                  <<" known = "<<ss.str());
   }
 
-  if(!is_scalar)
+  if(!is_scalar_field(*dataset, field))
   {
     ASCENT_ERROR("FieldMax: field '"<<field<<"' is not a scalar");
   }
 
-  const std::string assoc_str = dataset->child(0)["fields/" + field + "/association"].as_string();
+  conduit::Node n_max = field_max(*dataset, field);
 
-  double max_value = std::numeric_limits<double>::lowest();
-
-  std::cout<<"init max "<<max_value<<"\n";
-
-  int domain = -1;
-  int index = -1;
-
-  for(int i = 0; i < dataset->number_of_children(); ++i)
-  {
-    const conduit::Node &dom = dataset->child(i);
-    if(dom.has_path("fields/"+field))
-    {
-      const std::string path = "fields/" + field + "/values";
-      conduit::Node res;
-      res = array_max(dom[path]);
-      res.print();
-      double a_max = res["value"].to_float64();
-      std::cout<<"max "<<max_value<<"  current "<<a_max<<"\n";
-      if(a_max > max_value)
-      {
-        max_value = a_max;
-        index = res["index"].as_int32();
-        domain = i;
-      }
-    }
-  }
-
-  std::cout<<"max value "<<max_value<<"\n";
-  std::cout<<"index "<<index<<"\n";
-
-  conduit::Node loc;
-  if(assoc_str == "vertex")
-  {
-    loc = point_location(dataset->child(domain),index);
-  }
-  else if(assoc_str == "element")
-  {
-    loc = cell_location(dataset->child(domain),index);
-  }
-  else
-  {
-    ASCENT_ERROR("Location for "<<assoc_str<<" not implemented");
-  }
-
-  loc.print();
-
-  int rank = 0;
-#ifdef ASCENT_MPI_ENABLED
-  struct MaxLoc
-  {
-    double value;
-    int rank;
-  };
-
-  MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-  MPI_Comm_rank(mpi_comm, &rank);
-
-  MaxLoc maxloc = {max_value, rank};
-  MaxLoc maxloc_res;
-  MPI_Allreduce( &maxloc, &maxloc_res, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mpi_comm);
-  double * ploc = loc.as_float64_ptr();
-  MPI_Bcast(ploc, 3, MPI_DOUBLE, maxloc_res.rank, mpi_comm);
-  loc.set(ploc, 3);
-  if(rank == 0)
-  {
-    std::cout<<"Winning rank = "<<maxloc_res.rank<<"\n";
-    std::cout<<"loc ";
-    loc.print();
-  }
-#endif
-
-  (*output)["value"] = max_value;
+  (*output)["value"] = n_max["value"];
   (*output)["type"] = "numeric";
-  (*output)["atts/position"] = loc;
+  (*output)["atts/position"] = n_max["position"];
 
   set_output<conduit::Node>(output);
 }

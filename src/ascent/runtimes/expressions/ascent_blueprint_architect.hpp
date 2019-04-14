@@ -82,7 +82,14 @@ conduit::Node cell_location(const conduit::Node &domain,
                             const int &index,
                             const std::string topo_name = "");
 
-// TODO: add cell version that returns the centroid
+conduit::Node field_max(const conduit::Node &dataset,
+                        const std::string &field_name);
+
+bool is_scalar_field(const conduit::Node &dataset,
+                     const std::string &field_name);
+
+bool has_field(const conduit::Node &dataset,
+               const std::string &field_name);
 
 };
 //-----------------------------------------------------------------------------

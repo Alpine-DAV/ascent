@@ -50,10 +50,17 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_blueprint_architect.hpp"
+#include "ascent_conduit_reductions.hpp"
 
 #include <ascent_logging.hpp>
 
 #include <limits>
+
+#include <flow_workspace.hpp>
+
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -75,6 +82,28 @@ namespace expressions
 
 namespace detail
 {
+
+bool at_least_one(bool local)
+{
+  bool agreement = local;
+#ifdef ASCENT_MPI_ENABLED
+  int local_boolean = local ? 1 : 0;
+  int global_count = 0;
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Allreduce((void *)(&local_boolean),
+                (void *)(&global_count),
+                1,
+                MPI_INT,
+                MPI_SUM,
+                mpi_comm);
+
+  if(global_count > 0)
+  {
+    agreement = true;
+  }
+#endif
+  return agreement;
+}
 
 struct UniformCoords
 {
@@ -578,6 +607,132 @@ cell_location(const conduit::Node &domain,
   {
     ASCENT_ERROR("The Architect: unknown mesh type: '"<<mesh_type<<"'");
   }
+
+  return res;
+}
+
+bool is_scalar_field(const conduit::Node &dataset, const std::string &field_name)
+{
+  bool is_scalar = false;
+  bool has_field = false;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(!has_field && dom.has_path("fields/"+field_name))
+    {
+      has_field = true;
+      const conduit::Node &n_field = dom["fields/"+field_name];
+      const int num_children = n_field["values"].number_of_children();
+      if(num_children == 0)
+      {
+        is_scalar = true;
+      }
+    }
+  }
+  return is_scalar;
+}
+
+bool has_field(const conduit::Node &dataset, const std::string &field_name)
+{
+  bool has_field = false;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(!has_field && dom.has_path("fields/"+field_name))
+    {
+      has_field = true;
+    }
+  }
+  // check to see if the field exists in any rank
+  has_field = detail::at_least_one(has_field);
+  return has_field;
+}
+
+conduit::Node
+field_max(const conduit::Node &dataset,
+          const std::string &field)
+{
+  double max_value = std::numeric_limits<double>::lowest();
+
+  int domain = -1;
+  int domain_id = -1;
+  int index = -1;
+
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/"+field))
+    {
+      const std::string path = "fields/" + field + "/values";
+      conduit::Node res;
+      res = array_max(dom[path]);
+      res.print();
+      double a_max = res["value"].to_float64();
+      std::cout<<"max "<<max_value<<"  current "<<a_max<<"\n";
+      if(a_max > max_value)
+      {
+        max_value = a_max;
+        index = res["index"].as_int32();
+        domain = i;
+        domain_id = dom["state/domain_id"].to_int32();
+      }
+    }
+  }
+
+  std::cout<<"max value "<<max_value<<"\n";
+  std::cout<<"index "<<index<<"\n";
+
+  const std::string assoc_str = dataset.child(0)["fields/"
+                                + field + "/association"].as_string();
+
+  conduit::Node loc;
+  if(assoc_str == "vertex")
+  {
+    loc = point_location(dataset.child(domain),index);
+  }
+  else if(assoc_str == "element")
+  {
+    loc = cell_location(dataset.child(domain),index);
+  }
+  else
+  {
+    ASCENT_ERROR("Location for "<<assoc_str<<" not implemented");
+  }
+
+  int rank = 0;
+  conduit::Node res;
+#ifdef ASCENT_MPI_ENABLED
+  struct MaxLoc
+  {
+    double value;
+    int rank;
+  };
+
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Comm_rank(mpi_comm, &rank);
+
+  MaxLoc maxloc = {max_value, rank};
+  MaxLoc maxloc_res;
+  MPI_Allreduce( &maxloc, &maxloc_res, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mpi_comm);
+  max_value = maxloc.value;
+
+  double * ploc = loc.as_float64_ptr();
+  MPI_Bcast(ploc, 3, MPI_DOUBLE, maxloc_res.rank, mpi_comm);
+  MPI_Bcast(&domain_id, 1, MPI_INT, maxloc_res.rank, mpi_comm);
+
+  loc.set(ploc, 3);
+  if(rank == 0)
+  {
+    std::cout<<"Winning rank = "<<maxloc_res.rank<<"\n";
+    std::cout<<"loc ";
+    loc.print();
+  }
+  rank = maxloc_res.rank;
+#endif
+  res["rank"] = rank;
+  res["domain_id"] = domain_id;
+  res["position"] = loc;
+  res["value"] = max_value;
 
   return res;
 }

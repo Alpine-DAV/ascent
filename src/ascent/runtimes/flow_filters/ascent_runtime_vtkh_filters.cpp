@@ -1013,13 +1013,7 @@ VTKH3Slice::execute()
     slicer.SetInput(data);
 
     conduit::Node n_data;
-    const int num_doms = data->GetNumberOfDomains();
-    for(int i = 0; i < num_doms; ++i)
-    {
-      conduit::Node &dom = n_data.append();
-      vtkm::cont::DataSet vtkm_dom =  data->GetDomain(i);
-      VTKHDataAdapter:: VTKmToBlueprintDataSet(&vtkm_dom,dom);
-    }
+    VTKHDataAdapter::VTKHToBlueprintDataSet(data,n_data);
 
     using Vec3f = vtkm::Vec<vtkm::Float32,3>;
 

@@ -117,6 +117,9 @@ public:
 
     static void              VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
                                                     conduit::Node &node);
+
+    static void              VTKHToBlueprintDataSet(vtkh::DataSet *dset,
+                                                    conduit::Node &node);
 private:
     // helpers for specific conversion cases
     static vtkm::cont::DataSet  *UniformBlueprintToVTKmDataSet(const std::string &coords_name,

@@ -1783,6 +1783,25 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
 }
 
 void
+VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
+                                        conduit::Node &node)
+{
+  node.reset();
+  const int num_doms = dset->GetNumberOfDomains();
+  for(int i = 0; i < num_doms; ++i)
+  {
+    conduit::Node &dom = node.append();
+    vtkm::cont::DataSet vtkm_dom;
+    vtkm::Id domain_id;
+    int cycle = dset->GetCycle();
+    dset->GetDomain(i, vtkm_dom, domain_id);
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom);
+    dom["state/domain_id"] = (int) domain_id;
+    dom["state/cycle"] = cycle;
+  }
+}
+
+void
 VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
                                         conduit::Node &node)
 {
