@@ -392,9 +392,13 @@ After building these libraries and tools, it writes an initial *host-config* fil
 Building with Spack
 -------------------
 
-As of 11/10/2017,  Spack's develop branch includes a
-`recipe <https://github.com/spack/spack/blob/develop/var/spack/repos/builtin/packages/ascent/package.py>`_
-to build and install Ascent.
+Currently, we maintain our own fork of Spack for stability. As part of the uberenv python
+script, we automatically clone our
+`Spack fork. <https://github.com/Alpine-DAV/spack/tree/task/2018_04_update_ascent>`_
+
+.. warning::
+  Installing Ascent from the Spack master branch will most likely fail. We build and test spack
+  installations with uberenv.py.
 
 To install Ascent with all options (and also build all of its dependencies as necessary) run:
 
