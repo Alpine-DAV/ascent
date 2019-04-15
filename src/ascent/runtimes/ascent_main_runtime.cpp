@@ -1240,6 +1240,10 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
           w.reset();
         }
+        else
+        {
+            ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
+        }
     }
 }
 
