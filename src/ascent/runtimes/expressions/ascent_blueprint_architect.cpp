@@ -826,6 +826,30 @@ field_max(const conduit::Node &dataset,
   return res;
 }
 
+conduit::Node
+get_state_var(const conduit::Node &dataset,
+              const std::string &var_name)
+{
+  bool has_state = false;
+  conduit::Node state;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(!has_state && dom.has_path("state/"+var_name))
+    {
+      has_state = true;
+      state = dom["state/"+var_name];
+    }
+  }
+
+  // TODO: make sure everyone has this
+  if(!has_state)
+  {
+    ASCENT_ERROR("Unable to retrieve state variable '"<<var_name<<"'");
+  }
+  return state;
+}
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

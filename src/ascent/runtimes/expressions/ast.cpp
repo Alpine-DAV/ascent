@@ -182,7 +182,12 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
   {
     const conduit::Node &func = overload_list.child(i);
     bool valid = false;
-    if(arg_list.size() == func["args"].number_of_children())
+    int num_args = 0;
+    if(func.has_path("args"))
+    {
+      num_args = func["args"].number_of_children();
+    }
+    if(arg_list.size() == num_args)
     {
       valid = true;
       // validate the types

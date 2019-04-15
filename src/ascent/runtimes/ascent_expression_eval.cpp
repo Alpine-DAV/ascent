@@ -86,6 +86,7 @@ void register_builtin()
   flow::Workspace::register_filter_type<expressions::FieldMax>();
   flow::Workspace::register_filter_type<expressions::FieldMin>();
   flow::Workspace::register_filter_type<expressions::Position>();
+  flow::Workspace::register_filter_type<expressions::Cycle>();
 }
 
 ExpressionEval::ExpressionEval(conduit::Node *data)
@@ -137,6 +138,12 @@ ExpressionEval::initialize_functions()
   pos_sig["return_type"] = "scalar";
   pos_sig["filter_name"] = "expr_position";
   pos_sig["args/arg1/type"] = "scalar"; // Should query result be differnt type?
+  // -------------------------------------------------------------
+
+  conduit::Node &cycle_sig = (*functions)["cycle"].append();
+  cycle_sig["return_type"] = "scalar";
+  cycle_sig["filter_name"] = "cycle";
+  cycle_sig["args"] = conduit::DataType::empty();
 }
 
 conduit::Node

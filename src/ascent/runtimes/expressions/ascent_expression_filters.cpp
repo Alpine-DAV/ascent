@@ -781,6 +781,63 @@ Position::execute()
 }
 
 //-----------------------------------------------------------------------------
+Cycle::Cycle()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Cycle::~Cycle()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Cycle::declare_interface(Node &i)
+{
+    i["type_name"]   = "cycle";
+    i["port_names"] = DataType::empty();
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Cycle::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Cycle::execute()
+
+{
+  conduit::Node *output = new conduit::Node();
+
+  if(!graph().workspace().registry().has_entry("dataset"))
+  {
+    ASCENT_ERROR("Cycle: Missing dataset");
+  }
+
+  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+
+  conduit::Node state = get_state_var(*dataset, "cycle");
+  if(!state.dtype().is_number())
+  {
+    ASCENT_ERROR("Expressions: cycle() is not a number");
+  }
+
+  (*output)["type"] = "numeric";
+  (*output)["value"] = state;
+  set_output<conduit::Node>(output);
+}
+//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

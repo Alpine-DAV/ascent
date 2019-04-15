@@ -131,6 +131,18 @@ public:
 };
 
 
+class Cycle : public ::flow::Filter
+{
+public:
+    Cycle();
+   ~Cycle();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 class ScalarMax : public ::flow::Filter
 {
 public:

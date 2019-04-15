@@ -88,6 +88,9 @@ conduit::Node field_max(const conduit::Node &dataset,
 conduit::Node field_min(const conduit::Node &dataset,
                         const std::string &field_name);
 
+conduit::Node get_state_var(const conduit::Node &dataset,
+                            const std::string &var_name);
+
 bool is_scalar_field(const conduit::Node &dataset,
                      const std::string &field_name);
 
