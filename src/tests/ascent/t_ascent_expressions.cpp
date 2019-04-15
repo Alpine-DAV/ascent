@@ -98,7 +98,8 @@ TEST(ascent_expressions, test_expression)
     Node multi_dom;
     blueprint::mesh::to_multi_domain(data, multi_dom);
 
-    runtime::ExpressionEval eval(&multi_dom);
+    runtime::expressions::register_builtin();
+    runtime::expressions::ExpressionEval eval(&multi_dom);
     //std::string expr = "max(1,\"p\")";
     //std::string expr = "max(\"braid\")";
     std::string expr = "position(max(\"braid\"))";

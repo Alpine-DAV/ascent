@@ -42,94 +42,80 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_mpi_slice.cpp
+/// file: ascent_runtime_trigger_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "gtest/gtest.h"
+#ifndef ASCENT_RUNTIME_TRIGGER_FILTERS
+#define ASCENT_RUNTIME_TRIGGER_FILTERS
 
 #include <ascent.hpp>
-#include <iostream>
-#include <math.h>
 
+#include <flow_filter.hpp>
 
-#include <ascent_expression_eval.hpp>
-
-#include <mpi.h>
-
-#include <conduit_blueprint.hpp>
-
-#include "t_config.hpp"
-#include "t_utils.hpp"
-
-using namespace std;
-using namespace conduit;
-using namespace ascent;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_mpi_expressions, mpi_expressoins)
+// -- begin ascent:: --
+//-----------------------------------------------------------------------------
+namespace ascent
 {
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
-        return;
-    }
 
-    //
-    // Set Up MPI
-    //
-    int par_rank;
-    int par_size;
-    MPI_Comm comm = MPI_COMM_WORLD;
-    MPI_Comm_rank(comm, &par_rank);
-    MPI_Comm_size(comm, &par_size);
-
-    ASCENT_INFO("Rank "
-                  << par_rank
-                  << " of "
-                  << par_size
-                  << " reporting");
-    //
-    // Create the data.
-    //
-    Node data, verify_info;
-    int dims = 32;
-    create_3d_example_dataset(data,dims,par_rank,par_size);
-    Node multi_dom;
-    blueprint::mesh::to_multi_domain(data, multi_dom);
-
-    conduit::blueprint::mesh::verify(data,verify_info);
-
-    Ascent ascent;
-    Node ascent_opts;
-    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    ascent_opts["runtime"] = "ascent";
-    ascent.open(ascent_opts);
-
-    runtime::expressions::register_builtin();
-    runtime::expressions::ExpressionEval eval(&multi_dom);
-    //std::string expr = "max(1,\"p\")";
-    std::string expr = "max(\"radial_vert\")";
-    //std::string expr = "max(1,2)";
-    //std::string expr = "max(2)";
-    //std::string expr = "(2.0 + 1) / 0.5" ;
-    //std::string expr = "1+\"p\"" ;
-    conduit::Node res = eval.evaluate(expr);
-}
-
-int main(int argc, char* argv[])
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime --
+//-----------------------------------------------------------------------------
+namespace runtime
 {
-    int result = 0;
-    ::testing::InitGoogleTest(&argc, argv);
-    MPI_Init(&argc, &argv);
-    result = RUN_ALL_TESTS();
-    MPI_Finalize();
 
-    return result;
-}
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::filters --
+//-----------------------------------------------------------------------------
+namespace filters
+{
+
+//-----------------------------------------------------------------------------
+///
+/// Filters Related to Blueprint
+///
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+class BasicTrigger : public ::flow::Filter
+{
+public:
+    BasicTrigger();
+   ~BasicTrigger();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime::filters --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent:: --
+//-----------------------------------------------------------------------------
+
+
+
+
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------

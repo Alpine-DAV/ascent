@@ -692,6 +692,24 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
 
 }
 //-----------------------------------------------------------------------------
+void
+AscentRuntime::ConvertTriggerToFlow(const conduit::Node &trigger,
+                                    const std::string trigger_name)
+{
+  std::string filter_name;
+
+  conduit::Node params;
+  if(trigger.has_path("params")) params = trigger["params"];
+
+  w.graph().add_filter("trigger",
+                       trigger_name,
+                       params);
+
+  // this is the blueprint mesh
+  m_connections[trigger_name] = "source";
+
+}
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
@@ -770,6 +788,18 @@ AscentRuntime::CreateExtracts(const conduit::Node &extracts)
   {
     conduit::Node extract = extracts.child(i);
     ConvertExtractToFlow(extract, names[i]);
+  }
+}
+
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::CreateTriggers(const conduit::Node &triggers)
+{
+  std::vector<std::string> names = triggers.child_names();
+  for(int i = 0; i < triggers.number_of_children(); ++i)
+  {
+    conduit::Node trigger = triggers.child(i);
+    ConvertTriggerToFlow(trigger, names[i]);
   }
 }
 
@@ -1174,8 +1204,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
             ASCENT_ERROR("action 'add_pipelines' missing child 'pipelines'");
           }
         }
-
-        if(action_name == "add_scenes")
+        else if(action_name == "add_scenes")
         {
           if(action.has_path("scenes"))
           {
@@ -1186,8 +1215,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
             ASCENT_ERROR("action 'add_scenes' missing child 'scenes'");
           }
         }
-
-        if(action_name == "add_extracts")
+        else if(action_name == "add_extracts")
         {
           if(action.has_path("extracts"))
           {
@@ -1198,7 +1226,17 @@ AscentRuntime::Execute(const conduit::Node &actions)
             ASCENT_ERROR("action 'add_extracts' missing child 'extracts'");
           }
         }
-
+        else if(action_name == "add_triggers")
+        {
+          if(action.has_path("triggers"))
+          {
+            CreateTriggers(action["triggers"]);
+          }
+          else
+          {
+            ASCENT_ERROR("action 'add_triggers' missing child 'triggers'");
+          }
+        }
         else if( action_name == "execute")
         {
           ConnectGraphs();
