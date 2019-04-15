@@ -53,6 +53,7 @@
 #define ASCENT_EXPRESSION_EVAL_HPP
 #include <conduit.hpp>
 
+#include "flow_workspace.hpp"
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -65,15 +66,29 @@ namespace ascent
 namespace runtime
 {
 
+namespace expressions
+{
+
+void register_builtin();
+
 class ExpressionEval
 {
 protected:
   conduit::Node *m_data;
+  flow::Workspace w;
+
+  void initialize_functions();
 public:
   ExpressionEval(conduit::Node *data);
+
   conduit::Node evaluate(const std::string expr);
 };
 
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::expressions--
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

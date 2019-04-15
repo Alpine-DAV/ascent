@@ -1017,7 +1017,7 @@ VTKH3Slice::execute()
 
     using Vec3f = vtkm::Vec<vtkm::Float32,3>;
 
-    runtime::ExpressionEval eval(&n_data);
+    runtime::expressions::ExpressionEval eval(&n_data);
     //std::string expr = "position(max(\"velocity_x\"))";
     std::string expr = "position(min(\"p\"))";
     //std::string expr = "position(max(\"p\"))";

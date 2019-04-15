@@ -70,6 +70,7 @@
 
 #include <flow.hpp>
 #include <ascent_runtime_filters.hpp>
+#include <ascent_expression_eval.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkh/vtkh.hpp>
@@ -222,6 +223,8 @@ AscentRuntime::Initialize(const conduit::Node &options)
     flow::filters::register_builtin();
     // filters for ascent flow runtime.
     runtime::filters::register_builtin();
+    // filters for expression evaluation
+    runtime::expressions::register_builtin();
 
     if(options.has_path("web/stream") &&
        options["web/stream"].as_string() == "true" &&

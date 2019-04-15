@@ -50,7 +50,6 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_expression_eval.hpp"
-#include "flow_workspace.hpp"
 #include "expressions/ascent_expression_filters.hpp"
 #include "expressions/ast.hpp"
 #include "expressions/parser.hpp"
@@ -68,21 +67,16 @@ namespace ascent
 namespace runtime
 {
 
+//-----------------------------------------------------------------------------
+// -- begin ascent::expressions--
+//-----------------------------------------------------------------------------
+namespace expressions
+{
+
 extern ASTExpression *expression;
 
-ExpressionEval::ExpressionEval(conduit::Node *data)
-  : m_data(data)
+void register_builtin()
 {
-
-}
-
-conduit::Node
-ExpressionEval::evaluate(const std::string expr)
-{
-
-  flow::Workspace w;
-
-
   flow::Workspace::register_filter_type<expressions::Double>();
   flow::Workspace::register_filter_type<expressions::Integer>();
   flow::Workspace::register_filter_type<expressions::BinaryOp>();
@@ -91,8 +85,22 @@ ExpressionEval::evaluate(const std::string expr)
   flow::Workspace::register_filter_type<expressions::FieldMax>();
   flow::Workspace::register_filter_type<expressions::FieldMin>();
   flow::Workspace::register_filter_type<expressions::Position>();
+}
 
-  conduit::Node* functions = new conduit::Node();;
+ExpressionEval::ExpressionEval(conduit::Node *data)
+  : m_data(data)
+{
+  initialize_functions();
+}
+
+
+void
+ExpressionEval::initialize_functions()
+{
+  // functions
+  conduit::Node* functions = new conduit::Node();
+  w.registry().add<conduit::Node>("function_table", functions, 1);
+  // -------------------------------------------------------------
 
   conduit::Node &scalar_max_sig = (*functions)["max"].append();
   scalar_max_sig["return_type"] = "scalar";
@@ -100,22 +108,31 @@ ExpressionEval::evaluate(const std::string expr)
   scalar_max_sig["args/arg1/type"] = "scalar"; // arg names match input port names
   scalar_max_sig["args/arg2/type"] = "scalar";
 
+  // -------------------------------------------------------------
+
   conduit::Node &field_max_sig = (*functions)["max"].append();
   field_max_sig["return_type"] = "scalar";
   field_max_sig["filter_name"] = "field_max";
   field_max_sig["args/arg1/type"] = "meshvar"; // arg names match input port names
+
+  // -------------------------------------------------------------
 
   conduit::Node &field_min_sig = (*functions)["min"].append();
   field_min_sig["return_type"] = "scalar";
   field_min_sig["filter_name"] = "field_min";
   field_min_sig["args/arg1/type"] = "meshvar"; // arg names match input port names
 
+  // -------------------------------------------------------------
+
   conduit::Node &pos_sig = (*functions)["position"].append();
   pos_sig["return_type"] = "scalar";
   pos_sig["filter_name"] = "expr_position";
   pos_sig["args/arg1/type"] = "scalar"; // Should query result be differnt type?
+}
 
-  w.registry().add<conduit::Node>("function_table", functions, 1);
+conduit::Node
+ExpressionEval::evaluate(const std::string expr)
+{
 
   w.registry().add<conduit::Node>("dataset", m_data, -1);
 
@@ -145,6 +162,12 @@ ExpressionEval::evaluate(const std::string expr)
   delete expression;
   return res;
 }
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::expressions--
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 };
