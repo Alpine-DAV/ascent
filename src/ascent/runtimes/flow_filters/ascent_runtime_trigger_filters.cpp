@@ -62,8 +62,10 @@
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
+#include <ascent_expression_eval.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_runtime_param_check.hpp>
+
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -108,7 +110,7 @@ BasicTrigger::~BasicTrigger()
 void
 BasicTrigger::declare_interface(Node &i)
 {
-    i["type_name"]   = "trigger";
+    i["type_name"]   = "basic_trigger";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
 }
@@ -147,18 +149,31 @@ BasicTrigger::execute()
     Node v_info;
     Node *n_input = input<Node>(0);
 
-    Ascent ascent;
+    runtime::expressions::ExpressionEval eval(n_input);
+    conduit::Node res = eval.evaluate(expression);
+    res.print();
+    if(!res.dtype().is_integer())
+    {
+      ASCENT_ERROR("result of expression '"<<expression<<"' is not an integer");
+    }
 
-    Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
+    int condition = res.to_int32();
+    std::cout<<"condition "<<condition<<"\n";
+    if(condition)
+    {
+      Ascent ascent;
+
+      Node ascent_opts;
+      ascent_opts["runtime/type"] = "ascent";
 #ifdef ASCENT_MPI_ENABLED
-    ascent_opts["mpi_comm"] = Workspace::default_mpi_comm();
+      ascent_opts["mpi_comm"] = Workspace::default_mpi_comm();
 #endif
-    ascent_opts["actions_file"] = actions_file;
-    ascent.open(ascent_opts);
-    ascent.publish(*n_input);
-    ascent.execute(actions);
-    ascent.close();
+      ascent_opts["actions_file"] = actions_file;
+      ascent.open(ascent_opts);
+      ascent.publish(*n_input);
+      ascent.execute(actions);
+      ascent.close();
+    }
 }
 
 

@@ -60,6 +60,7 @@
 
 #include <ascent_runtime_relay_filters.hpp>
 #include <ascent_runtime_blueprint_filters.hpp>
+#include <ascent_runtime_trigger_filters.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
     #include <ascent_runtime_vtkh_filters.hpp>
@@ -107,6 +108,8 @@ register_builtin()
     AscentRuntime::register_filter_type<EnsureBlueprint>();
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
     AscentRuntime::register_filter_type<RelayIOLoad>();
+
+    AscentRuntime::register_filter_type<BasicTrigger>();
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();

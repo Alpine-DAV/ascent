@@ -82,6 +82,7 @@ void register_builtin()
   flow::Workspace::register_filter_type<expressions::BinaryOp>();
   flow::Workspace::register_filter_type<expressions::MeshVar>();
   flow::Workspace::register_filter_type<expressions::ScalarMax>();
+  flow::Workspace::register_filter_type<expressions::ScalarMin>();
   flow::Workspace::register_filter_type<expressions::FieldMax>();
   flow::Workspace::register_filter_type<expressions::FieldMin>();
   flow::Workspace::register_filter_type<expressions::Position>();
@@ -121,6 +122,14 @@ ExpressionEval::initialize_functions()
   field_min_sig["return_type"] = "scalar";
   field_min_sig["filter_name"] = "field_min";
   field_min_sig["args/arg1/type"] = "meshvar"; // arg names match input port names
+
+  // -------------------------------------------------------------
+
+  conduit::Node &scalar_min_sig = (*functions)["min"].append();
+  scalar_min_sig["return_type"] = "scalar";
+  scalar_min_sig["filter_name"] = "scalar_min";
+  scalar_min_sig["args/arg1/type"] = "scalar"; // arg names match input port names
+  scalar_min_sig["args/arg2/type"] = "scalar";
 
   // -------------------------------------------------------------
 

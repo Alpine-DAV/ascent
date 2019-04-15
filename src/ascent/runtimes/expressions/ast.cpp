@@ -303,7 +303,7 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
   if(l_type == "meshvar" || r_type == "meshvar")
   {
     std::stringstream msg;
-    msg<<"' "<<l_type<<" "<<m_op<<" "<<r_type<"'";
+    msg<<"' "<<l_type<<" "<<m_op<<" "<<r_type<<"'";
     ASCENT_ERROR("binary operation with mesh variable not supported: "<<msg.str());
   }
 

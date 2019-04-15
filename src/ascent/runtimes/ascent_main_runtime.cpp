@@ -701,7 +701,7 @@ AscentRuntime::ConvertTriggerToFlow(const conduit::Node &trigger,
   conduit::Node params;
   if(trigger.has_path("params")) params = trigger["params"];
 
-  w.graph().add_filter("trigger",
+  w.graph().add_filter("basic_trigger",
                        trigger_name,
                        params);
 
@@ -709,7 +709,6 @@ AscentRuntime::ConvertTriggerToFlow(const conduit::Node &trigger,
   m_connections[trigger_name] = "source";
 
 }
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
