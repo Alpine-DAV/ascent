@@ -1169,7 +1169,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
       if(field_name != "boundary_attribute")
       {
         ASCENT_INFO("Field '"<<field_name<<"' number of values "<<num_vals<<
-                    " does not match the number of cells "<<nverts<<". Skipping");
+                    " does not match the number of elements " << neles << ". Skipping");
       }
       return;
     }

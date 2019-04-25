@@ -199,7 +199,7 @@ Ascent's build system supports the following CMake options:
   Starting in CMake 3.10, the FindMPI **MPIEXEC** variable was changed to **MPIEXEC_EXECUTABLE**. FindMPI will still set **MPIEXEC**, but any attempt to change it before calling FindMPI with your own cached value of **MPIEXEC** will not survive, so you need to set **MPIEXEC_EXECUTABLE** `[reference] <https://cmake.org/cmake/help/v3.10/module/FindMPI.html>`_.
 
 
-* **CONDUIT_DIR** - Path to an Conduit install *(required for parallel version)*.
+* **CONDUIT_DIR** - Path to an Conduit install *(required)*.
 
 * **VTKM_DIR** - Path to an VTK-m install *(optional)*.
 
