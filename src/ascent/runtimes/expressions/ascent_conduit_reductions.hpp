@@ -78,6 +78,8 @@ conduit::Node array_max(const conduit::Node &values);
 
 conduit::Node array_min(const conduit::Node &values);
 
+conduit::Node array_sum(const conduit::Node &values);
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

@@ -69,7 +69,7 @@ using namespace conduit;
 using namespace ascent;
 
 
-index_t EXAMPLE_MESH_SIDE_DIM = 20;
+index_t EXAMPLE_MESH_SIDE_DIM = 5;
 
 
 //-----------------------------------------------------------------------------
@@ -95,19 +95,23 @@ TEST(ascent_expressions, test_expression)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
+    // ascent normally adds this but we are doing an end around
+    data["state/domain_id"] = 0;
     Node multi_dom;
     blueprint::mesh::to_multi_domain(data, multi_dom);
 
     runtime::expressions::register_builtin();
     runtime::expressions::ExpressionEval eval(&multi_dom);
     //std::string expr = "max(1,\"p\")";
-    //std::string expr = "max(\"braid\")";
-    std::string expr = "position(max(\"braid\"))";
+    std::string expr = "avg(\"braid\")";
+    //std::string expr = "position(max(\"braid\"))";
+    //std::string expr = "banana";
     //std::string expr = "max(1,2)";
     //std::string expr = "max(2)";
     //std::string expr = "(2.0 + 1) / 0.5" ;
     //std::string expr = "1+\"p\"" ;
     conduit::Node res = eval.evaluate(expr);
+    res.print();
 }
 
 //-----------------------------------------------------------------------------

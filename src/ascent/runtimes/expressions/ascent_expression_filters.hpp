@@ -191,6 +191,18 @@ public:
     virtual void   execute();
 };
 
+class FieldAvg : public ::flow::Filter
+{
+public:
+    FieldAvg();
+   ~FieldAvg();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 class Position : public ::flow::Filter
 {
 public:

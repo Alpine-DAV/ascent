@@ -188,6 +188,27 @@ struct MinFunctor
     return res;
   }
 };
+
+struct SumFunctor
+{
+  template<typename T>
+  conduit::Node operator()(const T* values, const int &size) const
+  {
+    T sum = 0;
+#ifdef ASCENT_USE_OPENMP
+    #pragma omp parallel for reduction(+:sum)
+#endif
+    for(int v = 0; v < size; ++v)
+    {
+      double val = static_cast<double>(values[v]);
+      sum += val;
+    }
+    conduit::Node res;
+    res["value"] = sum;
+    res["count"] = (int)size;
+    return res;
+  }
+};
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
@@ -204,6 +225,12 @@ conduit::Node
 array_min(const conduit::Node &values)
 {
   return detail::type_dispatch(values, detail::MinFunctor());
+}
+
+conduit::Node
+array_sum(const conduit::Node &values)
+{
+  return detail::type_dispatch(values, detail::SumFunctor());
 }
 
 //-----------------------------------------------------------------------------

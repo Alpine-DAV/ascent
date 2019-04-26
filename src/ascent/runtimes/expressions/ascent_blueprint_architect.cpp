@@ -738,6 +738,52 @@ field_min(const conduit::Node &dataset,
 }
 
 conduit::Node
+field_avg(const conduit::Node &dataset,
+          const std::string &field)
+{
+  double sum = 0.;
+  long long int count = 0;
+
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/"+field))
+    {
+      const std::string path = "fields/" + field + "/values";
+      conduit::Node res;
+      res = array_sum(dom[path]);
+      res.print();
+      double a_sum = res["value"].to_float64();
+      long long int a_count = res["count"].to_int64();
+      std::cout<<"sum "<<sum<<" current sum "<<a_sum<<"\n";
+      sum += a_sum;
+      count += count;
+    }
+  }
+
+  std::cout<<"sum "<<sum<<"\n";
+
+#ifdef ASCENT_MPI_ENABLED
+  int rank;
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Comm_rank(mpi_comm, &rank);
+  double global_sum;
+  MPI_Allreduce( &sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_comm);
+
+  long long int global_count;
+  MPI_Allreduce( &count, &global_count, 1, MPI_LONG_LONG_INT, MPI_SUM, mpi_comm);
+
+  sum = global_sum;
+  count = global_count;
+#endif
+  double avg = sum / double(count);
+  conduit::Node res;
+  res["value"] = sum;
+
+  return res;
+}
+
+conduit::Node
 field_max(const conduit::Node &dataset,
           const std::string &field)
 {

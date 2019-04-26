@@ -85,6 +85,7 @@ void register_builtin()
   flow::Workspace::register_filter_type<expressions::ScalarMin>();
   flow::Workspace::register_filter_type<expressions::FieldMax>();
   flow::Workspace::register_filter_type<expressions::FieldMin>();
+  flow::Workspace::register_filter_type<expressions::FieldAvg>();
   flow::Workspace::register_filter_type<expressions::Position>();
   flow::Workspace::register_filter_type<expressions::Cycle>();
 }
@@ -102,6 +103,13 @@ ExpressionEval::initialize_functions()
   // functions
   conduit::Node* functions = new conduit::Node();
   w.registry().add<conduit::Node>("function_table", functions, 1);
+
+  // -------------------------------------------------------------
+
+  conduit::Node &field_avg_sig = (*functions)["avg"].append();
+  field_avg_sig["return_type"] = "scalar";
+  field_avg_sig["filter_name"] = "field_avg";
+  field_avg_sig["args/arg1/type"] = "meshvar"; // arg names match input port names
   // -------------------------------------------------------------
 
   conduit::Node &scalar_max_sig = (*functions)["max"].append();

@@ -726,6 +726,87 @@ FieldMax::execute()
   set_output<conduit::Node>(output);
 }
 
+//-----------------------------------------------------------------------------
+FieldAvg::FieldAvg()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+FieldAvg::~FieldAvg()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+FieldAvg::declare_interface(Node &i)
+{
+    i["type_name"]   = "field_avg";
+    i["port_names"].append() = "arg1";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+FieldAvg::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+FieldAvg::execute()
+
+{
+
+  Node *arg1 = input<Node>("arg1");
+
+  arg1->print();
+
+  const std::string field = (*arg1)["value"].as_string();
+
+  conduit::Node *output = new conduit::Node();
+
+  if(!graph().workspace().registry().has_entry("dataset"))
+  {
+    ASCENT_ERROR("FieldAvg: Missing dataset");
+  }
+
+  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+
+  if(!has_field(*dataset, field))
+  {
+    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+    std::stringstream ss;
+    ss<<"[";
+    for(int i = 0; i < names.size(); ++i)
+    {
+      ss<<" "<<names[i];
+    }
+    ss<<"]";
+    ASCENT_ERROR("FieldAvg: dataset does not contain field '"<<field<<"'"
+                 <<" known = "<<ss.str());
+  }
+
+  if(!is_scalar_field(*dataset, field))
+  {
+    ASCENT_ERROR("FieldAvg: field '"<<field<<"' is not a scalar");
+  }
+
+  conduit::Node n_avg = field_avg(*dataset, field);
+
+  (*output)["value"] = n_avg["value"];
+  (*output)["type"] = "numeric";
+
+  set_output<conduit::Node>(output);
+}
+
 
 //-----------------------------------------------------------------------------
 Position::Position()

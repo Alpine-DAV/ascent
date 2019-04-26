@@ -131,7 +131,7 @@ void ASTIdentifier::access()
 
 conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
 {
-  std::cout << "Flow indt : " << m_name<< endl;
+  std::cout << "Flow indent : " << m_name<< endl;
   conduit::Node res;
   return res;
 }
@@ -216,7 +216,7 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
     static int ast_method_counter = 0;
     // create a unique name for the filter
     std::stringstream ss;
-    ss<<"method_"<<"_"<<ast_method_counter<<"_"<<m_id->m_name;;
+    ss<<"method_"<<ast_method_counter<<"_"<<m_id->m_name;;
     std::string name = ss.str();
     ast_method_counter++;
 
