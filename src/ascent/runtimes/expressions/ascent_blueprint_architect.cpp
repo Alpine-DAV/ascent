@@ -757,7 +757,7 @@ field_avg(const conduit::Node &dataset,
       long long int a_count = res["count"].to_int64();
       std::cout<<"sum "<<sum<<" current sum "<<a_sum<<"\n";
       sum += a_sum;
-      count += count;
+      count += a_count;
     }
   }
 
@@ -778,7 +778,7 @@ field_avg(const conduit::Node &dataset,
 #endif
   double avg = sum / double(count);
   conduit::Node res;
-  res["value"] = sum;
+  res["value"] = avg;
 
   return res;
 }

@@ -50,6 +50,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_expression_eval.hpp"
+#include "expressions/ascent_blueprint_architect.hpp"
 #include "expressions/ascent_expression_filters.hpp"
 #include "expressions/ast.hpp"
 #include "expressions/parser.hpp"
@@ -74,6 +75,8 @@ namespace expressions
 {
 
 extern ASTExpression *expression;
+
+conduit::Node ExpressionEval::m_cache;
 
 void register_builtin()
 {
@@ -155,10 +158,19 @@ ExpressionEval::initialize_functions()
 }
 
 conduit::Node
-ExpressionEval::evaluate(const std::string expr)
+ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 {
 
+  if(expr_name == "")
+  {
+    expr_name = expr;
+  }
+
   w.registry().add<conduit::Node>("dataset", m_data, -1);
+  w.registry().add<conduit::Node>("cache", &m_cache, -1);
+  int cycle = get_state_var(*m_data, "cycle").to_int32();
+  w.registry().add<int>("cycle", &cycle, -1);
+
 
   scan_string(expr.c_str());
   ASTExpression *expression = get_result();

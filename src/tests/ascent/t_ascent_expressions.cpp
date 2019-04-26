@@ -85,7 +85,6 @@ TEST(ascent_expressions, test_expression)
         return;
     }
 
-
     //
     // Create an example mesh.
     //

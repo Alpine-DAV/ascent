@@ -76,12 +76,12 @@ class ExpressionEval
 protected:
   conduit::Node *m_data;
   flow::Workspace w;
-
+  static conduit::Node m_cache;
   void initialize_functions();
 public:
   ExpressionEval(conduit::Node *data);
 
-  conduit::Node evaluate(const std::string expr);
+  conduit::Node evaluate(const std::string expr, std::string exp_name = "");
 };
 
 //-----------------------------------------------------------------------------
