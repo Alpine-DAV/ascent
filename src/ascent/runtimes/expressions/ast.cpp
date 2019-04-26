@@ -132,7 +132,24 @@ void ASTIdentifier::access()
 conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
 {
   std::cout << "Flow indent : " << m_name<< endl;
+  static int ast_ident_counter = 0;
+
+  // create a unique name for the filter
+  std::stringstream ss;
+  ss<<"ident"<<"_"<<ast_ident_counter;
+  std::string name = ss.str();
+
+  conduit::Node params;
+  params["value"] = m_name;
+
+  w.graph().add_filter("expr_identifier",
+                       name,
+                       params);
+  ast_ident_counter++;
+
   conduit::Node res;
+  res["filter_name"] = name;
+  res["type"] = "scalar";
   return res;
 }
 

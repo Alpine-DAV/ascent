@@ -167,6 +167,70 @@ int comp_op(const T& lhs, const T& rhs, const std::string &op)
 } // namespace detail
 
 //-----------------------------------------------------------------------------
+Identifier::Identifier()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Identifier::~Identifier()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Identifier::declare_interface(Node &i)
+{
+    i["type_name"]   = "expr_identifier";
+    i["port_names"] = DataType::empty();
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Identifier::verify_params(const conduit::Node &params,
+                          conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    if(!params.has_path("value"))
+    {
+       info["errors"].append() = "Missing required string parameter 'value'";
+       res = false;
+    }
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Identifier::execute()
+{
+
+   conduit::Node *output = new conduit::Node();
+   std::string i_name = params()["value"].as_string();
+
+   conduit::Node *cache = graph().workspace().registry().fetch<Node>("cache");
+   if(!cache->has_path(i_name))
+   {
+     ASCENT_ERROR("Unknown expression identifier: '"<<i_name<<"'");
+   }
+
+   const int entries = (*cache)[i_name].number_of_children();
+   if(entries < 1)
+   {
+     ASCENT_ERROR("Expression identifier: needs a non-zero number of entires: "<<entries);
+   }
+   // grab the last one calculated
+   (*output) = (*cache)[i_name].child(entries - 1);
+   std::cout<<"IDENT ";
+   output->print();
+   set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 Integer::Integer()
 :Filter()
 {
@@ -191,7 +255,7 @@ Integer::declare_interface(Node &i)
 //-----------------------------------------------------------------------------
 bool
 Integer::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
+                       conduit::Node &info)
 {
     info.reset();
     bool res = true;
@@ -211,7 +275,7 @@ Integer::execute()
 
    conduit::Node *output = new conduit::Node();
    (*output)["value"] = params()["value"].to_int32();
-   (*output)["type"] = "numeric";
+   (*output)["type"] = "scalar";
    set_output<conduit::Node>(output);
 }
 
@@ -260,7 +324,7 @@ Double::execute()
 
    conduit::Node *output = new conduit::Node();
    (*output)["value"] = params()["value"].to_float64();
-   (*output)["type"] = "numeric";
+   (*output)["type"] = "scalar";
    set_output<conduit::Node>(output);
 }
 
@@ -362,6 +426,11 @@ BinaryOp::execute()
   const Node &lhs = (*n_lhs)["value"];
   const Node &rhs = (*n_rhs)["value"];
 
+  if((*n_lhs)["type"].as_string() == "vector" ||
+     (*n_rhs)["type"].as_string() == "vector")
+  {
+    ASCENT_ERROR("Vector binary ops not supported / implemented");
+  }
 
   n_lhs->print();
   n_rhs->print();
@@ -392,7 +461,7 @@ BinaryOp::execute()
     {
       (*output)["value"] = detail::comp_op(d_lhs, d_rhs, op);
     }
-    (*output)["type"] = "numeric";
+    (*output)["type"] = "scalar";
   }
   else
   {
@@ -484,7 +553,7 @@ ScalarMin::execute()
     (*output)["value"] = std::min(i_lhs, i_rhs);
   }
 
-  (*output)["type"] = "numeric";
+  (*output)["type"] = "scalar";
   set_output<conduit::Node>(output);
 }
 
@@ -558,7 +627,7 @@ ScalarMax::execute()
     (*output)["value"] = std::max(i_lhs, i_rhs);
   }
 
-  (*output)["type"] = "numeric";
+  (*output)["type"] = "scalar";
   set_output<conduit::Node>(output);
 }
 
@@ -638,7 +707,7 @@ FieldMin::execute()
   conduit::Node n_min = field_min(*dataset, field);
 
   (*output)["value"] = n_min["value"];
-  (*output)["type"] = "numeric";
+  (*output)["type"] = "scalar";
   (*output)["atts/position"] = n_min["position"];
 
   set_output<conduit::Node>(output);
@@ -720,7 +789,7 @@ FieldMax::execute()
   conduit::Node n_max = field_max(*dataset, field);
 
   (*output)["value"] = n_max["value"];
-  (*output)["type"] = "numeric";
+  (*output)["type"] = "scalar";
   (*output)["atts/position"] = n_max["position"];
 
   set_output<conduit::Node>(output);
@@ -802,7 +871,7 @@ FieldAvg::execute()
   conduit::Node n_avg = field_avg(*dataset, field);
 
   (*output)["value"] = n_avg["value"];
-  (*output)["type"] = "numeric";
+  (*output)["type"] = "scalar";
 
   set_output<conduit::Node>(output);
 }
@@ -914,7 +983,7 @@ Cycle::execute()
     ASCENT_ERROR("Expressions: cycle() is not a number");
   }
 
-  (*output)["type"] = "numeric";
+  (*output)["type"] = "scalar";
   (*output)["value"] = state;
   set_output<conduit::Node>(output);
 }

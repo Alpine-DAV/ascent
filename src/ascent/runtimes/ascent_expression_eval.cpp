@@ -77,11 +77,13 @@ namespace expressions
 extern ASTExpression *expression;
 
 conduit::Node ExpressionEval::m_cache;
+conduit::Node g_function_table;
 
 void register_builtin()
 {
   flow::Workspace::register_filter_type<expressions::Double>();
   flow::Workspace::register_filter_type<expressions::Integer>();
+  flow::Workspace::register_filter_type<expressions::Identifier>();
   flow::Workspace::register_filter_type<expressions::BinaryOp>();
   flow::Workspace::register_filter_type<expressions::MeshVar>();
   flow::Workspace::register_filter_type<expressions::ScalarMax>();
@@ -91,21 +93,22 @@ void register_builtin()
   flow::Workspace::register_filter_type<expressions::FieldAvg>();
   flow::Workspace::register_filter_type<expressions::Position>();
   flow::Workspace::register_filter_type<expressions::Cycle>();
+
+  initialize_functions();
 }
 
 ExpressionEval::ExpressionEval(conduit::Node *data)
   : m_data(data)
 {
-  initialize_functions();
 }
 
 
 void
-ExpressionEval::initialize_functions()
+initialize_functions()
 {
   // functions
-  conduit::Node* functions = new conduit::Node();
-  w.registry().add<conduit::Node>("function_table", functions, 1);
+  m_function_table.reset();
+  conduit::Node* functions = &g_function_table;
 
   // -------------------------------------------------------------
 
@@ -146,7 +149,7 @@ ExpressionEval::initialize_functions()
   // -------------------------------------------------------------
 
   conduit::Node &pos_sig = (*functions)["position"].append();
-  pos_sig["return_type"] = "scalar";
+  pos_sig["return_type"] = "vector";
   pos_sig["filter_name"] = "expr_position";
   pos_sig["args/arg1/type"] = "scalar"; // Should query result be differnt type?
   // -------------------------------------------------------------
@@ -168,6 +171,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   w.registry().add<conduit::Node>("dataset", m_data, -1);
   w.registry().add<conduit::Node>("cache", &m_cache, -1);
+  w.registry().add<conduit::Node>("function_table", &g_function_table, -1);
   int cycle = get_state_var(*m_data, "cycle").to_int32();
   w.registry().add<int>("cycle", &cycle, -1);
 
@@ -196,6 +200,14 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   }
 
   delete expression;
+
+  std::stringstream cache_entry;
+  cache_entry<<expr_name<<"/"<<cycle;
+  m_cache[cache_entry.str()] = *n_res;
+
+  m_cache.print();
+
+  w.reset();
   return res;
 }
 

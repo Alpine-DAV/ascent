@@ -711,6 +711,24 @@ AscentRuntime::ConvertTriggerToFlow(const conduit::Node &trigger,
 }
 //-----------------------------------------------------------------------------
 void
+AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
+                                  const std::string query_name)
+{
+  std::string filter_name;
+
+  conduit::Node params;
+  if(query.has_path("params")) params = query["params"];
+
+  w.graph().add_filter("basic_query",
+                       query_name,
+                       params);
+
+  // this is the blueprint mesh
+  m_connections[query_name] = "source";
+
+}
+//-----------------------------------------------------------------------------
+void
 AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
                                  const std::string plot_name)
 {
@@ -802,6 +820,19 @@ AscentRuntime::CreateTriggers(const conduit::Node &triggers)
   }
 }
 
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::CreateQueries(const conduit::Node &queries)
+{
+  std::vector<std::string> names = queries.child_names();
+  for(int i = 0; i < queries.number_of_children(); ++i)
+  {
+    conduit::Node query = queries.child(i);
+    ConvertQueryToFlow(query, names[i]);
+  }
+}
+
+//-----------------------------------------------------------------------------
 void
 AscentRuntime::PopulateMetadata()
 {
@@ -1234,6 +1265,17 @@ AscentRuntime::Execute(const conduit::Node &actions)
           else
           {
             ASCENT_ERROR("action 'add_triggers' missing child 'triggers'");
+          }
+        }
+        else if(action_name == "add_queries")
+        {
+          if(action.has_path("queries"))
+          {
+            CreateQueries(action["queries"]);
+          }
+          else
+          {
+            ASCENT_ERROR("action 'add_queries' missing child 'queries'");
           }
         }
         else if( action_name == "execute")

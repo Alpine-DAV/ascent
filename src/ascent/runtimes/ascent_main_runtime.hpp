@@ -121,9 +121,12 @@ private:
                               const std::string extract_name);
     void ConvertTriggerToFlow(const conduit::Node &trigger,
                               const std::string trigger_name);
+    void ConvertQueryToFlow(const conduit::Node &trigger,
+                            const std::string trigger_name);
     void CreatePipelines(const conduit::Node &pipelines);
     void CreateExtracts(const conduit::Node &extracts);
     void CreateTriggers(const conduit::Node &triggers);
+    void CreateQueries(const conduit::Node &queries);
     void CreatePlots(const conduit::Node &plots);
     std::vector<std::string> GetPipelines(const conduit::Node &plots);
     void CreateScenes(const conduit::Node &scenes);

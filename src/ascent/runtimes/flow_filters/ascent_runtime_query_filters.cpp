@@ -45,37 +45,32 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_filters.cpp
+/// file: ascent_runtime_trigger_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <ascent_runtime_filters.hpp>
-#include <ascent_main_runtime.hpp>
+#include "ascent_runtime_query_filters.hpp"
+
+//-----------------------------------------------------------------------------
+// thirdparty includes
+//-----------------------------------------------------------------------------
+
+// conduit includes
+#include <conduit.hpp>
+#include <conduit_blueprint.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
+#include <ascent_expression_eval.hpp>
 #include <ascent_logging.hpp>
+#include <ascent_runtime_param_check.hpp>
+
+#include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
-#include <ascent_runtime_relay_filters.hpp>
-#include <ascent_runtime_blueprint_filters.hpp>
-#include <ascent_runtime_trigger_filters.hpp>
-#include <ascent_runtime_query_filters.hpp>
-
-#if defined(ASCENT_VTKM_ENABLED)
-    #include <ascent_runtime_vtkh_filters.hpp>
-    #include <ascent_runtime_rover_filters.hpp>
-#endif
-
-#ifdef ASCENT_MPI_ENABLED
-    #include <ascent_runtime_hola_filters.hpp>
-#if defined(ASCENT_ADIOS_ENABLED)
-    #include <ascent_runtime_adios_filters.hpp>
-#endif
-#endif
-
-
+using namespace conduit;
+using namespace std;
 
 using namespace flow;
 
@@ -99,63 +94,65 @@ namespace filters
 
 
 //-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
+BasicQuery::BasicQuery()
+:Filter()
 {
-    AscentRuntime::register_filter_type<BlueprintVerify>();
-    AscentRuntime::register_filter_type<EnsureLowOrder>();
-    AscentRuntime::register_filter_type<EnsureBlueprint>();
-    AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
-    AscentRuntime::register_filter_type<RelayIOLoad>();
-
-    AscentRuntime::register_filter_type<BasicTrigger>();
-
-#if defined(ASCENT_VTKM_ENABLED)
-    AscentRuntime::register_filter_type<DefaultRender>();
-    AscentRuntime::register_filter_type<EnsureVTKH>();
-    AscentRuntime::register_filter_type<EnsureVTKM>();
-
-    AscentRuntime::register_filter_type<VTKHBounds>();
-    AscentRuntime::register_filter_type<VTKHUnionBounds>();
-
-    AscentRuntime::register_filter_type<VTKHDomainIds>();
-    AscentRuntime::register_filter_type<VTKHUnionDomainIds>();
-
-    // transforms, the current crop expect vtk-h input data
-    AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
-    AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");
-    AscentRuntime::register_filter_type<VTKHGhostStripper>("transforms","ghost_stripper");
-    AscentRuntime::register_filter_type<VTKHIsoVolume>("transforms","isovolume");
-    AscentRuntime::register_filter_type<VTKHLagrangian>("transforms","lagrangian");
-    AscentRuntime::register_filter_type<VTKHLog>("transforms","log");
-    AscentRuntime::register_filter_type<VTKHMarchingCubes>("transforms","contour");
-    AscentRuntime::register_filter_type<VTKHThreshold>("transforms","threshold");
-    AscentRuntime::register_filter_type<VTKHSlice>("transforms","slice");
-    AscentRuntime::register_filter_type<VTKH3Slice>("transforms","3slice");
-    AscentRuntime::register_filter_type<VTKHNoOp>("transforms","noop");
-    AscentRuntime::register_filter_type<VTKHVectorMagnitude>("transforms","vector_magnitude");
-    AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
-    AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
-
-    AscentRuntime::register_filter_type<AddPlot>();
-    AscentRuntime::register_filter_type<CreatePlot>();
-    AscentRuntime::register_filter_type<CreateScene>();
-    AscentRuntime::register_filter_type<ExecScene>();
-#endif
-
-#if defined(ASCENT_MPI_ENABLED)
-    AscentRuntime::register_filter_type<HolaMPIExtract>("extracts","hola_mpi");
-
-#if defined(ASCENT_ADIOS_ENABLED)
-    AscentRuntime::register_filter_type<ADIOS>("extracts","adios");
-#endif
-
-#endif
-
+// empty
 }
 
+//-----------------------------------------------------------------------------
+BasicQuery::~BasicQuery()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+BasicQuery::declare_interface(Node &i)
+{
+    i["type_name"]   = "basic_query";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+BasicQuery::verify_params(const conduit::Node &params,
+                            conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("expression",params, info, true);
+    res &= check_string("name",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("expression");
+    valid_paths.push_back("name");
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+BasicQuery::execute()
+{
+    if(!input(0).check_type<Node>())
+    {
+        ASCENT_ERROR("Query input must be a conduit node");
+    }
+
+
+    std::string expression = params()["condition"].as_string();
+    std::string name = params()["actions_file"].as_string();
+    conduit::Node actions;
+
+    Node v_info;
+    Node *n_input = input<Node>(0);
+
+    // The mere act of a query stores the results
+    runtime::expressions::ExpressionEval eval(n_input);
+    conduit::Node res = eval.evaluate(expression, name);
+}
 
 
 //-----------------------------------------------------------------------------
@@ -163,6 +160,7 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
@@ -176,4 +174,8 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
+
+
+
 

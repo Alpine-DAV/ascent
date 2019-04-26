@@ -114,6 +114,46 @@ TEST(ascent_expressions, test_expression)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_expressions, test_identifier)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    // ascent normally adds this but we are doing an end around
+    data["state/domain_id"] = 0;
+    Node multi_dom;
+    blueprint::mesh::to_multi_domain(data, multi_dom);
+
+    runtime::expressions::register_builtin();
+
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    const std::string cache_name = "mx_b";
+    std::string expr = "max(\"braid\")";
+    conduit::Node res = eval.evaluate(expr, cache_name);
+    res.print();
+    //runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("position(mx_b)");
+    //conduit::Node res = eval.evaluate("mx > 0");
+    res.print();
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;

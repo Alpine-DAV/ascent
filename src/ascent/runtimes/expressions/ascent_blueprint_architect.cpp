@@ -776,6 +776,7 @@ field_avg(const conduit::Node &dataset,
   sum = global_sum;
   count = global_count;
 #endif
+
   double avg = sum / double(count);
   conduit::Node res;
   res["value"] = avg;

@@ -45,12 +45,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_expression_filters.hpp
+/// file: ascent_runtime_query_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_EXPRESSION_FILTERS
-#define ASCENT_EXPRESSION_FILTERS
+#ifndef ASCENT_RUNTIME_QUERY_FILTERS
+#define ASCENT_RUNTIME_QUERY_FILTERS
 
 #include <ascent.hpp>
 
@@ -70,156 +70,23 @@ namespace runtime
 {
 
 //-----------------------------------------------------------------------------
-// -- begin ascent::runtime::expressions--
+// -- begin ascent::runtime::filters --
 //-----------------------------------------------------------------------------
-namespace expressions
+namespace filters
 {
 
 //-----------------------------------------------------------------------------
 ///
-/// Filters for expressions
+/// Filters Related to Blueprint
 ///
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class Identifier : public ::flow::Filter
+class BasicQuery : public ::flow::Filter
 {
 public:
-    Identifier();
-   ~Identifier();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-class Integer : public ::flow::Filter
-{
-public:
-    Integer();
-   ~Integer();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-class Double : public ::flow::Filter
-{
-public:
-    Double();
-   ~Double();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-class MeshVar : public ::flow::Filter
-{
-public:
-    MeshVar();
-   ~MeshVar();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-class BinaryOp : public ::flow::Filter
-{
-public:
-    BinaryOp();
-   ~BinaryOp();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-
-class Cycle : public ::flow::Filter
-{
-public:
-    Cycle();
-   ~Cycle();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-class ScalarMax : public ::flow::Filter
-{
-public:
-    ScalarMax();
-   ~ScalarMax();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-class ScalarMin : public ::flow::Filter
-{
-public:
-    ScalarMin();
-   ~ScalarMin();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-class FieldMax : public ::flow::Filter
-{
-public:
-    FieldMax();
-   ~FieldMax();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-class FieldMin : public ::flow::Filter
-{
-public:
-    FieldMin();
-   ~FieldMin();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-class FieldAvg : public ::flow::Filter
-{
-public:
-    FieldAvg();
-   ~FieldAvg();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-class Position : public ::flow::Filter
-{
-public:
-    Position();
-   ~Position();
+    BasicQuery();
+   ~BasicQuery();
 
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,
@@ -230,7 +97,7 @@ public:
 
 };
 //-----------------------------------------------------------------------------
-// -- end ascent::runtime::expressions--
+// -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -244,6 +111,8 @@ public:
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
+
 
 
 #endif

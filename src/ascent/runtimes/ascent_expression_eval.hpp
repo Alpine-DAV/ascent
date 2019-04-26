@@ -70,6 +70,8 @@ namespace expressions
 {
 
 void register_builtin();
+void initialize_functions();
+static conduit::Node m_function_table;
 
 class ExpressionEval
 {
@@ -77,7 +79,6 @@ protected:
   conduit::Node *m_data;
   flow::Workspace w;
   static conduit::Node m_cache;
-  void initialize_functions();
 public:
   ExpressionEval(conduit::Node *data);
 
