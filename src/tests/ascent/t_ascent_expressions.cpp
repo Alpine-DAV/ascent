@@ -102,7 +102,8 @@ TEST(ascent_expressions, test_expression)
     runtime::expressions::register_builtin();
     runtime::expressions::ExpressionEval eval(&multi_dom);
     //std::string expr = "max(1,\"p\")";
-    std::string expr = "avg(\"braid\")";
+    //std::string expr = "avg(\"braid\")";
+    std::string expr = "magnitude(vector(1,1,1) - vector(0,0,1))";
     //std::string expr = "position(max(\"braid\"))";
     //std::string expr = "banana";
     //std::string expr = "max(1,2)";

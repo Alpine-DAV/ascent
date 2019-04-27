@@ -68,6 +68,7 @@
 #include <flow_workspace.hpp>
 
 #include <limits>
+#include <math.h>
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -109,6 +110,32 @@ bool is_math(const std::string &op)
     return false;
   }
 }
+
+void
+vector_op(const double lhs[3],
+          const double rhs[3],
+          const std::string &op,
+          double res[3])
+{
+
+  if(op == "+")
+  {
+    res[0] = lhs[0] + rhs[0];
+    res[1] = lhs[1] + rhs[1];
+    res[2] = lhs[2] + rhs[2];
+  }
+  else if(op == "-")
+  {
+    res[0] = lhs[0] - rhs[0];
+    res[1] = lhs[1] - rhs[1];
+    res[2] = lhs[2] - rhs[2];
+  }
+  else
+  {
+    ASCENT_ERROR("Unsupported vector op "<<op);
+  }
+}
+
 
 template<typename T>
 T math_op(const T& lhs, const T& rhs, const std::string &op)
@@ -225,8 +252,8 @@ Identifier::execute()
    }
    // grab the last one calculated
    (*output) = (*cache)[i_name].child(entries - 1);
-   std::cout<<"IDENT ";
-   output->print();
+   //std::cout<<"IDENT ";
+   //output->print();
    set_output<conduit::Node>(output);
 }
 
@@ -426,59 +453,91 @@ BinaryOp::execute()
   const Node &lhs = (*n_lhs)["value"];
   const Node &rhs = (*n_rhs)["value"];
 
-  if((*n_lhs)["type"].as_string() == "vector" ||
-     (*n_rhs)["type"].as_string() == "vector")
+  bool lhs_is_vector = false;
+  bool rhs_is_vector = false;
+
+  if((*n_lhs)["type"].as_string() == "vector")
   {
-    ASCENT_ERROR("Vector binary ops not supported / implemented");
+    lhs_is_vector = true;
   }
 
-  n_lhs->print();
-  n_rhs->print();
-
-  bool has_float = false;
-
-  if(lhs.dtype().is_floating_point() ||
-     rhs.dtype().is_floating_point())
+  if((*n_rhs)["type"].as_string() == "vector")
   {
-    has_float = true;
+    rhs_is_vector = true;
   }
 
+  if((rhs_is_vector && !lhs_is_vector) ||
+     (!rhs_is_vector && lhs_is_vector))
+  {
+    ASCENT_ERROR("Mixed vector and scalar quantities not implemeneted / supported");
+  }
+
+  //n_rhs->print();
+  std::string op = params()["op_string"].as_string();
+  bool is_math = detail::is_math(op);
   conduit::Node *output = new conduit::Node();
 
-  std::string op = params()["op_string"].as_string();
-  // promote to double if at one is a double
-  bool is_math = detail::is_math(op);
-
-  if(has_float)
+  if(rhs_is_vector && lhs_is_vector)
   {
-    double d_rhs = rhs.to_float64();
-    double d_lhs = lhs.to_float64();
-    if(is_math)
+    if(!is_math)
     {
-      (*output)["value"] = detail::math_op(d_lhs, d_rhs, op);
+      ASCENT_ERROR("Boolean operators on vectors no allowed");
     }
-    else
-    {
-      (*output)["value"] = detail::comp_op(d_lhs, d_rhs, op);
-    }
-    (*output)["type"] = "scalar";
+    std::cout<<"Doing vector\n";
+    double res[3];
+    detail::vector_op((*n_lhs)["value"].value(),
+                      (*n_rhs)["value"].value(),
+                      op,
+                      res);
+
+
+    (*output)["value"].set(res, 3);
+    (*output)["type"] = "vector";
   }
   else
   {
-    int i_rhs = rhs.to_int32();
-    int i_lhs = lhs.to_int32();
-    if(is_math)
+    bool has_float = false;
+
+    if(lhs.dtype().is_floating_point() ||
+       rhs.dtype().is_floating_point())
     {
-      (*output)["value"] = detail::math_op(i_lhs, i_rhs, op);
+      has_float = true;
+    }
+
+
+    // promote to double if at one is a double
+
+    if(has_float)
+    {
+      double d_rhs = rhs.to_float64();
+      double d_lhs = lhs.to_float64();
+      if(is_math)
+      {
+        (*output)["value"] = detail::math_op(d_lhs, d_rhs, op);
+      }
+      else
+      {
+        (*output)["value"] = detail::comp_op(d_lhs, d_rhs, op);
+      }
+      (*output)["type"] = "scalar";
     }
     else
     {
-      (*output)["value"] = detail::comp_op(i_lhs, i_rhs, op);
+      int i_rhs = rhs.to_int32();
+      int i_lhs = lhs.to_int32();
+      if(is_math)
+      {
+        (*output)["value"] = detail::math_op(i_lhs, i_rhs, op);
+      }
+      else
+      {
+        (*output)["value"] = detail::comp_op(i_lhs, i_rhs, op);
+      }
+      (*output)["type"] = "boolean";
     }
-    (*output)["type"] = "boolean";
   }
 
-  std::cout<<" operation "<<op<<"\n";
+  //std::cout<<" operation "<<op<<"\n";
 
   set_output<conduit::Node>(output);
 }
@@ -527,8 +586,8 @@ ScalarMin::execute()
   Node *arg2 = input<Node>("arg2");
 
 
-  arg1->print();
-  arg2->print();
+  //arg1->print();
+  //arg2->print();
 
   bool has_float = false;
 
@@ -601,8 +660,8 @@ ScalarMax::execute()
   Node *arg2 = input<Node>("arg2");
 
 
-  arg1->print();
-  arg2->print();
+  //arg1->print();
+  //arg2->print();
 
   bool has_float = false;
 
@@ -672,7 +731,7 @@ FieldMin::execute()
 
   Node *arg1 = input<Node>("arg1");
 
-  arg1->print();
+  //arg1->print();
 
   const std::string field = (*arg1)["value"].as_string();
 
@@ -754,7 +813,7 @@ FieldMax::execute()
 
   Node *arg1 = input<Node>("arg1");
 
-  arg1->print();
+  //arg1->print();
 
   const std::string field = (*arg1)["value"].as_string();
 
@@ -836,7 +895,7 @@ FieldAvg::execute()
 
   Node *arg1 = input<Node>("arg1");
 
-  arg1->print();
+  //arg1->print();
 
   const std::string field = (*arg1)["value"].as_string();
 
@@ -988,6 +1047,123 @@ Cycle::execute()
   set_output<conduit::Node>(output);
 }
 //-----------------------------------------------------------------------------
+Vector::Vector()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Vector::~Vector()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Vector::declare_interface(Node &i)
+{
+    i["type_name"]   = "vector";
+    i["port_names"].append() = "arg1";
+    i["port_names"].append() = "arg2";
+    i["port_names"].append() = "arg3";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Vector::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Vector::execute()
+
+{
+
+  Node *arg1 = input<Node>("arg1");
+  Node *arg2 = input<Node>("arg2");
+  Node *arg3 = input<Node>("arg3");
+
+  if( (*arg1)["type"].as_string() != "scalar" ||
+      (*arg2)["type"].as_string() != "scalar" ||
+      (*arg3)["type"].as_string() != "scalar")
+  {
+    ASCENT_ERROR("All components to vector constructor must be scalars");
+  }
+
+  double vec[3] = {0., 0., 0.};
+  vec[0] = (*arg1)["value"].to_float64();
+  vec[1] = (*arg2)["value"].to_float64();
+  vec[2] = (*arg3)["value"].to_float64();
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "vector";
+  (*output)["value"].set(vec,3);;
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Magnitude::Magnitude()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Magnitude::~Magnitude()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Magnitude::declare_interface(Node &i)
+{
+    i["type_name"]   = "magnitude";
+    i["port_names"].append() = "arg1";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Magnitude::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Magnitude::execute()
+
+{
+
+  Node *arg1 = input<Node>("arg1");
+
+  if( (*arg1)["type"].as_string() != "vector")
+  {
+    ASCENT_ERROR("Magnitude input must be a vector");
+  }
+
+  double res = 0.;
+  const double *vec = (*arg1)["value"].value();
+  res = sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "vector";
+  (*output)["value"] = res;
+  set_output<conduit::Node>(output);
+}
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

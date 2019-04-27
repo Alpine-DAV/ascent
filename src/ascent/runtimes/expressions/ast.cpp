@@ -62,13 +62,13 @@ std::string print_match_error(const std::string &fname,
 } // namespace detail
 void ASTInteger::access()
 {
-  std::cout << "Creating integer: " << m_value << endl;
+  //std::cout << "Creating integer: " << m_value << endl;
 }
 
 conduit::Node ASTInteger::build_graph(flow::Workspace &w)
 {
   static int ast_int_counter = 0;
-  std::cout << "Flow integer: " << m_value << endl;
+  //std::cout << "Flow integer: " << m_value << endl;
 
   // create a unique name for the filter
   std::stringstream ss;
@@ -90,12 +90,12 @@ conduit::Node ASTInteger::build_graph(flow::Workspace &w)
 
 void ASTDouble::access()
 {
-  std::cout << "Creating double: " << m_value << endl;
+  //std::cout << "Creating double: " << m_value << endl;
 }
 
 conduit::Node ASTDouble::build_graph(flow::Workspace &w)
 {
-  std::cout << "Flow double: " << m_value << endl;
+  //std::cout << "Flow double: " << m_value << endl;
   static int ast_double_counter = 0;
 
   // create a unique name for the filter
@@ -120,7 +120,7 @@ conduit::Node ASTDouble::build_graph(flow::Workspace &w)
 
 void ASTIdentifier::access()
 {
-  std::cout << "Creating identifier reference: " << m_name << endl;
+  //std::cout << "Creating identifier reference: " << m_name << endl;
   //if (context.locals().find(name) == context.locals().end())
   //{
   //  std::cerr << "undeclared variable " << name << endl;
@@ -131,7 +131,7 @@ void ASTIdentifier::access()
 
 conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
 {
-  std::cout << "Flow indent : " << m_name<< endl;
+  //std::cout << "Flow indent : " << m_name<< endl;
   static int ast_ident_counter = 0;
 
   // create a unique name for the filter
@@ -156,10 +156,10 @@ conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
 void ASTMethodCall::access()
 {
   const size_t size = arguments->size();
-  std::cout << "Creating method call: " << m_id->m_name << endl;
+  //std::cout << "Creating method call: " << m_id->m_name << endl;
   for(size_t i = 0; i < size; ++i)
   {
-    std::cout<<"arg "<<i<<" = ";
+    //std::cout<<"arg "<<i<<" = ";
     (*arguments)[i]->access();
   }
 }
@@ -172,12 +172,12 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
   for(size_t i = 0; i < size; ++i)
   {
     arg_list[i] = (*arguments)[i]->build_graph(w);
-    std::cout<<"flow arg :\n";
-    arg_list[i].print();
-    std::cout<<"\n";
+    //std::cout<<"flow arg :\n";
+    //arg_list[i].print();
+    //std::cout<<"\n";
   }
 
-  std::cout << "Flow method call: " << m_id->m_name << endl;
+  //std::cout << "Flow method call: " << m_id->m_name << endl;
 
   if(!w.registry().has_entry("function_table"))
   {
@@ -227,8 +227,8 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
   if(matched_index != -1)
   {
     const conduit::Node &func = overload_list.child(matched_index);
-    std::cout<<"Function matched\n";
-    func.print();
+    //std::cout<<"Function matched\n";
+    //func.print();
 
     static int ast_method_counter = 0;
     // create a unique name for the filter
@@ -266,7 +266,7 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
 
 void ASTBinaryOp::access()
 {
-  std::cout << "Creating binary operation " << m_op << endl;
+  //std::cout << "Creating binary operation " << m_op << endl;
   //Instruction::BinaryOps instr;
   std::string op_str;
   switch (m_op)
@@ -286,7 +286,7 @@ void ASTBinaryOp::access()
   }
 
   m_rhs->access();
-  std::cout<<" op "<<op_str<<"\n";
+  //std::cout<<" op "<<op_str<<"\n";
   m_lhs->access();
 
 }
@@ -294,7 +294,7 @@ void ASTBinaryOp::access()
 
 conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
 {
-  std::cout << "Creating binary operation " << m_op << endl;
+  //std::cout << "Creating binary operation " << m_op << endl;
   std::string op_str;
   switch (m_op)
   {
@@ -313,13 +313,10 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
   }
 
   conduit::Node r_in = m_rhs->build_graph(w);
-  std::cout<<" flow op "<<op_str<<"\n";
+  //std::cout<<" flow op "<<op_str<<"\n";
   conduit::Node l_in = m_lhs->build_graph(w);
 
   // Validate types
-  // right now this is easy since we only have scalars and
-  // mesh vars. When we have attributes(like position)
-  // and vectors this validation will get more complicated
   const std::string l_type = l_in["type"].as_string();
   const std::string r_type = r_in["type"].as_string();
   if(l_type == "meshvar" || r_type == "meshvar")
@@ -331,7 +328,12 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
 
   // evaluate what the return type will be
   // For now, only scalar
+
   std::string res_type = "scalar";
+  if(l_type == "vector" && r_type == "vector")
+  {
+    res_type = "vector";
+  }
 
   static int ast_op_counter = 0;
   // create a unique name for the filter
@@ -360,7 +362,7 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
 
 void ASTMeshVar::access()
 {
-  std::cout << "Creating mesh var " << m_name << endl;
+  //std::cout << "Creating mesh var " << m_name << endl;
 }
 
 conduit::Node ASTMeshVar::build_graph(flow::Workspace &w)
@@ -375,7 +377,7 @@ conduit::Node ASTMeshVar::build_graph(flow::Workspace &w)
     pos = stripped.find("\"");
   }
 
-  std::cout << "Flow mesh var " << m_name << " "<< stripped <<endl;
+  //std::cout << "Flow mesh var " << m_name << " "<< stripped <<endl;
   // create a unique name for the filter
   static int ast_meshvar_counter = 0;
   std::stringstream ss;

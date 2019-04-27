@@ -227,6 +227,30 @@ public:
     virtual void   execute();
 };
 
+class Vector : public ::flow::Filter
+{
+public:
+    Vector();
+   ~Vector();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+class Magnitude : public ::flow::Filter
+{
+public:
+    Magnitude();
+   ~Magnitude();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 
 };
 //-----------------------------------------------------------------------------

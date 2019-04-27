@@ -111,6 +111,7 @@ register_builtin()
     AscentRuntime::register_filter_type<RelayIOLoad>();
 
     AscentRuntime::register_filter_type<BasicTrigger>();
+    AscentRuntime::register_filter_type<BasicQuery>();
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();

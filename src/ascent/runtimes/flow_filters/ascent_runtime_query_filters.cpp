@@ -142,8 +142,8 @@ BasicQuery::execute()
     }
 
 
-    std::string expression = params()["condition"].as_string();
-    std::string name = params()["actions_file"].as_string();
+    std::string expression = params()["expression"].as_string();
+    std::string name = params()["name"].as_string();
     conduit::Node actions;
 
     Node v_info;

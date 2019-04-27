@@ -92,6 +92,8 @@ void register_builtin()
   flow::Workspace::register_filter_type<expressions::FieldMin>();
   flow::Workspace::register_filter_type<expressions::FieldAvg>();
   flow::Workspace::register_filter_type<expressions::Position>();
+  flow::Workspace::register_filter_type<expressions::Vector>();
+  flow::Workspace::register_filter_type<expressions::Magnitude>();
   flow::Workspace::register_filter_type<expressions::Cycle>();
 
   initialize_functions();
@@ -158,6 +160,20 @@ initialize_functions()
   cycle_sig["return_type"] = "scalar";
   cycle_sig["filter_name"] = "cycle";
   cycle_sig["args"] = conduit::DataType::empty();
+
+  // -------------------------------------------------------------
+  conduit::Node &vector = (*functions)["vector"].append();
+  vector["return_type"] = "vector";
+  vector["filter_name"] = "vector";
+  vector["args/arg1/type"] = "scalar"; // arg names match input port names
+  vector["args/arg2/type"] = "scalar";
+  vector["args/arg3/type"] = "scalar";
+
+  // -------------------------------------------------------------
+  conduit::Node &mag_sig= (*functions)["magnitude"].append();
+  mag_sig["return_type"] = "scalar";
+  mag_sig["filter_name"] = "magnitude";
+  mag_sig["args/arg1/type"] = "vector";
 }
 
 conduit::Node
@@ -182,11 +198,11 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   std::cout<<"Expresion "<<expression<<"\n";
   expression->access();
   conduit::Node root = expression->build_graph(w);
-  std::cout<<w.graph().to_dot()<<"\n";
+  //std::cout<<w.graph().to_dot()<<"\n";
   w.execute();
-  std::cout<<"root node \n";
-  root.print();
-  std::cout<<"end root node \n";
+  ///std::cout<<"root node \n";
+  ///root.print();
+  ///std::cout<<"end root node \n";
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(root["filter_name"].as_string());
 
   const conduit::Node res = (*n_res)["value"];
@@ -205,7 +221,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   cache_entry<<expr_name<<"/"<<cycle;
   m_cache[cache_entry.str()] = *n_res;
 
-  m_cache.print();
+  //m_cache.print();
 
   w.reset();
   return res;
