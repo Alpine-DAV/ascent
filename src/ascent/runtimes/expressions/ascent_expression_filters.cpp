@@ -483,7 +483,7 @@ BinaryOp::execute()
     {
       ASCENT_ERROR("Boolean operators on vectors no allowed");
     }
-    std::cout<<"Doing vector\n";
+
     double res[3];
     detail::vector_op((*n_lhs)["value"].value(),
                       (*n_rhs)["value"].value(),
@@ -1161,6 +1161,82 @@ Magnitude::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "vector";
   (*output)["value"] = res;
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Histogram::Histogram()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Histogram::~Histogram()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Histogram::declare_interface(Node &i)
+{
+    i["type_name"]   = "histogram";
+    i["port_names"].append() = "arg1";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Histogram::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Histogram::execute()
+
+{
+
+  Node *arg1 = input<Node>("arg1");
+
+  if( (*arg1)["type"].as_string() != "meshvar")
+  {
+    ASCENT_ERROR("Histogram: input must be a meshvar");
+  }
+
+  const std::string field = (*arg1)["value"].as_string();
+
+  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+
+  if(!has_field(*dataset, field))
+  {
+    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+    std::stringstream ss;
+    ss<<"[";
+    for(int i = 0; i < names.size(); ++i)
+    {
+      ss<<" "<<names[i];
+    }
+    ss<<"]";
+    ASCENT_ERROR("Histogram: dataset does not contain field '"<<field<<"'"
+                 <<" known = "<<ss.str());
+  }
+
+  double min_val = field_min(*dataset, field)["value"].to_float64();
+  double max_val = field_max(*dataset, field)["value"].to_float64();
+  const int num_bins = 256;
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = field_histogram(*dataset, field, min_val, max_val, num_bins);
+  (*output)["type"] = "historgram";
+  (*output)["min_val"] = min_val;
+  (*output)["max_val"] = max_val;
+  (*output)["num_bins"] = num_bins;
   set_output<conduit::Node>(output);
 }
 

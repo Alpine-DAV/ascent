@@ -94,6 +94,7 @@ void register_builtin()
   flow::Workspace::register_filter_type<expressions::Position>();
   flow::Workspace::register_filter_type<expressions::Vector>();
   flow::Workspace::register_filter_type<expressions::Magnitude>();
+  flow::Workspace::register_filter_type<expressions::Histogram>();
   flow::Workspace::register_filter_type<expressions::Cycle>();
 
   initialize_functions();
@@ -104,12 +105,51 @@ ExpressionEval::ExpressionEval(conduit::Node *data)
 {
 }
 
+void
+count_params()
+{
+  const int num_functions = g_function_table.number_of_children();
+  for(int i = 0; i < num_functions; ++i)
+  {
+    conduit::Node &function = g_function_table.child(i);
+    const int num_overloads = function.number_of_children();
+    for(int o = 0; o < num_overloads; ++o)
+    {
+      conduit::Node &sig = function.child(o);
+      const int num_args = sig["args"].number_of_children();
+      int req = 0;
+      int opt = 0;
+      bool seen_opt = false;
+      for(int a = 0; a < num_args; ++a)
+      {
+        const conduit::Node &arg = sig["args"].child(a);
+        if(arg.has_path("optional"))
+        {
+          seen_opt = true;
+          opt++;
+        }
+        else
+        {
+          req++;
+          if(seen_opt)
+          {
+            function.print();
+            ASCENT_ERROR("Function: optional parameters must be after require params");
+          }
+        }
+      }
+      sig["req_count"] = req;
+      sig["opt_count"] = opt;
+    }
+  }
+  g_function_table.print();
+}
 
 void
 initialize_functions()
 {
   // functions
-  m_function_table.reset();
+  g_function_table.reset();
   conduit::Node* functions = &g_function_table;
 
   // -------------------------------------------------------------
@@ -174,6 +214,39 @@ initialize_functions()
   mag_sig["return_type"] = "scalar";
   mag_sig["filter_name"] = "magnitude";
   mag_sig["args/arg1/type"] = "vector";
+
+  // -------------------------------------------------------------
+  conduit::Node &hist_sig= (*functions)["histogram"].append();
+  hist_sig["return_type"] = "histogram";
+  hist_sig["filter_name"] = "histogram";
+  hist_sig["args/arg1/type"] = "meshvar";
+  hist_sig["args/num_bins/type"] = "scalar";
+  hist_sig["args/num_bins/optional"];
+  hist_sig["args/min_val/type"] = "scalar";
+  hist_sig["args/min_val/optional"];
+  hist_sig["args/max_val/type"] = "scalar";
+  hist_sig["args/max_val/optional"];
+
+  count_params();
+  // TODO: validate thar there are no ambiguities
+  //       and optional params are last
+  //const int num_functions = functions->number_of_children();
+  //for(int i = 0; i < num_functions; ++i)
+  //{
+  //  conduit::Node &function = functions->child(i);
+  //  const int num_overloads = function.number_of_children();
+  //  for(int o = 0; o < num_overloads; ++o)
+  //  {
+  //    conduit::Node &sig = function.child(o);
+  //    for(int c = 0; c < num_overloads; ++c)
+  //    {
+  //      if(c == o)
+  //      {
+  //        continue;
+  //      }
+  //    }
+  //  }
+  //}
 }
 
 conduit::Node
@@ -206,14 +279,6 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(root["filter_name"].as_string());
 
   const conduit::Node res = (*n_res)["value"];
-  if(res.dtype().is_floating_point())
-  {
-    std::cout<<"Result "<<res.as_float64()<<"\n";
-  }
-  else
-  {
-    std::cout<<"Result "<<res.as_int32()<<"\n";
-  }
 
   delete expression;
 
@@ -221,7 +286,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   cache_entry<<expr_name<<"/"<<cycle;
   m_cache[cache_entry.str()] = *n_res;
 
-  //m_cache.print();
+  m_cache.print();
 
   w.reset();
   return res;

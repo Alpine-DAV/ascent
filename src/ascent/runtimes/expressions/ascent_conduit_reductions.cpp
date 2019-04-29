@@ -209,6 +209,50 @@ struct SumFunctor
     return res;
   }
 };
+
+struct HistogramFunctor
+{
+  double m_min_val;
+  double m_max_val;
+  int m_num_bins;
+  HistogramFunctor(const double &min_val,
+                   const double &max_val,
+                   const int &num_bins)
+    : m_min_val(min_val),
+      m_max_val(max_val),
+      m_num_bins(num_bins)
+  {}
+
+  template<typename T>
+  conduit::Node operator()(const T* values, const int &size) const
+  {
+    const double inv_delta = double(m_num_bins) / (m_max_val - m_min_val);
+
+    int *bins = new int[m_num_bins];
+    memset(bins, 0, sizeof(int) * m_num_bins);
+#ifdef ASCENT_USE_OPENMP
+    #pragma omp parallel for
+#endif
+    for(int v = 0; v < size; ++v)
+    {
+      double val = static_cast<double>(values[v]);
+      int bin_index = static_cast<int>((val - m_min_val) * inv_delta);
+      // clamp for now
+      bin_index = std::max(0, std::min(bin_index, m_num_bins - 1));
+#ifdef ASCENT_USE_OPENMP
+      #pragma omp atomic
+#endif
+      bins[bin_index]++;
+
+    }
+    conduit::Node res;
+    res["value"].set(bins, m_num_bins);
+    res["bin_size"] = (m_max_val - m_min_val) / double(m_num_bins);
+
+    delete[] bins;
+    return res;
+  }
+};
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
@@ -231,6 +275,16 @@ conduit::Node
 array_sum(const conduit::Node &values)
 {
   return detail::type_dispatch(values, detail::SumFunctor());
+}
+
+conduit::Node
+array_histogram(const conduit::Node &values,
+                const double &min_value,
+                const double &max_value,
+                const int &num_bins)
+{
+  detail::HistogramFunctor histogram(min_value, max_value, num_bins);
+  return detail::type_dispatch(values, histogram);
 }
 
 //-----------------------------------------------------------------------------

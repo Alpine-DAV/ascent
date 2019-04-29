@@ -649,6 +649,57 @@ bool has_field(const conduit::Node &dataset, const std::string &field_name)
 }
 
 conduit::Node
+field_histogram(const conduit::Node &dataset,
+                const std::string &field,
+                const double &min_val,
+                const double &max_val,
+                const int &num_bins)
+{
+
+  std::cout<<"min val "<<min_val<<"\n";
+  std::cout<<"max val "<<max_val<<"\n";
+
+  int *bins = new int[num_bins];
+  memset(bins, 0, sizeof(int) * num_bins);
+
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/"+field))
+    {
+      const std::string path = "fields/" + field + "/values";
+      conduit::Node res;
+      res = array_histogram(dom[path], min_val, max_val, num_bins);
+      //res.print();
+      int *dom_hist = res["value"].value();
+#ifdef ASCENT_USE_OPENMP
+      #pragma omp parallel for
+#endif
+      for(int b = 0; b < num_bins; ++b)
+      {
+        bins[b] += dom_hist[b];
+      }
+    }
+  }
+  conduit::Node res;
+
+#ifdef ASCENT_MPI_ENABLED
+
+  int *global_bins = new int[num_bins];
+
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Allreduce( bins, global_bins, num_bins, MPI_INT, MPI_SUM, mpi_comm);
+
+  int *tmp = bins;
+  bins = global_bins;
+  delete[] tmp;
+#endif
+  res["value"].set(bins, num_bins);
+  delete[] bins;
+  return res;
+}
+
+conduit::Node
 field_min(const conduit::Node &dataset,
           const std::string &field)
 {

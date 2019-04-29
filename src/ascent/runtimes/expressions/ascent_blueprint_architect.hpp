@@ -91,6 +91,12 @@ conduit::Node field_min(const conduit::Node &dataset,
 conduit::Node field_avg(const conduit::Node &dataset,
                         const std::string &field_name);
 
+conduit::Node field_histogram(const conduit::Node &dataset,
+                              const std::string &field_name,
+                              const double &min_val,
+                              const double &max_val,
+                              const int &num_bins);
+
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);
 
