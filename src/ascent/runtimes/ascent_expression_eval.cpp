@@ -81,6 +81,7 @@ conduit::Node g_function_table;
 
 void register_builtin()
 {
+  flow::Workspace::register_filter_type<expressions::NullArg>();
   flow::Workspace::register_filter_type<expressions::Double>();
   flow::Workspace::register_filter_type<expressions::Integer>();
   flow::Workspace::register_filter_type<expressions::Identifier>();
@@ -142,7 +143,6 @@ count_params()
       sig["opt_count"] = opt;
     }
   }
-  g_function_table.print();
 }
 
 void
@@ -220,6 +220,7 @@ initialize_functions()
   hist_sig["return_type"] = "histogram";
   hist_sig["filter_name"] = "histogram";
   hist_sig["args/arg1/type"] = "meshvar";
+  // In a flow filter, these become parameters
   hist_sig["args/num_bins/type"] = "scalar";
   hist_sig["args/num_bins/optional"];
   hist_sig["args/min_val/type"] = "scalar";

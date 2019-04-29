@@ -40,10 +40,16 @@ std::string print_match_error(const std::string &fname,
   for(int i = 0; i < overload_list.number_of_children(); ++i)
   {
     ss<<" "<<fname<<"(";
-    const conduit::Node &n_args = overload_list.child(i)["args"];
+    const conduit::Node &sig = overload_list.child(i);
+    const conduit::Node &n_args = sig["args"];
+    const int req_args = sig["req_count"].to_int32();
     for(int a = 0; a < n_args.number_of_children(); ++a)
     {
       ss<<n_args.child(a)["type"].as_string();
+      if(a > req_args)
+      {
+        ss<<"[optional]";
+      }
       if(a == n_args.number_of_children() - 1)
       {
         ss<<")\n";
@@ -199,18 +205,22 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
   {
     const conduit::Node &func = overload_list.child(i);
     bool valid = false;
-    int num_args = 0;
+    int total_args = 0;
 
     if(func.has_path("args"))
     {
-      num_args = func["args"].number_of_children();
+      total_args = func["args"].number_of_children();
     }
 
-    if(arg_list.size() == num_args)
+    //const int opt_args = func["opt_cout"].to_int32();
+    const int req_args = func["req_count"].to_int32();
+
+    const int arg_size = arg_list.size();
+    if(arg_size >= req_args && arg_size <= total_args)
     {
       valid = true;
       // validate the types
-      for(int a = 0; a < arg_list.size(); ++a)
+      for(int a = 0; a < arg_size; ++a)
       {
         if(arg_list[a]["type"].as_string() != func["args"].child(a)["type"].as_string())
         {
@@ -240,6 +250,21 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
     std::string name = ss.str();
     ast_method_counter++;
 
+    const int total_args = func["args"].number_of_children();
+    const int arg_size = arg_list.size();
+    // we will have some optional parameters, prep the null_args filter
+    if(arg_size < total_args)
+    {
+      if(!w.graph().has_filter("null_arg"))
+      {
+        conduit::Node null_params;
+        w.graph().add_filter("null_arg",
+                             "null_arg",
+                             null_params);
+
+      }
+    }
+
     conduit::Node params;
     w.graph().add_filter(func["filter_name"].as_string(),
                          name,
@@ -247,11 +272,22 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
 
     // connecting incoming ports to args
     std::vector<std::string> arg_names = func["args"].child_names();
+
+
     // src, dest, port
-    for(int a = 0; a < arg_list.size(); ++a)
+    for(int a = 0; a < total_args; ++a)
     {
-      const conduit::Node &arg = arg_list[a];
-      w.graph().connect(arg["filter_name"].as_string(),name,arg_names[a]);
+      if(a < arg_size)
+      {
+        const conduit::Node &arg = arg_list[a];
+        w.graph().connect(arg["filter_name"].as_string(),name,arg_names[a]);
+      }
+      else
+      {
+        // this is an optional parameter that is not in the arg list.
+        // connect the null filter
+        w.graph().connect("null_arg",name,arg_names[a]);
+      }
     }
 
     res["filter_name"] = name;

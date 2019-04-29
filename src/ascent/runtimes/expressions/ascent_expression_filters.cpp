@@ -194,6 +194,47 @@ int comp_op(const T& lhs, const T& rhs, const std::string &op)
 } // namespace detail
 
 //-----------------------------------------------------------------------------
+NullArg::NullArg()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+NullArg::~NullArg()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+NullArg::declare_interface(Node &i)
+{
+    i["type_name"]   = "null_arg";
+    i["port_names"] = DataType::empty();
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+NullArg::verify_params(const conduit::Node &params,
+                       conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+NullArg::execute()
+{
+   conduit::Node *output = new conduit::Node();
+   set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 Identifier::Identifier()
 :Filter()
 {
@@ -1183,6 +1224,9 @@ Histogram::declare_interface(Node &i)
 {
     i["type_name"]   = "histogram";
     i["port_names"].append() = "arg1";
+    i["port_names"].append() = "num_bins";
+    i["port_names"].append() = "min_val";
+    i["port_names"].append() = "max_val";
     i["output_port"] = "true";
 }
 
@@ -1203,6 +1247,10 @@ Histogram::execute()
 {
 
   Node *arg1 = input<Node>("arg1");
+  // optional inputs
+  const Node *n_bins = input<Node>("num_bins");
+  const Node *n_max = input<Node>("max_val");
+  const Node *n_min = input<Node>("min_val");
 
   if( (*arg1)["type"].as_string() != "meshvar")
   {
@@ -1227,9 +1275,38 @@ Histogram::execute()
                  <<" known = "<<ss.str());
   }
 
-  double min_val = field_min(*dataset, field)["value"].to_float64();
-  double max_val = field_max(*dataset, field)["value"].to_float64();
-  const int num_bins = 256;
+  int num_bins = 256;
+  if(!n_bins->dtype().is_empty())
+  {
+    num_bins = (*n_bins)["value"].to_int32();
+  }
+
+  double min_val;
+  double max_val;
+
+  // handle the optional inputs
+  if(!n_max->dtype().is_empty())
+  {
+    max_val = (*n_max)["value"].to_float64();
+  }
+  else
+  {
+    max_val = field_max(*dataset, field)["value"].to_float64();
+  }
+
+  if(!n_min->dtype().is_empty())
+  {
+    min_val = (*n_min)["value"].to_float64();
+  }
+  else
+  {
+    min_val = field_min(*dataset, field)["value"].to_float64();
+  }
+
+  if(min_val >=  max_val)
+  {
+    ASCENT_ERROR("Histogram: min value ("<<min_val<<") must be smaller than max ("<<max_val<<")");
+  }
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_histogram(*dataset, field, min_val, max_val, num_bins);

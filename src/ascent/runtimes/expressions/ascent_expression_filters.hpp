@@ -82,6 +82,18 @@ namespace expressions
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+class NullArg : public ::flow::Filter
+{
+public:
+    NullArg();
+   ~NullArg();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 class Identifier : public ::flow::Filter
 {
 public:

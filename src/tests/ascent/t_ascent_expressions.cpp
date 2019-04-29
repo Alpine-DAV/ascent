@@ -104,7 +104,7 @@ TEST(ascent_expressions, test_expression)
     //std::string expr = "max(1,\"p\")";
     //std::string expr = "avg(\"braid\")";
     //std::string expr = "magnitude(vector(1,1,1) - vector(0,0,1))";
-    std::string expr = "histogram(\"braid\")";
+    std::string expr = "histogram(\"braid\", 10)";
     //std::string expr = "position(max(\"braid\"))";
     //std::string expr = "banana";
     //std::string expr = "max(1,2)";
