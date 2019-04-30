@@ -230,24 +230,6 @@ initialize_functions()
 
   count_params();
   // TODO: validate thar there are no ambiguities
-  //       and optional params are last
-  //const int num_functions = functions->number_of_children();
-  //for(int i = 0; i < num_functions; ++i)
-  //{
-  //  conduit::Node &function = functions->child(i);
-  //  const int num_overloads = function.number_of_children();
-  //  for(int o = 0; o < num_overloads; ++o)
-  //  {
-  //    conduit::Node &sig = function.child(o);
-  //    for(int c = 0; c < num_overloads; ++c)
-  //    {
-  //      if(c == o)
-  //      {
-  //        continue;
-  //      }
-  //    }
-  //  }
-  //}
 }
 
 conduit::Node
@@ -272,7 +254,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   catch(const char* msg)
   {
     w.reset();
-    ASCENT_ERROR("Expression: "<<msg);
+    ASCENT_ERROR("Expression: "<<msg<<" in '"<<expr<<"'");
   }
 
   ASTExpression *expression = get_result();

@@ -1293,8 +1293,8 @@ Histogram::execute()
   }
 
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = field_histogram(*dataset, field, min_val, max_val, num_bins);
-  (*output)["type"] = "historgram";
+  (*output)["value"] = field_histogram(*dataset, field, min_val, max_val, num_bins)["value"];
+  (*output)["type"] = "histogram";
   (*output)["min_val"] = min_val;
   (*output)["max_val"] = max_val;
   (*output)["num_bins"] = num_bins;

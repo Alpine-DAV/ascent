@@ -190,21 +190,18 @@ TEST(ascent_expressions, basic_expressions)
     EXPECT_EQ(res["value"].to_float64(), 100);
     EXPECT_EQ(res["type"].as_string(), "scalar");
 
-    //std::string expr = "max(1,\"p\")";
-    //std::string expr = "avg(\"braid\")";
-    //std::string expr = "magnitude(vector(1,1,1) - vector(0,0,1))";
-    //std::string expr = "histogram(\"braid\", 10)";
-    //std::string expr = "position(max(\"braid\"))";
-    //std::string expr = "banana";
-    //std::string expr = "max(1,2)";
-    //std::string expr = "max(2)";
-    //std::string expr = "1+\"p\"" ;
-    //conduit::Node res = eval.evaluate(expr);
-    //res.print();
+    expr = "position(max(\"braid\"))";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["type"].as_string(), "vector");
+
+    expr = "magnitude(position(max(\"braid\"))) > 0";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 1);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_expressions, complex_expressions)
+TEST(ascent_expressions, expressions_optional_params)
 {
     // the vtkm runtime is currently our only rendering runtime
     Node n;
@@ -232,18 +229,25 @@ TEST(ascent_expressions, complex_expressions)
 
     runtime::expressions::register_builtin();
     runtime::expressions::ExpressionEval eval(&multi_dom);
-    //std::string expr = "max(1,\"p\")";
-    //std::string expr = "avg(\"braid\")";
-    //std::string expr = "magnitude(vector(1,1,1) - vector(0,0,1))";
-    std::string expr = "histogram(\"braid\", 10)";
-    //std::string expr = "position(max(\"braid\"))";
-    //std::string expr = "banana";
-    //std::string expr = "max(1,2)";
-    //std::string expr = "max(2)";
-    //std::string expr = "(2.0 + 1) / 0.5" ;
-    //std::string expr = "1+\"p\"" ;
-    conduit::Node res = eval.evaluate(expr);
-    //res.print();
+    // test optional parameters
+    std::string expr;
+    conduit::Node res;
+    expr = "histogram(\"braid\")";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].dtype().number_of_elements(), 256);
+    EXPECT_EQ(res["type"].as_string(), "histogram");
+
+    expr = "histogram(\"braid\", 10)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].dtype().number_of_elements(), 10);
+    EXPECT_EQ(res["type"].as_string(), "histogram");
+
+    expr = "histogram(\"braid\",10,0,1)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].dtype().number_of_elements(), 10);
+    EXPECT_EQ(res["min_val"].to_float64(), 0);
+    EXPECT_EQ(res["max_val"].to_float64(), 1);
+    EXPECT_EQ(res["type"].as_string(), "histogram");
 }
 
 //-----------------------------------------------------------------------------
@@ -276,11 +280,20 @@ TEST(ascent_expressions, test_identifier)
     runtime::expressions::register_builtin();
 
     runtime::expressions::ExpressionEval eval(&multi_dom);
+    std::string expr;
+    conduit::Node res1, res2;
+
+    // test retrieving named cached value
+    expr = "max(\"braid\")";
     const std::string cache_name = "mx_b";
-    std::string expr = "max(\"braid\")";
-    conduit::Node res = eval.evaluate(expr, cache_name);
-    //runtime::expressions::ExpressionEval eval(&multi_dom);
-    res = eval.evaluate("position(mx_b)");
+    res1 = eval.evaluate(expr, cache_name);
+    res2 = eval.evaluate("mx_b");
+    EXPECT_EQ(res1["value"].to_float64(), res2["value"].to_float64());
+
+    // grab attribute from cached value
+    res2 = eval.evaluate("position(mx_b)");
+    EXPECT_EQ(res2["type"].as_string(), "vector");
+
 }
 
 //-----------------------------------------------------------------------------
