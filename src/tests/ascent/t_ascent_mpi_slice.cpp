@@ -97,7 +97,7 @@ TEST(ascent_mpi_slice, mpi_3slice)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,par_rank,par_size);
+    create_3d_example_dataset(data,32,par_rank,par_size);
 
     // There is a bug in conduit blueprint related to rectilinear
     // reenable this check after updating conduit
@@ -139,7 +139,7 @@ TEST(ascent_mpi_slice, mpi_3slice)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "radial_vert";
+    scenes["s1/plots/p1/field"] = "rank_ele";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
 

@@ -97,7 +97,7 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_default_runtime)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,par_rank,par_size);
+    create_3d_example_dataset(data,32,par_rank,par_size);
 
     // There is a bug in conduit blueprint related to rectilinear
     // reenable this check after updating conduit
@@ -126,8 +126,11 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_default_runtime)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]  = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "radial_vert";
-    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/plots/p1/field"] = "rank_ele";
+    scenes["s1/renders/r1/image_width"]  = 512;
+    scenes["s1/renders/r1/image_height"] = 512;
+    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/camera/azimuth"] = 45.0;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
@@ -189,7 +192,7 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,par_rank,par_size);
+    create_3d_example_dataset(data,32,par_rank,par_size);
 
     // There is a bug in conduit blueprint related to rectilinear
     // reenable this check after updating conduit
@@ -219,7 +222,10 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "volume";
     scenes["s1/plots/p1/field"] = "radial_vert";
-    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_width"]  = 512;
+    scenes["s1/renders/r1/image_height"] = 512;
+    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/camera/azimuth"] = 45.0;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
