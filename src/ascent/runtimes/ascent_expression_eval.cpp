@@ -265,32 +265,41 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   int cycle = get_state_var(*m_data, "cycle").to_int32();
   w.registry().add<int>("cycle", &cycle, -1);
 
+  try
+  {
+    scan_string(expr.c_str());
+  }
+  catch(const char* msg)
+  {
+    w.reset();
+    ASCENT_ERROR("Expression: "<<msg);
+  }
 
-  scan_string(expr.c_str());
   ASTExpression *expression = get_result();
 
-  std::cout<<"Expresion "<<expression<<"\n";
   expression->access();
   conduit::Node root = expression->build_graph(w);
+
   //std::cout<<w.graph().to_dot()<<"\n";
-  w.execute();
-  ///std::cout<<"root node \n";
-  ///root.print();
-  ///std::cout<<"end root node \n";
+  try
+  {
+    w.execute();
+  }
+  catch(std::exception &e)
+  {
+    w.reset();
+    throw e;
+  }
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(root["filter_name"].as_string());
-
-  const conduit::Node res = (*n_res)["value"];
-
+  conduit::Node return_val = *n_res;
   delete expression;
 
   std::stringstream cache_entry;
   cache_entry<<expr_name<<"/"<<cycle;
   m_cache[cache_entry.str()] = *n_res;
 
-  m_cache.print();
-
   w.reset();
-  return res;
+  return return_val;
 }
 
 //-----------------------------------------------------------------------------

@@ -73,7 +73,138 @@ index_t EXAMPLE_MESH_SIDE_DIM = 5;
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_expressions, test_expression)
+TEST(ascent_expressions, basic_expressions)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    // ascent normally adds this but we are doing an end around
+    data["state/domain_id"] = 0;
+    Node multi_dom;
+    blueprint::mesh::to_multi_domain(data, multi_dom);
+
+    runtime::expressions::register_builtin();
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+
+    conduit::Node res;
+    std::string expr;
+
+
+    expr = "(2.0 + 1) / 0.5";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 6.0);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    expr = "(2.0 * 2) / 2";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 2.0);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    expr = "2.0 + 1 / 0.5";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 4.0);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    expr = "max(1, 2)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 2.0);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    expr = "max(1, 2.0)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 2.0);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    expr = "min(1, 2)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 1.0);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    bool threw = false;
+    try
+    {
+      expr = "(2.0 + 1 / 0.5";
+      res = eval.evaluate(expr);
+    }
+    catch(...)
+    {
+      threw = true;
+    }
+    EXPECT_EQ(threw, true);
+
+    expr = "vector(1.5,0,0)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 1.5); // test the first val
+    EXPECT_EQ(res["type"].as_string(), "vector");
+
+    expr = "vector(1.5,0,0) - vector(1,0,0)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 0.5); // test the first val
+    EXPECT_EQ(res["type"].as_string(), "vector");
+
+    expr = "magnitude(vector(2,0,0) - vector(0,0,0))";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 2);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    // currently unsupported vector ops
+    threw = false;
+    try
+    {
+      expr = "vector(1.5,0,0) * vector(1,0,0)";
+      res = eval.evaluate(expr);
+      EXPECT_EQ(res["value"].to_float64(), 0.5); // test the first val
+      EXPECT_EQ(res["type"].as_string(), "vector");
+    }
+    catch(...)
+    {
+      threw = true;
+    }
+    EXPECT_EQ(threw, true);
+
+    threw = false;
+    try
+    {
+      expr = "vector(1.5,0,0) / vector(1,0,0)";
+      res = eval.evaluate(expr);
+      EXPECT_EQ(res["value"].to_float64(), 0.5); // test the first val
+      EXPECT_EQ(res["type"].as_string(), "vector");
+    }
+    catch(...)
+    {
+      threw = true;
+    }
+    EXPECT_EQ(threw, true);
+
+    expr = "cycle()";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 100);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    //std::string expr = "max(1,\"p\")";
+    //std::string expr = "avg(\"braid\")";
+    //std::string expr = "magnitude(vector(1,1,1) - vector(0,0,1))";
+    //std::string expr = "histogram(\"braid\", 10)";
+    //std::string expr = "position(max(\"braid\"))";
+    //std::string expr = "banana";
+    //std::string expr = "max(1,2)";
+    //std::string expr = "max(2)";
+    //std::string expr = "1+\"p\"" ;
+    //conduit::Node res = eval.evaluate(expr);
+    //res.print();
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_expressions, complex_expressions)
 {
     // the vtkm runtime is currently our only rendering runtime
     Node n;
@@ -112,7 +243,7 @@ TEST(ascent_expressions, test_expression)
     //std::string expr = "(2.0 + 1) / 0.5" ;
     //std::string expr = "1+\"p\"" ;
     conduit::Node res = eval.evaluate(expr);
-    res.print();
+    //res.print();
 }
 
 //-----------------------------------------------------------------------------
@@ -148,11 +279,8 @@ TEST(ascent_expressions, test_identifier)
     const std::string cache_name = "mx_b";
     std::string expr = "max(\"braid\")";
     conduit::Node res = eval.evaluate(expr, cache_name);
-    res.print();
     //runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("position(mx_b)");
-    //conduit::Node res = eval.evaluate("mx > 0");
-    res.print();
 }
 
 //-----------------------------------------------------------------------------

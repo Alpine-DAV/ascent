@@ -231,7 +231,7 @@ void get_cell_indices(const conduit::Node &n_topo,
     int point_dims[3] = {0, 0, 0};
     point_dims[0] = n_topo["elements/dims/i"].to_int32() + 1;
     point_dims[1] = n_topo["elements/dims/j"].to_int32() + 1;
-    //n_topo.print();
+
     if(n_topo.has_path("elements/dims/j"))
     {
       point_dims[2] = n_topo["elements/dims/k"].to_int32() + 1;
@@ -656,9 +656,6 @@ field_histogram(const conduit::Node &dataset,
                 const int &num_bins)
 {
 
-  std::cout<<"min val "<<min_val<<"\n";
-  std::cout<<"max val "<<max_val<<"\n";
-
   int *bins = new int[num_bins];
   memset(bins, 0, sizeof(int) * num_bins);
 
@@ -670,7 +667,7 @@ field_histogram(const conduit::Node &dataset,
       const std::string path = "fields/" + field + "/values";
       conduit::Node res;
       res = array_histogram(dom[path], min_val, max_val, num_bins);
-      //res.print();
+
       int *dom_hist = res["value"].value();
 #ifdef ASCENT_USE_OPENMP
       #pragma omp parallel for
@@ -717,9 +714,7 @@ field_min(const conduit::Node &dataset,
       const std::string path = "fields/" + field + "/values";
       conduit::Node res;
       res = array_min(dom[path]);
-      //res.print();
       double a_min = res["value"].to_float64();
-      //std::cout<<"min "<<min_value<<"  current "<<a_min<<"\n";
       if(a_min < min_value)
       {
         min_value = a_min;
@@ -729,9 +724,6 @@ field_min(const conduit::Node &dataset,
       }
     }
   }
-
-  //std::cout<<"max value "<<min_value<<"\n";
-  //std::cout<<"index "<<index<<"\n";
 
   const std::string assoc_str = dataset.child(0)["fields/"
                                 + field + "/association"].as_string();
@@ -772,12 +764,7 @@ field_min(const conduit::Node &dataset,
   MPI_Bcast(&domain_id, 1, MPI_INT, minloc_res.rank, mpi_comm);
 
   loc.set(ploc, 3);
-  //if(rank == 0)
-  //{
-  //  std::cout<<"Winning rank = "<<minloc_res.rank<<"\n";
-  //  std::cout<<"loc ";
-  //  loc.print();
-  //}
+
   rank = minloc_res.rank;
 #endif
   res["rank"] = rank;
@@ -803,16 +790,14 @@ field_avg(const conduit::Node &dataset,
       const std::string path = "fields/" + field + "/values";
       conduit::Node res;
       res = array_sum(dom[path]);
-      //res.print();
+
       double a_sum = res["value"].to_float64();
       long long int a_count = res["count"].to_int64();
-      //std::cout<<"sum "<<sum<<" current sum "<<a_sum<<"\n";
+
       sum += a_sum;
       count += a_count;
     }
   }
-
-  //std::cout<<"sum "<<sum<<"\n";
 
 #ifdef ASCENT_MPI_ENABLED
   int rank;
@@ -853,9 +838,7 @@ field_max(const conduit::Node &dataset,
       const std::string path = "fields/" + field + "/values";
       conduit::Node res;
       res = array_max(dom[path]);
-      res.print();
       double a_max = res["value"].to_float64();
-      ///std::cout<<"max "<<max_value<<"  current "<<a_max<<"\n";
       if(a_max > max_value)
       {
         max_value = a_max;
@@ -865,9 +848,6 @@ field_max(const conduit::Node &dataset,
       }
     }
   }
-
-  //std::cout<<"max value "<<max_value<<"\n";
-  //std::cout<<"index "<<index<<"\n";
 
   const std::string assoc_str = dataset.child(0)["fields/"
                                 + field + "/association"].as_string();
@@ -908,12 +888,6 @@ field_max(const conduit::Node &dataset,
   MPI_Bcast(&domain_id, 1, MPI_INT, maxloc_res.rank, mpi_comm);
 
   loc.set(ploc, 3);
-  //if(rank == 0)
-  //{
-  //  std::cout<<"Winning rank = "<<maxloc_res.rank<<"\n";
-  //  std::cout<<"loc ";
-  //  loc.print();
-  //}
   rank = maxloc_res.rank;
 #endif
   res["rank"] = rank;

@@ -141,7 +141,7 @@ struct MaxFunctor
         mcomp.index = v;
       }
     }
-    std::cout<<"ARRAY SIZE "<<size<<"\n";
+
     conduit::Node res;
     res["value"] = mcomp.value;
     res["index"] = mcomp.index;
@@ -181,7 +181,7 @@ struct MinFunctor
         mcomp.index = v;
       }
     }
-    std::cout<<"ARRAY SIZE "<<size<<"\n";
+
     conduit::Node res;
     res["value"] = mcomp.value;
     res["index"] = mcomp.index;

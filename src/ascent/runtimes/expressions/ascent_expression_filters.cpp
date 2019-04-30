@@ -293,8 +293,6 @@ Identifier::execute()
    }
    // grab the last one calculated
    (*output) = (*cache)[i_name].child(entries - 1);
-   //std::cout<<"IDENT ";
-   //output->print();
    set_output<conduit::Node>(output);
 }
 
@@ -513,7 +511,6 @@ BinaryOp::execute()
     ASCENT_ERROR("Mixed vector and scalar quantities not implemeneted / supported");
   }
 
-  //n_rhs->print();
   std::string op = params()["op_string"].as_string();
   bool is_math = detail::is_math(op);
   conduit::Node *output = new conduit::Node();
@@ -627,13 +624,10 @@ ScalarMin::execute()
   Node *arg2 = input<Node>("arg2");
 
 
-  //arg1->print();
-  //arg2->print();
-
   bool has_float = false;
 
-  if(arg1->dtype().is_floating_point() ||
-     arg2->dtype().is_floating_point())
+  if((*arg1)["value"].dtype().is_floating_point() ||
+     (*arg2)["value"].dtype().is_floating_point())
   {
     has_float = true;
   }
@@ -642,14 +636,14 @@ ScalarMin::execute()
 
   if(has_float)
   {
-    double d_rhs = arg1->to_float64();
-    double d_lhs = arg2->to_float64();
+    double d_rhs = (*arg1)["value"].to_float64();
+    double d_lhs = (*arg2)["value"].to_float64();
     (*output)["value"] = std::min(d_lhs, d_rhs);
   }
   else
   {
-    int i_rhs = arg1->to_int32();
-    int i_lhs = arg2->to_int32();
+    int i_rhs = (*arg1)["value"].to_int32();
+    int i_lhs = (*arg2)["value"].to_int32();
     (*output)["value"] = std::min(i_lhs, i_rhs);
   }
 
@@ -700,14 +694,10 @@ ScalarMax::execute()
   Node *arg1 = input<Node>("arg1");
   Node *arg2 = input<Node>("arg2");
 
-
-  //arg1->print();
-  //arg2->print();
-
   bool has_float = false;
 
-  if(arg1->dtype().is_floating_point() ||
-     arg2->dtype().is_floating_point())
+  if((*arg1)["value"].dtype().is_floating_point() ||
+     (*arg2)["value"].dtype().is_floating_point())
   {
     has_float = true;
   }
@@ -716,14 +706,14 @@ ScalarMax::execute()
 
   if(has_float)
   {
-    double d_rhs = arg1->to_float64();
-    double d_lhs = arg2->to_float64();
+    double d_rhs = (*arg1)["value"].to_float64();
+    double d_lhs = (*arg2)["value"].to_float64();
     (*output)["value"] = std::max(d_lhs, d_rhs);
   }
   else
   {
-    int i_rhs = arg1->to_int32();
-    int i_lhs = arg2->to_int32();
+    int i_rhs = (*arg1)["value"].to_int32();
+    int i_lhs = (*arg2)["value"].to_int32();
     (*output)["value"] = std::max(i_lhs, i_rhs);
   }
 
@@ -771,8 +761,6 @@ FieldMin::execute()
 {
 
   Node *arg1 = input<Node>("arg1");
-
-  //arg1->print();
 
   const std::string field = (*arg1)["value"].as_string();
 
@@ -854,8 +842,6 @@ FieldMax::execute()
 
   Node *arg1 = input<Node>("arg1");
 
-  //arg1->print();
-
   const std::string field = (*arg1)["value"].as_string();
 
   conduit::Node *output = new conduit::Node();
@@ -935,8 +921,6 @@ FieldAvg::execute()
 {
 
   Node *arg1 = input<Node>("arg1");
-
-  //arg1->print();
 
   const std::string field = (*arg1)["value"].as_string();
 
@@ -1200,7 +1184,7 @@ Magnitude::execute()
   const double *vec = (*arg1)["value"].value();
   res = sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
   conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "vector";
+  (*output)["type"] = "scalar";
   (*output)["value"] = res;
   set_output<conduit::Node>(output);
 }
