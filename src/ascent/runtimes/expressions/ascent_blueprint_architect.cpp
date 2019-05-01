@@ -54,6 +54,7 @@
 
 #include <ascent_logging.hpp>
 
+#include <cstring>
 #include <limits>
 
 #include <flow_workspace.hpp>

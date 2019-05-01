@@ -53,6 +53,7 @@
 
 #include <ascent_logging.hpp>
 
+#include <cstring>
 #include <limits>
 
 //-----------------------------------------------------------------------------
