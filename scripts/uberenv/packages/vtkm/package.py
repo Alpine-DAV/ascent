@@ -62,6 +62,7 @@ class Vtkm(CMakePackage, CudaPackage):
             # cuda support
             if "+cuda" in spec:
                 options.append("-DVTKm_ENABLE_CUDA:BOOL=ON")
+                options.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(env["SPACK_CXX"]))
                 if 'cuda_arch' in spec.variants:
                     cuda_arch = spec.variants['cuda_arch'].value
                     options.append(
