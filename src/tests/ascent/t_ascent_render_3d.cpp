@@ -1533,10 +1533,12 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     // Create the data.
     //
     Node verify_info;
-    create_3d_example_dataset(mesh1,0,2);
-    create_3d_example_dataset(mesh2,1,2);
+    create_3d_example_dataset(mesh1,32,0,2);
+    create_3d_example_dataset(mesh2,32,1,2);
+
     mesh1["state/domain_id"] = 0;
     mesh2["state/domain_id"] = 1;
+
     // There is a bug in conduit blueprint related to rectilinear
     // reenable this check after updating conduit
     // EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
@@ -1556,8 +1558,11 @@ TEST(ascent_render_3d, render_3d_domain_overload)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]  = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "radial_vert";
-    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/plots/p1/field"] = "rank_ele";
+    scenes["s1/renders/r1/image_width"]  = 512;
+    scenes["s1/renders/r1/image_height"] = 512;
+    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/camera/azimuth"] = 45.0;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
