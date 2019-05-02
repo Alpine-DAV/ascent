@@ -3,17 +3,14 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-trigger:
-- develop
-
 pool:
   vmImage: 'Ubuntu-16.04'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- checkout: self
+  clean: boolean
+  submodules: recursive
 
 - script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+    cd src/examples/docker/ubuntu/ && ./example_build.sh
+  displayName: 'Docker Build'
