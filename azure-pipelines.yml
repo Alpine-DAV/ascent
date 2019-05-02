@@ -3,6 +3,10 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
+jobs:
+- job: Test
+  timeoutInMinutes: 0
+
 pool:
   vmImage: 'Ubuntu-16.04'
 
