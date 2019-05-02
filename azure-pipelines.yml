@@ -6,9 +6,13 @@
 jobs:
 - job: Test
   timeoutInMinutes: 0
+  strategy:
+    matrix:
+      main:
+      VM_ImageName: 'ubuntu-16.04'
 
 pool:
-  vmImage: 'Ubuntu-16.04'
+  vmImage: $(VM_ImageName)
 
 steps:
 - checkout: self
