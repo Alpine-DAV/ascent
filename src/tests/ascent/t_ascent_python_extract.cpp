@@ -75,7 +75,7 @@ TEST(ascent_runtime, test_python_script_extract)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,0,1);
+    create_3d_example_dataset(data,32,0,1);
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
@@ -123,7 +123,7 @@ TEST(ascent_runtime, test_python_script_extract_from_file)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,0,1);
+    create_3d_example_dataset(data,32,0,1);
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
@@ -195,7 +195,7 @@ TEST(ascent_runtime, test_python_script_extract_import)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,0,1);
+    create_3d_example_dataset(data,32,0,1);
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
@@ -273,7 +273,7 @@ TEST(ascent_runtime, test_python_extract_inception)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,0,1);
+    create_3d_example_dataset(data,32,0,1);
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));

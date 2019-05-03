@@ -476,11 +476,21 @@ public:
                     const conduit::Node &render_node)
   {
     conduit::Node render_copy = render_node;
+
+    // allow zoom to be ajusted
+    conduit::Node zoom;
+    if(render_copy.has_path("camera/zoom"))
+    {
+      zoom = render_copy["camera/zoom"];
+    }
+
     // cinema is controlling the camera so get
     // rid of it
     if(render_copy.has_path("camera"))
     {
       render_copy["camera"].reset();
+
+
     }
     std::string tmp_name = "";
     vtkh::Render render = detail::parse_render(render_copy,
@@ -494,6 +504,13 @@ public:
       std::string image_name = conduit::utils::join_file_path(m_image_path , m_image_names[i]);
 
       render.SetImageName(image_name);
+
+      if(!zoom.dtype().is_empty())
+      {
+        // Allow default zoom to be overridden
+        m_cameras[i].Zoom(zoom.to_float32());
+      }
+
       render.SetCamera(m_cameras[i]);
       renders->push_back(render);
     }
@@ -638,7 +655,7 @@ private:
         camera.SetViewUp(up);
         camera.SetLookAt(center);
         camera.SetPosition(pos);
-        camera.Zoom(0.2);
+        camera.Zoom(0.2f);
 
         std::stringstream ss;
         ss<<get_string(phi)<<"_"<<get_string(theta)<<"_";
