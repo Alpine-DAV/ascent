@@ -1217,6 +1217,16 @@ AscentRuntime::Execute(const conduit::Node &actions)
     ResetInfo();
     // make sure we always have our source data
     ConnectSource();
+
+    conduit::Node queries;
+    conduit::Node triggers;
+    conduit::Node pipelines;
+    conduit::Node scenes;
+    conduit::Node extracts;
+
+    bool do_execute = false;
+    bool do_reset= false;
+
     // Loop over the actions
     for (int i = 0; i < actions.number_of_children(); ++i)
     {
@@ -1227,7 +1237,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
           if(action.has_path("pipelines"))
           {
-            CreatePipelines(action["pipelines"]);
+            pipelines.append() = action["pipelines"];
           }
           else
           {
@@ -1238,7 +1248,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
           if(action.has_path("scenes"))
           {
-            CreateScenes(action["scenes"]);
+            scenes.append() = action["scenes"];
           }
           else
           {
@@ -1249,7 +1259,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
           if(action.has_path("extracts"))
           {
-            CreateExtracts(action["extracts"]);
+            extracts.append() = action["extracts"];
           }
           else
           {
@@ -1260,7 +1270,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
           if(action.has_path("triggers"))
           {
-            CreateTriggers(action["triggers"]);
+            triggers.append() = action["triggers"];
           }
           else
           {
@@ -1271,7 +1281,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
           if(action.has_path("queries"))
           {
-            CreateQueries(action["queries"]);
+            queries.append() = action["queries"];
           }
           else
           {
@@ -1280,49 +1290,85 @@ AscentRuntime::Execute(const conduit::Node &actions)
         }
         else if( action_name == "execute")
         {
-          ConnectGraphs();
-          PopulateMetadata(); // add metadata so filters can access it
-          w.info(m_info["flow_graph"]);
-          //w.print();
-          //std::cout<<w.graph().to_dot();
-
-#if defined(ASCENT_VTKM_ENABLED)
-          // we have vtkm enabled so catch any errors that
-          // come up here and forward them up as a conduit
-          // error
-          try
-          {
-            w.execute();
-          }
-          catch(vtkh::Error &e)
-          {
-            ASCENT_ERROR("Execution failed with: "<<e.what());
-          }
-#else
-          w.execute();
-#endif
-
-          Node msg;
-          this->Info(msg["info"]);
-          ascent::about(msg["about"]);
-          m_web_interface.PushMessage(msg);
-
-          Node renders;
-          FindRenders(renders);
-          m_info["images"] = renders;
-
-          m_web_interface.PushRenders(renders);
-
-          w.registry().reset();
+          do_execute = true;
         }
         else if( action_name == "reset")
         {
-          w.reset();
+          do_reset = true;
         }
         else
         {
             ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
         }
+
+    }
+
+    // we are enforcing the order of exectution
+    for(int i = 0; i < queries.number_of_children(); ++i)
+    {
+      CreateQueries(queries.child(i));
+    }
+    for(int i = 0; i < triggers.number_of_children(); ++i)
+    {
+      CreateTriggers(triggers.child(i));
+    }
+    for(int i = 0; i < pipelines.number_of_children(); ++i)
+    {
+      CreatePipelines(pipelines.child(i));
+    }
+    for(int i = 0; i < scenes.number_of_children(); ++i)
+    {
+      CreateScenes(scenes.child(i));
+    }
+    for(int i = 0; i < extracts.number_of_children(); ++i)
+    {
+      CreateExtracts(extracts.child(i));
+    }
+
+    if(do_execute)
+    {
+
+      ConnectGraphs();
+      PopulateMetadata(); // add metadata so filters can access it
+      w.info(m_info["flow_graph"]);
+      //w.print();
+      //std::cout<<w.graph().to_dot();
+
+#if defined(ASCENT_VTKM_ENABLED)
+      // we have vtkm enabled so catch any errors that
+      // come up here and forward them up as a conduit
+      // error
+      try
+      {
+        w.execute();
+      }
+      catch(vtkh::Error &e)
+      {
+        ASCENT_ERROR("Execution failed with: "<<e.what());
+      }
+#else
+      w.execute();
+#endif
+
+      Node msg;
+      this->Info(msg["info"]);
+      ascent::about(msg["about"]);
+      m_web_interface.PushMessage(msg);
+
+      Node renders;
+      FindRenders(renders);
+      m_info["images"] = renders;
+
+      m_web_interface.PushRenders(renders);
+
+      w.registry().reset();
+    }
+
+    if(do_reset)
+    {
+      // resets the entire workspace meaning all filters
+      // in the graph are cleared
+      w.reset();
     }
 }
 
