@@ -1218,6 +1218,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
     // make sure we always have our source data
     ConnectSource();
 
+    // exection will be enforced in the following order:
     conduit::Node queries;
     conduit::Node triggers;
     conduit::Node pipelines;
