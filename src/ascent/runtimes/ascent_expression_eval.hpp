@@ -82,6 +82,8 @@ protected:
 public:
   ExpressionEval(conduit::Node *data);
 
+  static const conduit::Node &get_cache();
+
   conduit::Node evaluate(const std::string expr, std::string exp_name = "");
 };
 

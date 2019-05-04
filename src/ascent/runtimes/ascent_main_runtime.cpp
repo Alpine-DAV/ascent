@@ -1360,6 +1360,14 @@ AscentRuntime::Execute(const conduit::Node &actions)
       FindRenders(renders);
       m_info["images"] = renders;
 
+      const conduit::Node &expression_cache =
+        runtime::expressions::ExpressionEval::get_cache();
+
+      if(expression_cache.number_of_children() > 0)
+      {
+        m_info["expressions"] = expression_cache;
+      }
+
       m_web_interface.PushRenders(renders);
 
       w.registry().reset();

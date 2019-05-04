@@ -284,6 +284,11 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   return return_val;
 }
 
+const conduit::Node&
+ExpressionEval::get_cache()
+{
+  return m_cache;
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

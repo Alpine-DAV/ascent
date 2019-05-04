@@ -74,6 +74,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_rover
                 t_ascent_lagrangian
                 t_ascent_log
+                t_ascent_queries
                 t_ascent_hola)
 
 set(MPI_TESTS  t_ascent_mpi_smoke
