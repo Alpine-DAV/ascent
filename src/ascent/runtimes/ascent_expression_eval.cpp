@@ -270,7 +270,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   catch(std::exception &e)
   {
     w.reset();
-    throw e;
+    ASCENT_ERROR("Error while executing expression '"<<expr<<"': "<<e.what());
   }
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(root["filter_name"].as_string());
   conduit::Node return_val = *n_res;

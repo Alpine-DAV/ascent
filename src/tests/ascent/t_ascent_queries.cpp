@@ -103,9 +103,9 @@ TEST(ascent_queries, max_query)
     queries["q1/params/expression"] = "max(\"braid\")";
     queries["q1/params/name"] = "max_braid";
 
-    conduit::Node &add_scenes = actions.append();
-    add_scenes["action"] = "add_queries";
-    add_scenes["queries"] = queries;
+    conduit::Node &add_queries = actions.append();
+    add_queries["action"] = "add_queries";
+    add_queries["queries"] = queries;
     conduit::Node &execute = actions.append();
     execute["action"] = "execute";
     actions.print();
@@ -169,9 +169,9 @@ TEST(ascent_queries, cycle_query)
     queries["q1/params/expression"] = "cycle()";
     queries["q1/params/name"] = "cycle";
 
-    conduit::Node &add_scenes = actions.append();
-    add_scenes["action"] = "add_queries";
-    add_scenes["queries"] = queries;
+    conduit::Node &add_queries = actions.append();
+    add_queries["action"] = "add_queries";
+    add_queries["queries"] = queries;
     conduit::Node &execute = actions.append();
     execute["action"] = "execute";
     actions.print();

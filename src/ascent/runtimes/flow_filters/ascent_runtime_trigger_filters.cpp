@@ -141,7 +141,6 @@ BasicTrigger::execute()
         ASCENT_ERROR("Trigger input must be a conduit node");
     }
 
-
     std::string expression = params()["condition"].as_string();
     std::string actions_file = params()["actions_file"].as_string();
     conduit::Node actions;
@@ -151,15 +150,14 @@ BasicTrigger::execute()
 
     runtime::expressions::ExpressionEval eval(n_input);
     conduit::Node res = eval.evaluate(expression);
-    res.print();
-    if(!res.dtype().is_integer())
+
+    if(res["type"].as_string() != "boolean")
     {
-      ASCENT_ERROR("result of expression '"<<expression<<"' is not an integer");
+      ASCENT_ERROR("result of expression '"<<expression<<"' is not an boolean");
     }
 
-    int condition = res.to_int32();
-    std::cout<<"condition "<<condition<<"\n";
-    if(condition)
+    bool fire = res["value"].to_int32() != 0;
+    if(fire)
     {
       Ascent ascent;
 

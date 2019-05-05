@@ -1335,21 +1335,26 @@ AscentRuntime::Execute(const conduit::Node &actions)
       //w.print();
       //std::cout<<w.graph().to_dot();
 
-#if defined(ASCENT_VTKM_ENABLED)
-      // we have vtkm enabled so catch any errors that
-      // come up here and forward them up as a conduit
-      // error
+      // catch any errors that come up here and forward
+      // them up as a conduit error
       try
       {
         w.execute();
       }
+#if defined(ASCENT_VTKM_ENABLED)
       catch(vtkh::Error &e)
+      {
+        ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
+      }
+#endif
+      catch(conduit::Error &e)
+      {
+        throw e;
+      }
+      catch(std::exception &e)
       {
         ASCENT_ERROR("Execution failed with: "<<e.what());
       }
-#else
-      w.execute();
-#endif
 
       Node msg;
       this->Info(msg["info"]);

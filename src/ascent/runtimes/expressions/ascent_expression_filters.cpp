@@ -184,6 +184,10 @@ int comp_op(const T& lhs, const T& rhs, const std::string &op)
   {
     res = lhs >= rhs;
   }
+  else if(op == "==")
+  {
+    res = lhs == rhs;
+  }
   else
   {
     ASCENT_ERROR("unknow comparison op "<<op);
@@ -552,12 +556,13 @@ BinaryOp::execute()
       if(is_math)
       {
         (*output)["value"] = detail::math_op(d_lhs, d_rhs, op);
+        (*output)["type"] = "scalar";
       }
       else
       {
         (*output)["value"] = detail::comp_op(d_lhs, d_rhs, op);
+        (*output)["type"] = "boolean";
       }
-      (*output)["type"] = "scalar";
     }
     else
     {
@@ -566,12 +571,13 @@ BinaryOp::execute()
       if(is_math)
       {
         (*output)["value"] = detail::math_op(i_lhs, i_rhs, op);
+        (*output)["type"] = "scalar";
       }
       else
       {
         (*output)["value"] = detail::comp_op(i_lhs, i_rhs, op);
+        (*output)["type"] = "boolean";
       }
-      (*output)["type"] = "boolean";
     }
   }
 
