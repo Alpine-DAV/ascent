@@ -56,6 +56,7 @@
 
 
 #include <ascent_expression_eval.hpp>
+#include <flow_workspace.hpp>
 
 #include <mpi.h>
 
@@ -74,12 +75,6 @@ TEST(ascent_mpi_expressions, mpi_expressoins)
     // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
-        return;
-    }
 
     //
     // Set Up MPI
@@ -106,21 +101,19 @@ TEST(ascent_mpi_expressions, mpi_expressoins)
 
     conduit::blueprint::mesh::verify(data,verify_info);
 
-    Ascent ascent;
-    Node ascent_opts;
-    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    ascent_opts["runtime"] = "ascent";
-    ascent.open(ascent_opts);
+    flow::Workspace::set_default_mpi_comm(MPI_Comm_c2f(comm));
 
     runtime::expressions::register_builtin();
     runtime::expressions::ExpressionEval eval(&multi_dom);
-    //std::string expr = "max(1,\"p\")";
-    std::string expr = "max(\"radial_vert\")";
-    //std::string expr = "max(1,2)";
-    //std::string expr = "max(2)";
-    //std::string expr = "(2.0 + 1) / 0.5" ;
-    //std::string expr = "1+\"p\"" ;
+    std::string expr = "magnitude(position(max(\"radial_vert\")))";
     conduit::Node res = eval.evaluate(expr);
+
+    EXPECT_TRUE(res["type"].as_string() == "scalar");
+
+    if(par_rank == 0)
+    {
+      res.print();
+    }
 }
 
 int main(int argc, char* argv[])

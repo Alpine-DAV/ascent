@@ -254,7 +254,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   catch(const char* msg)
   {
     w.reset();
-    ASCENT_ERROR("Expression: "<<msg<<" in '"<<expr<<"'");
+    ASCENT_ERROR("Expression parsing error: "<<msg<<" in '"<<expr<<"'");
   }
 
   ASTExpression *expression = get_result();
