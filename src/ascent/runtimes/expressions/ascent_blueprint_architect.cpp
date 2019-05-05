@@ -183,25 +183,25 @@ get_num_indices(const std::string shape_type)
   }
   else
   {
-    ASCENT_ERROR("Unsupported cell type "<<shape_type);
+    ASCENT_ERROR("Unsupported element type "<<shape_type);
   }
   return num;
 }
 
-void logical_index_2d(int *idx, const int point_index, const int *dims)
+void logical_index_2d(int *idx, const int vert_index, const int *dims)
 {
-  idx[0] = point_index % dims[0];
-  idx[1] = point_index / dims[0];
+  idx[0] = vert_index % dims[0];
+  idx[1] = vert_index / dims[0];
 }
 
-void logical_index_3d(int *idx, const int point_index, const int *dims)
+void logical_index_3d(int *idx, const int vert_index, const int *dims)
 {
-  idx[0] = point_index % dims[0];
-  idx[1] = (point_index / dims[0]) % dims[1];
-  idx[2] = point_index / (dims[0] * dims[1]);
+  idx[0] = vert_index % dims[0];
+  idx[1] = (vert_index / dims[0]) % dims[1];
+  idx[2] = vert_index / (dims[0] * dims[1]);
 }
 
-void get_cell_indices(const conduit::Node &n_topo,
+void get_element_indices(const conduit::Node &n_topo,
                       const int index,
                       std::vector<int> &indices)
 {
@@ -209,7 +209,7 @@ void get_cell_indices(const conduit::Node &n_topo,
   const std::string mesh_type = n_topo["type"].as_string();
   if(mesh_type == "unstructured")
   {
-    // supports only single cell type
+    // supports only single element type
     const conduit::Node &n_topo_eles = n_topo["elements"];
 
     // get the shape
@@ -229,43 +229,43 @@ void get_cell_indices(const conduit::Node &n_topo,
   else
   {
     bool is_2d = true;
-    int point_dims[3] = {0, 0, 0};
-    point_dims[0] = n_topo["elements/dims/i"].to_int32() + 1;
-    point_dims[1] = n_topo["elements/dims/j"].to_int32() + 1;
+    int vert_dims[3] = {0, 0, 0};
+    vert_dims[0] = n_topo["elements/dims/i"].to_int32() + 1;
+    vert_dims[1] = n_topo["elements/dims/j"].to_int32() + 1;
 
     if(n_topo.has_path("elements/dims/j"))
     {
-      point_dims[2] = n_topo["elements/dims/k"].to_int32() + 1;
+      vert_dims[2] = n_topo["elements/dims/k"].to_int32() + 1;
       is_2d = false;
     }
 
-    const int cell_dims[3] = {point_dims[0] - 1,
-                              point_dims[1] - 1,
-                              point_dims[2] - 1};
+    const int element_dims[3] = {vert_dims[0] - 1,
+                              vert_dims[1] - 1,
+                              vert_dims[2] - 1};
 
-    int cell_index[3] = {0, 0, 0};
+    int element_index[3] = {0, 0, 0};
     if(is_2d)
     {
       indices.resize(4);
-      logical_index_2d(cell_index, index, cell_dims);
+      logical_index_2d(element_index, index, element_dims);
 
-      indices[0] = cell_index[1] * point_dims[0] + cell_index[0];
+      indices[0] = element_index[1] * vert_dims[0] + element_index[0];
       indices[1] = indices[0] + 1;
-      indices[2] = indices[1] + point_dims[0];
+      indices[2] = indices[1] + vert_dims[0];
       indices[3] = indices[2] - 1;
     }
     else
     {
       indices.resize(8);
-      logical_index_3d(cell_index, index, cell_dims);
+      logical_index_3d(element_index, index, element_dims);
 
-      indices[0] = (cell_index[2] * point_dims[1] + cell_index[1]) * point_dims[0] + cell_index[0];
+      indices[0] = (element_index[2] * vert_dims[1] + element_index[1]) * vert_dims[0] + element_index[0];
       indices[1] = indices[0] + 1;
-      indices[2] = indices[1] + point_dims[1];
+      indices[2] = indices[1] + vert_dims[1];
       indices[3] = indices[2] - 1;
-      indices[4] = indices[0] + point_dims[0] * point_dims[2];
+      indices[4] = indices[0] + vert_dims[0] * vert_dims[2];
       indices[5] = indices[4] + 1;
-      indices[6] = indices[5] + point_dims[1];
+      indices[6] = indices[5] + vert_dims[1];
       indices[7] = indices[6] - 1;
     }
 
@@ -275,7 +275,7 @@ void get_cell_indices(const conduit::Node &n_topo,
 
 
 conduit::Node
-get_uniform_point(const conduit::Node &n_coords, const int &index)
+get_uniform_vert(const conduit::Node &n_coords, const int &index)
 {
 
   UniformCoords coords(n_coords);
@@ -291,52 +291,52 @@ get_uniform_point(const conduit::Node &n_coords, const int &index)
     logical_index_3d(logical_index, index, coords.m_dims);
   }
 
-  double point[3];
-  point[0] = coords.m_origin[0] + logical_index[0] * coords.m_spacing[0];
-  point[1] = coords.m_origin[1] + logical_index[1] * coords.m_spacing[1];
-  point[2] = coords.m_origin[2] + logical_index[2] * coords.m_spacing[2];
+  double vert[3];
+  vert[0] = coords.m_origin[0] + logical_index[0] * coords.m_spacing[0];
+  vert[1] = coords.m_origin[1] + logical_index[1] * coords.m_spacing[1];
+  vert[2] = coords.m_origin[2] + logical_index[2] * coords.m_spacing[2];
 
   conduit::Node res;
-  res.set(point,3);
+  res.set(vert,3);
   return res;
 }
 
 conduit::Node
-get_explicit_point(const conduit::Node &n_coords, const int &index)
+get_explicit_vert(const conduit::Node &n_coords, const int &index)
 {
   bool is_float64 = true;
   if(n_coords["values/x"].dtype().is_float32())
   {
     is_float64 = false;
   }
-  double point[3] = {0., 0., 0.};
+  double vert[3] = {0., 0., 0.};
   if(is_float64)
   {
     conduit::float64_array x_a = n_coords["values/x"].value();
     conduit::float64_array y_a = n_coords["values/y"].value();
     conduit::float64_array z_a = n_coords["values/z"].value();
-    point[0] = x_a[index];
-    point[1] = y_a[index];
-    point[2] = z_a[index];
+    vert[0] = x_a[index];
+    vert[1] = y_a[index];
+    vert[2] = z_a[index];
   }
   else
   {
     conduit::float32_array x_a = n_coords["values/x"].value();
     conduit::float32_array y_a = n_coords["values/y"].value();
     conduit::float32_array z_a = n_coords["values/z"].value();
-    point[0] = x_a[index];
-    point[1] = y_a[index];
-    point[2] = z_a[index];
+    vert[0] = x_a[index];
+    vert[1] = y_a[index];
+    vert[2] = z_a[index];
 
   }
 
   conduit::Node res;
-  res.set(point,3);
+  res.set(vert,3);
   return res;
 }
 
 conduit::Node
-get_rectilinear_point(const conduit::Node &n_coords, const int &index)
+get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
 {
   bool is_float64 = true;
 
@@ -353,7 +353,7 @@ get_rectilinear_point(const conduit::Node &n_coords, const int &index)
   {
     is_float64 = false;
   }
-  double point[3] = {0., 0., 0.};
+  double vert[3] = {0., 0., 0.};
 
 
   int logical_index[3] = {0, 0, 0};
@@ -371,67 +371,67 @@ get_rectilinear_point(const conduit::Node &n_coords, const int &index)
   {
     conduit::float64_array x_a = n_coords["values/x"].value();
     conduit::float64_array y_a = n_coords["values/y"].value();
-    point[0] = x_a[logical_index[0]];
-    point[1] = y_a[logical_index[1]];
+    vert[0] = x_a[logical_index[0]];
+    vert[1] = y_a[logical_index[1]];
     if(dims[2] != 0)
     {
       conduit::float64_array z_a = n_coords["values/z"].value();
-      point[2] = z_a[logical_index[2]];
+      vert[2] = z_a[logical_index[2]];
     }
   }
   else
   {
     conduit::float32_array x_a = n_coords["values/x"].value();
     conduit::float32_array y_a = n_coords["values/y"].value();
-    point[0] = x_a[logical_index[0]];
-    point[1] = y_a[logical_index[1]];
+    vert[0] = x_a[logical_index[0]];
+    vert[1] = y_a[logical_index[1]];
     if(dims[2] != 0)
     {
       conduit::float32_array z_a = n_coords["values/z"].value();
-      point[2] = z_a[logical_index[2]];
+      vert[2] = z_a[logical_index[2]];
     }
 
   }
 
   conduit::Node res;
-  res.set(point,3);
+  res.set(vert,3);
   return res;
 }
-// ----------------------  cell locations ---------------------------------
+// ----------------------  element locations ---------------------------------
 conduit::Node
-get_uniform_cell(const conduit::Node &n_coords, const int &index)
+get_uniform_element(const conduit::Node &n_coords, const int &index)
 {
 
   UniformCoords coords(n_coords);
 
   int logical_index[3] = {0, 0, 0};
-  const int cell_dims[3] = {coords.m_dims[0] - 1,
+  const int element_dims[3] = {coords.m_dims[0] - 1,
                             coords.m_dims[1] - 1,
                             coords.m_dims[2] - 1};
 
   if(coords.m_is_2d)
   {
-    logical_index_2d(logical_index, index, cell_dims);
+    logical_index_2d(logical_index, index, element_dims);
   }
   else
   {
-    logical_index_3d(logical_index, index, cell_dims);
+    logical_index_3d(logical_index, index, element_dims);
   }
 
-  // cell logical index will be the lower left point index
+  // element logical index will be the lower left point index
 
-  double point[3] = {0., 0., 0.};
-  point[0] = coords.m_origin[0] + logical_index[0] * coords.m_spacing[0] + coords.m_spacing[0] * 0.5;
-  point[1] = coords.m_origin[1] + logical_index[1] * coords.m_spacing[1] + coords.m_spacing[1] * 0.5;
-  point[2] = coords.m_origin[2] + logical_index[2] * coords.m_spacing[2] + coords.m_spacing[2] * 0.5;
+  double vert[3] = {0., 0., 0.};
+  vert[0] = coords.m_origin[0] + logical_index[0] * coords.m_spacing[0] + coords.m_spacing[0] * 0.5;
+  vert[1] = coords.m_origin[1] + logical_index[1] * coords.m_spacing[1] + coords.m_spacing[1] * 0.5;
+  vert[2] = coords.m_origin[2] + logical_index[2] * coords.m_spacing[2] + coords.m_spacing[2] * 0.5;
 
   conduit::Node res;
-  res.set(point,3);
+  res.set(vert,3);
   return res;
 }
 
 conduit::Node
-get_rectilinear_cell(const conduit::Node &n_coords, const int &index)
+get_rectilinear_element(const conduit::Node &n_coords, const int &index)
 {
   bool is_float64 = true;
 
@@ -449,79 +449,79 @@ get_rectilinear_cell(const conduit::Node &n_coords, const int &index)
   {
     is_float64 = false;
   }
-  const int cell_dims[3] = {dims[0] - 1,
+  const int element_dims[3] = {dims[0] - 1,
                             dims[1] - 1,
                             dims[2] - 1};
 
-  double point[3] = {0., 0., 0.};
+  double vert[3] = {0., 0., 0.};
 
   int logical_index[3] = {0, 0, 0};
 
   if(dims[2] == 0)
   {
-    logical_index_2d(logical_index, index, cell_dims);
+    logical_index_2d(logical_index, index, element_dims);
   }
   else
   {
-    logical_index_3d(logical_index, index, cell_dims);
+    logical_index_3d(logical_index, index, element_dims);
   }
 
   if(is_float64)
   {
     conduit::float64_array x_a = n_coords["values/x"].value();
     conduit::float64_array y_a = n_coords["values/y"].value();
-    point[0] = (x_a[logical_index[0]] + x_a[logical_index[0] + 1]) * 0.5;
-    point[1] = (y_a[logical_index[1]] + y_a[logical_index[1] + 1]) * 0.5;
+    vert[0] = (x_a[logical_index[0]] + x_a[logical_index[0] + 1]) * 0.5;
+    vert[1] = (y_a[logical_index[1]] + y_a[logical_index[1] + 1]) * 0.5;
     if(dims[2] != 0)
     {
       conduit::float64_array z_a = n_coords["values/z"].value();
-      point[2] = (z_a[logical_index[2]] + z_a[logical_index[2] + 1]) * 0.5;
+      vert[2] = (z_a[logical_index[2]] + z_a[logical_index[2] + 1]) * 0.5;
     }
   }
   else
   {
     conduit::float32_array x_a = n_coords["values/x"].value();
     conduit::float32_array y_a = n_coords["values/y"].value();
-    point[0] = (x_a[logical_index[0]] + x_a[logical_index[0] + 1]) * 0.5;
-    point[1] = (y_a[logical_index[1]] + y_a[logical_index[1] + 1]) * 0.5;
+    vert[0] = (x_a[logical_index[0]] + x_a[logical_index[0] + 1]) * 0.5;
+    vert[1] = (y_a[logical_index[1]] + y_a[logical_index[1] + 1]) * 0.5;
     if(dims[2] != 0)
     {
       conduit::float32_array z_a = n_coords["values/z"].value();
-      point[2] = (z_a[logical_index[2]] + z_a[logical_index[2] + 1]) * 0.5;
+      vert[2] = (z_a[logical_index[2]] + z_a[logical_index[2] + 1]) * 0.5;
     }
 
   }
 
   conduit::Node res;
-  res.set(point,3);
+  res.set(vert,3);
   return res;
 }
 
 conduit::Node
-get_explicit_cell(const conduit::Node &n_coords,
+get_explicit_element(const conduit::Node &n_coords,
                   const conduit::Node &n_topo,
                   const int &index)
 {
   std::vector<int> conn;
-  get_cell_indices(n_topo, index, conn);
+  get_element_indices(n_topo, index, conn);
   const int num_indices = conn.size();
-  double point[3] = {0., 0., 0.};
+  double vert[3] = {0., 0., 0.};
   for(int i = 0; i < num_indices; ++i)
   {
-    int point_index = conn[i];
-    conduit::Node n_point = get_explicit_point(n_coords, point_index);
-    double * ptr = n_point.value();
-    point[0] += ptr[0];
-    point[1] += ptr[1];
-    point[2] += ptr[2];
+    int vert_index = conn[i];
+    conduit::Node n_vert = get_explicit_vert(n_coords, vert_index);
+    double * ptr = n_vert.value();
+    vert[0] += ptr[0];
+    vert[1] += ptr[1];
+    vert[2] += ptr[2];
   }
 
-  point[0] /= double(num_indices);
-  point[1] /= double(num_indices);
-  point[2] /= double(num_indices);
+  vert[0] /= double(num_indices);
+  vert[1] /= double(num_indices);
+  vert[2] /= double(num_indices);
 
   conduit::Node res;
-  res.set(point,3);
+  res.set(vert,3);
   return res;
 }
 //-----------------------------------------------------------------------------
@@ -531,48 +531,7 @@ get_explicit_cell(const conduit::Node &n_coords,
 //-----------------------------------------------------------------------------
 
 conduit::Node
-point_location(const conduit::Node &domain,
-               const int &index,
-               const std::string topo_name)
-{
-  std::string topo = topo_name;
-  // if we don't specify a topology, find the first topology ...
-  if(topo_name == "")
-  {
-      conduit::NodeConstIterator itr = domain["topologies"].children();
-      itr.next();
-      topo = itr.name();
-  }
-
-  const conduit::Node &n_topo   = domain["topologies"][topo];
-  const std::string mesh_type   = n_topo["type"].as_string();
-  const std::string coords_name = n_topo["coordset"].as_string();
-
-  const conduit::Node &n_coords = domain["coordsets"][coords_name];
-
-  conduit::Node res;
-  if(mesh_type == "uniform")
-  {
-    res = detail::get_uniform_point(n_coords, index);
-  }
-  else if(mesh_type == "rectilinear")
-  {
-    res = detail::get_rectilinear_point(n_coords, index);
-  }
-  else if(mesh_type == "unstructured" || mesh_type == "structured")
-  {
-    res = detail::get_explicit_point(n_coords, index);
-  }
-  else
-  {
-    ASCENT_ERROR("The Architect: unknown mesh type: '"<<mesh_type<<"'");
-  }
-
-  return res;
-}
-
-conduit::Node
-cell_location(const conduit::Node &domain,
+vert_location(const conduit::Node &domain,
               const int &index,
               const std::string topo_name)
 {
@@ -594,15 +553,56 @@ cell_location(const conduit::Node &domain,
   conduit::Node res;
   if(mesh_type == "uniform")
   {
-    res = detail::get_uniform_cell(n_coords, index);
+    res = detail::get_uniform_vert(n_coords, index);
   }
   else if(mesh_type == "rectilinear")
   {
-    res = detail::get_rectilinear_cell(n_coords, index);
+    res = detail::get_rectilinear_vert(n_coords, index);
   }
   else if(mesh_type == "unstructured" || mesh_type == "structured")
   {
-    res = detail::get_explicit_cell(n_coords, n_topo, index);
+    res = detail::get_explicit_vert(n_coords, index);
+  }
+  else
+  {
+    ASCENT_ERROR("The Architect: unknown mesh type: '"<<mesh_type<<"'");
+  }
+
+  return res;
+}
+
+conduit::Node
+element_location(const conduit::Node &domain,
+              const int &index,
+              const std::string topo_name)
+{
+  std::string topo = topo_name;
+  // if we don't specify a topology, find the first topology ...
+  if(topo_name == "")
+  {
+      conduit::NodeConstIterator itr = domain["topologies"].children();
+      itr.next();
+      topo = itr.name();
+  }
+
+  const conduit::Node &n_topo   = domain["topologies"][topo];
+  const std::string mesh_type   = n_topo["type"].as_string();
+  const std::string coords_name = n_topo["coordset"].as_string();
+
+  const conduit::Node &n_coords = domain["coordsets"][coords_name];
+
+  conduit::Node res;
+  if(mesh_type == "uniform")
+  {
+    res = detail::get_uniform_element(n_coords, index);
+  }
+  else if(mesh_type == "rectilinear")
+  {
+    res = detail::get_rectilinear_element(n_coords, index);
+  }
+  else if(mesh_type == "unstructured" || mesh_type == "structured")
+  {
+    res = detail::get_explicit_element(n_coords, n_topo, index);
   }
   else
   {
@@ -732,11 +732,11 @@ field_min(const conduit::Node &dataset,
   conduit::Node loc;
   if(assoc_str == "vertex")
   {
-    loc = point_location(dataset.child(domain),index);
+    loc = vert_location(dataset.child(domain),index);
   }
   else if(assoc_str == "element")
   {
-    loc = cell_location(dataset.child(domain),index);
+    loc = element_location(dataset.child(domain),index);
   }
   else
   {
@@ -856,11 +856,11 @@ field_max(const conduit::Node &dataset,
   conduit::Node loc;
   if(assoc_str == "vertex")
   {
-    loc = point_location(dataset.child(domain),index);
+    loc = vert_location(dataset.child(domain),index);
   }
   else if(assoc_str == "element")
   {
-    loc = cell_location(dataset.child(domain),index);
+    loc = element_location(dataset.child(domain),index);
   }
   else
   {

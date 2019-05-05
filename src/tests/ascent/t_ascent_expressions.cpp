@@ -197,7 +197,7 @@ TEST(ascent_expressions, basic_expressions)
     expr = "magnitude(position(max(\"braid\"))) > 0";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 1);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "boolean");
 }
 
 //-----------------------------------------------------------------------------

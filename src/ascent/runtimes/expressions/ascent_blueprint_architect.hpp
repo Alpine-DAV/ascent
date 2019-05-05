@@ -74,13 +74,13 @@ namespace runtime
 namespace expressions
 {
 
-conduit::Node point_location(const conduit::Node &domain,
-                             const int &index,
-                             const std::string topo_name = "");
-
-conduit::Node cell_location(const conduit::Node &domain,
+conduit::Node vert_location(const conduit::Node &domain,
                             const int &index,
                             const std::string topo_name = "");
+
+conduit::Node element_location(const conduit::Node &domain,
+                               const int &index,
+                               const std::string topo_name = "");
 
 conduit::Node field_max(const conduit::Node &dataset,
                         const std::string &field_name);
