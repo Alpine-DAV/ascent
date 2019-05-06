@@ -202,8 +202,8 @@ void logical_index_3d(int *idx, const int vert_index, const int *dims)
 }
 
 void get_element_indices(const conduit::Node &n_topo,
-                      const int index,
-                      std::vector<int> &indices)
+                         const int index,
+                         std::vector<int> &indices)
 {
 
   const std::string mesh_type = n_topo["type"].as_string();
