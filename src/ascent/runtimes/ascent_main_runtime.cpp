@@ -70,6 +70,7 @@
 
 #include <flow.hpp>
 #include <ascent_runtime_filters.hpp>
+#include <ascent_expression_eval.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkh/vtkh.hpp>
@@ -222,6 +223,8 @@ AscentRuntime::Initialize(const conduit::Node &options)
     flow::filters::register_builtin();
     // filters for ascent flow runtime.
     runtime::filters::register_builtin();
+    // filters for expression evaluation
+    runtime::expressions::register_builtin();
 
     if(options.has_path("web/stream") &&
        options["web/stream"].as_string() == "true" &&
@@ -689,6 +692,41 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
 
 }
 //-----------------------------------------------------------------------------
+void
+AscentRuntime::ConvertTriggerToFlow(const conduit::Node &trigger,
+                                    const std::string trigger_name)
+{
+  std::string filter_name;
+
+  conduit::Node params;
+  if(trigger.has_path("params")) params = trigger["params"];
+
+  w.graph().add_filter("basic_trigger",
+                       trigger_name,
+                       params);
+
+  // this is the blueprint mesh
+  m_connections[trigger_name] = "source";
+
+}
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
+                                  const std::string query_name)
+{
+  std::string filter_name;
+
+  conduit::Node params;
+  if(query.has_path("params")) params = query["params"];
+
+  w.graph().add_filter("basic_query",
+                       query_name,
+                       params);
+
+  // this is the blueprint mesh
+  m_connections[query_name] = "source";
+
+}
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
@@ -770,6 +808,31 @@ AscentRuntime::CreateExtracts(const conduit::Node &extracts)
   }
 }
 
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::CreateTriggers(const conduit::Node &triggers)
+{
+  std::vector<std::string> names = triggers.child_names();
+  for(int i = 0; i < triggers.number_of_children(); ++i)
+  {
+    conduit::Node trigger = triggers.child(i);
+    ConvertTriggerToFlow(trigger, names[i]);
+  }
+}
+
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::CreateQueries(const conduit::Node &queries)
+{
+  std::vector<std::string> names = queries.child_names();
+  for(int i = 0; i < queries.number_of_children(); ++i)
+  {
+    conduit::Node query = queries.child(i);
+    ConvertQueryToFlow(query, names[i]);
+  }
+}
+
+//-----------------------------------------------------------------------------
 void
 AscentRuntime::PopulateMetadata()
 {
@@ -794,7 +857,7 @@ AscentRuntime::PopulateMetadata()
   if(!w.registry().has_entry("metadata"))
   {
     conduit::Node *meta = new conduit::Node();
-    w.registry().add<Node>("metadata", meta,1);
+    w.registry().add<conduit::Node>("metadata", meta,1);
   }
 
   Node *meta = w.registry().fetch<Node>("metadata");
@@ -1154,6 +1217,17 @@ AscentRuntime::Execute(const conduit::Node &actions)
     ResetInfo();
     // make sure we always have our source data
     ConnectSource();
+
+    // exection will be enforced in the following order:
+    conduit::Node queries;
+    conduit::Node triggers;
+    conduit::Node pipelines;
+    conduit::Node scenes;
+    conduit::Node extracts;
+
+    bool do_execute = false;
+    bool do_reset= false;
+
     // Loop over the actions
     for (int i = 0; i < actions.number_of_children(); ++i)
     {
@@ -1164,79 +1238,151 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
           if(action.has_path("pipelines"))
           {
-            CreatePipelines(action["pipelines"]);
+            pipelines.append() = action["pipelines"];
           }
           else
           {
             ASCENT_ERROR("action 'add_pipelines' missing child 'pipelines'");
           }
         }
-
-        if(action_name == "add_scenes")
+        else if(action_name == "add_scenes")
         {
           if(action.has_path("scenes"))
           {
-            CreateScenes(action["scenes"]);
+            scenes.append() = action["scenes"];
           }
           else
           {
             ASCENT_ERROR("action 'add_scenes' missing child 'scenes'");
           }
         }
-
-        if(action_name == "add_extracts")
+        else if(action_name == "add_extracts")
         {
           if(action.has_path("extracts"))
           {
-            CreateExtracts(action["extracts"]);
+            extracts.append() = action["extracts"];
           }
           else
           {
             ASCENT_ERROR("action 'add_extracts' missing child 'extracts'");
           }
         }
-
+        else if(action_name == "add_triggers")
+        {
+          if(action.has_path("triggers"))
+          {
+            triggers.append() = action["triggers"];
+          }
+          else
+          {
+            ASCENT_ERROR("action 'add_triggers' missing child 'triggers'");
+          }
+        }
+        else if(action_name == "add_queries")
+        {
+          if(action.has_path("queries"))
+          {
+            queries.append() = action["queries"];
+          }
+          else
+          {
+            ASCENT_ERROR("action 'add_queries' missing child 'queries'");
+          }
+        }
         else if( action_name == "execute")
         {
-          ConnectGraphs();
-          PopulateMetadata(); // add metadata so filters can access it
-          w.info(m_info["flow_graph"]);
-          //w.print();
-          //std::cout<<w.graph().to_dot();
-
-#if defined(ASCENT_VTKM_ENABLED)
-          // we have vtkm enabled so catch any errors that
-          // come up here and forward them up as a conduit
-          // error
-          try
-          {
-            w.execute();
-          }
-          catch(vtkh::Error &e)
-          {
-            ASCENT_ERROR("Execution failed with: "<<e.what());
-          }
-#else
-          w.execute();
-#endif
-
-          Node msg;
-          this->Info(msg["info"]);
-          ascent::about(msg["about"]);
-          m_web_interface.PushMessage(msg);
-
-          Node renders;
-          FindRenders(renders);
-          m_info["images"] = renders;
-
-          m_web_interface.PushRenders(renders);
-
-          w.registry().reset();
+          do_execute = true;
         }
         else if( action_name == "reset")
         {
-          w.reset();
+          do_reset = true;
         }
+        else
+        {
+            ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
+        }
+
+    }
+
+    // we are enforcing the order of exectution
+    for(int i = 0; i < queries.number_of_children(); ++i)
+    {
+      CreateQueries(queries.child(i));
+    }
+    for(int i = 0; i < triggers.number_of_children(); ++i)
+    {
+      CreateTriggers(triggers.child(i));
+    }
+    for(int i = 0; i < pipelines.number_of_children(); ++i)
+    {
+      CreatePipelines(pipelines.child(i));
+    }
+    for(int i = 0; i < scenes.number_of_children(); ++i)
+    {
+      CreateScenes(scenes.child(i));
+    }
+    for(int i = 0; i < extracts.number_of_children(); ++i)
+    {
+      CreateExtracts(extracts.child(i));
+    }
+
+    if(do_execute)
+    {
+
+      ConnectGraphs();
+      PopulateMetadata(); // add metadata so filters can access it
+      w.info(m_info["flow_graph"]);
+      //w.print();
+      //std::cout<<w.graph().to_dot();
+
+      // catch any errors that come up here and forward
+      // them up as a conduit error
+      try
+      {
+        w.execute();
+      }
+#if defined(ASCENT_VTKM_ENABLED)
+      catch(vtkh::Error &e)
+      {
+        ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
+      }
+#endif
+      catch(conduit::Error &e)
+      {
+        throw e;
+      }
+      catch(std::exception &e)
+      {
+        ASCENT_ERROR("Execution failed with: "<<e.what());
+      }
+
+      Node msg;
+      this->Info(msg["info"]);
+      ascent::about(msg["about"]);
+      m_web_interface.PushMessage(msg);
+
+      Node renders;
+      FindRenders(renders);
+      m_info["images"] = renders;
+
+      const conduit::Node &expression_cache =
+        runtime::expressions::ExpressionEval::get_cache();
+
+      if(expression_cache.number_of_children() > 0)
+      {
+        m_info["expressions"] = expression_cache;
+      }
+
+      m_web_interface.PushRenders(renders);
+
+      w.registry().reset();
+    }
+
+    if(do_reset)
+    {
+      // resets the entire workspace meaning all filters
+      // in the graph are cleared
+      w.reset();
     }
 }
 
