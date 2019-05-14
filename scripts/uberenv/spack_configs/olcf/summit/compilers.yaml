@@ -16,7 +16,8 @@ compilers:
     environment: {}
     extra_rpaths: []
     flags: {}
-    modules: []
+    modules:
+    - gcc/5.4.0 
     operating_system: rhel7
     paths:
       cc:  /sw/summit/gcc/5.4.0/bin/gcc 

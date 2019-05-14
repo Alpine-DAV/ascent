@@ -93,6 +93,7 @@ endif()
 ################################
 # don't use BLT's all warnings feature
 set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
+set (CUDA_SEPARABLE_COMPILATION ON CACHE BOOL "" )
 
 ################################
 # Init BLT

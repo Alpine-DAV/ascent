@@ -16,6 +16,7 @@
 # -------------------------------------------------------------------------
 packages:
   all:
+    variants: cuda_arch=70
     compiler: [gcc, intel, pgi, clang, xl, nag]
     providers:
       awk: [gawk]

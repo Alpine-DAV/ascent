@@ -65,8 +65,15 @@ class Vtkm(CMakePackage, CudaPackage):
                 options.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(env["SPACK_CXX"]))
                 if 'cuda_arch' in spec.variants:
                     cuda_arch = spec.variants['cuda_arch'].value
+                    vtkm_cuda_arch = "native" 
+                    arch_map = {75:"turing", 70:"volta", 
+                                62:"pascal", 61:"pascal", 60:"pascal", 
+                                53:"maxwell", 52:"maxwell", 50:"maxwell", 
+                                35:"kepler", 32:"kepler", 30:"kepler"}
+                    if cuda_arch in arch_map:
+                      vtkm_cuda_arch = arch_map[cuda_arch]
                     options.append(
-                        '-DVTKm_CUDA_Architecture={0}'.format(cuda_arch[0]))
+                        '-DVTKm_CUDA_Architecture={0}'.format(vtkm_cuda_arch))
                 else:
                     # this fix is necessary if compiling platform has cuda, but
                     # no devices (this's common for front end nodes on hpc clus
