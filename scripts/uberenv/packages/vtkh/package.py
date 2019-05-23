@@ -85,8 +85,6 @@ class Vtkh(Package):
     depends_on("vtkm@ascent_ver+cuda~tbb~openmp~shared", when="@ascent_ver+cuda~openmp~shared")
 
 
-    patch('vtkm_lagrange_cuda_fix.patch')
-
     def install(self, spec, prefix):
         with working_dir('spack-build', create=True):
             cmake_args = ["../src",
@@ -123,7 +121,19 @@ class Vtkh(Package):
                 # this fix is necessary if compiling platform has cuda, but
                 # no devices (this common for front end nodes on hpc clusters)
                 # we choose kepler as a lowest common denominator
-                cmake_args.append("-DVTKm_CUDA_Architecture=kepler")
+                cmake_args.append("-DVTKm_ENABLE_CUDA:BOOL=ON")
+                cmake_args.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(env["SPACK_CXX"]))
+                if 'cuda_arch' in spec.variants:
+                    cuda_arch = spec.variants['cuda_arch'].value
+                    vtkm_cuda_arch = "native" 
+                    arch_map = {75:"turing", 70:"volta", 
+                                62:"pascal", 61:"pascal", 60:"pascal", 
+                                53:"maxwell", 52:"maxwell", 50:"maxwell", 
+                                35:"kepler", 32:"kepler", 30:"kepler"}
+                    if cuda_arch in arch_map:
+                      vtkm_cuda_arch = arch_map[cuda_arch]
+                    cmake_args.append(
+                        '-DVTKm_CUDA_Architecture={0}'.format(vtkm_cuda_arch))
 
             # use release, instead of release with debug symbols b/c vtkh libs
             # can overwhelm compilers with too many symbols
