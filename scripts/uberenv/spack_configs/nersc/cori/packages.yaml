@@ -24,7 +24,7 @@
 
 packages:
   all:
-    compiler: [gcc@5.3.0, intel@18.0.1.163]
+    compiler: [gcc@7.3.0, intel@18.0.1.163]
     modules: {}
     paths: {}
     providers:
