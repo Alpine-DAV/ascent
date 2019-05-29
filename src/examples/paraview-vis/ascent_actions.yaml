@@ -1,0 +1,12 @@
+
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      type: "python"
+      params: 
+        file: "paraview-vis.py"
+- 
+  action: "execute"
+- 
+  action: "reset"
