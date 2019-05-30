@@ -31,17 +31,25 @@ packages:
     providers:
       mpi:
       - mvapich2
-      blas:
-      - intel-mkl
-      lapack:
-      - intel-mkl
+      blas: [openblas]
+      lapack: [openblas]
   mvapich2:
     buildable: false
     paths:
         mvapich2: /opt/intel/compilers_and_libraries_2017.4.196/linux/mpi/intel64/
-  intel-mkl:
-    buildable: false
-    modules:
-        intel-mkl: mkl
   conduit:
     version: [master]
+  perl:
+      buildable: False
+      paths:
+          perl: /usr
+  python:
+      variants: ~dbm
+  cmake:
+      version: [3.9.6]
+      variants: ~ncurses~openssl
+  pkg-config:
+      buildable: False
+      paths:
+          pkg-config: /usr
+
