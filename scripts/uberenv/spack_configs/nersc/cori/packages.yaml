@@ -29,8 +29,8 @@ packages:
     paths: {}
     providers:
       mpi: [mpich]
-      blas: [intel-mkl, openblas]
-      lapack: [intel-mkl, openblas]
+      blas: [openblas]
+      lapack: [openblas]
     variants: +mpi 
   mpich:
     version: [7.7.0]
@@ -60,8 +60,6 @@ packages:
       variants: ~ncurses~openssl
   python:
       variants: ~dbm
-  py-numpy:
-      variants: ~blas~lapack
   pkg-config:
       buildable: False
       paths:
