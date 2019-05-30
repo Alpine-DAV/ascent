@@ -13,7 +13,8 @@ compilers:
     spec: gcc@7.1.0
     target: x86_64
 - compiler:
-    extra_rpaths: []
+    extra_rpaths:
+     - /opt/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin
     flags: {}
     modules:
      - intel/18.0.2
