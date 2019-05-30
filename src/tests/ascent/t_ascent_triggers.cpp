@@ -265,14 +265,17 @@ TEST(ascent_triggers, trigger_extract)
     string output_path = prepare_output_dir();
     string trigger_file = conduit::utils::join_file_path(output_path,"trigger_extract_actions");
     string output_file = conduit::utils::join_file_path(output_path,"tout_trigger_extract");
+    string output_root_file = output_file + ".cycle_000100.root";
+    
     // remove old files
     if(conduit::utils::is_file(trigger_file))
     {
       conduit::utils::remove_file(trigger_file);
     }
-    if(conduit::utils::is_file(output_file))
+    
+    if(conduit::utils::is_file(output_root_file))
     {
-      conduit::utils::remove_file(output_file);
+      conduit::utils::remove_file(output_root_file);
     }
 
     //
@@ -325,7 +328,7 @@ TEST(ascent_triggers, trigger_extract)
     ascent.close();
 
     // check that we created an image from the trigger
-    EXPECT_TRUE(conduit::utils::is_file(output_file + ".root"));
+    EXPECT_TRUE(conduit::utils::is_file(output_root_file));
 }
 
 
