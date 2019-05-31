@@ -173,13 +173,12 @@ BlueprintVerify::execute()
                                        *n_input,
                                        v_info))
         {
-            n_input->print();
+            n_input->schema().print();
             v_info.print();
             ASCENT_ERROR("blueprint verify failed for protocol"
                           << protocol << std::endl
                           << "details:" << std::endl
-                          << v_info["message"].as_string());
-                          //<< v_info.to_json());
+                          << v_info.to_json());
         }
         else
         {
