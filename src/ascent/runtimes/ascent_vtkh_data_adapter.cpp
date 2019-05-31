@@ -132,7 +132,7 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     bool is_interleaved = blueprint::mcarray::is_interleaved(n_coords["values"]);
 
     ndims = 2;
-
+    
     // n_coords_conv holds contig data if we have stride-ed but
     // non-interleaved values
     Node n_coords_conv;
@@ -281,7 +281,18 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   int num_vals = node.dtype().number_of_elements();
 
 
-  const T *values_ptr = node.value();
+  const T *values_ptr = NULL;
+
+  Node vals_conv;
+  if(node.is_compact())
+  {
+      values_ptr = node.value();
+  }
+  else
+  {
+      node.compact_to(vals_conv);
+      values_ptr = vals_conv.value();
+  }
 
   vtkm::cont::Field field;
   if(assoc_str == "vertex")
