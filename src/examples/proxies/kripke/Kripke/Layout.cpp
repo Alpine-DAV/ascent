@@ -336,4 +336,7 @@ Layout *createLayout(Input_Variables *input_vars){
   }
   printf("Unknown Layout patter\n");
   MPI_Abort(MPI_COMM_WORLD, 1);
+
+  // CYRUSH: Added in Ascent ver to address -Wreturn-type
+  return NULL;
 }

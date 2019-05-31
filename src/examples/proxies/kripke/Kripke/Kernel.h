@@ -18,6 +18,8 @@ struct Subdomain;
  */
 class Kernel {
   public:
+    // CYRUSH: Added in Ascent ver to address -Wdelete-non-virtual-dtor
+    virtual ~Kernel();
     virtual Nesting_Order nestingPsi(void) const = 0;
     virtual Nesting_Order nestingPhi(void) const = 0;
     virtual Nesting_Order nestingSigt(void) const = 0;
