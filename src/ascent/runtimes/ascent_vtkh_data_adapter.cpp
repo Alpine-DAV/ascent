@@ -280,19 +280,7 @@ vtkm::cont::Field GetField(const conduit::Node &node,
 
   int num_vals = node.dtype().number_of_elements();
 
-
-  const T *values_ptr = NULL;
-
-  Node vals_conv;
-  if(node.is_compact())
-  {
-      values_ptr = node.value();
-  }
-  else
-  {
-      node.compact_to(vals_conv);
-      values_ptr = vals_conv.value();
-  }
+  const T *values_ptr = values_ptr = node.value();
 
   vtkm::cont::Field field;
   if(assoc_str == "vertex")
@@ -380,6 +368,8 @@ void ExtractVector(vtkm::cont::DataSet *dset,
                    const std::string topo_name,
                    bool zero_copy)
 {
+  // TODO: Do we need to fix this for striding?
+  // GetField<T> expects compact
 
   std::string u_name = field_name + "_" + "x";
   dset->AddField(detail::GetField<T>(u, u_name, assoc_str, topo_name, zero_copy));
