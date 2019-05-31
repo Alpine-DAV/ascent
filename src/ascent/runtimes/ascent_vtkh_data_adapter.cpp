@@ -133,14 +133,50 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
 
     ndims = 2;
 
-    const T* x_coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
-    const T* y_coords_ptr = GetNodePointer<T>(n_coords["values/y"]);
+    // n_coords_conv holds contig data if we have stride-ed but
+    // non-interleaved values
+    Node n_coords_conv;
+
+    const T* x_coords_ptr = NULL;
+    const T* y_coords_ptr = NULL;
     const T *z_coords_ptr = NULL;
+
+    // if we are an interleaved mcarray, or compact we can 
+    // directly use the pointer with vtk-m.
+    // otherwise, we need to compact.
+
+    if(is_interleaved || n_coords["values/x"].is_compact())
+    {
+        x_coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
+    }
+    else
+    {
+        n_coords["values/x"].compact_to(n_coords_conv["x"]);
+        x_coords_ptr = GetNodePointer<T>(n_coords_conv["x"]);
+    }
+
+    if(is_interleaved || n_coords["values/y"].is_compact())
+    {
+        y_coords_ptr = GetNodePointer<T>(n_coords["values/y"]);
+    }
+    else
+    {
+        n_coords["values/y"].compact_to(n_coords_conv["y"]);
+        y_coords_ptr = GetNodePointer<T>(n_coords_conv["y"]);
+    }
 
     if(n_coords.has_path("values/z"))
     {
         ndims = 3;
-        z_coords_ptr = GetNodePointer<T>(n_coords["values/z"]);
+        if(is_interleaved || n_coords["values/z"].is_compact())
+        {
+            z_coords_ptr = GetNodePointer<T>(n_coords["values/z"]);
+        }
+        else
+        {
+            n_coords["values/z"].compact_to(n_coords_conv["z"]);
+            z_coords_ptr = GetNodePointer<T>(n_coords_conv["z"]);
+        }
     }
 
     if(!is_interleaved)
@@ -175,10 +211,9 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
       const T* coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
       vtkm::cont::ArrayHandle<vtkm::Vec<T, 3>> coords;
       // we cannot zero copy 2D interleaved arrays into vtkm
-      if(ndims == 3 || true) // TODO: need way to detect 3d interleaved compendents that has
+      if(ndims == 3 || true) // TODO: need way to detect 3d interleaved components that has
                              //       only has xy in conduit
       {
-
         detail::CopyArray(coords, (vtkm::Vec<T,3>*)coords_ptr, nverts, zero_copy);
       }
       else
