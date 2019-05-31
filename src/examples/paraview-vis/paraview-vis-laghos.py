@@ -1,7 +1,7 @@
 import sys
 # CHANGE this path to the result of:
 # $(spack location --install-dir paraview)
-paraview_path = "/home/danlipsa/projects/ascent/build/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/paraview-master-dn6y4ofccm4eg3wya6u5uvgz6x6aar5w"
+paraview_path = "/home/danlipsa/projects/ascent_new/build/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.4.0/paraview-master-e6ji62w2jt47cj446twsnndkkxgncz6x"
 paraview_path = paraview_path + "/lib/python2.7/site-packages"
 sys.path.append(paraview_path)
 
@@ -62,18 +62,18 @@ writer.UpdatePipeline()
 
 
 # # VTK API
-# from ascent_to_vtk import AscentSource, write_data
+# from ascent_to_vtk import AscentSource, write_vtk
 # ascentSource = AscentSource()
 # ascentSource.Update()
-# write_data("vtkdata-main", ascentSource.GetNode(),
+# write_vtk("vtkdata-main", ascentSource.GetNode(),
 #            ascentSource.GetOutputDataObject(0))
 
 
 # # Python API
-# from ascent_to_vtk import ascent_to_vtk, write_data, write_json
+# from ascent_to_vtk import ascent_to_vtk, write_vtk, write_json
 # node = ascent_data().child(0)
-# write_json(node)
+# write_json("blueprint", node)
 # data = ascent_to_vtk(node, "main")
-# write_data("pythondata-main", node, data)
+# write_vtk("pythondata-main", node, data)
 # data = ascent_to_vtk(node, "boundary")
-# write_data("pythondata-boundary", node, data)
+# write_vtk("pythondata-boundary", node, data)

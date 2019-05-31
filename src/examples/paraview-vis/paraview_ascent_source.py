@@ -16,6 +16,9 @@ from vtkmodules.vtkParallelCore import vtkMultiProcessController
 # needed for paraview decorators
 from paraview.util.vtkAlgorithm import smproxy, smproperty
 import ascent_extract
+# for hdf5
+import conduit
+import conduit.relay.io
 
 # keeps around a reference to python arrays passed to VTK so that
 # they don't get deleted
@@ -24,16 +27,25 @@ _keep_around = []
 
 def read_fields(node, topology, data):
     '''
-    Read fields form Ascent 'node' into VTK 'data'
+    Read fields form Ascent 'node' into VTK 'data' a vtkDataSet
+    already created.
     '''
     global _keep_around
     for fieldIt in node["fields"].children():
+        ghostField = False
+        fieldName = fieldIt.name()
+        if (fieldName == "ascent_ghosts"):
+            ghostField = True
         field = fieldIt.node()
         if (field["topology"] != topology):
             continue
         values = field["values"]
         va = None
         if type(values) is np.ndarray:
+            if (ghostField):
+                # The values stored in ascent_ghosts match what VTK expects:
+                # (0 real cell, 1 = vtkDataSetAttribute::DUPLICATEPOINT ghost cell)
+                values = values.astype(np.uint8)
             va = numpy_support.numpy_to_vtk(values)
         else:
             # structure of arrays
@@ -43,7 +55,10 @@ def read_fields(node, topology, data):
             vn = np.stack(components, axis=1)
             _keep_around.append(vn)
             va = numpy_support.numpy_to_vtk(vn)
-        va.SetName(fieldIt.name())
+        if (ghostField):
+            va.SetName("vtkGhostType")
+        else:
+            va.SetName(fieldName)
         if field["association"] == "element":
             data.GetCellData().AddArray(va)
         elif field["association"] == "vertex":
@@ -169,10 +184,9 @@ def ascent_to_vtk(node, topology=None, extent=None):
     read_fields(node, topology, data)
     return data
 
-
-def write_json(node, prefix="blueprint"):
+def get_filenoext(prefix, node):
     '''
-    Write the Ascent node object into a json file
+    Returns the prefix followed by domain_id and cycle.
     '''
     # MPI domain
     domain_id = node["state/domain_id"]
@@ -180,11 +194,26 @@ def write_json(node, prefix="blueprint"):
     cycle = node["state/cycle"]
     fileNoExt = (prefix + "_" + str(domain_id) +
                  "_{0:04d}").format(int(cycle))
+    return fileNoExt
+
+
+def write_hdf(prefix, node):
+    '''
+    Write the Ascent node object into a hdf5 file
+    '''
+    fileNoExt = get_filenoext(prefix, node)
+    conduit.relay.io.save(node, fileNoExt + ".hdf5")
+
+def write_json(prefix, node):
+    '''
+    Write the Ascent node object into a json file
+    '''
+    fileNoExt = get_filenoext(prefix, node)
     with open(fileNoExt + ".json", "w") as f:
         f.write("{}".format(node))
 
 
-def write_data(prefix, node, data):
+def write_vtk(prefix, node, data):
     '''
     Write the VTK data (read from an Ascent node object) to disk.
     Note that data is not written to a parallel file, each node writes its
