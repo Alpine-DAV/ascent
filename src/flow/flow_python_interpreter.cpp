@@ -61,6 +61,128 @@
 
 using namespace std;
 
+
+
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#endif
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Begin Functions to help with Python 2/3 Compatibility.
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+#if defined(IS_PY3K)
+
+//-----------------------------------------------------------------------------
+int
+PyString_Check(PyObject *o)
+{
+    return PyUnicode_Check(o);
+}
+
+
+//-----------------------------------------------------------------------------
+char *
+PyString_AsString(PyObject *py_obj)
+{
+    char *res = NULL;
+    if(PyUnicode_Check(py_obj))
+    {
+        PyObject * temp_bytes = PyUnicode_AsEncodedString(py_obj,
+                                                          "ASCII",
+                                                          "strict"); // Owned reference
+        if(temp_bytes != NULL)
+        {
+            res = strdup(PyBytes_AS_STRING(temp_bytes));
+            Py_DECREF(temp_bytes);
+        }
+        else
+        {
+            // TODO: Error
+        }
+    }
+    else if(PyBytes_Check(py_obj))
+    {
+        res = strdup(PyBytes_AS_STRING(py_obj));
+    }
+    else
+    {
+        // TODO: ERROR or auto convert?
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+PyObject *
+PyString_FromString(const char *s)
+{
+    return PyUnicode_FromString(s);
+}
+
+//-----------------------------------------------------------------------------
+void
+PyString_AsString_Cleanup(char *bytes)
+{
+    free(bytes);
+}
+
+//-----------------------------------------------------------------------------
+int
+PyInt_Check(PyObject *o)
+{
+    return PyLong_Check(o);
+}
+
+//-----------------------------------------------------------------------------
+long
+PyInt_AsLong(PyObject *o)
+{
+    return PyLong_AsLong(o);
+}
+
+//-----------------------------------------------------------------------------
+long
+PyInt_AS_LONG(PyObject *o)
+{
+    return PyLong_AS_LONG(o);
+}
+
+//-----------------------------------------------------------------------------
+PyObject *
+PyNumber_Int(PyObject *o)
+{
+    return PyNumber_Long(o);
+}
+
+
+#else // python 2.6+
+
+//-----------------------------------------------------------------------------
+#define PyString_AsString_Cleanup(c) { /* noop */ }
+
+#endif
+
+// helper for both python 2 and 3
+//-----------------------------------------------------------------------------
+void
+PyString_To_CPP_String(PyObject *py_obj, std::string &res)
+{
+    
+    char *str = PyString_AsString(py_obj);
+    res = str;
+    PyString_AsString_Cleanup(str);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// End Functions to help with Python 2/3 Compatibility.
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+
 //-----------------------------------------------------------------------------
 // -- begin flow:: --
 //-----------------------------------------------------------------------------
@@ -99,6 +221,54 @@ PythonInterpreter::~PythonInterpreter()
 {
     // Shutdown the interpreter if running.
     shutdown();
+ }
+
+
+//-----------------------------------------------------------------------------
+///
+/// PythonInterpreter::set_program_name
+///
+//-----------------------------------------------------------------------------
+void
+PythonInterpreter::set_program_name(const char *prog_name)
+{
+#ifdef IS_PY3K
+    wchar_t *w_prog_name = Py_DecodeLocale(prog_name, NULL);
+    Py_SetProgramName(w_prog_name);
+    PyMem_RawFree(w_prog_name);
+#else
+    Py_SetProgramName(const_cast<char*>(prog_name));
+#endif
+}
+
+
+//-----------------------------------------------------------------------------
+///
+/// PythonInterpreter::set_argv
+///
+//-----------------------------------------------------------------------------
+void
+PythonInterpreter::set_argv(int argc, char **argv)
+{
+#ifdef IS_PY3K
+    // alloc ptrs for encoded ver
+    std::vector<wchar_t*> wargv(argc);
+    
+    for(int i = 0; i < argc; i++)
+    {
+        wargv[i] = Py_DecodeLocale(argv[i], NULL);
+    }
+    
+    PySys_SetArgv(argc,&wargv[0]);
+    
+    for(int i = 0; i < argc; i++)
+    {
+        PyMem_RawFree(wargv[i]);
+    }
+
+#else
+    PySys_SetArgv(argc, argv);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -124,15 +294,15 @@ PythonInterpreter::initialize(int argc, char **argv)
     else
     {
         // set prog name
-        char *prog_name = (char*)"flow_embedded_py";
+        const char *prog_name = "flow_embedded_py";
 
         if(argc == 0 || argv == NULL)
-        {
-            Py_SetProgramName(prog_name);
+        { 
+            set_program_name(prog_name);
         }
         else
-        {
-            Py_SetProgramName(argv[0]);
+        {   
+            set_program_name(argv[0]);
         }
 
         // Init Python
@@ -143,11 +313,11 @@ PythonInterpreter::initialize(int argc, char **argv)
 
         if(argc == 0 || argv == NULL)
         {
-            PySys_SetArgv(1, &prog_name);
+            set_argv(1, const_cast<char**>(&prog_name));
         }
         else
         {
-            PySys_SetArgv(argc, argv);
+            set_argv(argc, argv);
         }
 
         // make sure we know we need to cleanup the interp
@@ -158,7 +328,7 @@ PythonInterpreter::initialize(int argc, char **argv)
     // inited
 
     // setup up __main__ and capture StdErr
-    PyRun_SimpleString("import os,sys,traceback,StringIO\n");
+    PyRun_SimpleString("import os,sys\n");
     if(check_error())
         return false;
 
@@ -170,14 +340,46 @@ PythonInterpreter::initialize(int argc, char **argv)
 
     // get ref to traceback.print_exception method
     m_py_trace_module = PyImport_AddModule("traceback");
+    
+    if(m_py_trace_module == NULL)
+    {
+        CONDUIT_INFO("PythonInterpreter failed to import `traceback` module");
+        return false;
+    }
+    
     PyObject *py_trace_dict = PyModule_GetDict(m_py_trace_module);
     m_py_trace_print_exception_func = PyDict_GetItemString(py_trace_dict,
                                                            "print_exception");
     // get ref to StringIO.StringIO class
-    m_py_sio_module   = PyImport_AddModule("StringIO");
+
+#ifdef IS_PY3K
+    const char *sio_module_name = "io";
+#else
+    const char *sio_module_name = "StringIO";
+#endif
+
+    m_py_sio_module   = PyImport_AddModule(sio_module_name);
+    
+    if(m_py_trace_module == NULL)
+    {
+        CONDUIT_INFO("PythonInterpreter failed to import "
+                     << "`"
+                     << sio_module_name
+                     << "` module");
+        return false;
+    }
+    
     PyObject *py_sio_dict= PyModule_GetDict(m_py_sio_module);
+    // input the class
     m_py_sio_class = PyDict_GetItemString(py_sio_dict,"StringIO");
 
+
+    if(m_py_sio_class == NULL)
+    {
+        CONDUIT_INFO("PythonInterpreter failed access StringIO class");
+        return false;
+    }
+    
     m_running = true;
 
     return true;
@@ -499,6 +701,7 @@ PythonInterpreter::PyObject_to_int(PyObject *py_obj, int &res)
         return false;
 
     PyObject *py_val = PyNumber_Int(py_obj);
+
     if(py_val == NULL)
         return false;
     res = (int) PyInt_AS_LONG(py_val);
@@ -520,7 +723,7 @@ PythonInterpreter::PyObject_to_string(PyObject *py_obj, std::string &res)
     if(py_obj_str == NULL)
         return false;
 
-    res = PyString_AS_STRING(py_obj_str);
+    PyString_To_CPP_String(py_obj_str,res);
     Py_DECREF(py_obj_str);
     return true;
 }
@@ -577,7 +780,7 @@ PythonInterpreter::PyTraceback_to_string(PyObject *py_etype,
     }
 
     // convert python string object to std::string
-    res = PyString_AS_STRING(py_str);
+    PyString_To_CPP_String(py_str,res);
 
     Py_DECREF(py_buffer);
     Py_DECREF(py_res);
