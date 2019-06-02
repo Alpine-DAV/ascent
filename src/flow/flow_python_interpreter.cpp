@@ -351,6 +351,11 @@ PythonInterpreter::initialize(int argc, char **argv)
 
     // get objects that help us print exceptions
 
+
+    PyRun_SimpleString("import traceback\n");
+    if(check_error())
+        return false;
+
     // get ref to traceback.print_exception method
     m_py_trace_module = PyImport_AddModule("traceback");
 
@@ -381,6 +386,9 @@ PythonInterpreter::initialize(int argc, char **argv)
 
 #ifdef IS_PY3K
     const char *sio_module_name = "io";
+    PyRun_SimpleString("import io\n");
+    if(check_error())
+        return false;
 #else
     const char *sio_module_name = "StringIO";
     PyRun_SimpleString("import StringIO\n");
