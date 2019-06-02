@@ -131,6 +131,10 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     int nverts = n_coords["values/x"].dtype().number_of_elements();
     bool is_interleaved = blueprint::mcarray::is_interleaved(n_coords["values"]);
 
+    // some interleaved cases aren't working
+    // disabling this path until we find out what is going wrong.
+    is_interleaved = false;
+
     ndims = 2;
     
     // n_coords_conv holds contig data if we have stride-ed but
@@ -153,6 +157,8 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     {
         n_coords["values/x"].compact_to(n_coords_conv["x"]);
         x_coords_ptr = GetNodePointer<T>(n_coords_conv["x"]);
+        // since we had to copy and compact the data, we can't zero copy
+        zero_copy = false;
     }
 
     if(is_interleaved || n_coords["values/y"].is_compact())
@@ -163,6 +169,8 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     {
         n_coords["values/y"].compact_to(n_coords_conv["y"]);
         y_coords_ptr = GetNodePointer<T>(n_coords_conv["y"]);
+        // since we had to copy and compact the data, we can't zero copy
+        zero_copy = false;
     }
 
     if(n_coords.has_path("values/z"))
@@ -176,6 +184,8 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
         {
             n_coords["values/z"].compact_to(n_coords_conv["z"]);
             z_coords_ptr = GetNodePointer<T>(n_coords_conv["z"]);
+            // since we had to copy and compact the data, we can't zero copy
+            zero_copy = false;
         }
     }
 
@@ -205,7 +215,7 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
                                                                           y_coords_handle,
                                                                           z_coords_handle));
     }
-    else
+    else // NOTE: This case is disabled.
     {
       // we have interleaved coordinates x0,y0,z0,x1,y1,z1...
       const T* coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
@@ -214,6 +224,8 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
       if(ndims == 3 || true) // TODO: need way to detect 3d interleaved components that has
                              //       only has xy in conduit
       {
+        // this case was failing from Nyx + AMReX
+        // still haven't been able to reproduce with a simpler test
         detail::CopyArray(coords, (vtkm::Vec<T,3>*)coords_ptr, nverts, zero_copy);
       }
       else
