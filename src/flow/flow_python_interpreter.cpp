@@ -324,8 +324,8 @@ PythonInterpreter::initialize(int argc, char **argv)
         m_handled_init = true;
     }
 
-    // do to setup b/c we need for c++ connection , even if python was already
-    // inited
+    // do to setup b/c we need for c++ connection,
+    // even if python was already inited
 
     // setup up __main__ and capture StdErr
     PyRun_SimpleString("import os,sys\n");
@@ -334,33 +334,63 @@ PythonInterpreter::initialize(int argc, char **argv)
 
     // all of these PyObject*s are borrowed refs
     m_py_main_module = PyImport_AddModule((char*)"__main__");
+    
+    if(m_py_main_module == NULL)
+    {
+        CONDUIT_INFO("PythonInterpreter failed to import `__main__` module");
+        return false;
+    }
+    
     m_py_global_dict = PyModule_GetDict(m_py_main_module);
+
+    if(m_py_global_dict == NULL)
+    {
+        CONDUIT_INFO("PythonInterpreter failed to access `__main__` dictionary");
+        return false;
+    }
 
     // get objects that help us print exceptions
 
     // get ref to traceback.print_exception method
     m_py_trace_module = PyImport_AddModule("traceback");
-    
+
     if(m_py_trace_module == NULL)
     {
         CONDUIT_INFO("PythonInterpreter failed to import `traceback` module");
         return false;
     }
-    
+
     PyObject *py_trace_dict = PyModule_GetDict(m_py_trace_module);
+
+    if(py_trace_dict == NULL)
+    {
+        CONDUIT_INFO("PythonInterpreter failed to access `traceback` dictionary");
+        return false;
+    }
+    
     m_py_trace_print_exception_func = PyDict_GetItemString(py_trace_dict,
                                                            "print_exception");
-    // get ref to StringIO.StringIO class
+
+    if(m_py_trace_print_exception_func == NULL)
+    {
+        CONDUIT_INFO("PythonInterpreter failed to access `print_exception` function");
+        return false;
+    }
+
+    // get ref to StringIO class
 
 #ifdef IS_PY3K
     const char *sio_module_name = "io";
 #else
     const char *sio_module_name = "StringIO";
+    PyRun_SimpleString("import StringIO\n");
+    if(check_error())
+        return false;
 #endif
 
-    m_py_sio_module   = PyImport_AddModule(sio_module_name);
+    m_py_sio_module = PyImport_ImportModule(sio_module_name);
     
-    if(m_py_trace_module == NULL)
+    if(m_py_sio_module == NULL)
     {
         CONDUIT_INFO("PythonInterpreter failed to import "
                      << "`"
@@ -369,7 +399,16 @@ PythonInterpreter::initialize(int argc, char **argv)
         return false;
     }
     
-    PyObject *py_sio_dict= PyModule_GetDict(m_py_sio_module);
+    PyObject *py_sio_dict = PyModule_GetDict(m_py_sio_module);
+    
+    if(py_sio_dict == NULL)
+    {
+        CONDUIT_INFO("PythonInterpreter failed to access `"
+                     << sio_module_name 
+                     << "` dictionary");
+        return false;
+    }
+
     // input the class
     m_py_sio_class = PyDict_GetItemString(py_sio_dict,"StringIO");
 
@@ -743,6 +782,13 @@ PythonInterpreter::PyTraceback_to_string(PyObject *py_etype,
 {
     if(!py_eval)
         py_eval = Py_None;
+  
+    // we can only print traceback if we have fully
+    // inited the interpreter, since it uses imported helpers
+    if(!m_running)
+    {
+        return false;
+    }
 
     // create a StringIO object "buffer" to print traceback into.
     PyObject *py_args = Py_BuildValue("()");

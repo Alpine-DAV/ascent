@@ -76,6 +76,8 @@ TEST(flow_py_interp_exe, flow_python_interpreter)
     EXPECT_TRUE(py_interp.run_script("a = 42"));
 
     PyObject *py_a = py_interp.get_global_object("a");
+    
+    EXPECT_TRUE(py_a != NULL);
 
     int a_cpp=0;
     EXPECT_TRUE(PythonInterpreter::PyObject_to_int(py_a,a_cpp));
