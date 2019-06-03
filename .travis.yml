@@ -79,6 +79,20 @@ env:
       ENABLE_ADIOS=OFF
       ENABLE_MFEM=ON
       PYTHON_VERSION=3.6.3
+    # python 2, vtk-h on, mfem off
+    - BUILD_SHARED_LIBS=ON
+      ENABLE_VTKH=ON
+      ENABLE_DOCS=ON
+      ENABLE_ADIOS=OFF
+      ENABLE_MFEM=OFF
+      PYTHON_VERSION=2.7.14
+    # python 3, vtk-h on, mfem off
+    - BUILD_SHARED_LIBS=ON
+      ENABLE_VTKH=ON
+      ENABLE_DOCS=ON
+      ENABLE_ADIOS=OFF
+      ENABLE_MFEM=OFF
+      PYTHON_VERSION=3.6.3
 
 addons:
   apt:
@@ -142,15 +156,17 @@ script:
   # clear the cache of conduit, vtkm and vtkh to rebuild critical dependencies
   - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/conduit*; do if [ -d $f ];   then export CLEAN_CONDUIT="TRUE"; fi; done;
   - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/vtkm*; do if [ -d $f ];      then export CLEAN_VTKM="TRUE"; fi; done;
-  - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/py-mpi4py*; do if [ -d $f ]; then export CLEAN_MPI4PY="TRUE"; fi; done;
-  - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/py-numpy*; do if [ -d $f ];  then export CLEAN_NUMPY="TRUE"; fi; done;
-  - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/py-sphinx*; do if [ -d $f ]; then export CLEAN_SPHINX="TRUE"; fi; done;
+  - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/python*; do if [ -d $f ]; then export CLEAN_PYTHON="TRUE"; fi; done;
+  # - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/py-mpi4py*; do if [ -d $f ]; then export CLEAN_MPI4PY="TRUE"; fi; done;
+  # - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/py-numpy*; do if [ -d $f ];  then export CLEAN_NUMPY="TRUE"; fi; done;
+  # - for f in ${CACHE_ROOT}/uberenv_libs/spack/opt/spack/*/*/py-sphinx*; do if [ -d $f ]; then export CLEAN_SPHINX="TRUE"; fi; done;
   - if [ "$CLEAN_CONDUIT"  = "TRUE" ]; then echo "y" | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all conduit; fi;
   - if [ "$CLEAN_VTKM"  = "TRUE" ]; then echo "y"    | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all vtkm; fi;
-  - if [ "$CLEAN_MPI4PY" = "TRUE" ]; then echo "y"   | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-mpi4py; fi;
-  - if [ "$CLEAN_NUMPY" = "TRUE" ]; then echo "y"    | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-numpy; fi;
-  - if [ "$CLEAN_SPHINX" = "TRUE" ]; then echo "y"   | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-sphinx; fi;
-  - python ascent/scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=ascent/scripts/uberenv/spack_configs/travis/
+  - if [ "$CLEAN_PYTHON"  = "TRUE" ]; then echo "y"  | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all python; fi;
+  - #if [ "$CLEAN_MPI4PY" = "TRUE" ]; then echo "y"   | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-mpi4py; fi;
+  - #if [ "$CLEAN_NUMPY" = "TRUE" ]; then echo "y"    | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-numpy; fi;
+  - #if [ "$CLEAN_SPHINX" = "TRUE" ]; then echo "y"   | ${CACHE_ROOT}/uberenv_libs/spack/bin/spack uninstall --all --dependents --all py-sphinx; fi;
+  - python ascent/scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=ascent/scripts/uberenv/spack_configs/travis/ || exit 1
   - cd $TRAVIS_BUILD_DIR
   # create out-of-source build dir
   - mkdir build-debug
