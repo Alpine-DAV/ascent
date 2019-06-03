@@ -71,6 +71,7 @@ env:
       ENABLE_DOCS=OFF
       ENABLE_ADIOS=OFF
       ENABLE_MFEM=OFF
+      PYTHON_VERSION=2.7.14
     # python 3
     - BUILD_SHARED_LIBS=ON
       ENABLE_VTKH=ON
