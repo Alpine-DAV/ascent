@@ -46,7 +46,7 @@
 # file: __init__.py
 # Purpose: Main init for the ascent_mpi module.
 ###############################################################################
-from ascent_mpi import *
+from .ascent_mpi import *
 
 
 
