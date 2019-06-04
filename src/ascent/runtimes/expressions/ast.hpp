@@ -12,8 +12,11 @@ class ASTNode {
 public:
   virtual ~ASTNode() {}
   virtual void access() {}
-  virtual conduit::Node build_graph(flow::Workspace &w) {}
-
+  virtual conduit::Node build_graph(flow::Workspace &w)
+                                     { 
+                                         conduit::Node res;
+                                         return res;
+                                     }
 };
 
 class ASTExpression : public ASTNode {
