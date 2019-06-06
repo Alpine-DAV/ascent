@@ -4,7 +4,64 @@
 # https://aka.ms/yaml
 
 jobs:
-- job: Whatever
+- job: Ubuntu Test Build
+  pool: 
+    vmImage: 'ubuntu-16.04'
+  timeoutInMinutes: 0
+  steps:
+    - checkout: self
+      clean: boolean
+      submodules: recursive
+
+    - script: |
+         export COMPILER_CC=gcc-5
+         export COMPILER_CXX=g++-5
+         export COMPILER_FC=gfortran-5
+         export BUILD_SHARED_LIBS=ON
+         export ROOT_DIR=`pwd`
+         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+         export APT_PKGS=binutils
+         export APT_PKGS="$APT_PKGS gcc-5"
+         export APT_PKGS="$APT_PKGS g++-5"
+         export APT_PKGS="$APT_PKGS gfortran-5"
+         export APT_PKGS="$APT_PKGS openmpi-bin"
+         export APT_PKGS="$APT_PKGS libopenmpi-dev"
+         export APT_PKGS="$APT_PKGS libncurses-dev"
+         export APT_PKGS="$APT_PKGS libssl-dev"
+         export APT_PKGS="$APT_PKGS libblas-dev"
+         export APT_PKGS="$APT_PKGS liblapack-dev"
+         export APT_PKGS="$APT_PKGS zlib1g-dev"
+         export APT_PKGS="$APT_PKGS libgdbm-dev"
+         export APT_PKGS="$APT_PKGS libreadline-dev"
+         export APT_PKGS="$APT_PKGS libsqlite3-dev"
+         export APT_PKGS="$APT_PKGS libbz2-dev"
+         sudo apt-get install $APT_PKGS
+         export CC=${COMPILER_CC}
+         export CXX=${COMPILER_CXX}
+         export FC=${COMPILER_FC}
+         ${CC} --version
+         export SPACK_SPEC="%gcc@5+mpi"
+         echo $SPACK_SPEC
+         python ascent/scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=ascent/scripts/uberenv/spack_configs/travis/
+         export HOST_CONFIG=`ls ${ROOT_DIR}/uberenv_libs/*.cmake
+         echo $HOST_CONFIG
+         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+         export PATH=${CMAKE_BIN_DIR}:$PATH
+         echo $PATH
+         which cmake
+         cmake --version
+         mkdir build-debug
+         cd build-debug
+         export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=Debug"
+         export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+         export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install-debug"
+         cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+         make VERBOSE=1
+         env CTEST_OUTPUT_ON_FAILURE=1 make test
+         make install
+      displayName: 'Main Build and Test'
+# start with just shared build with standard tpls
+- job: Docker Test Build
   pool: 
     vmImage: 'ubuntu-16.04'
   timeoutInMinutes: 0
