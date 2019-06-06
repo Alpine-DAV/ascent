@@ -4,7 +4,7 @@
 # https://aka.ms/yaml
 
 jobs:
-- job: Ubuntu Test Build
+- job: Ubuntu
   pool: 
     vmImage: 'ubuntu-16.04'
   timeoutInMinutes: 0
@@ -61,7 +61,7 @@ jobs:
          make install
       displayName: 'Main Build and Test'
 # start with just shared build with standard tpls
-- job: Docker Test Build
+- job: Docker
   pool: 
     vmImage: 'ubuntu-16.04'
   timeoutInMinutes: 0
