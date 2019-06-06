@@ -19,7 +19,7 @@ jobs:
         BUILD_SHARED_LIBS: ON
         CMAKE_BUILD_TYPE: Debug
         ENABLE_PYTHON: OFF
-        ENABLE_MFEM: OFF
+        ENABLE_VTKH: OFF
         ENABLE_MFEM: OFF
       shared_py27:
         BUILD_SHARED_LIBS: ON
