@@ -4,21 +4,24 @@
 # https://aka.ms/yaml
 
 jobs:
+# Linux build and test, using spack to build tpls
 - job: Ubuntu
   pool: 
     vmImage: 'ubuntu-16.04'
   timeoutInMinutes: 0
+  variables:
+    COMPILER_CC: gcc-5
+    COMPILER_CXX: g++-5
+    COMPILER_FC: gfortran-5
+    BUILD_SHARED_LIBS: ON
+    CMAKE_BUILD_TYPE: Debug
+    PYTHON_VERSION: 2.7.14
   steps:
     - checkout: self
       clean: boolean
       submodules: recursive
 
     - script: |
-         export COMPILER_CC=gcc-5
-         export COMPILER_CXX=g++-5
-         export COMPILER_FC=gfortran-5
-         export BUILD_SHARED_LIBS=ON
-         export ROOT_DIR=`pwd`
          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
          export APT_PKGS=binutils
          export APT_PKGS="$APT_PKGS gcc-5"
@@ -36,31 +39,43 @@ jobs:
          export APT_PKGS="$APT_PKGS libsqlite3-dev"
          export APT_PKGS="$APT_PKGS libbz2-dev"
          sudo apt-get install $APT_PKGS
+      displayName: 'Prepare build env'
+
+    - script: |
+         # echo system python details
+         which python
+         python --version
+         # setup spack spec
+         export SPACK_SPEC="%gcc@5+mpi"
+         export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
+         echo $SPACK_SPEC
+         # run uber to build tpls
+         python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/travis/
+      displayName: 'Spack Build Tpls'
+
+    - script: |
          export CC=${COMPILER_CC}
          export CXX=${COMPILER_CXX}
          export FC=${COMPILER_FC}
          ${CC} --version
-         export SPACK_SPEC="%gcc@5+mpi"
-         echo $SPACK_SPEC
-         python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/travis/
-         export HOST_CONFIG=`ls uberenv_libs/*.cmake
+         export HOST_CONFIG=`ls uberenv_libs/*.cmake`
          echo $HOST_CONFIG
          export CMAKE_BIN_DIR=`ls -d uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
          export PATH=${CMAKE_BIN_DIR}:$PATH
          echo $PATH
          which cmake
          cmake --version
-         mkdir build-debug
-         cd build-debug
-         export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=Debug"
+         mkdir build
+         cd build
+         export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
          export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-         export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install-debug"
+         export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
          cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
          make VERBOSE=1
          env CTEST_OUTPUT_ON_FAILURE=1 make test
          make install
-      displayName: 'Main Build and Test'
-# start with just shared build with standard tpls
+      displayName: 'Build and Test'
+# Docker build and test, that leverages our script that calls Docker Build
 - job: Docker
   pool: 
     vmImage: 'ubuntu-16.04'
