@@ -23,6 +23,7 @@ jobs:
 
     - script: |
          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+         sudo apt-get update
          export APT_PKGS=binutils
          export APT_PKGS="$APT_PKGS gcc-5"
          export APT_PKGS="$APT_PKGS g++-5"
@@ -54,37 +55,46 @@ jobs:
       displayName: 'Spack Build Tpls'
 
     - script: |
+         # setup compiler env vars
          export CC=${COMPILER_CC}
          export CXX=${COMPILER_CXX}
          export FC=${COMPILER_FC}
          ${CC} --version
+         # find spack generated host config file
          export HOST_CONFIG=`ls uberenv_libs/*.cmake`
          echo $HOST_CONFIG
+         # find spack installed cmake
          export CMAKE_BIN_DIR=`ls -d uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
          export PATH=${CMAKE_BIN_DIR}:$PATH
          echo $PATH
          which cmake
          cmake --version
+         # prepare build dir
          mkdir build
          cd build
+         # setup cmake options
          export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
          export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
          export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+         # configure
          cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+         # build
          make VERBOSE=1
+         # test
          env CTEST_OUTPUT_ON_FAILURE=1 make test
+         # install
          make install
       displayName: 'Build and Test'
 # Docker build and test, that leverages our script that calls Docker Build
-- job: Docker
-  pool: 
-    vmImage: 'ubuntu-16.04'
-  timeoutInMinutes: 0
-  steps:
-    - checkout: self
-      clean: boolean
-      submodules: recursive
-
-    - script: |
-        cd src/examples/docker/ubuntu/ && ./example_build.sh
-      displayName: 'Docker Build'
+# - job: Docker
+#   pool:
+#     vmImage: 'ubuntu-16.04'
+#   timeoutInMinutes: 0
+#   steps:
+#     - checkout: self
+#       clean: boolean
+#       submodules: recursive
+#
+#     - script: |
+#         cd src/examples/docker/ubuntu/ && ./example_build.sh
+#       displayName: 'Docker Build'
