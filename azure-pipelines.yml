@@ -42,7 +42,7 @@ jobs:
          ${CC} --version
          export SPACK_SPEC="%gcc@5+mpi"
          echo $SPACK_SPEC
-         python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=ascent/scripts/uberenv/spack_configs/travis/
+         python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/travis/
          export HOST_CONFIG=`ls uberenv_libs/*.cmake
          echo $HOST_CONFIG
          export CMAKE_BIN_DIR=`ls -d uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
