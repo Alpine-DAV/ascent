@@ -60,11 +60,13 @@ jobs:
          export CXX=${COMPILER_CXX}
          export FC=${COMPILER_FC}
          ${CC} --version
+         # capture current path
+         export ROOT_DIR=`pwd`
          # find spack generated host config file
-         export HOST_CONFIG=`ls uberenv_libs/*.cmake`
+         export HOST_CONFIG=`ls ${ROOT_DIR}/uberenv_libs/*.cmake`
          echo $HOST_CONFIG
          # find spack installed cmake
-         export CMAKE_BIN_DIR=`ls -d uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
          export PATH=${CMAKE_BIN_DIR}:$PATH
          echo $PATH
          which cmake
