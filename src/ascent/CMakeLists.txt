@@ -86,11 +86,20 @@ set(ascent_sources
     ascent_runtime.cpp
     runtimes/ascent_main_runtime.cpp
     runtimes/ascent_empty_runtime.cpp
+    runtimes/ascent_expression_eval.cpp
+    runtimes/expressions/ascent_blueprint_architect.cpp
+    runtimes/expressions/ascent_conduit_reductions.cpp
+    runtimes/expressions/ascent_expression_filters.cpp
+    runtimes/expressions/ast.cpp
+    runtimes/expressions/tokens.cpp
+    runtimes/expressions/parser.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
     runtimes/flow_filters/ascent_runtime_param_check.cpp
     runtimes/flow_filters/ascent_runtime_relay_filters.cpp
     runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp
+    runtimes/flow_filters/ascent_runtime_trigger_filters.cpp
+    runtimes/flow_filters/ascent_runtime_query_filters.cpp
     # utils
     utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
@@ -111,6 +120,13 @@ set(ascent_headers
     # runtimes
     ascent_runtime.hpp
     runtimes/ascent_empty_runtime.hpp
+    runtimes/ascent_expression_eval.hpp
+    runtimes/expressions/ascent_blueprint_architect.hpp
+    runtimes/expressions/ascent_conduit_reductions.hpp
+    runtimes/expressions/ascent_expression_filters.hpp
+    runtimes/expressions/ast.hpp
+    runtimes/expressions/tokens.hpp
+    runtimes/expressions/parser.hpp
     # flow
     runtimes/ascent_main_runtime.hpp
     runtimes/ascent_flow_runtime.hpp
@@ -118,6 +134,8 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_param_check.hpp
     runtimes/flow_filters/ascent_runtime_relay_filters.hpp
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
+    runtimes/flow_filters/ascent_runtime_trigger_filters.hpp
+    runtimes/flow_filters/ascent_runtime_query_filters.hpp
     # utils
     utils/ascent_logging.hpp
     utils/ascent_file_system.hpp

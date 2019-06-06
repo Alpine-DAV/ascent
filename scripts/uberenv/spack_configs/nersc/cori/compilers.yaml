@@ -11,6 +11,20 @@ compilers:
       cxx: CC
       f77: ftn
       fc: ftn
+    spec: gcc@7.3.0
+    target: any
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules:
+    - PrgEnv-gnu
+    operating_system: cnl9
+    paths:
+      cc: cc
+      cxx: CC
+      f77: ftn
+      fc: ftn
     spec: gcc@4.9.3
     target: any
 - compiler:

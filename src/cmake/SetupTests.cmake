@@ -212,7 +212,7 @@ function(add_cpp_mpi_test)
     # with other mpi implementations.
     ###########################################################################
     set_property(TEST ${arg_TEST}
-                 PROPERTY ENVIRONMENT  "OMPI_MCA_rmaps_base_oversubscribe=1")
+                 APPEND PROPERTY ENVIRONMENT  "OMPI_MCA_rmaps_base_oversubscribe=1")
 endfunction()
 
 

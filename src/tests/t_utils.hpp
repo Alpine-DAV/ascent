@@ -278,9 +278,9 @@ create_2d_example_dataset(Node &data,
 //-----------------------------------------------------------------------------
 void
 create_3d_example_dataset(Node &data,
-                          int cell_dim = 32,
-                          int par_rank=0,
-                          int par_size=1)
+                          int cell_dim,
+                          int par_rank,
+                          int par_size)
 {
     // if( (par_size > 1)  && ((par_size % par_rank) != 0))
     // {
@@ -318,13 +318,15 @@ create_3d_example_dataset(Node &data,
 
     data["fields/radial_vert/association"] = "vertex";
     data["fields/radial_vert/topology"] = "mesh";
-    data["fields/radial_vert/type"] = "scalar";
     data["fields/radial_vert/values"].set(DataType::float64(npts));
 
     data["fields/radial_ele/association"] = "element";
     data["fields/radial_ele/topology"] = "mesh";
-    data["fields/radial_ele/type"] = "scalar";
     data["fields/radial_ele/values"].set(DataType::float64(nele));
+
+    data["fields/rank_ele/association"] = "element";
+    data["fields/rank_ele/topology"] = "mesh";
+    data["fields/rank_ele/values"].set(DataType::float64(nele));
 
 
     float64 *x_vals =  data["coordsets/coords/values/x"].value();
@@ -333,6 +335,13 @@ create_3d_example_dataset(Node &data,
 
     float64 *point_scalar   = data["fields/radial_vert/values"].value();
     float64 *element_scalar = data["fields/radial_ele/values"].value();
+    
+    float64 *rank_scalar = data["fields/rank_ele/values"].value();
+
+    for(int i=0;i < nele;i++)
+    {
+        rank_scalar[i] = (float64)par_rank;
+    }
 
     float64 start = 0.0 - (float64)(size) / 2.0;
     float64 rank_offset = start + (float)(par_rank * nx);

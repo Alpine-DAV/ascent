@@ -1566,9 +1566,30 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       output["topologies/topo/coordset"] = "coords";
       output["topologies/topo/type"] = "structured";
-      output["topologies/topo/elements/dims/i"] = (int) point_dims[0];
-      output["topologies/topo/elements/dims/j"] = (int) point_dims[1];
-      output["topologies/topo/elements/dims/k"] = (int) point_dims[2];
+
+      vtkm::cont::DynamicCellSet dyn_cells = data_set.GetCellSet();
+      using Structured2D = vtkm::cont::CellSetStructured<2>;
+      using Structured3D = vtkm::cont::CellSetStructured<3>;
+      if(dyn_cells.IsSameType(Structured2D()))
+      {
+        Structured2D cells = dyn_cells.Cast<Structured2D>();
+        vtkm::Id2 cell_dims = cells.GetCellDimensions();
+        output["topologies/topo/elements/dims/i"] = (int) cell_dims[0];
+        output["topologies/topo/elements/dims/j"] = (int) cell_dims[1];
+      }
+      else if(dyn_cells.IsSameType(Structured3D()))
+      {
+        Structured3D cells = dyn_cells.Cast<Structured3D>();
+        vtkm::Id3 cell_dims = cells.GetCellDimensions();
+        output["topologies/topo/elements/dims/i"] = (int) cell_dims[0];
+        output["topologies/topo/elements/dims/j"] = (int) cell_dims[1];
+        output["topologies/topo/elements/dims/k"] = (int) cell_dims[2];
+      }
+      else
+      {
+        ASCENT_ERROR("Unknown structured cell set");
+      }
+
     }
     else
     {
@@ -1761,6 +1782,25 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
 }
 
 void
+VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
+                                        conduit::Node &node)
+{
+  node.reset();
+  const int num_doms = dset->GetNumberOfDomains();
+  for(int i = 0; i < num_doms; ++i)
+  {
+    conduit::Node &dom = node.append();
+    vtkm::cont::DataSet vtkm_dom;
+    vtkm::Id domain_id;
+    int cycle = dset->GetCycle();
+    dset->GetDomain(i, vtkm_dom, domain_id);
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom);
+    dom["state/domain_id"] = (int) domain_id;
+    dom["state/cycle"] = cycle;
+  }
+}
+
+void
 VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
                                         conduit::Node &node)
 {
@@ -1787,6 +1827,3 @@ VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-

@@ -56,16 +56,16 @@ public:
   ~VolumeEngine();
 
   vtkmColorMap correct_opacity();
-  void set_data_set(vtkm::cont::DataSet &);
+  void set_data_set(vtkm::cont::DataSet &) override;
   PartialVector32 partial_trace(Ray32 &rays) override;
   PartialVector64 partial_trace(Ray64 &rays) override;
-  void init_rays(Ray32 &rays);
-  void init_rays(Ray64 &rays);
-  void set_primary_range(const vtkmRange &range);
-  void set_primary_field(const std::string &primary_field);
-  void set_composite_background(bool on);
-  void set_samples(const vtkm::Bounds &global_bounds, const int &samples);
-  vtkmRange get_primary_range();
+  void init_rays(Ray32 &rays) override;
+  void init_rays(Ray64 &rays) override;
+  void set_primary_range(const vtkmRange &range) override;
+  void set_primary_field(const std::string &primary_field) override;
+  void set_composite_background(bool on) override;
+  void set_samples(const vtkm::Bounds &global_bounds, const int &samples) override;
+  vtkmRange get_primary_range() override;
   int get_num_channels() override;
 };
 
