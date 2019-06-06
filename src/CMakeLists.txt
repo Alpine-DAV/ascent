@@ -98,13 +98,6 @@ if (NOT BLT_CXX_STD)
     set(BLT_CXX_STD "c++11" CACHE STRING "")
 endif()
 
-# VTKm requires us to link with nvcc in with static libs
-if(NOT ENABLE_SHARED_LIBS)
-  set (CUDA_SEPARABLE_COMPILATION ON CACHE BOOL "" )
-endif()
-set(gtest_disable_pthreads ON CACHE BOOL "")
-
-################################
 # Init BLT
 ################################
 # if BLT_SOURCE_DIR is not set - use "blt" as default

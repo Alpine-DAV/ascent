@@ -38,7 +38,7 @@ class Vtkh(Package):
     maintainers = ['cyrush']
 
 
-    version('ascent_ver', commit='2c7ab4d', submodules=True, preferred=True)
+    version('ascent_ver', commit='c27ee5c6', submodules=True, preferred=True)
     version('develop', branch='develop', submodules=True)
     version('0.1.0', branch='develop', tag='v0.1.0', submodules=True)
 
@@ -125,10 +125,10 @@ class Vtkh(Package):
                 cmake_args.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(env["SPACK_CXX"]))
                 if 'cuda_arch' in spec.variants:
                     cuda_arch = spec.variants['cuda_arch'].value
-                    vtkm_cuda_arch = "native" 
-                    arch_map = {75:"turing", 70:"volta", 
-                                62:"pascal", 61:"pascal", 60:"pascal", 
-                                53:"maxwell", 52:"maxwell", 50:"maxwell", 
+                    vtkm_cuda_arch = "native"
+                    arch_map = {75:"turing", 70:"volta",
+                                62:"pascal", 61:"pascal", 60:"pascal",
+                                53:"maxwell", 52:"maxwell", 50:"maxwell",
                                 35:"kepler", 32:"kepler", 30:"kepler"}
                     if cuda_arch in arch_map:
                       vtkm_cuda_arch = arch_map[cuda_arch]
@@ -270,10 +270,10 @@ class Vtkh(Package):
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "ON"))
             if 'cuda_arch' in spec.variants:
                 cuda_arch = spec.variants['cuda_arch'].value
-                blt_cuda_arch = "sm_35" 
-                arch_map = {75:"sm_75", 70:"sm_70", 
-                            62:"sm_62", 61:"sm_61", 60:"sm_60", 
-                            53:"sm_53", 52:"sm_52", 50:"sm_50", 
+                blt_cuda_arch = "sm_35"
+                arch_map = {75:"sm_75", 70:"sm_70",
+                            62:"sm_62", 61:"sm_61", 60:"sm_60",
+                            53:"sm_53", 52:"sm_52", 50:"sm_50",
                             35:"sm_35", 32:"sm_32", 30:"sm_30"}
                 if cuda_arch in arch_map:
                   blt_cuda_arch = arch_map[cuda_arch]
