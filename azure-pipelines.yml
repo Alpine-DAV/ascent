@@ -3,6 +3,12 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
+# only build merge target pr to develop
+pr:
+  branches:
+    include:
+    - develop
+
 jobs:
 # Linux build and test, using spack to build tpls
 - job: Ubuntu
