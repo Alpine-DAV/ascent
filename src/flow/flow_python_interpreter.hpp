@@ -87,6 +87,10 @@ public:
     /// use with caution!
     void         reset();
     void         shutdown();
+    
+    
+    void         set_program_name(const char *name);
+    void         set_argv(int argc, char **argv);
 
     /// helper to add a system path to access new modules
     bool         add_system_path(const std::string &path);
