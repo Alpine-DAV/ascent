@@ -94,7 +94,10 @@ endif()
 # don't use BLT's all warnings feature
 set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
 
-################################
+if (NOT BLT_CXX_STD)
+    set(BLT_CXX_STD "c++11" CACHE STRING "")
+endif()
+
 # Init BLT
 ################################
 # if BLT_SOURCE_DIR is not set - use "blt" as default
