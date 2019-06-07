@@ -140,16 +140,28 @@ flow::PythonInterpreter *PythonScript::interpreter()
     if(m_interp == NULL)
     {
         m_interp = new PythonInterpreter();
-        m_interp->initialize();
 
+        if(!m_interp->initialize())
+        {
+            delete m_interp;
+            m_interp = NULL;
+            CONDUIT_ERROR("PythonInterpreter initialize failed");
+        }
+     
         // setup for conduit python c api
         if(!m_interp->run_script("import conduit"))
         {
-            CONDUIT_ERROR("failed to import conduit");
+            std::string emsg = interpreter()->error_message();
+            delete m_interp;
+            m_interp = NULL;
+            CONDUIT_ERROR("failed to import conduit\n"
+                           << emsg);
         }
 
         if(import_conduit() < 0)
         {
+            delete m_interp;
+            m_interp = NULL;
             CONDUIT_ERROR("failed to import Conduit Python C-API");
         }
     }
@@ -178,7 +190,6 @@ PythonScript::declare_interface(Node &i)
     i["port_names"].append() = "in";
     i["output_port"] = "true";
 }
-
 
 //-----------------------------------------------------------------------------
 bool
@@ -270,7 +281,6 @@ PythonScript::execute()
     // we need the python env ready
 
     PythonInterpreter *py_interp = interpreter();
-
 
     PyObject *py_input = NULL;
 

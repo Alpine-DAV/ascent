@@ -411,8 +411,7 @@ void ExtractVector(vtkm::cont::DataSet *dset,
 
   vtkm::cont::ArrayHandle<vtkm::Vec<T,3>> interleaved_handle;
   interleaved_handle.Allocate(num_vals);
-  // Calling this without forcing serial could cause serious problems
-  vtkm::cont::ArrayCopy(composite, interleaved_handle, vtkm::cont::DeviceAdapterTagSerial());
+  vtkm::cont::ArrayCopy(composite, interleaved_handle);
 
   vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
   if(assoc_str == "vertex")
@@ -1876,7 +1875,3 @@ VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-  
