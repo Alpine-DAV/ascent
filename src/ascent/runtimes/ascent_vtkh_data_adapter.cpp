@@ -292,7 +292,7 @@ vtkm::cont::Field GetField(const conduit::Node &node,
 
   int num_vals = node.dtype().number_of_elements();
 
-  const T *values_ptr = values_ptr = node.value();
+  const T *values_ptr = node.value();
 
   vtkm::cont::Field field;
   if(assoc_str == "vertex")
