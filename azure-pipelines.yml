@@ -178,7 +178,7 @@ jobs:
          which python
          python --version
          # setup spack spec
-         export SPACK_SPEC="%clang+mpi~fortran"
+         export SPACK_SPEC="%clang~mpi~fortran"
          # vtkh
          if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
          # mfem
