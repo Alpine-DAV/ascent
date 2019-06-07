@@ -61,17 +61,17 @@ public:
   EnergyEngine();
   ~EnergyEngine();
 
-  void set_data_set(vtkm::cont::DataSet &);
+  void set_data_set(vtkm::cont::DataSet &) override;
   PartialVector32 partial_trace(Ray32 &rays) override;
   PartialVector64 partial_trace(Ray64 &rays) override;
-  void init_rays(Ray32 &rays);
-  void init_rays(Ray64 &rays);
+  void init_rays(Ray32 &rays) override;
+  void init_rays(Ray64 &rays) override;
   void set_primary_range(const vtkmRange &range) override;
   void set_primary_field(const std::string &primary_field) override;
-  void set_secondary_field(const std::string &field);
-  void set_composite_background(bool on);
+  void set_secondary_field(const std::string &field) override;
+  void set_composite_background(bool on) override;
   void set_unit_scalar(vtkm::Float32 unit_scalar);
-  vtkmRange get_primary_range();
+  vtkmRange get_primary_range() override;
   int get_num_channels() override;
 };
 

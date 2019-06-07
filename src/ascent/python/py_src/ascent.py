@@ -46,7 +46,7 @@
 # file: ascent.py
 # Purpose: Lazy loads the (non-mpi) ascent interface
 #
-#  We use lazy loading b/c the aline and alpine_mpi libraries provide the
+#  We use lazy loading b/c the ascent and ascent_mpi libraries provide the
 #  same symbols, and without this, on some platforms (OSX), importing
 #  ascent_python before ascent_mpi_python prevents us from getting the mpi
 #  version.

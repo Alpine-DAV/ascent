@@ -9,6 +9,11 @@
 #include<Kripke/Kernel/Kernel_3d_ZGD.h>
 #include<Kripke/Kernel/Kernel_3d_GZD.h>
 
+// CYRUSH: Added in Ascent ver to address -Wdelete-non-virtual-dtor
+Kernel::~Kernel()
+{
+    
+}
 
 /**
  * Factory to create a kernel object for the specified nesting
@@ -32,5 +37,7 @@ Kernel *createKernel(Nesting_Order nest, int num_dims){
   }
 
   MPI_Abort(MPI_COMM_WORLD, 1);
+  // CYRUSH: Added in Ascent ver to address -Wreturn-type
+  return NULL;
 }
 
