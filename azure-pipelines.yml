@@ -4,6 +4,7 @@
 # https://aka.ms/yaml
 
 # only build merge target pr to develop
+trigger: none
 pr:
   branches:
     include:
