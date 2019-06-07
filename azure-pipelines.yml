@@ -187,6 +187,7 @@ jobs:
          # python
          if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
          if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
+         export SPACK_SPEC="${SPACK_SPEC} ^conduit~mpi"
          echo $SPACK_SPEC
          # run uber to build tpls
          python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}"
