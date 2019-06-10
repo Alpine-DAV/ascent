@@ -272,7 +272,7 @@ jobs:
           cd $(Agent.BuildDirectory)
           pwd
           ls install
-        displayName: 'Check Install'
+      displayName: 'Check Install'
 
 ###############################################################################
 # Ubuntu build and install, using spack
