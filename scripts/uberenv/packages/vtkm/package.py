@@ -48,6 +48,10 @@ class Vtkm(CMakePackage, CudaPackage):
     depends_on("cuda", when="+cuda")
     depends_on("mpi", when="+mpi")
 
+    # patch that stops extra errors about not propagating
+    # cuda usage
+    patch('vtkm_cuda_comp_reprieve.patch')
+
     def cmake_args(self):
         spec = self.spec
         options = []
