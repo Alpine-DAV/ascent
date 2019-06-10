@@ -177,7 +177,7 @@ jobs:
          export APT_PKGS="$APT_PKGS libopenmpi-dev"
          export APT_PKGS="$APT_PKGS zlib1g-dev"
          # install pkgs we need
-         sudo apt-get install $APT_PKGS
+         sudo apt-get -y install $APT_PKGS
       displayName: 'Prepare build env'
 
     - script: |
@@ -270,7 +270,7 @@ jobs:
 #          export APT_PKGS="$APT_PKGS libsqlite3-dev"
 #          export APT_PKGS="$APT_PKGS libbz2-dev"
 #          # install pkgs we need
-#          sudo apt-get install $APT_PKGS
+#          sudo apt-get -y install $APT_PKGS
 #       displayName: 'Prepare build env'
 #
 #     - script: |
