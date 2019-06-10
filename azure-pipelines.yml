@@ -166,10 +166,7 @@ jobs:
     - script: |
          # output env
          env
-         apt-get clean
-         rm -vf /var/lib/apt/lists/*
-         rm -vf /var/lib/apt/lists/partial/*
-         apt-get update
+         su -u root apt-get update
          # list pkgs we need
          export APT_PKGS=git
          export APT_PKGS="$APT_PKGS python"
@@ -178,7 +175,7 @@ jobs:
          export APT_PKGS="$APT_PKGS libopenmpi-dev"
          export APT_PKGS="$APT_PKGS zlib1g-dev"
          # install pkgs we need
-         apt-get install $APT_PKGS
+         su -u root apt-get install $APT_PKGS
       displayName: 'Prepare build env'
 
     - script: |
