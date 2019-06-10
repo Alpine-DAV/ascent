@@ -187,8 +187,10 @@ jobs:
          # setup spack spec, goal here is a minimal cuda enabled build
          export SPACK_SPEC="%gcc+mpi+cuda+vtkh~python"
          # shared vs static
-         if [ $BUILD_SHARED_LIBS  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+shared"; fi
-         if [ $BUILD_SHARED_LIBS  = 'OFF' ];  then export SPACK_SPEC="${SPACK_SPEC}~shared"; fi
+         if [ $BUILD_SHARED_LIBS  = 'ON' ];  then export SPACK_SHARED_VARIANT="+shared"; fi
+         if [ $BUILD_SHARED_LIBS  = 'OFF' ];  then export SPACK_SHARED_VARIANT="~shared"; fi
+         export SPACK_SPEC="${SPACK_SPEC}${SPACK_SHARED_VARIANT} ^vtkh+cuda${SPACK_SHARED_VARIANT} ^vtkm+cuda${SPACK_SHARED_VARIANT}"
+         export SPACK_SPEC="${SPACK_SPEC} ^cmake~openssl~ncurses"
          echo $SPACK_SPEC
          # run uber to build tpls
          python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/travis/
