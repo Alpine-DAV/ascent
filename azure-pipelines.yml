@@ -237,8 +237,6 @@ jobs:
          make install
       displayName: 'Build and Test'
 
-
-jobs:
 # Linux build and test, using spack to build tpls
 - job: Ubuntu_Uberenv_Install
   pool:
