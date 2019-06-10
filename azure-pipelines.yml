@@ -265,7 +265,7 @@ jobs:
          make install
       displayName: 'Build and Install'
 
-      - script: |
+    - script: |
           #################################
           # check install
           #################################
