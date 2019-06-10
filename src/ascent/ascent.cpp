@@ -81,7 +81,7 @@ Ascent::Ascent()
 : m_runtime(NULL),
   m_verbose_msgs(true),
   m_forward_exceptions(false),
-  m_actions_file("ascent_actions.json")
+  m_actions_file("<<UNSET>>")
 {
 }
 
@@ -101,15 +101,28 @@ Ascent::open()
 
 //-----------------------------------------------------------------------------
 void
-CheckForJSONFile(std::string file_name, conduit::Node &node, bool merge)
+CheckForSettingsFile(std::string file_name, conduit::Node &node, bool merge)
 {
     if(!conduit::utils::is_file(file_name))
     {
         return;
     }
 
+    std::string curr,next;
+    
+    std::string protocol = "json";
+    // if file ends with yaml, use yaml as proto
+    conduit::utils::rsplit_string(file_name,
+                                  ".",
+                                  curr,
+                                  next);
+    if(curr == "yaml")
+    {
+        protocol = "yaml";
+    }
+
     conduit::Node file_node;
-    file_node.load(file_name, "json");
+    file_node.load(file_name, protocol);
     if(merge)
     {
       node.update(file_node);
@@ -132,7 +145,15 @@ Ascent::open(const conduit::Node &options)
         }
 
         Node processed_opts(options);
-        CheckForJSONFile("ascent_options.json", processed_opts, true);
+        
+        std::string opts_file = "ascent_options.json";
+
+        if(!conduit::utils::is_file(opts_file))
+        {
+            opts_file = "ascent_options.yaml";
+        }
+
+        CheckForSettingsFile(opts_file, processed_opts, true);
 
         if(options.has_path("messages") &&
            options["messages"].dtype().is_string() )
@@ -298,7 +319,17 @@ Ascent::execute(const conduit::Node &actions)
         if(m_runtime != NULL)
         {
             Node processed_actions(actions);
-            CheckForJSONFile(m_actions_file, processed_actions, false);
+            if(m_actions_file == "<<UNSET>>")
+            {
+                m_actions_file = "ascent_options.json";
+
+                if(!conduit::utils::is_file(m_actions_file))
+                {
+                    m_actions_file = "ascent_options.yaml";
+                }
+            }
+
+            CheckForSettingsFile(m_actions_file, processed_actions, false);
             m_runtime->Execute(processed_actions);
         }
         else
