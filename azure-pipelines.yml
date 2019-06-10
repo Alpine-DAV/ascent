@@ -92,6 +92,8 @@ jobs:
          #################################
          # run uber to build tpls
          #################################
+         #
+         pwd
          # echo system python details
          which python
          python --version
@@ -145,14 +147,19 @@ jobs:
          env CTEST_OUTPUT_ON_FAILURE=1 make test
          # install
          make install
+         # move back up to repor root
+         cd ${ROOT_DIR}
       displayName: 'Build and Test'
 
     - script: |
         ###########################
         # using with cmake example
         ###########################
-        cd $(Agent.BuildDirectory)
-        pwd
+        # capture current path
+        export ROOT_DIR=`pwd`
+        # find spack installed cmake
+        export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+        export PATH=${CMAKE_BIN_DIR}:$PATH
         echo $PATH
         which cmake
         cd install/examples/ascent/using-with-cmake
@@ -164,7 +171,7 @@ jobs:
         ###########################
         # using with make example
         ###########################
-        cd $(Agent.BuildDirectory)
+        cd ${ROOT_DIR}
         pwd
         cd install/examples/ascent/using-with-make
         make
