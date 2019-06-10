@@ -166,9 +166,9 @@ jobs:
     - script: |
          # output env
          env
-         rm /var/lib/apt/lists/lock
-         rm /var/cache/apt/archives/lock
-         rm /var/lib/dpkg/lock
+         apt-get clean
+         rm -vf /var/lib/apt/lists/*
+         rm -vf /var/lib/apt/lists/partial/*
          apt-get update
          # list pkgs we need
          export APT_PKGS=git
