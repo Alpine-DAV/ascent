@@ -166,6 +166,9 @@ jobs:
     - script: |
          # output env
          env
+         rm /var/lib/apt/lists/lock
+         rm /var/cache/apt/archives/lock
+         rm /var/lib/dpkg/lock
          apt-get update
          # list pkgs we need
          export APT_PKGS=git
@@ -224,7 +227,7 @@ jobs:
          # we are interested in compile + link issues
          # install
          make install
-      displayName: 'Build and Test'
+      displayName: 'Build and Install'
 
 ###############################################################################
 # Ubuntu build and install, using spack
