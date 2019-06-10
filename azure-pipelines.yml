@@ -143,21 +143,6 @@ jobs:
         which cmake
       displayName: 'Test vs Install'
 
-#Docker build and test, that leverages our script that calls Docker Build
-- job: Docker
-  pool:
-    vmImage: 'ubuntu-16.04'
-  timeoutInMinutes: 0
-  steps:
-    - checkout: self
-      clean: boolean
-      submodules: recursive
-
-    - script: |
-        cd src/examples/docker/ubuntu/ && ./example_build.sh
-      displayName: 'Docker Build'
-
-
 # NVCC Linux build and test, using spack to build tpls
 - job: Ubuntu_Cuda
   pool:
