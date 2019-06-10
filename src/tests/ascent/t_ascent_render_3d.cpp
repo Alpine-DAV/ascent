@@ -1579,8 +1579,6 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     Ascent ascent;
 
     Node ascent_opts;
-    // we use the mpi handle provided by the fortran interface
-    // since it is simply an integer
     ascent_opts["runtime"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(multi_dom);
@@ -1588,6 +1586,55 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     ascent.close();
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, render_3d_empty_data)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with ascent support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D MPI "
+                      "Runtime test");
+
+        return;
+    }
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "rank_ele";
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node data; // empty!
+    Node ascent_opts;
+    ascent_opts["runtime"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    // we expect ascent to complain about no data
+    EXPECT_THROW(ascent.execute(actions),conduit::Error);
+    ascent.close();
 }
 
 //-----------------------------------------------------------------------------
