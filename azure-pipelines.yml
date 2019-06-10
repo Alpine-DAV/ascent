@@ -176,6 +176,7 @@ jobs:
          export APT_PKGS="$APT_PKGS openmpi-bin"
          export APT_PKGS="$APT_PKGS libopenmpi-dev"
          export APT_PKGS="$APT_PKGS zlib1g-dev"
+         export APT_PKGS="$APT_PKGS curl"
          # install pkgs we need
          sudo apt-get -y install $APT_PKGS
       displayName: 'Prepare build env'
