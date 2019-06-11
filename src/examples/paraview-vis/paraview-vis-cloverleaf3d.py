@@ -1,7 +1,7 @@
 import sys
 # CHANGE this path to the result of:
 # $(spack location --install-dir paraview)
-paraview_path="/home/danlipsa/projects/ascent/build/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/paraview-master-dn6y4ofccm4eg3wya6u5uvgz6x6aar5w"
+paraview_path="/home/danlipsa/projects/ascent/build/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.4.0/paraview-master-e6ji62w2jt47cj446twsnndkkxgncz6x"
 paraview_path = paraview_path + "/lib/python2.7/site-packages"
 sys.path.append(paraview_path)
 
@@ -32,6 +32,11 @@ dataName = "paraviewdata_{0:04d}".format(int(cycle))
 scriptName = "/home/danlipsa/projects/ascent/src/examples/paraview-vis/paraview_ascent_source.py"
 LoadPlugin(scriptName, remote=True, ns=globals())
 ascentSource = AscentSource()
+
+# ghosts are not supported in rectilinear grids so we just extract the regular cells.
+sel=SelectCells("vtkGhostType < 1")
+e = ExtractSelection(Selection=sel)
+
 rep = Show()
 ColorBy(rep, ("CELLS", "energy"))
 # rescale transfer function
@@ -62,15 +67,16 @@ writer.UpdatePipeline()
 
 
 # # VTK API
-# from paraview_ascent_source import AscentSource, write_data
+# from paraview_ascent_source import AscentSource, write_vtk
 # ascentSource = AscentSource()
 # ascentSource.Update()
-# write_data("vtkdata", ascentSource.GetNode(), ascentSource.GetOutputDataObject(0))
+# write_vtk("vtkdata", ascentSource.GetNode(), ascentSource.GetOutputDataObject(0))
 
 
 # # Python API
-# from paraview_ascent_source import ascent_to_vtk, write_data, write_json
+# from paraview_ascent_source import ascent_to_vtk, write_vtk, write_json, write_hdf
 # node = ascent_data().child(0)
-# write_json(node)
+# write_json("blueprint", node)
+# write_hdf("data", node)
 # data = ascent_to_vtk(node)
-# write_data("pythondata", node, data)
+# write_vtk("pythondata", node, data)
