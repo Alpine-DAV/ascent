@@ -177,6 +177,7 @@ jobs:
         make
         ./ascent_render_example
       displayName: 'Test vs Install'
+      condition: eq(variables['ENABLE_VTKH'], 'ON')
 
 ###############################################################################
 # NVCC Linux build and install, using spack to build tpls
@@ -270,14 +271,14 @@ jobs:
          # we are interested in compile + link issues
          # install
          make install
+         # cd back up to repo root
+         cd ..
       displayName: 'Build and Install'
 
     - script: |
           #################################
           # check install
           #################################
-          cd $(Agent.BuildDirectory)
-          pwd
           ls install
       displayName: 'Check Install'
 
@@ -352,9 +353,8 @@ jobs:
       displayName: 'Spack Build and Install'
 
     - script: |
-        cd $(Agent.BuildDirectory)
-        pwd
         ls uberenv_libs/ascent-install
+        cat uberenv_libs/ascent-install/*.cmake
       displayName: 'Check Install'
 
 ###############################################################################
