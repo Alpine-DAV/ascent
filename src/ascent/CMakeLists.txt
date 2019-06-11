@@ -208,6 +208,12 @@ set(ascent_thirdparty_libs
 ##################
 if(VTKM_FOUND)
     list(APPEND ascent_thirdparty_libs vtkm vtkh rover)
+    # if cuda is on and we are using vtk-h.
+    # using *any* vtk-m header requires cuda compiler, so we
+    # run ascent through the cuda compiler 
+    if(CUDA_FOUND)
+        list(APPEND ascent_thirdparty_libs cuda)
+    endif()
 endif()
 
 if(MFEM_FOUND)
