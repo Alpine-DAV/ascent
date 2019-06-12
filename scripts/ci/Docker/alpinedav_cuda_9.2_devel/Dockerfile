@@ -42,32 +42,10 @@
 #
 ###############################################################################
 
-################################
-# Basic TPL Tests
-################################
-
-IF(VTKH_FOUND)
-    message(STATUS "Adding vtk-h lib unit tests")
-    set(vtkh_smoke_deps vtkh)
-    if(CUDA_FOUND)
-        list(APPEND vtkh_smoke_deps cuda)
-    endif()
-    add_cpp_test(TEST t_vtkh_smoke DEPENDS_ON ${vtkh_smoke_deps})
-endif()
-
-
-IF(MFEM_FOUND)
-    message(STATUS "Adding mfem lib unit tests")
-    set(mfem_smoke_deps mfem conduit)
-    # mfem does not have both a serial version and an mpi
-    # version. So if we compiled with MPI on, the we need
-    # to set the correct dependency
-    if(MPI_FOUND AND ENABLE_MPI)
-        list(APPEND mfem_smoke_deps mpi conduit)
-    endif()
-    add_cpp_test(TEST t_mfem_smoke DEPENDS_ON ${mfem_smoke_deps})
-endif()
-
-
-
+FROM nvidia/cuda:9.2-devel
+MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
+# add sudo to base cuda devel env
+# so we can install additional packages as
+# non-root, but admin default user on azure pipelines
+RUN apt-get update && apt-get -y install sudo
 
