@@ -150,26 +150,41 @@ set(ascent_headers
 
 if(VTKM_FOUND)
 
-    # data adapter
-    list(APPEND ascent_headers runtimes/ascent_vtkh_data_adapter.hpp)
-    list(APPEND ascent_sources runtimes/ascent_vtkh_data_adapter.cpp)
+    set(asent_vtkh_dep_headers
+        runtimes/ascent_vtkh_data_adapter.hpp
+        runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
+        runtimes/flow_filters/ascent_runtime_rover_filters.hpp
+        runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
+        runtimes/ascent_main_runtime.hpp)
 
-    # vtkh filters
-    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp)
-    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp)
+    set(asent_vtkh_dep_sources
+        runtimes/ascent_vtkh_data_adapter.cpp
+        runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
+        runtimes/flow_filters/ascent_runtime_rover_filters.cpp
+        runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
+        ascent_sources runtimes/ascent_main_runtime.cpp)
 
-    # rover
-    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_rover_filters.hpp)
-    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_rover_filters.cpp)
+    foreach( _itm ${asent_vtkh_dep_headers} )
+        list(APPEND ascent_headers ${_itm})
+    endforeach()
 
-    # parsing utils
-    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp)
-    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp)
+    foreach( _itm ${asent_vtkh_dep_sources} )
+        list(APPEND ascent_sources ${_itm})
+    endforeach()
 
-    # main runtime
-    list(APPEND ascent_headers runtimes/ascent_main_runtime.hpp)
-    list(APPEND ascent_sources runtimes/ascent_main_runtime.cpp)
+    # when cuda is enabled, any source files including any vtk-m header
+    # have to be compiled by the cuda compiler
+    if(CUDA_FOUND)
+        set_source_files_properties( ${ascent_vtkh_dep_sources}
+                                     PROPERTIES
+                                     LANGUAGE CUDA)
 
+        if (CUDA_SEPARABLE_COMPILATION)
+            set_source_files_properties( ${ascent_vtkh_dep_sources}
+                                         PROPERTIES
+                                         CUDA_SEPARABLE_COMPILATION ON)
+        endif()
+    endif()
 endif()
 
 if(MFEM_FOUND)
@@ -208,12 +223,6 @@ set(ascent_thirdparty_libs
 ##################
 if(VTKM_FOUND)
     list(APPEND ascent_thirdparty_libs vtkm vtkh rover)
-    # if cuda is on and we are using vtk-h.
-    # using *any* vtk-m header requires cuda compiler, so we
-    # run ascent through the cuda compiler 
-    if(CUDA_FOUND)
-        list(APPEND ascent_thirdparty_libs cuda)
-    endif()
 endif()
 
 if(MFEM_FOUND)
