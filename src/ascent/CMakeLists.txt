@@ -174,16 +174,17 @@ if(VTKM_FOUND)
     endforeach()
     
     # this has already been added to ascent sources 
-    # but they need cuda props set, so we add to the asent_vtkh_dep_sources list
+    # but its needs cuda src props set, so we add to the 
+    # asent_vtkh_dep_sources list
     list(APPEND asent_vtkh_dep_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
     
+    # using a foreach b/c passing our current list directly as {asent_vtkh_dep_sources} 
+    # does not work, but passing each item does ... 
     foreach( _itm ${asent_vtkh_dep_sources} )
 
         set_source_files_properties( ${_itm}
                                      PROPERTIES
                                      LANGUAGE CUDA)
-
-
 
         if (CUDA_SEPARABLE_COMPILATION)
             set_source_files_properties( ${_itm}
@@ -266,27 +267,6 @@ install(TARGETS ascent
         RUNTIME DESTINATION lib
 )
 
-# when cuda is enabled, any source files including any vtk-m header
-# have to be compiled by the cuda compiler
-# if(CUDA_FOUND)
-#     set_target_properties( ascent PROPERTIES LANGUAGE CUDA)
-#     foreach( _itm ${asent_vtkh_dep_sources} )
-#
-#         set_source_files_properties( ${_itm}
-#                                      PROPERTIES
-#                                      LANGUAGE CUDA)
-#
-#
-#
-#         if (CUDA_SEPARABLE_COMPILATION)
-#             set_source_files_properties( ${_itm}
-#                                          PROPERTIES
-#                                          CUDA_SEPARABLE_COMPILATION ON)
-#         endif()
-#     endforeach()
-# endif()
-
-
 
 ################################################
 # Build Parallel (MPI) version of ascent
@@ -326,22 +306,6 @@ if(MPI_FOUND)
         SOURCES     ${ascent_sources} ${ascent_mpi_sources}
         HEADERS     ${ascent_headers} ${ascent_mpi_headers}
         DEPENDS_ON  ${ascent_mpi_thirdparty_libs})
-
-    # when cuda is enabled, any source files including any vtk-m header
-    # have to be compiled by the cuda compiler
-    if(CUDA_FOUND)
-        set_target_properties( ascent_mpi PROPERTIES LANGUAGE CUDA)
-        set_source_files_properties( ${ascent_vtkh_dep_sources}
-                                     PROPERTIES
-                                     LANGUAGE CUDA)
-
-        if (CUDA_SEPARABLE_COMPILATION)
-            set_source_files_properties( ${ascent_vtkh_dep_sources}
-                                         PROPERTIES
-                                         CUDA_SEPARABLE_COMPILATION ON)
-        endif()
-    endif()
-
 
     blt_add_target_compile_flags(TO ascent_mpi FLAGS "-D ASCENT_MPI_ENABLED")
 
