@@ -162,7 +162,7 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
-        ascent_sources runtimes/ascent_main_runtime.cpp)
+        runtimes/ascent_main_runtime.cpp)
 
     foreach( _itm ${asent_vtkh_dep_headers} )
         list(APPEND ascent_headers ${_itm})
