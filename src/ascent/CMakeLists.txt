@@ -250,6 +250,7 @@ install(TARGETS ascent
 # when cuda is enabled, any source files including any vtk-m header
 # have to be compiled by the cuda compiler
 if(CUDA_FOUND)
+    set_target_properties( ascent PROPERTIES LANGUAGE CUDA)
     set_source_files_properties( ${ascent_vtkh_dep_sources}
                                  PROPERTIES
                                  LANGUAGE CUDA)
@@ -260,6 +261,7 @@ if(CUDA_FOUND)
                                      CUDA_SEPARABLE_COMPILATION ON)
     endif()
 endif()
+
 
 
 ################################################
@@ -304,6 +306,7 @@ if(MPI_FOUND)
     # when cuda is enabled, any source files including any vtk-m header
     # have to be compiled by the cuda compiler
     if(CUDA_FOUND)
+        set_target_properties( ascent_mpi PROPERTIES LANGUAGE CUDA)
         set_source_files_properties( ${ascent_vtkh_dep_sources}
                                      PROPERTIES
                                      LANGUAGE CUDA)
