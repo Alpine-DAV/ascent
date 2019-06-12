@@ -325,7 +325,7 @@ Ascent::execute(const conduit::Node &actions)
 
                 if(!conduit::utils::is_file(m_actions_file))
                 {
-                    m_actions_file = "ascent_actionsyaml";
+                    m_actions_file = "ascent_actions.yaml";
                 }
             }
 
