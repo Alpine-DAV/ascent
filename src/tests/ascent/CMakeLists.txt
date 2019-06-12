@@ -90,8 +90,8 @@ set(MPI_TESTS  t_ascent_mpi_smoke
 
 # include the "ascent" pipeline
 if(VTKM_FOUND)
-   list(APPEND BASIC_TESTS t_ascent_ascent_runtime
-                           t_ascent_vtkh_data_adapter)
+   list(APPEND BASIC_TESTS t_ascent_ascent_runtime)
+   list(APPEND VTKH_DEP_TESTS t_ascent_vtkh_data_adapter)
    list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime
                            t_ascent_mpi_relay_extract)
 endif()
@@ -113,6 +113,14 @@ endif()
 message(STATUS "Adding ascent lib unit tests")
 foreach(TEST ${BASIC_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
+endforeach()
+
+foreach(TEST ${VTKH_DEP_TESTS})
+    set(vtkh_tests_deps ascent)
+    if(CUDA_FOUND)
+        list(APPEND vtkh_tests_deps cuda)
+    endif()
+    add_cpp_test(TEST ${TEST} DEPENDS_ON ${vtkh_tests_deps})
 endforeach()
 
 ################################
