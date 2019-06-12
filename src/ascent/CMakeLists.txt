@@ -251,15 +251,20 @@ install(TARGETS ascent
 # have to be compiled by the cuda compiler
 if(CUDA_FOUND)
     set_target_properties( ascent PROPERTIES LANGUAGE CUDA)
-    set_source_files_properties( ${ascent_vtkh_dep_sources}
-                                 PROPERTIES
-                                 LANGUAGE CUDA)
+    foreach( _itm ${asent_vtkh_dep_sources} )
 
-    if (CUDA_SEPARABLE_COMPILATION)
-        set_source_files_properties( ${ascent_vtkh_dep_sources}
+        set_source_files_properties( ${_itm}
                                      PROPERTIES
-                                     CUDA_SEPARABLE_COMPILATION ON)
-    endif()
+                                     LANGUAGE CUDA)
+
+
+
+        if (CUDA_SEPARABLE_COMPILATION)
+            set_source_files_properties( ${_itm}
+                                         PROPERTIES
+                                         CUDA_SEPARABLE_COMPILATION ON)
+        endif()
+    endforeach()
 endif()
 
 
