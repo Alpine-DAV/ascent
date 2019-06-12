@@ -154,6 +154,7 @@ if(VTKM_FOUND)
         runtimes/ascent_vtkh_data_adapter.hpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
+        runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
         runtimes/ascent_main_runtime.hpp)
 
@@ -161,6 +162,7 @@ if(VTKM_FOUND)
         runtimes/ascent_vtkh_data_adapter.cpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
+        runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
         runtimes/ascent_main_runtime.cpp)
 
