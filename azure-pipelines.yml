@@ -156,6 +156,8 @@ jobs:
         # using with cmake example
         ###########################
         # capture current path
+        pwd
+        ls -l
         export ROOT_DIR=`pwd`
         # find spack installed cmake
         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
@@ -173,6 +175,7 @@ jobs:
         ###########################
         cd ${ROOT_DIR}
         pwd
+        ls -l
         cd install/examples/ascent/using-with-make
         make
         ./ascent_render_example
