@@ -48,7 +48,11 @@
 
 IF(VTKH_FOUND)
     message(STATUS "Adding vtk-h lib unit tests")
-    add_cpp_test(TEST t_vtkh_smoke DEPENDS_ON vtkh)
+    set(vtkh_smoke_deps vtkh)
+    if(CUDA_FOUND)
+        list(APPEND vtkh_smoke_deps cuda)
+    endif()
+    add_cpp_test(TEST t_vtkh_smoke DEPENDS_ON ${vtkh_smoke_deps})
 endif()
 
 
