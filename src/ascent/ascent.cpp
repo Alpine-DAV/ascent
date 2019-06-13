@@ -109,7 +109,7 @@ CheckForSettingsFile(std::string file_name, conduit::Node &node, bool merge)
     }
 
     std::string curr,next;
-    
+
     std::string protocol = "json";
     // if file ends with yaml, use yaml as proto
     conduit::utils::rsplit_string(file_name,
@@ -145,7 +145,7 @@ Ascent::open(const conduit::Node &options)
         }
 
         Node processed_opts(options);
-        
+
         std::string opts_file = "ascent_options.json";
 
         if(!conduit::utils::is_file(opts_file))
@@ -321,11 +321,11 @@ Ascent::execute(const conduit::Node &actions)
             Node processed_actions(actions);
             if(m_actions_file == "<<UNSET>>")
             {
-                m_actions_file = "ascent_options.json";
+                m_actions_file = "ascent_actions.json";
 
                 if(!conduit::utils::is_file(m_actions_file))
                 {
-                    m_actions_file = "ascent_options.yaml";
+                    m_actions_file = "ascent_actions.yaml";
                 }
             }
 
