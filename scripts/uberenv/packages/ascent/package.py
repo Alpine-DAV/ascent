@@ -230,7 +230,7 @@ class Ascent(Package):
 
         if self.compiler.fc:
             # even if this is set, it may not exist so do one more sanity check
-            f_compiler = which(env["SPACK_FC"])
+            f_compiler = env["SPACK_FC"]
 
         #######################################################################
         # By directly fetching the names of the actual compilers we appear
@@ -286,7 +286,7 @@ class Ascent(Package):
         if "+fortran" in spec and f_compiler is not None:
             cfg.write(cmake_cache_entry("ENABLE_FORTRAN", "ON"))
             cfg.write(cmake_cache_entry("CMAKE_Fortran_COMPILER",
-                                        f_compiler.path))
+                                        f_compiler))
         else:
             cfg.write("# no fortran compiler found\n\n")
             cfg.write(cmake_cache_entry("ENABLE_FORTRAN", "OFF"))

@@ -56,8 +56,9 @@ packages:
   conduit:
       version: [master]
   cmake:
-      version: [3.9.6]
-      variants: ~ncurses~openssl
+      buildable: False
+      paths:
+       cmake@3.9.6: /project/projectdirs/alpine/software/cmake/3.9.6/
   python:
       variants: ~dbm
   pkg-config:
