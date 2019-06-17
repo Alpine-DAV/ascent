@@ -63,6 +63,13 @@ The quickest path to install Ascent and its dependencies is via :ref:`uberenv <b
 
 After this completes, ``build/ascent-install`` will contain an Ascent install.
 
+We also provide spack settings for several well known HPC clusters, here is an example of how to use our settings for NERSC's Cori System:
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --install --prefix="build" --spack-config-dir="scripts/uberenv/spack_configs/nersc/cori/"
+
+
 For more details about building and installing Ascent see :ref:`building`. This page provides detailed info about Ascent's CMake options, :ref:`uberenv <building_with_uberenv>` and :ref:`Spack <building_with_spack>` support. We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>` and a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
 
