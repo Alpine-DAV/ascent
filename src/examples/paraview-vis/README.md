@@ -1,27 +1,45 @@
 Insitu ParaView visualization using the Ascent Extract interface
 ================================================================
 
-# Instalation instructions from within Ascent git
+# Installation instructions for Ascent git
 * Install Ascent with mfem turned on so that proxies/laghos is built
    - `git clone --recursive https://github.com/alpine-dav/ascent.git`
    - `cd ascent`
    - `python scripts/uberenv/uberenv.py --install --prefix="build" --spec='+mfem'`
        `build/ascent-install` will contain the ascent installation and built examples
        and `build/spack` will contain the spack packages.
-     Note that fortran is requried for the compiler chosen. Use `spack compilers`
+     Note that FORTRAN is required for the compiler chosen. Use `spack compilers`
      to see the compilers found by spack.
 * Setup spack. Note spack modules are not setup
    - `. ascent/build/spack/share/spack/setup-env.sh`
 * Install ParaView (use older matplotlib because newest requires python3.)
    - `spack install paraview +python ^py-matplotlib@2.2.3 ~tk`
-      We use paraview master because we need the fix in 0b349f3e18.
-* Test with available simulations - VTK files and images will be generated in the curent directory.
+      We use ParaView master because we need the fix in 0b349f3e18.
+* Follow `Common installation instructions`
+
+# Installation instructions for spack devel
+* Install spack, modules and shell support.
+  - `git clone https://github.com/spack/spack.git
+    cd spack
+    source share/spack/setup-env.sh
+    spack boostrap`
+* Install ParaView
+  - `spack install paraview@devel+python3+mpi`
+* Install Ascent
+  - `spack install ascent~vtkh^python@3.7.3`
+     Make sure you match the python version used by ParaView
+* Load required modules
+  - `spack load conduit py-numpy py-mpi4py paraview`
+* Follow `Common installation instructions`
+
+# Common installation instructions
+* Test with available simulations - VTK files and images will be generated in the current directory.
    - Test `proxies/cloverleaf3d`
-     - `cd build/ascent-install/examples/ascent/proxies/cloverleaf3d`
-     - `ln -s ~/projects/ascent/src/examples/paraview-vis/paraview_ascent_source.py
-        ln -s ~/projects/ascent/src/examples/paraview-vis/paraview-vis-cloverleaf3d.py paraview-vis.py
+     - `cd $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d`
+     - `ln -s ../../paraview-vis/paraview_ascent_source.py
+        ln -s ../../paraview-vis/paraview-vis-cloverleaf3d.py paraview-vis.py
         mv ascent_actions.json ascent_actions_volume.json
-        ln -s ~/projects/ascent/src/examples/paraview-vis/ascent_actions.json`
+        ln -s ../../paraview-vis/ascent_actions.json`
      - replace paraview_path from paraview-vis-xxx.py
          with the result of `$(spack location --install-dir paraview)` and
          scriptName with the correct path to 'paraview_ascent_source.py'
@@ -34,9 +52,7 @@ Insitu ParaView visualization using the Ascent Extract interface
    - Test noise from `synthetic/noise`
      - `$(spack location --install-dir mpi)/bin/mpiexec -np 8 noise_par  --dims=32,32,32 --time_steps=5 --time_delta=1 > output.txt 2>&1`
 
-
 TODO:
-* Add installing ParaView + Ascent Support as an option when installing Ascent
 * Add testing
 
 NOTE:

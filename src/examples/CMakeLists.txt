@@ -57,7 +57,7 @@ if(MFEM_FOUND)
 endif()
 
 # install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python tutorial
+install(DIRECTORY using-with-cmake using-with-make python tutorial paraview-vis
         DESTINATION examples/ascent)
 
 
