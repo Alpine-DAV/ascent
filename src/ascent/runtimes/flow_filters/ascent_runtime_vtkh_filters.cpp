@@ -455,6 +455,10 @@ public:
     if(rank == 0 && !conduit::utils::is_directory(m_db_path))
     {
         conduit::utils::create_directory(m_db_path);
+        // copy over cinema web resources
+        std::string cinema_root = conduit::utils::join_file_path(ASCENT_WEB_CLIENT_ROOT,
+                                                                 "cinema");
+        ascent::copy_directory(cinema_root, m_db_path);
     }
 
     std::stringstream ss;

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'>
+    <title>Cinema Viewer - Spec A</title>
+    <meta name='description' content='A Cinema Viewer capable of browsing Spec A databases'>
+    <meta name='author' content='Jonas Lukasczyk'>
+    <link rel='stylesheet' href='cvlib/css/cvlib.css'>
+    <script src='cvlib/lib/jquery-3.1.1.min.js'></script>
+    <script src='cvlib/js/Parameter.js'></script>
+    <script src='cvlib/js/QuerySet.js'></script>
+    <script src='cvlib/js/ResultSet.js'></script>
+    <script src='cvlib/js/UIFactory.js'></script>
+    <script src='cvlib/js/ControlsPhiTheta.js'></script>
+    <script src='cvlib/js/Database.js'></script>
+    <script src='cvlib/js/DatabaseSpecA.js'></script>
+    <script src='cvlib/js/Renderer.js'></script>
+    <script src='cvlib/js/RendererSpecA.js'></script>
+</head>
+<body>
+    <script>
+        var db = new CVLIB.DatabaseSpecA('info.json', function(querySet){
+            var sidebarLayout = CVLIB.UIFactory.createSidebarLayout();
+            sidebarLayout.sidebar.append( '<h2>Cinema Viewer<br>Spec A - Single</h2>' );
+            $('body').append(sidebarLayout);
+
+            var queryTable = CVLIB.UIFactory.createSimpleQueryTable( querySet );
+            sidebarLayout.sidebar.append(queryTable);
+
+            var viewport = CVLIB.UIFactory.createViewport();
+            sidebarLayout.content.append(viewport);
+
+            new CVLIB.ControlsPhiTheta(viewport, querySet);
+
+            var renderer = new CVLIB.RendererSpecA();
+
+            var renderFunction = function(resultSet){
+                renderer.render(resultSet.data, viewport.canvas, true);
+            };
+
+            var updateFunction = function(e, parameter){
+                db.processQuery( querySet, renderFunction );
+            };
+
+            querySet.emitter.on(
+                'change',
+                updateFunction
+            );
+
+            updateFunction();
+        });
+    </script>
+</body>
+</html>
