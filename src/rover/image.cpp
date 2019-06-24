@@ -218,7 +218,7 @@ Image<FloatType>::steal_intensity(const int &channel_num)
   m_intensities[channel_num].SyncControlArray();
   using StoreType = vtkm::cont::internal::Storage<FloatType, vtkm::cont::StorageTagBasic>;
   StoreType *storage = reinterpret_cast<StoreType*>(m_intensities[channel_num].Internals->ControlArray);
-  FloatType *ptr = reinterpret_cast<FloatType*>(storage->StealArray().first);
+  FloatType *ptr = reinterpret_cast<FloatType*>(storage->StealArray());
   return ptr;
 }
 
@@ -238,7 +238,7 @@ Image<FloatType>::steal_optical_depth(const int &channel_num)
   m_optical_depths[channel_num].SyncControlArray();
   using StoreType = vtkm::cont::internal::Storage<FloatType, vtkm::cont::StorageTagBasic>;
   StoreType *storage = reinterpret_cast<StoreType*>(m_optical_depths[channel_num].Internals->ControlArray);
-  FloatType *ptr = reinterpret_cast<FloatType*>(storage->StealArray().first);
+  FloatType *ptr = reinterpret_cast<FloatType*>(storage->StealArray());
   return ptr;
 }
 
