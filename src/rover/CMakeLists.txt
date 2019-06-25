@@ -42,13 +42,6 @@
 
 set(rover_thirdparty_deps vtkh_lodepng vtkm vtkh)
 
-# if cuda is on and we are using vtk-h
-# using *any* vtk-m header requires cuda compiler, so we
-# run ascent through the cuda compiler 
-if(CUDA_FOUND)
-    list(APPEND rover_thirdparty_deps cuda)
-endif()
-
 set(rover_headers
     domain.hpp
     image.hpp
