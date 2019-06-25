@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -7,7 +7,7 @@
 #
 # All rights reserved.
 #
-# This file is part of Alpine.
+# This file is part of Ascent.
 #
 # For details, see: http://ascent.readthedocs.io/.
 #
@@ -43,37 +43,58 @@
 ###############################################################################
 
 
-# this header allows us to easily use the cmake source and binary paths in
-# our unit tests
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/t_config.hpp.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/t_config.hpp")
+"""
+ file: gen_img_compare_html_report.py
+ description: 
+    Generates a html file that collects image diff results from ascent's tests
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+"""
+import json
+import glob
+import os
 
-# for t_utils.hpp
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+from os.path import join as pjoin
 
-################################
-# Unit Tests
-################################
-# add tpl smoke tests, so they run before we run the ascent tests
-add_subdirectory("thirdparty")
-
-# add flow tests
-add_subdirectory("flow")
-
-# add ascent tests
-add_subdirectory("ascent")
+def output_dir():
+    return "_output"
 
 
-if(PYTHON_FOUND)
-# if we have python:
-#  add custom command that generates a html img comparison report for our tests
-#  run with "make gen_report"
-#  creates "_output/tout_img_report.html"
-    add_custom_target(gen_report
-                      ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_img_compare_html_report.py
-                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                      COMMENT "Generating html summary of image compare tests")
-endif()
+def file_name(fpath):
+    return os.path.split(fpath)[1]
+
+def find_img_compare_results():
+    return glob.glob(pjoin(output_dir(),"*_img_compare_results.json"))
+
+def gen_html_report():
+    ofile = open(pjoin("_output","tout_img_report.html"),"w")
+    ofile.write("<table border=1>\n")
+    for res in find_img_compare_results():
+        v = json.load(open(res))
+        ofile.write("<tr>\n")
+        ofile.write("<td>\n")
+        ofile.write("case: {0} <br>\n".format(file_name(v["test_file"]["path"])))
+        ofile.write("pass: {0} <br>\n".format(v["pass"]))
+        for k in ["dims_match","percent_diff","tolerance"]:
+           ofile.write("{0} = {1} <br>\n".format(k,v[k]))
+        ofile.write("</td>\n")
+        if v["test_file"]["exists"] == "true":
+            ofile.write('<td> <img width="200" src="{0}"></td>\n'.format(file_name(v["test_file"]["path"])))
+        else:
+            ofile.write("<td> TEST IMAGE MISSING!</td>\n")
+        if v["baseline_file"]["exists"] == "true":
+            ofile.write('<td> <img width="200" src="{0}"></td>\n'.format(file_name(v["baseline_file"]["path"])))
+        else:
+            ofile.write("<td> BASELINE IMAGE MISSING!</td>\n")
+        if "diff_image" in v.keys():
+            ofile.write('<td> <img width="200" src="{0}"></td>\n'.format(file_name(v["diff_image"])))
+        else:
+            ofile.write('<td> (NO DIFF) </td>\n')
+        ofile.write("</tr>\n")
+    ofile.write("</table>\n")
+
+if __name__ == "__main__" :
+    gen_html_report()    
+        
+
+
 
