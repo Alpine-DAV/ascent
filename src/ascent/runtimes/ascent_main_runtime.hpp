@@ -139,8 +139,7 @@ private:
 
     std::string GetDefaultImagePrefix(const std::string scene);
 
-    void FindRenders(conduit::Node &out);
-
+    void FindRenders(conduit::Node &image_params, conduit::Node &image_list);
 
     // internal reg helper
     static void RegisterFilterType(const std::string &role_path,

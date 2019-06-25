@@ -1189,24 +1189,25 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
 }
 
 void
-AscentRuntime::FindRenders(conduit::Node &out)
+AscentRuntime::FindRenders(conduit::Node &image_params, conduit::Node& image_list)
 {
-    out.reset();
+    image_list.reset();
 
     if(!w.registry().has_entry("image_list"))
     {
       return;
     }
 
-    Node *image_list = w.registry().fetch<Node>("image_list");
+    Node *images = w.registry().fetch<Node>("image_list");
 
-    const int size = image_list->number_of_children();
+    const int size = images->number_of_children();
+    image_params = *images;
     for(int i = 0; i < size; i++)
     {
-      out.append() = image_list->child(i).as_string();
+      image_list.append() = images->child(i)["image_name"].as_string();
     }
 
-    image_list->reset();
+    images->reset();
 
 }
 
@@ -1332,6 +1333,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
       ConnectGraphs();
       PopulateMetadata(); // add metadata so filters can access it
       w.info(m_info["flow_graph"]);
+      m_info["actions"] = actions;
       //w.print();
       //std::cout<<w.graph().to_dot();
 
@@ -1361,8 +1363,9 @@ AscentRuntime::Execute(const conduit::Node &actions)
       ascent::about(msg["about"]);
       m_web_interface.PushMessage(msg);
 
+      Node render_file_names;
       Node renders;
-      FindRenders(renders);
+      FindRenders(renders, render_file_names);
       m_info["images"] = renders;
 
       const conduit::Node &expression_cache =
@@ -1373,7 +1376,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         m_info["expressions"] = expression_cache;
       }
 
-      m_web_interface.PushRenders(renders);
+      m_web_interface.PushRenders(render_file_names);
 
       w.registry().reset();
     }
