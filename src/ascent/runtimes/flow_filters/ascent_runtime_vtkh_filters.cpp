@@ -2476,7 +2476,18 @@ ExecScene::execute()
     for(int i = 0; i < renders->size(); ++i)
     {
       const std::string image_name = renders->at(i).GetImageName() + ".png";
-      image_list->append() = image_name;
+      conduit::Node image_data;
+      image_data["image_name"] = image_name;
+      image_data["image_width"] = renders->at(i).GetWidth();
+      image_data["image_height"] = renders->at(i).GetHeight();
+
+      image_data["camera/position"].set(&renders->at(i).GetCamera().GetPosition()[0],3);
+      image_data["camera/look_at"].set(&renders->at(i).GetCamera().GetLookAt()[0],3);
+      image_data["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0],3);
+      image_data["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
+      image_data["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
+
+      image_list->append() = image_data;
     }
 
 }
