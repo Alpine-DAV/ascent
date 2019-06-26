@@ -171,6 +171,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("image_name");
   r_valid_paths.push_back("image_width");
   r_valid_paths.push_back("image_height");
+  r_valid_paths.push_back("scene_magnitude");
   r_valid_paths.push_back("camera/look_at");
   r_valid_paths.push_back("camera/position");
   r_valid_paths.push_back("camera/up");
@@ -180,14 +181,13 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("camera/zoom");
   r_valid_paths.push_back("camera/near_plane");
   r_valid_paths.push_back("camera/far_plane");
+  r_valid_paths.push_back("camera/azimuth");
+  r_valid_paths.push_back("camera/elevation");
   r_valid_paths.push_back("type");
   r_valid_paths.push_back("phi");
   r_valid_paths.push_back("theta");
   r_valid_paths.push_back("db_name");
-  // TODO: document
   r_valid_paths.push_back("render_bg");
-  r_valid_paths.push_back("camera/azimuth");
-  r_valid_paths.push_back("camera/elevation");
   r_valid_paths.push_back("annotations");
   r_valid_paths.push_back("output_path");
   r_valid_paths.push_back("fg_color");
@@ -2486,6 +2486,13 @@ ExecScene::execute()
       image_data["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0],3);
       image_data["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
       image_data["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
+      vtkm::Bounds bounds=  renders->at(i).GetSceneBounds();
+      double xl = bounds.X.Length();
+      double yl = bounds.Y.Length();
+      double zl = bounds.Z.Length();
+      double mag = sqrt(xl*xl + yl*yl + zl* zl);
+
+      image_data["scene_magnitude"] = mag;
 
       image_list->append() = image_data;
     }
