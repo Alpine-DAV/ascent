@@ -13,4 +13,5 @@ uberenv_libs
 *.tar
 s_env.sh
 _uberenv_test*
-
+.idea/
+build/
