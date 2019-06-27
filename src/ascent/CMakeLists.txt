@@ -172,28 +172,6 @@ if(VTKM_FOUND)
     foreach( _itm ${asent_vtkh_dep_sources} )
         list(APPEND ascent_sources ${_itm})
     endforeach()
-    
-    # this has already been added to ascent sources 
-    # but its needs cuda src props set, so we add to the 
-    # asent_vtkh_dep_sources list
-    list(APPEND asent_vtkh_dep_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
-    
-    if(CUDA_FOUND)
-        # using a foreach b/c passing our current list directly as {asent_vtkh_dep_sources} 
-        # does not work, but passing each item does ... 
-        foreach( _itm ${asent_vtkh_dep_sources} )
-
-            set_source_files_properties( ${_itm}
-                                         PROPERTIES
-                                         LANGUAGE CUDA)
-
-            if (CUDA_SEPARABLE_COMPILATION)
-                set_source_files_properties( ${_itm}
-                                             PROPERTIES
-                                             CUDA_SEPARABLE_COMPILATION ON)
-            endif()
-        endforeach()
-    endif()
 
 endif()
 

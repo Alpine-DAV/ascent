@@ -114,7 +114,7 @@ output_dir()
 
 //-----------------------------------------------------------------------------
 bool
-check_test_image(const std::string &path, const float tolerance = 0.0001f, std::string num = "100")
+check_test_image(const std::string &path, const float tolerance = 0.001f, std::string num = "100")
 {
     Node info;
     std::string png_path = path + num + ".png";
@@ -158,6 +158,8 @@ check_test_image(const std::string &path, const float tolerance = 0.0001f, std::
     {
       info.print();
     }
+    std::string info_fpath = path + num + "_img_compare_results.json";
+    info.save(info_fpath,"json");
 
     return res;
 }

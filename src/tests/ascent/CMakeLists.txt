@@ -116,11 +116,7 @@ foreach(TEST ${BASIC_TESTS})
 endforeach()
 
 foreach(TEST ${VTKH_DEP_TESTS})
-    set(vtkh_tests_deps ascent)
-    if(CUDA_FOUND)
-        list(APPEND vtkh_tests_deps cuda)
-    endif()
-    add_cpp_test(TEST ${TEST} DEPENDS_ON ${vtkh_tests_deps})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
 endforeach()
 
 ################################

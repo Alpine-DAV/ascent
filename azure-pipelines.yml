@@ -285,80 +285,86 @@ jobs:
           ls install
       displayName: 'Check Install'
 
+
+###############################################################################
+# Disabled b/c this is currently always testing develop, which 
+# isn't helpful and creates confusing results.
+###############################################################################
+
 ###############################################################################
 # Ubuntu build and install, using spack
 ###############################################################################
-- job: Ubuntu_Uberenv_Install
-  pool:
-    vmImage: 'ubuntu-16.04'
-  timeoutInMinutes: 0
-  variables:
-    COMPILER_CC: gcc-5
-    COMPILER_CXX: g++-5
-    COMPILER_FC: gfortran-5
-  steps:
-    - checkout: self
-      clean: boolean
-      submodules: recursive
-
-    - script: |
-         ##################
-         # setup build env
-         ##################
-         # output env
-         env
-         # clean default paths
-         sudo rm -rf /usr/local/lib/android/
-         sudo rm -rf /usr/share/miniconda/
-         # add extra repo and update
-         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-         sudo apt-get update
-         # list pkgs we need
-         export APT_PKGS=binutils
-         export APT_PKGS="$APT_PKGS gcc-5"
-         export APT_PKGS="$APT_PKGS g++-5"
-         export APT_PKGS="$APT_PKGS gfortran-5"
-         export APT_PKGS="$APT_PKGS openmpi-bin"
-         export APT_PKGS="$APT_PKGS libopenmpi-dev"
-         export APT_PKGS="$APT_PKGS libncurses-dev"
-         export APT_PKGS="$APT_PKGS libssl-dev"
-         export APT_PKGS="$APT_PKGS libblas-dev"
-         export APT_PKGS="$APT_PKGS liblapack-dev"
-         export APT_PKGS="$APT_PKGS zlib1g-dev"
-         export APT_PKGS="$APT_PKGS libgdbm-dev"
-         export APT_PKGS="$APT_PKGS libreadline-dev"
-         export APT_PKGS="$APT_PKGS libsqlite3-dev"
-         export APT_PKGS="$APT_PKGS libbz2-dev"
-         # install pkgs we need
-         sudo apt-get -y install $APT_PKGS
-      displayName: 'Prepare build env'
-
-    - script: |
-         ################################
-         # use uber to build and install
-         ################################
-         # echo system python details
-         which python
-         python --version
-         # setup spack spec
-         export SPACK_SPEC="%gcc@5+mpi"
-         # vtkh
-         if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
-         # mfem
-         if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem"; fi
-         if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem"; fi
-         # python
-         if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
-         if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
-         echo $SPACK_SPEC
-         # run uber to build tpls
-         python scripts/uberenv/uberenv.py --install --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu/
-      displayName: 'Spack Build and Install'
-
-    - script: |
-        ls uberenv_libs/ascent-install
-        cat uberenv_libs/ascent-install/*.cmake
-      displayName: 'Check Install'
+# - job: Ubuntu_Uberenv_Install
+#   pool:
+#     vmImage: 'ubuntu-16.04'
+#   timeoutInMinutes: 0
+#   variables:
+#     COMPILER_CC: gcc-5
+#     COMPILER_CXX: g++-5
+#     COMPILER_FC: gfortran-5
+#   steps:
+#     - checkout: self
+#       clean: boolean
+#       submodules: recursive
+#
+#     - script: |
+#          ##################
+#          # setup build env
+#          ##################
+#          # output env
+#          env
+#          # clean default paths
+#          sudo rm -rf /usr/local/lib/android/
+#          sudo rm -rf /usr/share/miniconda/
+#          # add extra repo and update
+#          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+#          sudo apt-get update
+#          # list pkgs we need
+#          export APT_PKGS=binutils
+#          export APT_PKGS="$APT_PKGS gcc-5"
+#          export APT_PKGS="$APT_PKGS g++-5"
+#          export APT_PKGS="$APT_PKGS gfortran-5"
+#          export APT_PKGS="$APT_PKGS openmpi-bin"
+#          export APT_PKGS="$APT_PKGS libopenmpi-dev"
+#          export APT_PKGS="$APT_PKGS libncurses-dev"
+#          export APT_PKGS="$APT_PKGS libssl-dev"
+#          export APT_PKGS="$APT_PKGS libblas-dev"
+#          export APT_PKGS="$APT_PKGS liblapack-dev"
+#          export APT_PKGS="$APT_PKGS zlib1g-dev"
+#          export APT_PKGS="$APT_PKGS libgdbm-dev"
+#          export APT_PKGS="$APT_PKGS libreadline-dev"
+#          export APT_PKGS="$APT_PKGS libsqlite3-dev"
+#          export APT_PKGS="$APT_PKGS libbz2-dev"
+#          # install pkgs we need
+#          sudo apt-get -y install $APT_PKGS
+#       displayName: 'Prepare build env'
+#
+#     - script: |
+#          ################################
+#          # use uber to build and install
+#          ################################
+#          # echo system python details
+#          which python
+#          python --version
+#          # setup spack spec
+#          export SPACK_SPEC="%gcc@5+mpi"
+#          # vtkh
+#          if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
+#          # mfem
+#          if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem"; fi
+#          if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem"; fi
+#          # python
+#          if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
+#          if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
+#          echo $SPACK_SPEC
+#          # run uber to build tpls
+#          python scripts/uberenv/uberenv.py --install --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu/
+#       displayName: 'Spack Build and Install'
+#
+#     - script: |
+#         ls uberenv_libs/ascent-install
+#         cat uberenv_libs/ascent-install/*.cmake
+#       displayName: 'Check Install'
 
 ###############################################################################
 # Docker build and test, that leverages our script that calls Docker Build

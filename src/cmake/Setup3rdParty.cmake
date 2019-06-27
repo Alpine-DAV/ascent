@@ -82,10 +82,6 @@ include(cmake/thirdparty/SetupConduit.cmake)
 # VTKm and supporting libs
 ################################
 if(VTKM_DIR)
-    # explicitly setting this avoids a bug with VTKm's cuda
-    # arch detection logic
-    set(VTKm_CUDA_Architecture "kepler" CACHE PATH "" FORCE)
-
     ################################
     # VTKm
     ################################

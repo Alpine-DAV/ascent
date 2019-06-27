@@ -411,7 +411,8 @@ void ExtractVector(vtkm::cont::DataSet *dset,
 
   vtkm::cont::ArrayHandle<vtkm::Vec<T,3>> interleaved_handle;
   interleaved_handle.Allocate(num_vals);
-  vtkm::cont::ArrayCopy(composite, interleaved_handle);
+  // Calling this without forcing serial could cause serious problems
+  vtkm::cont::ArrayCopy(composite, interleaved_handle, vtkm::cont::DeviceAdapterTagSerial());
 
   vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
   if(assoc_str == "vertex")
@@ -1301,6 +1302,7 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
       ASCENT_INFO("VTKm conversion does not support field assoc "<<assoc_str<<". Skipping");
       return;
     }
+
 
     const Node &n_vals = n_field["values"];
     int num_vals = n_vals.child(0).dtype().number_of_elements();
