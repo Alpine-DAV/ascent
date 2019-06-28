@@ -44,30 +44,15 @@
 
 ###############################################################################
 #
-# Example that shows how to use an installed instance of Ascent in another
-# CMake-based build system.
+# Example that shows how to use an installed instance of BabelFlow PMT
+#   mkdir build
+#   cd build
+#   cmake .. -DPMT_DIR=<PMT_DIR> -DBabelFlow_DIR=<BabelFlow_DIR>
+#   make
+#   mpirun -np 4 ascent_babelflow_example
 #
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DASCENT_DIR={ascent install path}   \
-#   -DCONDUIT_DIR={conduit install path} \
-#   -DVTKH_DIR={vtkh install path}          
-#   ../
-# make
-# ./ascent_render_example
-#
-# If run in sub directory below using-with-cmake in an ascent install, 
-# ASCENT_DIR will be defaulted to ../../..
-# 
-#  mkdir build
-#  cd build
-#  cmake ..
-#  make
-#  ./ascent_render_example
-#
-###############################################################################
+##############################################################################
+
 
 cmake_minimum_required(VERSION 3.9)
 
@@ -76,39 +61,42 @@ project(using_with_cmake)
 #
 # Provide default for ASCENT_DIR that works for an ascent install
 #
-if(NOT ASCENT_DIR)
+if (NOT ASCENT_DIR)
     set(ASCENT_DIR "../../..")
-endif()
+endif ()
 #
 # Check for valid Ascent install
 #
 get_filename_component(ASCENT_DIR ${ASCENT_DIR} ABSOLUTE)
-if(NOT EXISTS ${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)
+if (NOT EXISTS ${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)
     MESSAGE(FATAL_ERROR "Could not find Ascent CMake include file (${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)")
-endif()
+endif ()
 
 #
 # Use CMake's find_package to import ascent's targets
 #
 find_package(Ascent REQUIRED
-             NO_DEFAULT_PATH 
-             PATHS ${ASCENT_DIR}/lib/cmake)
+        NO_DEFAULT_PATH
+        PATHS ${ASCENT_DIR}/lib/cmake)
 
-set(BabelFlow_DIR /Users/li74/babelflow_ascent/lib/cmake/BabelFlow)
-set(PMT_DIR /Users/li74/pmt_ascent)
+
+if (NOT PMT_DIR)
+    message(FATAL_ERROR "PMT_DIR not defined")
+else ()
+    message("PMT_DIR ${PMT_DIR}")
+endif ()
+
 set(PMT_LIBRARIES libpmt.dylib)
 
-include(${BabelFlow_DIR}/FindBabelFlow.cmake)
 find_package(BabelFlow REQUIRED)
-include(/Users/li74/ascent/uberenv_libs/columbine.llnl.gov-darwin-mojave-x86_64-clang@10.0.0-apple-ascent.cmake)
 find_package(MPI REQUIRED)
-include_directories(${ASCENT_DIR}/include/ascent ${BABELFLOW_INCLUDE_DIR} ${MPI_C_INCLUDE_PATH})
+include_directories(${ASCENT_DIR}/include/ascent ${MPI_C_INCLUDE_PATH})
 message("ASCENT_DIR ${ASCENT_DIR}")
 
 # create our example
 add_executable(ascent_babelflow_example ascent_babelflow_example.cpp)
 
 # link to ascent
-target_link_directories(ascent_babelflow_example PUBLIC ${BABELFLOW_INCLUDE_DIR}/../lib ${PMT_DIR}/lib)
+target_link_directories(ascent_babelflow_example PUBLIC ${PMT_DIR}/lib)
 target_link_libraries(ascent_babelflow_example ascent::ascent_mpi ${BABELFLOW_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PMT_LIBRARIES})
 
