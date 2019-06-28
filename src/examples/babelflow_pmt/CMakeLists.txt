@@ -42,85 +42,73 @@
 #
 ###############################################################################
 
-################################
-# Ascent 3rd Party Dependencies
-################################
-
 ###############################################################################
-# gtest, fruit, mpi,cuda, openmp, sphinx and doxygen are handled by blt
+#
+# Example that shows how to use an installed instance of Ascent in another
+# CMake-based build system.
+#
+# To build:
+#  mkdir build
+#  cd build
+#  cmake \
+#   -DASCENT_DIR={ascent install path}   \
+#   -DCONDUIT_DIR={conduit install path} \
+#   -DVTKH_DIR={vtkh install path}          
+#   ../
+# make
+# ./ascent_render_example
+#
+# If run in sub directory below using-with-cmake in an ascent install, 
+# ASCENT_DIR will be defaulted to ../../..
+# 
+#  mkdir build
+#  cd build
+#  cmake ..
+#  make
+#  ./ascent_render_example
+#
 ###############################################################################
 
-################################
-# Setup Python if requested
-################################
-if(ENABLE_PYTHON)
-    include(cmake/thirdparty/SetupPython.cmake)
-    message(STATUS "Using Python Include: ${PYTHON_INCLUDE_DIRS}")
-    include_directories(${PYTHON_INCLUDE_DIRS})
-    # if we don't find python, throw a fatal error
-    if(NOT PYTHON_FOUND)
-        message(FATAL_ERROR "ENABLE_PYTHON is true, but Python wasn't found.")
-    endif()
-endif()
+cmake_minimum_required(VERSION 3.9)
 
-################################
-# Conduit
-################################
-include(cmake/thirdparty/SetupConduit.cmake)
+project(using_with_cmake)
 
-
-################################################################
-################################################################
 #
-# 3rd Party Libs that underpin Ascent's Pipelines
+# Provide default for ASCENT_DIR that works for an ascent install
 #
-################################################################
-################################################################
-
-
-################################
-# VTKm and supporting libs
-################################
-if(VTKM_DIR)
-    ################################
-    # VTKm
-    ################################
-    include(cmake/thirdparty/SetupVTKm.cmake)
-
-    ################################
-    # VTKh
-    ################################
-    include(cmake/thirdparty/SetupVTKh.cmake)
+if(NOT ASCENT_DIR)
+    set(ASCENT_DIR "../../..")
+endif()
+#
+# Check for valid Ascent install
+#
+get_filename_component(ASCENT_DIR ${ASCENT_DIR} ABSOLUTE)
+if(NOT EXISTS ${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)
+    MESSAGE(FATAL_ERROR "Could not find Ascent CMake include file (${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)")
 endif()
 
+#
+# Use CMake's find_package to import ascent's targets
+#
+find_package(Ascent REQUIRED
+             NO_DEFAULT_PATH 
+             PATHS ${ASCENT_DIR}/lib/cmake)
 
-################################
-# Setup HDF5
-################################
-if(HDF5_DIR)
-    include(cmake/thirdparty/SetupHDF5.cmake)
-endif()
+set(BabelFlow_DIR /Users/li74/babelflow_ascent/lib/cmake/BabelFlow)
+set(PMT_DIR /Users/li74/pmt_ascent)
+set(PMT_LIBRARIES libpmt.dylib)
 
-################################
-# Setup MFEM
-################################
-if (MFEM_DIR)
-  include(cmake/thirdparty/SetupMFEM.cmake)
-endif()
+include(${BabelFlow_DIR}/FindBabelFlow.cmake)
+find_package(BabelFlow REQUIRED)
+include(/Users/li74/ascent/uberenv_libs/columbine.llnl.gov-darwin-mojave-x86_64-clang@10.0.0-apple-ascent.cmake)
+find_package(MPI REQUIRED)
+include_directories(${ASCENT_DIR}/include/ascent ${BABELFLOW_INCLUDE_DIR} ${MPI_C_INCLUDE_PATH})
+message("ASCENT_DIR ${ASCENT_DIR}")
 
+# create our example
+add_executable(ascent_babelflow_example ascent_babelflow_example.cpp)
 
-################################
-# Setup ADIOS
-################################
-if (ADIOS_DIR)
-  include(cmake/thirdparty/SetupADIOS.cmake)
-endif()
-
-################################
-# Setup Babelflow
-################################
-if (BabelFlow_DIR)
-    include(cmake/thirdparty/SetupBabelFlow.cmake)
-endif ()
-
+# link to ascent
+target_link_directories(ascent_babelflow_example PUBLIC ${BABELFLOW_INCLUDE_DIR}/../lib ${PMT_DIR}/lib)
+target_link_libraries(ascent_babelflow_example ascent::ascent_mpi ${BABELFLOW_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PMT_LIBRARIES})
 

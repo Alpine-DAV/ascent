@@ -68,6 +68,10 @@
     #include <ascent_runtime_rover_filters.hpp>
 #endif
 
+#ifdef ASCENT_BABELFLOW_ENABLED
+#include <ascent_runtime_babelflow_filters.h>
+#endif
+
 #ifdef ASCENT_MPI_ENABLED
     #include <ascent_runtime_hola_filters.hpp>
 #if defined(ASCENT_ADIOS_ENABLED)
@@ -144,6 +148,10 @@ register_builtin()
     AscentRuntime::register_filter_type<CreatePlot>();
     AscentRuntime::register_filter_type<CreateScene>();
     AscentRuntime::register_filter_type<ExecScene>();
+#endif
+
+#if defined(ASCENT_BABELFLOW_ENABLED)
+  AscentRuntime::register_filter_type<filter::BabelFlow>("extracts", "babelflow");
 #endif
 
 #if defined(ASCENT_MPI_ENABLED)
