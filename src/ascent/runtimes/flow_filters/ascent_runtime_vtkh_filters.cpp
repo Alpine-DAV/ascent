@@ -171,7 +171,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("image_name");
   r_valid_paths.push_back("image_width");
   r_valid_paths.push_back("image_height");
-  r_valid_paths.push_back("scene_magnitude");
+  r_valid_paths.push_back("scene_bounds");
   r_valid_paths.push_back("camera/look_at");
   r_valid_paths.push_back("camera/position");
   r_valid_paths.push_back("camera/up");
@@ -2487,12 +2487,14 @@ ExecScene::execute()
       image_data["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
       image_data["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
       vtkm::Bounds bounds=  renders->at(i).GetSceneBounds();
-      double xl = bounds.X.Length();
-      double yl = bounds.Y.Length();
-      double zl = bounds.Z.Length();
-      double mag = sqrt(xl*xl + yl*yl + zl* zl);
+      double coord_bounds [6] = {bounds.X.Min,
+                                 bounds.Y.Min,
+                                 bounds.Z.Min,
+                                 bounds.X.Max,
+                                 bounds.Y.Max,
+                                 bounds.Z.Max};
 
-      image_data["scene_magnitude"] = mag;
+      image_data["scene_bounds"].set(coord_bounds, 6);
 
       image_list->append() = image_data;
     }
