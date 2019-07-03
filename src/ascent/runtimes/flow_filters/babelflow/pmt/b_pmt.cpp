@@ -105,114 +105,9 @@ void ParallelMergeTree::Initialize()
   MPI_Comm_rank(comm, &my_rank);
   MPI_Comm_size(comm, &mpi_size);
 
-//  using namespace std;
-//  if (my_rank == 0) {
-//    cout << "class data" << endl;
-//    for (int i = 0; i < data_size[0] * data_size[1] * data_size[2]; ++i) {
-//      cout << data[i] << " ";
-//    }
-//    cout << endl;
-//  }
+  BabelFlow::Payload payload = make_local_block(this->data_ptr, this->low, this->high, this->threshold);
+  inputs[this->task_id] = payload;
 
-  // divide the data assign it to inputs
-  uint32_t n_z = 0, n_y = 0, n_x = 0;
-  for (uint32_t z = 0; z < data_size[2]; z += block_size[2]) {
-    n_z++;
-    for (uint32_t y = 0; y < data_size[1]; y += block_size[1]) {
-      if (z == 0) n_y++;
-      for (uint32_t x = 0; x < data_size[0]; x += block_size[0]) {
-        if (y == 0 && z == 0) n_x++;
-        uint32_t z_size = (data_size[2] <= z + block_size[2]) ? data_size[2] - z - 1 : block_size[2];
-        uint32_t y_size = (data_size[1] <= y + block_size[1]) ? data_size[1] - y - 1 : block_size[1];
-        uint32_t x_size = (data_size[0] <= x + block_size[0]) ? data_size[0] - x - 1 : block_size[0];
-
-        uint32_t low[3] = {x, y, z};
-        uint32_t high[3] = {x + x_size, y + y_size, z + z_size};
-        DataBlock block(low, high);
-
-        uint32_t num_x = high[0] - low[0] + 1;
-        uint32_t num_y = high[1] - low[1] + 1;
-        uint32_t num_z = high[2] - low[2] + 1;
-
-        block.data = new FunctionType[num_x * num_y * num_z];
-//        if (my_rank == 0 && x == 0 && y == 0 && z == 0) {
-//          cout << "num_x " << num_x << endl;
-//          cout << "num_y " << num_y << endl;
-//          cout << "num_z " << num_z << endl;
-//          cout << "block len " << num_x * num_y * num_z << endl;
-//        }
-        uint32_t offset = 0;
-        uint32_t start = x + y * data_size[0] + z * data_size[0] * data_size[1];
-        for (int bz = 0; bz < num_z; ++bz) {
-          for (int by = 0; by < num_y; ++by) {
-            FunctionType *data_ptr = this->data + start + bz * data_size[0] * data_size[1] + by * data_size[0];
-            uint32_t data_len = num_x;
-            memcpy(reinterpret_cast<char *>(block.data) + offset,
-                   reinterpret_cast<char *>(data_ptr), data_len * sizeof(FunctionType));
-            offset += data_len * sizeof(FunctionType);
-          }
-        }
-        data_blocks.push_back(block);
-      }
-    }
-  }
-
-//  if (my_rank == 0) {
-//    int block_n = 7;
-//    cout << "check data block " << block_n << endl;
-//    auto &&db = data_blocks[block_n];
-//    cout << "low: " << db.low[0] << " " << db.low[1] << " " << db.low[2] << endl;
-//    cout << "high: " << db.high[0] << " " << db.high[1] << " " << db.high[2] << endl;
-//    cout << "data block " << block_n << " data" << endl;
-//    auto db_len = (db.high[0] - db.low[0] + 1) * (db.high[1] - db.low[1] + 1) * (db.high[2] - db.low[2] + 1);
-//    cout << "db len " << db_len << endl;
-//    for (auto i = 0; i < db_len; ++i) {
-//      cout << db.data[i] << " ";
-//    }
-//    cout << endl;
-//
-//  }
-
-  std::vector<BabelFlow::TaskId> tasks;
-  int factor = 1;
-  while (data_blocks.size() / (factor * mpi_size)) {
-    if (my_rank + ((factor - 1) * mpi_size) < data_blocks.size())
-      tasks.push_back(my_rank + ((factor - 1) * mpi_size));
-    factor++;
-  }
-
-  for (auto &&t: tasks) {
-    BabelFlow::Payload local_block = make_local_block(data_blocks[t].data,
-                                                      data_blocks[t].low,
-                                                      data_blocks[t].high,
-                                                      this->threshold);
-    inputs[t] = local_block;
-  }
-
-//  for (int i = 0; i < data_blocks.size(); ++i) {
-//    BabelFlow::Payload local_block = make_local_block(data_blocks[i].data,
-//                                                      data_blocks[i].low,
-//                                                      data_blocks[i].high,
-//                                                      this->threshold);
-////    if (my_rank == 0 && i == 7) {
-////      cout << "input payload" << endl;
-////      uint32_t b_size = sizeof(FunctionType *) + 6 * sizeof(GlobalIndexType) + sizeof(FunctionType);
-////      char *msgbuffer = local_block.buffer();
-////      FunctionType *dbuffer = reinterpret_cast<FunctionType *>(msgbuffer);
-////      uint32_t data_len = (local_block.size() - b_size) / sizeof(FunctionType);
-////      cout << "payload data len " << data_len << endl;
-////      cout << "payload data" << endl;
-////      for (int j = 0; j < data_len; ++j) {
-////        cout << dbuffer[j] << " ";
-////      }
-////      cout << endl;
-////    }
-//    inputs[i] = local_block;
-//  }
-
-  for (auto &&db : data_blocks) delete[] db.data;
-
-  uint32_t n_blocks[3] = {n_x, n_y, n_z};
   graph = KWayMerge(n_blocks, fanin);
   task_map = KWayTaskMap(mpi_size, &graph);
   MergeTree::setDimension(data_size);
@@ -233,20 +128,26 @@ void ParallelMergeTree::Execute()
   master.run(inputs);
 }
 
-ParallelMergeTree::ParallelMergeTree(FunctionType *data, int data_size[3], int block_size[3], int fanin,
-                                     FunctionType threshold, MPI_Comm comm)
+ParallelMergeTree::ParallelMergeTree(FunctionType *data_ptr, uint32_t task_id, const uint32_t *data_size,
+                                     const uint32_t *n_blocks,
+                                     const uint32_t *low, const uint32_t *high, uint32_t fanin,
+                                     FunctionType threshold, MPI_Comm mpi_comm)
 {
-  char *bytes = new char[data_size[0] * data_size[1] * data_size[2] * sizeof(FunctionType)];
-  memcpy(bytes, data, data_size[0] * data_size[1] * data_size[2] * sizeof(FunctionType));
-
-  this->data = reinterpret_cast<FunctionType *>(bytes);
+  this->data_ptr = data_ptr;
+  this->task_id = task_id;
   this->data_size[0] = data_size[0];
   this->data_size[1] = data_size[1];
   this->data_size[2] = data_size[2];
-  this->block_size[0] = block_size[0];
-  this->block_size[1] = block_size[1];
-  this->block_size[2] = block_size[2];
+  this->n_blocks[0] = n_blocks[0];
+  this->n_blocks[1] = n_blocks[1];
+  this->n_blocks[2] = n_blocks[2];
+  this->low[0] = low[0];
+  this->low[1] = low[1];
+  this->low[2] = low[2];
+  this->high[0] = high[0];
+  this->high[1] = high[1];
+  this->high[2] = high[2];
   this->fanin = fanin;
   this->threshold = threshold;
-  this->comm = comm;
+  this->comm = mpi_comm;
 }

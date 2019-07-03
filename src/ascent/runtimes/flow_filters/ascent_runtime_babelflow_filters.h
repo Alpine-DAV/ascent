@@ -30,7 +30,6 @@ private:
   op op = NOOP;
   int mpi_size;
   int mpi_rank;
-  std::vector<int> mr_data;
 
 public:
   BabelFlow():mpi_size(0),mpi_rank(0){};

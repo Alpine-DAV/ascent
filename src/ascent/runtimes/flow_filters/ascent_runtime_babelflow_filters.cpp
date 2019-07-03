@@ -23,43 +23,24 @@ void ascent::runtime::filter::BabelFlow::execute()
   this->mpi_rank = params()["mpi_rank"].as_int();
   this->mpi_size = params()["mpi_size"].as_int();
   if (op == PMT) {
-    std::cout << "Rank:" << mpi_rank << " is executing Parallel Merge Tree" << std::endl;
+    conduit::Node p = params();
     auto *in = input<conduit::Node>("in");
     auto &data_node = in->children().next();
-    conduit::Node p = params();
 
-    conduit::DataArray<double> arr = data_node[p["data_path"].as_string()].as_float64_array();
-    int n = arr.number_of_elements();
-    std::vector<FunctionType> vdata;
-    vdata.resize(n);
-    for (int i = 0; i < n; ++i) {
-      vdata[i] = static_cast<FunctionType>(arr[i]);
-    }
+    conduit::DataArray<float> array = data_node[p["data_path"].as_string()].as_float32_array();
+    auto n_elems = array.number_of_elements();
 
-#ifdef BABELFLOW_DEBUG
-    if (mpi_rank == 0) {
-      std::ofstream ofs("data.txt");
-      std::stringstream ss;
-      for (auto &&v: vdata) ss << v << " ";
-      ofs << ss.str();
-      ofs.flush();
-      ofs.close();
 
-      std::ofstream bofs("data.bin", std::ios::out | std::ios::binary);
-      FunctionType *flt_buffer = vdata.data();
-      size_t size = vdata.size() * sizeof(FunctionType);
-      auto *buffer = reinterpret_cast<char *>(flt_buffer);
-      bofs.write(buffer, size);
-      bofs.flush();
-      bofs.close();
-    }
-#endif
-
-    int dim[3] = {p["xdim"].as_int(), p["ydim"].as_int(), p["zdim"].as_int()};
-    int block[3] = {p["bxdim"].as_int(), p["bydim"].as_int(), p["bzdim"].as_int()};
-    ParallelMergeTree pmt(reinterpret_cast<FunctionType *>(vdata.data()), dim,
-                          block, p["fanin"].as_int(), p["threshold"].as_float(),
-                          MPI_Comm_f2c(p["mpi_comm"].as_int()));
+    MPI_Comm comm = MPI_Comm_f2c(p["mpi_comm"].as_int());
+    uint32_t *data_size = p["data_size"].as_uint32_ptr();
+    uint32_t *low = p["low"].as_uint32_ptr();
+    uint32_t *high = p["high"].as_uint32_ptr();
+    uint32_t *n_blocks = p["n_blocks"].as_uint32_ptr();
+    uint32_t task_id = p["task_id"].as_uint32();
+    uint32_t fanin = p["fanin"].as_uint32();
+    FunctionType threshold = p["threshold"].as_float();
+    ParallelMergeTree pmt(reinterpret_cast<FunctionType *>(array.data_ptr()), task_id, data_size, n_blocks, low, high,
+                          fanin, threshold, comm);
     pmt.Initialize();
     pmt.Execute();
   } else {

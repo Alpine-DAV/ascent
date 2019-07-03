@@ -7,7 +7,6 @@
 using namespace ascent;
 using namespace conduit;
 
-
 int main(int argc, char **argv)
 {
   using namespace std;
@@ -21,37 +20,135 @@ int main(int argc, char **argv)
 
   Ascent a;
   conduit::Node ascent_opt;
-  ascent_opt["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);;
+  ascent_opt["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
   ascent_opt["runtime/type"] = "ascent";
   a.open(ascent_opt);
 
-  // create example mesh using conduit blueprint
-  Node mesh;
-  int xdim = 128, ydim = 128, zdim = 128;
-  conduit::blueprint::mesh::examples::braid("hexs",
-                                            xdim,
-                                            ydim,
-                                            zdim,
-                                            mesh);
-  // publish mesh to ascent
-  a.publish(mesh);
-  // publish mesh to ascent
+  // user defines n_blocks per dimension
+  // user provides the size of the whole data
+  vector <uint32_t> data_size({256, 256, 256});
+  vector <uint32_t> n_blocks({2, 2, 2});
+  uint32_t block_size[3] = {data_size[0] / n_blocks[0], data_size[1] / n_blocks[1], data_size[2] / n_blocks[2]};
+  // compute the boundaries of the needed block
+  vector <uint32_t> low(3);
+  vector <uint32_t> high(3);
+  low[0] = mpi_rank % n_blocks[0] * block_size[0];
+  low[1] = mpi_rank / n_blocks[0] % n_blocks[1] * block_size[1];
+  low[2] = mpi_rank / n_blocks[1] / n_blocks[2] % n_blocks[2] * block_size[2];
+  high[0] = std::min(low[0] + block_size[0], data_size[0] - 1);
+  high[1] = std::min(low[1] + block_size[1], data_size[1] - 1);
+  high[2] = std::min(low[2] + block_size[2], data_size[2] - 1);
 
+
+  // for testing purpose: every rank has whole data
+  // in practice, Only assign the corresponding block(s) to each rank
+  // in practice, the code below till the comment <build the local mesh> are not needed
+  // The user should define block_data or that should come from the simulation\
+  // NOTE: PMT assumes Ghost Layers only in positive x,y,z directions
+  Node whole_data_node;
+  conduit::blueprint::mesh::examples::braid("hexs",
+                                            data_size[0],
+                                            data_size[1],
+                                            data_size[2],
+                                            whole_data_node);
+  conduit::DataArray<double> whole_data_array = whole_data_node["fields/braid/values"].as_float64_array();
+
+  uint32_t num_x = high[0] - low[0] + 1;
+  uint32_t num_y = high[1] - low[1] + 1;
+  uint32_t num_z = high[2] - low[2] + 1;
+
+  // copy the subsection of data
+  uint32_t offset = 0;
+  uint32_t start = low[0] + low[1] * data_size[0] + low[2] * data_size[0] * data_size[1];
+  // change FunctionType to double or change datatype to float
+  vector<float> block_data(num_x * num_y * num_z, 0.f);
+  for (uint32_t bz = 0; bz < num_z; ++bz) {
+    for (uint32_t by = 0; by < num_y; ++by) {
+      int data_idx = start + bz * data_size[0] * data_size[1] + by * data_size[0];
+      for (uint32_t i = 0; i < num_x; ++i) {
+        block_data[offset + i] = static_cast<float>(whole_data_array[data_idx + i]);
+      }
+      offset += num_x;
+    }
+  }
+
+  // build the local mesh.
+  Node mesh;
+  mesh["coordsets/coords/type"] = "uniform";
+  mesh["coordsets/coords/dims/i"] = num_x;
+  mesh["coordsets/coords/dims/j"] = num_y;
+  mesh["coordsets/coords/dims/k"] = num_z;
+  mesh["topologies/topo/type"] = "uniform";
+  mesh["topologies/topo/coordset"] = "coords";
+  mesh["fields/braids/association"] = "vertex";
+  mesh["fields/braids/topology"] = "topo";
+  mesh["fields/braids/values"].set_external(block_data);
+
+  // assuming # of ranks == # of leaves
+  uint32_t task_id = mpi_rank;
+
+
+  // output binary blocks for debugging purpose
+  //  data<mpi_rank>.bin
+  {
+    stringstream ss;
+    ss << "data" << mpi_rank << ".bin";
+    ofstream bofs(ss.str(), ios::out | ios::binary);
+    bofs.write(reinterpret_cast<char *>(block_data.data()), block_data.size() * sizeof(float));
+    bofs.close();
+  }
+  // output text block parameters
+  //  uint32 low[0], uint32 low[1], uint32 low[2], uint32 high[0], uint32 high[1], uint32 high2
+  //  data<mpi_rank>.params
+  {
+    stringstream ss;
+    ss << "data" << mpi_rank << ".params";
+    ofstream ofs(ss.str());
+    ofs << low[0] << " " << low[1] << " " << low[2] << " " << high[0] << " " << high[1] << " " << high[2];
+    ofs.flush();
+    ofs.close();
+  }
+  // publish
+  a.publish(mesh);
+  // build extracts Node
   Node extract;
-  extract["e1/type"] = "babelflow";
+  extract["e1/type"] = "babelflow"; // use the babelflow runtime filter
+
+  // extracts params:
+  //  task = "pmt"
   extract["e1/params/task"] = "pmt";
-  extract["e1/params/mpi_size"] = mpi_size;
-  extract["e1/params/mpi_rank"] = mpi_rank;
-  extract["e1/params/data_path"] = "fields/braid/values";
-  extract["e1/params/xdim"] = xdim;
-  extract["e1/params/ydim"] = ydim;
-  extract["e1/params/zdim"] = zdim;
-  extract["e1/params/bxdim"] = 64;
-  extract["e1/params/bydim"] = 64;
-  extract["e1/params/bzdim"] = 64;
-  extract["e1/params/fanin"] = 2;
-  extract["e1/params/threshold"] = -FLT_MAX;
+  //  mpi_comm = MPI_COMM_WORLD // Default.
   extract["e1/params/mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+  //  mpi_size
+  extract["e1/params/mpi_size"] = mpi_size;
+  //  mpi_rank
+  extract["e1/params/mpi_rank"] = mpi_rank;
+  //  data_path = <string to access the scalar field>
+  extract["e1/params/data_path"] = "fields/braids/values";
+  //  data_size = the size of whole dataset
+  extract["e1/params/data_size"].set_uint32_vector(data_size);
+  //  n_blocks = <# of blocks for each dimension, needed by TaskGraph>
+  extract["e1/params/n_blocks"].set_uint32_vector(n_blocks);
+  //  fanin = <pmt parameter>
+  extract["e1/params/fanin"] = static_cast<uint32_t>(2);
+  //  threshold = <pmt parameter>
+  extract["e1/params/threshold"] = -FLT_MAX;
+  //  low = <starting indices of the current block, needed by make_local_block>
+  extract["e1/params/low"].set_uint32_vector(low);
+  //  high = <ending indices of the current block (inclusive), needed by make_local_block>
+  extract["e1/params/high"].set_uint32_vector(high);
+  //  task_id <needed when setting initial input>
+  extract["e1/params/task_id"] = task_id;
+
+  //  ### future work: supporting multiple blocks per node
+  //  ### low and high should be defined in TaskId
+  //  ### the following parameters should be defined in form of lists ###
+  //  ### low, high, task_id
+  //  ### we add additional number n_jobs to indicate number of blocks on this node ###
+  //  ### low.size() = 3 * n_jobs
+  //  ### high.size() = 3 * n_jobs
+  //  ### task_id.size() = n_jobs
+  //  ### data in form of <block_1, block_2, ..., block_n> size of each block is defined by high - low + 1 per dimension
 
   Node action;
   Node &add_extract = action.append();
