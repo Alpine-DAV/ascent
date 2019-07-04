@@ -23,14 +23,15 @@ void ascent::runtime::filter::BabelFlow::execute()
   this->mpi_rank = params()["mpi_rank"].as_int();
   this->mpi_size = params()["mpi_size"].as_int();
   if (op == PMT) {
+    // connect to the input port and get the parameters
     conduit::Node p = params();
     auto *in = input<conduit::Node>("in");
     auto &data_node = in->children().next();
 
+    // get the data handle
     conduit::DataArray<float> array = data_node[p["data_path"].as_string()].as_float32_array();
-    auto n_elems = array.number_of_elements();
 
-
+    // get the parameters
     MPI_Comm comm = MPI_Comm_f2c(p["mpi_comm"].as_int());
     uint32_t *data_size = p["data_size"].as_uint32_ptr();
     uint32_t *low = p["low"].as_uint32_ptr();
@@ -39,6 +40,8 @@ void ascent::runtime::filter::BabelFlow::execute()
     uint32_t task_id = p["task_id"].as_uint32();
     uint32_t fanin = p["fanin"].as_uint32();
     FunctionType threshold = p["threshold"].as_float();
+
+    // create ParallelMergeTree instance and run
     ParallelMergeTree pmt(reinterpret_cast<FunctionType *>(array.data_ptr()), task_id, data_size, n_blocks, low, high,
                           fanin, threshold, comm);
     pmt.Initialize();

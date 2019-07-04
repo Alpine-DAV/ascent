@@ -119,10 +119,6 @@ int main(int argc, char **argv)
   extract["e1/params/task"] = "pmt";
   //  mpi_comm = MPI_COMM_WORLD // Default.
   extract["e1/params/mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
-  //  mpi_size
-  extract["e1/params/mpi_size"] = mpi_size;
-  //  mpi_rank
-  extract["e1/params/mpi_rank"] = mpi_rank;
   //  data_path = <string to access the scalar field>
   extract["e1/params/data_path"] = "fields/braids/values";
   //  data_size = the size of whole dataset
