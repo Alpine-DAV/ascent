@@ -19,9 +19,6 @@ void ascent::runtime::filter::BabelFlow::declare_interface(conduit::Node &i)
 
 void ascent::runtime::filter::BabelFlow::execute()
 {
-
-  this->mpi_rank = params()["mpi_rank"].as_int();
-  this->mpi_size = params()["mpi_size"].as_int();
   if (op == PMT) {
     // connect to the input port and get the parameters
     conduit::Node p = params();

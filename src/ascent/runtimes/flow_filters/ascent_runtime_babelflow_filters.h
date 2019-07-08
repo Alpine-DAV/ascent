@@ -28,11 +28,9 @@ class BabelFlow : public ::flow::Filter
 {
 private:
   op op = NOOP;
-  int mpi_size;
-  int mpi_rank;
 
 public:
-  BabelFlow():mpi_size(0),mpi_rank(0){};
+  BabelFlow()= default;
   void declare_interface(conduit::Node &i) override;
 
   void execute() override;
