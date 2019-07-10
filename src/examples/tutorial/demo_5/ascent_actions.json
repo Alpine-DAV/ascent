@@ -1,0 +1,24 @@
+[
+  {
+    "action": "add_extracts",
+    "extracts":
+    {
+      "e1":
+      {
+        "type": "python",
+        "params":
+        {
+            "file": "ascent_tutorial_demo_5_rotation.py"
+        }
+      }
+    }
+  },
+
+  {
+    "action": "execute"
+  },
+
+  {
+    "action": "reset"
+  }
+]

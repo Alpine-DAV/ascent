@@ -241,6 +241,47 @@ The script computes the histogram of the energy field and prints a summary like 
     2.6617779   2.70134404  2.74091018  2.78047632  2.82004246  2.8596086
     2.89917474  2.93874088]
 
+Demo 5: Running A More Advanced Custom Python Extract
+-----------------------------------------------------
+
+In this demo we will show how to use more advanced features using python extracts.
+We will demonstrate how you can use python in the way that many will be familiar
+with, using classes and definitions, to create our images.
+
+Hopefully this will allow you to understand the core concepts and how to achieve
+what can be done in C++ with python. The key concept is that we need to grab
+the communicator from ascent, from which point we can write a conventional python
+file. We are also able to use any ascent and conduit functionality. 
+
+Our goal is to take a running simulation, in this case Cloverleaf3d, and create
+many images that represent a rotation of that object about its vertical
+axis, thus giving us a 3d view of the object at each time-step. We will do this
+by centering the cube to have its origin at the center of the cube. Then we will
+convert to cylindrical coordinates and rotate around the object's y-axis (the
+vertical axis). 
+
+Our actions file will be fairly simple.
+
+.. literalinclude:: ../../../src/examples/tutorial/demo_5/ascent_actions.json
+   :language: json
+
+(Also available in install directory: `examples/tutorial/demo_5/ascent_actions.json`)
+
+
+Next, create our python program ``ascent_tutorial_demo_5_rotation.py``:
+
+.. literalinclude:: ../../../src/examples/tutorial/demo_5/ascent_tutorial_demo_5_rotation.py 
+   :language: python
+
+We can run this code like we did above. 
+
+.. code::
+
+   mpiexec -n 2 ./cloverleaf3d_par 
+
+If everything ran correctly then in our destination folder we should see 100 
+images.
+
 .. _demos_using_docker:
 
 Running Demos using Docker
