@@ -49,6 +49,10 @@
 #
 ###############################################################################
 
+if(ENABLE_CUDA AND NOT "${BUILD_SHARED_LIBS}" STREQUAL "OFF")
+  message(FATAL_ERROR "Ascent can only be built statically when cuda is enabled")
+endif()
+
 convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
                                     ASCENT_INSTALL_PREFIX)
 
