@@ -83,7 +83,7 @@ PNGDecoder::Decode(unsigned char *&rgba,
                    const std::string &file_name)
 {
   unsigned w,h;
-  unsigned int res = lodepng_decode32_file(&rgba, &w, &h, file_name.c_str());
+  unsigned int res = lpng::lodepng_decode32_file(&rgba, &w, &h, file_name.c_str());
 
   width = w;
   height = h;

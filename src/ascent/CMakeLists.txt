@@ -150,7 +150,7 @@ set(ascent_headers
 
 if(VTKM_FOUND)
 
-    set(asent_vtkh_dep_headers
+    set(ascent_vtkh_dep_headers
         runtimes/ascent_vtkh_data_adapter.hpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
@@ -158,18 +158,18 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
         runtimes/ascent_main_runtime.hpp)
 
-    set(asent_vtkh_dep_sources
+    set(ascent_vtkh_dep_sources
         runtimes/ascent_vtkh_data_adapter.cpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
         runtimes/ascent_main_runtime.cpp)
 
-    foreach( _itm ${asent_vtkh_dep_headers} )
+    foreach( _itm ${ascent_vtkh_dep_headers} )
         list(APPEND ascent_headers ${_itm})
     endforeach()
 
-    foreach( _itm ${asent_vtkh_dep_sources} )
+    foreach( _itm ${ascent_vtkh_dep_sources} )
         list(APPEND ascent_sources ${_itm})
     endforeach()
 
@@ -180,6 +180,8 @@ if(MFEM_FOUND)
     list(APPEND ascent_headers runtimes/ascent_mfem_data_adapter.hpp)
     list(APPEND ascent_sources runtimes/ascent_mfem_data_adapter.cpp)
 endif()
+
+
 ##############################
 # optional features
 #############################
@@ -239,6 +241,12 @@ blt_add_library(
     HEADERS     ${ascent_headers}
     DEPENDS_ON  ${ascent_thirdparty_libs})
 
+if(VTKM_FOUND)
+    set(ascent_device_sources ${ascent_vtkh_dep_sources})
+    list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
+
+    vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
+endif()
 # install target for serial ascent lib
 install(TARGETS ascent
         EXPORT  ascent
@@ -287,6 +295,11 @@ if(MPI_FOUND)
         HEADERS     ${ascent_headers} ${ascent_mpi_headers}
         DEPENDS_ON  ${ascent_mpi_thirdparty_libs})
 
+
+    if(VTKM_FOUND)
+        vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_device_sources})
+        message(STATUS "*&*^*&*^ ${ascent_device_sources}")
+    endif()
     blt_add_target_compile_flags(TO ascent_mpi FLAGS "-D ASCENT_MPI_ENABLED")
 
     # install target for mpi ver

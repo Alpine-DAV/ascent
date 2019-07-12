@@ -136,7 +136,7 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     is_interleaved = false;
 
     ndims = 2;
-    
+
     // n_coords_conv holds contig data if we have stride-ed but
     // non-interleaved values
     Node n_coords_conv;
@@ -145,7 +145,7 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     const T* y_coords_ptr = NULL;
     const T *z_coords_ptr = NULL;
 
-    // if we are an interleaved mcarray, or compact we can 
+    // if we are an interleaved mcarray, or compact we can
     // directly use the pointer with vtk-m.
     // otherwise, we need to compact.
 
@@ -412,7 +412,10 @@ void ExtractVector(vtkm::cont::DataSet *dset,
   vtkm::cont::ArrayHandle<vtkm::Vec<T,3>> interleaved_handle;
   interleaved_handle.Allocate(num_vals);
   // Calling this without forcing serial could cause serious problems
-  vtkm::cont::ArrayCopy(composite, interleaved_handle, vtkm::cont::DeviceAdapterTagSerial());
+  {
+    vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
+    vtkm::cont::ArrayCopy(composite, interleaved_handle);
+  }
 
   vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
   if(assoc_str == "vertex")

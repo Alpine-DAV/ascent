@@ -91,7 +91,7 @@ set(MPI_TESTS  t_ascent_mpi_smoke
 # include the "ascent" pipeline
 if(VTKM_FOUND)
    list(APPEND BASIC_TESTS t_ascent_ascent_runtime)
-   list(APPEND VTKH_DEP_TESTS t_ascent_vtkh_data_adapter)
+   #list(APPEND VTKH_DEP_TESTS t_ascent_vtkh_data_adapter)
    list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime
                            t_ascent_mpi_relay_extract)
 endif()
@@ -118,6 +118,12 @@ endforeach()
 foreach(TEST ${VTKH_DEP_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
 endforeach()
+
+#if(VTKM_FOUND)
+#  # special test case where we test vtkm conversions
+#   vtkm_add_target_information(t_ascent_vtkh_data_adapter
+#                               DEVICE_SOURCES t_ascent_vtkh_data_adapter)
+#endif()
 
 ################################
 # Add optional tests
