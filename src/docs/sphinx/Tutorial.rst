@@ -279,8 +279,16 @@ We can run this code like we did above.
 
    mpiexec -n 2 ./cloverleaf3d_par 
 
-If everything ran correctly then in our destination folder we should see 100 
-images.
+If everything ran correctly then in our destination folder we have created a 
+folder for the cycle number which should see 10 images and a data folder that
+contains another folder and a root file. The root file can be read by Ascent's
+:ref:`replay <replay>` functionality.
+
+
+If we print our actions node we can see that it will look exactly like 
+an ascent_actions.json file that we are used to creating.
+
+.. literalinclude:: ../../../src/examples/tutorial/demo_5/actions_output.json
 
 .. _demos_using_docker:
 

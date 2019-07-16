@@ -92,6 +92,8 @@ your path:
 To verify success, you can echo your path and the paths of the libraries should appear at the
 front of the path.
 
+.. _replay:
+
 Replay
 ------
 Replay is a utility that allows the user to 'replay' Conduit Blueprint HDF5

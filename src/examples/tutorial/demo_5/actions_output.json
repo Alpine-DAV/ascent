@@ -1,0 +1,51 @@
+[
+  {
+    "action": "add_scenes",
+    "scenes": 
+    {
+      "s1": 
+      {
+        "plots": 
+        {
+          "p1": 
+          {
+            "type": "pseudocolor",
+            "field": "energy"
+          }
+        },
+        "renders": 
+        {
+          "r0": 
+          {
+            "annotations": "false",
+            "image_name": "myPath/1/theta_0.0_",
+            "camera": 
+            {
+              "position": [20.0, 0.0, 0.0]
+            }
+          },
+          more renders
+          }
+        }
+      }
+    },
+    {
+    "action": "add_extracts",
+    "extracts":
+    {
+      "e2":
+      {
+        "type": "relay",
+        "params":
+        {
+          "path": "myPath/1/data/rotation_data",
+          "protocol": "blueprint/mesh/hdf5"
+        }
+      }
+    }
+  },
+  
+  {
+    "action": "execute"
+  }
+]
