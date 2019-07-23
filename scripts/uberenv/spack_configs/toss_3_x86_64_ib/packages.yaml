@@ -16,7 +16,7 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    #variants: cuda_arch=60
+    variants: cuda_arch=60
     compiler: [gcc, intel, pgi, clang, xl, nag]
     providers:
       awk: [gawk]
@@ -43,8 +43,10 @@ packages:
     variants: ~dbm
   cmake:
     paths:
-      cmake@3.9.2: /usr/tce/packages/cmake/cmake-3.9.2
+      cmake@3.14.5: /usr/tce/packages/cmake/cmake-3.14.5/
     buildable: False
+    #modules:
+    #  cmake@3.14.5: cmake/3.14.5
   perl:
     buildable: False
     paths:
@@ -56,7 +58,7 @@ packages:
 # LLNL toss3 CUDA
   cuda:
     modules:
-       cuda@9.2: cuda/9.2.88
+       cuda@10.1.168: cuda/10.1.168
     buildable: False
 # LLNL toss3 mvapich2
   mvapich2:

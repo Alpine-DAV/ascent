@@ -21,7 +21,7 @@ class Vtkm(CMakePackage, CudaPackage):
     git      = "https://gitlab.kitware.com/vtk/vtk-m.git"
 
     # version used for ascent
-    version('ascent_ver', commit='cbe9b261', preferred=True)
+    version('ascent_ver', commit='c80c1d09c043b9af04839a92cd46b12ac673fc98', preferred=True)
     version('master', branch='master')
     version('1.3.0', "d9f6e274dec2ea01273cccaba356d23ca88c5a25")
     version('1.2.0', "3295fed86012226c107e1f2605ca7cc583586b63")
@@ -44,9 +44,14 @@ class Vtkm(CMakePackage, CudaPackage):
             description="enable 64 bits ids")
 
     depends_on("cmake")
+
     depends_on("tbb", when="+tbb")
     depends_on("cuda", when="+cuda")
     depends_on("mpi", when="+mpi")
+
+    # secretly change build to static when building with cuda to bypass spack variant
+    # forwarding crazyness
+    #conflicts('+cuda', when='+shared', msg='vtk-m must be built statically (~shared) when cuda is enabled')
 
     def cmake_args(self):
         spec = self.spec
@@ -54,11 +59,15 @@ class Vtkm(CMakePackage, CudaPackage):
         with working_dir('spack-build', create=True):
             options = ["../",
                        "-DVTKm_ENABLE_TESTING:BOOL=OFF"]
-            # shared vs static libs
-            if "+shared" in spec:
-                options.append('-DBUILD_SHARED_LIBS=ON')
-            else:
+            # shared vs static libs logic
+            # force building statically with cuda
+            if "+cuda" in spec:
                 options.append('-DBUILD_SHARED_LIBS=OFF')
+            else:
+              if "+shared" in spec:
+                  options.append('-DBUILD_SHARED_LIBS=ON')
+              else:
+                  options.append('-DBUILD_SHARED_LIBS=OFF')
             # cuda support
             if "+cuda" in spec:
                 options.append("-DVTKm_ENABLE_CUDA:BOOL=ON")
