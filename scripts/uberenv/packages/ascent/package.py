@@ -73,7 +73,7 @@ class Ascent(Package):
     # package dependencies
     ###########################################################################
 
-    depends_on("cmake@3.14.5", type='build')
+    depends_on("cmake@3.14.1:3.14.5")
     depends_on("conduit~python", when="~python")
     depends_on("conduit+python", when="+python+shared")
     depends_on("conduit~shared~python", when="~shared")

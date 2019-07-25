@@ -56,6 +56,10 @@ packages:
     paths:
       cuda@10.1.105: /sw/summit/cuda/10.1.105/
     buildable: False
+#  cmake:
+#    paths:
+#      cmake@3.14.2: /autofs/nccs-svm1_sw/summit/.swci/0-core/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/cmake-3.14.2-3zkrrk4chuq6wfhvxpmen2gzdpaoiorw/
+#    buildable: False
 # ORNL blueos mpi
 # note, we need to fake this as an existing mpi package
 # so even though this is spectrum mpi, we call it mvapich2
