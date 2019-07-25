@@ -1,8 +1,7 @@
 import sys
 # CHANGE this path to the result of:
 # $(spack location --install-dir paraview)
-paraview_path="/home/danlipsa/projects/ascent_new/build/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.4.0/paraview-master-e6ji62w2jt47cj446twsnndkkxgncz6x"
-paraview_path = paraview_path + "/lib/python2.7/site-packages"
+paraview_path="/home/danlipsa/projects/ascent_new/build/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.4.0/paraview-master-e6ji62w2jt47cj446twsnndkkxgncz6x/lib/python2.7/site-packages"
 sys.path.append(paraview_path)
 
 

@@ -1,0 +1,12 @@
+diff --git a/var/spack/repos/builtin/packages/paraview/package.py b/var/spack/repos/builtin/packages/paraview/package.py
+index 8d04d459f..68ebe4eaf 100644
+--- a/var/spack/repos/builtin/packages/paraview/package.py
++++ b/var/spack/repos/builtin/packages/paraview/package.py
+@@ -189,6 +189,7 @@ class Paraview(CMakePackage):
+             '-DVTK_USE_X:BOOL=%s' % nvariant_bool('+osmesa'),
+             '-DVTK_RENDERING_BACKEND:STRING=%s' % rendering,
+             '-DPARAVIEW_INSTALL_DEVELOPMENT_FILES:BOOL=%s' % includes,
++            '-DPARAVIEW_ENABLE_MOMENTINVARIANTS:BOOL=ON',
+             '-DBUILD_TESTING:BOOL=OFF',
+             '-DBUILD_EXAMPLES:BOOL=%s' % variant_bool('+examples'),
+             '-DVTK_USE_SYSTEM_FREETYPE:BOOL=ON',

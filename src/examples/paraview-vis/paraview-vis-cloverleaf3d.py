@@ -1,8 +1,7 @@
 import sys
 # CHANGE this path to the result of:
 # $(spack location --install-dir paraview)
-paraview_path="/home/danlipsa/projects/ascent/build/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.4.0/paraview-master-e6ji62w2jt47cj446twsnndkkxgncz6x"
-paraview_path = paraview_path + "/lib/python2.7/site-packages"
+paraview_path="/home/danlipsa/projects/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/paraview-develop-qhm2ssmu2e3ko3jpz6xijn6b64u7nwnp//lib/python2.7/site-packages"
 sys.path.append(paraview_path)
 
 # Same Python interpreter for all time steps
@@ -28,15 +27,16 @@ node = ascent_extract.ascent_data().child(0)
 domain_id = node["state/domain_id"]
 cycle = node["state/cycle"]
 imageName = "image_{0:04d}.png".format(int(cycle))
-dataName = "paraviewdata_{0:04d}".format(int(cycle))
+dataName = "cloverleaf3d_data_{0:04d}".format(int(cycle))
 scriptName = "/home/danlipsa/projects/ascent/src/examples/paraview-vis/paraview_ascent_source.py"
 LoadPlugin(scriptName, remote=True, ns=globals())
+
 ascentSource = AscentSource()
 
 # ghosts are not supported in rectilinear grids so we just extract the regular cells.
 sel=SelectCells("vtkGhostType < 1")
 e = ExtractSelection(Selection=sel)
-
+# render the data
 rep = Show()
 ColorBy(rep, ("CELLS", "energy"))
 # rescale transfer function
@@ -51,19 +51,18 @@ energyLUT.ComponentTitle = ''
 energyLUT.Visibility = 1
 # show color legend
 rep.SetScalarBarVisibility(renderView1, True)
+
 ResetCamera()
 if count == 0:
     cam = GetActiveCamera()
     cam.Elevation(30)
-    cam.Azimuth(30)
+    cam.Azimuth(-30)
 Render()
-# This returns an error:
-# X Error of failed request:  BadValue (integer parameter out of range for operation)
-#     Major opcode of failed request:  12 (X_ConfigureWindow)
-# SaveScreenshot(imageName)
-WriteImage(imageName)
-writer = CreateWriter(dataName + ".pvtr", ascentSource)
-writer.UpdatePipeline()
+
+
+SaveScreenshot(imageName, ImageResolution=(1024, 1024))
+# writer = CreateWriter(dataName + ".pvtr", ascentSource)
+# writer.UpdatePipeline()
 
 
 # # VTK API
@@ -80,3 +79,4 @@ writer.UpdatePipeline()
 # write_hdf("data", node)
 # data = ascent_to_vtk(node)
 # write_vtk("pythondata", node, data)
+    
