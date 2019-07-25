@@ -65,7 +65,7 @@ class UberenvAscent(Ascent):
 
 
     # in upstream spack package
-    depends_on("cmake@3.14.5", when="+cmake")
+    depends_on("cmake@3.14.1:3.14.5", when="+cmake")
 
 
     def url_for_version(self, version):

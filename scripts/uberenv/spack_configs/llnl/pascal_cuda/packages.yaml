@@ -16,7 +16,7 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    variants: cuda_arch=70 +cuda~openmp~python+shared~mfem
+    variants: ~shared~openmp~python+cuda cuda_arch=60
     compiler: [gcc, intel, pgi, clang, xl, nag]
     providers:
       awk: [gawk]
@@ -41,8 +41,10 @@ packages:
     version: [master]
   python:
     variants: ~dbm
-  py-numpy:
-    variants: ~blas~lapack
+  cmake:
+    paths:
+      cmake@3.14.5: /usr/tce/packages/cmake/cmake-3.14.5/
+    buildable: False
   perl:
     buildable: False
     paths:
@@ -51,16 +53,15 @@ packages:
       buildable: False
       paths:
           pkg-config: /usr
-# ORNL blueos CUDA
+# LLNL toss3 CUDA 
   cuda:
-    paths:
-      cuda@10.1.105: /sw/summit/cuda/10.1.105/
+    modules:
+       cuda@10.1: cuda/10.1.168
     buildable: False
-# ORNL blueos mpi
-# note, we need to fake this as an existing mpi package
-# so even though this is spectrum mpi, we call it mvapich2
+# LLNL toss3 mvapich2
   mvapich2:
     paths:
-      mvapich2@2.2%xl: /autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/xl-16.1.1-1/spectrum-mpi-10.2.0.11-20190201-6qypd6rixwrkcyd5gnijoacjqxrtblzk/ 
-      mvapich2@2.2%gcc: /autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-5.4.0/spectrum-mpi-10.3.0.0-20190419-qz2r4lhch6h3xf64hqht3covyj7o4hqp/ 
+      mvapich2@2.2%gcc@4.9.3:  /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+      mvapich2@2.2%intel@17.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.0
+      mvapich2@2.2%clang@4.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-clang-4.0.0
     buildable: False

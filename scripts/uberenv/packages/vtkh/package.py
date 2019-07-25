@@ -49,16 +49,11 @@ class Vtkh(Package):
     variant("openmp", default=(sys.platform != 'darwin'),
             description="build openmp support")
 
-    depends_on("cmake@3.14.5:")
+    depends_on("cmake@3.14.1:3.14.5")
 
     depends_on("mpi", when="+mpi")
     depends_on("intel-tbb", when="@0.1.0+tbb")
     depends_on("cuda", when="+cuda")
-
-    #depends_on("vtkm@1.2.0", when="@0.1.0")
-    #depends_on("vtkm@1.2.0+tbb", when="@0.1.0+tbb")
-    #depends_on("vtkm@1.2.0+cuda", when="@0.1.0+cuda")
-    #depends_on("vtkm@1.2.0~shared", when="@0.1.0~shared")
 
     depends_on("vtkm@master~tbb+openmp", when="@develop+openmp")
     depends_on("vtkm@master~tbb~openmp", when="@develop~openmp")
