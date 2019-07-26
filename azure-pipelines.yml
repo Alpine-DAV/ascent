@@ -228,7 +228,7 @@ jobs:
          which python
          python --version
          # setup spack spec, goal here is a minimal cuda enabled build
-         export SPACK_SPEC="%gcc+mpi+cuda+vtkh~python"
+         export SPACK_SPEC="cuda_arch=70 %gcc+mpi+cuda+vtkh~python~shared"
          # shared vs static
          if [ $BUILD_SHARED_LIBS  = 'ON' ];  then export SPACK_SHARED_VARIANT="+shared"; fi
          if [ $BUILD_SHARED_LIBS  = 'OFF' ];  then export SPACK_SHARED_VARIANT="~shared"; fi
