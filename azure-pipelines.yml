@@ -192,7 +192,7 @@ jobs:
   timeoutInMinutes: 0
   strategy:
     matrix:
-      shared_vtkh:
+      static_vtkh:
         BUILD_SHARED_LIBS: OFF
         CMAKE_BUILD_TYPE: Debug
   steps:
