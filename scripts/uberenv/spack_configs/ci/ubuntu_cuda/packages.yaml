@@ -1,6 +1,6 @@
 packages:
   all:
-    variants: cuda_arch=60 %gcc+mpi+cuda+vtkh~python~shared
+    variants: ~shared~python+cuda+openmp cuda_arch=70
     compiler: [gcc]
     providers:
       blas: [netlib-lapack]
@@ -15,7 +15,7 @@ packages:
       openmpi: /usr
   gdbm:
     buildable: False
-   paths:
+    paths:
       gdbm: /usr
   bzip2:
     buildable: False
