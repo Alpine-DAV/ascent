@@ -206,7 +206,7 @@ jobs:
          #################################
          # output env
          env
-         whoami 
+         whoami
          sudo apt-get update
          # list pkgs we need
          export APT_PKGS=git
@@ -228,7 +228,7 @@ jobs:
          which python
          python --version
          # setup spack spec, goal here is a minimal cuda enabled build
-         export SPACK_SPEC="cuda_arch=70 %gcc+mpi+cuda+vtkh~python~shared"
+         export SPACK_SPEC=" cuda_arch=70 %gcc+mpi+cuda+vtkh~python~shared"
          # shared vs static
          if [ $BUILD_SHARED_LIBS  = 'ON' ];  then export SPACK_SHARED_VARIANT="+shared"; fi
          if [ $BUILD_SHARED_LIBS  = 'OFF' ];  then export SPACK_SHARED_VARIANT="~shared"; fi
@@ -287,7 +287,7 @@ jobs:
 
 
 ###############################################################################
-# Disabled b/c this is currently always testing develop, which 
+# Disabled b/c this is currently always testing develop, which
 # isn't helpful and creates confusing results.
 ###############################################################################
 
