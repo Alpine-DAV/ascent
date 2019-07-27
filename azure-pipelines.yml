@@ -193,7 +193,7 @@ jobs:
   strategy:
     matrix:
       shared_vtkh:
-        BUILD_SHARED_LIBS: ON
+        BUILD_SHARED_LIBS: OFF
         CMAKE_BUILD_TYPE: Debug
   steps:
     - checkout: self
@@ -227,16 +227,9 @@ jobs:
          # echo system python details
          which python
          python --version
-         # setup spack spec, goal here is a minimal cuda enabled build
-         export SPACK_SPEC=" cuda_arch=70 %gcc+mpi+cuda+vtkh~python~shared"
-         # shared vs static
-         if [ $BUILD_SHARED_LIBS  = 'ON' ];  then export SPACK_SHARED_VARIANT="+shared"; fi
-         if [ $BUILD_SHARED_LIBS  = 'OFF' ];  then export SPACK_SHARED_VARIANT="~shared"; fi
-         export SPACK_SPEC="${SPACK_SPEC}${SPACK_SHARED_VARIANT} ^vtkh+cuda${SPACK_SHARED_VARIANT} ^vtkm+cuda${SPACK_SHARED_VARIANT}"
-         export SPACK_SPEC="${SPACK_SPEC} ^cmake~openssl~ncurses"
-         echo $SPACK_SPEC
+         # spack spec is completely comtained inside the ubuntu_cuda config
          # run uber to build tpls
-         python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu/
+         python scripts/uberenv/uberenv.py --pull --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_cuda/
       displayName: 'Spack Build Tpls'
 
     - script: |
