@@ -15,7 +15,7 @@ packages:
       openmpi: /usr
   gdbm:
     buildable: False
-    paths:
+   paths:
       gdbm: /usr
   bzip2:
     buildable: False
@@ -37,10 +37,10 @@ packages:
     buildable: False
     paths:
       pkg-confg: /usr
-      #  openssl:
-      #    buildable: False
-      #    paths:
-      #      openssl: /usr
+  openssl:
+    buildable: False
+    paths:
+      openssl: /usr
   zlib:
     buildable: False
     paths:
