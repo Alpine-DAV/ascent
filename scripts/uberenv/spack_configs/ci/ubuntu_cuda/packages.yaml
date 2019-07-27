@@ -37,10 +37,10 @@ packages:
     buildable: False
     paths:
       pkg-confg: /usr
-  openssl:
-    buildable: False
-    paths:
-      openssl: /usr
+      #  openssl:
+      #    buildable: False
+      #    paths:
+      #      openssl: /usr
   zlib:
     buildable: False
     paths:
