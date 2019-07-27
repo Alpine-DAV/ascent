@@ -193,7 +193,7 @@ jobs:
   strategy:
     matrix:
       shared_vtkh:
-        BUILD_SHARED_LIBS: OFF
+        BUILD_SHARED_LIBS: ON
         CMAKE_BUILD_TYPE: Debug
   steps:
     - checkout: self
@@ -227,9 +227,19 @@ jobs:
          # echo system python details
          which python
          python --version
-         # spack spec is completely comtained inside the ubuntu_cuda config
+         # setup spack spec
+         export SPACK_SPEC="%gcc@5+mpi"
+         # vtkh
+         if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
+         # mfem
+         if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem"; fi
+         if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem"; fi
+         # python
+         if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
+         if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
+         echo $SPACK_SPEC
          # run uber to build tpls
-         python scripts/uberenv/uberenv.py --pull --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_cuda/
+         python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_cuda/
       displayName: 'Spack Build Tpls'
 
     - script: |
