@@ -1,7 +1,6 @@
 packages:
   all:
-    #variants: ~shared~python+cuda~openmp cuda_arch=70
-    variants: ~python+cuda~openmp cuda_arch=70
+    variants: cuda_arch=70
     compiler: [gcc]
     providers:
       blas: [netlib-lapack]
