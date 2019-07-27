@@ -227,10 +227,8 @@ jobs:
          # echo system python details
          which python
          python --version
-         # setup spack spec
+         # setup spack spec (must be static)
          export SPACK_SPEC="%gcc+mpi+cuda+vtkh~python~openmp~shared"
-         # must be static
-         export SPACK_SHARED_VARIANT="~shared"
          export SPACK_SPEC="${SPACK_SPEC}${SPACK_SHARED_VARIANT} ^vtkh+cuda${SPACK_SHARED_VARIANT} ^vtkm+cuda${SPACK_SHARED_VARIANT}"
          export SPACK_SPEC="${SPACK_SPEC} ^cmake~openssl~ncurses"
          echo $SPACK_SPEC
