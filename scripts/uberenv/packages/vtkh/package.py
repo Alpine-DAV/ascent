@@ -123,12 +123,12 @@ class Vtkh(Package):
                 options.append("-DENABLE_CUDA:BOOL=ON")
                 options.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(env["SPACK_CXX"]))
                 if 'cuda_arch' in spec.variants:
-                    cuda_arch = int(spec.variants['cuda_arch'].value[0])
+                    cuda_arch = spec.variants['cuda_arch'].value[0]
                     vtkm_cuda_arch = "native"
-                    arch_map = {75:"turing", 70:"volta",
-                                62:"pascal", 61:"pascal", 60:"pascal",
-                                53:"maxwell", 52:"maxwell", 50:"maxwell",
-                                35:"kepler", 32:"kepler", 30:"kepler"}
+                    arch_map = {"75":"turing", "70":"volta",
+                                "62":"pascal", "61":"pascal", "60":"pascal",
+                                "53":"maxwell", "52":"maxwell", "50":"maxwell",
+                                "35":"kepler", "32":"kepler", "30":"kepler"}
                     if cuda_arch in arch_map:
                       vtkm_cuda_arch = arch_map[cuda_arch]
                     options.append(
