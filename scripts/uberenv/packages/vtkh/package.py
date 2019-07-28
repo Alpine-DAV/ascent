@@ -126,7 +126,7 @@ class Vtkh(Package):
                 cmake_args.append("-DVTKm_ENABLE_CUDA:BOOL=ON")
                 cmake_args.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(env["SPACK_CXX"]))
                 if 'cuda_arch' in spec.variants:
-                    cuda_arch = spec.variants['cuda_arch'].value
+                    cuda_arch = int(spec.variants['cuda_arch'].value[0])
                     vtkm_cuda_arch = "native"
                     arch_map = {75:"turing", 70:"volta",
                                 62:"pascal", 61:"pascal", 60:"pascal",
