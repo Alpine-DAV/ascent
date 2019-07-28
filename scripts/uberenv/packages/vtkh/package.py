@@ -109,9 +109,6 @@ class Vtkh(Package):
                 mpiexe_bin = join_path(spec['mpi'].prefix.bin, 'mpiexec')
                 if os.path.isfile(mpiexe_bin):
                     cmake_args.append("-DMPIEXEC={0}".format(mpiexe_bin))
-            # tbb support
-            if "+tbb" in spec:
-                cmake_args.append("-DTBB_DIR={0}".format(spec["tbb"].prefix))
 
             # openmp support
             if "+openmp" in spec:
@@ -119,9 +116,9 @@ class Vtkh(Package):
 
             # cuda support
             if "+cuda" in spec:
-                options.append("-DVTKm_ENABLE_CUDA:BOOL=ON")
-                options.append("-DENABLE_CUDA:BOOL=ON")
-                options.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(env["SPACK_CXX"]))
+                cmake_args.append("-DVTKm_ENABLE_CUDA:BOOL=ON")
+                cmake_args.append("-DENABLE_CUDA:BOOL=ON")
+                cmake_args.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(env["SPACK_CXX"]))
                 if 'cuda_arch' in spec.variants:
                     cuda_arch = spec.variants['cuda_arch'].value[0]
                     vtkm_cuda_arch = "native"
@@ -131,17 +128,17 @@ class Vtkh(Package):
                                 "35":"kepler", "32":"kepler", "30":"kepler"}
                     if cuda_arch in arch_map:
                       vtkm_cuda_arch = arch_map[cuda_arch]
-                    options.append(
+                    cmake_args.append(
                         '-DVTKm_CUDA_Architecture={0}'.format(vtkm_cuda_arch))
                 else:
                     # this fix is necessary if compiling platform has cuda, but
                     # no devices (this's common for front end nodes on hpc clus
                     # ters)
                     # we choose kepler as a lowest common denominator
-                    options.append("-DVTKm_CUDA_Architecture=kepler")
+                    cmake_args.append("-DVTKm_CUDA_Architecture=kepler")
             else:
-                options.append("-DVTKm_ENABLE_CUDA:BOOL=OFF")
-                options.append("-DENABLE_CUDA:BOOL=OFF")
+                cmake_args.append("-DVTKm_ENABLE_CUDA:BOOL=OFF")
+                cmake_args.append("-DENABLE_CUDA:BOOL=OFF")
             # use release, instead of release with debug symbols b/c vtkh libs
             # can overwhelm compilers with too many symbols
             for arg in std_cmake_args:
@@ -149,13 +146,7 @@ class Vtkh(Package):
                     cmake_args.extend(std_cmake_args)
             cmake_args.append("-DCMAKE_BUILD_TYPE=Release")
             cmake(*cmake_args)
-            if "+cuda" in spec:
-                # avoid issues with make -j and FindCuda deps
-                # likely a ordering issue that needs to be resolved
-                # in vtk-h
-                make(parallel=False)
-            else:
-                make()
+            make()
             make("install")
 
     def create_host_config(self, spec, prefix, py_site_pkgs_dir=None):
