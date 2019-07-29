@@ -28,7 +28,7 @@ def cmake_cache_entry(name, value, vtype=None):
     return 'set({0} "{1}" CACHE {2} "")\n\n'.format(name, value, vtype)
 
 
-class Vtkh(Package):
+class Vtkh(Package,CudaPackage):
     """VTK-h is a toolkit of scientific visualization algorithms for emerging
     processor architectures. VTK-h brings together several projects like VTK-m
     and DIY2 to provide a toolkit with hybrid parallel capabilities."""
@@ -119,23 +119,23 @@ class Vtkh(Package):
                 cmake_args.append("-DVTKm_ENABLE_CUDA:BOOL=ON")
                 cmake_args.append("-DENABLE_CUDA:BOOL=ON")
                 cmake_args.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(env["SPACK_CXX"]))
-                if 'cuda_arch' in spec.variants:
-                    cuda_arch = spec.variants['cuda_arch'].value[0]
-                    vtkm_cuda_arch = "native"
-                    arch_map = {"75":"turing", "70":"volta",
-                                "62":"pascal", "61":"pascal", "60":"pascal",
-                                "53":"maxwell", "52":"maxwell", "50":"maxwell",
-                                "35":"kepler", "32":"kepler", "30":"kepler"}
-                    if cuda_arch in arch_map:
-                      vtkm_cuda_arch = arch_map[cuda_arch]
-                    cmake_args.append(
-                        '-DVTKm_CUDA_Architecture={0}'.format(vtkm_cuda_arch))
-                else:
-                    # this fix is necessary if compiling platform has cuda, but
-                    # no devices (this's common for front end nodes on hpc clus
-                    # ters)
-                    # we choose kepler as a lowest common denominator
-                    cmake_args.append("-DVTKm_CUDA_Architecture=kepler")
+                #if 'cuda_arch' in spec.variants:
+                #    cuda_arch = spec.variants['cuda_arch'].value[0]
+                #    vtkm_cuda_arch = "native"
+                #    arch_map = {"75":"turing", "70":"volta",
+                #                "62":"pascal", "61":"pascal", "60":"pascal",
+                #                "53":"maxwell", "52":"maxwell", "50":"maxwell",
+                #                "35":"kepler", "32":"kepler", "30":"kepler"}
+                #    if cuda_arch in arch_map:
+                #      vtkm_cuda_arch = arch_map[cuda_arch]
+                #    cmake_args.append(
+                #        '-DVTKm_CUDA_Architecture={0}'.format(vtkm_cuda_arch))
+                #else:
+                #    # this fix is necessary if compiling platform has cuda, but
+                #    # no devices (this's common for front end nodes on hpc clus
+                #    # ters)
+                #    # we choose kepler as a lowest common denominator
+                #    cmake_args.append("-DVTKm_CUDA_Architecture=native")
             else:
                 cmake_args.append("-DVTKm_ENABLE_CUDA:BOOL=OFF")
                 cmake_args.append("-DENABLE_CUDA:BOOL=OFF")
@@ -148,6 +148,11 @@ class Vtkh(Package):
             cmake(*cmake_args)
             make()
             make("install")
+
+            host_cfg_fname = self.create_host_config(spec,
+                                                     prefix)
+
+            install(host_cfg_fname, prefix)
 
     def create_host_config(self, spec, prefix, py_site_pkgs_dir=None):
         """
@@ -266,6 +271,18 @@ class Vtkh(Package):
 
         if "+cuda" in spec:
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "ON"))
+            #cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA","ON"))
+            #cfg.write(cmake_cache_entry("CMAKE_CUDA_HOST_COMPILER",''.format(env["SPACK_CXX"])))
+            #if 'cuda_arch' in spec.variants:
+            #    cuda_arch = spec.variants['cuda_arch'].value[0]
+            #    vtkm_cuda_arch = "native"
+            #    arch_map = {"75":"turing", "70":"volta",
+            #                "62":"pascal", "61":"pascal", "60":"pascal",
+            #                "53":"maxwell", "52":"maxwell", "50":"maxwell",
+            #                "35":"kepler", "32":"kepler", "30":"kepler"}
+            #    if cuda_arch in arch_map:
+            #      vtkm_cuda_arch = arch_map[cuda_arch]
+            #    cfg.write(cmake_cache_entry('VTKm_CUDA_Architecture','{0}'.format(vtkm_cuda_arch)))
         else:
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "OFF"))
 
