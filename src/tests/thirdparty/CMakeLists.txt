@@ -48,7 +48,7 @@
 
 IF(VTKH_FOUND)
     message(STATUS "Adding vtk-h lib unit tests")
-    set(vtkh_smoke_deps vtkh)
+    set(vtkh_smoke_deps vtkh vtkm)
     if(CUDA_FOUND)
         list(APPEND vtkh_smoke_deps cuda)
     endif()
