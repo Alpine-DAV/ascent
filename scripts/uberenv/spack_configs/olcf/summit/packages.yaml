@@ -54,7 +54,7 @@ packages:
 # ORNL blueos CUDA
   cuda:
     paths:
-      cuda@10.1.105: /sw/summit/cuda/10.1.105/
+      cuda@10.1.168: /sw/summit/cuda/10.1.168 
     buildable: False
 # ORNL blueos mpi
 # note, we need to fake this as an existing mpi package
