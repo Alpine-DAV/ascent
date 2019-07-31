@@ -46,16 +46,16 @@
 # Basic TPL Tests
 ################################
 
-IF(VTKH_FOUND)
-    message(STATUS "Adding vtk-h lib unit tests")
-    set(vtkh_smoke_deps vtkh vtkm)
-    if(CUDA_FOUND)
-        list(APPEND vtkh_smoke_deps cuda)
-    endif()
-    add_cpp_test(TEST t_vtkh_smoke DEPENDS_ON ${vtkh_smoke_deps})
-    vtkm_add_target_information(t_vtkh_smoke
-                                DEVICE_SOURCES t_vtkh_smoke.cpp)
-endif()
+#IF(VTKH_FOUND)
+#    message(STATUS "Adding vtk-h lib unit tests")
+#    set(vtkh_smoke_deps vtkh)
+#    if(CUDA_FOUND)
+#        list(APPEND vtkh_smoke_deps cuda)
+#    endif()
+#    add_cpp_test(TEST t_vtkh_smoke DEPENDS_ON ${vtkh_smoke_deps})
+#    vtkm_add_target_information(t_vtkh_smoke
+#                                DEVICE_SOURCES t_vtkh_smoke.cpp)
+#endif()
 
 
 IF(MFEM_FOUND)
