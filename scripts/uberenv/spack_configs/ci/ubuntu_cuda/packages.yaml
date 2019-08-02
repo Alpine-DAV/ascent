@@ -1,6 +1,6 @@
 packages:
   all:
-    variants: cuda_arch=70
+    variants: cuda_arch=30
     compiler: [gcc]
     providers:
       blas: [netlib-lapack]
