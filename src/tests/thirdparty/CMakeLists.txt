@@ -48,7 +48,9 @@
 
 IF(VTKH_FOUND)
     message(STATUS "Adding vtk-h lib unit tests")
-    set(vtkh_smoke_deps vtkh)
+    # also add vtkm, i suspect compile flags aren't transitive
+    # for some reason, and this can undermine cuda builds
+    set(vtkh_smoke_deps vtkm vtkh)
     if(CUDA_FOUND)
         list(APPEND vtkh_smoke_deps cuda)
     endif()
