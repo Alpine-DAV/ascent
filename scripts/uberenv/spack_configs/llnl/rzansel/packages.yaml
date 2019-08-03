@@ -16,7 +16,7 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    variants: cuda_arch=60
+    variants: ~shared~python+cuda+openmp cuda_arch=70
     compiler: [gcc, intel, pgi, clang, xl, nag]
     providers:
       awk: [gawk]
@@ -45,8 +45,6 @@ packages:
     paths:
       cmake@3.14.5: /usr/tce/packages/cmake/cmake-3.14.5/
     buildable: False
-    #modules:
-    #  cmake@3.14.5: cmake/3.14.5
   perl:
     buildable: False
     paths:
@@ -63,7 +61,5 @@ packages:
 # LLNL toss3 mvapich2
   mvapich2:
     paths:
-      mvapich2@2.2%gcc@4.9.3:  /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
-      mvapich2@2.2%intel@17.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.0
-      mvapich2@2.2%clang@4.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-clang-4.0.0
+        mvapich2@2.2%gcc@4.9.3: /usr/tce/packages/spectrum-mpi/spectrum-mpi-2019.06.24-gcc-4.9.3/
     buildable: False

@@ -119,6 +119,12 @@ foreach(TEST ${VTKH_DEP_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
 endforeach()
 
+if(VTKM_FOUND)
+  # special test case where we test vtkm conversions
+   vtkm_add_target_information(t_ascent_vtkh_data_adapter
+                               DEVICE_SOURCES t_ascent_vtkh_data_adapter.cpp)
+endif()
+
 ################################
 # Add optional tests
 ################################

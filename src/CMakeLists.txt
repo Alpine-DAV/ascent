@@ -42,7 +42,7 @@
 #
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.9)
+
 ################################
 # cmake policy selections
 ################################
@@ -50,7 +50,6 @@ cmake_minimum_required(VERSION 3.9)
 cmake_policy(SET CMP0042 OLD)
 # avoid warnings for project commands w/o VERSION
 cmake_policy(SET CMP0048 NEW)
-
 
 ################################
 # Ascent
@@ -73,6 +72,17 @@ option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
+
+
+if(ENABLE_CUDA)
+  cmake_minimum_required(VERSION 3.14)
+else()
+  cmake_minimum_required(VERSION 3.9)
+endif()
+
+if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
+  message(FATAL_ERROR "Static libraries are required when building with CUDA")
+endif()
 
 
 ################################

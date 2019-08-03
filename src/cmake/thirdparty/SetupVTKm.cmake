@@ -63,7 +63,7 @@ find_package(VTKm REQUIRED)
 set(VTKM_FOUND TRUE)
 message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
 
-set(VTKm_LIBRARIES vtkm_cont vtkm_rendering)
+set(VTKm_LIBRARIES vtkm_filter vtkm_cont vtkm_rendering)
 
 blt_register_library(NAME vtkm
                      INCLUDES ${VTKm_INCLUDE_DIRS}

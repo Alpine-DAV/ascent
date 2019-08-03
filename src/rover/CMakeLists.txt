@@ -95,6 +95,7 @@ set(rover_sources
                   DEPENDS_ON ${rover_thirdparty_deps}
                  )
 
+vtkm_add_target_information(rover DEVICE_SOURCES ${rover_sources})
 ##########################################
 # Ensure we use c++11
 ##########################################
@@ -142,6 +143,7 @@ if(MPI_FOUND)
                   DEPENDS_ON ${rover_mpi_thirdparty_deps}
                   )
 
+  vtkm_add_target_information(rover_mpi DEVICE_SOURCES ${rover_sources})
   ##########################################
   # Ensure we use c++11
   ##########################################

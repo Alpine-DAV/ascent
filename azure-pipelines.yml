@@ -192,8 +192,8 @@ jobs:
   timeoutInMinutes: 0
   strategy:
     matrix:
-      shared_vtkh:
-        BUILD_SHARED_LIBS: ON
+      static_vtkh:
+        BUILD_SHARED_LIBS: OFF
         CMAKE_BUILD_TYPE: Debug
   steps:
     - checkout: self
@@ -206,7 +206,7 @@ jobs:
          #################################
          # output env
          env
-         whoami 
+         whoami
          sudo apt-get update
          # list pkgs we need
          export APT_PKGS=git
@@ -227,16 +227,13 @@ jobs:
          # echo system python details
          which python
          python --version
-         # setup spack spec, goal here is a minimal cuda enabled build
-         export SPACK_SPEC="%gcc+mpi+cuda+vtkh~python"
-         # shared vs static
-         if [ $BUILD_SHARED_LIBS  = 'ON' ];  then export SPACK_SHARED_VARIANT="+shared"; fi
-         if [ $BUILD_SHARED_LIBS  = 'OFF' ];  then export SPACK_SHARED_VARIANT="~shared"; fi
+         # setup spack spec (must be static)
+         export SPACK_SPEC="%gcc+mpi+cuda+vtkh~python~openmp~shared"
          export SPACK_SPEC="${SPACK_SPEC}${SPACK_SHARED_VARIANT} ^vtkh+cuda${SPACK_SHARED_VARIANT} ^vtkm+cuda${SPACK_SHARED_VARIANT}"
          export SPACK_SPEC="${SPACK_SPEC} ^cmake~openssl~ncurses"
          echo $SPACK_SPEC
          # run uber to build tpls
-         python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu/
+         python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_cuda/
       displayName: 'Spack Build Tpls'
 
     - script: |
@@ -287,7 +284,7 @@ jobs:
 
 
 ###############################################################################
-# Disabled b/c this is currently always testing develop, which 
+# Disabled b/c this is currently always testing develop, which
 # isn't helpful and creates confusing results.
 ###############################################################################
 

@@ -44,7 +44,7 @@
 #include <stdlib.h>
 
 // thirdparty includes
-#include <lodepng.h>
+#include <vtkh/thirdparty_builtin/lodepng/lodepng.h>
 
 // rover includes
 #include <rover_exceptions.hpp>
@@ -81,12 +81,12 @@ PNGEncoder::Encode(const unsigned char *rgba_in,
            width*4);
   }
 
-   unsigned error = lodepng_encode_memory(&m_buffer,
+   unsigned error = vtkh::lodepng_encode_memory(&m_buffer,
                                           &m_buffer_size,
                                           &rgba_flip[0],
                                           width,
                                           height,
-                                          LCT_RGBA, // these settings match those for
+                                          vtkh::LCT_RGBA, // these settings match those for
                                           8);       // lodepng_encode32_file
 
   delete [] rgba_flip;
@@ -125,12 +125,12 @@ PNGEncoder::Encode(const float *rgba_in,
       rgba_flip[outOffset + 3] = (unsigned char)(rgba_in[inOffset + 3] * 255.f);
     }
 
-   unsigned error = lodepng_encode_memory(&m_buffer,
+   unsigned error = vtkh::lodepng_encode_memory(&m_buffer,
                                           &m_buffer_size,
                                           &rgba_flip[0],
                                           width,
                                           height,
-                                          LCT_RGBA, // these settings match those for
+                                          vtkh::LCT_RGBA, // these settings match those for
                                           8);       // lodepng_encode32_file
 
   delete [] rgba_flip;
@@ -168,12 +168,12 @@ PNGEncoder::Encode(const double *rgba_in,
       rgba_flip[outOffset + 3] = (unsigned char)(rgba_in[inOffset + 3] * 255.);
     }
 
-   unsigned error = lodepng_encode_memory(&m_buffer,
+   unsigned error = vtkh::lodepng_encode_memory(&m_buffer,
                                           &m_buffer_size,
                                           &rgba_flip[0],
                                           width,
                                           height,
-                                          LCT_RGBA, // these settings match those for
+                                          vtkh::LCT_RGBA, // these settings match those for
                                           8);       // lodepng_encode32_file
 
   delete [] rgba_flip;
@@ -212,12 +212,12 @@ PNGEncoder::EncodeChannel(const double *buffer_in,
       rgba_flip[outOffset + 3] = 255;
     }
 
-   unsigned error = lodepng_encode_memory(&m_buffer,
+   unsigned error = vtkh::lodepng_encode_memory(&m_buffer,
                                           &m_buffer_size,
                                           &rgba_flip[0],
                                           width,
                                           height,
-                                          LCT_RGBA, // these settings match those for
+                                          vtkh::LCT_RGBA, // these settings match those for
                                           8);       // lodepng_encode32_file
 
   delete [] rgba_flip;
@@ -255,12 +255,12 @@ PNGEncoder::EncodeChannel(const float *buffer_in,
       rgba_flip[outOffset + 3] = 255;
     }
 
-   unsigned error = lodepng_encode_memory(&m_buffer,
+   unsigned error = vtkh::lodepng_encode_memory(&m_buffer,
                                           &m_buffer_size,
                                           &rgba_flip[0],
                                           width,
                                           height,
-                                          LCT_RGBA, // these settings match those for
+                                          vtkh::LCT_RGBA, // these settings match those for
                                           8);       // lodepng_encode32_file
 
   delete [] rgba_flip;
@@ -283,7 +283,7 @@ PNGEncoder::Save(const std::string &filename)
       return;
   }
 
-  unsigned error = lodepng_save_file(m_buffer,
+  unsigned error = vtkh::lodepng_save_file(m_buffer,
                                      m_buffer_size,
                                      filename.c_str());
   ROVER_INFO("Saved png: "<<filename);

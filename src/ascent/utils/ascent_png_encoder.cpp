@@ -96,12 +96,12 @@ PNGEncoder::Encode(const unsigned char *rgba_in,
                width*4);
     }
 
-     unsigned error = lodepng_encode_memory(&m_buffer,
+     unsigned error = lpng::lodepng_encode_memory(&m_buffer,
                                             &m_buffer_size,
                                             &rgba_flip[0],
                                             width,
                                             height,
-                                            LCT_RGBA, // these settings match those for
+                                            lpng::LCT_RGBA, // these settings match those for
                                             8);       // lodepng_encode32_file
 
     delete [] rgba_flip;
@@ -139,12 +139,12 @@ PNGEncoder::Encode(const float *rgba_in,
             rgba_flip[outOffset + 3] = (unsigned char)(rgba_in[inOffset + 3] * 255.f);
         }
 
-     unsigned error = lodepng_encode_memory(&m_buffer,
+     unsigned error = lpng::lodepng_encode_memory(&m_buffer,
                                             &m_buffer_size,
                                             &rgba_flip[0],
                                             width,
                                             height,
-                                            LCT_RGBA, // these settings match those for
+                                            lpng::LCT_RGBA, // these settings match those for
                                             8);       // lodepng_encode32_file
 
     delete [] rgba_flip;
@@ -166,7 +166,7 @@ PNGEncoder::Save(const std::string &filename)
         return;
     }
 
-    unsigned error = lodepng_save_file(m_buffer,
+    unsigned error = lpng::lodepng_save_file(m_buffer,
                                        m_buffer_size,
                                        filename.c_str());
     if(error)

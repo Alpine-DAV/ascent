@@ -16,7 +16,7 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    variants: cuda_arch=60
+    variants: cuda_arch=60 ~shared~openmp~python+cuda
     compiler: [gcc, intel, pgi, clang, xl, nag]
     providers:
       awk: [gawk]
@@ -42,8 +42,9 @@ packages:
   python:
     variants: ~dbm
   cmake:
-    version: [3.9.6]
-    variants: ~openssl~ncurses
+    paths:
+      cmake@3.14.5: /usr/tce/packages/cmake/cmake-3.14.5/
+    buildable: False
   perl:
     buildable: False
     paths:
@@ -52,10 +53,10 @@ packages:
       buildable: False
       paths:
           pkg-config: /usr
-# LLNL toss3 CUDA 
+# LLNL toss3 CUDA
   cuda:
     modules:
-       cuda@9.2: cuda/9.2.88
+       cuda@10.1: cuda/10.1.168
     buildable: False
 # LLNL toss3 mvapich2
   mvapich2:

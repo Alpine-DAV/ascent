@@ -16,7 +16,7 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    variants: cuda_arch=30
+    variants: +shared+openmp+python
     compiler: [gcc, intel, pgi, clang, xl, nag]
     providers:
       awk: [gawk]
@@ -42,8 +42,9 @@ packages:
   python:
     variants: ~dbm
   cmake:
-    version: [3.9.6]
-    variants: ~openssl~ncurses
+    paths:
+      cmake@3.14.5: /usr/tce/packages/cmake/cmake-3.14.5/
+    buildable: False
   perl:
     buildable: False
     paths:
