@@ -47,3 +47,7 @@ packages:
       zlib: /usr
   conduit:
     version: [master]
+  cuda:
+    paths:
+      cuda@9.2: /usr/local/cuda/
+    buildable: False
