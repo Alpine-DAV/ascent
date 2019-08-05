@@ -29,7 +29,7 @@ cycle = node["state/cycle"]
 if cycle == 200:
     imageName = "moment_{0:04d}.png".format(int(cycle))
     dataName = "cloverleaf3d_data_{0:04d}".format(int(cycle))
-    scriptName = "/home/danlipsa/projects/ascent/src/examples/paraview-vis/paraview_ascent_source.py"
+    scriptName = "../../paraview-vis/paraview_ascent_source.py"
     LoadPlugin(scriptName, remote=True, ns=globals())
     
     v = OpenDataFile('expandingVortex.vti')

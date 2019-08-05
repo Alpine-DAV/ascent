@@ -26,7 +26,7 @@ domain_id = node["state/domain_id"]
 cycle = node["state/cycle"]
 imageName = "image_{0:04d}.png".format(int(cycle))
 dataName = "lulesh_data_{0:04d}".format(int(cycle))
-scriptName = "/home/danlipsa/projects/ascent/src/examples/paraview-vis/paraview_ascent_source.py"
+scriptName = "../../paraview-vis/paraview_ascent_source.py"
 LoadPlugin(scriptName, remote=True, ns=globals())
 ascentSource = AscentSource()
 rep = Show()

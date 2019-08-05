@@ -54,9 +54,9 @@ Insitu ParaView visualization using the Ascent Extract interface
      ln -s ../../paraview-vis/expandingVortex.vti  
      ```
      - replace paraview_path from paraview-vis-xxx.py
-         with the result of `echo $(spack location --install-dir paraview)/lib/python*/site-packages` and
-         scriptName with the correct path to 'paraview_ascent_source.py'
-     - `$(spack location --install-dir mpi)/bin/mpiexec -n 2 cloverleaf3d_par > output.txt 2>&1`
+         with the result of `echo $(spack location --install-dir paraview)/lib/python*/site-packages`
+     - Run the simulation 
+     `$(spack location --install-dir mpi)/bin/mpiexec -n 2 cloverleaf3d_par > output.txt 2>&1`
      - examine the generated VTK files the images
    - Similarily test: `proxies/kripke`, `proxies/laghos`, `proxies/lulesh` (you need to create the links)
      - `$(spack location --install-dir mpi)/bin/mpiexec -np 8 kripke_par --procs 2,2,2 --zones 32,32,32 --niter 5 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4 > output.txt 2>&1`
