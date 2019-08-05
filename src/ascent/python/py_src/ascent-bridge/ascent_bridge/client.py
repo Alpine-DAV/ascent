@@ -250,6 +250,8 @@ class SocketClient():
             self._sock = None
         self.config = None
         self.is_connected = False
+        if self.disconnect_callback is not None:
+            self.disconnect_callback()
 
     def set_disconnect_callback(self, f):
         self.disconnect_callback = f
@@ -426,6 +428,10 @@ class SocketClient():
             else:
                 obj = message
 
+    def check_connection(self):
+        self.writemsg({"type": "ping"})
+        return self.read()
+
     def _execute(self, code):
         if not self.is_connected:
             self.stdout("_execute: not connected!")
@@ -441,8 +447,6 @@ class SocketClient():
             ret = self._execute(code)
             if not self.is_connected:
                 self.stdout("disconnected\n")
-                if self.disconnect_callback is not None:
-                    self.disconnect_callback()
             return ret
         except KeyboardInterrupt:
             # TODO: this is an interesting case where select (even 2x select)

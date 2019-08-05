@@ -15,6 +15,10 @@ An example MPI Python implementation is available under *server*.
 Bridge Kernel is not on PyPI yet, please clone and install from local source.
 
 ```console
+
+spack/bin/spack install -v py-pip ^python@3.6.3
+spack/bin/spack activate py-pip
+pip install ipykernel
 pip install . [--user] [--upgrade]
 ```
 

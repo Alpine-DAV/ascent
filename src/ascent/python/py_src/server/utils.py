@@ -77,8 +77,8 @@ def look_at(info, position, look_at, up):
     render_info['camera']['up'] = numpy.array(up)
 
     render_info['camera']['zoom'] = 0
-    info['actions'][0]['scenes/s1/renders/r1'] = render_info
-    return info['actions']
+
+    return render_info
 
 
 def move_up(info, multiplier=.1):
@@ -97,8 +97,8 @@ def move_up(info, multiplier=.1):
     render_info['camera']['look_at'] = numpy.add(look_at, numpy.array(up) * multiplier * scene_magnitude)
 
     render_info['camera']['zoom'] = 0
-    info['actions'][0]['scenes/s1/renders/r1'] = render_info
-    return info['actions']
+
+    return render_info
     
 def move_forward(info, multiplier=.1):
     render_info = info['images'][0]
@@ -118,8 +118,8 @@ def move_forward(info, multiplier=.1):
     render_info['camera']['look_at'] = numpy.add(look_at, forward * multiplier * scene_magnitude)
 
     render_info['camera']['zoom'] = 0
-    info['actions'][0]['scenes/s1/renders/r1'] = render_info
-    return info['actions']
+
+    return render_info
 
 def move_right(info, multiplier=.1):
     render_info = info['images'][0]
@@ -140,8 +140,8 @@ def move_right(info, multiplier=.1):
     render_info['camera']['look_at'] = numpy.add(look_at, right * multiplier * scene_magnitude)
 
     render_info['camera']['zoom'] = 0
-    info['actions'][0]['scenes/s1/renders/r1'] = render_info
-    return info['actions']
+
+    return render_info
 
 #rotate the camera about the direction we are looking in 
 def roll(info, radians=2*numpy.pi/36):
@@ -160,8 +160,8 @@ def roll(info, radians=2*numpy.pi/36):
     render_info['camera']['up'] = res_up
 
     render_info['camera']['zoom'] = 0
-    info['actions'][0]['scenes/s1/renders/r1'] = render_info
-    return info['actions']
+    
+    return render_info
 
 def pitch(info, radians=2*numpy.pi/36):
     render_info = info['images'][0]
@@ -184,8 +184,8 @@ def pitch(info, radians=2*numpy.pi/36):
     render_info['camera']['up'] = res_up
 
     render_info['camera']['zoom'] = 0
-    info['actions'][0]['scenes/s1/renders/r1'] = render_info
-    return info['actions']
+    
+    return render_info
 
 
 def yaw(info, radians=2*numpy.pi/36):
@@ -204,8 +204,8 @@ def yaw(info, radians=2*numpy.pi/36):
     render_info['camera']['look_at'] = res_look_at
 
     render_info['camera']['zoom'] = 0
-    info['actions'][0]['scenes/s1/renders/r1'] = render_info
-    return info['actions']
+
+    return render_info
 
 utils_dict = {
     'normalize': normalize,

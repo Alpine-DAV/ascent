@@ -12,12 +12,12 @@ from ipykernel.kernelspec import write_kernel_spec, make_ipkernel_cmd
 
 install_requires = ["enum34", "jupyter_core", "ipywidgets", "ipykernel", "IPython", "numpy", "matplotlib"]
 
-distname = "bridge_kernel"
-kernelname = "bridge"
+distname = "ascent_bridge"
+kernelname = "ascent_bridge"
 
 setup_args = dict(
     name=distname,
-    description="Bridge Kernel for existing backends",
+    description="Ascent Bridge for existing backends",
     packages=[distname],
     install_requires=install_requires
 )
@@ -29,10 +29,11 @@ if exists(dest):
 
 write_kernel_spec(path=dest, overrides=dict(
     argv=make_ipkernel_cmd("%s.kernel" % distname),
-    display_name="Bridge Kernel",
+    display_name="Ascent Bridge",
     name=kernelname
 ))
 
 setup_args["data_files"] = [(join("share", "jupyter", "kernels", kernelname), glob(join(dest, "*")))]
+setup_args["package_data"] = {distname: ["views/*", "views/*/*"]}
 
 setup(**setup_args)

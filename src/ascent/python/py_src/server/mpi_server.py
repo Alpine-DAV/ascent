@@ -50,10 +50,17 @@ class MPIServer():
         def flush(self):
             pass
 
-    def __init__(self, comm, ns, prefix=None, inline_matplotlib=True):
-        self.comm = comm
-        self.rank = comm.Get_rank()
-        self.nprocs = comm.Get_size()
+    def __init__(self, comm, ns, callback, prefix=None, inline_matplotlib=True):
+        if comm is None:
+          self.MPI_ENABLED = False
+          self.rank = 0
+        else:
+          self.MPI_ENABLED = True
+          self.comm = comm
+          self.rank = comm.Get_rank()
+          self.nprocs = comm.Get_size()
+
+        self.callback = callback
         self.exec_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
         self.ns = ns
         self.files = []
@@ -83,7 +90,8 @@ class MPIServer():
 
         ns["quit"] = self._quitter
         ns["exit"] = self._quitter
-        ns["mpi_print"] = self._mpi_print
+        if self.MPI_ENABLED:
+          ns["mpi_print"] = self._mpi_print
         ns["image"] = self._write_bytes_image
 
         if inline_matplotlib:
@@ -157,7 +165,9 @@ class MPIServer():
         else:
             pyplot.show = lambda *args, **kwargs: None
             pyplot.show_if_interactive = pyplot.show
-        self.comm.Barrier()
+
+        if self.MPI_ENABLED:
+          self.comm.Barrier()
 
     def readmsg(self):
         try:
@@ -221,7 +231,7 @@ class MPIServer():
             bytes_sent += sent
 
     #TODO make this default behavior of writemsg?
-    def root_send(self, data):
+    def root_writemsg(self, data):
         if self.rank == 0:
             self.writemsg(data)
 
@@ -281,7 +291,9 @@ class MPIServer():
                 "cursor_end": cursor_pos,
                 "matches": [m[0:-1] if m[-1] == "(" else m for m in matches]
             })
-        self.comm.Barrier()
+
+        if self.MPI_ENABLED:
+          self.comm.Barrier()
 
     def serve(self):
         if self.rank == 0:
@@ -332,14 +344,17 @@ class MPIServer():
             print("got client - {}".format(addr))
 
             self.writemsg({"type": "idle"})
-        self.comm.Barrier()
+
+        if self.MPI_ENABLED:
+          self.comm.Barrier()
 
         while self.go:
             if self.rank == 0:
                 data = self.readmsg()
             else:
                 data = None
-            data = self.comm.bcast(data, root=0)
+            if self.MPI_ENABLED:
+              data = self.comm.bcast(data, root=0)
 
             if data is None:
                 print("disconnected")
@@ -350,12 +365,13 @@ class MPIServer():
             elif data["type"] == "complete":
                 self.complete(data["code"], cursor_pos=data["cursor_pos"])
             elif data["type"] == "custom":
-                self.ns["handle_message"](self, data)
+                self.callback(self, data)
+            elif data["type"] == "ping":
+                self.root_writemsg({"type": "pong"})
             elif data["type"] == "disconnect":
                 break
 
-            if self.rank == 0:
-                self.writemsg({"type": "idle"})
+            self.root_writemsg({"type": "idle"})
 
         if self.rank == 0:
             self._remove_files()

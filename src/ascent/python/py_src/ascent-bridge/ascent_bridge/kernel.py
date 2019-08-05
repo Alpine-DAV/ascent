@@ -19,7 +19,7 @@ import time
 from . import mywidgets
 
 class BridgeKernel(IPythonKernel):
-    banner = "Bridge Kernel"
+    banner = "Ascent Bridge"
 
     def __init__(self, klass=SocketClient, **kwargs):
         assert(issubclass(klass, SocketClient))
@@ -30,7 +30,7 @@ class BridgeKernel(IPythonKernel):
         self.exe_count = 0
         self.magics = {
             "%connect": self.connect_magic,
-            "%disconnect": lambda args: self.disconnect(),
+            "%disconnect": lambda args: self.client.disconnect(),
             "%exec_local": self.exec_local,
             "%trackball": lambda args: mywidgets.build_trackball(self),
         }
@@ -82,14 +82,14 @@ class BridgeKernel(IPythonKernel):
         except Exception as e:
             print("Kernel exec error: %s." % e)
 
+    #called by client when it disconnects
     def disconnect(self):
         if self.client is not None:
-            self.client.disconnect()
             self.client = None
 
     def connect(self, cfg):
         if self.client is not None:
-            self.disconnect()
+            self.client.disconnect()
 
         self.config_data = cfg
 
@@ -110,9 +110,12 @@ class BridgeKernel(IPythonKernel):
         return 0
 
     def connect_magic(self, args):
+        #TODO could this be better?
         if self.client is not None:
-            print("already connected to backend")
-            return
+            self.client.check_connection()
+            if self.client is not None:
+                print("already connected to backend")
+                return
 
         w = self.pick_backend()
 
@@ -123,7 +126,7 @@ class BridgeKernel(IPythonKernel):
 
     def connect_wait(self, cfg, backend_wait_file=15):
         if self.client is not None:
-            self.disconnect()
+            self.client.disconnect()
 
         self.stdout("connecting to %s" % cfg["codename"])
         key = "%s %s %s" % (cfg["codename"], cfg["date"], cfg["hostname"])
@@ -232,9 +235,9 @@ class BridgeKernel(IPythonKernel):
                 metadata=None, status="ok")
 
     def do_shutdown(self, restart):
-        self.disconnect()
+        if self.client is not None:
+            self.client.disconnect()
         return {"restart": False}
-
 
 if __name__ == "__main__":
     from ipykernel.kernelapp import IPKernelApp
