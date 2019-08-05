@@ -44,7 +44,7 @@ Insitu ParaView visualization using the Ascent Extract interface
    - Test `proxies/cloverleaf3d`
      - `cd $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d`
      - `ln -s ../../paraview-vis/paraview_ascent_source.py`
-     - Execute: `ln -s ../../paraview-vis/paraview-vis-cloverleaf3d-momentinvariant.py paraview-vis.py`
+     - Execute: `ln -s ../../paraview-vis/paraview-vis-cloverleaf3d-momentinvariants.py paraview-vis.py`
      for MomentInvariants visualization or `ln -s ../../paraview-vis/paraview-vis-cloverleaf3d.py paraview-vis.py`
      for surface visualization.
      - Execute:
