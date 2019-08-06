@@ -49,7 +49,7 @@ import os
 import platform
 from os.path import join as pjoin
 
-from ascent import Ascent
+from .ascent import Ascent
 
 class UberenvAscent(Ascent):
     """Spack Based Uberenv Build for Ascent Thirdparty Libs """
