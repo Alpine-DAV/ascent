@@ -74,7 +74,7 @@ define('trackball', ['@jupyter-widgets/base', 'three', 'TrackballControls'], fun
             var styleSheet = document.createElement("style");
             styleSheet.type = "text/css";
             styleSheet.innerText = styles;
-            this.el.appendChild(styleSheet);
+            this.main_container.appendChild(styleSheet);
             
             this.main_container.innerHTML = `
                 <div id="canvasDiv" class="row"></div>
@@ -201,6 +201,7 @@ define('trackball', ['@jupyter-widgets/base', 'three', 'TrackballControls'], fun
             this.controls.rotateSpeed = 0.5;
                 
             this.scene = new THREE.Scene();
+            this.scene.background = new THREE.Color(0xffffff);
             var geometry = this.generate_cube_geometry();
             
             var material = new THREE.MeshNormalMaterial();

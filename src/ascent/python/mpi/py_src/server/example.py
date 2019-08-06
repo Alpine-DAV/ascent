@@ -51,6 +51,7 @@ def jupyter_extract():
           server_ascent = ascent.mpi.Ascent()
         else:
           server_ascent = ascent.Ascent()
+
         ascent_opts["actions_file"] = ""
         server_ascent.open(ascent_opts)
         server_ascent.publish(ascent_extract.ascent_data())
@@ -107,7 +108,7 @@ def jupyter_extract():
                     "field": "zonal_noise",
                     "color_table": 
                     {
-                      "name": "Black, Blue and White",
+                      "name": "cool to warm",
                       "control_points": 
                       {
                         "p1": 
@@ -130,6 +131,8 @@ def jupyter_extract():
                 {
                   "r1": 
                   {
+                    "image_width": 966,
+                    "image_height": 700,
                     "bg_color": [1.0, 1.0, 1.0],
                     "fg_color": [0.0, 0.0, 0.0]
                   }
@@ -140,6 +143,10 @@ def jupyter_extract():
           
           {
             "action": "execute"
+          },
+
+          {
+            "action": "reset"
           }
         ]
         """
@@ -217,7 +224,6 @@ def jupyter_extract():
         render.update(transformation(info, *args, **kwargs))
         #TODO this is temporary
         render["image_name"] = "out_ascent_render_3d"
-        print(info["actions"])
         return info["actions"]
 
     #TODO pass this in rather than relying on it being in globals()

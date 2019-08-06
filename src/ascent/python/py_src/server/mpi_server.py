@@ -373,5 +373,6 @@ class MPIServer():
 
             self.root_writemsg({"type": "idle"})
 
+        self.root_writemsg({"type": "disconnect"})
         if self.rank == 0:
             self._remove_files()

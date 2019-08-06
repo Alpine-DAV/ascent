@@ -35,6 +35,7 @@ class BridgeKernel(IPythonKernel):
             "%trackball": lambda args: mywidgets.build_trackball(self),
         }
         self.last_used_backend = None
+        self.disconnect_callback = None
 
     def out(self, name, message, silent=False):
         if silent: return
@@ -82,10 +83,16 @@ class BridgeKernel(IPythonKernel):
         except Exception as e:
             print("Kernel exec error: %s." % e)
 
+    #TODO this is copied from client.py
+    def set_disconnect_callback(self, f):
+        self.disconnect_callback = f
+
     #called by client when it disconnects
     def disconnect(self):
         if self.client is not None:
             self.client = None
+        if self.disconnect_callback is not None:
+            self.disconnect_callback()
 
     def connect(self, cfg):
         if self.client is not None:
@@ -139,7 +146,7 @@ class BridgeKernel(IPythonKernel):
             backends = get_backend_list()
 
         if not self.backend_exists(cfg):
-            self.stderr("Backend not found. Try giving Ascent more time to connect.\n")
+            self.stderr("Backend not found. The simulation may have ended.\n")
         else:
             self.connect(cfg)
 

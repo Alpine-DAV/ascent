@@ -9,6 +9,16 @@ import os
 class KernelUtils():
     def __init__(self, kernel):
         self.kernel = kernel
+        self.disconnect_callback = None
+        self.kernel.set_disconnect_callback(self.disconnect)
+
+    #TODO this is copied from client.py
+    def set_disconnect_callback(self, f):
+        self.disconnect_callback = f
+
+    def disconnect(self):
+        if self.disconnect_callback is not None:
+            self.disconnect_callback()
 
     def custom_send(self, code):
         self.kernel.client.writemsg({
@@ -44,7 +54,7 @@ class KernelUtils():
 
     def next_frame(self):
         self.kernel.connect_wait(copy.deepcopy(self.kernel.last_used_backend))
-        self.custom_send({
+        return self.custom_send({
             "type": "next",
         })
 
@@ -103,16 +113,23 @@ class TrackballWidget(widgets.DOMWidget):
     def __init__(self, kernelUtils, *args, **kwargs):
         widgets.DOMWidget.__init__(self, *args, **kwargs)
 
+        self.is_connected = True
+
         self.on_msg(self._handle_msg)
                 
         #TODO make my own DomWidget subclass that all my widgets inherit from to avoid repeating this line?
         self.kernelUtils = kernelUtils
+        self.kernelUtils.set_disconnect_callback(self.disconnect)
         
         self._update_scene_bounds()
 
         self._update_camera_info_from_ascent()
         
         self._update_image()
+
+    #TODO notify the user and stop trying to handle clicks
+    def disconnect(self):
+        self.is_connected = False
 
     def _update_image(self):
         self.image = self.kernelUtils.get_images()[0]
@@ -128,51 +145,56 @@ class TrackballWidget(widgets.DOMWidget):
         self.scene_bounds = self.kernelUtils.get_ascent_info()['images'][0]['scene_bounds']
     
     def _handle_msg(self, msg, *args, **kwargs):
-        content = msg["content"]["data"]["content"]
-        if content['event'] == 'keydown' or content['event'] == 'button':
-            code = content['code']
-            if code == 87 or code == 'move_up': #W
-                self.kernelUtils.up()
-            elif code == 65 or code == 'move_left': #A
-                self.kernelUtils.left()
-            elif code == 83 or code == 'move_down': #S
-                self.kernelUtils.down()
-            elif code == 68 or code == 'move_right': #D
-                self.kernelUtils.right()
-            elif code == 'move_forward':
-                self.kernelUtils.forward()
-            elif code == 'move_back':
-                self.kernelUtils.back()
-            elif code == 'move_right':
-                self.kernelUtils.right()
-            elif code == 'move_left':
-                self.kernelUtils.left()
-            elif code == 'roll_c':
-                self.kernelUtils.roll_c()
-            elif code == 'roll_cc':
-                self.kernelUtils.roll_cc()
-            elif code == 'pitch_up':
-                self.kernelUtils.pitch_up()
-            elif code == 'pitch_down':
-                self.kernelUtils.pitch_down()
-            elif code == 'yaw_right':
-                self.kernelUtils.yaw_right()
-            elif code == 'yaw_left':
-                self.kernelUtils.yaw_left()
-            elif code == 'next':
-                #TODO this can fail
-                self.kernelUtils.next_frame()
+        if self.is_connected:
+            content = msg["content"]["data"]["content"]
+            if content['event'] == 'keydown' or content['event'] == 'button':
+                code = content['code']
+                if code == 87 or code == 'move_up': #W
+                    self.kernelUtils.up()
+                elif code == 65 or code == 'move_left': #A
+                    self.kernelUtils.left()
+                elif code == 83 or code == 'move_down': #S
+                    self.kernelUtils.down()
+                elif code == 68 or code == 'move_right': #D
+                    self.kernelUtils.right()
+                elif code == 'move_forward':
+                    self.kernelUtils.forward()
+                elif code == 'move_back':
+                    self.kernelUtils.back()
+                elif code == 'move_right':
+                    self.kernelUtils.right()
+                elif code == 'move_left':
+                    self.kernelUtils.left()
+                elif code == 'roll_c':
+                    self.kernelUtils.roll_c()
+                elif code == 'roll_cc':
+                    self.kernelUtils.roll_cc()
+                elif code == 'pitch_up':
+                    self.kernelUtils.pitch_up()
+                elif code == 'pitch_down':
+                    self.kernelUtils.pitch_down()
+                elif code == 'yaw_right':
+                    self.kernelUtils.yaw_right()
+                elif code == 'yaw_left':
+                    self.kernelUtils.yaw_left()
+                elif code == 'next':
+                    #TODO this can fail
+                    resp = self.kernelUtils.next_frame()
+                    self.is_connected = (resp is not None)
 
-            self._update_camera_info_from_ascent()
-            
-            self._update_image() #TODO move this to bottom of function?
-        elif content['event'] == 'mouseup':
-            camera_info = content['camera_info']
-            self._update_camera_info(camera_info)
-            self.kernelUtils.look_at(camera_info['position'],
-                           camera_info['look_at'],
-                           camera_info['up'])
-            self._update_image()
+                self._update_camera_info_from_ascent()
+                
+                self._update_image() #TODO move this to bottom of function?
+            elif content['event'] == 'mouseup':
+                camera_info = content['camera_info']
+                self._update_camera_info(camera_info)
+                self.kernelUtils.look_at(camera_info['position'],
+                               camera_info['look_at'],
+                               camera_info['up'])
+                self._update_image()
+        else:
+            self.kernelUtils.kernel.stderr("disconnected - wait to reconnect or check the simulation hasn't ended\n")
+
 
 def build_trackball(kernel):
     VIEWS_PATH = pkg_resources.resource_filename(__name__, 'views/')

@@ -421,6 +421,8 @@ class SocketClient():
                     self.display(message)
                 else:
                     self.stdout("[display] - no graphics display available")
+            elif message["type"] == MessageType.disconnect.value:
+                self.disconnect()
             elif message["type"] == MessageType.idle.value:
                 return obj
 
@@ -446,7 +448,7 @@ class SocketClient():
         try:
             ret = self._execute(code)
             if not self.is_connected:
-                self.stdout("disconnected\n")
+                self.stderr("disconnected\n")
             return ret
         except KeyboardInterrupt:
             # TODO: this is an interesting case where select (even 2x select)
