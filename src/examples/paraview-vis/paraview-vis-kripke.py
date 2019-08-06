@@ -1,8 +1,7 @@
 import sys
 # CHANGE this path to the result of:
 # $(spack location --install-dir paraview)
-paraview_path="/home/danlipsa/projects/ascent_new/build/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.4.0/paraview-master-e6ji62w2jt47cj446twsnndkkxgncz6x"
-paraview_path = paraview_path + "/lib/python2.7/site-packages"
+paraview_path="/home/danlipsa/projects/ascent_new/build/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.4.0/paraview-master-e6ji62w2jt47cj446twsnndkkxgncz6x/lib/python2.7/site-packages"
 sys.path.append(paraview_path)
 
 
@@ -28,7 +27,7 @@ domain_id = node["state/domain_id"]
 cycle = node["state/cycle"]
 imageName = "image_{0:04d}.png".format(int(cycle))
 dataName = "paraviewdata_{0:04d}".format(int(cycle))
-scriptName = "/home/danlipsa/projects/ascent/src/examples/paraview-vis/paraview_ascent_source.py"
+scriptName = "../../paraview-vis/paraview_ascent_source.py"
 LoadPlugin(scriptName, remote=True, ns=globals())
 ascentSource = AscentSource()
 ResampleToImage()

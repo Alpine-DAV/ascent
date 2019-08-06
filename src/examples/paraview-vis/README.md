@@ -15,35 +15,48 @@ Insitu ParaView visualization using the Ascent Extract interface
 * Install ParaView (use older matplotlib because newest requires python3.)
    - `spack install paraview +python ^py-matplotlib@2.2.3 ~tk`
       We use ParaView master because we need the fix in 0b349f3e18.
-* Follow `Common installation instructions`
+* Continue with `Common installation instructions`
 
 # Installation instructions for spack devel
 * Install spack, modules and shell support.
-  - `git clone https://github.com/spack/spack.git
-    cd spack
-    source share/spack/setup-env.sh
-    spack boostrap`
+  - Execute the following:  
+  ```
+  git clone https://github.com/danlipsa/spack.git  
+  cd spack  
+  git checkout moment-invariants  
+  source share/spack/setup-env.sh  
+  spack bootstrap
+  ```
+* Optional: For MomentInvariants visualization patch paraview package
+  - Download the patch [paraview-package-momentinvariants.patch](paraview-package-momentinvariants.patch)
+  - Patch paraview: `patch -p1 < paraview-package-momentinvariants.patch`
 * Install ParaView
-  - `spack install paraview@devel+python3+mpi`
+  - `spack install paraview@develop+python3+mpi`
 * Install Ascent
-  - `spack install ascent~vtkh^python@3.7.3`
+  - `spack install ascent~vtkh^python@3.7.4`
      Make sure you match the python version used by ParaView
 * Load required modules
-  - `spack load conduit py-numpy py-mpi4py paraview`
-* Follow `Common installation instructions`
+  - `spack load conduit;spack load py-numpy;spack load py-mpi4py;spack load paraview`
+* Continue with `Common installation instructions`
 
 # Common installation instructions
 * Test with available simulations - VTK files and images will be generated in the current directory.
    - Test `proxies/cloverleaf3d`
      - `cd $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d`
-     - `ln -s ../../paraview-vis/paraview_ascent_source.py
-        ln -s ../../paraview-vis/paraview-vis-cloverleaf3d.py paraview-vis.py
-        mv ascent_actions.json ascent_actions_volume.json
-        ln -s ../../paraview-vis/ascent_actions.json`
+     - `ln -s ../../paraview-vis/paraview_ascent_source.py`
+     - Execute: `ln -s ../../paraview-vis/paraview-vis-cloverleaf3d-momentinvariants.py paraview-vis.py`
+     for MomentInvariants visualization or `ln -s ../../paraview-vis/paraview-vis-cloverleaf3d.py paraview-vis.py`
+     for surface visualization.
+     - Execute:
+     ```
+     mv ascent_actions.json ascent_actions_volume.json  
+     ln -s ../../paraview-vis/ascent_actions.json  
+     ln -s ../../paraview-vis/expandingVortex.vti  
+     ```
      - replace paraview_path from paraview-vis-xxx.py
-         with the result of `$(spack location --install-dir paraview)` and
-         scriptName with the correct path to 'paraview_ascent_source.py'
-     - `$(spack location --install-dir mpi)/bin/mpiexec -n 2 cloverleaf3d_par > output.txt 2>&1`
+         with the result of `echo $(spack location --install-dir paraview)/lib/python*/site-packages`
+     - Run the simulation 
+     `$(spack location --install-dir mpi)/bin/mpiexec -n 2 cloverleaf3d_par > output.txt 2>&1`
      - examine the generated VTK files the images
    - Similarily test: `proxies/kripke`, `proxies/laghos`, `proxies/lulesh` (you need to create the links)
      - `$(spack location --install-dir mpi)/bin/mpiexec -np 8 kripke_par --procs 2,2,2 --zones 32,32,32 --niter 5 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4 > output.txt 2>&1`
@@ -52,10 +65,11 @@ Insitu ParaView visualization using the Ascent Extract interface
    - Test noise from `synthetic/noise`
      - `$(spack location --install-dir mpi)/bin/mpiexec -np 8 noise_par  --dims=32,32,32 --time_steps=5 --time_delta=1 > output.txt 2>&1`
 
-TODO:
+# Todo:
 * Add testing
+* Build the ParaView pipeline only once.
 
-NOTE:
+# Note:
 Global extents are computed for uniform and rectilinear topologies but
 they are not yet computed for a structured topology (lulesh). This
 means that for lulesh and datasets that have a structured topology we
