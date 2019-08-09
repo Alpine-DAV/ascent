@@ -46,8 +46,6 @@
 ################################
 # cmake policy selections
 ################################
-# avoid default mac osx rpath settings for cmake 3.0
-cmake_policy(SET CMP0042 OLD)
 # avoid warnings for project commands w/o VERSION
 cmake_policy(SET CMP0048 NEW)
 
