@@ -153,9 +153,6 @@ TEST(ascent_mpi_slice, mpi_3slice)
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
 
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
     actions.print();
 
     //

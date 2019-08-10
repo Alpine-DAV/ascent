@@ -139,9 +139,6 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
     actions.print();
 
     //

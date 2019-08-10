@@ -133,9 +133,6 @@ TEST(ascent_vector_mag, test_vector_mag)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -216,9 +213,6 @@ TEST(ascent_vector_mag, test_vector_mag_interleaved)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent

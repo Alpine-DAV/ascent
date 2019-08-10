@@ -129,12 +129,6 @@ TEST(ascent_lagrangian, test_lagrangian_multistep)
     conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-    // reset
-    conduit::Node &reset  = actions.append();
-    reset["action"] = "reset";
 
     //
     // Run Ascent

@@ -105,9 +105,6 @@ TEST(ascent_hola, test_hola_relay_blueprint_mesh)
     add_extract["extracts/e1/params/path"] = output_file;
     add_extract["extracts/e1/params/protocol"] = "blueprint/mesh/hdf5";
 
-    actions.append()["action"] = "execute";
-    actions.print();
-
     //
     // Run Ascent
     //

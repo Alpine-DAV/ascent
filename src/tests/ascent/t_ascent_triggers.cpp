@@ -99,8 +99,6 @@ TEST(ascent_triggers, simple_rick)
     // Create trigger actions.
     //
     Node trigger_actions;
-    conduit::Node &trigger_execute = trigger_actions.append();
-    trigger_execute["action"] = "execute";
     trigger_actions.save(trigger_file, "json");
 
     //
@@ -116,8 +114,6 @@ TEST(ascent_triggers, simple_rick)
     conduit::Node &add_triggers= actions.append();
     add_triggers["action"] = "add_triggers";
     add_triggers["triggers"] = triggers;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //
@@ -193,8 +189,6 @@ TEST(ascent_triggers, complex_trigger)
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
 
-    conduit::Node &trigger_execute = trigger_actions.append();
-    trigger_execute["action"] = "execute";
     trigger_actions.save(trigger_file, "json");
 
     //
@@ -210,8 +204,6 @@ TEST(ascent_triggers, complex_trigger)
     conduit::Node &add_triggers= actions.append();
     add_triggers["action"] = "add_triggers";
     add_triggers["triggers"] = triggers;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //
@@ -266,13 +258,13 @@ TEST(ascent_triggers, trigger_extract)
     string trigger_file = conduit::utils::join_file_path(output_path,"trigger_extract_actions");
     string output_file = conduit::utils::join_file_path(output_path,"tout_trigger_extract");
     string output_root_file = output_file + ".cycle_000100.root";
-    
+
     // remove old files
     if(conduit::utils::is_file(trigger_file))
     {
       conduit::utils::remove_file(trigger_file);
     }
-    
+
     if(conduit::utils::is_file(output_root_file))
     {
       conduit::utils::remove_file(output_root_file);
@@ -284,7 +276,7 @@ TEST(ascent_triggers, trigger_extract)
     Node trigger_actions;
 
     conduit::Node extracts;
-    
+
     extracts["e1/type"]  = "relay";
     extracts["e1/params/path"] = output_file;
     extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
@@ -293,8 +285,6 @@ TEST(ascent_triggers, trigger_extract)
     add_ext["action"] = "add_extracts";
     add_ext["extracts"] = extracts;
 
-    conduit::Node &trigger_execute = trigger_actions.append();
-    trigger_execute["action"] = "execute";
     trigger_actions.save(trigger_file, "json");
 
     //
@@ -310,8 +300,6 @@ TEST(ascent_triggers, trigger_extract)
     conduit::Node &add_triggers= actions.append();
     add_triggers["action"] = "add_triggers";
     add_triggers["triggers"] = triggers;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //

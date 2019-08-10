@@ -1222,9 +1222,6 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   conduit::Node scenes;
   conduit::Node extracts;
 
-  bool do_execute = false;
-  bool do_reset= false;
-
   // Loop over the actions
   for (int i = 0; i < actions.number_of_children(); ++i)
   {
@@ -1286,13 +1283,12 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
           ASCENT_ERROR("action 'add_queries' missing child 'queries'");
         }
       }
-      else if( action_name == "execute")
+      else if( action_name == "execute" ||
+               action_name == "reset")
       {
-        do_execute = true;
-      }
-      else if( action_name == "reset")
-      {
-        do_reset = true;
+        // These actions are now deprecated. To avoid
+        // issues with existing integrations we will just
+        // do nothing
       }
       else
       {
