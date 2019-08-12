@@ -27,3 +27,7 @@ http://ascent.readthedocs.io/en/latest/Licenses.html
 
 or the following files in the Ascent source tree:
 - [LICENSE](/LICENSE)
+
+Changelog
+=========
+- [Changelog](/CHANGELOG.md)
