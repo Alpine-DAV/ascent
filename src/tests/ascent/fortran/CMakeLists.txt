@@ -48,8 +48,8 @@
 ###############################################################################
 
 set(FORTRAN_TESTS
-    t_f_ascent_smoke)
-    #t_f_ascent_render_2d)
+    t_f_ascent_smoke
+    t_f_ascent_render_2d)
 
 
 ################################
