@@ -26,7 +26,7 @@ Insitu ParaView visualization using the Ascent Extract interface
   git checkout moment-invariants  
   source share/spack/setup-env.sh  
   ```
-  - Optional if modules are not installed: `spack boostrap`
+  - Optional if modules are not installed: `spack bootstrap`
 
 # 3. Install ParaView and Ascent
 * Optional: For MomentInvariants visualization patch paraview package
