@@ -551,11 +551,6 @@ int main(int argc, char *argv[])
             conduit::Node &add_plots = actions.append();
             add_plots["action"] = "add_scenes";
             add_plots["scenes"] = scenes;
-            conduit::Node &execute = actions.append();
-            execute["action"] = "execute";
-
-            conduit::Node &reset = actions.append();
-            reset["action"] = "reset";
 
             ascent.execute(actions);
 

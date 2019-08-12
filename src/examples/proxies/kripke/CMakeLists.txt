@@ -79,8 +79,8 @@ if(MPI_FOUND)
     configure_file(run_kripke_simple_example.sh
                    ${CMAKE_CURRENT_BINARY_DIR}/run_kripke_simple_example.sh
                    COPYONLY)
-    configure_file(ascent_actions.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_actions.json COPYONLY)
-    configure_file(ascent_options.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_options.json COPYONLY)
+    configure_file(ascent_actions.yaml ${CMAKE_CURRENT_BINARY_DIR}/ascent_actions.yaml COPYONLY)
+    configure_file(ascent_options.yaml ${CMAKE_CURRENT_BINARY_DIR}/ascent_options.yaml COPYONLY)
 
     if(ENABLE_OPENMP)
        set(kripke_openmp_flags "-DKRIPKE_USE_OPENMP")

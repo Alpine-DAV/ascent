@@ -108,6 +108,7 @@ if(MPI_FOUND)
 endif()
 
 
+configure_file(example_actions.yaml ${CMAKE_CURRENT_BINARY_DIR}/example_actions.yaml COPYONLY)
 
 
 

@@ -16,11 +16,5 @@
         "image_prefix": "energy_%04d"
       }
     }
-  },
-  {
-    "action": "execute"
-  },
-  {
-    "action": "reset"
   }
 ]

@@ -27,7 +27,7 @@ file(COPY run_tripple_point_3d.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY run_sedov_2d.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY run_sedov_3d.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 # copy example laucnh scripts
-file(COPY ascent_options.json DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ascent_options.yaml DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # mfem does not build with both serial and mpi
 if(MPI_FOUND AND ENABLE_MPI)
