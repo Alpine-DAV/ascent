@@ -106,8 +106,6 @@ TEST(ascent_queries, max_query)
     conduit::Node &add_queries = actions.append();
     add_queries["action"] = "add_queries";
     add_queries["queries"] = queries;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //
@@ -172,8 +170,6 @@ TEST(ascent_queries, cycle_query)
     conduit::Node &add_queries = actions.append();
     add_queries["action"] = "add_queries";
     add_queries["queries"] = queries;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //

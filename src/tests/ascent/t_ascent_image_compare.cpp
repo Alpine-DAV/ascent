@@ -119,8 +119,6 @@ TEST(ascent_image_compare, test_image_diff)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //

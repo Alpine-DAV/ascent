@@ -139,9 +139,6 @@ TEST(ascent_clip, test_clip_sphere)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -230,9 +227,6 @@ TEST(ascent_clip, test_clip_inverted_sphere)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -321,9 +315,6 @@ TEST(ascent_clip, test_clip_box)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -413,9 +404,6 @@ TEST(ascent_clip, test_clip_plane)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent

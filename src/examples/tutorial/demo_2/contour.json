@@ -34,12 +34,5 @@
          }
        }
      }
-   },
-   {
-     "action": "execute"
-   },
-
-   {
-     "action": "reset"
    }
 ]

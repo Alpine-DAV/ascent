@@ -95,9 +95,6 @@ TEST(ascent_runtime, test_python_script_extract)
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
     actions.print();
 
     //
@@ -149,9 +146,6 @@ TEST(ascent_runtime, test_python_script_extract_from_file)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
-
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     actions.print();
 
@@ -221,9 +215,6 @@ TEST(ascent_runtime, test_python_script_extract_import)
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
     actions.print();
 
     //
@@ -260,7 +251,6 @@ std::string py_script_inception = "\n"
 "add_act =actions.append()\n"
 "add_act['action'] = 'add_scenes'\n"
 "add_act['scenes'] = scenes\n"
-"actions.append()['action'] = 'execute'\n"
 "a.execute(actions)\n"
 "a.close()\n"
 "\n";
@@ -292,9 +282,6 @@ TEST(ascent_runtime, test_python_extract_inception)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
-
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     actions.print();
 

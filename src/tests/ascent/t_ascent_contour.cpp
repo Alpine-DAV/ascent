@@ -135,9 +135,6 @@ TEST(ascent_contour, test_single_contour_3d)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -220,9 +217,6 @@ TEST(ascent_contour, test_multi_contour_3d)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -304,9 +298,6 @@ TEST(ascent_contour, test_multi_contour_levels)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent

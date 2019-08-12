@@ -135,9 +135,6 @@ TEST(ascent_iso_volume, test_iso_volume)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent

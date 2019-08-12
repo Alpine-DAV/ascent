@@ -47,8 +47,6 @@ int main(int argc, char **argv)
     add_act2["action"] = "add_extracts";
     add_act2["extracts"] = extracts;
 
-    actions.append()["action"] = "execute";
-
     // execute
     a.execute(actions);
 

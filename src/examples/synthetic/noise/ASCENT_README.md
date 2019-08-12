@@ -20,3 +20,7 @@ mpiexec -n 2 ./noise_par
 For more info, please visit:
 
 http://ascent.readthedocs.io/en/latest/ExampleIntegrations.html
+
+By default, noise will generate images of a scene with a isosurface and a volume plot.
+Additionally, we include the `example_actions.yaml` file containing another set of actions.
+To enable the actions decribed in the file, rename it to `ascent_actions.yaml`.

@@ -1,19 +1,18 @@
-
 -
   action: "add_pipelines"
   pipelines:
-    pl1:
+    p1:
       f1:
         type: "contour"
         params:
-          field: "velocity_x"
-          iso_values: 1.0
+          field: "nodal_noise"
+          levels: 5
 -
   action: "add_scenes"
   scenes:
-    scene1:
+    s1:
       plots:
-        plt1:
+        p1:
           type: "pseudocolor"
-          pipeline: "pl1"
-          field: "pressure"
+          field: "zonal_noise"
+          pipeline: "p1"

@@ -1,21 +1,17 @@
 
-- 
+-
   action: "add_scenes"
-  scenes: 
-    s1: 
-      plots: 
-        p1: 
+  scenes:
+    s1:
+      plots:
+        p1:
           type: "volume"
           field: "energy"
           min_value: 1
           max_value: 3
-      renders: 
-        r1: 
+      renders:
+        r1:
           type: "cinema"
           phi: 4
           theta: 4
           db_name: "clover_db"
-- 
-  action: "execute"
-- 
-  action: "reset"

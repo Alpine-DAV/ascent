@@ -115,8 +115,6 @@ TEST(ascent_web, test_ascent_main_web_launch)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     // we want the "flow" runtime
@@ -145,7 +143,6 @@ TEST(ascent_web, test_ascent_main_web_launch)
         ASCENT_INFO(data["state"].to_json());
         // publish the same mesh data, but update the state info
         actions.reset();
-        actions.append()["action"] = "execute";
         ascent.publish(data);
         ascent.execute(actions);
         conduit::utils::sleep(1000);

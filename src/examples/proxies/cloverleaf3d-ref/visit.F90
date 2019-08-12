@@ -197,12 +197,6 @@ SUBROUTINE visit(my_ascent)
       CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/type", "volume")
       CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/field", "energy")
 
-      execute_act = conduit_node_append(sim_actions)
-      CALL conduit_node_set_path_char8_str(execute_act,"action", "execute")
-
-      reset_act = conduit_node_append(sim_actions)
-      CALL conduit_node_set_path_char8_str(reset_act,"action", "reset")
-
       CALL ascent_publish(my_ascent, sim_data)
       CALL ascent_execute(my_ascent, sim_actions)
 

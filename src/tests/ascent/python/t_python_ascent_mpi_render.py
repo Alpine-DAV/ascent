@@ -110,8 +110,6 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
         add_act["action"] = "add_scenes"
         add_act["scenes"] = scenes
 
-        actions.append()["action"] = "execute"
-
         a.execute(actions)
         a.close()
 
@@ -168,8 +166,6 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
         add_act =actions.append()
         add_act["action"] = "add_scenes"
         add_act["scenes"] = scenes
-
-        actions.append()["action"] = "execute"
 
         a.execute(actions)
         a.close()

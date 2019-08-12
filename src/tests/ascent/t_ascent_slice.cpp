@@ -140,9 +140,6 @@ TEST(ascent_slice, test_slice)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -228,9 +225,6 @@ TEST(ascent_slice, test_slice_off_axis)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -314,9 +308,6 @@ TEST(ascent_slice, test_3slice)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent

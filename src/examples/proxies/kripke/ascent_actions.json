@@ -16,14 +16,6 @@
         }
       }
     }
-  },
-
-  {
-    "action": "execute"
-  },
-
-  {
-    "action": "reset"
   }
 ]
 

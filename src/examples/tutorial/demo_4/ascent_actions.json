@@ -12,13 +12,5 @@
          }
        }
     }
-  },
-
-  {
-    "action": "execute"
-  },
-
-  {
-    "action": "reset"
   }
 ]

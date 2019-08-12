@@ -122,8 +122,6 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -195,8 +193,6 @@ TEST(ascent_render_3d, test_render_3d_points)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -269,8 +265,6 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -345,8 +339,6 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -421,8 +413,6 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -494,8 +484,6 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -566,8 +554,6 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -639,8 +625,6 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -713,8 +697,6 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -821,9 +803,6 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -894,9 +873,6 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -987,9 +963,6 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -1057,8 +1030,6 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //
@@ -1127,8 +1098,6 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -1200,8 +1169,6 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_min_max)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -1273,8 +1240,6 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -1349,8 +1314,6 @@ TEST(ascent_render_3d, test_3d_render_ascent_runtime_cuda_backend)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -1488,8 +1451,6 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -1568,9 +1529,6 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
 
     //
     // Run Ascent
@@ -1616,8 +1574,6 @@ TEST(ascent_render_3d, render_3d_empty_data)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
 
     //
@@ -1677,8 +1633,6 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
     conduit::Node &scenes = add_plots["scenes"];
     scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    actions.append()["action"]  = "execute";
-    actions.append()["action"]  = "reset";
 
     Ascent ascent;
 
@@ -1940,8 +1894,6 @@ TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
     conduit::Node &scenes = add_plots["scenes"];
     scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    actions.append()["action"] = "execute";
-    actions.append()["action"] = "reset";
 
     Ascent ascent;
 

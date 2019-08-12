@@ -35,8 +35,6 @@ int main(int argc, char **argv)
     add_act["action"] = "add_scenes";
     add_act["scenes"] = scenes;
 
-    actions.append()["action"] = "execute";
-
     // execute
     a.execute(actions);
 

@@ -234,7 +234,7 @@ TEST(ascent_data_adapter, consistent_domain_ids_check)
 TEST(ascent_data_adapter, interleaved_3d)
 {
     // CYRUSH: I tried recreate an issue with interleaved coords
-    // we hit in AMReX with this test case, however it does not 
+    // we hit in AMReX with this test case, however it does not
     // replicate it  (rendering still works with the vtk-m interleaved logic)
     // It is still a good basic interleaved test case.
     Node n;
@@ -278,9 +278,6 @@ TEST(ascent_data_adapter, interleaved_3d)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
 
     // make sure we can render interleaved data
     Ascent ascent;

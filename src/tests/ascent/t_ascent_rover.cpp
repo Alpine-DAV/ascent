@@ -123,9 +123,6 @@ TEST(ascent_rover, test_xray_serial)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -196,9 +193,6 @@ TEST(ascent_rover, test_volume_min_max)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -266,9 +260,6 @@ TEST(ascent_rover, test_volume_serial)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent

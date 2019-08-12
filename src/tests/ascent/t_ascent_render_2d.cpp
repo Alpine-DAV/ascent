@@ -110,8 +110,6 @@ TEST(ascent_render_2d, test_render_2d_default_runtime)
     conduit::Node &add_scenes = actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -175,8 +173,6 @@ TEST(ascent_render_2d, test_render_2d_uniform_default_runtime)
     conduit::Node &add_scenes = actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -241,8 +237,6 @@ TEST(ascent_render_2d, test_render_2d_render_serial_backend)
     conduit::Node &add_scenes = actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -308,8 +302,6 @@ TEST(ascent_render_2d, test_render_2d_uniform_render_serial_backend)
     conduit::Node &add_scenes = actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
