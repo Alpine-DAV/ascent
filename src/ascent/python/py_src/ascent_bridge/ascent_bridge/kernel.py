@@ -16,7 +16,7 @@ from .client import SocketClient, get_backend_list
 import copy
 import time
 
-from . import mywidgets
+from ascent_widgets.trackball import trackball
 
 class BridgeKernel(IPythonKernel):
     banner = "Ascent Bridge"
@@ -32,7 +32,7 @@ class BridgeKernel(IPythonKernel):
             "%connect": self.connect_magic,
             "%disconnect": lambda args: self.client.disconnect(),
             "%exec_local": self.exec_local,
-            "%trackball": lambda args: mywidgets.build_trackball(self),
+            "%trackball": lambda args: trackball.build_trackball(self),
         }
         self.last_used_backend = None
         self.disconnect_callback = None

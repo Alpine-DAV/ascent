@@ -1,9 +1,10 @@
 //TODO figure out how to compile requirejs
 //TODO use shadow dom or iframes for encapsulation
-//TODO use display(HTML(filename="trackball.css.html")) for separate HTML/CSS?
 
 //require.undef('trackball')
 
+
+// -------------------------------------
 require.config({
   //Define 3rd party plugins dependencies
   paths: {
@@ -26,14 +27,15 @@ require.config({
     }
 });
 
-
 define('three-glue', ['three'], function (three) {
     window.THREE = three;
     return three;
 });
 
-define('trackball', ['@jupyter-widgets/base', 'three', 'TrackballControls'], function(widgets, THREE) {       
-    var trackball_view = widgets.DOMWidgetView.extend({
+// -------------------------------------
+
+define(['@jupyter-widgets/base', 'three', 'TrackballControls', 'text!./trackball1.html', 'text!./trackball1.css'], function(widgets, THREE, _, template, styles) {       
+    var TrackballView = widgets.DOMWidgetView.extend({
         render: function() {
             var that = this;
             
@@ -44,73 +46,13 @@ define('trackball', ['@jupyter-widgets/base', 'three', 'TrackballControls'], fun
             this.main_container.style.background = "white";
             this.main_container.style.overflow = "hidden";
             
-            var styles = `
-                .col {
-                    display: inline-block;
-                }
-                #controlsDiv {
-                    display: flex;
-                    align-items: stretch;
-                    text-align: center;
-                }
-                #trackballDiv {
-                    flex-grow: 1;
-                }
-                #buttonsDiv {
-                    flex-grow: 1;
-                }
-                #canvasDiv {
-                    text-align: center;
-                    margin-top: 2rem;
-                }
-                .row {
-                    margin-bottom: 2rem;
-                }
-                #simControl {
-                    text-align: right;
-                    margin-top: 5rem;
-                }
-            `;
             var styleSheet = document.createElement("style");
             styleSheet.type = "text/css";
             styleSheet.innerText = styles;
-            this.main_container.appendChild(styleSheet);
+            //TODO encapsulate this
+            document.head.appendChild(styleSheet);
             
-            this.main_container.innerHTML = `
-                <div id="canvasDiv" class="row"></div>
-                <div id="controlsDiv" class="row">
-                    <div id="trackballDiv" class="col"></div>
-                    <div id="buttonsDiv" class="col">
-                        <div id="panButtons" class="row">
-                            <button id="move_up" class="control-button">Move up (W)</button>
-                            <div id="lowerButtons">
-                                <button id="move_left" class="control-button">Move left (A)</button>
-                                <button id="move_down" class="control-button">Move down (S)</button>
-                                <button id="move_right" class="control-button">Move right (D)</button>                            
-                            </div>
-                        </div>
-                        <div id="fbButtons" class="row">
-                            <button id="move_forward" class="control-button">Move forward</button>
-                            <button id="move_back" class="control-button">Move back</button>
-                        </div>
-                        <div id="rollButtons" class="row">
-                            <button id="roll_c" class="control-button">Roll clockwise</button>
-                            <button id="roll_cc" class="control-button">Roll counterclockwise</button>
-                        </div>
-                        <div id="pitchButtons" class="row">
-                            <button id="pitch_up" class="control-button">Pitch up</button>
-                            <button id="pitch_down" class="control-button">Pitch down</button>
-                        </div>
-                        <div id="yawButtons" class="row">
-                            <button id="yaw_right" class="control-button">Yaw right</button>
-                            <button id="yaw_left" class="control-button">Yaw left</button>
-                        </div>
-                        <div id="simControl" class="row">
-                            <button id="next" class="control-button">Advance Simulation</button>
-                        </div>
-                    </div>
-                </div>
-            `;
+            this.main_container.innerHTML = template;
             this.main_container.querySelectorAll('.control-button').forEach((button) => {
                 // add css classes to make buttons look like jupyter widget buttons
                 const cls = ["p-Widget", "jupyter-widgets", "jupyter-button", "widget-button"];
@@ -292,5 +234,5 @@ define('trackball', ['@jupyter-widgets/base', 'three', 'TrackballControls'], fun
         }
     });
         
-    return {TrackballView: trackball_view};
+    return {TrackballView: TrackballView};
 });

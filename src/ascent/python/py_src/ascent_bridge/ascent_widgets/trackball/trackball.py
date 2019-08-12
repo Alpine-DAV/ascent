@@ -99,7 +99,7 @@ class KernelUtils():
 
 class TrackballWidget(widgets.DOMWidget):
     _view_name = Unicode('TrackballView').tag(sync=True)
-    _view_module = Unicode('trackball').tag(sync=True)
+    _view_module = Unicode('ascent_widgets').tag(sync=True)
     _view_module_version = Unicode('0.0.0').tag(sync=True)
     
     width = Int(966).tag(sync=True)
@@ -197,8 +197,8 @@ class TrackballWidget(widgets.DOMWidget):
 
 
 def build_trackball(kernel):
-    VIEWS_PATH = pkg_resources.resource_filename(__name__, 'views/')
-    display(Javascript(filename=os.path.join(VIEWS_PATH, 'trackball', 'trackball.js')))
+    #VIEWS_PATH = pkg_resources.resource_filename(__name__, 'views/')
+    #display(Javascript(filename=os.path.join(VIEWS_PATH, 'trackball', 'trackball.js')))
     kernelUtils = KernelUtils(kernel)
     s = TrackballWidget(kernelUtils)
     display(s)
