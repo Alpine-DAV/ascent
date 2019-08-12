@@ -39,12 +39,5 @@
          }
        }
      }
-   },
-   {
-     "action": "execute"
-   },
-
-   {
-     "action": "reset"
    }
 ]

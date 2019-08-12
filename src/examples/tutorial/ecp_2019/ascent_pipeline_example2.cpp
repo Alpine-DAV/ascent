@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     thresh_params["min_value"] = 0.0;
     thresh_params["max_value"] = 0.5;
     pipelines["pl1/f1/params"] = thresh_params;
-    
+
     pipelines["pl1/f2/type"]   = "clip";
     // filter parameters
     conduit::Node clip_params;
@@ -60,8 +60,6 @@ int main(int argc, char **argv)
     Node &add_act2 = actions.append();
     add_act2["action"] = "add_scenes";
     add_act2["scenes"] = scenes;
-
-    actions.append()["action"] = "execute";
 
     // execute
     a.execute(actions);

@@ -27,13 +27,5 @@
         }
       }
     }
-  },
-
-  {
-    "action": "execute"
-  },
-
-  {
-    "action": "reset"
   }
 ]

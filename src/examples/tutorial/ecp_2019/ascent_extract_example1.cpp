@@ -33,8 +33,6 @@ int main(int argc, char **argv)
     add_act["action"] = "add_extracts";
     add_act["extracts"] = extracts;
 
-    actions.append()["action"] = "execute";
-
     // execute
     a.execute(actions);
 
