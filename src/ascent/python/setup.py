@@ -61,7 +61,7 @@ class SkipEggInfo(install_egg_info):
 setup (name = 'ascent',
        description = 'ascent',
        package_dir = {'ascent':'py_src'},
-       packages=['ascent', 'ascent.server'],
+       packages=['ascent', 'ascent.bridge_kernel'],
        cmdclass={'install_egg_info': SkipEggInfo})
 
 

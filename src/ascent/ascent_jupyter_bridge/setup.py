@@ -13,14 +13,14 @@ from ipykernel.kernelspec import write_kernel_spec, make_ipkernel_cmd
 
 install_requires = ["enum34", "jupyter_core", "ipywidgets", "ipykernel", "IPython", "numpy", "matplotlib"]
 
-distname = "ascent_bridge"
-kernelname = "ascent_bridge"
-widgets_dir = "ascent_widgets"
+distname = "ascent_jupyter_bridge"
+kernelname = "ascent_jupyter_bridge"
+widgetsname = "ascent_widgets"
 
 setup_args = dict(
     name=distname,
     description="Ascent Bridge for existing backends",
-    packages=[distname, '{}.trackball'.format(widgets_dir)],
+    packages=[distname, '{}.trackball'.format(widgetsname)],
     install_requires=install_requires,
     zip_safe=False
 )
@@ -38,16 +38,16 @@ write_kernel_spec(path=dest, overrides=dict(
 
 setup_args["data_files"] = [
     (join("share", "jupyter", "kernels", kernelname), glob(join(dest, "*"))),
-    ('etc/jupyter/nbconfig/notebook.d', [join(widgets_dir, 'ascent_widgets.json')])
+    ('etc/jupyter/nbconfig/notebook.d', [join(widgetsname, '{}.json'.format(widgetsname))])
 ]
 
-js_dir = join(widgets_dir, 'js', 'lib')
+js_dir = join(widgetsname, 'js', 'lib')
 # install HTML/JS/CSS files
 for path, directories, files in os.walk(join(js_dir)):
     # directory relative to js_dir
     rel_dir = relpath(path, join(js_dir))
     # destination directory in jupyter
-    dest = join("share", "jupyter", "nbextensions", widgets_dir, rel_dir)
+    dest = join("share", "jupyter", "nbextensions", widgetsname, rel_dir)
     # file paths relative to setup.py
     rel_files = [join(path, f) for f in files]
     setup_args["data_files"].append((dest, rel_files))

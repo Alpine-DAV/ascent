@@ -96,6 +96,7 @@ Contributors
 - Hank Childs (LBL and UO)
 - Utkarsh Ayachit (Kitware, Inc)
 - Sudhanshu Sane (UO)
+- Seif Ibrahim (LLNL, UCSB)
 
 Ascent Documentation
 ======================

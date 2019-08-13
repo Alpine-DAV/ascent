@@ -64,7 +64,7 @@ def Ascent():
     return ascent_obj()
 
 def jupyter_bridge():
-    from .server.example import jupyter_extract
+    from .bridge_kernel.server import jupyter_extract
     return jupyter_extract()
 
 
