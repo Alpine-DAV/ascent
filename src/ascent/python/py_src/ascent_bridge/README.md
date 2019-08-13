@@ -22,6 +22,8 @@ pip install ipykernel
 pip install . [--user] [--upgrade]
 ```
 
+# Writing custom Jupyter Widgets
+TODO
 # Release
 
 Bridge Kernel is released under a BSD-3-Clause license. For more details, please see the

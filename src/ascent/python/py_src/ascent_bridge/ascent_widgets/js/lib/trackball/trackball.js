@@ -82,6 +82,13 @@ define(['@jupyter-widgets/base', 'three', 'TrackballControls', 'text!./trackball
             this.init_trackball();
             this.animate_trackball();
         },
+        remove: function() {
+            //TODO why isn't this being called?
+            console.log("removing trackball");
+            while(this.el.firstChild) {
+                this.el.removeChild(this.el.firstChild);
+            }
+        },
         events: {
             'keydown': 'keydown',
         },

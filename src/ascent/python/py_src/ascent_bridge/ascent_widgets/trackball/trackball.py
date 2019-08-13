@@ -1,6 +1,6 @@
 import ipywidgets as widgets
 from traitlets import Unicode, validate, Int, List, Dict
-from IPython.display import Javascript
+from IPython.display import clear_output
 import json
 import copy
 import pkg_resources
@@ -121,11 +121,16 @@ class TrackballWidget(widgets.DOMWidget):
         self.kernelUtils = kernelUtils
         self.kernelUtils.set_disconnect_callback(self.disconnect)
         
-        self._update_scene_bounds()
+        try:
+            self._update_scene_bounds()
 
-        self._update_camera_info_from_ascent()
-        
-        self._update_image()
+            self._update_camera_info_from_ascent()
+            
+            self._update_image()
+        except KeyError:
+            clear_output(wait=True)
+            self.close()
+            self.kernelUtils.kernel.stderr("no images found, ensure server_ascent has excecuted actions and re-execute the widget")
 
     #TODO notify the user and stop trying to handle clicks
     def disconnect(self):
@@ -193,9 +198,12 @@ class TrackballWidget(widgets.DOMWidget):
                                camera_info['up'])
                 self._update_image()
         else:
+            clear_output(wait=True)
+            self.close()
             self.kernelUtils.kernel.stderr("disconnected - wait to reconnect or check the simulation hasn't ended\n")
 
 
+#TODO move this to a different file and make more general?
 def build_trackball(kernel):
     #VIEWS_PATH = pkg_resources.resource_filename(__name__, 'views/')
     #display(Javascript(filename=os.path.join(VIEWS_PATH, 'trackball', 'trackball.js')))
