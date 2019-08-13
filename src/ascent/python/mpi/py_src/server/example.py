@@ -54,148 +54,14 @@ def jupyter_extract():
 
         ascent_opts["actions_file"] = ""
         server_ascent.open(ascent_opts)
-        server_ascent.publish(ascent_extract.ascent_data())
-        json = """
-        [
-          {
-            "action": "add_pipelines",
-            "pipelines": 
-            {
-              "pl1": 
-              {
-                "f1": 
-                {
-                  "type": "contour",
-                  "params": 
-                  {
-                    "field": "nodal_noise",
-                    "iso_values": -0.4
-                  }
-                }
-              },
-              "pl2": 
-              {
-                "f1": 
-                {
-                  "type": "contour",
-                  "params": 
-                  {
-                    "field": "nodal_noise",
-                    "iso_values": 0.3
-                  }
-                }
-              }
-            }
-          },
-        
-          {
-            "action": "add_scenes",
-            "scenes": 
-            {
-              "scene1": 
-              {
-                "plots": 
-                {
-                  "plt1": 
-                  {
-                    "type": "pseudocolor",
-                    "pipeline": "pl1",
-                    "field": "zonal_noise"
-                  },
-                  "plt2": 
-                  {
-                    "type": "volume",
-                    "field": "zonal_noise",
-                    "color_table": 
-                    {
-                      "name": "cool to warm",
-                      "control_points": 
-                      {
-                        "p1": 
-                        {
-                          "type": "alpha",
-                          "position": 0.0,
-                          "alpha": 0.01
-                        },
-                        "p2": 
-                        {
-                          "type": "alpha",
-                          "position": 1.0,
-                          "alpha": 0.3
-                        }
-                      }
-                    }
-                  }
-                },
-                "renders": 
-                {
-                  "r1": 
-                  {
-                    "image_width": 966,
-                    "image_height": 700,
-                    "bg_color": [1.0, 1.0, 1.0],
-                    "fg_color": [0.0, 0.0, 0.0]
-                  }
-                }
-              }
-            }
-          },
-          
-          {
-            "action": "execute"
-          },
-
-          {
-            "action": "reset"
-          }
-        ]
-        """
-        yaml = """
-
-        - 
-          action: "add_scenes"
-          scenes: 
-            s1: 
-              plots: 
-                p1: 
-                  type: "volume"
-                  field: "energy"
-                  color_table:
-                    name: "cool to warm"
-                    control_points:
-                      -
-                        type: "alpha"
-                        position: 0
-                        alpha: .3
-                      -
-                        type: "alpha"
-                        position: 1
-                        alpha: 1
-              renders:
-                r1:
-                  image_width: "1500"
-                  image_height: "1200"
-                  bg_color: [1,1,1]
-                  fg_color: [0,0,0]
-        - 
-          action: "execute"
-        - 
-          action: "reset"
-
-        """
-        generated = conduit.Generator(json, "json")
-        actions = conduit.Node()
-        generated.walk(actions)
-        server_ascent.execute(actions)
-        info = conduit.Node()
-        server_ascent.info(info)
 
         global_dict["server_ascent"] = server_ascent
     else:
-        global_dict["server_ascent"].publish(ascent_extract.ascent_data())
         #TODO is this needed here?
         if global_dict["MPI_ENABLED"]:
           comm = MPI.Comm.f2py(ascent_extract.ascent_mpi_comm_id())
+
+    global_dict["server_ascent"].publish(ascent_extract.ascent_data())
 
     def display_images(info):
         for img in info["images"].children():
@@ -226,7 +92,6 @@ def jupyter_extract():
         render["image_name"] = "out_ascent_render_3d"
         return info["actions"]
 
-    #TODO pass this in rather than relying on it being in globals()
     #TODO store MPIServer in global variable instead of passing it
     #TODO why doesn't if rank==0 at the top work?
     def handle_message(server, message):
@@ -236,6 +101,7 @@ def jupyter_extract():
 
             info = conduit.Node()
             server_ascent.info(info)
+
             data = message["code"]
 
             if data["type"] == "transform":
@@ -275,6 +141,7 @@ def jupyter_extract():
       'display_images': display_images,
       'conduit': conduit,
       'ascent_data': ascent_extract.ascent_data,
+      'server_ascent': global_dict['server_ascent'],
     }
     if global_dict["MPI_ENABLED"]:
       my_ns['MPI'] = MPI
