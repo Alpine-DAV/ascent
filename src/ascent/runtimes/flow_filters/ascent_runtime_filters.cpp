@@ -136,6 +136,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHSlice>("transforms","slice");
     AscentRuntime::register_filter_type<VTKH3Slice>("transforms","3slice");
     AscentRuntime::register_filter_type<VTKHNoOp>("transforms","noop");
+    AscentRuntime::register_filter_type<VTKHRecenter>("transforms","recenter");
     AscentRuntime::register_filter_type<VTKHVectorMagnitude>("transforms","vector_magnitude");
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
