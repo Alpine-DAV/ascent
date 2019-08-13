@@ -74,7 +74,7 @@ install(TARGETS replay_ser
 if(MPI_FOUND)
 
     set(replay_mpi_deps ascent_mpi mpi)
-    if(ENABLE_OPENMP)
+    if(OPENMP_FOUND)
            list(APPEND replay_mpi_deps openmp)
     endif()
 

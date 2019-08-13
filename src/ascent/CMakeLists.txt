@@ -73,7 +73,7 @@ set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
 
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
-    set(ASCENT_VTKM_USE_OPENMP ${ENABLE_OPENMP})
+    set(ASCENT_VTKM_USE_OPENMP ${OPENMP_FOUND})
 endif()
 
 
@@ -231,7 +231,7 @@ if(CUDA_FOUND)
     list(APPEND ascent_thirdparty_libs cuda_runtime)
 endif()
 
-if(ENABLE_OPENMP)
+if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs openmp)
 endif()
 
