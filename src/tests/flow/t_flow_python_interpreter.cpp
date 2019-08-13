@@ -122,6 +122,28 @@ TEST(flow_py_interp_exe, flow_python_interpreter)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(flow_py_interp_exe, flow_python_interpreter_bad_file)
+{
+    PythonInterpreter py_interp;
+
+    EXPECT_TRUE(py_interp.initialize());
+    EXPECT_TRUE(py_interp.is_running());
+
+    EXPECT_TRUE(py_interp.run_script("print(sys.path)"));
+    
+    EXPECT_THROW(py_interp.run_script_file("/blarg/script/path/to/garbage//thats/not/real"),
+                 conduit::Error);
+
+    // shutdown
+    py_interp.shutdown();
+
+    EXPECT_FALSE(py_interp.is_running());
+
+}
+
+
+
 
 
 
