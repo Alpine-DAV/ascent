@@ -1,0 +1,26 @@
+Intellectual Property Notice
+------------------------------
+
+Ascent is licensed under the BSD 3-Clause license,
+(BSD-3-Clause or https://opensource.org/licenses/BSD-3-Clause).
+
+Copyrights and patents in the Ascent project are retained by contributors.
+No copyright assignment is required to contribute to Ascent.
+
+
+Bundled External Packages
+---------------------------
+
+PackageName: BLT
+PackageHomePage: https://github.com/LLNL/blt/
+PackageLicenseDeclared: BSD-3-Clause
+
+PackageName: uberenv
+PackageHomePage: https://github.com/LLNL/uberenv
+PackageLicenseDeclared: BSD-3-Clause
+
+PackageName: Bridge Kernel
+PackageHomePage: https://github.com/LLNL/bridge-kernel
+PackageLicenseDeclared: BSD-3-Clause
+
+
