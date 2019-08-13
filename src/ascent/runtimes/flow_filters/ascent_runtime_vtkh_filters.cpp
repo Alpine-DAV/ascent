@@ -89,6 +89,7 @@
 #include <vtkh/filters/NoOp.hpp>
 #include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/filters/Log.hpp>
+#include <vtkh/filters/Recenter.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
@@ -2679,6 +2680,93 @@ VTKHLog::execute()
     set_output<vtkh::DataSet>(log_output);
 }
 
+//-----------------------------------------------------------------------------
+
+VTKHRecenter::VTKHRecenter()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHRecenter::~VTKHRecenter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHRecenter::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_recenter";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHRecenter::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_string("association",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("association");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHRecenter::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+      ASCENT_ERROR("vtkh_recenter input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    std::string association = params()["association"].as_string();
+    if(association != "vertex" && association != "element")
+    {
+      ASCENT_ERROR("Recenter: resulting field association '"<<association<<"'"
+                   <<" must have a value of 'vertex' or 'element'");
+    }
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Recenter recenter;
+
+    recenter.SetInput(data);
+    recenter.SetField(field_name);
+
+    if(association == "vertex")
+    {
+      recenter.SetResultAssoc(vtkm::cont::Field::Association::POINTS);
+    }
+    if(association == "element")
+    {
+      recenter.SetResultAssoc(vtkm::cont::Field::Association::CELL_SET);
+    }
+
+    recenter.Update();
+
+    vtkh::DataSet *recenter_output = recenter.GetOutput();
+
+    set_output<vtkh::DataSet>(recenter_output);
+}
 //-----------------------------------------------------------------------------
 
 VTKHNoOp::VTKHNoOp()
