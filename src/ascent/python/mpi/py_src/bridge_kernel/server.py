@@ -116,7 +116,7 @@ def jupyter_extract():
                 #TODO eval kwargs
                 kwargs = call_obj["kwargs"]
 
-                actions = run_transformation(utils.utils_dict[call_obj["name"]], info, *args, *kwargs)
+                actions = run_transformation(utils.utils_dict[call_obj["name"]], info, *args, **kwargs)
                 server_ascent.execute(actions)
 
                 server.root_writemsg({"type": "transform"})
