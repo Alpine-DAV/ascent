@@ -18,7 +18,7 @@ Bridge Kernel is not on PyPI yet, please clone and install from local source.
 
 spack/bin/spack install -v py-pip ^python@3.6.3
 spack/bin/spack activate py-pip
-pip install ipykernel
+pip install -r requirements.txt
 pip install . [--user] [--upgrade]
 ```
 

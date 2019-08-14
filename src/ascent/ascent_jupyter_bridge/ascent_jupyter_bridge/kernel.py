@@ -32,7 +32,9 @@ class BridgeKernel(IPythonKernel):
             "%connect": self.connect_magic,
             "%disconnect": lambda args: self.client.disconnect(),
             "%exec_local": self.exec_local,
-            "%trackball": lambda args: trackball.build_trackball(self),
+        }
+        self.widgets = {
+            "%trackball": lambda args: trackball.build_trackball(self)
         }
         self.last_used_backend = None
         self.disconnect_callback = None
@@ -117,12 +119,13 @@ class BridgeKernel(IPythonKernel):
         return 0
 
     def connect_magic(self, args):
-        #TODO could this be better?
         if self.client is not None:
             self.client.check_connection()
             if self.client is not None:
                 print("already connected to backend")
                 return
+            else:
+                print("disconnected, select a new connection")
 
         w = self.pick_backend()
 
@@ -215,8 +218,11 @@ class BridgeKernel(IPythonKernel):
         if arg0 in self.magics.keys():
             self.magics[arg0](code)
         elif self.client is not None:
-            eval_result = self.client.execute(code)
-            self.exe_count += 1
+            if arg0 in self.widgets.keys():
+                self.widgets[arg0](code)
+            else:
+                eval_result = self.client.execute(code)
+                self.exe_count += 1
         else:
             self.stdout("no backend - use %connect\n", silent)
 

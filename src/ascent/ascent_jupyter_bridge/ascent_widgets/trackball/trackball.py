@@ -32,7 +32,7 @@ class KernelUtils():
         call_obj = {
             "name": call_info[0],
             "args": call_info[1:],
-            "kwargs": [],
+            "kwargs": {},
         }
         return self.custom_send({
             "type": "transform",
@@ -189,14 +189,14 @@ class TrackballWidget(widgets.DOMWidget):
 
                 self._update_camera_info_from_ascent()
                 
-                self._update_image() #TODO move this to bottom of function?
             elif content['event'] == 'mouseup':
                 camera_info = content['camera_info']
                 self._update_camera_info(camera_info)
                 self.kernelUtils.look_at(camera_info['position'],
                                camera_info['look_at'],
                                camera_info['up'])
-                self._update_image()
+
+            self._update_image()
         else:
             clear_output(wait=True)
             self.close()
