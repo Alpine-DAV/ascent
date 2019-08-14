@@ -634,8 +634,42 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
                   << params["source"].as_string(); // now include user's script
 
      params["source"] = py_src_final.str();
-
 #endif
+  }
+  else if(extract_type == "jupyter")
+  {
+    filter_name = "python_script";
+
+    // customize the names of the script integration module and funcs
+    params["interface/module"] = "ascent_extract";
+    params["interface/input"]  = "ascent_data";
+    params["interface/set_output"] = "ascent_set_output";
+
+     ostringstream py_src_final;
+#ifdef ASCENT_MPI_ENABLED
+    // for MPI case, inspect args, if script is passed via file,
+    // read contents on root and broadcast to other tasks
+    int comm_id = flow::Workspace::default_mpi_comm();
+    MPI_Comm comm = MPI_Comm_f2c(comm_id);
+    // inject helper that provides the mpi comm handle
+
+    py_src_final << "# ascent mpi comm helper function" << std::endl
+                 << "def ascent_mpi_comm_id():" << std::endl
+                 << "    return " << comm_id << std::endl
+                 << std::endl
+                 // bind ascent_mpi_comm_id into the module
+                 << "ascent_extract.ascent_mpi_comm_id = ascent_mpi_comm_id"
+                 << std::endl
+                 // import our code that connects to the bridge kernel server
+                 << "from ascent.mpi import jupyter_bridge "
+                 << std::endl;
+#else
+    // import our code that connects to the bridge kernel server
+    py_src_final << "from ascent import jupyter_bridge" << std::endl;
+#endif
+    // finally actually call the bridge kernel server
+    py_src_final << "jupyter_bridge()" << std::endl;
+    params["source"] = py_src_final.str();
   }
   // generic extract support
   else if(registered_filter_types()["extracts"].has_child(extract_type))
