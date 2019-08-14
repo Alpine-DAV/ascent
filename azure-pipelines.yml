@@ -183,6 +183,13 @@ jobs:
       displayName: 'Test vs Install'
       condition: eq(variables['ENABLE_VTKH'], 'ON')
 
+###############################################################################
+# Ubuntu 18 build and test, using spack to build tpls
+#
+# Azure doesn't have an Ubuntu 18 dev image, so we are using the
+# standard Ubuntu 18 container.
+#
+###############################################################################
 - job: Ubuntu_18
   pool:
     vmImage: 'ubuntu-16.04'
@@ -213,7 +220,7 @@ jobs:
          # output env
          cat etc/*rel*
          env
-         sudo apt-get update
+         apt-get update
          # list pkgs we need
          export APT_PKGS=binutils
          export APT_PKGS="$APT_PKGS gcc"
@@ -229,7 +236,7 @@ jobs:
          export APT_PKGS="$APT_PKGS libsqlite3-dev"
          export APT_PKGS="$APT_PKGS libbz2-dev"
          # install pkgs we need
-         sudo apt-get install $APT_PKGS
+         apt-get install $APT_PKGS
       displayName: 'Prepare build env'
 
     - script: |
