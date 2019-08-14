@@ -60,7 +60,7 @@ class SkipEggInfo(install_egg_info):
 setup (name = 'ascent mpi',
        description = 'mpi-enabled ascent',
        package_dir = {'ascent.mpi':'py_src'},
-       packages=['ascent.mpi'],
+       packages=['ascent.mpi', 'ascent.mpi.bridge_kernel'],
        cmdclass={'install_egg_info': SkipEggInfo})
 
 
