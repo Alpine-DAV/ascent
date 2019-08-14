@@ -99,7 +99,6 @@ ASCENT_LINK_RPATH += $(if $(ASCENT_MFEM_DIR), $(ASCENT_MFEM_RPATH_FLAGS_VALUE))
 # Conduit
 ##########
 
-
 # Note: Conduit's conduit_config.mk handles hdf5 and zlib
 
 # For Conduit without MPI
@@ -111,6 +110,10 @@ ASCENT_CONDUIT_MPI_LIB_FLAGS = $(CONDUIT_MPI_LIB_FLAGS)
 ##########
 # VTKH
 ##########
+
+# only provide lib flags if VTK-h support is enabled
+ifeq ($(ASCENT_VTKH_DIR),)
+
 # If using VTKH without mpi
 ASCENT_VTKH_LIB_FLAGS=-L $(ASCENT_VTKH_DIR)/lib \
                       -lvtkh_rendering \
@@ -126,13 +129,18 @@ ASCENT_VTKH_MPI_LIB_FLAGS=-L $(ASCENT_VTKH_DIR)/lib \
                           -lvtkh_core_mpi \
                           -lvtkh_lodepng \
                           -lvtkh_utils_mpi
+endif
 
 ##########
 #VTKM
 ##########
+
+# only provide lib flags if VTK-m support is enabled
+ifeq ($(ASCENT_VTKM_DIR),)
 ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
                         -lvtkm_cont-$(ASCENT_VTKM_VERSION) \
                         -lvtkm_rendering-$(ASCENT_VTKM_VERSION)
+endif
 
 ##########
 # MFEM
