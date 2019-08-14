@@ -364,9 +364,10 @@ jobs:
 #       displayName: 'Check Install'
 
 ###############################################################################
-# Docker build and test, that leverages our script that calls Docker Build
+# Docker build and test cases, that leverage our script that calls Docker Build
 ###############################################################################
-- job: Docker
+# ubuntu 16
+- job: Docker_Ubuntu_16
   pool:
     vmImage: 'ubuntu-16.04'
   timeoutInMinutes: 0
@@ -380,7 +381,24 @@ jobs:
         # run docker build
         ####################
         cd src/examples/docker/ubuntu/ && ./example_build.sh
-      displayName: 'Docker Build'
+      displayName: 'Docker Build Ubuntu 16'
+# ubuntu 18
+- job: Docker_Ubuntu_18
+  pool:
+    vmImage: 'ubuntu-16.04'
+  container: ubuntu:18.04
+  timeoutInMinutes: 0
+  steps:
+    - checkout: self
+      clean: boolean
+      submodules: recursive
+
+    - script: |
+        ####################
+        # run docker build
+        ####################
+        cd src/examples/docker/ubuntu/ && ./example_build.sh
+      displayName: 'Docker Build Ubuntu 18'
 
 
 ###############################################################################
