@@ -193,7 +193,7 @@ jobs:
 - job: Ubuntu_18
   pool:
     vmImage: 'ubuntu-16.04'
-  container: ubuntu:18.04
+  container: alpinedav/ascent-ci:ubuntu-18.04-dev
   timeoutInMinutes: 0
   variables:
     COMPILER_CC: gcc
@@ -220,7 +220,7 @@ jobs:
          # output env
          cat etc/*rel*
          env
-         apt-get update
+         sudo apt-get update
          # list pkgs we need
          export APT_PKGS=binutils
          export APT_PKGS="$APT_PKGS gcc"
@@ -236,7 +236,7 @@ jobs:
          export APT_PKGS="$APT_PKGS libsqlite3-dev"
          export APT_PKGS="$APT_PKGS libbz2-dev"
          # install pkgs we need
-         apt-get install $APT_PKGS
+         sudo apt-get install $APT_PKGS
       displayName: 'Prepare build env'
 
     - script: |
