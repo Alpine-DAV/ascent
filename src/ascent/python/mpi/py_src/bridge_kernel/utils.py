@@ -1,4 +1,5 @@
 import numpy
+from functools import reduce
 
 #return a vector pointing in the same direction as vec with length 1
 def normalize(vec):
@@ -64,7 +65,8 @@ def rotate(p0, p1, p2, radians):
     ])
 
     #multiply by all the forward transforms followed by reverse transforms
-    return translate_inv @ rot_x_inv @ rot_y_inv @ rot_z @ rot_y @ rot_x @ translate @ p0
+    #return translate_inv @ rot_x_inv @ rot_y_inv @ rot_z @ rot_y @ rot_x @ translate @ p0
+    return reduce(numpy.dot, [translate_inv, rot_x_inv, rot_y_inv, rot_z, rot_y, rot_x, translate, p0])
 
 
 

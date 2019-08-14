@@ -41,14 +41,17 @@ else:
 
 def jupyter_extract():
     global global_dict
+    server = None
 
-    #The if branch runs once per simulation, else runs for each given timestep
-    if "ascent_server" not in global_dict:
+    # this runs once per simulation
+    if "server_ascent" not in global_dict:
         ascent_opts = conduit.Node()
+
         if global_dict["MPI_ENABLED"]:
           comm = MPI.Comm.f2py(ascent_extract.ascent_mpi_comm_id())
           ascent_opts["mpi_comm"].set(comm.py2f())
           server_ascent = ascent.mpi.Ascent()
+          global_dict["comm"] = comm
         else:
           server_ascent = ascent.Ascent()
 
@@ -56,19 +59,15 @@ def jupyter_extract():
         server_ascent.open(ascent_opts)
 
         global_dict["server_ascent"] = server_ascent
-    else:
-        #TODO is this needed here?
-        if global_dict["MPI_ENABLED"]:
-          comm = MPI.Comm.f2py(ascent_extract.ascent_mpi_comm_id())
 
     global_dict["server_ascent"].publish(ascent_extract.ascent_data())
 
     def display_images(info):
+        nonlocal server
         for img in info["images"].children():
             with open(img.node()["image_name"], 'rb') as f:
                 img_content = f.read()
-                #TODO this doesn't work
-                image(img_content, "png")
+                server._write_bytes_image(img_content, "png")
 
     def get_encoded_images(info):
         images = []
@@ -79,24 +78,26 @@ def jupyter_extract():
 
     def run_transformation(transformation, info, *args, **kwargs):
         render = None
+        #get the first render
         for child in info["actions"].children():
           if child.node()["action"] == "add_scenes":
-            #get the first render
             render = child.node()["scenes"][0]["renders"][0]
             break
         if render is None:
           print("ERROR: no scenes found")
-        #keeps the defaults from info['actions']
+
+        # keeps the defaults from info['actions']
         render.update(transformation(info, *args, **kwargs))
-        #TODO this is temporary
+
+        # TODO this is temporary
         render["image_name"] = "out_ascent_render_3d"
+
         return info["actions"]
 
-    #TODO store MPIServer in global variable instead of passing it
     #TODO why doesn't if rank==0 at the top work?
-    def handle_message(server, message):
+    def handle_message(message):
+        nonlocal server
         with server._redirect():
-            #TODO move this up?
             server_ascent = global_dict['server_ascent']
 
             info = conduit.Node()
@@ -107,16 +108,16 @@ def jupyter_extract():
             if data["type"] == "transform":
                 call_obj = data["code"]
 
-                #TODO better way to do this so i don't have to import everything into this file
-                #eval args
+                # TODO i shouldn't import everything into this file
+                # eval args
                 args = []
                 for arg in call_obj["args"]:
                     args.append(eval(arg))
 
-                #TODO eval kwargs
+                # TODO eval kwargs
                 kwargs = call_obj["kwargs"]
 
-                actions = run_transformation(utils.utils_dict[call_obj["name"]], info, *args, *kwargs)
+                actions = run_transformation(utils.utils_dict[call_obj["name"]], info, *args, **kwargs)
                 server_ascent.execute(actions)
 
                 server.root_writemsg({"type": "transform"})
@@ -131,9 +132,11 @@ def jupyter_extract():
                         "code": info.to_json(),
                     })
             elif data["type"] == "next":
+                server_ascent.publish(ascent_extract.ascent_data())
                 server_ascent.execute(info['actions'])
 
                 server.root_writemsg({"type": "next"})
+
 
     my_prefix = "%s_%s" % (os.path.splitext(os.path.basename(sys.argv[0]))[0], socket.gethostname())
 
@@ -141,11 +144,14 @@ def jupyter_extract():
       'display_images': display_images,
       'conduit': conduit,
       'ascent_data': ascent_extract.ascent_data,
-      'server_ascent': global_dict['server_ascent'],
+      'jupyter_ascent': global_dict['server_ascent'],
     }
+
     if global_dict["MPI_ENABLED"]:
       my_ns['MPI'] = MPI
       my_ns['ascent_mpi_comm_id'] = ascent_extract.ascent_mpi_comm_id
-      MPIServer(comm=comm, ns=my_ns, callback=handle_message, prefix=my_prefix).serve()
+      server = MPIServer(comm=global_dict["comm"], ns=my_ns, callback=handle_message, prefix=my_prefix)
     else:
-      MPIServer(comm=None, ns=my_ns, callback=handle_message, prefix=my_prefix).serve()
+      server = MPIServer(comm=None, ns=my_ns, callback=handle_message, prefix=my_prefix)
+
+    server.serve()

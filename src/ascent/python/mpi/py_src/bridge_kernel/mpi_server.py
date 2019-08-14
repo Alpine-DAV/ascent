@@ -154,7 +154,7 @@ class MPIServer():
                 bio = BytesIO()
                 pyplot.savefig(bio, format="png")
                 bio.seek(0)
-                self._write_bytes_image(bio.read(), "png", "[matplotlib plot]\n")
+                self._write_bytes_image(bio.read(), "png")
                 pyplot.close()
             pyplot._show = write_image
             # TODO: draw_if_interactive is called automatically when using
@@ -365,7 +365,7 @@ class MPIServer():
             elif data["type"] == "complete":
                 self.complete(data["code"], cursor_pos=data["cursor_pos"])
             elif data["type"] == "custom":
-                self.callback(self, data)
+                self.callback(data)
             elif data["type"] == "ping":
                 self.root_writemsg({"type": "pong"})
             elif data["type"] == "disconnect":
@@ -373,5 +373,6 @@ class MPIServer():
 
             self.root_writemsg({"type": "idle"})
 
+        self.root_writemsg({"type": "disconnect"})
         if self.rank == 0:
             self._remove_files()

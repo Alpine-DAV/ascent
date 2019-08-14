@@ -365,7 +365,7 @@ class MPIServer():
             elif data["type"] == "complete":
                 self.complete(data["code"], cursor_pos=data["cursor_pos"])
             elif data["type"] == "custom":
-                self.callback(self, data)
+                self.callback(data)
             elif data["type"] == "ping":
                 self.root_writemsg({"type": "pong"})
             elif data["type"] == "disconnect":

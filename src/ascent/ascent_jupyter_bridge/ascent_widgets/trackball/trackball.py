@@ -130,7 +130,7 @@ class TrackballWidget(widgets.DOMWidget):
         except KeyError:
             clear_output(wait=True)
             self.close()
-            self.kernelUtils.kernel.stderr("no images found, ensure server_ascent has excecuted actions and re-execute the widget")
+            self.kernelUtils.kernel.stderr("no images found, ensure jupyter_ascent has excecuted actions and re-execute the widget")
 
     #TODO notify the user and stop trying to handle clicks
     def disconnect(self):
