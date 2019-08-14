@@ -304,6 +304,7 @@ TEST(ascent_mpi_runtime, test_python_script_extract_bad_file)
     // since it is simply an integer
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
     ascent_opts["runtime"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
     ascent.publish(data);
     EXPECT_THROW(ascent.execute(actions),
