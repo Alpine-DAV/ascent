@@ -158,7 +158,9 @@ class MPIServer():
                 bio = BytesIO()
                 pyplot.savefig(bio, format="png")
                 bio.seek(0)
-                self._write_bytes_image(bio.read(), "png", "[matplotlib plot]\n")
+                # TODO: Old form?
+                # self._write_bytes_image(bio.read(), "png" , "[matplotlib plot]\n")
+                self._write_bytes_image(bio.read(), "png")
                 pyplot.close()
             pyplot._show = write_image
             # TODO: draw_if_interactive is called automatically when using
@@ -226,7 +228,8 @@ class MPIServer():
                 sent = self._client_sock.send(chunk)
             except socket.error as sockerr:
                 (code, msg) = sockerr.args
-                self.debug("socket error: {}, {}".format(code, msg))
+                # TODO: error, simply print for now
+                print("socket error: {}, {}".format(code, msg))
                 return
 
             if sent == 0:
