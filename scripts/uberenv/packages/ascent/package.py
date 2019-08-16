@@ -90,6 +90,7 @@ class Ascent(Package, CudaPackage):
     depends_on("python+shared", when="+python+shared")
     extends("python", when="+python+shared")
     depends_on("py-numpy", when="+python+shared", type=('build', 'run'))
+    depends_on("py-pip", when="+python+shared", type=('build', 'run'))
 
     #######################
     # MPI
