@@ -144,10 +144,14 @@ class MPIServer():
             })
 
     def _setup_matplotlib(self):
-        import matplotlib
-        matplotlib.use("agg")
-        from matplotlib import pyplot
-
+        # allow use without matplotlib
+        # TODO: figure out best strategy to warn on import failure
+        try:
+            import matplotlib
+            matplotlib.use("agg")
+            from matplotlib import pyplot
+        except ImportError:
+            return
         if self.rank == 0:
             def write_image(*args, **kwargs):
                 print(repr(pyplot.gcf()))
