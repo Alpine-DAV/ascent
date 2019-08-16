@@ -201,12 +201,6 @@ endif()
 ################################
 if(PYTHON_FOUND)
     add_subdirectory(python)
-
-    # install the jupyter bridge kernel client source
-    # we copy the source because users may want to install
-    # client into a different python environment
-    install(DIRECTORY ascent_jupyter_bridge
-            DESTINATION share/ascent)
 endif()
 
 ##################

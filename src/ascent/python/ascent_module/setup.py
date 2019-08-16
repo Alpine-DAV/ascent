@@ -43,32 +43,25 @@
 ###############################################################################
 
 ###############################################################################
-# file: ascent_mpi.py
-# Purpose: Lazy loads the mpi-enabled ascent interface
-#
-#  We use lazy loading b/c the ascent and ascent_mpi libraries provide the
-#  same symbols, and without this, on some platforms (OSX) importing
-#  ascent_python before ascent_mpi_python prevents us from getting the mpi
-#  version.
+# file: setup.py
+# Purpose: disutils setup for ascent python module.
 #
 ###############################################################################
 
+import sys
+from distutils.core import setup
+from distutils.command.install_egg_info import install_egg_info
 
-def about():
-    from .ascent_mpi_python import about as ascent_about
-    return ascent_about()
-
-
-def Ascent():
-    from .ascent_mpi_python import Ascent as ascent_obj
-    return ascent_obj()
-
-def jupyter_bridge():
-    from .bridge_kernel.server import jupyter_extract
-    return jupyter_extract()
+# disable install_egg_info
+class SkipEggInfo(install_egg_info):
+    def run(self):
+        pass
 
 
-
-
+setup (name = 'ascent',
+       description = 'ascent',
+       package_dir = {'ascent':'py_src'},
+       packages=['ascent', 'ascent.bridge_kernel' , 'ascent.mpi'],
+       cmdclass={'install_egg_info': SkipEggInfo})
 
 

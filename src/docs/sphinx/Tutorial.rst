@@ -257,6 +257,15 @@ First you will need to install the ``ascent_jupyter_bridge`` python module locat
    pip install -r requirements.txt
    pip install .
 
+
+If you are at a site that does SSL interception and can not configure your SSL certificates to avoid pip SSL errors, you can use the following:
+
+.. code::
+
+   pip install  --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
+   pip install  --trusted-host pypi.org --trusted-host files.pythonhosted.org .
+
+
 We will once again use the Cloverleaf3D Ascent integration, so make sure you are in the ``examples/ascent/proxies/cloverleaf3d`` directory of your Ascent install.
 Then edit the ``ascent_actions.json`` file to request that Ascent run the Jupyter extract:
 
