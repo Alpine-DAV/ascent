@@ -49,14 +49,14 @@
 #   cd build
 #   cmake .. -DPMT_DIR=<PMT_DIR> -DBabelFlow_DIR=<BabelFlow_DIR>
 #   make
-#   mpirun -np 4 ascent_babelflow_example
+#   mpirun -np 8 ascent_babelflow_example
 #
 ##############################################################################
 
 
 cmake_minimum_required(VERSION 3.9)
 
-project(using_with_cmake)
+project(babelflow_pmt)
 
 #
 # Provide default for ASCENT_DIR that works for an ascent install
