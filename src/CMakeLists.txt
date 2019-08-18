@@ -122,6 +122,11 @@ include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 include(cmake/CMakeBasics.cmake)
 
 ################################
+# Set a default build type 
+################################
+include(cmake/AscentBuildType.cmake)
+
+################################
 # Setup Fortran Support
 ################################
 include(cmake/SetupFortran.cmake)
