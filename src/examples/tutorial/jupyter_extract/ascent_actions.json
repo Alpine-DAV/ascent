@@ -1,0 +1,12 @@
+[
+  {
+    "action": "add_extracts",
+    "extracts":
+    {
+      "e1":
+      {
+        "type": "jupyter"
+      }
+    }
+  }
+]

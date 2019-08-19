@@ -20,7 +20,7 @@ widgetsname = "ascent_widgets"
 setup_args = dict(
     name=distname,
     description="Ascent Bridge for existing backends",
-    packages=[distname, '{}.trackball'.format(widgetsname)],
+    packages=[distname, widgetsname, '{}.trackball'.format(widgetsname)],
     install_requires=install_requires,
     zip_safe=False
 )

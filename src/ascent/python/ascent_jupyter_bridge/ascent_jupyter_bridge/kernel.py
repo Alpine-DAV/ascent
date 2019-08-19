@@ -16,7 +16,8 @@ from .client import SocketClient, get_backend_list
 import copy
 import time
 
-from ascent_widgets.trackball import trackball
+from ascent_widgets.trackball import TrackballWidget
+from ascent_widgets.kernel_widget_utils import KernelWidgetUtils
 
 class BridgeKernel(IPythonKernel):
     banner = "Ascent Bridge"
@@ -32,10 +33,13 @@ class BridgeKernel(IPythonKernel):
             "%connect": self.connect_magic,
             "%disconnect": lambda args: self.client.disconnect(),
             "%exec_local": self.exec_local,
-            "%trackball": lambda args: trackball.build_trackball(self),
+        }
+        self.widgets = {
+            "%trackball": lambda args: self.display_widget(TrackballWidget)
         }
         self.last_used_backend = None
         self.disconnect_callback = None
+        self.widget_utils = None
 
     def out(self, name, message, silent=False):
         if silent: return
@@ -75,6 +79,13 @@ class BridgeKernel(IPythonKernel):
                 self.stderr("display error: %s" % e)
         else:
             self.stderr("display error: message must contain 'module', 'attr', and 'args'")
+
+    def display_widget(self, widget):
+        # load the widget utils extension for the kernel
+        if self.widget_utils is None:
+            self.widget_utils = KernelWidgetUtils(self)
+        w = widget(self.widget_utils)
+        display(w)
 
     def exec_local(self, code):
         code = code.split('\n', 1)[1]
@@ -117,12 +128,13 @@ class BridgeKernel(IPythonKernel):
         return 0
 
     def connect_magic(self, args):
-        #TODO could this be better?
         if self.client is not None:
             self.client.check_connection()
             if self.client is not None:
                 print("already connected to backend")
                 return
+            else:
+                print("disconnected, select a new connection")
 
         w = self.pick_backend()
 
@@ -215,8 +227,11 @@ class BridgeKernel(IPythonKernel):
         if arg0 in self.magics.keys():
             self.magics[arg0](code)
         elif self.client is not None:
-            eval_result = self.client.execute(code)
-            self.exe_count += 1
+            if arg0 in self.widgets.keys():
+                self.widgets[arg0](code)
+            else:
+                eval_result = self.client.execute(code)
+                self.exe_count += 1
         else:
             self.stdout("no backend - use %connect\n", silent)
 

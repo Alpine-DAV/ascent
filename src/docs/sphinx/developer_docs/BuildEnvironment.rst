@@ -58,7 +58,7 @@ The list of common development use cases:
 
 
 I Want To Develop C++ and Python Code Directly In Ascent
------------------------------------------------------
+--------------------------------------------------------
 C++ and python filter can be directly developed inside of an Ascent build.
 All that is required is a development build of Ascent. Please see :ref:`building`
 for an overview of the different ways to build Ascent.

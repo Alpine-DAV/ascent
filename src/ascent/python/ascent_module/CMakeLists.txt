@@ -42,33 +42,48 @@
 #
 ###############################################################################
 
-###############################################################################
-# file: ascent_mpi.py
-# Purpose: Lazy loads the mpi-enabled ascent interface
-#
-#  We use lazy loading b/c the ascent and ascent_mpi libraries provide the
-#  same symbols, and without this, on some platforms (OSX) importing
-#  ascent_python before ascent_mpi_python prevents us from getting the mpi
-#  version.
-#
-###############################################################################
+# Specify the sources of the pure python and compiled portions of our module.
+SET(ascent_py_python_sources  py_src/__init__.py 
+                              py_src/ascent.py
+                              py_src/mpi/__init__.py
+                              py_src/mpi/ascent_mpi.py
+                              py_src/bridge_kernel/__init__.py
+                              py_src/bridge_kernel/mpi_server.py
+                              py_src/bridge_kernel/server.py
+                              py_src/bridge_kernel/utils.py
+                              )
+
+SET(ascent_py_cpp_sources     ascent_python.cpp)
 
 
-def about():
-    from .ascent_mpi_python import about as ascent_about
-    return ascent_about()
+# Setup our module
+PYTHON_ADD_HYBRID_MODULE(ascent_python
+                         python-modules
+                         ascent
+                         setup.py
+                         "${ascent_py_python_sources}"
+                         ${ascent_py_cpp_sources})
+
+# link with the proper libs (beyond python)
+target_link_libraries(ascent_python ascent)
 
 
-def Ascent():
-    from .ascent_mpi_python import Ascent as ascent_obj
-    return ascent_obj()
-
-def jupyter_bridge():
-    from .bridge_kernel.server import jupyter_extract
-    return jupyter_extract()
+if(MPI_FOUND)
+    # Specify the sources of the pure python and compiled portions of our module.
+    SET(ascent_mpi_py_python_sources  py_src/__init__.py py_src/mpi/ascent_mpi.py)
+    SET(ascent_mpi_py_cpp_sources     ascent_mpi_python.cpp)
 
 
+    # Setup our module
+    PYTHON_ADD_COMPILED_MODULE(ascent_mpi_python
+                               python-modules
+                               ascent/mpi
+                               "${ascent_mpi_py_python_sources}"
+                               ${ascent_mpi_py_cpp_sources})
 
+    # link with the proper libs (beyond python)
+    target_link_libraries(ascent_mpi_python ascent_mpi)
+endif()
 
 
 

@@ -42,31 +42,26 @@
 #
 ###############################################################################
 
-# Specify the sources of the pure python and compiled portions of our module.
-SET(ascent_mpi_py_python_sources  py_src/__init__.py py_src/ascent_mpi.py)
-#SET(ascent_mpi_py_headers        ascent_python.hpp)
-SET(ascent_mpi_py_cpp_sources     ascent_mpi_python.cpp)
+###############################################################################
+# file: setup.py
+# Purpose: disutils setup for ascent python module.
+#
+###############################################################################
+
+import sys
+from distutils.core import setup
+from distutils.command.install_egg_info import install_egg_info
+
+# disable install_egg_info
+class SkipEggInfo(install_egg_info):
+    def run(self):
+        pass
 
 
-# Setup our module
-PYTHON_ADD_HYBRID_MODULE(ascent_mpi_python
-                         python-modules
-                         ascent/mpi
-                         setup.py
-                         "${ascent_mpi_py_python_sources}"
-                         #${ascent_mpi_py_headers}
-                         ${ascent_mpi_py_cpp_sources})
+setup (name = 'ascent',
+       description = 'ascent',
+       package_dir = {'ascent':'py_src'},
+       packages=['ascent', 'ascent.bridge_kernel' , 'ascent.mpi'],
+       cmdclass={'install_egg_info': SkipEggInfo})
 
-# link with the proper libs (beyond python)
-target_link_libraries(ascent_mpi_python ascent_mpi)
-
-
-# TODO: ADD SUPPORT FOR SUPPORT PYTHON_MODULE_INSTALL_PREFIX
-# install the capi header so other python modules can use it
-# support alt install dir for python module via PYTHON_MODULE_INSTALL_PREFIX
-# if(PYTHON_MODULE_INSTALL_PREFIX)
-#     install(FILES ${ascent_mpi_py_headers} DESTINATION ${PYTHON_MODULE_INSTALL_PREFIX}/ascent/mpi)
-# else()
-#     install(FILES ${ascent_mpi_py_headers} DESTINATION python-modules/ascent/mpi)
-# endif()
 
