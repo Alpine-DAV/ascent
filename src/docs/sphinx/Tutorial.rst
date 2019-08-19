@@ -156,7 +156,7 @@ for any host code (even those without a Python interface).
 For this demo we use numpy and mpi4py to compute a histogram of Cloverleaf3D's 
 energy field. 
 
-Again, since we will use the Cloverleaf3D Ascent integration, make sure you are in 
+Again, since we will use the Cloverleaf3D Ascent integration, make sure you are in the
 ``examples/ascent/proxies/cloverleaf3d`` directory of your Ascent install. Then edit the ``ascent_actions.json`` 
 file to define a single python extract that runs a script file:
 
@@ -241,6 +241,54 @@ The script computes the histogram of the energy field and prints a summary like 
     2.6617779   2.70134404  2.74091018  2.78047632  2.82004246  2.8596086
     2.89917474  2.93874088]
 
+Demo 5: The Jupyter Extract
+-----------------------------------
+
+*Use Jupyter Notebook with Ascent to interactively analyze and visualize your data in situ*
+
+Ascent's Jupyter extract provides a path for interactive analysis and visualization in Jupyter Notebook. The Jupyter extract is an extension of the Python extract that allows tweaking of analysis methods as the simulation runs.
+
+In this demo we provide two example Jupyter Notebooks with code and instructions under ``examples/ascent/tutorial/jupyter_extract/notebooks`` and demonstrate how to connect them with Ascent.
+
+First you will need to install the ``ascent_jupyter_bridge`` python module located in your source directory under ``src/ascent/ascent_jupyter_bridge``. Navigate to that directory and make sure you have ``pip`` installed then run the following commands:
+
+.. code::
+
+   pip install -r requirements.txt
+   pip install .
+
+
+If you are at a site that does SSL interception and can not configure your SSL certificates to avoid pip SSL errors, you can use the following:
+
+.. code::
+
+   pip install  --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
+   pip install  --trusted-host pypi.org --trusted-host files.pythonhosted.org .
+
+
+We will once again use the Cloverleaf3D Ascent integration, so make sure you are in the ``examples/ascent/proxies/cloverleaf3d`` directory of your Ascent install.
+Then edit the ``ascent_actions.json`` file to request that Ascent run the Jupyter extract:
+
+.. literalinclude:: ../../../src/examples/tutorial/jupyter_extract/ascent_actions.json
+   :language: json
+
+(Also available in install directory: `examples/ascent/tutorial/jupyter_extract/ascent_actions.json`)
+
+Finally, run Cloverleaf3D:
+
+.. code::
+
+   mpiexec -n 2 ./cloverleaf3d_par
+
+After the simulation has progressed a number of timesteps it will wait for a connection from Jupyter Notebook. To connect to a demo notebook make sure you are in ``examples/ascent/tutorial/jupyter_extract/notebooks`` and run:
+
+.. code::
+
+   jupyter notebook
+
+This will start Jupyter Notebook in your browser where you will see our demo notebooks. Click on a notebook and make sure you see "Ascent Bridge" in the top right corner of the notebook, if you don't then try selecting it from the "Kernel" menu. Follow the instructions inside the notebook to connect and learn more about how to use the notebook.
+
+
 .. _demos_using_docker:
 
 Running Demos using Docker
@@ -293,6 +341,5 @@ To view output files you can use a simple Python web server to expose files from
 With this server running, open up a web browser on your host machine and view localhost:10000. You should be able to click on ``out_ascent_render_3d.png`` and view the rendered result in your web browser. 
 
 You should now be ready to run the other demos, remember to use the Python web server to browse results.
-
 
 

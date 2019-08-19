@@ -138,6 +138,7 @@ endif
 # only provide lib flags if VTK-m support is enabled
 ifeq ($(ASCENT_VTKM_DIR),)
 ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
+                        -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
                         -lvtkm_cont-$(ASCENT_VTKM_VERSION) \
                         -lvtkm_rendering-$(ASCENT_VTKM_VERSION)
 endif
@@ -155,7 +156,7 @@ endif
 # MFEM isn't in the interface, so we don't need include flags
 ASCENT_MFEM_LIB_FLAGS = $(if $(ASCENT_MFEM_DIR),-L $(ASCENT_MFEM_DIR)/lib -lmfem $(MFEM_EXT_LIBS))
 
-# if we build mfem w/ mpi support (which we do to support laghos) serial static builds need to 
+# if we build mfem w/ mpi support (which we do to support laghos) serial static builds need to
 # link mpi, or fail due to unresolved symbols
 #
 # If mfem was built with MPI support, add ASCENT_MPI_LIBS to avoid errors with static serial builds

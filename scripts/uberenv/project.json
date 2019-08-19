@@ -4,6 +4,7 @@
 "spack_url": "https://github.com/alpine-DAV/spack",
 "spack_branch": "task/2019_01_update_ascent",
 "spack_activate" : { "py-numpy"  : ["+python"],
+                     "py-pip"    : ["+python"],
                      "py-mpi4py" : ["+python", "+mpi"],
                      "conduit"   : ["+python"],
                      "py-sphinx" : ["+python", "+doc"]},

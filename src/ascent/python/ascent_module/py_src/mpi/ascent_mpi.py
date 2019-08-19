@@ -42,37 +42,44 @@
 #
 ###############################################################################
 
-add_subdirectory(ascent_module)
-
-# install the jupyter bridge kernel client source
-# we copy the source because users may want to install
-# client into a different python environment
-install(DIRECTORY ascent_jupyter_bridge
-        DESTINATION share/ascent)
-
-# create scripts that make it easy to launch the proper 
-# python interp with the ascent module already in PYTHONPATH
-
-set(_PYMOD_DIR ${PROJECT_BINARY_DIR}/python-modules)
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/run_python_with_ascent.sh.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/run_python_with_ascent_build.sh" @ONLY)
-
-if(PYTHON_MODULE_INSTALL_PREFIX)
-    set(_PYMOD_DIR ${PYTHON_MODULE_INSTALL_PREFIX})
-else()
-    set(_PYMOD_DIR ${CMAKE_INSTALL_PREFIX}/python-modules/)
-endif()
+###############################################################################
+# file: ascent_mpi.py
+# Purpose: Lazy loads the mpi-enabled ascent interface
+#
+#  We use lazy loading b/c the ascent and ascent_mpi libraries provide the
+#  same symbols, and without this, on some platforms (OSX) importing
+#  ascent_python before ascent_mpi_python prevents us from getting the mpi
+#  version.
+#
+###############################################################################
 
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/run_python_with_ascent.sh.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/run_python_with_ascent_install.sh" @ONLY)
+def about():
+    try:
+        from .ascent_mpi_python import about as ascent_about
+        return ascent_about()
+    except ImportError:
+        raise ImportError('failed to import ascent_mpi_python, was Ascent built with mpi support?')
+    return None
 
-unset(_PYMOD_DIR)
 
-# install the script that works for install paths
-# 'PROGRAMS' makes sure exec perms are set
-install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/run_python_with_ascent_install.sh"
-        DESTINATION bin
-        RENAME run_python_with_ascent.sh)
+def Ascent():
+    try:
+        from .ascent_mpi_python import Ascent as ascent_obj
+        return ascent_obj()
+    except ImportError:
+        raise ImportError('failed to import ascent_mpi_python, was Ascent built with mpi support?')
+    return None
+
+def jupyter_bridge():
+    try:
+        from ..bridge_kernel.server import jupyter_extract
+        return jupyter_extract()
+    except ImportError:
+        raise ImportError('failed to import ascent_mpi_python, was Ascent built with mpi support?')
+    return None
+
+
+
 
 
