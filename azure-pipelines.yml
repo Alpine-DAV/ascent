@@ -86,7 +86,7 @@ jobs:
          export APT_PKGS="$APT_PKGS libsqlite3-dev"
          export APT_PKGS="$APT_PKGS libbz2-dev"
          # install pkgs we need
-         sudo apt-get install $APT_PKGS
+         sudo apt-get -y install $APT_PKGS
       displayName: 'Prepare build env'
 
     - script: |
@@ -175,6 +175,7 @@ jobs:
         # using with make example
         ###########################
         cd ${ROOT_DIR}
+        cat install/share/ascent/ascent_config.mk
         pwd
         ls -l
         cd install/examples/ascent/using-with-make
@@ -236,7 +237,7 @@ jobs:
          export APT_PKGS="$APT_PKGS libsqlite3-dev"
          export APT_PKGS="$APT_PKGS libbz2-dev"
          # install pkgs we need
-         sudo apt-get install $APT_PKGS
+         sudo apt-get -y install $APT_PKGS
       displayName: 'Prepare build env'
 
     - script: |
