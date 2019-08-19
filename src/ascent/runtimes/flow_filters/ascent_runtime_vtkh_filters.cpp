@@ -96,6 +96,7 @@
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
+#include <ascent_runtime_metadata_access.hpp>
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
 #endif
 
@@ -1438,9 +1439,9 @@ DefaultRender::execute()
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
+    int cycle = MetadataAccess::get_cycle(graph());
     Node * meta = graph().workspace().registry().fetch<Node>("metadata");
 
-    int cycle = 0;
 
     if(meta->has_path("cycle"))
     {

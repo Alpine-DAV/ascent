@@ -898,6 +898,7 @@ AscentRuntime::PopulateMetadata()
   (*meta)["cycle"] = cycle;
   (*meta)["time"] = time;
   (*meta)["refinement_level"] = m_refinement_level;
+  (*meta)["ghost_field"] = m_ghost_field_name;
 
 }
 //-----------------------------------------------------------------------------
