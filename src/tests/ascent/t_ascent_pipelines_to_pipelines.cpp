@@ -154,6 +154,7 @@ TEST(ascent_pipelines_to_pipelines, test_pipelines_to_pipelines)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_vector_mag, test_vector_mag_interleaved)
@@ -234,6 +235,7 @@ TEST(ascent_vector_mag, test_vector_mag_interleaved)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

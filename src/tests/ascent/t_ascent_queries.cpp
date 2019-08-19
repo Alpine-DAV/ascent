@@ -129,6 +129,7 @@ TEST(ascent_queries, max_query)
 
     // check that we created an image
     EXPECT_TRUE(conduit::utils::is_file(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 //-----------------------------------------------------------------------------
@@ -194,6 +195,7 @@ TEST(ascent_queries, cycle_query)
 
     // check that we created an image
     EXPECT_TRUE(conduit::utils::is_file(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 //-----------------------------------------------------------------------------

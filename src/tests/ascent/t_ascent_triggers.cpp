@@ -132,6 +132,7 @@ TEST(ascent_triggers, simple_rick)
     ascent.info(info);
     std::string path = "expressions/" + condition + "/100/value";
     EXPECT_TRUE(info[path].to_int32() == 1);
+    ASCENT_ACTIONS_DUMP(actions,std::string("basic_trigger"));
 
     ascent.close();
 
@@ -227,6 +228,7 @@ TEST(ascent_triggers, complex_trigger)
 
     // check that we created an image from the trigger
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 //-----------------------------------------------------------------------------
@@ -317,6 +319,7 @@ TEST(ascent_triggers, trigger_extract)
 
     // check that we created an image from the trigger
     EXPECT_TRUE(conduit::utils::is_file(output_root_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 

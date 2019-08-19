@@ -337,7 +337,7 @@ create_3d_example_dataset(Node &data,
 
     float64 *point_scalar   = data["fields/radial_vert/values"].value();
     float64 *element_scalar = data["fields/radial_ele/values"].value();
-    
+
     float64 *rank_scalar = data["fields/rank_ele/values"].value();
 
     for(int i=0;i < nele;i++)
@@ -445,6 +445,16 @@ void add_interleaved_vector(conduit::Node &dset)
       }
   }
 }
+
+// Macro to save ascent actions file
+#define ASCENT_ACTIONS_DUMP(actions,name) \
+  std::string actions_str = actions.to_yaml(); \
+  std::ofstream out; \
+  out.open(name+".yaml"); \
+  out<<actions_str; \
+  out.close();
+
+
 //-----------------------------------------------------------------------------
 #endif
 //-----------------------------------------------------------------------------

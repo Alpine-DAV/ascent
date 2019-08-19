@@ -147,6 +147,7 @@ TEST(ascent_recenter, test_recenter_to_element)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_recenter, test_recenter_to_vertex)
@@ -224,6 +225,7 @@ TEST(ascent_recenter, test_recenter_to_vertex)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

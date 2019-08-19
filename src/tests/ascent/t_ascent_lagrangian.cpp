@@ -162,6 +162,7 @@ TEST(ascent_lagrangian, test_lagrangian_multistep)
     // check that we created the right output
     EXPECT_TRUE(check_test_file(output_file1));
     EXPECT_TRUE(check_test_file(output_file2));
+    ASCENT_ACTIONS_DUMP(actions,output_file1);
 
     // clean up
     remove_test_file(output_file1);

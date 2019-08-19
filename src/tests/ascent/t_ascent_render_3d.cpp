@@ -283,6 +283,7 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 TEST(ascent_render_3d, test_render_3d_points_variable_radius)
@@ -357,6 +358,7 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 TEST(ascent_render_3d, test_render_3d_bg_fg_color)
@@ -431,6 +433,7 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 TEST(ascent_render_3d, test_render_3d_no_annotations)
@@ -502,6 +505,7 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 TEST(ascent_render_3d, test_render_3d_name_format)
@@ -572,6 +576,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file, 0.0001f, "0100"));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 TEST(ascent_render_3d, test_render_3d_no_bg)
@@ -643,6 +648,7 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 TEST(ascent_render_3d, test_render_3d_render_azimuth)
@@ -714,6 +720,7 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 //-----------------------------------------------------------------------------
@@ -820,6 +827,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 //-----------------------------------------------------------------------------
@@ -891,6 +899,7 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
     // check that we created an image
     float tolerance = 0.01f;
     EXPECT_TRUE(check_test_image(output_file, tolerance));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 //-----------------------------------------------------------------------------
@@ -981,6 +990,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
     // check that we created an image
     float tolerance = 0.01f;
     EXPECT_TRUE(check_test_image(output_file, tolerance));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
@@ -1185,6 +1195,7 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_min_max)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
@@ -1467,6 +1478,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file1));
 }
@@ -1544,6 +1556,7 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     ascent.close();
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 

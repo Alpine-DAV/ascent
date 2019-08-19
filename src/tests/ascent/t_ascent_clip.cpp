@@ -62,8 +62,6 @@
 #include "t_utils.hpp"
 
 
-
-
 using namespace std;
 using namespace conduit;
 using namespace ascent;
@@ -155,6 +153,7 @@ TEST(ascent_clip, test_clip_sphere)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 //-----------------------------------------------------------------------------
@@ -243,6 +242,7 @@ TEST(ascent_clip, test_clip_inverted_sphere)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 //-----------------------------------------------------------------------------
@@ -331,6 +331,7 @@ TEST(ascent_clip, test_clip_box)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 //-----------------------------------------------------------------------------
@@ -420,6 +421,7 @@ TEST(ascent_clip, test_clip_plane)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 //-----------------------------------------------------------------------------

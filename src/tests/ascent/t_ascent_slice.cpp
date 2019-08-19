@@ -156,6 +156,7 @@ TEST(ascent_slice, test_slice)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_slice, test_slice_off_axis)
@@ -241,6 +242,7 @@ TEST(ascent_slice, test_slice_off_axis)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -324,6 +326,7 @@ TEST(ascent_slice, test_3slice)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

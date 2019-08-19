@@ -151,6 +151,7 @@ TEST(ascent_clip_with_field, test_clip_with_field)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 //-----------------------------------------------------------------------------
@@ -233,6 +234,7 @@ TEST(ascent_clip_with_field, test_clip_with_field_inverted)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 
 //-----------------------------------------------------------------------------

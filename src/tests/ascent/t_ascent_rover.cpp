@@ -139,6 +139,7 @@ TEST(ascent_rover, test_xray_serial)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file, 0.0001f, "100_0"));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 //
 //-----------------------------------------------------------------------------
@@ -209,6 +210,7 @@ TEST(ascent_rover, test_volume_min_max)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_volume_serial)
@@ -276,4 +278,5 @@ TEST(ascent_rover, test_volume_serial)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    ASCENT_ACTIONS_DUMP(actions,output_file);
 }
