@@ -113,22 +113,23 @@ ASCENT_CONDUIT_MPI_LIB_FLAGS = $(CONDUIT_MPI_LIB_FLAGS)
 
 # only provide lib flags if VTK-h support is enabled
 ifeq ($(ASCENT_VTKH_DIR),)
-
-# If using VTKH without mpi
-ASCENT_VTKH_LIB_FLAGS=-L $(ASCENT_VTKH_DIR)/lib \
-                      -lvtkh_rendering \
-                      -lvtkh_filters \
-                      -lvtkh_core \
-                      -lvtkh_lodepng \
-                      -lvtkh_utils
-
-# If using VTKH with mpi
-ASCENT_VTKH_MPI_LIB_FLAGS=-L $(ASCENT_VTKH_DIR)/lib \
-                          -lvtkh_rendering_mpi \
-                          -lvtkh_filters_mpi \
-                          -lvtkh_core_mpi \
+   # not set, do not include config.mk
+else
+    # If using VTKH without mpi
+    ASCENT_VTKH_LIB_FLAGS=-L $(ASCENT_VTKH_DIR)/lib \
+                          -lvtkh_rendering \
+                          -lvtkh_filters \
+                          -lvtkh_core \
                           -lvtkh_lodepng \
-                          -lvtkh_utils_mpi
+                          -lvtkh_utils
+
+    # If using VTKH with mpi
+    ASCENT_VTKH_MPI_LIB_FLAGS=-L $(ASCENT_VTKH_DIR)/lib \
+                              -lvtkh_rendering_mpi \
+                              -lvtkh_filters_mpi \
+                              -lvtkh_core_mpi \
+                              -lvtkh_lodepng \
+                              -lvtkh_utils_mpi
 endif
 
 ##########
@@ -137,10 +138,12 @@ endif
 
 # only provide lib flags if VTK-m support is enabled
 ifeq ($(ASCENT_VTKM_DIR),)
-ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
-                        -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
-                        -lvtkm_cont-$(ASCENT_VTKM_VERSION) \
-                        -lvtkm_rendering-$(ASCENT_VTKM_VERSION)
+   # not set, do not include config.mk
+else
+    ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
+                            -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_cont-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_rendering-$(ASCENT_VTKM_VERSION)
 endif
 
 ##########
