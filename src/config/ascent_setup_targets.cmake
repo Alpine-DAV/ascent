@@ -55,44 +55,44 @@ else()
     set(ASCENT_FORTRAN_ENABLED FALSE)
 endif()
 
-# create convenience target that bundles all reg ascent deps (ascent::ascent)
-
-add_library(ascent::ascent INTERFACE IMPORTED)
-
-set_property(TARGET ascent::ascent
-             APPEND PROPERTY
-             INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/")
-
-set_property(TARGET ascent::ascent
-             APPEND PROPERTY
-             INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/ascent/")
-
-set_property(TARGET ascent::ascent
-             PROPERTY INTERFACE_LINK_LIBRARIES
-             ascent)
-
-# try to include conduit with new exports
-if(TARGET conduit::conduit)
-    set_property(TARGET ascent::ascent
-                 APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-                 conduit::conduit)
-else()
-    # if not, bottle conduit
+if (ENABLE_SERIAL)
+    # create convenience target that bundles all reg ascent deps (ascent::ascent)
+    add_library(ascent::ascent INTERFACE IMPORTED)
+    
     set_property(TARGET ascent::ascent
                  APPEND PROPERTY
-                 INTERFACE_INCLUDE_DIRECTORIES ${CONDUIT_INCLUDE_DIRS})
-
+                 INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/")
+    
     set_property(TARGET ascent::ascent
-                 APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-                 conduit conduit_relay conduit_blueprint)
-endif()
-
-if(VTKH_FOUND)
+                 APPEND PROPERTY
+                 INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/ascent/")
+    
     set_property(TARGET ascent::ascent
-                 APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-                 vtkh)
+                 PROPERTY INTERFACE_LINK_LIBRARIES
+                 ascent)
+    
+    # try to include conduit with new exports
+    if(TARGET conduit::conduit)
+        set_property(TARGET ascent::ascent
+                     APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+                     conduit::conduit)
+    else()
+        # if not, bottle conduit
+        set_property(TARGET ascent::ascent
+                     APPEND PROPERTY
+                     INTERFACE_INCLUDE_DIRECTORIES ${CONDUIT_INCLUDE_DIRS})
+    
+        set_property(TARGET ascent::ascent
+                     APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+                     conduit conduit_relay conduit_blueprint)
+    endif()
+    
+    if(VTKH_FOUND)
+        set_property(TARGET ascent::ascent
+                     APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+                     vtkh)
+    endif()
 endif()
-
 
 # and if mpi enabled, a convenience target mpi case (ascent::cascent_mpi)
 if(ASCENT_MPI_ENABLED)

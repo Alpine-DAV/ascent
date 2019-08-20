@@ -51,6 +51,7 @@ class Ascent(Package, CudaPackage):
     variant('test', default=True, description='Enable Ascent unit tests')
 
     variant("mpi", default=True, description="Build Ascent MPI Support")
+    variant("serial", default=True, description="build serial (non-mpi) libraries")
 
     # variants for language support
     variant("python", default=True, description="Build Ascent Python support")
@@ -353,6 +354,16 @@ class Ascent(Package, CudaPackage):
             cfg.write(cmake_cache_entry("SPHINX_EXECUTABLE", sphinx_build_exe))
         else:
             cfg.write(cmake_cache_entry("ENABLE_DOCS", "OFF"))
+
+        #######################
+        # Serial
+        #######################
+
+        if "+serial" in spec:
+            cfg.write(cmake_cache_entry("ENABLE_SERIAL", "ON"))
+        else:
+            cfg.write(cmake_cache_entry("ENABLE_SERIAL", "OFF"))
+
 
         #######################
         # MPI
