@@ -230,6 +230,7 @@ jobs:
          export APT_PKGS="$APT_PKGS python"
          export APT_PKGS="$APT_PKGS git"
          export APT_PKGS="$APT_PKGS curl"
+         export APT_PKGS="$APT_PKGS unzip"
          export APT_PKGS="$APT_PKGS wget"
          export APT_PKGS="$APT_PKGS build-essential"
          export APT_PKGS="$APT_PKGS libncurses-dev"
