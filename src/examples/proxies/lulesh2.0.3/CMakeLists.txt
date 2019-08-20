@@ -67,7 +67,7 @@ else()
    set(lulesh_openmp_flags "")
 endif()
 
-if (ENABLE_SER)
+if (ENABLE_SERIAL)
     blt_add_executable(
         NAME        lulesh_ser
         SOURCES     ${LULESH_SOURCES}
