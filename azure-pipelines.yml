@@ -202,11 +202,11 @@ jobs:
     COMPILER_FC: gfortran
   strategy:
     matrix:
-      shared_py37:
+      shared_py36:
         BUILD_SHARED_LIBS: ON
         CMAKE_BUILD_TYPE: Debug
         ENABLE_PYTHON: ON
-        PYTHON_VERSION: 3.7.4
+        PYTHON_VERSION: 3.6.3
         ENABLE_VTKH: ON
         ENABLE_MFEM: ON
   steps:
