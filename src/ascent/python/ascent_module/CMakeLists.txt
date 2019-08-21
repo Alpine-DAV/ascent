@@ -46,8 +46,6 @@ if (ENABLE_SERIAL)
     # Specify the sources of the pure python and compiled portions of our module.
     SET(ascent_py_python_sources  py_src/__init__.py 
                                   py_src/ascent.py
-                                  py_src/mpi/__init__.py
-                                  py_src/mpi/ascent_mpi.py
                                   py_src/bridge_kernel/__init__.py
                                   py_src/bridge_kernel/mpi_server.py
                                   py_src/bridge_kernel/server.py
