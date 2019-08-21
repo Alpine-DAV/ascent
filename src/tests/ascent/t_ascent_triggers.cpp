@@ -132,6 +132,9 @@ TEST(ascent_triggers, simple_rick)
     ascent.info(info);
     std::string path = "expressions/" + condition + "/100/value";
     EXPECT_TRUE(info[path].to_int32() == 1);
+    std::string msg = "A simple example of triggering actions based on a boolean"
+                      " expression.";
+    ASCENT_ACTIONS_DUMP(actions, std::string("basic_trigger"), msg);
 
     ascent.close();
 
@@ -227,6 +230,9 @@ TEST(ascent_triggers, complex_trigger)
 
     // check that we created an image from the trigger
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "A more complex trigger example using several functions"
+                      " that evaluate positons on the mesh.";
+    ASCENT_ACTIONS_DUMP(actions,output_file, msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -317,6 +323,9 @@ TEST(ascent_triggers, trigger_extract)
 
     // check that we created an image from the trigger
     EXPECT_TRUE(conduit::utils::is_file(output_root_file));
+    std::string msg = "A more complex trigger example using several functions"
+                      " that evaluate positons on the mesh.";
+    ASCENT_ACTIONS_DUMP(actions,output_file, msg);
 }
 
 

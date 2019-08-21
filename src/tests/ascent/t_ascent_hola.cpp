@@ -148,13 +148,14 @@ TEST(ascent_hola, test_hola_relay_blueprint_mesh)
     add_scene["scenes/scene1/plots/plt1/type"]         = "pseudocolor";
     add_scene["scenes/scene1/plots/plt1/field"] = "braid";
     add_scene["scenes/scene1/image_prefix"] = output_file;
-    actions.print();
 
 
     ascent2.publish(hola_data);
     ascent2.execute(actions);
     ascent2.close();
 
+    std::string msg = "An example of using hola with a blueprint hdf5 file";
+    ASCENT_ACTIONS_DUMP(actions,output_file, msg);
 
 }
 

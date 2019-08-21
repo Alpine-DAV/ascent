@@ -151,6 +151,8 @@ TEST(ascent_contour, test_single_contour_3d)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of the contour filter with a single iso value.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -233,6 +235,8 @@ TEST(ascent_contour, test_multi_contour_3d)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of the contour filter with a multiple iso values.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -314,6 +318,8 @@ TEST(ascent_contour, test_multi_contour_levels)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of the contour filter with a number of evenly spaced levels.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------

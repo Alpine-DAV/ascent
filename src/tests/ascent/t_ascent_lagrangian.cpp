@@ -162,6 +162,8 @@ TEST(ascent_lagrangian, test_lagrangian_multistep)
     // check that we created the right output
     EXPECT_TRUE(check_test_file(output_file1));
     EXPECT_TRUE(check_test_file(output_file2));
+    std::string msg = "An example of using the lagrangian flow filter.";
+    ASCENT_ACTIONS_DUMP(actions,output_file1,msg);
 
     // clean up
     remove_test_file(output_file1);

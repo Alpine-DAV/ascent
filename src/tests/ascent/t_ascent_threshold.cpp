@@ -152,6 +152,8 @@ TEST(ascent_threshold, test_threshold_3d)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the threshold filter.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 

@@ -156,6 +156,8 @@ TEST(ascent_slice, test_slice)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of the slice filter with a single plane.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_slice, test_slice_off_axis)
@@ -241,6 +243,8 @@ TEST(ascent_slice, test_slice_off_axis)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of the slice filter with a single plane (off-axis).";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -324,6 +328,8 @@ TEST(ascent_slice, test_3slice)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of the three slice filter.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

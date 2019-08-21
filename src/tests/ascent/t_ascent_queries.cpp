@@ -129,6 +129,8 @@ TEST(ascent_queries, max_query)
 
     // check that we created an image
     EXPECT_TRUE(conduit::utils::is_file(output_file));
+    std::string msg = "An example of quiering the maximum value of a field.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -194,6 +196,8 @@ TEST(ascent_queries, cycle_query)
 
     // check that we created an image
     EXPECT_TRUE(conduit::utils::is_file(output_file));
+    std::string msg = "An example of quiering the current cycle.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------

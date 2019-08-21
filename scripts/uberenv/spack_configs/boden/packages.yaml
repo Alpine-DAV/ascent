@@ -15,7 +15,8 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    variants: ~python~docs~openmp
+    #variants: ~python~docs~openmp
+    variants: ~py-numpy~openmp
     compiler: [clang, gcc, intel, pgi, xl, nag]
     providers:
       awk: [gawk]

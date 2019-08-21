@@ -1,0 +1,29 @@
+#An example a plane clip defined with a point and a normal
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "clip"
+        params: 
+          topology: "mesh"
+          plane: 
+            point: 
+              x: 0.0
+              y: 0.0
+              z: 0.0
+            normal: 
+              x: 1.0
+              y: 0.0
+              z: 0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "radial"
+          pipeline: "pl1"
+      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_clip_plane"

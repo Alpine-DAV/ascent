@@ -1,0 +1,28 @@
+#An example of the interconnecting pipelines.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "vector_magnitude"
+        params: 
+          field: "vel"
+          output_name: "mag"
+    pl2: 
+      pipeline: "pl1"
+      f1: 
+        type: "log"
+        params: 
+          field: "mag"
+          output_name: "log_mag"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "log_mag"
+          pipeline: "pl2"
+      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_pipelines"

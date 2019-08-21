@@ -62,8 +62,6 @@
 #include "t_utils.hpp"
 
 
-
-
 using namespace std;
 using namespace conduit;
 using namespace ascent;
@@ -155,6 +153,8 @@ TEST(ascent_clip, test_clip_sphere)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example a sphere clip using a center and radius";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -243,6 +243,8 @@ TEST(ascent_clip, test_clip_inverted_sphere)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example an inverted sphere clip using a center and radius";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -331,6 +333,8 @@ TEST(ascent_clip, test_clip_box)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example a blox clip";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -420,6 +424,8 @@ TEST(ascent_clip, test_clip_plane)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example a plane clip defined with a point and a normal";
+    ASCENT_ACTIONS_DUMP(actions,output_file, msg);
 }
 
 //-----------------------------------------------------------------------------
