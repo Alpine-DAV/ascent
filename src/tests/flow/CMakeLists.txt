@@ -50,32 +50,30 @@
 ################################
 # Flow Unit Tests
 ################################
-if (ENABLE_SERIAL)
-    set(FLOW_TESTS  t_flow_data
-                    t_flow_timer
-                    t_flow_registry
-                    t_flow_workspace
-                    t_flow_workspace_adv_manage)
-    
-    if(PYTHON_FOUND)
-        list(APPEND FLOW_TESTS t_flow_python_interpreter
-                               t_flow_python_script_filter)
-    endif()
-    
-    ################################
-    # Add tests
-    ################################
-    
-    #(tests depend on ascent b/c we are using some of its utils in the tests)
-    
-    message(STATUS "Adding flow lib unit tests")
-    foreach(TEST ${FLOW_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON ascent_flow ascent)
-    endforeach()
-    
-    if(PYTHON_FOUND AND ENABLE_PYTHON)
-        add_subdirectory("python")
-    else()
-        message(STATUS "Python disabled: Skipping ascent python module tests")
-    endif()
+set(FLOW_TESTS  t_flow_data
+                t_flow_timer
+                t_flow_registry
+                t_flow_workspace
+                t_flow_workspace_adv_manage)
+
+if(PYTHON_FOUND)
+    list(APPEND FLOW_TESTS t_flow_python_interpreter
+                           t_flow_python_script_filter)
+endif()
+
+################################
+# Add tests
+################################
+
+#(tests depend on ascent b/c we are using some of its utils in the tests)
+
+message(STATUS "Adding flow lib unit tests")
+foreach(TEST ${FLOW_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON ascent_flow)
+endforeach()
+
+if(PYTHON_FOUND AND ENABLE_PYTHON)
+    add_subdirectory("python")
+else()
+    message(STATUS "Python disabled: Skipping ascent python module tests")
 endif()

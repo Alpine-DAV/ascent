@@ -64,7 +64,7 @@ using namespace std;
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
-void
+inline void
 remove_test_image(const std::string &path, const std::string num = "100")
 {
     if(conduit::utils::is_file(path + num + ".png"))
@@ -80,7 +80,7 @@ remove_test_image(const std::string &path, const std::string num = "100")
 }
 
 //-----------------------------------------------------------------------------
-void
+inline void
 remove_test_file(const std::string &path)
 {
     if(conduit::utils::is_file(path))
@@ -90,7 +90,7 @@ remove_test_file(const std::string &path)
 }
 
 //-----------------------------------------------------------------------------
-std::string
+inline std::string
 prepare_output_dir()
 {
     string output_path = ASCENT_T_BIN_DIR;
@@ -106,14 +106,14 @@ prepare_output_dir()
 }
 
 //----------------------------------------------------------------------------
-std::string
+inline std::string
 output_dir()
 {
     return conduit::utils::join_file_path(ASCENT_T_BIN_DIR,"_output");;
 }
 
 //-----------------------------------------------------------------------------
-bool
+inline bool
 check_test_image(const std::string &path, const float tolerance = 0.001f, std::string num = "100")
 {
     Node info;
@@ -164,7 +164,7 @@ check_test_image(const std::string &path, const float tolerance = 0.001f, std::s
     return res;
 }
 
-bool
+inline bool
 check_test_file(const std::string &path)
 {
     // for now, just check if the file exists.
@@ -175,7 +175,7 @@ check_test_file(const std::string &path)
 //-----------------------------------------------------------------------------
 // create an example 2d rectilinear grid with two variables.
 //-----------------------------------------------------------------------------
-void
+inline void
 create_2d_example_dataset(Node &data,
                           int par_rank=0,
                           int par_size=1)
@@ -278,7 +278,7 @@ create_2d_example_dataset(Node &data,
 //-----------------------------------------------------------------------------
 // create an example 3d rectilinear grid with two variables.
 //-----------------------------------------------------------------------------
-void
+inline void
 create_3d_example_dataset(Node &data,
                           int cell_dim,
                           int par_rank,
@@ -394,7 +394,8 @@ create_3d_example_dataset(Node &data,
     }
 }
 
-void add_interleaved_vector(conduit::Node &dset)
+inline void
+add_interleaved_vector(conduit::Node &dset)
 {
   int dims = dset["fields/vel/values"].number_of_children();
   if(dims != 2 && dims != 3)
