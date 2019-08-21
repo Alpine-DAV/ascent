@@ -99,6 +99,6 @@ The equivelent ``yaml`` is
             type: "pseudocolor"
             field: "braid"
 
-A full example of an actions file populated from Ascent's test suite can be found in :ref:`yaml-examples`.
+A full example of actions files populated from Ascent's test suite can be found in :ref:`yaml-examples`.
 
 
