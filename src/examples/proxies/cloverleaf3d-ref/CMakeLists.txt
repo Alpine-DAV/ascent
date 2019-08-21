@@ -111,7 +111,7 @@ if(MPI_FOUND AND FORTRAN_FOUND)
     endif()
 
     set(clover_par_deps ascent_mpi mpi)
-    if(ENABLE_OPENMP)
+    if(OPENMP_FOUND)
       list(APPEND clover_par_deps openmp)
     endif()
 

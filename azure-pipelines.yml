@@ -14,7 +14,7 @@ jobs:
 ###############################################################################
 # Ubuntu build and test, using spack to build tpls
 ###############################################################################
-- job: Ubuntu
+- job: Ubuntu_16
   pool:
     vmImage: 'ubuntu-16.04'
   timeoutInMinutes: 0
@@ -61,6 +61,7 @@ jobs:
          # setup build env
          ##################
          # output env
+         cat etc/*rel*
          env
          # clean default paths
          sudo rm -rf /usr/local/lib/android/
@@ -85,7 +86,7 @@ jobs:
          export APT_PKGS="$APT_PKGS libsqlite3-dev"
          export APT_PKGS="$APT_PKGS libbz2-dev"
          # install pkgs we need
-         sudo apt-get install $APT_PKGS
+         sudo apt-get -y install $APT_PKGS
       displayName: 'Prepare build env'
 
     - script: |
@@ -109,7 +110,165 @@ jobs:
          if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
          echo $SPACK_SPEC
          # run uber to build tpls
-         python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu/
+         python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16/
+      displayName: 'Spack Build Tpls'
+
+    - script: |
+         #################################
+         # build, test and install
+         #################################
+         # setup compiler env vars
+         export CC=${COMPILER_CC}
+         export CXX=${COMPILER_CXX}
+         export FC=${COMPILER_FC}
+         ${CC} --version
+         # capture current path
+         export ROOT_DIR=`pwd`
+         # find spack generated host config file
+         export HOST_CONFIG=`ls ${ROOT_DIR}/uberenv_libs/*.cmake`
+         echo $HOST_CONFIG
+         # find spack installed cmake
+         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+         export PATH=${CMAKE_BIN_DIR}:$PATH
+         echo $PATH
+         which cmake
+         cmake --version
+         # prepare build dir
+         mkdir build
+         cd build
+         # setup cmake options
+         export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+         export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+         export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+         # configure
+         cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+         # build
+         make VERBOSE=1
+         # test
+         env CTEST_OUTPUT_ON_FAILURE=1 make test
+         # install
+         make install
+         # move back up to repor root
+         cd ${ROOT_DIR}
+      displayName: 'Build and Test'
+
+    - script: |
+        ###########################
+        # using with cmake example
+        ###########################
+        # capture current path
+        pwd
+        ls -l
+        export ROOT_DIR=`pwd`
+        # find spack installed cmake
+        export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+        export PATH=${CMAKE_BIN_DIR}:$PATH
+        echo $PATH
+        which cmake
+        cd install/examples/ascent/using-with-cmake
+        mkdir _test_build
+        cd _test_build
+        cmake ../
+        make VERBOSE=1
+        ./ascent_render_example
+        ###########################
+        # using with make example
+        ###########################
+        cd ${ROOT_DIR}
+        cat install/share/ascent/ascent_config.mk
+        pwd
+        ls -l
+        cd install/examples/ascent/using-with-make
+        make
+        ./ascent_render_example
+      displayName: 'Test vs Install'
+      condition: eq(variables['ENABLE_VTKH'], 'ON')
+
+###############################################################################
+# Ubuntu 18 build and test, using spack to build tpls
+#
+# Azure doesn't have an Ubuntu 18 dev image, so we are using the
+# standard Ubuntu 18 container.
+#
+###############################################################################
+- job: Ubuntu_18
+  pool:
+    vmImage: 'ubuntu-16.04'
+  container: alpinedav/ascent-ci:ubuntu-18.04-dev
+  timeoutInMinutes: 0
+  variables:
+    COMPILER_CC: gcc
+    COMPILER_CXX: g++
+    COMPILER_FC: gfortran
+  strategy:
+    matrix:
+      shared_py36:
+        BUILD_SHARED_LIBS: ON
+        CMAKE_BUILD_TYPE: Debug
+        ENABLE_PYTHON: ON
+        PYTHON_VERSION: 3.6.3
+        ENABLE_VTKH: ON
+        ENABLE_MFEM: ON
+  steps:
+    - checkout: self
+      clean: boolean
+      submodules: recursive
+
+    - script: |
+         ##################
+         # setup build env
+         ##################
+         # output env
+         cat etc/*rel*
+         env
+         sudo apt-get update
+         # list pkgs we need
+         export APT_PKGS=binutils
+         export APT_PKGS="$APT_PKGS gcc"
+         export APT_PKGS="$APT_PKGS g++"
+         export APT_PKGS="$APT_PKGS gfortran"
+         export APT_PKGS="$APT_PKGS python"
+         export APT_PKGS="$APT_PKGS git"
+         export APT_PKGS="$APT_PKGS curl"
+         export APT_PKGS="$APT_PKGS unzip"
+         export APT_PKGS="$APT_PKGS wget"
+         export APT_PKGS="$APT_PKGS build-essential"
+         export APT_PKGS="$APT_PKGS libncurses-dev"
+         export APT_PKGS="$APT_PKGS libssl-dev"
+         export APT_PKGS="$APT_PKGS libblas-dev"
+         export APT_PKGS="$APT_PKGS liblapack-dev"
+         export APT_PKGS="$APT_PKGS zlib1g-dev"
+         export APT_PKGS="$APT_PKGS libgdbm-dev"
+         export APT_PKGS="$APT_PKGS libreadline-dev"
+         export APT_PKGS="$APT_PKGS libsqlite3-dev"
+         export APT_PKGS="$APT_PKGS libbz2-dev"
+         # install pkgs we need
+         sudo apt-get -y install $APT_PKGS
+      displayName: 'Prepare build env'
+
+    - script: |
+         #################################
+         # run uber to build tpls
+         #################################
+         #
+         pwd
+         # echo system python details
+         which python
+         python --version
+         # setup spack spec
+         export SPACK_SPEC="%gcc+mpi"
+         # vtkh
+         if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
+         # mfem
+         if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem"; fi
+         if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem"; fi
+         # python
+         if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
+         if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
+         export SPACK_SPEC="${SPACK_SPEC} ^mpich"
+         echo $SPACK_SPEC
+         # run uber to build tpls
+         python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_18/
       displayName: 'Spack Build Tpls'
 
     - script: |
@@ -182,6 +341,7 @@ jobs:
       displayName: 'Test vs Install'
       condition: eq(variables['ENABLE_VTKH'], 'ON')
 
+
 ###############################################################################
 # NVCC Linux build and install, using spack to build tpls
 ###############################################################################
@@ -205,6 +365,7 @@ jobs:
          # setup build env
          #################################
          # output env
+         cat etc/*rel*
          env
          whoami
          sudo apt-get update
@@ -364,9 +525,9 @@ jobs:
 #       displayName: 'Check Install'
 
 ###############################################################################
-# Docker build and test, that leverages our script that calls Docker Build
+# Docker build and test case, that leverages our script that calls Docker Build
 ###############################################################################
-- job: Docker
+- job: Docker_Ubuntu
   pool:
     vmImage: 'ubuntu-16.04'
   timeoutInMinutes: 0
@@ -381,7 +542,6 @@ jobs:
         ####################
         cd src/examples/docker/ubuntu/ && ./example_build.sh
       displayName: 'Docker Build'
-
 
 ###############################################################################
 # macOS build and test, using spack to build tpls

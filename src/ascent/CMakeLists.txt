@@ -73,7 +73,7 @@ set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
 
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
-    set(ASCENT_VTKM_USE_OPENMP ${ENABLE_OPENMP})
+    set(ASCENT_VTKM_USE_OPENMP ${OPENMP_FOUND})
 endif()
 
 
@@ -94,9 +94,9 @@ set(ascent_sources
     runtimes/expressions/ascent_blueprint_architect.cpp
     runtimes/expressions/ascent_conduit_reductions.cpp
     runtimes/expressions/ascent_expression_filters.cpp
-    runtimes/expressions/ast.cpp
-    runtimes/expressions/tokens.cpp
-    runtimes/expressions/parser.cpp
+    runtimes/expressions/ascent_expressions_ast.cpp
+    runtimes/expressions/ascent_expressions_tokens.cpp
+    runtimes/expressions/ascent_expressions_parser.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
     runtimes/flow_filters/ascent_runtime_param_check.cpp
@@ -128,9 +128,9 @@ set(ascent_headers
     runtimes/expressions/ascent_blueprint_architect.hpp
     runtimes/expressions/ascent_conduit_reductions.hpp
     runtimes/expressions/ascent_expression_filters.hpp
-    runtimes/expressions/ast.hpp
-    runtimes/expressions/tokens.hpp
-    runtimes/expressions/parser.hpp
+    runtimes/expressions/ascent_expressions_ast.hpp
+    runtimes/expressions/ascent_expressions_tokens.hpp
+    runtimes/expressions/ascent_expressions_parser.hpp
     # flow
     runtimes/ascent_main_runtime.hpp
     runtimes/ascent_flow_runtime.hpp
@@ -231,7 +231,7 @@ if(CUDA_FOUND)
     list(APPEND ascent_thirdparty_libs cuda_runtime)
 endif()
 
-if(ENABLE_OPENMP)
+if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs openmp)
 endif()
 

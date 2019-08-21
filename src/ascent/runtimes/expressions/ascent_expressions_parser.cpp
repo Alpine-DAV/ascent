@@ -64,7 +64,7 @@
 /* Copy the first part of user declarations.  */
 #line 1 "parser.y" /* yacc.c:339  */
 
-  #include "ast.hpp"
+  #include "ascent_expressions_ast.hpp"
   #include <cstdio>
   #include <cstdlib>
   ASTExpression *expression; /* the top level root node of our final AST */

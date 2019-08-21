@@ -542,6 +542,12 @@ PythonInterpreter::run_script_file(const std::string &fname,
                                    PyObject *py_dict)
 {
     ifstream ifs(fname.c_str());
+    if(!ifs.is_open())
+    {        
+        CONDUIT_ERROR("PythonInterpreter::run_script_file " 
+                      " failed to open "<< fname);
+        return false;
+    }
     string py_script((istreambuf_iterator<char>(ifs)),
                      istreambuf_iterator<char>());
     ifs.close();

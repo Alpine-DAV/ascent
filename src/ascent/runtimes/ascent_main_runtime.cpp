@@ -583,27 +583,40 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
 
      if(params.has_path("file"))
      {
+       std::string script_fname = params["file"].as_string();
+
        Node n_py_src;
        // read script only on rank 0
        if(m_rank == 0)
        {
          ostringstream py_src;
-         std::string script_fname = params["file"].as_string();
          ifstream ifs(script_fname.c_str());
-
-         py_src << "# script from: " << script_fname << std::endl;
-         copy(istreambuf_iterator<char>(ifs),
-              istreambuf_iterator<char>(),
-              ostreambuf_iterator<char>(py_src));
-         n_py_src.set(py_src.str());
+         
+         // guard by successful file open, 
+         // otherwise our prefix comment will always cause 
+         // a valid string to be passed to the node
+         // and we won't be able to detect when there was 
+         // a bad file passed
+         if(ifs.is_open())
+         {
+             py_src << "# script from: " << script_fname << std::endl;
+             copy(istreambuf_iterator<char>(ifs),
+                  istreambuf_iterator<char>(),
+                  ostreambuf_iterator<char>(py_src));
+             n_py_src.set(py_src.str());
+             ifs.close();
+         }
        }
 
        relay::mpi::broadcast_using_schema(n_py_src,0,comm);
 
        if(!n_py_src.dtype().is_string())
        {
-         ASCENT_ERROR("broadcast of python script source failed");
+         ASCENT_ERROR("failed to read python script file " 
+                      << script_fname
+                      << " and broadcast source");
        }
+
        // replace file param with source that includes actual script
        params.remove("file");
        params["source"] = n_py_src;

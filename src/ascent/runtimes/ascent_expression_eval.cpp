@@ -52,9 +52,9 @@
 #include "ascent_expression_eval.hpp"
 #include "expressions/ascent_blueprint_architect.hpp"
 #include "expressions/ascent_expression_filters.hpp"
-#include "expressions/ast.hpp"
-#include "expressions/parser.hpp"
-#include "expressions/tokens.hpp"
+#include "expressions/ascent_expressions_ast.hpp"
+#include "expressions/ascent_expressions_parser.hpp"
+#include "expressions/ascent_expressions_tokens.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

@@ -494,8 +494,8 @@ char *yytext;
 #line 1 "tokens.l"
 #line 2 "tokens.l"
 #include <string>
-#include "ast.hpp"
-#include "parser.hpp"
+#include "ascent_expressions_ast.hpp"
+#include "ascent_expressions_parser.hpp"
 
 #define SAVE_TOKEN  yylval.string = new std::string(yytext, yyleng)
 #define TOKEN(t)    (yylval.token = t)
