@@ -1,0 +1,9 @@
+#A more complex trigger example using several functions that evaluate positons on the mesh.
+
+- 
+  action: "add_triggers"
+  triggers: 
+    t1: 
+      params: 
+        condition: "magnitude(position(max(\"braid\")) - vector(0,0,0)) > 0"
+        actions_file: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/complex_trigger_actions"

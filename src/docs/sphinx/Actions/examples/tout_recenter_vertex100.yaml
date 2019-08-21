@@ -1,0 +1,21 @@
+#An example if using the re-center filter (to element).
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "recenter"
+        params: 
+          field: "braid"
+          association: "element"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_recenter_vertex"

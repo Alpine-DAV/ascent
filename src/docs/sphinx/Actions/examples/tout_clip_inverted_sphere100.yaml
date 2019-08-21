@@ -1,0 +1,27 @@
+#An example an inverted sphere clip using a center and radius
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "clip"
+        params: 
+          topology: "mesh"
+          invert: "true"
+          sphere: 
+            radius: 11.0
+            center: 
+              x: 0.0
+              y: 0.0
+              z: 0.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "radial"
+          pipeline: "pl1"
+      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_clip_inverted_sphere"

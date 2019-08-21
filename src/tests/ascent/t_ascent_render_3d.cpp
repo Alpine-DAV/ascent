@@ -283,7 +283,8 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of rendering a point field with constant radius.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 TEST(ascent_render_3d, test_render_3d_points_variable_radius)
@@ -358,7 +359,8 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of rendering a point field with variable radius.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 TEST(ascent_render_3d, test_render_3d_bg_fg_color)
@@ -433,7 +435,8 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of rendering custom background and foreground colors.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 TEST(ascent_render_3d, test_render_3d_no_annotations)
@@ -505,7 +508,8 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of rendering with no annotations.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 TEST(ascent_render_3d, test_render_3d_name_format)
@@ -576,7 +580,8 @@ TEST(ascent_render_3d, test_render_3d_name_format)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file, 0.0001f, "0100"));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of rendering to a filename using format specifiers.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 TEST(ascent_render_3d, test_render_3d_no_bg)
@@ -648,7 +653,8 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of rendering with no background (alpha channel = 0)";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 TEST(ascent_render_3d, test_render_3d_render_azimuth)
@@ -720,7 +726,8 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of changing the azimuth of the camera.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -827,7 +834,8 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of creating a transfer function for volume rendering.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -899,7 +907,8 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
     // check that we created an image
     float tolerance = 0.01f;
     EXPECT_TRUE(check_test_image(output_file, tolerance));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of creating a mesh plot.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -990,7 +999,8 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
     // check that we created an image
     float tolerance = 0.01f;
     EXPECT_TRUE(check_test_image(output_file, tolerance));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of creating a mesh plot of a contour.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
@@ -1195,7 +1205,9 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_min_max)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of creating a plot specifying the min and max "
+                      "values of the scalar range.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
@@ -1478,7 +1490,8 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of creating a render, specifying all camera parameters.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file1));
 }
@@ -1556,7 +1569,8 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     ascent.close();
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of creating a render specifying the image size.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 

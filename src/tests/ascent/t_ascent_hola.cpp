@@ -154,7 +154,8 @@ TEST(ascent_hola, test_hola_relay_blueprint_mesh)
     ascent2.execute(actions);
     ascent2.close();
 
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example of using hola with a blueprint hdf5 file";
+    ASCENT_ACTIONS_DUMP(actions,output_file, msg);
 
 }
 

@@ -1,0 +1,37 @@
+#An example of creating a transfer function for volume rendering.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "contour"
+        params: 
+          field: "braid"
+          iso_values: 0.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "radial"
+          pipeline: "pl1"
+        p2: 
+          type: "volume"
+          field: "braid"
+          min_value: -0.5
+          max_value: 0.5
+          color_table: 
+            name: "rainbow desaturated"
+            control_points: 
+              - 
+                type: "alpha"
+                position: 0.0
+                alpha: 0.0
+              - 
+                type: "alpha"
+                position: 1.0
+                alpha: 0.5
+      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_render_3d_multi_default_runtime"

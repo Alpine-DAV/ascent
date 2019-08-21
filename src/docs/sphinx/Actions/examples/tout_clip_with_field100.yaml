@@ -1,0 +1,21 @@
+#An example of using clip with field.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "clip_with_field"
+        params: 
+          field: "braid"
+          clip_value: 0.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "radial"
+          pipeline: "pl1"
+      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_clip_with_field"

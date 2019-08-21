@@ -348,9 +348,7 @@ TEST(ascent_runtime_options, test_actions_yaml_file)
                               "              field: braid\n"
                               "          renders:\n"
                               "            r1:\n"
-                              "              image_name: " + output_file + "\n"
-                              "-\n"
-                              "  action: execute\n";
+                              "              image_name: " + output_file + "\n";
 
 
     std::ofstream file(output_actions);

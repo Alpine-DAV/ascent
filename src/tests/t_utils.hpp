@@ -447,10 +447,11 @@ void add_interleaved_vector(conduit::Node &dset)
 }
 
 // Macro to save ascent actions file
-#define ASCENT_ACTIONS_DUMP(actions,name) \
+#define ASCENT_ACTIONS_DUMP(actions,name,msg) \
   std::string actions_str = actions.to_yaml(); \
   std::ofstream out; \
-  out.open(name+".yaml"); \
+  out.open(name+"100"+".yaml"); \
+  out<<"#"<<msg<<"\n"; \
   out<<actions_str; \
   out.close();
 

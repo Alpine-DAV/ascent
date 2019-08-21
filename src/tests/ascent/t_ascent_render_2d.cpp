@@ -126,7 +126,8 @@ TEST(ascent_render_2d, test_render_2d_default_runtime)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    ASCENT_ACTIONS_DUMP(actions,output_file);
+    std::string msg = "An example rendering a 2d field.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 

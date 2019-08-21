@@ -53,11 +53,10 @@ The currently supported actions are:
 - ``add_scenes``  : adds a list of scenes to create images
 - ``add_extracts``: adds a list of extracts to move data out of Ascent
 - ``add_pipelines`` : adds a list of pipelines to transform mesh data
-- ``execute`` : executes the data flow network created by the actions
-- ``reset`` : resets all actions to an empty state
 
 Ascent actions can be specified within the integration using Conduit Nodes and can be read in through a file.
-Each time Ascent executes a set of actions, it will check for a file in the current working directory called ``ascent_actions.json``.
+Actions files can be defined in both ``json`` or ``yaml``, and if you are human, we recomend using ``yaml``.
+Each time Ascent executes a set of actions, it will check for a file in the current working directory called ``ascent_actions.json`` or ``ascent_actions.yaml``.
 If found, the current actions specified in code will be replaced with the contents of the json file.
 Then default name of the ascent actions file can be specified in the ``ascent_options.json`` or in the
 ascent options inside the simulation integration.
@@ -79,21 +78,27 @@ Here is an example of an ascent actions json file:
             "plt1":
             {
               "type": "pseudocolor",
-              "params":
-              {
-                "field": "zonal_noise"
-              }
+              "field": "zonal_noise"
             }
           }
         }
       }
-    },
-
-    {
-      "action": "execute"
     }
   ]
 
-A full example of an actions file can be found in ``/src/examples/proxies/lulesh2.0.3/ascent_actions.json``.
+The equivelent ``yaml`` is
+
+.. code-block:: yaml
+
+  -
+    action: "add_scenes"
+    scenes:
+      scene1:
+        plots:
+          plt1:
+            type: "pseudocolor"
+            field: "braid"
+
+A full example of an actions file populated from Ascent's test suite can be found in :ref:`yaml-examples`.
 
 
