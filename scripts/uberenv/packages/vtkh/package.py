@@ -44,6 +44,7 @@ class Vtkh(Package,CudaPackage):
 
     variant("shared", default=True, description="Build vtk-h as shared libs")
     variant("mpi", default=True, description="build mpi support")
+    variant("serial", default=True, description="build serial (non-mpi) libraries")
     variant("tbb", default=False, description="build tbb support")
     variant("cuda", default=False, description="build cuda support")
     variant("openmp", default=(sys.platform != 'darwin'),
@@ -236,6 +237,15 @@ class Vtkh(Package,CudaPackage):
         #######################################################################
         # Optional Dependencies
         #######################################################################
+
+        #######################
+        # Serial
+        #######################
+
+        if "+serial" in spec:
+            cfg.write(cmake_cache_entry("ENABLE_SERIAL", "ON"))
+        else:
+            cfg.write(cmake_cache_entry("ENABLE_SERIAL", "OFF"))
 
         #######################
         # MPI

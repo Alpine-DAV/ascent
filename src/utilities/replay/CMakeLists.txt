@@ -57,19 +57,21 @@ if(OPENMP_FOUND)
    list(APPEND deps openmp)
 endif()
 
-blt_add_executable(
-    NAME        replay_ser
-    SOURCES     ${REPLAY_SOURCES}
-    DEPENDS_ON  ${replay_deps}
-    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
-
-# install target for replay serial
-install(TARGETS replay_ser
-        EXPORT  ascent
-        LIBRARY DESTINATION utilities/ascent/replay
-        ARCHIVE DESTINATION utilities/ascent/replay
-        RUNTIME DESTINATION utilities/ascent/replay
-)
+if (ENABLE_SERIAL)
+    blt_add_executable(
+        NAME        replay_ser
+        SOURCES     ${REPLAY_SOURCES}
+        DEPENDS_ON  ${replay_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    
+    # install target for replay serial
+    install(TARGETS replay_ser
+            EXPORT  ascent
+            LIBRARY DESTINATION utilities/ascent/replay
+            ARCHIVE DESTINATION utilities/ascent/replay
+            RUNTIME DESTINATION utilities/ascent/replay
+    )
+endif()
 
 if(MPI_FOUND)
 
