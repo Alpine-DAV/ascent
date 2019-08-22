@@ -59,16 +59,24 @@ def about():
         from .ascent_python import about as ascent_about
         return ascent_about()
     except ImportError:
-        raise ImportError('failed to import ascent_python, did you ENABLE_SERIAL?')
+        raise ImportError('failed to import ascent_python, was Ascent built with serial support ENABLE_SERIAL=ON')
     return None
 
 def Ascent():
-    from .ascent_python import Ascent as ascent_obj
-    return ascent_obj()
+    try:
+        from .ascent_python import Ascent as ascent_obj
+        return ascent_obj()
+    except ImportError:
+        raise ImportError('failed to import ascent_python, was Ascent built with serial support ENABLE_SERIAL=ON')
+    return None
 
 def jupyter_bridge():
-    from .bridge_kernel.server import jupyter_extract
-    return jupyter_extract()
+    try:
+        from .bridge_kernel.server import jupyter_extract
+        return jupyter_extract()
+    except ImportError:
+        raise ImportError('failed to import ascent_python, was Ascent built with serial support ENABLE_SERIAL=ON')
+    return None
 
 
 
