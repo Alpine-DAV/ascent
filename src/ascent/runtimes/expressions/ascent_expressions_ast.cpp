@@ -100,6 +100,7 @@ conduit::Node ASTInteger::build_graph(flow::Workspace &w)
   conduit::Node res;
   res["filter_name"] = name;
   res["type"] = "scalar";
+  res["data_type"] = "integer";
   return res;
 }
 
@@ -129,6 +130,7 @@ conduit::Node ASTDouble::build_graph(flow::Workspace &w)
   conduit::Node res;
   res["filter_name"] = name;
   res["type"] = "scalar";
+  res["data_type"] = "double";
   return res;
 }
 
@@ -352,10 +354,7 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
       {
         valid &= req_args.erase(named_arg_names[a]);
       }
-      if(named_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
-      {
-        valid = false;
-      }
+
       if(!valid)
       {
         goto next_overload;
@@ -458,6 +457,7 @@ void ASTBinaryOp::access()
     case TMINUS:  op_str = "-"; break;
     case TMUL:    op_str = "*"; break;
     case TDIV:    op_str = "/"; break;
+    case TMOD:    op_str = "%"; break;
     case TCEQ:    op_str = "=="; break;
     case TCNE:    op_str = "!="; break;
     case TCLE:    op_str = "<="; break;
@@ -485,6 +485,7 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
     case TMINUS:  op_str = "-"; break;
     case TMUL:    op_str = "*"; break;
     case TDIV:    op_str = "/"; break;
+    case TMOD:    op_str = "%"; break;
     case TCEQ:    op_str = "=="; break;
     case TCNE:    op_str = "!="; break;
     case TCLE:    op_str = "<="; break;
@@ -505,8 +506,23 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
   if(l_type == "meshvar" || r_type == "meshvar")
   {
     std::stringstream msg;
-    msg << "' " << l_type << " " << m_op << " " << r_type << "'";
+    msg << "' " << l_type << " " << op_str << " " << r_type << "'";
     ASCENT_ERROR("binary operation with mesh variable not supported: " << msg.str());
+  }
+
+  if(l_in.has_path("data_type") && r_in.has_path("data_type"))
+  {
+    const std::string l_data_type = l_in["data_type"].as_string();
+    const std::string r_data_type = r_in["data_type"].as_string();
+    if(op_str == "%")
+    {
+      if(l_data_type != "integer" || r_data_type != "integer")
+      {
+        std::stringstream msg;
+        msg << "' " << l_data_type << " " << op_str << " " << r_data_type << "'";
+        ASCENT_ERROR("modulus operation (%) with non-integer values is not supported: " << msg.str());
+      }
+    }
   }
 
   // evaluate what the return type will be

@@ -63,7 +63,8 @@ extern int yydebug;
     TMINUS = 273,
     TMUL = 274,
     TDIV = 275,
-    TNEG = 276
+    TMOD = 276,
+    TNEG = 277
   };
 #endif
 
@@ -85,7 +86,7 @@ union YYSTYPE
  std::string                 *string;
  int token;
 
-#line 89 "parser.hpp" /* yacc.c:1909  */
+#line 90 "parser.hpp" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

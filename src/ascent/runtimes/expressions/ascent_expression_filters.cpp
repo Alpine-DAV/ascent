@@ -69,6 +69,7 @@
 
 #include <limits>
 #include <math.h>
+#include <typeinfo>
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -101,7 +102,7 @@ namespace detail
 
 bool is_math(const std::string &op)
 {
-  if(op == "*" || op == "+" || op == "/" || op == "-")
+  if(op == "*" || op == "+" || op == "/" || op == "-" || op == "%")
   {
     return true;
   }
@@ -138,7 +139,7 @@ vector_op(const double lhs[3],
 
 
 template<typename T>
-T math_op(const T& lhs, const T& rhs, const std::string &op)
+T math_op(const T lhs, const T rhs, const std::string &op)
 {
   T res;
   if(op == "+")
@@ -159,7 +160,22 @@ T math_op(const T& lhs, const T& rhs, const std::string &op)
   }
   else
   {
-    ASCENT_ERROR("unknow math op "<<op);
+    ASCENT_ERROR("unknow math op "<<op<<" for type "<<typeid(T).name());
+  }
+  return res;
+}
+
+template<>
+int math_op(const int lhs, const int rhs, const std::string &op)
+{
+  int res;
+  if(op == "%")
+  {
+    res = lhs % rhs;
+  }
+  else
+  {
+    ASCENT_ERROR("unknow math op "<<op<<" for type int");
   }
   return res;
 }

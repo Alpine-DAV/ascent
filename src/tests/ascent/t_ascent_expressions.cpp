@@ -114,6 +114,23 @@ TEST(ascent_expressions, basic_expressions)
     EXPECT_EQ(res["value"].to_float64(), 4.0);
     EXPECT_EQ(res["type"].as_string(), "scalar");
 
+    expr = "8 % 3";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_int32(), 2);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    bool threw = false;
+    try
+    {
+    expr = "4 % 2.5";
+    res = eval.evaluate(expr);
+    }
+    catch(...)
+    {
+      threw = true;
+    }
+    EXPECT_EQ(threw, true);
+
     expr = "max(1, 2)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 2.0);
@@ -129,7 +146,7 @@ TEST(ascent_expressions, basic_expressions)
     EXPECT_EQ(res["value"].to_float64(), 1.0);
     EXPECT_EQ(res["type"].as_string(), "scalar");
 
-    bool threw = false;
+    threw = false;
     try
     {
       expr = "(2.0 + 1 / 0.5";
