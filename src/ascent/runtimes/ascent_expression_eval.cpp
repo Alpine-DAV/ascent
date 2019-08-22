@@ -259,12 +259,14 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   ASTExpression *expression = get_result();
 
-  expression->access();
-  conduit::Node root = expression->build_graph(w);
+  conduit::Node root;
 
   //std::cout<<w.graph().to_dot()<<"\n";
+
   try
   {
+    //expression->access();
+    root = expression->build_graph(w);
     w.execute();
   }
   catch(std::exception &e)

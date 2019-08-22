@@ -11,15 +11,33 @@ typedef std::vector<ASTExpression*> ExpressionList;
 class ASTNode {
 public:
   virtual ~ASTNode() {}
-  virtual void access() {}
-  virtual conduit::Node build_graph(flow::Workspace &w)
-                                     { 
-                                         conduit::Node res;
-                                         return res;
-                                     }
+  virtual void access() = 0;
+  virtual conduit::Node build_graph(flow::Workspace &w) = 0;
 };
 
 class ASTExpression : public ASTNode {
+};
+
+class ASTIdentifier : public ASTExpression {
+public:
+  std::string m_name;
+  ASTIdentifier(const std::string& name) : m_name(name) { }
+  virtual void access();
+  virtual conduit::Node build_graph(flow::Workspace &w);
+};
+
+class NamedExpression : public ASTExpression {
+public:
+  ASTIdentifier *key;
+  ASTExpression *value;
+  NamedExpression(ASTIdentifier *key, ASTExpression *value) : key(key), value(value) { }
+  virtual void access();
+  virtual conduit::Node build_graph(flow::Workspace &w);
+
+  virtual ~NamedExpression() {
+    delete key;
+    delete value;
+  }
 };
 
 class ASTInteger : public ASTExpression {
@@ -38,16 +56,7 @@ public:
   virtual conduit::Node build_graph(flow::Workspace &w);
 };
 
-class ASTIdentifier : public ASTExpression {
-public:
-  std::string m_name;
-  ASTIdentifier(const std::string& name) : m_name(name) { }
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
-};
-
-class ASTMeshVar: public ASTExpression
-{
+class ASTMeshVar: public ASTExpression {
 public:
   std::string m_name;
   ASTMeshVar(const std::string& name) : m_name(name) { }
@@ -55,11 +64,43 @@ public:
   virtual conduit::Node build_graph(flow::Workspace &w);
 };
 
+typedef std::vector<ASTExpression*> ExpressionList;
+typedef std::vector<NamedExpression*> NamedExpressionList;
+
+class ASTArguments {
+public:
+  ExpressionList *pos_args;
+  NamedExpressionList *named_args;
+  ASTArguments(ExpressionList *pos_args, NamedExpressionList *named_args) :
+    pos_args(pos_args), named_args(named_args) { }
+  virtual void access();
+
+  virtual ~ASTArguments() {
+    if (pos_args != nullptr) {
+      const size_t pos_size = pos_args->size();
+      for(size_t i = 0; i < pos_size; ++i)
+      {
+        delete (*pos_args)[i];
+      }
+      delete pos_args;
+    }
+
+    if (named_args != nullptr) {
+      const size_t named_size = named_args->size();
+      for(size_t i = 0; i < named_size; ++i)
+      {
+        delete (*named_args)[i];
+      }
+      delete named_args;
+    }
+  }
+};
+
 class ASTMethodCall : public ASTExpression {
 public:
   ASTIdentifier *m_id;
-  ExpressionList *arguments;
-  ASTMethodCall(ASTIdentifier *id, ExpressionList *arguments) :
+  ASTArguments *arguments;
+  ASTMethodCall(ASTIdentifier *id, ASTArguments *arguments) :
     m_id(id), arguments(arguments) { }
   ASTMethodCall(ASTIdentifier *id) : m_id(id) { }
   virtual void access();
@@ -67,11 +108,6 @@ public:
 
   virtual ~ASTMethodCall()
   {
-    const size_t size = arguments->size();
-    for(size_t i = 0; i < size; ++i)
-    {
-      delete (*arguments)[i];
-    }
     delete arguments;
     delete m_id;
   }
@@ -82,10 +118,11 @@ public:
   int m_op;
   ASTExpression *m_lhs;
   ASTExpression *m_rhs;
-  ASTBinaryOp(ASTExpression *lhs, int op, ASTExpression *rhs) :
+  ASTBinaryOp(ASTExpression* lhs, int op, ASTExpression* rhs) :
     m_lhs(lhs), m_rhs(rhs), m_op(op) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
+
   virtual ~ASTBinaryOp()
   {
     delete m_lhs;

@@ -251,6 +251,96 @@ TEST(ascent_expressions, expressions_optional_params)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_expressions, expressions_named_params)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    // ascent normally adds this but we are doing an end around
+    data["state/domain_id"] = 0;
+    Node multi_dom;
+    blueprint::mesh::to_multi_domain(data, multi_dom);
+
+    runtime::expressions::register_builtin();
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+
+    // test named parameters
+    
+    std::string expr;
+    conduit::Node res;
+
+    expr = "histogram(\"braid\", num_bins=10)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].dtype().number_of_elements(), 10);
+    EXPECT_EQ(res["type"].as_string(), "histogram");
+
+    expr = "histogram(\"braid\",min_val=0,num_bins=10,max_val=1)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].dtype().number_of_elements(), 10);
+    EXPECT_EQ(res["min_val"].to_float64(), 0);
+    EXPECT_EQ(res["max_val"].to_float64(), 1);
+    EXPECT_EQ(res["type"].as_string(), "histogram");
+
+    bool threw = false;
+    try
+    {
+      expr = "histogram(\"braid\",\"braid\")";
+      res = eval.evaluate(expr);
+    }
+    catch(...)
+    {
+      threw = true;
+    }
+    EXPECT_EQ(threw, true);
+
+
+    expr = "histogram(\"braid\",max_val=2)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["max_val"].to_float64(), 2);
+    EXPECT_EQ(res["type"].as_string(), "histogram");
+
+    threw = false;
+    try
+    {
+      expr = "histogram(\"braid\",min_val=\"braid\")";
+      res = eval.evaluate(expr);
+    }
+    catch(...)
+    {
+      threw = true;
+    }
+    EXPECT_EQ(threw, true);
+
+    threw = false;
+    try
+    {
+      expr = "histogram(\"braid\",min_val=0,num_bins=10,1)";
+      res = eval.evaluate(expr);
+    }
+    catch(...)
+    {
+      threw = true;
+    }
+    EXPECT_EQ(threw, true);
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_expressions, test_identifier)
 {
     // the vtkm runtime is currently our only rendering runtime

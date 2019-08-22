@@ -49,20 +49,21 @@ extern int yydebug;
     TINTEGER = 259,
     TDOUBLE = 260,
     TMESHVAR = 261,
-    TCEQ = 262,
-    TCNE = 263,
-    TCLT = 264,
-    TCLE = 265,
-    TCGT = 266,
-    TCGE = 267,
-    TLPAREN = 268,
-    TRPAREN = 269,
-    TCOMMA = 270,
-    TPLUS = 271,
-    TMINUS = 272,
-    TMUL = 273,
-    TDIV = 274,
-    TNEG = 275
+    TAEQ = 262,
+    TCEQ = 263,
+    TCNE = 264,
+    TCLT = 265,
+    TCLE = 266,
+    TCGT = 267,
+    TCGE = 268,
+    TLPAREN = 269,
+    TRPAREN = 270,
+    TCOMMA = 271,
+    TPLUS = 272,
+    TMINUS = 273,
+    TMUL = 274,
+    TDIV = 275,
+    TNEG = 276
   };
 #endif
 
@@ -71,17 +72,20 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 12 "parser.y" /* yacc.c:1909  */
+#line 16 "parser.y" /* yacc.c:1909  */
 
  ASTNode                     *node;
  ASTExpression               *expr;
  ASTIdentifier               *ident;
  ASTMeshVar                  *meshvar;
- std::vector<ASTExpression*> *exprvec;
+ ExpressionList              *exprlist;
+ NamedExpression             *namedexpr;
+ NamedExpressionList         *namedexprlist;
+ ASTArguments                *args;
  std::string                 *string;
  int token;
 
-#line 85 "parser.hpp" /* yacc.c:1909  */
+#line 89 "parser.hpp" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

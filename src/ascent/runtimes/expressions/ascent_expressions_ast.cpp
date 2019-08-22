@@ -2,6 +2,7 @@
 //#include "codegen.h"
 #include "ascent_expressions_parser.hpp"
 #include <typeinfo>
+#include <unordered_set>
 
 //-----------------------------------------------------------------------------
 // ascent includes
@@ -15,48 +16,56 @@ using namespace std;
 namespace detail
 {
 std::string print_match_error(const std::string &fname,
-                              const std::vector<conduit::Node> &args,
+                              const std::vector<conduit::Node> &pos_arg_nodes,
+                              const std::vector<conduit::Node> &named_arg_nodes,
+                              const std::vector<std::string> &named_arg_names,
                               const conduit::Node &overload_list)
 {
   std::stringstream ss;
-  ss<<"Could not match function : ";
-  ss<<fname<<"(";
-  for(int i = 0; i < args.size(); ++i)
+  ss << "Could not match function : ";
+  ss << fname << "(";
+  for(int i = 0; i < pos_arg_nodes.size(); ++i)
   {
-    ss<<args[i]["type"].as_string();
-
-    if(i == args.size() - 1)
+    ss << ((i == 0)? "" : ", ")  << pos_arg_nodes[i]["type"].as_string();
+  }
+  for(int i = 0; i < named_arg_nodes.size(); ++i)
+  {
+    if(i == 0)
     {
-      ss<<")\n";
+      if(pos_arg_nodes.size() > 0)
+      {
+        ss << ", ";
+      }
     }
     else
     {
-      ss<<", ";
+      ss << ", ";
     }
-
+    ss << named_arg_names[i] << "=" << named_arg_nodes[i]["type"].as_string();
   }
+  ss << ")" << std::endl;
 
-  ss<<"Known function signatures :\n";
+  ss << "Known function signatures :\n";
   for(int i = 0; i < overload_list.number_of_children(); ++i)
   {
-    ss<<" "<<fname<<"(";
+    ss << " " << fname << "(";
     const conduit::Node &sig = overload_list.child(i);
     const conduit::Node &n_args = sig["args"];
     const int req_args = sig["req_count"].to_int32();
     for(int a = 0; a < n_args.number_of_children(); ++a)
     {
-      ss<<n_args.child(a)["type"].as_string();
+      ss << n_args.child(a)["type"].as_string();
       if(a > req_args)
       {
-        ss<<"[optional]";
+        ss << "[optional]";
       }
       if(a == n_args.number_of_children() - 1)
       {
-        ss<<")\n";
+        ss << ")\n";
       }
       else
       {
-        ss<<", ";
+        ss << ", ";
       }
     }
 
@@ -68,7 +77,7 @@ std::string print_match_error(const std::string &fname,
 } // namespace detail
 void ASTInteger::access()
 {
-  //std::cout << "Creating integer: " << m_value << endl;
+  std::cout << "Creating integer: " << m_value << endl;
 }
 
 conduit::Node ASTInteger::build_graph(flow::Workspace &w)
@@ -78,7 +87,7 @@ conduit::Node ASTInteger::build_graph(flow::Workspace &w)
 
   // create a unique name for the filter
   std::stringstream ss;
-  ss<<"integer"<<"_"<<ast_int_counter;
+  ss << "integer" << "_" << ast_int_counter;
   std::string name = ss.str();
 
   conduit::Node params;
@@ -96,7 +105,7 @@ conduit::Node ASTInteger::build_graph(flow::Workspace &w)
 
 void ASTDouble::access()
 {
-  //std::cout << "Creating double: " << m_value << endl;
+  std::cout << "Creating double: " << m_value << endl;
 }
 
 conduit::Node ASTDouble::build_graph(flow::Workspace &w)
@@ -106,7 +115,7 @@ conduit::Node ASTDouble::build_graph(flow::Workspace &w)
 
   // create a unique name for the filter
   std::stringstream ss;
-  ss<<"double"<<"_"<<ast_double_counter;
+  ss << "double" << "_" << ast_double_counter;
   std::string name = ss.str();
 
   conduit::Node params;
@@ -126,7 +135,7 @@ conduit::Node ASTDouble::build_graph(flow::Workspace &w)
 
 void ASTIdentifier::access()
 {
-  //std::cout << "Creating identifier reference: " << m_name << endl;
+  std::cout << "Creating identifier reference: " << m_name << endl;
   //if (context.locals().find(name) == context.locals().end())
   //{
   //  std::cerr << "undeclared variable " << name << endl;
@@ -137,12 +146,12 @@ void ASTIdentifier::access()
 
 conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
 {
-  //std::cout << "Flow indent : " << m_name<< endl;
+  //std::cout << "Flow indent : " << m_name << endl;
   static int ast_ident_counter = 0;
 
   // create a unique name for the filter
   std::stringstream ss;
-  ss<<"ident"<<"_"<<ast_ident_counter;
+  ss << "ident" << "_" << ast_ident_counter;
   std::string name = ss.str();
 
   conduit::Node params;
@@ -159,28 +168,76 @@ conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
   return res;
 }
 
+void NamedExpression::access()
+{
+  key->access();
+  value->access();
+}
+
+conduit::Node NamedExpression::build_graph(flow::Workspace &w)
+{
+  return value->build_graph(w);
+}
+
+void ASTArguments::access()
+{
+  if (pos_args != nullptr) {
+    const size_t pos_size = pos_args->size();
+    for(size_t i = 0; i < pos_size; ++i) {
+        (*pos_args)[i]->access();
+    }
+    std::cout << "Creating positional arguments" << std::endl;
+  }
+
+  if (named_args != nullptr) {
+    const size_t named_size = named_args->size();
+    for(size_t i = 0; i < named_size; ++i) {
+        (*named_args)[i]->access();
+    }
+    std::cout << "Creating named arguments" << std::endl;
+  }
+
+}
+
 void ASTMethodCall::access()
 {
-  const size_t size = arguments->size();
-  //std::cout << "Creating method call: " << m_id->m_name << endl;
-  for(size_t i = 0; i < size; ++i)
-  {
-    //std::cout<<"arg "<<i<<" = ";
-    (*arguments)[i]->access();
-  }
+  arguments->access();
+  std::cout << "Creating method call: " << m_id->m_name << std::endl;
 }
 
 conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
 {
-  const size_t size = arguments->size();
-  std::vector<conduit::Node> arg_list;
-  arg_list.resize(size);
-  for(size_t i = 0; i < size; ++i)
+  // build the positional arguments
+  size_t pos_size = 0;
+  std::vector<conduit::Node> pos_arg_nodes;
+  if(arguments->pos_args != nullptr)
   {
-    arg_list[i] = (*arguments)[i]->build_graph(w);
-    //std::cout<<"flow arg :\n";
-    //arg_list[i].print();
-    //std::cout<<"\n";
+    pos_size = arguments->pos_args->size();
+    pos_arg_nodes.resize(pos_size);
+    for(size_t i = 0; i < pos_size; ++i)
+    {
+      pos_arg_nodes[i] = (*arguments->pos_args)[i]->build_graph(w);
+      //std::cout << "flow arg :\n";
+      //pos_arg_nodes[i].print();
+      //std::cout << "\n";
+    }
+  }
+
+  // build the named arguments
+  size_t named_size = 0;
+  std::vector<conduit::Node> named_arg_nodes;
+  // stores argument names in the same order as named_arg_nodes
+  std::vector<std::string> named_arg_names;
+  if(arguments->named_args != nullptr)
+  {
+    named_size = arguments->named_args->size();
+    named_arg_nodes.resize(named_size);
+    named_arg_names.resize(named_size);
+    for(size_t i = 0; i < named_size; ++i)
+    {
+      named_arg_nodes[i] = (*arguments->named_args)[i]->build_graph(w);
+      named_arg_names[i] = (*arguments->named_args)[i]->key->m_name;
+    }
   }
 
   //std::cout << "Flow method call: " << m_id->m_name << endl;
@@ -194,17 +251,22 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
   // resolve the function
   if(!f_table->has_path(m_id->m_name))
   {
-    ASCENT_ERROR("unknown function "<<m_id->m_name);
+    ASCENT_ERROR("unknown function " << m_id->m_name);
   }
 
   // resolve overloaded function names
   const conduit::Node &overload_list = (*f_table)[m_id->m_name];
 
   int matched_index = -1;
+
+  std::vector<std::string> func_arg_names;
+  std::unordered_set<std::string> req_args;
+  std::unordered_set<std::string> opt_args;
+  std::unordered_set<std::string> all_args;
   for(int i = 0; i < overload_list.number_of_children(); ++i)
   {
     const conduit::Node &func = overload_list.child(i);
-    bool valid = false;
+    bool valid = true;
     int total_args = 0;
 
     if(func.has_path("args"))
@@ -212,27 +274,107 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
       total_args = func["args"].number_of_children();
     }
 
-    //const int opt_args = func["opt_cout"].to_int32();
-    const int req_args = func["req_count"].to_int32();
 
-    const int arg_size = arg_list.size();
-    if(arg_size >= req_args && arg_size <= total_args)
+     // validation
+
+     func_arg_names = func["args"].child_names();
+     req_args.clear();
+     opt_args.clear();
+     all_args.clear();
+    // populate opt_args, req_args, and all_args
+    for(int a = 0; a < total_args; ++a)
     {
-      valid = true;
-      // validate the types
-      for(int a = 0; a < arg_size; ++a)
+      conduit::Node func_arg = func["args"].child(a);
+      if(func_arg.has_path("optional"))
       {
-        if(arg_list[a]["type"].as_string() != func["args"].child(a)["type"].as_string())
+        opt_args.insert(func_arg_names[a]);
+      }
+      else
+      {
+        req_args.insert(func_arg_names[a]);
+      }
+      all_args.insert(func_arg_names[a]);
+    }
+
+    // validate positionals
+    if(pos_size <= total_args) {
+      for(int a = 0; a < pos_size; ++a)
+      {
+        conduit::Node func_arg = func["args"].child(a);
+        // validate types
+        if(pos_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
         {
           valid = false;
         }
+        // keep track of which arguments have been specified
+        if(func_arg.has_path("optional"))
+        {
+          valid &= opt_args.erase(func_arg_names[a]);
+        }
+        else
+        {
+          valid &= req_args.erase(func_arg_names[a]);
+        }
+        if(!valid)
+        {
+          goto next_overload;
+        }
+      }
+    }
+    else
+    {
+      valid = false;
+    }
+
+    // validate named arguments
+    for(int a = 0; a < named_size; ++a)
+    {
+      //check if argument name exists
+      if(all_args.find(named_arg_names[a]) == all_args.end())
+      {
+        valid = false;
+      }
+      // get the an argument given its name
+      conduit::Node func_arg = func["args"][named_arg_names[a]];
+
+       // validate types
+      if(named_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
+      {
+        valid = false;
+      }
+    
+      // keep track of which arguments have been specified
+      if(func_arg.has_path("optional"))
+      {
+        valid &= opt_args.erase(named_arg_names[a]);
+      }
+      else
+      {
+        valid &= req_args.erase(named_arg_names[a]);
+      }
+      if(named_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
+      {
+        valid = false;
+      }
+      if(!valid)
+      {
+        goto next_overload;
       }
     }
 
+    // ensure all required arguments are passed
+    if(!req_args.empty())
+    {
+      valid = false;
+    }
+
+    // finds the last valid function
     if(valid)
     {
       matched_index = i;
     }
+
+    next_overload:;
   }
 
   conduit::Node res;
@@ -240,20 +382,18 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
   if(matched_index != -1)
   {
     const conduit::Node &func = overload_list.child(matched_index);
-    //std::cout<<"Function matched\n";
+    //std::cout << "Function matched\n";
     //func.print();
 
     static int ast_method_counter = 0;
     // create a unique name for the filter
     std::stringstream ss;
-    ss<<"method_"<<ast_method_counter<<"_"<<m_id->m_name;;
+    ss << "method_" << ast_method_counter << "_" << m_id->m_name;;
     std::string name = ss.str();
     ast_method_counter++;
 
-    const int total_args = func["args"].number_of_children();
-    const int arg_size = arg_list.size();
     // we will have some optional parameters, prep the null_args filter
-    if(arg_size < total_args)
+    if(!opt_args.empty())
     {
       if(!w.graph().has_filter("null_arg"))
       {
@@ -270,24 +410,26 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
                          name,
                          params);
 
-    // connecting incoming ports to args
-    std::vector<std::string> arg_names = func["args"].child_names();
-
-
     // src, dest, port
-    for(int a = 0; a < total_args; ++a)
+
+    // pass positional arguments
+    for(int a = 0; a < pos_size; ++a)
     {
-      if(a < arg_size)
-      {
-        const conduit::Node &arg = arg_list[a];
-        w.graph().connect(arg["filter_name"].as_string(),name,arg_names[a]);
-      }
-      else
-      {
-        // this is an optional parameter that is not in the arg list.
-        // connect the null filter
-        w.graph().connect("null_arg",name,arg_names[a]);
-      }
+      const conduit::Node &arg = pos_arg_nodes[a];
+      w.graph().connect(arg["filter_name"].as_string(),name,func_arg_names[a]);
+    }
+
+    // pass named arguments
+    for(int a = 0; a < named_size; ++a)
+    {
+      const conduit::Node &arg = named_arg_nodes[a];
+      w.graph().connect(arg["filter_name"].as_string(),name,named_arg_names[a]);
+    }
+
+    // connect null filter to optional args that weren't passed in
+    for(std::unordered_set<std::string>::iterator it = opt_args.begin(); it != opt_args.end(); ++it)
+    {
+      w.graph().connect("null_arg",name,*it);
     }
 
     res["filter_name"] = name;
@@ -296,7 +438,9 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
   else
   {
     ASCENT_ERROR( detail::print_match_error(m_id->m_name,
-                                            arg_list,
+                                            pos_arg_nodes,
+                                            named_arg_nodes,
+                                            named_arg_names,
                                             overload_list));
   }
 
@@ -320,12 +464,12 @@ void ASTBinaryOp::access()
     case TCGE:    op_str = ">="; break;
     case TCGT:    op_str = ">"; break;
     case TCLT:    op_str = "<"; break;
-    default: std::cout<<"unknown binary op "<<m_op<<"\n";
+    default: std::cout << "unknown binary op " << m_op << "\n";
 
   }
 
   m_rhs->access();
-  //std::cout<<" op "<<op_str<<"\n";
+  //std::cout << " op " << op_str << "\n";
   m_lhs->access();
 
 }
@@ -347,12 +491,12 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
     case TCGE:    op_str = ">="; break;
     case TCGT:    op_str = ">"; break;
     case TCLT:    op_str = "<"; break;
-    default: std::cout<<"unknown binary op "<<m_op<<"\n";
+    default: std::cout << "unknown binary op " << m_op << "\n";
 
   }
 
   conduit::Node r_in = m_rhs->build_graph(w);
-  //std::cout<<" flow op "<<op_str<<"\n";
+  //std::cout << " flow op " << op_str << "\n";
   conduit::Node l_in = m_lhs->build_graph(w);
 
   // Validate types
@@ -361,8 +505,8 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
   if(l_type == "meshvar" || r_type == "meshvar")
   {
     std::stringstream msg;
-    msg<<"' "<<l_type<<" "<<m_op<<" "<<r_type<<"'";
-    ASCENT_ERROR("binary operation with mesh variable not supported: "<<msg.str());
+    msg << "' " << l_type << " " << m_op << " " << r_type << "'";
+    ASCENT_ERROR("binary operation with mesh variable not supported: " << msg.str());
   }
 
   // evaluate what the return type will be
@@ -377,8 +521,8 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
   static int ast_op_counter = 0;
   // create a unique name for the filter
   std::stringstream ss;
-  //ss<<"binary_op"<<"_"<<ast_op_counter<<"_"<<op_str;
-  ss<<"binary_op"<<"_"<<ast_op_counter<<"_"<<m_op;
+  //ss << "binary_op" << "_" << ast_op_counter << "_" << op_str;
+  ss << "binary_op" << "_" << ast_op_counter << "_" << m_op;
   std::string name = ss.str();
 
   conduit::Node params;
@@ -416,11 +560,11 @@ conduit::Node ASTMeshVar::build_graph(flow::Workspace &w)
     pos = stripped.find("\"");
   }
 
-  //std::cout << "Flow mesh var " << m_name << " "<< stripped <<endl;
+  //std::cout << "Flow mesh var " << m_name << " " << stripped << endl;
   // create a unique name for the filter
   static int ast_meshvar_counter = 0;
   std::stringstream ss;
-  ss<<"meshvar"<<"_"<<ast_meshvar_counter;
+  ss << "meshvar" << "_" << ast_meshvar_counter;
   std::string name = ss.str();
 
   conduit::Node params;
