@@ -1661,8 +1661,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         output["topologies/topo/elements/shape"] = conduit_name;
 
         static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints");
-        auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagPoint(),
-                                               vtkm::TopologyElementTagCell());
+        auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
+                                               vtkm::TopologyElementTagPoint());
 
         output["topologies/topo/elements/connectivity"].set(vtkh::GetVTKMPointer(conn),
                                                              conn.GetNumberOfValues());
@@ -1672,16 +1672,16 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         // If we are here, the we know that the cell set is explicit,
         // but only a single cell shape
         auto cells = dyn_cells.Cast<vtkm::cont::CellSetExplicit<>>();
-        auto shapes = cells.GetShapesArray(vtkm::TopologyElementTagPoint(),
-                                           vtkm::TopologyElementTagCell());
+        auto shapes = cells.GetShapesArray(vtkm::TopologyElementTagCell(),
+                                           vtkm::TopologyElementTagPoint());
 
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/topo/elements/shape"] = conduit_name;
 
         static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints");
 
-        auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagPoint(),
-                                               vtkm::TopologyElementTagCell());
+        auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
+                                               vtkm::TopologyElementTagPoint());
 
         output["topologies/topo/elements/connectivity"].set(vtkh::GetVTKMPointer(conn),
                                                              conn.GetNumberOfValues());
