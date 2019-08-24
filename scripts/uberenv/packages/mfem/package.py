@@ -49,6 +49,7 @@ class Mfem(Package):
     version('3.4.1-laghos-v2.0', tag='laghos-v2.0')
 
     version('4.0.0',
+            'acbc9ca4398f3cc19762abdc47654607',
             url='https://bit.ly/mfem-4-0', extension='.tar.gz',
             preferred=True)
 
