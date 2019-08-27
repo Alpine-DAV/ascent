@@ -83,7 +83,6 @@ Insitu ParaView visualization using the Ascent Extract interface
   - `module load gcc/7.4.0`
   - `spack compiler add`
   - `spack compiler remove gcc@4.8.5`
-  - Replace `modules: []` with `modules: [gcc/7.4.0]` in `~/.spack/linux/compilers.yaml`
   - add a file `~/.spack/packages.yaml` with the following content:
   ```
   packages:
