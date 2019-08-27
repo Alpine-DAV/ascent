@@ -34,11 +34,11 @@ class Vtkh(Package,CudaPackage):
     and DIY2 to provide a toolkit with hybrid parallel capabilities."""
 
     homepage = "https://github.com/Alpine-DAV/vtk-h"
-    git      = "https://github.com/Alpine-DAV/vtk-h.git"
+    git      = "https://github.com/danlipsa/vtk-h.git"
     maintainers = ['cyrush']
 
 
-    version('ascent_ver', commit='b8504989173666e009d9ceb37a690b8284e42146', submodules=True, preferred=True)
+    version('ascent_ver', branch='oliver_parallel', submodules=True, preferred=True)
     version('develop', branch='develop', submodules=True)
     version('0.1.0', branch='develop', tag='v0.1.0', submodules=True)
 

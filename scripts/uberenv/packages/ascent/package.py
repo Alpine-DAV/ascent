@@ -38,10 +38,11 @@ class Ascent(Package, CudaPackage):
     maintainers = ['cyrush']
 
     version('develop',
-            git='https://github.com/Alpine-DAV/ascent.git',
-            branch='develop',
+            git='https://github.com/danlipsa/ascent.git',
+            branch='oliver_parallel',
             submodules=True,
             preferred=True)
+
 
     ###########################################################################
     # package variants

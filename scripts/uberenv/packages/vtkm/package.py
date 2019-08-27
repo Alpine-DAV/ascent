@@ -18,7 +18,7 @@ class Vtkm(CMakePackage, CudaPackage):
 
     homepage = "https://m.vtk.org/"
     url      = "https://gitlab.kitware.com/api/v4/projects/vtk%2Fvtk-m/repository/archive.tar.gz?sha=v1.3.0"
-    git      = "https://gitlab.kitware.com/vtk/vtk-m.git"
+    git      = "https://gitlab.kitware.com/dcamp/vtk-m.git"
 
     # version used for ascent
     version('ascent_ver', commit='a4dfe50cd50b6827491ac6e760a6a60940d8ba17', preferred=True)
@@ -42,6 +42,7 @@ class Vtkm(CMakePackage, CudaPackage):
     variant("tbb", default=True, description="build TBB support")
     variant("64bitids", default=False,
             description="enable 64 bits ids")
+    variant("examples", default=False, description="built examples")
 
     depends_on("cmake")
 
@@ -113,6 +114,11 @@ class Vtkm(CMakePackage, CudaPackage):
                 options.append("-DVTKm_ENABLE_MPI:BOOL=ON")
             else:
                 options.append("-DVTKm_ENABLE_MPI:BOOL=OFF")
+
+            if "+examples" in spec:
+                options.append("-DVTKm_ENABLE_EXAMPLES:BOOL=ON")
+            else:
+                options.append("-DVTKm_ENABLE_EXAMPLES:BOOL=OFF")
 
             # openmp support
             if "+openmp" in spec:
