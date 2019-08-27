@@ -1,0 +1,13 @@
+#!/bin/bash
+# Begin LSF Directives
+#BSUB -P CSC340
+#BSUB -W 0:30
+#BSUB -nnodes 2
+#BSUB -J PVAMomentInvariants
+#BSUB -o PVAMomentInvariants.%J
+#BSUB -e PVAMomentInvariants.%J
+
+SPACK_HOME="$HOME/projects/spack"
+. ${SPACK_HOME}/share/spack/setup-env.sh
+jsrun -n 1 -a2 "$(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/cloverleaf3d_par"
+
