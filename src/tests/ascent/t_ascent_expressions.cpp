@@ -131,6 +131,26 @@ TEST(ascent_expressions, basic_expressions)
     }
     EXPECT_EQ(threw, true);
 
+    expr = "2.5 >= 2";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_uint8(), 1);
+    EXPECT_EQ(res["type"].as_string(), "boolean");
+    
+    expr = "(1 == 1) and (3 <= 3)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_uint8(), 1);
+    EXPECT_EQ(res["type"].as_string(), "boolean");
+
+    expr = "(2.3 != 2.3) or (3 > 3)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_uint8(), 0);
+    EXPECT_EQ(res["type"].as_string(), "boolean");
+
+    expr = "not (55 < 59)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_uint8(), 0);
+    EXPECT_EQ(res["type"].as_string(), "boolean");
+
     expr = "max(1, 2)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 2.0);
@@ -404,6 +424,92 @@ TEST(ascent_expressions, test_identifier)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_expressions, test_history)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    // ascent normally adds this but we are doing an end around
+    data["state/domain_id"] = 0;
+    Node multi_dom;
+    blueprint::mesh::to_multi_domain(data, multi_dom);
+
+    runtime::expressions::register_builtin();
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+
+    conduit::Node res;
+    std::string expr;
+
+
+    res = eval.evaluate("1", "val");
+    res = eval.evaluate("vector(1,2,3)", "vec");
+    data["state/cycle"] = 200;
+    res = eval.evaluate("2", "val");
+    res = eval.evaluate("vector(9,3,4)", "vec");
+    data["state/cycle"] = 300;
+    res = eval.evaluate("3", "val");
+    res = eval.evaluate("vector(3,4,0)", "vec");
+    data["state/cycle"] = 400;
+    res = eval.evaluate("4", "val");
+    res = eval.evaluate("vector(6,4,8)", "vec");
+
+
+    expr = "history(val, 2)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_int32(), 2);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    expr = "history(val, 3)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_int32(), 1);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    bool threw = false;
+    try
+    {
+      expr = "history(val, 10)";
+      res = eval.evaluate(expr);
+    }
+    catch(...)
+    {
+      threw = true;
+    }
+    EXPECT_EQ(threw, true);
+
+    threw = false;
+    try
+    {
+      expr = "history(vval, 10)";
+      res = eval.evaluate(expr);
+    }
+    catch(...)
+    {
+      threw = true;
+    }
+    EXPECT_EQ(threw, true);
+
+
+    expr = "history(vec, 2) - vector(1,1,1)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 8); // test the first val
+    EXPECT_EQ(res["type"].as_string(), "vector");
+
+    expr = "magnitude(history(vec, 1))";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 5); // test the first val
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+}
+//-----------------------------------------------------------------------------
+
 int main(int argc, char* argv[])
 {
     int result = 0;

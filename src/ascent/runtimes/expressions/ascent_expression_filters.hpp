@@ -106,6 +106,30 @@ public:
     virtual void   execute();
 };
 
+class History : public ::flow::Filter
+{
+public:
+    History();
+   ~History();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+class Boolean : public ::flow::Filter
+{
+public:
+    Boolean();
+   ~Boolean();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 class Integer : public ::flow::Filter
 {
 public:

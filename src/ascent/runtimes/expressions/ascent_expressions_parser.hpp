@@ -49,22 +49,25 @@ extern int yydebug;
     TINTEGER = 259,
     TDOUBLE = 260,
     TMESHVAR = 261,
-    TAEQ = 262,
-    TCEQ = 263,
-    TCNE = 264,
-    TCLT = 265,
-    TCLE = 266,
-    TCGT = 267,
-    TCGE = 268,
-    TLPAREN = 269,
-    TRPAREN = 270,
-    TCOMMA = 271,
-    TPLUS = 272,
-    TMINUS = 273,
-    TMUL = 274,
-    TDIV = 275,
-    TMOD = 276,
-    TNEG = 277
+    TOR = 262,
+    TAND = 263,
+    TNOT = 264,
+    TAEQ = 265,
+    TCEQ = 266,
+    TCNE = 267,
+    TCLT = 268,
+    TCLE = 269,
+    TCGT = 270,
+    TCGE = 271,
+    TLPAREN = 272,
+    TRPAREN = 273,
+    TCOMMA = 274,
+    TPLUS = 275,
+    TMINUS = 276,
+    TMUL = 277,
+    TDIV = 278,
+    TMOD = 279,
+    TNEG = 280
   };
 #endif
 
@@ -73,7 +76,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 16 "parser.y" /* yacc.c:1909  */
+#line 22 "parser.y" /* yacc.c:1909  */
 
  ASTNode                     *node;
  ASTExpression               *expr;
@@ -86,7 +89,7 @@ union YYSTYPE
  std::string                 *string;
  int token;
 
-#line 90 "parser.hpp" /* yacc.c:1909  */
+#line 93 "parser.hpp" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -98,6 +101,11 @@ typedef union YYSTYPE YYSTYPE;
 extern YYSTYPE yylval;
 
 int yyparse (void);
-ASTExpression *get_result();
+/* "%code provides" blocks.  */
+#line 17 "parser.y" /* yacc.c:1909  */
+
+  ASTExpression *get_result();
+
+#line 110 "parser.hpp" /* yacc.c:1909  */
 
 #endif /* !YY_YY_PARSER_HPP_INCLUDED  */

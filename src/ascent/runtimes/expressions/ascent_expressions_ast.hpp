@@ -16,6 +16,9 @@ public:
 };
 
 class ASTExpression : public ASTNode {
+public:
+  virtual void access();
+  virtual conduit::Node build_graph(flow::Workspace &w);
 };
 
 class ASTIdentifier : public ASTExpression {

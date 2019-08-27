@@ -74,17 +74,17 @@ namespace runtime
 namespace expressions
 {
 
-extern ASTExpression *expression;
-
 conduit::Node ExpressionEval::m_cache;
 conduit::Node g_function_table;
 
 void register_builtin()
 {
   flow::Workspace::register_filter_type<expressions::NullArg>();
+  flow::Workspace::register_filter_type<expressions::Boolean>();
   flow::Workspace::register_filter_type<expressions::Double>();
   flow::Workspace::register_filter_type<expressions::Integer>();
   flow::Workspace::register_filter_type<expressions::Identifier>();
+  flow::Workspace::register_filter_type<expressions::History>();
   flow::Workspace::register_filter_type<expressions::BinaryOp>();
   flow::Workspace::register_filter_type<expressions::MeshVar>();
   flow::Workspace::register_filter_type<expressions::ScalarMax>();
@@ -193,7 +193,7 @@ initialize_functions()
   conduit::Node &pos_sig = (*functions)["position"].append();
   pos_sig["return_type"] = "vector";
   pos_sig["filter_name"] = "expr_position";
-  pos_sig["args/arg1/type"] = "scalar"; // Should query result be differnt type?
+  pos_sig["args/arg1/type"] = "anytype"; // Should query result be differnt type?
   // -------------------------------------------------------------
 
   conduit::Node &cycle_sig = (*functions)["cycle"].append();
@@ -202,6 +202,7 @@ initialize_functions()
   cycle_sig["args"] = conduit::DataType::empty();
 
   // -------------------------------------------------------------
+
   conduit::Node &vector = (*functions)["vector"].append();
   vector["return_type"] = "vector";
   vector["filter_name"] = "vector";
@@ -210,12 +211,14 @@ initialize_functions()
   vector["args/arg3/type"] = "scalar";
 
   // -------------------------------------------------------------
+  
   conduit::Node &mag_sig= (*functions)["magnitude"].append();
   mag_sig["return_type"] = "scalar";
   mag_sig["filter_name"] = "magnitude";
   mag_sig["args/arg1/type"] = "vector";
 
   // -------------------------------------------------------------
+  
   conduit::Node &hist_sig= (*functions)["histogram"].append();
   hist_sig["return_type"] = "histogram";
   hist_sig["filter_name"] = "histogram";
@@ -227,9 +230,17 @@ initialize_functions()
   hist_sig["args/min_val/optional"];
   hist_sig["args/max_val/type"] = "scalar";
   hist_sig["args/max_val/optional"];
+  
+  // -------------------------------------------------------------
+  
+  conduit::Node &history_sig= (*functions)["history"].append();
+  history_sig["return_type"] = "anytype";
+  history_sig["filter_name"] = "history";
+  history_sig["args/expr_name/type"] = "anytype";
+  history_sig["args/index/type"] = "scalar";
 
   count_params();
-  // TODO: validate thar there are no ambiguities
+  // TODO: validate that there are no ambiguities
 }
 
 conduit::Node

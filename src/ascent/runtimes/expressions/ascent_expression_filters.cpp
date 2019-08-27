@@ -102,14 +102,11 @@ namespace detail
 
 bool is_math(const std::string &op)
 {
-  if(op == "*" || op == "+" || op == "/" || op == "-" || op == "%")
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+  return op == "*"
+         || op == "+"
+         || op == "/"
+         || op == "-"
+         || op == "%";
 }
 
 void
@@ -141,7 +138,13 @@ vector_op(const double lhs[3],
 template<typename T>
 T math_op(const T lhs, const T rhs, const std::string &op)
 {
-  T res;
+ASCENT_ERROR("unknown type: "<<typeid(T).name());
+}
+
+template<>
+double math_op(const double lhs, const double rhs, const std::string &op)
+{
+  double res;
   if(op == "+")
   {
     res = lhs + rhs;
@@ -160,7 +163,7 @@ T math_op(const T lhs, const T rhs, const std::string &op)
   }
   else
   {
-    ASCENT_ERROR("unknow math op "<<op<<" for type "<<typeid(T).name());
+    ASCENT_ERROR("unknown math op "<<op<<" for type double");
   }
   return res;
 }
@@ -169,13 +172,29 @@ template<>
 int math_op(const int lhs, const int rhs, const std::string &op)
 {
   int res;
-  if(op == "%")
+  if(op == "+")
+  {
+    res = lhs + rhs;
+  }
+  else if(op == "-")
+  {
+    res = lhs - rhs;
+  }
+  else if(op == "*")
+  {
+    res = lhs * rhs;
+  }
+  else if(op == "/")
+  {
+    res = lhs / rhs;
+  }
+  else if(op == "%")
   {
     res = lhs % rhs;
   }
   else
   {
-    ASCENT_ERROR("unknow math op "<<op<<" for type int");
+    ASCENT_ERROR("unknown math op "<<op<<" for type int");
   }
   return res;
 }
@@ -204,9 +223,35 @@ int comp_op(const T& lhs, const T& rhs, const std::string &op)
   {
     res = lhs == rhs;
   }
+  else if(op == "!=")
+  {
+    res = lhs != rhs;
+  }
   else
   {
-    ASCENT_ERROR("unknow comparison op "<<op);
+    ASCENT_ERROR("unknown comparison op "<<op);
+  }
+  return res;
+}
+
+bool boolean_op(const bool lhs, const bool rhs, const std::string &op)
+{
+  bool res;
+  if(op == "or")
+  {
+    res = lhs || rhs;
+  }
+  else if(op == "and")
+  {
+    res = lhs && rhs;
+  }
+  else if(op == "not")
+  {
+    res = !rhs;
+  }
+  else
+  {
+    ASCENT_ERROR("unknown boolean op "<<op);
   }
   return res;
 }
@@ -244,7 +289,6 @@ NullArg::verify_params(const conduit::Node &params,
     bool res = true;
     return res;
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -313,9 +357,60 @@ Identifier::execute()
    }
    // grab the last one calculated
    (*output) = (*cache)[i_name].child(entries - 1);
+   (*output)["atts/history"] = (*cache)[i_name];
    set_output<conduit::Node>(output);
 }
 
+//-----------------------------------------------------------------------------
+Boolean::Boolean()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Boolean::~Boolean()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Boolean::declare_interface(Node &i)
+{
+    i["type_name"]   = "expr_boolean";
+    i["port_names"] = DataType::empty();
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Boolean::verify_params(const conduit::Node &params,
+                       conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    if(!params.has_path("value"))
+    {
+       info["errors"].append() = "Missing required numeric parameter 'value'";
+       res = false;
+    }
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Boolean::execute()
+{
+
+   conduit::Node *output = new conduit::Node();
+   (*output)["value"] = params()["value"].to_uint8();
+   (*output)["type"] = "boolean";
+   set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 Integer::Integer()
 :Filter()
@@ -330,6 +425,7 @@ Integer::~Integer()
 }
 
 //-----------------------------------------------------------------------------
+
 void
 Integer::declare_interface(Node &i)
 {
@@ -512,6 +608,7 @@ BinaryOp::execute()
   const Node &lhs = (*n_lhs)["value"];
   const Node &rhs = (*n_rhs)["value"];
 
+
   bool lhs_is_vector = false;
   bool rhs_is_vector = false;
 
@@ -525,11 +622,30 @@ BinaryOp::execute()
     rhs_is_vector = true;
   }
 
-  if((rhs_is_vector && !lhs_is_vector) ||
-     (!rhs_is_vector && lhs_is_vector))
+  if(rhs_is_vector != lhs_is_vector)
   {
     ASCENT_ERROR("Mixed vector and scalar quantities not implemeneted / supported");
   }
+
+
+  bool lhs_is_boolean = false;
+  bool rhs_is_boolean = false;
+
+  if((*n_lhs)["type"].as_string() == "boolean")
+  {
+    lhs_is_boolean = true;
+  }
+
+  if((*n_rhs)["type"].as_string() == "boolean")
+  {
+    rhs_is_boolean = true;
+  }
+
+  if(rhs_is_boolean != lhs_is_boolean)
+  {
+    ASCENT_ERROR("Mixed boolean and non-boolean operation not supported");
+  }
+
 
   std::string op = params()["op_string"].as_string();
   bool is_math = detail::is_math(op);
@@ -539,18 +655,29 @@ BinaryOp::execute()
   {
     if(!is_math)
     {
-      ASCENT_ERROR("Boolean operators on vectors no allowed");
+      ASCENT_ERROR("Boolean operators on vectors not allowed");
     }
 
     double res[3];
-    detail::vector_op((*n_lhs)["value"].value(),
-                      (*n_rhs)["value"].value(),
+    detail::vector_op(lhs.value(),
+                      rhs.value(),
                       op,
                       res);
 
 
     (*output)["value"].set(res, 3);
     (*output)["type"] = "vector";
+  }
+  else if (rhs_is_boolean && lhs_is_boolean)
+  {
+    if(!(op == "or" || op == "and" || op == "not"))
+    {
+      ASCENT_ERROR("Only boolean operators are allowed on boolean values");
+    }
+    bool b_rhs = rhs.to_uint8();
+    bool b_lhs = lhs.to_uint8();
+    (*output)["value"] = detail::boolean_op(b_rhs, b_lhs, op);
+    (*output)["type"] = "boolean";
   }
   else
   {
@@ -1093,6 +1220,60 @@ Cycle::execute()
   (*output)["value"] = state;
   set_output<conduit::Node>(output);
 }
+
+//-----------------------------------------------------------------------------
+History::History()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+History::~History()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+History::declare_interface(Node &i)
+{
+    i["type_name"]   = "history";
+    i["port_names"].append() = "expr_name";
+    i["port_names"].append() = "index";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+History::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+History::execute()
+{
+  conduit::Node *output = new conduit::Node();
+  conduit::Node history = (*input<Node>("expr_name"))["atts/history"];
+  int index = (*input<Node>("index"))["value"].to_int32();
+
+  const int entries = history.number_of_children();
+  if(entries - index - 1 < 0)
+  {
+    ASCENT_ERROR("History: found only "<<entries<<" entries, cannot get "<<index<<" entries ago.");
+  }
+
+  // grab the value from index cycles ago
+  (*output) = history.child(entries - index - 1);
+  set_output<conduit::Node>(output);
+
+}
+
 //-----------------------------------------------------------------------------
 Vector::Vector()
 :Filter()

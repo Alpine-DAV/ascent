@@ -3,6 +3,7 @@
 #include "ascent_expressions_parser.hpp"
 #include <typeinfo>
 #include <unordered_set>
+#include <unordered_map>
 
 //-----------------------------------------------------------------------------
 // ascent includes
@@ -75,6 +76,30 @@ std::string print_match_error(const std::string &fname,
 
 }
 } // namespace detail
+
+void ASTExpression::access()
+{
+  std::cout << "placeholder expression" << std::endl;
+}
+
+conduit::Node ASTExpression::build_graph(flow::Workspace &w)
+{
+  // placeholder to make binary op work with "not"
+  if(!w.graph().has_filter("bop_placeholder"))
+  {
+    conduit::Node placeholder_params;
+    placeholder_params["value"] = true;
+    w.graph().add_filter("expr_boolean",
+                         "bop_placeholder",
+                         placeholder_params);
+
+  }
+  conduit::Node res;
+  res["filter_name"] = "bop_placeholder";
+  res["type"] = "boolean";
+  return res;
+}
+
 void ASTInteger::access()
 {
   std::cout << "Creating integer: " << m_value << endl;
@@ -166,7 +191,22 @@ conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
 
   conduit::Node res;
   res["filter_name"] = name;
-  res["type"] = "scalar";
+
+  
+  // get identifier type from cache
+  conduit::Node *cache = w.registry().fetch<conduit::Node>("cache");
+  if(!cache->has_path(m_name))
+  {
+    ASCENT_ERROR("Unknown expression identifier: '"<<m_name<<"'");
+  }
+
+  const int entries = (*cache)[m_name].number_of_children();
+  if(entries < 1)
+  {
+    ASCENT_ERROR("Expression identifier: needs a non-zero number of entires: "<<entries);
+  }
+  // grab the last one calculated
+  res["type"] = (*cache)[m_name].child(entries - 1)["type"];
   return res;
 }
 
@@ -304,7 +344,8 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
       {
         conduit::Node func_arg = func["args"].child(a);
         // validate types
-        if(pos_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
+        if(func_arg["type"].as_string() != "anytype" &&
+          pos_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
         {
           valid = false;
         }
@@ -340,7 +381,8 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
       conduit::Node func_arg = func["args"][named_arg_names[a]];
 
        // validate types
-      if(named_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
+      if(func_arg["type"].as_string() != "anytype" &&
+        named_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
       {
         valid = false;
       }
@@ -409,13 +451,19 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
                          name,
                          params);
 
+    // connect up all the arguments
     // src, dest, port
+
+    // keeps track of how things are connected
+    std::unordered_map<std::string, const conduit::Node*> args_map;
 
     // pass positional arguments
     for(int a = 0; a < pos_size; ++a)
     {
       const conduit::Node &arg = pos_arg_nodes[a];
       w.graph().connect(arg["filter_name"].as_string(),name,func_arg_names[a]);
+
+      args_map[func_arg_names[a]] = &arg;
     }
 
     // pass named arguments
@@ -423,6 +471,8 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
     {
       const conduit::Node &arg = named_arg_nodes[a];
       w.graph().connect(arg["filter_name"].as_string(),name,named_arg_names[a]);
+
+      args_map[named_arg_names[a]] = &arg;
     }
 
     // connect null filter to optional args that weren't passed in
@@ -432,7 +482,25 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
     }
 
     res["filter_name"] = name;
-    res["type"] = func["return_type"].as_string();
+
+    // evaluate what the return type will be
+    std::string res_type = func["return_type"].as_string();
+    // we will need special code (per function) to determine the correct return type
+    if(res_type == "anytype")
+    {
+      // the history function's return type is the same as the type of its first argument
+      if(func["filter_name"].as_string() == "history")
+      {
+        res_type = (*args_map.at("expr_name"))["type"].as_string();
+      }
+      else
+      {
+        ASCENT_ERROR("Could not determine the return type of "<<func["filter_name"].as_string());
+      }
+
+    }
+    
+    res["type"] = res_type;
   }
   else
   {
@@ -464,6 +532,9 @@ void ASTBinaryOp::access()
     case TCGE:    op_str = ">="; break;
     case TCGT:    op_str = ">"; break;
     case TCLT:    op_str = "<"; break;
+    case TOR:     op_str = "or"; break;
+    case TAND:    op_str = "and"; break;
+    case TNOT:    op_str = "not"; break;
     default: std::cout << "unknown binary op " << m_op << "\n";
 
   }
@@ -474,6 +545,16 @@ void ASTBinaryOp::access()
 
 }
 
+
+//TODO this is duplicated from ascent_expression_filters
+bool is_math(const std::string &op)
+{
+  return op == "*"
+         || op == "+"
+         || op == "/"
+         || op == "-"
+         || op == "%";
+}
 
 conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
 {
@@ -492,6 +573,9 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
     case TCGE:    op_str = ">="; break;
     case TCGT:    op_str = ">"; break;
     case TCLT:    op_str = "<"; break;
+    case TOR:     op_str = "or"; break;
+    case TAND:    op_str = "and"; break;
+    case TNOT:    op_str = "not"; break;
     default: std::cout << "unknown binary op " << m_op << "\n";
 
   }
@@ -526,12 +610,15 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
   }
 
   // evaluate what the return type will be
-  // For now, only scalar
 
   std::string res_type = "scalar";
-  if(l_type == "vector" && r_type == "vector")
+  if(l_type == "vector" || r_type == "vector")
   {
     res_type = "vector";
+  }
+  if(!is_math(op_str))
+  {
+    res_type = "boolean";
   }
 
   static int ast_op_counter = 0;
