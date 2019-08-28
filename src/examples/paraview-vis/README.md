@@ -47,7 +47,7 @@ Insitu ParaView visualization using the Ascent Extract interface
    - Test `proxies/cloverleaf3d`
      - `cd $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d`.
        For super-computers (summit) user directory is readonly on compute nodes so use:
-     `cd $MEMBER_WORK/csc340` instead.
+     `cd $MEMBERWORK/csc340` instead.
      - `ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview_ascent_source.py`
      - Execute: `ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview-vis-cloverleaf3d-momentinvariants.py paraview-vis.py`
      for MomentInvariants visualization or `ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview-vis-cloverleaf3d.py paraview-vis.py`
@@ -60,12 +60,10 @@ Insitu ParaView visualization using the Ascent Extract interface
      ln -s $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/ascent_options.json  
      ln -s $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/clover.in  
      ```
-     - replace `paraview_path` from paraview-vis.py
+     - Set `paraview_path` in paraview-vis.py
          with the result of `echo $(spack location --install-dir paraview)/lib/python*/site-packages`
-         Make sure home is not added twice. On summit you need to replace `lib` with `lib64` in `paraview_path`.
-     - replace `scriptName` from paraview-vis.py 
-         with the result of `$(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview_ascent_source.py`
-         Make sure home is not added twice.
+     - Set `scriptName` in paraview-vis.py
+         with the result of `echo $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview_ascent_source.py`
      - Run the simulation 
      `$(spack location --install-dir mpi)/bin/mpiexec -n 2 cloverleaf3d_par > output.txt 2>&1`
      - examine the generated VTK files the images
@@ -83,7 +81,6 @@ Insitu ParaView visualization using the Ascent Extract interface
   - `module load gcc/7.4.0`
   - `spack compiler add`
   - `spack compiler remove gcc@4.8.5`
-  - Replace `modules: []` with `modules: [gcc/7.4.0]` in `~/.spack/linux/compilers.yaml`
   - add a file `~/.spack/packages.yaml` with the following content:
   ```
   packages:
