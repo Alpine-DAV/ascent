@@ -299,7 +299,41 @@ public:
     virtual void   execute();
 };
 
+class Entropy : public ::flow::Filter
+{
+public:
+    Entropy();
+   ~Entropy();
 
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+class Pdf : public ::flow::Filter
+{
+public:
+    Pdf();
+   ~Pdf();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+class Cdf : public ::flow::Filter
+{
+public:
+    Cdf();
+   ~Cdf();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

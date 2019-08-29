@@ -96,6 +96,9 @@ void register_builtin()
   flow::Workspace::register_filter_type<expressions::Vector>();
   flow::Workspace::register_filter_type<expressions::Magnitude>();
   flow::Workspace::register_filter_type<expressions::Histogram>();
+  flow::Workspace::register_filter_type<expressions::Entropy>();
+  flow::Workspace::register_filter_type<expressions::Pdf>();
+  flow::Workspace::register_filter_type<expressions::Cdf>();
   flow::Workspace::register_filter_type<expressions::Cycle>();
 
   initialize_functions();
@@ -212,14 +215,14 @@ initialize_functions()
 
   // -------------------------------------------------------------
   
-  conduit::Node &mag_sig= (*functions)["magnitude"].append();
+  conduit::Node &mag_sig = (*functions)["magnitude"].append();
   mag_sig["return_type"] = "scalar";
   mag_sig["filter_name"] = "magnitude";
   mag_sig["args/arg1/type"] = "vector";
 
   // -------------------------------------------------------------
   
-  conduit::Node &hist_sig= (*functions)["histogram"].append();
+  conduit::Node &hist_sig = (*functions)["histogram"].append();
   hist_sig["return_type"] = "histogram";
   hist_sig["filter_name"] = "histogram";
   hist_sig["args/arg1/type"] = "meshvar";
@@ -233,11 +236,34 @@ initialize_functions()
   
   // -------------------------------------------------------------
   
-  conduit::Node &history_sig= (*functions)["history"].append();
+  conduit::Node &history_sig = (*functions)["history"].append();
   history_sig["return_type"] = "anytype";
   history_sig["filter_name"] = "history";
   history_sig["args/expr_name/type"] = "anytype";
   history_sig["args/index/type"] = "scalar";
+  
+  // -------------------------------------------------------------
+  
+  conduit::Node &entropy_sig = (*functions)["entropy"].append();
+  entropy_sig["return_type"] = "scalar";
+  entropy_sig["filter_name"] = "entropy";
+  entropy_sig["args/hist/type"] = "histogram";
+
+  // -------------------------------------------------------------
+  
+  conduit::Node &pdf_sig = (*functions)["pdf"].append();
+  pdf_sig["return_type"] = "scalar";
+  pdf_sig["filter_name"] = "pdf";
+  pdf_sig["args/arg1/type"] = "scalar";
+  pdf_sig["args/hist/type"] = "histogram";
+
+  // -------------------------------------------------------------
+  
+  conduit::Node &cdf_sig = (*functions)["cdf"].append();
+  cdf_sig["return_type"] = "scalar";
+  cdf_sig["filter_name"] = "cdf";
+  cdf_sig["args/arg1/type"] = "scalar";
+  cdf_sig["args/hist/type"] = "histogram";
 
   count_params();
   // TODO: validate that there are no ambiguities
@@ -282,6 +308,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   }
   catch(std::exception &e)
   {
+    delete expression;
     w.reset();
     ASCENT_ERROR("Error while executing expression '"<<expr<<"': "<<e.what());
   }

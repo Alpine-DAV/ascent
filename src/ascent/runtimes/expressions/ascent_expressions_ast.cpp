@@ -77,6 +77,7 @@ std::string print_match_error(const std::string &fname,
 }
 } // namespace detail
 
+//-----------------------------------------------------------------------------
 void ASTExpression::access()
 {
   std::cout << "placeholder expression" << std::endl;
@@ -100,6 +101,7 @@ conduit::Node ASTExpression::build_graph(flow::Workspace &w)
   return res;
 }
 
+//-----------------------------------------------------------------------------
 void ASTInteger::access()
 {
   std::cout << "Creating integer: " << m_value << endl;
@@ -129,6 +131,7 @@ conduit::Node ASTInteger::build_graph(flow::Workspace &w)
   return res;
 }
 
+//-----------------------------------------------------------------------------
 void ASTDouble::access()
 {
   std::cout << "Creating double: " << m_value << endl;
@@ -159,7 +162,7 @@ conduit::Node ASTDouble::build_graph(flow::Workspace &w)
   return res;
 }
 
-
+//-----------------------------------------------------------------------------
 void ASTIdentifier::access()
 {
   std::cout << "Creating identifier reference: " << m_name << endl;
@@ -210,6 +213,7 @@ conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
   return res;
 }
 
+//-----------------------------------------------------------------------------
 void NamedExpression::access()
 {
   key->access();
@@ -221,6 +225,7 @@ conduit::Node NamedExpression::build_graph(flow::Workspace &w)
   return value->build_graph(w);
 }
 
+//-----------------------------------------------------------------------------
 void ASTArguments::access()
 {
   if (pos_args != nullptr) {
@@ -241,6 +246,7 @@ void ASTArguments::access()
 
 }
 
+//-----------------------------------------------------------------------------
 void ASTMethodCall::access()
 {
   arguments->access();
@@ -514,6 +520,32 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
   return res;
 }
 
+//-----------------------------------------------------------------------------
+void ASTIfExpr::access()
+{
+  m_condition->access();
+  std::cout << "Creating if condition" << std::endl;
+
+  m_if->access();
+  std::cout << "Creating if body" << std::endl;
+
+  m_else->access();
+  std::cout << "Creating else body" << std::endl;
+
+  std::cout << "Creating if expression" << std::endl;
+}
+
+conduit::Node ASTIfExpr::build_graph(flow::Workspace &w)
+{
+  conduit::Node n_condition = m_condition->build_graph(w);
+  conduit::Node n_if = m_if->build_graph(w);
+  conduit::Node n_else = m_else->build_graph(w);
+
+  // Validate types
+  const std::string condition_type = n_condition["type"].as_string();
+}
+
+//-----------------------------------------------------------------------------
 void ASTBinaryOp::access()
 {
   //std::cout << "Creating binary operation " << m_op << endl;
@@ -635,7 +667,7 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
                        name,
                        params);
 
-  // // src, dest, port
+  // src, dest, port
   w.graph().connect(r_in["filter_name"].as_string(),name,"rhs");
   w.graph().connect(l_in["filter_name"].as_string(),name,"lhs");
 
@@ -646,6 +678,7 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
   return res;
 }
 
+//-----------------------------------------------------------------------------
 void ASTMeshVar::access()
 {
   //std::cout << "Creating mesh var " << m_name << endl;

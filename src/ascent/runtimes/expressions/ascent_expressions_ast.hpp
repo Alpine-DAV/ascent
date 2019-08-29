@@ -121,7 +121,7 @@ public:
   int m_op;
   ASTExpression *m_lhs;
   ASTExpression *m_rhs;
-  ASTBinaryOp(ASTExpression* lhs, int op, ASTExpression* rhs) :
+  ASTBinaryOp(ASTExpression *lhs, int op, ASTExpression *rhs) :
     m_lhs(lhs), m_rhs(rhs), m_op(op) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
@@ -130,6 +130,24 @@ public:
   {
     delete m_lhs;
     delete m_rhs;
+  }
+};
+
+class ASTIfExpr : public ASTExpression {
+public:
+  ASTExpression *m_condition;
+  ASTExpression *m_if;
+  ASTExpression *m_else;
+  ASTIfExpr(ASTExpression *m_condition, ASTExpression *m_if, ASTExpression *m_else) :
+    m_condition(m_condition), m_if(m_if), m_else(m_else) { }
+  virtual void access();
+  virtual conduit::Node build_graph(flow::Workspace &w);
+
+  virtual ~ASTIfExpr()
+  {
+    delete m_condition;
+    delete m_if;
+    delete m_else;
   }
 };
 #endif

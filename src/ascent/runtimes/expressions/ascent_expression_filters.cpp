@@ -1490,7 +1490,7 @@ Histogram::execute()
     min_val = field_min(*dataset, field)["value"].to_float64();
   }
 
-  if(min_val >=  max_val)
+  if(min_val >= max_val)
   {
     ASCENT_ERROR("Histogram: min value ("<<min_val<<") must be smaller than max ("<<max_val<<")");
   }
@@ -1504,6 +1504,187 @@ Histogram::execute()
   set_output<conduit::Node>(output);
 }
 
+//-----------------------------------------------------------------------------
+Entropy::Entropy()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Entropy::~Entropy()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Entropy::declare_interface(Node &i)
+{
+    i["type_name"]   = "entropy";
+    i["port_names"].append() = "hist";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Entropy::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Entropy::execute()
+
+{
+  const conduit::Node *hist = input<conduit::Node>("hist");
+
+  if((*hist)["type"].as_string() != "histogram")
+  {
+    ASCENT_ERROR("Entropy: hist must be a histogram");
+  }
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = field_entropy(*hist)["value"];
+  (*output)["type"] = "scalar";
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Pdf::Pdf()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Pdf::~Pdf()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Pdf::declare_interface(Node &i)
+{
+    i["type_name"]   = "pdf";
+    i["port_names"].append() = "arg1";
+    i["port_names"].append() = "hist";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Pdf::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Pdf::execute()
+
+{
+  const conduit::Node *arg1 = input<conduit::Node>("arg1");
+  const conduit::Node *hist = input<conduit::Node>("hist");
+
+  if((*arg1)["type"].as_string() != "scalar")
+  {
+    ASCENT_ERROR("Pdf: arg1 must be a scalar");
+  }
+
+  if((*hist)["type"].as_string() != "histogram")
+  {
+    ASCENT_ERROR("Pdf: hist must be a histogram");
+  }
+
+  double val = (*arg1)["value"].to_float64();
+  double hist_min_val =(*hist)["min_val"].to_float64(); 
+  double hist_max_val =(*hist)["max_val"].to_float64(); 
+
+  if(val < hist_min_val || val > hist_max_val)
+  {
+    ASCENT_ERROR("Pdf: arg1 must within the bounds of hist ["<<hist_min_val<<", "<<hist_max_val<<"]");
+  }
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = field_pdf(val, *hist)["value"];
+  (*output)["type"] = "scalar";
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Cdf::Cdf()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Cdf::~Cdf()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Cdf::declare_interface(Node &i)
+{
+    i["type_name"]   = "cdf";
+    i["port_names"].append() = "arg1";
+    i["port_names"].append() = "hist";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Cdf::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Cdf::execute()
+
+{
+  const conduit::Node *arg1 = input<conduit::Node>("arg1");
+  const conduit::Node *hist = input<conduit::Node>("hist");
+
+  if((*arg1)["type"].as_string() != "scalar")
+  {
+    ASCENT_ERROR("Cdf: arg1 must be a scalar");
+  }
+
+  if((*hist)["type"].as_string() != "histogram")
+  {
+    ASCENT_ERROR("Cdf: hist must be a histogram");
+  }
+
+  double val = (*arg1)["value"].to_float64();
+  double hist_min_val =(*hist)["min_val"].to_float64(); 
+  double hist_max_val =(*hist)["max_val"].to_float64(); 
+
+  if(val < hist_min_val || val > hist_max_val)
+  {
+    ASCENT_ERROR("Cdf: arg1 must within the bounds of hist ["<<hist_min_val<<", "<<hist_max_val<<"]");
+  }
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = field_cdf(val, *hist)["value"];
+  (*output)["type"] = "scalar";
+  set_output<conduit::Node>(output);
+}
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

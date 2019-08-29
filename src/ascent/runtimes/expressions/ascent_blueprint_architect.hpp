@@ -97,6 +97,11 @@ conduit::Node field_histogram(const conduit::Node &dataset,
                               const double &max_val,
                               const int &num_bins);
 
+conduit::Node field_entropy(const conduit::Node &hist);
+
+conduit::Node field_pdf(const double val, const conduit::Node &hist);
+conduit::Node field_cdf(const double val, const conduit::Node &hist);
+
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);
 

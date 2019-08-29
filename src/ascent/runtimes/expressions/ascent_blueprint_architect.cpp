@@ -56,6 +56,7 @@
 
 #include <cstring>
 #include <limits>
+#include <cmath>
 
 #include <flow_workspace.hpp>
 
@@ -686,14 +687,89 @@ field_histogram(const conduit::Node &dataset,
   int *global_bins = new int[num_bins];
 
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  MPI_Allreduce( bins, global_bins, num_bins, MPI_INT, MPI_SUM, mpi_comm);
+  MPI_Allreduce(bins, global_bins, num_bins, MPI_INT, MPI_SUM, mpi_comm);
 
   int *tmp = bins;
   bins = global_bins;
   delete[] tmp;
 #endif
   res["value"].set(bins, num_bins);
+  res["min_val"] = min_val;
+  res["max_val"] = max_val;
+  res["num_bins"] = num_bins;
   delete[] bins;
+  return res;
+}
+
+conduit::Node
+field_entropy(const conduit::Node &hist)
+{
+  const int *hist_bins = hist["value"].value();
+  int num_bins = hist["num_bins"].to_int32();
+  double sum = array_sum(hist["value"])["value"].to_float64();
+  double entropy = 0;
+  double p;
+
+#ifdef ASCENT_USE_OPENMP
+      #pragma omp parallel for
+#endif
+  for(int b = 0; b < num_bins; ++b)
+  {
+    if(hist_bins[b] != 0)
+    {
+      p = hist_bins[b] / sum;
+      entropy += -p * std::log(p);
+    }
+  }
+  
+  conduit::Node res;
+  res["value"] = entropy;
+  return res;
+}
+
+conduit::Node
+field_pdf(const double val, const conduit::Node &hist)
+{
+  const int *hist_bins = hist["value"].value();
+  int num_bins = hist["num_bins"].to_int32();
+  double min_val =  hist["min_val"].to_float64();
+  double max_val =  hist["max_val"].to_float64();
+
+  double sum = array_sum(hist["value"])["value"].to_float64();
+
+  const double inv_delta = num_bins / (max_val - min_val);
+  int bin_index = static_cast<int>((val - min_val) * inv_delta);
+
+  conduit::Node res;
+  res["value"] = hist_bins[bin_index] / sum;
+  return res;
+}
+
+conduit::Node
+field_cdf(const double val, const conduit::Node &hist)
+{
+  const int *hist_bins = hist["value"].value();
+  int num_bins = hist["num_bins"].to_int32();
+  double min_val =  hist["min_val"].to_float64();
+  double max_val =  hist["max_val"].to_float64();
+
+  double sum = array_sum(hist["value"])["value"].to_float64();
+
+  const double inv_delta = num_bins / (max_val - min_val);
+  int bin_index = static_cast<int>((val - min_val) * inv_delta);
+
+  double cdf = 0;
+
+#ifdef ASCENT_USE_OPENMP
+      #pragma omp parallel for
+#endif
+  for(int b = 0; b <= bin_index; ++b)
+  {
+    cdf += hist_bins[b] / sum;
+  }
+
+  conduit::Node res;
+  res["value"] = cdf;
   return res;
 }
 
@@ -777,9 +853,10 @@ field_min(const conduit::Node &dataset,
 }
 
 conduit::Node
-field_avg(const conduit::Node &dataset,
+field_sum(const conduit::Node &dataset,
           const std::string &field)
 {
+  
   double sum = 0.;
   long long int count = 0;
 
@@ -814,10 +891,22 @@ field_avg(const conduit::Node &dataset,
   count = global_count;
 #endif
 
-  double avg = sum / double(count);
+  conduit::Node res;
+  res["value"] = sum;
+  res["count"] = count;
+  return res;
+}
+
+conduit::Node
+field_avg(const conduit::Node &dataset,
+          const std::string &field)
+{
+  conduit::Node sum = field_sum(dataset, field);
+
+  double avg = sum["value"].as_float64() / sum["count"].as_float64();
+
   conduit::Node res;
   res["value"] = avg;
-
   return res;
 }
 

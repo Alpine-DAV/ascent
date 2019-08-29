@@ -54,7 +54,7 @@
 #include <ascent_expression_eval.hpp>
 
 #include <iostream>
-#include <math.h>
+#include <cmath>
 
 #include <conduit_blueprint.hpp>
 
@@ -227,10 +227,6 @@ TEST(ascent_expressions, basic_expressions)
     EXPECT_EQ(res["value"].to_float64(), 100);
     EXPECT_EQ(res["type"].as_string(), "scalar");
 
-    expr = "position(max(\"braid\"))";
-    res = eval.evaluate(expr);
-    EXPECT_EQ(res["type"].as_string(), "vector");
-
     expr = "magnitude(position(max(\"braid\"))) > 0";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 1);
@@ -238,27 +234,56 @@ TEST(ascent_expressions, basic_expressions)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_expressions, expressions_optional_params)
+TEST(ascent_expressions, functional_correctness)
 {
-    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping test");
-        return;
-    }
 
     //
     // Create an example mesh.
     //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
+    Node data;
+
+    // create the coordinate set
+    data["coordsets/coords/type"] = "uniform";
+    data["coordsets/coords/dims/i"] = 5;
+    data["coordsets/coords/dims/j"] = 5;
+    // add origin and spacing to the coordset (optional)
+    data["coordsets/coords/origin/x"] = -10.0;
+    data["coordsets/coords/origin/y"] = -10.0;
+    data["coordsets/coords/spacing/dx"] = 10.0;
+    data["coordsets/coords/spacing/dy"] = 10.0;
+
+    // add the topology
+    // this case is simple b/c it's implicitly derived from the coordinate set
+    data["topologies/topo/type"] = "uniform";
+    // reference the coordinate set by name
+    data["topologies/topo/coordset"] = "coords";
+
+    // add a simple element-associated field 
+    data["fields/ele_example/association"] =  "element";
+    // reference the topology this field is defined on by name
+    data["fields/ele_example/topology"] =  "topo";
+    // set the field values, for this case we have 9 elements
+    data["fields/ele_example/values"].set(DataType::float64(16));
+
+    float64 *ele_vals_ptr = data["fields/ele_example/values"].value();
+
+    for(int i = 0; i < 16; i++)
+    {
+        ele_vals_ptr[i] = float64(i);
+    }
+
+    data["state/cycle"] = 100;
+
+    // make sure we conform:
+    Node verify_info;
+    if(!blueprint::mesh::verify(data, verify_info))
+    {
+        std::cout << "Verify failed!" << std::endl;
+        verify_info.print();
+    }
+
     // ascent normally adds this but we are doing an end around
     data["state/domain_id"] = 0;
     Node multi_dom;
@@ -266,25 +291,34 @@ TEST(ascent_expressions, expressions_optional_params)
 
     runtime::expressions::register_builtin();
     runtime::expressions::ExpressionEval eval(&multi_dom);
-    // test optional parameters
-    std::string expr;
+
     conduit::Node res;
-    expr = "histogram(\"braid\")";
-    res = eval.evaluate(expr);
-    EXPECT_EQ(res["value"].dtype().number_of_elements(), 256);
-    EXPECT_EQ(res["type"].as_string(), "histogram");
+    std::string expr;
 
-    expr = "histogram(\"braid\", 10)";
+    expr = "position(max(\"ele_example\"))";
     res = eval.evaluate(expr);
-    EXPECT_EQ(res["value"].dtype().number_of_elements(), 10);
-    EXPECT_EQ(res["type"].as_string(), "histogram");
+    EXPECT_EQ(res["value"].as_float64(), 25);
+    EXPECT_EQ(res["type"].as_string(), "vector");
 
-    expr = "histogram(\"braid\",10,0,1)";
+    expr = "entropy(histogram(\"ele_example\"))";
     res = eval.evaluate(expr);
-    EXPECT_EQ(res["value"].dtype().number_of_elements(), 10);
-    EXPECT_EQ(res["min_val"].to_float64(), 0);
-    EXPECT_EQ(res["max_val"].to_float64(), 1);
-    EXPECT_EQ(res["type"].as_string(), "histogram");
+    EXPECT_EQ(res["value"].as_float64(), -std::log(1.0/16.0));
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    expr = "cdf(5.0, histogram(\"ele_example\"))";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].as_float64(), .375);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    expr = "pdf(5, histogram(\"ele_example\"))";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].as_float64(), 1.0/16.0);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
+
+    expr = "pdf(4.5, histogram(\"ele_example\"))";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].as_float64(), 0);
+    EXPECT_EQ(res["type"].as_string(), "scalar");
 }
 
 //-----------------------------------------------------------------------------
@@ -488,7 +522,7 @@ TEST(ascent_expressions, test_history)
     threw = false;
     try
     {
-      expr = "history(vval, 10)";
+      expr = "history(vval, 1)";
       res = eval.evaluate(expr);
     }
     catch(...)
