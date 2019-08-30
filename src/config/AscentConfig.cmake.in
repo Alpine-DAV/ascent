@@ -62,6 +62,9 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_INSTALL_PREFIX "@ASCENT_INSTALL_PREFIX@")
     set(ASCENT_CONDUIT_DIR  "@CONDUIT_DIR@")
 
+    # advertise if fortran support is enabled
+    set(ASCENT_FORTRAN_ENABLED @ENABLE_FORTRAN@)
+
     # advertise if vtk-h support is enabled
     set(ASCENT_VTKH_ENABLED @VTKH_FOUND@)
     set(ASCENT_VTKH_DIR "@VTKH_DIR@")
@@ -71,9 +74,11 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_MFEM_ENABLED @MFEM_FOUND@)
     set(ASCENT_MFEM_DIR "@MFEM_DIR@")
 
-
+    # advertise if python support is enabled
+    set(ASCENT_PYTHON_ENABLED @PYTHON_FOUND@)
     set(ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
     
+    set(ASCENT_SERIAL_ENABLED @ENABLE_SERIAL@)
     set(ASCENT_MPI_ENABLED @ENABLE_MPI@)
 
     # pull in vars with details about configured paths
