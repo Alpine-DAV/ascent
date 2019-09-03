@@ -38,6 +38,11 @@ Insitu ParaView visualization using the Ascent Extract interface
 * Install Ascent
   - `spack install ascent~vtkh^python@3.7.4`
      Make sure you match the python version used by ParaView
+  - If you need ascent built with vtkh you can use
+    `spack install ascent^python@3.7.4`. Note that the patch applied earlier
+    select specific version of `vtkh` and `vtkm` that work with latest ascent.
+    Those versions were backported from `ascent/scripts/uberenv/packages/`
+    `vtkh/package.py` and `vtkm/package.py`.
 * Load required modules
   - `spack load conduit;spack load py-numpy;spack load py-mpi4py;spack load paraview`
 * Continue with `4. Common installation instructions`
@@ -65,14 +70,14 @@ Insitu ParaView visualization using the Ascent Extract interface
      - Set `scriptName` in paraview-vis.py
          with the result of `echo $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview_ascent_source.py`
      - Run the simulation 
-     `$(spack location --install-dir mpi)/bin/mpiexec -n 2 cloverleaf3d_par > output.txt 2>&1`
+     `$(spack location --install-dir mpi)/bin/mpiexec -n 2 ./cloverleaf3d_par > output.txt 2>&1`
      - examine the generated VTK files the images
    - Similarily test: `proxies/kripke`, `proxies/laghos`, `proxies/lulesh` (you need to create the links)
-     - `$(spack location --install-dir mpi)/bin/mpiexec -np 8 kripke_par --procs 2,2,2 --zones 32,32,32 --niter 5 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4 > output.txt 2>&1`
+     - `$(spack location --install-dir mpi)/bin/mpiexec -np 8 ./kripke_par --procs 2,2,2 --zones 32,32,32 --niter 5 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4 > output.txt 2>&1`
      - `$(spack location --install-dir mpi)/bin/mpiexec -n 8 ./laghos_mpi -p 1 -m data/cube01_hex.mesh -rs 2 -tf 0.6 -visit -pa > output.txt 2>&1`
-     - `$(spack location --install-dir mpi)/bin/mpiexec -np 8 lulesh_par -i 10 -s 32 > output.txt 2>&1`
+     - `$(spack location --install-dir mpi)/bin/mpiexec -np 8 ./lulesh_par -i 10 -s 32 > output.txt 2>&1`
    - Test noise from `synthetic/noise`
-     - `$(spack location --install-dir mpi)/bin/mpiexec -np 8 noise_par  --dims=32,32,32 --time_steps=5 --time_delta=1 > output.txt 2>&1`
+     - `$(spack location --install-dir mpi)/bin/mpiexec -np 8 ./noise_par  --dims=32,32,32 --time_steps=5 --time_delta=1 > output.txt 2>&1`
 
 # 5. Compile and run on summit.olcf.ornl.gov
 * Execute only `2. Installation instructions for spack devel` and
