@@ -80,6 +80,7 @@ Scheduler<FloatType>::get_global_channels()
   }
 #ifdef ROVER_PARALLEL
   vtkmTimer timer;
+  timer.Start();
   double time = 0;
   (void) time;
   int mpi_num_channels;
@@ -99,6 +100,7 @@ Scheduler<FloatType>::set_global_scalar_range()
 {
 
   vtkmTimer timer;
+  timer.Start();
   double time = 0;
   (void) time;
 
@@ -147,6 +149,7 @@ void
 Scheduler<FloatType>::set_global_bounds()
 {
   vtkmTimer timer;
+  timer.Start();
   double time = 0;
 
   const int num_domains = static_cast<int>(m_domains.size());
@@ -356,6 +359,8 @@ Scheduler<FloatType>::trace_rays()
   ROVER_INFO("tracing_rays");
   vtkmTimer tot_timer;
   vtkmTimer timer;
+  tot_timer.Start();
+  timer.Start();
   double time = 0;
   (void) time;
   ROVER_DATA_OPEN("schedule_trace");
@@ -394,9 +399,11 @@ Scheduler<FloatType>::trace_rays()
   this->set_global_bounds();
 
   vtkmTimer trace_timer;
+  trace_timer.Start();
   for(int i = 0; i < num_domains; ++i)
   {
     vtkmTimer domain_timer;
+    domain_timer.Start();
     std::stringstream domain_s;
     domain_s<<"trace_domain_"<<i;
     ROVER_DATA_OPEN(domain_s.str());
@@ -412,7 +419,7 @@ Scheduler<FloatType>::trace_rays()
     }
     ROVER_INFO("Generating rays for domian "<<i);
 
-    timer.Reset();
+    timer.Start();
 
     vtkmRayTracing::Ray<FloatType> rays;
     m_ray_generator->get_rays(rays);
@@ -424,7 +431,7 @@ Scheduler<FloatType>::trace_rays()
 
     ROVER_INFO("Tracing domain "<<i);
 
-    timer.Reset();
+    timer.Start();
     std::vector<vtkmRayTracing::PartialComposite<FloatType>> partials;
     partials = m_domains[i].partial_trace(rays);
     time = timer.GetElapsedTime();
@@ -441,7 +448,7 @@ Scheduler<FloatType>::trace_rays()
       add_partial(partials[p], width, height);
     }
 
-    timer.Reset();
+    timer.Start();
     time = timer.GetElapsedTime();
     ROVER_DATA_ADD("domain_push_back", time);
 
@@ -450,12 +457,13 @@ Scheduler<FloatType>::trace_rays()
     ROVER_INFO("Schedule: done tracing domain "<<i);
   }// for each domain
 
-  timer.Reset();
+  timer.Start();
   time = trace_timer.GetElapsedTime();
   ROVER_DATA_ADD("total_trace", time);
   int num_channels = this->get_global_channels();
 
   vtkmTimer t1;
+  t1.Start();
 
   // Add dummy partial image if we had no domains
 
@@ -475,7 +483,7 @@ Scheduler<FloatType>::trace_rays()
   }
   //DataLogger::GetInstance()->AddLogData("blank_image", t1.GetElapsedTime());
   //ROVER_DATA_ADD("blank_image", t1.GetElapsedTime());
-  t1.Reset();
+  t1.Start();
 
   if(m_background.size() == 0)
   {
@@ -483,20 +491,20 @@ Scheduler<FloatType>::trace_rays()
   }
 
   ROVER_DATA_ADD("default_bg", t1.GetElapsedTime());
-  t1.Reset();
+  t1.Start();
 
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("mid", t1.GetElapsedTime());
-  timer.Reset();
+  timer.Start();
 
   //
   // Composite the results
   //
-  timer.Reset();
+  timer.Start();
   composite();
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("compositing", time);
-  timer.Reset();
+  timer.Start();
 
   m_partial_images.clear();
   time = timer.GetElapsedTime();

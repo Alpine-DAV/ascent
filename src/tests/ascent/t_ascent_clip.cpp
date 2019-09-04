@@ -116,7 +116,6 @@ TEST(ascent_clip, test_clip_sphere)
     pipelines["pl1/f1/type"] = "clip";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
     clip_params["sphere/radius"] = 11.;
     clip_params["sphere/center/x"] = 0.;
     clip_params["sphere/center/y"] = 0.;
@@ -205,7 +204,6 @@ TEST(ascent_clip, test_clip_inverted_sphere)
     pipelines["pl1/f1/type"] = "clip";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
     clip_params["invert"] = "true";
     clip_params["sphere/radius"] = 11.;
     clip_params["sphere/center/x"] = 0.;
@@ -294,7 +292,6 @@ TEST(ascent_clip, test_clip_box)
     pipelines["pl1/f1/type"] = "clip";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
     clip_params["box/min/x"] = 0.;
     clip_params["box/min/y"] = 0.;
     clip_params["box/min/z"] = 0.;
@@ -385,7 +382,6 @@ TEST(ascent_clip, test_clip_plane)
     pipelines["pl1/f1/type"] = "clip";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
     clip_params["plane/point/x"] = 0.;
     clip_params["plane/point/y"] = 0.;
     clip_params["plane/point/z"] = 0.;
