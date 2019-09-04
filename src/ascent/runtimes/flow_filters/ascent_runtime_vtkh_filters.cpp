@@ -1649,7 +1649,6 @@ VTKHClip::verify_params(const conduit::Node &params,
     valid_paths.push_back("plane/normal/x");
     valid_paths.push_back("plane/normal/y");
     valid_paths.push_back("plane/normal/z");
-    valid_paths.push_back("topology");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -1677,12 +1676,6 @@ VTKHClip::execute()
     vtkh::Clip clipper;
 
     clipper.SetInput(data);
-
-    if(params().has_child("topology"))
-    {
-      std::string topology = params()["topology"].as_string();
-      clipper.SetCellSet(topology);
-    }
 
     if(params().has_path("sphere"))
     {
