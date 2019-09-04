@@ -295,24 +295,11 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   const T *values_ptr = node.value();
 
   vtkm::cont::Field field;
-  if(assoc_str == "vertex")
-  {
-    field = vtkm::cont::make_Field(field_name,
-                                   vtkm_assoc,
-                                   values_ptr,
-                                   num_vals,
-                                   copy);
-  }
-  else
-  {
-    field = vtkm::cont::make_Field(field_name,
-                                   vtkm_assoc,
-                                   topo_str,
-                                   values_ptr,
-                                   num_vals,
-                                   copy);
-  }
-
+  field = vtkm::cont::make_Field(field_name,
+                                 vtkm_assoc,
+                                 values_ptr,
+                                 num_vals,
+                                 copy);
   return field;
 }
 
@@ -345,23 +332,11 @@ vtkm::cont::Field GetVectorField(T *values_ptr,
   }
 
   vtkm::cont::Field field;
-  if(assoc_str == "vertex")
-  {
-    field = vtkm::cont::make_Field(field_name,
-                                   vtkm_assoc,
-                                   values_ptr,
-                                   num_vals,
-                                   copy);
-  }
-  else
-  {
-    field = vtkm::cont::make_Field(field_name,
-                                   vtkm_assoc,
-                                   topo_str,
-                                   values_ptr,
-                                   num_vals,
-                                   copy);
-  }
+  field = vtkm::cont::make_Field(field_name,
+                                 vtkm_assoc,
+                                 values_ptr,
+                                 num_vals,
+                                 copy);
 
   return field;
 }
@@ -432,16 +407,8 @@ void ExtractVector(vtkm::cont::DataSet *dset,
                  <<assoc_str<<" field_name "<<field_name);
   }
 
-  if(assoc_str == "vertex")
-  {
-    vtkm::cont::Field field(field_name, vtkm_assoc, interleaved_handle);
-    dset->AddField(field);
-  }
-  else
-  {
-    vtkm::cont::Field field(field_name, vtkm_assoc, topo_name, interleaved_handle);
-    dset->AddField(field);
-  }
+  vtkm::cont::Field field(field_name, vtkm_assoc, interleaved_handle);
+  dset->AddField(field);
 }
 
 
@@ -868,15 +835,15 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
     if(is_2d)
     {
       vtkm::Id2 dims2(dims[0], dims[1]);
-      vtkm::cont::CellSetStructured<2> cell_set(topo_name.c_str());
+      vtkm::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(dims2);
-      result->AddCellSet(cell_set);
+      result->SetCellSet(cell_set);
     }
     else
     {
-      vtkm::cont::CellSetStructured<3> cell_set(topo_name.c_str());
+      vtkm::cont::CellSetStructured<3> cell_set;
       cell_set.SetPointDimensions(dims);
-      result->AddCellSet(cell_set);
+      result->SetCellSet(cell_set);
     }
 
     neles =  (dims_i - 1) * (dims_j - 1);
@@ -983,18 +950,18 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
 
     if (ndims == 2)
     {
-      vtkm::cont::CellSetStructured<2> cell_set(topo_name.c_str());
+      vtkm::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_npts,
                                                  y_npts));
-      result->AddCellSet(cell_set);
+      result->SetCellSet(cell_set);
     }
     else
     {
-      vtkm::cont::CellSetStructured<3> cell_set(topo_name.c_str());
+      vtkm::cont::CellSetStructured<3> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_npts,
                                                  y_npts,
                                                  z_npts));
-      result->AddCellSet(cell_set);
+      result->SetCellSet(cell_set);
     }
 
     nverts = x_npts * y_npts;
@@ -1052,20 +1019,20 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
     int32 y_elems = n_topo["elements/dims/j"].as_int32();
     if (ndims == 2)
     {
-      vtkm::cont::CellSetStructured<2> cell_set(topo_name.c_str());
+      vtkm::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
                                                  y_elems+1));
-      result->AddCellSet(cell_set);
+      result->SetCellSet(cell_set);
       neles = x_elems * y_elems;
     }
     else
     {
       int32 z_elems = n_topo["elements/dims/k"].as_int32();
-      vtkm::cont::CellSetStructured<3> cell_set(topo_name.c_str());
+      vtkm::cont::CellSetStructured<3> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
                                                  y_elems+1,
                                                  z_elems+1));
-      result->AddCellSet(cell_set);
+      result->SetCellSet(cell_set);
       neles = x_elems * y_elems * z_elems;
 
     }
@@ -1170,7 +1137,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     vtkm::cont::CellSetSingleType<> cellset;
     cellset.Fill(nverts, shape_id, indices_per, connectivity);
     neles = cellset.GetNumberOfCells();
-    result->AddCellSet(cellset);
+    result->SetCellSet(cellset);
 
     return result;
 }
@@ -1268,7 +1235,6 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             {
                 dset->AddField(vtkm::cont::Field(field_name.c_str(),
                                                  vtkm::cont::Field::Association::CELL_SET,
-                                                 topo_name.c_str(),
                                                  vtkm_arr));
             }
         }
@@ -1439,9 +1405,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
                                          const vtkm::cont::DataSet &data_set)
 {
 
-  const int default_cell_set = 0;
   int topo_dims;
-  bool is_structured = vtkh::VTKMDataSetInfo::IsStructured(data_set, topo_dims, default_cell_set);
+  bool is_structured = vtkh::VTKMDataSetInfo::IsStructured(data_set, topo_dims);
   bool is_uniform = vtkh::VTKMDataSetInfo::IsUniform(data_set);
   bool is_rectilinear = vtkh::VTKMDataSetInfo::IsRectilinear(data_set);
   vtkm::cont::CoordinateSystem coords = data_set.GetCoordinateSystem();
