@@ -27,22 +27,11 @@ std::string print_match_error(const std::string &fname,
   ss << fname << "(";
   for(int i = 0; i < pos_arg_nodes.size(); ++i)
   {
-    ss << ((i == 0)? "" : ", ")  << pos_arg_nodes[i]["type"].as_string();
+    ss << ((i == 0)? "" : ", ") << pos_arg_nodes[i]["type"].as_string();
   }
   for(int i = 0; i < named_arg_nodes.size(); ++i)
   {
-    if(i == 0)
-    {
-      if(pos_arg_nodes.size() > 0)
-      {
-        ss << ", ";
-      }
-    }
-    else
-    {
-      ss << ", ";
-    }
-    ss << named_arg_names[i] << "=" << named_arg_nodes[i]["type"].as_string();
+    ss << ", " << named_arg_names[i] << "=" << named_arg_nodes[i]["type"].as_string();
   }
   ss << ")" << std::endl;
 
@@ -55,7 +44,7 @@ std::string print_match_error(const std::string &fname,
     const int req_args = sig["req_count"].to_int32();
     for(int a = 0; a < n_args.number_of_children(); ++a)
     {
-      ss << n_args.child(a)["type"].as_string();
+      ss << n_args.child(a).name() << "=" << n_args.child(a)["type"].as_string();
       if(a > req_args)
       {
         ss << "[optional]";
@@ -75,6 +64,29 @@ std::string print_match_error(const std::string &fname,
   return ss.str();
 
 }
+
+bool is_math(const std::string &op)
+{
+  return op == "*"
+         || op == "+"
+         || op == "/"
+         || op == "-"
+         || op == "%";
+}
+
+bool is_logic(const std::string &op)
+{
+  return op == "or"
+         || op == "and"
+         || op == "not";
+}
+
+bool is_scalar(const std::string &type)
+{
+  return type == "int"
+         || type == "double"
+         || type == "scalar";
+}
 } // namespace detail
 
 //-----------------------------------------------------------------------------
@@ -90,14 +102,14 @@ conduit::Node ASTExpression::build_graph(flow::Workspace &w)
   {
     conduit::Node placeholder_params;
     placeholder_params["value"] = true;
-    w.graph().add_filter("expr_boolean",
+    w.graph().add_filter("expr_bool",
                          "bop_placeholder",
                          placeholder_params);
 
   }
   conduit::Node res;
   res["filter_name"] = "bop_placeholder";
-  res["type"] = "boolean";
+  res["type"] = "bool";
   return res;
 }
 
@@ -114,7 +126,7 @@ conduit::Node ASTInteger::build_graph(flow::Workspace &w)
 
   // create a unique name for the filter
   std::stringstream ss;
-  ss << "integer" << "_" << ast_int_counter;
+  ss << "integer" << "_" << ast_int_counter++;
   std::string name = ss.str();
 
   conduit::Node params;
@@ -123,11 +135,9 @@ conduit::Node ASTInteger::build_graph(flow::Workspace &w)
   w.graph().add_filter("expr_integer",
                        name,
                        params);
-  ast_int_counter++;
   conduit::Node res;
   res["filter_name"] = name;
-  res["type"] = "scalar";
-  res["data_type"] = "integer";
+  res["type"] = "int";
   return res;
 }
 
@@ -144,7 +154,7 @@ conduit::Node ASTDouble::build_graph(flow::Workspace &w)
 
   // create a unique name for the filter
   std::stringstream ss;
-  ss << "double" << "_" << ast_double_counter;
+  ss << "double" << "_" << ast_double_counter++;
   std::string name = ss.str();
 
   conduit::Node params;
@@ -153,12 +163,10 @@ conduit::Node ASTDouble::build_graph(flow::Workspace &w)
   w.graph().add_filter("expr_double",
                        name,
                        params);
-  ast_double_counter++;
 
   conduit::Node res;
   res["filter_name"] = name;
-  res["type"] = "scalar";
-  res["data_type"] = "double";
+  res["type"] = "double";
   return res;
 }
 
@@ -181,7 +189,7 @@ conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
 
   // create a unique name for the filter
   std::stringstream ss;
-  ss << "ident" << "_" << ast_ident_counter;
+  ss << "ident" << "_" << ast_ident_counter++;
   std::string name = ss.str();
 
   conduit::Node params;
@@ -190,7 +198,6 @@ conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
   w.graph().add_filter("expr_identifier",
                        name,
                        params);
-  ast_ident_counter++;
 
   conduit::Node res;
   res["filter_name"] = name;
@@ -310,7 +317,6 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
   std::vector<std::string> func_arg_names;
   std::unordered_set<std::string> req_args;
   std::unordered_set<std::string> opt_args;
-  std::unordered_set<std::string> all_args;
   for(int i = 0; i < overload_list.number_of_children(); ++i)
   {
     const conduit::Node &func = overload_list.child(i);
@@ -328,8 +334,7 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
      func_arg_names = func["args"].child_names();
      req_args.clear();
      opt_args.clear();
-     all_args.clear();
-    // populate opt_args, req_args, and all_args
+    // populate opt_args and req_args
     for(int a = 0; a < total_args; ++a)
     {
       conduit::Node func_arg = func["args"].child(a);
@@ -341,7 +346,6 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
       {
         req_args.insert(func_arg_names[a]);
       }
-      all_args.insert(func_arg_names[a]);
     }
 
     // validate positionals
@@ -350,11 +354,18 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
       {
         conduit::Node func_arg = func["args"].child(a);
         // validate types
-        if(func_arg["type"].as_string() != "anytype" &&
-          pos_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
+        if(func_arg["type"].as_string() != "anytype"
+          && pos_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
         {
           valid = false;
         }
+        // special case for the "scalar" pseudo-type
+        if(func_arg["type"].as_string() == "scalar"
+          && detail::is_scalar(pos_arg_nodes[a]["type"].as_string()))
+        {
+          valid = true;
+        }
+
         // keep track of which arguments have been specified
         if(func_arg.has_path("optional"))
         {
@@ -379,9 +390,10 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
     for(int a = 0; a < named_size; ++a)
     {
       //check if argument name exists
-      if(all_args.find(named_arg_names[a]) == all_args.end())
+      if(!func["args"].has_path(named_arg_names[a]))
       {
         valid = false;
+        goto next_overload;
       }
       // get the an argument given its name
       conduit::Node func_arg = func["args"][named_arg_names[a]];
@@ -391,6 +403,12 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
         named_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
       {
         valid = false;
+      }
+      // special case for the "scalar" pseudo-type
+      if(func_arg["type"].as_string() == "scalar"
+        && detail::is_scalar(named_arg_nodes[a]["type"].as_string()))
+      {
+        valid = true;
       }
     
       // keep track of which arguments have been specified
@@ -435,9 +453,8 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
     static int ast_method_counter = 0;
     // create a unique name for the filter
     std::stringstream ss;
-    ss << "method_" << ast_method_counter << "_" << m_id->m_name;;
+    ss << "method_" << ast_method_counter++ << "_" << m_id->m_name;;
     std::string name = ss.str();
-    ast_method_counter++;
 
     // we will have some optional parameters, prep the null_args filter
     if(!opt_args.empty())
@@ -543,6 +560,37 @@ conduit::Node ASTIfExpr::build_graph(flow::Workspace &w)
 
   // Validate types
   const std::string condition_type = n_condition["type"].as_string();
+  const std::string if_type = n_if["type"].as_string();
+  const std::string else_type = n_else["type"].as_string();
+  if(condition_type != "bool")
+  {
+    ASCENT_ERROR("if-expression condition must be of type boolean");
+  }
+
+  if(if_type != else_type)
+  {
+    ASCENT_ERROR("The return types of the if ("<<if_type<<") and else ("<<else_type<<") branches must match");
+  }
+
+  static int ast_if_counter = 0;
+  std::stringstream ss;
+  ss << "expr_if" << "_" << ast_if_counter++;
+  std::string name = ss.str();
+  conduit::Node params;
+  w.graph().add_filter("expr_if",
+                       name,
+                       params);
+  
+  // src, dest, port
+  w.graph().connect(n_condition["filter_name"].as_string(),name,"condition");
+  w.graph().connect(n_if["filter_name"].as_string(),name,"if");
+  w.graph().connect(n_else["filter_name"].as_string(),name,"else");
+
+  conduit::Node res;
+  res["type"] = if_type;
+  res["filter_name"] = name;
+
+  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -577,17 +625,6 @@ void ASTBinaryOp::access()
 
 }
 
-
-//TODO this is duplicated from ascent_expression_filters
-bool is_math(const std::string &op)
-{
-  return op == "*"
-         || op == "+"
-         || op == "/"
-         || op == "-"
-         || op == "%";
-}
-
 conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
 {
   //std::cout << "Creating binary operation " << m_op << endl;
@@ -609,55 +646,61 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
     case TAND:    op_str = "and"; break;
     case TNOT:    op_str = "not"; break;
     default: std::cout << "unknown binary op " << m_op << "\n";
-
   }
 
   conduit::Node r_in = m_rhs->build_graph(w);
   //std::cout << " flow op " << op_str << "\n";
   conduit::Node l_in = m_lhs->build_graph(w);
 
-  // Validate types
+  // Validate types and evaluate what the return type will be
   const std::string l_type = l_in["type"].as_string();
   const std::string r_type = r_in["type"].as_string();
-  if(l_type == "meshvar" || r_type == "meshvar")
-  {
-    std::stringstream msg;
-    msg << "' " << l_type << " " << op_str << " " << r_type << "'";
-    ASCENT_ERROR("binary operation with mesh variable not supported: " << msg.str());
-  }
 
-  if(l_in.has_path("data_type") && r_in.has_path("data_type"))
+  std::string res_type;
+  std::stringstream msg;
+  if(detail::is_math(op_str))
   {
-    const std::string l_data_type = l_in["data_type"].as_string();
-    const std::string r_data_type = r_in["data_type"].as_string();
-    if(op_str == "%")
+    if((!detail::is_scalar(l_type) && l_type != "vector")
+      || (!detail::is_scalar(r_type) && r_type != "vector"))
     {
-      if(l_data_type != "integer" || r_data_type != "integer")
-      {
-        std::stringstream msg;
-        msg << "' " << l_data_type << " " << op_str << " " << r_data_type << "'";
-        ASCENT_ERROR("modulus operation (%) with non-integer values is not supported: " << msg.str());
-      }
+      msg << "' " << l_type << " " << op_str << " " << r_type << "'";
+      ASCENT_ERROR("math operations are only supported on vectors and scalars: " << msg.str());
+    }
+
+    if(l_type == r_type)
+    {
+      res_type = l_type;
+    }
+    else
+    {
+      //TODO figure out once and for all if we want mixed scalar/vector ops
+      res_type = "vector";
     }
   }
-
-  // evaluate what the return type will be
-
-  std::string res_type = "scalar";
-  if(l_type == "vector" || r_type == "vector")
+  else if (detail::is_logic(op_str))
   {
-    res_type = "vector";
+    if(l_type != "bool" || r_type != "bool")
+    {
+      msg << "' " << l_type << " " << op_str << " " << r_type << "'";
+      ASCENT_ERROR("logical operators are only supported on booleans: " << msg.str());
+    }
+    res_type = "bool";
   }
-  if(!is_math(op_str))
+  else
   {
-    res_type = "boolean";
+    if(!detail::is_scalar(l_type) || !detail::is_scalar(r_type))
+    {
+      msg << "' " << l_type << " " << op_str << " " << r_type << "'";
+      ASCENT_ERROR("comparison operators are only supported on scalars: " << msg.str());
+    }
+    res_type = "bool";
   }
 
   static int ast_op_counter = 0;
   // create a unique name for the filter
   std::stringstream ss;
   //ss << "binary_op" << "_" << ast_op_counter << "_" << op_str;
-  ss << "binary_op" << "_" << ast_op_counter << "_" << m_op;
+  ss << "binary_op" << "_" << ast_op_counter++ << "_" << m_op;
   std::string name = ss.str();
 
   conduit::Node params;
@@ -671,7 +714,6 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
   w.graph().connect(r_in["filter_name"].as_string(),name,"rhs");
   w.graph().connect(l_in["filter_name"].as_string(),name,"lhs");
 
-  ast_op_counter++;
   conduit::Node res;
   res["filter_name"] = name;
   res["type"] = res_type;
@@ -679,14 +721,13 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
 }
 
 //-----------------------------------------------------------------------------
-void ASTMeshVar::access()
+void ASTString::access()
 {
-  //std::cout << "Creating mesh var " << m_name << endl;
+  std::cout << "Creating string " << m_name << endl;
 }
 
-conduit::Node ASTMeshVar::build_graph(flow::Workspace &w)
+conduit::Node ASTString::build_graph(flow::Workspace &w)
 {
-
   // strip the quotes from the variable name
   std::string stripped = m_name;
   int pos = stripped.find("\"");
@@ -696,23 +737,109 @@ conduit::Node ASTMeshVar::build_graph(flow::Workspace &w)
     pos = stripped.find("\"");
   }
 
-  //std::cout << "Flow mesh var " << m_name << " " << stripped << endl;
   // create a unique name for the filter
-  static int ast_meshvar_counter = 0;
+  static int ast_string_counter = 0;
   std::stringstream ss;
-  ss << "meshvar" << "_" << ast_meshvar_counter;
+  ss << "string" << "_" << ast_string_counter++;
   std::string name = ss.str();
 
   conduit::Node params;
   params["value"] = stripped;
 
-  w.graph().add_filter("expr_meshvar",
+  w.graph().add_filter("expr_string",
                        name,
                        params);
-  ast_meshvar_counter++;
 
   conduit::Node res;
-  res["type"] = "meshvar";
+  res["value"] = stripped;
+  res["type"] = "string";
+  res["filter_name"] = name;
+
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void ASTArrayAccess::access()
+{
+  array->access();
+  std::cout << "Creating array" << std::endl;
+
+  index->access();
+  std::cout << "Creating array index by " << ((by_name)? "name" : "index") << std::endl;
+
+  std::cout << "Creating array access" << std::endl;
+}
+
+conduit::Node ASTArrayAccess::build_graph(flow::Workspace &w)
+{
+  conduit::Node n_array = array->build_graph(w);
+  conduit::Node n_index = index->build_graph(w);
+
+  std::string obj_type = n_array["type"].as_string();
+
+  conduit::Node params;
+  std::string res_type;
+  // get an attribute
+  if(by_name)
+  {
+    // load the object table
+    if(!w.registry().has_entry("object_table"))
+    {
+      ASCENT_ERROR("Missing object table");
+    }
+    conduit::Node *o_table = w.registry().fetch<conduit::Node>("object_table");
+
+    // get the object
+    if(!o_table->has_path(obj_type))
+    {
+      ASCENT_ERROR("Cannot get attribute of non-object type: "<<obj_type);
+    }
+    const conduit::Node &obj = (*o_table)[obj_type];
+
+    // resolve attribute type
+    std::string attr = n_index["value"].as_string();
+    std::string path = "attrs/" + attr + "/type";
+    if(!obj.has_path(path))
+    {
+      obj.print();
+      ASCENT_ERROR("Attribute "<<attr<<" of "<<obj_type<<" not found");
+    }
+    res_type = obj[path].as_string();
+
+    params["by_name"] = true;
+  }
+  // get an array element
+  else if(n_index["type"].as_string() == "int")
+  {
+    if(obj_type != "array")
+    {
+      ASCENT_ERROR("Cannot get index of non-array type: "<<obj_type);
+    }
+    // only arrays of doubles are supported
+    res_type = "double";
+    params["by_name"] = false;
+  }
+  else
+  {
+    ASCENT_ERROR("Array index must be a string or an integer");
+  }
+
+  // create a unique name for the filter
+  static int ast_array_counter = 0;
+  std::stringstream ss;
+  ss << "array" << "_" << ast_array_counter++;
+  std::string name = ss.str();
+
+  w.graph().add_filter("expr_array",
+                       name,
+                       params);
+
+  // src, dest, port
+  w.graph().connect(n_array["filter_name"].as_string(),name,"array");
+  w.graph().connect(n_index["filter_name"].as_string(),name,"index");
+
+  conduit::Node res;
+  res["type"] = res_type;
   res["filter_name"] = name;
 
   return res;

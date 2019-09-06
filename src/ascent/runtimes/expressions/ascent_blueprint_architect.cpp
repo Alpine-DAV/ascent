@@ -658,8 +658,8 @@ field_histogram(const conduit::Node &dataset,
                 const int &num_bins)
 {
 
-  int *bins = new int[num_bins];
-  memset(bins, 0, sizeof(int) * num_bins);
+  double *bins = new double[num_bins];
+  memset(bins, 0, sizeof(double) * num_bins);
 
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
@@ -670,7 +670,7 @@ field_histogram(const conduit::Node &dataset,
       conduit::Node res;
       res = array_histogram(dom[path], min_val, max_val, num_bins);
 
-      int *dom_hist = res["value"].value();
+      double *dom_hist = res["value"].value();
 #ifdef ASCENT_USE_OPENMP
       #pragma omp parallel for
 #endif
@@ -684,12 +684,12 @@ field_histogram(const conduit::Node &dataset,
 
 #ifdef ASCENT_MPI_ENABLED
 
-  int *global_bins = new int[num_bins];
+  double *global_bins = new double[num_bins];
 
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   MPI_Allreduce(bins, global_bins, num_bins, MPI_INT, MPI_SUM, mpi_comm);
 
-  int *tmp = bins;
+  double *tmp = bins;
   bins = global_bins;
   delete[] tmp;
 #endif
@@ -704,9 +704,9 @@ field_histogram(const conduit::Node &dataset,
 conduit::Node
 field_entropy(const conduit::Node &hist)
 {
-  const int *hist_bins = hist["value"].value();
-  int num_bins = hist["num_bins"].to_int32();
-  double sum = array_sum(hist["value"])["value"].to_float64();
+  const double *hist_bins = hist["attrs/value/value"].value();
+  const int num_bins = hist["attrs/num_bins/value"].to_int32();
+  double sum = array_sum(hist["attrs/value/value"])["value"].to_float64();
   double entropy = 0;
   double p;
 
@@ -728,48 +728,82 @@ field_entropy(const conduit::Node &hist)
 }
 
 conduit::Node
-field_pdf(const double val, const conduit::Node &hist)
+field_pdf(const conduit::Node &hist)
 {
-  const int *hist_bins = hist["value"].value();
-  int num_bins = hist["num_bins"].to_int32();
-  double min_val =  hist["min_val"].to_float64();
-  double max_val =  hist["max_val"].to_float64();
+  const double *hist_bins = hist["attrs/value/value"].value();
+  const int num_bins = hist["attrs/num_bins/value"].to_int32();
+  double min_val = hist["attrs/min_val/value"].to_float64();
+  double max_val = hist["attrs/max_val/value"].to_float64();
 
-  double sum = array_sum(hist["value"])["value"].to_float64();
+  double sum = array_sum(hist["attrs/value/value"])["value"].to_float64();
 
-  const double inv_delta = num_bins / (max_val - min_val);
-  int bin_index = static_cast<int>((val - min_val) * inv_delta);
-
-  conduit::Node res;
-  res["value"] = hist_bins[bin_index] / sum;
-  return res;
-}
-
-conduit::Node
-field_cdf(const double val, const conduit::Node &hist)
-{
-  const int *hist_bins = hist["value"].value();
-  int num_bins = hist["num_bins"].to_int32();
-  double min_val =  hist["min_val"].to_float64();
-  double max_val =  hist["max_val"].to_float64();
-
-  double sum = array_sum(hist["value"])["value"].to_float64();
-
-  const double inv_delta = num_bins / (max_val - min_val);
-  int bin_index = static_cast<int>((val - min_val) * inv_delta);
-
-  double cdf = 0;
+  double *pdf = new double[num_bins];
+  memset(pdf, 0, sizeof(double) * num_bins);
 
 #ifdef ASCENT_USE_OPENMP
       #pragma omp parallel for
 #endif
-  for(int b = 0; b <= bin_index; ++b)
+  for(int b = 0; b < num_bins; ++b)
   {
-    cdf += hist_bins[b] / sum;
+    pdf[b] = hist_bins[b] / sum;
   }
 
   conduit::Node res;
-  res["value"] = cdf;
+  res["value"].set(pdf, num_bins);
+  res["min_val"] = min_val;
+  res["max_val"] = max_val;
+  res["num_bins"] = num_bins;
+  return res;
+}
+
+conduit::Node
+field_cdf(const conduit::Node &hist)
+{
+  const double *hist_bins = hist["attrs/value/value"].value();
+  const int num_bins = hist["attrs/num_bins/value"].to_int32();
+  double min_val = hist["attrs/min_val/value"].to_float64();
+  double max_val = hist["attrs/max_val/value"].to_float64();
+
+  double sum = array_sum(hist["attrs/value/value"])["value"].to_float64();
+
+  double rolling_cdf = 0;
+
+  double *cdf = new double[num_bins];
+  memset(cdf, 0, sizeof(double) * num_bins);
+
+#ifdef ASCENT_USE_OPENMP
+      #pragma omp parallel for
+#endif
+  for(int b = 0; b < num_bins; ++b)
+  {
+    rolling_cdf += hist_bins[b] / sum;
+    cdf[b] = rolling_cdf;
+  }
+
+  conduit::Node res;
+  res["value"].set(cdf, num_bins);
+  res["min_val"] = min_val;
+  res["max_val"] = max_val;
+  res["num_bins"] = num_bins;
+  return res;
+}
+
+// this only makes sense on a count histogram
+conduit::Node quantile(const conduit::Node &cdf,
+                       const double val)
+{
+  const double *cdf_bins = cdf["attrs/value/value"].value();
+  const int num_bins = cdf["attrs/num_bins/value"].to_int32();
+  double min_val = cdf["attrs/min_val/value"].to_float64();
+  double max_val = cdf["attrs/max_val/value"].to_float64();
+
+  conduit::Node res;
+
+  int bin = 0;
+
+  for(; cdf_bins[bin] < val; ++bin);
+  res["value"] = min_val + bin * (max_val - min_val) / (num_bins - 1);
+
   return res;
 }
 
@@ -852,6 +886,7 @@ field_min(const conduit::Node &dataset,
   return res;
 }
 
+//TODO expose this
 conduit::Node
 field_sum(const conduit::Node &dataset,
           const std::string &field)

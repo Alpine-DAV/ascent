@@ -76,6 +76,7 @@ namespace expressions
 
 conduit::Node ExpressionEval::m_cache;
 conduit::Node g_function_table;
+conduit::Node g_object_table;
 
 void register_builtin()
 {
@@ -86,22 +87,28 @@ void register_builtin()
   flow::Workspace::register_filter_type<expressions::Identifier>();
   flow::Workspace::register_filter_type<expressions::History>();
   flow::Workspace::register_filter_type<expressions::BinaryOp>();
-  flow::Workspace::register_filter_type<expressions::MeshVar>();
+  flow::Workspace::register_filter_type<expressions::IfExpr>();
+  flow::Workspace::register_filter_type<expressions::String>();
   flow::Workspace::register_filter_type<expressions::ScalarMax>();
   flow::Workspace::register_filter_type<expressions::ScalarMin>();
   flow::Workspace::register_filter_type<expressions::FieldMax>();
   flow::Workspace::register_filter_type<expressions::FieldMin>();
   flow::Workspace::register_filter_type<expressions::FieldAvg>();
-  flow::Workspace::register_filter_type<expressions::Position>();
   flow::Workspace::register_filter_type<expressions::Vector>();
   flow::Workspace::register_filter_type<expressions::Magnitude>();
+  flow::Workspace::register_filter_type<expressions::Field>();
   flow::Workspace::register_filter_type<expressions::Histogram>();
   flow::Workspace::register_filter_type<expressions::Entropy>();
   flow::Workspace::register_filter_type<expressions::Pdf>();
   flow::Workspace::register_filter_type<expressions::Cdf>();
+  flow::Workspace::register_filter_type<expressions::Quantile>();
+  flow::Workspace::register_filter_type<expressions::BinByValue>();
+  flow::Workspace::register_filter_type<expressions::BinByIndex>();
   flow::Workspace::register_filter_type<expressions::Cycle>();
+  flow::Workspace::register_filter_type<expressions::ArrayAccess>();
 
   initialize_functions();
+  initialize_objects();
 }
 
 ExpressionEval::ExpressionEval(conduit::Node *data)
@@ -158,13 +165,13 @@ initialize_functions()
   // -------------------------------------------------------------
 
   conduit::Node &field_avg_sig = (*functions)["avg"].append();
-  field_avg_sig["return_type"] = "scalar";
+  field_avg_sig["return_type"] = "double";
   field_avg_sig["filter_name"] = "field_avg";
-  field_avg_sig["args/arg1/type"] = "meshvar"; // arg names match input port names
+  field_avg_sig["args/arg1/type"] = "field"; // arg names match input port names
   // -------------------------------------------------------------
 
   conduit::Node &scalar_max_sig = (*functions)["max"].append();
-  scalar_max_sig["return_type"] = "scalar";
+  scalar_max_sig["return_type"] = "double";
   scalar_max_sig["filter_name"] = "scalar_max";
   scalar_max_sig["args/arg1/type"] = "scalar"; // arg names match input port names
   scalar_max_sig["args/arg2/type"] = "scalar";
@@ -172,35 +179,29 @@ initialize_functions()
   // -------------------------------------------------------------
 
   conduit::Node &field_max_sig = (*functions)["max"].append();
-  field_max_sig["return_type"] = "scalar";
+  field_max_sig["return_type"] = "value_position";
   field_max_sig["filter_name"] = "field_max";
-  field_max_sig["args/arg1/type"] = "meshvar"; // arg names match input port names
+  field_max_sig["args/arg1/type"] = "field"; // arg names match input port names
 
   // -------------------------------------------------------------
 
   conduit::Node &field_min_sig = (*functions)["min"].append();
-  field_min_sig["return_type"] = "scalar";
+  field_min_sig["return_type"] = "value_position";
   field_min_sig["filter_name"] = "field_min";
-  field_min_sig["args/arg1/type"] = "meshvar"; // arg names match input port names
+  field_min_sig["args/arg1/type"] = "field"; // arg names match input port names
 
   // -------------------------------------------------------------
 
   conduit::Node &scalar_min_sig = (*functions)["min"].append();
-  scalar_min_sig["return_type"] = "scalar";
+  scalar_min_sig["return_type"] = "double";
   scalar_min_sig["filter_name"] = "scalar_min";
   scalar_min_sig["args/arg1/type"] = "scalar"; // arg names match input port names
   scalar_min_sig["args/arg2/type"] = "scalar";
 
   // -------------------------------------------------------------
 
-  conduit::Node &pos_sig = (*functions)["position"].append();
-  pos_sig["return_type"] = "vector";
-  pos_sig["filter_name"] = "expr_position";
-  pos_sig["args/arg1/type"] = "anytype"; // Should query result be differnt type?
-  // -------------------------------------------------------------
-
   conduit::Node &cycle_sig = (*functions)["cycle"].append();
-  cycle_sig["return_type"] = "scalar";
+  cycle_sig["return_type"] = "int";
   cycle_sig["filter_name"] = "cycle";
   cycle_sig["args"] = conduit::DataType::empty();
 
@@ -216,7 +217,7 @@ initialize_functions()
   // -------------------------------------------------------------
   
   conduit::Node &mag_sig = (*functions)["magnitude"].append();
-  mag_sig["return_type"] = "scalar";
+  mag_sig["return_type"] = "double";
   mag_sig["filter_name"] = "magnitude";
   mag_sig["args/arg1/type"] = "vector";
 
@@ -225,9 +226,9 @@ initialize_functions()
   conduit::Node &hist_sig = (*functions)["histogram"].append();
   hist_sig["return_type"] = "histogram";
   hist_sig["filter_name"] = "histogram";
-  hist_sig["args/arg1/type"] = "meshvar";
+  hist_sig["args/arg1/type"] = "field";
   // In a flow filter, these become parameters
-  hist_sig["args/num_bins/type"] = "scalar";
+  hist_sig["args/num_bins/type"] = "int";
   hist_sig["args/num_bins/optional"];
   hist_sig["args/min_val/type"] = "scalar";
   hist_sig["args/min_val/optional"];
@@ -240,33 +241,83 @@ initialize_functions()
   history_sig["return_type"] = "anytype";
   history_sig["filter_name"] = "history";
   history_sig["args/expr_name/type"] = "anytype";
-  history_sig["args/index/type"] = "scalar";
+  history_sig["args/index/type"] = "int";
   
   // -------------------------------------------------------------
   
   conduit::Node &entropy_sig = (*functions)["entropy"].append();
-  entropy_sig["return_type"] = "scalar";
+  entropy_sig["return_type"] = "double";
   entropy_sig["filter_name"] = "entropy";
   entropy_sig["args/hist/type"] = "histogram";
 
   // -------------------------------------------------------------
   
   conduit::Node &pdf_sig = (*functions)["pdf"].append();
-  pdf_sig["return_type"] = "scalar";
+  pdf_sig["return_type"] = "histogram";
   pdf_sig["filter_name"] = "pdf";
-  pdf_sig["args/arg1/type"] = "scalar";
   pdf_sig["args/hist/type"] = "histogram";
 
   // -------------------------------------------------------------
   
   conduit::Node &cdf_sig = (*functions)["cdf"].append();
-  cdf_sig["return_type"] = "scalar";
+  cdf_sig["return_type"] = "histogram";
   cdf_sig["filter_name"] = "cdf";
-  cdf_sig["args/arg1/type"] = "scalar";
   cdf_sig["args/hist/type"] = "histogram";
+  
+  // -------------------------------------------------------------
+  
+  // gets histogram bin by index
+  conduit::Node &bin_by_index_sig = (*functions)["bin"].append();
+  bin_by_index_sig["return_type"] = "double";
+  bin_by_index_sig["filter_name"] = "bin_by_index";
+  bin_by_index_sig["args/hist/type"] = "histogram";
+  bin_by_index_sig["args/bin/type"] = "int";
+
+  // -------------------------------------------------------------
+  
+  // gets histogram bin by value
+  conduit::Node &bin_by_value_sig = (*functions)["bin"].append();
+  bin_by_value_sig["return_type"] = "double";
+  bin_by_value_sig["filter_name"] = "bin_by_value";
+  bin_by_value_sig["args/hist/type"] = "histogram";
+  bin_by_value_sig["args/val/type"] = "scalar";
+
+
+  // -------------------------------------------------------------
+
+  conduit::Node &field_sig = (*functions)["field"].append();
+  field_sig["return_type"] = "field";
+  field_sig["filter_name"] = "field";
+  field_sig["args/arg1/type"] = "string";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &quantile_sig = (*functions)["quantile"].append();
+  quantile_sig["return_type"] = "double";
+  quantile_sig["filter_name"] = "quantile";
+  quantile_sig["args/cdf/type"] = "histogram";
+  quantile_sig["args/val/type"] = "double";
 
   count_params();
   // TODO: validate that there are no ambiguities
+}
+
+void
+initialize_objects()
+{
+  // object type definitions
+  g_object_table.reset();
+  conduit::Node* objects = &g_object_table;
+
+  conduit::Node &histogram = (*objects)["histogram/attrs"];
+  histogram["value/type"] = "array";
+  histogram["min_val/type"] = "double";
+  histogram["max_val/type"] = "double";
+  histogram["num_bins/type"] = "int";
+
+  conduit::Node &value_position = (*objects)["value_position/attrs"];
+  value_position["value/type"] = "double";
+  value_position["position/type"] = "vector";
 }
 
 conduit::Node
@@ -281,6 +332,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   w.registry().add<conduit::Node>("dataset", m_data, -1);
   w.registry().add<conduit::Node>("cache", &m_cache, -1);
   w.registry().add<conduit::Node>("function_table", &g_function_table, -1);
+  w.registry().add<conduit::Node>("object_table", &g_object_table, -1);
   int cycle = get_state_var(*m_data, "cycle").to_int32();
   w.registry().add<int>("cycle", &cycle, -1);
 

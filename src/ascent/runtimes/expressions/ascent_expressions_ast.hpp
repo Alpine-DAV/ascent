@@ -59,10 +59,10 @@ public:
   virtual conduit::Node build_graph(flow::Workspace &w);
 };
 
-class ASTMeshVar: public ASTExpression {
+class ASTString: public ASTExpression {
 public:
   std::string m_name;
-  ASTMeshVar(const std::string& name) : m_name(name) { }
+  ASTString(const std::string& name) : m_name(name) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
 };
@@ -148,6 +148,24 @@ public:
     delete m_condition;
     delete m_if;
     delete m_else;
+  }
+};
+
+
+class ASTArrayAccess : public ASTExpression {
+public:
+  ASTExpression *array;
+  ASTExpression *index;
+  bool by_name;
+  ASTArrayAccess(ASTExpression *array, ASTExpression *index, bool by_name) :
+    array(array), index(index), by_name(by_name) { }
+  virtual void access();
+  virtual conduit::Node build_graph(flow::Workspace &w);
+
+  virtual ~ASTArrayAccess()
+  { 
+    delete array;
+    delete index;
   }
 };
 #endif

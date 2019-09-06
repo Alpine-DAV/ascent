@@ -229,8 +229,8 @@ struct HistogramFunctor
   {
     const double inv_delta = double(m_num_bins) / (m_max_val - m_min_val);
 
-    int *bins = new int[m_num_bins];
-    memset(bins, 0, sizeof(int) * m_num_bins);
+    double *bins = new double[m_num_bins];
+    memset(bins, 0, sizeof(double) * m_num_bins);
 #ifdef ASCENT_USE_OPENMP
     #pragma omp parallel for
 #endif

@@ -48,26 +48,31 @@ extern int yydebug;
     TIDENTIFIER = 258,
     TINTEGER = 259,
     TDOUBLE = 260,
-    TMESHVAR = 261,
-    TOR = 262,
-    TAND = 263,
-    TNOT = 264,
-    TAEQ = 265,
-    TCEQ = 266,
-    TCNE = 267,
-    TCLT = 268,
-    TCLE = 269,
-    TCGT = 270,
-    TCGE = 271,
-    TLPAREN = 272,
-    TRPAREN = 273,
-    TCOMMA = 274,
-    TPLUS = 275,
-    TMINUS = 276,
-    TMUL = 277,
-    TDIV = 278,
-    TMOD = 279,
-    TNEG = 280
+    TSTRING = 261,
+    TIF = 262,
+    TTHEN = 263,
+    TELSE = 264,
+    TOR = 265,
+    TAND = 266,
+    TNOT = 267,
+    TAEQ = 268,
+    TCEQ = 269,
+    TCNE = 270,
+    TCLT = 271,
+    TCLE = 272,
+    TCGT = 273,
+    TCGE = 274,
+    TLPAREN = 275,
+    TRPAREN = 276,
+    TLBRACKET = 277,
+    TRBRACKET = 278,
+    TCOMMA = 279,
+    TPLUS = 280,
+    TMINUS = 281,
+    TMUL = 282,
+    TDIV = 283,
+    TMOD = 284,
+    TNEG = 285
   };
 #endif
 
@@ -81,15 +86,15 @@ union YYSTYPE
  ASTNode                     *node;
  ASTExpression               *expr;
  ASTIdentifier               *ident;
- ASTMeshVar                  *meshvar;
- ExpressionList              *exprlist;
- NamedExpression             *namedexpr;
- NamedExpressionList         *namedexprlist;
+ ASTString                   *string_literal;
+ ExpressionList              *expr_list;
+ NamedExpression             *named_expr;
+ NamedExpressionList         *named_expr_list;
  ASTArguments                *args;
  std::string                 *string;
  int token;
 
-#line 93 "parser.hpp" /* yacc.c:1909  */
+#line 98 "parser.hpp" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -106,6 +111,6 @@ int yyparse (void);
 
   ASTExpression *get_result();
 
-#line 110 "parser.hpp" /* yacc.c:1909  */
+#line 115 "parser.hpp" /* yacc.c:1909  */
 
 #endif /* !YY_YY_PARSER_HPP_INCLUDED  */

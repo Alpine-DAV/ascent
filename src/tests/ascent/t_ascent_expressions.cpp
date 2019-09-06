@@ -102,22 +102,22 @@ TEST(ascent_expressions, basic_expressions)
     expr = "(2.0 + 1) / 0.5";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 6.0);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "double");
 
     expr = "(2.0 * 2) / 2";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 2.0);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "double");
 
     expr = "2.0 + 1 / 0.5";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 4.0);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "double");
 
     expr = "8 % 3";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_int32(), 2);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "int");
 
     bool threw = false;
     try
@@ -134,37 +134,37 @@ TEST(ascent_expressions, basic_expressions)
     expr = "2.5 >= 2";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 1);
-    EXPECT_EQ(res["type"].as_string(), "boolean");
+    EXPECT_EQ(res["type"].as_string(), "bool");
     
     expr = "(1 == 1) and (3 <= 3)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 1);
-    EXPECT_EQ(res["type"].as_string(), "boolean");
+    EXPECT_EQ(res["type"].as_string(), "bool");
 
     expr = "(2.3 != 2.3) or (3 > 3)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 0);
-    EXPECT_EQ(res["type"].as_string(), "boolean");
+    EXPECT_EQ(res["type"].as_string(), "bool");
 
     expr = "not (55 < 59)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 0);
-    EXPECT_EQ(res["type"].as_string(), "boolean");
+    EXPECT_EQ(res["type"].as_string(), "bool");
 
     expr = "max(1, 2)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 2.0);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "int");
 
     expr = "max(1, 2.0)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 2.0);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "double");
 
     expr = "min(1, 2)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 1.0);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "int");
 
     threw = false;
     try
@@ -191,7 +191,7 @@ TEST(ascent_expressions, basic_expressions)
     expr = "magnitude(vector(2,0,0) - vector(0,0,0))";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 2);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "double");
 
     // currently unsupported vector ops
     threw = false;
@@ -225,12 +225,12 @@ TEST(ascent_expressions, basic_expressions)
     expr = "cycle()";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 100);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "int");
 
-    expr = "magnitude(position(max(\"braid\"))) > 0";
+    expr = "magnitude(max(field(\"braid\"))[\"position\"]) > 0";
     res = eval.evaluate(expr);
-    EXPECT_EQ(res["value"].to_float64(), 1);
-    EXPECT_EQ(res["type"].as_string(), "boolean");
+    EXPECT_EQ(res["value"].to_uint8(), 1);
+    EXPECT_EQ(res["type"].as_string(), "bool");
 }
 
 //-----------------------------------------------------------------------------
@@ -295,30 +295,40 @@ TEST(ascent_expressions, functional_correctness)
     conduit::Node res;
     std::string expr;
 
-    expr = "position(max(\"ele_example\"))";
+    expr = "max(field(\"ele_example\"))[\"position\"]";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].as_float64(), 25);
     EXPECT_EQ(res["type"].as_string(), "vector");
 
-    expr = "entropy(histogram(\"ele_example\"))";
+    expr = "entropy(histogram(field(\"ele_example\")))";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].as_float64(), -std::log(1.0/16.0));
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "double");
 
-    expr = "cdf(5.0, histogram(\"ele_example\"))";
+    expr = "bin(cdf(histogram(field(\"ele_example\"))), val=5.0)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].as_float64(), .375);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "double");
 
-    expr = "pdf(5, histogram(\"ele_example\"))";
+    expr = "bin(pdf(histogram(field(\"ele_example\"))), val=5)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].as_float64(), 1.0/16.0);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "double");
 
-    expr = "pdf(4.5, histogram(\"ele_example\"))";
+    expr = "bin(pdf(histogram(field(\"ele_example\"))), val=4.5)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].as_float64(), 0);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "double");
+
+    expr = "bin(pdf(histogram(field(\"ele_example\"))), bin=4) == pdf(histogram(field(\"ele_example\")))[\"value\"][4]";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_uint8(), 1);
+    EXPECT_EQ(res["type"].as_string(), "bool");
+
+    expr = "quantile(cdf(histogram(field(\"ele_example\"))), 1.0)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 15);
+    EXPECT_EQ(res["type"].as_string(), "double");
 }
 
 //-----------------------------------------------------------------------------
@@ -356,22 +366,22 @@ TEST(ascent_expressions, expressions_named_params)
     std::string expr;
     conduit::Node res;
 
-    expr = "histogram(\"braid\", num_bins=10)";
+    expr = "histogram(field(\"braid\"), num_bins=10)";
     res = eval.evaluate(expr);
-    EXPECT_EQ(res["value"].dtype().number_of_elements(), 10);
+    EXPECT_EQ(res["attrs/value/value"].dtype().number_of_elements(), 10);
     EXPECT_EQ(res["type"].as_string(), "histogram");
 
-    expr = "histogram(\"braid\",min_val=0,num_bins=10,max_val=1)";
+    expr = "histogram(field(\"braid\"),min_val=0,num_bins=10,max_val=1)";
     res = eval.evaluate(expr);
-    EXPECT_EQ(res["value"].dtype().number_of_elements(), 10);
-    EXPECT_EQ(res["min_val"].to_float64(), 0);
-    EXPECT_EQ(res["max_val"].to_float64(), 1);
+    EXPECT_EQ(res["attrs/value/value"].dtype().number_of_elements(), 10);
+    EXPECT_EQ(res["attrs/min_val/value"].to_float64(), 0);
+    EXPECT_EQ(res["attrs/max_val/value"].to_float64(), 1);
     EXPECT_EQ(res["type"].as_string(), "histogram");
 
     bool threw = false;
     try
     {
-      expr = "histogram(\"braid\",\"braid\")";
+      expr = "histogram(field(\"braid\"),field(\"braid\"))";
       res = eval.evaluate(expr);
     }
     catch(...)
@@ -381,15 +391,15 @@ TEST(ascent_expressions, expressions_named_params)
     EXPECT_EQ(threw, true);
 
 
-    expr = "histogram(\"braid\",max_val=2)";
+    expr = "histogram(field(\"braid\"),max_val=2)";
     res = eval.evaluate(expr);
-    EXPECT_EQ(res["max_val"].to_float64(), 2);
+    EXPECT_EQ(res["attrs/max_val/value"].to_float64(), 2);
     EXPECT_EQ(res["type"].as_string(), "histogram");
 
     threw = false;
     try
     {
-      expr = "histogram(\"braid\",min_val=\"braid\")";
+      expr = "histogram(field(\"braid\"),min_val=field(\"braid\"))";
       res = eval.evaluate(expr);
     }
     catch(...)
@@ -401,7 +411,7 @@ TEST(ascent_expressions, expressions_named_params)
     threw = false;
     try
     {
-      expr = "histogram(\"braid\",min_val=0,num_bins=10,1)";
+      expr = "histogram(field(\"braid\"),min_val=0,num_bins=10,1)";
       res = eval.evaluate(expr);
     }
     catch(...)
@@ -445,16 +455,15 @@ TEST(ascent_expressions, test_identifier)
     conduit::Node res1, res2;
 
     // test retrieving named cached value
-    expr = "max(\"braid\")";
+    expr = "max(field(\"braid\"))";
     const std::string cache_name = "mx_b";
     res1 = eval.evaluate(expr, cache_name);
     res2 = eval.evaluate("mx_b");
     EXPECT_EQ(res1["value"].to_float64(), res2["value"].to_float64());
 
     // grab attribute from cached value
-    res2 = eval.evaluate("position(mx_b)");
+    res2 = eval.evaluate("mx_b[\"position\"]");
     EXPECT_EQ(res2["type"].as_string(), "vector");
-
 }
 
 //-----------------------------------------------------------------------------
@@ -500,12 +509,12 @@ TEST(ascent_expressions, test_history)
     expr = "history(val, 2)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_int32(), 2);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "int");
 
     expr = "history(val, 3)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_int32(), 1);
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "int");
 
     bool threw = false;
     try
@@ -540,7 +549,51 @@ TEST(ascent_expressions, test_history)
     expr = "magnitude(history(vec, 1))";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 5); // test the first val
-    EXPECT_EQ(res["type"].as_string(), "scalar");
+    EXPECT_EQ(res["type"].as_string(), "double");
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_expressions, if_expressions)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    // ascent normally adds this but we are doing an end around
+    data["state/domain_id"] = 0;
+    Node multi_dom;
+    blueprint::mesh::to_multi_domain(data, multi_dom);
+
+    runtime::expressions::register_builtin();
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+
+    conduit::Node res;
+    std::string expr;
+
+    expr = "if 5 == 5 then 1 else 2";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_int32(), 1);
+    EXPECT_EQ(res["type"].as_string(), "int");
+
+    bool threw = false;
+    try
+    {
+      expr = "if max(3,7) > min(2,6) then 1 else vector(1,1,1)";
+      res = eval.evaluate(expr);
+    }
+    catch(...)
+    {
+      threw = true;
+    }
+    EXPECT_EQ(threw, true);
 }
 //-----------------------------------------------------------------------------
 
