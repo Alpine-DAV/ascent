@@ -66,7 +66,7 @@ def create_package(output_file=None):
          t = datetime.datetime.now()
          output_file = "%s.%04d.%02d.%02d.%s" % (repo_name,t.year,t.month,t.day,suffix)
     cmd = "python " + pkg_script + " --prefix=ascent " + output_file
-    print "[exe: %s]" % cmd
+    print("[exe: {}]".format(cmd))
     subprocess.call(cmd,shell=True)
 
 if __name__ == "__main__":

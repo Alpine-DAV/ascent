@@ -102,7 +102,7 @@ if(PYTHON_FOUND)
                         OUTPUT_VARIABLE _FIND_CONDUIT_PYTHON_OUT
                         ERROR_VARIABLE  _FIND_CONDUIT_PYTHON_ERROR_VALUE
                         OUTPUT_STRIP_TRAILING_WHITESPACE)
-                      message(STATUS "PYTHOn found!! ${CONDUIT_DIR}")
+                      message(STATUS "PYTHON found!! ${CONDUIT_DIR}")
         if(_FIND_CONDUIT_PYTHON_RESULT MATCHES 0)
             message(STATUS "FOUND conduit python module at: ${_FIND_CONDUIT_PYTHON_OUT}")
         else()

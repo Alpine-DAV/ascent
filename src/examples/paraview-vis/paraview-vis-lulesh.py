@@ -1,7 +1,9 @@
 import sys
+from pathlib import Path
+home = str(Path.home())
 # CHANGE this path to the result of:
 # $(spack location --install-dir paraview)
-paraview_path="/home/danlipsa/projects/ascent_new/build/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.4.0/paraview-master-e6ji62w2jt47cj446twsnndkkxgncz6x/lib/python2.7/site-packages"
+paraview_path=home + "/projects/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/paraview-develop-qhm2ssmu2e3ko3jpz6xijn6b64u7nwnp//lib/python2.7/site-packages"
 sys.path.append(paraview_path)
 
 # Same Python interpreter for all time steps
@@ -26,7 +28,9 @@ domain_id = node["state/domain_id"]
 cycle = node["state/cycle"]
 imageName = "image_{0:04d}.png".format(int(cycle))
 dataName = "lulesh_data_{0:04d}".format(int(cycle))
-scriptName = "../../paraview-vis/paraview_ascent_source.py"
+# CHANGE this path to the result of:
+# echo $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview_ascent_source.py
+scriptName = home + "/projects/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/ascent-develop-ncrcrl6ib5k6zkcffd6k6repvkk3b44e/examples/ascent/paraview-vis/paraview_ascent_source.py"
 LoadPlugin(scriptName, remote=True, ns=globals())
 ascentSource = AscentSource()
 rep = Show()

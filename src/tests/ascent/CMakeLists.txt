@@ -111,21 +111,22 @@ endif()
 ################################
 # Add main tests
 ################################
-message(STATUS "Adding ascent lib unit tests")
-foreach(TEST ${BASIC_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
-endforeach()
-
-foreach(TEST ${VTKH_DEP_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
-endforeach()
-
-if(VTKM_FOUND)
-  # special test case where we test vtkm conversions
-   vtkm_add_target_information(t_ascent_vtkh_data_adapter
-                               DEVICE_SOURCES t_ascent_vtkh_data_adapter.cpp)
+if (ENABLE_SERIAL)
+    message(STATUS "Adding ascent lib unit tests")
+    foreach(TEST ${BASIC_TESTS})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
+    endforeach()
+    
+    foreach(TEST ${VTKH_DEP_TESTS})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
+    endforeach()
+    
+    if(VTKM_FOUND)
+      # special test case where we test vtkm conversions
+       vtkm_add_target_information(t_ascent_vtkh_data_adapter
+                                   DEVICE_SOURCES t_ascent_vtkh_data_adapter.cpp)
+    endif()
 endif()
-
 ################################
 # Add optional tests
 ################################

@@ -193,7 +193,16 @@ endif()
 if(FORTRAN_FOUND)
     add_library(ascent_fortran OBJECT fortran/ascent_fortran.f90)
     list(APPEND ascent_sources $<TARGET_OBJECTS:ascent_fortran>)
+    
+    #####################################################
+    # Setup install to copy the fortran modules
+    #####################################################
+    install(FILES 
+            ${CMAKE_Fortran_MODULE_DIRECTORY}/ascent.mod
+            DESTINATION include/ascent)
 endif()
+
+
 
 ################################
 # Add python wrappers if python
@@ -238,27 +247,27 @@ endif()
 ##########################################
 # Build a serial version of ascent
 ##########################################
-
-blt_add_library(
-    NAME        ascent
-    SOURCES     ${ascent_sources}
-    HEADERS     ${ascent_headers}
-    DEPENDS_ON  ${ascent_thirdparty_libs})
-
-if(VTKM_FOUND)
-    set(ascent_device_sources ${ascent_vtkh_dep_sources})
-    list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
-
-    vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
+if (ENABLE_SERIAL)
+    blt_add_library(
+        NAME        ascent
+        SOURCES     ${ascent_sources}
+        HEADERS     ${ascent_headers}
+        DEPENDS_ON  ${ascent_thirdparty_libs})
+    
+    if(VTKM_FOUND)
+        set(ascent_device_sources ${ascent_vtkh_dep_sources})
+        list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
+    
+        vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
+    endif()
+    # install target for serial ascent lib
+    install(TARGETS ascent
+            EXPORT  ascent
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            RUNTIME DESTINATION lib
+    )
 endif()
-# install target for serial ascent lib
-install(TARGETS ascent
-        EXPORT  ascent
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION lib
-)
-
 
 ################################################
 # Build Parallel (MPI) version of ascent

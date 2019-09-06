@@ -48,51 +48,44 @@ set(ASCENT_INCLUDE_DIRS "${ASCENT_INSTALL_PREFIX}/include/ascent")
 # Probe Ascent Features
 #
 
-# check for fortran support
-if(EXISTS ${ASCENT_INSTALL_PREFIX}/include/ascent/ascent.mod)
-    set(ASCENT_FORTRAN_ENABLED TRUE)
-else()
-    set(ASCENT_FORTRAN_ENABLED FALSE)
-endif()
-
-# create convenience target that bundles all reg ascent deps (ascent::ascent)
-
-add_library(ascent::ascent INTERFACE IMPORTED)
-
-set_property(TARGET ascent::ascent
-             APPEND PROPERTY
-             INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/")
-
-set_property(TARGET ascent::ascent
-             APPEND PROPERTY
-             INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/ascent/")
-
-set_property(TARGET ascent::ascent
-             PROPERTY INTERFACE_LINK_LIBRARIES
-             ascent)
-
-# try to include conduit with new exports
-if(TARGET conduit::conduit)
-    set_property(TARGET ascent::ascent
-                 APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-                 conduit::conduit)
-else()
-    # if not, bottle conduit
+if(ASCENT_SERIAL_ENABLED)
+    # create convenience target that bundles all reg ascent deps (ascent::ascent)
+    add_library(ascent::ascent INTERFACE IMPORTED)
+    
     set_property(TARGET ascent::ascent
                  APPEND PROPERTY
-                 INTERFACE_INCLUDE_DIRECTORIES ${CONDUIT_INCLUDE_DIRS})
-
+                 INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/")
+    
     set_property(TARGET ascent::ascent
-                 APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-                 conduit conduit_relay conduit_blueprint)
-endif()
-
-if(VTKH_FOUND)
+                 APPEND PROPERTY
+                 INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/ascent/")
+    
     set_property(TARGET ascent::ascent
-                 APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-                 vtkh)
+                 PROPERTY INTERFACE_LINK_LIBRARIES
+                 ascent)
+    
+    # try to include conduit with new exports
+    if(TARGET conduit::conduit)
+        set_property(TARGET ascent::ascent
+                     APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+                     conduit::conduit)
+    else()
+        # if not, bottle conduit
+        set_property(TARGET ascent::ascent
+                     APPEND PROPERTY
+                     INTERFACE_INCLUDE_DIRECTORIES ${CONDUIT_INCLUDE_DIRS})
+    
+        set_property(TARGET ascent::ascent
+                     APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+                     conduit conduit_relay conduit_blueprint)
+    endif()
+    
+    if(ASCENT_VTKH_ENABLED)
+        set_property(TARGET ascent::ascent
+                     APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+                     vtkh)
+    endif()
 endif()
-
 
 # and if mpi enabled, a convenience target mpi case (ascent::cascent_mpi)
 if(ASCENT_MPI_ENABLED)
@@ -116,7 +109,7 @@ if(ASCENT_MPI_ENABLED)
                      conduit conduit_relay conduit_relay_mpi conduit_blueprint)
     endif()
     
-    if(VTKH_FOUND)
+    if(ASCENT_VTKH_ENABLED)
         set_property(TARGET ascent::ascent_mpi
                      APPEND PROPERTY INTERFACE_LINK_LIBRARIES
                      vtkh_mpi)
@@ -130,12 +123,21 @@ if(NOT Ascent_FIND_QUIETLY)
     message(STATUS "ASCENT_VERSION             = ${ASCENT_VERSION}")
     message(STATUS "ASCENT_INSTALL_PREFIX      = ${ASCENT_INSTALL_PREFIX}")
     message(STATUS "ASCENT_INCLUDE_DIRS        = ${ASCENT_INCLUDE_DIRS}")
+    message(STATUS "ASCENT_SERIAL_ENABLED      = ${ASCENT_SERIAL_ENABLED}")
+    message(STATUS "ASCENT_MPI_ENABLED         = ${ASCENT_MPI_ENABLED}")
     message(STATUS "ASCENT_FORTRAN_ENABLED     = ${ASCENT_FORTRAN_ENABLED}")
+    message(STATUS "ASCENT_VTKH_ENABLED        = ${ASCENT_VTKH_ENABLED}")
+    message(STATUS "ASCENT_PYTHON_ENABLED      = ${ASCENT_PYTHON_ENABLED}")
     message(STATUS "ASCENT_PYTHON_EXECUTABLE   = ${ASCENT_PYTHON_EXECUTABLE}")
 
-    set(_print_targets "ascent::ascent")
+
+    set(_print_targets "")
+    if(ASCENT_SERIAL_ENABLED)
+        set(_print_targets "ascent::ascent ")
+    endif()
+
     if(ASCENT_MPI_ENABLED)
-        set(_print_targets "${_print_targets} ascent::ascent_mpi")
+        set(_print_targets "${_print_targets}ascent::ascent_mpi")
     endif()
 
     message(STATUS "Ascent imported targets: ${_print_targets}")

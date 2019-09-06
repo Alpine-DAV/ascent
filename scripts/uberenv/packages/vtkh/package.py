@@ -38,12 +38,13 @@ class Vtkh(Package,CudaPackage):
     maintainers = ['cyrush']
 
 
-    version('ascent_ver', commit='1f4fae3b48d8a3b2a7749b1aa649de6b955b89a0', submodules=True, preferred=True)
+    version('ascent_ver', commit='a8a851940a26c916d5d3a50fdbadb7ad8f21da96', submodules=True, preferred=True)
     version('develop', branch='develop', submodules=True)
     version('0.1.0', branch='develop', tag='v0.1.0', submodules=True)
 
     variant("shared", default=True, description="Build vtk-h as shared libs")
     variant("mpi", default=True, description="build mpi support")
+    variant("serial", default=True, description="build serial (non-mpi) libraries")
     variant("tbb", default=False, description="build tbb support")
     variant("cuda", default=False, description="build cuda support")
     variant("openmp", default=(sys.platform != 'darwin'),
@@ -236,6 +237,15 @@ class Vtkh(Package,CudaPackage):
         #######################################################################
         # Optional Dependencies
         #######################################################################
+
+        #######################
+        # Serial
+        #######################
+
+        if "+serial" in spec:
+            cfg.write(cmake_cache_entry("ENABLE_SERIAL", "ON"))
+        else:
+            cfg.write(cmake_cache_entry("ENABLE_SERIAL", "OFF"))
 
         #######################
         # MPI

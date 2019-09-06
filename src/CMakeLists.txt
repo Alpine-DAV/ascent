@@ -65,11 +65,17 @@ option(ENABLE_FORTRAN     "Build Fortran support"     ON)
 option(ENABLE_PYTHON      "Build Python Support"      ON)
 
 option(ENABLE_MPI         "Build MPI Support"         ON)
+option(ENABLE_SERIAL      "Build Serial (non-MPI) Support" ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
+
+if(NOT ENABLE_SERIAL AND NOT ENABLE_MPI)
+  message(FATAL_ERROR "No libraries are built. "
+    "Please set ENABLE_SERIAL, ENABLE_MPI or both to ON")
+endif()
 
 
 if(ENABLE_CUDA)
