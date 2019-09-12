@@ -245,6 +245,7 @@ jobs:
          # install pkgs we need
          sudo apt-get -y install $APT_PKGS
       displayName: 'Prepare build env'
+      failOnStderr: true
 
     - script: |
          #################################
@@ -309,6 +310,7 @@ jobs:
          # move back up to repor root
          cd ${ROOT_DIR}
       displayName: 'Build and Test'
+      failOnStderr: true
 
     - script: |
         ###########################
@@ -340,6 +342,7 @@ jobs:
         ./ascent_render_example
       displayName: 'Test vs Install'
       condition: eq(variables['ENABLE_VTKH'], 'ON')
+      failOnStderr: true
 
 
 ###############################################################################
@@ -380,6 +383,7 @@ jobs:
          # install pkgs we need
          sudo apt-get -y install $APT_PKGS
       displayName: 'Prepare build env'
+      failOnStderr: true
 
     - script: |
          #################################
@@ -396,6 +400,7 @@ jobs:
          # run uber to build tpls
          python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_cuda/
       displayName: 'Spack Build Tpls'
+      failOnStderr: true
 
     - script: |
          #################################
@@ -435,6 +440,7 @@ jobs:
          # cd back up to repo root
          cd ..
       displayName: 'Build and Install'
+      failOnStderr: true
 
     - script: |
           #################################
@@ -442,6 +448,7 @@ jobs:
           #################################
           ls install
       displayName: 'Check Install'
+      failOnStderr: true
 
 
 ###############################################################################

@@ -67,5 +67,7 @@ using namespace ascent;
 TEST(ascent_smoke, ascent_about)
 {
     ASCENT_INFO(ascent::about());
+    // make sure we fail!
+    EXPECT_TRUE(false);
 }
 
