@@ -24,7 +24,7 @@
 
 packages:
   all:
-    compiler: [gcc@7.3.0, intel@18.0.1.163]
+    compiler: [gcc@8.2.0, intel@19.0.3.199]
     modules: {}
     paths: {}
     providers:
@@ -33,10 +33,10 @@ packages:
       lapack: [openblas]
     variants: +mpi 
   mpich:
-    version: [7.7.0]
+    version: [7.7.6]
     buildable: false
     modules:
-        mpich@7.7.0: cray-mpich
+        mpich@7.7.6: cray-mpich/7.7.6
     paths: {}
     providers: {}
     compiler: []
@@ -48,7 +48,7 @@ packages:
   intel-mkl:
       buildable: False
       paths:
-        intel-mkl%intel@18.0.1.163: /opt/intel
+        intel-mkl%intel@19.0.3.199: /opt/intel
   perl:
       buildable: False
       paths:
@@ -58,7 +58,7 @@ packages:
   cmake:
       buildable: False
       paths:
-       cmake@3.9.6: /project/projectdirs/alpine/software/cmake/3.9.6/
+       cmake: /project/projectdirs/alpine/software/cmake/3.14.6/
   python:
       variants: ~dbm
   pkg-config:
