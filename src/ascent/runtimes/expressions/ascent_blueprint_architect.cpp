@@ -790,7 +790,8 @@ field_cdf(const conduit::Node &hist)
 
 // this only makes sense on a count histogram
 conduit::Node quantile(const conduit::Node &cdf,
-                       const double val)
+                       const double val,
+                       const std::string interpolation)
 {
   const double *cdf_bins = cdf["attrs/value/value"].value();
   const int num_bins = cdf["attrs/num_bins/value"].to_int32();
@@ -802,7 +803,38 @@ conduit::Node quantile(const conduit::Node &cdf,
   int bin = 0;
 
   for(; cdf_bins[bin] < val; ++bin);
-  res["value"] = min_val + bin * (max_val - min_val) / (num_bins - 1);
+  // we overshot
+  if(cdf_bins[bin] > val) --bin;
+  // i and j are the bin boundaries
+  double i = min_val + bin * (max_val - min_val) / num_bins;
+  double j = min_val + (bin + 1) * (max_val - min_val) / num_bins;
+  
+  if(interpolation == "linear") {
+    if(cdf_bins[bin+1] - cdf_bins[bin] == 0)
+    {
+      res["value"] = i;
+    }
+    else
+    {
+      res["value"] = i + (j - i) * (val - cdf_bins[bin]) / (cdf_bins[bin+1] - cdf_bins[bin]);
+    }
+  } 
+  else if(interpolation == "lower")
+  {
+    res["value"] = i;
+  }
+  else if(interpolation == "higher")
+  {
+    res["value"] = j;
+  }
+  else if(interpolation == "midpoint")
+  {
+    res["value"] = (i + j) / 2;
+  }
+  else if(interpolation == "nearest")
+  {
+    res["value"] = (val - i < j - val)? i : j;
+  }
 
   return res;
 }
@@ -886,7 +918,6 @@ field_min(const conduit::Node &dataset,
   return res;
 }
 
-//TODO expose this
 conduit::Node
 field_sum(const conduit::Node &dataset,
           const std::string &field)
@@ -917,10 +948,10 @@ field_sum(const conduit::Node &dataset,
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   MPI_Comm_rank(mpi_comm, &rank);
   double global_sum;
-  MPI_Allreduce( &sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_comm);
+  MPI_Allreduce(&sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_comm);
 
   long long int global_count;
-  MPI_Allreduce( &count, &global_count, 1, MPI_LONG_LONG_INT, MPI_SUM, mpi_comm);
+  MPI_Allreduce(&count, &global_count, 1, MPI_LONG_LONG_INT, MPI_SUM, mpi_comm);
 
   sum = global_sum;
   count = global_count;
@@ -938,7 +969,7 @@ field_avg(const conduit::Node &dataset,
 {
   conduit::Node sum = field_sum(dataset, field);
 
-  double avg = sum["value"].as_float64() / sum["count"].as_float64();
+  double avg = sum["value"].to_float64() / sum["count"].to_float64();
 
   conduit::Node res;
   res["value"] = avg;

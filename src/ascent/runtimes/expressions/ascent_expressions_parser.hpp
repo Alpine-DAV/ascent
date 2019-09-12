@@ -30,14 +30,14 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_YY_PARSER_HPP_INCLUDED
-# define YY_YY_PARSER_HPP_INCLUDED
+#ifndef YY_ASCENT_PARSER_HPP_INCLUDED
+# define YY_ASCENT_PARSER_HPP_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 1
 #endif
 #if YYDEBUG
-extern int yydebug;
+extern int ascentdebug;
 #endif
 
 /* Token type.  */
@@ -67,12 +67,13 @@ extern int yydebug;
     TLBRACKET = 277,
     TRBRACKET = 278,
     TCOMMA = 279,
-    TPLUS = 280,
-    TMINUS = 281,
-    TMUL = 282,
-    TDIV = 283,
-    TMOD = 284,
-    TNEG = 285
+    TDOT = 280,
+    TPLUS = 281,
+    TMINUS = 282,
+    TMUL = 283,
+    TDIV = 284,
+    TMOD = 285,
+    TNEG = 286
   };
 #endif
 
@@ -94,7 +95,7 @@ union YYSTYPE
  std::string                 *string;
  int token;
 
-#line 98 "parser.hpp" /* yacc.c:1909  */
+#line 99 "parser.hpp" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -103,14 +104,14 @@ typedef union YYSTYPE YYSTYPE;
 #endif
 
 
-extern YYSTYPE yylval;
+extern YYSTYPE ascentlval;
 
-int yyparse (void);
+int ascentparse (void);
 /* "%code provides" blocks.  */
 #line 17 "parser.y" /* yacc.c:1909  */
 
   ASTExpression *get_result();
 
-#line 115 "parser.hpp" /* yacc.c:1909  */
+#line 116 "parser.hpp" /* yacc.c:1909  */
 
-#endif /* !YY_YY_PARSER_HPP_INCLUDED  */
+#endif /* !YY_ASCENT_PARSER_HPP_INCLUDED  */

@@ -114,6 +114,11 @@ TEST(ascent_expressions, basic_expressions)
     EXPECT_EQ(res["value"].to_float64(), 4.0);
     EXPECT_EQ(res["type"].as_string(), "double");
 
+    expr = "5e-2 / .5";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 0.1);
+    EXPECT_EQ(res["type"].as_string(), "double");
+
     expr = "8 % 3";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_int32(), 2);
@@ -227,7 +232,7 @@ TEST(ascent_expressions, basic_expressions)
     EXPECT_EQ(res["value"].to_float64(), 100);
     EXPECT_EQ(res["type"].as_string(), "int");
 
-    expr = "magnitude(max(field(\"braid\"))[\"position\"]) > 0";
+    expr = "magnitude(max(field(\"braid\")).position) > 0";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 1);
     EXPECT_EQ(res["type"].as_string(), "bool");
@@ -295,7 +300,7 @@ TEST(ascent_expressions, functional_correctness)
     conduit::Node res;
     std::string expr;
 
-    expr = "max(field(\"ele_example\"))[\"position\"]";
+    expr = "max(field(\"ele_example\")).position";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].as_float64(), 25);
     EXPECT_EQ(res["type"].as_string(), "vector");
@@ -320,15 +325,25 @@ TEST(ascent_expressions, functional_correctness)
     EXPECT_EQ(res["value"].as_float64(), 0);
     EXPECT_EQ(res["type"].as_string(), "double");
 
-    expr = "bin(pdf(histogram(field(\"ele_example\"))), bin=4) == pdf(histogram(field(\"ele_example\")))[\"value\"][4]";
+    expr = "bin(pdf(histogram(field(\"ele_example\"))), bin=0) == pdf(histogram(field(\"ele_example\"))).value[0]";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 1);
     EXPECT_EQ(res["type"].as_string(), "bool");
 
-    expr = "quantile(cdf(histogram(field(\"ele_example\"))), 1.0)";
+    expr = "quantile(cdf(histogram(field(\"ele_example\"), num_bins=240)), 3.0/16.0)";
     res = eval.evaluate(expr);
-    EXPECT_EQ(res["value"].to_float64(), 15);
+    EXPECT_EQ(res["value"].to_float64(), 2);
     EXPECT_EQ(res["type"].as_string(), "double");
+
+    expr = "16.0/256 == avg(histogram(field(\"ele_example\")).value)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_uint8(), 1);
+    EXPECT_EQ(res["type"].as_string(), "bool");
+
+    expr = "16 == sum(histogram(field(\"ele_example\")).value)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_uint8(), 1);
+    EXPECT_EQ(res["type"].as_string(), "bool");
 }
 
 //-----------------------------------------------------------------------------
@@ -462,7 +477,7 @@ TEST(ascent_expressions, test_identifier)
     EXPECT_EQ(res1["value"].to_float64(), res2["value"].to_float64());
 
     // grab attribute from cached value
-    res2 = eval.evaluate("mx_b[\"position\"]");
+    res2 = eval.evaluate("mx_b.position");
     EXPECT_EQ(res2["type"].as_string(), "vector");
 }
 
@@ -506,9 +521,9 @@ TEST(ascent_expressions, test_history)
     res = eval.evaluate("vector(6,4,8)", "vec");
 
 
-    expr = "history(val, 2)";
+    expr = "history(val, absolute_index=2)";
     res = eval.evaluate(expr);
-    EXPECT_EQ(res["value"].to_int32(), 2);
+    EXPECT_EQ(res["value"].to_int32(), 3);
     EXPECT_EQ(res["type"].as_string(), "int");
 
     expr = "history(val, 3)";
@@ -595,6 +610,7 @@ TEST(ascent_expressions, if_expressions)
     }
     EXPECT_EQ(threw, true);
 }
+
 //-----------------------------------------------------------------------------
 
 int main(int argc, char* argv[])

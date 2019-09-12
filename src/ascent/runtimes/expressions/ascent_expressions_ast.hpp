@@ -156,16 +156,30 @@ class ASTArrayAccess : public ASTExpression {
 public:
   ASTExpression *array;
   ASTExpression *index;
-  bool by_name;
-  ASTArrayAccess(ASTExpression *array, ASTExpression *index, bool by_name) :
-    array(array), index(index), by_name(by_name) { }
+  ASTArrayAccess(ASTExpression *array, ASTExpression *index) :
+    array(array), index(index) { } 
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
 
   virtual ~ASTArrayAccess()
-  { 
+  {
     delete array;
     delete index;
+  }
+};
+
+class ASTDotAccess : public ASTExpression {
+public:
+  ASTExpression *obj;
+  std::string name;
+  ASTDotAccess(ASTExpression *obj, const std::string& name) :
+    obj(obj), name(name) { } 
+  virtual void access();
+  virtual conduit::Node build_graph(flow::Workspace &w);
+
+  virtual ~ASTDotAccess()
+  {
+    delete obj;
   }
 };
 #endif

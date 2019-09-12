@@ -239,6 +239,7 @@ struct HistogramFunctor
       double val = static_cast<double>(values[v]);
       int bin_index = static_cast<int>((val - m_min_val) * inv_delta);
       // clamp for now
+      // another option is not to count data outside the range
       bin_index = std::max(0, std::min(bin_index, m_num_bins - 1));
 #ifdef ASCENT_USE_OPENMP
       #pragma omp atomic

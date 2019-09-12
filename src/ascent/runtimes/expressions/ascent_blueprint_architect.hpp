@@ -88,6 +88,9 @@ conduit::Node field_max(const conduit::Node &dataset,
 conduit::Node field_min(const conduit::Node &dataset,
                         const std::string &field_name);
 
+conduit::Node field_sum(const conduit::Node &dataset,
+                        const std::string &field_name);
+
 conduit::Node field_avg(const conduit::Node &dataset,
                         const std::string &field_name);
 
@@ -112,7 +115,8 @@ bool has_field(const conduit::Node &dataset,
                const std::string &field_name);
 
 conduit::Node quantile(const conduit::Node &cdf,
-                       const double val);
+                       const double val,
+                       const std::string interpolation);
 
 };
 //-----------------------------------------------------------------------------

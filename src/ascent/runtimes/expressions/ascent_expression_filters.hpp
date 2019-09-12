@@ -215,11 +215,35 @@ public:
     virtual void   execute();
 };
 
+class ArrayMin : public ::flow::Filter
+{
+public:
+    ArrayMin();
+   ~ArrayMin();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 class FieldMax : public ::flow::Filter
 {
 public:
     FieldMax();
    ~FieldMax();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+class ArrayMax : public ::flow::Filter
+{
+public:
+    ArrayMax();
+   ~ArrayMax();
 
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,
@@ -244,6 +268,42 @@ class FieldAvg : public ::flow::Filter
 public:
     FieldAvg();
    ~FieldAvg();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+class ArrayAvg : public ::flow::Filter
+{
+public:
+    ArrayAvg();
+   ~ArrayAvg();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+class FieldSum : public ::flow::Filter
+{
+public:
+    FieldSum();
+   ~FieldSum();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+class ArraySum : public ::flow::Filter
+{
+public:
+    ArraySum();
+   ~ArraySum();
 
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,
@@ -376,6 +436,18 @@ class ArrayAccess : public ::flow::Filter
 public:
     ArrayAccess();
    ~ArrayAccess();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+class DotAccess : public ::flow::Filter
+{
+public:
+    DotAccess();
+   ~DotAccess();
 
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,

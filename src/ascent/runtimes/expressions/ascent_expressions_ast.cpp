@@ -667,13 +667,20 @@ conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
       ASCENT_ERROR("math operations are only supported on vectors and scalars: " << msg.str());
     }
 
-    if(l_type == r_type)
+    if(detail::is_scalar(l_type) && detail::is_scalar(r_type))
     {
-      res_type = l_type;
+      // promote to double if at least one is a double
+      if(l_type == "double" || r_type == "double")
+      {
+        res_type = "double";
+      }
+      else
+      {
+        res_type = "int";
+      }
     }
     else
     {
-      //TODO figure out once and for all if we want mixed scalar/vector ops
       res_type = "vector";
     }
   }
@@ -765,7 +772,7 @@ void ASTArrayAccess::access()
   std::cout << "Creating array" << std::endl;
 
   index->access();
-  std::cout << "Creating array index by " << ((by_name)? "name" : "index") << std::endl;
+  std::cout << "Creating array index" << std::endl;
 
   std::cout << "Creating array access" << std::endl;
 }
@@ -775,53 +782,17 @@ conduit::Node ASTArrayAccess::build_graph(flow::Workspace &w)
   conduit::Node n_array = array->build_graph(w);
   conduit::Node n_index = index->build_graph(w);
 
-  std::string obj_type = n_array["type"].as_string();
-
   conduit::Node params;
-  std::string res_type;
-  // get an attribute
-  if(by_name)
+
+  if(n_index["type"].as_string() != "int")
   {
-    // load the object table
-    if(!w.registry().has_entry("object_table"))
-    {
-      ASCENT_ERROR("Missing object table");
-    }
-    conduit::Node *o_table = w.registry().fetch<conduit::Node>("object_table");
-
-    // get the object
-    if(!o_table->has_path(obj_type))
-    {
-      ASCENT_ERROR("Cannot get attribute of non-object type: "<<obj_type);
-    }
-    const conduit::Node &obj = (*o_table)[obj_type];
-
-    // resolve attribute type
-    std::string attr = n_index["value"].as_string();
-    std::string path = "attrs/" + attr + "/type";
-    if(!obj.has_path(path))
-    {
-      obj.print();
-      ASCENT_ERROR("Attribute "<<attr<<" of "<<obj_type<<" not found");
-    }
-    res_type = obj[path].as_string();
-
-    params["by_name"] = true;
+    ASCENT_ERROR("Array index must be an integer");
   }
-  // get an array element
-  else if(n_index["type"].as_string() == "int")
+
+  std::string obj_type = n_array["type"].as_string();
+  if(obj_type != "array")
   {
-    if(obj_type != "array")
-    {
-      ASCENT_ERROR("Cannot get index of non-array type: "<<obj_type);
-    }
-    // only arrays of doubles are supported
-    res_type = "double";
-    params["by_name"] = false;
-  }
-  else
-  {
-    ASCENT_ERROR("Array index must be a string or an integer");
+    ASCENT_ERROR("Cannot get index of non-array type: "<<obj_type);
   }
 
   // create a unique name for the filter
@@ -839,8 +810,72 @@ conduit::Node ASTArrayAccess::build_graph(flow::Workspace &w)
   w.graph().connect(n_index["filter_name"].as_string(),name,"index");
 
   conduit::Node res;
-  res["type"] = res_type;
+  // only arrays of double are supported
+  res["type"] = "double";
   res["filter_name"] = name;
+
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void ASTDotAccess::access()
+{
+  obj->access();
+  std::cout << "Creating object" << std::endl;
+
+  std::cout << "Creating dot name " << name << std::endl;
+
+  std::cout << "Creating dot access" << std::endl;
+}
+
+conduit::Node ASTDotAccess::build_graph(flow::Workspace &w)
+{
+  conduit::Node n_obj = obj->build_graph(w);
+
+  std::string obj_type = n_obj["type"].as_string();
+
+  // load the object table
+  if(!w.registry().has_entry("object_table"))
+  {
+    ASCENT_ERROR("Missing object table");
+  }
+  conduit::Node *o_table = w.registry().fetch<conduit::Node>("object_table");
+
+  // get the object
+  if(!o_table->has_path(obj_type))
+  {
+    ASCENT_ERROR("Cannot get attribute of non-object type: "<<obj_type);
+  }
+  const conduit::Node &obj = (*o_table)[obj_type];
+
+  // resolve attribute type
+  std::string path = "attrs/" + name + "/type";
+  if(!obj.has_path(path))
+  {
+    obj.print();
+    ASCENT_ERROR("Attribute "<<name<<" of "<<obj_type<<" not found");
+  }
+  std::string res_type = obj[path].as_string();
+
+  // create a unique name for the filter
+  static int ast_dot_counter = 0;
+  std::stringstream ss;
+  ss << "dot" << "_" << ast_dot_counter++;
+  std::string f_name = ss.str();
+
+  conduit::Node params;
+  params["name"] = name;
+
+  w.graph().add_filter("expr_dot",
+                       f_name,
+                       params);
+
+  // src, dest, port
+  w.graph().connect(n_obj["filter_name"].as_string(),f_name,"obj");
+
+  conduit::Node res;
+  res["type"] = res_type;
+  res["filter_name"] = f_name;
 
   return res;
 }
