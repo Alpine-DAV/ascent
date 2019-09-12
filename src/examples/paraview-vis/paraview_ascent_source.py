@@ -192,8 +192,7 @@ def get_filenoext(prefix, node):
     domain_id = node["state/domain_id"]
     # time step
     cycle = node["state/cycle"]
-    fileNoExt = (prefix + "_" + str(domain_id) +
-                 "_{0:04d}").format(int(cycle))
+    fileNoExt = (prefix + "_{0:04d}_{1}").format(int(cycle), domain_id)
     return fileNoExt
 
 
@@ -239,12 +238,7 @@ def write_vtk(prefix, node, data):
     else:
         print("Error: Unknown datatype.")
         return
-    # MPI domain
-    domain_id = node["state/domain_id"]
-    # time step
-    cycle = node["state/cycle"]
-    fileNoExt = (prefix + "_" + str(domain_id) +
-                 "_{0:04d}").format(int(cycle))
+    fileNoExt = get_filenoext(prefix, node)
     writer.SetFileName(fileNoExt + "." + extension)
     writer.SetInputDataObject(data)
     writer.Write()
