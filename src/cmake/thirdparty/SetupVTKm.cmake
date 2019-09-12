@@ -58,15 +58,25 @@ if(NOT VTKm_DIR)
     MESSAGE(FATAL_ERROR "Failed to find VTKm at VTKM_DIR=${VTKM_DIR}/lib/cmake/vtk-*")
 endif()
 
-find_package(VTKm REQUIRED)
+find_package(VTKm REQUIRED QUIET)
+
+if(ENABLE_CUDA AND NOT VTKm_ENABLE_CUDA)
+   message(FATAL_ERROR "Ascent CUDA support requires VTK-m with CUDA support (ENABLE_CUDA == TRUE, however VTKm_ENABLE_CUDA == FALSE")
+endif()
+
 
 set(VTKM_FOUND TRUE)
-message(STATUS "Found VTKm Include Dirs: ${VTKm_INCLUDE_DIRS}")
 
-set(VTKm_LIBRARIES vtkm_filter vtkm_cont vtkm_rendering)
+set(VTKM_TARGETS vtkm_cont vtkm_filter vtkm_rendering)
+
+if(ENABLE_CUDA)
+    # we need to inject the vtkm cuda flags into CMAKE_CUDA_FLAGS
+    vtkm_get_cuda_flags(_fetch_vtkm_cuda_flags)
+    set(CMAKE_CUDA_FLAGS  "${CMAKE_CUDA_FLAGS} ${_fetch_vtkm_cuda_flags}")
+    unset(_fetch_vtkm_cuda_flags)
+endif()
+
 
 blt_register_library(NAME vtkm
-                     INCLUDES ${VTKm_INCLUDE_DIRS}
-                     COMPILE_FLAGS ${VTKm_COMPILE_OPTIONS}
-                     LIBRARIES vtkm_cont vtkm_rendering
+                     LIBRARIES ${VTKM_TARGETS}
                      )
