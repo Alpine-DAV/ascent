@@ -160,9 +160,15 @@ jobs:
          #################################
          # test
          cd build
-         env CTEST_OUTPUT_ON_FAILURE=1 make test
-      displayName: 'Test'
+         ctest -T TestOut --output-on-failure -V
+      displayName: 'Run Unit Tests'
       failOnStderr: true
+
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: 'cTest'
+        testResultsFiles: '**/TestOut.xml'
+      displayName: 'Unit Test Results'
 
     - script: |
          #################################
