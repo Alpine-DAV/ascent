@@ -93,6 +93,7 @@
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
+#include <vtkh/filters/HistSampling.hpp>
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
@@ -2760,6 +2761,124 @@ VTKHRecenter::execute()
 
     set_output<vtkh::DataSet>(recenter_output);
 }
+//-----------------------------------------------------------------------------
+
+VTKHHistSampling::VTKHHistSampling()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHHistSampling::~VTKHHistSampling()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHHistSampling::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_hist_sampling";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHHistSampling::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_numeric("bins",params, info, false);
+    res &= check_numeric("sample_rate",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("bins");
+    valid_paths.push_back("sample_rate");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHHistSampling::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_hist_sampling input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+
+    float sample_rate = .1f;
+    if(params().has_path("sample_rate"))
+    {
+      sample_rate = params()["sample_rate"].to_float32();
+      if(sample_rate <= 0.f || sample_rate >= 1.f)
+      {
+        ASCENT_ERROR("vtkh_hist_sampling 'sample_rate' value '"<<sample_rate<<"'"
+                     <<" not in the range (0,1)");
+      }
+    }
+
+    int bins = 128;
+
+    if(params().has_path("bins"))
+    {
+      bins = params()["bins"].to_int32();
+      if(bins <= 0.f)
+      {
+        ASCENT_ERROR("vtkh_hist_sampling 'bins' value '"<<bins<<"'"
+                     <<" must be positive");
+      }
+    }
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+
+    // TODO: write helper functions for this
+    std::string ghost_field = "";
+    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    if(meta->has_path("ghost_field"))
+    {
+      ghost_field = (*meta)["ghost_field"].as_string();
+      if(!data->GlobalFieldExists(ghost_field))
+      {
+        // can't find it
+        ghost_field = "";
+      }
+
+    }
+
+    vtkh::HistSampling hist;
+
+    hist.SetInput(data);
+    hist.SetField(field_name);
+    hist.SetNumBins(bins);
+    hist.SetSamplingPercent(sample_rate);
+    if(ghost_field != "")
+    {
+      hist.SetGhostField(ghost_field);
+    }
+
+    hist.Update();
+    vtkh::DataSet *hist_output = hist.GetOutput();
+
+    set_output<vtkh::DataSet>(hist_output);
+}
+
 //-----------------------------------------------------------------------------
 
 VTKHNoOp::VTKHNoOp()
