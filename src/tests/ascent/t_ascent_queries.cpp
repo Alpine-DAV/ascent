@@ -100,7 +100,7 @@ TEST(ascent_queries, max_query)
     Node actions;
 
     conduit::Node queries;
-    queries["q1/params/expression"] = "max(\"braid\")";
+    queries["q1/params/expression"] = "max(field(\"braid\"))";
     queries["q1/params/name"] = "max_braid";
 
     conduit::Node &add_queries = actions.append();
@@ -122,7 +122,7 @@ TEST(ascent_queries, max_query)
 
     conduit::Node info;
     ascent.info(info);
-    EXPECT_TRUE(info.has_path("expressions/max_braid/100/value"));
+    EXPECT_TRUE(info.has_path("expressions/max_braid/100/attrs/value"));
     info["expressions"].save(output_file, "json");
 
     ascent.close();

@@ -199,7 +199,7 @@ TEST(ascent_triggers, complex_trigger)
     //
     Node actions;
     // this should always be true
-    std::string condition = "magnitude(position(max(\"braid\")) - vector(0,0,0)) > 0";
+    std::string condition = "magnitude(max(field(\"braid\")).position - vector(0,0,0)) > 0";
     conduit::Node triggers;
     triggers["t1/params/condition"] = condition;
     triggers["t1/params/actions_file"] = trigger_file;
@@ -224,7 +224,7 @@ TEST(ascent_triggers, complex_trigger)
     conduit::Node info;
     ascent.info(info);
     std::string path = "expressions/" + condition + "/100/value";
-    EXPECT_TRUE(info[path].to_int32() == 1);
+    EXPECT_TRUE(info[path].to_uint8() == 1);
 
     ascent.close();
 
@@ -232,7 +232,7 @@ TEST(ascent_triggers, complex_trigger)
     EXPECT_TRUE(check_test_image(output_file));
     std::string msg = "A more complex trigger example using several functions"
                       " that evaluate positons on the mesh.";
-    ASCENT_ACTIONS_DUMP(actions,output_file, msg);
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -298,7 +298,7 @@ TEST(ascent_triggers, trigger_extract)
     //
     Node actions;
     // this should always be true
-    std::string condition = "magnitude(position(max(\"braid\")) - vector(0,0,0)) > 0";
+    std::string condition = "magnitude(max(field(\"braid\")).position - vector(0,0,0)) > 0";
     conduit::Node triggers;
     triggers["t1/params/condition"] = condition;
     triggers["t1/params/actions_file"] = trigger_file;
@@ -325,7 +325,7 @@ TEST(ascent_triggers, trigger_extract)
     EXPECT_TRUE(conduit::utils::is_file(output_root_file));
     std::string msg = "A more complex trigger example using several functions"
                       " that evaluate positons on the mesh.";
-    ASCENT_ACTIONS_DUMP(actions,output_file, msg);
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 

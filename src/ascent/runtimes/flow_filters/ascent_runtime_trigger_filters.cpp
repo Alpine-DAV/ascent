@@ -151,12 +151,12 @@ BasicTrigger::execute()
     runtime::expressions::ExpressionEval eval(n_input);
     conduit::Node res = eval.evaluate(expression);
 
-    if(res["type"].as_string() != "boolean")
+    if(res["type"].as_string() != "bool")
     {
-      ASCENT_ERROR("result of expression '"<<expression<<"' is not an boolean");
+      ASCENT_ERROR("result of expression '"<<expression<<"' is not an bool");
     }
 
-    bool fire = res["value"].to_int32() != 0;
+    bool fire = res["value"].to_uint8() != 0;
     if(fire)
     {
       Ascent ascent;

@@ -708,16 +708,15 @@ field_entropy(const conduit::Node &hist)
   const int num_bins = hist["attrs/num_bins/value"].to_int32();
   double sum = array_sum(hist["attrs/value/value"])["value"].to_float64();
   double entropy = 0;
-  double p;
 
 #ifdef ASCENT_USE_OPENMP
-      #pragma omp parallel for
+      #pragma omp parallel for reduction(+ : entropy)
 #endif
   for(int b = 0; b < num_bins; ++b)
   {
     if(hist_bins[b] != 0)
     {
-      p = hist_bins[b] / sum;
+      double p = hist_bins[b] / sum;
       entropy += -p * std::log(p);
     }
   }
@@ -771,9 +770,7 @@ field_cdf(const conduit::Node &hist)
   double *cdf = new double[num_bins];
   memset(cdf, 0, sizeof(double) * num_bins);
 
-#ifdef ASCENT_USE_OPENMP
-      #pragma omp parallel for
-#endif
+  //TODO can this be parallel?
   for(int b = 0; b < num_bins; ++b)
   {
     rolling_cdf += hist_bins[b] / sum;
