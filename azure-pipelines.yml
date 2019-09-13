@@ -149,6 +149,7 @@ jobs:
          # build
          #################################
          # build
+         cd build
          make VERBOSE=1
       displayName: 'Build'
       failOnStderr: true
@@ -158,6 +159,7 @@ jobs:
          # test
          #################################
          # test
+         cd build
          env CTEST_OUTPUT_ON_FAILURE=1 make test
       displayName: 'Test'
       failOnStderr: true
@@ -166,6 +168,7 @@ jobs:
          #################################
          # install
          #################################
+         cd build
          make install
       displayName: 'Install'
 
@@ -173,9 +176,6 @@ jobs:
         ###########################
         # using with cmake example
         ###########################
-        # capture current path
-        # move back up to repor root
-        cd ${ROOT_DIR}
         pwd
         ls -l
         # find spack installed cmake
@@ -196,7 +196,6 @@ jobs:
         ###########################
         # using with make example
         ###########################
-        cd ${ROOT_DIR}
         cat install/share/ascent/ascent_config.mk
         pwd
         ls -l
