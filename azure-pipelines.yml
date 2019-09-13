@@ -159,13 +159,13 @@ jobs:
          #################################
          # test
          cd build
-         ctest -T TestOut --output-on-failure -V
+         ctest -T test --output-on-failure -V
       displayName: 'Run Unit Tests'
 
     - task: PublishTestResults@2
       inputs:
         testResultsFormat: 'cTest'
-        testResultsFiles: '**/TestOut.xml'
+        testResultsFiles: '**/Test.xml'
       displayName: 'Unit Test Results'
 
     - script: |
