@@ -152,7 +152,6 @@ jobs:
          cd build
          make VERBOSE=1
       displayName: 'Build'
-      failOnStderr: true
 
     - script: |
          #################################
@@ -162,7 +161,6 @@ jobs:
          cd build
          ctest -T TestOut --output-on-failure -V
       displayName: 'Run Unit Tests'
-      failOnStderr: true
 
     - task: PublishTestResults@2
       inputs:
