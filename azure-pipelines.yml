@@ -143,7 +143,6 @@ jobs:
          # configure
          cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
       displayName: 'Configure with CMake'
-      failOnStderr: true
 
     - script: |
          #################################
@@ -169,7 +168,6 @@ jobs:
          #################################
          make install
       displayName: 'Install'
-      failOnStderr: true
 
     - script: |
         ###########################
@@ -192,8 +190,7 @@ jobs:
         make VERBOSE=1
         ./ascent_render_example
       displayName: 'Test vs Install (using-with-cmake)'
-      condition: eq(variables['ENABLE_VTKH'], 'ON')
-      failOnStderr: true
+      condition: and(succeeded(), eq(variables['ENABLE_VTKH'], 'ON'))
 
     - script: |
         ###########################
@@ -207,8 +204,7 @@ jobs:
         make
         ./ascent_render_example
       displayName: 'Test vs Install (using-with-make)'
-      condition: eq(variables['ENABLE_VTKH'], 'ON')
-      failOnStderr: true
+      condition: and(succeeded(), eq(variables['ENABLE_VTKH'], 'ON'))
 
 
 ###############################################################################
@@ -476,6 +472,34 @@ jobs:
 #       failOnStderr: true
 
 
+
+###############################################################################
+# Docker build and test case, that leverages our script that calls Docker Build
+###############################################################################
+# - job: Docker_Ubuntu
+#   pool:
+#     vmImage: 'ubuntu-16.04'
+#   timeoutInMinutes: 0
+#   steps:
+#     - checkout: self
+#       clean: boolean
+#       submodules: recursive
+#
+#     - script: |
+#         ####################
+#         # run docker build
+#         ####################
+#         cd src/examples/docker/ubuntu/ && ./example_build.sh
+#       displayName: 'Docker Build'
+
+
+
+###############################################################################
+###############################################################################
+# Disabled tests
+###############################################################################
+###############################################################################
+
 ###############################################################################
 # Disabled b/c this is currently always testing develop, which
 # isn't helpful and creates confusing results.
@@ -556,24 +580,12 @@ jobs:
 #         cat uberenv_libs/ascent-install/*.cmake
 #       displayName: 'Check Install'
 
-###############################################################################
-# Docker build and test case, that leverages our script that calls Docker Build
-###############################################################################
-- job: Docker_Ubuntu
-  pool:
-    vmImage: 'ubuntu-16.04'
-  timeoutInMinutes: 0
-  steps:
-    - checkout: self
-      clean: boolean
-      submodules: recursive
 
-    - script: |
-        ####################
-        # run docker build
-        ####################
-        cd src/examples/docker/ubuntu/ && ./example_build.sh
-      displayName: 'Docker Build'
+
+
+###############################################################################
+# disable b/c macos recipie needs more work 
+###############################################################################
 
 ###############################################################################
 # macOS build and test, using spack to build tpls
