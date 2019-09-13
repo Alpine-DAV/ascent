@@ -1,2 +1,2 @@
 vtkm branch='master' commit='23b73103e0ea242f1d9b3e7116410d1c6c832d38'
-vtkh branch='develop' commit='3c75e91aeef36e237de54698b8999246b8b9dc70'
+vtkh branch='develop' commit='69381ec9d52409af9172495c0829c937de19e416'
