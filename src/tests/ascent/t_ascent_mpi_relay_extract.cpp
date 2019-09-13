@@ -215,10 +215,6 @@ TEST(ascent_mpi_runtime, test_relay_extract_selected_fields)
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
-
     //
     // Run Ascent
     //
