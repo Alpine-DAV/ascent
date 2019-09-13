@@ -167,6 +167,7 @@ jobs:
         testResultsFormat: 'cTest'
         testResultsFiles: '**/Test.xml'
       displayName: 'Unit Test Results'
+      condition: always()
 
     - script: |
          #################################
