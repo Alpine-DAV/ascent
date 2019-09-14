@@ -339,6 +339,7 @@ class AscentSource(VTKPythonAlgorithmBase):
         #          unless you have the same import in paraview-vis.py
         from mpi4py import MPI
         self._node = ascent_extract.ascent_data().child(0)
+        self._count = 0
         # topology and coords are set only if there is only one topology,
         # otherwise they are none.
         self._topology = None
@@ -365,6 +366,16 @@ class AscentSource(VTKPythonAlgorithmBase):
 
     def GetNode(self):
         return self._node
+
+
+    @smproperty.intvector(name="Count", default_values=0)
+    def SetCount(self, x):
+        self._node = ascent_extract.ascent_data().child(0)
+        cycle = self._node["state/cycle"]
+        self._count = x
+        # if self._mpi_rank == 0:
+        #     print("SetCount: count={}, cycle={}".format(self._count, cycle))
+        self.Modified()
 
     def RequestData(self, request, inVector, outVector):
         for outputPort in range(self.GetNumberOfOutputPorts()):
