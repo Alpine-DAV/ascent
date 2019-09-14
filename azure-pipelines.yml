@@ -189,6 +189,7 @@ jobs:
         pwd
         ls -l
         # find spack installed cmake
+        export ROOT_DIR=`pwd`
         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
         export PATH=${CMAKE_BIN_DIR}:$PATH
         echo $PATH
@@ -378,6 +379,7 @@ jobs:
         pwd
         ls -l
         # find spack installed cmake
+        export ROOT_DIR=`pwd`
         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
         export PATH=${CMAKE_BIN_DIR}:$PATH
         echo $PATH
