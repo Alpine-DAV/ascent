@@ -591,11 +591,11 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
        {
          ostringstream py_src;
          ifstream ifs(script_fname.c_str());
-         
-         // guard by successful file open, 
-         // otherwise our prefix comment will always cause 
+
+         // guard by successful file open,
+         // otherwise our prefix comment will always cause
          // a valid string to be passed to the node
-         // and we won't be able to detect when there was 
+         // and we won't be able to detect when there was
          // a bad file passed
          if(ifs.is_open())
          {
@@ -612,7 +612,7 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
 
        if(!n_py_src.dtype().is_string())
        {
-         ASCENT_ERROR("failed to read python script file " 
+         ASCENT_ERROR("failed to read python script file "
                       << script_fname
                       << " and broadcast source");
        }
@@ -911,6 +911,7 @@ AscentRuntime::PopulateMetadata()
   (*meta)["cycle"] = cycle;
   (*meta)["time"] = time;
   (*meta)["refinement_level"] = m_refinement_level;
+  (*meta)["ghost_field"] = m_ghost_field_name;
 
 }
 //-----------------------------------------------------------------------------
