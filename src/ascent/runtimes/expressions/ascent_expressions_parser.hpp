@@ -30,14 +30,14 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_YY_PARSER_HPP_INCLUDED
-# define YY_YY_PARSER_HPP_INCLUDED
+#ifndef YY_ASCENT_PARSER_HPP_INCLUDED
+# define YY_ASCENT_PARSER_HPP_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 1
 #endif
 #if YYDEBUG
-extern int yydebug;
+extern int ascentdebug;
 #endif
 
 /* Token type.  */
@@ -48,21 +48,32 @@ extern int yydebug;
     TIDENTIFIER = 258,
     TINTEGER = 259,
     TDOUBLE = 260,
-    TMESHVAR = 261,
-    TCEQ = 262,
-    TCNE = 263,
-    TCLT = 264,
-    TCLE = 265,
-    TCGT = 266,
-    TCGE = 267,
-    TLPAREN = 268,
-    TRPAREN = 269,
-    TCOMMA = 270,
-    TPLUS = 271,
-    TMINUS = 272,
-    TMUL = 273,
-    TDIV = 274,
-    TNEG = 275
+    TSTRING = 261,
+    TIF = 262,
+    TTHEN = 263,
+    TELSE = 264,
+    TOR = 265,
+    TAND = 266,
+    TNOT = 267,
+    TAEQ = 268,
+    TCEQ = 269,
+    TCNE = 270,
+    TCLT = 271,
+    TCLE = 272,
+    TCGT = 273,
+    TCGE = 274,
+    TLPAREN = 275,
+    TRPAREN = 276,
+    TLBRACKET = 277,
+    TRBRACKET = 278,
+    TCOMMA = 279,
+    TDOT = 280,
+    TPLUS = 281,
+    TMINUS = 282,
+    TMUL = 283,
+    TDIV = 284,
+    TMOD = 285,
+    TNEG = 286
   };
 #endif
 
@@ -71,17 +82,20 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 12 "parser.y" /* yacc.c:1909  */
+#line 22 "parser.y" /* yacc.c:1909  */
 
  ASTNode                     *node;
  ASTExpression               *expr;
  ASTIdentifier               *ident;
- ASTMeshVar                  *meshvar;
- std::vector<ASTExpression*> *exprvec;
+ ASTString                   *string_literal;
+ ExpressionList              *expr_list;
+ NamedExpression             *named_expr;
+ NamedExpressionList         *named_expr_list;
+ ASTArguments                *args;
  std::string                 *string;
  int token;
 
-#line 85 "parser.hpp" /* yacc.c:1909  */
+#line 99 "parser.hpp" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -90,9 +104,14 @@ typedef union YYSTYPE YYSTYPE;
 #endif
 
 
-extern YYSTYPE yylval;
+extern YYSTYPE ascentlval;
 
-int yyparse (void);
-ASTExpression *get_result();
+int ascentparse (void);
+/* "%code provides" blocks.  */
+#line 17 "parser.y" /* yacc.c:1909  */
 
-#endif /* !YY_YY_PARSER_HPP_INCLUDED  */
+  ASTExpression *get_result();
+
+#line 116 "parser.hpp" /* yacc.c:1909  */
+
+#endif /* !YY_ASCENT_PARSER_HPP_INCLUDED  */

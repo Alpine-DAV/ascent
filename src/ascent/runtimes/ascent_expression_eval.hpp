@@ -71,6 +71,7 @@ namespace expressions
 
 void register_builtin();
 void initialize_functions();
+void initialize_objects();
 static conduit::Node m_function_table;
 
 class ExpressionEval

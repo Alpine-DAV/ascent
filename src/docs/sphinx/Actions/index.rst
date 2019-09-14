@@ -54,6 +54,7 @@ Ascent Actions
    Scenes
    Extracts
    Examples
+   Expressions
 
 ..
 
