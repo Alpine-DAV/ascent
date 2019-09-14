@@ -115,7 +115,7 @@ jobs:
 
     - script: |
          #################################
-         # build, test and install
+         # configure
          #################################
          # setup compiler env vars
          export CC=${COMPILER_CC}
@@ -142,25 +142,54 @@ jobs:
          export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
          # configure
          cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+      displayName: 'Configure with CMake'
+
+    - script: |
+         #################################
          # build
+         #################################
+         # build
+         cd build
          make VERBOSE=1
+      displayName: 'Build'
+
+    - script: |
+         #################################
          # test
-         env CTEST_OUTPUT_ON_FAILURE=1 make test
+         #################################
+         # find spack installed cmake
+         export ROOT_DIR=`pwd`
+         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+         export PATH=${CMAKE_BIN_DIR}:$PATH
+         which ctest
+         cd build
+         # run ctest
+         ctest -T test --output-on-failure -V
+      displayName: 'Run Unit Tests'
+
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: 'cTest'
+        testResultsFiles: '**/Test.xml'
+      displayName: 'Unit Test Results'
+      condition: always()
+
+    - script: |
+         #################################
          # install
+         #################################
+         cd build
          make install
-         # move back up to repor root
-         cd ${ROOT_DIR}
-      displayName: 'Build and Test'
+      displayName: 'Install'
 
     - script: |
         ###########################
         # using with cmake example
         ###########################
-        # capture current path
         pwd
         ls -l
-        export ROOT_DIR=`pwd`
         # find spack installed cmake
+        export ROOT_DIR=`pwd`
         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
         export PATH=${CMAKE_BIN_DIR}:$PATH
         echo $PATH
@@ -171,18 +200,22 @@ jobs:
         cmake ../
         make VERBOSE=1
         ./ascent_render_example
+      displayName: 'Test vs Install (using-with-cmake)'
+      condition: and(succeeded(), eq(variables['ENABLE_VTKH'], 'ON'))
+
+    - script: |
         ###########################
         # using with make example
         ###########################
-        cd ${ROOT_DIR}
         cat install/share/ascent/ascent_config.mk
         pwd
         ls -l
         cd install/examples/ascent/using-with-make
         make
         ./ascent_render_example
-      displayName: 'Test vs Install'
-      condition: eq(variables['ENABLE_VTKH'], 'ON')
+      displayName: 'Test vs Install (using-with-make)'
+      condition: and(succeeded(), eq(variables['ENABLE_VTKH'], 'ON'))
+
 
 ###############################################################################
 # Ubuntu 18 build and test, using spack to build tpls
@@ -270,10 +303,9 @@ jobs:
          # run uber to build tpls
          python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_18/
       displayName: 'Spack Build Tpls'
-
     - script: |
          #################################
-         # build, test and install
+         # configure
          #################################
          # setup compiler env vars
          export CC=${COMPILER_CC}
@@ -300,25 +332,54 @@ jobs:
          export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
          # configure
          cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+      displayName: 'Configure with CMake'
+
+    - script: |
+         #################################
          # build
+         #################################
+         # build
+         cd build
          make VERBOSE=1
+      displayName: 'Build'
+
+    - script: |
+         #################################
          # test
-         env CTEST_OUTPUT_ON_FAILURE=1 make test
+         #################################
+         # find spack installed cmake
+         export ROOT_DIR=`pwd`
+         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+         export PATH=${CMAKE_BIN_DIR}:$PATH
+         which ctest
+         cd build
+         # run ctest
+         ctest -T test --output-on-failure -V
+      displayName: 'Run Unit Tests'
+
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: 'cTest'
+        testResultsFiles: '**/Test.xml'
+      displayName: 'Unit Test Results'
+      condition: always()
+
+    - script: |
+         #################################
          # install
+         #################################
+         cd build
          make install
-         # move back up to repor root
-         cd ${ROOT_DIR}
-      displayName: 'Build and Test'
+      displayName: 'Install'
 
     - script: |
         ###########################
         # using with cmake example
         ###########################
-        # capture current path
         pwd
         ls -l
-        export ROOT_DIR=`pwd`
         # find spack installed cmake
+        export ROOT_DIR=`pwd`
         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
         export PATH=${CMAKE_BIN_DIR}:$PATH
         echo $PATH
@@ -329,17 +390,22 @@ jobs:
         cmake ../
         make VERBOSE=1
         ./ascent_render_example
+      displayName: 'Test vs Install (using-with-cmake)'
+      condition: and(succeeded(), eq(variables['ENABLE_VTKH'], 'ON'))
+
+    - script: |
         ###########################
         # using with make example
         ###########################
-        cd ${ROOT_DIR}
+        cat install/share/ascent/ascent_config.mk
         pwd
         ls -l
         cd install/examples/ascent/using-with-make
         make
         ./ascent_render_example
-      displayName: 'Test vs Install'
-      condition: eq(variables['ENABLE_VTKH'], 'ON')
+      displayName: 'Test vs Install (using-with-make)'
+      condition: and(succeeded(), eq(variables['ENABLE_VTKH'], 'ON'))
+
 
 
 ###############################################################################
@@ -399,7 +465,7 @@ jobs:
 
     - script: |
          #################################
-         # build and install
+         # configure
          #################################
          # setup compiler env vars
          export CC=gcc
@@ -426,15 +492,24 @@ jobs:
          export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
          # configure
          cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+      displayName: 'Configure with CMake'
+
+    - script: |
+         #################################
          # build
+         #################################
+         # build
+         cd build
          make VERBOSE=1
-         # we don't run cuda tests, b/c we don't have cuda devices in ci
-         # we are interested in compile + link issues
+      displayName: 'Build'
+
+    - script: |
+         #################################
          # install
+         #################################
+         cd build
          make install
-         # cd back up to repo root
-         cd ..
-      displayName: 'Build and Install'
+      displayName: 'Install'
 
     - script: |
           #################################
@@ -442,7 +517,36 @@ jobs:
           #################################
           ls install
       displayName: 'Check Install'
+      failOnStderr: true
 
+
+
+###############################################################################
+# Docker build and test case, that leverages our script that calls Docker Build
+###############################################################################
+- job: Docker_Ubuntu
+  pool:
+    vmImage: 'ubuntu-16.04'
+  timeoutInMinutes: 0
+  steps:
+    - checkout: self
+      clean: boolean
+      submodules: recursive
+
+    - script: |
+        ####################
+        # run docker build
+        ####################
+        cd src/examples/docker/ubuntu/ && ./example_build.sh
+      displayName: 'Docker Build'
+
+
+
+###############################################################################
+###############################################################################
+# Disabled tests
+###############################################################################
+###############################################################################
 
 ###############################################################################
 # Disabled b/c this is currently always testing develop, which
@@ -524,24 +628,12 @@ jobs:
 #         cat uberenv_libs/ascent-install/*.cmake
 #       displayName: 'Check Install'
 
-###############################################################################
-# Docker build and test case, that leverages our script that calls Docker Build
-###############################################################################
-- job: Docker_Ubuntu
-  pool:
-    vmImage: 'ubuntu-16.04'
-  timeoutInMinutes: 0
-  steps:
-    - checkout: self
-      clean: boolean
-      submodules: recursive
 
-    - script: |
-        ####################
-        # run docker build
-        ####################
-        cd src/examples/docker/ubuntu/ && ./example_build.sh
-      displayName: 'Docker Build'
+
+
+###############################################################################
+# disable b/c macos recipie needs more work 
+###############################################################################
 
 ###############################################################################
 # macOS build and test, using spack to build tpls
