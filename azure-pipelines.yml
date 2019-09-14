@@ -157,8 +157,13 @@ jobs:
          #################################
          # test
          #################################
-         # test
+         # find spack installed cmake
+         export ROOT_DIR=`pwd`
+         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+         export PATH=${CMAKE_BIN_DIR}:$PATH
+         which ctest
          cd build
+         # run ctest
          ctest -T test --output-on-failure -V
       displayName: 'Run Unit Tests'
 
@@ -341,8 +346,13 @@ jobs:
          #################################
          # test
          #################################
-         # test
+         # find spack installed cmake
+         export ROOT_DIR=`pwd`
+         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+         export PATH=${CMAKE_BIN_DIR}:$PATH
+         which ctest
          cd build
+         # run ctest
          ctest -T test --output-on-failure -V
       displayName: 'Run Unit Tests'
 
