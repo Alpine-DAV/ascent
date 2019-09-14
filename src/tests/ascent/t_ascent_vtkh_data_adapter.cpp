@@ -183,6 +183,35 @@ TEST(ascent_data_adapter, vtkm_explicit_single_type_to_blueprint)
     bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
     EXPECT_TRUE(success);
+
+
+    // Write out the data set for debugging
+    blueprint["state/cycle"] = 1;
+    blueprint["state/domain_id"] = 0;
+    string output_path = "";
+    output_path = prepare_output_dir();
+
+    string output_file = conduit::utils::join_file_path(output_path,"tout_explicit_vtkm_converions");
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    Node ascent_opts;
+    Ascent ascent;
+    ascent.open(ascent_opts);
+    ascent_opts["runtime"] = "ascent";
+    ascent.publish(blueprint);
+    ascent.execute(actions);
+    ascent.close();
+
 }
 
 
