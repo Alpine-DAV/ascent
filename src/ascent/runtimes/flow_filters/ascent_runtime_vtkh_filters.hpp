@@ -194,6 +194,20 @@ public:
     virtual void   execute();
 };
 
+// changes start Ayan
+//-----------------------------------------------------------------------------
+class VTKHHistSampling : public ::flow::Filter
+{
+public:
+    VTKHHistSampling();
+    virtual ~VTKHHistSampling();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+// changes end Ayan
 //-----------------------------------------------------------------------------
 class VTKHClipWithField : public ::flow::Filter
 {

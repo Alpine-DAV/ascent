@@ -84,6 +84,7 @@
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
 #include <vtkh/filters/GhostStripper.hpp>
+#include <vtkh/filters/HistSampling.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/NoOp.hpp>
@@ -2502,6 +2503,84 @@ ExecScene::execute()
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
+
+// Changes start Ayan
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+VTKHHistSampling::VTKHHistSampling()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHHistSampling::~VTKHHistSampling()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHHistSampling::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_hist_sampling";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHHistSampling::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHHistSampling::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_hist_sampling input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::HistSampling hist_sample;
+
+    hist_sample.SetInput(data);
+    hist_sample.SetField(field_name);
+
+    hist_sample.Update();
+
+    vtkh::DataSet *hist_sample_output = hist_sample.GetOutput();
+
+    set_output<vtkh::DataSet>(hist_sample_output);
+}
+
+
+// Changes end Ayan
+
 
 VTKHLagrangian::VTKHLagrangian()
 :Filter()
