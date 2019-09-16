@@ -31,28 +31,22 @@ def read_blt_hash():
     print("[ERROR: could not read blt info from hashes.txt]")
     sys.exit(-1)
 
-def read_last_blt_hash():
-    cmd = 'git log --patch develop -- src/blt/'
-    rres, rout = sexe(cmd,ret_output=True)
-    print rres, rout
-    for txt in rout.split("\n"):
-         print txt
-         if txt.count("+Subproject") > 0:
-             key = "commit "
-             cmt_start = txt.find(key) + len(key)
-             commit = txt[cmt_start:].strip()
-             return commit
-    print("[ERROR: could not read git ref log]")
-    # hard fail
-    sys.exit(-1)
-
+def read_last_blt_commit():
+    cmd = 'git ls-files -s src/blt'
+    rcode, rout = sexe(cmd,ret_output=True)
+    # the commit id is the second token
+    toks = rout.split()
+    if rcode != 0 or len(toks) < 2:
+        print("[ERROR: could not git ls-files -s src/blt]")
+        sys.exit(-1)
+    return toks[1]
 
 def main():
     expected = read_blt_hash()
-    current  = read_last_blt_hash()
+    current  = read_last_blt_commit()
     print("[blt sanity check]")
-    print("[ Expected sha: {0}]".format(expected))
-    print("[ Current  sha: {0}]".format(current))
+    print("[ Expected sha (hashes.txt): {0}]".format(expected))
+    print("[ Current  sha (from git):   {0}]".format(current))
     if expected != current:
         print("[ERROR: sha mismatch!]")
         print("[If you wanted to update blt - did you update hashes.txt?]")
