@@ -3,6 +3,7 @@ define(function (require) {
 
     var loadedModules = [
         require("./trackball/trackball"),
+        require("./save_actions/save_actions"),
     ];
 
     for (var i in loadedModules) {

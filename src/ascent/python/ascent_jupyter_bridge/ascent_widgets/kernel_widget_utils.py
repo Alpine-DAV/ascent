@@ -54,6 +54,12 @@ class KernelWidgetUtils():
             "type": "next",
         })
 
+    def save_actions(self, filename):
+        return self.custom_send({
+            "type": "save",
+            "filename": filename
+        })
+
     def look_at(self, position, look_at, up):
         self.send_transform(['look_at', str(position), str(look_at), str(up)])
 

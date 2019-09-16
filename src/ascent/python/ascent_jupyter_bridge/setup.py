@@ -17,10 +17,17 @@ distname = "ascent_jupyter_bridge"
 kernelname = "ascent_jupyter_bridge"
 widgetsname = "ascent_widgets"
 
+widgets = [
+  'trackball',
+  'save_actions'
+]
+packages = [distname, widgetsname]
+packages.extend('{}.{}'.format(widgetsname, w) for w in widgets)
+
 setup_args = dict(
     name=distname,
     description="Ascent Bridge for existing backends",
-    packages=[distname, widgetsname, '{}.trackball'.format(widgetsname)],
+    packages=packages,
     install_requires=install_requires,
     zip_safe=False
 )

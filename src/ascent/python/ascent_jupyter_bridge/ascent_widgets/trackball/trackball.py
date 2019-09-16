@@ -1,14 +1,16 @@
 import ipywidgets as widgets
 from traitlets import Unicode, validate, Int, List, Dict
-from IPython.display import clear_output
+from IPython.display import clear_output, display
+from ..save_actions import SaveActionsWidget
 
+@widgets.register
 class TrackballWidget(widgets.DOMWidget):
     _view_name = Unicode('TrackballView').tag(sync=True)
     _view_module = Unicode('ascent_widgets').tag(sync=True)
     _view_module_version = Unicode('0.0.0').tag(sync=True)
     
-    width = Int(800).tag(sync=True)
-    height = Int(800).tag(sync=True)
+    width = Int(512).tag(sync=True)
+    height = Int(512).tag(sync=True)
     image = Unicode('').tag(sync=True)
     
     camera_info = Dict({'position': [], 'look_at': [], 'up': [], 'fov': 60}).tag(sync=True)
@@ -27,6 +29,8 @@ class TrackballWidget(widgets.DOMWidget):
         
         try:
             self._update_scene_bounds()
+
+            self._update_canvas_size()
 
             self._update_camera_info_from_ascent()
             
@@ -52,9 +56,13 @@ class TrackballWidget(widgets.DOMWidget):
         
     def _update_scene_bounds(self):
         self.scene_bounds = self.kernelUtils.get_ascent_info()['images'][0]['scene_bounds']
+    def _update_canvas_size(self):
+        ascent_img_info = self.kernelUtils.get_ascent_info()['images'][0]
+        self.width = ascent_img_info['image_width']
+        self.height = ascent_img_info['image_height']
     
     def _handle_msg(self, msg, *args, **kwargs):
-        if self.is_connected:
+        if self.is_connected and ("content" in msg["content"]["data"]):
             content = msg["content"]["data"]["content"]
             if content['event'] == 'keydown' or content['event'] == 'button':
                 code = content['code']
@@ -90,6 +98,9 @@ class TrackballWidget(widgets.DOMWidget):
                     #TODO this can fail
                     resp = self.kernelUtils.next_frame()
                     self.is_connected = (resp is not None)
+                elif code == 'save':
+                    #self.kernelUtils.save_actions()
+                    display(SaveActionsWidget(self.kernelUtils))
 
                 self._update_camera_info_from_ascent()
                 

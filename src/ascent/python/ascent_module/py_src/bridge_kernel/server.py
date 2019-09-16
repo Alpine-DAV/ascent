@@ -94,7 +94,6 @@ def jupyter_extract():
 
         return info["actions"]
 
-    #TODO why doesn't if rank==0 at the top work?
     def handle_message(message):
         nonlocal server
         with server._redirect():
@@ -136,7 +135,15 @@ def jupyter_extract():
                 server_ascent.execute(info['actions'])
 
                 server.root_writemsg({"type": "next"})
-
+            elif data["type"] == "save":
+                filename = data["filename"]
+                if os.path.exists(filename):
+                    server.root_writemsg({"type": "save",
+                                          "status": "Filename {} already exists.".format(filename)})
+                else:
+                    info["actions"].save(filename, filename[-4:])
+                    server.root_writemsg({"type": "save",
+                                          "status": "Successfully saved {}.".format(filename)})
 
     my_prefix = "%s_%s" % (os.path.splitext(os.path.basename(sys.argv[0]))[0], socket.gethostname())
 

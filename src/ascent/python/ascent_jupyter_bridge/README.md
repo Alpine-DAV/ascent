@@ -28,9 +28,10 @@ Note: If you run into SSL cert errors try adding `--trusted-host pypi.org --trus
 
 1. Make a `<widget_name>` directory under `ascent_widgets`. This directory will have all the python code for your widgets.
     1. In your new directory create `__init__.py` and `<widget_name>.py`.
-        1. In `<widget_name>.py` define a class that extends `widgets.DOMWidget`. Set the class's `_view_name` to `<_view_name>` and set `_view_module` to `ascent_widgets`. See the [`ascent_widgets/trackball/tracball.py`](./ascent_widgets/trackball/tracball.py) for an example.
+        1. In `<widget_name>.py` define a class that extends `widgets.DOMWidget`. Set the class's `_view_name` to `<_view_name>` of your choice and set `_view_module` to `ascent_widgets`. See the [`ascent_widgets/trackball/trackball.py`](./ascent_widgets/trackball/trackball.py) for an example.
         1. In `__init__.py` import your module and define the `_jupyter_nbextension_paths` function as follows:
             ```python
+            from .<widget_name> import *
             def _jupyter_nbextension_paths():
                 return [{
                     'section': 'notebook',
@@ -41,7 +42,7 @@ Note: If you run into SSL cert errors try adding `--trusted-host pypi.org --trus
             ```
     1. Edit `setup.py` and add your new package to the `packages` list.
 1. Make a `<widget_name>` directory under [`ascent_widgets/js/lib/`](./ascent_widgets/js/lib/). All your Javascript, CSS, and HTML files should lie in this directory and can be imported via RequireJS.
-    1.  In that folder create your main `<widget_name>.js` file. In this file define a RequireJS module that exports an object which extends `DOMWidgetView`. This object should at least define a "render" method as shown in the [Jupyter Documentation](https://ipywidgets.readthedocs.io/en/latest/examples/Widget%20Custom.html).
+    1.  In that folder create your main `<widget_name>.js` file. In this file define a RequireJS module that exports an object named `<_view_name>` (same name as above) which extends `DOMWidgetView`. This object should at least define a "render" method as shown in the [Jupyter Documentation](https://ipywidgets.readthedocs.io/en/latest/examples/Widget%20Custom.html).
     1. Edit the [`ascent_widgets/js/lib/index.js`](ascent_widgets/js/lib/index.js) file and import your main Javascript file to the by adding it to the `loadedModules` array.
     1. Finally create a magic command to display your widget by editing [`ascent_jupyter_bridge/kernel.py`](`ascent_jupyter_bridge/kernel.py`) and adding your magic to the `widgets` dict along with a callback function that initializes and displays your widget.
 

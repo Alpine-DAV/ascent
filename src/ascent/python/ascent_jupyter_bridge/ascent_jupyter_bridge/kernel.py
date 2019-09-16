@@ -17,6 +17,8 @@ import copy
 import time
 
 from ascent_widgets.trackball import TrackballWidget
+from ascent_widgets.save_actions import SaveActionsWidget
+
 from ascent_widgets.kernel_widget_utils import KernelWidgetUtils
 
 class BridgeKernel(IPythonKernel):
@@ -35,7 +37,8 @@ class BridgeKernel(IPythonKernel):
             "%exec_local": self.exec_local,
         }
         self.widgets = {
-            "%trackball": lambda args: self.display_widget(TrackballWidget)
+            "%trackball": lambda args: self.display_widget(TrackballWidget),
+            "%save_actions": lambda args: self.display_widget(SaveActionsWidget)
         }
         self.last_used_backend = None
         self.disconnect_callback = None

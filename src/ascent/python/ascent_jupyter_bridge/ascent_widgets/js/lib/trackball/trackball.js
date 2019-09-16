@@ -1,10 +1,7 @@
 //TODO figure out how to compile requirejs
 //TODO use shadow dom or iframes for encapsulation
 
-//require.undef('trackball')
-
-
-// -------------------------------------
+// -----------------------------------------------------------------------------
 require.config({
   //Define 3rd party plugins dependencies
   paths: {
@@ -32,25 +29,27 @@ define('three-glue', ['three'], function (three) {
     return three;
 });
 
-// -------------------------------------
+// -----------------------------------------------------------------------------
 
 define(['@jupyter-widgets/base', 'three', 'TrackballControls', 'text!./trackball1.html', 'text!./trackball1.css'], function(widgets, THREE, _, template, styles) {       
     var TrackballView = widgets.DOMWidgetView.extend({
         render: function() {
+            TrackballView.__super__.render.apply(this, arguments);
+
             var that = this;
             
             this.move_trackball = false;
-            
-            this.main_container = document.createElement("div");
-            this.main_container.tabIndex = 1;
-            this.main_container.style.background = "white";
-            this.main_container.style.overflow = "hidden";
-            
+
             var styleSheet = document.createElement("style");
             styleSheet.type = "text/css";
             styleSheet.innerText = styles;
             //TODO encapsulate this
             document.head.appendChild(styleSheet);
+            
+            this.main_container = document.createElement("div");
+            this.main_container.tabIndex = 1;
+            this.main_container.style.background = "white";
+            this.main_container.style.overflow = "hidden";
             
             this.main_container.innerHTML = template;
             this.main_container.querySelectorAll('.control-button').forEach((button) => {
@@ -64,7 +63,7 @@ define(['@jupyter-widgets/base', 'three', 'TrackballControls', 'text!./trackball
             });
             this.el.appendChild(this.main_container);
 
-
+            
             this.canvas = document.createElement('canvas');
             this.context = this.canvas.getContext('2d');
             this.canvas.width = this.model.get('width');
@@ -212,8 +211,10 @@ define(['@jupyter-widgets/base', 'three', 'TrackballControls', 'text!./trackball
             
         },
         //update that threejs cube's position and size to match ascent's bounding box
+        //only useful if the bounds change while trackball is running
         update_scene_bounds: function() {
             console.log("TODO: Change Scene Bounds")
+            //this.generate_cube_geometry();
         },
         //generate cube geometry based on ascent's bounding box
         generate_cube_geometry: function() {
