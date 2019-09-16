@@ -83,6 +83,7 @@
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
+#include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/GhostStripper.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
@@ -2268,7 +2269,7 @@ CreatePlot::execute()
     conduit::Node plot_params = params();
     std::string type = params()["type"].as_string();
 
-    if(data->GlobalIsEmpty(0))
+    if(data->GlobalIsEmpty())
     {
       ASCENT_INFO(type<<" plot yielded no data, i.e., no cells remain");
     }
@@ -2877,6 +2878,84 @@ VTKHHistSampling::execute()
     vtkh::DataSet *hist_output = hist.GetOutput();
 
     set_output<vtkh::DataSet>(hist_output);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHQCriterion::VTKHQCriterion()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHQCriterion::~VTKHQCriterion()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHQCriterion::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_qcriterion";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHQCriterion::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHQCriterion::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_qcriterion input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Gradient grad;
+    grad.SetInput(data);
+    grad.SetField(field_name);
+    vtkh::GradientParameters grad_params;
+    grad_params.compute_qcriterion = true;
+    if(params().has_path("output_name"))
+    {
+      grad_params.qcriterion_name = params()["output_name"].as_string();
+    }
+
+    grad.SetParameters(grad_params);
+    grad.Update();
+
+    vtkh::DataSet *grad_output = grad.GetOutput();
+
+    set_output<vtkh::DataSet>(grad_output);
 }
 
 //-----------------------------------------------------------------------------

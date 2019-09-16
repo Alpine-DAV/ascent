@@ -381,6 +381,18 @@ public:
     virtual void   execute();
 };
 
+class VTKHQCriterion: public ::flow::Filter
+{
+public:
+    VTKHQCriterion();
+    virtual ~VTKHQCriterion();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 //-----------------------------------------------------------------------------
 class VTKHNoOp : public ::flow::Filter
 {
