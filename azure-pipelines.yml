@@ -1,6 +1,7 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
+###############################################################################
+# Ascent CI Checks
+###############################################################################
+# Ref:
 # https://aka.ms/yaml
 
 # only build merge target pr to develop
@@ -10,7 +11,39 @@ pr:
     include:
     - develop
 
+# fast fail sanity checks
+stages:
+- stage: Sanity
+  jobs:
+  - job: BLT_Time_Travel_Check
+
+# main checks
+- stage: Main
+  jobs:
+  - job: Ubuntu_16
+  - job: Ubuntu_18
+  - job: Ubuntu_Cuda
+  - job: Docker_Ubuntu
+
 jobs:
+###############################################################################
+# Ubuntu build and test, using spack to build tpls
+###############################################################################
+- job: BLT_Time_Travel_Check
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+    - checkout: self
+      clean: boolean
+      submodules: recursive
+
+    - script: |
+        #######################################
+        # run our sanity check script
+        #######################################
+        python scripts/ci/check_blt_time_travel.py 
+      displayName: 'BLT Time Travel Check'
+  
 ###############################################################################
 # Ubuntu build and test, using spack to build tpls
 ###############################################################################
