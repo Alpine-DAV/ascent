@@ -2957,6 +2957,82 @@ VTKHQCriterion::execute()
 
     set_output<vtkh::DataSet>(grad_output);
 }
+//-----------------------------------------------------------------------------
+
+VTKHGradient::VTKHGradient()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHGradient::~VTKHGradient()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHGradient::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_gradient";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHGradient::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHGradient::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_gradient input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Gradient grad;
+    grad.SetInput(data);
+    grad.SetField(field_name);
+    vtkh::GradientParameters grad_params;
+    if(params().has_path("output_name"))
+    {
+      grad_params.output_name = params()["output_name"].as_string();
+    }
+
+    grad.SetParameters(grad_params);
+    grad.Update();
+
+    vtkh::DataSet *grad_output = grad.GetOutput();
+
+    set_output<vtkh::DataSet>(grad_output);
+}
 
 //-----------------------------------------------------------------------------
 
