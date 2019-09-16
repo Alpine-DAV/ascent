@@ -36,7 +36,7 @@ def read_last_blt_hash():
     rres, rout = sexe(cmd,ret_output=True)
     print rres, rout
     for txt in rout.split("\n"):
-        print txt
+         print txt
          if txt.count("+Subproject") > 0:
              key = "commit "
              cmt_start = txt.find(key) + len(key)
