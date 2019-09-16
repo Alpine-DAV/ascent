@@ -49,7 +49,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include <hola/ascent_hola.hpp>
+#include <hola/ascent_hola_mpi.hpp>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -214,7 +214,6 @@ hola_mpi_comm_map(const conduit::Node &data,
     int32 num_dest_domains = calc_offsets(dest_lst,
                                           dest_offsets);
 }
-
 
 //-----------------------------------------------------------------------------
 void

@@ -193,11 +193,11 @@ endif()
 if(FORTRAN_FOUND)
     add_library(ascent_fortran OBJECT fortran/ascent_fortran.f90)
     list(APPEND ascent_sources $<TARGET_OBJECTS:ascent_fortran>)
-    
+
     #####################################################
     # Setup install to copy the fortran modules
     #####################################################
-    install(FILES 
+    install(FILES
             ${CMAKE_Fortran_MODULE_DIRECTORY}/ascent.mod
             DESTINATION include/ascent)
 endif()
@@ -253,11 +253,14 @@ if (ENABLE_SERIAL)
         SOURCES     ${ascent_sources}
         HEADERS     ${ascent_headers}
         DEPENDS_ON  ${ascent_thirdparty_libs})
-    
+
+    set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
+
     if(VTKM_FOUND)
         set(ascent_device_sources ${ascent_vtkh_dep_sources})
         list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
-    
+
         vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
     endif()
     # install target for serial ascent lib
@@ -308,6 +311,8 @@ if(MPI_FOUND)
         HEADERS     ${ascent_headers} ${ascent_mpi_headers}
         DEPENDS_ON  ${ascent_mpi_thirdparty_libs})
 
+    set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
 
     if(VTKM_FOUND)
         vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_device_sources})

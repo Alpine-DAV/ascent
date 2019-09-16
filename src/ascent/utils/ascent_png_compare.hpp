@@ -52,6 +52,7 @@
 
 #include <string>
 #include <conduit.hpp>
+#include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -59,7 +60,7 @@
 namespace ascent
 {
 
-class PNGCompare
+class ASCENT_API PNGCompare
 {
 public:
     PNGCompare();

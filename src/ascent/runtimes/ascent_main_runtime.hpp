@@ -53,6 +53,7 @@
 #define ASCENT_ASCENT_RUNTIME_HPP
 
 #include <ascent.hpp>
+#include <ascent_exports.h>
 #include <ascent_runtime.hpp>
 #include <ascent_web_interface.hpp>
 #include <flow.hpp>
@@ -65,7 +66,7 @@
 namespace ascent
 {
 
-class AscentRuntime : public Runtime
+class ASCENT_API AscentRuntime : public Runtime
 {
 public:
 
