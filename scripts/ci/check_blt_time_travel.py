@@ -40,7 +40,7 @@ def read_last_blt_hash():
              cmt_start = txt.find(key) + len(key)
              commit = txt[cmt_start:].strip()
              return commit
-    print("[ERROR: could not read git ref log")
+    print("[ERROR: could not read git ref log]")
     # hard fail
     sys.exit(-1)
 
