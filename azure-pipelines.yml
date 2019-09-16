@@ -27,7 +27,7 @@ stages:
           #######################################
           # run our sanity check script
           #######################################
-          which git
+          git fetch develop
           python scripts/ci/check_blt_time_travel.py 
         displayName: 'BLT Time Travel Check'
 
