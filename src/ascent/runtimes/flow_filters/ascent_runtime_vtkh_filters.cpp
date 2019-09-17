@@ -2632,10 +2632,12 @@ VTKHLog::verify_params(const conduit::Node &params,
 
     bool res = check_string("field",params, info, true);
     res &= check_string("output_name",params, info, false);
+    res &= check_numeric("clamp_min_value",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
     valid_paths.push_back("output_name");
+    valid_paths.push_back("clamp_min_value");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -2666,6 +2668,12 @@ VTKHLog::execute()
     if(params().has_path("output_name"))
     {
       logger.SetResultField(params()["output_name"].as_string());
+    }
+
+    if(params().has_path("clamp_min_value"))
+    {
+      logger.SetClampMin(params()["clamp_min_value"].to_float32());
+      logger.SetClampToMin(true);
     }
 
     logger.Update();
