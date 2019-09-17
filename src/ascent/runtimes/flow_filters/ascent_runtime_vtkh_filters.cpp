@@ -2963,6 +2963,7 @@ VTKHQCriterion::execute()
     grad.Update();
 
     vtkh::DataSet *grad_output = grad.GetOutput();
+    grad_output->PrintSummary(std::cout);
 
     set_output<vtkh::DataSet>(grad_output);
 }
