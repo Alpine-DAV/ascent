@@ -18,7 +18,7 @@ class Vtkm(CMakePackage, CudaPackage):
 
     homepage = "https://m.vtk.org/"
     url      = "https://gitlab.kitware.com/api/v4/projects/vtk%2Fvtk-m/repository/archive.tar.gz?sha=v1.3.0"
-    git      = "https://gitlab.kitware.com/dcamp/vtk-m.git"
+    git      = "https://gitlab.kitware.com/vtk/vtk-m.git"
 
     # version used for ascent
     version('ascent_ver', commit='a4dfe50cd50b6827491ac6e760a6a60940d8ba17', preferred=True)
