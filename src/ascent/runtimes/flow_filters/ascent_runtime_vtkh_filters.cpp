@@ -2909,13 +2909,14 @@ VTKHQCriterion::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-
     bool res = check_string("field",params, info, true);
     res &= check_string("output_name",params, info, false);
+    res &= check_string("use_cell_gradient",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
     valid_paths.push_back("output_name");
+    valid_paths.push_back("use_cell_gradient");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -2945,6 +2946,14 @@ VTKHQCriterion::execute()
     grad.SetField(field_name);
     vtkh::GradientParameters grad_params;
     grad_params.compute_qcriterion = true;
+
+    if(params().has_path("use_cell_gradient"))
+    {
+      if(params()["use_cell_gradient"].as_string() == "true")
+      {
+        grad_params.use_point_gradient = false;
+      }
+    }
     if(params().has_path("output_name"))
     {
       grad_params.qcriterion_name = params()["output_name"].as_string();
@@ -2989,10 +2998,12 @@ VTKHGradient::verify_params(const conduit::Node &params,
 
     bool res = check_string("field",params, info, true);
     res &= check_string("output_name",params, info, false);
+    res &= check_string("use_cell_gradient",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
     valid_paths.push_back("output_name");
+    valid_paths.push_back("use_cell_gradient");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -3021,6 +3032,15 @@ VTKHGradient::execute()
     grad.SetInput(data);
     grad.SetField(field_name);
     vtkh::GradientParameters grad_params;
+
+    if(params().has_path("use_cell_gradient"))
+    {
+      if(params()["use_cell_gradient"].as_string() == "true")
+      {
+        grad_params.use_point_gradient = false;
+      }
+    }
+
     if(params().has_path("output_name"))
     {
       grad_params.output_name = params()["output_name"].as_string();

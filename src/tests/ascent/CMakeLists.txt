@@ -63,6 +63,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_web_main
                 t_ascent_clip
                 t_ascent_gradient
+                t_ascent_relay
                 t_ascent_clip_with_field
                 t_ascent_contour
                 t_ascent_iso_volume
