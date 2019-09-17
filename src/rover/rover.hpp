@@ -54,7 +54,7 @@
 
 namespace rover {
 
-class Rover
+class ROVER_API Rover
 {
 public:
   Rover();
