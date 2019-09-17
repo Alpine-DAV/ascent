@@ -393,6 +393,30 @@ public:
     virtual void   execute();
 };
 
+class VTKHDivergence: public ::flow::Filter
+{
+public:
+    VTKHDivergence();
+    virtual ~VTKHDivergence();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+class VTKHVorticity: public ::flow::Filter
+{
+public:
+    VTKHVorticity();
+    virtual ~VTKHVorticity();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 class VTKHGradient : public ::flow::Filter
 {
 public:

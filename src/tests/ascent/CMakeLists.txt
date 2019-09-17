@@ -64,6 +64,8 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_clip
                 t_ascent_gradient
                 t_ascent_qcriterion
+                t_ascent_divergence
+                t_ascent_vorticity
                 t_ascent_relay
                 t_ascent_clip_with_field
                 t_ascent_contour
