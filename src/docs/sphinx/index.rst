@@ -73,7 +73,7 @@ Ascent Project Resources
 
 http://www.ascent-dav.org
 
-**Githib Source Repo**
+**Github Source Repo**
 
 http://github.com/alpine-dav/ascent
 
