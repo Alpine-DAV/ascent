@@ -150,19 +150,19 @@ ascent_destroy(Ascent *c_ascent)
     delete v;
 }
 
-void ascent_timer_start(char *name)
+void ASCENT_API ascent_timer_start(char *name)
 {
   ascent::BlockTimer::StartTimer(name);
 }
 
 //---------------------------------------------------------------------------//
-void ascent_timer_stop(char *name)
+void ASCENT_API ascent_timer_stop(char *name)
 {
   ascent::BlockTimer::StopTimer(name);
 }
 
 //---------------------------------------------------------------------------//
-void ascent_timer_write()
+void ASCENT_API ascent_timer_write()
 {
   ascent::BlockTimer::WriteLogFile();
 }
