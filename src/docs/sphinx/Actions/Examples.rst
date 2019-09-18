@@ -168,6 +168,17 @@ Resulting image:
 
 .. image:: examples/tout_rover_volume_min_max100.png
 
+An example of using the gradient filter on a element centered fieldand plotting the magnitude.
+-----------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_gradient_mag_radial100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_gradient_mag_radial100.png
+
 An example of the contour filter with a multiple iso values.
 -------------------------------------------------------------
 
@@ -322,6 +333,17 @@ Resulting image:
 
 .. image:: examples/tout_recenter_vertex100.png
 
+An example of using the gradient filter and plotting the magnitude.
+--------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_divergence_vel100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_divergence_vel100.png
+
 An example of creating a render specifying the image size.
 -----------------------------------------------------------
 
@@ -388,6 +410,17 @@ Resulting image:
 
 .. image:: examples/tout_complex_trigger_actions100.png
 
+An example of using the gradient filter and plotting the magnitude.
+--------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_gradient_mag_braid100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_gradient_mag_braid100.png
+
 A more complex trigger example using several functions that evaluate positons on the mesh.
 -------------------------------------------------------------------------------------------
 
@@ -415,6 +448,20 @@ An example of quiering the current cycle.
 YAML actions:
 
 .. literalinclude:: examples/tout_cycle_query100.yaml
+
+An example of using an relay extract to save the results of  a pipeline to the file system.
+--------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_hd5f_iso100.yaml
+
+An example of using an relay extract to save the published mesh to the file system.
+------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_hd5f_mesh100.yaml
 
 
 -
