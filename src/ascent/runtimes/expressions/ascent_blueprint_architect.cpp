@@ -702,6 +702,153 @@ field_histogram(const conduit::Node &dataset,
 }
 
 conduit::Node
+ecf(const conduit::Node &dataset,
+		const conduit::Node &bin_axes,
+		const std::string &reduction_field_name,
+		const std::string &reduction)
+{
+  int num_fields = bin_axes.number_of_children();
+
+  // create bins
+  int num_bins = 1;
+  for(int field_index = 0; i < field_index; ++field_index)
+  {
+    num_bins *= bin_axes.child(field_index)["num_bins"];
+  }
+  int *bins = new double[num_bins];
+  memset(bins, 0, sizeof(int) * num_bins);
+
+  // get association
+  std::string assoc_str = "";
+  for(int i = 0; i < num_fields; ++i)
+  {
+    const std::string field_name = bin_axes.child(i)["field_name"];
+    // only check the first domain
+    if(dataset.child(0).has_path("fields/"+field_name))
+    {
+      const std::string new_assoc_str = dataset.child(0)["fields/"
+        + field + "/association"].as_string();
+      if(assoc_str == "")
+      {
+        assoc_str = new_assoc_str;
+      }
+      else if(assoc_str != new_assoc_str)
+      {
+        ASCENT_ERROR("All ECF fields must have the same association.");
+      }
+    }
+    else if(field_name != "x" && field_name != "y" && field_name != "z")
+    {
+      ASCENT_ERROR("Field "<< field << "not found.");
+    }
+  }
+
+
+  for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
+  {
+    int stride = 1;
+    int num_cells = -1;
+    const conduit::Node &dom = dataset.child(dom_index);
+    // each domain has a homes array
+    int *homes;
+
+    // loop over axis fields to populate homes
+    for(int field_index = 0; i < field_index; ++field_index)
+    {
+      const conduit::Node field = bin_axes.child(i);
+      const std::string field_name = field["field_name"];
+
+      const double inv_delta = double(field["num_bins"])
+        / (field["min_val"] - field["max_val"]);
+      if(dom.has_path("fields/"+field_name))
+      {
+        const std::string path = "fields/" + field_name + "/values";
+
+        int new_num_cells = dom[path].number_of_children();
+        if(num_cells != -1)
+        {
+          num_cells = new_num_cells;
+          homes = new int[num_cells];
+          memset(homes, 0, sizeof(int) * num_cells);
+        }
+        else if (num_cells != new_num_cells)
+        {
+          ASCENT_ERROR("The number of data points within the same domain must be the same across fields.");
+        }
+
+        for(int cell_index = 0; cell_index < num_cells; ++cell_index)
+        {
+          int bin_index = static_cast<int>((dom[path][cell_index] - field["min_val"]) * inv_delta);
+          homes[cell_index] += bin_index*stride;
+        }
+      }
+      else if(field_name != "x" && field_name != "y" && field_name != "z")
+      {
+        conduit::Node loc;
+        if(assoc_str == "vertex")
+        {
+          for(int cell_index = 0; cell_index < num_cells; ++cell_index)
+          {
+            loc = vert_location(dataset.child(domain),index);
+          }
+        }
+        else if(assoc_str == "element")
+        {
+          for(int cell_index = 0; cell_index < num_cells; ++cell_index)
+          {
+            loc = element_location(dataset.child(domain),index);
+          }
+        }
+        else
+        {
+          ASCENT_ERROR("Location for "<<assoc_str<<" not implemented");
+        }
+      }
+      else
+      {
+        ASCENT_ERROR("Field "<< field << "not found in all datasets");
+      }
+
+      stride *= bin_axes.child(i)["num_bins"];
+    }
+
+    // update bins
+    // for now reduction can only happen on one field
+    if(dom.has_path("fields/"+reduction_field_name))
+    {
+      for(int cell_index = 0; cell_index < num_cells; ++cell_index)
+      {
+        const std::string path = "fields/" + reduction_field + "/values";
+        //TODO check reduction operation type
+        bins[homes[cell_index]] += dom[path][cell_index];
+      }
+    }
+    else if(field_name != "x" && field_name != "y" && field_name != "z")
+    {
+
+    }
+    else
+    {
+      ASCENT_ERROR("Field "<< field << "not found in all datasets");
+    }
+  }
+
+  conduit::Node res;
+  res["value"].set(bins, num_bins);
+  res["bin_axes"] = bin_axes;
+  return res;
+}
+
+
+void
+calculate_coordinates(const conduit::Node &dataset,
+                      const std::string coord)
+{
+
+
+}
+
+conduit::Node
 field_entropy(const conduit::Node &hist)
 {
   const double *hist_bins = hist["attrs/value/value"].value();
@@ -710,7 +857,7 @@ field_entropy(const conduit::Node &hist)
   double entropy = 0;
 
 #ifdef ASCENT_USE_OPENMP
-      #pragma omp parallel for reduction(+ : entropy)
+  #pragma omp parallel for reduction(+ : entropy)
 #endif
   for(int b = 0; b < num_bins; ++b)
   {
@@ -740,7 +887,7 @@ field_pdf(const conduit::Node &hist)
   memset(pdf, 0, sizeof(double) * num_bins);
 
 #ifdef ASCENT_USE_OPENMP
-      #pragma omp parallel for
+  #pragma omp parallel for
 #endif
   for(int b = 0; b < num_bins; ++b)
   {
