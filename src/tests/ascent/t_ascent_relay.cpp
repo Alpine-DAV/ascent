@@ -62,8 +62,6 @@
 #include "t_utils.hpp"
 
 
-
-
 using namespace std;
 using namespace conduit;
 using namespace ascent;
