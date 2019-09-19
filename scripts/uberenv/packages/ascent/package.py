@@ -116,11 +116,11 @@ class Ascent(Package, CudaPackage):
     depends_on("vtkh@ascent_ver~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
 
     # mfem
-    depends_on("mfem+shared+mpi+conduit", when="+shared+mfem+mpi")
-    depends_on("mfem~shared+mpi+conduit", when="~shared+mfem+mpi")
+    depends_on("mfem+threadsafe+shared+mpi+conduit", when="+shared+mfem+mpi")
+    depends_on("mfem+threadsafe~shared+mpi+conduit", when="~shared+mfem+mpi")
 
-    depends_on("mfem+shared~mpi+conduit", when="+shared+mfem~mpi")
-    depends_on("mfem~shared~mpi+conduit", when="~shared+mfem~mpi")
+    depends_on("mfem+threadsafe+shared~mpi+conduit", when="+shared+mfem~mpi")
+    depends_on("mfem+threadsafe~shared~mpi+conduit", when="~shared+mfem~mpi")
 
     depends_on("adios", when="+adios")
 
@@ -376,8 +376,8 @@ class Ascent(Package, CudaPackage):
             mpicxx_path = spec['mpi'].mpicxx
             mpifc_path = spec['mpi'].mpifc
             # if we are using compiler wrappers on cray systems
-            # use those for mpi wrappers, b/c  spec['mpi'].mpicxx 
-            # etc make return the spack compiler wrappers 
+            # use those for mpi wrappers, b/c  spec['mpi'].mpicxx
+            # etc make return the spack compiler wrappers
             # which can trip up mpi detection in CMake 3.14
             if cpp_compiler == "CC":
                 mpicc_path = "cc"
