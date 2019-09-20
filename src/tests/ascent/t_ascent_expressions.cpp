@@ -269,7 +269,7 @@ TEST(ascent_expressions, functional_correctness)
     data["fields/ele_example/association"] =  "element";
     // reference the topology this field is defined on by name
     data["fields/ele_example/topology"] =  "topo";
-    // set the field values, for this case we have 9 elements
+    // set the field values, for this case we have 16 elements
     data["fields/ele_example/values"].set(DataType::float64(16));
 
     float64 *ele_vals_ptr = data["fields/ele_example/values"].value();

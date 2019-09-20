@@ -105,6 +105,11 @@ conduit::Node field_entropy(const conduit::Node &hist);
 conduit::Node field_pdf(const conduit::Node &hist);
 conduit::Node field_cdf(const conduit::Node &hist);
 
+conduit::Node ecf(const conduit::Node &dataset,
+                  const conduit::Node &bin_axes,
+                  const std::string &reduction_field_name,
+                  const std::string &reduction);
+
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);
 

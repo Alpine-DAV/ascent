@@ -438,7 +438,7 @@ initialize_functions()
   // -------------------------------------------------------------
 
   count_params();
-  functions->save("functions.json", "json");
+  // functions->save("functions.json", "json");
   // TODO: validate that there are no ambiguities
 }
 
@@ -459,7 +459,7 @@ initialize_objects()
   value_position["value/type"] = "double";
   value_position["position/type"] = "vector";
 
-  objects->save("objects.json", "json");
+  // objects->save("objects.json", "json");
 }
 
 conduit::Node

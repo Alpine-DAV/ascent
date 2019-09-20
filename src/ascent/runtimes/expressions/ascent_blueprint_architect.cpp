@@ -574,8 +574,8 @@ vert_location(const conduit::Node &domain,
 
 conduit::Node
 element_location(const conduit::Node &domain,
-              const int &index,
-              const std::string topo_name)
+                 const int &index,
+                 const std::string topo_name)
 {
   std::string topo = topo_name;
   // if we don't specify a topology, find the first topology ...
@@ -711,23 +711,24 @@ ecf(const conduit::Node &dataset,
 
   // create bins
   int num_bins = 1;
-  for(int field_index = 0; i < field_index; ++field_index)
+  for(int field_index = 0; field_index < num_fields; ++field_index)
   {
-    num_bins *= bin_axes.child(field_index)["num_bins"];
+    num_bins *= bin_axes.child(field_index)["num_bins"].as_int32();
   }
   int *bins = new double[num_bins];
   memset(bins, 0, sizeof(int) * num_bins);
 
+
   // get association
   std::string assoc_str = "";
-  for(int i = 0; i < num_fields; ++i)
+  for(int field_index = 0; field_index < num_fields; ++field_index)
   {
-    const std::string field_name = bin_axes.child(i)["field_name"];
+    const std::string field_name = bin_axes.child(field_index)["field_name"].as_string();
     // only check the first domain
     if(dataset.child(0).has_path("fields/"+field_name))
     {
       const std::string new_assoc_str = dataset.child(0)["fields/"
-        + field + "/association"].as_string();
+        + field_name + "/association"].as_string();
       if(assoc_str == "")
       {
         assoc_str = new_assoc_str;
@@ -739,7 +740,7 @@ ecf(const conduit::Node &dataset,
     }
     else if(field_name != "x" && field_name != "y" && field_name != "z")
     {
-      ASCENT_ERROR("Field "<< field << "not found.");
+      ASCENT_ERROR("Field "<< field_name << "not found.");
     }
   }
 
@@ -753,18 +754,18 @@ ecf(const conduit::Node &dataset,
     int *homes;
 
     // loop over axis fields to populate homes
-    for(int field_index = 0; i < field_index; ++field_index)
+    for(int field_index = 0; field_index < num_fields; ++field_index)
     {
-      const conduit::Node field = bin_axes.child(i);
-      const std::string field_name = field["field_name"];
+      const conduit::Node field = bin_axes.child(field_index);
+      const std::string field_name = field["field_name"].as_string();
 
-      const double inv_delta = double(field["num_bins"])
-        / (field["min_val"] - field["max_val"]);
+      const double inv_delta = field["num_bins"].to_float64()
+        / (field["min_val"].to_float64() - field["max_val"].to_float64());
       if(dom.has_path("fields/"+field_name))
       {
         const std::string path = "fields/" + field_name + "/values";
 
-        int new_num_cells = dom[path].number_of_children();
+        int new_num_cells = dom[path].dtype().number_of_elements();
         if(num_cells != -1)
         {
           num_cells = new_num_cells;
@@ -773,7 +774,7 @@ ecf(const conduit::Node &dataset,
         }
         else if (num_cells != new_num_cells)
         {
-          ASCENT_ERROR("The number of data points within the same domain must be the same across fields.");
+          ASCENT_ERROR("The number of data points within a domain must be the same across fields.");
         }
 
         for(int cell_index = 0; cell_index < num_cells; ++cell_index)
@@ -782,21 +783,29 @@ ecf(const conduit::Node &dataset,
           homes[cell_index] += bin_index*stride;
         }
       }
-      else if(field_name != "x" && field_name != "y" && field_name != "z")
+      else if(field_name == "x" || field_name == "y" || field_name == "z")
       {
-        conduit::Node loc;
+        int coord = (field_name == "x")? 0 : (
+                    (field_name == "y")? 1 : (
+                    (field_name == "z")? 2 : -1)); 
+
+        double *loc;
         if(assoc_str == "vertex")
         {
           for(int cell_index = 0; cell_index < num_cells; ++cell_index)
           {
-            loc = vert_location(dataset.child(domain),index);
+            loc = vert_location(dataset.child(dom_index),cell_index).value();
+            int bin_index = static_cast<int>((loc[coord] - field["min_val"]) * inv_delta);
+            homes[cell_index] += bin_index*stride;
           }
         }
         else if(assoc_str == "element")
         {
           for(int cell_index = 0; cell_index < num_cells; ++cell_index)
           {
-            loc = element_location(dataset.child(domain),index);
+            loc = element_location(dataset.child(dom_index),cell_index).value();
+            int bin_index = static_cast<int>((loc[coord] - field["min_val"]) * inv_delta);
+            homes[cell_index] += bin_index*stride;
           }
         }
         else
@@ -806,46 +815,67 @@ ecf(const conduit::Node &dataset,
       }
       else
       {
-        ASCENT_ERROR("Field "<< field << "not found in all datasets");
+        ASCENT_ERROR("Field "<< field_name<< "not found in all datasets");
       }
 
-      stride *= bin_axes.child(i)["num_bins"];
+      stride *= bin_axes.child(field_index)["num_bins"].as_int32();
     }
 
     // update bins
-    // for now reduction can only happen on one field
+    //TODO for now reduction can only happen on one field
     if(dom.has_path("fields/"+reduction_field_name))
     {
       for(int cell_index = 0; cell_index < num_cells; ++cell_index)
       {
-        const std::string path = "fields/" + reduction_field + "/values";
+        const std::string path = "fields/" + reduction_field_name + "/values";
         //TODO check reduction operation type
         bins[homes[cell_index]] += dom[path][cell_index];
       }
     }
-    else if(field_name != "x" && field_name != "y" && field_name != "z")
+    else if(reduction_field_name == "x" || reduction_field_name == "y" || reduction_field_name == "z")
     {
+      int coord = (field_name == "x")? 0 : (
+                  (field_name == "y")? 1 : (
+                  (field_name == "z")? 2 : -1)); 
+
+      double *loc;
+      if(assoc_str == "vertex")
+      {
+        for(int cell_index = 0; cell_index < num_cells; ++cell_index)
+        {
+          loc = vert_location(dataset.child(dom_index),cell_index).value();
+          //TODO check reduction operation type
+          bins[homes[cell_index]] += loc[coord];
+        }
+      }
+      else if(assoc_str == "element")
+      {
+        for(int cell_index = 0; cell_index < num_cells; ++cell_index)
+        {
+          loc = element_location(dataset.child(dom_index),cell_index);
+          //TODO check reduction operation type
+          bins[homes[cell_index]] += loc[coord];
+        }
+      }
+      else
+      {
+        ASCENT_ERROR("Location for "<<assoc_str<<" not implemented");
+      }
 
     }
     else
     {
-      ASCENT_ERROR("Field "<< field << "not found in all datasets");
+      ASCENT_ERROR("Field "<< reduction_field_name << "not found in all datasets");
     }
+
+    delete homes;
+    // TODO use MPI to combine domains
   }
 
   conduit::Node res;
   res["value"].set(bins, num_bins);
   res["bin_axes"] = bin_axes;
   return res;
-}
-
-
-void
-calculate_coordinates(const conduit::Node &dataset,
-                      const std::string coord)
-{
-
-
 }
 
 conduit::Node
@@ -1015,7 +1045,7 @@ field_min(const conduit::Node &dataset,
   const std::string assoc_str = dataset.child(0)["fields/"
                                 + field + "/association"].as_string();
 
-  conduit::Node loc;
+  double *loc;
   if(assoc_str == "vertex")
   {
     loc = vert_location(dataset.child(domain),index);
