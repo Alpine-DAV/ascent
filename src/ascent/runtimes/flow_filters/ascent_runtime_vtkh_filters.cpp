@@ -83,6 +83,7 @@
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
+#include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/GhostStripper.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
@@ -2268,7 +2269,7 @@ CreatePlot::execute()
     conduit::Node plot_params = params();
     std::string type = params()["type"].as_string();
 
-    if(data->GlobalIsEmpty(0))
+    if(data->GlobalIsEmpty())
     {
       ASCENT_INFO(type<<" plot yielded no data, i.e., no cells remain");
     }
@@ -2631,10 +2632,12 @@ VTKHLog::verify_params(const conduit::Node &params,
 
     bool res = check_string("field",params, info, true);
     res &= check_string("output_name",params, info, false);
+    res &= check_numeric("clamp_min_value",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
     valid_paths.push_back("output_name");
+    valid_paths.push_back("clamp_min_value");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -2665,6 +2668,12 @@ VTKHLog::execute()
     if(params().has_path("output_name"))
     {
       logger.SetResultField(params()["output_name"].as_string());
+    }
+
+    if(params().has_path("clamp_min_value"))
+    {
+      logger.SetClampMin(params()["clamp_min_value"].to_float32());
+      logger.SetClampToMin(true);
     }
 
     logger.Update();
@@ -2877,6 +2886,354 @@ VTKHHistSampling::execute()
     vtkh::DataSet *hist_output = hist.GetOutput();
 
     set_output<vtkh::DataSet>(hist_output);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHQCriterion::VTKHQCriterion()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHQCriterion::~VTKHQCriterion()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHQCriterion::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_qcriterion";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHQCriterion::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+    res &= check_string("use_cell_gradient",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+    valid_paths.push_back("use_cell_gradient");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHQCriterion::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_qcriterion input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Gradient grad;
+    grad.SetInput(data);
+    grad.SetField(field_name);
+    vtkh::GradientParameters grad_params;
+    grad_params.compute_qcriterion = true;
+
+    if(params().has_path("use_cell_gradient"))
+    {
+      if(params()["use_cell_gradient"].as_string() == "true")
+      {
+        grad_params.use_point_gradient = false;
+      }
+    }
+    if(params().has_path("output_name"))
+    {
+      grad_params.qcriterion_name = params()["output_name"].as_string();
+    }
+
+    grad.SetParameters(grad_params);
+    grad.Update();
+
+    vtkh::DataSet *grad_output = grad.GetOutput();
+
+    set_output<vtkh::DataSet>(grad_output);
+}
+//-----------------------------------------------------------------------------
+
+VTKHDivergence::VTKHDivergence()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHDivergence::~VTKHDivergence()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHDivergence::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_divergence";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHDivergence::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+    res &= check_string("use_cell_gradient",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+    valid_paths.push_back("use_cell_gradient");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHDivergence::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_divergence input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Gradient grad;
+    grad.SetInput(data);
+    grad.SetField(field_name);
+    vtkh::GradientParameters grad_params;
+    grad_params.compute_divergence = true;
+
+    if(params().has_path("use_cell_gradient"))
+    {
+      if(params()["use_cell_gradient"].as_string() == "true")
+      {
+        grad_params.use_point_gradient = false;
+      }
+    }
+
+    if(params().has_path("output_name"))
+    {
+      grad_params.divergence_name = params()["output_name"].as_string();
+    }
+
+    grad.SetParameters(grad_params);
+    grad.Update();
+
+    vtkh::DataSet *grad_output = grad.GetOutput();
+
+    set_output<vtkh::DataSet>(grad_output);
+}
+//-----------------------------------------------------------------------------
+
+VTKHVorticity::VTKHVorticity()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHVorticity::~VTKHVorticity()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHVorticity::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_curl";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHVorticity::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+    res &= check_string("use_cell_gradient",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+    valid_paths.push_back("use_cell_gradient");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHVorticity::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_vorticity input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Gradient grad;
+    grad.SetInput(data);
+    grad.SetField(field_name);
+    vtkh::GradientParameters grad_params;
+    grad_params.compute_vorticity = true;
+
+    if(params().has_path("use_cell_gradient"))
+    {
+      if(params()["use_cell_gradient"].as_string() == "true")
+      {
+        grad_params.use_point_gradient = false;
+      }
+    }
+
+    if(params().has_path("output_name"))
+    {
+      grad_params.vorticity_name = params()["output_name"].as_string();
+    }
+
+    grad.SetParameters(grad_params);
+    grad.Update();
+
+    vtkh::DataSet *grad_output = grad.GetOutput();
+
+    set_output<vtkh::DataSet>(grad_output);
+}
+//-----------------------------------------------------------------------------
+
+VTKHGradient::VTKHGradient()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHGradient::~VTKHGradient()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHGradient::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_gradient";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHGradient::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+    res &= check_string("use_cell_gradient",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+    valid_paths.push_back("use_cell_gradient");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHGradient::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_gradient input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Gradient grad;
+    grad.SetInput(data);
+    grad.SetField(field_name);
+    vtkh::GradientParameters grad_params;
+
+    if(params().has_path("use_cell_gradient"))
+    {
+      if(params()["use_cell_gradient"].as_string() == "true")
+      {
+        grad_params.use_point_gradient = false;
+      }
+    }
+
+    if(params().has_path("output_name"))
+    {
+      grad_params.output_name = params()["output_name"].as_string();
+    }
+
+    grad.SetParameters(grad_params);
+    grad.Update();
+
+    vtkh::DataSet *grad_output = grad.GetOutput();
+
+    set_output<vtkh::DataSet>(grad_output);
 }
 
 //-----------------------------------------------------------------------------

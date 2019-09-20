@@ -172,7 +172,7 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   if(camera_node.has_child("elevation"))
   {
       vtkm::Float64 elevation = camera_node["elevation"].to_float64();
-      camera.Azimuth(elevation);
+      camera.Elevation(elevation);
   }
 }
 

@@ -57,6 +57,7 @@ IF(VTKH_FOUND)
     add_cpp_test(TEST t_vtkh_smoke DEPENDS_ON ${vtkh_smoke_deps})
     vtkm_add_target_information(t_vtkh_smoke
                                 DEVICE_SOURCES t_vtkh_smoke.cpp)
+    set_target_properties(t_vtkh_smoke PROPERTIES CXX_VISIBILITY_PRESET hidden)
 endif()
 
 

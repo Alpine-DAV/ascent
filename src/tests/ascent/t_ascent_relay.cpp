@@ -44,48 +44,105 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_png_compare.hpp
+/// file: t_ascent_slice.cpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ASCENT_PNG_COMPARE_HPP
-#define ASCENT_PNG_COMPARE_HPP
 
-#include <string>
-#include <conduit.hpp>
-#include <ascent_exports.h>
+
+#include "gtest/gtest.h"
+
+#include <ascent.hpp>
+
+#include <iostream>
+#include <math.h>
+
+#include <conduit_blueprint.hpp>
+
+#include "t_config.hpp"
+#include "t_utils.hpp"
+
+
+using namespace std;
+using namespace conduit;
+using namespace ascent;
+
+
+index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 //-----------------------------------------------------------------------------
-// -- begin ascent:: --
-//-----------------------------------------------------------------------------
-namespace ascent
+TEST(ascent_relay, test_relay)
 {
+    Node n;
+    ascent::about(n);
 
-class ASCENT_API PNGCompare
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract in serial");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+}
+//-----------------------------------------------------------------------------
+int main(int argc, char* argv[])
 {
-public:
-    PNGCompare();
-    ~PNGCompare();
-    bool Compare(const std::string &img1,
-                 const std::string &img2,
-                 conduit::Node &info,
-                 const float tolarance = 0.001f);
-private:
-    void DiffImage(const unsigned char *buff_1,
-                   const unsigned char *buff_2,
-                   const int width,
-                   const int height,
-                   const std::string out_name);
-};
+    int result = 0;
 
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end ascent:: --
-//-----------------------------------------------------------------------------
+    ::testing::InitGoogleTest(&argc, argv);
 
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
+    // allow override of the data size via the command line
+    if(argc == 2)
+    {
+        EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
+    }
+
+    result = RUN_ALL_TESTS();
+    return result;
+}
 
 

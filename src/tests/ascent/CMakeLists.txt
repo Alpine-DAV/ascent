@@ -62,6 +62,11 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_web_flow
                 t_ascent_web_main
                 t_ascent_clip
+                t_ascent_gradient
+                t_ascent_qcriterion
+                t_ascent_divergence
+                t_ascent_vorticity
+                t_ascent_relay
                 t_ascent_clip_with_field
                 t_ascent_contour
                 t_ascent_iso_volume
@@ -116,15 +121,16 @@ if (ENABLE_SERIAL)
     foreach(TEST ${BASIC_TESTS})
         add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
     endforeach()
-    
+
     foreach(TEST ${VTKH_DEP_TESTS})
         add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
     endforeach()
-    
+
     if(VTKM_FOUND)
       # special test case where we test vtkm conversions
        vtkm_add_target_information(t_ascent_vtkh_data_adapter
                                    DEVICE_SOURCES t_ascent_vtkh_data_adapter.cpp)
+       set_target_properties(t_ascent_vtkh_data_adapter PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
 endif()
 ################################
