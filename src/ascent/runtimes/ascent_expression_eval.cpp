@@ -269,7 +269,7 @@ initialize_functions()
   vector["description"] = "Return the 3D position vector for the input value.";
 
   // -------------------------------------------------------------
-  
+
   conduit::Node &mag_sig = (*functions)["magnitude"].append();
   mag_sig["return_type"] = "double";
   mag_sig["filter_name"] = "magnitude";
@@ -277,7 +277,7 @@ initialize_functions()
   mag_sig["description"] = "Return the magnitude of the input vector.";
 
   // -------------------------------------------------------------
-  
+
   conduit::Node &hist_sig = (*functions)["histogram"].append();
   hist_sig["return_type"] = "histogram";
   hist_sig["filter_name"] = "histogram";
@@ -306,9 +306,9 @@ initialize_functions()
   - avg: average of values that fall in a bin";
 
   hist_sig["description"] = "Return a histogram of the mesh variable. Return a histogram of the mesh variable.";
-  
+
   // -------------------------------------------------------------
-  
+
   conduit::Node &history_sig = (*functions)["history"].append();
   history_sig["return_type"] = "anytype";
   history_sig["filter_name"] = "history";
@@ -343,7 +343,7 @@ initialize_functions()
   used.";
 
   // -------------------------------------------------------------
-  
+
   conduit::Node &entropy_sig = (*functions)["entropy"].append();
   entropy_sig["return_type"] = "double";
   entropy_sig["filter_name"] = "entropy";
@@ -351,7 +351,7 @@ initialize_functions()
   entropy_sig["description"] = "Return the Shannon entropy given a histogram of the field.";
 
   // -------------------------------------------------------------
-  
+
   conduit::Node &pdf_sig = (*functions)["pdf"].append();
   pdf_sig["return_type"] = "histogram";
   pdf_sig["filter_name"] = "pdf";
@@ -359,15 +359,15 @@ initialize_functions()
   pdf_sig["description"] = "Return the probability distribution function (pdf) from a histogram.";
 
   // -------------------------------------------------------------
-  
+
   conduit::Node &cdf_sig = (*functions)["cdf"].append();
   cdf_sig["return_type"] = "histogram";
   cdf_sig["filter_name"] = "cdf";
   cdf_sig["args/hist/type"] = "histogram";
   cdf_sig["description"] = "Return the cumulative distribution function (cdf) from a histogram.";
-  
+
   // -------------------------------------------------------------
-  
+
   // gets histogram bin by index
   conduit::Node &bin_by_index_sig = (*functions)["bin"].append();
   bin_by_index_sig["return_type"] = "double";
@@ -377,7 +377,7 @@ initialize_functions()
   bin_by_index_sig["description"] = "Return the value of the bin at index `bin` of a histogram.";
 
   // -------------------------------------------------------------
-  
+
   // gets histogram bin by value
   conduit::Node &bin_by_value_sig = (*functions)["bin"].append();
   bin_by_value_sig["return_type"] = "double";
@@ -438,7 +438,7 @@ initialize_functions()
   // -------------------------------------------------------------
 
   count_params();
-  functions->save("functions.json", "json");
+  //functions->save("functions.json", "json");
   // TODO: validate that there are no ambiguities
 }
 
@@ -459,7 +459,7 @@ initialize_objects()
   value_position["value/type"] = "double";
   value_position["position/type"] = "vector";
 
-  objects->save("objects.json", "json");
+  //objects->save("objects.json", "json");
 }
 
 conduit::Node
