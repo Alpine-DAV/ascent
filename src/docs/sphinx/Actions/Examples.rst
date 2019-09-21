@@ -366,6 +366,17 @@ Resulting image:
 
 .. image:: examples/tout_clip_box100.png
 
+An example of creating a custom color map.
+-------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/milk_chocolate100.yaml
+
+Resulting image:
+
+.. image:: examples/milk_chocolate100.png
+
 An example a sphere clip using a center and radius
 ---------------------------------------------------
 
@@ -420,6 +431,13 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_gradient_mag_braid100.png
+
+An example of using a relay extract to save a subset of the data.
+------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_relay_serial_extract_subset100.yaml
 
 A more complex trigger example using several functions that evaluate positons on the mesh.
 -------------------------------------------------------------------------------------------
