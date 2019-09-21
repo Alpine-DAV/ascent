@@ -426,7 +426,7 @@ public:
       m_time(0.f)
   {
     this->create_cinema_cameras(bounds);
-    m_csv = "phi, theta, time, FILE\n";
+    m_csv = "phi,theta,time,FILE\n";
 
     m_base_path = conduit::utils::join_file_path(path, "cinema_databases");
   }
