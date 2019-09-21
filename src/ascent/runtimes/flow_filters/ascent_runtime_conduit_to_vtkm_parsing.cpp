@@ -220,9 +220,11 @@ parse_color_table(const conduit::Node &color_table_node)
                 <<color_map_name);
   }
 
+  bool name_provided = false;
   if(color_table_node.has_child("name"))
   {
     std::string name = color_table_node["name"].as_string();
+    name_provided = true;
     if(is_valid_name(name))
     {
       color_map_name = name;
@@ -238,8 +240,25 @@ parse_color_table(const conduit::Node &color_table_node)
 
   if(color_table_node.has_child("control_points"))
   {
-
+    bool clear = false;
+    // check to see if we have rgb points and clear the table
     NodeConstIterator itr = color_table_node.fetch("control_points").children();
+    while(itr.has_next())
+    {
+        const Node &peg = itr.next();
+        if (peg["type"].as_string() == "rgb")
+        {
+          clear = true;
+          break;
+        }
+    }
+
+    if(clear && !name_provided)
+    {
+      color_table.ClearColors();
+    }
+
+    itr = color_table_node.fetch("control_points").children();
     while(itr.has_next())
     {
         const Node &peg = itr.next();
