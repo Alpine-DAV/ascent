@@ -193,6 +193,71 @@ TEST(ascent_relay, test_relay_subselection)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_no_cycle)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    conduit::Node state = data["state"];
+    data["state"].reset();
+    data["state/time"] = state["time"];
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract in serial");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_no_cycle");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    extracts["e1/params/fields"].append() = "braid";
+    extracts["e1/params/fields"].append() = "radial";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+}
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
