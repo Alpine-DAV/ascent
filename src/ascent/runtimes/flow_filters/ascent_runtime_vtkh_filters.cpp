@@ -92,6 +92,7 @@
 #include <vtkh/filters/Log.hpp>
 #include <vtkh/filters/Recenter.hpp>
 #include <vtkh/filters/Slice.hpp>
+#include <vtkh/filters/Statistics.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
 #include <vtkh/filters/HistSampling.hpp>
@@ -3236,6 +3237,81 @@ VTKHGradient::execute()
     set_output<vtkh::DataSet>(grad_output);
 }
 
+//-----------------------------------------------------------------------------
+
+VTKHStats::VTKHStats()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHStats::~VTKHStats()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHStats::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_stats";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHStats::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHStats::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_stats input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Statistics stats;
+
+    vtkh::Statistics::Result res = stats.Run(*data, field_name);
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    if(rank == 0)
+    {
+      res.Print(std::cout);
+    }
+
+    // ask a question and pass the data through
+    set_output<vtkh::DataSet>(data);
+}
 //-----------------------------------------------------------------------------
 
 VTKHNoOp::VTKHNoOp()
