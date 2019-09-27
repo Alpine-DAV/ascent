@@ -442,6 +442,19 @@ public:
     virtual void   execute();
 };
 
+//-----------------------------------------------------------------------------
+class VTKHStats : public ::flow::Filter
+{
+public:
+    VTKHStats();
+    virtual ~VTKHStats();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
