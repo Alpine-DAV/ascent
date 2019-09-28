@@ -75,6 +75,7 @@
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
+#include <vtkh/Logger.hpp>
 
 #ifdef VTKM_CUDA
 #include <vtkm/cont/cuda/ChooseCudaDevice.h>
@@ -691,7 +692,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   // TODO:
   bool special = false;
   if(extract_type == "xray" ||
-     extract_type == "volume") special = true;
+     extract_type == "volume" ||
+     extract_type == "histogram" ||
+     extract_type == "statistics") special = true;
 
   std::string ensure_name = "ensure_blueprint_" + extract_name;
   conduit::Node empty_params;
@@ -724,7 +727,6 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     {
       extract_source = "default";
     }
-
 
   }
   if(!special)
@@ -1404,7 +1406,22 @@ AscentRuntime::Execute(const conduit::Node &actions)
     // them up as a conduit error
     try
     {
+#if defined(ASCENT_VTKM_ENABLED)
+      Node *meta = w.registry().fetch<Node>("metadata");
+      int cycle = 0;
+      if(meta->has_path("cycle"))
+      {
+        cycle = (*meta)["cycle"].to_int32();
+      }
+      std::stringstream ss;
+      ss<<"cycle_"<<cycle;
+      vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
+      vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
+#endif
       w.execute();
+#if defined(ASCENT_VTKM_ENABLED)
+      vtkh::DataLogger::GetInstance()->CloseLogEntry();
+#endif
     }
 #if defined(ASCENT_VTKM_ENABLED)
     catch(vtkh::Error &e)

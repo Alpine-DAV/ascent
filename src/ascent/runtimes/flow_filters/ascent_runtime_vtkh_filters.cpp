@@ -90,11 +90,13 @@
 #include <vtkh/filters/NoOp.hpp>
 #include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/filters/Log.hpp>
+#include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Recenter.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
+#include <vtkh/filters/Histogram.hpp>
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkm/cont/DataSet.h>
 
@@ -3257,7 +3259,7 @@ VTKHStats::declare_interface(Node &i)
 {
     i["type_name"]   = "vtkh_stats";
     i["port_names"].append() = "in";
-    i["output_port"] = "true";
+    i["output_port"] = "false";
 }
 
 //-----------------------------------------------------------------------------
@@ -3308,10 +3310,159 @@ VTKHStats::execute()
     {
       res.Print(std::cout);
     }
-
-    // ask a question and pass the data through
-    set_output<vtkh::DataSet>(data);
 }
+//-----------------------------------------------------------------------------
+
+VTKHHistogram::VTKHHistogram()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHHistogram::~VTKHHistogram()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHHistogram::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_histogram";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHHistogram::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_numeric("bins",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("bins");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHHistogram::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_histogram input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    int bins = 128;
+    if(params().has_path("bins"))
+    {
+      bins = params()["bins"].to_int32();
+    }
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Histogram hist;
+
+    hist.SetNumBins(bins);
+    vtkh::Histogram::HistogramResult res = hist.Run(*data, field_name);
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    if(rank == 0)
+    {
+      res.Print(std::cout);
+    }
+}
+//-----------------------------------------------------------------------------
+
+VTKHParticleAdvection::VTKHParticleAdvection()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHParticleAdvection::~VTKHParticleAdvection()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHParticleAdvection::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_particle_advection";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHParticleAdvection::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHParticleAdvection::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_particle_advection input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::ParticleAdvection streamline;
+
+    streamline.SetInput(data);
+    streamline.SetField(field_name);
+    streamline.SetStepSize(0.1);
+    streamline.SetSeedsRandomWhole(500);
+
+    streamline.Update();
+
+    vtkh::DataSet *output = streamline.GetOutput();
+    set_output<vtkh::DataSet>(output);
+}
+
 //-----------------------------------------------------------------------------
 
 VTKHNoOp::VTKHNoOp()
@@ -3379,7 +3530,6 @@ VTKHNoOp::execute()
     noop.Update();
 
     vtkh::DataSet *noop_output = noop.GetOutput();
-
     set_output<vtkh::DataSet>(noop_output);
 }
 

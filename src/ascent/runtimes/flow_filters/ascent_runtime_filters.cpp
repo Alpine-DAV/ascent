@@ -140,10 +140,12 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHVectorMagnitude>("transforms","vector_magnitude");
     AscentRuntime::register_filter_type<VTKHHistSampling>("transforms","histsampling");
     AscentRuntime::register_filter_type<VTKHQCriterion>("transforms","qcriterion");
-    AscentRuntime::register_filter_type<VTKHStats>("transforms","statistics");
+    AscentRuntime::register_filter_type<VTKHStats>("extracts","statistics");
+    AscentRuntime::register_filter_type<VTKHHistogram>("extracts","histogram");
     AscentRuntime::register_filter_type<VTKHGradient>("transforms","gradient");
     AscentRuntime::register_filter_type<VTKHDivergence>("transforms","divergence");
     AscentRuntime::register_filter_type<VTKHVorticity>("transforms","vorticity");
+    AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
 
