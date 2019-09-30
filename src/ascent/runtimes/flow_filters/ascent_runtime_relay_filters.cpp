@@ -611,10 +611,12 @@ void
 RelayIOSave::execute()
 {
 //#if defined(ASCENT_VTKM_ENABLED)
-      vtkh::DataLogger::GetInstance()->OpenLogEntry("relay");
+    vtkh::DataLogger::GetInstance()->OpenLogEntry("relay");
 //#endif
     std::string path, protocol;
     path = params()["path"].as_string();
+    vtkh::DataLogger::GetInstance()->AddLogData("path", path);
+
     // TODO check if we need to expand the path (MPI) case for std protocols
     if(params().has_child("protocol"))
     {
