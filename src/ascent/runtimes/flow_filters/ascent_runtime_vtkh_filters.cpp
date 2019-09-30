@@ -3422,9 +3422,13 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("field",params, info, true);
+    res &= check_numeric("seeds",params, info, false);
+    res &= check_numeric("step_size",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
+    valid_paths.push_back("seeds");
+    valid_paths.push_back("step_size");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -3448,14 +3452,24 @@ VTKHParticleAdvection::execute()
     }
 
     std::string field_name = params()["field"].as_string();
+    float step_size = 0.1f;
+    int seeds = 500;
+    if(params().has_path("seeds"))
+    {
+      seeds = params()["seeds"].to_int32();
+    }
+    if(params().has_path("step_size"))
+    {
+      step_size = params()["step_size"].to_float32();
+    }
 
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
     vtkh::ParticleAdvection streamline;
 
     streamline.SetInput(data);
     streamline.SetField(field_name);
-    streamline.SetStepSize(0.1);
-    streamline.SetSeedsRandomWhole(500);
+    streamline.SetStepSize(step_size);
+    streamline.SetSeedsRandomWhole(seeds);
 
     streamline.Update();
 

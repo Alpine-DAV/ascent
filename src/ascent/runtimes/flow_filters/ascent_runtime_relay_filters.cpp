@@ -80,6 +80,10 @@
 #include <limits>
 #include <set>
 
+//#if defined(ASCENT_VTKM_ENABLED)
+#include <vtkh/Logger.hpp>
+//#endif
+
 using namespace std;
 using namespace conduit;
 using namespace conduit::relay;
@@ -606,6 +610,9 @@ RelayIOSave::verify_params(const conduit::Node &params,
 void
 RelayIOSave::execute()
 {
+//#if defined(ASCENT_VTKM_ENABLED)
+      vtkh::DataLogger::GetInstance()->OpenLogEntry("relay");
+//#endif
     std::string path, protocol;
     path = params()["path"].as_string();
     // TODO check if we need to expand the path (MPI) case for std protocols
@@ -666,6 +673,9 @@ RelayIOSave::execute()
         conduit::relay::io::save(selected,path,protocol);
     }
 
+//#if defined(ASCENT_VTKM_ENABLED)
+      vtkh::DataLogger::GetInstance()->CloseLogEntry();
+//#endif
 }
 
 
