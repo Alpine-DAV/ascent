@@ -474,7 +474,7 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       if(cname == "pipeline")
       {
         // this is a child that is not a filter.
-        // It specifices the input to the pipeline itself
+        // It specifies the input to the pipeline itself
         continue;
       }
       conduit::Node filter = pipeline.child(i);
@@ -494,7 +494,7 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       }
       else
       {
-        ASCENT_ERROR("Unrecognized filter "<<filter["type"].as_string());
+        ASCENT_ERROR("Unrecognized transform filter "<<filter["type"].as_string());
       }
 
       // create a unique name for the filter
