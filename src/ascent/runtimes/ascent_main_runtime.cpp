@@ -1426,15 +1426,18 @@ AscentRuntime::Execute(const conduit::Node &actions)
 #if defined(ASCENT_VTKM_ENABLED)
     catch(vtkh::Error &e)
     {
+      w.reset();
       ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
     }
 #endif
     catch(conduit::Error &e)
     {
+      w.reset();
       throw e;
     }
     catch(std::exception &e)
     {
+      w.reset();
       ASCENT_ERROR("Execution failed with: "<<e.what());
     }
 
