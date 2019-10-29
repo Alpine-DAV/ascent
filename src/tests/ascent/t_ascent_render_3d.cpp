@@ -407,7 +407,7 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
     float bg_color[3] = {1.f, 1.f, 1.f};
     float fg_color[3] = {0.f, 0.f, 0.f};
     scenes["s1/renders/r1/bg_color"].set(bg_color,3);
@@ -483,7 +483,7 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/renders/r1/image_name"]  = output_file;
+    scenes["s1/renders/r1/image_prefix"]  = output_file;
     scenes["s1/renders/r1/annotations"] = "false";
 
     conduit::Node actions;
@@ -555,7 +555,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/renders/r1/image_name"]  = output_file + "%04d";
+    scenes["s1/renders/r1/image_prefix"]  = output_file + "%04d";
     scenes["s1/renders/r1/annotations"] = "false";
 
     conduit::Node actions;
@@ -628,7 +628,7 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/renders/r1/image_name"]  = output_file;
+    scenes["s1/renders/r1/image_prefix"]  = output_file;
     scenes["s1/renders/r1/render_bg"] = "false";
 
     conduit::Node actions;
@@ -702,7 +702,7 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/renders/r1/camera/azimuth"] = 1.;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
 
 
     conduit::Node actions;
@@ -1388,14 +1388,14 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
     string output_path = prepare_output_dir();
-    string image_name0 = "render_0";
-    string output_file = conduit::utils::join_file_path(output_path,image_name0);
+    string image_prefix0 = "render_0";
+    string output_file = conduit::utils::join_file_path(output_path,image_prefix0);
 
     // remove old images before rendering
     remove_test_image(output_file);
 
-    string image_name1 = "render_1";
-    string output_file1 = conduit::utils::join_file_path(output_path,image_name1);
+    string image_prefix1 = "render_1";
+    string output_file1 = conduit::utils::join_file_path(output_path,image_prefix1);
 
     // remove old images before rendering
     remove_test_image(output_file1);
@@ -1447,12 +1447,12 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
 
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
 
     //
     scenes["s1/renders/r2/image_width"]  = 400;
     scenes["s1/renders/r2/image_height"] = 400;
-    scenes["s1/renders/r2/image_name"]   = output_file1;
+    scenes["s1/renders/r2/image_prefix"]   = output_file1;
     double vec3[3];
     vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
     scenes["s1/renders/r2/camera/look_at"].set_float64_ptr(vec3,3);
@@ -1527,8 +1527,8 @@ TEST(ascent_render_3d, test_render_3d_milk_chocolate)
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
     string output_path = prepare_output_dir();
-    string image_name0 = "milk_chocolate";
-    string output_file = conduit::utils::join_file_path(output_path,image_name0);
+    string image_prefix0 = "milk_chocolate";
+    string output_file = conduit::utils::join_file_path(output_path,image_prefix0);
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -1569,7 +1569,7 @@ TEST(ascent_render_3d, test_render_3d_milk_chocolate)
 
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
@@ -1646,7 +1646,7 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     scenes["s1/plots/p1/field"] = "rank_ele";
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
     scenes["s1/renders/r1/camera/azimuth"] = 45.0;
 
     conduit::Node actions;

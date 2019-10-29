@@ -175,6 +175,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   // render paths
   std::vector<std::string> r_valid_paths;
   r_valid_paths.push_back("image_name");
+  r_valid_paths.push_back("image_prefix");
   r_valid_paths.push_back("image_width");
   r_valid_paths.push_back("image_height");
   r_valid_paths.push_back("scene_bounds");
@@ -1521,12 +1522,15 @@ DefaultRender::execute()
           {
             image_name = render_node["image_name"].as_string();
           }
-          else
+          else if(render_node.has_path("image_prefix"))
           {
             std::stringstream ss;
-            ss<<expand_family_name(params()["image_prefix"].as_string(), cycle);
-            ss<<"_"<<i;
+            ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
             image_name = ss.str();
+          }
+          else
+          {
+            ASCENT_ERROR("Render must have either a 'image_name' or 'image_prefix' parameter");
           }
 
           vtkh::Render render = detail::parse_render(render_node,
