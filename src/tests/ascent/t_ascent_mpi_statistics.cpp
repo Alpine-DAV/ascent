@@ -123,31 +123,19 @@ TEST(ascent_mpi_stats, mpi_stats)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
+    conduit::Node extracts;
     // pipeline 1
-    pipelines["pl1/f1/type"] = "statistics";
-    // filter knobs all these are optional
-    conduit::Node &contour_params = pipelines["pl1/f1/params"];
-    contour_params["field"] = "radial_vert";
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "rank_ele";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
+    extracts["e1/type"] = "statistics";
+    conduit::Node &params = extracts["e1/params"];
+    params["field"] = "radial_vert";
 
     conduit::Node actions;
 
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-
-    conduit::Node &add_plots = actions.append();
-    add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
 
     actions.print();
-
     //
     // Run Ascent
     //
@@ -165,8 +153,6 @@ TEST(ascent_mpi_stats, mpi_stats)
     ascent.close();
 
     MPI_Barrier(comm);
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
 }
 
 

@@ -1519,7 +1519,7 @@ DefaultRender::execute()
           // this render has a unique name
           if(render_node.has_path("image_name"))
           {
-            image_name = expand_family_name(render_node["image_name"].as_string(), cycle);
+            image_name = render_node["image_name"].as_string();
           }
           else
           {

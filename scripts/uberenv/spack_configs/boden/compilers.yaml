@@ -8,8 +8,8 @@ compilers:
     paths:
       cc: /usr/bin/clang
       cxx: /usr/bin/clang++
-      f77: /usr/local/bin/gfortran
-      fc: /usr/local/bin/gfortran
+      f77: /opt/local/bin/gfortran
+      fc: /opt/local/bin/gfortran
     spec: clang@7.3.0-apple
 - compiler:
     environment: {}
@@ -20,8 +20,8 @@ compilers:
     paths:
       cc: /usr/bin/clang
       cxx: /usr/bin/clang++
-      f77: /usr/local/bin/gfortran
-      fc: /usr/local/bin/gfortran
+      f77: /opt/local/bin/gfortran
+      fc: /opt/local/bin/gfortran
     spec: clang@8.0.0-apple
     target: x86_64
 - compiler:
@@ -33,8 +33,8 @@ compilers:
     paths:
       cc: /usr/bin/clang
       cxx: /usr/bin/clang++
-      f77: /usr/local/bin/gfortran
-      fc: /usr/local/bin/gfortran
+      f77: /opt/local/bin/gfortran
+      fc: /opt/local/bin/gfortran
     spec: clang@9.0.0-apple
     target: x86_64
 - compiler:
@@ -46,7 +46,7 @@ compilers:
     paths:
       cc: /usr/bin/clang
       cxx: /usr/bin/clang++
-      f77: /usr/local/bin/gfortran
-      fc: /usr/local/bin/gfortran
+      f77: /opt/local/bin/gfortran
+      fc: /opt/local/bin/gfortran
     spec: clang@10.0.0-apple
     target: x86_64
