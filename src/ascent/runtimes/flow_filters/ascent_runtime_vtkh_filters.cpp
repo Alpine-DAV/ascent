@@ -1393,10 +1393,12 @@ DefaultRender::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-    bool res = check_string("image_prefix",params, info, true);
+    bool res = check_string("image_name",params, info, false);
+    res &= check_string("image_prefix",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("image_prefix");
+    valid_paths.push_back("image_name");
 
     std::vector<std::string> ignore_paths;
     ignore_paths.push_back("renders");

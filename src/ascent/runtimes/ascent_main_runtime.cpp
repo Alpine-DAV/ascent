@@ -1028,9 +1028,16 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       render_params["renders"] = scene["renders"];
     }
 
-    if(scene.has_path("image_prefix"))
+    if(scene.has_path("image_prefix") || scene.has_path("image_name"))
     {
-      render_params["image_prefix"] = scene["image_prefix"].as_string();
+      if(scene.has_path("image_prefix"))
+      {
+        render_params["image_prefix"] = scene["image_prefix"].as_string();
+      }
+      else
+      {
+        render_params["image_name"] = scene["image_name"].as_string();
+      }
     }
     else
     {
