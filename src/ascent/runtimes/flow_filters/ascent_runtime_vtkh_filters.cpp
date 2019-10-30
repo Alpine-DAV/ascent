@@ -1545,8 +1545,18 @@ DefaultRender::execute()
     }
     else
     {
-      std::string image_name =  params()["image_prefix"].as_string();
-      image_name = expand_family_name(image_name, cycle);
+      // This is the path for the default render attached directly to a scene
+      std::string image_name;
+      if(params().has_path("image_name"))
+      {
+        image_name =  params()["image_name"].as_string();
+      }
+      else
+      {
+        image_name =  params()["image_prefix"].as_string();
+        image_name = expand_family_name(image_name, cycle);
+      }
+
       vtkh::Render render = vtkh::MakeRender(1024,
                                              1024,
                                              *bounds,
