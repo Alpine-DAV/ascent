@@ -42,131 +42,473 @@
 .. #
 .. ############################################################################
 
-.. _tutorials:
+.. _tutorial_intro:
 
-Tutorials
-==============================
+Introduction to Ascent
+=============================
 
-ECP 2019 Annual Meeting
--------------------------
+.. _tutorial_first_light:
 
-**In Situ Visualization and Analysis with Ascent**
+First Light
+--------------
 
-**Date:** Thursday, January 17th, 2019
+*Render a sample dataset using Ascent from C++ and Python*
 
-**Time:** 8:30am - 12:00pm
+For this demo, we run the "First Light" examples which are installed with Ascent to enable users to quickly test ascent in their build system.
 
-**Location:** Champions VII
+C++ Example (`examples/ascent/using-with-make/ascent_render_example.cpp`):
 
-**Authors:**
+.. literalinclude:: ../../../src/examples/using-with-make/ascent_render_example.cpp
+   :language: cpp
+   :lines: 45-
 
-Hank Childs (University of Oregon); Matthew Larsen (Lawrence Livermore National Laboratory); Cyrus Harrison (Lawrence Livermore National Laboratory); Kenneth Moreland (Sandia National Laboratories); David Rogers (Los Alamos National Laboratory)
+Python Example (`examples/ascent/python/ascent_python_render_example.py`):
 
-**Abstract:**
-
-In situ visualization and analysis is an important capability for addressing slow I/O on modern supercomputers. With this 3-hour tutorial, we will spend the majority of our time (two hours) going into detail on Ascent, an in situ visualization and analysis library being developed by ECP ALPINE. Ascent is from the makers of ParaView Catalyst and VisIt LibSim, and it will soon be able to directly connect with both of those products. The tutorial will be practical in nature: how to integrate Ascent into a simulation code, Ascent’s data model, build and linking issues, and capabilities. The remaining hour will be spent highlighting other visualization efforts in ECP, such as in situ-specific visualization algorithms, VTK-m, and CINEMA.
-
-**Slides:**
-`http://portal.nersc.gov/project/alpine/docs/ecp_2019_ahm/  <http://portal.nersc.gov/project/alpine/docs/ecp_2019_ahm/>`_
-
-
-Tutorial Setup
-----------------------------------------
-
-Build and Install
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To build and install Ascent yourself see :doc:`QuickStart`.
-
-NERSC Cori Install
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We have a public ascent install for use on NERSC's Cori System. This install was built with the default
-intel compiler (18.0.1.163).
-
-The install is located at ``/project/projectdirs/alpine/software/ascent/ecp_2019/ascent-install``.
-You can copy the tutorial examples from this install and build them as follows:
-
-.. code::
-
-    cp -r /project/projectdirs/alpine/software/ascent/ecp_2019/ascent-install/examples/ascent/tutorial/ecp_2019 .
-    cd ecp_2019
-    make ASCENT_DIR=/project/projectdirs/alpine/software/ascent/ecp_2019/ascent-install/
-
-Using Docker
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you have Docker installed you can obtain a Docker image with a ready-to-use ascent install from `Docker Hub <https://hub.docker.com/r/alpinedav/ascent/>`_.
-
-Fetch the latest Ascent image:
-
-.. code::
-
-    docker pull alpinedav/ascent
-
-After the download completes, create and run a container using this image:
-
-.. code::
-
-    docker run -p 8000:8000 -p 10000:10000 -t -i alpinedav/ascent
-
-(The ``-p`` is used to forward ports between the container and your host machine, we use these ports to allow web servers on the container to serve data to the host.)
+.. literalinclude:: ../../../src/examples/python/ascent_python_render_example.py
+   :language: python
+   :lines: 45-
 
 
-You will now be at a bash prompt in you container.
-
-To add the proper paths to Python and MPI to your environment run:
-
-.. code::
-
-    source ascent_docker_setup.sh
-
-The ascent source code is at ``/ascent/src/``, and the install is at ``/ascent/install-debug``.
+These examples render the same example data set using ray casting to create a pseudocolor plot. 
+The data set is one of the built-in Conduit Mesh Blueprint examples, in this case an unstructured mesh composed of hexagons.
 
 
-Example Program Sources
-----------------------------------------
+.. _tutorial_conduit_basics:
 
-You can find the tutorial example source code and a Makefile in your Ascent install directory
-under ``examples/ascent/tutorial/ecp_2019``.
+Conduit Basics
+----------------
 
+Ascent's API is based on Conduit (LINK). Both mesh data and action descriptions are passed to Ascent as Conduit trees.  The Conduit C++ and Python interfaces are very similar, with the C++ interface heavily influenced by the ease of use of Python. These examples provide basic knowledge about creating Conduit Nodes to use with Ascent.
+
+Creating key-value entries
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/conduit_example1.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/conduit_example1.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/conduit_example1.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example1.py
+   :language: python
+
+
+Creating a path hierarchy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/conduit_example2.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/conduit_example2.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/conduit_example2.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example2.py
+   :language: python
+
+
+Setting array data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/conduit_example3.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/conduit_example3.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/conduit_example3.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example3.py
+   :language: python
+
+
+Zero-copy vs deep copy of array data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/conduit_example4.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/conduit_example4.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/conduit_example4.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example4.py
+   :language: python
+
+You can also find more Conduit examples in Conduit's documentation (LINK)
+
+Conduit Blueprint Mesh Examples
+---------------------------------
+
+Simulation mesh data is passed to Ascent using a shared set of conventions called the **Mesh Blueprint**.
+(LINK) (MORE)
+
+
+Creating a uniform grid with a single field
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**C++**
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/blueprint_example1.cpp
+   :language: cpp
+
+**Python**
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/blueprint_example1.py
+   :language: python
+
+(PICTURE OF THE RESULT)
+
+
+Creating an unstructured tet mesh with fields
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**C++**
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/blueprint_example2.cpp
+   :language: cpp
+
+**Python**
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/blueprint_example2.py
+   :language: python
+
+(PICTURE OF THE RESULT)
+
+Using the built-in blueprint  ``braid`` example mesh
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+(ALSO TALK ABOUT BUILT CONDUIT EXAMPLE FUNCTIONS)
+
+(TODO) describe braid, and possibly tweak to make time varying
+
+**C++**
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/blueprint_example3.cpp
+   :language: cpp
+
+**Python**
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/blueprint_example3.py
+   :language: python
+
+
+You can also find more Conduit examples in Conduit’s documentation (LINK)
+
+
+Rendering images with Scenes
+-------------------------------
+
+SHORT BLURB ABOUT SCENES, link to docs etc
+
+Using multiple scenes to render different variables 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example1.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example1.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example1.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example1.py
+   :language: python
+
+
+Rendering multiple plots to a single image
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example2.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example2.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example2.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example2.py
+   :language: python
+
+
+Rendering multiple views of the same scene
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example3.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example3.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example3.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example3.py
+   :language: python
+
+
+Changing the color table used for pseudocolor rendering
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example4.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example4.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example4.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example4.py
+   :language: python
+
+
+Transforming data with Pipelines
+-----------------------------------
+
+SHORT BLURB ABOUT PIPELINES, link to docs etc
+
+Calculate and render contours
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py
+   :language: python
+
+
+Combining threshold and clip transforms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py
+   :language: python
+
+Creating and rendering the multiple pipelines
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py
+   :language: python
+
+
+Capturing data with Extracts
+-----------------------------------
+
+SHORT BLURB ABOUT EXTRACTS, link to docs etc
+
+Exporting input mesh data to Blueprint HDF5 files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py
+   :language: python
+
+
+
+VisIt 2.13 or newer, when built with Conduit support, can load and visualize these files.
+
+
+Exporting the result of a pipeline to Blueprint HDF5 files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example2.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example2.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example2.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example2.py
+   :language: python
+
+
+Creating a Cinema image database for post-hoc exploration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example2.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example2.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example2.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example2.py
+   :language: python
+
+
+If you are already in Python land this may seem strange, but for C++ and FORTRAN codes, the Python extract gives you access to a distributed-memory python environment with in-situ access to mesh data
+
+
+Using a Python Extract to execute custom Python analysis
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example3.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example3.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example3.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example3.py
+   :language: python
+
+
+If you are already in Python land this may seem strange, but for C++ and FORTRAN codes, the Python extract gives you access to a distributed-memory python environment with in-situ access to mesh data
+
+
+
+Adaptive visualization with Triggers
+--------------------------------------
+
+SHORT BLURB ABOUT TRIGGERS, link to docs etc
+
+
+Using a trigger to rendering when an event occurs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_tirgger_example1.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_tirgger_example1.cpp
+   :language: cpp
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_tirgger_example1.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_tirgger_example1.py
+   :language: python
+
+
+All Intro Examples
+----------------------
+
+Tutorial Notebooks
+~~~~~~~~~~~~~~~~~~~
+
+* First Light:  :download:`01_ascent_first_light.ipynb <../../../src/examples/tutorial/ascent_intro/notebooks/01_ascent_first_light.ipynb>`
+* Conduit Basics:  :download:`02_conduit_basics.ipynb <../../../src/examples/tutorial/ascent_intro/notebooks/02_conduit_basics.ipynb>`
+* Conduit Blueprint Mesh Examples: :download:`03_conduit_blueprint_mesh_examples.cpp <../../../src/examples/tutorial/ascent_intro/notebooks/03_conduit_blueprint_mesh_examples.ipynb>`
+* Scene Examples:    :download:`04_ascent_scene_examples.cpp <../../../src/examples/tutorial/ascent_intro/notebooks/04_ascent_scene_examples.ipynb>`
+* Pipeline Examples: :download:`05_ascent_pipeline_examples.cpp <../../../src/examples/tutorial/ascent_intro/notebooks/05_ascent_pipeline_examples.ipynb>`
+* Extract Examples:  :download:`05_ascent_pipeline_examples.cpp <../../../src/examples/tutorial/ascent_intro/notebooks/05_ascent_pipeline_examples.ipynb>`
+* Trigger Examples:  :download:`06_ascent_trigger_examples.cpp <../../../src/examples/tutorial/ascent_intro/notebooks/06_ascent_trigger_examples.ipynb>`
+
+
+C++ Examples
+~~~~~~~~~~~~~~~
 
 Example Makefile:
- * :download:`Makefile <../../examples/tutorial/ecp_2019/Makefile>`
+ * :download:`Makefile <../../examples/tutorial/ascent_into/cpp/Makefile>`
 
-Basic Example:
- * :download:`ascent_example1.cpp <../../examples/tutorial/ecp_2019/ascent_example1.cpp>`
+First Light:
+ * :download:`ascent_example1.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_first_light_example.cpp>`
 
+Conduit Basics:
+ * :download:`conduit_example1.cpp <../../../src/examples/tutorial/ascent_intro/cpp/conduit_example1.cpp>`
+ * :download:`conduit_example2.cpp <../../../src/examples/tutorial/ascent_intro/cpp/conduit_example2.cpp>`
+ * :download:`conduit_example3.cpp <../../../src/examples/tutorial/ascent_intro/cpp/conduit_example3.cpp>`
+ * :download:`conduit_example4.cpp <../../../src/examples/tutorial/ascent_intro/cpp/conduit_example4.cpp>`
 
-Conduit Examples:
- * :download:`conduit_example1.cpp <../../examples/tutorial/ecp_2019/conduit_example1.cpp>`
- * :download:`conduit_example2.cpp <../../examples/tutorial/ecp_2019/conduit_example2.cpp>`
- * :download:`conduit_example3.cpp <../../examples/tutorial/ecp_2019/conduit_example3.cpp>`
- * :download:`conduit_example4.cpp <../../examples/tutorial/ecp_2019/conduit_example4.cpp>`
- * :download:`conduit_example5.cpp <../../examples/tutorial/ecp_2019/conduit_example5.cpp>`
-
-
-Conduit Blueprint Examples:
- * :download:`blueprint_example2.cpp <../../examples/tutorial/ecp_2019/blueprint_example2.cpp>`
- * :download:`blueprint_example2.cpp <../../examples/tutorial/ecp_2019/blueprint_example2.cpp>`
-
+Conduit Blueprint Mesh Examples:
+ * :download:`blueprint_example2.cpp <../../../src/examples/tutorial/ascent_intro/cpp/blueprint_example1.cpp>`
+ * :download:`blueprint_example2.cpp <../../../src/examples/tutorial/ascent_intro/cpp/blueprint_example2.cpp>`
+ * :download:`blueprint_example2.cpp <../../../src/examples/tutorial/ascent_intro/cpp/blueprint_example3.cpp>`
 
 Scene Examples:
- * :download:`ascent_scene_example1.cpp <../../examples/tutorial/ecp_2019/ascent_scene_example1.cpp>`
- * :download:`ascent_scene_example2.cpp <../../examples/tutorial/ecp_2019/ascent_scene_example2.cpp>`
- * :download:`ascent_scene_example3.cpp <../../examples/tutorial/ecp_2019/ascent_scene_example3.cpp>`
- * :download:`ascent_scene_example4.cpp <../../examples/tutorial/ecp_2019/ascent_scene_example4.cpp>`
+ * :download:`ascent_scene_example1.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example1.cpp>`
+ * :download:`ascent_scene_example2.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example2.cpp>`
+ * :download:`ascent_scene_example3.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example3.cpp>`
+ * :download:`ascent_scene_example4.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example4.cpp>`
 
 
 Pipeline Examples:
- * :download:`ascent_pipeline_example1.cpp <../../examples/tutorial/ecp_2019/ascent_pipeline_example1.cpp>`
- * :download:`ascent_pipeline_example2.cpp <../../examples/tutorial/ecp_2019/ascent_pipeline_example2.cpp>`
- * :download:`ascent_pipeline_example3.cpp <../../examples/tutorial/ecp_2019/ascent_pipeline_example3.cpp>`
+ * :download:`ascent_pipeline_example1.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp>`
+ * :download:`ascent_pipeline_example2.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example2.cpp>`
+ * :download:`ascent_pipeline_example3.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example3.cpp>`
 
 
 Extract Examples:
- * :download:`ascent_extract_example1.cpp <../../examples/tutorial/ecp_2019/ascent_extract_example1.cpp>`
- * :download:`ascent_extract_example2.cpp <../../examples/tutorial/ecp_2019/ascent_extract_example2.cpp>`
+ * :download:`ascent_extract_example1.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example1.cpp>`
+ * :download:`ascent_extract_example2.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example2.cpp>`
+ * :download:`ascent_extract_example2.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example3.cpp>`
+
+Trigger Examples:
+ * :download:`ascent_trigger_example1.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_trigger_example1.cpp>`
 
 
+Python Examples
+~~~~~~~~~~~~~~~
 
+First Light:
+ * :download:`ascent_example1.py <../../../src/examples/tutorial/ascent_intro/python/ascent_first_light_example.py>`
+
+Conduit Basics:
+ * :download:`conduit_example1.py <../../../src/examples/tutorial/ascent_intro/python/conduit_example1.py>`
+ * :download:`conduit_example2.py <../../../src/examples/tutorial/ascent_intro/python/conduit_example2.py>`
+ * :download:`conduit_example3.py <../../../src/examples/tutorial/ascent_intro/python/conduit_example3.py>`
+ * :download:`conduit_example4.py <../../../src/examples/tutorial/ascent_intro/python/conduit_example4.py>`
+
+Conduit Blueprint Mesh Examples:
+ * :download:`blueprint_example2.py <../../../src/examples/tutorial/ascent_intro/python/blueprint_example1.py>`
+ * :download:`blueprint_example2.py <../../../src/examples/tutorial/ascent_intro/python/blueprint_example2.py>`
+ * :download:`blueprint_example2.py <../../../src/examples/tutorial/ascent_intro/python/blueprint_example3.py>`
+
+Scene Examples:
+ * :download:`ascent_scene_example1.py <../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example1.py>`
+ * :download:`ascent_scene_example2.py <../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example2.py>`
+ * :download:`ascent_scene_example3.py <../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example3.py>`
+ * :download:`ascent_scene_example4.py <../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example4.py>`
+
+
+Pipeline Examples:
+ * :download:`ascent_pipeline_example1.py <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py>`
+ * :download:`ascent_pipeline_example2.py <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example2.py>`
+ * :download:`ascent_pipeline_example3.py <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example3.py>`
+
+
+Extract Examples:
+ * :download:`ascent_extract_example1.py <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example1.py>`
+ * :download:`ascent_extract_example2.py <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example2.py>`
+ * :download:`ascent_extract_example2.py <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example3.py>`
+
+Trigger Examples:
+ * :download:`ascent_trigger_example1.py <../../../src/examples/tutorial/ascent_intro/python/ascent_trigger_example1.py>`
+
+
+.. ECP 2019 Annual Meeting
+.. -------------------------
+..
+.. **In Situ Visualization and Analysis with Ascent**
+..
+.. **Date:** Thursday, January 17th, 2019
+..
+.. **Time:** 8:30am - 12:00pm
+..
+.. **Location:** Champions VII
+..
+.. **Authors:**
+..
+.. Hank Childs (University of Oregon); Matthew Larsen (Lawrence Livermore National Laboratory); Cyrus Harrison (Lawrence Livermore National Laboratory); Kenneth Moreland (Sandia National Laboratories); David Rogers (Los Alamos National Laboratory)
+..
+.. **Abstract:**
+..
+.. In situ visualization and analysis is an important capability for addressing slow I/O on modern supercomputers. With this 3-hour tutorial, we will spend the majority of our time (two hours) going into detail on Ascent, an in situ visualization and analysis library being developed by ECP ALPINE. Ascent is from the makers of ParaView Catalyst and VisIt LibSim, and it will soon be able to directly connect with both of those products. The tutorial will be practical in nature: how to integrate Ascent into a simulation code, Ascent’s data model, build and linking issues, and capabilities. The remaining hour will be spent highlighting other visualization efforts in ECP, such as in situ-specific visualization algorithms, VTK-m, and CINEMA.
+..
+.. **Slides:**
+.. `http://portal.nersc.gov/project/alpine/docs/ecp_2019_ahm/  <http://portal.nersc.gov/project/alpine/docs/ecp_2019_ahm/>`_

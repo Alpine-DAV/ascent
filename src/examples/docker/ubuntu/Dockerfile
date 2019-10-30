@@ -83,6 +83,12 @@ RUN tar -xzf ascent.docker.src.tar.gz
 # in a way that fails in docker
 RUN cd ascent && python scripts/uberenv/uberenv.py -k --spec "%gcc+mpi~doc~adios ^mpich"
 
+# install jupyter via pip
+RUN /ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
+    install \
+    --trusted-host pypi.org --trusted-host files.pythonhosted.org \
+    jupyter
+
 # configure a debug build with cmake
 RUN cd ascent && mkdir build-debug
 RUN cd ascent/build-debug && \
@@ -97,10 +103,26 @@ RUN cd ascent/build-debug && make
 RUN cd ascent/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
 RUN cd ascent/build-debug && make install
 
+# install ascent bridge kernel into jupyter
+RUN cd /ascent/install-debug/share/ascent/ascent_jupyter_bridge/ && \
+    /ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
+    install \
+    --trusted-host pypi.org --trusted-host files.pythonhosted.org \
+    -r requirements.txt
+
+RUN cd /ascent/install-debug/share/ascent/ascent_jupyter_bridge/ && \
+    /ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
+    install \
+    --trusted-host pypi.org --trusted-host files.pythonhosted.org \
+    .
+
+
 # gen env script that points to spack installs of tpls
 RUN cd ascent && python scripts/gen_spack_env_script.py cmake mpi python
 RUN cp ascent/s_env.sh ascent_docker_setup_env.sh
 
+# open port 8888, for use by jupyter notebook http server
+EXPOSE 8888
 # open port 9000, for use by conduit relay
 EXPOSE 9000
 # open port 10000 for other apps (browse fs via http, etc)
