@@ -129,7 +129,7 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_default_runtime)
     scenes["s1/plots/p1/field"] = "rank_ele";
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
     scenes["s1/renders/r1/camera/azimuth"] = 45.0;
 
     conduit::Node actions;
@@ -228,7 +228,7 @@ TEST(ascent_mpi_render_3d, mpi_render_ranks_without_data)
     scenes["s1/plots/p1/field"] = "rank_ele";
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
     scenes["s1/renders/r1/camera/azimuth"] = 45.0;
 
     conduit::Node actions;
@@ -385,7 +385,7 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
     scenes["s1/plots/p1/field"] = "radial_vert";
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
     scenes["s1/renders/r1/camera/azimuth"] = 45.0;
 
     conduit::Node actions;
