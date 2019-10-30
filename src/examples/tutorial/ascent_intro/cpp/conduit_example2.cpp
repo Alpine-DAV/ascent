@@ -1,9 +1,8 @@
 #include <iostream>
 #include <vector>
-#include "conduit_blueprint.hpp"
+#include "conduit.hpp"
 
 using namespace conduit;
-using std::vector;
 
 int main()
 {

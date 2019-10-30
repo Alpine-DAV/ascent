@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include "conduit_blueprint.hpp"
+#include "conduit.hpp"
 
 using namespace conduit;
 using std::vector;
@@ -9,8 +9,8 @@ int main()
 {
     Node n;
     vector<int> A1(20);
-    A1[0] = 0;  
-    A1[1] = 1; 
+    A1[0] = 0;
+    A1[1] = 1;
     for (int i = 2 ; i < 20 ; i++)
         A1[i] = A1[i-2]+A1[i-1];
     n["fib_deep_copy"].set(A);
