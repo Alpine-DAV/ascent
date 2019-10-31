@@ -75,7 +75,7 @@ ascent_first_light_example:
 	$(CXX) $(INC_FLAGS) ascent_first_light_example.cpp $(LNK_FLAGS) -o ascent_first_light_example
 
 # conduit examples (1-4)
-conduit_examples: conduit_example1 conduit_example2 conduit_example3 conduit_example4 conduit_example5
+conduit_examples: conduit_example1 conduit_example2 conduit_example3 conduit_example4 
 	echo "[done building conduit examples]"
 
 conduit_example1:

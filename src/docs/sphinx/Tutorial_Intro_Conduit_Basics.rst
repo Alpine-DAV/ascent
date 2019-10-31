@@ -56,11 +56,23 @@ Creating key-value entries
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/conduit_example1.cpp
    :language: cpp
+   :lines: 50-
 
+**Output**
+
+.. literalinclude:: Tutorial_Output/out_txt_cpp_conduit_example1.txt
+   :language: json
+   
 :download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/conduit_example1.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example1.py
    :language: python
+   :lines: 45-
+
+**Output**
+
+.. literalinclude:: Tutorial_Output/out_txt_py_conduit_example1.txt
+   :language: yaml
 
 
 Creating a path hierarchy
@@ -70,11 +82,24 @@ Creating a path hierarchy
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/conduit_example2.cpp
    :language: cpp
+   :lines: 50-
 
+**Output**
+
+.. literalinclude:: Tutorial_Output/out_txt_cpp_conduit_example2.txt
+   :language: json
+
+   
 :download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/conduit_example2.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example2.py
    :language: python
+   :lines: 45-
+
+**Output**
+
+.. literalinclude:: Tutorial_Output/out_txt_py_conduit_example2.txt
+   :language: yaml
 
 
 Setting array data
@@ -84,11 +109,23 @@ Setting array data
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/conduit_example3.cpp
    :language: cpp
+   :lines: 50-
+
+**Output**
+
+.. literalinclude:: Tutorial_Output/out_txt_cpp_conduit_example3.txt
+   :language: json
 
 :download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/conduit_example3.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example3.py
    :language: python
+   :lines: 45-
+
+**Output**
+
+.. literalinclude:: Tutorial_Output/out_txt_py_conduit_example3.txt
+   :language: yaml
 
 
 Zero-copy vs deep copy of array data
@@ -98,10 +135,20 @@ Zero-copy vs deep copy of array data
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/conduit_example4.cpp
    :language: cpp
+   :lines: 50-
+
+**Output**
+
+.. literalinclude:: Tutorial_Output/out_txt_cpp_conduit_example4.txt
+   :language: json
 
 :download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/conduit_example4.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example4.py
    :language: python
+   :lines: 45-
 
+**Output**
 
+.. literalinclude:: Tutorial_Output/out_txt_py_conduit_example4.txt
+   :language: yaml

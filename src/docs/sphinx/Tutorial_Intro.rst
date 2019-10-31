@@ -482,13 +482,7 @@ Trigger Examples:
  * :download:`ascent_trigger_example1.py <../../../src/examples/tutorial/ascent_intro/python/ascent_trigger_example1.py>`
 
 
-Past Tutorials:
-    ECP 2018 Annual Meeting - Feb 2018, Knoxville, TX
-    ECP 2019 Annual Meeting - Jan 2019, Houston, TX
-        
-Scheduled Tutorials:
-    SC19 - Nov 2019, Denver, CO
-    ECP 2020 Annual Meeting - Feb 2020, Houston, TX
+
 
 .. 
 .. -------------------------
