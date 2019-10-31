@@ -138,7 +138,7 @@ The result of the expression is `stored` internally and can be accessed in two w
 Combining Queries
 ^^^^^^^^^^^^^^^^^
 Queries are executed in the same order they are declared, and since the result of each query stored,
-each query can be thought of a statement, with one query building on the previous queries.
+each query can be thought of as an assignement statement in a program, with one query building on the previous queries.
 
 .. code-block:: yaml
 
