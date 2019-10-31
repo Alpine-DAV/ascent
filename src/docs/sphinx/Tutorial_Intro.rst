@@ -54,19 +54,17 @@ First Light
 
 *Render a sample dataset using Ascent from C++ and Python*
 
-For this demo, we run the "First Light" examples which are installed with Ascent to enable users to quickly test ascent in their build system.
+To start, we run a basic "First Light" example to generate an image.
 
-C++ Example (`examples/ascent/using-with-make/ascent_render_example.cpp`):
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_first_light_example.cpp>`
 
-.. literalinclude:: ../../../src/examples/using-with-make/ascent_render_example.cpp
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_first_light_example.cpp
    :language: cpp
-   :lines: 45-
 
-Python Example (`examples/ascent/python/ascent_python_render_example.py`):
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_first_light_example.py>`
 
-.. literalinclude:: ../../../src/examples/python/ascent_python_render_example.py
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_first_light_example.py
    :language: python
-   :lines: 45-
 
 
 These examples render the same example data set using ray casting to create a pseudocolor plot. 
@@ -78,7 +76,7 @@ The data set is one of the built-in Conduit Mesh Blueprint examples, in this cas
 Conduit Basics
 ----------------
 
-Ascent's API is based on Conduit (LINK). Both mesh data and action descriptions are passed to Ascent as Conduit trees.  The Conduit C++ and Python interfaces are very similar, with the C++ interface heavily influenced by the ease of use of Python. These examples provide basic knowledge about creating Conduit Nodes to use with Ascent.
+Ascent's API is based on `Conduit <http://software.llnl.gov/conduit/>`_. Both mesh data and action descriptions are passed to Ascent as Conduit trees.  The Conduit C++ and Python interfaces are very similar, with the C++ interface heavily influenced by the ease of use of Python. These examples provide basic knowledge about creating Conduit Nodes to use with Ascent.
 
 Creating key-value entries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -135,13 +133,17 @@ Zero-copy vs deep copy of array data
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example4.py
    :language: python
 
-You can also find more Conduit examples in Conduit's documentation (LINK)
+You can also find more introductory Conduit examples in Conduit's `Tutorial docs <https://llnl-conduit.readthedocs.io/en/latest/conduit.html>`_ .
+
+.. _tutorial_conduit_mesh_blueprint:
 
 Conduit Blueprint Mesh Examples
 ---------------------------------
 
-Simulation mesh data is passed to Ascent using a shared set of conventions called the **Mesh Blueprint**.
-(LINK) (MORE)
+Simulation mesh data is passed to Ascent using a shared set of conventions called the
+`Mesh Blueprint <https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html>`_ .
+
+(MORE)
 
 
 Creating a uniform grid with a single field
@@ -193,13 +195,15 @@ Using the built-in blueprint  ``braid`` example mesh
    :language: python
 
 
-You can also find more Conduit examples in Conduit’s documentation (LINK)
+You can also find more Mesh Blueprint examples in Conduit's `Mesh Blueprint Examples docs https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#examples`_ .
 
+.. _tutorial_scenes:
 
 Rendering images with Scenes
 -------------------------------
 
-SHORT BLURB ABOUT SCENES, link to docs etc
+Scenes are the construct used to render pictures of meshes in Ascent. A scene description encapsulates all the information required to generate one or more images. Scenes can render mesh data published to Ascent or the result of an Ascent Pipeline.  This section of the tutorial provides a few simple examples demonstrating how to describe and render scenes. See :ref:`scenes` docs for deeper details on Scenes.
+
 
 Using multiple scenes to render different variables 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

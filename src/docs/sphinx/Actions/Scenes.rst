@@ -43,6 +43,8 @@
 .. ############################################################################
 .. _add_plot-label:
 
+.. _scenes:
+
 Scenes
 ======
 A scene encapsulates the information required to generate one or more images.
