@@ -46,15 +46,15 @@ Ascent API
 ============
 The top level API for ascent consists of five calls:
 
-  - Open(condiut::Node)
-  - Publish(conduit::Node)
-  - Execute(conduit::Node)
-  - Info(conduit::Node)
-  - Close()
+  - open(condiut::Node)
+  - publish(conduit::Node)
+  - execute(conduit::Node)
+  - info(conduit::Node)
+  - close()
 
 .. _ascent_api_open:
 
-Open
+open
 ----
 Open provides the initial setup of Ascent from a Conduit Node.
 Options include runtime type (e.g., ascent, flow, or empty) and associated backend if available.
@@ -152,7 +152,7 @@ launch one MPI task per GPU. This default behavior can be overridden with the fo
 
 By disabling CUDA GPU initialization, an application is free to set the active device.
 
-Publish
+publish
 -------
 This call publishes data to Ascent through `Conduit Blueprint <http://llnl-conduit.readthedocs.io/en/latest/blueprint.html>`_ mesh descriptions.
 In the Lulesh proxy-app, data is already in a form that is compatible with the blueprint conventions and the code to create the Conduit Node is straight-forward:
@@ -207,7 +207,7 @@ Once the Conduit Node has been populated with data conforming to the mesh bluepr
 
 Publish is called each cycle where Ascent is used.
 
-Execute
+execute
 -------
 Execute applies some number of actions to published data.
 Each action is described inside of a Conduit Node and passed to the Execute call.
@@ -235,7 +235,7 @@ Here is a simple example of adding a plot using the C++ API:
       ascent.Publish(mesh_data);
       ascent.Execute(actions);
 
-Info
+info
 ----
 Info populates a conduit Node with infomation about Ascent including runtime execution and outputted results.
 This information can be used to return data back to the simulation and for debugging purposes.
@@ -243,7 +243,7 @@ This information can be used to return data back to the simulation and for debug
 .. code-block:: c++
 
   conduit::Node info;
-  ascent.Info(info);
+  ascent.info(info);
   info.print();
 
 The data populated inside the info node is as follows:
@@ -255,13 +255,13 @@ The data populated inside the info node is as follows:
   - ``images``: a list of image file names and camera parameters that were create in the last call to ``Execute``.
   - ``expressions``: a set of query results from all calls to ``Execute``.
 
-Close
+close
 -----
 Close informs Ascent that all actions are complete, and the call performs the appropriate clean-up.
 
 .. code-block:: c++
 
-  ascent.Close();
+  ascent.close();
 
 
 Error Handling
