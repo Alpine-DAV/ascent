@@ -100,6 +100,8 @@ blueprint_example1:
 blueprint_example2:
 	$(CXX) $(INC_FLAGS) blueprint_example2.cpp $(LNK_FLAGS) -o blueprint_example2
 
+blueprint_example3:
+	$(CXX) $(INC_FLAGS) blueprint_example3.cpp $(LNK_FLAGS) -o blueprint_example3
 
 #ascent scene examples (1-4)
 ascent_scene_examples: ascent_scene_example1 ascent_scene_example2 ascent_scene_example3 ascent_scene_example4
@@ -149,6 +151,7 @@ clean:
 	rm -f ascent_first_light_example 
 	rm -f blueprint_example1
 	rm -f blueprint_example2
+	rm -f blueprint_example3
 	rm -f conduit_example1
 	rm -f conduit_example2
 	rm -f conduit_example3

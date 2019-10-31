@@ -69,5 +69,5 @@ To start, we run a basic "First Light" example to generate an image. This exampl
     :scale: 50 %
     :align: center
 
-    First Light example result image
+    First Light Example Result
 

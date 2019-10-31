@@ -61,7 +61,7 @@ Creating key-value entries
 **Output**
 
 .. literalinclude:: Tutorial_Output/out_txt_cpp_conduit_example1.txt
-   :language: json
+   :language: yaml
    
 :download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/conduit_example1.py>`
 
