@@ -43,6 +43,8 @@
 .. ############################################################################
 .. _add_plot-label:
 
+.. _scenes:
+
 Scenes
 ======
 A scene encapsulates the information required to generate one or more images.
@@ -212,6 +214,9 @@ The code below creates a volume plot of the default pipeline.
 
     A mesh plot of simple grid.
 
+
+.. _scenes_color_tables:
+
 Color Tables
 ^^^^^^^^^^^^
 The color map translates normalized scalars to color values. Color maps
@@ -309,6 +314,7 @@ Here is an example of clamping the scalar values to the range [-0.5, 0.5].
   scenes["s1/plots/p1/min_value"] = -0.5;
   scenes["s1/plots/p1/max_value"] = 0.5;
 
+.. _scenes_renders:
 
 Renders (Optional)
 ------------------

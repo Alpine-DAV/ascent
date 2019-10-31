@@ -47,6 +47,7 @@ MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 
 # fetch build env
 RUN apt-get update && apt-get install -y \
+    sudo \
     git \
     curl \
     build-essential \
@@ -55,15 +56,31 @@ RUN apt-get update && apt-get install -y \
     gfortran \
     zlib1g-dev \
     python \
+    tar \
     unzip \
+    perl \
+    openmpi-bin \
+    libopenmpi-dev \
+    libncurses-dev \
+    libssl-dev \
+    libopenblas-dev \
+    zlib1g-dev \
+    libgdbm-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libbz2-dev \
     vim \
     emacs \
  && rm -rf /var/lib/apt/lists/*
 
 
+RUN useradd -ms /bin/bash user
+USER user
+WORKDIR /home/user
+
 # obtain a copy of ascent source from host env
-COPY ascent.docker.src.tar.gz /
-RUN tar -xzf ascent.docker.src.tar.gz
+COPY ascent.docker.src.tar.gz /home/user
+RUN cd /home/user && tar -xzf ascent.docker.src.tar.gz
 
 # at some sites ssl certs are intercepted, which cases issues fetching
 # tpl sources via https
@@ -81,45 +98,48 @@ RUN tar -xzf ascent.docker.src.tar.gz
 # will not run for the root user, also avoid mpi4py after 2.0,
 # since it reqs cython and cython's src tarball has perms set
 # in a way that fails in docker
-RUN cd ascent && python scripts/uberenv/uberenv.py -k --spec "%gcc+mpi~doc~adios ^mpich"
+RUN cd /home/user/ascent && python scripts/uberenv/uberenv.py \
+       -k \
+       --spec "%gcc+mpi+mfem ^python@3.6.3" \
+       --spack-config-dir=scripts/uberenv/spack_configs/docker/ubuntu/
 
 # install jupyter via pip
-RUN /ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
+RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
-    jupyter
+    jupyter matplotlib
 
 # configure a debug build with cmake
-RUN cd ascent && mkdir build-debug
-RUN cd ascent/build-debug && \
+RUN cd /home/user/ascent && mkdir build-debug
+RUN cd /home/user/ascent/build-debug && \
     ../uberenv_libs/spack/opt/spack/*/*/cmake*/bin/cmake \
     -DCMAKE_BUILD_TYPE=Debug \
-    -DCMAKE_INSTALL_PREFIX=/ascent/install-debug \
+    -DCMAKE_INSTALL_PREFIX=/home/user/ascent/install-debug \
     -C ../uberenv_libs/*.cmake \
     ../src
 
 # build, test, and install conduit
-RUN cd ascent/build-debug && make
-RUN cd ascent/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
-RUN cd ascent/build-debug && make install
+RUN cd /home/user/ascent/build-debug && make
+RUN cd /home/user/ascent/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
+RUN cd /home/user/ascent/build-debug && make install
 
 # install ascent bridge kernel into jupyter
-RUN cd /ascent/install-debug/share/ascent/ascent_jupyter_bridge/ && \
-    /ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
+RUN cd /home/user/ascent/install-debug/share/ascent/ascent_jupyter_bridge/ && \
+    /home/user/ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
     -r requirements.txt
 
-RUN cd /ascent/install-debug/share/ascent/ascent_jupyter_bridge/ && \
-    /ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
+RUN cd /home/user/ascent/install-debug/share/ascent/ascent_jupyter_bridge/ && \
+    /home/user/ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
     .
 
 
 # gen env script that points to spack installs of tpls
-RUN cd ascent && python scripts/gen_spack_env_script.py cmake mpi python
-RUN cp ascent/s_env.sh ascent_docker_setup_env.sh
+RUN cd /home/user/ascent && python scripts/gen_spack_env_script.py cmake mpi python
+RUN cp /home/user/ascent/s_env.sh ascent_docker_setup_env.sh
 
 # open port 8888, for use by jupyter notebook http server
 EXPOSE 8888
