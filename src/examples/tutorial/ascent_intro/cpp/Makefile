@@ -70,12 +70,11 @@ default: all
 INC_FLAGS = $(ASCENT_INCLUDE_FLAGS)
 LNK_FLAGS = $(ASCENT_LINK_RPATH) $(ASCENT_LIB_FLAGS)
 
-# ascent examples (1)
-ascent_example1:
-	$(CXX) $(INC_FLAGS) ascent_example1.cpp $(LNK_FLAGS) -o ascent_example1
+# ascent first light (1)
+ascent_first_light_example:
+	$(CXX) $(INC_FLAGS) ascent_first_light_example.cpp $(LNK_FLAGS) -o ascent_first_light_example
 
-# TODO ONLY USE 4 EXAMPLES!
-# conduit examples (1-5)
+# conduit examples (1-4)
 conduit_examples: conduit_example1 conduit_example2 conduit_example3 conduit_example4 conduit_example5
 	echo "[done building conduit examples]"
 
@@ -91,11 +90,8 @@ conduit_example3:
 conduit_example4:
 	$(CXX) $(INC_FLAGS) conduit_example4.cpp $(LNK_FLAGS) -o conduit_example4
 
-conduit_example5:
-	$(CXX) $(INC_FLAGS) conduit_example5.cpp $(LNK_FLAGS) -o conduit_example5
-
-# blueprint examples (1-2)
-blueprint_examples: blueprint_example1 blueprint_example2
+# blueprint examples (1-3)
+blueprint_examples: blueprint_example1 blueprint_example2 blueprint_example3
 	echo "[done building blueprint examples]"
 
 blueprint_example1:
@@ -146,17 +142,13 @@ ascent_extract_example2:
 	$(CXX) $(INC_FLAGS) ascent_extract_example2.cpp $(LNK_FLAGS) -o ascent_extract_example2
 
 
-all:  ascent_example1 conduit_examples blueprint_examples ascent_scene_examples ascent_pipeline_examples ascent_extract_examples
+all:  ascent_first_light_example conduit_examples blueprint_examples ascent_scene_examples ascent_pipeline_examples ascent_extract_examples
 	echo "[done building all examples]"
 
 clean:
-	rm -f ascent_example1 
+	rm -f ascent_first_light_example 
 	rm -f blueprint_example1
-	rm -f blueprint_example1
-	rm -f conduit_example1
-	rm -f conduit_example2
-	rm -f conduit_example3
-	rm -f conduit_example4
+	rm -f blueprint_example2
 	rm -f conduit_example1
 	rm -f conduit_example2
 	rm -f conduit_example3

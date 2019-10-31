@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 .. #
 .. # Produced at the Lawrence Livermore National Laboratory
 .. #
@@ -42,30 +42,23 @@
 .. #
 .. ############################################################################
 
-Tutorial
-=================
+.. _tutorial_triggers:
 
-This tutorial introduces how to use Ascent, including basics about:
+Adaptive visualization with Triggers
+--------------------------------------
 
- - Formating mesh data for Ascent
- - Using Conduit and Ascent's Conduit-based API
- - Using and combining Ascent's core building blocks: Scenes, Pipelines, Extracts, and Triggers
- - Using Ascent with the Cloverleaf3D example integration
+SHORT BLURB ABOUT TRIGGERS, link to docs etc
 
-Ascent installs include standalone C++, Python, and Python-based Jupyter notebook examples for this tutorial. 
-You can find the tutorial source code and notebooks in your Ascent install directory under ``examples/ascent/tutorial/ascent_intro/`` and the Cloverleaf3D demo files under ``examples/ascent/tutorial/cloverleaf_demos/``.
 
-    
-Scheduled Tutorials:
- * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC19 <https://sc19.supercomputing.org/presentation/?id=tut141&sess=sess199>`_ - Nov 2019, Denver, CO
- * ECP 2020 Annual Meeting - Feb 2020, Houston, TX
+Using a trigger to rendering when an event occurs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Past Tutorials:
- * ECP 2018 Annual Meeting - Feb 2018, Knoxville, TX
- * ECP 2019 Annual Meeting - Jan 2019, Houston, TX
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_tirgger_example1.cpp>`
 
-.. toctree::
-   Tutorial_Setup
-   Tutorial_Intro
-   Tutorial_CloverLeaf_Demos
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_tirgger_example1.cpp
+   :language: cpp
 
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_tirgger_example1.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_tirgger_example1.py
+   :language: python

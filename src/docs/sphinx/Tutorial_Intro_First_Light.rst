@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 .. #
 .. # Produced at the Lawrence Livermore National Laboratory
 .. #
@@ -42,30 +42,26 @@
 .. #
 .. ############################################################################
 
-Tutorial
-=================
+.. _tutorial_first_light:
 
-This tutorial introduces how to use Ascent, including basics about:
+First Light
+--------------
 
- - Formating mesh data for Ascent
- - Using Conduit and Ascent's Conduit-based API
- - Using and combining Ascent's core building blocks: Scenes, Pipelines, Extracts, and Triggers
- - Using Ascent with the Cloverleaf3D example integration
+Render a sample dataset using Ascent
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Ascent installs include standalone C++, Python, and Python-based Jupyter notebook examples for this tutorial. 
-You can find the tutorial source code and notebooks in your Ascent install directory under ``examples/ascent/tutorial/ascent_intro/`` and the Cloverleaf3D demo files under ``examples/ascent/tutorial/cloverleaf_demos/``.
+To start, we run a basic "First Light" example to generate an image. This example renders the an example dataset using ray casting to create a pseudocolor plot. The dataset is one of the built-in Conduit Mesh Blueprint examples, in this case an unstructured mesh composed of hexagons.
 
-    
-Scheduled Tutorials:
- * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC19 <https://sc19.supercomputing.org/presentation/?id=tut141&sess=sess199>`_ - Nov 2019, Denver, CO
- * ECP 2020 Annual Meeting - Feb 2020, Houston, TX
 
-Past Tutorials:
- * ECP 2018 Annual Meeting - Feb 2018, Knoxville, TX
- * ECP 2019 Annual Meeting - Jan 2019, Houston, TX
+:download:`C++ Source <../../../src/examples/tutorial/ascent_intro/cpp/ascent_first_light_example.cpp>`
 
-.. toctree::
-   Tutorial_Setup
-   Tutorial_Intro
-   Tutorial_CloverLeaf_Demos
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_first_light_example.cpp
+   :language: cpp
+   :lines: 45-
+
+:download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/ascent_first_light_example.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_first_light_example.py
+   :language: python
+   :lines: 45-
 

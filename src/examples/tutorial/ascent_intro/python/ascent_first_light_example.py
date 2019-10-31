@@ -42,9 +42,8 @@
 #
 ###############################################################################
 
-
 """
- file: ascent_python_render_example.py
+ file: ascent_first_light_example.py
 
  description:
    Demonstrates using ascent to render a pseudocolor plot.
@@ -56,43 +55,68 @@ import conduit.blueprint
 import ascent
 
 # print details about ascent
-print(ascent.about())
+print(ascent.about().to_yaml())
 
+# create conduit node with an example mesh using conduit blueprint's braid function
+# ref: https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#braid
 
-# open ascent
-a = ascent.Ascent()
-a.open()
+# things to explore:
+#  changing the mesh resolution
 
-
-# create example mesh using conduit blueprint
-n_mesh = conduit.Node()
+mesh = conduit.Node()
 conduit.blueprint.mesh.examples.braid("hexs",
-                                      10,
-                                      10,
-                                      10,
-                                      n_mesh)
-# publish mesh to ascent
-a.publish(n_mesh)
+                                      50,
+                                      50,
+                                      50,
+                                      mesh)
 
-# declare a scene to render the dataset
-scenes  = conduit.Node()
+# create an Ascent instance
+a = ascent.Ascent()
+
+# set options to allow errors propagate to python
+ascent_opts = conduit.Node()
+ascent_opts["exceptions"] = "forward"
+
+#
+# open ascent
+#
+a.open(ascent_opts)
+
+#
+# publish mesh data to ascent
+#
+a.publish(mesh)
+
+#
+# Ascent's interface accepts "actions" 
+# that to tell Ascent what to execute
+#
+actions = conduit.Node()
+
+# Create an action that tells Ascent to:
+#  add a scene (s1) with one plot (p1)
+#  that will render a pseudocolor of 
+#  the mesh field `braid`
+add_act = actions.append()
+add_act["action"] = "add_scenes"
+
+# declare a scene (s1) and pseudocolor plot (p1)
+scenes = add_act["scenes"]
+
+# things to explore:
+#  changing plot type (mesh)
+#  changing field name (for this dataset: radial)
 scenes["s1/plots/p1/type"] = "pseudocolor"
 scenes["s1/plots/p1/field"] = "braid"
-# Set the output file name (ascent will add ".png")
-scenes["s1/image_prefix"] = "out_ascent_render_3d"
 
-# setup actions to
-actions = conduit.Node()
-add_act =actions.append()
-add_act["action"] = "add_scenes"
-add_act["scenes"] = scenes
+# set the output file name (ascent will add ".png")
+scenes["s1/image_name"] = "out_first_light_render_3d"
 
-# execute
+# view our full actions tree
+print(actions.to_yaml())
+
+# execute the actions
 a.execute(actions)
 
-# close alpine
+# close ascent
 a.close()
-
-
-
-
