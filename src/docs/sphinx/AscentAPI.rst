@@ -44,11 +44,12 @@
 
 Ascent API
 ============
-The top level API for ascent consists of four calls:
+The top level API for ascent consists of five calls:
 
   - Open(condiut::Node)
   - Publish(conduit::Node)
   - Execute(conduit::Node)
+  - Info(conduit::Node)
   - Close()
 
 .. _ascent_api_open:
@@ -233,6 +234,26 @@ Here is a simple example of adding a plot using the C++ API:
 
       ascent.Publish(mesh_data);
       ascent.Execute(actions);
+
+Info
+----
+Info populates a conduit Node with infomation about Ascent including runtime execution and outputted results.
+This information can be used to return data back to the simulation and for debugging purposes.
+
+.. code-block:: c++
+
+  conduit::Node info;
+  ascent.Info(info);
+  info.print();
+
+The data populated inside the info node is as follows:
+
+  - ``runtime``: the default runtime that Ascent used. Unless a custom runtime was used, this value will be ``ascent``.
+  - ``registered_filter_types``: a list of filters that have been registered with the Ascent runtime.
+  - ``flow_graph``: description of the data flow network that was run with the last ``Execute`` call.
+  - ``actions``: the last set of input actions Ascent ran with the last ``Execute`` call.
+  - ``images``: a list of image file names and camera parameters that were create in the last call to ``Execute``.
+  - ``expressions``: a set of query results from all calls to ``Execute``.
 
 Close
 -----
