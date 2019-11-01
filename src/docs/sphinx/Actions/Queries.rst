@@ -45,7 +45,7 @@
 
 Queries
 ========
-Queries are a way to ask questions and get anwsers.
+Queries are a way to ask questions and get answers.
 Each query has to required parameters: an expression and a name.
 
 Below is an example of a simple query.
@@ -76,12 +76,12 @@ Expressions are based on a simple python-like language that supports math evalua
 
 Basic Data Types
 ^^^^^^^^^^^^^^^^
-There are three main intergal types in the language:
+There are three main integral types in the language:
 
-   - integers
-   - floating point
-   - boolean
-   - strings
+   - integers: ``0``, ``-1``, ``1000``
+   - floating point: ``1.0``, ``-1.0``, ``2.13e10``
+   - strings: ``"this is a string"``
+   - boolean: only created as the result of a comparison
 
 Operators
 ^^^^^^^^^
@@ -91,7 +91,7 @@ The supported math operators follow the standard operator precedence order:
    - ``f(args...)``: function call
    - ``a.attribute``: attribute reference
    - ``-``: negation
-   - ``*, /, %``: multiplicatoin, division, modulus (remainder)
+   - ``*, /, %``: multiplication, division, modulus (remainder)
    - ``+, -``: addition, subtraction
    - ``not, or, and, <, <=, >, >=, !=, ==``: comparisons
 
@@ -121,12 +121,12 @@ Additionally, function overloading is supported and the overload type is resolve
 function parameters.
 
 
-Functioj Examples
+Function Examples
 ~~~~~~~~~~~~~~~~~
    - ``cycle()``: returns the current simulation cycle
    - ``field("braid")``: returns a field object for the simulation field specified
-   - ``histogram(field("braid"), num_bins=128)``: returns a historgram of the ``braid`` field
-   - ``entropy(histogram(field("braid"), num_bins=128))``: returns a the entopy of the historgram of the ``braid`` field
+   - ``histogram(field("braid"), num_bins=128)``: returns a histogram of the ``braid`` field
+   - ``entropy(histogram(field("braid"), num_bins=128))``: returns a the entropy of the histogram of the ``braid`` field
 
 The Name
 --------
@@ -138,7 +138,7 @@ The result of the expression is `stored` internally and can be accessed in two w
 Combining Queries
 ^^^^^^^^^^^^^^^^^
 Queries are executed in the same order they are declared, and since the result of each query stored,
-each query can be thought of as an assignement statement in a program, with one query building on the previous queries.
+each query can be thought of as an assignment statement in a program, with one query building on the previous queries.
 
 .. code-block:: yaml
 
@@ -161,14 +161,14 @@ In ``q2``, the identifier is referenced and the expression evaluates to ``3``.
 Query History
 -------------
 Since the results of queries are stored, we can access values from previous executions.
-The history function allows expressions to have a temporal component, which is a powerful tool
+The ``history`` function allows expressions to have a temporal component, which is a powerful tool
 when tracking simulation state and adaptively responding to user defined events.
 The history function can be called on any existing query.
 
 The history of a query can be indexed in two ways:
 
-   - ``relative_index``: a positive value that indicates how far back in history to access. If the index exceeds the current history, the value is clamped to the last index. An index of 0 is equivelent to the current time value and and index of 1 is the value of the identifier on the last execution.
-   - ``absolue_index``: the index of the value to access. 0 is the first query result.
+   - ``relative_index``: a positive value that indicates how far back in history to access. If the index exceeds the current history, the value is clamped to the last index. An index of 0 is equivalent to the current time value and and index of 1 is the value of the identifier on the last execution.
+   - ``absolute_index``: the index of the value to access. 0 is the first query result.
 
 Here is an example of a use case for the history function:
 
@@ -185,8 +185,8 @@ Here is an example of a use case for the history function:
              name: "max_pressure"
          q2:
            params:
-             expression: "max_pressure > history(max_pressure, relative_index = 1) + 100"
+             expression: "max_pressure - history(max_pressure, relative_index = 1) > 100"
              name: "result"
 
 In the above example, `q2` will evaluate to true if the maximum value of pressure jumps over 100 units
-since the last in invocation, possibly indicating that an interesting event inside the simulation occured.
+since the last in invocation, possibly indicating that an interesting event inside the simulation occurred.
