@@ -1409,6 +1409,7 @@ History::execute()
     {
       ASCENT_ERROR("History: absolute_index must be a non-negative integer.");
     }
+    history.print();
     (*output) = history.child(absolute_index);
   }
 

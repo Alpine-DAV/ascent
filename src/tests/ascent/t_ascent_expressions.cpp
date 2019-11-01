@@ -140,7 +140,7 @@ TEST(ascent_expressions, basic_expressions)
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 1);
     EXPECT_EQ(res["type"].as_string(), "bool");
-    
+
     expr = "(1 == 1) and (3 <= 3)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 1);
@@ -232,7 +232,7 @@ TEST(ascent_expressions, basic_expressions)
     EXPECT_EQ(res["value"].to_float64(), 100);
     EXPECT_EQ(res["type"].as_string(), "int");
 
-    expr = "magnitude(max(field(\"braid\")).position) > 0";
+    expr = "magnitude(max(field('braid')).position) > 0";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 1);
     EXPECT_EQ(res["type"].as_string(), "bool");
@@ -265,7 +265,7 @@ TEST(ascent_expressions, functional_correctness)
     // reference the coordinate set by name
     data["topologies/topo/coordset"] = "coords";
 
-    // add a simple element-associated field 
+    // add a simple element-associated field
     data["fields/ele_example/association"] =  "element";
     // reference the topology this field is defined on by name
     data["fields/ele_example/topology"] =  "topo";
@@ -300,47 +300,47 @@ TEST(ascent_expressions, functional_correctness)
     conduit::Node res;
     std::string expr;
 
-    expr = "max(field(\"ele_example\")).position";
+    expr = "max(field('ele_example')).position";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].as_float64(), 25);
     EXPECT_EQ(res["type"].as_string(), "vector");
 
-    expr = "entropy(histogram(field(\"ele_example\")))";
+    expr = "entropy(histogram(field('ele_example')))";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].as_float64(), -std::log(1.0/16.0));
     EXPECT_EQ(res["type"].as_string(), "double");
 
-    expr = "bin(cdf(histogram(field(\"ele_example\"))), val=5.0)";
+    expr = "bin(cdf(histogram(field('ele_example'))), val=5.0)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].as_float64(), .375);
     EXPECT_EQ(res["type"].as_string(), "double");
 
-    expr = "bin(pdf(histogram(field(\"ele_example\"))), val=5)";
+    expr = "bin(pdf(histogram(field('ele_example'))), val=5)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].as_float64(), 1.0/16.0);
     EXPECT_EQ(res["type"].as_string(), "double");
 
-    expr = "bin(pdf(histogram(field(\"ele_example\"))), val=4.5)";
+    expr = "bin(pdf(histogram(field('ele_example'))), val=4.5)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].as_float64(), 0);
     EXPECT_EQ(res["type"].as_string(), "double");
 
-    expr = "bin(pdf(histogram(field(\"ele_example\"))), bin=0) == pdf(histogram(field(\"ele_example\"))).value[0]";
+    expr = "bin(pdf(histogram(field('ele_example'))), bin=0) == pdf(histogram(field('ele_example'))).value[0]";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 1);
     EXPECT_EQ(res["type"].as_string(), "bool");
 
-    expr = "quantile(cdf(histogram(field(\"ele_example\"), num_bins=240)), 3.0/16.0)";
+    expr = "quantile(cdf(histogram(field('ele_example'), num_bins=240)), 3.0/16.0)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_float64(), 2);
     EXPECT_EQ(res["type"].as_string(), "double");
 
-    expr = "16.0/256 == avg(histogram(field(\"ele_example\")).value)";
+    expr = "16.0/256 == avg(histogram(field('ele_example')).value)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 1);
     EXPECT_EQ(res["type"].as_string(), "bool");
 
-    expr = "16 == sum(histogram(field(\"ele_example\")).value)";
+    expr = "16 == sum(histogram(field('ele_example')).value)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 1);
     EXPECT_EQ(res["type"].as_string(), "bool");
@@ -377,16 +377,16 @@ TEST(ascent_expressions, expressions_named_params)
     runtime::expressions::ExpressionEval eval(&multi_dom);
 
     // test named parameters
-    
+
     std::string expr;
     conduit::Node res;
 
-    expr = "histogram(field(\"braid\"), num_bins=10)";
+    expr = "histogram(field('braid'), num_bins=10)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["attrs/value/value"].dtype().number_of_elements(), 10);
     EXPECT_EQ(res["type"].as_string(), "histogram");
 
-    expr = "histogram(field(\"braid\"),min_val=0,num_bins=10,max_val=1)";
+    expr = "histogram(field('braid'),min_val=0,num_bins=10,max_val=1)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["attrs/value/value"].dtype().number_of_elements(), 10);
     EXPECT_EQ(res["attrs/min_val/value"].to_float64(), 0);
@@ -396,7 +396,7 @@ TEST(ascent_expressions, expressions_named_params)
     bool threw = false;
     try
     {
-      expr = "histogram(field(\"braid\"),field(\"braid\"))";
+      expr = "histogram(field('braid'),field('braid'))";
       res = eval.evaluate(expr);
     }
     catch(...)
@@ -406,7 +406,7 @@ TEST(ascent_expressions, expressions_named_params)
     EXPECT_EQ(threw, true);
 
 
-    expr = "histogram(field(\"braid\"),max_val=2)";
+    expr = "histogram(field('braid'),max_val=2)";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["attrs/max_val/value"].to_float64(), 2);
     EXPECT_EQ(res["type"].as_string(), "histogram");
@@ -414,7 +414,7 @@ TEST(ascent_expressions, expressions_named_params)
     threw = false;
     try
     {
-      expr = "histogram(field(\"braid\"),min_val=field(\"braid\"))";
+      expr = "histogram(field('braid'),min_val=field('braid'))";
       res = eval.evaluate(expr);
     }
     catch(...)
@@ -426,7 +426,7 @@ TEST(ascent_expressions, expressions_named_params)
     threw = false;
     try
     {
-      expr = "histogram(field(\"braid\"),min_val=0,num_bins=10,1)";
+      expr = "histogram(field('braid'),min_val=0,num_bins=10,1)";
       res = eval.evaluate(expr);
     }
     catch(...)
@@ -470,7 +470,7 @@ TEST(ascent_expressions, test_identifier)
     conduit::Node res1, res2;
 
     // test retrieving named cached value
-    expr = "max(field(\"braid\"))";
+    expr = "max(field('braid'))";
     const std::string cache_name = "mx_b";
     res1 = eval.evaluate(expr, cache_name);
     res2 = eval.evaluate("mx_b");
