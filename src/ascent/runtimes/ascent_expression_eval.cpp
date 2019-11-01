@@ -506,14 +506,19 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     w.reset();
     ASCENT_ERROR("Error while executing expression '"<<expr<<"': "<<e.what());
   }
-  conduit::Node *n_res = w.registry().fetch<conduit::Node>(root["filter_name"].as_string());
+  std::string filter_name = root["filter_name"].as_string();
+
+  conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
   conduit::Node return_val = *n_res;
-  delete expression;
 
   std::stringstream cache_entry;
   cache_entry<<expr_name<<"/"<<cycle;
-  m_cache[cache_entry.str()] = *n_res;
 
+  // this causes an invalid read in conduit in the expression tests
+  //m_cache[cache_entry.str()] = *n_res;
+  m_cache[cache_entry.str()] = return_val;
+
+  delete expression;
   w.reset();
   return return_val;
 }

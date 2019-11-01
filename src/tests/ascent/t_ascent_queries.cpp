@@ -100,7 +100,7 @@ TEST(ascent_queries, max_query)
     Node actions;
 
     conduit::Node queries;
-    queries["q1/params/expression"] = "max(field(\"braid\"))";
+    queries["q1/params/expression"] = "max(field('braid'))";
     queries["q1/params/name"] = "max_braid";
 
     conduit::Node &add_queries = actions.append();

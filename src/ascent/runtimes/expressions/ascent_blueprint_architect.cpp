@@ -720,7 +720,7 @@ field_entropy(const conduit::Node &hist)
       entropy += -p * std::log(p);
     }
   }
-  
+
   conduit::Node res;
   res["value"] = entropy;
   return res;
@@ -805,7 +805,7 @@ conduit::Node quantile(const conduit::Node &cdf,
   // i and j are the bin boundaries
   double i = min_val + bin * (max_val - min_val) / num_bins;
   double j = min_val + (bin + 1) * (max_val - min_val) / num_bins;
-  
+
   if(interpolation == "linear") {
     if(cdf_bins[bin+1] - cdf_bins[bin] == 0)
     {
@@ -815,7 +815,7 @@ conduit::Node quantile(const conduit::Node &cdf,
     {
       res["value"] = i + (j - i) * (val - cdf_bins[bin]) / (cdf_bins[bin+1] - cdf_bins[bin]);
     }
-  } 
+  }
   else if(interpolation == "lower")
   {
     res["value"] = i;
@@ -919,7 +919,7 @@ conduit::Node
 field_sum(const conduit::Node &dataset,
           const std::string &field)
 {
-  
+
   double sum = 0.;
   long long int count = 0;
 

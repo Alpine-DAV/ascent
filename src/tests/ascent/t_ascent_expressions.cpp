@@ -71,7 +71,6 @@ using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 5;
 
-
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, basic_expressions)
 {
@@ -435,7 +434,6 @@ TEST(ascent_expressions, expressions_named_params)
     }
     EXPECT_EQ(threw, true);
 }
-
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, test_identifier)
 {
@@ -510,13 +508,19 @@ TEST(ascent_expressions, test_history)
 
     res = eval.evaluate("1", "val");
     res = eval.evaluate("vector(1,2,3)", "vec");
-    data["state/cycle"] = 200;
+
+    multi_dom.child(0)["state/cycle"] = 200;
+
     res = eval.evaluate("2", "val");
     res = eval.evaluate("vector(9,3,4)", "vec");
-    data["state/cycle"] = 300;
+
+    multi_dom.child(0)["state/cycle"] = 300;
+
     res = eval.evaluate("3", "val");
     res = eval.evaluate("vector(3,4,0)", "vec");
-    data["state/cycle"] = 400;
+
+    multi_dom.child(0)["state/cycle"] = 400;
+
     res = eval.evaluate("4", "val");
     res = eval.evaluate("vector(6,4,8)", "vec");
 
@@ -534,7 +538,7 @@ TEST(ascent_expressions, test_history)
     bool threw = false;
     try
     {
-      expr = "history(val, 10)";
+      expr = "history(val, absolute_index = 10)";
       res = eval.evaluate(expr);
     }
     catch(...)

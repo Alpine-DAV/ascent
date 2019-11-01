@@ -1382,7 +1382,7 @@ History::execute()
   const int entries = history.number_of_children();
   if(!n_relative_index->dtype().is_empty())
   {
-    int relative_index = (*n_relative_index)["value"].as_int32();
+    int relative_index = (*n_relative_index)["value"].to_int32();
     if(relative_index >= entries)
     {
       // clamp to last if its gone too far
@@ -1399,7 +1399,14 @@ History::execute()
   {
     int absolute_index = 0;
 
-    if(n_absolute_index->has_path("value")) (*n_absolute_index)["value"].as_int32();
+    if(n_absolute_index->has_path("value"))
+    {
+      absolute_index = (*n_absolute_index)["value"].to_int32();
+    }
+    else
+    {
+      ASCENT_ERROR("History: internal error. absolute index does not have child value");
+    }
 
     if(absolute_index >= entries)
     {
@@ -1409,7 +1416,7 @@ History::execute()
     {
       ASCENT_ERROR("History: absolute_index must be a non-negative integer.");
     }
-    history.print();
+
     (*output) = history.child(absolute_index);
   }
 
