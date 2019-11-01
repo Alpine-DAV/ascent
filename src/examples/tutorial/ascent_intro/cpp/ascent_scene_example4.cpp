@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     // See the Color Tables docs for more details on what is supported:
     // https://ascent.readthedocs.io/en/latest/Actions/Scenes.html#color-tables
     //
-    Node & scenes = add_act["scenes"];
+    Node &scenes = add_act["scenes"];
 
     // the first scene (s1) will render a pseudocolor 
     // plot using Viridis color table

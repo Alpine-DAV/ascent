@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     add_act["action"] = "add_scenes";
 
     // declare a scene to render the dataset
-    Node & scenes = add_act["scenes"];
+    Node &scenes = add_act["scenes"];
 
     //
     // You can define renders to control the parameters of a single output image.

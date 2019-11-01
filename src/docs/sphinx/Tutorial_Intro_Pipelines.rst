@@ -47,21 +47,28 @@
 Transforming data with Pipelines
 -----------------------------------
 
-SHORT BLURB ABOUT PIPELINES, link to docs etc
+Pipelines are the construct used to compose filters that transform the published input data into new meshes. This is where users specify typical geometric transforms (e.g., clipping and slicing), field based transforms (e.g., threshold and contour), etc. The resulting data from each Pipeline can be used as input to Scenes or Extracts. Each pipeline contains one or more filters that transform the published mesh data. See Ascent's :ref:`scenes` docs for deeper details on Pipelines.
 
-Calculate and render contours
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Calculating and rendering contours
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp
    :language: cpp
+   :lines: 50-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py
    :language: python
+   :lines: 45-
 
+..  figure:: Tutorial_Output/out_pipeline_ex1_contour.png
+    :scale: 50 %
+    :align: center
+
+    Render of contour pipeline result
 
 Combining threshold and clip transforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -70,11 +77,21 @@ Combining threshold and clip transforms
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp
    :language: cpp
+   :lines: 50-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py
    :language: python
+   :lines: 45-
+
+..  figure:: Tutorial_Output/out_pipeline_ex2_thresh_clip.png
+    :scale: 50 %
+    :align: center
+
+    Render of threshold and clip pipeline result
+
+
 
 Creating and rendering the multiple pipelines
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,8 +100,16 @@ Creating and rendering the multiple pipelines
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp
    :language: cpp
+   :lines: 50-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py
    :language: python
+   :lines: 45-
+   
+..  figure:: Tutorial_Output/out_pipeline_ex3_two_plots.png
+    :scale: 50 %
+    :align: center
+
+    Render of multiple pipeline results

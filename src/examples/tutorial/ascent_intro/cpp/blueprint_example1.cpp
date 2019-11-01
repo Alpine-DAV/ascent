@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 
     // declare a scene (s1) with one plot (p1) 
     // to render the dataset
-    Node & scenes = add_act["scenes"];
+    Node &scenes = add_act["scenes"];
     scenes["s1/plots/p1/type"] = "pseudocolor";
     scenes["s1/plots/p1/field"] = "alternating";
     // Set the output file name (ascent will add ".png")
