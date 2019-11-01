@@ -41,58 +41,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
-#
-# file: ascent_tutorial_jupyter_utils.py
-#
-###############################################################################
 
-import ipywidgets as widgets
-import numpy as np
+
 import conduit
-
-
-def img_display_width():
-    """
-    returns common size for displaying rendered results in
-    our notebooks
-    """
-    return 400
-
-class ImageSeqViewer(object):
-    """
-    helper for displaying sequences of images
-    in a jupyter notebook (thanks to Tom Stitt @ LLNL)
-    """
-    def __init__(self,fnames):
-        self.data = []
-        for fname in fnames:
-            with open(fname, "rb") as f:
-                self.data.append(f.read())
-        self.image = widgets.Image(value=self.data[0],
-                                    width=img_display_width(),
-                                    height=img_display_width(),
-                                    format="png")
-        self.slider = widgets.IntSlider()
-        self.play = widgets.Play(value=0,
-                                 min=0,
-                                 max=len(self.data)-1,
-                                 step=1,
-                                 interval=500) 
-
-        widgets.jslink((self.play, "min"), (self.slider, "min"))
-        widgets.jslink((self.play, "max"), (self.slider, "max"))
-        widgets.jslink((self.play, "value"), (self.slider, "value"))
-
-    def update(self,change):
-        index = change.owner.value
-        self.image.value = self.data[index]
- 
-    def show(self):
-        v = widgets.VBox([self.image, self.slider, self.play])
-        self.slider.observe(self.update)
-        self.play.observe(self.update)
-        return v
-
+import conduit.blueprint
+import numpy as np
 
 def tutorial_tets_example(mesh):
     """

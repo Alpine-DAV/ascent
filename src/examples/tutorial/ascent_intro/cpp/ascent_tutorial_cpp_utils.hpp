@@ -44,71 +44,75 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_scene_example4.cpp
+/// file: ascent_tutorial_cpp_utils.hpp
 ///
 //-----------------------------------------------------------------------------
 
+#ifndef ASCENT_TUTORIAL_CPP_UTILS_H
+#define ASCENT_TUTORIAL_CPP_UTILS_H
+
 #include <iostream>
-#include "ascent.hpp"
 #include "conduit_blueprint.hpp"
 
 #include "ascent_tutorial_cpp_utils.hpp"
 
-using namespace ascent;
 using namespace conduit;
 
-int main(int argc, char **argv)
+// --------------------------------------------------------------------------//
+void
+tutorial_tets_example(Node &mesh)
 {
-    Node mesh;
-    // (call helper to create example tet mesh as in blueprint example 2)
-    tutorial_tets_example(mesh);
-
-    // Use Ascent to render pseudocolor plots with different color tables
-
-    Ascent a;
-
-    // open ascent
-    a.open();
-
-    // publish mesh to ascent
-    a.publish(mesh);
-
-    // setup actions
-    Node actions;
-    Node &add_act = actions.append();
-    add_act["action"] = "add_scenes";
+    mesh.reset();
 
     //
-    // declare a two scenes (s1 and s2) to render the dataset
-    // using different color tables
-    // 
-    // See the Color Tables docs for more details on what is supported:
-    // https://ascent.readthedocs.io/en/latest/Actions/Scenes.html#color-tables
+    // (create example tet mesh from blueprint example 2)
     //
-    Node & scenes = add_act["scenes"];
+    // Create a 3D mesh defined on an explicit set of points,
+    // composed of two tets, with two element associated fields
+    //  (`var1` and `var2`)
+    //
 
-    // the first scene (s1) will render a pseudocolor 
-    // plot using Viridis color table
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "var1";
-    scenes["s1/plots/p1/color_table/name"] = "Viridis";
-    scenes["s1/image_name"] = "out_scene_ex4_render_viridis";
+    // create an explicit coordinate set
+    double X[5] = { -1.0, 0.0, 0.0, 0.0, 1.0 };
+    double Y[5] = { 0.0, -1.0, 0.0, 1.0, 0.0 };
+    double Z[5] = { 0.0, 0.0, 1.0, 0.0, 0.0 };
+    mesh["coordsets/coords/type"] = "explicit";
+    mesh["coordsets/coords/values/x"].set(X, 5);
+    mesh["coordsets/coords/values/y"].set(Y, 5);
+    mesh["coordsets/coords/values/z"].set(Z, 5);
 
-    // the first scene (s2) will render a pseudocolor 
-    // plot using Inferno color table
-    scenes["s2/plots/p1/type"] = "pseudocolor";
-    scenes["s2/plots/p1/field"] = "var1";
-    scenes["s2/plots/p1/color_table/name"] = "Inferno";
-    scenes["s2/image_name"] = "out_scene_ex4_render_inferno";
 
-    // print our full actions tree
-    std::cout << actions.to_yaml() << std::endl;
+    // add an unstructured topology
+    mesh["topologies/mesh/type"] = "unstructured";
+    // reference the coordinate set by name
+    mesh["topologies/mesh/coordset"] = "coords";
+    // set topology shape type
+    mesh["topologies/mesh/elements/shape"] = "tet";
+    // add a connectivity array for the tets
+    int64 connectivity[8] = { 0, 1, 3, 2, 4, 3, 1, 2 };
+    mesh["topologies/mesh/elements/connectivity"].set(connectivity, 8);
 
-    // execute the actions
-    a.execute(actions);
+    const int num_elements = 2;
+    float var1_vals[num_elements] = { 0, 1 };
+    float var2_vals[num_elements] = { 1, 0 };
+    
+    // create a field named var1
+    mesh["fields/var1/association"] = "element";
+    mesh["fields/var1/topology"] = "mesh";
+    mesh["fields/var1/values"].set(var1_vals, 2);
 
-    a.close();
+    // create a field named var2
+    mesh["fields/var2/association"] = "element";
+    mesh["fields/var2/topology"] = "mesh";
+    mesh["fields/var2/values"].set(var2_vals, 2);
+
+    //  make sure the mesh we created conforms to the blueprint
+    Node verify_info;
+    if(!blueprint::mesh::verify(mesh, verify_info))
+    {
+        std::cout << "Mesh Verify failed!" << std::endl;
+        std::cout << verify_info.to_yaml() << std::endl;
+    }
 }
 
-
-
+#endif
