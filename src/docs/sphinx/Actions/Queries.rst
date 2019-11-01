@@ -181,7 +181,7 @@ Here is an example of a use case for the history function:
          q1:
            params:
              # get the maximum value of a field
-             expression: "max(field("pressure"))"
+             expression: "max(field(\"pressure\"))"
              name: "max_pressure"
          q2:
            params:

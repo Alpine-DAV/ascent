@@ -103,7 +103,7 @@ The following code example shows how queries and triggers can be used for debugg
          q1:
            params:
              # get the maximum value of a field
-             expression: "max(field("pressure"))"
+             expression: "max(field(\"pressure\"))"
              name: "max_pressure"
          q2:
            params:
@@ -133,7 +133,7 @@ entropy that could represent a simulation event that the user wants act on:
        queries:
          q1:
            params:
-             expression: "entropy(histogram(field("braid"))"
+             expression: "entropy(histogram(field(\"pressure\"))"
              name: "entropy"
      -
        action: "add_triggers"
