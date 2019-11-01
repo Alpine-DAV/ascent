@@ -145,7 +145,7 @@ int main(int argc, char **argv)
 
     // create our actions
     Node actions;
-    Node & add_act = actions.append();
+    Node &add_act = actions.append();
     add_act["action"] = "add_scenes";
 
     // declare a scene (s1) and plot (p1)

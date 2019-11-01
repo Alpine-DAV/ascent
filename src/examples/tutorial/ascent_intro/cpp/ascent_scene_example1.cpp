@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     add_act["action"] = "add_scenes";
 
     // declare two scenes (s1 and s2) to render the dataset    
-    Node & scenes = add_act["scenes"];
+    Node &scenes = add_act["scenes"];
     
     // our first scene (named 's1') will render the field 'var1'
     // to the file out_scene_ex1_render_var1.png

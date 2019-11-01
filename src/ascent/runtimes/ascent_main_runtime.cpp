@@ -73,6 +73,7 @@
 #include <ascent_expression_eval.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
+#include <vtkm/cont/Error.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
@@ -1435,6 +1436,10 @@ AscentRuntime::Execute(const conduit::Node &actions)
     {
       ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
     }
+    catch(vtkm::cont::Error &e)
+    {
+      ASCENT_ERROR("Execution failed with vtkm: "<<e.what());
+    }
 #endif
     catch(conduit::Error &e)
     {
@@ -1443,6 +1448,10 @@ AscentRuntime::Execute(const conduit::Node &actions)
     catch(std::exception &e)
     {
       ASCENT_ERROR("Execution failed with: "<<e.what());
+    }
+    catch(...)
+    {
+      ASCENT_ERROR("Ascent: unknown exception thrown");
     }
 
     Node msg;
