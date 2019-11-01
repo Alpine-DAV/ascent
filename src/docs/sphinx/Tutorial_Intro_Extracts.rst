@@ -95,8 +95,6 @@ Creating a Cinema image database for post-hoc exploration
    :language: python
 
 
-If you are already in Python land this may seem strange, but for C++ and FORTRAN codes, the Python extract gives you access to a distributed-memory python environment with in-situ access to mesh data
-
 
 Using a Python Extract to execute custom Python analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
