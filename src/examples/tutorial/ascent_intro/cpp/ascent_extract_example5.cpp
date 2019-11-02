@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_extract_example1.cpp
+/// file: ascent_extract_example5.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -66,7 +66,8 @@ int main(int argc, char **argv)
                                               25,
                                               mesh);
 
-    // Use Ascent to export our mesh to blueprint flavored hdf5 files
+    // Use Ascent to execute a python script
+    // that computes a histogram
     Ascent a;
 
     // open ascent
@@ -80,12 +81,17 @@ int main(int argc, char **argv)
     Node &add_act = actions.append();
     add_act["action"] = "add_extracts";
 
-    // add a relay extract that will write mesh data to 
-    // blueprint hdf5 files
+    // add an extract to execute custom python code
+    // in `ascent_tutorial_python_extract_braid_histogram.py`
+
+    //
+    // This extract script runs the same histogram code as above,
+    // but saves the output to `out_py_extract_hist_results.yaml`
+    //
+
     Node &extracts = add_act["extracts"];
-    extracts["e1/type"] = "relay";
-    extracts["e1/params/path"] = "out_export_braid_all_fields";
-    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    extracts["e1/type"] = "python";
+    extracts["e1/params/file"] = "ascent_tutorial_python_extract_braid_histogram.py";
 
     // print our full actions tree
     std::cout << actions.to_yaml() << std::endl;
@@ -95,6 +101,7 @@ int main(int argc, char **argv)
 
     // close ascent
     a.close();
+
 }
 
 

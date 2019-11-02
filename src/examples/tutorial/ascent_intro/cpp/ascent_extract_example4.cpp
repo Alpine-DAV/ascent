@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_extract_example1.cpp
+/// file: ascent_extract_example4.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
                                               25,
                                               mesh);
 
-    // Use Ascent to export our mesh to blueprint flavored hdf5 files
+    // Use Ascent to create a Cinema Image Database
     Ascent a;
 
     // open ascent
@@ -78,14 +78,42 @@ int main(int argc, char **argv)
     // setup actions
     Node actions;
     Node &add_act = actions.append();
-    add_act["action"] = "add_extracts";
+    add_act["action"] = "add_pipelines";
+    Node &pipelines = add_act["pipelines"];
 
-    // add a relay extract that will write mesh data to 
-    // blueprint hdf5 files
-    Node &extracts = add_act["extracts"];
-    extracts["e1/type"] = "relay";
-    extracts["e1/params/path"] = "out_export_braid_all_fields";
-    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    // create a  pipeline (pl1) with a contour filter (f1)
+    pipelines["pl1/f1/type"] = "contour";
+
+    // extract contours where braid variable
+    // equals 0.2 and 0.4
+    Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "braid";
+
+    double iso_vals[2] = {0.2, 0.4};
+    contour_params["iso_values"].set(iso_vals,2);
+
+    // declare a scene to render several angles of
+    // the pipeline result (pl1) to a Cinema Image
+    // database
+
+    Node &add_act2 = actions.append();
+    add_act2["action"] = "add_scenes";
+    Node &scenes = add_act2["scenes"];
+
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/plots/p1/field"] = "braid";
+    // select cinema path
+    scenes["s1/renders/r1/type"] = "cinema";
+    // use 5 renders in phi
+    scenes["s1/renders/r1/phi"] = 5;
+    // and 5 renders in theta
+    scenes["s1/renders/r1/theta"] = 5;
+    // setup to output database to:
+    //  cinema_databases/out_extract_cinema_contour
+    // you can view using a webserver to open:
+    //  cinema_databases/out_extract_cinema_contour/index.html
+    scenes["s1/renders/r1/db_name"] = "out_extract_cinema_contour";
 
     // print our full actions tree
     std::cout << actions.to_yaml() << std::endl;

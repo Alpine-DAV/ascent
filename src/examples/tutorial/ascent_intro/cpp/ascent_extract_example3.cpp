@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_extract_example1.cpp
+/// file: ascent_extract_example3.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
                                               25,
                                               mesh);
 
-    // Use Ascent to export our mesh to blueprint flavored hdf5 files
+    // Use Ascent to export contours to blueprint flavored hdf5 files
     Ascent a;
 
     // open ascent
@@ -78,13 +78,30 @@ int main(int argc, char **argv)
     // setup actions
     Node actions;
     Node &add_act = actions.append();
-    add_act["action"] = "add_extracts";
+    add_act["action"] = "add_pipelines";
+    Node &pipelines = add_act["pipelines"];
 
-    // add a relay extract that will write mesh data to 
-    // blueprint hdf5 files
-    Node &extracts = add_act["extracts"];
+    // create a  pipeline (pl1) with a contour filter (f1)
+    pipelines["pl1/f1/type"] = "contour";
+
+    // extract contours where braid variable
+    // equals 0.2 and 0.4
+    Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "braid";
+
+    double iso_vals[2] = {0.2, 0.4};
+    contour_params["iso_values"].set(iso_vals,2);
+
+    // add an extract to capture the pipeline result
+    Node &add_act2 = actions.append();
+    add_act2["action"] = "add_extracts";
+    Node &extracts = add_act2["extracts"];
+
+    // add an relay extract (e1) to export the pipeline result
+    // (pl1) to blueprint hdf5 files
     extracts["e1/type"] = "relay";
-    extracts["e1/params/path"] = "out_export_braid_all_fields";
+    extracts["e1/pipeline"]  = "pl1";
+    extracts["e1/params/path"] = "out_extract_braid_contour";
     extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
 
     // print our full actions tree

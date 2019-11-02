@@ -47,67 +47,124 @@
 Capturing data with Extracts
 -----------------------------------
 
-SHORT BLURB ABOUT EXTRACTS, link to docs etc
+Extracts are the construct that allows users to capture and process data outside Ascent's pipeline infrastructure. Extract use cases include: Saving mesh data to HDF5 files, creating Cinema databases, and running custom Python analysis scripts. These examples outline how to use several of Ascent's extracts. See Ascent's :ref:`extracts`  docs for deeper details on Extracts.
+
 
 Exporting input mesh data to Blueprint HDF5 files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Related docs: :ref:`extracts_relay`
 
 :download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp
    :language: cpp
+   :lines: 50-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py
    :language: python
+   :lines: 45-
 
+VisIt 2.13 or newer, when built with Conduit support, can visualize meshes from these files.
 
+..  figure:: Tutorial_Output/out_extract_visit_braid_all.png
+    :scale: 50 %
+    :align: center
+    
+    Exported Mesh Rendered in VisIt
 
-VisIt 2.13 or newer, when built with Conduit support, can load and visualize these files.
+Exporting selected fields from input mesh data to Blueprint HDF5 files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-Exporting the result of a pipeline to Blueprint HDF5 files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Related docs: :ref:`extracts_relay`
 
 :download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example2.cpp>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example2.cpp
    :language: cpp
+   :lines: 50-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example2.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example2.py
    :language: python
+   :lines: 45-
 
+..  figure:: Tutorial_Output/out_extract_visit_braid_one.png
+    :scale: 50 %
+    :align: center
+    
+    Exported Mesh Rendered in VisIt
+
+Exporting the result of a pipeline to Blueprint HDF5 files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Related docs: :ref:`extracts_relay`
+
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example3.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example3.cpp
+   :language: cpp
+   :lines: 50-
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example3.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example3.py
+   :language: python
+   :lines: 45-
+
+..  figure:: Tutorial_Output/out_extract_visit_braid_contour.png
+    :scale: 50 %
+    :align: center
+    
+    Exported Mesh Rendered in VisIt
 
 Creating a Cinema image database for post-hoc exploration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Related docs: :ref:`actions_cinema`
 
-:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example2.cpp>`
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example4.cpp>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example2.cpp
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example4.cpp
    :language: cpp
+   :lines: 50-
 
-:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example2.py>`
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example4.py>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example2.py
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example4.py
    :language: python
+   :lines: 45-
 
+..  figure:: Tutorial_Output/out_extracts_cinema_snap.png
+    :scale: 50 %
+    :align: center
+
+    Snapshot of Cinema Database Result
 
 
 Using a Python Extract to execute custom Python analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example3.cpp>`
+Related docs: :ref:`extracts_python`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example3.cpp
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example5.cpp>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example5.cpp
    :language: cpp
+   :lines: 50-
 
-:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example3.py>`
+**Output**
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example3.py
+.. literalinclude:: Tutorial_Output/out_txt_cpp_extract_example5.txt
+
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example5.py>`
+
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example5.py
    :language: python
+   :lines: 45-
 
+**Output**
 
-If you are already in Python land this may seem strange, but for C++ and FORTRAN codes, the Python extract gives you access to a distributed-memory python environment with in-situ access to mesh data
+.. literalinclude:: Tutorial_Output/out_txt_py_extract_example5.txt
+
