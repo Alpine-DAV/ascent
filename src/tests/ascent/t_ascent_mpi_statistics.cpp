@@ -117,10 +117,6 @@ TEST(ascent_mpi_stats, mpi_stats)
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    conduit::Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    add_extracts["extracts"] = extracts;
-
     actions.print();
     //
     // Run Ascent
