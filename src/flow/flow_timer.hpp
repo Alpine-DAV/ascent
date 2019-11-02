@@ -52,6 +52,7 @@
 #ifndef FLOW_TIMER_HPP
 #define FLOW_TIMER_HPP
 
+#include <flow_exports.h>
 #include <chrono>
 
 //-----------------------------------------------------------------------------
@@ -62,7 +63,7 @@ namespace flow
 
 
 //-----------------------------------------------------------------------------
-class Timer
+class FLOW_API Timer
 {
 
 public:

@@ -82,7 +82,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class EnsureVTKH : public ::flow::Filter
+class ASCENT_API EnsureVTKH : public ::flow::Filter
 {
 public:
     EnsureVTKH();
@@ -93,7 +93,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class EnsureVTKM : public ::flow::Filter
+class ASCENT_API EnsureVTKM : public ::flow::Filter
 {
 public:
     EnsureVTKM();
@@ -104,7 +104,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHMarchingCubes : public ::flow::Filter
+class ASCENT_API VTKHMarchingCubes : public ::flow::Filter
 {
 public:
     VTKHMarchingCubes();
@@ -117,7 +117,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHVectorMagnitude : public ::flow::Filter
+class ASCENT_API VTKHVectorMagnitude : public ::flow::Filter
 {
 public:
     VTKHVectorMagnitude();
@@ -130,7 +130,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHSlice : public ::flow::Filter
+class ASCENT_API VTKHSlice : public ::flow::Filter
 {
 public:
     VTKHSlice();
@@ -143,7 +143,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKH3Slice : public ::flow::Filter
+class ASCENT_API VTKH3Slice : public ::flow::Filter
 {
 public:
     VTKH3Slice();
@@ -156,7 +156,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHThreshold : public ::flow::Filter
+class ASCENT_API VTKHThreshold : public ::flow::Filter
 {
 public:
     VTKHThreshold();
@@ -169,7 +169,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHGhostStripper: public ::flow::Filter
+class ASCENT_API VTKHGhostStripper: public ::flow::Filter
 {
 public:
     VTKHGhostStripper();
@@ -182,7 +182,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHClip: public ::flow::Filter
+class ASCENT_API VTKHClip: public ::flow::Filter
 {
 public:
     VTKHClip();
@@ -195,7 +195,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHClipWithField : public ::flow::Filter
+class ASCENT_API VTKHClipWithField : public ::flow::Filter
 {
 public:
     VTKHClipWithField();
@@ -208,7 +208,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHIsoVolume : public ::flow::Filter
+class ASCENT_API VTKHIsoVolume : public ::flow::Filter
 {
 public:
     VTKHIsoVolume();
@@ -221,7 +221,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class DefaultRender : public ::flow::Filter
+class ASCENT_API DefaultRender : public ::flow::Filter
 {
 public:
     DefaultRender();
@@ -234,7 +234,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHBounds: public ::flow::Filter
+class ASCENT_API VTKHBounds: public ::flow::Filter
 {
 public:
     VTKHBounds();
@@ -245,7 +245,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHUnionBounds: public ::flow::Filter
+class ASCENT_API VTKHUnionBounds: public ::flow::Filter
 {
 public:
     VTKHUnionBounds();
@@ -258,7 +258,7 @@ public:
 
 
 //-----------------------------------------------------------------------------
-class VTKHDomainIds: public ::flow::Filter
+class ASCENT_API VTKHDomainIds: public ::flow::Filter
 {
 public:
     VTKHDomainIds();
@@ -269,7 +269,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHUnionDomainIds: public ::flow::Filter
+class ASCENT_API VTKHUnionDomainIds: public ::flow::Filter
 {
 public:
     VTKHUnionDomainIds();
@@ -280,7 +280,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class CreatePlot : public ::flow::Filter
+class ASCENT_API CreatePlot : public ::flow::Filter
 {
 public:
     CreatePlot();
@@ -294,7 +294,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class AddPlot : public ::flow::Filter
+class ASCENT_API AddPlot : public ::flow::Filter
 {
 public:
     AddPlot();
@@ -306,7 +306,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class CreateScene : public ::flow::Filter
+class ASCENT_API CreateScene : public ::flow::Filter
 {
 public:
     CreateScene();
@@ -318,7 +318,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class ExecScene : public ::flow::Filter
+class ASCENT_API ExecScene : public ::flow::Filter
 {
 public:
     ExecScene();
@@ -330,7 +330,7 @@ public:
     virtual void execute();
 };
 //-----------------------------------------------------------------------------
-class VTKHLagrangian : public ::flow::Filter
+class ASCENT_API VTKHLagrangian : public ::flow::Filter
 {
 public:
     VTKHLagrangian();
@@ -343,7 +343,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHLog: public ::flow::Filter
+class ASCENT_API VTKHLog: public ::flow::Filter
 {
 public:
     VTKHLog();
@@ -356,7 +356,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHRecenter: public ::flow::Filter
+class ASCENT_API VTKHRecenter: public ::flow::Filter
 {
 public:
     VTKHRecenter();
@@ -369,7 +369,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHHistSampling : public ::flow::Filter
+class ASCENT_API VTKHHistSampling : public ::flow::Filter
 {
 public:
     VTKHHistSampling();
@@ -381,7 +381,8 @@ public:
     virtual void   execute();
 };
 
-class VTKHQCriterion: public ::flow::Filter
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHQCriterion: public ::flow::Filter
 {
 public:
     VTKHQCriterion();
@@ -393,7 +394,8 @@ public:
     virtual void   execute();
 };
 
-class VTKHDivergence: public ::flow::Filter
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHDivergence: public ::flow::Filter
 {
 public:
     VTKHDivergence();
@@ -405,7 +407,8 @@ public:
     virtual void   execute();
 };
 
-class VTKHVorticity: public ::flow::Filter
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHVorticity: public ::flow::Filter
 {
 public:
     VTKHVorticity();
@@ -417,7 +420,8 @@ public:
     virtual void   execute();
 };
 
-class VTKHGradient : public ::flow::Filter
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHGradient : public ::flow::Filter
 {
 public:
     VTKHGradient();
@@ -430,7 +434,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHNoOp : public ::flow::Filter
+class ASCENT_API VTKHNoOp : public ::flow::Filter
 {
 public:
     VTKHNoOp();
@@ -443,7 +447,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHStats : public ::flow::Filter
+class ASCENT_API VTKHStats : public ::flow::Filter
 {
 public:
     VTKHStats();
@@ -456,7 +460,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHHistogram : public ::flow::Filter
+class ASCENT_API VTKHHistogram : public ::flow::Filter
 {
 public:
     VTKHHistogram();
@@ -469,7 +473,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHParticleAdvection : public ::flow::Filter
+class ASCENT_API VTKHParticleAdvection : public ::flow::Filter
 {
 public:
     VTKHParticleAdvection();

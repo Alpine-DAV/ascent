@@ -83,7 +83,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-class ADIOS : public ::flow::Filter
+class ASCENT_API ADIOS : public ::flow::Filter
 {
 public:
     ADIOS();

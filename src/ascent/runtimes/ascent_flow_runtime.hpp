@@ -68,7 +68,7 @@
 namespace ascent
 {
 
-class FlowRuntime : public Runtime
+class ASCENT_API FlowRuntime : public Runtime
 {
 public:
 

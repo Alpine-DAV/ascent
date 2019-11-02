@@ -64,7 +64,7 @@ namespace ascent
 {
 
 
-class MFEMDataSet
+class ASCENT_API MFEMDataSet
 {
 public:
   using FieldMap = std::map<std::string, mfem::GridFunction*>;
@@ -86,7 +86,7 @@ protected:
 
 };
 
-struct MFEMDomains
+struct ASCENT_API MFEMDomains
 {
   std::vector<MFEMDataSet*> m_data_sets;
   std::vector<int> m_domain_ids;
@@ -104,7 +104,7 @@ struct MFEMDomains
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-class MFEMDataAdapter
+class ASCENT_API MFEMDataAdapter
 {
 public:
 
