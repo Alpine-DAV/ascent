@@ -99,25 +99,7 @@ TEST(ascent_mpi_stats, mpi_stats)
     Node data, verify_info;
     create_3d_example_dataset(data,32,par_rank,par_size);
 
-    // There is a bug in conduit blueprint related to rectilinear
-    // reenable this check after updating conduit
-    // EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    conduit::blueprint::mesh::verify(data,verify_info);
-    // make sure the _output dir exists
-    string output_path = "";
-    if(par_rank == 0)
-    {
-        output_path = prepare_output_dir();
-    }
-    else
-    {
-        output_path = output_dir();
-    }
-
-    string output_file = conduit::utils::join_file_path(output_path,"tout_mpi_stats");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     //
     // Create the actions.
@@ -130,6 +112,10 @@ TEST(ascent_mpi_stats, mpi_stats)
     params["field"] = "radial_vert";
 
     conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
 
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";

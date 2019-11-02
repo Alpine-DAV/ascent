@@ -475,7 +475,7 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       if(cname == "pipeline")
       {
         // this is a child that is not a filter.
-        // It specifices the input to the pipeline itself
+        // It specifies the input to the pipeline itself
         continue;
       }
       conduit::Node filter = pipeline.child(i);
@@ -495,7 +495,7 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       }
       else
       {
-        ASCENT_ERROR("Unrecognized filter "<<filter["type"].as_string());
+        ASCENT_ERROR("Unrecognized transform filter "<<filter["type"].as_string());
       }
 
       // create a unique name for the filter
@@ -1434,6 +1434,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
 #if defined(ASCENT_VTKM_ENABLED)
     catch(vtkh::Error &e)
     {
+      w.reset();
       ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
     }
     catch(vtkm::cont::Error &e)
@@ -1443,10 +1444,12 @@ AscentRuntime::Execute(const conduit::Node &actions)
 #endif
     catch(conduit::Error &e)
     {
+      w.reset();
       throw e;
     }
     catch(std::exception &e)
     {
+      w.reset();
       ASCENT_ERROR("Execution failed with: "<<e.what());
     }
     catch(...)
