@@ -80,7 +80,7 @@ There are three main integral types in the language:
 
    - integers: ``0``, ``-1``, ``1000``
    - floating point: ``1.0``, ``-1.0``, ``2.13e10``
-   - strings: ``"this is a string"``
+   - strings: ``'this is a string'``
    - boolean: only created as the result of a comparison
 
 Operators
@@ -181,7 +181,7 @@ Here is an example of a use case for the history function:
          q1:
            params:
              # get the maximum value of a field
-             expression: "max(field(\"pressure\"))"
+             expression: "max(field('pressure'))"
              name: "max_pressure"
          q2:
            params:
