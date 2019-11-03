@@ -48,6 +48,7 @@
 
 import ipywidgets as widgets
 import numpy as np
+import math
 import conduit
 
 
@@ -141,3 +142,59 @@ def tutorial_tets_example(mesh):
     if not conduit.blueprint.mesh.verify(mesh,verify_info):
         print("Mesh Verify failed!")
         print(verify_info.to_yaml())
+
+def tutorial_gyre_example(time):
+    """
+    Helper that generate a double gyre time varying example mesh.
+    
+    gyre ref :https://shaddenlab.berkeley.edu/uploads/LCS-tutorial/examples.html
+    """
+    mesh = conduit.Node()
+    xy_dims = 40
+    z_dims = 2
+    
+    conduit.blueprint.mesh.examples.braid("hexs",
+                                          xy_dims,
+                                          xy_dims,
+                                          z_dims,
+                                          mesh)
+
+    field = mesh["fields/gyre"]
+    field["association"] = "vertex"
+    field["topology"] = "mesh"
+    values = np.zeros(xy_dims*xy_dims*z_dims)
+
+
+    e = 0.25
+    A = 0.1
+    w = (2.0 * math.pi) / 10.0
+    a_t = e * math.sin(w * time)
+    b_t = 1.0 - 2 * e * math.sin(w * time)
+    #print("e: " + str(e) + " A " + str(A) + " w " + str(w) + " a_t " + str(a_t) + " b_t " + str(b_t))
+    #print(b_t)
+    #print(w)
+    idx = 0
+    for z in range(z_dims):
+        for y in range(xy_dims):
+            # scale y to 0-1
+            y_n = float(y)/float(xy_dims)
+            y_t = math.sin(math.pi * y_n)
+            for x in range(xy_dims):
+                # scale x to 0-1
+                x_f = float(x)/ (float(xy_dims) * .5)
+                f_t = a_t * x_f * x_f + b_t * x_f
+                #print(f_t)
+                value = A * math.sin(math.pi * f_t) * y_t
+                u = -math.pi * A * math.sin(math.pi * f_t) * math.cos(math.pi * y_n)
+                df_dx = 2.0 * a_t + b_t
+                #print("df_dx " + str(df_dx))
+                v = math.pi * A * math.cos(math.pi * f_t) * math.sin(math.pi * y_n) * df_dx
+                values[idx] = math.sqrt(u * u + v * v)
+                #values[idx] = u * u + v * v
+                #values[idx] = value
+                #print("u " + str(u) + " v " + str(v) + " mag " + str(math.sqrt(u * u + v * v)))
+                idx = idx + 1
+
+    #print(values)
+    field["values"] = values  
+    return mesh

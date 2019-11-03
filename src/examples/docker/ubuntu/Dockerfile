@@ -103,7 +103,7 @@ RUN cd /home/user/ascent && python scripts/uberenv/uberenv.py \
        --spec "%gcc+mpi+mfem ^python@3.6.3" \
        --spack-config-dir=scripts/uberenv/spack_configs/docker/ubuntu/
 
-# install jupyter via pip
+# install jupyter and matplotlib via pip
 RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
@@ -136,11 +136,13 @@ RUN cd /home/user/ascent/install-debug/share/ascent/ascent_jupyter_bridge/ && \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
     .
 
-
 # gen env script that points to spack installs of tpls
 RUN cd /home/user/ascent && python scripts/gen_spack_env_script.py cmake mpi python
 RUN cp /home/user/ascent/s_env.sh ascent_docker_setup_env.sh
+RUN cat "PYTHONPATH=/home/user/ascent/install-debug/python-modules/" >> ascent_docker_setup_env.sh
 
+# open port 8000, for use as http server
+EXPOSE 8000
 # open port 8888, for use by jupyter notebook http server
 EXPOSE 8888
 # open port 9000, for use by conduit relay
