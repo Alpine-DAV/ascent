@@ -47,18 +47,24 @@
 Adaptive visualization with Triggers
 --------------------------------------
 
-SHORT BLURB ABOUT TRIGGERS, link to docs etc
+Triggers allow the user to specify a set of actions that are triggered by the result of a boolean expression.
+They provide flexibility to adapt what analysis and visualization actions are taken in situ. Triggers leverage Ascent's Query and Expression infrastructure. See Ascent's [Triggers](https://ascent.readthedocs.io/en/latest/Actions/Triggers.html) docs for deeper details on Triggers.
 
-
-Using a trigger to rendering when an event occurs
+Using triggers to render when events occur
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_tirgger_example1.cpp>`
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_trigger_example1.cpp>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_tirgger_example1.cpp
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_trigger_example1.cpp
    :language: cpp
+   :lines: 50-
 
-:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_tirgger_example1.py>`
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_trigger_example1.py>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_tirgger_example1.py
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_trigger_example1.py
    :language: python
+   :lines: 45-
+
+**Output**
+
+.. literalinclude:: Tutorial_Output/out_txt_py_trigger_example1.txt

@@ -153,13 +153,21 @@ ascent_extract_example5:
 	$(CXX) $(INC_FLAGS) ascent_extract_example5.cpp $(LNK_FLAGS) -o ascent_extract_example5
 
 #ascent query examples (1)
-ascent_queries_examples: ascent_query_example1
+ascent_query_examples: ascent_query_example1
 	echo "[done building query examples]"
 
 ascent_query_example1:
 	$(CXX) $(INC_FLAGS) ascent_query_example1.cpp $(LNK_FLAGS) -o ascent_query_example1
 
-all:  ascent_first_light_example conduit_examples blueprint_examples ascent_scene_examples ascent_pipeline_examples ascent_extract_examples ascent_queries_examples
+#ascent trigger examples (1)
+ascent_trigger_examples: ascent_trigger_example1
+	echo "[done building trigger examples]"
+
+ascent_trigger_example1:
+	$(CXX) $(INC_FLAGS) ascent_trigger_example1.cpp $(LNK_FLAGS) -o ascent_trigger_example1
+
+
+all:  ascent_first_light_example conduit_examples blueprint_examples ascent_scene_examples ascent_pipeline_examples ascent_extract_examples ascent_query_examples ascent_trigger_examples
 	echo "[done building all examples]"
 
 clean:
@@ -184,3 +192,4 @@ clean:
 	rm -f ascent_extract_example4
 	rm -f ascent_extract_example5
 	rm -f ascent_query_example1
+	rm -f ascent_trigger_example1
