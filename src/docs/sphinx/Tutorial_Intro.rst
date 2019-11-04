@@ -69,7 +69,8 @@ Tutorial Notebooks
 * Scene Examples:    :download:`04_ascent_scene_examples.cpp <../../../src/examples/tutorial/ascent_intro/notebooks/04_ascent_scene_examples.ipynb>`
 * Pipeline Examples: :download:`05_ascent_pipeline_examples.cpp <../../../src/examples/tutorial/ascent_intro/notebooks/05_ascent_pipeline_examples.ipynb>`
 * Extract Examples:  :download:`06_ascent_extract_examples.ipynb <../../../src/examples/tutorial/ascent_intro/notebooks/06_ascent_extract_examples.ipynb>`
-* Trigger Examples:  :download:`07_ascent_trigger_examples.ipynb <../../../src/examples/tutorial/ascent_intro/notebooks/07_ascent_trigger_examples.ipynb>`
+* Query Examples:  :download:`07_ascent_query_examples.ipynb <../../../src/examples/tutorial/ascent_intro/notebooks/07_ascent_query_examples.ipynb>`
+* Trigger Examples:  :download:`08_ascent_trigger_examples.ipynb <../../../src/examples/tutorial/ascent_intro/notebooks/08_ascent_trigger_examples.ipynb>`
 
 
 C++ Examples
@@ -110,7 +111,7 @@ Extract Examples:
  * :download:`ascent_extract_example2.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example2.cpp>`
  * :download:`ascent_extract_example2.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example3.cpp>`
 
-Queries Examples:
+Query Examples:
  * :download:`ascent_query_example1.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_query_example1.cpp>`
 
 Trigger Examples:
@@ -152,7 +153,7 @@ Extract Examples:
  * :download:`ascent_extract_example2.py <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example2.py>`
  * :download:`ascent_extract_example2.py <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example3.py>`
 
-Queries Examples:
+Query Examples:
  * :download:`ascent_query_example1.py <../../../src/examples/tutorial/ascent_intro/python/ascent_query_example1.py>`
 
 Trigger Examples:

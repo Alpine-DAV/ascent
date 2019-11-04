@@ -145,7 +145,7 @@ def tutorial_tets_example(mesh):
 
 def tutorial_gyre_example(time):
     """
-    Helper that generate a double gyre time varying example mesh.
+    Helper that generates a gyre time varying example mesh.
     
     gyre ref :https://shaddenlab.berkeley.edu/uploads/LCS-tutorial/examples.html
     """

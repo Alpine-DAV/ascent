@@ -88,7 +88,7 @@ time = 0.0
 delta_time = 0.5
 
 for step in range(nsteps):
-    # call helper that generates a double gyre time varying example mesh.
+    # call helper that generates a gyre time varying example mesh.
     # gyre ref :https://shaddenlab.berkeley.edu/uploads/LCS-tutorial/examples.html
     mesh = tutorial_gyre_example(time)
     
@@ -126,10 +126,8 @@ print(info["expressions/entropy_of_gyre"].to_yaml())
 # create an array with the entropy values from all 
 # cycles
 entropy = np.zeros(nsteps)
-index = 0
 # get the node that has the time history
 gyre = info["expressions/entropy_of_gyre"]
-cycle_names = gyre.child_names()
 
 # transfer conduit data to our summary numpy array
 for i in range(gyre.number_of_children()):

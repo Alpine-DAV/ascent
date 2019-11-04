@@ -54,9 +54,11 @@
 #include <iostream>
 #include "conduit_blueprint.hpp"
 
-#include "ascent_tutorial_cpp_utils.hpp"
+#include <math.h>
 
 using namespace conduit;
+
+const float64 PI_VALUE = 3.14159265359;
 
 // --------------------------------------------------------------------------//
 void
@@ -113,6 +115,66 @@ tutorial_tets_example(Node &mesh)
         std::cout << "Mesh Verify failed!" << std::endl;
         std::cout << verify_info.to_yaml() << std::endl;
     }
+}
+
+// --------------------------------------------------------------------------//
+void
+tutorial_gyre_example(float64 time_value, Node &mesh)
+{
+    mesh.reset();
+    int xy_dims = 40;
+    int z_dims = 2;
+    
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                             xy_dims,
+                                             xy_dims,
+                                             z_dims,
+                                             mesh);
+
+    Node &field = mesh["fields/gyre"];
+    field["association"] = "vertex";
+    field["topology"] = "mesh";
+    field["values"].set(DataType::float64(xy_dims*xy_dims*z_dims));
+    
+    float64 *values_ptr = field["values"].value();
+
+    float64 e = 0.25;
+    float64 A = 0.1;
+    float64 w = (2.0 * PI_VALUE) / 10.0;
+    float64 a_t = e * sin(w * time_value);
+    float64 b_t = 1.0 - 2 * e * sin(w * time_value);
+    // print("e: " + str(e) + " A " + str(A) + " w " + str(w) + " a_t " + str(a_t) + " b_t " + str(b_t))
+    // print(b_t)
+    // print(w)
+    int idx = 0;
+    for (int z=0; z < z_dims; z++)
+    {
+        for (int y=0; y < xy_dims; y++)
+        {
+            // scale y to 0-1
+            float64 y_n = float64(y)/float64(xy_dims);
+            float64 y_t = sin(PI_VALUE * y_n);
+            for (int x=0; x < xy_dims; x++)
+            {
+                // scale x to 0-1
+                float64 x_f = float(x)/ (float(xy_dims) * .5);
+                float64 f_t = a_t * x_f * x_f + b_t * x_f;
+                // print(f_t)
+                float64 value = A * sin(PI_VALUE * f_t) * y_t;
+                float64 u = -PI_VALUE * A * sin(PI_VALUE * f_t) * cos(PI_VALUE * y_n);
+                float64 df_dx = 2.0 * a_t + b_t;
+                // print("df_dx " + str(df_dx))
+                float64 v = PI_VALUE * A * cos(PI_VALUE * f_t) * sin(PI_VALUE * y_n) * df_dx;
+                values_ptr[idx] = sqrt(u * u + v * v);
+                // values[idx] = u * u + v * v
+                // values[idx] = value
+                // print("u " + str(u) + " v " + str(v) + " mag " + str(math.sqrt(u * u + v * v)))
+                idx++;
+            }
+        }
+    }
+
+    //print(values)
 }
 
 #endif
