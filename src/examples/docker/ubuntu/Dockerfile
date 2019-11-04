@@ -141,6 +141,15 @@ RUN cd /home/user/ascent && python scripts/gen_spack_env_script.py cmake mpi pyt
 RUN cp /home/user/ascent/s_env.sh ascent_docker_setup_env.sh
 RUN cat "PYTHONPATH=/home/user/ascent/install-debug/python-modules/" >> ascent_docker_setup_env.sh
 
+# setup docker password
+RUN mkdir /home/user/.jupyter/
+RUN echo "c.NotebookApp.password = 'sha1:d8baf2aa447b:aa60264fe892fc31c80c4650d49b1adeaa09944e'" > /home/user/.jupyter/jupyter_notebook_config.py
+
+# gen script that allows us to easily run jupyter
+RUN cp /home/user/ascent/ascent_docker_setup_env.sh ascent_docker_run_jupyter.sh
+RUN echo "jupyter notebook --ip=\"0.0.0.0\" --no-browser" >> ascent_docker_run_jupyter.sh
+
+
 # open port 8000, for use as http server
 EXPOSE 8000
 # open port 8888, for use by jupyter notebook http server
