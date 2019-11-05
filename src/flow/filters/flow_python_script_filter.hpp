@@ -87,7 +87,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class PythonScript : public ::flow::Filter
+class FLOW_API PythonScript : public ::flow::Filter
 {
 public:
     PythonScript();

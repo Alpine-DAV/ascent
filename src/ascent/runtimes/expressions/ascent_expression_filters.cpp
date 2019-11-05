@@ -260,7 +260,9 @@ bool logic_op(const bool lhs, const bool rhs, const std::string &op)
   }
   else if(op == "not")
   {
-    res = !rhs;
+    // TODO: this does not make total sense to me (matt)
+    // it seems like a dummy rhs is being passed
+    res = !lhs;
   }
   else
   {
@@ -1380,10 +1382,11 @@ History::execute()
   const int entries = history.number_of_children();
   if(!n_relative_index->dtype().is_empty())
   {
-    int relative_index = (*n_relative_index)["value"].as_int32();
+    int relative_index = (*n_relative_index)["value"].to_int32();
     if(relative_index >= entries)
     {
-      ASCENT_ERROR("History: found only "<<entries<<" entries, cannot get "<<relative_index<<" entries ago.");
+      // clamp to last if its gone too far
+      relative_index = entries - 1;
     }
     if(relative_index < 0)
     {
@@ -1394,7 +1397,17 @@ History::execute()
   }
   else
   {
-    int absolute_index = (*n_absolute_index)["value"].as_int32();
+    int absolute_index = 0;
+
+    if(n_absolute_index->has_path("value"))
+    {
+      absolute_index = (*n_absolute_index)["value"].to_int32();
+    }
+    else
+    {
+      ASCENT_ERROR("History: internal error. absolute index does not have child value");
+    }
+
     if(absolute_index >= entries)
     {
       ASCENT_ERROR("History: found only "<<entries<<" entries, cannot get entry at "<<absolute_index);
@@ -1403,6 +1416,7 @@ History::execute()
     {
       ASCENT_ERROR("History: absolute_index must be a non-negative integer.");
     }
+
     (*output) = history.child(absolute_index);
   }
 
@@ -1938,7 +1952,7 @@ BinByIndex::execute()
   const conduit::Node *n_bin = input<conduit::Node>("bin");
   const conduit::Node *n_hist = input<conduit::Node>("hist");
 
-  int num_bins = (*n_hist)["attrs/num_bins/value"].as_int32(); 
+  int num_bins = (*n_hist)["attrs/num_bins/value"].as_int32();
   int bin = (*n_bin)["value"].as_int32();
 
   if(bin < 0 || bin > num_bins - 1)
@@ -1994,9 +2008,9 @@ BinByValue::execute()
   const conduit::Node *n_hist = input<conduit::Node>("hist");
 
   double val = (*n_val)["value"].to_float64();
-  double min_val = (*n_hist)["attrs/min_val/value"].to_float64(); 
-  double max_val = (*n_hist)["attrs/max_val/value"].to_float64(); 
-  int num_bins = (*n_hist)["attrs/num_bins/value"].as_int32(); 
+  double min_val = (*n_hist)["attrs/min_val/value"].to_float64();
+  double max_val = (*n_hist)["attrs/max_val/value"].to_float64();
+  int num_bins = (*n_hist)["attrs/num_bins/value"].as_int32();
 
   if(val < min_val || val > max_val)
   {

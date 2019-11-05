@@ -42,6 +42,7 @@
 .. #
 .. ############################################################################
 
+.. _extracts:
 
 Extracts
 ========
@@ -55,6 +56,7 @@ Currently supported extracts include:
     * Relay : leverages Conduit's Relay library to do parallel I/O
     * ADIOS : use ADIOS to send data to a separate resource
 
+.. _extracts_python:
 
 Python
 ------
@@ -141,7 +143,7 @@ In addition to performing custom python analysis, your can create new data sets 
 through a new instance of Ascent. We call this technique Inception.
 
 
-.. _relay:
+.. _extracts_relay:
 
 Relay
 -----

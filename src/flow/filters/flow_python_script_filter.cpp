@@ -94,8 +94,8 @@ namespace flow
 //-----------------------------------------------------------------------------
 // Make sure we treat cleanup of python objects correctly
 //-----------------------------------------------------------------------------
-template<>
-class DataWrapper<PyObject>: public Data
+template<> 
+class FLOW_API DataWrapper<PyObject>: public Data
 {
  public:
     DataWrapper(void *data)

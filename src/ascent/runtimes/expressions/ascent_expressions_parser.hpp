@@ -1,8 +1,9 @@
-/* A Bison parser, made by GNU Bison 3.0.4.  */
+/* A Bison parser, made by GNU Bison 3.3.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2019 Free Software Foundation,
+   Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,6 +30,9 @@
 
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
+
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
 
 #ifndef YY_ASCENT_PARSER_HPP_INCLUDED
 # define YY_ASCENT_PARSER_HPP_INCLUDED
@@ -82,7 +86,7 @@ extern int ascentdebug;
 
 union YYSTYPE
 {
-#line 22 "parser.y" /* yacc.c:1909  */
+#line 22 "parser.y" /* yacc.c:1921  */
 
  ASTNode                     *node;
  ASTExpression               *expr;
@@ -95,7 +99,7 @@ union YYSTYPE
  std::string                 *string;
  int token;
 
-#line 99 "parser.hpp" /* yacc.c:1909  */
+#line 103 "parser.hpp" /* yacc.c:1921  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -108,10 +112,10 @@ extern YYSTYPE ascentlval;
 
 int ascentparse (void);
 /* "%code provides" blocks.  */
-#line 17 "parser.y" /* yacc.c:1909  */
+#line 17 "parser.y" /* yacc.c:1921  */
 
   ASTExpression *get_result();
 
-#line 116 "parser.hpp" /* yacc.c:1909  */
+#line 120 "parser.hpp" /* yacc.c:1921  */
 
 #endif /* !YY_ASCENT_PARSER_HPP_INCLUDED  */

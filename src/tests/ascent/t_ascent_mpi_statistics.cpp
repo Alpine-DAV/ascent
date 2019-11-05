@@ -106,8 +106,10 @@ TEST(ascent_mpi_stats, mpi_stats)
     //
 
     conduit::Node extracts;
-    extracts["e1/type"]  = "statistics";
-    extracts["e1/params/field"] = "radial_vert";
+    // pipeline 1
+    extracts["e1/type"] = "statistics";
+    conduit::Node &params = extracts["e1/params"];
+    params["field"] = "radial_vert";
 
     conduit::Node actions;
     // add the extracts
@@ -115,13 +117,7 @@ TEST(ascent_mpi_stats, mpi_stats)
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
     actions.print();
-
-    actions.print();
-
     //
     // Run Ascent
     //

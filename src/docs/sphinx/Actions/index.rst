@@ -53,6 +53,8 @@ Ascent Actions
    Pipelines
    Scenes
    Extracts
+   Queries
+   Triggers
    Examples
    Expressions
 

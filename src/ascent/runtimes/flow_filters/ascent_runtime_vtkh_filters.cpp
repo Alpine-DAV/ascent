@@ -175,6 +175,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   // render paths
   std::vector<std::string> r_valid_paths;
   r_valid_paths.push_back("image_name");
+  r_valid_paths.push_back("image_prefix");
   r_valid_paths.push_back("image_width");
   r_valid_paths.push_back("image_height");
   r_valid_paths.push_back("scene_bounds");
@@ -1392,10 +1393,12 @@ DefaultRender::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-    bool res = check_string("image_prefix",params, info, true);
+    bool res = check_string("image_name",params, info, false);
+    res &= check_string("image_prefix",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("image_prefix");
+    valid_paths.push_back("image_name");
 
     std::vector<std::string> ignore_paths;
     ignore_paths.push_back("renders");
@@ -1519,14 +1522,17 @@ DefaultRender::execute()
           // this render has a unique name
           if(render_node.has_path("image_name"))
           {
-            image_name = expand_family_name(render_node["image_name"].as_string(), cycle);
+            image_name = render_node["image_name"].as_string();
+          }
+          else if(render_node.has_path("image_prefix"))
+          {
+            std::stringstream ss;
+            ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
+            image_name = ss.str();
           }
           else
           {
-            std::stringstream ss;
-            ss<<expand_family_name(params()["image_prefix"].as_string(), cycle);
-            ss<<"_"<<i;
-            image_name = ss.str();
+            ASCENT_ERROR("Render must have either a 'image_name' or 'image_prefix' parameter");
           }
 
           vtkh::Render render = detail::parse_render(render_node,
@@ -1539,8 +1545,18 @@ DefaultRender::execute()
     }
     else
     {
-      std::string image_name =  params()["image_prefix"].as_string();
-      image_name = expand_family_name(image_name, cycle);
+      // This is the path for the default render attached directly to a scene
+      std::string image_name;
+      if(params().has_path("image_name"))
+      {
+        image_name =  params()["image_name"].as_string();
+      }
+      else
+      {
+        image_name =  params()["image_prefix"].as_string();
+        image_name = expand_family_name(image_name, cycle);
+      }
+
       vtkh::Render render = vtkh::MakeRender(1024,
                                              1024,
                                              *bounds,

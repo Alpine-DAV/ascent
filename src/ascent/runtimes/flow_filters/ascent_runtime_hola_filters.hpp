@@ -82,7 +82,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class HolaMPIExtract: public ::flow::Filter
+class ASCENT_API HolaMPIExtract: public ::flow::Filter
 {
 public:
     HolaMPIExtract();

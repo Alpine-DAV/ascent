@@ -73,6 +73,7 @@
 #include <ascent_expression_eval.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
+#include <vtkm/cont/Error.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
@@ -1028,9 +1029,16 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       render_params["renders"] = scene["renders"];
     }
 
-    if(scene.has_path("image_prefix"))
+    if(scene.has_path("image_prefix") || scene.has_path("image_name"))
     {
-      render_params["image_prefix"] = scene["image_prefix"].as_string();
+      if(scene.has_path("image_prefix"))
+      {
+        render_params["image_prefix"] = scene["image_prefix"].as_string();
+      }
+      else
+      {
+        render_params["image_name"] = scene["image_name"].as_string();
+      }
     }
     else
     {
@@ -1429,6 +1437,10 @@ AscentRuntime::Execute(const conduit::Node &actions)
       w.reset();
       ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
     }
+    catch(vtkm::cont::Error &e)
+    {
+      ASCENT_ERROR("Execution failed with vtkm: "<<e.what());
+    }
 #endif
     catch(conduit::Error &e)
     {
@@ -1439,6 +1451,10 @@ AscentRuntime::Execute(const conduit::Node &actions)
     {
       w.reset();
       ASCENT_ERROR("Execution failed with: "<<e.what());
+    }
+    catch(...)
+    {
+      ASCENT_ERROR("Ascent: unknown exception thrown");
     }
 
     Node msg;

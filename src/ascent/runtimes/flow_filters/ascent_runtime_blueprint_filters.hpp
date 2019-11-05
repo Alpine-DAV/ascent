@@ -82,7 +82,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class BlueprintVerify : public ::flow::Filter
+class ASCENT_API BlueprintVerify : public ::flow::Filter
 {
 public:
     BlueprintVerify();
@@ -96,7 +96,7 @@ public:
 
 
 //-----------------------------------------------------------------------------
-class EnsureLowOrder : public ::flow::Filter
+class ASCENT_API EnsureLowOrder : public ::flow::Filter
 {
 public:
     EnsureLowOrder();
@@ -111,7 +111,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class EnsureBlueprint : public ::flow::Filter
+class ASCENT_API EnsureBlueprint : public ::flow::Filter
 {
 public:
     EnsureBlueprint();

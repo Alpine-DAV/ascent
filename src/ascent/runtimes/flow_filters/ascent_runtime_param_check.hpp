@@ -58,6 +58,8 @@
 #include <string>
 #include <vector>
 
+#include <ascent_exports.h>
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -76,32 +78,33 @@ namespace runtime
 namespace filters
 {
 
-bool check_numeric(const std::string path,
-                   const conduit::Node &params,
-                   conduit::Node &info,
-                   bool required);
+bool ASCENT_API check_numeric(const std::string path,
+                              const conduit::Node &params,
+                              conduit::Node &info,
+                              bool required);
 
-bool check_string(const std::string path,
-                  const conduit::Node &params,
-                  conduit::Node &info,
-                  bool required);
+bool ASCENT_API check_string(const std::string path,
+                             const conduit::Node &params,
+                             conduit::Node &info,
+                             bool required);
 
-void path_helper(std::vector<std::string> &paths, const conduit::Node &params);
+void ASCENT_API path_helper(std::vector<std::string> &paths,
+                            const conduit::Node &params);
 
-void path_helper(std::vector<std::string> &paths,
-                 const std::vector<std::string> &ignore,
-                 const conduit::Node &params,
-                 const std::string path_prefix);
+void ASCENT_API path_helper(std::vector<std::string> &paths,
+                            const std::vector<std::string> &ignore,
+                            const conduit::Node &params,
+                            const std::string path_prefix);
 
-std::string surprise_check(const std::vector<std::string> &valid_paths,
-                           const conduit::Node &node);
+std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_paths,
+                                      const conduit::Node &node);
 //
 // Ignore paths only ignores top level paths, deffering lower level
 // paths to another surpise check.
 //
-std::string surprise_check(const std::vector<std::string> &valid_paths,
-                           const std::vector<std::string> &ignore_paths,
-                           const conduit::Node &node);
+std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_paths,
+                                      const std::vector<std::string> &ignore_paths,
+                                      const conduit::Node &node);
 
 //-----------------------------------------------------------------------------
 };
