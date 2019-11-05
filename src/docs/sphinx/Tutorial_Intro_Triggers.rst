@@ -44,11 +44,11 @@
 
 .. _tutorial_triggers:
 
-Adaptive visualization with Triggers
+Adapting visualization with Triggers
 --------------------------------------
 
 Triggers allow the user to specify a set of actions that are triggered by the result of a boolean expression.
-They provide flexibility to adapt what analysis and visualization actions are taken in situ. Triggers leverage Ascent's Query and Expression infrastructure. See Ascent's [Triggers](https://ascent.readthedocs.io/en/latest/Actions/Triggers.html) docs for deeper details on Triggers.
+They provide flexibility to adapt what analysis and visualization actions are taken in situ. Triggers leverage Ascent's Query and Expression infrastructure. See Ascent's :ref:`triggers` docs for deeper details on Triggers.
 
 Using triggers to render when events occur
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

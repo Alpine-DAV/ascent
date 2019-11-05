@@ -59,6 +59,7 @@ RUN apt-get update && apt-get install -y \
     tar \
     unzip \
     perl \
+    pkg-config \
     openmpi-bin \
     libopenmpi-dev \
     libncurses-dev \
@@ -69,12 +70,19 @@ RUN apt-get update && apt-get install -y \
     libreadline-dev \
     libsqlite3-dev \
     libbz2-dev \
+    openssh-server \
     vim \
     emacs \
  && rm -rf /var/lib/apt/lists/*
 
 
-RUN useradd -ms /bin/bash user
+# add our 'user' with password 'docker'
+RUN useradd -ms /bin/bash -G sudo user && echo "user:docker" | chpasswd
+# allow sudo w/o password
+RUN echo "user ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/user && \
+ chmod 0440 /etc/sudoers.d/user
+     
+# run the rest as user
 USER user
 WORKDIR /home/user
 
@@ -136,19 +144,27 @@ RUN cd /home/user/ascent/install-debug/share/ascent/ascent_jupyter_bridge/ && \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
     .
 
-# gen env script that points to spack installs of tpls
-RUN cd /home/user/ascent && python scripts/gen_spack_env_script.py cmake mpi python
-RUN cp /home/user/ascent/s_env.sh ascent_docker_setup_env.sh
-RUN cat "PYTHONPATH=/home/user/ascent/install-debug/python-modules/" >> ascent_docker_setup_env.sh
+# setup ssh keys for passwordless ssh to localhost
+RUN mkdir -p ~/.ssh
+RUN ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa -q -N ""
+RUN cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+RUN chmod 0600 ~/.ssh/authorized_keys
 
-# setup docker password
+# setup jupyter password
 RUN mkdir /home/user/.jupyter/
 RUN echo "c.NotebookApp.password = 'sha1:d8baf2aa447b:aa60264fe892fc31c80c4650d49b1adeaa09944e'" > /home/user/.jupyter/jupyter_notebook_config.py
 
+# gen env script that points to spack installs of tpls
+RUN cd /home/user/ascent && python scripts/gen_spack_env_script.py cmake mpi python
+RUN cp /home/user/ascent/s_env.sh ascent_docker_setup_env.sh
+RUN echo "export PYTHONPATH=/home/user/ascent/install-debug/python-modules/" >> ascent_docker_setup_env.sh
+
 # gen script that allows us to easily run jupyter
-RUN cp /home/user/ascent/ascent_docker_setup_env.sh ascent_docker_run_jupyter.sh
+RUN cp /home/user/ascent_docker_setup_env.sh ascent_docker_run_jupyter.sh
 RUN echo "jupyter notebook --ip=\"0.0.0.0\" --no-browser" >> ascent_docker_run_jupyter.sh
 
+#make sure helpers are executable
+RUN chmod 777 /home/user/ascent_docker_setup_env.sh /home/user/ascent_docker_run_jupyter.sh
 
 # open port 8000, for use as http server
 EXPOSE 8000
@@ -159,4 +175,4 @@ EXPOSE 9000
 # open port 10000 for other apps (browse fs via http, etc)
 EXPOSE 10000
 
-CMD ["/bin/bash"]
+CMD sudo service ssh start && /bin/bash

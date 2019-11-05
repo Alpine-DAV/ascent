@@ -32,10 +32,10 @@ packages:
     buildable: False
     paths:
       ncurses: /usr
-  pkg-confg:
+  pkg-config:
     buildable: False
     paths:
-      pkg-confg: /usr
+      pkg-config: /usr
   openssl:
     buildable: False
     paths:

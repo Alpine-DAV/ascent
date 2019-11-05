@@ -44,8 +44,8 @@
 
 .. _tutorial_queries:
 
-Ask and answer questions with Queries
---------------------------------------
+Asking and answering questions with Queries
+---------------------------------------------
 
 Queries are a way to ask summarization questions about meshes. Queries results can be used with Triggers to adapt analysis and visualization actions.  This section shows how to execute queries with Ascent and access query results. See :ref:`queries` docs for deeper details on Queries.
 
