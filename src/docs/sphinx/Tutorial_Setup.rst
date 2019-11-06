@@ -99,19 +99,43 @@ NERSC Cori Install
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We have a public ascent install for use on NERSC's Cori System. This install was built with the default
-intel compiler (18.0.1.163).
+gnu compiler (8.2.0). You need to use `module load gcc` to build and run the installed examples.
 
-The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/ascent-install``.
-You can copy the tutorial examples from this install and build them as follows:
+
+The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install``.
+You can copy the tutorial examples from this install and use them as follows:
 
 .. code::
 
-    mkdir ascent_tutorail
+    #
+    # source helper script that loads the default gcc module, sets python paths, and ASCENT_DIR env var
+    #
+    source /project/projectdirs/alpine/software/ascent/current/cori/ascent_cori_setup_env_gcc.sh
+    
+    #
+    # make your own dir to hold the tutorial examples
+    #
+    mkdir ascent_tutorial
     cd ascent_tutorial
-    cp -r /project/projectdirs/alpine/software/ascent/current/cori/ascent-install/examples/ascent/tutorial/* .
+    
+    #
+    # copy the examples from the public install
+    #
+    cp -r /project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install/examples/ascent/tutorial/* .
+    
+    #
+    # build cpp examples and run the first one
+    #
     cd ascent_intro/cpp
-    make ASCENT_DIR=project/projectdirs/alpine/software/ascent/current/cori/ascent-install/
-
+    make
+    ./ascent_first_light_example
+    
+    #
+    # run a python example
+    #
+    cd ..
+    cd python
+    python ascent_first_light_example.py  
 
 Build and Install
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
