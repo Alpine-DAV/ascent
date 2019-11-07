@@ -98,7 +98,10 @@ def find_pkg(pkg_name):
     print(rout)
     for l in rout.split("\n"):
         print(l)
-        if l.startswith(" "):
+        lstrip = l.strip()
+        if not lstrip == "" and \
+           not lstrip.startswith("==>") and  \
+           not lstrip.startswith("--"):
             return {"name": pkg_name, "path": l.split()[-1]}
     print("[ERROR: failed to find package named '{}']".format(pkg_name))
     sys.exit(-1)

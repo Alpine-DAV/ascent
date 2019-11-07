@@ -6,6 +6,7 @@
 
 from spack import *
 import os
+import sys
 
 
 class Vtkm(CMakePackage, CudaPackage):
@@ -20,45 +21,47 @@ class Vtkm(CMakePackage, CudaPackage):
     url      = "https://gitlab.kitware.com/api/v4/projects/vtk%2Fvtk-m/repository/archive.tar.gz?sha=v1.3.0"
     git      = "https://gitlab.kitware.com/vtk/vtk-m.git"
 
-    # version used for ascent
-    version('ascent_ver', commit='a4dfe50cd50b6827491ac6e760a6a60940d8ba17', preferred=True)
     version('master', branch='master')
-    version('1.3.0', "d9f6e274dec2ea01273cccaba356d23ca88c5a25")
-    version('1.2.0', "3295fed86012226c107e1f2605ca7cc583586b63")
+    version('1.5.0', sha256="b1b13715c7fcc8d17f5c7166ff5b3e9025f6865dc33eb9b06a63471c21349aa8")
+    version('1.4.0', sha256="60e1ce73a8c6beda8aed5f2d3ae670b6b0c78c068c6eff4ece769e6d719d5065")
+    version('1.3.0', sha256="72c2c8525a77a456fe0b6a1af0328dad6b9a688f402a3d3ebfa8942e0b5dba1a")
+    version('1.2.0', sha256="9103d954284661f6f03e5b18be6d7bc94254603e6abc8fce67f617f4ad325a0e")
+    version('1.1.0', sha256="a1746b1547d6fb901ea7d7ed50834e8832d6d41ddd497c84d02e1481100d43bc")
     version('1.1.0', "6aab1c0885f6ffaaffcf07930873d0df")
 
     # use release, instead of release with debug symbols b/c vtkm libs
     # can overwhelm compilers with too many symbols
     variant('build_type', default='Release', description='CMake build type',
             values=('Debug', 'Release', 'RelWithDebInfo', 'MinSizeRel'))
-    variant("shared", default=True, description="build shared libs")
+    variant("shared", default=False, description="build shared libs")
     variant("cuda", default=False, description="build cuda support")
     variant("doubleprecision", default=True,
             description='enable double precision')
-    variant("logging", default=False, description="build logging support")
+    variant("logging", default=True, description="build logging support")
     variant("mpi", default=False, description="build mpi support")
-    variant("openmp", default=False, description="build openmp support")
+    variant("openmp", default=(sys.platform != 'darwin'), description="build openmp support")
     variant("rendering", default=True, description="build rendering support")
-    variant("tbb", default=True, description="build TBB support")
+    variant("tbb", default=(sys.platform == 'darwin'), description="build TBB support")
     variant("64bitids", default=False,
             description="enable 64 bits ids")
 
     depends_on("cmake")
-
     depends_on("tbb", when="+tbb")
     depends_on("cuda", when="+cuda")
     depends_on("mpi", when="+mpi")
 
-    # secretly change build to static when building with cuda to bypass spack variant
-    # forwarding crazyness
-    #conflicts('+cuda', when='+shared', msg='vtk-m must be built statically (~shared) when cuda is enabled')
+    conflicts("~shared", when="~pic")
 
     def cmake_args(self):
         spec = self.spec
         options = []
+        gpu_name_table = {'20': 'fermi',
+                          '30': 'kepler',  '32': 'kepler',  '35': 'kepler',
+                          '50': 'maxwell', '52': 'maxwell', '53': 'maxwell',
+                          '60': 'pascal',  '61': 'pascal',  '62': 'pascal',
+                          '70': 'turing',  '72': 'turing',  '75': 'turing'}
         with working_dir('spack-build', create=True):
-            options = ["../",
-                       "-DVTKm_ENABLE_TESTING:BOOL=OFF"]
+            options = ["-DVTKm_ENABLE_TESTING:BOOL=OFF"]
             # shared vs static libs logic
             # force building statically with cuda
             if "+cuda" in spec:
@@ -73,16 +76,18 @@ class Vtkm(CMakePackage, CudaPackage):
                 options.append("-DVTKm_ENABLE_CUDA:BOOL=ON")
                 options.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(env["SPACK_CXX"]))
                 if 'cuda_arch' in spec.variants:
-                    cuda_arch = spec.variants['cuda_arch'].value[0]
-                    vtkm_cuda_arch = "native"
-                    arch_map = {"75":"turing", "70":"volta",
-                                "62":"pascal", "61":"pascal", "60":"pascal",
-                                "53":"maxwell", "52":"maxwell", "50":"maxwell",
-                                "35":"kepler", "32":"kepler", "30":"kepler"}
-                    if cuda_arch in arch_map:
-                      vtkm_cuda_arch = arch_map[cuda_arch]
-                    options.append(
-                        '-DVTKm_CUDA_Architecture={0}'.format(vtkm_cuda_arch))
+                    cuda_value = spec.variants['cuda_arch'].value
+                    cuda_arch = cuda_value[0]
+                    if cuda_arch in gpu_name_table:
+                        vtkm_cuda_arch = gpu_name_table[cuda_arch]
+                        options.append(
+                            '-DVTKm_CUDA_Architecture={0}'.format(vtkm_cuda_arch))
+                else:
+                    # this fix is necessary if compiling platform has cuda, but
+                    # no devices (this's common for front end nodes on hpc clus
+                    # ters)
+                    # we choose kepler as a lowest common denominator
+                    options.append("-DVTKm_CUDA_Architecture=kepler")
             else:
                 options.append("-DVTKm_ENABLE_CUDA:BOOL=OFF")
 
@@ -95,8 +100,7 @@ class Vtkm(CMakePackage, CudaPackage):
             # logging support
             if "+logging" in spec:
                 if spec.satisfies('@:1.2.0') and \
-                        spec['vtkm'].version.string != 'master' and \
-                        spec['vtkm'].version.string != 'ascent_ver' :
+                        spec['vtkm'].version.string != 'master':
                     raise InstallError('logging is not supported for\
                             vtkm version lower than 1.3')
                 options.append("-DVTKm_ENABLE_LOGGING:BOOL=ON")
@@ -106,8 +110,7 @@ class Vtkm(CMakePackage, CudaPackage):
             # mpi support
             if "+mpi" in spec:
                 if spec.satisfies('@:1.2.0') and \
-                        spec['vtkm'].version.string != 'master' and \
-                        spec['vtkm'].version.string != 'ascent_ver':
+                        spec['vtkm'].version.string != 'master':
                     raise InstallError('mpi is not supported for\
                             vtkm version lower than 1.3')
                 options.append("-DVTKm_ENABLE_MPI:BOOL=ON")
@@ -118,8 +121,7 @@ class Vtkm(CMakePackage, CudaPackage):
             if "+openmp" in spec:
                 # openmp is added since version 1.3.0
                 if spec.satisfies('@:1.2.0') and \
-                        spec['vtkm'].version.string != 'master' and \
-                        spec['vtkm'].version.string != 'ascent_ver':
+                        spec['vtkm'].version.string != 'master':
                     raise InstallError('OpenMP is not supported for\
                             vtkm version lower than 1.3')
                 options.append("-DVTKm_ENABLE_OPENMP:BOOL=ON")

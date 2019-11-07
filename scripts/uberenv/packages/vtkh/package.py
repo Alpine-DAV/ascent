@@ -37,10 +37,8 @@ class Vtkh(Package,CudaPackage):
     git      = "https://github.com/Alpine-DAV/vtk-h.git"
     maintainers = ['cyrush']
 
-
     version('ascent_ver', commit='f67aef0b9aef7ed999cb3d3e687b837a7671be03', submodules=True, preferred=True)
     version('develop', branch='develop', submodules=True)
-    version('0.1.0', branch='develop', tag='v0.1.0', submodules=True)
 
     variant("shared", default=True, description="Build vtk-h as shared libs")
     variant("mpi", default=True, description="build mpi support")
@@ -56,33 +54,17 @@ class Vtkh(Package,CudaPackage):
     depends_on("intel-tbb", when="@0.1.0+tbb")
     depends_on("cuda", when="+cuda")
 
-    depends_on("vtkm@master~tbb+openmp", when="@develop+openmp")
-    depends_on("vtkm@master~tbb~openmp", when="@develop~openmp")
+    depends_on("vtkm@1.5.0~tbb+openmp", when="+openmp")
+    depends_on("vtkm@1.5.0~tbb~openmp", when="~openmp")
 
-    depends_on("vtkm@master+cuda~tbb+openmp", when="@develop+cuda+openmp")
-    depends_on("vtkm@master+cuda~tbb~openmp", when="@develop+cuda~openmp")
+    depends_on("vtkm@1.5.0+cuda~tbb+openmp", when="+cuda+openmp")
+    depends_on("vtkm@1.5.0+cuda~tbb~openmp", when="+cuda~openmp")
 
-    depends_on("vtkm@master~tbb+openmp~shared", when="@develop+openmp~shared")
-    depends_on("vtkm@master~tbb~openmp~shared", when="@develop~openmp~shared")
+    depends_on("vtkm@1.5.0~tbb+openmp~shared", when="+openmp~shared")
+    depends_on("vtkm@1.5.0~tbb~openmp~shared", when="~openmp~shared")
 
-    depends_on("vtkm@master+cuda~tbb+openmp~shared", when="@develop+cuda+openmp~shared")
-    depends_on("vtkm@master+cuda~tbb~openmp~shared", when="@develop+cuda~openmp~shared")
-
-    depends_on("vtkm@ascent_ver~tbb+openmp", when="@ascent_ver+openmp")
-    depends_on("vtkm@ascent_ver~tbb~openmp", when="@ascent_ver~openmp")
-
-    depends_on("vtkm@ascent_ver+cuda~tbb+openmp", when="@ascent_ver+cuda+openmp")
-    depends_on("vtkm@ascent_ver+cuda~tbb~openmp", when="@ascent_ver+cuda~openmp")
-
-    depends_on("vtkm@ascent_ver~tbb+openmp~shared", when="@ascent_ver+openmp~shared")
-    depends_on("vtkm@ascent_ver~tbb~openmp~shared", when="@ascent_ver~openmp~shared")
-
-    depends_on("vtkm@ascent_ver+cuda~tbb+openmp~shared", when="@ascent_ver+cuda+openmp~shared")
-    depends_on("vtkm@ascent_ver+cuda~tbb~openmp~shared", when="@ascent_ver+cuda~openmp~shared")
-
-    # secretly change build to static when building with cuda to bypass spack variant
-    # forwarding crazyness
-    #conflicts('+cuda', when='+shared', msg='vtk-h must be built statically (~shared) when cuda is enabled')
+    depends_on("vtkm@1.5.0+cuda~tbb+openmp~shared", when="+cuda+openmp~shared")
+    depends_on("vtkm@1.5.0+cuda~tbb~openmp~shared", when="+cuda~openmp~shared")
 
     def install(self, spec, prefix):
         with working_dir('spack-build', create=True):
@@ -120,23 +102,6 @@ class Vtkh(Package,CudaPackage):
                 cmake_args.append("-DVTKm_ENABLE_CUDA:BOOL=ON")
                 cmake_args.append("-DENABLE_CUDA:BOOL=ON")
                 cmake_args.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(env["SPACK_CXX"]))
-                #if 'cuda_arch' in spec.variants:
-                #    cuda_arch = spec.variants['cuda_arch'].value[0]
-                #    vtkm_cuda_arch = "native"
-                #    arch_map = {"75":"turing", "70":"volta",
-                #                "62":"pascal", "61":"pascal", "60":"pascal",
-                #                "53":"maxwell", "52":"maxwell", "50":"maxwell",
-                #                "35":"kepler", "32":"kepler", "30":"kepler"}
-                #    if cuda_arch in arch_map:
-                #      vtkm_cuda_arch = arch_map[cuda_arch]
-                #    cmake_args.append(
-                #        '-DVTKm_CUDA_Architecture={0}'.format(vtkm_cuda_arch))
-                #else:
-                #    # this fix is necessary if compiling platform has cuda, but
-                #    # no devices (this's common for front end nodes on hpc clus
-                #    # ters)
-                #    # we choose kepler as a lowest common denominator
-                #    cmake_args.append("-DVTKm_CUDA_Architecture=native")
             else:
                 cmake_args.append("-DVTKm_ENABLE_CUDA:BOOL=OFF")
                 cmake_args.append("-DENABLE_CUDA:BOOL=OFF")
@@ -290,18 +255,6 @@ class Vtkh(Package,CudaPackage):
 
         if "+cuda" in spec:
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "ON"))
-            #cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA","ON"))
-            #cfg.write(cmake_cache_entry("CMAKE_CUDA_HOST_COMPILER",''.format(env["SPACK_CXX"])))
-            #if 'cuda_arch' in spec.variants:
-            #    cuda_arch = spec.variants['cuda_arch'].value[0]
-            #    vtkm_cuda_arch = "native"
-            #    arch_map = {"75":"turing", "70":"volta",
-            #                "62":"pascal", "61":"pascal", "60":"pascal",
-            #                "53":"maxwell", "52":"maxwell", "50":"maxwell",
-            #                "35":"kepler", "32":"kepler", "30":"kepler"}
-            #    if cuda_arch in arch_map:
-            #      vtkm_cuda_arch = arch_map[cuda_arch]
-            #    cfg.write(cmake_cache_entry('VTKm_CUDA_Architecture','{0}'.format(vtkm_cuda_arch)))
         else:
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "OFF"))
 

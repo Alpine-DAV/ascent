@@ -34,11 +34,11 @@ class Ascent(Package, CudaPackage):
     simulations."""
 
     homepage = "https://github.com/Alpine-DAV/ascent"
+    git      = "https://github.com/Alpine-DAV/ascent.git"
 
     maintainers = ['cyrush']
 
     version('develop',
-            git='https://github.com/Alpine-DAV/ascent.git',
             branch='develop',
             submodules=True,
             preferred=True)
@@ -81,7 +81,6 @@ class Ascent(Package, CudaPackage):
     depends_on("conduit~python~mpi", when="~python~mpi")
     depends_on("conduit+python~mpi", when="+python+shared~mpi")
     depends_on("conduit~shared~python~mpi", when="~shared~mpi")
-    #depends_on("cuda", when="+cuda")
 
     #######################
     # Python
@@ -97,14 +96,13 @@ class Ascent(Package, CudaPackage):
     # MPI
     #######################
     depends_on("mpi", when="+mpi")
-    # use old version of mpi4py to avoid build issues with cython
-    depends_on("py-mpi4py@2.0.0:2.9.999", when="+mpi+python+shared")
+    depends_on("py-mpi4py", when="+mpi+python+shared")
 
     #############################
     # TPLs for Runtime Features
     #############################
 
-    # uberenv overrides to use ascent_ver
+    # ascent depends on pinned `ascent_ver` of vtk-h
     depends_on("vtkh@ascent_ver",             when="+vtkh")
     depends_on("vtkh@ascent_ver~openmp",      when="+vtkh~openmp")
     depends_on("vtkh@ascent_ver+cuda+openmp", when="+vtkh+cuda+openmp")
@@ -432,16 +430,6 @@ class Ascent(Package, CudaPackage):
             if "+cuda" in spec:
                 cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA","ON"))
                 cfg.write(cmake_cache_entry("CMAKE_CUDA_HOST_COMPILER",''.format(env["SPACK_CXX"])))
-                #if 'cuda_arch' in spec.variants:
-                #    cuda_arch = spec.variants['cuda_arch'].value[0]
-                #    vtkm_cuda_arch = "native"
-                #    arch_map = {"75":"turing", "70":"volta",
-                #                "62":"pascal", "61":"pascal", "60":"pascal",
-                #                "53":"maxwell", "52":"maxwell", "50":"maxwell",
-                #                "35":"kepler", "32":"kepler", "30":"kepler"}
-                #    if cuda_arch in arch_map:
-                #      vtkm_cuda_arch = arch_map[cuda_arch]
-                #    cfg.write(cmake_cache_entry('VTKm_CUDA_Architecture','{0}'.format(vtkm_cuda_arch)))
             else:
                 cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA","OFF"))
 
