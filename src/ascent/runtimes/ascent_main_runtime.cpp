@@ -1383,55 +1383,85 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
 void
 AscentRuntime::Execute(const conduit::Node &actions)
 {
-    ResetInfo();
-
-    conduit::Node diff_info;
-    bool different_actions = m_previous_actions.diff(actions, diff_info);
-
-    if(different_actions)
-    {
-      // destroy existing graph an start anew
-      w.reset();
-      ConnectSource();
-      BuildGraph(actions);
-    }
-    else
-    {
-      // always ensure that we have the source
-      ConnectSource();
-    }
-
-    m_previous_actions = actions;
-
-    PopulateMetadata(); // add metadata so filters can access it
-
-    w.info(m_info["flow_graph"]);
-    m_info["actions"] = actions;
-    //w.print();
-    //std::cout<<w.graph().to_dot();
-
     // catch any errors that come up here and forward
     // them up as a conduit error
+    
+    // --- open try --- //
     try
     {
+        ResetInfo();
+
+        conduit::Node diff_info;
+        bool different_actions = m_previous_actions.diff(actions, diff_info);
+
+        if(different_actions)
+        {
+          // destroy existing graph an start anew
+          w.reset();
+          ConnectSource();
+          BuildGraph(actions);
+        }
+        else
+        {
+          // always ensure that we have the source
+          ConnectSource();
+        }
+
+        m_previous_actions = actions;
+
+        PopulateMetadata(); // add metadata so filters can access it
+
+        w.info(m_info["flow_graph"]);
+        m_info["actions"] = actions;
+        //w.print();
+        //std::cout<<w.graph().to_dot();
+
 #if defined(ASCENT_VTKM_ENABLED)
-      Node *meta = w.registry().fetch<Node>("metadata");
-      int cycle = 0;
-      if(meta->has_path("cycle"))
-      {
+        Node *meta = w.registry().fetch<Node>("metadata");
+        int cycle = 0;
+        if(meta->has_path("cycle"))
+        {
         cycle = (*meta)["cycle"].to_int32();
-      }
-      std::stringstream ss;
-      ss<<"cycle_"<<cycle;
-      vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
-      vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
+        }
+        std::stringstream ss;
+        ss<<"cycle_"<<cycle;
+        vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
+        vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
 #endif
-      w.execute();
+        // now execute the data flow graph
+        w.execute();
+
 #if defined(ASCENT_VTKM_ENABLED)
-      vtkh::DataLogger::GetInstance()->CloseLogEntry();
+        vtkh::DataLogger::GetInstance()->CloseLogEntry();
 #endif
+        Node msg;
+        this->Info(msg["info"]);
+        ascent::about(msg["about"]);
+        m_web_interface.PushMessage(msg);
+
+        Node render_file_names;
+        Node renders;
+        FindRenders(renders, render_file_names);
+        m_info["images"] = renders;
+
+        const conduit::Node &expression_cache =
+          runtime::expressions::ExpressionEval::get_cache();
+
+        if(expression_cache.number_of_children() > 0)
+        {
+          m_info["expressions"] = expression_cache;
+        }
+
+        m_web_interface.PushRenders(render_file_names);
+
+        w.registry().reset();
     }
+    // --- close try --- //
+    
+    // Defend calling code by repackaging 
+    // as many errors as possible with catch statements
 #if defined(ASCENT_VTKM_ENABLED)
+    // bottle vtkm and vtkh errors
     catch(vtkh::Error &e)
     {
       w.reset();
@@ -1456,30 +1486,9 @@ AscentRuntime::Execute(const conduit::Node &actions)
     {
       ASCENT_ERROR("Ascent: unknown exception thrown");
     }
-
-    Node msg;
-    this->Info(msg["info"]);
-    ascent::about(msg["about"]);
-    m_web_interface.PushMessage(msg);
-
-    Node render_file_names;
-    Node renders;
-    FindRenders(renders, render_file_names);
-    m_info["images"] = renders;
-
-    const conduit::Node &expression_cache =
-      runtime::expressions::ExpressionEval::get_cache();
-
-    if(expression_cache.number_of_children() > 0)
-    {
-      m_info["expressions"] = expression_cache;
-    }
-
-    m_web_interface.PushRenders(render_file_names);
-
-    w.registry().reset();
 }
 
+//-----------------------------------------------------------------------------
 void
 AscentRuntime::DisplayError(const std::string &msg)
 {
@@ -1488,6 +1497,7 @@ AscentRuntime::DisplayError(const std::string &msg)
     std::cerr<<msg;
   }
 }
+
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::RegisterFilterType(const std::string  &role_path,

@@ -49,7 +49,7 @@ This tutorial introduces how to use Ascent, including basics about:
 
  - Formating mesh data for Ascent
  - Using Conduit and Ascent's Conduit-based API
- - Using and combining Ascent's core building blocks: Scenes, Pipelines, Extracts, and Triggers
+ - Using and combining Ascent's core building blocks: Scenes, Pipelines, Extracts, Queries, and Triggers
  - Using Ascent with the Cloverleaf3D example integration
 
 Ascent installs include standalone C++, Python, and Python-based Jupyter notebook examples for this tutorial. 

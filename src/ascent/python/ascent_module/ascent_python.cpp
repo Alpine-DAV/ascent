@@ -203,6 +203,18 @@ PyAscent_Ascent_Error_To_PyErr(const conduit::Error &e)
 }
 
 //---------------------------------------------------------------------------//
+// Helper that promotes ascent error to python error
+//---------------------------------------------------------------------------//
+static void
+PyAscent_Cpp_Error_To_PyErr(const char *msg)
+{
+    std::ostringstream oss;
+    oss << "Ascent Error: " << msg;
+    PyErr_SetString(PyExc_RuntimeError,
+                    oss.str().c_str());
+}
+
+//---------------------------------------------------------------------------//
 static PyObject *
 PyAscent_Ascent_new(PyTypeObject *type,
                         PyObject*, // args -- unused
@@ -293,6 +305,18 @@ PyAscent_Ascent_open(PyAscent_Ascent *self,
         PyAscent_Ascent_Error_To_PyErr(e);
         return NULL;
     }
+    // also try to bottle other errors, to prevent python
+    // from crashing due to uncaught exception
+    catch(std::exception &e)
+    {
+        PyAscent_Cpp_Error_To_PyErr(e.what());
+        return NULL;
+    }
+    catch(...)
+    {
+        PyAscent_Cpp_Error_To_PyErr("unknown cpp exception thrown");
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -336,6 +360,18 @@ PyAscent_Ascent_publish(PyAscent_Ascent *self,
     catch(conduit::Error e)
     {
         PyAscent_Ascent_Error_To_PyErr(e);
+        return NULL;
+    }
+    // also try to bottle other errors, to prevent python
+    // from crashing due to uncaught exception
+    catch(std::exception &e)
+    {
+        PyAscent_Cpp_Error_To_PyErr(e.what());
+        return NULL;
+    }
+    catch(...)
+    {
+        PyAscent_Cpp_Error_To_PyErr("unknown cpp exception thrown");
         return NULL;
     }
 
@@ -382,6 +418,18 @@ PyAscent_Ascent_execute(PyAscent_Ascent *self,
         PyAscent_Ascent_Error_To_PyErr(e);
         return NULL;
     }
+    // also try to bottle other errors, to prevent python
+    // from crashing due to uncaught exception
+    catch(std::exception &e)
+    {
+        PyAscent_Cpp_Error_To_PyErr(e.what());
+        return NULL;
+    }
+    catch(...)
+    {
+        PyAscent_Cpp_Error_To_PyErr("unknown cpp exception thrown");
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -417,7 +465,29 @@ PyAscent_Ascent_info(PyAscent_Ascent *self,
     }
 
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-    self->ascent->info(*node);
+
+    try
+    {
+            self->ascent->info(*node);
+    }
+    catch(conduit::Error e)
+    {
+        PyAscent_Ascent_Error_To_PyErr(e);
+        return NULL;
+    }
+    // also try to bottle other errors, to prevent python
+    // from crashing due to uncaught exception
+    catch(std::exception &e)
+    {
+        PyAscent_Cpp_Error_To_PyErr(e.what());
+        return NULL;
+    }
+    catch(...)
+    {
+        PyAscent_Cpp_Error_To_PyErr("unknown cpp exception thrown");
+        return NULL;
+    }
+
 
     Py_RETURN_NONE;
 }
@@ -436,6 +506,19 @@ PyAscent_Ascent_close(PyAscent_Ascent *self)
         PyAscent_Ascent_Error_To_PyErr(e);
         return NULL;
     }
+    // also try to bottle other errors, to prevent python
+    // from crashing due to uncaught exception
+    catch(std::exception &e)
+    {
+        PyAscent_Cpp_Error_To_PyErr(e.what());
+        return NULL;
+    }
+    catch(...)
+    {
+        PyAscent_Cpp_Error_To_PyErr("unknown cpp exception thrown");
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
