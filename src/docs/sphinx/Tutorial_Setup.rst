@@ -46,36 +46,18 @@
 Tutorial Setup
 =================
 
+The tutorial examples are installed with Ascent to the subdirectory ``examples/ascent/tutorial/``.  Below are several options for using pre-built Ascent installs and links to info about building Ascent. If you have access to Docker, the easiest way to test the waters is via the ``alpinedav/ascent`` Docker image.
+
 SC19 Tutorial Option
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-For SC19
-
-
-Build and Install
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To build and install Ascent yourself see :doc:`QuickStart`.
-
-NERSC Cori Install
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We have a public ascent install for use on NERSC's Cori System. This install was built with the default
-intel compiler (18.0.1.163).
-
-The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/ascent-install``.
-You can copy the tutorial examples from this install and build them as follows:
-
-.. code::
-
-    cp -r /project/projectdirs/alpine/software/ascent/current/cori/ascent-install/examples/ascent/tutorial/ascent_intro .
-    cd ecp_2019
-    make ASCENT_DIR=project/projectdirs/alpine/software/ascent/current/cori/ascent-install/
+For SC19, we plan to have several instances of our Ascent Docker iamge up and running the jupyter notebook server.
+We will provide IP addresses and login info to attendees.
 
 Using Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you have Docker installed you can obtain a Docker image with a ready-to-use ascent install from `Docker Hub <https://hub.docker.com/r/alpinedav/ascent/>`_.
+If you have Docker installed you can obtain a Docker image with a ready-to-use ascent install from `Docker Hub <https://hub.docker.com/r/alpinedav/ascent/>`_. This image also includes a jupyter install to support running Ascent's tutorial notebooks.
 
 Fetch the latest Ascent image:
 
@@ -87,7 +69,7 @@ After the download completes, create and run a container using this image:
 
 .. code::
 
-    docker run -p 8000:8000 -p 10000:10000 -t -i alpinedav/ascent
+    docker run -p 8000:8000 run -p 8888:8888 -p 10000:10000 -t -i alpinedav/ascent
 
 (The ``-p`` is used to forward ports between the container and your host machine, we use these ports to allow web servers on the container to serve data to the host.)
 
@@ -98,68 +80,66 @@ To add the proper paths to Python and MPI to your environment run:
 
 .. code::
 
-    source ascent_docker_setup.sh
+    source ascent_docker_setup_env.sh
 
-The ascent source code is at ``/ascent/src/``, and the install is at ``/ascent/install-debug``.
-
-
-These demos assume you have an Ascent install. If you have access to Docker, the easiest way to test the waters is via the ``alpinedav/ascent`` Docker image. For more details about using this image see :ref:`demos_using_docker`. You can also build Ascent with `Spack <https://spack.io/>`_. For more details see :ref:`building_with_spack`.
-
-.. .. _demos_using_docker:
-..
-.. Running Demos using Docker
-.. -----------------------------------
-..
-.. If you have Docker installed you can obtain a Docker image with a ready-to-use ascent install from `Docker Hub <https://hub.docker.com/r/alpinedav/ascent/>`_.
-..
-.. Fetch the latest Ascent image:
-..
-.. .. code::
-..
-..     docker pull alpinedav/ascent
-..
-.. After the download completes, create and run a container using this image:
-..
-.. .. code::
-..
-..     docker run -p 8000:8000 -p 10000:10000 -t -i alpinedav/ascent
-..
-.. (The ``-p`` is used to forward ports between the container and your host machine, we use these ports to allow web servers on the container to serve data to the host.)
-..
-..
-.. You will now be at a bash prompt in you container.
-..
-.. To add the proper paths to Python and MPI to your environment run:
-..
-.. .. code::
-..
-..     source ascent_docker_setup.sh
-..
-.. The ascent source code is at ``/ascent/src/``, and the install is at ``/ascent/install-debug``.
-..
-.. Next, try running an included python example:
-..
-.. .. code::
-..
-..     cd /ascent/install-debug/examples/ascent/python
-..     python ascent_python_render_example.py
-..
-.. You should see some verbose output and ``out_ascent_render_3d.png`` will be created.
-..
-..
-.. To view output files you can use a simple Python web server to expose files from the container to your host machine:
-..
-.. .. code::
-..
-..     python -m SimpleHTTPServer 10000
-..
-..
-.. With this server running, open up a web browser on your host machine and view localhost:10000. You should be able to click on ``out_ascent_render_3d.png`` and view the rendered result in your web browser.
-..
-.. You should now be ready to run the other demos, remember to use the Python web server can help you browse results in the Docker container.
+The ascent source code is at ``/home/user/ascent/src/``, and the install is at ``/home/user/ascent/install-debug/``.
+The tutorial examples are at ``/home/user/ascent/install-debug/examples/ascent/tutorial/`` and the tutorial notebooks are at ``/home/user/ascent/install-debug/examples/ascent/tutorial/ascent_intro/notebooks/``.
 
 
-Running Jupyter Notebook Examples
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To launch the a jupyter notebook server run:
+
+.. code::
+
+    ./ascent_docker_run_jupyter.sh
+
+This will launch a notebook server on port 8888. Assuming you forwarded port 8888 from the Docker container to your host machine, you should be able to connect to the notebook server using http://localhost:8888. The current password for the notebook server is: ``ascentsc19``
+
+
+NERSC Cori Install
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We have a public ascent install for use on NERSC's Cori System. This install was built with the default
+gnu compiler (8.2.0). You need to use `module load gcc` to build and run the installed examples.
+
+
+The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install``.
+You can copy the tutorial examples from this install and use them as follows:
+
+.. code::
+
+    #
+    # source helper script that loads the default gcc module, sets python paths, and ASCENT_DIR env var
+    #
+    source /project/projectdirs/alpine/software/ascent/current/cori/ascent_cori_setup_env_gcc.sh
+    
+    #
+    # make your own dir to hold the tutorial examples
+    #
+    mkdir ascent_tutorial
+    cd ascent_tutorial
+    
+    #
+    # copy the examples from the public install
+    #
+    cp -r /project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install/examples/ascent/tutorial/* .
+    
+    #
+    # build cpp examples and run the first one
+    #
+    cd ascent_intro/cpp
+    make
+    ./ascent_first_light_example
+    
+    #
+    # run a python example
+    #
+    cd ..
+    cd python
+    python ascent_first_light_example.py  
+
+Build and Install
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To build and install Ascent yourself see :doc:`QuickStart`.
 
 

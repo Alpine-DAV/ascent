@@ -200,6 +200,7 @@ PythonInterpreter::PythonInterpreter()
     m_handled_init = false;
     m_running      = false;
     m_error        = false;
+    m_echo         = false;
 
     m_py_main_module = NULL;
     m_py_global_dict = NULL;
@@ -520,7 +521,13 @@ PythonInterpreter::run_script(const std::string &script,
     bool res = false;
     if(m_running)
     {
-        CONDUIT_INFO("PythonInterpreter::run_script " << script);
+        // show contents of the script via conduit info if echo option
+        // is enabled
+        if(m_echo)
+        {
+            CONDUIT_INFO("PythonInterpreter::run_script " << script);
+        }
+
         PyRun_String((char*)script.c_str(),
                      Py_file_input,
                      py_dict,
