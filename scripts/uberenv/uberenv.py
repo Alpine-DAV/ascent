@@ -455,8 +455,8 @@ def main():
     cln_cmd = "spack/bin/spack clean "
     res = sexe(cln_cmd, echo=True)
 
-    # clean out any spack cached downloads
-    cln_cmd = "spack/bin/spack clean -d"
+    # clean out any spack cached stuff
+    cln_cmd = "spack/bin/spack clean -all"
     res = sexe(cln_cmd, echo=True)
 
     # check if we need to force uninstall of selected packages
