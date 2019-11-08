@@ -20,7 +20,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Updated our uberenv-based to use a 2019/11 version of spack develop.
 - Improved Python error handling and propagation.
 - Updated Docker example to build with Jupyter Notebook support.
-- Updated to VTK-m 1.5.0 and impose necessary static build constraints.
+- Updated to VTK-m 1.5.0 and associated VTK-h.
+- Imposed necessary static build constraints for cuda support.
 
  
 ### Fixed
