@@ -317,7 +317,9 @@ TEST(ascent_data_adapter, interleaved_3d)
     ascent.execute(actions);
     ascent.close();
 
-    EXPECT_TRUE(check_test_image(output_file));
+    // NOTE: RELAXED TOLERANCE TO FROM default
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file,0.01f));
 }
 
 
