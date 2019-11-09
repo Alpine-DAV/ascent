@@ -1125,10 +1125,36 @@ VTKHSlice::verify_params(const conduit::Node &params,
 {
     info.reset();
 
-    bool res = check_numeric("point/x",params, info, true);
+    bool res = true;
 
-    res = check_numeric("point/y",params, info, true) && res;
-    res = check_numeric("point/z",params, info, true) && res;
+
+    if(params.has_path("point/x_offset") && params.has_path("point/x"))
+    {
+      info["errors"]
+        .append() = "Cannot specify the plane point as both an offset and explicit point";
+      res = false;
+    }
+
+    if(params.has_path("point/x"))
+    {
+      res &= check_numeric("point/x",params, info, true);
+      res = check_numeric("point/y",params, info, true) && res;
+      res = check_numeric("point/z",params, info, true) && res;
+    }
+    else if(params.has_path("point/x_offset"))
+    {
+      res &= check_numeric("point/x_offset",params, info, true);
+      res = check_numeric("point/y_offset",params, info, true) && res;
+      res = check_numeric("point/z_offset",params, info, true) && res;
+    }
+    else
+    {
+      info["errors"]
+        .append() = "Slice must specify a point for the plane.";
+      res = false;
+    }
+
+
     res = check_numeric("normal/x",params, info, true) && res;
     res = check_numeric("normal/y",params, info, true) && res;
     res = check_numeric("normal/z",params, info, true) && res;
@@ -1137,9 +1163,14 @@ VTKHSlice::verify_params(const conduit::Node &params,
     valid_paths.push_back("point/x");
     valid_paths.push_back("point/y");
     valid_paths.push_back("point/z");
+    valid_paths.push_back("point/x_offset");
+    valid_paths.push_back("point/y_offset");
+    valid_paths.push_back("point/z_offset");
     valid_paths.push_back("normal/x");
     valid_paths.push_back("normal/y");
     valid_paths.push_back("normal/z");
+
+
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -1169,15 +1200,45 @@ VTKHSlice::execute()
     const Node &n_point = params()["point"];
     const Node &n_normal = params()["normal"];
 
-    vtkm::Vec<vtkm::Float32,3> v_point(n_point["x"].to_float32(),
-                                       n_point["y"].to_float32(),
-                                       n_point["z"].to_float32());
+    using Vec3f = vtkm::Vec<vtkm::Float32,3>;
+    vtkm::Bounds bounds = data->GetGlobalBounds();
+    Vec3f point;
+
+    const float eps = 1e-5; // ensure that the slice is always inside the data set
+
+
+    if(n_point.has_path("x_offset"))
+    {
+      float offset = n_point["x_offset"].to_float32();
+      std::max(-1.f, std::min(1.f, offset));
+      float t = (offset + 1.f) / 2.f;
+      t = std::max(0.f + eps, std::min(1.f - eps, t));
+      point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
+
+      offset = n_point["y_offset"].to_float32();
+      std::max(-1.f, std::min(1.f, offset));
+      t = (offset + 1.f) / 2.f;
+      t = std::max(0.f + eps, std::min(1.f - eps, t));
+      point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
+
+      offset = n_point["z_offset"].to_float32();
+      std::max(-1.f, std::min(1.f, offset));
+      t = (offset + 1.f) / 2.f;
+      t = std::max(0.f + eps, std::min(1.f - eps, t));
+      point[2] = bounds.Z.Min + t * (bounds.Z.Max - bounds.Z.Min);
+    }
+    else
+    {
+      point[0] = n_point["x"].to_float32();
+      point[1] = n_point["y"].to_float32();
+      point[2] = n_point["z"].to_float32();
+    }
 
     vtkm::Vec<vtkm::Float32,3> v_normal(n_normal["x"].to_float32(),
                                         n_normal["y"].to_float32(),
                                         n_normal["z"].to_float32());
 
-    slicer.AddPlane(v_point, v_normal);
+    slicer.AddPlane(point, v_normal);
     slicer.Update();
 
     vtkh::DataSet *slice_output = slicer.GetOutput();
