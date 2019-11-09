@@ -242,7 +242,9 @@ TEST(ascent_slice, test_slice_off_axis)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    // NOTE: RELAXED TOLERANCE TO FROM default
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
     std::string msg = "An example of the slice filter with a single plane (off-axis).";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }

@@ -2,7 +2,7 @@
 "package_name" : "ascent",
 "uberenv_package_name" : "uberenv-ascent",
 "spack_url": "https://github.com/alpine-DAV/spack",
-"spack_branch": "task/2019_01_update_ascent",
+"spack_branch": "task/2019_11_update_ascent",
 "spack_activate" : { "py-numpy"  : ["+python"],
                      "py-pip"    : ["+python"],
                      "py-mpi4py" : ["+python", "+mpi"],

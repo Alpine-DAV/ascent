@@ -6,7 +6,7 @@ compilers:
     modules:
     - PrgEnv-gnu
     - gcc/8.2.0
-    operating_system: cnl9
+    operating_system: cnl7
     paths:
       cc: cc
       cxx: CC
@@ -21,7 +21,7 @@ compilers:
     modules:
     - PrgEnv-intel
     - intel/19.0.3.199
-    operating_system: cnl9
+    operating_system: cnl7
     paths:
       cc: cc
       cxx: CC

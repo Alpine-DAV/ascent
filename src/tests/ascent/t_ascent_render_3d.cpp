@@ -210,7 +210,9 @@ TEST(ascent_render_3d, test_render_3d_points)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    // NOTE: RELAXED TOLERANCE TO FROM default
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file,0.09f));
 }
 
 TEST(ascent_render_3d, test_render_3d_points_const_radius)
@@ -282,7 +284,9 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    // NOTE: RELAXED TOLERANCE TO FROM default
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file,0.01f));
     std::string msg = "An example of rendering a point field with constant radius.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
@@ -358,7 +362,9 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    // NOTE: RELAXED TOLERANCE TO FROM default
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file, 0.09));
     std::string msg = "An example of rendering a point field with variable radius.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
