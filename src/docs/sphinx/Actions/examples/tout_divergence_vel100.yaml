@@ -1,0 +1,22 @@
+#An example of using the gradient filter and plotting the magnitude.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f2: 
+        type: "divergence"
+        params: 
+          field: "vel"
+          output_name: "vel_divergence"
+          use_cell_gradient: "false"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "vel_divergence"
+          pipeline: "pl1"
+      image_prefix: "/Users/larsen30/research/test_builds/gradient/ascent/build/tests/_output/tout_divergence_vel"

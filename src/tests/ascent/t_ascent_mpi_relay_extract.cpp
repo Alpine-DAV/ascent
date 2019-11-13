@@ -87,7 +87,7 @@ TEST(ascent_mpi_runtime, test_relay_extract_iso)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,par_rank,par_size);
+    create_3d_example_dataset(data,32,par_rank,par_size);
     data["state/cycle"] = 100;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
@@ -154,6 +154,12 @@ TEST(ascent_mpi_runtime, test_relay_extract_iso)
     ascent.execute(actions);
     ascent.close();
 
+    if(par_rank == 0)
+    {
+      std::string msg = "An example of using an relay extract to save the results of "
+                        " a pipeline to the file system.";
+      ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -178,7 +184,7 @@ TEST(ascent_mpi_runtime, test_relay_extract_selected_fields)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,par_rank,par_size);
+    create_3d_example_dataset(data,32,par_rank,par_size);
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
@@ -214,10 +220,6 @@ TEST(ascent_mpi_runtime, test_relay_extract_selected_fields)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
-
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
 
     //
     // Run Ascent
@@ -259,7 +261,7 @@ TEST(ascent_mpi_runtime, test_relay_extract_mesh)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,par_rank,par_size);
+    create_3d_example_dataset(data,32,par_rank,par_size);
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
@@ -315,6 +317,12 @@ TEST(ascent_mpi_runtime, test_relay_extract_mesh)
     ascent.execute(actions);
     ascent.close();
 
+    if(par_rank == 0)
+    {
+      std::string msg = "An example of using an relay extract to save the published mesh "
+                        "to the file system.";
+      ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -339,8 +347,8 @@ TEST(ascent_mpi_runtime, test_relay_partially_empty)
     // Create the data.
     //
     Node data, data2, verify_info;
-    create_3d_example_dataset(data,par_rank,par_size*2);
-    create_3d_example_dataset(data2,par_rank+1,par_size*2);
+    create_3d_example_dataset(data,32,par_rank,par_size*2);
+    create_3d_example_dataset(data2,32,par_rank+1,par_size*2);
     data["state/cycle"] = 101;
     data2["state/cycle"] = 101;
 
@@ -462,7 +470,7 @@ TEST(ascent_mpi_runtime, test_relay_empty)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,par_rank,par_size);
+    create_3d_example_dataset(data,32,par_rank,par_size);
     data["state/cycle"] = 101;
 
     Node multi_dom;

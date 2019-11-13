@@ -76,6 +76,8 @@ TEST(flow_py_interp_exe, flow_python_interpreter)
     EXPECT_TRUE(py_interp.run_script("a = 42"));
 
     PyObject *py_a = py_interp.get_global_object("a");
+    
+    EXPECT_TRUE(py_a != NULL);
 
     int a_cpp=0;
     EXPECT_TRUE(PythonInterpreter::PyObject_to_int(py_a,a_cpp));
@@ -119,6 +121,28 @@ TEST(flow_py_interp_exe, flow_python_interpreter)
     EXPECT_FALSE(py_interp.is_running());
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(flow_py_interp_exe, flow_python_interpreter_bad_file)
+{
+    PythonInterpreter py_interp;
+
+    EXPECT_TRUE(py_interp.initialize());
+    EXPECT_TRUE(py_interp.is_running());
+
+    EXPECT_TRUE(py_interp.run_script("print(sys.path)"));
+    
+    EXPECT_THROW(py_interp.run_script_file("/blarg/script/path/to/garbage//thats/not/real"),
+                 conduit::Error);
+
+    // shutdown
+    py_interp.shutdown();
+
+    EXPECT_FALSE(py_interp.is_running());
+
+}
+
+
 
 
 

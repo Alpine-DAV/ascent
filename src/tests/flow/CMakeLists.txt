@@ -50,7 +50,6 @@
 ################################
 # Flow Unit Tests
 ################################
-
 set(FLOW_TESTS  t_flow_data
                 t_flow_timer
                 t_flow_registry
@@ -70,7 +69,7 @@ endif()
 
 message(STATUS "Adding flow lib unit tests")
 foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON flow)
+    add_cpp_test(TEST ${TEST} DEPENDS_ON ascent_flow)
 endforeach()
 
 if(PYTHON_FOUND AND ENABLE_PYTHON)

@@ -132,7 +132,7 @@ def add(a,b):
     return a+b
 
 def prnt(i):
-    print i
+    print(i)
     return None
 
 class Test_Flow_Basic(unittest.TestCase):

@@ -83,14 +83,21 @@
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
+#include <vtkh/filters/Gradient.hpp>
+#include <vtkh/filters/GhostStripper.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/NoOp.hpp>
 #include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/filters/Log.hpp>
+#include <vtkh/filters/ParticleAdvection.hpp>
+#include <vtkh/filters/Recenter.hpp>
 #include <vtkh/filters/Slice.hpp>
+#include <vtkh/filters/Statistics.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
+#include <vtkh/filters/Histogram.hpp>
+#include <vtkh/filters/HistSampling.hpp>
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
@@ -168,8 +175,10 @@ check_renders_surprises(const conduit::Node &renders_node)
   // render paths
   std::vector<std::string> r_valid_paths;
   r_valid_paths.push_back("image_name");
+  r_valid_paths.push_back("image_prefix");
   r_valid_paths.push_back("image_width");
   r_valid_paths.push_back("image_height");
+  r_valid_paths.push_back("scene_bounds");
   r_valid_paths.push_back("camera/look_at");
   r_valid_paths.push_back("camera/position");
   r_valid_paths.push_back("camera/up");
@@ -179,14 +188,13 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("camera/zoom");
   r_valid_paths.push_back("camera/near_plane");
   r_valid_paths.push_back("camera/far_plane");
+  r_valid_paths.push_back("camera/azimuth");
+  r_valid_paths.push_back("camera/elevation");
   r_valid_paths.push_back("type");
   r_valid_paths.push_back("phi");
   r_valid_paths.push_back("theta");
   r_valid_paths.push_back("db_name");
-  // TODO: document
   r_valid_paths.push_back("render_bg");
-  r_valid_paths.push_back("camera/azimuth");
-  r_valid_paths.push_back("camera/elevation");
   r_valid_paths.push_back("annotations");
   r_valid_paths.push_back("output_path");
   r_valid_paths.push_back("fg_color");
@@ -422,7 +430,7 @@ public:
       m_time(0.f)
   {
     this->create_cinema_cameras(bounds);
-    m_csv = "phi, theta, time, FILE\n";
+    m_csv = "phi,theta,time,FILE\n";
 
     m_base_path = conduit::utils::join_file_path(path, "cinema_databases");
   }
@@ -454,6 +462,10 @@ public:
     if(rank == 0 && !conduit::utils::is_directory(m_db_path))
     {
         conduit::utils::create_directory(m_db_path);
+        // copy over cinema web resources
+        std::string cinema_root = conduit::utils::join_file_path(ASCENT_WEB_CLIENT_ROOT,
+                                                                 "cinema");
+        ascent::copy_directory(cinema_root, m_db_path);
     }
 
     std::stringstream ss;
@@ -474,12 +486,22 @@ public:
                     const std::vector<vtkm::Id> &domain_ids,
                     const conduit::Node &render_node)
   {
-    conduit::Node render_copy = render_node; 
+    conduit::Node render_copy = render_node;
+
+    // allow zoom to be ajusted
+    conduit::Node zoom;
+    if(render_copy.has_path("camera/zoom"))
+    {
+      zoom = render_copy["camera/zoom"];
+    }
+
     // cinema is controlling the camera so get
     // rid of it
     if(render_copy.has_path("camera"))
     {
       render_copy["camera"].reset();
+
+
     }
     std::string tmp_name = "";
     vtkh::Render render = detail::parse_render(render_copy,
@@ -493,6 +515,13 @@ public:
       std::string image_name = conduit::utils::join_file_path(m_image_path , m_image_names[i]);
 
       render.SetImageName(image_name);
+
+      if(!zoom.dtype().is_empty())
+      {
+        // Allow default zoom to be overridden
+        m_cameras[i].Zoom(zoom.to_float32());
+      }
+
       render.SetCamera(m_cameras[i]);
       renders->push_back(render);
     }
@@ -637,7 +666,7 @@ private:
         camera.SetViewUp(up);
         camera.SetLookAt(center);
         camera.SetPosition(pos);
-        camera.Zoom(0.2);
+        camera.Zoom(0.2f);
 
         std::stringstream ss;
         ss<<get_string(phi)<<"_"<<get_string(theta)<<"_";
@@ -1096,10 +1125,36 @@ VTKHSlice::verify_params(const conduit::Node &params,
 {
     info.reset();
 
-    bool res = check_numeric("point/x",params, info, true);
+    bool res = true;
 
-    res = check_numeric("point/y",params, info, true) && res;
-    res = check_numeric("point/z",params, info, true) && res;
+
+    if(params.has_path("point/x_offset") && params.has_path("point/x"))
+    {
+      info["errors"]
+        .append() = "Cannot specify the plane point as both an offset and explicit point";
+      res = false;
+    }
+
+    if(params.has_path("point/x"))
+    {
+      res &= check_numeric("point/x",params, info, true);
+      res = check_numeric("point/y",params, info, true) && res;
+      res = check_numeric("point/z",params, info, true) && res;
+    }
+    else if(params.has_path("point/x_offset"))
+    {
+      res &= check_numeric("point/x_offset",params, info, true);
+      res = check_numeric("point/y_offset",params, info, true) && res;
+      res = check_numeric("point/z_offset",params, info, true) && res;
+    }
+    else
+    {
+      info["errors"]
+        .append() = "Slice must specify a point for the plane.";
+      res = false;
+    }
+
+
     res = check_numeric("normal/x",params, info, true) && res;
     res = check_numeric("normal/y",params, info, true) && res;
     res = check_numeric("normal/z",params, info, true) && res;
@@ -1108,9 +1163,14 @@ VTKHSlice::verify_params(const conduit::Node &params,
     valid_paths.push_back("point/x");
     valid_paths.push_back("point/y");
     valid_paths.push_back("point/z");
+    valid_paths.push_back("point/x_offset");
+    valid_paths.push_back("point/y_offset");
+    valid_paths.push_back("point/z_offset");
     valid_paths.push_back("normal/x");
     valid_paths.push_back("normal/y");
     valid_paths.push_back("normal/z");
+
+
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -1140,20 +1200,144 @@ VTKHSlice::execute()
     const Node &n_point = params()["point"];
     const Node &n_normal = params()["normal"];
 
-    vtkm::Vec<vtkm::Float32,3> v_point(n_point["x"].to_float32(),
-                                       n_point["y"].to_float32(),
-                                       n_point["z"].to_float32());
+    using Vec3f = vtkm::Vec<vtkm::Float32,3>;
+    vtkm::Bounds bounds = data->GetGlobalBounds();
+    Vec3f point;
+
+    const float eps = 1e-5; // ensure that the slice is always inside the data set
+
+
+    if(n_point.has_path("x_offset"))
+    {
+      float offset = n_point["x_offset"].to_float32();
+      std::max(-1.f, std::min(1.f, offset));
+      float t = (offset + 1.f) / 2.f;
+      t = std::max(0.f + eps, std::min(1.f - eps, t));
+      point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
+
+      offset = n_point["y_offset"].to_float32();
+      std::max(-1.f, std::min(1.f, offset));
+      t = (offset + 1.f) / 2.f;
+      t = std::max(0.f + eps, std::min(1.f - eps, t));
+      point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
+
+      offset = n_point["z_offset"].to_float32();
+      std::max(-1.f, std::min(1.f, offset));
+      t = (offset + 1.f) / 2.f;
+      t = std::max(0.f + eps, std::min(1.f - eps, t));
+      point[2] = bounds.Z.Min + t * (bounds.Z.Max - bounds.Z.Min);
+    }
+    else
+    {
+      point[0] = n_point["x"].to_float32();
+      point[1] = n_point["y"].to_float32();
+      point[2] = n_point["z"].to_float32();
+    }
 
     vtkm::Vec<vtkm::Float32,3> v_normal(n_normal["x"].to_float32(),
                                         n_normal["y"].to_float32(),
                                         n_normal["z"].to_float32());
 
-    slicer.AddPlane(v_point, v_normal);
+    slicer.AddPlane(point, v_normal);
     slicer.Update();
 
     vtkh::DataSet *slice_output = slicer.GetOutput();
 
     set_output<vtkh::DataSet>(slice_output);
+}
+
+//-----------------------------------------------------------------------------
+VTKHGhostStripper::VTKHGhostStripper()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHGhostStripper::~VTKHGhostStripper()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHGhostStripper::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_ghost_stripper";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHGhostStripper::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+
+    res = check_numeric("min_value",params, info, true) && res;
+    res = check_numeric("max_value",params, info, true) && res;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("min_value");
+    valid_paths.push_back("max_value");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHGhostStripper::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("VTKHGhostStripper input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+
+    // Check to see of the ghost field even exists
+    bool do_strip = data->GlobalFieldExists(field_name);
+
+    if(do_strip)
+    {
+      vtkh::GhostStripper stripper;
+
+      stripper.SetInput(data);
+      stripper.SetField(field_name);
+
+      const Node &n_min_val = params()["min_value"];
+      const Node &n_max_val = params()["max_value"];
+
+      int min_val = n_min_val.to_int32();
+      int max_val = n_max_val.to_int32();
+
+      stripper.SetMaxValue(max_val);
+      stripper.SetMinValue(min_val);
+
+      stripper.Update();
+
+      vtkh::DataSet *stripper_output = stripper.GetOutput();
+
+      set_output<vtkh::DataSet>(stripper_output);
+    }
+    else
+    {
+      set_output<vtkh::DataSet>(data);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1270,10 +1454,12 @@ DefaultRender::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-    bool res = check_string("image_prefix",params, info, true);
+    bool res = check_string("image_name",params, info, false);
+    res &= check_string("image_prefix",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("image_prefix");
+    valid_paths.push_back("image_name");
 
     std::vector<std::string> ignore_paths;
     ignore_paths.push_back("renders");
@@ -1322,7 +1508,9 @@ DefaultRender::execute()
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
     Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+
     int cycle = 0;
+
     if(meta->has_path("cycle"))
     {
       cycle = (*meta)["cycle"].as_int32();
@@ -1395,14 +1583,17 @@ DefaultRender::execute()
           // this render has a unique name
           if(render_node.has_path("image_name"))
           {
-            image_name = expand_family_name(render_node["image_name"].as_string(), cycle);
+            image_name = render_node["image_name"].as_string();
+          }
+          else if(render_node.has_path("image_prefix"))
+          {
+            std::stringstream ss;
+            ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
+            image_name = ss.str();
           }
           else
           {
-            std::stringstream ss;
-            ss<<expand_family_name(params()["image_prefix"].as_string(), cycle);
-            ss<<"_"<<i;
-            image_name = ss.str();
+            ASCENT_ERROR("Render must have either a 'image_name' or 'image_prefix' parameter");
           }
 
           vtkh::Render render = detail::parse_render(render_node,
@@ -1415,8 +1606,18 @@ DefaultRender::execute()
     }
     else
     {
-      std::string image_name =  params()["image_prefix"].as_string();
-      image_name = expand_family_name(image_name, cycle);
+      // This is the path for the default render attached directly to a scene
+      std::string image_name;
+      if(params().has_path("image_name"))
+      {
+        image_name =  params()["image_name"].as_string();
+      }
+      else
+      {
+        image_name =  params()["image_prefix"].as_string();
+        image_name = expand_family_name(image_name, cycle);
+      }
+
       vtkh::Render render = vtkh::MakeRender(1024,
                                              1024,
                                              *bounds,
@@ -1530,7 +1731,6 @@ VTKHClip::verify_params(const conduit::Node &params,
     valid_paths.push_back("plane/normal/x");
     valid_paths.push_back("plane/normal/y");
     valid_paths.push_back("plane/normal/z");
-    valid_paths.push_back("topology");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -1558,12 +1758,6 @@ VTKHClip::execute()
     vtkh::Clip clipper;
 
     clipper.SetInput(data);
-
-    if(params().has_child("topology"))
-    {
-      std::string topology = params()["topology"].as_string();
-      clipper.SetCellSet(topology);
-    }
 
     if(params().has_path("sphere"))
     {
@@ -2018,95 +2212,6 @@ VTKHUnionDomainIds::execute()
 }
 
 //-----------------------------------------------------------------------------
-int DefaultScene::s_image_count = 0;
-
-DefaultScene::DefaultScene()
-:Filter()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-DefaultScene::~DefaultScene()
-{
-// empty
-}
-
-
-//-----------------------------------------------------------------------------
-bool
-DefaultScene::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-    bool res = check_string("field",params, info, true);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-DefaultScene::declare_interface(Node &i)
-{
-    i["type_name"] = "vtkh_default_scene";
-    i["port_names"].append() = "bounds";
-    i["port_names"].append() = "domain_ids";
-    i["port_names"].append() = "data_set";
-    i["output_port"] = "false";
-}
-
-//-----------------------------------------------------------------------------
-void
-DefaultScene::execute()
-{
-    // inputs are bounds and set of domains
-    vtkm::Bounds       *bounds_in     = input<vtkm::Bounds>(0);
-    std::set<vtkm::Id> *domain_ids_set = input<std::set<vtkm::Id> >(1);
-    vtkh::DataSet      *ds = input<vtkh::DataSet>(2);
-    std::string field_name = params()["field"].as_string();
-
-    std::stringstream ss;
-    ss<<"default_image_"<<s_image_count;
-    s_image_count++;
-
-    vtkm::Bounds bounds;
-    bounds.Include(*bounds_in);
-
-    std::vector<vtkm::Id> domain_ids(domain_ids_set->begin(),
-                                     domain_ids_set->end());
-
-
-    vtkh::Render render = vtkh::MakeRender(1024,
-                                           1024,
-                                           bounds,
-                                           domain_ids,
-                                           ss.str());
-
-    std::vector<vtkh::Render> renders;
-    renders.push_back(render);
-
-    detail::AscentScene scene(&graph().workspace().registry());
-    vtkh::Renderer *renderer = new vtkh::RayTracer();
-
-    detail::RendererContainer *cont = new detail::RendererContainer(this->name() + "_cont",
-                                                                    &graph().workspace().registry(),
-                                                                    renderer);
-    renderer->SetInput(ds);
-    renderer->SetField(field_name);
-    scene.AddRenderer(cont);
-    scene.Execute(renders);
-}
-
-//-----------------------------------------------------------------------------
 AddPlot::AddPlot()
 :Filter()
 {
@@ -2240,10 +2345,11 @@ CreatePlot::execute()
     }
 
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
+
     conduit::Node plot_params = params();
     std::string type = params()["type"].as_string();
 
-    if(data->GlobalIsEmpty(0))
+    if(data->GlobalIsEmpty())
     {
       ASCENT_INFO(type<<" plot yielded no data, i.e., no cells remain");
     }
@@ -2317,7 +2423,7 @@ CreatePlot::execute()
       std::string field_name = plot_params["field"].as_string();
       if(!data->GlobalFieldExists(field_name))
       {
-        ASCENT_WARN("Plot variable '"<<field_name<<"' does not exist");
+        ASCENT_INFO("Plot variable '"<<field_name<<"' does not exist");
       }
       renderer->SetField(field_name);
     }
@@ -2432,6 +2538,43 @@ ExecScene::execute()
     detail::AscentScene *scene = input<detail::AscentScene>(0);
     std::vector<vtkh::Render> * renders = input<std::vector<vtkh::Render>>(1);
     scene->Execute(*renders);
+
+    // the images should exist now so add them to the image list
+    // this can be used for the web server or jupyter
+
+    if(!graph().workspace().registry().has_entry("image_list"))
+    {
+      conduit::Node *image_list = new conduit::Node();
+      graph().workspace().registry().add<Node>("image_list", image_list,1);
+    }
+
+    conduit::Node *image_list = graph().workspace().registry().fetch<Node>("image_list");
+    for(int i = 0; i < renders->size(); ++i)
+    {
+      const std::string image_name = renders->at(i).GetImageName() + ".png";
+      conduit::Node image_data;
+      image_data["image_name"] = image_name;
+      image_data["image_width"] = renders->at(i).GetWidth();
+      image_data["image_height"] = renders->at(i).GetHeight();
+
+      image_data["camera/position"].set(&renders->at(i).GetCamera().GetPosition()[0],3);
+      image_data["camera/look_at"].set(&renders->at(i).GetCamera().GetLookAt()[0],3);
+      image_data["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0],3);
+      image_data["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
+      image_data["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
+      vtkm::Bounds bounds=  renders->at(i).GetSceneBounds();
+      double coord_bounds [6] = {bounds.X.Min,
+                                 bounds.Y.Min,
+                                 bounds.Z.Min,
+                                 bounds.X.Max,
+                                 bounds.Y.Max,
+                                 bounds.Z.Max};
+
+      image_data["scene_bounds"].set(coord_bounds, 6);
+
+      image_list->append() = image_data;
+    }
+
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -2569,10 +2712,12 @@ VTKHLog::verify_params(const conduit::Node &params,
 
     bool res = check_string("field",params, info, true);
     res &= check_string("output_name",params, info, false);
+    res &= check_numeric("clamp_min_value",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
     valid_paths.push_back("output_name");
+    valid_paths.push_back("clamp_min_value");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -2605,11 +2750,794 @@ VTKHLog::execute()
       logger.SetResultField(params()["output_name"].as_string());
     }
 
+    if(params().has_path("clamp_min_value"))
+    {
+      logger.SetClampMin(params()["clamp_min_value"].to_float32());
+      logger.SetClampToMin(true);
+    }
+
     logger.Update();
 
     vtkh::DataSet *log_output = logger.GetOutput();
 
     set_output<vtkh::DataSet>(log_output);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHRecenter::VTKHRecenter()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHRecenter::~VTKHRecenter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHRecenter::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_recenter";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHRecenter::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_string("association",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("association");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHRecenter::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+      ASCENT_ERROR("vtkh_recenter input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    std::string association = params()["association"].as_string();
+    if(association != "vertex" && association != "element")
+    {
+      ASCENT_ERROR("Recenter: resulting field association '"<<association<<"'"
+                   <<" must have a value of 'vertex' or 'element'");
+    }
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Recenter recenter;
+
+    recenter.SetInput(data);
+    recenter.SetField(field_name);
+
+    if(association == "vertex")
+    {
+      recenter.SetResultAssoc(vtkm::cont::Field::Association::POINTS);
+    }
+    if(association == "element")
+    {
+      recenter.SetResultAssoc(vtkm::cont::Field::Association::CELL_SET);
+    }
+
+    recenter.Update();
+
+    vtkh::DataSet *recenter_output = recenter.GetOutput();
+
+    set_output<vtkh::DataSet>(recenter_output);
+}
+//-----------------------------------------------------------------------------
+
+VTKHHistSampling::VTKHHistSampling()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHHistSampling::~VTKHHistSampling()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHHistSampling::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_hist_sampling";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHHistSampling::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_numeric("bins",params, info, false);
+    res &= check_numeric("sample_rate",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("bins");
+    valid_paths.push_back("sample_rate");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHHistSampling::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_hist_sampling input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+
+    float sample_rate = .1f;
+    if(params().has_path("sample_rate"))
+    {
+      sample_rate = params()["sample_rate"].to_float32();
+      if(sample_rate <= 0.f || sample_rate >= 1.f)
+      {
+        ASCENT_ERROR("vtkh_hist_sampling 'sample_rate' value '"<<sample_rate<<"'"
+                     <<" not in the range (0,1)");
+      }
+    }
+
+    int bins = 128;
+
+    if(params().has_path("bins"))
+    {
+      bins = params()["bins"].to_int32();
+      if(bins <= 0.f)
+      {
+        ASCENT_ERROR("vtkh_hist_sampling 'bins' value '"<<bins<<"'"
+                     <<" must be positive");
+      }
+    }
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+
+    // TODO: write helper functions for this
+    std::string ghost_field = "";
+    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    if(meta->has_path("ghost_field"))
+    {
+      ghost_field = (*meta)["ghost_field"].as_string();
+      if(!data->GlobalFieldExists(ghost_field))
+      {
+        // can't find it
+        ghost_field = "";
+      }
+
+    }
+
+    vtkh::HistSampling hist;
+
+    hist.SetInput(data);
+    hist.SetField(field_name);
+    hist.SetNumBins(bins);
+    hist.SetSamplingPercent(sample_rate);
+    if(ghost_field != "")
+    {
+      hist.SetGhostField(ghost_field);
+    }
+
+    hist.Update();
+    vtkh::DataSet *hist_output = hist.GetOutput();
+
+    set_output<vtkh::DataSet>(hist_output);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHQCriterion::VTKHQCriterion()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHQCriterion::~VTKHQCriterion()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHQCriterion::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_qcriterion";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHQCriterion::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+    res &= check_string("use_cell_gradient",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+    valid_paths.push_back("use_cell_gradient");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHQCriterion::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_qcriterion input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Gradient grad;
+    grad.SetInput(data);
+    grad.SetField(field_name);
+    vtkh::GradientParameters grad_params;
+    grad_params.compute_qcriterion = true;
+
+    if(params().has_path("use_cell_gradient"))
+    {
+      if(params()["use_cell_gradient"].as_string() == "true")
+      {
+        grad_params.use_point_gradient = false;
+      }
+    }
+    if(params().has_path("output_name"))
+    {
+      grad_params.qcriterion_name = params()["output_name"].as_string();
+    }
+
+    grad.SetParameters(grad_params);
+    grad.Update();
+
+    vtkh::DataSet *grad_output = grad.GetOutput();
+
+    set_output<vtkh::DataSet>(grad_output);
+}
+//-----------------------------------------------------------------------------
+
+VTKHDivergence::VTKHDivergence()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHDivergence::~VTKHDivergence()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHDivergence::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_divergence";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHDivergence::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+    res &= check_string("use_cell_gradient",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+    valid_paths.push_back("use_cell_gradient");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHDivergence::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_divergence input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Gradient grad;
+    grad.SetInput(data);
+    grad.SetField(field_name);
+    vtkh::GradientParameters grad_params;
+    grad_params.compute_divergence = true;
+
+    if(params().has_path("use_cell_gradient"))
+    {
+      if(params()["use_cell_gradient"].as_string() == "true")
+      {
+        grad_params.use_point_gradient = false;
+      }
+    }
+
+    if(params().has_path("output_name"))
+    {
+      grad_params.divergence_name = params()["output_name"].as_string();
+    }
+
+    grad.SetParameters(grad_params);
+    grad.Update();
+
+    vtkh::DataSet *grad_output = grad.GetOutput();
+
+    set_output<vtkh::DataSet>(grad_output);
+}
+//-----------------------------------------------------------------------------
+
+VTKHVorticity::VTKHVorticity()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHVorticity::~VTKHVorticity()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHVorticity::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_curl";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHVorticity::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+    res &= check_string("use_cell_gradient",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+    valid_paths.push_back("use_cell_gradient");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHVorticity::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_vorticity input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Gradient grad;
+    grad.SetInput(data);
+    grad.SetField(field_name);
+    vtkh::GradientParameters grad_params;
+    grad_params.compute_vorticity = true;
+
+    if(params().has_path("use_cell_gradient"))
+    {
+      if(params()["use_cell_gradient"].as_string() == "true")
+      {
+        grad_params.use_point_gradient = false;
+      }
+    }
+
+    if(params().has_path("output_name"))
+    {
+      grad_params.vorticity_name = params()["output_name"].as_string();
+    }
+
+    grad.SetParameters(grad_params);
+    grad.Update();
+
+    vtkh::DataSet *grad_output = grad.GetOutput();
+
+    set_output<vtkh::DataSet>(grad_output);
+}
+//-----------------------------------------------------------------------------
+
+VTKHGradient::VTKHGradient()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHGradient::~VTKHGradient()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHGradient::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_gradient";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHGradient::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+    res &= check_string("use_cell_gradient",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+    valid_paths.push_back("use_cell_gradient");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHGradient::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_gradient input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Gradient grad;
+    grad.SetInput(data);
+    grad.SetField(field_name);
+    vtkh::GradientParameters grad_params;
+
+    if(params().has_path("use_cell_gradient"))
+    {
+      if(params()["use_cell_gradient"].as_string() == "true")
+      {
+        grad_params.use_point_gradient = false;
+      }
+    }
+
+    if(params().has_path("output_name"))
+    {
+      grad_params.output_name = params()["output_name"].as_string();
+    }
+
+    grad.SetParameters(grad_params);
+    grad.Update();
+
+    vtkh::DataSet *grad_output = grad.GetOutput();
+
+    set_output<vtkh::DataSet>(grad_output);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHStats::VTKHStats()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHStats::~VTKHStats()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHStats::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_stats";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHStats::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHStats::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_stats input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Statistics stats;
+
+    vtkh::Statistics::Result res = stats.Run(*data, field_name);
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    if(rank == 0)
+    {
+      res.Print(std::cout);
+    }
+}
+//-----------------------------------------------------------------------------
+
+VTKHHistogram::VTKHHistogram()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHHistogram::~VTKHHistogram()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHHistogram::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_histogram";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHHistogram::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_numeric("bins",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("bins");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHHistogram::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_histogram input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    int bins = 128;
+    if(params().has_path("bins"))
+    {
+      bins = params()["bins"].to_int32();
+    }
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Histogram hist;
+
+    hist.SetNumBins(bins);
+    vtkh::Histogram::HistogramResult res = hist.Run(*data, field_name);
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    if(rank == 0)
+    {
+      res.Print(std::cout);
+    }
+}
+//-----------------------------------------------------------------------------
+
+VTKHParticleAdvection::VTKHParticleAdvection()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHParticleAdvection::~VTKHParticleAdvection()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHParticleAdvection::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_particle_advection";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHParticleAdvection::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHParticleAdvection::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_particle_advection input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::ParticleAdvection streamline;
+
+    streamline.SetInput(data);
+    streamline.SetField(field_name);
+    streamline.SetStepSize(0.1);
+    streamline.SetSeedsRandomWhole(500);
+
+    streamline.Update();
+
+    vtkh::DataSet *output = streamline.GetOutput();
+    set_output<vtkh::DataSet>(output);
 }
 
 //-----------------------------------------------------------------------------
@@ -2679,7 +3607,6 @@ VTKHNoOp::execute()
     noop.Update();
 
     vtkh::DataSet *noop_output = noop.GetOutput();
-
     set_output<vtkh::DataSet>(noop_output);
 }
 

@@ -73,20 +73,32 @@ cmake_minimum_required(VERSION 3.9)
 
 project(using_with_cmake)
 
+#
+# Provide default for ASCENT_DIR that works for an ascent install
+#
 if(NOT ASCENT_DIR)
     set(ASCENT_DIR "../../..")
 endif()
 
-include("SetupAscent.cmake")
+#
+# Check for valid Ascent install
+#
+get_filename_component(ASCENT_DIR ${ASCENT_DIR} ABSOLUTE)
+if(NOT EXISTS ${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)
+    MESSAGE(FATAL_ERROR "Could not find Ascent CMake include file (${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)")
+endif()
 
-# setup the ascent & conduit include paths
-include_directories(${ASCENT_INCLUDE_DIRS})
-include_directories(${CONDUIT_INCLUDE_DIRS})
-# note: vtkm/h headers are not exposed in the interface
+#
+# Use CMake's find_package to import ascent's targets
+#
+find_package(Ascent REQUIRED
+             NO_DEFAULT_PATH 
+             PATHS ${ASCENT_DIR}/lib/cmake)
 
 # create our example
 add_executable(ascent_render_example ascent_render_example.cpp)
 
 # link to ascent
-target_link_libraries(ascent_render_example ascent)
+target_link_libraries(ascent_render_example ascent::ascent)
+
 

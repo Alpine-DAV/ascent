@@ -71,6 +71,7 @@ namespace vtkh
 class DataSet;
 };
 
+#include <ascent_exports.h>
 // conduit includes
 #include <conduit.hpp>
 
@@ -87,7 +88,7 @@ namespace ascent
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-class VTKHDataAdapter
+class ASCENT_API VTKHDataAdapter
 {
 public:
 
@@ -116,6 +117,9 @@ public:
     static vtkh::DataSet    *VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset);
 
     static void              VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
+                                                    conduit::Node &node);
+
+    static void              VTKHToBlueprintDataSet(vtkh::DataSet *dset,
                                                     conduit::Node &node);
 private:
     // helpers for specific conversion cases

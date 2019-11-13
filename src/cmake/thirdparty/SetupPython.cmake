@@ -168,7 +168,7 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
     endif()
 
     install(TARGETS ${target_name}
-            EXPORT  conduit
+            EXPORT  ascent
             LIBRARY DESTINATION ${py_install_dir}/${py_module_dir}
             ARCHIVE DESTINATION ${py_install_dir}/${py_module_dir}
             RUNTIME DESTINATION ${py_install_dir}/${py_module_dir}
@@ -206,7 +206,7 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
     endif()
 
     install(TARGETS ${target_name}
-            EXPORT  conduit
+            EXPORT  ascent
             LIBRARY DESTINATION ${py_install_dir}/${py_module_dir}
             ARCHIVE DESTINATION ${py_install_dir}/${py_module_dir}
             RUNTIME DESTINATION ${py_install_dir}/${py_module_dir}

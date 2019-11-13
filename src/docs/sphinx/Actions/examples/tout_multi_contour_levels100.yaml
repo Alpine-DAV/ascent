@@ -1,0 +1,21 @@
+#An example of the contour filter with a number of evenly spaced levels.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "contour"
+        params: 
+          field: "braid"
+          levels: 5
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "radial"
+          pipeline: "pl1"
+      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_multi_contour_levels"

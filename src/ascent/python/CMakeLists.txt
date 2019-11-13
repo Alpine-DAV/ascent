@@ -42,37 +42,37 @@
 #
 ###############################################################################
 
-# Specify the sources of the pure python and compiled portions of our module.
-SET(ascent_py_python_sources  py_src/__init__.py py_src/ascent.py )
-#SET(ascent_py_headers        ascent_python.hpp)
-SET(ascent_py_cpp_sources     ascent_python.cpp)
+add_subdirectory(ascent_module)
 
+# install the jupyter bridge kernel client source
+# we copy the source because users may want to install
+# client into a different python environment
+install(DIRECTORY ascent_jupyter_bridge
+        DESTINATION share/ascent)
 
-# Setup our module
-PYTHON_ADD_HYBRID_MODULE(ascent_python
-                         python-modules
-                         ascent
-                         setup.py
-                         "${ascent_py_python_sources}"
-                         #${ascent_py_headers}
-                         ${ascent_py_cpp_sources})
+# create scripts that make it easy to launch the proper 
+# python interp with the ascent module already in PYTHONPATH
 
-# link with the proper libs (beyond python)
-target_link_libraries(ascent_python ascent)
+set(_PYMOD_DIR ${PROJECT_BINARY_DIR}/python-modules)
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/run_python_with_ascent.sh.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/run_python_with_ascent_build.sh" @ONLY)
 
-
-# TODO: ADD SUPPORT FOR SUPPORT PYTHON_MODULE_INSTALL_PREFIX
-# install the capi header so other python modules can use it
-# support alt install dir for python module via PYTHON_MODULE_INSTALL_PREFIX
-# if(PYTHON_MODULE_INSTALL_PREFIX)
-#     install(FILES ${ascent_py_headers} DESTINATION ${PYTHON_MODULE_INSTALL_PREFIX}/ascent/)
-# else()
-#     install(FILES ${ascent_py_headers} DESTINATION python-modules/ascent/)
-# endif()
-
-if(MPI_FOUND)
-    add_subdirectory(mpi)
+if(PYTHON_MODULE_INSTALL_PREFIX)
+    set(_PYMOD_DIR ${PYTHON_MODULE_INSTALL_PREFIX})
+else()
+    set(_PYMOD_DIR ${CMAKE_INSTALL_PREFIX}/python-modules/)
 endif()
 
+
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/run_python_with_ascent.sh.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/run_python_with_ascent_install.sh" @ONLY)
+
+unset(_PYMOD_DIR)
+
+# install the script that works for install paths
+# 'PROGRAMS' makes sure exec perms are set
+install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/run_python_with_ascent_install.sh"
+        DESTINATION bin
+        RENAME run_python_with_ascent.sh)
 
 

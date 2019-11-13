@@ -67,6 +67,11 @@
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
+// mpi
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#endif
+
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkm/cont/DataSet.h>
 #include <ascent_vtkh_data_adapter.hpp>
@@ -153,24 +158,51 @@ BlueprintVerify::execute()
         ASCENT_ERROR("blueprint_verify input must be a conduit node");
     }
 
-
     std::string protocol = params()["protocol"].as_string();
 
     Node v_info;
     Node *n_input = input<Node>(0);
-    if(!conduit::blueprint::verify(protocol,
-                                   *n_input,
-                                   v_info))
+    
+    // some MPI tasks may not have data, that is fine
+    // but blueprint verify will fail, so if the
+    // input node is empty skip verify
+    int local_verify_ok = 0;
+    if(!n_input->dtype().is_empty())
     {
-        n_input->print();
-        v_info.print();
-        ASCENT_ERROR("blueprint verify failed for protocol"
-                      << protocol << std::endl
-                      << "details:" << std::endl
-                      << v_info["message"].as_string());
-                      //<< v_info.to_json());
+        if(!conduit::blueprint::verify(protocol,
+                                       *n_input,
+                                       v_info))
+        {
+            n_input->schema().print();
+            v_info.print();
+            ASCENT_ERROR("blueprint verify failed for protocol"
+                          << protocol << std::endl
+                          << "details:" << std::endl
+                          << v_info.to_json());
+        }
+        else
+        {
+            local_verify_ok = 1;
+        }
     }
+    
+    // make sure some MPI task actually had bp data
+#ifdef ASCENT_MPI_ENABLED
+    int global_verify_ok = 0;
+    MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+    MPI_Allreduce((void *)(&local_verify_ok),
+                (void *)(&global_verify_ok),
+                1,
+                MPI_INT,
+                MPI_SUM,
+                mpi_comm);
+    local_verify_ok = global_verify_ok;
+#endif
 
+    if(local_verify_ok == 0)
+    {
+        ASCENT_ERROR("blueprint verify failed: published data is empty");
+    }
     set_output<Node>(n_input);
 }
 
@@ -321,20 +353,9 @@ EnsureBlueprint::execute()
     {
         // convert from vtk-h to blueprint
         vtkh::DataSet *in_dset = input<vtkh::DataSet>(0);
-
-        const vtkm::Id num_domains = in_dset->GetNumberOfDomains();
         conduit::Node * res = new conduit::Node();
-        uint64 cycle = in_dset->GetCycle();
-        for(vtkm::Id dom = 0; dom < num_domains; ++dom)
-        {
-            vtkm::cont::DataSet dset;
-            vtkm::Id domain_id;
-            in_dset->GetDomain(dom, dset, domain_id);
-            conduit::Node &bp = res->append();
-            VTKHDataAdapter::VTKmToBlueprintDataSet(&dset, bp);
-            bp["state/cycle"] = cycle;
-            bp["state/domain_id"] = domain_id;
-        }
+
+        VTKHDataAdapter::VTKHToBlueprintDataSet(in_dset, *res);
         set_output<conduit::Node>(res);
     }
     else if(input(0).check_type<vtkm::cont::DataSet>())

@@ -64,3 +64,16 @@ add_subdirectory("flow")
 
 # add ascent tests
 add_subdirectory("ascent")
+
+
+if(PYTHON_FOUND)
+# if we have python:
+#  add custom command that generates a html img comparison report for our tests
+#  run with "make gen_report"
+#  creates "_output/tout_img_report.html"
+    add_custom_target(gen_report
+                      ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_img_compare_html_report.py
+                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                      COMMENT "Generating html summary of image compare tests")
+endif()
+

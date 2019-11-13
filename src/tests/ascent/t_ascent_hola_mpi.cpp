@@ -286,7 +286,6 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         add_extract["extracts/e1/type"]  = "hola_mpi";
         add_extract["extracts/e1/params/mpi_comm"] = MPI_Comm_c2f(world_comm);
         add_extract["extracts/e1/params/rank_split"] = rank_split;
-        actions.append()["action"] = "execute";
         //
         // Run Ascent
         //
@@ -341,9 +340,6 @@ TEST(ascent_hola_mpi, test_hola_mpi)
         add_scene["scenes/scene1/plots/plt1/type"]         = "pseudocolor";
         add_scene["scenes/scene1/plots/plt1/field"] = "radial_vert";
         add_scene["scenes/scene1/image_prefix"] = output_image;
-
-        conduit::Node &execute  = actions.append();
-        execute["action"] = "execute";
 
         ascent.publish(data);
         ascent.execute(actions);

@@ -56,7 +56,7 @@
 // -- define proper lib exports for various platforms --
 //-----------------------------------------------------------------------------
 #if defined(_WIN32)
-#if defined(ASCENT_EXPORTS) || defined(ascent_EXPORTS)
+#if defined(ASCENT_EXPORTS_FLAG)
 #define ASCENT_API __declspec(dllexport)
 #else
 #define ASCENT_API __declspec(dllimport)
@@ -70,7 +70,7 @@
 #pragma warning(disable:4786)
 #endif
 #else
-# if __GNUC__ >= 4 && (defined(ASCENT_EXPORTS) || defined(ascent_EXPORTS))
+# if __GNUC__ >= 4 && defined(ASCENT_EXPORTS_FLAG)
 #   define ASCENT_API __attribute__ ((visibility("default")))
 # else
 #   define ASCENT_API /* hidden by default */

@@ -1,0 +1,10 @@
+
+-
+  action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "e"
+      image_prefix: "energy_%04d"

@@ -1,0 +1,57 @@
+packages:
+  all:
+    compiler: [gcc]
+    providers:
+      blas: [netlib-lapack]
+      lapack: [netlib-lapack]
+  netlib-lapack:
+    buildable: False
+    paths:
+      netlib-lapack: /usr/
+  openmpi:
+    buildable: False
+    paths:
+      openmpi: /usr
+  gdbm:
+    buildable: False
+    paths:
+      gdbm: /usr
+  bzip2:
+    buildable: False
+    paths:
+      bzip2: /usr
+  readline:
+    buildable: False
+    paths:
+      readline: /usr
+  sqlite:
+    buildable: False
+    paths:
+      sqlite: /usr
+  ncurses:
+    buildable: False
+    paths:
+      ncurses: /usr
+  pkg-config:
+    buildable: False
+    paths:
+      pkg-config: /usr
+  openssl:
+    buildable: False
+    paths:
+      openssl: /usr
+  perl:
+    buildable: False
+    paths:
+      perl: /usr
+  tar:
+    buildable: False
+    paths:
+      tar: /usr
+  conduit:
+    version: [master]
+  # python 2 constraints
+  py-sphinx:
+    version: [1.8.4]
+  py-numpy:
+    version: [1.16.5]

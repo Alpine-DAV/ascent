@@ -131,16 +131,62 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     int nverts = n_coords["values/x"].dtype().number_of_elements();
     bool is_interleaved = blueprint::mcarray::is_interleaved(n_coords["values"]);
 
+    // some interleaved cases aren't working
+    // disabling this path until we find out what is going wrong.
+    is_interleaved = false;
+
     ndims = 2;
 
-    const T* x_coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
-    const T* y_coords_ptr = GetNodePointer<T>(n_coords["values/y"]);
+    // n_coords_conv holds contig data if we have stride-ed but
+    // non-interleaved values
+    Node n_coords_conv;
+
+    const T* x_coords_ptr = NULL;
+    const T* y_coords_ptr = NULL;
     const T *z_coords_ptr = NULL;
+
+    // if we are an interleaved mcarray, or compact we can
+    // directly use the pointer with vtk-m.
+    // otherwise, we need to compact.
+
+    if(is_interleaved || n_coords["values/x"].is_compact())
+    {
+        x_coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
+    }
+    else
+    {
+        n_coords["values/x"].compact_to(n_coords_conv["x"]);
+        x_coords_ptr = GetNodePointer<T>(n_coords_conv["x"]);
+        // since we had to copy and compact the data, we can't zero copy
+        zero_copy = false;
+    }
+
+    if(is_interleaved || n_coords["values/y"].is_compact())
+    {
+        y_coords_ptr = GetNodePointer<T>(n_coords["values/y"]);
+    }
+    else
+    {
+        n_coords["values/y"].compact_to(n_coords_conv["y"]);
+        y_coords_ptr = GetNodePointer<T>(n_coords_conv["y"]);
+        // since we had to copy and compact the data, we can't zero copy
+        zero_copy = false;
+    }
 
     if(n_coords.has_path("values/z"))
     {
         ndims = 3;
-        z_coords_ptr = GetNodePointer<T>(n_coords["values/z"]);
+        if(is_interleaved || n_coords["values/z"].is_compact())
+        {
+            z_coords_ptr = GetNodePointer<T>(n_coords["values/z"]);
+        }
+        else
+        {
+            n_coords["values/z"].compact_to(n_coords_conv["z"]);
+            z_coords_ptr = GetNodePointer<T>(n_coords_conv["z"]);
+            // since we had to copy and compact the data, we can't zero copy
+            zero_copy = false;
+        }
     }
 
     if(!is_interleaved)
@@ -169,16 +215,17 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
                                                                           y_coords_handle,
                                                                           z_coords_handle));
     }
-    else
+    else // NOTE: This case is disabled.
     {
       // we have interleaved coordinates x0,y0,z0,x1,y1,z1...
       const T* coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
       vtkm::cont::ArrayHandle<vtkm::Vec<T, 3>> coords;
       // we cannot zero copy 2D interleaved arrays into vtkm
-      if(ndims == 3 || true) // TODO: need way to detect 3d interleaved compendents that has
+      if(ndims == 3 || true) // TODO: need way to detect 3d interleaved components that has
                              //       only has xy in conduit
       {
-
+        // this case was failing from Nyx + AMReX
+        // still haven't been able to reproduce with a simpler test
         detail::CopyArray(coords, (vtkm::Vec<T,3>*)coords_ptr, nverts, zero_copy);
       }
       else
@@ -245,28 +292,14 @@ vtkm::cont::Field GetField(const conduit::Node &node,
 
   int num_vals = node.dtype().number_of_elements();
 
-
   const T *values_ptr = node.value();
 
   vtkm::cont::Field field;
-  if(assoc_str == "vertex")
-  {
-    field = vtkm::cont::make_Field(field_name,
-                                   vtkm_assoc,
-                                   values_ptr,
-                                   num_vals,
-                                   copy);
-  }
-  else
-  {
-    field = vtkm::cont::make_Field(field_name,
-                                   vtkm_assoc,
-                                   topo_str,
-                                   values_ptr,
-                                   num_vals,
-                                   copy);
-  }
-
+  field = vtkm::cont::make_Field(field_name,
+                                 vtkm_assoc,
+                                 values_ptr,
+                                 num_vals,
+                                 copy);
   return field;
 }
 
@@ -299,23 +332,11 @@ vtkm::cont::Field GetVectorField(T *values_ptr,
   }
 
   vtkm::cont::Field field;
-  if(assoc_str == "vertex")
-  {
-    field = vtkm::cont::make_Field(field_name,
-                                   vtkm_assoc,
-                                   values_ptr,
-                                   num_vals,
-                                   copy);
-  }
-  else
-  {
-    field = vtkm::cont::make_Field(field_name,
-                                   vtkm_assoc,
-                                   topo_str,
-                                   values_ptr,
-                                   num_vals,
-                                   copy);
-  }
+  field = vtkm::cont::make_Field(field_name,
+                                 vtkm_assoc,
+                                 values_ptr,
+                                 num_vals,
+                                 copy);
 
   return field;
 }
@@ -334,6 +355,8 @@ void ExtractVector(vtkm::cont::DataSet *dset,
                    const std::string topo_name,
                    bool zero_copy)
 {
+  // TODO: Do we need to fix this for striding?
+  // GetField<T> expects compact
 
   std::string u_name = field_name + "_" + "x";
   dset->AddField(detail::GetField<T>(u, u_name, assoc_str, topo_name, zero_copy));
@@ -364,7 +387,10 @@ void ExtractVector(vtkm::cont::DataSet *dset,
   vtkm::cont::ArrayHandle<vtkm::Vec<T,3>> interleaved_handle;
   interleaved_handle.Allocate(num_vals);
   // Calling this without forcing serial could cause serious problems
-  vtkm::cont::ArrayCopy(composite, interleaved_handle, vtkm::cont::DeviceAdapterTagSerial());
+  {
+    vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
+    vtkm::cont::ArrayCopy(composite, interleaved_handle);
+  }
 
   vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
   if(assoc_str == "vertex")
@@ -381,16 +407,8 @@ void ExtractVector(vtkm::cont::DataSet *dset,
                  <<assoc_str<<" field_name "<<field_name);
   }
 
-  if(assoc_str == "vertex")
-  {
-    vtkm::cont::Field field(field_name, vtkm_assoc, interleaved_handle);
-    dset->AddField(field);
-  }
-  else
-  {
-    vtkm::cont::Field field(field_name, vtkm_assoc, topo_name, interleaved_handle);
-    dset->AddField(field);
-  }
+  vtkm::cont::Field field(field_name, vtkm_assoc, interleaved_handle);
+  dset->AddField(field);
 }
 
 
@@ -817,15 +835,15 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
     if(is_2d)
     {
       vtkm::Id2 dims2(dims[0], dims[1]);
-      vtkm::cont::CellSetStructured<2> cell_set(topo_name.c_str());
+      vtkm::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(dims2);
-      result->AddCellSet(cell_set);
+      result->SetCellSet(cell_set);
     }
     else
     {
-      vtkm::cont::CellSetStructured<3> cell_set(topo_name.c_str());
+      vtkm::cont::CellSetStructured<3> cell_set;
       cell_set.SetPointDimensions(dims);
-      result->AddCellSet(cell_set);
+      result->SetCellSet(cell_set);
     }
 
     neles =  (dims_i - 1) * (dims_j - 1);
@@ -932,18 +950,18 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
 
     if (ndims == 2)
     {
-      vtkm::cont::CellSetStructured<2> cell_set(topo_name.c_str());
+      vtkm::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_npts,
                                                  y_npts));
-      result->AddCellSet(cell_set);
+      result->SetCellSet(cell_set);
     }
     else
     {
-      vtkm::cont::CellSetStructured<3> cell_set(topo_name.c_str());
+      vtkm::cont::CellSetStructured<3> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_npts,
                                                  y_npts,
                                                  z_npts));
-      result->AddCellSet(cell_set);
+      result->SetCellSet(cell_set);
     }
 
     nverts = x_npts * y_npts;
@@ -1001,20 +1019,20 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
     int32 y_elems = n_topo["elements/dims/j"].as_int32();
     if (ndims == 2)
     {
-      vtkm::cont::CellSetStructured<2> cell_set(topo_name.c_str());
+      vtkm::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
                                                  y_elems+1));
-      result->AddCellSet(cell_set);
+      result->SetCellSet(cell_set);
       neles = x_elems * y_elems;
     }
     else
     {
       int32 z_elems = n_topo["elements/dims/k"].as_int32();
-      vtkm::cont::CellSetStructured<3> cell_set(topo_name.c_str());
+      vtkm::cont::CellSetStructured<3> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
                                                  y_elems+1,
                                                  z_elems+1));
-      result->AddCellSet(cell_set);
+      result->SetCellSet(cell_set);
       neles = x_elems * y_elems * z_elems;
 
     }
@@ -1119,7 +1137,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     vtkm::cont::CellSetSingleType<> cellset;
     cellset.Fill(nverts, shape_id, indices_per, connectivity);
     neles = cellset.GetNumberOfCells();
-    result->AddCellSet(cellset);
+    result->SetCellSet(cellset);
 
     return result;
 }
@@ -1169,7 +1187,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
       if(field_name != "boundary_attribute")
       {
         ASCENT_INFO("Field '"<<field_name<<"' number of values "<<num_vals<<
-                    " does not match the number of cells "<<nverts<<". Skipping");
+                    " does not match the number of elements " << neles << ". Skipping");
       }
       return;
     }
@@ -1217,7 +1235,6 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             {
                 dset->AddField(vtkm::cont::Field(field_name.c_str(),
                                                  vtkm::cont::Field::Association::CELL_SET,
-                                                 topo_name.c_str(),
                                                  vtkm_arr));
             }
         }
@@ -1254,6 +1271,7 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
       ASCENT_INFO("VTKm conversion does not support field assoc "<<assoc_str<<". Skipping");
       return;
     }
+
 
     const Node &n_vals = n_field["values"];
     int num_vals = n_vals.child(0).dtype().number_of_elements();
@@ -1387,9 +1405,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
                                          const vtkm::cont::DataSet &data_set)
 {
 
-  const int default_cell_set = 0;
   int topo_dims;
-  bool is_structured = vtkh::VTKMDataSetInfo::IsStructured(data_set, topo_dims, default_cell_set);
+  bool is_structured = vtkh::VTKMDataSetInfo::IsStructured(data_set, topo_dims);
   bool is_uniform = vtkh::VTKMDataSetInfo::IsUniform(data_set);
   bool is_rectilinear = vtkh::VTKMDataSetInfo::IsRectilinear(data_set);
   vtkm::cont::CoordinateSystem coords = data_set.GetCoordinateSystem();
@@ -1567,9 +1584,30 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       output["topologies/topo/coordset"] = "coords";
       output["topologies/topo/type"] = "structured";
-      output["topologies/topo/elements/dims/i"] = (int) point_dims[0];
-      output["topologies/topo/elements/dims/j"] = (int) point_dims[1];
-      output["topologies/topo/elements/dims/k"] = (int) point_dims[2];
+
+      vtkm::cont::DynamicCellSet dyn_cells = data_set.GetCellSet();
+      using Structured2D = vtkm::cont::CellSetStructured<2>;
+      using Structured3D = vtkm::cont::CellSetStructured<3>;
+      if(dyn_cells.IsSameType(Structured2D()))
+      {
+        Structured2D cells = dyn_cells.Cast<Structured2D>();
+        vtkm::Id2 cell_dims = cells.GetCellDimensions();
+        output["topologies/topo/elements/dims/i"] = (int) cell_dims[0];
+        output["topologies/topo/elements/dims/j"] = (int) cell_dims[1];
+      }
+      else if(dyn_cells.IsSameType(Structured3D()))
+      {
+        Structured3D cells = dyn_cells.Cast<Structured3D>();
+        vtkm::Id3 cell_dims = cells.GetCellDimensions();
+        output["topologies/topo/elements/dims/i"] = (int) cell_dims[0];
+        output["topologies/topo/elements/dims/j"] = (int) cell_dims[1];
+        output["topologies/topo/elements/dims/k"] = (int) cell_dims[2];
+      }
+      else
+      {
+        ASCENT_ERROR("Unknown structured cell set");
+      }
+
     }
     else
     {
@@ -1588,8 +1626,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         output["topologies/topo/elements/shape"] = conduit_name;
 
         static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints");
-        auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagPoint(),
-                                               vtkm::TopologyElementTagCell());
+        auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
+                                               vtkm::TopologyElementTagPoint());
 
         output["topologies/topo/elements/connectivity"].set(vtkh::GetVTKMPointer(conn),
                                                              conn.GetNumberOfValues());
@@ -1599,16 +1637,16 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         // If we are here, the we know that the cell set is explicit,
         // but only a single cell shape
         auto cells = dyn_cells.Cast<vtkm::cont::CellSetExplicit<>>();
-        auto shapes = cells.GetShapesArray(vtkm::TopologyElementTagPoint(),
-                                           vtkm::TopologyElementTagCell());
+        auto shapes = cells.GetShapesArray(vtkm::TopologyElementTagCell(),
+                                           vtkm::TopologyElementTagPoint());
 
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/topo/elements/shape"] = conduit_name;
 
         static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints");
 
-        auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagPoint(),
-                                               vtkm::TopologyElementTagCell());
+        auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
+                                               vtkm::TopologyElementTagPoint());
 
         output["topologies/topo/elements/connectivity"].set(vtkh::GetVTKMPointer(conn),
                                                              conn.GetNumberOfValues());
@@ -1762,6 +1800,25 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
 }
 
 void
+VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
+                                        conduit::Node &node)
+{
+  node.reset();
+  const int num_doms = dset->GetNumberOfDomains();
+  for(int i = 0; i < num_doms; ++i)
+  {
+    conduit::Node &dom = node.append();
+    vtkm::cont::DataSet vtkm_dom;
+    vtkm::Id domain_id;
+    int cycle = dset->GetCycle();
+    dset->GetDomain(i, vtkm_dom, domain_id);
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom);
+    dom["state/domain_id"] = (int) domain_id;
+    dom["state/cycle"] = cycle;
+  }
+}
+
+void
 VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
                                         conduit::Node &node)
 {
@@ -1788,6 +1845,3 @@ VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-

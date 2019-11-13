@@ -49,7 +49,7 @@ import os
 import platform
 from os.path import join as pjoin
 
-from ascent import Ascent
+from .ascent import Ascent
 
 class UberenvAscent(Ascent):
     """Spack Based Uberenv Build for Ascent Thirdparty Libs """
@@ -64,9 +64,8 @@ class UberenvAscent(Ascent):
             description="Build deps needed to create Conduit's Docs")
 
 
-    # stick with cmake 3.8 or 3.9 until we use MPIEXEC_EXECUTABLE for 3.10+
     # in upstream spack package
-    depends_on("cmake@3.8.2:3.9.999", when="+cmake")
+    depends_on("cmake@3.14.1:3.14.5", when="+cmake")
 
 
     def url_for_version(self, version):

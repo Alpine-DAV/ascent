@@ -136,9 +136,6 @@ TEST(ascent_error_handling, test_bad_filter_field)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -230,9 +227,6 @@ TEST(ascent_error_handling, test_bad_plot_var_name)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -246,6 +240,7 @@ TEST(ascent_error_handling, test_bad_plot_var_name)
     ascent.open(ascent_opts);
     ascent.publish(data);
 
+    conduit::utils::set_info_handler(throw_handler);
     bool error = false;
     try
     {
@@ -259,6 +254,7 @@ TEST(ascent_error_handling, test_bad_plot_var_name)
     ASSERT_TRUE(error);
 
     ascent.close();
+    conduit::utils::set_info_handler(conduit::utils::default_info_handler);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_error_handling, test_bad_color_table)
@@ -309,9 +305,6 @@ TEST(ascent_error_handling, test_bad_color_table)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -406,9 +399,6 @@ TEST(ascent_error_handling, test_emtpy)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent

@@ -58,11 +58,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # we always build lodepng as lib 
 blt_add_library(
-    NAME        lodepng 
+    NAME        ascent_lodepng
     SOURCES     ${lodepng_sources})
 
 # install target for serial ascent lib
-install(TARGETS lodepng 
+install(TARGETS ascent_lodepng
         EXPORT  ascent 
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib

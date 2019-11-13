@@ -509,12 +509,6 @@ int main(int argc, char** argv)
   add_scenes["action"] = "add_scenes";
   add_scenes["scenes"] = scenes;
 
-  conduit::Node &execute = actions.append();
-  execute["action"] = "execute";
-
-  conduit::Node reset;
-  conduit::Node &reset_action = reset.append();
-  reset_action["action"] = "reset";
   for(int t = 0; t < options.m_time_steps; ++t)
   {
     //
@@ -546,7 +540,6 @@ int main(int argc, char** argv)
 
         ascent.publish(mesh_data);
         ascent.execute(actions);
-        ascent.execute(reset);
       } //for each time step
 
 

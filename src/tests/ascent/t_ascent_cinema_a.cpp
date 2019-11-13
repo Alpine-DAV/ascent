@@ -115,12 +115,11 @@ TEST(ascent_cinema_a, test_cinema_a)
     scenes["scene1/renders/r1/theta"] = 2;
     scenes["scene1/renders/r1/db_name"] = "test_db";
     scenes["scene1/renders/r1/annotations"] = "false";
+    scenes["scene1/renders/r1/camera/zoom"] = 0.0;
 
     conduit::Node &add_scenes = actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //

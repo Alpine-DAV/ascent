@@ -56,13 +56,15 @@
 #include <iostream>
 #include <math.h>
 
+#include "t_config.hpp"
 #include <ascent.hpp>
+#include <utils/ascent_png_compare.hpp>
 
 using namespace std;
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
-void
+inline void
 remove_test_image(const std::string &path, const std::string num = "100")
 {
     if(conduit::utils::is_file(path + num + ".png"))
@@ -78,7 +80,7 @@ remove_test_image(const std::string &path, const std::string num = "100")
 }
 
 //-----------------------------------------------------------------------------
-void
+inline void
 remove_test_file(const std::string &path)
 {
     if(conduit::utils::is_file(path))
@@ -88,7 +90,7 @@ remove_test_file(const std::string &path)
 }
 
 //-----------------------------------------------------------------------------
-std::string
+inline std::string
 prepare_output_dir()
 {
     string output_path = ASCENT_T_BIN_DIR;
@@ -104,21 +106,65 @@ prepare_output_dir()
 }
 
 //----------------------------------------------------------------------------
-std::string
+inline std::string
 output_dir()
 {
     return conduit::utils::join_file_path(ASCENT_T_BIN_DIR,"_output");;
 }
 
 //-----------------------------------------------------------------------------
-bool
-check_test_image(const std::string &path, std::string num = "100")
+inline bool
+check_test_image(const std::string &path, const float tolerance = 0.001f, std::string num = "100")
 {
+    Node info;
+    std::string png_path = path + num + ".png";
     // for now, just check if the file exists.
-    return conduit::utils::is_file(path + num + ".png");
+    bool res = conduit::utils::is_file(png_path);
+    info["test_file/path"] = png_path;
+    if(res)
+    {
+      info["test_file/exists"] = "true";
+    }
+    else
+    {
+      info["test_file/exists"] = "false";
+    }
+
+    std::string file_name;
+    std::string path_b;
+
+    conduit::utils::rsplit_file_path(png_path,
+                                     file_name,
+                                     path_b);
+
+    string baseline_dir = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"baseline_images");
+    string baseline = conduit::utils::join_file_path(baseline_dir,file_name);
+
+    info["baseline_file/path"] = baseline;
+    if(conduit::utils::is_file(baseline))
+    {
+      info["baseline_file/exists"] = "true";
+    }
+    else
+    {
+      info["baseline_file/exists"] = "false";
+    }
+
+    ascent::PNGCompare compare;
+
+    res &= compare.Compare(png_path, baseline, info, tolerance);
+
+    if(!res)
+    {
+      info.print();
+    }
+    std::string info_fpath = path + num + "_img_compare_results.json";
+    info.save(info_fpath,"json");
+
+    return res;
 }
 
-bool
+inline bool
 check_test_file(const std::string &path)
 {
     // for now, just check if the file exists.
@@ -129,7 +175,7 @@ check_test_file(const std::string &path)
 //-----------------------------------------------------------------------------
 // create an example 2d rectilinear grid with two variables.
 //-----------------------------------------------------------------------------
-void
+inline void
 create_2d_example_dataset(Node &data,
                           int par_rank=0,
                           int par_size=1)
@@ -232,11 +278,11 @@ create_2d_example_dataset(Node &data,
 //-----------------------------------------------------------------------------
 // create an example 3d rectilinear grid with two variables.
 //-----------------------------------------------------------------------------
-void
+inline void
 create_3d_example_dataset(Node &data,
-                          int cell_dim = 32,
-                          int par_rank=0,
-                          int par_size=1)
+                          int cell_dim,
+                          int par_rank,
+                          int par_size)
 {
     // if( (par_size > 1)  && ((par_size % par_rank) != 0))
     // {
@@ -274,13 +320,15 @@ create_3d_example_dataset(Node &data,
 
     data["fields/radial_vert/association"] = "vertex";
     data["fields/radial_vert/topology"] = "mesh";
-    data["fields/radial_vert/type"] = "scalar";
     data["fields/radial_vert/values"].set(DataType::float64(npts));
 
     data["fields/radial_ele/association"] = "element";
     data["fields/radial_ele/topology"] = "mesh";
-    data["fields/radial_ele/type"] = "scalar";
     data["fields/radial_ele/values"].set(DataType::float64(nele));
+
+    data["fields/rank_ele/association"] = "element";
+    data["fields/rank_ele/topology"] = "mesh";
+    data["fields/rank_ele/values"].set(DataType::float64(nele));
 
 
     float64 *x_vals =  data["coordsets/coords/values/x"].value();
@@ -289,6 +337,13 @@ create_3d_example_dataset(Node &data,
 
     float64 *point_scalar   = data["fields/radial_vert/values"].value();
     float64 *element_scalar = data["fields/radial_ele/values"].value();
+
+    float64 *rank_scalar = data["fields/rank_ele/values"].value();
+
+    for(int i=0;i < nele;i++)
+    {
+        rank_scalar[i] = (float64)par_rank;
+    }
 
     float64 start = 0.0 - (float64)(size) / 2.0;
     float64 rank_offset = start + (float)(par_rank * nx);
@@ -339,7 +394,8 @@ create_3d_example_dataset(Node &data,
     }
 }
 
-void add_interleaved_vector(conduit::Node &dset)
+inline void
+add_interleaved_vector(conduit::Node &dset)
 {
   int dims = dset["fields/vel/values"].number_of_children();
   if(dims != 2 && dims != 3)
@@ -390,6 +446,17 @@ void add_interleaved_vector(conduit::Node &dset)
       }
   }
 }
+
+// Macro to save ascent actions file
+#define ASCENT_ACTIONS_DUMP(actions,name,msg) \
+  std::string actions_str = actions.to_yaml(); \
+  std::ofstream out; \
+  out.open(name+"100"+".yaml"); \
+  out<<"#"<<msg<<"\n"; \
+  out<<actions_str; \
+  out.close();
+
+
 //-----------------------------------------------------------------------------
 #endif
 //-----------------------------------------------------------------------------

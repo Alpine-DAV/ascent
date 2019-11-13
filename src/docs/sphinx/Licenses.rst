@@ -59,6 +59,10 @@ C and C++ Libraries
 - *gtest*:  From BLT - (BSD Style License)
 - *lodepng*: thirdparty_builtin/lodepng/LICENSE (BSD Style License)
 
+Python Libraries
+"""""""""""""""""""
+- *Bridge Kernel*:  ascent/ascent_jupyter_bridge/LICENSE (BSD Style License)
+
 Fortran Libraries
 """""""""""""""""
 - *fruit*: thirdparty_builtin/fruit-3.3.9/LICENSE.txt (BSD Style License)

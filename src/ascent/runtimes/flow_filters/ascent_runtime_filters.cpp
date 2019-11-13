@@ -60,6 +60,8 @@
 
 #include <ascent_runtime_relay_filters.hpp>
 #include <ascent_runtime_blueprint_filters.hpp>
+#include <ascent_runtime_trigger_filters.hpp>
+#include <ascent_runtime_query_filters.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
     #include <ascent_runtime_vtkh_filters.hpp>
@@ -108,6 +110,9 @@ register_builtin()
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
     AscentRuntime::register_filter_type<RelayIOLoad>();
 
+    AscentRuntime::register_filter_type<BasicTrigger>();
+    AscentRuntime::register_filter_type<BasicQuery>();
+
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
     AscentRuntime::register_filter_type<EnsureVTKH>();
@@ -119,11 +124,10 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHDomainIds>();
     AscentRuntime::register_filter_type<VTKHUnionDomainIds>();
 
-    AscentRuntime::register_filter_type<DefaultScene>();
-
     // transforms, the current crop expect vtk-h input data
     AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
     AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");
+    AscentRuntime::register_filter_type<VTKHGhostStripper>("transforms","ghost_stripper");
     AscentRuntime::register_filter_type<VTKHIsoVolume>("transforms","isovolume");
     AscentRuntime::register_filter_type<VTKHLagrangian>("transforms","lagrangian");
     AscentRuntime::register_filter_type<VTKHLog>("transforms","log");
@@ -132,7 +136,16 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHSlice>("transforms","slice");
     AscentRuntime::register_filter_type<VTKH3Slice>("transforms","3slice");
     AscentRuntime::register_filter_type<VTKHNoOp>("transforms","noop");
+    AscentRuntime::register_filter_type<VTKHRecenter>("transforms","recenter");
     AscentRuntime::register_filter_type<VTKHVectorMagnitude>("transforms","vector_magnitude");
+    AscentRuntime::register_filter_type<VTKHHistSampling>("transforms","histsampling");
+    AscentRuntime::register_filter_type<VTKHQCriterion>("transforms","qcriterion");
+    AscentRuntime::register_filter_type<VTKHStats>("extracts","statistics");
+    AscentRuntime::register_filter_type<VTKHHistogram>("extracts","histogram");
+    AscentRuntime::register_filter_type<VTKHGradient>("transforms","gradient");
+    AscentRuntime::register_filter_type<VTKHDivergence>("transforms","divergence");
+    AscentRuntime::register_filter_type<VTKHVorticity>("transforms","vorticity");
+    AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
 

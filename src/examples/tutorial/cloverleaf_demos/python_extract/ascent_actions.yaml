@@ -1,0 +1,7 @@
+-
+  action: "add_extracts"
+  extracts:
+    e1:
+      type: "python"
+      params:
+        file: "ascent_python_extract_histogram_demo.py"

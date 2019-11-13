@@ -107,13 +107,16 @@ endif()
 ##########################################
 
 blt_add_library(
-    NAME        flow
+    NAME        ascent_flow
     SOURCES     ${flow_sources}
     HEADERS     ${flow_headers}
     DEPENDS_ON  ${flow_thirdparty_libs})
 
+set_target_properties(ascent_flow PROPERTIES CXX_VISIBILITY_PRESET hidden)
+target_compile_definitions(ascent_flow PRIVATE ASCENT_EXPORTS_FLAG)
+    
 # install target for serial ascent lib
-install(TARGETS flow
+install(TARGETS ascent_flow
         EXPORT  ascent
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib

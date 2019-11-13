@@ -75,8 +75,8 @@ public:
   void save_result(std::string file_name) override;
   void save_bov(std::string file_name) override;
 
-  virtual void get_result(Image<vtkm::Float32> &image);
-  virtual void get_result(Image<vtkm::Float64> &image);
+  virtual void get_result(Image<vtkm::Float32> &image) override;
+  virtual void get_result(Image<vtkm::Float64> &image) override;
 protected:
   void composite();
   void set_global_scalar_range();

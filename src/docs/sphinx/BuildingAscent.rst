@@ -45,13 +45,13 @@
 .. _building:
 
 Building Ascent
-=================
+===============
 
 This page provides details on several ways to build Ascent from source.
 
 For the shortest path from zero to Ascent, see :doc:`QuickStart`.
 
-To build third party dependencies we recommend using :ref:`uberenv <building_with_uberenv>` which leverages Spack or :ref:`Spack directly<building_with_spack>`. 
+To build third party dependencies we recommend using :ref:`uberenv <building_with_uberenv>` which leverages Spack or :ref:`Spack directly<building_with_spack>`.
 We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>`.
 and a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
@@ -62,7 +62,7 @@ Ascent uses CMake for its build system.
 Building Ascent creates two separate libraries:
 
     * libascent : a version for execution on a single node
-    * libascent_mpi : a version for distributed memory parallel
+    * libascent_mpi : a version for distributed-memory parallel
 
 The CMake variable( ENABLE_MPI ON | OFF ) controls the building the parallel version of Ascent and included proxy-apps.
 
@@ -199,7 +199,7 @@ Ascent's build system supports the following CMake options:
   Starting in CMake 3.10, the FindMPI **MPIEXEC** variable was changed to **MPIEXEC_EXECUTABLE**. FindMPI will still set **MPIEXEC**, but any attempt to change it before calling FindMPI with your own cached value of **MPIEXEC** will not survive, so you need to set **MPIEXEC_EXECUTABLE** `[reference] <https://cmake.org/cmake/help/v3.10/module/FindMPI.html>`_.
 
 
-* **CONDUIT_DIR** - Path to an Conduit install *(required for parallel version)*.
+* **CONDUIT_DIR** - Path to an Conduit install *(required)*.
 
 * **VTKM_DIR** - Path to an VTK-m install *(optional)*.
 
@@ -270,7 +270,7 @@ Uberenv Options for Building Third Party Dependencies
                                                                       osx: ``scripts/uberenv/spack_configs/darwin/``
   -k                   Ignore SSL Errors                              **False**
   --install            Fully install conduit, not just dependencies   **False**
-  --run_tests          Invoke tests during build and against install  **False** 
+  --run_tests          Invoke tests during build and against install  **False**
  ==================== ============================================== ================================================
 
 The ``-k`` option exists for sites where SSL certificate interception undermines fetching
@@ -288,7 +288,7 @@ Default invocation on Linux:
 .. code:: bash
 
     python scripts/uberenv/uberenv.py --prefix uberenv_libs \
-                                      --spec %gcc 
+                                      --spec %gcc
 
 Default invocation on OSX:
 
@@ -315,7 +315,7 @@ To run tests during the build process to validate the build and install, you can
 
 For details on Spack's spec syntax, see the `Spack Specs & dependencies <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ documentation.
 
- 
+
 Compiler Settings for Third Party Dependencies
 ----------------------------------------------
 
@@ -324,21 +324,21 @@ and `Spack System Packages
 <http://spack.readthedocs.io/en/latest/getting_started.html#system-packages>`_
 documentation for details.
 
-For OSX, the defaults in ``spack_configs/darwin/compilers.yaml`` are X-Code's clang and gfortran from https://gcc.gnu.org/wiki/GFortranBinaries#MacOS. 
+For OSX, the defaults in ``spack_configs/darwin/compilers.yaml`` are X-Code's clang and gfortran from https://gcc.gnu.org/wiki/GFortranBinaries#MacOS.
 
 .. note::
     The bootstrapping process ignores ``~/.spack/compilers.yaml`` to avoid conflicts
     and surprises from a user's specific Spack settings on HPC platforms.
 
-When run, ``uberenv.py`` checkouts a specific version of Spack from github as ``spack`` in the 
-destination directory. It then uses Spack to build and install Conduit's dependencies into 
-``spack/opt/spack/``. Finally, it generates a host-config file ``{hostname}.cmake`` in the 
+When run, ``uberenv.py`` checkouts a specific version of Spack from github as ``spack`` in the
+destination directory. It then uses Spack to build and install Conduit's dependencies into
+``spack/opt/spack/``. Finally, it generates a host-config file ``{hostname}.cmake`` in the
 destination directory that specifies the compiler settings and paths to all of the dependencies.
 
 
 .. _building_known_hpc:
 
-Building with Uberenv on Known HPC Platforms 
+Building with Uberenv on Known HPC Platforms
 --------------------------------------------------
 
 To support testing and installing on common platforms, we maintain sets of Spack compiler and package settings
@@ -348,7 +348,7 @@ for a few known HPC platforms.  Here are the commonly tested configurations:
   System             OS                     Tested Configurations (Spack Specs)
  ================== ====================== ======================================
   pascal.llnl.gov     Linux: TOSS3          %gcc
-                                            
+
                                             %gcc~shared
   lassen.llnl.gov     Linux: BlueOS         %clang\@coral~python~fortran
   cori.nersc.gov      Linux: SUSE / CNL     %gcc
@@ -392,9 +392,13 @@ After building these libraries and tools, it writes an initial *host-config* fil
 Building with Spack
 -------------------
 
-As of 11/10/2017,  Spack's develop branch includes a
-`recipe <https://github.com/spack/spack/blob/develop/var/spack/repos/builtin/packages/ascent/package.py>`_
-to build and install Ascent.
+Currently, we maintain our own fork of Spack for stability. As part of the uberenv python
+script, we automatically clone our
+`Spack fork. <https://github.com/Alpine-DAV/spack/tree/task/2018_04_update_ascent>`_
+
+.. warning::
+  Installing Ascent from the Spack master branch will most likely fail. We build and test spack
+  installations with uberenv.py.
 
 To install Ascent with all options (and also build all of its dependencies as necessary) run:
 
@@ -461,7 +465,7 @@ Here is an example of specifying system MPI and CUDA on an LLNL Chaos 5 machine:
 
 .. code:: yaml
 
-    # LLNL toss3 CUDA 
+    # LLNL toss3 CUDA
       cuda:
         modules:
            cuda@9.1: cuda/9.1.85
@@ -493,6 +497,9 @@ Building Ascent in a Docker Container
 ---------------------------------------
 
 Under ``src/examples/docker/master/ubuntu`` there is an example ``Dockerfile`` which can be used to create an ubuntu-based docker image with a build of the Ascent github master branch. There is also a script that demonstrates how to build a Docker image from the Dockerfile (``example_build.sh``) and a script that runs this image in a Docker container (``example_run.sh``). The Ascent repo is cloned into the image's file system at ``/ascent``, the build directory is ``/ascent/build-debug``, and the install directory is ``/ascent/install-debug``.
+
+
+.. _building_manually:
 
 Building Ascent Dependencies Manually
 -------------------------------------
@@ -537,7 +544,6 @@ config file in the cmake variable ``CONDUIT_DIR``.
 
     git clone --recursive https://github.com/LLNL/conduit.git
     cd conduit
-    git checkout tags/v0.3.1
     mkdir build
     mkdir install
     cd build
@@ -547,9 +553,19 @@ config file in the cmake variable ``CONDUIT_DIR``.
 
 In the host config, add ``set(CONDUIT_DIR "/path/to/conduit_install" CACHE PATH "")``.
 
+
+.. _building_vtkm:
+
 VTK-m (Optional but recommended)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-We currently use the master branch of VTK-m, but in the future, we will checkout a specific commit or release for stability.
+We currently use the master branch of vtkm and checkout a specific commit for stability.
+This is the current commit we build and test against:
+
+.. literalinclude:: ../../../hashes.txt
+    :linenos:
+    :language: python
+    :lines: 1
+
 We recommend VTK-m since VTK-m and VTK-h provide the majority of Ascent's visualization and analysis functionality.
 The code below is minimal, and will only configure the serial device adapter. For instructions on building with TBB and CUDA, please consult the
 `VTK-m repository <https://gitlab.kitware.com/vtk/vtk-m>`_. In Ascent, we require non-default configure options, so pay close attention to the extra cmake configure options.
@@ -558,26 +574,38 @@ The code below is minimal, and will only configure the serial device adapter. Fo
 
     git clone https://gitlab.kitware.com/vtk/vtk-m.git
     cd vtk-m
+    git checkout commit_hash_listed_above
+    mkdir build
     mkdir install
-    cmake -C path_to_host_config/myhost_config.cmake . -DCMAKE_INSTALL_PREFIX=path_to_install \
+    cmake -C path_to_host_config/myhost_config.cmake ../ -DCMAKE_INSTALL_PREFIX=path_to_install \
       -DCMAKE_BUILD_TYPE=Release -DVTKm_USE_64BIT_IDS=OFF -DVTKm_USE_DOUBLE_PRECISION=ON
     make install
 
 
 In the host config, add ``set(VTKM_DIR "/path/to/vtkm_install" CACHE PATH "")``.
 
+.. _building_vtkh:
+
 VTK-h (Optional but recommended)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We recommend VTK-h since VTK-m and VTK-h provide the majority of Ascent's visualization and analysis functionality.
+We currently use the develop branch of vtkm and checkout a specific commit for stability.
+This is the current commit we build and test against:
+
+.. literalinclude:: ../../../hashes.txt
+    :linenos:
+    :language: python
+    :lines: 2
 
 .. code:: bash
 
     git clone https://github.com/Alpine-DAV/vtk-h.git
     cd vtk-h
+    git checkout commit_hash_listed_above
     mkdir build
     mkdir install
     cd build
-    cmake -C path_to_host_config/myhost_config.cmake . -DCMAKE_INSTALL_PREFIX=path_to_install
+    cmake -C path_to_host_config/myhost_config.cmake ../src -DCMAKE_INSTALL_PREFIX=path_to_install
     make install
 
 
@@ -594,7 +622,7 @@ Now that we have all the dependencies built and a host config file for our envir
     mkdir build
     mkdir install
     cd build
-    cmake -C path_to_host_config/myhost_config.cmake . -DCMAKE_INSTALL_PREFIX=path_to_install \
+    cmake -C path_to_host_config/myhost_config.cmake ../src -DCMAKE_INSTALL_PREFIX=path_to_install \
       -DCMAKE_BUILD_TYPE=Release
     make install
 

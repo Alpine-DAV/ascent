@@ -378,9 +378,15 @@ void mesh_blueprint_save(const Node &data,
       Node dom = multi_dom.child(0);
       if(!dom.has_path("state/cycle"))
       {
-        ASCENT_ERROR("Cannot blueprint save without 'state/cycle'");
+        static std::map<string,int> counters;
+        ASCENT_INFO("no 'state/cycle' present. Defaulting to counter");
+        cycle = counters[path];
+        counters[path]++;
       }
-      cycle = dom["state/cycle"].to_int();
+      else
+      {
+        cycle = dom["state/cycle"].to_int();
+      }
     }
 
 #ifdef ASCENT_MPI_ENABLED

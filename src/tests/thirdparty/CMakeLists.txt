@@ -48,7 +48,16 @@
 
 IF(VTKH_FOUND)
     message(STATUS "Adding vtk-h lib unit tests")
-    add_cpp_test(TEST t_vtkh_smoke DEPENDS_ON vtkh)
+    # also add vtkm, i suspect compile flags aren't transitive
+    # for some reason, and this can undermine cuda builds
+    set(vtkh_smoke_deps vtkm vtkh)
+    if(CUDA_FOUND)
+        list(APPEND vtkh_smoke_deps cuda)
+    endif()
+    add_cpp_test(TEST t_vtkh_smoke DEPENDS_ON ${vtkh_smoke_deps})
+    vtkm_add_target_information(t_vtkh_smoke
+                                DEVICE_SOURCES t_vtkh_smoke.cpp)
+    set_target_properties(t_vtkh_smoke PROPERTIES CXX_VISIBILITY_PRESET hidden)
 endif()
 
 

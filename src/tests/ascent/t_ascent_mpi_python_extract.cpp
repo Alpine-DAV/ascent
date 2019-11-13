@@ -97,7 +97,7 @@ TEST(ascent_mpi_runtime, test_pyhton_script_extract_src)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,par_rank,par_size);
+    create_3d_example_dataset(data,32,par_rank,par_size);
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
@@ -163,7 +163,7 @@ TEST(ascent_mpi_runtime, test_python_script_extract_file)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,par_rank,par_size);
+    create_3d_example_dataset(data,32,par_rank,par_size);
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
@@ -229,6 +229,90 @@ TEST(ascent_mpi_runtime, test_python_script_extract_file)
     ascent.close();
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_mpi_runtime, test_python_script_extract_bad_file)
+{
+    // same as above, however we read the script from a file
+
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    ASCENT_INFO("Rank "
+                << par_rank
+                << " of "
+                << par_size
+                << " reporting");
+
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    create_3d_example_dataset(data,32,par_rank,par_size);
+    data["state/cycle"] = 101;
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    // make sure the _output dir exists
+    string output_path = "";
+    if(par_rank == 0)
+    {
+        output_path = prepare_output_dir();
+    }
+    else
+    {
+        output_path = output_dir();
+    }
+
+
+    //
+    // Create the actions.
+    //
+
+    string script_fname = "/blarhg/very/bad/path.py";
+    
+    conduit::Node extracts;
+    extracts["e1/type"]  = "python";
+    extracts["e1/params/file"] = script_fname;
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["runtime"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    EXPECT_THROW(ascent.execute(actions),
+                 conduit::Error);
+    ascent.close();
+
+}
+
 //
 // This demos using the ascent python api inside of ascent ...
 std::string py_script_inception = "\n"
@@ -277,7 +361,7 @@ TEST(ascent_mpi_runtime, test_python_extract_inception)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,par_rank,par_size);
+    create_3d_example_dataset(data,32,par_rank,par_size);
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));

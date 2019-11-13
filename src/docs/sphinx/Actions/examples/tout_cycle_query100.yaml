@@ -1,0 +1,9 @@
+#An example of quiering the current cycle.
+
+- 
+  action: "add_queries"
+  queries: 
+    q1: 
+      params: 
+        expression: "cycle()"
+        name: "cycle"
