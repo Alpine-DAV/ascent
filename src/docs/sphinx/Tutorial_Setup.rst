@@ -48,10 +48,10 @@ Tutorial Setup
 
 The tutorial examples are installed with Ascent to the subdirectory ``examples/ascent/tutorial/``.  Below are several options for using pre-built Ascent installs and links to info about building Ascent. If you have access to Docker, the easiest way to test the waters is via the ``alpinedav/ascent`` Docker image.
 
-SC19 Tutorial Option
-~~~~~~~~~~~~~~~~~~~~~~~
+SC19 Tutorial Cloud Option
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For SC19, we plan to have several instances of our Ascent Docker iamge up and running the jupyter notebook server.
+For SC19, we plan to have several instances of our Ascent Docker image up and running the jupyter notebook server.
 We will provide IP addresses and login info to attendees.
 
 Using Docker
@@ -136,6 +136,46 @@ You can copy the tutorial examples from this install and use them as follows:
     cd ..
     cd python
     python ascent_first_light_example.py  
+
+
+SC19 Tutorial VM Option
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Ascent is also installed on the SC19 SENSEI + Ascent Example VM Image. The install is located at ``/home/in-situ-user/ascent/current``. You can use the tutorial examples as follows:
+
+.. code::
+
+    #
+    # source helper script with Ascent paths
+    #
+    source /home/in-situ-user/ascent/current/setup_ascent_env.sh
+
+    #
+    # build cpp examples and run the first one
+    #
+    cd /home/in-situ-user/ascent/current/ascent-install/examples/ascent/tutorial/ascent_intro/cpp
+    make
+    ./ascent_first_light_example
+
+    #
+    # run a python example
+    #
+    cd ..
+    cd python
+    python ascent_first_light_example.py  
+
+
+This install also includes jupyter, you can launch the notebook server with:
+
+.. code::
+
+   jupyter notebook
+
+
+The jupyter examples are at:
+
+`/home/in-situ-user/ascent/current/ascent-install/examples/ascent/tutorial/ascent_intro/`
+
 
 Build and Install
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

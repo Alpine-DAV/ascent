@@ -6,6 +6,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 
+## [0.5.0] - Released 2019-11-12
+
 ### Added
 
 - Added new [Tutorial Content](https://ascent.readthedocs.io/en/latest/Tutorial.html) including C++, Python, and Python-based Jupyter Notebook examples.
@@ -13,6 +15,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a Jupyter Extract that provides interactive Python Notebook access to published mesh data. See the related [Cloverleaf Demo](https://ascent.readthedocs.io/en/latest/Tutorial_CloverLeaf_Demos.html#using-the-jupyter-extract-for-interactive-python-analysis).
 - Deprecated the `execute` and `reset` actions. `ascent.execute(actions)` now implicitly resets and execute the Ascent actions. To maintain a degree of backwards compatibility, using `execute` and `reset` are still passable to `ascent.execute(actions)`. Internally, the internal data flow network will only be rebuilt when the current actions differ from the previously executed actions. Note: this only occurs when the Ascent runtime object is persistent between calls to `ascent.execute(actions)`.
 - Added support for YAML `ascent_actions` and `ascent_options` files. YAML files are much easier for humans to compose
+- Add a relative offset option to the Slice filter.
 
 ### Changed
 
@@ -26,3 +29,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
  
 ### Fixed
 - Several minor bug fixes 
+
+[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Alpine-DAV/ascent/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/Alpine-DAV/ascent/compare/v0.3.0...v0.4.0
+

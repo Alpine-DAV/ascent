@@ -242,6 +242,8 @@ The script computes the histogram of the energy field and prints a summary like 
     2.6617779   2.70134404  2.74091018  2.78047632  2.82004246  2.8596086
     2.89917474  2.93874088]
 
+.. _cloverleaf_demo_jupyter_extract:
+
 Using the Jupyter Extract for interactive Python analysis 
 -----------------------------------------------------------
 
