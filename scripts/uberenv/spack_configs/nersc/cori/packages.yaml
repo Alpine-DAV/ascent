@@ -57,7 +57,7 @@ packages:
   cmake:
       buildable: False
       paths:
-       cmake: /project/projectdirs/alpine/software/cmake/3.14.6/
+       cmake@3.14.6: /project/projectdirs/alpine/software/cmake/3.14.6/
   python:
       variants: ~dbm
   pkg-config:
