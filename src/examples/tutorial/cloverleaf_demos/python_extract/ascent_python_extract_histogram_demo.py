@@ -75,7 +75,7 @@ comm.Allreduce(e_max, e_max_all, op=MPI.MAX)
 bins = np.linspace(e_min_all, e_max_all)
 
 # get histogram counts for local data
-hist, bin_edges = np.histogram(e_vals, bins = bins)
+hist, bin_edges = np.histogram(e_vals[0], bins = bins[0])
 
 # declare var for reduce results
 hist_all = np.zeros_like(hist)
