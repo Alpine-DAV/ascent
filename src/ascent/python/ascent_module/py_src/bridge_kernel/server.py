@@ -64,7 +64,7 @@ def jupyter_extract():
     # so we use set_external until we better understand
     # the cause
     pub_data = conduit.Node()
-    pub_data.set_external(ascent_extract.ascent_data())
+    pub_data.update_external(ascent_extract.ascent_data())
     global_dict["server_ascent"].publish(pub_data)
 
     def display_images(info):
