@@ -55,7 +55,9 @@ This tutorial introduces how to use Ascent, including basics about:
 Ascent installs include standalone C++, Python, and Python-based Jupyter notebook examples for this tutorial. 
 You can find the tutorial source code and notebooks in your Ascent install directory under ``examples/ascent/tutorial/ascent_intro/`` and the Cloverleaf3D demo files under ``examples/ascent/tutorial/cloverleaf_demos/``.
 
-    
+
+`Ascent Tutorial  Intro Slides [pdf] <https://www.ascent-dav.org/2019_11_17_SC19_insitu_tutorial_ascent_intro_slides.pdf>`_
+
 Scheduled Tutorials:
  * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC19 <https://sc19.supercomputing.org/presentation/?id=tut141&sess=sess199>`_ - Nov 2019, Denver, CO
  * ECP 2020 Annual Meeting - Feb 2020, Houston, TX
