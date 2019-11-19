@@ -186,6 +186,11 @@ public:
     /// create graphviz output
     std::string to_dot() const;
 
+    /// save graphviz output to a d3 + html output, viewable
+    /// in a web browser.
+    void save_dot_html(const std::string &ofile) const;
+
+
 private:
     Graph(Workspace *w);
 

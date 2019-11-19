@@ -640,6 +640,51 @@ Graph::to_dot() const
 
 //-----------------------------------------------------------------------------
 void
+Graph::save_dot_html(const std::string &ofile) const
+{
+    // we are injected as inline js literal -- new lines need to be escaped.
+    // Add \ to the end of each line in our dot output.
+    std::string graph_dot_str = to_dot();
+    std::string search = "\n";
+    std::string replace = "\\\n";
+
+    size_t pos = 0;
+    while ((pos = graph_dot_str.find(search, pos)) != std::string::npos)
+    {
+        graph_dot_str.replace(pos, search.length(), replace);
+        pos += replace.length();
+    }
+
+    std::ofstream ofs;
+    ofs.open(ofile.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("Failed to open " << ofile << " to save dot html result.");
+    }
+
+    // TODO: Path that bundles these js deps
+    ofs << "<!DOCTYPE html>\n"
+    "<meta charset=\"utf-8\">\n"
+    "<body>\n"
+    "<script src=\"https://d3js.org/d3.v4.min.js\"></script>\n"
+    "<script src=\"https://unpkg.com/viz.js@1.8.0/viz.js\" type=\"javascript/worker\"></script>\n"
+    "<script src=\"https://unpkg.com/d3-graphviz@1.3.1/build/d3-graphviz.min.js\"></script>\n"
+    "<div id=\"graph\" style=\"text-align: center;\"></div>\n"
+    "<script>\n"
+    "\n"
+    "d3.select(\"#graph\")\n"
+    "  .graphviz()\n"
+    "    .renderDot('" << graph_dot_str  << "');\n"
+    "\n"
+    "</script>\n"
+    "</body>\n"
+    "</html>\n";
+    ofs.close();
+}
+
+
+//-----------------------------------------------------------------------------
+void
 Graph::print() const
 {
     CONDUIT_INFO(to_json());
