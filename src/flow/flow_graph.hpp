@@ -180,16 +180,29 @@ public:
     void           info(conduit::Node &out) const;
     /// create json string from info
     std::string    to_json() const;
+    /// create yaml string from info
+    std::string    to_yaml() const;
     /// print json version of info
     void           print() const;
 
-    /// create graphviz output
+    /// graphviz output helpers
+    
+    /// create dot description
     std::string to_dot() const;
+    /// create dot description embedded d3 + html
+    std::string to_dot_html() const;
+
+    /// stream variants of graphviz output helpers
+    void to_dot(std::ostream &oss,
+                const std::string &eol = "\n") const;
+    void to_dot_html(std::ostream &oss) const;
+
+    /// save graphviz output to txt file
+    void save_dot(const std::string &ofile) const;
 
     /// save graphviz output to a d3 + html output, viewable
     /// in a web browser.
     void save_dot_html(const std::string &ofile) const;
-
 
 private:
     Graph(Workspace *w);

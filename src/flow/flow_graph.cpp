@@ -594,18 +594,45 @@ Graph::to_json() const
     return oss.str();
 }
 
+//-----------------------------------------------------------------------------
+std::string
+Graph::to_yaml() const
+{
+    Node out;
+    info(out);
+    ostringstream oss;
+    out.to_yaml_stream(oss);
+    return oss.str();
+}
 
 //-----------------------------------------------------------------------------
 std::string
 Graph::to_dot() const
 {
+    ostringstream oss;
+    to_dot(oss);
+    return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+std::string
+Graph::to_dot_html() const
+{
+    ostringstream oss;
+    to_dot_html(oss);
+    return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void 
+Graph::to_dot(std::ostream &os,
+              const std::string &eol) const
+{
     Node out;
     info(out);
 
-    ostringstream oss;
-
     // traverse conns to create a dot graph;
-    oss << "digraph {" << std::endl;
+    os << "digraph {" << eol;
 
 
     NodeConstIterator itr = out["filters"].children();
@@ -613,11 +640,11 @@ Graph::to_dot() const
     {
         const Node &f= itr.next();
         std::string f_name = itr.name();
-        oss << "  "
-            << f_name
-            << " [label=\"" << f_name
-            << "(" << f["type_name"].as_string() << ")"
-            << "\"];" << std::endl;
+        os << "  "
+           << f_name
+           << " [label=\"" << f_name
+           << "(" << f["type_name"].as_string() << ")"
+           << "\"];" << eol;
     }
 
     itr = out["connections"].children();
@@ -625,60 +652,86 @@ Graph::to_dot() const
     while(itr.has_next())
     {
         const Node &c= itr.next();
-        oss << "  "
-            << c["src"].as_string()
-            << " -> "
-            << c["dest"].as_string()
-            << "[ label=\"" << c["port"].as_string() << "\" ]"
-            << ";"
-            << std::endl;
+        os << "  "
+           << c["src"].as_string()
+           << " -> "
+           << c["dest"].as_string()
+           << "[ label=\"" << c["port"].as_string() << "\" ]"
+           << ";"
+           << eol;
     }
 
-    oss << "}" << std::endl;
-    return oss.str();
+    os << "}" << eol;
+}
+
+//-----------------------------------------------------------------------------
+void
+Graph::to_dot_html(std::ostream &os) const
+{
+
+    // TODO: Path that bundles these js deps w/ ascent?
+    os << "<script src=\"https://d3js.org/d3.v4.min.js\"></script>\n"
+          "<script src=\"https://unpkg.com/viz.js@1.8.0/viz.js\" type=\"javascript/worker\"></script>\n"
+          "<script src=\"https://unpkg.com/d3-graphviz@1.3.1/build/d3-graphviz.min.js\"></script>\n"
+          "<div id=\"graph\" style=\"text-align: center;\"></div>\n"
+          "<script>\n"
+          "\n"
+          "d3.select(\"#graph\")\n"
+          "  .graphviz()\n"
+          "    .renderDot('";
+
+    // gen dot def, with proper js escaping
+    // we are injected as inline js literal -- new lines need to be escaped.
+    // Add \ to the end of each line in our dot output.
+    to_dot(os," \\\n");
+    
+    os << "');\n"
+          "\n"
+          "</script>\n";
+}
+
+//-----------------------------------------------------------------------------
+void
+Graph::save_dot(const std::string &ofile) const
+{
+    std::ofstream ofs;
+    ofs.open(ofile.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("Failed to open "
+                      << ofile 
+                      << " to save dot txt result.");
+    }
+
+    to_dot(ofs);
+
+    ofs.close();
 }
 
 //-----------------------------------------------------------------------------
 void
 Graph::save_dot_html(const std::string &ofile) const
 {
-    // we are injected as inline js literal -- new lines need to be escaped.
-    // Add \ to the end of each line in our dot output.
-    std::string graph_dot_str = to_dot();
-    std::string search = "\n";
-    std::string replace = "\\\n";
-
-    size_t pos = 0;
-    while ((pos = graph_dot_str.find(search, pos)) != std::string::npos)
-    {
-        graph_dot_str.replace(pos, search.length(), replace);
-        pos += replace.length();
-    }
-
     std::ofstream ofs;
     ofs.open(ofile.c_str());
     if(!ofs.is_open())
     {
-        CONDUIT_ERROR("Failed to open " << ofile << " to save dot html result.");
+        CONDUIT_ERROR("Failed to open " 
+                       << ofile
+                       << " to save dot html result.");
     }
-
-    // TODO: Path that bundles these js deps
+    
+    // add html header to create full well formed html doc
     ofs << "<!DOCTYPE html>\n"
-    "<meta charset=\"utf-8\">\n"
-    "<body>\n"
-    "<script src=\"https://d3js.org/d3.v4.min.js\"></script>\n"
-    "<script src=\"https://unpkg.com/viz.js@1.8.0/viz.js\" type=\"javascript/worker\"></script>\n"
-    "<script src=\"https://unpkg.com/d3-graphviz@1.3.1/build/d3-graphviz.min.js\"></script>\n"
-    "<div id=\"graph\" style=\"text-align: center;\"></div>\n"
-    "<script>\n"
-    "\n"
-    "d3.select(\"#graph\")\n"
-    "  .graphviz()\n"
-    "    .renderDot('" << graph_dot_str  << "');\n"
-    "\n"
-    "</script>\n"
-    "</body>\n"
-    "</html>\n";
+           "<meta charset=\"utf-8\">\n"
+           "<body>\n";
+
+    to_dot_html(ofs);
+    
+    // add html footer to finish well formed html doc
+    ofs << "</body>\n"
+           "</html>\n";
+
     ofs.close();
 }
 

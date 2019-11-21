@@ -1452,6 +1452,9 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
           m_info["expressions"] = expression_cache;
         }
+        
+        m_info["flow_graph_dot"]      = w.graph().to_dot();
+        m_info["flow_graph_dot_html"] = w.graph().to_dot_html();
 
         m_web_interface.PushRenders(render_file_names);
 
