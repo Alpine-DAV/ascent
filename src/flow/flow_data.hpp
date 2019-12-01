@@ -169,6 +169,9 @@ class FLOW_API DataWrapper: public Data
 };
 
 
+// this needs to be declared here to cement proper symbol visibly
+// to use runtime type checking in further libs
+template class FLOW_API DataWrapper<conduit::Node>;
 
 //-----------------------------------------------------------------------------
 };

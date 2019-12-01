@@ -202,7 +202,7 @@ conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
   conduit::Node res;
   res["filter_name"] = name;
 
-  
+
   // get identifier type from cache
   conduit::Node *cache = w.registry().fetch<conduit::Node>("cache");
   if(!cache->has_path(m_name))
@@ -410,7 +410,7 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
       {
         valid = true;
       }
-    
+
       // keep track of which arguments have been specified
       if(func_arg.has_path("optional"))
       {
@@ -522,7 +522,7 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
       }
 
     }
-    
+
     res["type"] = res_type;
   }
   else
@@ -580,7 +580,7 @@ conduit::Node ASTIfExpr::build_graph(flow::Workspace &w)
   w.graph().add_filter("expr_if",
                        name,
                        params);
-  
+
   // src, dest, port
   w.graph().connect(n_condition["filter_name"].as_string(),name,"condition");
   w.graph().connect(n_if["filter_name"].as_string(),name,"if");
@@ -737,11 +737,11 @@ conduit::Node ASTString::build_graph(flow::Workspace &w)
 {
   // strip the quotes from the variable name
   std::string stripped = m_name;
-  int pos = stripped.find("\"");
+  int pos = stripped.find("'");
   while (pos != std::string::npos)
   {
     stripped.erase(pos,1);
-    pos = stripped.find("\"");
+    pos = stripped.find("'");
   }
 
   // create a unique name for the filter

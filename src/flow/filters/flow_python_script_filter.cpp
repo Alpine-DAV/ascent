@@ -94,8 +94,8 @@ namespace flow
 //-----------------------------------------------------------------------------
 // Make sure we treat cleanup of python objects correctly
 //-----------------------------------------------------------------------------
-template<>
-class DataWrapper<PyObject>: public Data
+template<> 
+class FLOW_API DataWrapper<PyObject>: public Data
 {
  public:
     DataWrapper(void *data)
@@ -196,7 +196,6 @@ bool
 PythonScript::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
-    CONDUIT_INFO(params.to_json());
     info.reset();
     bool res = true;
 
@@ -221,6 +220,17 @@ PythonScript::verify_params(const conduit::Node &params,
         info["errors"].append() = "Missing required string parameter"
                                   " 'source' or 'file'";
         res = false;
+    }
+
+    if( params.has_child("echo") )
+    {
+        if( !params["echo"].dtype().is_string() || 
+             (params["echo"].as_string() != "true" &&
+              params["echo"].as_string() != "false") )
+        {
+            info["errors"].append() = "parameter 'echo' is not \"true\" or \"false\"";
+            res = false;
+        }
     }
 
     if( params.has_child("interface") )
@@ -304,6 +314,15 @@ PythonScript::execute()
     std::string module_name = "flow_script_filter";
     std::string input_func_name = "flow_input";
     std::string set_output_func_name = "flow_set_output";
+
+    bool echo = false;
+    if( params().has_path("echo") && 
+        params()["echo"].as_string() == "true")
+    {
+        echo = true;
+    }
+
+    py_interp->set_echo(echo);
 
     if( params().has_path("interface/module") )
     {

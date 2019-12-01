@@ -87,8 +87,14 @@ public:
     /// use with caution!
     void         reset();
     void         shutdown();
-    
-    
+
+    /// echo (default = false)
+    ///  when enabled, controls if contents of execd python 
+    //   scripts are echoed to conduit info
+    bool         echo_enabled() const { return m_echo; }
+    /// change echo setting
+    void         set_echo(bool value) { m_echo = value; }
+
     void         set_program_name(const char *name);
     void         set_argv(int argc, char **argv);
 
@@ -144,6 +150,7 @@ private:
 
     bool         m_handled_init;
     bool         m_running;
+    bool         m_echo;
     bool         m_error;
     std::string  m_error_msg;
 

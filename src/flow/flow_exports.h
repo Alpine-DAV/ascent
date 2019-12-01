@@ -56,10 +56,10 @@
 // -- define proper lib exports for various platforms --
 //-----------------------------------------------------------------------------
 #if defined(_WIN32)
-#if defined(FLOW_EXPORTS) || defined(flow_EXPORTS)
-#define ASCENT_API __declspec(dllexport)
+#if defined(ASCENT_EXPORTS_FLAG)
+#define FLOW_API __declspec(dllexport)
 #else
-#define ASCENT_API __declspec(dllimport)
+#define FLOW_API __declspec(dllimport)
 #endif
 #if defined(_MSC_VER)
 // Turn off warning about lack of DLL interface
@@ -70,7 +70,7 @@
 #pragma warning(disable:4786)
 #endif
 #else
-# if __GNUC__ >= 4 && (defined(FLOW_EXPORTS) || defined(flow_EXPORTS))
+# if __GNUC__ >= 4 && defined(ASCENT_EXPORTS_FLAG)
 #   define FLOW_API __attribute__ ((visibility("default")))
 # else
 #   define FLOW_API /* hidden by default */

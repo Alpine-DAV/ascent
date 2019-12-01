@@ -175,6 +175,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   // render paths
   std::vector<std::string> r_valid_paths;
   r_valid_paths.push_back("image_name");
+  r_valid_paths.push_back("image_prefix");
   r_valid_paths.push_back("image_width");
   r_valid_paths.push_back("image_height");
   r_valid_paths.push_back("scene_bounds");
@@ -1124,10 +1125,36 @@ VTKHSlice::verify_params(const conduit::Node &params,
 {
     info.reset();
 
-    bool res = check_numeric("point/x",params, info, true);
+    bool res = true;
 
-    res = check_numeric("point/y",params, info, true) && res;
-    res = check_numeric("point/z",params, info, true) && res;
+
+    if(params.has_path("point/x_offset") && params.has_path("point/x"))
+    {
+      info["errors"]
+        .append() = "Cannot specify the plane point as both an offset and explicit point";
+      res = false;
+    }
+
+    if(params.has_path("point/x"))
+    {
+      res &= check_numeric("point/x",params, info, true);
+      res = check_numeric("point/y",params, info, true) && res;
+      res = check_numeric("point/z",params, info, true) && res;
+    }
+    else if(params.has_path("point/x_offset"))
+    {
+      res &= check_numeric("point/x_offset",params, info, true);
+      res = check_numeric("point/y_offset",params, info, true) && res;
+      res = check_numeric("point/z_offset",params, info, true) && res;
+    }
+    else
+    {
+      info["errors"]
+        .append() = "Slice must specify a point for the plane.";
+      res = false;
+    }
+
+
     res = check_numeric("normal/x",params, info, true) && res;
     res = check_numeric("normal/y",params, info, true) && res;
     res = check_numeric("normal/z",params, info, true) && res;
@@ -1136,9 +1163,14 @@ VTKHSlice::verify_params(const conduit::Node &params,
     valid_paths.push_back("point/x");
     valid_paths.push_back("point/y");
     valid_paths.push_back("point/z");
+    valid_paths.push_back("point/x_offset");
+    valid_paths.push_back("point/y_offset");
+    valid_paths.push_back("point/z_offset");
     valid_paths.push_back("normal/x");
     valid_paths.push_back("normal/y");
     valid_paths.push_back("normal/z");
+
+
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -1168,15 +1200,45 @@ VTKHSlice::execute()
     const Node &n_point = params()["point"];
     const Node &n_normal = params()["normal"];
 
-    vtkm::Vec<vtkm::Float32,3> v_point(n_point["x"].to_float32(),
-                                       n_point["y"].to_float32(),
-                                       n_point["z"].to_float32());
+    using Vec3f = vtkm::Vec<vtkm::Float32,3>;
+    vtkm::Bounds bounds = data->GetGlobalBounds();
+    Vec3f point;
+
+    const float eps = 1e-5; // ensure that the slice is always inside the data set
+
+
+    if(n_point.has_path("x_offset"))
+    {
+      float offset = n_point["x_offset"].to_float32();
+      std::max(-1.f, std::min(1.f, offset));
+      float t = (offset + 1.f) / 2.f;
+      t = std::max(0.f + eps, std::min(1.f - eps, t));
+      point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
+
+      offset = n_point["y_offset"].to_float32();
+      std::max(-1.f, std::min(1.f, offset));
+      t = (offset + 1.f) / 2.f;
+      t = std::max(0.f + eps, std::min(1.f - eps, t));
+      point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
+
+      offset = n_point["z_offset"].to_float32();
+      std::max(-1.f, std::min(1.f, offset));
+      t = (offset + 1.f) / 2.f;
+      t = std::max(0.f + eps, std::min(1.f - eps, t));
+      point[2] = bounds.Z.Min + t * (bounds.Z.Max - bounds.Z.Min);
+    }
+    else
+    {
+      point[0] = n_point["x"].to_float32();
+      point[1] = n_point["y"].to_float32();
+      point[2] = n_point["z"].to_float32();
+    }
 
     vtkm::Vec<vtkm::Float32,3> v_normal(n_normal["x"].to_float32(),
                                         n_normal["y"].to_float32(),
                                         n_normal["z"].to_float32());
 
-    slicer.AddPlane(v_point, v_normal);
+    slicer.AddPlane(point, v_normal);
     slicer.Update();
 
     vtkh::DataSet *slice_output = slicer.GetOutput();
@@ -1392,10 +1454,12 @@ DefaultRender::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-    bool res = check_string("image_prefix",params, info, true);
+    bool res = check_string("image_name",params, info, false);
+    res &= check_string("image_prefix",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("image_prefix");
+    valid_paths.push_back("image_name");
 
     std::vector<std::string> ignore_paths;
     ignore_paths.push_back("renders");
@@ -1519,14 +1583,17 @@ DefaultRender::execute()
           // this render has a unique name
           if(render_node.has_path("image_name"))
           {
-            image_name = expand_family_name(render_node["image_name"].as_string(), cycle);
+            image_name = render_node["image_name"].as_string();
+          }
+          else if(render_node.has_path("image_prefix"))
+          {
+            std::stringstream ss;
+            ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
+            image_name = ss.str();
           }
           else
           {
-            std::stringstream ss;
-            ss<<expand_family_name(params()["image_prefix"].as_string(), cycle);
-            ss<<"_"<<i;
-            image_name = ss.str();
+            ASCENT_ERROR("Render must have either a 'image_name' or 'image_prefix' parameter");
           }
 
           vtkh::Render render = detail::parse_render(render_node,
@@ -1539,8 +1606,18 @@ DefaultRender::execute()
     }
     else
     {
-      std::string image_name =  params()["image_prefix"].as_string();
-      image_name = expand_family_name(image_name, cycle);
+      // This is the path for the default render attached directly to a scene
+      std::string image_name;
+      if(params().has_path("image_name"))
+      {
+        image_name =  params()["image_name"].as_string();
+      }
+      else
+      {
+        image_name =  params()["image_prefix"].as_string();
+        image_name = expand_family_name(image_name, cycle);
+      }
+
       vtkh::Render render = vtkh::MakeRender(1024,
                                              1024,
                                              *bounds,

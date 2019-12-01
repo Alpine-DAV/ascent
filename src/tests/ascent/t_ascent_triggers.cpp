@@ -199,7 +199,7 @@ TEST(ascent_triggers, complex_trigger)
     //
     Node actions;
     // this should always be true
-    std::string condition = "magnitude(max(field(\"braid\")).position - vector(0,0,0)) > 0";
+    std::string condition = "magnitude(max(field('braid')).position - vector(0,0,0)) > 0";
     conduit::Node triggers;
     triggers["t1/params/condition"] = condition;
     triggers["t1/params/actions_file"] = trigger_file;
@@ -298,7 +298,7 @@ TEST(ascent_triggers, trigger_extract)
     //
     Node actions;
     // this should always be true
-    std::string condition = "magnitude(max(field(\"braid\")).position - vector(0,0,0)) > 0";
+    std::string condition = "magnitude(max(field('braid')).position - vector(0,0,0)) > 0";
     conduit::Node triggers;
     triggers["t1/params/condition"] = condition;
     triggers["t1/params/actions_file"] = trigger_file;

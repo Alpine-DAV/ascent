@@ -99,55 +99,25 @@ TEST(ascent_mpi_stats, mpi_stats)
     Node data, verify_info;
     create_3d_example_dataset(data,32,par_rank,par_size);
 
-    // There is a bug in conduit blueprint related to rectilinear
-    // reenable this check after updating conduit
-    // EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    conduit::blueprint::mesh::verify(data,verify_info);
-    // make sure the _output dir exists
-    string output_path = "";
-    if(par_rank == 0)
-    {
-        output_path = prepare_output_dir();
-    }
-    else
-    {
-        output_path = output_dir();
-    }
-
-    string output_file = conduit::utils::join_file_path(output_path,"tout_mpi_stats");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     //
     // Create the actions.
     //
 
-    conduit::Node pipelines;
+    conduit::Node extracts;
     // pipeline 1
-    pipelines["pl1/f1/type"] = "statistics";
-    // filter knobs all these are optional
-    conduit::Node &contour_params = pipelines["pl1/f1/params"];
-    contour_params["field"] = "radial_vert";
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "rank_ele";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
+    extracts["e1/type"] = "statistics";
+    conduit::Node &params = extracts["e1/params"];
+    params["field"] = "radial_vert";
 
     conduit::Node actions;
-
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-
-    conduit::Node &add_plots = actions.append();
-    add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
 
     actions.print();
-
     //
     // Run Ascent
     //
@@ -165,8 +135,6 @@ TEST(ascent_mpi_stats, mpi_stats)
     ascent.close();
 
     MPI_Barrier(comm);
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
 }
 
 

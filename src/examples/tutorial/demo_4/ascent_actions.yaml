@@ -1,8 +1,0 @@
-
--
-  action: "add_extracts"
-  extracts:
-    e1:
-      type: "python"
-      params:
-        file: "ascent_tutorial_demo_4_histogram.py"

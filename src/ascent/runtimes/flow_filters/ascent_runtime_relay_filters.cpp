@@ -560,7 +560,7 @@ void mesh_blueprint_save(const Node &data,
         }
 
         root["protocol/name"]    =  file_protocol;
-        root["protocol/version"] = "0.4.0";
+        root["protocol/version"] = "0.5.0";
 
         root["number_of_files"]  = global_domains;
         // for now we will save one file per domain, so trees == files

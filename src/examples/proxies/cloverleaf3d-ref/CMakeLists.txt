@@ -142,8 +142,8 @@ if(MPI_FOUND AND FORTRAN_FOUND)
 
     install(FILES ASCENT_README.md
                   clover.in
-                  ascent_actions.json
-                  ascent_options.json
+                  ascent_actions.yaml
+                  ascent_options.yaml
             DESTINATION examples/ascent/proxies/cloverleaf3d)
 
 endif()

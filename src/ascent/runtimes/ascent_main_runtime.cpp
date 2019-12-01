@@ -73,6 +73,7 @@
 #include <ascent_expression_eval.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
+#include <vtkm/cont/Error.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
@@ -474,7 +475,7 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       if(cname == "pipeline")
       {
         // this is a child that is not a filter.
-        // It specifices the input to the pipeline itself
+        // It specifies the input to the pipeline itself
         continue;
       }
       conduit::Node filter = pipeline.child(i);
@@ -494,7 +495,7 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       }
       else
       {
-        ASCENT_ERROR("Unrecognized filter "<<filter["type"].as_string());
+        ASCENT_ERROR("Unrecognized transform filter "<<filter["type"].as_string());
       }
 
       // create a unique name for the filter
@@ -1028,9 +1029,16 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       render_params["renders"] = scene["renders"];
     }
 
-    if(scene.has_path("image_prefix"))
+    if(scene.has_path("image_prefix") || scene.has_path("image_name"))
     {
-      render_params["image_prefix"] = scene["image_prefix"].as_string();
+      if(scene.has_path("image_prefix"))
+      {
+        render_params["image_prefix"] = scene["image_prefix"].as_string();
+      }
+      else
+      {
+        render_params["image_name"] = scene["image_name"].as_string();
+      }
     }
     else
     {
@@ -1375,93 +1383,113 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
 void
 AscentRuntime::Execute(const conduit::Node &actions)
 {
-    ResetInfo();
-
-    conduit::Node diff_info;
-    bool different_actions = m_previous_actions.diff(actions, diff_info);
-
-    if(different_actions)
-    {
-      // destroy existing graph an start anew
-      w.reset();
-      ConnectSource();
-      BuildGraph(actions);
-    }
-    else
-    {
-      // always ensure that we have the source
-      ConnectSource();
-    }
-
-    m_previous_actions = actions;
-
-    PopulateMetadata(); // add metadata so filters can access it
-
-    w.info(m_info["flow_graph"]);
-    m_info["actions"] = actions;
-    //w.print();
-    //std::cout<<w.graph().to_dot();
-
     // catch any errors that come up here and forward
     // them up as a conduit error
+
+    // --- open try --- //
     try
     {
+        ResetInfo();
+
+        conduit::Node diff_info;
+        bool different_actions = m_previous_actions.diff(actions, diff_info);
+
+        if(different_actions)
+        {
+          // destroy existing graph an start anew
+          w.reset();
+          ConnectSource();
+          BuildGraph(actions);
+        }
+        else
+        {
+          // always ensure that we have the source
+          ConnectSource();
+        }
+
+        m_previous_actions = actions;
+
+        PopulateMetadata(); // add metadata so filters can access it
+
+        w.info(m_info["flow_graph"]);
+        m_info["actions"] = actions;
+        //w.print();
+        //std::cout<<w.graph().to_dot();
+
 #if defined(ASCENT_VTKM_ENABLED)
-      Node *meta = w.registry().fetch<Node>("metadata");
-      int cycle = 0;
-      if(meta->has_path("cycle"))
-      {
+        Node *meta = w.registry().fetch<Node>("metadata");
+        int cycle = 0;
+        if(meta->has_path("cycle"))
+        {
         cycle = (*meta)["cycle"].to_int32();
-      }
-      std::stringstream ss;
-      ss<<"cycle_"<<cycle;
-      vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
-      vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
+        }
+        std::stringstream ss;
+        ss<<"cycle_"<<cycle;
+        vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
+        vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
 #endif
-      w.execute();
+        // now execute the data flow graph
+        w.execute();
+
 #if defined(ASCENT_VTKM_ENABLED)
-      vtkh::DataLogger::GetInstance()->CloseLogEntry();
-      vtkh::DataLogger::GetInstance()->WriteLog();
+        vtkh::DataLogger::GetInstance()->CloseLogEntry();
+        vtkh::DataLogger::GetInstance()->WriteLog();
 #endif
+        Node msg;
+        this->Info(msg["info"]);
+        ascent::about(msg["about"]);
+        m_web_interface.PushMessage(msg);
+
+        Node render_file_names;
+        Node renders;
+        FindRenders(renders, render_file_names);
+        m_info["images"] = renders;
+
+        const conduit::Node &expression_cache =
+          runtime::expressions::ExpressionEval::get_cache();
+
+        if(expression_cache.number_of_children() > 0)
+        {
+          m_info["expressions"] = expression_cache;
+        }
+
+        m_web_interface.PushRenders(render_file_names);
+
+        w.registry().reset();
     }
+    // --- close try --- //
+
+    // Defend calling code by repackaging
+    // as many errors as possible with catch statements
 #if defined(ASCENT_VTKM_ENABLED)
+    // bottle vtkm and vtkh errors
     catch(vtkh::Error &e)
     {
+      w.reset();
       ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
+    }
+    catch(vtkm::cont::Error &e)
+    {
+      ASCENT_ERROR("Execution failed with vtkm: "<<e.what());
     }
 #endif
     catch(conduit::Error &e)
     {
+      w.reset();
       throw e;
     }
     catch(std::exception &e)
     {
+      w.reset();
       ASCENT_ERROR("Execution failed with: "<<e.what());
     }
-
-    Node msg;
-    this->Info(msg["info"]);
-    ascent::about(msg["about"]);
-    m_web_interface.PushMessage(msg);
-
-    Node render_file_names;
-    Node renders;
-    FindRenders(renders, render_file_names);
-    m_info["images"] = renders;
-
-    const conduit::Node &expression_cache =
-      runtime::expressions::ExpressionEval::get_cache();
-
-    if(expression_cache.number_of_children() > 0)
+    catch(...)
     {
-      m_info["expressions"] = expression_cache;
+      ASCENT_ERROR("Ascent: unknown exception thrown");
     }
-
-    m_web_interface.PushRenders(render_file_names);
-
-    w.registry().reset();
 }
 
+//-----------------------------------------------------------------------------
 void
 AscentRuntime::DisplayError(const std::string &msg)
 {
@@ -1470,6 +1498,7 @@ AscentRuntime::DisplayError(const std::string &msg)
     std::cerr<<msg;
   }
 }
+
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::RegisterFilterType(const std::string  &role_path,

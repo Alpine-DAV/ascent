@@ -55,5 +55,4 @@ Ascent User Documentation
    Actions/index
    Utilities
    GPU_notes
-   Tutorial
 

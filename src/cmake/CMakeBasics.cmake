@@ -137,7 +137,7 @@ endif()
 ##############################################################################
 find_package(Git)
 if(GIT_FOUND)
-  message("git executable: ${GIT_EXECUTABLE}")
+  message(STATUS "git executable: ${GIT_EXECUTABLE}")
   execute_process(COMMAND
     "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
