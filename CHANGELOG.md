@@ -6,6 +6,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 
+### Fixed
+- Issue where cycle was not properly propagated when converting mfem data.
+- Cinema issue where zoom was applied additively each cycle to oblivion.s
+- Cinema issue where cameras were not following the center of the data set
+
 ## [0.5.0] - Released 2019-11-14
 
 ### Added
@@ -26,9 +31,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Updated to VTK-m 1.5.0 and associated VTK-h.
 - Imposed necessary static build constraints for cuda support.
 
- 
+
 ### Fixed
-- Several minor bug fixes 
+- Several minor bug fixes
 
 [Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.5.0...HEAD
 [0.5.0]: https://github.com/Alpine-DAV/ascent/compare/v0.4.0...v0.5.0
