@@ -53,6 +53,7 @@
 
 // standard lib includes
 #include <string.h>
+#include <chrono>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -1385,7 +1386,11 @@ AscentRuntime::Execute(const conduit::Node &actions)
 {
     // catch any errors that come up here and forward
     // them up as a conduit error
-
+    using namespace std::chrono;
+    static  high_resolution_clock::time_point start, stop;
+    static bool timers_valid = false;
+    static int start_cycle;
+    start = high_resolution_clock::now();
     // --- open try --- //
     try
     {
@@ -1421,12 +1426,25 @@ AscentRuntime::Execute(const conduit::Node &actions)
         int cycle = 0;
         if(meta->has_path("cycle"))
         {
-        cycle = (*meta)["cycle"].to_int32();
+          cycle = (*meta)["cycle"].to_int32();
         }
         std::stringstream ss;
         ss<<"cycle_"<<cycle;
         vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
         vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
+        if(timers_valid)
+        {
+          // log the time spent in the simulation
+          int cycle_count = cycle - start_cycle;
+          start_cycle = cycle;
+          duration<double> time_span = duration_cast<duration<double>>(start - stop);
+          vtkh::DataLogger::GetInstance()->AddLogData("sim_time", time_span.count());
+          vtkh::DataLogger::GetInstance()->AddLogData("cycle_count", cycle_count);
+        }
+        else
+        {
+          start_cycle = cycle;
+        }
 #endif
         // now execute the data flow graph
         w.execute();
@@ -1487,6 +1505,9 @@ AscentRuntime::Execute(const conduit::Node &actions)
     {
       ASCENT_ERROR("Ascent: unknown exception thrown");
     }
+
+    stop = high_resolution_clock::now();
+    timers_valid = true;
 }
 
 //-----------------------------------------------------------------------------
