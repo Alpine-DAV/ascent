@@ -1940,13 +1940,37 @@ VTKHIsoVolume::verify_params(const conduit::Node &params,
 {
     info.reset();
 
-    bool res = check_numeric("min_value",params, info, true);
-    res = check_numeric("max_value",params, info, true) && res;
-    res = check_string("field",params, info, true) && res;
+    bool res = check_string("field",params, info, true);
+
+    if(params.has_path("min_value") &&
+       params.has_path("min_offset"))
+    {
+      info["errors"].append()
+        = "must speficy either absolutes values or relative not both";
+      res = false;
+    }
+    if(params.has_path("min_value"))
+    {
+      res &= check_numeric("min_value",params, info, true);
+      res &= check_numeric("max_value",params, info, true);
+    }
+    else if(params.has_path("min_offset"))
+    {
+      res &= check_numeric("min_offset",params, info, true);
+      res &= check_numeric("max_offset",params, info, true);
+    }
+    else
+    {
+      info["errors"].append()
+        = "must speficy either min and max values";
+      res = false;
+    }
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("min_value");
     valid_paths.push_back("max_value");
+    valid_paths.push_back("min_offset");
+    valid_paths.push_back("max_offset");
     valid_paths.push_back("field");
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -1975,10 +1999,25 @@ VTKHIsoVolume::execute()
 
     clipper.SetInput(data);
 
-    vtkm::Range clip_range;
-    clip_range.Min = params()["min_value"].to_float64();
-    clip_range.Max = params()["max_value"].to_float64();
     std::string field_name = params()["field"].as_string();
+
+    vtkm::Range clip_range;
+
+    if(params().has_path("min_offset"))
+    {
+      auto field_range = data->GetGlobalRange(field_name);
+      vtkm::Range range = field_range.GetPortalControl().Get(0);
+      double len = range.Length();
+      double min_offset = params()["min_offset"].to_float64();
+      double max_offset = params()["max_offset"].to_float64();
+      clip_range.Min = range.Min + (min_offset + 1.) * 0.5 * len;
+      clip_range.Max = range.Min + (max_offset + 1.) * 0.5 * len;
+    }
+    else
+    {
+      clip_range.Min = params()["min_value"].to_float64();
+      clip_range.Max = params()["max_value"].to_float64();
+    }
 
     clipper.SetField(field_name);
     clipper.SetRange(clip_range);
