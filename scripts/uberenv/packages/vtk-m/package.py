@@ -42,7 +42,7 @@ class VtkM(CMakePackage, CudaPackage):
     variant("openmp", default=(sys.platform != 'darwin'), description="build openmp support")
     variant("rendering", default=True, description="build rendering support")
     variant("tbb", default=(sys.platform == 'darwin'), description="build TBB support")
-    variant("64bitids", default=False,
+    variant("64bitids", default=True,
             description="enable 64 bits ids")
 
     depends_on("cmake")
@@ -119,9 +119,9 @@ class VtkM(CMakePackage, CudaPackage):
             # openmp support
             if "+openmp" in spec:
                 # openmp is added since version 1.3.0
-                if spec.satisfies('@:1.2.0'):
-                    raise InstallError('OpenMP is not supported for\
-                            vtkm version lower than 1.3')
+                #if spec.satisfies('@:1.2.0'):
+                #    raise InstallError('OpenMP is not supported for\
+                #            vtkm version lower than 1.3')
                 options.append("-DVTKm_ENABLE_OPENMP:BOOL=ON")
             else:
                 options.append("-DVTKm_ENABLE_OPENMP:BOOL=OFF")
