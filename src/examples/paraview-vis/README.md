@@ -25,7 +25,9 @@ Insitu ParaView visualization using the Ascent Extract interface
   cd spack  
   source share/spack/setup-env.sh  
   ```
-  - Optional if modules are not installed: `spack bootstrap`
+  - Optional if `module` command does not exist:
+    - instal environment-modules (or run `spack bootstrap`)
+    - run `add.modules` to add the `module` command to your `.bashrc` file
 
 # 3. Install ParaView and Ascent
 * Optional: For MomentInvariants visualization patch paraview package
@@ -35,6 +37,7 @@ Insitu ParaView visualization using the Ascent Extract interface
   - `spack install paraview@develop+python3+mpi+osmesa~opengl2`
   - on mac use: `spack install paraview@develop+python3+mpi^python+shared`
   (ParaView OSMesa does not compile, conduit needs `^python+shared`)
+  - for CUDA use: `spack install paraview@develop+python3+mpi+osmesa~opengl2+cuda`
 * Install Ascent
   - `spack install ascent~vtkh^python@3.7.4`
      Make sure you match the python version used by ParaView
@@ -50,14 +53,11 @@ Insitu ParaView visualization using the Ascent Extract interface
 # 4. Common installation instructions
 * Test with available simulations - VTK files and images will be generated in the current directory.
    - Test `proxies/cloverleaf3d`
-     - `cd $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d`.
-       For super-computers (summit) user directory is readonly on compute nodes so use:
-     `cd $MEMBERWORK/csc340` instead.
+     - Go to a directory where to run cloverleaf, for summit use `cd $MEMBERWORK/csc340`.
      - `ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview_ascent_source.py`
      - Execute: `ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview-vis-cloverleaf3d-momentinvariants.py paraview-vis.py`
      for MomentInvariants visualization or `ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview-vis-cloverleaf3d.py paraview-vis.py`
      for surface visualization.
-     - Optional: (if you have the file) `mv ascent_actions.json ascent_actions_volume.json  `
      - Execute:
      ```
      ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/ascent_actions.json  
@@ -70,7 +70,7 @@ Insitu ParaView visualization using the Ascent Extract interface
      - Set `scriptName` in paraview-vis.py
          with the result of `echo $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview_ascent_source.py`
      - Run the simulation 
-     `$(spack location --install-dir mpi)/bin/mpiexec -n 2 ./cloverleaf3d_par > output.txt 2>&1`
+     `$(spack location --install-dir mpi)/bin/mpiexec -n 2 $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/cloverleaf3d_par > output.txt 2>&1`
      - examine the generated VTK files the images
    - Similarily test: `proxies/kripke`, `proxies/laghos`, `proxies/lulesh` (you need to create the links)
      - `$(spack location --install-dir mpi)/bin/mpiexec -np 8 ./kripke_par --procs 2,2,2 --zones 32,32,32 --niter 5 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4 > output.txt 2>&1`
@@ -92,6 +92,10 @@ Insitu ParaView visualization using the Ascent Extract interface
    spectrum-mpi:
      modules:
        spectrum-mpi@10.3.0.1-20190611: spectrum-mpi/10.3.0.1-20190611
+     buildable: False
+   cuda:
+     modules:
+       cuda@10.1.168: cuda/10.1.168
      buildable: False
   ```
 * Continue with `3. Install ParaView and Ascent` but add the following postfix
