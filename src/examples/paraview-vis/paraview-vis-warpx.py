@@ -11,7 +11,7 @@ if count == 0:
     # echo $(spack location --install-dir paraview)
     paraview_path = ('/home/danlipsa/projects/spack/opt/spack/'
                      'linux-ubuntu18.04-x86_64/gcc-7.4.0/'
-                     'paraview-develop-odtqjudmv53um5qyzvfojkcbyi64glmc')
+                     'paraview-develop-ilfazyixajzsejg6x56xzhwbspmimnds')
     sys.path.append(paraview_path)
 
     # ParaView API
@@ -22,7 +22,7 @@ if count == 0:
     paraview.options.symmetric = True
     from paraview.simple import LoadPlugin, Contour, \
         Show, ColorBy, GetColorTransferFunction, GetActiveCamera, Render,\
-        SaveScreenshot
+        SaveScreenshot, ResetCamera
     import ascent_extract
 
     # CHANGE this path to the result of:
@@ -69,6 +69,7 @@ cycle = node['state/cycle']
 imageName = 'warpx_{0:04d}.png'.format(int(cycle))
 dataName = 'warpx_data_{0:04d}'.format(int(cycle))
 ascentSource.Count = count
+ResetCamera()
 Render()
 SaveScreenshot(imageName, ImageResolution=(1024, 1024),
                FontScaling='Do not scale fonts')
