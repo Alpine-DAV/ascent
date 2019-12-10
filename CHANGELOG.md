@@ -8,8 +8,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Fixed
 - Issue where cycle was not properly propagated when converting mfem data.
-- Cinema issue where zoom was applied additively each cycle to oblivion.s
-- Cinema issue where cameras were not following the center of the data set
+- Cinema issue where zoom was applied additively each cycle to oblivion.
+- Cinema issue where cameras were not following the center of the data set.
 
 ## [0.5.0] - Released 2019-11-14
 
