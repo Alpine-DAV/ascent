@@ -442,6 +442,14 @@ public:
     ASCENT_ERROR("Cannot create un-initialized CinemaManger");
   }
 
+  void set_bounds(vtkm::Bounds &bounds)
+  {
+    if(bounds != m_bounds)
+    {
+      this->create_cinema_cameras(bounds);
+    }
+  }
+
   void add_time_step()
   {
     m_times.push_back(m_time);
@@ -500,9 +508,8 @@ public:
     if(render_copy.has_path("camera"))
     {
       render_copy["camera"].reset();
-
-
     }
+
     std::string tmp_name = "";
     vtkh::Render render = detail::parse_render(render_copy,
                                                m_bounds,
@@ -515,14 +522,17 @@ public:
       std::string image_name = conduit::utils::join_file_path(m_image_path , m_image_names[i]);
 
       render.SetImageName(image_name);
+      // we have to make a copy of the camera because
+      // zoom is additive for some reason
+      vtkm::rendering::Camera camera = m_cameras[i];
 
       if(!zoom.dtype().is_empty())
       {
         // Allow default zoom to be overridden
-        m_cameras[i].Zoom(zoom.to_float32());
+        camera.Zoom(zoom.to_float32());
       }
 
-      render.SetCamera(m_cameras[i]);
+      render.SetCamera(camera);
       renders->push_back(render);
     }
   }
@@ -617,6 +627,8 @@ public:
 private:
   void create_cinema_cameras(vtkm::Bounds bounds)
   {
+    m_cameras.clear();
+    m_image_names.clear();
     using vtkmVec3f = vtkm::Vec<vtkm::Float32,3>;
     vtkmVec3f center = bounds.Center();
     vtkm::Vec<vtkm::Float32,3> totalExtent;
@@ -666,7 +678,7 @@ private:
         camera.SetViewUp(up);
         camera.SetLookAt(center);
         camera.SetPosition(pos);
-        camera.Zoom(0.2f);
+        //camera.Zoom(0.2f);
 
         std::stringstream ss;
         ss<<get_string(phi)<<"_"<<get_string(theta)<<"_";
@@ -1573,6 +1585,7 @@ DefaultRender::execute()
           int image_height;
           parse_image_dims(render_node, image_width, image_height);
 
+          manager.set_bounds(*bounds);
           manager.add_time_step();
           manager.fill_renders(renders, v_domain_ids, render_node);
           manager.write_metadata();
@@ -3499,9 +3512,13 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("field",params, info, true);
+    res &= check_numeric("seeds",params, info, false);
+    res &= check_numeric("step_size",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
+    valid_paths.push_back("seeds");
+    valid_paths.push_back("step_size");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -3525,14 +3542,24 @@ VTKHParticleAdvection::execute()
     }
 
     std::string field_name = params()["field"].as_string();
+    float step_size = 0.1f;
+    int seeds = 500;
+    if(params().has_path("seeds"))
+    {
+      seeds = params()["seeds"].to_int32();
+    }
+    if(params().has_path("step_size"))
+    {
+      step_size = params()["step_size"].to_float32();
+    }
 
     vtkh::DataSet *data = input<vtkh::DataSet>(0);
     vtkh::ParticleAdvection streamline;
 
     streamline.SetInput(data);
     streamline.SetField(field_name);
-    streamline.SetStepSize(0.1);
-    streamline.SetSeedsRandomWhole(500);
+    streamline.SetStepSize(step_size);
+    streamline.SetSeedsRandomWhole(seeds);
 
     streamline.Update();
 
