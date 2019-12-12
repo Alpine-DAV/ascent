@@ -36,7 +36,10 @@ Insitu ParaView visualization using the Ascent Extract interface
 * Install ParaView
   - `spack install paraview@develop+python3+mpi+osmesa~opengl2`
   - on mac use: `spack install paraview@develop+python3+mpi^python+shared`
-  (ParaView OSMesa does not compile, conduit needs `^python+shared`)
+    (ParaView OSMesa does not compile, conduit needs `^python+shared`)
+  - on summit `internal compiler error` for `llvm` can be solved by using lower
+    number of nodes for instance `-j4` or even `-j1`. I think this depends
+    on the load of the system.
   - for CUDA use: `spack install paraview@develop+python3+mpi+osmesa~opengl2+cuda`
 * Install Ascent
   - `spack install ascent~vtkh^python@3.7.4`
@@ -62,7 +65,6 @@ Insitu ParaView visualization using the Ascent Extract interface
      ```
      ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/ascent_actions.json  
      ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/expandingVortex.vti  
-     ln -s $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/ascent_options.json  
      ln -s $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/clover.in  
      ```
      - Set `paraview_path` in paraview-vis.py
