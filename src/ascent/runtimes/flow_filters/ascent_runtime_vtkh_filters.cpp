@@ -643,11 +643,17 @@ private:
     double theta_inc = 180.0 / double(m_theta);
     for(int p = 0; p < m_phi; ++p)
     {
+      float phi  =  -180.f + phi_inc * p;
+      m_phi_values.push_back(phi);
+
       for(int t = 0; t < m_theta; ++t)
       {
-        float phi  =  -180.f + phi_inc * p;
-        float theta = -90.f + theta_inc * t;
-
+        float theta = theta_inc * t;
+        if (p == 0)
+        {
+          m_theta_values.push_back(theta);
+        }
+        
         const int i = p * m_theta + t;
 
         vtkm::rendering::Camera camera;
@@ -688,19 +694,6 @@ private:
 
       } // theta
     } // phi
-
-    for(int p = 0; p < m_phi; ++p)
-    {
-      float phi  =  -180.f + phi_inc * p;
-      m_phi_values.push_back(phi);
-    }
-
-    for(int t = 0; t < m_theta; ++t)
-    {
-      float theta = -90.f + theta_inc * t;
-      m_theta_values.push_back(theta);
-    }
-
   }
 
 }; // CinemaManager
