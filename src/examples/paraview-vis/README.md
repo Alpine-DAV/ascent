@@ -37,9 +37,6 @@ Insitu ParaView visualization using the Ascent Extract interface
   - `spack install paraview@develop+python3+mpi+osmesa~opengl2`
   - on mac use: `spack install paraview@develop+python3+mpi^python+shared`
     (ParaView OSMesa does not compile, conduit needs `^python+shared`)
-  - on summit `internal compiler error` for `llvm` can be solved by using lower
-    number of nodes for instance `-j4` or even `-j1`. I think this depends
-    on the load of the system.
   - for CUDA use: `spack install paraview@develop+python3+mpi+osmesa~opengl2+cuda`
 * Install Ascent
   - `spack install ascent~vtkh^python@3.7.4`
@@ -85,9 +82,6 @@ Insitu ParaView visualization using the Ascent Extract interface
 * Execute only `2. Installation instructions for spack devel` and
   do not continue with `3. Install ParaView and Ascent`
 * Configure spack
-  - `module load gcc/7.4.0`
-  - `spack compiler add`
-  - `spack compiler remove gcc@4.8.5`
   - add a file `~/.spack/packages.yaml` with the following content:
   ```
   packages:
@@ -100,9 +94,19 @@ Insitu ParaView visualization using the Ascent Extract interface
        cuda@10.1.168: cuda/10.1.168
      buildable: False
   ```
-* Continue with `3. Install ParaView and Ascent` but add the following postfix
-  for ParaView and Ascent specs
-    `^spectrum-mpi@10.3.0.1-20190611`
+  - Load the correct compiler:
+    ```
+    module load gcc/7.4.0
+    spack compiler add
+    spack compiler remove gcc@4.8.5
+    ```
+* For busy summit I got `internal compiler error` when compiling `llvm` and `paraview`
+    To fix this you could run `spack install` with `-j4` or even `-j1`. Even better
+    move the spack installation on `$MEMBERWORK/csc340` and recompile everything
+    on a compute node.
+  - First login to a compute node (for an hour):
+    `bsub -W 1:00 -nnodes 1 -P CSC340 -Is /bin/bash`
+  - Install all spack packages with `-j80` option (there are 84 threads)
 * Continue with `4. Common Installation Instructions` but do not run the simulation.
 * Execute cloverleaf 
   `bsub $(spack location --install-dir ascent)/examples/ascent/paraview-vis/summit-moment-invariants.lsf`
