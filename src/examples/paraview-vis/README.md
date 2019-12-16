@@ -66,8 +66,6 @@ Insitu ParaView visualization using the Ascent Extract interface
      ```
      - Set `paraview_path` in paraview-vis.py
          with the result of `echo $(spack location --install-dir paraview)/lib/python*/site-packages`
-     - Set `scriptName` in paraview-vis.py
-         with the result of `echo $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview_ascent_source.py`
      - Run the simulation 
      `$(spack location --install-dir mpi)/bin/mpiexec -n 2 $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/cloverleaf3d_par > output.txt 2>&1`
      - examine the generated VTK files the images

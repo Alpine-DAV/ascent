@@ -25,13 +25,7 @@ if count == 0:
         SaveScreenshot, ResetCamera
     import ascent_extract
 
-    # CHANGE this path to the result of:
-    # echo $(spack location --install-dir ascent)/
-    #                  examples/ascent/paraview-vis/paraview_ascent_source.py
-    scriptName = ('/home/danlipsa/projects/ascent/src/examples/'
-                  'paraview-vis/paraview_ascent_source.py')
-    LoadPlugin(scriptName, remote=True, ns=globals())
-
+    LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())
     # create the pipeline
     ascentSource = AscentSource()
     asDisplay = Show()

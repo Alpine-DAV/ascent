@@ -9,9 +9,8 @@ if count == 0:
     import sys
     # CHANGE this path to the result of:
     # echo $(spack location --install-dir paraview)/lib/python*/site-packages
-    paraview_path = "/home/danlipsa/projects/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.4.0/paraview-develop-ht7egbxaoqlr2rjg5fju3ic7fej7g47t/lib/python3.7/site-packages"
+    paraview_path="/home/danlipsa/projects/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.4.0/paraview-develop-ht7egbxaoqlr2rjg5fju3ic7fej7g47t/lib/python3.7/site-packages"
     sys.path.append(paraview_path)
-
 
     # ParaView API
     # WARNING: this does not work inside the plugin
@@ -23,45 +22,40 @@ if count == 0:
     from paraview.simple import *
     import ascent_extract
 
-    # CHANGE this path to the result of:
-    # echo $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview_ascent_source.py
-    scriptName = "/home/danlipsa/projects/ascent/src/examples/paraview-vis/paraview_ascent_source.py"
-    LoadPlugin(scriptName, remote=True, ns=globals())
+    LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())
     ascentSource = AscentSource()
+    ResampleToImage()
     rep = Show()
-    ColorBy(rep, ("CELLS", "e"))
+
+    ColorBy(rep, ("POINTS", "phi"))
     # rescale transfer function
-    energyLUT = GetColorTransferFunction('e')
-    energyLUT.RescaleTransferFunction(1, 5.5)
+    phiLUT = GetColorTransferFunction('phi')
+    phiLUT.RescaleTransferFunction(-0.14, 2)
     # show color bar
     renderView1  = GetActiveView()
-    energyLUT = GetScalarBar(energyLUT, renderView1)
-    energyLUT.Title = 'e'
-    energyLUT.ComponentTitle = ''
+    phiLUT = GetScalarBar(phiLUT, renderView1)
+    phiLUT.Title = 'phi'
+    phiLUT.ComponentTitle = ''
     # set color bar visibility
-    energyLUT.Visibility = 1
+    phiLUT.Visibility = 1
     # show color legend
     rep.SetScalarBarVisibility(renderView1, True)
+    rep.SetRepresentationType('Volume')
 
     cam = GetActiveCamera()
-    cam.Elevation(-30)
-    cam.Azimuth(-120)
-
+    cam.Elevation(30)
+    cam.Azimuth(30)
 
 node = ascent_extract.ascent_data().child(0)
 domain_id = node["state/domain_id"]
 cycle = node["state/cycle"]
 imageName = "image_{0:04d}.png".format(int(cycle))
-dataName = "lulesh_data_{0:04d}".format(int(cycle))
+dataName = "paraviewdata_{0:04d}".format(int(cycle))
 ascentSource.Count = count
 ResetCamera()
 Render()
 SaveScreenshot(imageName, ImageResolution=(1024, 1024))
-
-# This does not work correctly if
-# topologies/topo/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})
-# is missing
-# writer = CreateWriter(dataName + ".pvts", ascentSource)
+# writer = CreateWriter(dataName + ".pvtr", ascentSource)
 # writer.UpdatePipeline()
 
 

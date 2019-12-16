@@ -9,7 +9,7 @@ if count == 0:
     import sys
     # CHANGE this path to the result of:
     # echo $(spack location --install-dir paraview)/lib/python*/site-packages
-    paraview_path = "/projects/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/paraview-develop-qhm2ssmu2e3ko3jpz6xijn6b64u7nwnp//lib/python2.7/site-packages"
+    paraview_path = "/home/danlipsa/projects/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.4.0/paraview-develop-ht7egbxaoqlr2rjg5fju3ic7fej7g47t/lib/python3.7/site-packages"
     sys.path.append(paraview_path)
 
     # ParaView API
@@ -19,33 +19,28 @@ if count == 0:
     import paraview
     paraview.options.batch = True
     paraview.options.symmetric = True
-    from paraview.simple import LoadPlugin, Show, ColorBy,\
-        GetColorTransferFunction, GetActiveView, ResetCamera, GetActiveCamera,\
-        GetScalarBar, Render, WriteImage, CreateWriter
+    from paraview.simple import *
     import ascent_extract
 
-    # CHANGE this path to the result of:
-    # echo $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview_ascent_source.py
-    scriptName = "/projects/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/ascent-develop-ncrcrl6ib5k6zkcffd6k6repvkk3b44e/examples/ascent/paraview-vis/paraview_ascent_source.py"
-    LoadPlugin(scriptName, remote=True, ns=globals())
+    LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())
     ascentSource = AscentSource()
-    # show the boundary topology. For the main topology use Port 0.
-    ascentSource.Port = 1
+    ResampleToImage()
     rep = Show()
 
-    ColorBy(rep, ("CELLS", "boundary_attribute"))
+    ColorBy(rep, ("POINTS", "nodal_noise"))
     # rescale transfer function
-    lut = GetColorTransferFunction('boundary_attribute')
-    lut.RescaleTransferFunction(1, 3)
+    nodalNoiseLUT = GetColorTransferFunction('nodal_noise')
+    nodalNoiseLUT.RescaleTransferFunction(-0.8, 0.8)
     # show color bar
-    renderView1 = GetActiveView()
-    lut = GetScalarBar(lut, renderView1)
-    lut.Title = 'boundary_attribute'
-    lut.ComponentTitle = ''
+    renderView1  = GetActiveView()
+    nodalNoiseLUT = GetScalarBar(nodalNoiseLUT, renderView1)
+    nodalNoiseLUT.Title = 'nodal_noise'
+    nodalNoiseLUT.ComponentTitle = ''
     # set color bar visibility
-    lut.Visibility = 1
+    nodalNoiseLUT.Visibility = 1
     # show color legend
     rep.SetScalarBarVisibility(renderView1, True)
+    rep.SetRepresentationType('Volume')
 
     cam = GetActiveCamera()
     cam.Elevation(30)
@@ -60,7 +55,7 @@ ascentSource.Count = count
 ResetCamera()
 Render()
 SaveScreenshot(imageName, ImageResolution=(1024, 1024))
-# writer = CreateWriter(dataName + ".pvtu", ascentSource)
+# writer = CreateWriter(dataName + ".pvti", ascentSource)
 # writer.UpdatePipeline()
 
 
@@ -68,15 +63,12 @@ SaveScreenshot(imageName, ImageResolution=(1024, 1024))
 # from ascent_to_vtk import AscentSource, write_vtk
 # ascentSource = AscentSource()
 # ascentSource.Update()
-# write_vtk("vtkdata-main", ascentSource.GetNode(),
-#            ascentSource.GetOutputDataObject(0))
+# write_vtk("vtkdata", ascentSource.GetNode(), ascentSource.GetOutputDataObject(0))
 
 
 # # Python API
 # from ascent_to_vtk import ascent_to_vtk, write_vtk, write_json
 # node = ascent_data().child(0)
 # write_json("blueprint", node)
-# data = ascent_to_vtk(node, "main")
-# write_vtk("pythondata-main", node, data)
-# data = ascent_to_vtk(node, "boundary")
-# write_vtk("pythondata-boundary", node, data)
+# data = ascent_to_vtk(node)
+# write_vtk("pythondata", node, data)
