@@ -47,7 +47,7 @@ Insitu ParaView visualization using the Ascent Extract interface
     Those versions were backported from `ascent/scripts/uberenv/packages/`
     `vtkh/package.py` and `vtkm/package.py`.
 * Load required modules
-  - `spack load conduit;spack load py-numpy;spack load py-mpi4py;spack load paraview`
+  - `spack load conduit;spack load python;spack load py-numpy;spack load py-mpi4py;spack load paraview`
 * Continue with `4. Common installation instructions`
 
 # 4. Common installation instructions
@@ -64,8 +64,6 @@ Insitu ParaView visualization using the Ascent Extract interface
      ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/expandingVortex.vti  
      ln -s $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/clover.in  
      ```
-     - Set `paraview_path` in paraview-vis.py
-         with the result of `echo $(spack location --install-dir paraview)/lib/python*/site-packages`
      - Run the simulation 
      `$(spack location --install-dir mpi)/bin/mpiexec -n 2 $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/cloverleaf3d_par > output.txt 2>&1`
      - examine the generated VTK files the images

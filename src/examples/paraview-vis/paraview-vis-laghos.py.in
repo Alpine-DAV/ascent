@@ -6,22 +6,15 @@ except NameError:
     count = 0
 
 if count == 0:
-    import sys
-    # CHANGE this path to the result of:
-    # echo $(spack location --install-dir paraview)/lib/python*/site-packages
-    paraview_path = "/projects/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/paraview-develop-qhm2ssmu2e3ko3jpz6xijn6b64u7nwnp//lib/python2.7/site-packages"
-    sys.path.append(paraview_path)
-
     # ParaView API
     # WARNING: this does not work inside the plugin
     #          unless you have the same import in paraview-vis.py
-    from mpi4py import MPI
     import paraview
     paraview.options.batch = True
     paraview.options.symmetric = True
     from paraview.simple import LoadPlugin, Show, ColorBy,\
         GetColorTransferFunction, GetActiveView, ResetCamera, GetActiveCamera,\
-        GetScalarBar, Render, WriteImage, CreateWriter
+        GetScalarBar, Render, SaveScreenshot
     import ascent_extract
 
     LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())

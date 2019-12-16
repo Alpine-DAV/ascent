@@ -6,20 +6,15 @@ except NameError:
     count = 0
 
 if count == 0:
-    import sys
-    # CHANGE this path to the result of:
-    # echo $(spack location --install-dir paraview)/lib/python*/site-packages
-    paraview_path = "/home/danlipsa/projects/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.4.0/paraview-develop-ht7egbxaoqlr2rjg5fju3ic7fej7g47t/lib/python3.7/site-packages"
-    sys.path.append(paraview_path)
-
     # ParaView API
     # WARNING: this does not work inside the plugin
     #          unless you have the same import in paraview-vis.py
-    from mpi4py import MPI
     import paraview
     paraview.options.batch = True
     paraview.options.symmetric = True
-    from paraview.simple import *
+    from paraview.simple import LoadPlugin, Show, ColorBy, \
+        GetColorTransferFunction, GetActiveView, GetScalarBar, ResetCamera,\
+        Render, SaveScreenshot, GetActiveCamera, ResampleToImage
     import ascent_extract
 
     LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())
@@ -32,7 +27,7 @@ if count == 0:
     nodalNoiseLUT = GetColorTransferFunction('nodal_noise')
     nodalNoiseLUT.RescaleTransferFunction(-0.8, 0.8)
     # show color bar
-    renderView1  = GetActiveView()
+    renderView1 = GetActiveView()
     nodalNoiseLUT = GetScalarBar(nodalNoiseLUT, renderView1)
     nodalNoiseLUT.Title = 'nodal_noise'
     nodalNoiseLUT.ComponentTitle = ''
@@ -63,7 +58,8 @@ SaveScreenshot(imageName, ImageResolution=(1024, 1024))
 # from ascent_to_vtk import AscentSource, write_vtk
 # ascentSource = AscentSource()
 # ascentSource.Update()
-# write_vtk("vtkdata", ascentSource.GetNode(), ascentSource.GetOutputDataObject(0))
+# write_vtk("vtkdata", ascentSource.GetNode(),
+#           ascentSource.GetOutputDataObject(0))
 
 
 # # Python API
