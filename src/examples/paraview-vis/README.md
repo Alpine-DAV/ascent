@@ -39,10 +39,10 @@ Insitu ParaView visualization using the Ascent Extract interface
     (ParaView OSMesa does not compile, conduit needs `^python+shared`)
   - for CUDA use: `spack install paraview@develop+python3+mpi+osmesa~opengl2+cuda`
 * Install Ascent
-  - `spack install ascent~vtkh^python@3.7.4`
+  - `spack install ascent@develop~vtkh^python@3.7.4`
      Make sure you match the python version used by ParaView
   - If you need ascent built with vtkh you can use
-    `spack install ascent^python@3.7.4`. Note that the patch applied earlier
+    `spack install ascent@develop^python@3.7.4`. Note that the patch applied earlier
     select specific version of `vtkh` and `vtkm` that work with latest ascent.
     Those versions were backported from `ascent/scripts/uberenv/packages/`
     `vtkh/package.py` and `vtkm/package.py`.
