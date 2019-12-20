@@ -16,7 +16,7 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    variants: +shared+openmp
+    #variants: ~shared~python+cuda+openmp cuda_arch=70
     compiler: [gcc, intel, pgi, clang, xl, nag]
     providers:
       awk: [gawk]
@@ -53,15 +53,13 @@ packages:
       buildable: False
       paths:
           pkg-config: /usr
-# LLNL toss3 CUDA 
+# LLNL toss3 CUDA
   cuda:
     modules:
-       cuda@9.2: cuda/9.2.88
+       cuda@10.1.168: cuda/10.1.168
     buildable: False
 # LLNL toss3 mvapich2
   mvapich2:
     paths:
-      mvapich2@2.2%gcc@4.9.3:  /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
-      mvapich2@2.2%intel@17.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.0
-      mvapich2@2.2%clang@4.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-clang-4.0.0
+        mvapich2@2.2%gcc@7.3.1: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1/
     buildable: False

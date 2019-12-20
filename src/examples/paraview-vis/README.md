@@ -37,20 +37,17 @@ Insitu ParaView visualization using the Ascent Extract interface
   - `spack install paraview@develop+python3+mpi+osmesa~opengl2`
   - on mac use: `spack install paraview@develop+python3+mpi^python+shared`
     (ParaView OSMesa does not compile, conduit needs `^python+shared`)
-  - on summit `internal compiler error` for `llvm` can be solved by using lower
-    number of nodes for instance `-j4` or even `-j1`. I think this depends
-    on the load of the system.
   - for CUDA use: `spack install paraview@develop+python3+mpi+osmesa~opengl2+cuda`
 * Install Ascent
-  - `spack install ascent~vtkh^python@3.7.4`
+  - `spack install ascent@develop~vtkh^python@3.7.4`
      Make sure you match the python version used by ParaView
   - If you need ascent built with vtkh you can use
-    `spack install ascent^python@3.7.4`. Note that the patch applied earlier
+    `spack install ascent@develop^python@3.7.4`. Note that the patch applied earlier
     select specific version of `vtkh` and `vtkm` that work with latest ascent.
     Those versions were backported from `ascent/scripts/uberenv/packages/`
     `vtkh/package.py` and `vtkm/package.py`.
 * Load required modules
-  - `spack load conduit;spack load py-numpy;spack load py-mpi4py;spack load paraview`
+  - `spack load conduit;spack load python;spack load py-numpy;spack load py-mpi4py;spack load paraview`
 * Continue with `4. Common installation instructions`
 
 # 4. Common installation instructions
@@ -67,10 +64,6 @@ Insitu ParaView visualization using the Ascent Extract interface
      ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/expandingVortex.vti  
      ln -s $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/clover.in  
      ```
-     - Set `paraview_path` in paraview-vis.py
-         with the result of `echo $(spack location --install-dir paraview)/lib/python*/site-packages`
-     - Set `scriptName` in paraview-vis.py
-         with the result of `echo $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview_ascent_source.py`
      - Run the simulation 
      `$(spack location --install-dir mpi)/bin/mpiexec -n 2 $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/cloverleaf3d_par > output.txt 2>&1`
      - examine the generated VTK files the images
@@ -85,9 +78,6 @@ Insitu ParaView visualization using the Ascent Extract interface
 * Execute only `2. Installation instructions for spack devel` and
   do not continue with `3. Install ParaView and Ascent`
 * Configure spack
-  - `module load gcc/7.4.0`
-  - `spack compiler add`
-  - `spack compiler remove gcc@4.8.5`
   - add a file `~/.spack/packages.yaml` with the following content:
   ```
   packages:
@@ -100,9 +90,19 @@ Insitu ParaView visualization using the Ascent Extract interface
        cuda@10.1.168: cuda/10.1.168
      buildable: False
   ```
-* Continue with `3. Install ParaView and Ascent` but add the following postfix
-  for ParaView and Ascent specs
-    `^spectrum-mpi@10.3.0.1-20190611`
+  - Load the correct compiler:
+    ```
+    module load gcc/7.4.0
+    spack compiler add
+    spack compiler remove gcc@4.8.5
+    ```
+* For busy summit I got `internal compiler error` when compiling `llvm` and `paraview`
+    To fix this you could run `spack install` with `-j4` or even `-j1`. Even better
+    move the spack installation on `$MEMBERWORK/csc340` and recompile everything
+    on a compute node.
+  - First login to a compute node (for an hour):
+    `bsub -W 1:00 -nnodes 1 -P CSC340 -Is /bin/bash`
+  - Install all spack packages with `-j80` option (there are 84 threads)
 * Continue with `4. Common Installation Instructions` but do not run the simulation.
 * Execute cloverleaf 
   `bsub $(spack location --install-dir ascent)/examples/ascent/paraview-vis/summit-moment-invariants.lsf`
