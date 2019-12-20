@@ -293,6 +293,30 @@ public:
     {
         ostringstream oss;
         oss << "key_" << i;
+
+        vtkh::Renderer * r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
+        auto v = r->GetRenderTimes();
+        double t_avg = accumulate( v.begin(), v.end(), 0.0)/v.size();
+        int rank = 0;
+      #ifdef ASCENT_MPI_ENABLED
+        rank = r->GetMpiRank();
+      #else
+        ASCENT_INFO("Ascent MPI is not enabled."); 
+      #endif
+        std::stringstream ss;
+        ss << "\n==========" << "\navg: " << t_avg << "\n";
+        for (auto &val : v)
+          ss << val << " ";
+
+        std::ostringstream filename;
+        // filename << conduit::utils::join_file_path(PATH, "timings");
+        filename << "timings/frame_times";
+        filename << std::setw(6) << std::setfill('0') << std::to_string(rank) << ".txt";
+        std::ofstream out(filename, std::ios_base::app);
+        
+        out << ss.str();
+        out.close();
+
         m_registry->consume(oss.str());
     }
   }
@@ -1535,7 +1559,7 @@ DefaultRender::execute()
 
         if(render_node.has_path("type"))
         {
-          if(render_node["type"].as_string() == "cinema")
+          if(render_node["type"].as_string() == "cinema" || render_node["type"].as_string() == "probe")
           {
             is_cinema = true;
           }
@@ -1543,23 +1567,21 @@ DefaultRender::execute()
 
         if(is_cinema)
         {
-          if(!render_node.has_path("phi") || !render_node.has_path("theta"))
-          {
-            ASCENT_ERROR("Cinema must have 'phi' and 'theta'");
-          }
-          int phi = render_node["phi"].to_int32();
-          int theta = render_node["theta"].to_int32();
+          int phi = 5;
+          int theta = 5;
+          if (render_node.has_path("phi"))
+            phi = render_node["phi"].to_int32();
+          if (render_node.has_path("theta"))
+            theta = render_node["theta"].to_int32();
 
-          if(!render_node.has_path("db_name"))
-          {
-            ASCENT_ERROR("Cinema must specify a 'db_name'");
-          }
-
-          std::string output_path = "";
-
+          std::string output_path = "cinema_db";
           if(render_node.has_path("output_path"))
           {
             output_path = render_node["output_path"].as_string();
+          }
+          else
+          {
+            ASCENT_INFO("No cinema 'db_name' specified, defaulting to '" + output_path + "'.")
           }
 
           if(!render_node.has_path("db_name"))
@@ -3628,6 +3650,66 @@ VTKHNoOp::execute()
 
     vtkh::DataSet *noop_output = noop.GetOutput();
     set_output<vtkh::DataSet>(noop_output);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHProbeRender::VTKHProbeRender()
+:DefaultRender()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHProbeRender::~VTKHProbeRender()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHProbeRender::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_probe_renderer";
+    i["port_names"].append() = "a";
+    i["port_names"].append() = "b";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHProbeRender::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+    bool res = check_numeric("num_probes", params, info, true);
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("num_probes");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    // check default render parameters
+    res &= DefaultRender::verify_params(params, info);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHProbeRender::execute()
+{
+    DefaultRender::execute();
+
+    // TODO: get timings per node and set as output -- HOW???
+    //
+
+
+    // set_output<std::vector<double>>(timings);
 }
 
 //-----------------------------------------------------------------------------
