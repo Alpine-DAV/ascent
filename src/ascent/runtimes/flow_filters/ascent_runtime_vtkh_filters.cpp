@@ -312,7 +312,7 @@ public:
         // filename << conduit::utils::join_file_path(PATH, "timings");
         filename << "timings/frame_times";
         filename << std::setw(6) << std::setfill('0') << std::to_string(rank) << ".txt";
-        std::ofstream out(filename, std::ios_base::app);
+        std::ofstream out(filename.str(), std::ios_base::app);
         
         out << ss.str();
         out.close();
