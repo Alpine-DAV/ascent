@@ -24,10 +24,6 @@ add_scene = actions.append()
 add_scene["action"] = "add_scenes"
 add_scene["scenes"] = scenes
 
-# execute and reset the actions
-actions.append()["action"] = "execute"
-actions.append()["action"] = "reset"
-
 # save example actions to a json and yaml file
 actions.save("ascent_actions.json",protocol="json")
 actions.save("ascent_actions.yaml",protocol="yaml")

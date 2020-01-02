@@ -54,6 +54,8 @@
 
 #include <flow_filter.hpp>
 
+#include <ascent_exports.h>
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -79,7 +81,7 @@ namespace filters
 ///
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-class RelayIOSave : public ::flow::Filter
+class ASCENT_API RelayIOSave : public ::flow::Filter
 {
 public:
     RelayIOSave();
@@ -92,7 +94,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class RelayIOLoad : public ::flow::Filter
+class ASCENT_API RelayIOLoad : public ::flow::Filter
 {
 public:
     RelayIOLoad();

@@ -1,0 +1,22 @@
+#An example of the three slice filter.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "3slice"
+        params: 
+          x_offset: 1.0
+          y_offset: 0.0
+          z_offset: -1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "radial"
+          pipeline: "pl1"
+      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_3slice_3d"

@@ -88,6 +88,9 @@ conduit::Node field_max(const conduit::Node &dataset,
 conduit::Node field_min(const conduit::Node &dataset,
                         const std::string &field_name);
 
+conduit::Node field_sum(const conduit::Node &dataset,
+                        const std::string &field_name);
+
 conduit::Node field_avg(const conduit::Node &dataset,
                         const std::string &field_name);
 
@@ -97,6 +100,11 @@ conduit::Node field_histogram(const conduit::Node &dataset,
                               const double &max_val,
                               const int &num_bins);
 
+conduit::Node field_entropy(const conduit::Node &hist);
+
+conduit::Node field_pdf(const conduit::Node &hist);
+conduit::Node field_cdf(const conduit::Node &hist);
+
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);
 
@@ -105,6 +113,10 @@ bool is_scalar_field(const conduit::Node &dataset,
 
 bool has_field(const conduit::Node &dataset,
                const std::string &field_name);
+
+conduit::Node quantile(const conduit::Node &cdf,
+                       const double val,
+                       const std::string interpolation);
 
 };
 //-----------------------------------------------------------------------------

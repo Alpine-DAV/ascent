@@ -93,7 +93,6 @@ TEST(ascent_log, test_log)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing log of field");
 
@@ -137,9 +136,6 @@ TEST(ascent_log, test_log)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -156,9 +152,11 @@ TEST(ascent_log, test_log)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the log filter.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_vector_mag, test_vector_mag_interleaved)
+TEST(ascent_log, test_log_clamp)
 {
     Node n;
     ascent::about(n);
@@ -178,15 +176,13 @@ TEST(ascent_vector_mag, test_vector_mag_interleaved)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
-    add_interleaved_vector(data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
-    ASCENT_INFO("Testing vector magnitude interleaved");
+    ASCENT_INFO("Testing log clamp of field");
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_vec_mag_interleaved");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_log_field_clamp");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -199,14 +195,19 @@ TEST(ascent_vector_mag, test_vector_mag_interleaved)
     conduit::Node pipelines;
     // pipeline 1
     pipelines["pl1/f1/type"] = "vector_magnitude";
-    // filter knobs (all these are optional)
     conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "vel_interleaved";  // name of the vector field
-    params["output_name"] = "mag";        // name of the output field
+    params["field"] = "vel";         // name of the vector field
+    params["output_name"] = "mag";   // name of the output field
+
+    pipelines["pl1/f2/type"] = "log";
+    conduit::Node &params2 = pipelines["pl1/f2/params"];
+    params2["field"] = "mag";             // name of the input field
+    params2["output_name"] = "log_mag";   // name of the output field
+    params2["clamp_min_value"] = 2.f;
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "mag";
+    scenes["s1/plots/p1/field"] = "log_mag";
     scenes["s1/plots/p1/pipeline"] = "pl1";
 
     scenes["s1/image_prefix"] = output_file;
@@ -220,9 +221,6 @@ TEST(ascent_vector_mag, test_vector_mag_interleaved)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -239,6 +237,9 @@ TEST(ascent_vector_mag, test_vector_mag_interleaved)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the log filter and clamping the min value."
+                      " This can help when there are negative values present.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

@@ -111,7 +111,7 @@ PNGCompare::DiffImage(const unsigned char *buff_1,
       }
   }
 
-  int res = lodepng_encode32_file(out_name.c_str(),
+  int res = lpng::lodepng_encode32_file(out_name.c_str(),
                                   &out_buff[0],
                                   width,
                                   height);

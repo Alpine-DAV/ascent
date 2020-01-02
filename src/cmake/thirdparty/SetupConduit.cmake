@@ -51,6 +51,8 @@
 #  If found, the conduit CMake targets will also be imported
 ###############################################################################
 
+include(CMakeFindDependencyMacro)
+
 # first Check for CONDUIT_DIR
 
 if(NOT CONDUIT_DIR)
@@ -59,7 +61,12 @@ endif()
 
 MESSAGE(STATUS "Looking for Conduit using CONDUIT_DIR = ${CONDUIT_DIR}")
 
-include(${CONDUIT_DIR}/lib/cmake/conduit.cmake)
+###############################################################################
+# Import Conduit's CMake targets
+###############################################################################
+find_dependency(Conduit REQUIRED
+                NO_DEFAULT_PATH
+                PATHS ${CONDUIT_DIR}/lib/cmake)
 
 # if fortran is enabled, make sure conduit was built with fortran support
 if(FORTRAN_FOUND)
@@ -95,7 +102,7 @@ if(PYTHON_FOUND)
                         OUTPUT_VARIABLE _FIND_CONDUIT_PYTHON_OUT
                         ERROR_VARIABLE  _FIND_CONDUIT_PYTHON_ERROR_VALUE
                         OUTPUT_STRIP_TRAILING_WHITESPACE)
-                      message(STATUS "PYTHOn found!! ${CONDUIT_DIR}")
+                      message(STATUS "PYTHON found!! ${CONDUIT_DIR}")
         if(_FIND_CONDUIT_PYTHON_RESULT MATCHES 0)
             message(STATUS "FOUND conduit python module at: ${_FIND_CONDUIT_PYTHON_OUT}")
         else()

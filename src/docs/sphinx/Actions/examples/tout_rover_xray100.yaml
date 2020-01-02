@@ -1,0 +1,11 @@
+#An example of using the xray extract.
+
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      type: "xray"
+      params: 
+        absorption: "radial"
+        emission: "radial"
+        filename: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_rover_xray"

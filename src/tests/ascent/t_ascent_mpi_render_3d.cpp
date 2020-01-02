@@ -129,15 +129,13 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_default_runtime)
     scenes["s1/plots/p1/field"] = "rank_ele";
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
     scenes["s1/renders/r1/camera/azimuth"] = 45.0;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -199,7 +197,7 @@ TEST(ascent_mpi_render_3d, mpi_render_ranks_without_data)
         // wipe out the data, emulating sims with no data on some mpi tasks
         data.reset();
     }
-    
+
     if(!data.dtype().is_empty())
     {
         conduit::blueprint::mesh::verify(data,verify_info);
@@ -230,15 +228,13 @@ TEST(ascent_mpi_render_3d, mpi_render_ranks_without_data)
     scenes["s1/plots/p1/field"] = "rank_ele";
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
     scenes["s1/renders/r1/camera/azimuth"] = 45.0;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -302,8 +298,6 @@ TEST(ascent_mpi_render_3d, mpi_render_no_data)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -321,7 +315,7 @@ TEST(ascent_mpi_render_3d, mpi_render_no_data)
     ascent.publish(data);
     // we expect ascent to complain about no data
     EXPECT_THROW(ascent.execute(actions),conduit::Error);
-    
+
     ascent.close();
 
 }
@@ -391,15 +385,13 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
     scenes["s1/plots/p1/field"] = "radial_vert";
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
     scenes["s1/renders/r1/camera/azimuth"] = 45.0;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent

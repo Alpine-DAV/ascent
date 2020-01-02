@@ -133,6 +133,37 @@ TEST(flow_python_script_filter, simple_execute)
     Workspace::clear_supported_filter_types();
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(flow_python_script_filter, simple_execute_echo)
+{
+    flow::filters::register_builtin();
+
+    Workspace::register_filter_type<SrcFilter>();
+
+    Workspace w;
+
+    Node src_params;
+    src_params["value"] = 21;
+
+    w.graph().add_filter("src","v",src_params);
+
+    Node py_params;
+    py_params["source"] = "val = flow_input().value() * 2\nprint(val)\nflow_set_output(val)";
+    py_params["echo"] = "true";
+
+    w.graph().add_filter("python_script","py", py_params);
+
+    // // src, dest, port
+    w.graph().connect("v","py","in");
+    //
+    w.print();
+    //
+    w.execute();
+
+    Workspace::clear_supported_filter_types();
+}
+
 //-----------------------------------------------------------------------------
 TEST(flow_python_script_filter, simple_execute_file)
 {
@@ -150,14 +181,14 @@ TEST(flow_python_script_filter, simple_execute_file)
     string script_fname = conduit::utils::join_file_path(output_path,
                                                          "tout_test_flow_filter_script.py");
 
+    ofstream ofs;
+    ofs.open(script_fname);
+    ofs << "val = flow_input().value() * 2\nprint(val)\nflow_set_output(val)";
+    ofs.close();
+
     w.graph().add_filter("src","v",src_params);
 
     Node py_params;
-
-    ofstream ofs;
-    ofs.open("_test_flow_filter_script.py");
-    ofs << "val = flow_input().value() * 2\nprint(val)\nflow_set_output(val)";
-    ofs.close();
 
     py_params["file"] = script_fname;
 
@@ -169,6 +200,41 @@ TEST(flow_python_script_filter, simple_execute_file)
     w.print();
     //
     w.execute();
+
+    Workspace::clear_supported_filter_types();
+}
+
+//-----------------------------------------------------------------------------
+TEST(flow_python_script_filter, simple_execute_bad_file)
+{
+    flow::filters::register_builtin();
+
+    Workspace::register_filter_type<SrcFilter>();
+
+    Workspace w;
+
+    Node src_params;
+    src_params["value"] = 21;
+
+    string output_path = prepare_output_dir();
+
+    string script_fname = "/blargh/path/to/bad/script.py";
+        
+    w.graph().add_filter("src","v",src_params);
+
+    Node py_params;
+
+    py_params["file"] = script_fname;
+
+    w.graph().add_filter("python_script","py", py_params);
+
+    // // src, dest, port
+    w.graph().connect("v","py","in");
+    //
+    w.print();
+
+    EXPECT_THROW(w.execute(),
+                 conduit::Error);
 
     Workspace::clear_supported_filter_types();
 }

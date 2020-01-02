@@ -507,7 +507,7 @@ values are removed from the data set.
 
 Vector Magnitude
 ~~~~~~~~~~~~~~~~
-Vecotr magnitude creates a new field on the data set representing the magitude
+Vector magnitude creates a new field on the data set representing the magitude
 of a vector variable. The only parameters are the input vector field name
 and the name of the new field.
 
@@ -529,4 +529,23 @@ and the name of the new field.
 
     An example of creating a pseudocolor plot of vector magnitude
 
+
+Recenter
+~~~~~~~~
+Recenter changes the association of a field. Fields associated with either `element` or `vertex` can
+be interchanged by averaging the surrounding values. When recentering to a element associated field, all vertex
+values incident to a element are averaged, and similarly when rencentering to a vertex associated field,
+all element values incident to the vertex are averaged. If a field is already of the desired associated, then
+the nothing is done and the field is simply passed through the filter. Note: ghost zones must be available when
+the data set has more than one domain. Without ghost, the averaging will not be smooth across domain boundaries.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "recenter";
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "braid";         // name of the vector field
+  params["association"] = "vertex";   // output field association
+  // or params["association"] = "element";   // output field association
 

@@ -122,8 +122,6 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -195,8 +193,6 @@ TEST(ascent_render_3d, test_render_3d_points)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -214,7 +210,9 @@ TEST(ascent_render_3d, test_render_3d_points)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    // NOTE: RELAXED TOLERANCE TO FROM default
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file,0.09f));
 }
 
 TEST(ascent_render_3d, test_render_3d_points_const_radius)
@@ -269,8 +267,6 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -288,7 +284,11 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    // NOTE: RELAXED TOLERANCE TO FROM default
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file,0.01f));
+    std::string msg = "An example of rendering a point field with constant radius.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 TEST(ascent_render_3d, test_render_3d_points_variable_radius)
@@ -345,8 +345,6 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -364,7 +362,11 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    // NOTE: RELAXED TOLERANCE TO FROM default
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file, 0.09));
+    std::string msg = "An example of rendering a point field with variable radius.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 TEST(ascent_render_3d, test_render_3d_bg_fg_color)
@@ -411,7 +413,7 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
     float bg_color[3] = {1.f, 1.f, 1.f};
     float fg_color[3] = {0.f, 0.f, 0.f};
     scenes["s1/renders/r1/bg_color"].set(bg_color,3);
@@ -421,8 +423,6 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -441,6 +441,8 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of rendering custom background and foreground colors.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 TEST(ascent_render_3d, test_render_3d_no_annotations)
@@ -487,15 +489,13 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/renders/r1/image_name"]  = output_file;
+    scenes["s1/renders/r1/image_prefix"]  = output_file;
     scenes["s1/renders/r1/annotations"] = "false";
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -514,6 +514,8 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of rendering with no annotations.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 TEST(ascent_render_3d, test_render_3d_name_format)
@@ -559,15 +561,13 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/renders/r1/image_name"]  = output_file + "%04d";
+    scenes["s1/renders/r1/image_prefix"]  = output_file + "%04d";
     scenes["s1/renders/r1/annotations"] = "false";
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -586,6 +586,8 @@ TEST(ascent_render_3d, test_render_3d_name_format)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file, 0.0001f, "0100"));
+    std::string msg = "An example of rendering to a filename using format specifiers.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 TEST(ascent_render_3d, test_render_3d_no_bg)
@@ -632,15 +634,13 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/renders/r1/image_name"]  = output_file;
+    scenes["s1/renders/r1/image_prefix"]  = output_file;
     scenes["s1/renders/r1/render_bg"] = "false";
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -659,6 +659,8 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of rendering with no background (alpha channel = 0)";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 TEST(ascent_render_3d, test_render_3d_render_azimuth)
@@ -706,15 +708,13 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/renders/r1/camera/azimuth"] = 1.;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
 
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -732,6 +732,8 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of changing the azimuth of the camera.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -821,9 +823,6 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -841,6 +840,8 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a transfer function for volume rendering.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -894,9 +895,6 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -915,6 +913,8 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
     // check that we created an image
     float tolerance = 0.01f;
     EXPECT_TRUE(check_test_image(output_file, tolerance));
+    std::string msg = "An example of creating a mesh plot.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -987,9 +987,6 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -1008,6 +1005,8 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
     // check that we created an image
     float tolerance = 0.01f;
     EXPECT_TRUE(check_test_image(output_file, tolerance));
+    std::string msg = "An example of creating a mesh plot of a contour.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
@@ -1057,8 +1056,6 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //
@@ -1127,8 +1124,6 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -1200,8 +1195,6 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_min_max)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -1218,6 +1211,9 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_min_max)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a plot specifying the min and max "
+                      "values of the scalar range.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
@@ -1273,8 +1269,6 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -1349,8 +1343,6 @@ TEST(ascent_render_3d, test_3d_render_ascent_runtime_cuda_backend)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -1402,14 +1394,14 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
     string output_path = prepare_output_dir();
-    string image_name0 = "render_0";
-    string output_file = conduit::utils::join_file_path(output_path,image_name0);
+    string image_prefix0 = "render_0";
+    string output_file = conduit::utils::join_file_path(output_path,image_prefix0);
 
     // remove old images before rendering
     remove_test_image(output_file);
 
-    string image_name1 = "render_1";
-    string output_file1 = conduit::utils::join_file_path(output_path,image_name1);
+    string image_prefix1 = "render_1";
+    string output_file1 = conduit::utils::join_file_path(output_path,image_prefix1);
 
     // remove old images before rendering
     remove_test_image(output_file1);
@@ -1461,12 +1453,12 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
 
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
 
     //
     scenes["s1/renders/r2/image_width"]  = 400;
     scenes["s1/renders/r2/image_height"] = 400;
-    scenes["s1/renders/r2/image_name"]   = output_file1;
+    scenes["s1/renders/r2/image_prefix"]   = output_file1;
     double vec3[3];
     vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
     scenes["s1/renders/r2/camera/look_at"].set_float64_ptr(vec3,3);
@@ -1488,8 +1480,6 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -1506,8 +1496,109 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a render, specifying all camera parameters.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file1));
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_milk_chocolate)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
+    string output_path = prepare_output_dir();
+    string image_prefix0 = "milk_chocolate";
+    string output_file = conduit::utils::join_file_path(output_path,image_prefix0);
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node control_points;
+    conduit::Node &point1 = control_points.append();
+    point1["type"] = "rgb";
+    point1["position"] = 0.;
+    double color[3] = {.23, 0.08, 0.08};
+    point1["color"].set_float64_ptr(color, 3);
+
+    conduit::Node &point2 = control_points.append();
+    point2["type"] = "rgb";
+    point2["position"] = .5;
+    color[0] = .48;
+    color[1] = .23;
+    color[2] = .04;
+    point2["color"].set_float64_ptr(color, 3);
+
+    conduit::Node &point3 = control_points.append();
+    point3["type"] = "rgb";
+    point3["position"] = 1.0;
+    color[0] = .99;
+    color[1] = 1.;
+    color[2] = .96;
+    point3["color"].set_float64_ptr(color, 3);
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/color_table/control_points"] = control_points;
+
+    scenes["s1/image_prefix"] = output_file;
+
+    scenes["s1/renders/r1/image_width"]  = 512;
+    scenes["s1/renders/r1/image_height"] = 512;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a custom color map.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -1561,16 +1652,13 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     scenes["s1/plots/p1/field"] = "rank_ele";
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
-    scenes["s1/renders/r1/image_name"]   = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
     scenes["s1/renders/r1/camera/azimuth"] = 45.0;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
 
     //
     // Run Ascent
@@ -1586,6 +1674,8 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     ascent.close();
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a render specifying the image size.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 
@@ -1616,8 +1706,6 @@ TEST(ascent_render_3d, render_3d_empty_data)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
 
     //
@@ -1677,8 +1765,6 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
     conduit::Node &scenes = add_plots["scenes"];
     scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    actions.append()["action"]  = "execute";
-    actions.append()["action"]  = "reset";
 
     Ascent ascent;
 
@@ -1940,8 +2026,6 @@ TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
     conduit::Node &scenes = add_plots["scenes"];
     scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    actions.append()["action"] = "execute";
-    actions.append()["action"] = "reset";
 
     Ascent ascent;
 

@@ -74,7 +74,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class Alias : public ::flow::Filter
+class FLOW_API Alias : public ::flow::Filter
 {
 public:
     Alias();
@@ -97,7 +97,7 @@ public:
 /// output of the filter will alias an existing entry
 
 //-----------------------------------------------------------------------------
-class RegistrySource : public Filter
+class FLOW_API RegistrySource : public Filter
 {
 public:
     RegistrySource();

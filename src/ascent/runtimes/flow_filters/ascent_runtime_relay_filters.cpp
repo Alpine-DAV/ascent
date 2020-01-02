@@ -378,9 +378,15 @@ void mesh_blueprint_save(const Node &data,
       Node dom = multi_dom.child(0);
       if(!dom.has_path("state/cycle"))
       {
-        ASCENT_ERROR("Cannot blueprint save without 'state/cycle'");
+        static std::map<string,int> counters;
+        ASCENT_INFO("no 'state/cycle' present. Defaulting to counter");
+        cycle = counters[path];
+        counters[path]++;
       }
-      cycle = dom["state/cycle"].to_int();
+      else
+      {
+        cycle = dom["state/cycle"].to_int();
+      }
     }
 
 #ifdef ASCENT_MPI_ENABLED
@@ -550,7 +556,7 @@ void mesh_blueprint_save(const Node &data,
         }
 
         root["protocol/name"]    =  file_protocol;
-        root["protocol/version"] = "0.4.0";
+        root["protocol/version"] = "0.5.0";
 
         root["number_of_files"]  = global_domains;
         // for now we will save one file per domain, so trees == files

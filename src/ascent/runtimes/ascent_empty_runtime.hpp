@@ -62,7 +62,7 @@
 namespace ascent
 {
 
-class EmptyRuntime : public Runtime
+class ASCENT_API EmptyRuntime : public Runtime
 {
 public:
 

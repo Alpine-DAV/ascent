@@ -12,13 +12,6 @@
          }
        }
     }
-  },
-
-  {
-    "action": "execute"
-  },
-
-  {
-    "action": "reset"
   }
+
 ]

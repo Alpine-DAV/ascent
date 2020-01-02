@@ -1,0 +1,14 @@
+#An example of rendering a point field with variable radius.
+
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          points: 
+            radius: 0.25
+            radius_delta: 2.0
+      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_render_3d_points_variable_radius"

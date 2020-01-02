@@ -544,7 +544,6 @@ config file in the cmake variable ``CONDUIT_DIR``.
 
     git clone --recursive https://github.com/LLNL/conduit.git
     cd conduit
-    git checkout tags/v0.3.1
     mkdir build
     mkdir install
     cd build
@@ -574,10 +573,11 @@ The code below is minimal, and will only configure the serial device adapter. Fo
 .. code:: bash
 
     git clone https://gitlab.kitware.com/vtk/vtk-m.git
-    git checkout commit_hash_listed_above
     cd vtk-m
+    git checkout commit_hash_listed_above
+    mkdir build
     mkdir install
-    cmake -C path_to_host_config/myhost_config.cmake . -DCMAKE_INSTALL_PREFIX=path_to_install \
+    cmake -C path_to_host_config/myhost_config.cmake ../ -DCMAKE_INSTALL_PREFIX=path_to_install \
       -DCMAKE_BUILD_TYPE=Release -DVTKm_USE_64BIT_IDS=OFF -DVTKm_USE_DOUBLE_PRECISION=ON
     make install
 
@@ -600,12 +600,12 @@ This is the current commit we build and test against:
 .. code:: bash
 
     git clone https://github.com/Alpine-DAV/vtk-h.git
-    git checkout commit_hash_listed_above
     cd vtk-h
+    git checkout commit_hash_listed_above
     mkdir build
     mkdir install
     cd build
-    cmake -C path_to_host_config/myhost_config.cmake . -DCMAKE_INSTALL_PREFIX=path_to_install
+    cmake -C path_to_host_config/myhost_config.cmake ../src -DCMAKE_INSTALL_PREFIX=path_to_install
     make install
 
 
@@ -622,7 +622,7 @@ Now that we have all the dependencies built and a host config file for our envir
     mkdir build
     mkdir install
     cd build
-    cmake -C path_to_host_config/myhost_config.cmake . -DCMAKE_INSTALL_PREFIX=path_to_install \
+    cmake -C path_to_host_config/myhost_config.cmake ../src -DCMAKE_INSTALL_PREFIX=path_to_install \
       -DCMAKE_BUILD_TYPE=Release
     make install
 

@@ -123,9 +123,6 @@ TEST(ascent_rover, test_xray_serial)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -141,7 +138,11 @@ TEST(ascent_rover, test_xray_serial)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.0001f, "100_0"));
+    // NOTE: RELAXED TOLERANCE TO FROM 0.0001f
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100_0"));
+    std::string msg = "An example of using the xray extract.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //
 //-----------------------------------------------------------------------------
@@ -196,9 +197,6 @@ TEST(ascent_rover, test_volume_min_max)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -215,6 +213,9 @@ TEST(ascent_rover, test_volume_min_max)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the volume (unstructured grid) extract with "
+                      "min and max values.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_volume_serial)
@@ -266,9 +267,6 @@ TEST(ascent_rover, test_volume_serial)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -285,4 +283,6 @@ TEST(ascent_rover, test_volume_serial)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the volume (unstructured grid) extract.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }

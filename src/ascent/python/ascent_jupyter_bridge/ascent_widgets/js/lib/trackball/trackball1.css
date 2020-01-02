@@ -1,0 +1,25 @@
+.col {
+    display: inline-block;
+}
+#controlsDiv {
+    display: flex;
+    align-items: stretch;
+    text-align: center;
+}
+#trackballDiv {
+    flex-grow: 1;
+}
+#buttonsDiv {
+    flex-grow: 1;
+}
+#canvasDiv {
+    text-align: center;
+    margin-top: 2rem;
+}
+.row {
+    margin-bottom: 2rem;
+}
+#simControl {
+    text-align: right;
+    margin-top: 5rem;
+}

@@ -1,0 +1,70 @@
+# Same Python interpreter for all time steps
+# We use count for one time initializations
+try:
+    count = count + 1
+except NameError:
+    count = 0
+
+if count == 0:
+    # ParaView API
+    # WARNING: this does not work inside the plugin
+    #          unless you have the same import in paraview-vis.py
+    import paraview
+    paraview.options.batch = True
+    paraview.options.symmetric = True
+    from paraview.simple import LoadPlugin, Show, ColorBy, \
+        GetColorTransferFunction, GetActiveView, GetScalarBar, ResetCamera,\
+        Render, SaveScreenshot, GetActiveCamera, ResampleToImage
+    import ascent_extract
+
+    LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())
+    ascentSource = AscentSource()
+    ResampleToImage()
+    rep = Show()
+
+    ColorBy(rep, ("POINTS", "nodal_noise"))
+    # rescale transfer function
+    nodalNoiseLUT = GetColorTransferFunction('nodal_noise')
+    nodalNoiseLUT.RescaleTransferFunction(-0.8, 0.8)
+    # show color bar
+    renderView1 = GetActiveView()
+    nodalNoiseLUT = GetScalarBar(nodalNoiseLUT, renderView1)
+    nodalNoiseLUT.Title = 'nodal_noise'
+    nodalNoiseLUT.ComponentTitle = ''
+    # set color bar visibility
+    nodalNoiseLUT.Visibility = 1
+    # show color legend
+    rep.SetScalarBarVisibility(renderView1, True)
+    rep.SetRepresentationType('Volume')
+
+    cam = GetActiveCamera()
+    cam.Elevation(30)
+    cam.Azimuth(30)
+
+node = ascent_extract.ascent_data().child(0)
+domain_id = node["state/domain_id"]
+cycle = node["state/cycle"]
+imageName = "image_{0:04d}.png".format(int(cycle))
+dataName = "paraviewdata_{0:04d}".format(int(cycle))
+ascentSource.Count = count
+ResetCamera()
+Render()
+SaveScreenshot(imageName, ImageResolution=(1024, 1024))
+# writer = CreateWriter(dataName + ".pvti", ascentSource)
+# writer.UpdatePipeline()
+
+
+# # VTK API
+# from ascent_to_vtk import AscentSource, write_vtk
+# ascentSource = AscentSource()
+# ascentSource.Update()
+# write_vtk("vtkdata", ascentSource.GetNode(),
+#           ascentSource.GetOutputDataObject(0))
+
+
+# # Python API
+# from ascent_to_vtk import ascent_to_vtk, write_vtk, write_json
+# node = ascent_data().child(0)
+# write_json("blueprint", node)
+# data = ascent_to_vtk(node)
+# write_vtk("pythondata", node, data)

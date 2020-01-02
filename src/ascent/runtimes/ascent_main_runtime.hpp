@@ -53,6 +53,7 @@
 #define ASCENT_ASCENT_RUNTIME_HPP
 
 #include <ascent.hpp>
+#include <ascent_exports.h>
 #include <ascent_runtime.hpp>
 #include <ascent_web_interface.hpp>
 #include <flow.hpp>
@@ -65,7 +66,7 @@
 namespace ascent
 {
 
-class AscentRuntime : public Runtime
+class ASCENT_API AscentRuntime : public Runtime
 {
 public:
 
@@ -103,6 +104,7 @@ private:
     conduit::Node     m_scene_connections;
 
     conduit::Node     m_info;
+    conduit::Node     m_previous_actions;
 
     WebInterface      m_web_interface;
     int               m_refinement_level;
@@ -133,7 +135,8 @@ private:
     void ConvertSceneToFlow(const conduit::Node &scenes);
     void ConnectSource();
     void ConnectGraphs();
-    void ExecuteGraphs();
+
+    void BuildGraph(const conduit::Node &actions);
     void EnsureDomainIds();
     void PopulateMetadata();
 

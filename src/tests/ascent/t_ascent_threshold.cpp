@@ -136,9 +136,6 @@ TEST(ascent_threshold, test_threshold_3d)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -155,6 +152,8 @@ TEST(ascent_threshold, test_threshold_3d)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the threshold filter.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 

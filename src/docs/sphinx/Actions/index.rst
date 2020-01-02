@@ -50,9 +50,13 @@ Ascent Actions
    :maxdepth: 2
 
    Actions
-   Pipelines   
-   Scenes 
+   Pipelines
+   Scenes
    Extracts
+   Queries
+   Triggers
+   Examples
+   Expressions
 
-..  
+..
 

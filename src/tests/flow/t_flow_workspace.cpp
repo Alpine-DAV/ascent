@@ -273,6 +273,54 @@ TEST(ascent_flow_workspace, linear_graph_using_filter_ptr_iface)
 
     w.print();
 
+    // test various graph rep output helpers
+
+    std::string r_json = w.graph().to_json();
+    std::string r_yaml = w.graph().to_yaml();
+
+    ASCENT_INFO("Graph JSON" << r_json);
+    ASCENT_INFO("Graph YAML" << r_yaml);
+    
+    // make sure we can parse back with conduit
+    
+    Node n_parse_test;
+    Generator g_json(r_json,"json");
+    g_json.walk(n_parse_test);
+    EXPECT_EQ(r_json,n_parse_test.to_json());
+
+    Generator g_yaml(r_yaml,"yaml");
+    g_yaml.walk(n_parse_test);
+    EXPECT_EQ(r_yaml,n_parse_test.to_yaml());
+    
+    ASCENT_INFO("Graph Dot" 
+                << w.graph().to_dot());
+
+    ASCENT_INFO("Graph Dot HTML" 
+                << w.graph().to_dot_html());
+
+    string output_path = prepare_output_dir();
+    string output_file_dot_txt  = conduit::utils::join_file_path(output_path,
+                                         "tout_flow_workspace_linear_dot.txt");
+    string output_file_dot_html = conduit::utils::join_file_path(output_path,
+                                        "tout_flow_workspace_linear_dot.html");
+
+    // remove old files
+    if(conduit::utils::is_file(output_file_dot_txt))
+    {
+        conduit::utils::remove_file(output_file_dot_txt);
+    }
+
+    if(conduit::utils::is_file(output_file_dot_html))
+    {
+        conduit::utils::remove_file(output_file_dot_html);
+    }
+
+    w.graph().save_dot(output_file_dot_txt);
+    w.graph().save_dot_html(output_file_dot_html);
+
+    EXPECT_TRUE(conduit::utils::is_file(output_file_dot_txt));
+    EXPECT_TRUE(conduit::utils::is_file(output_file_dot_html));
+
     Workspace::clear_supported_filter_types();
 }
 

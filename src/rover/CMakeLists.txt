@@ -61,6 +61,7 @@ set(rover_headers
     ray_generators/ray_generator.hpp
     ray_generators/camera_generator.hpp
     ray_generators/visit_generator.hpp
+    rover_exports.h
     vtkm_typedefs.hpp
     # utils headers
     utils/png_encoder.hpp
@@ -95,6 +96,7 @@ set(rover_sources
                   DEPENDS_ON ${rover_thirdparty_deps}
                  )
 
+vtkm_add_target_information(rover DEVICE_SOURCES ${rover_sources})
 ##########################################
 # Ensure we use c++11
 ##########################################
@@ -103,6 +105,9 @@ set_target_properties(rover PROPERTIES
                       CXX_STANDARD 11
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENTIONS NO)
+
+set_target_properties(rover PROPERTIES CXX_VISIBILITY_PRESET hidden)
+target_compile_definitions(rover PRIVATE ROVER_EXPORTS_FLAG)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty_builtin/diy2/include/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -116,7 +121,7 @@ if(ENABLE_LOGGING)
   blt_add_target_compile_flags(TO rover FLAGS " -D ROVER_ENABLE_LOGGING=1")
 endif()
 
-if(ENABLE_OPENMP)
+if(OPENMP_FOUND)
   blt_add_target_compile_flags(TO rover FLAGS " -D ROVER_ENABLE_OPENMP=1")
 endif()
 
@@ -142,6 +147,7 @@ if(MPI_FOUND)
                   DEPENDS_ON ${rover_mpi_thirdparty_deps}
                   )
 
+  vtkm_add_target_information(rover_mpi DEVICE_SOURCES ${rover_sources})
   ##########################################
   # Ensure we use c++11
   ##########################################
@@ -152,6 +158,9 @@ if(MPI_FOUND)
                         CXX_EXTENTIONS NO)
 
                       blt_add_target_compile_flags(TO rover_mpi FLAGS "-D ROVER_PARALLEL")
+
+  set_target_properties(rover_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+  target_compile_definitions(rover_mpi PRIVATE ROVER_EXPORTS_FLAG)
 
   target_include_directories(rover_mpi PRIVATE ${MPI_INCLUDE_PATH})
   target_include_directories(rover_mpi PUBLIC ${VTKm_INCLUDE_DIRS})
@@ -167,7 +176,7 @@ if(MPI_FOUND)
   if(ENABLE_LOGGING)
     blt_add_target_compile_flags(TO rover_mpi FLAGS " -D ROVER_ENABLE_LOGGING=1")
   endif()
-  if(ENABLE_OPENMP)
+  if(OPENMP_FOUND)
     blt_add_target_compile_flags(TO rover FLAGS " -D ROVER_ENABLE_OPENMP=1")
   endif()
 

@@ -56,6 +56,7 @@
 
 #include <cstring>
 #include <limits>
+#include <cmath>
 
 #include <flow_workspace.hpp>
 
@@ -657,8 +658,8 @@ field_histogram(const conduit::Node &dataset,
                 const int &num_bins)
 {
 
-  int *bins = new int[num_bins];
-  memset(bins, 0, sizeof(int) * num_bins);
+  double *bins = new double[num_bins];
+  memset(bins, 0, sizeof(double) * num_bins);
 
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
@@ -669,7 +670,7 @@ field_histogram(const conduit::Node &dataset,
       conduit::Node res;
       res = array_histogram(dom[path], min_val, max_val, num_bins);
 
-      int *dom_hist = res["value"].value();
+      double *dom_hist = res["value"].value();
 #ifdef ASCENT_USE_OPENMP
       #pragma omp parallel for
 #endif
@@ -683,17 +684,155 @@ field_histogram(const conduit::Node &dataset,
 
 #ifdef ASCENT_MPI_ENABLED
 
-  int *global_bins = new int[num_bins];
+  double *global_bins = new double[num_bins];
 
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  MPI_Allreduce( bins, global_bins, num_bins, MPI_INT, MPI_SUM, mpi_comm);
+  MPI_Allreduce(bins, global_bins, num_bins, MPI_INT, MPI_SUM, mpi_comm);
 
-  int *tmp = bins;
+  double *tmp = bins;
   bins = global_bins;
   delete[] tmp;
 #endif
   res["value"].set(bins, num_bins);
+  res["min_val"] = min_val;
+  res["max_val"] = max_val;
+  res["num_bins"] = num_bins;
   delete[] bins;
+  return res;
+}
+
+conduit::Node
+field_entropy(const conduit::Node &hist)
+{
+  const double *hist_bins = hist["attrs/value/value"].value();
+  const int num_bins = hist["attrs/num_bins/value"].to_int32();
+  double sum = array_sum(hist["attrs/value/value"])["value"].to_float64();
+  double entropy = 0;
+
+#ifdef ASCENT_USE_OPENMP
+      #pragma omp parallel for reduction(+ : entropy)
+#endif
+  for(int b = 0; b < num_bins; ++b)
+  {
+    if(hist_bins[b] != 0)
+    {
+      double p = hist_bins[b] / sum;
+      entropy += -p * std::log(p);
+    }
+  }
+
+  conduit::Node res;
+  res["value"] = entropy;
+  return res;
+}
+
+conduit::Node
+field_pdf(const conduit::Node &hist)
+{
+  const double *hist_bins = hist["attrs/value/value"].value();
+  const int num_bins = hist["attrs/num_bins/value"].to_int32();
+  double min_val = hist["attrs/min_val/value"].to_float64();
+  double max_val = hist["attrs/max_val/value"].to_float64();
+
+  double sum = array_sum(hist["attrs/value/value"])["value"].to_float64();
+
+  double *pdf = new double[num_bins];
+  memset(pdf, 0, sizeof(double) * num_bins);
+
+#ifdef ASCENT_USE_OPENMP
+      #pragma omp parallel for
+#endif
+  for(int b = 0; b < num_bins; ++b)
+  {
+    pdf[b] = hist_bins[b] / sum;
+  }
+
+  conduit::Node res;
+  res["value"].set(pdf, num_bins);
+  res["min_val"] = min_val;
+  res["max_val"] = max_val;
+  res["num_bins"] = num_bins;
+  return res;
+}
+
+conduit::Node
+field_cdf(const conduit::Node &hist)
+{
+  const double *hist_bins = hist["attrs/value/value"].value();
+  const int num_bins = hist["attrs/num_bins/value"].to_int32();
+  double min_val = hist["attrs/min_val/value"].to_float64();
+  double max_val = hist["attrs/max_val/value"].to_float64();
+
+  double sum = array_sum(hist["attrs/value/value"])["value"].to_float64();
+
+  double rolling_cdf = 0;
+
+  double *cdf = new double[num_bins];
+  memset(cdf, 0, sizeof(double) * num_bins);
+
+  //TODO can this be parallel?
+  for(int b = 0; b < num_bins; ++b)
+  {
+    rolling_cdf += hist_bins[b] / sum;
+    cdf[b] = rolling_cdf;
+  }
+
+  conduit::Node res;
+  res["value"].set(cdf, num_bins);
+  res["min_val"] = min_val;
+  res["max_val"] = max_val;
+  res["num_bins"] = num_bins;
+  return res;
+}
+
+// this only makes sense on a count histogram
+conduit::Node quantile(const conduit::Node &cdf,
+                       const double val,
+                       const std::string interpolation)
+{
+  const double *cdf_bins = cdf["attrs/value/value"].value();
+  const int num_bins = cdf["attrs/num_bins/value"].to_int32();
+  double min_val = cdf["attrs/min_val/value"].to_float64();
+  double max_val = cdf["attrs/max_val/value"].to_float64();
+
+  conduit::Node res;
+
+  int bin = 0;
+
+  for(; cdf_bins[bin] < val; ++bin);
+  // we overshot
+  if(cdf_bins[bin] > val) --bin;
+  // i and j are the bin boundaries
+  double i = min_val + bin * (max_val - min_val) / num_bins;
+  double j = min_val + (bin + 1) * (max_val - min_val) / num_bins;
+
+  if(interpolation == "linear") {
+    if(cdf_bins[bin+1] - cdf_bins[bin] == 0)
+    {
+      res["value"] = i;
+    }
+    else
+    {
+      res["value"] = i + (j - i) * (val - cdf_bins[bin]) / (cdf_bins[bin+1] - cdf_bins[bin]);
+    }
+  }
+  else if(interpolation == "lower")
+  {
+    res["value"] = i;
+  }
+  else if(interpolation == "higher")
+  {
+    res["value"] = j;
+  }
+  else if(interpolation == "midpoint")
+  {
+    res["value"] = (i + j) / 2;
+  }
+  else if(interpolation == "nearest")
+  {
+    res["value"] = (val - i < j - val)? i : j;
+  }
+
   return res;
 }
 
@@ -777,9 +916,10 @@ field_min(const conduit::Node &dataset,
 }
 
 conduit::Node
-field_avg(const conduit::Node &dataset,
+field_sum(const conduit::Node &dataset,
           const std::string &field)
 {
+
   double sum = 0.;
   long long int count = 0;
 
@@ -805,19 +945,31 @@ field_avg(const conduit::Node &dataset,
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   MPI_Comm_rank(mpi_comm, &rank);
   double global_sum;
-  MPI_Allreduce( &sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_comm);
+  MPI_Allreduce(&sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_comm);
 
   long long int global_count;
-  MPI_Allreduce( &count, &global_count, 1, MPI_LONG_LONG_INT, MPI_SUM, mpi_comm);
+  MPI_Allreduce(&count, &global_count, 1, MPI_LONG_LONG_INT, MPI_SUM, mpi_comm);
 
   sum = global_sum;
   count = global_count;
 #endif
 
-  double avg = sum / double(count);
+  conduit::Node res;
+  res["value"] = sum;
+  res["count"] = count;
+  return res;
+}
+
+conduit::Node
+field_avg(const conduit::Node &dataset,
+          const std::string &field)
+{
+  conduit::Node sum = field_sum(dataset, field);
+
+  double avg = sum["value"].to_float64() / sum["count"].to_float64();
+
   conduit::Node res;
   res["value"] = avg;
-
   return res;
 }
 

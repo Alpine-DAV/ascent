@@ -99,8 +99,6 @@ TEST(ascent_triggers, simple_rick)
     // Create trigger actions.
     //
     Node trigger_actions;
-    conduit::Node &trigger_execute = trigger_actions.append();
-    trigger_execute["action"] = "execute";
     trigger_actions.save(trigger_file, "json");
 
     //
@@ -116,8 +114,6 @@ TEST(ascent_triggers, simple_rick)
     conduit::Node &add_triggers= actions.append();
     add_triggers["action"] = "add_triggers";
     add_triggers["triggers"] = triggers;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //
@@ -136,6 +132,9 @@ TEST(ascent_triggers, simple_rick)
     ascent.info(info);
     std::string path = "expressions/" + condition + "/100/value";
     EXPECT_TRUE(info[path].to_int32() == 1);
+    std::string msg = "A simple example of triggering actions based on a boolean"
+                      " expression.";
+    ASCENT_ACTIONS_DUMP(actions, std::string("basic_trigger"), msg);
 
     ascent.close();
 
@@ -193,8 +192,6 @@ TEST(ascent_triggers, complex_trigger)
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
 
-    conduit::Node &trigger_execute = trigger_actions.append();
-    trigger_execute["action"] = "execute";
     trigger_actions.save(trigger_file, "json");
 
     //
@@ -202,7 +199,7 @@ TEST(ascent_triggers, complex_trigger)
     //
     Node actions;
     // this should always be true
-    std::string condition = "magnitude(position(max(\"braid\")) - vector(0,0,0)) > 0";
+    std::string condition = "magnitude(max(field('braid')).position - vector(0,0,0)) > 0";
     conduit::Node triggers;
     triggers["t1/params/condition"] = condition;
     triggers["t1/params/actions_file"] = trigger_file;
@@ -210,8 +207,6 @@ TEST(ascent_triggers, complex_trigger)
     conduit::Node &add_triggers= actions.append();
     add_triggers["action"] = "add_triggers";
     add_triggers["triggers"] = triggers;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //
@@ -229,12 +224,15 @@ TEST(ascent_triggers, complex_trigger)
     conduit::Node info;
     ascent.info(info);
     std::string path = "expressions/" + condition + "/100/value";
-    EXPECT_TRUE(info[path].to_int32() == 1);
+    EXPECT_TRUE(info[path].to_uint8() == 1);
 
     ascent.close();
 
     // check that we created an image from the trigger
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "A more complex trigger example using several functions"
+                      " that evaluate positons on the mesh.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -266,13 +264,13 @@ TEST(ascent_triggers, trigger_extract)
     string trigger_file = conduit::utils::join_file_path(output_path,"trigger_extract_actions");
     string output_file = conduit::utils::join_file_path(output_path,"tout_trigger_extract");
     string output_root_file = output_file + ".cycle_000100.root";
-    
+
     // remove old files
     if(conduit::utils::is_file(trigger_file))
     {
       conduit::utils::remove_file(trigger_file);
     }
-    
+
     if(conduit::utils::is_file(output_root_file))
     {
       conduit::utils::remove_file(output_root_file);
@@ -284,7 +282,7 @@ TEST(ascent_triggers, trigger_extract)
     Node trigger_actions;
 
     conduit::Node extracts;
-    
+
     extracts["e1/type"]  = "relay";
     extracts["e1/params/path"] = output_file;
     extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
@@ -293,8 +291,6 @@ TEST(ascent_triggers, trigger_extract)
     add_ext["action"] = "add_extracts";
     add_ext["extracts"] = extracts;
 
-    conduit::Node &trigger_execute = trigger_actions.append();
-    trigger_execute["action"] = "execute";
     trigger_actions.save(trigger_file, "json");
 
     //
@@ -302,7 +298,7 @@ TEST(ascent_triggers, trigger_extract)
     //
     Node actions;
     // this should always be true
-    std::string condition = "magnitude(position(max(\"braid\")) - vector(0,0,0)) > 0";
+    std::string condition = "magnitude(max(field('braid')).position - vector(0,0,0)) > 0";
     conduit::Node triggers;
     triggers["t1/params/condition"] = condition;
     triggers["t1/params/actions_file"] = trigger_file;
@@ -310,8 +306,6 @@ TEST(ascent_triggers, trigger_extract)
     conduit::Node &add_triggers= actions.append();
     add_triggers["action"] = "add_triggers";
     add_triggers["triggers"] = triggers;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //
@@ -329,6 +323,9 @@ TEST(ascent_triggers, trigger_extract)
 
     // check that we created an image from the trigger
     EXPECT_TRUE(conduit::utils::is_file(output_root_file));
+    std::string msg = "A more complex trigger example using several functions"
+                      " that evaluate positons on the mesh.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 

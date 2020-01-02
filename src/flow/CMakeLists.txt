@@ -112,6 +112,9 @@ blt_add_library(
     HEADERS     ${flow_headers}
     DEPENDS_ON  ${flow_thirdparty_libs})
 
+set_target_properties(ascent_flow PROPERTIES CXX_VISIBILITY_PRESET hidden)
+target_compile_definitions(ascent_flow PRIVATE ASCENT_EXPORTS_FLAG)
+    
 # install target for serial ascent lib
 install(TARGETS ascent_flow
         EXPORT  ascent

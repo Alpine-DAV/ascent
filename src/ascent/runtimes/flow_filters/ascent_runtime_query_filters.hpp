@@ -82,7 +82,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class BasicQuery : public ::flow::Filter
+class ASCENT_API BasicQuery : public ::flow::Filter
 {
 public:
     BasicQuery();

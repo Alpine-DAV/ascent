@@ -105,10 +105,10 @@ TEST(ascent_mpi_expressions, mpi_expressoins)
 
     runtime::expressions::register_builtin();
     runtime::expressions::ExpressionEval eval(&multi_dom);
-    std::string expr = "magnitude(position(max(\"radial_vert\")))";
+    std::string expr = "magnitude(max(field('radial_vert')).position)";
     conduit::Node res = eval.evaluate(expr);
 
-    EXPECT_TRUE(res["type"].as_string() == "scalar");
+    EXPECT_EQ(res["type"].as_string(), "double");
 
     if(par_rank == 0)
     {
