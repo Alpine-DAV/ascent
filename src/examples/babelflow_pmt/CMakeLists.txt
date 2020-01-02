@@ -54,49 +54,52 @@
 ##############################################################################
 
 
-cmake_minimum_required(VERSION 3.9)
+#cmake_minimum_required(VERSION 3.9)
 
-project(babelflow_pmt)
+#project(babelflow_pmt)
+
+#set(ASCENT_DIR /home/xuanhuang/projects/ascent-update/ascent/build/install)
+#set(BabelFlow_DIR /home/xuanhuang/package/babelflow-ascent/build/install/lib/cmake/BabelFlow)
+#set(PMT_DIR /home/xuanhuang/projects/parallelmergetree/build/install/lib/cmake/PMT)
+
 
 #
 # Provide default for ASCENT_DIR that works for an ascent install
 #
-if (NOT ASCENT_DIR)
-    set(ASCENT_DIR "../../..")
-endif ()
+#set(ASCENT_DIR "" CACHE PATH "path to installed ascent")
+#if (NOT ASCENT_DIR)
+#    set(ASCENT_DIR "../../..")
+#endif ()
 #
 # Check for valid Ascent install
 #
-get_filename_component(ASCENT_DIR ${ASCENT_DIR} ABSOLUTE)
-if (NOT EXISTS ${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)
-    MESSAGE(FATAL_ERROR "Could not find Ascent CMake include file (${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)")
-endif ()
+#get_filename_component(ASCENT_DIR ${ASCENT_DIR} ABSOLUTE)
+#if (NOT EXISTS ${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)
+#    MESSAGE(FATAL_ERROR "Could not find Ascent CMake include file (${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)")
+#endif ()
 
 #
 # Use CMake's find_package to import ascent's targets
 #
-find_package(Ascent REQUIRED
-        NO_DEFAULT_PATH
-        PATHS ${ASCENT_DIR}/lib/cmake)
+#find_package(Ascent REQUIRED
+#        NO_DEFAULT_PATH
+#        PATHS ${ASCENT_DIR}/lib/cmake)
 
+#set(PMT_DIR "" CACHE PATH "path to pmt installed dir")
+#set(BabelFlow_DIR "" CACHE PATH "path to babelflow cmake dir")
+#set(DIY_LIBRARIES "" CACHE PATH "path to libdiy.a")
 
-if (NOT PMT_DIR)
-    message(FATAL_ERROR "PMT_DIR not defined")
-else ()
-    message("PMT_DIR ${PMT_DIR}")
-endif ()
+#find_package(BabelFlow REQUIRED)
+#find_package(PMT REQUIRED)
+#find_package(MPI REQUIRED)
 
-set(PMT_LIBRARIES libpmt.dylib)
-
-find_package(BabelFlow REQUIRED)
-find_package(MPI REQUIRED)
-include_directories(${ASCENT_DIR}/include/ascent ${MPI_C_INCLUDE_PATH})
-message("ASCENT_DIR ${ASCENT_DIR}")
+#include_directories(${ASCENT_DIR}/include/ascent ${MPI_C_INCLUDE_PATH} /home/xuanhuang/projects/parallelmergetree/diy/include)
+#message("ASCENT_DIR ${ASCENT_DIR}")
 
 # create our example
 add_executable(ascent_babelflow_example ascent_babelflow_example.cpp)
 
 # link to ascent
-target_link_directories(ascent_babelflow_example PUBLIC ${PMT_DIR}/lib)
-target_link_libraries(ascent_babelflow_example ascent::ascent_mpi ${BABELFLOW_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PMT_LIBRARIES})
+#target_link_directories(ascent_babelflow_example PUBLIC ${PMT_DIR}/lib)
+target_link_libraries(ascent_babelflow_example ascent_mpi BabelFlow::babelflow ${MPI_CXX_LIBRARIES} PMT::pmt ${DIY_LIBRARIES})
 

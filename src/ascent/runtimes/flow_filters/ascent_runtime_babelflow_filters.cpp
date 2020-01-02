@@ -2,21 +2,22 @@
 // Created by Li, Jixian on 2019-06-04.
 //
 
-#include "ascent_runtime_babelflow_filters.h"
+#include "ascent_runtime_babelflow_filters.hpp"
 
 #include <conduit.hpp>
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
 
+#include <mpi.h>
 
-void ascent::runtime::filter::BabelFlow::declare_interface(conduit::Node &i) {
+void ascent::runtime::filters::BabelFlow::declare_interface(conduit::Node &i) {
   i["type_name"] = "babelflow";
   i["port_names"].append() = "in";
   i["output_port"] = "false";
 }
 
 
-void ascent::runtime::filter::BabelFlow::execute() {
+void ascent::runtime::filters::BabelFlow::execute() {
   if (op == PMT) {
     // connect to the input port and get the parameters
     conduit::Node p = params();
@@ -64,7 +65,7 @@ void ascent::runtime::filter::BabelFlow::execute() {
   }
 }
 
-bool ascent::runtime::filter::BabelFlow::verify_params(const conduit::Node &params, conduit::Node &info) {
+bool ascent::runtime::filters::BabelFlow::verify_params(const conduit::Node &params, conduit::Node &info) {
   if (params.has_child("task")) {
     std::string task_str(params["task"].as_string());
     if (task_str == "pmt") {

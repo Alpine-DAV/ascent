@@ -4,6 +4,7 @@
 #include <conduit_blueprint.hpp>
 #include <mpi.h>
 #include <ctime>
+#include <cassert>
 
 using namespace ascent;
 using namespace conduit;

@@ -6,19 +6,20 @@
 #define ASCENT_ASCENT_RUNTIME_BABELFLOW_FILTERS_H
 
 #include <flow_filter.hpp>
-#include <mpi.h>
 #include <fstream>
 #include <sstream>
-#include <babelflow/pmt/b_pmt.h>
+#include <babelflow/pmt/b_pmt.hpp>
 
 namespace ascent
 {
 namespace runtime
 {
-namespace filter
+namespace filters
 {
 
-enum op
+// Xuan
+// change here from op to op_enum to avoid naming dup
+enum op_enum
 {
   NOOP = 0,
   PMT
@@ -27,7 +28,7 @@ enum op
 class BabelFlow : public ::flow::Filter
 {
 private:
-  op op = NOOP;
+  op_enum op = NOOP;
 
 public:
   BabelFlow()= default;

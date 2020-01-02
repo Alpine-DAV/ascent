@@ -72,6 +72,8 @@ option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
 
+option(ENABLE_BABELFLOW   "Enable BabelFlow runtime" OFF)
+
 if(NOT ENABLE_SERIAL AND NOT ENABLE_MPI)
   message(FATAL_ERROR "No libraries are built. "
     "Please set ENABLE_SERIAL, ENABLE_MPI or both to ON")
@@ -88,6 +90,8 @@ if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
   message(FATAL_ERROR "Static libraries are required when building with CUDA")
 endif()
 
+#Xuan: has to force find threads
+find_package(Threads)
 
 ################################
 # Populate the cmake gui
