@@ -14,10 +14,51 @@ int main(int argc, char **argv)
   using namespace std;
   int provided;
 
+  //int32_t dim = 256;
+  //if (argc > 1) {
+  //  dim = stoi(argv[1]);
+  //}
+
   int32_t dim = 256;
-  if (argc > 1) {
-    dim = stoi(argv[1]);
+  if (argc < 9) {
+    fprintf(stderr,"Usage: %s -f <input_data> -d <Xdim> <Ydim> <Zdim> \
+                    -p <dx> <dy> <dz> -m <fanin> -t <threshold>\n", argv[0]);
+    return 0;
   }
+  //arg parse
+  int tot_blocks;
+  int data_size_[3];             // {x_size, y_size, z_size}
+  int block_decomp[3];     // block decomposition
+  int min[3], max[3], size[3];  // block extents
+  int nblocks;                  // my local number of blocks
+  int ghost[6] = {0, 0, 0, 0, 0, 0};
+  int share_face = 1;           // share a face among the blocks
+
+  int test_block_size[3];
+  uint32_t valence = 2;
+  //FunctionType threshold_ = (FunctionType)(-1)*FLT_MAX;
+  int threshold_ = (int)(-1)*FLT_MAX;
+  char* dataset;
+  for (int i = 1; i < argc; i++){
+    if (!strcmp(argv[i],"-d")){
+      data_size_[0] = atoi(argv[++i]); 
+      data_size_[1] = atoi(argv[++i]); 
+      data_size_[2] = atoi(argv[++i]); 
+    }
+    if (!strcmp(argv[i],"-p")){
+      block_decomp[0] = atoi(argv[++i]);                                                                                                           
+      block_decomp[1] = atoi(argv[++i]);                                                                                                           
+      block_decomp[2] = atoi(argv[++i]);
+    }
+    if (!strcmp(argv[i],"-m"))
+      valence = atoi(argv[++i]);
+    if (!strcmp(argv[i],"-t"))
+      threshold_ = atof(argv[++i]);
+    if (!strcmp(argv[i],"-f"))
+      dataset = argv[++i];
+  }
+  dim =  block_decomp[0]*block_decomp[1]*block_decomp[2];
+
 
   auto err = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
   assert(err == MPI_SUCCESS);
@@ -38,8 +79,8 @@ int main(int argc, char **argv)
 
   // user defines n_blocks per dimension
   // user provides the size of the whole data
-  vector <int32_t> data_size({dim, dim, dim});
-  vector <int32_t> n_blocks({2, 2, 2});
+  vector <int32_t> data_size({data_size_[0], data_size_[1], data_size_[2]});
+  vector <int32_t> n_blocks({ block_decomp[0],  block_decomp[1],  block_decomp[2]});
   int32_t block_size[3] = {data_size[0] / n_blocks[0], data_size[1] / n_blocks[1], data_size[2] / n_blocks[2]};
   // compute the boundaries of the needed block
   vector <int32_t> low(3);
@@ -53,11 +94,25 @@ int main(int argc, char **argv)
 
 
 
-
   // for testing purpose: every rank has whole data
   // in practice, Only assign the corresponding block(s) to each rank
   // The user should define block_data or that should come from the simulation\
   // NOTE: PMT assumes Ghost Layers only in positive x,y,z directions
+
+  // set the gloabl data
+  vector<int> global_data(data_size[0]*data_size[1]*data_size[2], 0);
+  {
+  ifstream rf(dataset, ios::out | ios::binary);
+    if(!rf) {
+      cout << "Cannot open file!" << endl;
+    return 1;
+  }
+
+    for(int i = 0; i < data_size[0]*data_size[1]*data_size[2] ; i++)
+      rf.read( (char *)&global_data[i], sizeof(int));
+
+    rf.close();
+  }
 
   // size of the local data
   int32_t num_x = high[0] - low[0] + 1;
@@ -67,26 +122,6 @@ int main(int argc, char **argv)
 
   // copy values from global data
   {
-    Node whole_data_node;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              data_size[0],
-                                              data_size[1],
-                                              data_size[2],
-                                              whole_data_node);
-    conduit::DataArray<double> whole_data_array = whole_data_node["fields/braid/values"].as_float64_array();
-
-    if (mpi_rank ==0 ){
-      vector<float> whole_data_array_f(data_size[0] * data_size[1] * data_size[2]);
-      for (int i = 0; i < data_size[0] * data_size[1] * data_size[2]; ++i) {
-        whole_data_array_f[i] = static_cast<float>(whole_data_array[i]);
-      }
-      stringstream ss;
-      ss << "data.bin";
-      ofstream bofs(ss.str(), ios::out | ios::binary);
-      bofs.write(reinterpret_cast<char *>(whole_data_array_f.data()), whole_data_array_f.size() * sizeof(float));
-      bofs.close();
-    }
-
     // copy the subsection of data
     uint32_t offset = 0;
     uint32_t start = low[0] + low[1] * data_size[0] + low[2] * data_size[0] * data_size[1];
@@ -94,7 +129,7 @@ int main(int argc, char **argv)
       for (uint32_t by = 0; by < num_y; ++by) {
         int data_idx = start + bz * data_size[0] * data_size[1] + by * data_size[0];
         for (uint32_t i = 0; i < num_x; ++i) {
-          block_data[offset + i] = static_cast<float>(whole_data_array[data_idx + i]);
+          block_data[offset + i] = static_cast<float>(global_data[data_idx + i]);
         }
         offset += num_x;
       }
