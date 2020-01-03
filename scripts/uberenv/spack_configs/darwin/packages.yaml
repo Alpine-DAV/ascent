@@ -34,10 +34,8 @@ packages:
       mariadb-client: [mariadb-c-client, mariadb]
       mkl: [intel-mkl]
       mpe: [mpe2]
-
       mpi: [openmpi, mpich]
       mysql-client: [mysql, mariadb-c-client]
-
       opencl: [pocl]
       pil: [py-pillow]
       pkgconfig: [pkgconf, pkg-config]
@@ -68,17 +66,3 @@ packages:
     paths:
       perl: /usr/
     buildable: False
-<<<<<<< HEAD
-  mpich:
-    paths:
-      mpich: /Users/li74/mpich
-    buildable: False
-# CUDA standard MacOS install paths
-  cuda:
-    paths:
-      cuda@8.0: /Developer/NVIDIA/CUDA-8.0
-      cuda@9.0: /Developer/NVIDIA/CUDA-9.0
-    buildable: False
-
-=======
->>>>>>> upstream/develop

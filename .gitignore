@@ -12,7 +12,5 @@ uberenv_libs
 *.tar
 s_env.sh
 _uberenv_test*
-.idea/
-build/
 .ipynb_checkpoints
 Untitle*.ipynb
