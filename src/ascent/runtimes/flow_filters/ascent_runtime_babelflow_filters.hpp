@@ -8,7 +8,6 @@
 #include <flow_filter.hpp>
 #include <fstream>
 #include <sstream>
-#include <babelflow/pmt/b_pmt.hpp>
 
 namespace ascent
 {

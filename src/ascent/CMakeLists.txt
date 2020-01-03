@@ -287,8 +287,6 @@ if(MPI_FOUND)
 	   # TODO get everything into one cpp and one hpp files
 	    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_filters.cpp)
 	    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
-	    list(APPEND ascent_sources runtimes/flow_filters/babelflow/pmt/b_pmt.cpp)
-	    list(APPEND ascent_headers runtimes/flow_filters/babelflow/pmt/b_pmt.hpp)
 
 	    list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
 	    list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
