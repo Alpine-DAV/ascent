@@ -90,8 +90,6 @@ if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
   message(FATAL_ERROR "Static libraries are required when building with CUDA")
 endif()
 
-#Xuan: has to force find threads
-find_package(Threads)
 
 ################################
 # Populate the cmake gui
