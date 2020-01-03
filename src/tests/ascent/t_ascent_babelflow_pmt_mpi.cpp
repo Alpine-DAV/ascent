@@ -44,13 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_hola_mpi.cpp
+/// file: t_ascent_babelfow_pmt_mpi.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include <iostream>
 #include <cfloat>
-#include <ascent.hpp>
 #include <conduit_blueprint.hpp>
 #include <mpi.h>
 #include <ctime>
@@ -60,11 +59,7 @@
 #include "gtest/gtest.h"
 
 #include <ascent.hpp>
-#include <ascent_hola.hpp>
-#include <ascent_hola_mpi.hpp>
 #include <mpi.h>
-#include "conduit_relay.hpp"
-#include "conduit_relay_mpi.hpp"
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
