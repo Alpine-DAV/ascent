@@ -58,7 +58,7 @@ if(MFEM_FOUND)
 endif()
 
 if(ENABLE_BABELFLOW)
-  add_subdirectory(babelflow_pmt)
+  add_subdirectory(babelflow/pmt)
 endif()
 
 # install using and python examples
