@@ -42,60 +42,29 @@
 #
 ###############################################################################
 
-from spack import *
+###############################################################################
+#
+# BabelFlow PMT example that reads an output file
+# Usage: mpirun -n N ./ascent_babelflow_example -f <input_data> 
+# 		-d <Xdim> <Ydim> <Zdim> -p <dx> <dy> <dz> -m <fanin> -t <threshold>
+#
+##############################################################################
 
-import socket
-import os
-import platform
-from os.path import join as pjoin
 
-from .ascent import Ascent
+set(ascent_babelflow_example_sources
+    ascent_babelflow_example.cpp)
 
-class UberenvAscent(Ascent):
-    """Spack Based Uberenv Build for Ascent Thirdparty Libs """
+set(ascent_babelflow_example_header)
 
-    homepage = "https://github.com/alpine-DAV/ascent"
+if(MPI_FOUND)
+	set(ascent_babelflow_example_deps ascent_mpi BabelFlow::babelflow ${MPI_CXX_LIBRARIES} PMT::pmt ${DIY_LIBRARIES})
 
-    version('0.5.0', '21d3663781975432144037270698d493a7f8fa876ede7da51618335be468168f')
+    blt_add_executable(
+        NAME        ascent_babelflow_example
+        SOURCES     ${ascent_babelflow_example_sources}
+        DEPENDS_ON  ${ascent_babelflow_example_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-    # default to building docs when using uberenv
-    variant("doc",
-            default=True,
-            description="Build deps needed to create Conduit's Docs")
+endif()
 
-    variant("babelflow", 
-            default=False,
-            description="Build with BabelFlow")
 
-    variant("pmt", 
-            default=False,
-            description="Build with ParallelMergeTree analysis")
-
-    depends_on('babelflow', when='+babelflow')
-    depends_on('pmt', when='+babelflow')
-
-    # in upstream spack package
-    depends_on("cmake@3.14.1:3.14.5", when="+cmake")
-
-    def cmake_args(self):
-        if '+babelflow' in self.spec:
-            cmake_args.extend([
-                '-DENABLE_BABELFLOW:BOOL=ON'
-            ])
-
-    def url_for_version(self, version):
-        dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
-        dummy_tar_path = pjoin(dummy_tar_path,"uberenv-ascent.tar.gz")
-        url      = "file://" + dummy_tar_path
-        return url
-
-    def install(self, spec, prefix):
-        """
-        Build and install Ascent.
-        """
-        with working_dir('spack-build', create=True):
-            host_cfg_fname = self.create_host_config(spec, prefix)
-            # place a copy in the spack install dir for the uberenv-conduit package
-            mkdirp(prefix)
-            install(host_cfg_fname,prefix)
-            install(host_cfg_fname,env["SPACK_DEBUG_LOG_DIR"])
