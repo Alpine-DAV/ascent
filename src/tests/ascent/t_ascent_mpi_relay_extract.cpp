@@ -154,6 +154,12 @@ TEST(ascent_mpi_runtime, test_relay_extract_iso)
     ascent.execute(actions);
     ascent.close();
 
+    if(par_rank == 0)
+    {
+      std::string msg = "An example of using an relay extract to save the results of "
+                        " a pipeline to the file system.";
+      ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -214,10 +220,6 @@ TEST(ascent_mpi_runtime, test_relay_extract_selected_fields)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
-
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
 
     //
     // Run Ascent
@@ -315,6 +317,12 @@ TEST(ascent_mpi_runtime, test_relay_extract_mesh)
     ascent.execute(actions);
     ascent.close();
 
+    if(par_rank == 0)
+    {
+      std::string msg = "An example of using an relay extract to save the published mesh "
+                        "to the file system.";
+      ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    }
 }
 
 //-----------------------------------------------------------------------------

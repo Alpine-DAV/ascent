@@ -62,8 +62,6 @@
 #include "t_utils.hpp"
 
 
-
-
 using namespace std;
 using namespace conduit;
 using namespace ascent;
@@ -118,7 +116,6 @@ TEST(ascent_clip, test_clip_sphere)
     pipelines["pl1/f1/type"] = "clip";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
     clip_params["sphere/radius"] = 11.;
     clip_params["sphere/center/x"] = 0.;
     clip_params["sphere/center/y"] = 0.;
@@ -139,9 +136,6 @@ TEST(ascent_clip, test_clip_sphere)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -158,6 +152,8 @@ TEST(ascent_clip, test_clip_sphere)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example a sphere clip using a center and radius";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -208,7 +204,6 @@ TEST(ascent_clip, test_clip_inverted_sphere)
     pipelines["pl1/f1/type"] = "clip";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
     clip_params["invert"] = "true";
     clip_params["sphere/radius"] = 11.;
     clip_params["sphere/center/x"] = 0.;
@@ -230,9 +225,6 @@ TEST(ascent_clip, test_clip_inverted_sphere)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -249,6 +241,8 @@ TEST(ascent_clip, test_clip_inverted_sphere)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example an inverted sphere clip using a center and radius";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -298,7 +292,6 @@ TEST(ascent_clip, test_clip_box)
     pipelines["pl1/f1/type"] = "clip";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
     clip_params["box/min/x"] = 0.;
     clip_params["box/min/y"] = 0.;
     clip_params["box/min/z"] = 0.;
@@ -321,9 +314,6 @@ TEST(ascent_clip, test_clip_box)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -340,6 +330,8 @@ TEST(ascent_clip, test_clip_box)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example a blox clip";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -390,7 +382,6 @@ TEST(ascent_clip, test_clip_plane)
     pipelines["pl1/f1/type"] = "clip";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
     clip_params["plane/point/x"] = 0.;
     clip_params["plane/point/y"] = 0.;
     clip_params["plane/point/z"] = 0.;
@@ -413,9 +404,6 @@ TEST(ascent_clip, test_clip_plane)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -432,6 +420,8 @@ TEST(ascent_clip, test_clip_plane)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example a plane clip defined with a point and a normal";
+    ASCENT_ACTIONS_DUMP(actions,output_file, msg);
 }
 
 //-----------------------------------------------------------------------------

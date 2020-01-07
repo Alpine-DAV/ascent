@@ -1,0 +1,13 @@
+#An example of creating a plot specifying the min and max values of the scalar range.
+
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          min_value: -0.5
+          max_value: 0.5
+      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_render_3d_ascent_min_max"

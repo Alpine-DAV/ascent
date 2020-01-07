@@ -63,21 +63,23 @@ else()
    set(noise_openmp_flags "")
 endif()
 
-blt_add_executable(
-    NAME        noise_ser
-    SOURCES     ${noise_sources}
-    DEPENDS_ON  ${noise_deps}
-    OUTPUT_DIR  ${CMAKE_CURRENT_BINARY_DIR})
-
-blt_add_target_compile_flags(TO noise_ser FLAGS "${noise_openmp_flags}")
-
-# install target for noise example
-install(TARGETS noise_ser
-        EXPORT  ascent
-        LIBRARY DESTINATION examples/ascent/synthetic/noise
-        ARCHIVE DESTINATION examples/ascent/synthetic/noise
-        RUNTIME DESTINATION examples/ascent/synthetic/noise
-)
+if (ENABLE_SERIAL)
+    blt_add_executable(
+        NAME        noise_ser
+        SOURCES     ${noise_sources}
+        DEPENDS_ON  ${noise_deps}
+        OUTPUT_DIR  ${CMAKE_CURRENT_BINARY_DIR})
+    
+    blt_add_target_compile_flags(TO noise_ser FLAGS "${noise_openmp_flags}")
+    
+    # install target for noise example
+    install(TARGETS noise_ser
+            EXPORT  ascent
+            LIBRARY DESTINATION examples/ascent/synthetic/noise
+            ARCHIVE DESTINATION examples/ascent/synthetic/noise
+            RUNTIME DESTINATION examples/ascent/synthetic/noise
+    )
+endif()
 
 install(FILES ASCENT_README.md DESTINATION examples/ascent/synthetic/noise)
 
@@ -108,6 +110,7 @@ if(MPI_FOUND)
 endif()
 
 
+configure_file(example_actions.yaml ${CMAKE_CURRENT_BINARY_DIR}/example_actions.yaml COPYONLY)
 
 
 

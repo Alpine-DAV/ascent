@@ -1,5 +1,7 @@
+#!/bin/sh
+"exec" "python" "-u" "-B" "$0" "$@"
 ###############################################################################
-# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -68,13 +70,14 @@ from os.path import join as pjoin
 def sexe(cmd,ret_output=False,echo = False):
     """ Helper for executing shell commands. """
     if echo:
-        print "[exe: %s]" % cmd
+        print("[exe: {}]".format(cmd))
     if ret_output:
         p = subprocess.Popen(cmd,
                              shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT)
-        res =p.communicate()[0]
+        res = p.communicate()[0]
+        res = res.decode('utf8')
         return p.returncode,res
     else:
         return subprocess.call(cmd,shell=True)
@@ -123,8 +126,6 @@ def parse_args():
                       default=pjoin(uberenv_script_dir(),"project.json"),
                       help="uberenv project settings json file")
 
-
-
     # flag to use insecure curl + git
     parser.add_option("-k",
                       action="store_true",
@@ -154,7 +155,7 @@ def parse_args():
                       default=False,
                       help="Invoke build tests during spack install")
 
-    # option to force a spack pull
+    # option to init osx sdk env flags
     parser.add_option("--macos-sdk-env-setup",
                       action="store_true",
                       dest="macos_sdk_env_setup",
@@ -175,7 +176,7 @@ def parse_args():
     if not opts["spack_config_dir"] is None:
         opts["spack_config_dir"] = os.path.abspath(opts["spack_config_dir"])
         if not os.path.isdir(opts["spack_config_dir"]):
-            print "[ERROR: invalid spack config dir: %s ]" % opts["spack_config_dir"]
+            print("[ERROR: invalid spack config dir: {} ]".format(opts["spack_config_dir"]))
             sys.exit(-1)
     return opts, extras
 
@@ -212,7 +213,7 @@ def disable_spack_config_scopes(spack_dir):
     # disables all config scopes except "default", which we will
     # force our settings into
     spack_lib_config = pjoin(spack_dir,"lib","spack","spack","config.py")
-    print "[disabling config scope (except default) in: %s]" % spack_lib_config
+    print("[disabling config scope (except default) in: {}]".format(spack_lib_config))
     cfg_script = open(spack_lib_config).read()
     for cfg_scope_stmt in ["('system', os.path.join(spack.paths.system_etc_path, 'spack')),",
                            "('site', os.path.join(spack.paths.etc_path, 'spack')),",
@@ -229,23 +230,23 @@ def patch_spack(spack_dir,uberenv_dir,cfg_dir,pkgs):
     spack_etc_defaults_dir = pjoin(spack_dir,"etc","spack","defaults")
     # copy in default config.yaml
     config_yaml = os.path.abspath(pjoin(uberenv_dir,"spack_configs","config.yaml"))
-    sexe("cp %s %s/" % (config_yaml, spack_etc_defaults_dir ), echo=True)
+    sexe("cp {} {}/".format(config_yaml, spack_etc_defaults_dir ), echo=True)
     # copy in other settings per platform
     if not cfg_dir is None:
-        print "[copying uberenv compiler and packages settings from %s]" % cfg_dir
+        print("[copying uberenv compiler and packages settings from {0}]".format(cfg_dir))
 
         config_yaml    = pjoin(cfg_dir,"config.yaml")
         compilers_yaml = pjoin(cfg_dir,"compilers.yaml")
         packages_yaml  = pjoin(cfg_dir,"packages.yaml")
 
         if os.path.isfile(config_yaml):
-            sexe("cp %s %s/" % (config_yaml , spack_etc_defaults_dir ), echo=True)
+            sexe("cp {} {}/".format(config_yaml , spack_etc_defaults_dir ), echo=True)
 
         if os.path.isfile(compilers_yaml):
-            sexe("cp %s %s/" % (compilers_yaml, spack_etc_defaults_dir ), echo=True)
+            sexe("cp {} {}/".format(compilers_yaml, spack_etc_defaults_dir ), echo=True)
 
         if os.path.isfile(packages_yaml):
-            sexe("cp %s %s/" % (packages_yaml, spack_etc_defaults_dir ), echo=True)
+            sexe("cp {} {}/".format(packages_yaml, spack_etc_defaults_dir ), echo=True)
     else:
         # let spack try to auto find compilers
         sexe("spack/bin/spack compiler find", echo=True)
@@ -259,7 +260,7 @@ def create_spack_mirror(mirror_path,pkg_name,ignore_ssl_errors=False):
     Creates a spack mirror for pkg_name at mirror_path.
     """
     if not mirror_path:
-        print "[--create-mirror requires a mirror directory]"
+        print("[--create-mirror requires a mirror directory]")
         sys.exit(-1)
     mirror_path = os.path.abspath(mirror_path)
 
@@ -295,20 +296,20 @@ def use_spack_mirror(spack_dir,
     existing_mirror_path = find_spack_mirror(spack_dir, mirror_name)
     if existing_mirror_path and mirror_path != existing_mirror_path:
         # Existing mirror has different URL, error out
-        print "[removing existing spack mirror `%s` @ %s]" % (mirror_name,
-                                                              existing_mirror_path)
+        print("[removing existing spack mirror `{}` @ {}]".format(mirror_name,
+                                                                  existing_mirror_path))
         #
         # Note: In this case, spack says it removes the mirror, but we still
         # get errors when we try to add a new one, sounds like a bug
         #
-        sexe("spack/bin/spack mirror remove --scope=site {} ".format(
-                mirror_name), echo=True)
+        sexe("spack/bin/spack mirror remove --scope=site {} ".format(mirror_name),
+             echo=True)
         existing_mirror_path = None
     if not existing_mirror_path:
         # Add if not already there
         sexe("spack/bin/spack mirror add --scope=site {} {}".format(
                 mirror_name, mirror_path), echo=True)
-        print "[using mirror %s]" % mirror_path
+        print("[using mirror {}]".format(mirror_path))
 
 
 def find_osx_sdks():
@@ -343,20 +344,25 @@ def setup_osx_sdk_env_vars():
         sdk_root = sdks[dep_tgt]
     else:
         # no valid sdks, error out
-        print "[ERROR: Could not find OSX SDK @ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/]"
+        print("[ERROR: Could not find OSX SDK @ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/]")
         sys.exit(-1)
 
     env["MACOSX_DEPLOYMENT_TARGET"] = dep_tgt
     env["SDKROOT"] = sdk_root
-    print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % env["MACOSX_DEPLOYMENT_TARGET"]
-    print "[setting SDKROOT to %s]" % env[ "SDKROOT" ]
+    print("[setting MACOSX_DEPLOYMENT_TARGET to {}]".format(env["MACOSX_DEPLOYMENT_TARGET"]))
+    print("[setting SDKROOT to {}]".format(env[ "SDKROOT"]))
 
 
 def find_spack_pkg_path(pkg_name):
     r,rout = sexe("spack/bin/spack find -p " + pkg_name,ret_output = True)
     for l in rout.split("\n"):
-        if l.startswith(" "):
+        lstrip = l.strip()
+        if not lstrip == "" and \
+           not lstrip.startswith("==>") and  \
+           not lstrip.startswith("--"):
             return {"name": pkg_name, "path": l.split()[-1]}
+    print("[ERROR: failed to find package named '{}']".format(pkg_name))
+    sys.exit(-1)
 
 def read_spack_full_spec(pkg_name,spec):
     rv, res = sexe("spack/bin/spack spec " + pkg_name + " " + spec, ret_output=True)
@@ -378,21 +384,21 @@ def main():
         uberenv_pkg_name = project_opts["package_name"]
     else:
         uberenv_pkg_name = project_opts["uberenv_package_name"]
-    print "[uberenv project settings: %s]" % str(project_opts)
-    print "[uberenv options: %s]" % str(opts)
+    print("[uberenv project settings: {}]".format(str(project_opts)))
+    print("[uberenv options: {}]".format(str(opts)))
     if "darwin" in platform.system().lower():
         if opts["macos_sdk_env_setup"]:
             # setup osx deployment target and sdk settings
             setup_osx_sdk_env_vars()
         else:
-            print "[skipping MACOSX env var setup]"
+            print("[skipping MACOSX env var setup]")
     # setup default spec
     if opts["spec"] is None:
         if "darwin" in platform.system().lower():
             opts["spec"] = "%clang"
         else:
             opts["spec"] = "%gcc"
-    print "[spack spec: %s]" % opts["spec"]
+    print("[spack spec: {}]".format(opts["spec"]))
     # get the current working path, and the glob used to identify the
     # package files we want to hot-copy to spack
     uberenv_path = os.path.split(os.path.abspath(__file__))[0]
@@ -400,17 +406,17 @@ def main():
     # setup destination paths
     dest_dir = os.path.abspath(opts["prefix"])
     dest_spack = pjoin(dest_dir,"spack")
-    print "[installing to: %s]" % dest_dir
+    print("[installing to: {0}]".format(dest_dir))
     # print a warning if the dest path already exists
     if not os.path.isdir(dest_dir):
         os.mkdir(dest_dir)
     else:
-        print "[info: destination '%s' already exists]"  % dest_dir
+        print("[info: destination '{}' already exists]".format(dest_dir))
     if os.path.isdir(dest_spack):
-        print "[info: destination '%s' already exists]"  % dest_spack
+        print("[info: destination '{}' already exists]".format(dest_spack))
 
     if not os.path.isdir(dest_spack):
-        print "[info: cloning spack develop branch from github]"
+        print("[info: cloning spack develop branch from github]")
         os.chdir(dest_dir)
         # clone spack into the dest path
         clone_cmd ="git "
@@ -426,9 +432,9 @@ def main():
         sexe(clone_cmd, echo=True)
         if "spack_commit" in project_opts:
             sha1 = project_opts["spack_commit"]
-            print "[info: using spack commit %s]" % sha1
+            print("[info: using spack commit {}]".format(sha1))
             os.chdir(pjoin(dest_dir,"spack"))
-            sexe("git reset --hard %s" % sha1,echo=True)
+            sexe("git checkout %s" % sha1,echo=True)
 
     if opts["spack_pull"]:
         # do a pull to make sure we have the latest
@@ -449,7 +455,8 @@ def main():
     cln_cmd = "spack/bin/spack clean "
     res = sexe(cln_cmd, echo=True)
 
-    cln_cmd = "spack/bin/spack clean -d "
+    # clean out any spack cached stuff
+    cln_cmd = "spack/bin/spack clean --all"
     res = sexe(cln_cmd, echo=True)
 
     # check if we need to force uninstall of selected packages
@@ -492,7 +499,7 @@ def main():
         if res != 0:
             return res
         if "spack_activate" in project_opts:
-            print "[activating dependent packages]"
+            print("[activating dependent packages]")
             # get the full spack spec for our project
             full_spec = read_spack_full_spec(uberenv_pkg_name,opts["spec"])
             pkg_names = project_opts["spack_activate"].keys()
@@ -516,14 +523,14 @@ def main():
         if opts["install"]:
             pkg_path = find_spack_pkg_path(uberenv_pkg_name)
             if uberenv_pkg_name != pkg_path["name"]:
-                print "[ERROR: Could not find install of %s]" % uberenv_pkg_name
+                print("[ERROR: Could not find install of {}]".format(uberenv_pkg_name))
                 return -1
             else:
-                pkg_lnk_dir = "%s-install" % uberenv_pkg_name
+                pkg_lnk_dir = "{}-install".format(uberenv_pkg_name)
                 if os.path.islink(pkg_lnk_dir):
                     os.unlink(pkg_lnk_dir)
-                print ""
-                print "[symlinking install to %s]" % pjoin(dest_dir,pkg_lnk_dir)
+                print("")
+                print("[symlinking install to {}]").format(pjoin(dest_dir,pkg_lnk_dir))
                 os.symlink(pkg_path["path"],os.path.abspath(pkg_lnk_dir))
                 hcfg_glob = glob.glob(pjoin(pkg_lnk_dir,"*.cmake"))
                 if len(hcfg_glob) > 0:
@@ -531,10 +538,10 @@ def main():
                     hcfg_fname = os.path.split(hcfg_path)[1]
                     if os.path.islink(hcfg_fname):
                         os.unlink(hcfg_fname)
-                    print "[symlinking host config file to %s]" % pjoin(dest_dir,hcfg_fname)
+                    print("[symlinking host config file to {}]".format(pjoin(dest_dir,hcfg_fname)))
                     os.symlink(hcfg_path,hcfg_fname)
-                print ""
-                print "[install complete!]"
+                print("")
+                print("[install complete!]")
         return res
 
 if __name__ == "__main__":

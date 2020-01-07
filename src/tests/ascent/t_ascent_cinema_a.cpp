@@ -120,8 +120,6 @@ TEST(ascent_cinema_a, test_cinema_a)
     conduit::Node &add_scenes = actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //

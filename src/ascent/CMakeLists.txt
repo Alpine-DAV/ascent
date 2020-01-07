@@ -49,6 +49,10 @@
 #
 ###############################################################################
 
+#if(ENABLE_CUDA AND NOT "${BUILD_SHARED_LIBS}" STREQUAL "OFF")
+#  message(FATAL_ERROR "Ascent can only be built statically when cuda is enabled")
+#endif()
+
 convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
                                     ASCENT_INSTALL_PREFIX)
 
@@ -69,7 +73,7 @@ set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
 
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
-    set(ASCENT_VTKM_USE_OPENMP ${ENABLE_OPENMP})
+    set(ASCENT_VTKM_USE_OPENMP ${OPENMP_FOUND})
 endif()
 
 
@@ -90,9 +94,9 @@ set(ascent_sources
     runtimes/expressions/ascent_blueprint_architect.cpp
     runtimes/expressions/ascent_conduit_reductions.cpp
     runtimes/expressions/ascent_expression_filters.cpp
-    runtimes/expressions/ast.cpp
-    runtimes/expressions/tokens.cpp
-    runtimes/expressions/parser.cpp
+    runtimes/expressions/ascent_expressions_ast.cpp
+    runtimes/expressions/ascent_expressions_tokens.cpp
+    runtimes/expressions/ascent_expressions_parser.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
     runtimes/flow_filters/ascent_runtime_param_check.cpp
@@ -124,9 +128,9 @@ set(ascent_headers
     runtimes/expressions/ascent_blueprint_architect.hpp
     runtimes/expressions/ascent_conduit_reductions.hpp
     runtimes/expressions/ascent_expression_filters.hpp
-    runtimes/expressions/ast.hpp
-    runtimes/expressions/tokens.hpp
-    runtimes/expressions/parser.hpp
+    runtimes/expressions/ascent_expressions_ast.hpp
+    runtimes/expressions/ascent_expressions_tokens.hpp
+    runtimes/expressions/ascent_expressions_parser.hpp
     # flow
     runtimes/ascent_main_runtime.hpp
     runtimes/ascent_flow_runtime.hpp
@@ -150,7 +154,7 @@ set(ascent_headers
 
 if(VTKM_FOUND)
 
-    set(asent_vtkh_dep_headers
+    set(ascent_vtkh_dep_headers
         runtimes/ascent_vtkh_data_adapter.hpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
@@ -158,18 +162,18 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
         runtimes/ascent_main_runtime.hpp)
 
-    set(asent_vtkh_dep_sources
+    set(ascent_vtkh_dep_sources
         runtimes/ascent_vtkh_data_adapter.cpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
         runtimes/ascent_main_runtime.cpp)
 
-    foreach( _itm ${asent_vtkh_dep_headers} )
+    foreach( _itm ${ascent_vtkh_dep_headers} )
         list(APPEND ascent_headers ${_itm})
     endforeach()
 
-    foreach( _itm ${asent_vtkh_dep_sources} )
+    foreach( _itm ${ascent_vtkh_dep_sources} )
         list(APPEND ascent_sources ${_itm})
     endforeach()
 
@@ -180,6 +184,8 @@ if(MFEM_FOUND)
     list(APPEND ascent_headers runtimes/ascent_mfem_data_adapter.hpp)
     list(APPEND ascent_sources runtimes/ascent_mfem_data_adapter.cpp)
 endif()
+
+
 ##############################
 # optional features
 #############################
@@ -187,7 +193,16 @@ endif()
 if(FORTRAN_FOUND)
     add_library(ascent_fortran OBJECT fortran/ascent_fortran.f90)
     list(APPEND ascent_sources $<TARGET_OBJECTS:ascent_fortran>)
+
+    #####################################################
+    # Setup install to copy the fortran modules
+    #####################################################
+    install(FILES
+            ${CMAKE_Fortran_MODULE_DIRECTORY}/ascent.mod
+            DESTINATION include/ascent)
 endif()
+
+
 
 ################################
 # Add python wrappers if python
@@ -225,28 +240,37 @@ if(CUDA_FOUND)
     list(APPEND ascent_thirdparty_libs cuda_runtime)
 endif()
 
-if(ENABLE_OPENMP)
+if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs openmp)
 endif()
 
 ##########################################
 # Build a serial version of ascent
 ##########################################
+if (ENABLE_SERIAL)
+    blt_add_library(
+        NAME        ascent
+        SOURCES     ${ascent_sources}
+        HEADERS     ${ascent_headers}
+        DEPENDS_ON  ${ascent_thirdparty_libs})
 
-blt_add_library(
-    NAME        ascent
-    SOURCES     ${ascent_sources}
-    HEADERS     ${ascent_headers}
-    DEPENDS_ON  ${ascent_thirdparty_libs})
+    set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
 
-# install target for serial ascent lib
-install(TARGETS ascent
-        EXPORT  ascent
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION lib
-)
+    if(VTKM_FOUND)
+        set(ascent_device_sources ${ascent_vtkh_dep_sources})
+        list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
 
+        vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
+    endif()
+    # install target for serial ascent lib
+    install(TARGETS ascent
+            EXPORT  ascent
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            RUNTIME DESTINATION lib
+    )
+endif()
 
 ################################################
 # Build Parallel (MPI) version of ascent
@@ -287,6 +311,12 @@ if(MPI_FOUND)
         HEADERS     ${ascent_headers} ${ascent_mpi_headers}
         DEPENDS_ON  ${ascent_mpi_thirdparty_libs})
 
+    set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
+
+    if(VTKM_FOUND)
+        vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_device_sources})
+    endif()
     blt_add_target_compile_flags(TO ascent_mpi FLAGS "-D ASCENT_MPI_ENABLED")
 
     # install target for mpi ver

@@ -52,6 +52,7 @@
 #define ASCENT_H
 
 #include <conduit_node.h>
+#include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 //
@@ -76,21 +77,21 @@ typedef void  Ascent;
 // --ascent methods --
 //-----------------------------------------------------------------------------
 
-void ascent_about(conduit_node *result);
+void ASCENT_API ascent_about(conduit_node *result);
 
-Ascent *ascent_create();
+Ascent ASCENT_API *ascent_create();
 
-void ascent_destroy(Ascent *c_ascent);
+void ASCENT_API ascent_destroy(Ascent *c_ascent);
 
-void ascent_open(Ascent *c_ascent,  conduit_node *options);
+void ASCENT_API ascent_open(Ascent *c_ascent,  conduit_node *options);
 
-void ascent_publish(Ascent *c_ascent, conduit_node *data);
+void ASCENT_API ascent_publish(Ascent *c_ascent, conduit_node *data);
 
-void ascent_execute(Ascent *c_ascent, conduit_node *actions);
+void ASCENT_API ascent_execute(Ascent *c_ascent, conduit_node *actions);
 
-void ascent_info(Ascent *c_ascent, conduit_node *result);
+void ASCENT_API ascent_info(Ascent *c_ascent, conduit_node *result);
 
-void ascent_close(Ascent *c_ascent);
+void ASCENT_API ascent_close(Ascent *c_ascent);
 
 
 #ifdef __cplusplus

@@ -52,9 +52,12 @@ set(PYTHON_MODULE_TESTS t_python_ascent_smoke
 set(PYTHON_MODULE_MPI_TESTS t_python_ascent_mpi_render)
 
 message(STATUS "Adding ascent lib python interface unit tests")
-foreach(TEST ${PYTHON_MODULE_TESTS})
-    add_python_test(${TEST})
-endforeach()
+
+if(ENABLE_SERIAL)
+    foreach(TEST ${PYTHON_MODULE_TESTS})
+        add_python_test(${TEST})
+    endforeach()
+endif()
 
 if(MPI_FOUND)
     foreach(TEST ${PYTHON_MODULE_MPI_TESTS})

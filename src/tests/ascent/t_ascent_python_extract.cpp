@@ -95,9 +95,6 @@ TEST(ascent_runtime, test_python_script_extract)
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
     actions.print();
 
     //
@@ -150,9 +147,6 @@ TEST(ascent_runtime, test_python_script_extract_from_file)
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
     actions.print();
 
     //
@@ -167,6 +161,60 @@ TEST(ascent_runtime, test_python_script_extract_from_file)
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
+    ascent.close();
+
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime, test_python_script_extract_from_bad_file)
+{
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    create_3d_example_dataset(data,32,0,1);
+    data["state/cycle"] = 101;
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    verify_info.print();
+
+    //
+    // Create the actions.
+    //
+
+    // write out the test module to a file
+    std::ofstream ofs;
+    ofs.open("t_my_test_script.py");
+    ofs << py_script;
+    ofs.close();
+
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "python";
+    extracts["e1/params/file"] = "/blarhg/very/bad/path";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Node ascent_opts;
+    ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["exceptions"] = "forward";
+
+    Ascent ascent;
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    // we will get an error here
+    EXPECT_THROW(ascent.execute(actions),
+                 conduit::Error);
     ascent.close();
 
 }
@@ -221,9 +269,6 @@ TEST(ascent_runtime, test_python_script_extract_import)
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
     actions.print();
 
     //
@@ -260,7 +305,6 @@ std::string py_script_inception = "\n"
 "add_act =actions.append()\n"
 "add_act['action'] = 'add_scenes'\n"
 "add_act['scenes'] = scenes\n"
-"actions.append()['action'] = 'execute'\n"
 "a.execute(actions)\n"
 "a.close()\n"
 "\n";
@@ -292,9 +336,6 @@ TEST(ascent_runtime, test_python_extract_inception)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
-
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     actions.print();
 

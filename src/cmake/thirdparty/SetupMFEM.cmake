@@ -89,7 +89,18 @@ string(REGEX MATCHALL "MFEM_EXT_LIBS .+\n" mfem_tpl_lnk_flags ${mfem_cfg_file_tx
 string(REGEX REPLACE  "MFEM_EXT_LIBS +=" "" mfem_tpl_lnk_flags ${mfem_tpl_lnk_flags})
 string(FIND  ${mfem_tpl_lnk_flags} "\n" mfem_tpl_lnl_flags_end_pos )
 string(SUBSTRING ${mfem_tpl_lnk_flags} 0 ${mfem_tpl_lnl_flags_end_pos} mfem_tpl_lnk_flags)
+
+string(FIND  ${mfem_tpl_lnk_flags} "\n" mfem_tpl_lnl_flags_end_pos )
+string(SUBSTRING ${mfem_tpl_lnk_flags} 0 ${mfem_tpl_lnl_flags_end_pos} mfem_tpl_lnk_flags)
+
+# filter out any -L s to system libs, they can appear
+# at wrong oder on link line, leading to accidental
+# inclusion of system libs vs those we want
+# note: we may discover other cases we need to defend against
+string(REGEX REPLACE "\-L\/lib64" ""  mfem_tpl_lnk_flags ${mfem_tpl_lnk_flags})
 string(STRIP ${mfem_tpl_lnk_flags} mfem_tpl_lnk_flags)
+
+
 
 # make sure mfem was built with with conduit support:
 message(STATUS "Checking for MFEM conduit support")

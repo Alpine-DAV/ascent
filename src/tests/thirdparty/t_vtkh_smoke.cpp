@@ -92,9 +92,9 @@ TEST(vtkh_smoke, vtkh_simple_dset)
   vtkm::cont::CoordinateSystem coords("coords", point_handle);
   data_set.AddCoordinateSystem(coords);
 
-  vtkm::cont::CellSetStructured<3> cell_set("cells");
+  vtkm::cont::CellSetStructured<3> cell_set;
   cell_set.SetPointDimensions(point_dims);
-  data_set.AddCellSet(cell_set);
+  data_set.SetCellSet(cell_set);
 
   vtkh::DataSet res;
 

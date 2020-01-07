@@ -103,10 +103,6 @@ TEST(ascent_mpi_slice, mpi_3slice)
     // reenable this check after updating conduit
     // EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     conduit::blueprint::mesh::verify(data,verify_info);
-    if(par_rank == 0)
-    {
-        verify_info.print();
-    }
 
     // make sure the _output dir exists
     string output_path = "";
@@ -152,9 +148,6 @@ TEST(ascent_mpi_slice, mpi_3slice)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     actions.print();
 

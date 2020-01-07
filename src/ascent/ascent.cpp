@@ -552,6 +552,19 @@ about(conduit::Node &n)
      n["runtimes/ascent/vtkm/status"] = "disabled";
 #endif
 
+#if defined(ASCENT_MFEM_ENABLED)
+    n["runtimes/ascent/mfem"] = "enabled";
+#else
+    n["runtimes/ascent/mfem"] = "disabled";
+#endif
+
+#if defined(ASCENT_HDF5_ENABLED)
+    n["runtimes/ascent/hdf5"] = "enabled";
+#else
+    n["runtimes/ascent/hdf5"] = "disabled";
+#endif
+
+
     n["runtimes/flow/status"] = "enabled";
 
     n["default_runtime"] = "ascent";

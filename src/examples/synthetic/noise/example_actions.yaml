@@ -1,0 +1,18 @@
+-
+  action: "add_pipelines"
+  pipelines:
+    p1:
+      f1:
+        type: "contour"
+        params:
+          field: "nodal_noise"
+          levels: 5
+-
+  action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "zonal_noise"
+          pipeline: "p1"

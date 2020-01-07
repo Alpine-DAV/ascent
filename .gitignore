@@ -6,12 +6,11 @@ install-debug/
 install-release/
 .DS_Store
 *.pyc
-.ipynb_checkpoints
 visitlog.py
 uberenv_libs
 *.tar.gz
 *.tar
 s_env.sh
 _uberenv_test*
-.idea/
-build/
+.ipynb_checkpoints
+Untitle*.ipynb

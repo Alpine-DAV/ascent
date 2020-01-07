@@ -55,8 +55,8 @@ set(LULESH_SOURCES
     lulesh-util.cc
     lulesh-init.cc)
 
-configure_file(ascent_actions.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_actions.json COPYONLY)
-configure_file(ascent_options.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_options.json COPYONLY)
+configure_file(ascent_actions.yaml ${CMAKE_CURRENT_BINARY_DIR}/ascent_actions.yaml COPYONLY)
+configure_file(ascent_options.yaml ${CMAKE_CURRENT_BINARY_DIR}/ascent_options.yaml COPYONLY)
 
 set(lulesh_deps ascent)
 
@@ -67,22 +67,24 @@ else()
    set(lulesh_openmp_flags "")
 endif()
 
-blt_add_executable(
-    NAME        lulesh_ser
-    SOURCES     ${LULESH_SOURCES}
-    DEPENDS_ON  ${lulesh_deps}
-    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
-
-
-blt_add_target_compile_flags(TO lulesh_ser FLAGS "-DUSE_MPI=0 ${lulesh_openmp_flags}")
-
-# install target for lulesh serial
-install(TARGETS lulesh_ser
-        EXPORT  ascent
-        LIBRARY DESTINATION examples/ascent/proxies/lulesh
-        ARCHIVE DESTINATION examples/ascent/proxies/lulesh
-        RUNTIME DESTINATION examples/ascent/proxies/lulesh
-)
+if (ENABLE_SERIAL)
+    blt_add_executable(
+        NAME        lulesh_ser
+        SOURCES     ${LULESH_SOURCES}
+        DEPENDS_ON  ${lulesh_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    
+    
+    blt_add_target_compile_flags(TO lulesh_ser FLAGS "-DUSE_MPI=0 ${lulesh_openmp_flags}")
+    
+    # install target for lulesh serial
+    install(TARGETS lulesh_ser
+            EXPORT  ascent
+            LIBRARY DESTINATION examples/ascent/proxies/lulesh
+            ARCHIVE DESTINATION examples/ascent/proxies/lulesh
+            RUNTIME DESTINATION examples/ascent/proxies/lulesh
+    )
+endif()
 
 install(FILES ASCENT_README.md
               ascent_actions.json
@@ -93,7 +95,7 @@ install(FILES ASCENT_README.md
 if(MPI_FOUND)
 
     set(lulesh_par_deps ascent_mpi mpi)
-    if(ENABLE_OPENMP)
+    if(OPENMP_FOUND)
            list(APPEND lulesh_par_deps openmp)
     endif()
 

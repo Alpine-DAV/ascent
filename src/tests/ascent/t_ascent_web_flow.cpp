@@ -144,7 +144,6 @@ TEST(ascent_web, test_ascent_web_launch)
     actions[1]["dest"] = "fi";
     actions[1]["port"] = "in";
 
-    actions.append()["action"] = "execute";
     actions.print();
 
     // we want the "flow" runtime
@@ -173,7 +172,6 @@ TEST(ascent_web, test_ascent_web_launch)
         ASCENT_INFO(data["state"].to_json());
         // publish the same mesh data, but update the state info
         actions.reset();
-        actions.append()["action"] = "execute";
         ASCENT_INFO(actions.to_json());
         ascent.publish(data);
         ascent.execute(actions);

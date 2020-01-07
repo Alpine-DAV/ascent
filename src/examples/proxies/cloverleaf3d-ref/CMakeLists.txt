@@ -101,8 +101,8 @@ set(clover_sources
 if(MPI_FOUND AND FORTRAN_FOUND)
     # copy over the input deck
     configure_file(clover.in ${CMAKE_CURRENT_BINARY_DIR}/clover.in COPYONLY)
-    configure_file(ascent_actions.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_actions.json COPYONLY)
-    configure_file(ascent_options.json ${CMAKE_CURRENT_BINARY_DIR}/ascent_options.json COPYONLY)
+    configure_file(ascent_actions.yaml ${CMAKE_CURRENT_BINARY_DIR}/ascent_actions.yaml COPYONLY)
+    configure_file(ascent_options.yaml ${CMAKE_CURRENT_BINARY_DIR}/ascent_options.yaml COPYONLY)
 
     if(MPI_Fortran_USE_MODULE )
         set(clover_compile_flags "-DUSE_MOD")
@@ -111,7 +111,7 @@ if(MPI_FOUND AND FORTRAN_FOUND)
     endif()
 
     set(clover_par_deps ascent_mpi mpi)
-    if(ENABLE_OPENMP)
+    if(OPENMP_FOUND)
       list(APPEND clover_par_deps openmp)
     endif()
 
@@ -142,8 +142,8 @@ if(MPI_FOUND AND FORTRAN_FOUND)
 
     install(FILES ASCENT_README.md
                   clover.in
-                  ascent_actions.json
-                  ascent_options.json
+                  ascent_actions.yaml
+                  ascent_options.yaml
             DESTINATION examples/ascent/proxies/cloverleaf3d)
 
 endif()

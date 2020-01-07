@@ -73,11 +73,11 @@ contains
     subroutine t_ascent_render_2d_basic
         type(C_PTR) cdata
         type(C_PTR) cverify_info
+        type(C_PTR) cascent_info
         type(C_PTR) cascent
         type(C_PTR) copen_opts
         type(C_PTR) cactions
-        type(C_PTR) cadd_plot
-        type(C_PTR) cdraw_plots
+        type(C_PTR) cadd_scenes
         integer res
         !----------------------------------------------------------------------
         call set_case_name("t_ascent_render_2d_basic")
@@ -89,17 +89,14 @@ contains
         cascent = ascent_create()
 
         call conduit_blueprint_mesh_examples_braid("quads",10_8,10_8,0_8,cdata)
-        call assert_true( conduit_blueprint_mesh_verify(ncdata,c_verify_info) .eqv. .true., "verify true on braid quads")
+        call assert_true( conduit_blueprint_mesh_verify(cdata,cverify_info) .eqv. .true., "verify true on braid quads")
 
         cactions = conduit_node_create()
-        cadd_plot = conduit_node_append(cactions)
-        CALL conduit_node_set_path_char8_str(cadd_plot,"action", "add_plot")
-        CALL conduit_node_set_path_char8_str(cadd_plot,"field_name", "braid")
-        CALL conduit_node_set_path_char8_str(cadd_plot,"render_options/file_name", "tout_f_render_2d_default_pipeline")
-        CALL conduit_node_set_path_int32(cadd_plot,"render_options/width", 512)
-        CALL conduit_node_set_path_int32(cadd_plot,"render_options/height",  512)
-        cdraw_plots = conduit_node_append(cactions)
-        CALL conduit_node_set_path_char8_str(cdraw_plots,"action", "draw_plots")
+        cadd_scenes = conduit_node_append(cactions)
+        CALL conduit_node_set_path_char8_str(cadd_scenes,"action", "add_scenes")
+        CALL conduit_node_set_path_char8_str(cadd_scenes,"scenes/scene1/plots/plt1/type", "pseudocolor")
+        CALL conduit_node_set_path_char8_str(cadd_scenes,"scenes/scene1/plots/plt1/field", "braid")
+        CALL conduit_node_set_path_char8_str(cadd_scenes,"scenes/scene1/image_prefix", "tout_f_render_2d_default_pipeline")
 
         copen_opts = conduit_node_create()
         call ascent_open(cascent,copen_opts)

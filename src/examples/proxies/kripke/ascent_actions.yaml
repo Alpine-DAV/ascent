@@ -1,13 +1,9 @@
 
-- 
+-
   action: "add_scenes"
-  scenes: 
-    s1: 
-      plots: 
-        p1: 
+  scenes:
+    s1:
+      plots:
+        p1:
           type: "volume"
           field: "phi"
-- 
-  action: "execute"
-- 
-  action: "reset"

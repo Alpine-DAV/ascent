@@ -260,14 +260,11 @@ TEST(ascent_runtime_options, test_actions_file)
                               "          {\n"
                               "            \"r1\": \n"
                               "            {\n"
-                              "              \"image_name\": \"" + output_file + "\"\n"
+                              "              \"image_prefix\": \"" + output_file + "\"\n"
                               "            }\n"
                               "          }\n"
                               "        }\n"
                               "      }\n"
-                              "    },\n"
-                              "    {\n"
-                              "      \"action\": \"execute\"\n"
                               "    }\n"
                               "  ]\n";
 
@@ -345,15 +342,13 @@ TEST(ascent_runtime_options, test_actions_yaml_file)
                               "  action: add_scenes\n"
                               "  scenes:\n"
                               "        s1:\n"
-                              "          plots:\n" 
+                              "          plots:\n"
                               "            p1: \n"
                               "              type: pseudocolor\n"
                               "              field: braid\n"
-                              "          renders:\n" 
-                              "            r1:\n" 
-                              "              image_name: " + output_file + "\n"
-                              "-\n"
-                              "  action: execute\n";
+                              "          renders:\n"
+                              "            r1:\n"
+                              "              image_prefix: " + output_file + "\n";
 
 
     std::ofstream file(output_actions);

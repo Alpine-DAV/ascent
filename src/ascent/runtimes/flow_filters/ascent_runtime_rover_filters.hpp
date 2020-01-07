@@ -81,7 +81,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class RoverXRay: public ::flow::Filter
+class ASCENT_API RoverXRay: public ::flow::Filter
 {
 public:
     RoverXRay();
@@ -93,7 +93,7 @@ public:
     virtual void   execute();
 };
 
-class RoverVolume : public ::flow::Filter
+class ASCENT_API RoverVolume : public ::flow::Filter
 {
 public:
     RoverVolume();

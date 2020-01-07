@@ -73,8 +73,10 @@
 #include <ascent_expression_eval.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
+#include <vtkm/cont/Error.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
+#include <vtkh/Logger.hpp>
 
 #ifdef VTKM_CUDA
 #include <vtkm/cont/cuda/ChooseCudaDevice.h>
@@ -473,7 +475,7 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       if(cname == "pipeline")
       {
         // this is a child that is not a filter.
-        // It specifices the input to the pipeline itself
+        // It specifies the input to the pipeline itself
         continue;
       }
       conduit::Node filter = pipeline.child(i);
@@ -493,7 +495,7 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       }
       else
       {
-        ASCENT_ERROR("Unrecognized filter "<<filter["type"].as_string());
+        ASCENT_ERROR("Unrecognized transform filter "<<filter["type"].as_string());
       }
 
       // create a unique name for the filter
@@ -583,27 +585,40 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
 
      if(params.has_path("file"))
      {
+       std::string script_fname = params["file"].as_string();
+
        Node n_py_src;
        // read script only on rank 0
        if(m_rank == 0)
        {
          ostringstream py_src;
-         std::string script_fname = params["file"].as_string();
          ifstream ifs(script_fname.c_str());
 
-         py_src << "# script from: " << script_fname << std::endl;
-         copy(istreambuf_iterator<char>(ifs),
-              istreambuf_iterator<char>(),
-              ostreambuf_iterator<char>(py_src));
-         n_py_src.set(py_src.str());
+         // guard by successful file open,
+         // otherwise our prefix comment will always cause
+         // a valid string to be passed to the node
+         // and we won't be able to detect when there was
+         // a bad file passed
+         if(ifs.is_open())
+         {
+             py_src << "# script from: " << script_fname << std::endl;
+             copy(istreambuf_iterator<char>(ifs),
+                  istreambuf_iterator<char>(),
+                  ostreambuf_iterator<char>(py_src));
+             n_py_src.set(py_src.str());
+             ifs.close();
+         }
        }
 
        relay::mpi::broadcast_using_schema(n_py_src,0,comm);
 
        if(!n_py_src.dtype().is_string())
        {
-         ASCENT_ERROR("broadcast of python script source failed");
+         ASCENT_ERROR("failed to read python script file "
+                      << script_fname
+                      << " and broadcast source");
        }
+
        // replace file param with source that includes actual script
        params.remove("file");
        params["source"] = n_py_src;
@@ -621,8 +636,42 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
                   << params["source"].as_string(); // now include user's script
 
      params["source"] = py_src_final.str();
-
 #endif
+  }
+  else if(extract_type == "jupyter")
+  {
+    filter_name = "python_script";
+
+    // customize the names of the script integration module and funcs
+    params["interface/module"] = "ascent_extract";
+    params["interface/input"]  = "ascent_data";
+    params["interface/set_output"] = "ascent_set_output";
+
+     ostringstream py_src_final;
+#ifdef ASCENT_MPI_ENABLED
+    // for MPI case, inspect args, if script is passed via file,
+    // read contents on root and broadcast to other tasks
+    int comm_id = flow::Workspace::default_mpi_comm();
+    MPI_Comm comm = MPI_Comm_f2c(comm_id);
+    // inject helper that provides the mpi comm handle
+
+    py_src_final << "# ascent mpi comm helper function" << std::endl
+                 << "def ascent_mpi_comm_id():" << std::endl
+                 << "    return " << comm_id << std::endl
+                 << std::endl
+                 // bind ascent_mpi_comm_id into the module
+                 << "ascent_extract.ascent_mpi_comm_id = ascent_mpi_comm_id"
+                 << std::endl
+                 // import our code that connects to the bridge kernel server
+                 << "from ascent.mpi import jupyter_bridge "
+                 << std::endl;
+#else
+    // import our code that connects to the bridge kernel server
+    py_src_final << "from ascent import jupyter_bridge" << std::endl;
+#endif
+    // finally actually call the bridge kernel server
+    py_src_final << "jupyter_bridge()" << std::endl;
+    params["source"] = py_src_final.str();
   }
   // generic extract support
   else if(registered_filter_types()["extracts"].has_child(extract_type))
@@ -644,7 +693,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   // TODO:
   bool special = false;
   if(extract_type == "xray" ||
-     extract_type == "volume") special = true;
+     extract_type == "volume" ||
+     extract_type == "histogram" ||
+     extract_type == "statistics") special = true;
 
   std::string ensure_name = "ensure_blueprint_" + extract_name;
   conduit::Node empty_params;
@@ -677,7 +728,6 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     {
       extract_source = "default";
     }
-
 
   }
   if(!special)
@@ -864,6 +914,7 @@ AscentRuntime::PopulateMetadata()
   (*meta)["cycle"] = cycle;
   (*meta)["time"] = time;
   (*meta)["refinement_level"] = m_refinement_level;
+  (*meta)["ghost_field"] = m_ghost_field_name;
 
 }
 //-----------------------------------------------------------------------------
@@ -978,9 +1029,16 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       render_params["renders"] = scene["renders"];
     }
 
-    if(scene.has_path("image_prefix"))
+    if(scene.has_path("image_prefix") || scene.has_path("image_name"))
     {
-      render_params["image_prefix"] = scene["image_prefix"].as_string();
+      if(scene.has_path("image_prefix"))
+      {
+        render_params["image_prefix"] = scene["image_prefix"].as_string();
+      }
+      else
+      {
+        render_params["image_name"] = scene["image_name"].as_string();
+      }
     }
     else
     {
@@ -1213,182 +1271,228 @@ AscentRuntime::FindRenders(conduit::Node &image_params, conduit::Node& image_lis
 
 //-----------------------------------------------------------------------------
 void
-AscentRuntime::Execute(const conduit::Node &actions)
+AscentRuntime::BuildGraph(const conduit::Node &actions)
 {
-    ResetInfo();
-    // make sure we always have our source data
-    ConnectSource();
+  // exection will be enforced in the following order:
+  conduit::Node queries;
+  conduit::Node triggers;
+  conduit::Node pipelines;
+  conduit::Node scenes;
+  conduit::Node extracts;
 
-    // exection will be enforced in the following order:
-    conduit::Node queries;
-    conduit::Node triggers;
-    conduit::Node pipelines;
-    conduit::Node scenes;
-    conduit::Node extracts;
+  // Loop over the actions
+  for (int i = 0; i < actions.number_of_children(); ++i)
+  {
+      const Node &action = actions.child(i);
+      string action_name = action["action"].as_string();
 
-    bool do_execute = false;
-    bool do_reset= false;
-
-    // Loop over the actions
-    for (int i = 0; i < actions.number_of_children(); ++i)
-    {
-        const Node &action = actions.child(i);
-        string action_name = action["action"].as_string();
-
-        if(action_name == "add_pipelines")
+      if(action_name == "add_pipelines")
+      {
+        if(action.has_path("pipelines"))
         {
-          if(action.has_path("pipelines"))
-          {
-            pipelines.append() = action["pipelines"];
-          }
-          else
-          {
-            ASCENT_ERROR("action 'add_pipelines' missing child 'pipelines'");
-          }
-        }
-        else if(action_name == "add_scenes")
-        {
-          if(action.has_path("scenes"))
-          {
-            scenes.append() = action["scenes"];
-          }
-          else
-          {
-            ASCENT_ERROR("action 'add_scenes' missing child 'scenes'");
-          }
-        }
-        else if(action_name == "add_extracts")
-        {
-          if(action.has_path("extracts"))
-          {
-            extracts.append() = action["extracts"];
-          }
-          else
-          {
-            ASCENT_ERROR("action 'add_extracts' missing child 'extracts'");
-          }
-        }
-        else if(action_name == "add_triggers")
-        {
-          if(action.has_path("triggers"))
-          {
-            triggers.append() = action["triggers"];
-          }
-          else
-          {
-            ASCENT_ERROR("action 'add_triggers' missing child 'triggers'");
-          }
-        }
-        else if(action_name == "add_queries")
-        {
-          if(action.has_path("queries"))
-          {
-            queries.append() = action["queries"];
-          }
-          else
-          {
-            ASCENT_ERROR("action 'add_queries' missing child 'queries'");
-          }
-        }
-        else if( action_name == "execute")
-        {
-          do_execute = true;
-        }
-        else if( action_name == "reset")
-        {
-          do_reset = true;
+          pipelines.append() = action["pipelines"];
         }
         else
         {
-            ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
+          ASCENT_ERROR("action 'add_pipelines' missing child 'pipelines'");
+        }
+      }
+      else if(action_name == "add_scenes")
+      {
+        if(action.has_path("scenes"))
+        {
+          scenes.append() = action["scenes"];
+        }
+        else
+        {
+          ASCENT_ERROR("action 'add_scenes' missing child 'scenes'");
+        }
+      }
+      else if(action_name == "add_extracts")
+      {
+        if(action.has_path("extracts"))
+        {
+          extracts.append() = action["extracts"];
+        }
+        else
+        {
+          ASCENT_ERROR("action 'add_extracts' missing child 'extracts'");
+        }
+      }
+      else if(action_name == "add_triggers")
+      {
+        if(action.has_path("triggers"))
+        {
+          triggers.append() = action["triggers"];
+        }
+        else
+        {
+          ASCENT_ERROR("action 'add_triggers' missing child 'triggers'");
+        }
+      }
+      else if(action_name == "add_queries")
+      {
+        if(action.has_path("queries"))
+        {
+          queries.append() = action["queries"];
+        }
+        else
+        {
+          ASCENT_ERROR("action 'add_queries' missing child 'queries'");
+        }
+      }
+      else if( action_name == "execute" ||
+               action_name == "reset")
+      {
+        // These actions are now deprecated. To avoid
+        // issues with existing integrations we will just
+        // do nothing
+      }
+      else
+      {
+          ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
+      }
+
+  }
+
+  // we are enforcing the order of exectution
+  for(int i = 0; i < queries.number_of_children(); ++i)
+  {
+    CreateQueries(queries.child(i));
+  }
+  for(int i = 0; i < triggers.number_of_children(); ++i)
+  {
+    CreateTriggers(triggers.child(i));
+  }
+  for(int i = 0; i < pipelines.number_of_children(); ++i)
+  {
+    CreatePipelines(pipelines.child(i));
+  }
+  for(int i = 0; i < scenes.number_of_children(); ++i)
+  {
+    CreateScenes(scenes.child(i));
+  }
+  for(int i = 0; i < extracts.number_of_children(); ++i)
+  {
+    CreateExtracts(extracts.child(i));
+  }
+
+  ConnectGraphs();
+}
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::Execute(const conduit::Node &actions)
+{
+    // catch any errors that come up here and forward
+    // them up as a conduit error
+    
+    // --- open try --- //
+    try
+    {
+        ResetInfo();
+
+        conduit::Node diff_info;
+        bool different_actions = m_previous_actions.diff(actions, diff_info);
+
+        if(different_actions)
+        {
+          // destroy existing graph an start anew
+          w.reset();
+          ConnectSource();
+          BuildGraph(actions);
+        }
+        else
+        {
+          // always ensure that we have the source
+          ConnectSource();
         }
 
-    }
+        m_previous_actions = actions;
 
-    // we are enforcing the order of exectution
-    for(int i = 0; i < queries.number_of_children(); ++i)
-    {
-      CreateQueries(queries.child(i));
-    }
-    for(int i = 0; i < triggers.number_of_children(); ++i)
-    {
-      CreateTriggers(triggers.child(i));
-    }
-    for(int i = 0; i < pipelines.number_of_children(); ++i)
-    {
-      CreatePipelines(pipelines.child(i));
-    }
-    for(int i = 0; i < scenes.number_of_children(); ++i)
-    {
-      CreateScenes(scenes.child(i));
-    }
-    for(int i = 0; i < extracts.number_of_children(); ++i)
-    {
-      CreateExtracts(extracts.child(i));
-    }
+        PopulateMetadata(); // add metadata so filters can access it
 
-    if(do_execute)
-    {
+        w.info(m_info["flow_graph"]);
+        m_info["actions"] = actions;
+        //w.print();
+        // std::cout<<w.graph().to_dot();
+        // w.graph().save_dot_html("ascent_flow_graph.html");
 
-      ConnectGraphs();
-      PopulateMetadata(); // add metadata so filters can access it
-      w.info(m_info["flow_graph"]);
-      m_info["actions"] = actions;
-      //w.print();
-      //std::cout<<w.graph().to_dot();
-
-      // catch any errors that come up here and forward
-      // them up as a conduit error
-      try
-      {
-        w.execute();
-      }
 #if defined(ASCENT_VTKM_ENABLED)
-      catch(vtkh::Error &e)
-      {
-        ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
-      }
+        Node *meta = w.registry().fetch<Node>("metadata");
+        int cycle = 0;
+        if(meta->has_path("cycle"))
+        {
+        cycle = (*meta)["cycle"].to_int32();
+        }
+        std::stringstream ss;
+        ss<<"cycle_"<<cycle;
+        vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
+        vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
 #endif
-      catch(conduit::Error &e)
-      {
-        throw e;
-      }
-      catch(std::exception &e)
-      {
-        ASCENT_ERROR("Execution failed with: "<<e.what());
-      }
+        // now execute the data flow graph
+        w.execute();
 
-      Node msg;
-      this->Info(msg["info"]);
-      ascent::about(msg["about"]);
-      m_web_interface.PushMessage(msg);
+#if defined(ASCENT_VTKM_ENABLED)
+        vtkh::DataLogger::GetInstance()->CloseLogEntry();
+#endif
+        Node msg;
+        this->Info(msg["info"]);
+        ascent::about(msg["about"]);
+        m_web_interface.PushMessage(msg);
 
-      Node render_file_names;
-      Node renders;
-      FindRenders(renders, render_file_names);
-      m_info["images"] = renders;
+        Node render_file_names;
+        Node renders;
+        FindRenders(renders, render_file_names);
+        m_info["images"] = renders;
 
-      const conduit::Node &expression_cache =
-        runtime::expressions::ExpressionEval::get_cache();
+        const conduit::Node &expression_cache =
+          runtime::expressions::ExpressionEval::get_cache();
 
-      if(expression_cache.number_of_children() > 0)
-      {
-        m_info["expressions"] = expression_cache;
-      }
+        if(expression_cache.number_of_children() > 0)
+        {
+          m_info["expressions"] = expression_cache;
+        }
+        
+        m_info["flow_graph_dot"]      = w.graph().to_dot();
+        m_info["flow_graph_dot_html"] = w.graph().to_dot_html();
 
-      m_web_interface.PushRenders(render_file_names);
+        m_web_interface.PushRenders(render_file_names);
 
-      w.registry().reset();
+        w.registry().reset();
     }
-
-    if(do_reset)
+    // --- close try --- //
+    
+    // Defend calling code by repackaging 
+    // as many errors as possible with catch statements
+#if defined(ASCENT_VTKM_ENABLED)
+    // bottle vtkm and vtkh errors
+    catch(vtkh::Error &e)
     {
-      // resets the entire workspace meaning all filters
-      // in the graph are cleared
       w.reset();
+      ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
+    }
+    catch(vtkm::cont::Error &e)
+    {
+      ASCENT_ERROR("Execution failed with vtkm: "<<e.what());
+    }
+#endif
+    catch(conduit::Error &e)
+    {
+      w.reset();
+      throw e;
+    }
+    catch(std::exception &e)
+    {
+      w.reset();
+      ASCENT_ERROR("Execution failed with: "<<e.what());
+    }
+    catch(...)
+    {
+      ASCENT_ERROR("Ascent: unknown exception thrown");
     }
 }
 
+//-----------------------------------------------------------------------------
 void
 AscentRuntime::DisplayError(const std::string &msg)
 {
@@ -1397,6 +1501,7 @@ AscentRuntime::DisplayError(const std::string &msg)
     std::cerr<<msg;
   }
 }
+
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::RegisterFilterType(const std::string  &role_path,

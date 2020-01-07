@@ -57,6 +57,44 @@ Source distributions for Ascent are hosted on github:
 
 https://github.com/Alpine-DAV/ascent/releases
 
+
+
+v0.5.0
+-------
+
+* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.5.0/ascent-v0.5.0-src-wth-blt.tar.gz>`_
+
+Highlights
++++++++++++++
+
+(Extracted from Ascent's :download:`Changelog <../../../CHANGELOG.md>`)
+
+Added
+~~~~~~~~~
+
+* Added new :ref:`Tutorial Content <tutorial_intro>` including C++, Python, and Python-based Jupyter Notebook examples.
+* Added docs for :ref:`queries` and :ref:`triggers`
+* Added a Jupyter Extract that provides interactive Python Notebook access to published mesh data. See the related :ref:`Cloverleaf Demo <cloverleaf_demo_jupyter_extract>`.
+* Deprecated the `execute` and `reset` actions. `ascent.execute(actions)` now implicitly resets and execute the Ascent actions. To maintain a degree of backwards compatibility, using `execute` and `reset` are still passable to `ascent.execute(actions)`. Internally, the internal data flow network will only be rebuilt when the current actions differ from the previously executed actions. Note: this only occurs when the Ascent runtime object is persistent between calls to `ascent.execute(actions)`.
+* Added support for YAML `ascent_actions` and `ascent_options` files. YAML files are much easier for humans to compose
+* Add a relative offset option to the Slice filter.
+
+Changed
+~~~~~~~~~
+
+* Several improvements to Ascent's Expression infrastructure.
+* Updated our uberenv-based to use a 2019/11 version of spack develop.
+* Improved Python error handling and propagation.
+* Updated Docker example to build with Jupyter Notebook support.
+* Updated to VTK-m 1.5.0 and associated VTK-h.
+* Imposed necessary static build constraints for cuda support.
+
+Fixed
+~~~~~~~~~
+
+* Several minor bug fixes 
+
+
 v0.4.0
 -------
 

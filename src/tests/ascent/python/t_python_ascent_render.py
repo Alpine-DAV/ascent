@@ -95,8 +95,6 @@ class Test_Ascent_Render(unittest.TestCase):
         add_act["action"] = "add_scenes"
         add_act["scenes"] = scenes
 
-        actions.append()["action"] = "execute"
-
         a.execute(actions)
 
         ascent_info = conduit.Node()
@@ -142,8 +140,6 @@ class Test_Ascent_Render(unittest.TestCase):
         add_act =actions.append()
         add_act["action"] = "add_scenes"
         add_act["scenes"] = scenes
-
-        actions.append()["action"] = "execute"
 
         a.execute(actions)
         a.close()

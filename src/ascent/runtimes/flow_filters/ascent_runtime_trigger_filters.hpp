@@ -82,7 +82,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class BasicTrigger : public ::flow::Filter
+class ASCENT_API BasicTrigger : public ::flow::Filter
 {
 public:
     BasicTrigger();

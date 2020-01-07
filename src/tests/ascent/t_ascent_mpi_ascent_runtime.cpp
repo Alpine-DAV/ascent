@@ -131,10 +131,6 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    // todo add_scene, singular? to simplify
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
 
     actions.print();
 

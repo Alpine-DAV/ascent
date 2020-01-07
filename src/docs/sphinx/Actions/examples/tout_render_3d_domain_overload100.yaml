@@ -1,0 +1,17 @@
+#An example of creating a render specifying the image size.
+
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "rank_ele"
+      renders: 
+        r1: 
+          image_width: 512
+          image_height: 512
+          image_name: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_render_3d_domain_overload"
+          camera: 
+            azimuth: 45.0

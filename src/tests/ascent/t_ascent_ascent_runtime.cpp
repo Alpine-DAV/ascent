@@ -103,8 +103,6 @@ TEST(ascent_pipeline, test_render_3d_main_pipeline)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //
@@ -189,9 +187,6 @@ TEST(ascent_pipeline, test_register_extract)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
-
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     Node data, info;
     conduit::blueprint::mesh::examples::braid("quads",
@@ -295,10 +290,6 @@ TEST(ascent_pipeline, test_register_transform)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
-
 
     Ascent ascent;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,info));

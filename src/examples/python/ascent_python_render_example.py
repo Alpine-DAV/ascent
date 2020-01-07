@@ -87,8 +87,6 @@ add_act =actions.append()
 add_act["action"] = "add_scenes"
 add_act["scenes"] = scenes
 
-actions.append()["action"] = "execute"
-
 # execute
 a.execute(actions)
 

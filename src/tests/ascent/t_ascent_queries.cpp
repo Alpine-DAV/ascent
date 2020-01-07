@@ -100,14 +100,12 @@ TEST(ascent_queries, max_query)
     Node actions;
 
     conduit::Node queries;
-    queries["q1/params/expression"] = "max(\"braid\")";
+    queries["q1/params/expression"] = "max(field('braid'))";
     queries["q1/params/name"] = "max_braid";
 
     conduit::Node &add_queries = actions.append();
     add_queries["action"] = "add_queries";
     add_queries["queries"] = queries;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //
@@ -124,13 +122,15 @@ TEST(ascent_queries, max_query)
 
     conduit::Node info;
     ascent.info(info);
-    EXPECT_TRUE(info.has_path("expressions/max_braid/100/value"));
+    EXPECT_TRUE(info.has_path("expressions/max_braid/100/attrs/value"));
     info["expressions"].save(output_file, "json");
 
     ascent.close();
 
     // check that we created an image
     EXPECT_TRUE(conduit::utils::is_file(output_file));
+    std::string msg = "An example of quiering the maximum value of a field.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -172,8 +172,6 @@ TEST(ascent_queries, cycle_query)
     conduit::Node &add_queries = actions.append();
     add_queries["action"] = "add_queries";
     add_queries["queries"] = queries;
-    conduit::Node &execute = actions.append();
-    execute["action"] = "execute";
     actions.print();
 
     //
@@ -198,6 +196,8 @@ TEST(ascent_queries, cycle_query)
 
     // check that we created an image
     EXPECT_TRUE(conduit::utils::is_file(output_file));
+    std::string msg = "An example of quiering the current cycle.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------

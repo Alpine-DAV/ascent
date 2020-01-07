@@ -52,6 +52,7 @@
 #ifndef ASCENT_EXPRESSION_EVAL_HPP
 #define ASCENT_EXPRESSION_EVAL_HPP
 #include <conduit.hpp>
+#include <ascent_exports.h>
 
 #include "flow_workspace.hpp"
 //-----------------------------------------------------------------------------
@@ -69,11 +70,12 @@ namespace runtime
 namespace expressions
 {
 
-void register_builtin();
-void initialize_functions();
+void ASCENT_API register_builtin();
+void ASCENT_API initialize_functions();
+void ASCENT_API initialize_objects();
 static conduit::Node m_function_table;
 
-class ExpressionEval
+class ASCENT_API ExpressionEval
 {
 protected:
   conduit::Node *m_data;

@@ -42,11 +42,12 @@
 #ifndef rover_camera_generator_h
 #define rover_camera_generator_h
 
+#include <rover_exports.h>
 #include <ray_generators/ray_generator.hpp>
 
 namespace rover {
 
-class CameraGenerator : public RayGenerator
+class ROVER_API CameraGenerator : public RayGenerator
 {
 public:
   CameraGenerator(const vtkmCamera &camera, const int height = 512, const int width = 512);

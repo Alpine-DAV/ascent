@@ -64,7 +64,7 @@ Ascent focuses on ease of use and reduced integration burden for simulation code
 Getting Started
 ----------------
 
-To get started building and using Ascent, see the :doc:`Quick Start Guide <QuickStart>`  and :doc:`Ascent Tutorials Info <Tutorials>`. For more details about building Ascent see the :doc:`Building documentation <BuildingAscent>`.
+To get started building and using Ascent, see the :doc:`Quick Start Guide <QuickStart>`  and the :doc:`Ascent Tutorial <Tutorial>`. For more details about building Ascent see the :doc:`Building documentation <BuildingAscent>`.
 
 Ascent Project Resources
 ==========================
@@ -73,7 +73,7 @@ Ascent Project Resources
 
 http://www.ascent-dav.org
 
-**Githib Source Repo**
+**Github Source Repo**
 
 http://github.com/alpine-dav/ascent
 
@@ -96,6 +96,7 @@ Contributors
 - Hank Childs (LBL and UO)
 - Utkarsh Ayachit (Kitware, Inc)
 - Sudhanshu Sane (UO)
+- Seif Ibrahim (LLNL, UCSB)
 
 Ascent Documentation
 ======================
@@ -105,7 +106,7 @@ Ascent Documentation
    QuickStart
    Ascent
    developer_docs/index.rst
-   Tutorials
+   Tutorial
    Releases
    Publications
    Licenses

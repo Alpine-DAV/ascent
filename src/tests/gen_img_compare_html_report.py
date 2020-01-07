@@ -62,12 +62,23 @@ def output_dir():
 def file_name(fpath):
     return os.path.split(fpath)[1]
 
+def baseline_file_path(fname):
+    baseline_dir = pjoin("..","..","..","src","tests","baseline_images")
+    return pjoin(baseline_dir,fname)
+
+
 def find_img_compare_results():
     return glob.glob(pjoin(output_dir(),"*_img_compare_results.json"))
 
 def gen_html_report():
     ofile = open(pjoin("_output","tout_img_report.html"),"w")
     ofile.write("<table border=1>\n")
+    ofile.write("<tr>\n")
+    ofile.write("<td>[INFO]</td>\n")
+    ofile.write("<td>[CURRENT]</td>\n")
+    ofile.write("<td>[BASELINE]</td>\n")
+    ofile.write("<td>[DIFF]</td>\n")
+    ofile.write("</tr>\n")
     for res in find_img_compare_results():
         v = json.load(open(res))
         ofile.write("<tr>\n")
@@ -82,7 +93,8 @@ def gen_html_report():
         else:
             ofile.write("<td> TEST IMAGE MISSING!</td>\n")
         if v["baseline_file"]["exists"] == "true":
-            ofile.write('<td> <img width="200" src="{0}"></td>\n'.format(file_name(v["baseline_file"]["path"])))
+            baseline_img = baseline_file_path(file_name(v["baseline_file"]["path"]))
+            ofile.write('<td> <img width="200" src="{0}"></td>\n'.format(baseline_img))
         else:
             ofile.write("<td> BASELINE IMAGE MISSING!</td>\n")
         if "diff_image" in v.keys():

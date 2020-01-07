@@ -1,0 +1,9 @@
+#An example of quiering the maximum value of a field.
+
+- 
+  action: "add_queries"
+  queries: 
+    q1: 
+      params: 
+        expression: "max(\"braid\")"
+        name: "max_braid"

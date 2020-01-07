@@ -135,9 +135,6 @@ TEST(ascent_clip_with_field, test_clip_with_field)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -154,6 +151,8 @@ TEST(ascent_clip_with_field, test_clip_with_field)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using clip with field.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -220,9 +219,6 @@ TEST(ascent_clip_with_field, test_clip_with_field_inverted)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // execute
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
 
     //
     // Run Ascent
@@ -239,6 +235,8 @@ TEST(ascent_clip_with_field, test_clip_with_field_inverted)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using inverted clip with field.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------

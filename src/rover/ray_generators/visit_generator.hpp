@@ -42,11 +42,12 @@
 #ifndef rover_visit_generator_h
 #define rover_visit_generator_h
 
+#include <rover_exports.h>
 #include <ray_generators/ray_generator.hpp>
 
 namespace rover {
 
-class VisitGenerator : public RayGenerator
+class ROVER_API VisitGenerator : public RayGenerator
 {
 public:
   struct VisitParams

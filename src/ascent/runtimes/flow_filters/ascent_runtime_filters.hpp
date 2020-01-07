@@ -52,6 +52,7 @@
 #ifndef ASCENT_RUNTIME_FILTERS_HPP
 #define ASCENT_RUNTIME_FILTERS_HPP
 
+#include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -72,7 +73,7 @@ namespace filters
 {
 
     // registers all built-in filter types.
-    void register_builtin();
+    void ASCENT_API register_builtin();
 
 //-----------------------------------------------------------------------------
 };
