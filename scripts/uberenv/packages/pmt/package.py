@@ -31,9 +31,15 @@ class Pmt(CMakePackage):
 
     maintainers = ['spetruzza']
 
-    version('0.0.0', sha256='8f984f643a15107716cef0d146846359672823da9dd95aea4b5cccea0984d743')
+    #version('0.0.0', sha256='8f984f643a15107716cef0d146846359672823da9dd95aea4b5cccea0984d743')
 
-    depends_on('uberenv-babelflow')
+    version('develop',
+            git='https://bitbucket.org/cedmav/parallelmergetree.git',
+            branch='ascent',
+            submodules=True,
+            preferred=True)
+
+    depends_on('babelflow@develop')
 
     def cmake_args(self):
       args = []
