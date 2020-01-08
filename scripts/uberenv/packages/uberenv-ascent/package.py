@@ -63,27 +63,8 @@ class UberenvAscent(Ascent):
             default=True,
             description="Build deps needed to create Conduit's Docs")
 
-    variant("babelflow", 
-            default=False,
-            description="Build with BabelFlow")
-
-    variant("pmt", 
-            default=False,
-            description="Build with ParallelMergeTree analysis")
-
-    depends_on('babelflow@develop', when='+babelflow')
-    depends_on('pmt@develop', when='+babelflow')
-
     # in upstream spack package
     depends_on("cmake@3.14.1:3.14.5", when="+cmake")
-
-    def cmake_args(self):
-        cmake_args=""
-        if '+babelflow' in self.spec:
-            cmake_args.extend([
-                '-DENABLE_BABELFLOW=ON'
-            ])
-            cmake(*cmake_args)
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
@@ -97,16 +78,10 @@ class UberenvAscent(Ascent):
         """
         with working_dir('spack-build', create=True):
             host_cfg_fname = self.create_host_config(spec, prefix)
+
             # place a copy in the spack install dir for the uberenv-conduit package
             mkdirp(prefix)
             install(host_cfg_fname,prefix)
             install(host_cfg_fname,env["SPACK_DEBUG_LOG_DIR"])
 
-            #######################
-            # BABELFLOW
-            #######################
 
-            #if "+babelflow" in spec:
-            #    host_cfg_fname.write(cmake_cache_entry("ENABLE_BABELFLOW", "ON"))
-            #    host_cfg_fname.write(cmake_cache_entry("BabelFlow_DIR", spec['babelflow'].prefix))
-            #    host_cfg_fname.write(cmake_cache_entry("PMT_DIR", spec['pmt'].prefix))
