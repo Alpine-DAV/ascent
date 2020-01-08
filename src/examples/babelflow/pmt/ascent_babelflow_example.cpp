@@ -5,6 +5,7 @@
 #include <mpi.h>
 #include <ctime>
 #include <cassert>
+#include <string.h> 
 
 using namespace ascent;
 using namespace conduit;
@@ -37,7 +38,7 @@ int main(int argc, char **argv)
   int test_block_size[3];
   uint32_t valence = 2;
   //FunctionType threshold_ = (FunctionType)(-1)*FLT_MAX;
-  int threshold_ = (int)(-1)*FLT_MAX;
+  float threshold_ = (int)(-1)*FLT_MAX;
   char* dataset;
   for (int i = 1; i < argc; i++){
     if (!strcmp(argv[i],"-d")){
