@@ -57,7 +57,7 @@ set(ascent_babelflow_example_sources
 set(ascent_babelflow_example_header)
 
 if(MPI_FOUND)
-	set(ascent_babelflow_example_deps ascent_mpi BabelFlow::babelflow ${MPI_CXX_LIBRARIES} PMT::pmt ${DIY_LIBRARIES})
+	set(ascent_babelflow_example_deps ascent_mpi BabelFlow::babelflow ${MPI_CXX_LIBRARIES} PMT::pmt)
 
     blt_add_executable(
         NAME        ascent_babelflow_example
