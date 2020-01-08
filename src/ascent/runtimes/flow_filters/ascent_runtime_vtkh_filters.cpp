@@ -653,7 +653,7 @@ private:
         {
           m_theta_values.push_back(theta);
         }
-        
+
         const int i = p * m_theta + t;
 
         vtkm::rendering::Camera camera;
@@ -784,7 +784,8 @@ EnsureVTKH::execute()
         const Node *n_input = input<Node>(0);
 
         vtkh::DataSet *res = nullptr;;
-        res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, zero_copy);
+        const std::vector<std::string> &topologies = n_input->child(0)["topologies"].child_names();
+        res = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, topologies[0], zero_copy);
 
         set_output<vtkh::DataSet>(res);
     }
@@ -2023,7 +2024,8 @@ EnsureVTKM::execute()
         bool zero_copy = false;
         // convert from conduit to vtkm
         const Node *n_input = input<Node>(0);
-        vtkm::cont::DataSet  *res = VTKHDataAdapter::BlueprintToVTKmDataSet(*n_input, zero_copy);
+        const std::vector<std::string> &topologies = n_input->child(0)["topologies"].child_names();
+        vtkm::cont::DataSet  *res = VTKHDataAdapter::BlueprintToVTKmDataSet(*n_input, zero_copy, topologies[0]);
         set_output<vtkm::cont::DataSet>(res);
     }
     else
@@ -2654,7 +2656,9 @@ VTKHLagrangian::execute()
     else if(input(0).check_type<Node>())
     {
       const Node *n_input = input<Node>(0);
-      data = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input);
+      const std::vector<std::string> &topologies = n_input->child(0)["topologies"].child_names();
+      bool zero_copy = false;
+      data = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, topologies[0], zero_copy);
     }
     else
     {

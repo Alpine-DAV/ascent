@@ -461,8 +461,8 @@ void VTKmCellShape(const std::string shape_type,
 //-----------------------------------------------------------------------------
 vtkh::DataSet *
 VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
-                                        bool zero_copy,
-                                        const std::string &topo_name)
+                                        const std::string &topo_name,
+                                        bool zero_copy)
 {
 
     // treat everything as a multi-domain data set
@@ -517,19 +517,11 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
     vtkm::cont::DataSet * result = NULL;
 
     std::string topo_name = topo_name_str;
-    // if we don't specify a topology, find the first topology ...
-    if(topo_name == "")
+
+    // we must find the topolgy they asked for
+    if(!node["topologies"].has_child(topo_name))
     {
-        NodeConstIterator itr = node["topologies"].children();
-        itr.next();
-        topo_name = itr.name();
-    }
-    else
-    {
-        if(!node["topologies"].has_child(topo_name))
-        {
-            ASCENT_ERROR("Invalid topology name: " << topo_name);
-        }
+        ASCENT_ERROR("Invalid topology name: " << topo_name);
     }
 
     // as long as mesh blueprint verify true, we access data without fear.
@@ -598,6 +590,11 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
 
             const Node &n_field = itr.next();
             std::string field_name = itr.name();
+            if(n_field["topology"].as_string() != topo_name)
+            {
+              // this is not the fields we are looking for
+              continue;
+            }
 
             // skip vector fields for now, we need to add
             // more logic to AddField

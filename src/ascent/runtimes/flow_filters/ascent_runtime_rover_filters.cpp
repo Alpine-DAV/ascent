@@ -136,7 +136,8 @@ transmogrify_source(const conduit::Node *n_input, const int ref_level)
   }
   else
   {
-    dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, zero_copy);
+    const std::vector<std::string> &topologies = n_input->child(0)["topologies"].child_names();
+    dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, topologies[0], zero_copy);
   }
 
   return dataset;

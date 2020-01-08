@@ -63,7 +63,7 @@ namespace ascent
 
 void VTKHCollection::add(vtkh::DataSet &dataset, const std::string topology_name)
 {
-  if(m_datasets.count(topology_name) != 0)
+  if(has_topology(topology_name))
   {
     ASCENT_ERROR("VTKH collection already had topology '"<<topology_name<<"'");
   }
@@ -91,7 +91,7 @@ std::string VTKHCollection::field_topology(const std::string field_name)
 vtkh::DataSet
 VTKHCollection::dataset_by_topology(const std::string topology_name)
 {
-  if(m_datasets.count(topology_name) == 0)
+  if(!has_topology(topology_name))
   {
     ASCENT_ERROR("VTKH collection has no topology '"<<topology_name<<"'");
   }

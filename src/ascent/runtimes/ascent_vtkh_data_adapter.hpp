@@ -99,8 +99,8 @@ public:
     //
     // zero copy means attempt to zero copy
     static vtkh::DataSet  *BlueprintToVTKHDataSet(const conduit::Node &n,
-                                                  bool zero_copy = false,
-                                                  const std::string &topo_name="");
+                                                  const std::string &topo_name,
+                                                  bool zero_copy = false);
 
 
     // convert blueprint data to a vtkm Data Set
@@ -110,7 +110,7 @@ public:
     //
     static vtkm::cont::DataSet  *BlueprintToVTKmDataSet(const conduit::Node &n,
                                                         bool zero_copy,
-                                                        const std::string &topo_name="");
+                                                        const std::string &topo_name);
 
 
     // wraps a single VTKm data set into a VTKH dataset
