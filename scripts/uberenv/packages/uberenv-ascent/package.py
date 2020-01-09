@@ -87,10 +87,6 @@ class UberenvAscent(Ascent):
         with working_dir('spack-build', create=True):
             host_cfg_fname = self.create_host_config(spec, prefix)
 
-            host_cfg_fname = "%s-%s-%s-ascent.cmake" % (socket.gethostname(),
-                                                    sys_type,
-                                                    spec.compiler)
-
             cfg = open(host_cfg_fname, "a")
 
             #######################
