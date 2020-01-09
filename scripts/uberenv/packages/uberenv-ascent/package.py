@@ -63,6 +63,14 @@ class UberenvAscent(Ascent):
             default=True,
             description="Build deps needed to create Conduit's Docs")
 
+    variant("babelflow", default=False, description="Build with BabelFlow")
+
+    #######################
+    # BabelFlow
+    #######################
+    depends_on('babelflow@develop', when='+babelflow')
+    depends_on('pmt@develop', when='+babelflow')
+
     # in upstream spack package
     depends_on("cmake@3.14.1:3.14.5", when="+cmake")
 
@@ -78,6 +86,23 @@ class UberenvAscent(Ascent):
         """
         with working_dir('spack-build', create=True):
             host_cfg_fname = self.create_host_config(spec, prefix)
+
+            host_cfg_fname = "%s-%s-%s-ascent.cmake" % (socket.gethostname(),
+                                                    sys_type,
+                                                    spec.compiler)
+
+            cfg = open(host_cfg_fname, "a")
+
+            #######################
+            # BABELFLOW
+            #######################
+
+            if "+babelflow" in spec:
+                cfg.write(cmake_cache_entry("ENABLE_BABELFLOW", "ON"))
+                cfg.write(cmake_cache_entry("BabelFlow_DIR", spec['babelflow'].prefix))
+                cfg.write(cmake_cache_entry("PMT_DIR", spec['pmt'].prefix))
+
+            cfg.close()
 
             # place a copy in the spack install dir for the uberenv-conduit package
             mkdirp(prefix)
