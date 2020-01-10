@@ -34,7 +34,16 @@ class Ascent(Package, CudaPackage):
     simulations."""
 
     homepage = "https://github.com/Alpine-DAV/ascent"
-    git      = "https://github.com/Alpine-DAV/ascent.git"
+
+    # TODO: revert this to the official repo when merged
+    git      = "https://github.com/xuanhuang1/ascent.git"
+
+    version('babelflow',
+            branch='babelflow',
+            submodules=True)
+
+    #############
+
     url      = "https://github.com/Alpine-DAV/ascent/releases/download/v0.5.0/ascent-v0.5.0-src-with-blt.tar.gz"
 
     maintainers = ['cyrush']
