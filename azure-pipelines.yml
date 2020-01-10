@@ -265,6 +265,7 @@ stages:
           PYTHON_VERSION: 3.6.3
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: ON
     steps:
       - checkout: self
         clean: boolean
@@ -321,6 +322,8 @@ stages:
            # python
            if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
            if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
+           # babelflow
+           if [ $ENABLE_BABELFLOW  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+babelflow"; fi
            export SPACK_SPEC="${SPACK_SPEC} ^mpich"
            echo $SPACK_SPEC
            # run uber to build tpls
