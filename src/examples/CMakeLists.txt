@@ -59,8 +59,6 @@ endif()
 
 if(ENABLE_BABELFLOW)
   add_subdirectory(babelflow/pmt)
-  install(DIRECTORY babelflow
-        DESTINATION examples/ascent)
 endif()
 
 # install using and python examples
