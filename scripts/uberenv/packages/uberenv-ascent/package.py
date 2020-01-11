@@ -56,7 +56,13 @@ class UberenvAscent(Ascent):
 
     homepage = "https://github.com/alpine-DAV/ascent"
 
-    version('0.5.0', '21d3663781975432144037270698d493a7f8fa876ede7da51618335be468168f')
+    #version('0.5.0', '21d3663781975432144037270698d493a7f8fa876ede7da51618335be468168f')
+
+    git      = "https://github.com/xuanhuang1/ascent.git"
+
+    version('babelflow',
+            branch='babelflow',
+            submodules=True)
 
     # default to building docs when using uberenv
     variant("doc",
