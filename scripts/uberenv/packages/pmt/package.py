@@ -41,6 +41,8 @@ class Pmt(CMakePackage):
 
     depends_on('babelflow@develop')
 
+    variant("shared", default=True, description="Build ParallelMergeTree as shared libs")
+
     def cmake_args(self):
       args = []
 
@@ -49,6 +51,11 @@ class Pmt(CMakePackage):
       return args
 
     def cmake_install(self, spec, prefix):
-        # FIXME: Unknown build system
+        
+        if "+shared" in spec:
+            cmake_args.append('-DBUILD_SHARED_LIBS=ON')
+        else:
+            cmake_args.append('-DBUILD_SHARED_LIBS=OFF')
+
         make()
         make('install')

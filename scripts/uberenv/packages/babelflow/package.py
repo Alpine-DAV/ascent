@@ -41,6 +41,8 @@ class Babelflow(CMakePackage):
 
     depends_on('mpi')
 
+    variant("shared", default=True, description="Build Babelflow as shared libs")
+
     def cmake_args(self):
       args = []
 
@@ -51,6 +53,11 @@ class Babelflow(CMakePackage):
   
     def cmake_install(self, spec, prefix):
         #print(cmake_cache_entry("MPI_C_COMPILER",spec['mpi'].mpicc))
-        # FIXME: Unknown build system
+        
+        if "+shared" in spec:
+            cmake_args.append('-DBUILD_SHARED_LIBS=ON')
+        else:
+            cmake_args.append('-DBUILD_SHARED_LIBS=OFF')
+            
         make()
         make('install')
