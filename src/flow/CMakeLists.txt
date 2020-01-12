@@ -98,7 +98,7 @@ if(PYTHON_FOUND)
         filters/flow_python_script_filter.hpp)
 
    # allow flow to link with python
-   list(APPEND flow_thirdparty_libs python)
+   list(APPEND flow_thirdparty_libs python_defered)
 
 endif()
 

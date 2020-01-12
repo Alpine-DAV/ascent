@@ -34,6 +34,11 @@ if(MPI_FOUND AND ENABLE_MPI)
   list(APPEND laghos_thirdparty_deps mpi)
 endif()
 
+if(PYTHON_FOUND)
+    list(APPEND laghos_thirdparty_deps python)
+endif()
+
+
 if (ENABLE_SERIAL)
     blt_add_executable(
         NAME        laghos_ser

@@ -63,6 +63,11 @@ else()
    set(noise_openmp_flags "")
 endif()
 
+if(PYTHON_FOUND)
+    list(APPEND noise_deps python)
+endif()
+
+
 if (ENABLE_SERIAL)
     blt_add_executable(
         NAME        noise_ser
@@ -88,6 +93,10 @@ if(MPI_FOUND)
     set(noise_par_deps ascent_mpi mpi)
     if(OPENMP_FOUND)
            list(APPEND noise_par_deps openmp)
+    endif()
+
+    if(PYTHON_FOUND)
+        list(APPEND noise_par_deps python)
     endif()
 
     blt_add_executable(

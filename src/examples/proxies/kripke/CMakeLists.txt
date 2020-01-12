@@ -93,8 +93,13 @@ if(MPI_FOUND)
 
 
     set(kripke_par_deps ascent_mpi mpi)
+
     if(OPENMP_FOUND)
            list(APPEND kripke_par_deps openmp)
+    endif()
+
+    if(PYTHON_FOUND)
+        list(APPEND kripke_par_deps python)
     endif()
 
     blt_add_executable(

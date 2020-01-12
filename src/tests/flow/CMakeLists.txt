@@ -56,9 +56,12 @@ set(FLOW_TESTS  t_flow_data
                 t_flow_workspace
                 t_flow_workspace_adv_manage)
 
+set(FLOW_DEPS ascent_flow)
+
 if(PYTHON_FOUND)
     list(APPEND FLOW_TESTS t_flow_python_interpreter
                            t_flow_python_script_filter)
+    list(APPEND FLOW_DEPS python)
 endif()
 
 ################################
@@ -69,7 +72,7 @@ endif()
 
 message(STATUS "Adding flow lib unit tests")
 foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON ascent_flow)
+    add_cpp_test(TEST ${TEST} DEPENDS_ON ${FLOW_DEPS})
 endforeach()
 
 if(PYTHON_FOUND AND ENABLE_PYTHON)

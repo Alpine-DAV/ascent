@@ -67,6 +67,10 @@ else()
    set(lulesh_openmp_flags "")
 endif()
 
+if(PYTHON_FOUND)
+    list(APPEND lulesh_deps python)
+endif()
+
 if (ENABLE_SERIAL)
     blt_add_executable(
         NAME        lulesh_ser
@@ -95,8 +99,13 @@ install(FILES ASCENT_README.md
 if(MPI_FOUND)
 
     set(lulesh_par_deps ascent_mpi mpi)
+
     if(OPENMP_FOUND)
            list(APPEND lulesh_par_deps openmp)
+    endif()
+
+    if(PYTHON_FOUND)
+        list(APPEND lulesh_par_deps python)
     endif()
 
     blt_add_executable(

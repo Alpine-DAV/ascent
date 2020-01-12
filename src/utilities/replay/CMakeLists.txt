@@ -54,7 +54,11 @@ set(REPLAY_SOURCES
 set(replay_deps ascent)
 
 if(OPENMP_FOUND)
-   list(APPEND deps openmp)
+   list(APPEND replay_deps openmp)
+endif()
+
+if(PYTHON_FOUND)
+   list(APPEND replay_deps python)
 endif()
 
 if (ENABLE_SERIAL)
@@ -76,8 +80,13 @@ endif()
 if(MPI_FOUND)
 
     set(replay_mpi_deps ascent_mpi mpi)
+
     if(OPENMP_FOUND)
            list(APPEND replay_mpi_deps openmp)
+    endif()
+
+    if(PYTHON_FOUND)
+       list(APPEND replay_mpi_deps python)
     endif()
 
     blt_add_executable(

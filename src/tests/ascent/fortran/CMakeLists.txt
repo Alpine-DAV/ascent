@@ -50,15 +50,19 @@ if (ENABLE_SERIAL)
     set(FORTRAN_TESTS
         t_f_ascent_smoke
         t_f_ascent_render_2d)
-    
-    
+
+    set(ASCENT_DEPS ascent)
+
+    if(PYTHON_FOUND)
+        list(APPEND ASCENT_DEPS python)
+    endif()
+
     ################################
     # Add our tests
     ################################
     message(STATUS "Adding ascent lib fortran interface unit tests")
     foreach(TEST ${FORTRAN_TESTS})
-        add_fortran_test(TEST ${TEST} DEPENDS_ON ascent
-                                                 conduit_blueprint)
+        add_fortran_test(TEST ${TEST} DEPENDS_ON ${ASCENT_DEPS})
     endforeach()
 endif()
 
