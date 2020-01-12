@@ -43,6 +43,8 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
+#ifndef ASCENT_VTKH_COLLECTION_HPP
+#define ASCENT_VTKH_COLLECTION_HPP
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_vtkh_collection.hpp
@@ -75,17 +77,25 @@ protected:
 public:
   void add(vtkh::DataSet &dataset, const std::string topology_name);
 
-  bool has_topology(const std::string name);
+  bool has_topology(const std::string name) const;
 
   // returns empty string if field not present
   std::string field_topology(const std::string field_name);
 
   vtkh::DataSet dataset_by_topology(const std::string topology_name);
 
+  std::vector<std::string> topology_names() const;
+
+  int cycle() const;
+
+  // re-organize by 'domian_id / topology / data set'
+  std::map<int, std::map<std::string,vtkm::cont::DataSet>> by_domain_id();
+
 };
 
 //-----------------------------------------------------------------------------
 };
+#endif
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

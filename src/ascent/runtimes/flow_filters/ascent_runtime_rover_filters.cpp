@@ -129,7 +129,8 @@ transmogrify_source(const conduit::Node *n_input, const int ref_level)
     MFEMDataAdapter::Linearize(domains, *lo_dset, ref_level);
     delete domains;
 
-    dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*lo_dset, zero_copy);
+    const std::vector<std::string> &topologies = lo_dset->child(0)["topologies"].child_names();
+    dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*lo_dset, topologies[0], zero_copy);
 #else
     ASCENT_ERROR("Unable to convert high order mesh when MFEM is not enabled");
 #endif

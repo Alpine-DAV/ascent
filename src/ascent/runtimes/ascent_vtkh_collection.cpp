@@ -49,9 +49,6 @@
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_VTKH_COLLECTION_HPP
-#define ASCENT_VTKH_COLLECTION_HPP
-
 #include "ascent_vtkh_collection.hpp"
 #include "ascent_logging.hpp"
 
@@ -70,7 +67,7 @@ void VTKHCollection::add(vtkh::DataSet &dataset, const std::string topology_name
   m_datasets[topology_name] = dataset;
 }
 
-bool VTKHCollection::has_topology(const std::string name)
+bool VTKHCollection::has_topology(const std::string name) const
 {
   return m_datasets.count(name) != 0;
 }
@@ -80,12 +77,26 @@ std::string VTKHCollection::field_topology(const std::string field_name)
   std::string topo_name = "";
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
+    // Should we really have to ask an MPI questions? its safer
     if(it->second.GlobalFieldExists(field_name))
     {
       topo_name = it->first;
       break;
     }
   }
+  return topo_name;
+}
+
+int
+VTKHCollection::cycle() const
+{
+  int cycle = 0;
+  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  {
+    it->second.GetCycle();
+    break;
+  }
+  return cycle;
 }
 
 vtkh::DataSet
@@ -99,13 +110,43 @@ VTKHCollection::dataset_by_topology(const std::string topology_name)
   return m_datasets[topology_name];
 }
 
+std::vector<std::string> VTKHCollection::topology_names() const
+{
+  std::vector<std::string> names;
+  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  {
+   names.push_back(it->first);
+  }
+  return names;
+}
+
+std::map<int, std::map<std::string,vtkm::cont::DataSet>>
+VTKHCollection::by_domain_id()
+{
+  std::map<int, std::map<std::string, vtkm::cont::DataSet>> res;
+
+  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  {
+    const std::string topo_name = it->first;
+    vtkh::DataSet &vtkh_dataset = it->second;
+
+    std::vector<vtkm::Id> domain_ids = vtkh_dataset.GetDomainIds();
+    for(int i = 0; i < domain_ids.size(); ++i)
+    {
+      const int domain_id = domain_ids[i];
+      res[domain_id][topo_name] = vtkh_dataset.GetDomain(domain_id);
+    }
+  }
+
+  return res;
+}
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
-#endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------

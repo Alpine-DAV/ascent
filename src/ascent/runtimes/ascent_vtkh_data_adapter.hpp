@@ -72,6 +72,7 @@ class DataSet;
 };
 
 #include <ascent_exports.h>
+#include "ascent_vtkh_collection.hpp"
 // conduit includes
 #include <conduit.hpp>
 
@@ -92,6 +93,8 @@ class ASCENT_API VTKHDataAdapter
 {
 public:
 
+    static VTKHCollection* BlueprintToVTKHCollection(const conduit::Node &n,
+                                                     bool zero_copy);
     // convert blueprint data to a vtkh Data Set
     // assumes "n" conforms to the mesh blueprint
     //
@@ -121,6 +124,9 @@ public:
 
     static void              VTKHToBlueprintDataSet(vtkh::DataSet *dset,
                                                     conduit::Node &node);
+
+    static void              VTKHCollectionToBlueprintDataSet(VTKHCollection *collection,
+                                                              conduit::Node &node);
 private:
     // helpers for specific conversion cases
     static vtkm::cont::DataSet  *UniformBlueprintToVTKmDataSet(const std::string &coords_name,

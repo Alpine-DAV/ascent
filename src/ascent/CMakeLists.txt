@@ -91,6 +91,8 @@ set(ascent_sources
     runtimes/ascent_main_runtime.cpp
     runtimes/ascent_empty_runtime.cpp
     runtimes/ascent_expression_eval.cpp
+    runtimes/ascent_data_object.cpp
+    runtimes/ascent_transmogrifier.cpp
     runtimes/expressions/ascent_blueprint_architect.cpp
     runtimes/expressions/ascent_conduit_reductions.cpp
     runtimes/expressions/ascent_expression_filters.cpp
@@ -125,6 +127,8 @@ set(ascent_headers
     ascent_runtime.hpp
     runtimes/ascent_empty_runtime.hpp
     runtimes/ascent_expression_eval.hpp
+    runtimes/ascent_data_object.hpp
+    runtimes/ascent_transmogrifier.hpp
     runtimes/expressions/ascent_blueprint_architect.hpp
     runtimes/expressions/ascent_conduit_reductions.hpp
     runtimes/expressions/ascent_expression_filters.hpp
