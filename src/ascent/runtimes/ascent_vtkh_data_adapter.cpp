@@ -1639,7 +1639,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else
     {
-      output["topologies/topo/coordset"] = "coords";
+      output["topologies/topo/coordset"] = coords_name;
       output["topologies/topo/type"] = "unstructured";
       vtkm::cont::DynamicCellSet dyn_cells = data_set.GetCellSet();
 
