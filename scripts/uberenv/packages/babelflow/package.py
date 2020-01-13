@@ -31,11 +31,10 @@ class Babelflow(CMakePackage):
 
     maintainers = ['spetruzza']
 
-    #version('0.0.0', sha256='8f984f643a15107716cef0d146846359672823da9dd95aea4b5cccea0984d743')
-
     version('develop',
             git='https://github.com/sci-visus/BabelFlow.git',
             branch='ascent',
+            commit='f63ded5698b3a50432fb09c658a9fa21646a9240',
             submodules=True,
             preferred=True)
 

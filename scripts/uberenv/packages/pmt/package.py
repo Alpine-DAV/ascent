@@ -31,11 +31,10 @@ class Pmt(CMakePackage):
 
     maintainers = ['spetruzza']
 
-    #version('0.0.0', sha256='8f984f643a15107716cef0d146846359672823da9dd95aea4b5cccea0984d743')
-
     version('develop',
             git='https://bitbucket.org/cedmav/parallelmergetree.git',
             branch='ascent',
+            commit='5de031d43eee2906667a875e4c6abdf99fad8b09',
             submodules=True,
             preferred=True)
 
