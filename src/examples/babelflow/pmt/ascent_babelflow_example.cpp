@@ -1,11 +1,20 @@
+
+#include <ascent.hpp>
+#include <ascent_logging.hpp>
+#include <conduit_blueprint.hpp>
+
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#else
+#include <mpidummy.h>
+#define _NOMPI
+#endif
+
+#include <string.h> 
 #include <iostream>
 #include <cfloat>
-#include <ascent.hpp>
-#include <conduit_blueprint.hpp>
-#include <mpi.h>
 #include <ctime>
 #include <cassert>
-#include <string.h> 
 
 using namespace ascent;
 using namespace conduit;

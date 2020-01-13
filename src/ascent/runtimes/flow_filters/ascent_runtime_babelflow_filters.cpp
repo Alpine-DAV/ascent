@@ -7,9 +7,14 @@
 #include <conduit.hpp>
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
+#include <ascent_logging.hpp>
 
+#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
-
+#else
+#include <mpidummy.h>
+#define _NOMPI
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin ParallelMergeTree --
@@ -30,6 +35,8 @@
 
 #include <iomanip>
 #include <iostream>
+
+
 
 class ParallelMergeTree {
 public:
@@ -322,9 +329,23 @@ void ascent::runtime::filters::BabelFlow::declare_interface(conduit::Node &i) {
 void ascent::runtime::filters::BabelFlow::execute() {
   if (op == PMT) {
     // connect to the input port and get the parameters
+    if(!input("in").check_type<conduit::Node>())
+    {
+        // error
+        ASCENT_ERROR("BabelFlow filter requires a conduit::Node input");
+    }
+
     conduit::Node p = params();
     auto *in = input<conduit::Node>("in");
     auto &data_node = in->children().next();
+
+    // check if coordset uniform
+    std::string coordSetType = (*in)["coordsets/coords/type"].as_string();
+    if (coordSetType != "uniform")
+    {
+        // error
+        ASCENT_ERROR("BabelFlow filter currenlty only works with uniform grids");
+    }
 
     // get the data handle
     conduit::DataArray<float> array = data_node[p["data_path"].as_string()].as_float32_array();
