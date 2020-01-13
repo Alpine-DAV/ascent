@@ -93,6 +93,10 @@ class ASCENT_API VTKHDataAdapter
 {
 public:
 
+    //
+    // Convert a multi-domain blueprint data set to a VTKHCollection
+    //  assumes: conduit::blueprint::mesh::verify(n,info) == true
+    //
     static VTKHCollection* BlueprintToVTKHCollection(const conduit::Node &n,
                                                      bool zero_copy);
     // convert blueprint data to a vtkh Data Set

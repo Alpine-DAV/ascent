@@ -117,7 +117,7 @@ TEST(ascent_multi_topo, adapter_test)
 
     ASCENT_INFO("Testing round trip of multi_topo");
     //
-    // Create an example mesh.
+    // Create an example mesh convert it, and convert it back.
     //
     Node data;
     build_multi_topo(data);
