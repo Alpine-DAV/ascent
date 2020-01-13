@@ -133,6 +133,7 @@ namespace filters
 // -- begin ascent::runtime::filters::detail --
 //-----------------------------------------------------------------------------
 
+#if 0
 //-----------------------------------------------------------------------------
 EnsureVTKH::EnsureVTKH()
 :Filter()
@@ -197,7 +198,7 @@ EnsureVTKH::execute()
     }
 }
 
-
+#endif
 //-----------------------------------------------------------------------------
 VTKHMarchingCubes::VTKHMarchingCubes()
 :Filter()
@@ -1170,6 +1171,7 @@ VTKHIsoVolume::execute()
 }
 
 
+#if 0
 //-----------------------------------------------------------------------------
 EnsureVTKM::EnsureVTKM()
 :Filter()
@@ -1219,7 +1221,7 @@ EnsureVTKM::execute()
     }
 #endif
 }
-
+#endif
 //-----------------------------------------------------------------------------
 
 VTKHLagrangian::VTKHLagrangian()

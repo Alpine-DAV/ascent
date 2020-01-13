@@ -112,40 +112,6 @@ namespace runtime
 namespace filters
 {
 
-namespace detail
-{
-vtkh::DataSet *
-transmogrify_source(const conduit::Node *n_input, const int ref_level)
-{
-
-  EnsureLowOrder ensure;
-  vtkh::DataSet *dataset;
-  bool zero_copy = true;
-  if(ensure.is_high_order(*n_input))
-  {
-#if defined(ASCENT_MFEM_ENABLED)
-    MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
-    conduit::Node *lo_dset = new conduit::Node;
-    MFEMDataAdapter::Linearize(domains, *lo_dset, ref_level);
-    delete domains;
-
-    const std::vector<std::string> &topologies = lo_dset->child(0)["topologies"].child_names();
-    dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*lo_dset, topologies[0], zero_copy);
-#else
-    ASCENT_ERROR("Unable to convert high order mesh when MFEM is not enabled");
-#endif
-  }
-  else
-  {
-    const std::vector<std::string> &topologies = n_input->child(0)["topologies"].child_names();
-    dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, topologies[0], zero_copy);
-  }
-
-  return dataset;
-}
-
-}// namespace detail
-
 //-----------------------------------------------------------------------------
 RoverXRay::RoverXRay()
 :Filter()
@@ -218,7 +184,7 @@ RoverXRay::execute()
 {
     if(!input(0).check_type<vtkh::DataSet>())
     {
-        ASCENT_ERROR("vtkh_slice input must be a vtk-h dataset");
+        ASCENT_ERROR("rover input must be a vtk-h dataset");
     }
     vtkh::DataSet *dataset = input<vtkh::DataSet>(0);
 

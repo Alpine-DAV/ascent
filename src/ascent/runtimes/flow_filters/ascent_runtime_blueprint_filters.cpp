@@ -64,6 +64,7 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <runtimes/ascent_data_object.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -162,7 +163,7 @@ BlueprintVerify::execute()
 
     Node v_info;
     Node *n_input = input<Node>(0);
-    
+
     // some MPI tasks may not have data, that is fine
     // but blueprint verify will fail, so if the
     // input node is empty skip verify
@@ -185,7 +186,7 @@ BlueprintVerify::execute()
             local_verify_ok = 1;
         }
     }
-    
+
     // make sure some MPI task actually had bp data
 #ifdef ASCENT_MPI_ENABLED
     int global_verify_ok = 0;
@@ -206,7 +207,7 @@ BlueprintVerify::execute()
     set_output<Node>(n_input);
 }
 
-
+#if 0
 //-----------------------------------------------------------------------------
 EnsureLowOrder::EnsureLowOrder()
 :Filter()
@@ -377,7 +378,7 @@ EnsureBlueprint::execute()
         ASCENT_ERROR(msg.str());
     }
 }
-
+#endif
 
 
 //-----------------------------------------------------------------------------

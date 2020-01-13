@@ -138,6 +138,7 @@ set(ascent_headers
     # flow
     runtimes/ascent_main_runtime.hpp
     runtimes/ascent_flow_runtime.hpp
+    runtimes/flow_filters/ascent_runtime_data_object_filter.hpp
     runtimes/flow_filters/ascent_runtime_filters.hpp
     runtimes/flow_filters/ascent_runtime_param_check.hpp
     runtimes/flow_filters/ascent_runtime_relay_filters.hpp

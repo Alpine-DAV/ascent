@@ -94,6 +94,7 @@ public:
     virtual void   execute();
 };
 
+#if 0
 
 //-----------------------------------------------------------------------------
 class ASCENT_API EnsureLowOrder : public ::flow::Filter
@@ -120,6 +121,7 @@ public:
     virtual void   declare_interface(conduit::Node &i);
     virtual void   execute();
 };
+#endif
 
 };
 //-----------------------------------------------------------------------------

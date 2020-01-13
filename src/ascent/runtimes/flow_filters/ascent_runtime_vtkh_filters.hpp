@@ -82,26 +82,26 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class ASCENT_API EnsureVTKH : public ::flow::Filter
-{
-public:
-    EnsureVTKH();
-    virtual ~EnsureVTKH();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class ASCENT_API EnsureVTKM : public ::flow::Filter
-{
-public:
-    EnsureVTKM();
-    virtual ~EnsureVTKM();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
+//class ASCENT_API EnsureVTKH : public ::flow::Filter
+//{
+//public:
+//    EnsureVTKH();
+//    virtual ~EnsureVTKH();
+//
+//    virtual void   declare_interface(conduit::Node &i);
+//    virtual void   execute();
+//};
+//
+////-----------------------------------------------------------------------------
+//class ASCENT_API EnsureVTKM : public ::flow::Filter
+//{
+//public:
+//    EnsureVTKM();
+//    virtual ~EnsureVTKM();
+//
+//    virtual void   declare_interface(conduit::Node &i);
+//    virtual void   execute();
+//};
 
 //-----------------------------------------------------------------------------
 class ASCENT_API VTKHMarchingCubes : public ::flow::Filter

@@ -106,8 +106,8 @@ void
 register_builtin()
 {
     AscentRuntime::register_filter_type<BlueprintVerify>();
-    AscentRuntime::register_filter_type<EnsureLowOrder>();
-    AscentRuntime::register_filter_type<EnsureBlueprint>();
+    //AscentRuntime::register_filter_type<EnsureLowOrder>();
+    //AscentRuntime::register_filter_type<EnsureBlueprint>();
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
     AscentRuntime::register_filter_type<RelayIOLoad>();
 
@@ -116,8 +116,8 @@ register_builtin()
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
-    AscentRuntime::register_filter_type<EnsureVTKH>();
-    AscentRuntime::register_filter_type<EnsureVTKM>();
+    //AscentRuntime::register_filter_type<EnsureVTKH>();
+    //AscentRuntime::register_filter_type<EnsureVTKM>();
 
     AscentRuntime::register_filter_type<VTKHBounds>();
     AscentRuntime::register_filter_type<VTKHUnionBounds>();

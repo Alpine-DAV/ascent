@@ -45,15 +45,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_data_object.hpp
+/// file: ascent_data_object_filter.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_DATA_OBJECT_HPP
-#define ASCENT_DATA_OBJECT_HPP
+#ifndef ASCENT_DATA_OBJECT_FILTER_HPP
+#define ASCENT_DATA_OBJECT_FILTER_HPP
 
-#include <conduit.hpp>
-#include <memory>
+#include <ascent.hpp>
+#include <ascent_data_object.hpp>
+
+#include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -61,33 +63,39 @@
 namespace ascent
 {
 
-class VTKHCollection;
-
-class DataObject
+//-----------------------------------------------------------------------------
+// -- begin filters:: --
+//-----------------------------------------------------------------------------
+namespace filters
 {
-protected:
-  std::shared_ptr<VTKHCollection> m_vtkh;
-  std::shared_ptr<conduit::Node>  m_low_bp;
-  std::shared_ptr<conduit::Node>  m_high_bp;
 
-  enum class Source { VTKH, LOW_BP, HIGH_BP};
-  Source m_source;
+class ASCENT_API DataObjectFilter : public ::flow::Filter
+{
 public:
-  DataObject() = delete;
-  //
-  // Constructors take ownership of pointers
-  //
-  DataObject(VTKHCollection *dataset);
-  DataObject(conduit::Node *dataset);
 
-  std::shared_ptr<VTKHCollection> as_vtkh_collection();
-  std::shared_ptr<conduit::Node>  as_low_order_bp();
-  std::shared_ptr<conduit::Node>  as_high_order_bp();
+DataObjectFilter()
+  : Filter()
+{
+
+}
+
+// Helper methods to wrap data set pointers
+template <class T>
+void set_output(T *data_ptr)
+{
+  DataObject *wrapper = new DataObject(data_ptr);
+  ::flow::Filter::set_output(wrapper);
+}
+
 };
-
 //-----------------------------------------------------------------------------
 };
-#endif
+//-----------------------------------------------------------------------------
+// -- end filters:: --
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+};
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+#endif
