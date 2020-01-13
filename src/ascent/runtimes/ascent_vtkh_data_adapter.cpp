@@ -1428,7 +1428,8 @@ GetBlueprintCellName(vtkm::UInt8 shape_id)
 
 bool
 VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
-                                         const vtkm::cont::DataSet &data_set)
+                                         const vtkm::cont::DataSet &data_set,
+                                         const std::string topo_name)
 {
 
   int topo_dims;
@@ -1460,8 +1461,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     auto spacing = portal.GetSpacing();
     auto dims = portal.GetDimensions();
 
-    output["topologies/topo/coordset"] = coords_name;
-    output["topologies/topo/type"] = "uniform";
+    output["topologies/"+topo_name+"/coordset"] = coords_name;
+    output["topologies/"+topo_name+"/type"] = "uniform";
 
     output["coordsets/"+coords_name+"/type"] = "uniform";
     output["coordsets/"+coords_name+"/dims/i"] = (int) dims[0];
@@ -1498,8 +1499,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     vtkm::FloatDefault *y_ptr = const_cast<vtkm::FloatDefault*>(&(*y_iter));
     vtkm::FloatDefault *z_ptr = const_cast<vtkm::FloatDefault*>(&(*z_iter));
 
-    output["topologies/topo/coordset"] = coords_name;
-    output["topologies/topo/type"] = "rectilinear";
+    output["topologies/"+topo_name+"/coordset"] = coords_name;
+    output["topologies/"+topo_name+"/type"] = "rectilinear";
 
     output["coordsets/"+coords_name+"/type"] = "rectilinear";
     output["coordsets/"+coords_name+"/values/x"].set(x_ptr, x_portal.GetNumberOfValues());
@@ -1610,8 +1611,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     vtkm::UInt8 shape_id = 0;
     if(is_structured)
     {
-      output["topologies/topo/coordset"] = coords_name;
-      output["topologies/topo/type"] = "structured";
+      output["topologies/"+topo_name+"/coordset"] = coords_name;
+      output["topologies/"+topo_name+"/type"] = "structured";
 
       vtkm::cont::DynamicCellSet dyn_cells = data_set.GetCellSet();
       using Structured2D = vtkm::cont::CellSetStructured<2>;
@@ -1620,16 +1621,16 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       {
         Structured2D cells = dyn_cells.Cast<Structured2D>();
         vtkm::Id2 cell_dims = cells.GetCellDimensions();
-        output["topologies/topo/elements/dims/i"] = (int) cell_dims[0];
-        output["topologies/topo/elements/dims/j"] = (int) cell_dims[1];
+        output["topologies/"+topo_name+"/elements/dims/i"] = (int) cell_dims[0];
+        output["topologies/"+topo_name+"/elements/dims/j"] = (int) cell_dims[1];
       }
       else if(dyn_cells.IsSameType(Structured3D()))
       {
         Structured3D cells = dyn_cells.Cast<Structured3D>();
         vtkm::Id3 cell_dims = cells.GetCellDimensions();
-        output["topologies/topo/elements/dims/i"] = (int) cell_dims[0];
-        output["topologies/topo/elements/dims/j"] = (int) cell_dims[1];
-        output["topologies/topo/elements/dims/k"] = (int) cell_dims[2];
+        output["topologies/"+topo_name+"/elements/dims/i"] = (int) cell_dims[0];
+        output["topologies/"+topo_name+"/elements/dims/j"] = (int) cell_dims[1];
+        output["topologies/"+topo_name+"/elements/dims/k"] = (int) cell_dims[2];
       }
       else
       {
@@ -1639,8 +1640,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else
     {
-      output["topologies/topo/coordset"] = coords_name;
-      output["topologies/topo/type"] = "unstructured";
+      output["topologies/"+topo_name+"/coordset"] = coords_name;
+      output["topologies/"+topo_name+"/type"] = "unstructured";
       vtkm::cont::DynamicCellSet dyn_cells = data_set.GetCellSet();
 
       using SingleType = vtkm::cont::CellSetSingleType<>;
@@ -1651,14 +1652,14 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         SingleType cells = dyn_cells.Cast<SingleType>();
         vtkm::UInt8 shape_id = cells.GetCellShape(0);
         std::string conduit_name = GetBlueprintCellName(shape_id);
-        output["topologies/topo/elements/shape"] = conduit_name;
+        output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
 
         static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints");
         auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
                                                vtkm::TopologyElementTagPoint());
 
-        output["topologies/topo/elements/connectivity"].set(vtkh::GetVTKMPointer(conn),
-                                                             conn.GetNumberOfValues());
+        output["topologies/"+topo_name+"/elements/connectivity"].set(vtkh::GetVTKMPointer(conn),
+                                                                     conn.GetNumberOfValues());
       }
       else if(vtkh::VTKMDataSetInfo::IsSingleCellShape(dyn_cells, shape_id))
       {
@@ -1669,15 +1670,15 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
                                            vtkm::TopologyElementTagPoint());
 
         std::string conduit_name = GetBlueprintCellName(shape_id);
-        output["topologies/topo/elements/shape"] = conduit_name;
+        output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
 
         static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints");
 
         auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
                                                vtkm::TopologyElementTagPoint());
 
-        output["topologies/topo/elements/connectivity"].set(vtkh::GetVTKMPointer(conn),
-                                                             conn.GetNumberOfValues());
+        output["topologies/"+topo_name+"/elements/connectivity"].set(vtkh::GetVTKMPointer(conn),
+                                                                     conn.GetNumberOfValues());
 
       }
       else
@@ -1718,7 +1719,8 @@ void ConvertVecToNode(conduit::Node &output,
 
 void
 VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
-                                      const vtkm::cont::Field &field)
+                                      const vtkm::cont::Field &field,
+                                      const std::string topo_name)
 {
   std::string name = field.GetName();
   std::string path = "fields/" + name;
@@ -1735,7 +1737,7 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else conduit_name = "element";
 
   output[path + "/association"] = conduit_name;
-  output[path + "/topology"] = "topo";
+  output[path + "/topology"] = topo_name;
 
   vtkm::cont::VariantArrayHandle dyn_handle = field.GetData();
   //
@@ -1830,10 +1832,28 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
 void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collection,
                                                        conduit::Node &node)
 {
+  node.reset();
+  const int cycle = collection->cycle();
   // we have to re-merge the domains so all domains with the same
   // domain id end up in a single domain
   std::map<int, std::map<std::string,vtkm::cont::DataSet>> domain_map;
   domain_map = collection->by_domain_id();
+
+  for(auto domain_it : domain_map)
+  {
+    const int domain_id = domain_it.first;
+
+    conduit::Node &dom = node.append();
+    dom["state/domain_id"] = (int) domain_id;
+    dom["state/cycle"] = cycle;
+
+    for(auto topo_it : domain_it.second)
+    {
+      const std::string topo_name = topo_it.first;
+      vtkm::cont::DataSet &dataset = topo_it.second;
+      VTKHDataAdapter::VTKmToBlueprintDataSet(&dataset, dom, topo_name);
+    }
+  }
 
 }
 
@@ -1858,14 +1878,15 @@ VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
 
 void
 VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
-                                        conduit::Node &node)
+                                        conduit::Node &node,
+                                        const std::string topo_name)
 {
   //
   // with vtkm, we have no idea what the type is of anything inside
   // dataset, so we have to ask all fields, cell sets anc coordinate systems.
   //
 
-  bool is_empty = VTKmTopologyToBlueprint(node, *dset);
+  bool is_empty = VTKmTopologyToBlueprint(node, *dset, topo_name);
 
   if(!is_empty)
   {
@@ -1873,7 +1894,7 @@ VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
     for(vtkm::Id i = 0; i < num_fields; ++i)
     {
       vtkm::cont::Field field = dset->GetField(i);
-      VTKmFieldToBlueprint(node, field);
+      VTKmFieldToBlueprint(node, field, topo_name);
     }
   }
 }

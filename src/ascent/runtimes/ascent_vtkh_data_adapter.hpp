@@ -120,7 +120,8 @@ public:
     static vtkh::DataSet    *VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset);
 
     static void              VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
-                                                    conduit::Node &node);
+                                                    conduit::Node &node,
+                                                    const std::string topo_name = "topo");
 
     static void              VTKHToBlueprintDataSet(vtkh::DataSet *dset,
                                                     conduit::Node &node);
@@ -179,10 +180,12 @@ private:
                                                 bool zero_copy);
 
     static bool VTKmTopologyToBlueprint(conduit::Node &output,
-                                        const vtkm::cont::DataSet &data_set);
+                                        const vtkm::cont::DataSet &data_set,
+                                        const std::string topo_name);
 
     static void VTKmFieldToBlueprint(conduit::Node &output,
-                                     const vtkm::cont::Field &field);
+                                     const vtkm::cont::Field &field,
+                                     const std::string topo_name);
 
 };
 
