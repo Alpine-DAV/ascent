@@ -35,15 +35,6 @@ class Ascent(Package, CudaPackage):
 
     homepage = "https://github.com/Alpine-DAV/ascent"
 
-    # TODO: revert this to the official repo when merged
-    git      = "https://github.com/xuanhuang1/ascent.git"
-
-    version('babelflow',
-            branch='babelflow',
-            submodules=True)
-
-    #############
-
     url      = "https://github.com/Alpine-DAV/ascent/releases/download/v0.5.0/ascent-v0.5.0-src-with-blt.tar.gz"
 
     maintainers = ['cyrush']
@@ -118,8 +109,8 @@ class Ascent(Package, CudaPackage):
     #######################
     # BabelFlow
     #######################
-    depends_on('babelflow@develop', when='+babelflow')
-    depends_on('pmt@develop', when='+babelflow')
+    depends_on('babelflow@develop', when='+babelflow+mpi')
+    depends_on('pmt@develop', when='+babelflow+mpi')
 
     #############################
     # TPLs for Runtime Features
