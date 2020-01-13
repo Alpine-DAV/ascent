@@ -462,26 +462,45 @@ VTKHCollection*
 VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
                                            bool zero_copy)
 {
-    int num_domains = 0;
+    // We must separate different topologies into
+    // different vtkh data sets
 
-    num_domains = n.number_of_children();
-    std::set<std::string> topologies;
+    const int num_domains = n.number_of_children();
+
+    VTKHCollection *res = new VTKHCollection();
+    std::map<std::string, vtkh::DataSet> datasets;
+    vtkm::UInt64 cycle = 0;
 
     for(int i = 0; i < num_domains; ++i)
     {
       const conduit::Node &dom = n.child(i);
       const std::vector<std::string> topo_names  = dom["topologies"].child_names();
+
+      if(!dom.has_path("state/domain_id"))
+      {
+        ASCENT_ERROR("Must have a domain_id to convert blueprint to vtkh");
+      }
+
+      int domain_id = dom["state/domain_id"].to_int();
+
+      if(dom.has_path("state/cycle"))
+      {
+        cycle = dom["state/cycle"].to_uint64();
+      }
+
       for(int t = 0; t < topo_names.size(); ++t)
       {
-        topologies.insert(topo_names[t]);
+        const std::string topo_name = topo_names[t];
+        vtkm::cont::DataSet *dset = BlueprintToVTKmDataSet(dom, zero_copy, topo_name);
+        datasets[topo_name].AddDomain(*dset,domain_id);
+        delete dset;
       }
-    }
-    VTKHCollection *res = new VTKHCollection();
-    for(auto it = topologies.begin(); it != topologies.end(); ++it)
-    {
-      vtkh::DataSet *vtkh = BlueprintToVTKHDataSet(n, *it, zero_copy);
-      res->add(*vtkh, *it);
-      delete vtkh;
+
+      for(auto dset_it : datasets)
+      {
+        dset_it.second.SetCycle(cycle);
+        res->add(dset_it.second, dset_it.first);
+      }
     }
 
     return res;

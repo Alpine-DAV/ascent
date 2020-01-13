@@ -51,6 +51,7 @@
 ///
 //-----------------------------------------------------------------------------
 
+#include <ascent_exports.h>
 #include <vtkh/DataSet.hpp>
 #include <map>
 
@@ -70,7 +71,7 @@ namespace ascent
 // From a vtkm point of view, each topology and associated fields are
 // a distinct data set and can be treated as such within pipelines.
 //
-class VTKHCollection
+class ASCENT_API VTKHCollection
 {
 protected:
   std::map<std::string, vtkh::DataSet> m_datasets;
