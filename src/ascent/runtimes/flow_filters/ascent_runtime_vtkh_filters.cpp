@@ -289,36 +289,53 @@ public:
 
     scene.Render();
 
+    // add the rendering times to the node
+    if(!m_registry->has_entry("render_times"))
+    {
+      conduit::Node *render_times = new conduit::Node();
+      m_registry->add<Node>("render_times", render_times, 1);
+    }
+    conduit::Node *render_times = m_registry->fetch<Node>("render_times");
+
     for(int i=0; i < m_renderer_count; i++)
     {
         ostringstream oss;
         oss << "key_" << i;
 
         vtkh::Renderer * r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
-        auto v = r->GetRenderTimes();
-        double t_avg = accumulate( v.begin(), v.end(), 0.0)/v.size();
+        auto times = r->GetRenderTimes();
+        double t_avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
         int rank = 0;
       #ifdef ASCENT_MPI_ENABLED
         rank = r->GetMpiRank();
-      #else
-        ASCENT_INFO("Ascent MPI is not enabled."); 
       #endif
+        
+        conduit::Node render_data;
+        render_data["renderer"] = i;
+        render_data["rank"] = rank;
+        render_data["average_time"] = t_avg;
+        render_data["times"].set(times.data(), int(times.size()));
+        render_times->append() = render_data;
+
+        // write render times to file
         std::stringstream ss;
         ss << "\n==========" << "\navg: " << t_avg << "\n";
-        for (auto &val : v)
+        for (auto &val : times)
           ss << val << " ";
-
-        std::ostringstream filename;
-        // filename << conduit::utils::join_file_path(PATH, "timings");
-        filename << "timings/frame_times";
-        filename << std::setw(6) << std::setfill('0') << std::to_string(rank) << ".txt";
-        std::ofstream out(filename.str(), std::ios_base::app);
-        
+        std::ofstream out("timings/frame_times" + 
+                          std::to_string(rank) + ".txt", std::ios_base::app);
         out << ss.str();
         out.close();
-
+        
         m_registry->consume(oss.str());
     }
+
+    // if (render_times->has_path("rank") && render_times->has_path("average_time"))
+    // {
+    //   int rank = (*render_times)["rank"].as_int();
+    //   double average_time = (*render_times)["average_time"].as_double();
+    //   std::cout << "~~~ Render: " << rank << " " << average_time << std::endl;
+    // }
   }
 }; // Ascent Scene
 
@@ -520,7 +537,7 @@ public:
   {
     conduit::Node render_copy = render_node;
 
-    // allow zoom to be ajusted
+    // allow zoom to be adjusted
     conduit::Node zoom;
     if(render_copy.has_path("camera/zoom"))
     {
@@ -1517,8 +1534,6 @@ DefaultRender::verify_params(const conduit::Node &params,
 void
 DefaultRender::execute()
 {
-
-
     if(!input(0).check_type<vtkm::Bounds>())
     {
       ASCENT_ERROR("'a' input must be a vktm::Bounds * instance");
@@ -1526,7 +1541,7 @@ DefaultRender::execute()
 
     if(!input(1).check_type<std::set<vtkm::Id> >())
     {
-        ASCENT_ERROR("'b' must be a std::set<vtkm::Id> * instance");
+      ASCENT_ERROR("'b' must be a std::set<vtkm::Id> * instance");
     }
 
     vtkm::Bounds *bounds = input<vtkm::Bounds>(0);
@@ -1559,7 +1574,8 @@ DefaultRender::execute()
 
         if(render_node.has_path("type"))
         {
-          if(render_node["type"].as_string() == "cinema" || render_node["type"].as_string() == "probe")
+          if(render_node["type"].as_string() == "cinema" ||
+             render_node["type"].as_string() == "vtkh_probe_render")
           {
             is_cinema = true;
           }
@@ -1567,6 +1583,12 @@ DefaultRender::execute()
 
         if(is_cinema)
         {
+          // if(!render_node.has_path("phi") || !render_node.has_path("theta"))
+          // {
+          //   ASCENT_ERROR("Cinema must have 'phi' and 'theta'");
+          // }
+
+          // default values for theta & phi
           int phi = 5;
           int theta = 5;
           if (render_node.has_path("phi"))
@@ -1574,21 +1596,23 @@ DefaultRender::execute()
           if (render_node.has_path("theta"))
             theta = render_node["theta"].to_int32();
 
-          std::string output_path = "cinema_db";
+          std::string output_path = "";
+
           if(render_node.has_path("output_path"))
           {
             output_path = render_node["output_path"].as_string();
           }
+
+          std::string db_name = "cinema_db";
+          if(render_node.has_path("db_name"))
+          {
+            db_name = render_node["db_name"].as_string();
+          }
           else
           {
-            ASCENT_INFO("No cinema 'db_name' specified, defaulting to '" + output_path + "'.")
+            ASCENT_INFO("No cinema 'db_name' specified, defaulting to 'cinema_db'.");
           }
-
-          if(!render_node.has_path("db_name"))
-          {
-            ASCENT_ERROR("Cinema must specify a 'db_name'");
-          }
-          std::string db_name = render_node["db_name"].as_string();
+          
           bool exists = detail::CinemaDatabases::db_exists(db_name);
           if(!exists)
           {
@@ -1605,7 +1629,6 @@ DefaultRender::execute()
           manager.fill_renders(renders, v_domain_ids, render_node);
           manager.write_metadata();
         }
-
         else
         {
           // this render has a unique name
@@ -1654,6 +1677,7 @@ DefaultRender::execute()
 
       renders->push_back(render);
     }
+
     set_output<std::vector<vtkh::Render>>(renders);
 }
 
@@ -2602,7 +2626,6 @@ ExecScene::execute()
 
       image_list->append() = image_data;
     }
-
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -3652,6 +3675,8 @@ VTKHNoOp::execute()
     set_output<vtkh::DataSet>(noop_output);
 }
 
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 VTKHProbeRender::VTKHProbeRender()
@@ -3670,7 +3695,7 @@ VTKHProbeRender::~VTKHProbeRender()
 void
 VTKHProbeRender::declare_interface(Node &i)
 {
-    i["type_name"]   = "vtkh_probe_renderer";
+    i["type_name"] = "vtkh_probe_render";
     i["port_names"].append() = "a";
     i["port_names"].append() = "b";
     i["output_port"] = "true";
@@ -3705,12 +3730,131 @@ VTKHProbeRender::execute()
 {
     DefaultRender::execute();
 
-    // TODO: get timings per node and set as output -- HOW???
-    //
+    std::cout << "~~~test ProbeRender" << std::endl;
 
+    // TODO: get timings per node and set as output
+    //
+    conduit::Node *render_times = graph().workspace().registry().fetch<Node>("render_times");    
+    if (render_times->has_path("rank") && render_times->has_path("average_time"))
+    {
+      std::string rank = (*render_times)["rank"].as_string();
+      std::string average_time = (*render_times)["average_time"].as_string();
+
+      // std::stringstream ss;
+      // ss << "\n~~~~~~~~" << "\navg: " << average_time << "\n";
+
+      // std::ofstream out("timings/_frame_times" + rank + ".txt", std::ios_base::app);
+
+      // out << ss.str();
+      // out.close();
+      std::cerr << "~~~ ProbeRender: " << rank << " " << average_time << std::endl;
+    }
 
     // set_output<std::vector<double>>(timings);
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+ExecProbe::ExecProbe()
+: ExecScene()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+ExecProbe::~ExecProbe()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExecProbe::declare_interface(Node &i)
+{
+    i["type_name"] = "exec_probe";
+    i["port_names"].append() = "scene";
+    i["port_names"].append() = "renders";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExecProbe::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_numeric("probing_factor", params, info, true);
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("probing_factor");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExecProbe::execute()
+{
+    ASCENT_INFO("~~~ Exec probe filter ~~~");
+
+    // TODO: reformulate to include less duplicates with ExecScene::execute() 
+
+    if(!input(0).check_type<detail::AscentScene>())
+    {
+        ASCENT_ERROR("'scene' must be a AscentScene * instance");
+    }
+
+    if(!input(1).check_type<std::vector<vtkh::Render> >())
+    {
+        ASCENT_ERROR("'renders' must be a std::vector<vtkh::Render> * instance");
+    }
+
+    detail::AscentScene *scene = input<detail::AscentScene>(0);
+    std::vector<vtkh::Render> * renders = input<std::vector<vtkh::Render>>(1);
+
+    // relative amount of images to probe
+    double probing_factor = 0.02;
+
+    if(params().has_path("probing_factor"))
+    {
+      probing_factor = params()["probing_factor"].to_double();
+      if(probing_factor <= 0. || probing_factor > 1.)
+      {
+        ASCENT_ERROR("vtkh_exec_probe 'probe' value '"<<probing_factor<<"'"
+                     <<" must be in range [0,1]. Skipping probing.");
+        return;
+      }
+    }
+
+    int num_probe_renders = std::round(renders->size() * probing_factor);
+    int stride = renders->size()/num_probe_renders;
+
+    std::cout << "~~~ Probing: " << num_probe_renders << " " << stride << " " <<
+                renders->size() <<  std::endl;
+
+    std::vector<vtkh::Render> * probe_renders = renders;
+    // select renders according to probe amount 
+    for (size_t i; i < renders->size(); i += stride)
+    {
+      probe_renders->push_back(renders->at(i));
+      std::cout << "~~~ Probe img " << i << "/" << renders->size() <<  std::endl;
+    } 
+
+    scene->Execute(*probe_renders);
+
+    // get probing times and pass them on
+    
+  // set_output<std::vector<double>>(timings);
+}
+
 
 //-----------------------------------------------------------------------------
 };

@@ -498,6 +498,20 @@ public:
     virtual void   execute();
 };
 
+//-----------------------------------------------------------------------------
+class ASCENT_API ExecProbe : public ExecScene
+{
+public:
+    ExecProbe();
+    virtual ~ExecProbe();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --

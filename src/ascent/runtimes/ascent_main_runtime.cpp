@@ -1068,6 +1068,33 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
 
     // ------------ NEW -----------------
 
+
+    // ~~~~~~~~~~~~ probing ~~~~~~~~~~~~
+    // Set up probe rendering filter if defined.
+    // "probe" defines percentage of total renders to be used for probing.
+    conduit::Node probe_params;
+    if(scene.has_path("probing_factor"))
+    {
+      probe_params["probing_factor"] = scene["probing_factor"].as_double();
+
+      std::string exec_probe_name = "exec_probe_" + names[i];
+      w.graph().add_filter("exec_probe",
+                           exec_probe_name,
+                           probe_params);
+
+      // connect renders to probe scene exec
+      w.graph().connect(renders_name,     // src
+                        exec_probe_name,  // dest
+                        0);               // default port
+
+      // connect the probe exec with the scene exec to pass render times
+      w.graph().connect(exec_probe_name,  // src
+                        exec_name,        // dest
+                        0);               // default port      
+    }
+    // ~~~~~~~~~~~~ probing ~~~~~~~~~~~~
+
+
     std::vector<std::string> pipelines = GetPipelines(scene["plots"]);
     std::vector<std::string> plot_names = scene["plots"].child_names();
 
