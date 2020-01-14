@@ -706,18 +706,21 @@ VTKHGhostStripper::execute()
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    // ask what topology this field is associated with and
+    // get the right data set
     std::string field_name = params()["field"].as_string();
+    std::string topo_name = collection->field_topology(field_name);
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
-
+    bool field_exists = topo_name != "";
     // Check to see of the ghost field even exists
-    bool do_strip = data->GlobalFieldExists(field_name);
+    bool do_strip = field_exists;
 
     if(do_strip)
     {
+      vtkh::DataSet data = collection->dataset_by_topology(topo_name);
       vtkh::GhostStripper stripper;
 
-      stripper.SetInput(data);
+      stripper.SetInput(&data);
       stripper.SetField(field_name);
 
       const Node &n_min_val = params()["min_value"];
@@ -733,11 +736,18 @@ VTKHGhostStripper::execute()
 
       vtkh::DataSet *stripper_output = stripper.GetOutput();
 
-      set_output<vtkh::DataSet>(stripper_output);
+      // we need to pass through the rest if the topologies, untouched,
+      // and add the result of this operation
+      VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+      new_coll->add(*stripper_output, topo_name);
+      // re wrap in data object
+      DataObject *res =  new DataObject(new_coll);
+      delete stripper_output;
+      set_output<DataObject>(res);
     }
     else
     {
-      set_output<vtkh::DataSet>(data);
+      set_output<DataObject>(data_object);
     }
 }
 

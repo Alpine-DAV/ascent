@@ -84,6 +84,7 @@ std::string VTKHCollection::field_topology(const std::string field_name)
       break;
     }
   }
+
   return topo_name;
 }
 
@@ -139,6 +140,20 @@ VTKHCollection::by_domain_id()
   }
 
   return res;
+}
+
+VTKHCollection* VTKHCollection::copy_without_topology(const std::string topology_name)
+{
+  if(!has_topology(topology_name))
+  {
+    ASCENT_ERROR("Copy without topology with '"<<topology_name<<"' failed."
+                 << " Topology does not exist");
+  }
+
+  VTKHCollection *copy = new VTKHCollection(*this);
+  copy->m_datasets.erase(topology_name);
+
+  return copy;
 }
 
 //-----------------------------------------------------------------------------

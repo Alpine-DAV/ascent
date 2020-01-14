@@ -431,7 +431,7 @@ AscentRuntime::CreateDefaultFilters()
     //w.graph().connect("low_order",
     //                  "vtkh_data",
     //                  0);        // default port
-#warning "This need to be rethought"
+#warning "This needs to be rethought"
       // garbage zones have a value of 2
     conduit::Node threshold_params;
     threshold_params["field"] = m_ghost_field_name;

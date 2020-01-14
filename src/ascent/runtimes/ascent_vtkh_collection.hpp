@@ -89,6 +89,10 @@ public:
 
   int cycle() const;
 
+  // returns a new collection without the specified topology
+  // this is a shallow copy operation
+  VTKHCollection* copy_without_topology(const std::string topology_name);
+
   // re-organize by 'domian_id / topology / data set'
   std::map<int, std::map<std::string,vtkm::cont::DataSet>> by_domain_id();
 
