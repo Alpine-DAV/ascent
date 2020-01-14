@@ -34,9 +34,9 @@ class Ascent(Package, CudaPackage):
     simulations."""
 
     homepage = "https://github.com/Alpine-DAV/ascent"
-
+    git      = "https://github.com/Alpine-DAV/ascent.git"
     url      = "https://github.com/Alpine-DAV/ascent/releases/download/v0.5.0/ascent-v0.5.0-src-with-blt.tar.gz"
-
+    
     maintainers = ['cyrush']
 
     version('develop',
