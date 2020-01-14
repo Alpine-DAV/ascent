@@ -51,8 +51,11 @@
 
 #include "ascent_data_object.hpp"
 
+#if defined(ASCENT_VTKM_ENABLED)
 #include "ascent_vtkh_collection.hpp"
 #include "ascent_vtkh_data_adapter.hpp"
+#endif
+
 #include "ascent_mfem_data_adapter.hpp"
 #include "ascent_transmogrifier.hpp"
 
@@ -64,19 +67,23 @@
 namespace ascent
 {
 
+#if defined(ASCENT_VTKM_ENABLED)
 DataObject::DataObject(VTKHCollection *dataset)
-  : m_vtkh(dataset),
-    m_low_bp(nullptr),
+  : m_low_bp(nullptr),
     m_high_bp(nullptr),
+    m_vtkh(dataset),
     m_source(Source::VTKH)
 {
 
 }
+#endif
 
 DataObject::DataObject(conduit::Node *dataset)
-  : m_vtkh(nullptr),
-    m_low_bp(nullptr),
+  : m_low_bp(nullptr),
     m_high_bp(nullptr)
+#if defined(ASCENT_VTKM_ENABLED)
+    ,m_vtkh(nullptr)
+#endif
 {
   bool high_order = Transmogrifier::is_high_order(*dataset);
   std::shared_ptr<conduit::Node>  bp(dataset);
@@ -92,6 +99,7 @@ DataObject::DataObject(conduit::Node *dataset)
   }
 }
 
+#if defined(ASCENT_VTKM_ENABLED)
 std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
 {
   if(m_vtkh != nullptr)
@@ -119,6 +127,7 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
 
   return nullptr;
 }
+#endif
 
 std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
 {
@@ -132,13 +141,18 @@ std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
     std::shared_ptr<conduit::Node>  low_order(Transmogrifier::low_order(*m_high_bp));
     m_low_bp = low_order;
   }
+#if defined(ASCENT_VTKM_ENABLED)
   else if(m_source == Source::VTKH)
   {
-    // vtkh -> blueprint
+    conduit::Node *out_data = new conduit::Node();
+    VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(m_vtkh.get(), *out_data);
+
+    std::shared_ptr<conduit::Node> bp(out_data);
+    m_low_bp = bp;
   }
+#endif
 
-
-  return nullptr;
+  return m_low_bp;
 }
 
 std::shared_ptr<conduit::Node>  DataObject::as_high_order_bp()
@@ -151,6 +165,31 @@ std::shared_ptr<conduit::Node>  DataObject::as_high_order_bp()
   ASCENT_ERROR("converting from low order to high order is not currenlty supported");
 
   return nullptr;
+}
+
+std::shared_ptr<conduit::Node>  DataObject::as_node()
+{
+  if(m_source == Source::VTKH)
+  {
+    ASCENT_ERROR("Bad");
+  }
+  if(m_high_bp != nullptr)
+  {
+    return m_high_bp;
+  }
+
+  if(m_low_bp != nullptr)
+  {
+    return m_low_bp;
+  }
+
+  ASCENT_ERROR("this should never happen");
+  return nullptr;
+}
+
+DataObject::Source DataObject::source() const
+{
+  return m_source;
 }
 
 //-----------------------------------------------------------------------------

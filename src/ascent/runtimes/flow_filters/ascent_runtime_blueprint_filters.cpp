@@ -154,15 +154,16 @@ BlueprintVerify::verify_params(const conduit::Node &params,
 void
 BlueprintVerify::execute()
 {
-    if(!input(0).check_type<Node>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("blueprint_verify input must be a conduit node");
+        ASCENT_ERROR("blueprint_verify input must be a DataObject");
     }
 
     std::string protocol = params()["protocol"].as_string();
 
     Node v_info;
-    Node *n_input = input<Node>(0);
+    DataObject *d_input = input<DataObject>(0);
+    std::shared_ptr<conduit::Node> n_input = d_input->as_node();
 
     // some MPI tasks may not have data, that is fine
     // but blueprint verify will fail, so if the
@@ -204,7 +205,9 @@ BlueprintVerify::execute()
     {
         ASCENT_ERROR("blueprint verify failed: published data is empty");
     }
-    set_output<Node>(n_input);
+
+
+    set_output<DataObject>(d_input);
 }
 
 #if 0

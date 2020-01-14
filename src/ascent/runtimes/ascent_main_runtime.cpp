@@ -71,6 +71,7 @@
 #include <flow.hpp>
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
+#include <ascent_data_object.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkm/cont/Error.h>
@@ -125,6 +126,7 @@ int InfoHandler::m_rank = 0;
 //-----------------------------------------------------------------------------
 AscentRuntime::AscentRuntime()
 :Runtime(),
+ m_data_object(new conduit::Node()), // trust me
  m_refinement_level(2), // default refinement level for high order meshes
  m_rank(0),
  m_ghost_field_name("ascent_ghosts")
@@ -292,7 +294,7 @@ void
 AscentRuntime::Publish(const conduit::Node &data)
 {
     // create our own tree, with all data zero copied.
-    blueprint::mesh::to_multi_domain(data, m_data);
+    blueprint::mesh::to_multi_domain(data, *m_data_object.as_node());
     EnsureDomainIds();
 }
 
@@ -305,11 +307,12 @@ AscentRuntime::EnsureDomainIds()
     bool has_ids = true;
     bool no_ids = true;
 
+    conduit::Node *data = m_data_object.as_node().get();
     // get the number of domains and check for id consistency
-    num_domains = m_data.number_of_children();
+    num_domains = data->number_of_children();
     for(int i = 0; i < num_domains; ++i)
     {
-      const conduit::Node &dom = m_data.child(i);
+      const conduit::Node &dom = data->child(i);
       if(dom.has_path("state/domain_id"))
       {
         no_ids = false;
@@ -374,7 +377,7 @@ AscentRuntime::EnsureDomainIds()
 #endif
     for(int i = 0; i < num_domains; ++i)
     {
-      conduit::Node &dom = m_data.child(i);
+      conduit::Node &dom = data->child(i);
 
       if(!dom.has_path("state/domain_id"))
       {
@@ -387,7 +390,7 @@ AscentRuntime::EnsureDomainIds()
 std::string
 AscentRuntime::CreateDefaultFilters()
 {
-    static std::string end_filter = "vtkh_data";
+    static std::string end_filter = "strip_garbage_ghosts";
     if(w.graph().has_filter(end_filter))
     {
       return end_filter;
@@ -408,45 +411,40 @@ AscentRuntime::CreateDefaultFilters()
                       "verify",
                       0);        // default port
     // conver high order MFEM meshes to low order
-    conduit::Node low_params;
-    w.graph().add_filter("ensure_low_order",
-                         "low_order",
-                         low_params);
+    //conduit::Node low_params;
+    //w.graph().add_filter("ensure_low_order",
+    //                     "low_order",
+    //                     low_params);
+
+    //w.graph().connect("verify",
+    //                  "low_order",
+    //                  0);        // default port
+
+    //conduit::Node vtkh_params;
+    //vtkh_params["zero_copy"] = "true";
+
+
+    //w.graph().add_filter("ensure_vtkh",
+    //                     "vtkh_data",
+    //                     vtkh_params);
+
+    //w.graph().connect("low_order",
+    //                  "vtkh_data",
+    //                  0);        // default port
+#warning "This need to be rethought"
+      // garbage zones have a value of 2
+    conduit::Node threshold_params;
+    threshold_params["field"] = m_ghost_field_name;
+    threshold_params["min_value"] = 0;
+    threshold_params["max_value"] = 1;
+
+    w.graph().add_filter("vtkh_ghost_stripper",
+                         end_filter,
+                         threshold_params);
 
     w.graph().connect("verify",
-                      "low_order",
+                      end_filter,
                       0);        // default port
-
-    conduit::Node vtkh_params;
-    vtkh_params["zero_copy"] = "true";
-
-
-    w.graph().add_filter("ensure_vtkh",
-                         "vtkh_data",
-                         vtkh_params);
-
-    w.graph().connect("low_order",
-                      "vtkh_data",
-                      0);        // default port
-    //if(m_has_ghosts)
-    //{
-      const std::string strip_name = "strip_garbage_ghosts";
-      // garbage zones have a value of 2
-      conduit::Node threshold_params;
-      threshold_params["field"] = m_ghost_field_name;
-      threshold_params["min_value"] = 0;
-      threshold_params["max_value"] = 1;
-
-      w.graph().add_filter("vtkh_ghost_stripper",
-                           strip_name,
-                           threshold_params);
-
-      w.graph().connect("vtkh_data",
-                        strip_name,
-                        0);        // default port
-
-      end_filter = strip_name;
-    //}
 
     return end_filter;
 }
@@ -887,13 +885,14 @@ void
 AscentRuntime::PopulateMetadata()
 {
   // add global state meta data to the registry
-  const int num_domains = m_data.number_of_children();
+  const conduit::Node *data = m_data_object.as_node().get();
+  const int num_domains = data->number_of_children();
   int cycle = 0;
   float time = 0.f;
 
   for(int i = 0; i < num_domains; ++i)
   {
-    const conduit::Node &dom = m_data.child(i);
+    const conduit::Node &dom = data->child(i);
     if(dom.has_path("state/cycle"))
     {
       cycle = dom["state/cycle"].to_int32();
@@ -924,10 +923,12 @@ AscentRuntime::ConnectSource()
     // note: if the reg entry for data was already added
     // the set_external updates everything,
     // we don't need to remove and re-add.
+
+
     if(!w.registry().has_entry("_ascent_input_data"))
     {
-        w.registry().add<Node>("_ascent_input_data",
-                               &m_data);
+        w.registry().add<DataObject>("_ascent_input_data",
+                                     &m_data_object);
     }
 
     if(!w.graph().has_filter("source"))
@@ -1385,7 +1386,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
 {
     // catch any errors that come up here and forward
     // them up as a conduit error
-    
+
     // --- open try --- //
     try
     {
@@ -1452,7 +1453,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
           m_info["expressions"] = expression_cache;
         }
-        
+
         m_info["flow_graph_dot"]      = w.graph().to_dot();
         m_info["flow_graph_dot_html"] = w.graph().to_dot_html();
 
@@ -1461,8 +1462,8 @@ AscentRuntime::Execute(const conduit::Node &actions)
         w.registry().reset();
     }
     // --- close try --- //
-    
-    // Defend calling code by repackaging 
+
+    // Defend calling code by repackaging
     // as many errors as possible with catch statements
 #if defined(ASCENT_VTKM_ENABLED)
     // bottle vtkm and vtkh errors

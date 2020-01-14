@@ -52,6 +52,7 @@
 #ifndef ASCENT_DATA_OBJECT_HPP
 #define ASCENT_DATA_OBJECT_HPP
 
+#include <ascent.hpp>
 #include <conduit.hpp>
 #include <memory>
 
@@ -61,28 +62,38 @@
 namespace ascent
 {
 
-class VTKHCollection;
+
+#if defined(ASCENT_VTKM_ENABLED)
+  class VTKHCollection;
+#endif
 
 class DataObject
 {
-protected:
-  std::shared_ptr<VTKHCollection> m_vtkh;
-  std::shared_ptr<conduit::Node>  m_low_bp;
-  std::shared_ptr<conduit::Node>  m_high_bp;
-
-  enum class Source { VTKH, LOW_BP, HIGH_BP};
-  Source m_source;
 public:
+  enum class Source { VTKH, LOW_BP, HIGH_BP};
   DataObject() = delete;
   //
   // Constructors take ownership of pointers
   //
-  DataObject(VTKHCollection *dataset);
+
   DataObject(conduit::Node *dataset);
 
+#if defined(ASCENT_VTKM_ENABLED)
+  DataObject(VTKHCollection *dataset);
   std::shared_ptr<VTKHCollection> as_vtkh_collection();
+#endif
   std::shared_ptr<conduit::Node>  as_low_order_bp();
   std::shared_ptr<conduit::Node>  as_high_order_bp();
+  std::shared_ptr<conduit::Node>  as_node();          // just return the coduit node
+  DataObject::Source              source() const;
+protected:
+  std::shared_ptr<conduit::Node>  m_low_bp;
+  std::shared_ptr<conduit::Node>  m_high_bp;
+#if defined(ASCENT_VTKM_ENABLED)
+  std::shared_ptr<VTKHCollection> m_vtkh;
+#endif
+
+  Source m_source;
 };
 
 //-----------------------------------------------------------------------------

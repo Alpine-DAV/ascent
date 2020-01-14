@@ -67,6 +67,7 @@
 #include <ascent_runtime_param_check.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
+#include <ascent_data_object.hpp>
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
@@ -697,10 +698,13 @@ void
 VTKHGhostStripper::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("VTKHGhostStripper input must be a vtk-h dataset");
+        ASCENT_ERROR("VTKHGhostStripper input must be a data object");
     }
+
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
 
