@@ -36,7 +36,7 @@ class Ascent(Package, CudaPackage):
     homepage = "https://github.com/Alpine-DAV/ascent"
     git      = "https://github.com/Alpine-DAV/ascent.git"
     url      = "https://github.com/Alpine-DAV/ascent/releases/download/v0.5.0/ascent-v0.5.0-src-with-blt.tar.gz"
-    
+
     maintainers = ['cyrush']
 
     version('develop',
@@ -68,11 +68,11 @@ class Ascent(Package, CudaPackage):
     variant("cuda", default=False, description="Build cuda support")
     variant("mfem", default=False, description="Build MFEM filter support")
     variant("adios", default=False, description="Build Adios filter support")
-    # variant("babelflow", default=False, description="Build with BabelFlow")
 
     # variants for dev-tools (docs, etc)
     variant("doc", default=False, description="Build Conduit's documentation")
 
+    # variant for BabelFlow runtime
     variant("babelflow", default=False, description="Build with BabelFlow")
 
 
@@ -134,12 +134,6 @@ class Ascent(Package, CudaPackage):
     depends_on("mfem+threadsafe~shared~mpi+conduit", when="~shared+mfem~mpi")
 
     depends_on("adios", when="+adios")
-
-    #######################
-    # BabelFlow
-    #######################
-    depends_on('babelflow@develop', when='+babelflow')
-    depends_on('pmt@develop', when='+babelflow')
 
     #######################
     # Documentation related
