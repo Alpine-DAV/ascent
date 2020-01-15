@@ -340,7 +340,7 @@ void ascent::runtime::filters::BabelFlow::execute() {
     auto &data_node = in->children().next();
 
     // check if coordset uniform
-    if(data_node.has_path("coordsets/"))
+    if(data_node.has_path("coordsets/coords/type"))
     {
       std::string coordSetType = data_node["coordsets/coords/type"].as_string();
       if (coordSetType != "uniform")
