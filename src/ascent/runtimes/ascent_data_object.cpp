@@ -106,10 +106,9 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
   {
     return m_vtkh;
   }
-
-  if(m_source == Source::HIGH_BP)
+  else
   {
-    if(m_low_bp != nullptr)
+    if(m_source == Source::HIGH_BP && m_low_bp == nullptr)
     {
       std::shared_ptr<conduit::Node>  low_order(Transmogrifier::low_order(*m_high_bp));
       m_low_bp = low_order;
@@ -125,6 +124,7 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
     return m_vtkh;
   }
 
+  ASCENT_ERROR("this should never happen");
   return nullptr;
 }
 #endif

@@ -406,6 +406,7 @@ VTKH3Slice::verify_params(const conduit::Node &params,
       res &= check_numeric("x_offset",params, info, false);
       res &= check_numeric("y_offset",params, info, false);
       res &= check_numeric("z_offset",params, info, false);
+      res = check_string("topology",params, info, false) && res;
 
       std::vector<std::string> valid_paths;
       valid_paths.push_back("x_offset");
@@ -427,18 +428,39 @@ void
 VTKH3Slice::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_3slice input must be a vtk-h dataset");
+        ASCENT_ERROR("VTKH3Slice input must be a data object");
     }
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    int num_topologies = collection->number_of_topologies();
+    std::string topo_name;
+    if(num_topologies > 1)
+    {
+      if(!params().has_path("topology"))
+      {
+        ASCENT_ERROR("VTKH3Slice: data set has multiple topologies "
+                     <<"and no topology is specified.");
+      }
+
+      topo_name = params()["topology"].as_string();
+    }
+    else
+    {
+      topo_name = collection->topology_names()[0];
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::Slice slicer;
 
-    slicer.SetInput(data);
+    slicer.SetInput(&data);
 
     using Vec3f = vtkm::Vec<vtkm::Float32,3>;
-    vtkm::Bounds bounds = data->GetGlobalBounds();
+    vtkm::Bounds bounds = data.GetGlobalBounds();
     Vec3f center = bounds.Center();
     Vec3f x_point = center;
     Vec3f y_point = center;
@@ -491,7 +513,14 @@ VTKH3Slice::execute()
 
     vtkh::DataSet *slice_output = slicer.GetOutput();
 
-    set_output<vtkh::DataSet>(slice_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*slice_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete slice_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
@@ -552,6 +581,7 @@ VTKHSlice::verify_params(const conduit::Node &params,
       res = false;
     }
 
+    res = check_string("topology",params, info, false) && res;
 
     res = check_numeric("normal/x",params, info, true) && res;
     res = check_numeric("normal/y",params, info, true) && res;
@@ -567,6 +597,7 @@ VTKHSlice::verify_params(const conduit::Node &params,
     valid_paths.push_back("normal/x");
     valid_paths.push_back("normal/y");
     valid_paths.push_back("normal/z");
+    valid_paths.push_back("topology");
 
 
     std::string surprises = surprise_check(valid_paths, params);
@@ -585,21 +616,41 @@ void
 VTKHSlice::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_slice input must be a vtk-h dataset");
+        ASCENT_ERROR("VTKHSlice input must be a data object");
     }
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    int num_topologies = collection->number_of_topologies();
+    std::string topo_name;
+    if(num_topologies > 1)
+    {
+      if(!params().has_path("topology"))
+      {
+        ASCENT_ERROR("VTKHSlice: data set has multiple topologies "
+                     <<"and no topology is specified.");
+      }
+
+      topo_name = params()["topology"].as_string();
+    }
+    else
+    {
+      topo_name = collection->topology_names()[0];
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkh::Slice slicer;
 
-    slicer.SetInput(data);
+    slicer.SetInput(&data);
 
     const Node &n_point = params()["point"];
     const Node &n_normal = params()["normal"];
 
     using Vec3f = vtkm::Vec<vtkm::Float32,3>;
-    vtkm::Bounds bounds = data->GetGlobalBounds();
+    vtkm::Bounds bounds = data.GetGlobalBounds();
     Vec3f point;
 
     const float eps = 1e-5; // ensure that the slice is always inside the data set
@@ -641,7 +692,15 @@ VTKHSlice::execute()
 
     vtkh::DataSet *slice_output = slicer.GetOutput();
 
-    set_output<vtkh::DataSet>(slice_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*slice_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete slice_output;
+    set_output<DataObject>(res);
+
 }
 
 //-----------------------------------------------------------------------------
@@ -717,7 +776,7 @@ VTKHGhostStripper::execute()
 
     if(do_strip)
     {
-      vtkh::DataSet data = collection->dataset_by_topology(topo_name);
+      vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
       vtkh::GhostStripper stripper;
 
       stripper.SetInput(&data);
@@ -736,7 +795,7 @@ VTKHGhostStripper::execute()
 
       vtkh::DataSet *stripper_output = stripper.GetOutput();
 
-      // we need to pass through the rest if the topologies, untouched,
+      // we need to pass through the rest of the topologies, untouched,
       // and add the result of this operation
       VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
       new_coll->add(*stripper_output, topo_name);

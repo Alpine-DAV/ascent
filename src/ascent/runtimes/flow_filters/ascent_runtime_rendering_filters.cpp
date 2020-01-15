@@ -64,6 +64,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
 #include <ascent_string_utils.hpp>
+#include <ascent_data_object.hpp>
 #include <ascent_runtime_param_check.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -199,18 +200,25 @@ class RendererContainer
 protected:
   std::string m_key;
   flow::Registry *m_registry;
-  std::string m_data_set_key;
+  std::shared_ptr<VTKHCollection> m_collection;
+  std::string m_topo_name;
   RendererContainer() {};
 public:
   RendererContainer(std::string key,
                     flow::Registry *r,
-                    vtkh::Renderer *renderer)
+                    vtkh::Renderer *renderer,
+                    std::shared_ptr<VTKHCollection> collection,
+                    std::string topo_name)
     : m_key(key),
-      m_registry(r)
+      m_registry(r),
+      m_collection(collection),
+      m_topo_name(topo_name)
   {
-    m_data_set_key = m_key + "_dset";
+    // we have to keep around the dataset so we bring the
+    // whole collection with us
+    vtkh::DataSet &data = m_collection->dataset_by_topology(m_topo_name);
+    renderer->SetInput(&data);
     m_registry->add<vtkh::Renderer>(m_key,renderer,1);
-    m_registry->add<vtkh::DataSet>(m_data_set_key, renderer->GetInput(),1);
   }
 
   vtkh::Renderer *
@@ -222,7 +230,6 @@ public:
   ~RendererContainer()
   {
     m_registry->consume(m_key);
-    m_registry->consume(m_data_set_key);
   }
 };
 
@@ -959,13 +966,15 @@ VTKHBounds::execute()
 {
     vtkm::Bounds *bounds = new vtkm::Bounds;
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("in must be a vtk-h dataset");
+        ASCENT_ERROR("VTKHBounds input must be a data object");
     }
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
-    bounds->Include(data->GetGlobalBounds());
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    bounds->Include(collection->global_bounds());
     set_output<vtkm::Bounds>(bounds);
 }
 
@@ -1047,14 +1056,15 @@ VTKHDomainIds::declare_interface(Node &i)
 void
 VTKHDomainIds::execute()
 {
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("'in' must be a vtk-h dataset");
+        ASCENT_ERROR("VTKHDomainIds input must be a data object");
     }
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    std::vector<vtkm::Id> domain_ids = data->GetDomainIds();
+    std::vector<vtkm::Id> domain_ids = collection->domain_ids();
 
     std::set<vtkm::Id> *result = new std::set<vtkm::Id>;
     result->insert(domain_ids.begin(), domain_ids.end());
@@ -1187,12 +1197,14 @@ CreatePlot::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("type",params, info, true);
+    res &= check_string("topology",params, info, false);
 
     bool is_mesh = false;
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("type");
     valid_paths.push_back("pipeline");
+    valid_paths.push_back("topology");
 
     if(res)
     {
@@ -1241,17 +1253,57 @@ CreatePlot::verify_params(const conduit::Node &params,
 void
 CreatePlot::execute()
 {
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("create_plot input must be a vtk-h dataset");
+      ASCENT_ERROR("create_plot input must be a data object");
     }
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    conduit::Node plot_params = params();
+    conduit::Node &plot_params = params();
+    const int num_topologies = collection->number_of_topologies();
+
+    std::string field_name;
+    if(plot_params.has_path("field"))
+    {
+      field_name = plot_params["field"].as_string();
+    }
+
+    std::string topo_name;
+    if(field_name == "")
+    {
+      if(num_topologies > 1)
+      {
+        if(!params().has_path("topology"))
+        {
+          ASCENT_ERROR("create_plot: data set has multiple topologies "
+                       <<"and no topology is specified.");
+        }
+
+        topo_name = params()["topology"].as_string();
+      }
+      else
+      {
+        topo_name = collection->topology_names()[0];
+      }
+    }
+    else
+    {
+      topo_name = collection->field_topology(field_name);
+      if(topo_name == "")
+      {
+#warning "we need to add error messages about valid fields"
+        ASCENT_ERROR("create plot: unknown field '"<<field_name<<"'");
+      }
+    }
+    std::cout<<"Topo Name "<<topo_name<<"\n";
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     std::string type = params()["type"].as_string();
 
-    if(data->GlobalIsEmpty())
+    if(data.GlobalIsEmpty())
     {
       ASCENT_INFO(type<<" plot yielded no data, i.e., no cells remain");
     }
@@ -1260,7 +1312,7 @@ CreatePlot::execute()
 
     if(type == "pseudocolor")
     {
-      bool is_point_mesh = data->IsPointMesh();
+      bool is_point_mesh = data.IsPointMesh();
       if(is_point_mesh)
       {
         vtkh::PointRenderer *p_renderer = new vtkh::PointRenderer();
@@ -1320,13 +1372,8 @@ CreatePlot::execute()
 
     renderer->SetRange(scalar_range);
 
-    if(plot_params.has_path("field"))
+    if(field_name != "")
     {
-      std::string field_name = plot_params["field"].as_string();
-      if(!data->GlobalFieldExists(field_name))
-      {
-        ASCENT_INFO("Plot variable '"<<field_name<<"' does not exist");
-      }
       renderer->SetField(field_name);
     }
 
@@ -1339,7 +1386,7 @@ CreatePlot::execute()
         // needed. This will eventually go away once
         // the mesh mapper in vtkm can handle no field
         const std::string fname = "constant_mesh_field";
-        data->AddConstantPointField(0.f, fname);
+        data.AddConstantPointField(0.f, fname);
         renderer->SetField(fname);
         mesh->SetUseForegroundColor(true);
       }
@@ -1364,11 +1411,11 @@ CreatePlot::execute()
 
     std::string key = this->name() + "_cont";
 
-    renderer->SetInput(data);
-
     detail::RendererContainer *container = new detail::RendererContainer(key,
                                                                          &graph().workspace().registry(),
-                                                                         renderer);
+                                                                         renderer,
+                                                                         collection,
+                                                                         topo_name);
     set_output<detail::RendererContainer>(container);
 
 }

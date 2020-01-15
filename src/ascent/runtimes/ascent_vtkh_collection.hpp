@@ -80,12 +80,22 @@ public:
 
   bool has_topology(const std::string name) const;
 
+  bool has_field(const std::string field_name) const;
+
+  std::string summary() const;
+
   // returns empty string if field not present
   std::string field_topology(const std::string field_name);
 
-  vtkh::DataSet dataset_by_topology(const std::string topology_name);
+  vtkh::DataSet &dataset_by_topology(const std::string topology_name);
+
+  vtkm::Bounds global_bounds() const;
 
   std::vector<std::string> topology_names() const;
+
+  std::vector<vtkm::Id> domain_ids() const;
+
+  int number_of_topologies() const;
 
   int cycle() const;
 

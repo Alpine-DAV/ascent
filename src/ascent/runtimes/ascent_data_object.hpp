@@ -55,6 +55,9 @@
 #include <ascent.hpp>
 #include <conduit.hpp>
 #include <memory>
+#if defined(ASCENT_VTKM_ENABLED)
+#include <ascent_vtkh_collection.hpp>
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -63,9 +66,6 @@ namespace ascent
 {
 
 
-#if defined(ASCENT_VTKM_ENABLED)
-  class VTKHCollection;
-#endif
 
 class DataObject
 {

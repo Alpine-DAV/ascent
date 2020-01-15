@@ -70,10 +70,7 @@ void VTKHCollection::add(vtkh::DataSet &dataset, const std::string topology_name
 bool VTKHCollection::has_topology(const std::string name) const
 {
   return m_datasets.count(name) != 0;
-}
-
-std::string VTKHCollection::field_topology(const std::string field_name)
-{
+} std::string VTKHCollection::field_topology(const std::string field_name) {
   std::string topo_name = "";
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
@@ -88,6 +85,46 @@ std::string VTKHCollection::field_topology(const std::string field_name)
   return topo_name;
 }
 
+bool VTKHCollection::has_field(const std::string field_name) const
+{
+  std::string topo_name = "";
+  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  {
+    // Should we really have to ask an MPI questions? its safer
+    if(it->second.GlobalFieldExists(field_name))
+    {
+      topo_name = it->first;
+      break;
+    }
+  }
+
+  return topo_name != "";
+}
+
+vtkm::Bounds VTKHCollection::global_bounds() const
+{
+  vtkm::Bounds bounds;
+  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  {
+    bounds.Include(it->second.GetGlobalBounds());
+  }
+  return bounds;
+}
+
+std::vector<vtkm::Id> VTKHCollection::domain_ids() const
+{
+  std::vector<vtkm::Id> all_ids;
+  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  {
+    std::vector<vtkm::Id> domain_ids = it->second.GetDomainIds();
+    for(int i = 0; i < domain_ids.size(); ++i)
+    {
+      all_ids.push_back(domain_ids[i]);
+    }
+  }
+  return all_ids;
+}
+
 int
 VTKHCollection::cycle() const
 {
@@ -100,7 +137,7 @@ VTKHCollection::cycle() const
   return cycle;
 }
 
-vtkh::DataSet
+vtkh::DataSet&
 VTKHCollection::dataset_by_topology(const std::string topology_name)
 {
   if(!has_topology(topology_name))
@@ -142,6 +179,8 @@ VTKHCollection::by_domain_id()
   return res;
 }
 
+int VTKHCollection::number_of_topologies() const { return m_datasets.size(); }
+
 VTKHCollection* VTKHCollection::copy_without_topology(const std::string topology_name)
 {
   if(!has_topology(topology_name))
@@ -154,6 +193,22 @@ VTKHCollection* VTKHCollection::copy_without_topology(const std::string topology
   copy->m_datasets.erase(topology_name);
 
   return copy;
+}
+
+std::string VTKHCollection::summary() const
+{
+  std::stringstream msg;
+
+  msg<<"vtkh colletion:\n";
+  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  {
+    const std::string topo_name = it->first;
+    msg<<"  Topology '"<<topo_name<<"': \n";
+    const vtkh::DataSet &vtkh_dataset = it->second;
+    vtkh_dataset.PrintSummary(msg);
+
+  }
+  return msg.str();
 }
 
 //-----------------------------------------------------------------------------
