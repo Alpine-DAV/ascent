@@ -768,6 +768,7 @@ VTKHGhostStripper::execute()
     // ask what topology this field is associated with and
     // get the right data set
     std::string field_name = params()["field"].as_string();
+
     std::string topo_name = collection->field_topology(field_name);
 
     bool field_exists = topo_name != "";
@@ -1013,17 +1014,36 @@ VTKHClip::verify_params(const conduit::Node &params,
 void
 VTKHClip::execute()
 {
-
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("VTKHClip input must be a vtk-h dataset");
+        ASCENT_ERROR("VTKHClip input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    int num_topologies = collection->number_of_topologies();
+    std::string topo_name;
+    if(num_topologies > 1)
+    {
+      if(!params().has_path("topology"))
+      {
+        ASCENT_ERROR("VTKHClip: data set has multiple topologies "
+                     <<"and no topology is specified.");
+      }
+
+      topo_name = params()["topology"].as_string();
+    }
+    else
+    {
+      topo_name = collection->topology_names()[0];
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::Clip clipper;
 
-    clipper.SetInput(data);
+    clipper.SetInput(&data);
 
     if(params().has_path("sphere"))
     {
@@ -1075,7 +1095,14 @@ VTKHClip::execute()
 
     vtkh::DataSet *clip_output = clipper.GetOutput();
 
-    set_output<vtkh::DataSet>(clip_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*clip_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete clip_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
@@ -1131,16 +1158,27 @@ void
 VTKHClipWithField::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("VTKHClipWithField input must be a vtk-h dataset");
+        ASCENT_ERROR("VTKHClipWithField input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::ClipField clipper;
 
-    clipper.SetInput(data);
+    clipper.SetInput(&data);
 
     if(params().has_child("invert"))
     {
@@ -1152,7 +1190,6 @@ VTKHClipWithField::execute()
     }
 
     vtkm::Float64 clip_value = params()["clip_value"].to_float64();
-    std::string field_name = params()["field"].as_string();
 
     clipper.SetField(field_name);
     clipper.SetClipValue(clip_value);
@@ -1162,6 +1199,14 @@ VTKHClipWithField::execute()
     vtkh::DataSet *clip_output = clipper.GetOutput();
 
     set_output<vtkh::DataSet>(clip_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*clip_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete clip_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------

@@ -200,6 +200,8 @@ class RendererContainer
 protected:
   std::string m_key;
   flow::Registry *m_registry;
+  // make sure the data set we need does not get deleted
+  // out from under us, which will happen
   std::shared_ptr<VTKHCollection> m_collection;
   std::string m_topo_name;
   RendererContainer() {};
