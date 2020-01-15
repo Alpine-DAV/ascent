@@ -229,7 +229,7 @@ int ParallelMergeTree::DownSizeGhosts(std::vector<BabelFlow::Payload> &inputs, s
 
 int pre_proc(std::vector<BabelFlow::Payload> &inputs,
              std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task) {
-  printf("this is where the preprocessing supposed to happend for Task %d\n", task);
+  //printf("this is where the preprocessing supposed to happend for Task %d\n", task);
   output = inputs;
   return 1;
 }
@@ -340,12 +340,17 @@ void ascent::runtime::filters::BabelFlow::execute() {
     auto &data_node = in->children().next();
 
     // check if coordset uniform
-    std::string coordSetType = (*in)["coordsets/coords/type"].as_string();
-    if (coordSetType != "uniform")
+    if(data_node.has_path("coordsets/coords/type"))
     {
-        // error
-        ASCENT_ERROR("BabelFlow filter currenlty only works with uniform grids");
+      std::string coordSetType = data_node["coordsets/coords/type"].as_string();
+      if (coordSetType != "uniform")
+      {
+          // error
+          ASCENT_ERROR("BabelFlow filter currenlty only works with uniform grids");
+      }
     }
+    else
+      ASCENT_ERROR("BabelFlow filter could not find coordsets/coords/type");
 
     // get the data handle
     conduit::DataArray<float> array = data_node[p["data_path"].as_string()].as_float32_array();
