@@ -249,6 +249,7 @@ class AscentScene
 {
 protected:
   int m_renderer_count;
+  std::vector<std::vector<double>> m_render_times;  // render times per renderer
   flow::Registry *m_registry;
   AscentScene() {};
 public:
@@ -261,6 +262,11 @@ public:
   ~AscentScene()
   {}
 
+  std::vector<std::vector<double>> * GetRenderTimes()
+  {
+    return &m_render_times;
+  }
+
   void AddRenderer(RendererContainer *container)
   {
     ostringstream oss;
@@ -270,8 +276,9 @@ public:
     m_renderer_count++;
   }
 
-  void Execute(std::vector<vtkh::Render> &renders)
+  void Execute(std::vector<vtkh::Render> &renders, bool isProbe = false)
   {
+    std::cout << "~~~ Execute scene: " << renders.size() <<  std::endl;
     vtkh::Scene scene;
     for(int i = 0; i < m_renderer_count; i++)
     {
@@ -290,52 +297,57 @@ public:
     scene.Render();
 
     // add the rendering times to the node
-    if(!m_registry->has_entry("render_times"))
-    {
-      conduit::Node *render_times = new conduit::Node();
-      m_registry->add<Node>("render_times", render_times, 1);
-    }
-    conduit::Node *render_times = m_registry->fetch<Node>("render_times");
+    // if(!m_registry->has_entry("render_times"))
+    // {
+    //   conduit::Node *render_times = new conduit::Node();
+    //   m_registry->add<Node>("render_times", render_times, 1);
+    // }
+    // conduit::Node *render_times = m_registry->fetch<Node>("render_times");
 
     for(int i=0; i < m_renderer_count; i++)
     {
         ostringstream oss;
         oss << "key_" << i;
 
-        vtkh::Renderer * r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
-        auto times = r->GetRenderTimes();
-        double t_avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
-        int rank = 0;
-      #ifdef ASCENT_MPI_ENABLED
-        rank = r->GetMpiRank();
-      #endif
-        
-        conduit::Node render_data;
-        render_data["renderer"] = i;
-        render_data["rank"] = rank;
-        render_data["average_time"] = t_avg;
-        render_data["times"].set(times.data(), int(times.size()));
-        render_times->append() = render_data;
+        if (isProbe)
+        {
+          vtkh::Renderer * r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
+          auto times = r->GetRenderTimes();
+          double t_avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
+          int rank = 0;
+        #ifdef ASCENT_MPI_ENABLED
+          rank = r->GetMpiRank();
+        #endif
+          
+          // use registry
+          // conduit::Node render_data;
+          // render_data["renderer"] = i;
+          // render_data["rank"] = rank;
+          // render_data["average_time"] = t_avg;
+          // render_data["times"].set(times.data(), int(times.size()));
+          // render_times->append() = render_data;
 
-        // write render times to file
-        std::stringstream ss;
-        ss << "\n==========" << "\navg: " << t_avg << "\n";
-        for (auto &val : times)
-          ss << val << " ";
-        std::ofstream out("timings/frame_times" + 
-                          std::to_string(rank) + ".txt", std::ios_base::app);
-        out << ss.str();
-        out.close();
-        
-        m_registry->consume(oss.str());
+          // member version
+          m_render_times.push_back(times);
+
+          // write render times to file
+          std::stringstream ss;
+          ss << "\n==========" << "\navg: " << t_avg << "\n";
+          for (auto &val : times)
+            ss << val << " ";
+          std::ofstream out("timings/frame_times" + 
+                            std::to_string(rank) + ".txt", std::ios_base::app);
+          out << ss.str();
+          out.close();
+        }
+        else
+        {
+          // only consume on regular rendering
+          m_registry->consume(oss.str());
+        }       
     }
 
-    // if (render_times->has_path("rank") && render_times->has_path("average_time"))
-    // {
-    //   int rank = (*render_times)["rank"].as_int();
-    //   double average_time = (*render_times)["average_time"].as_double();
-    //   std::cout << "~~~ Render: " << rank << " " << average_time << std::endl;
-    // }
+    std::cout << "~~~ End execute scene" << std::endl;
   }
 }; // Ascent Scene
 
@@ -1574,8 +1586,7 @@ DefaultRender::execute()
 
         if(render_node.has_path("type"))
         {
-          if(render_node["type"].as_string() == "cinema" ||
-             render_node["type"].as_string() == "vtkh_probe_render")
+          if(render_node["type"].as_string() == "cinema")
           {
             is_cinema = true;
           }
@@ -2563,44 +2574,16 @@ ExecScene::~ExecScene()
 
 }
 
-//-----------------------------------------------------------------------------
 void
-ExecScene::declare_interface(conduit::Node &i)
+add_images(std::vector<vtkh::Render> *renders, flow::Graph *graph)
 {
-    i["type_name"] = "exec_scene";
-    i["port_names"].append() = "scene";
-    i["port_names"].append() = "renders";
-    i["output_port"] = "false";
-}
-
-//-----------------------------------------------------------------------------
-void
-ExecScene::execute()
-{
-    if(!input(0).check_type<detail::AscentScene>())
-    {
-        ASCENT_ERROR("'scene' must be a AscentScene * instance");
-    }
-
-    if(!input(1).check_type<std::vector<vtkh::Render> >())
-    {
-        ASCENT_ERROR("'renders' must be a std::vector<vtkh::Render> * instance");
-    }
-
-    detail::AscentScene *scene = input<detail::AscentScene>(0);
-    std::vector<vtkh::Render> * renders = input<std::vector<vtkh::Render>>(1);
-    scene->Execute(*renders);
-
-    // the images should exist now so add them to the image list
-    // this can be used for the web server or jupyter
-
-    if(!graph().workspace().registry().has_entry("image_list"))
+    if(!graph->workspace().registry().has_entry("image_list"))
     {
       conduit::Node *image_list = new conduit::Node();
-      graph().workspace().registry().add<Node>("image_list", image_list,1);
+      graph->workspace().registry().add<Node>("image_list", image_list,1);
     }
 
-    conduit::Node *image_list = graph().workspace().registry().fetch<Node>("image_list");
+    conduit::Node *image_list = graph->workspace().registry().fetch<Node>("image_list");
     for(int i = 0; i < renders->size(); ++i)
     {
       const std::string image_name = renders->at(i).GetImageName() + ".png";
@@ -2626,6 +2609,42 @@ ExecScene::execute()
 
       image_list->append() = image_data;
     }
+}
+
+//-----------------------------------------------------------------------------
+void
+ExecScene::declare_interface(conduit::Node &i)
+{
+    i["type_name"] = "exec_scene";
+    i["port_names"].append() = "scene";
+    i["port_names"].append() = "renders";
+    i["port_names"].append() = "render_times";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+void
+ExecScene::execute()
+{
+    if(!input(0).check_type<detail::AscentScene>())
+    {
+        ASCENT_ERROR("'scene' must be a AscentScene * instance");
+    }
+
+    if(!input(1).check_type<std::vector<vtkh::Render> >())
+    {
+        ASCENT_ERROR("'renders' must be a std::vector<vtkh::Render> * instance");
+    }
+
+    detail::AscentScene *scene = input<detail::AscentScene>(0);
+    std::vector<vtkh::Render> *renders = input<std::vector<vtkh::Render>>(1);
+    std::vector<std::vector<double>> *render_times = input<std::vector<std::vector<double>>>(2);
+
+    scene->Execute(*renders);
+
+    // the images should exist now so add them to the image list
+    // this can be used for the web server or jupyter
+    add_images(renders, &graph());
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -3679,85 +3698,8 @@ VTKHNoOp::execute()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-VTKHProbeRender::VTKHProbeRender()
-:DefaultRender()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-VTKHProbeRender::~VTKHProbeRender()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-void
-VTKHProbeRender::declare_interface(Node &i)
-{
-    i["type_name"] = "vtkh_probe_render";
-    i["port_names"].append() = "a";
-    i["port_names"].append() = "b";
-    i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-VTKHProbeRender::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
-{
-    info.reset();
-    bool res = check_numeric("num_probes", params, info, true);
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("num_probes");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    // check default render parameters
-    res &= DefaultRender::verify_params(params, info);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-VTKHProbeRender::execute()
-{
-    DefaultRender::execute();
-
-    std::cout << "~~~test ProbeRender" << std::endl;
-
-    // TODO: get timings per node and set as output
-    //
-    conduit::Node *render_times = graph().workspace().registry().fetch<Node>("render_times");    
-    if (render_times->has_path("rank") && render_times->has_path("average_time"))
-    {
-      std::string rank = (*render_times)["rank"].as_string();
-      std::string average_time = (*render_times)["average_time"].as_string();
-
-      // std::stringstream ss;
-      // ss << "\n~~~~~~~~" << "\navg: " << average_time << "\n";
-
-      // std::ofstream out("timings/_frame_times" + rank + ".txt", std::ios_base::app);
-
-      // out << ss.str();
-      // out.close();
-      std::cerr << "~~~ ProbeRender: " << rank << " " << average_time << std::endl;
-    }
-
-    // set_output<std::vector<double>>(timings);
-}
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
 ExecProbe::ExecProbe()
-: ExecScene()
+: Filter()
 {
 // empty
 }
@@ -3804,7 +3746,6 @@ void
 ExecProbe::execute()
 {
     ASCENT_INFO("~~~ Exec probe filter ~~~");
-
     // TODO: reformulate to include less duplicates with ExecScene::execute() 
 
     if(!input(0).check_type<detail::AscentScene>())
@@ -3834,25 +3775,37 @@ ExecProbe::execute()
       }
     }
 
-    int num_probe_renders = std::round(renders->size() * probing_factor);
-    int stride = renders->size()/num_probe_renders;
+    const int num_probe_renders = std::round(renders->size() * probing_factor);
+    const int stride = renders->size()/num_probe_renders;
 
     std::cout << "~~~ Probing: " << num_probe_renders << " " << stride << " " <<
                 renders->size() <<  std::endl;
 
-    std::vector<vtkh::Render> * probe_renders = renders;
-    // select renders according to probe amount 
-    for (size_t i; i < renders->size(); i += stride)
+    std::vector<vtkh::Render> probe_renders;
+    for (size_t i = renders->size() - 1; i > 0; i -= stride)
     {
-      probe_renders->push_back(renders->at(i));
+      std::move(renders->begin() + i, renders->begin() + i + 1, std::back_inserter(probe_renders));
+      renders->erase(renders->begin() + i);
       std::cout << "~~~ Probe img " << i << "/" << renders->size() <<  std::endl;
     } 
 
-    scene->Execute(*probe_renders);
+    std::cout << "~~~ Execute probing " << std::endl;
+    scene->Execute(probe_renders, true);
 
-    // get probing times and pass them on
-    
-  // set_output<std::vector<double>>(timings);
+    // add probing images to the image list
+    add_images(renders, &graph());
+
+    // get probing times and pass them on 
+    std::vector<std::vector<double>> * render_times =  new std::vector<std::vector<double>>();
+    for (auto &a : *scene->GetRenderTimes())
+      render_times->push_back(a);
+
+    // DEBUG output
+    for (const auto &a : render_times->at(0))
+      std::cout << a << " "; 
+    std::cout << " frame render times" << std::endl;
+    // pass on render times 
+    set_output<std::vector<std::vector<double>> >(render_times);
 }
 
 

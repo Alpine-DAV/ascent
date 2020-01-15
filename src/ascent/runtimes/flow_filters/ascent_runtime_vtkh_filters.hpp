@@ -329,6 +329,7 @@ public:
 
     virtual void execute();
 };
+
 //-----------------------------------------------------------------------------
 class ASCENT_API VTKHLagrangian : public ::flow::Filter
 {
@@ -486,20 +487,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHProbeRender : public DefaultRender
-{
-public:
-    VTKHProbeRender();
-    virtual ~VTKHProbeRender();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class ASCENT_API ExecProbe : public ExecScene
+class ASCENT_API ExecProbe : public ::flow::Filter
 {
 public:
     ExecProbe();

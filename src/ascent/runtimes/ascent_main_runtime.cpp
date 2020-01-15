@@ -1059,25 +1059,24 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     std::string exec_name = "exec_" + names[i];
     w.graph().add_filter("exec_scene",
                           exec_name);
-
     // connect the renders to the scene exec
     // on the second port
-    w.graph().connect(renders_name,   // src
-                      exec_name,      // dest
-                      1);             // default port
+    // TODO: redundand?
+    // w.graph().connect(renders_name,   // src
+    //                   exec_name,      // dest
+    //                   1);             // port for renders
 
     // ------------ NEW -----------------
-
 
     // ~~~~~~~~~~~~ probing ~~~~~~~~~~~~
     // Set up probe rendering filter if defined.
     // "probe" defines percentage of total renders to be used for probing.
     conduit::Node probe_params;
+    std::string exec_probe_name = "exec_probe_" + names[i];
     if(scene.has_path("probing_factor"))
     {
       probe_params["probing_factor"] = scene["probing_factor"].as_double();
 
-      std::string exec_probe_name = "exec_probe_" + names[i];
       w.graph().add_filter("exec_probe",
                            exec_probe_name,
                            probe_params);
@@ -1085,15 +1084,14 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       // connect renders to probe scene exec
       w.graph().connect(renders_name,     // src
                         exec_probe_name,  // dest
-                        0);               // default port
+                        1);               // port 1 for renders
 
-      // connect the probe exec with the scene exec to pass render times
+      // connect the probe exec with the scene exec to pass on the render times
       w.graph().connect(exec_probe_name,  // src
                         exec_name,        // dest
-                        0);               // default port      
+                        2);               // port 2 for render times
     }
     // ~~~~~~~~~~~~ probing ~~~~~~~~~~~~
-
 
     std::vector<std::string> pipelines = GetPipelines(scene["plots"]);
     std::vector<std::string> plot_names = scene["plots"].child_names();
@@ -1270,6 +1268,15 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     w.graph().connect(renders_name,       // src
                       exec_name,          // dest
                       1);                 // default port
+
+    // as well as exec probe filter if active
+    if(scene.has_path("probing_factor"))
+    {
+      w.graph().connect(prev_add_plot_name, // src
+                        exec_probe_name,    // dest
+                        0);                 // scene port 
+    }
+
   } // each scene
 }
 
