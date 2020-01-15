@@ -428,7 +428,7 @@ that customize the options and dependencies used to build Ascent:
   **tbb**             Enable VTK-h TBB support             ON (+tbb)
   **cuda**            Enable VTK-h CUDA support            OFF (~cuda)
   **doc**             Build Ascent's Documentation         OFF (~doc)
-  **doc**             Enable MFEM support                  OFF (~mfem)
+  **mfem**            Enable MFEM support                  OFF (~mfem)
  ================== ==================================== ======================================
 
 
@@ -437,7 +437,7 @@ Variants are enabled using ``+`` and disabled using ``~``. For example, to build
 
 .. code:: bash
 
-  spack install ascent+cuda~python~docs
+  spack install ascent+cuda~python~doc
 
 
 See `Spack's Compiler Configuration <https://spack.readthedocs.io/en/latest/getting_started.html#compiler-config>`_ to customize which compiler settings.
