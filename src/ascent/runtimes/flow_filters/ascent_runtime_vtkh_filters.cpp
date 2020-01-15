@@ -2638,7 +2638,7 @@ ExecScene::execute()
 
     detail::AscentScene *scene = input<detail::AscentScene>(0);
     std::vector<vtkh::Render> *renders = input<std::vector<vtkh::Render>>(1);
-    std::vector<std::vector<double>> *render_times = input<std::vector<std::vector<double>>>(2);
+    // std::vector<std::vector<double>> *render_times = input<std::vector<std::vector<double>>>(2);
 
     scene->Execute(*renders);
 
@@ -3769,7 +3769,7 @@ ExecProbe::execute()
       probing_factor = params()["probing_factor"].to_double();
       if(probing_factor <= 0. || probing_factor > 1.)
       {
-        ASCENT_ERROR("vtkh_exec_probe 'probe' value '"<<probing_factor<<"'"
+        ASCENT_ERROR("exec_probe 'probing_factor' value '"<<probing_factor<<"'"
                      <<" must be in range [0,1]. Skipping probing.");
         return;
       }
@@ -3803,8 +3803,124 @@ ExecProbe::execute()
     // DEBUG output
     for (const auto &a : render_times->at(0))
       std::cout << a << " "; 
-    std::cout << " frame render times" << std::endl;
+    std::cout << " frame render times out" << std::endl;
     // pass on render times 
+    set_output<std::vector<std::vector<double>> >(render_times);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHRenderingSplit::VTKHRenderingSplit()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHRenderingSplit::~VTKHRenderingSplit()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHRenderingSplit::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_rendering_split";
+    // i["port_names"].append() = "dataset";
+    i["port_names"].append() = "render_times";
+    i["output_port"] = "true";  // extract?
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHRenderingSplit::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    // parameter for visualization performance budget in percent (default 10%)
+    bool res = check_numeric("vis_budget", params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("vis_budget");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHRenderingSplit::execute()
+{
+    ASCENT_INFO("~~~ Exec rendering split filter ~~~");
+    // if(!input(0).check_type<vtkh::DataSet>())
+    // {
+    //     ASCENT_ERROR("vtkh_rendering_split input 0 must be a vtkh DataSets");
+    // }
+    if(!input(0).check_type<std::vector<std::vector<double>> >())
+    {
+        ASCENT_ERROR("vtkh_rendering_split input 0 must be a vector of vectors of doubles");
+    }
+    // vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    std::vector<std::vector<double>> *render_times = input<std::vector<std::vector<double>> >(0);
+
+    // relative amount of visualization budget [0,1]
+    double vis_budget = 0.1;  // default to 10%
+    if(params().has_path("vis_budget"))
+    {
+      vis_budget = params()["vis_budget"].to_double();
+      if(vis_budget <= 0. || vis_budget > 1.)
+      {
+        ASCENT_ERROR("vtkh_rendering_split 'vis_budget' value '"<<vis_budget<<"'"
+                     <<" must be in range [0,1]. Skipping split.");
+        return;
+      }
+    }
+
+    // DEBUG output
+    for (const auto &a : render_times->at(0))
+      std::cout << a << " "; 
+    std::cout << " frame render times in (RenderingSplit)" << std::endl;
+
+
+    // Matt's pseudo code
+    //
+    // Int total_ranks = mpi_comm_size(my_comm)
+    // Array  render_ranks = make_complicated_decision(dataset)
+
+    // // split the current comm into two comms
+    // Mpi_Comm_Spilt(my_comm, render_ranks, new_comm)
+   
+    // If(my_rank  == a_render_rank)
+    // {
+    //   Vtkh::set_comm_handle(new_handle);
+    //   //do vtkh rendering 
+    //   // send results to another place
+    // }
+    // {
+    //   send_input_data(to the other resource)
+    // }
+
+
+    // noop reference code
+    // vtkh::NoOp noop;
+
+    // noop.SetInput(data);
+    // noop.SetField(field_name);
+
+    // noop.Update();
+
+    // vtkh::DataSet *noop_output = noop.GetOutput();
+    // set_output<vtkh::DataSet>(noop_output);
+
     set_output<std::vector<std::vector<double>> >(render_times);
 }
 

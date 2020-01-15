@@ -155,6 +155,7 @@ register_builtin()
     AscentRuntime::register_filter_type<ExecScene>();
 
     AscentRuntime::register_filter_type<ExecProbe>();
+    AscentRuntime::register_filter_type<VTKHRenderingSplit>();
 #endif
 
 #if defined(ASCENT_MPI_ENABLED)
