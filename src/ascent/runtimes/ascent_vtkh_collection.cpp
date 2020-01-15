@@ -131,7 +131,7 @@ VTKHCollection::cycle() const
   int cycle = 0;
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
-    it->second.GetCycle();
+    cycle = it->second.GetCycle();
     break;
   }
   return cycle;

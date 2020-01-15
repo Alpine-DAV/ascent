@@ -1853,6 +1853,7 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
                                                        conduit::Node &node)
 {
   node.reset();
+
   const int cycle = collection->cycle();
   // we have to re-merge the domains so all domains with the same
   // domain id end up in a single domain

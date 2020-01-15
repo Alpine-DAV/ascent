@@ -1376,6 +1376,10 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   }
 
   // we are enforcing the order of exectution
+  for(int i = 0; i < pipelines.number_of_children(); ++i)
+  {
+    CreatePipelines(pipelines.child(i));
+  }
   for(int i = 0; i < queries.number_of_children(); ++i)
   {
     CreateQueries(queries.child(i));
@@ -1383,10 +1387,6 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   for(int i = 0; i < triggers.number_of_children(); ++i)
   {
     CreateTriggers(triggers.child(i));
-  }
-  for(int i = 0; i < pipelines.number_of_children(); ++i)
-  {
-    CreatePipelines(pipelines.child(i));
   }
   for(int i = 0; i < scenes.number_of_children(); ++i)
   {
@@ -1435,7 +1435,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         m_info["actions"] = actions;
         //w.print();
         //std::cout<<w.graph().to_dot();
-        //w.graph().save_dot_html("ascent_flow_graph.html");
+        w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
         Node *meta = w.registry().fetch<Node>("metadata");

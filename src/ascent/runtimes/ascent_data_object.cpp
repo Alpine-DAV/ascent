@@ -144,6 +144,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
 #if defined(ASCENT_VTKM_ENABLED)
   else if(m_source == Source::VTKH)
   {
+
     conduit::Node *out_data = new conduit::Node();
     VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(m_vtkh.get(), *out_data);
 
