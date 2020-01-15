@@ -496,11 +496,12 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
         delete dset;
       }
 
-      for(auto dset_it : datasets)
-      {
-        dset_it.second.SetCycle(cycle);
-        res->add(dset_it.second, dset_it.first);
-      }
+    }
+
+    for(auto dset_it : datasets)
+    {
+      dset_it.second.SetCycle(cycle);
+      res->add(dset_it.second, dset_it.first);
     }
 
     return res;

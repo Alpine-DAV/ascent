@@ -1299,7 +1299,6 @@ CreatePlot::execute()
         ASCENT_ERROR("create plot: unknown field '"<<field_name<<"'");
       }
     }
-    std::cout<<"Topo Name "<<topo_name<<"\n";
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 

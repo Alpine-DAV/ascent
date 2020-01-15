@@ -689,20 +689,20 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
 
   // currently these are special cases.
   // TODO:
-  bool special = false;
-  if(extract_type == "xray" ||
-     extract_type == "volume" ||
-     extract_type == "histogram" ||
-     extract_type == "statistics") special = true;
+  //bool special = false;
+  //if(extract_type == "xray" ||
+  //   extract_type == "volume" ||
+  //   extract_type == "histogram" ||
+  //   extract_type == "statistics") special = true;
 
-  std::string ensure_name = "ensure_blueprint_" + extract_name;
-  conduit::Node empty_params;
-  if(!special)
-  {
-    w.graph().add_filter("ensure_blueprint",
-                         ensure_name,
-                         empty_params);
-  }
+  //std::string ensure_name = "ensure_blueprint_" + extract_name;
+  //conduit::Node empty_params;
+  //if(!special)
+  //{
+  //  w.graph().add_filter("ensure_blueprint",
+  //                       ensure_name,
+  //                       empty_params);
+  //}
 
   w.graph().add_filter(filter_name,
                        extract_name,
@@ -722,21 +722,22 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     // this is the blueprint mesh
     extract_source = "source";
     //current special case
-    if(special)
-    {
-      extract_source = "default";
-    }
+   // if(special)
+   // {
+   //   extract_source = "default";
+   // }
 
   }
-  if(!special)
-  {
-    m_connections[ensure_name] = extract_source;
-    m_connections[extract_name] = ensure_name;
-  }
-  else
-  {
+  //if(!special)
+  //{
+    //m_connections[ensure_name] = extract_source;
+    //m_connections[extract_name] = ensure_name;
     m_connections[extract_name] = extract_source;
-  }
+  //}
+  //else
+  //{
+  //  m_connections[extract_name] = extract_source;
+  //}
 
 }
 //-----------------------------------------------------------------------------
@@ -747,14 +748,23 @@ AscentRuntime::ConvertTriggerToFlow(const conduit::Node &trigger,
   std::string filter_name;
 
   conduit::Node params;
-  if(trigger.has_path("params")) params = trigger["params"];
+  if(trigger.has_path("params"))
+  {
+    params = trigger["params"];
+  }
+
+  std::string pipeline = "source";
+  if(trigger.has_path("pipeline"))
+  {
+    pipeline = trigger["pipeline"].as_string();
+  }
 
   w.graph().add_filter("basic_trigger",
                        trigger_name,
                        params);
 
   // this is the blueprint mesh
-  m_connections[trigger_name] = "source";
+  m_connections[trigger_name] = pipeline;
 
 }
 //-----------------------------------------------------------------------------
@@ -765,14 +775,23 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
   std::string filter_name;
 
   conduit::Node params;
-  if(query.has_path("params")) params = query["params"];
+  std::string pipeline = "source";
+  if(query.has_path("params"))
+  {
+    params = query["params"];
+  }
+
+  if(query.has_path("pipeline"))
+  {
+    pipeline = query["pipeline"].as_string();
+  }
 
   w.graph().add_filter("basic_query",
                        query_name,
                        params);
 
   // this is the blueprint mesh
-  m_connections[query_name] = "source";
+  m_connections[query_name] = pipeline;
 
 }
 //-----------------------------------------------------------------------------

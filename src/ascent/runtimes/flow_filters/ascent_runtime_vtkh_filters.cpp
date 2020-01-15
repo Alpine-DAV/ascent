@@ -260,17 +260,26 @@ void
 VTKHMarchingCubes::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_marchingcubes input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_vector_magnitude input must be a data object");
     }
 
-    std::string field_name = params()["field"].as_string();
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkh::MarchingCubes marcher;
 
-    marcher.SetInput(data);
+    marcher.SetInput(&data);
     marcher.SetField(field_name);
 
     if(params().has_path("iso_values"))
@@ -292,7 +301,14 @@ VTKHMarchingCubes::execute()
     marcher.Update();
 
     vtkh::DataSet *iso_output = marcher.GetOutput();
-    set_output<vtkh::DataSet>(iso_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*iso_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete iso_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
@@ -346,17 +362,27 @@ void
 VTKHVectorMagnitude::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_vector_magnitude input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_vector_magnitude input must be a data object");
     }
 
-    std::string field_name = params()["field"].as_string();
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::VectorMagnitude mag;
 
-    mag.SetInput(data);
+    mag.SetInput(&data);
     mag.SetField(field_name);
     if(params().has_path("output_name"))
     {
@@ -367,7 +393,15 @@ VTKHVectorMagnitude::execute()
     mag.Update();
 
     vtkh::DataSet *mag_output = mag.GetOutput();
-    set_output<vtkh::DataSet>(mag_output);
+
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*mag_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete mag_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
@@ -866,18 +900,27 @@ void
 VTKHThreshold::execute()
 {
 
-
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("VTKHThresholds input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_threshold input must be a data object");
     }
 
-    std::string field_name = params()["field"].as_string();
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::Threshold thresher;
 
-    thresher.SetInput(data);
+    thresher.SetInput(&data);
     thresher.SetField(field_name);
 
     const Node &n_min_val = params()["min_value"];
@@ -893,7 +936,14 @@ VTKHThreshold::execute()
 
     vtkh::DataSet *thresh_output = thresher.GetOutput();
 
-    set_output<vtkh::DataSet>(thresh_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*thresh_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete thresh_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
@@ -1198,7 +1248,6 @@ VTKHClipWithField::execute()
 
     vtkh::DataSet *clip_output = clipper.GetOutput();
 
-    set_output<vtkh::DataSet>(clip_output);
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
     VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
@@ -1263,20 +1312,31 @@ void
 VTKHIsoVolume::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("VTKHIsoVolume input must be a vtk-h dataset");
+        ASCENT_ERROR("VTKHIsoVolume input must be a data object");
     }
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::IsoVolume clipper;
 
-    clipper.SetInput(data);
+    clipper.SetInput(&data);
 
     vtkm::Range clip_range;
     clip_range.Min = params()["min_value"].to_float64();
     clip_range.Max = params()["max_value"].to_float64();
-    std::string field_name = params()["field"].as_string();
 
     clipper.SetField(field_name);
     clipper.SetRange(clip_range);
@@ -1285,7 +1345,14 @@ VTKHIsoVolume::execute()
 
     vtkh::DataSet *clip_output = clipper.GetOutput();
 
-    set_output<vtkh::DataSet>(clip_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*clip_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete clip_output;
+    set_output<DataObject>(res);
 }
 
 
@@ -1403,24 +1470,25 @@ VTKHLagrangian::verify_params(const conduit::Node &params,
 void
 VTKHLagrangian::execute()
 {
-    vtkh::DataSet *data = nullptr;
-    if(input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-      data = input<vtkh::DataSet>(0);
-    }
-    else if(input(0).check_type<Node>())
-    {
-      const Node *n_input = input<Node>(0);
-      const std::vector<std::string> &topologies = n_input->child(0)["topologies"].child_names();
-      bool zero_copy = false;
-      data = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, topologies[0], zero_copy);
-    }
-    else
-    {
-        ASCENT_ERROR("vtkh_lagrangian input must be a< vtkh::DataSet> or <Node>");
+        ASCENT_ERROR("vtkh_lagrangian input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
     std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+
     double step_size = params()["step_size"].to_float64();
     int write_frequency = params()["write_frequency"].to_int32();
     int cust_res = params()["cust_res"].to_int32();
@@ -1430,7 +1498,7 @@ VTKHLagrangian::execute()
 
     vtkh::Lagrangian lagrangian;
 
-    lagrangian.SetInput(data);
+    lagrangian.SetInput(&data);
     lagrangian.SetField(field_name);
     lagrangian.SetStepSize(step_size);
     lagrangian.SetWriteFrequency(write_frequency);
@@ -1442,7 +1510,14 @@ VTKHLagrangian::execute()
 
     vtkh::DataSet *lagrangian_output = lagrangian.GetOutput();
 
-    set_output<vtkh::DataSet>(lagrangian_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*lagrangian_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete lagrangian_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
@@ -1500,15 +1575,26 @@ void
 VTKHLog::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_log input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_log input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
     std::string field_name = params()["field"].as_string();
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::Log logger;
-    logger.SetInput(data);
+    logger.SetInput(&data);
     logger.SetField(field_name);
     if(params().has_path("output_name"))
     {
@@ -1525,7 +1611,14 @@ VTKHLog::execute()
 
     vtkh::DataSet *log_output = logger.GetOutput();
 
-    set_output<vtkh::DataSet>(log_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*log_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete log_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
@@ -1580,13 +1673,25 @@ VTKHRecenter::verify_params(const conduit::Node &params,
 void
 VTKHRecenter::execute()
 {
-
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-      ASCENT_ERROR("vtkh_recenter input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_recenter input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
     std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+
     std::string association = params()["association"].as_string();
     if(association != "vertex" && association != "element")
     {
@@ -1594,10 +1699,9 @@ VTKHRecenter::execute()
                    <<" must have a value of 'vertex' or 'element'");
     }
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
     vtkh::Recenter recenter;
 
-    recenter.SetInput(data);
+    recenter.SetInput(&data);
     recenter.SetField(field_name);
 
     if(association == "vertex")
@@ -1613,7 +1717,14 @@ VTKHRecenter::execute()
 
     vtkh::DataSet *recenter_output = recenter.GetOutput();
 
-    set_output<vtkh::DataSet>(recenter_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*recenter_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete recenter_output;
+    set_output<DataObject>(res);
 }
 //-----------------------------------------------------------------------------
 
@@ -1670,12 +1781,23 @@ void
 VTKHHistSampling::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_hist_sampling input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_hist_sampling input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
     std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     float sample_rate = .1f;
     if(params().has_path("sample_rate"))
@@ -1700,15 +1822,14 @@ VTKHHistSampling::execute()
       }
     }
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
-
     // TODO: write helper functions for this
     std::string ghost_field = "";
     Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+#warning "fix topo ghost zone name"
     if(meta->has_path("ghost_field"))
     {
       ghost_field = (*meta)["ghost_field"].as_string();
-      if(!data->GlobalFieldExists(ghost_field))
+      if(!data.GlobalFieldExists(ghost_field))
       {
         // can't find it
         ghost_field = "";
@@ -1718,7 +1839,7 @@ VTKHHistSampling::execute()
 
     vtkh::HistSampling hist;
 
-    hist.SetInput(data);
+    hist.SetInput(&data);
     hist.SetField(field_name);
     hist.SetNumBins(bins);
     hist.SetSamplingPercent(sample_rate);
@@ -1730,7 +1851,14 @@ VTKHHistSampling::execute()
     hist.Update();
     vtkh::DataSet *hist_output = hist.GetOutput();
 
-    set_output<vtkh::DataSet>(hist_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*hist_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete hist_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
@@ -1787,15 +1915,26 @@ void
 VTKHQCriterion::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_qcriterion input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_qcriterion input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
     std::string field_name = params()["field"].as_string();
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::Gradient grad;
-    grad.SetInput(data);
+    grad.SetInput(&data);
     grad.SetField(field_name);
     vtkh::GradientParameters grad_params;
     grad_params.compute_qcriterion = true;
@@ -1817,7 +1956,14 @@ VTKHQCriterion::execute()
 
     vtkh::DataSet *grad_output = grad.GetOutput();
 
-    set_output<vtkh::DataSet>(grad_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*grad_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete grad_output;
+    set_output<DataObject>(res);
 }
 //-----------------------------------------------------------------------------
 
@@ -1873,15 +2019,26 @@ void
 VTKHDivergence::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_divergence input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_divergence input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
     std::string field_name = params()["field"].as_string();
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::Gradient grad;
-    grad.SetInput(data);
+    grad.SetInput(&data);
     grad.SetField(field_name);
     vtkh::GradientParameters grad_params;
     grad_params.compute_divergence = true;
@@ -1904,7 +2061,14 @@ VTKHDivergence::execute()
 
     vtkh::DataSet *grad_output = grad.GetOutput();
 
-    set_output<vtkh::DataSet>(grad_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*grad_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete grad_output;
+    set_output<DataObject>(res);
 }
 //-----------------------------------------------------------------------------
 
@@ -1960,15 +2124,26 @@ void
 VTKHVorticity::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_vorticity input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_vorticity input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
     std::string field_name = params()["field"].as_string();
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::Gradient grad;
-    grad.SetInput(data);
+    grad.SetInput(&data);
     grad.SetField(field_name);
     vtkh::GradientParameters grad_params;
     grad_params.compute_vorticity = true;
@@ -1991,7 +2166,14 @@ VTKHVorticity::execute()
 
     vtkh::DataSet *grad_output = grad.GetOutput();
 
-    set_output<vtkh::DataSet>(grad_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*grad_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete grad_output;
+    set_output<DataObject>(res);
 }
 //-----------------------------------------------------------------------------
 
@@ -2048,15 +2230,26 @@ void
 VTKHGradient::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_gradient input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_gradient input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
     std::string field_name = params()["field"].as_string();
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::Gradient grad;
-    grad.SetInput(data);
+    grad.SetInput(&data);
     grad.SetField(field_name);
     vtkh::GradientParameters grad_params;
 
@@ -2078,7 +2271,14 @@ VTKHGradient::execute()
 
     vtkh::DataSet *grad_output = grad.GetOutput();
 
-    set_output<vtkh::DataSet>(grad_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*grad_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete grad_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
@@ -2132,17 +2332,27 @@ void
 VTKHStats::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_stats input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_stats input must be a data object");
     }
 
-    std::string field_name = params()["field"].as_string();
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::Statistics stats;
 
-    vtkh::Statistics::Result res = stats.Run(*data, field_name);
+    vtkh::Statistics::Result res = stats.Run(data, field_name);
     int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
@@ -2206,23 +2416,34 @@ void
 VTKHHistogram::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_histogram input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_histogram input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
     std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     int bins = 128;
     if(params().has_path("bins"))
     {
       bins = params()["bins"].to_int32();
     }
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
     vtkh::Histogram hist;
 
     hist.SetNumBins(bins);
-    vtkh::Histogram::HistogramResult res = hist.Run(*data, field_name);
+    vtkh::Histogram::HistogramResult res = hist.Run(data, field_name);
     int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
@@ -2288,12 +2509,24 @@ void
 VTKHParticleAdvection::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_particle_advection input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_particle_advection input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
     std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     float step_size = 0.1f;
     int seeds = 500;
     if(params().has_path("seeds"))
@@ -2305,10 +2538,9 @@ VTKHParticleAdvection::execute()
       step_size = params()["step_size"].to_float32();
     }
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
     vtkh::ParticleAdvection streamline;
 
-    streamline.SetInput(data);
+    streamline.SetInput(&data);
     streamline.SetField(field_name);
     streamline.SetStepSize(step_size);
     streamline.SetSeedsRandomWhole(seeds);
@@ -2316,7 +2548,15 @@ VTKHParticleAdvection::execute()
     streamline.Update();
 
     vtkh::DataSet *output = streamline.GetOutput();
-    set_output<vtkh::DataSet>(output);
+
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
@@ -2370,23 +2610,42 @@ void
 VTKHNoOp::execute()
 {
 
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_no_op input must be a vtk-h dataset");
+        ASCENT_ERROR("vtkh_particle_advection input must be a data object");
     }
 
-    std::string field_name = params()["field"].as_string();
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
     vtkh::NoOp noop;
 
-    noop.SetInput(data);
+    noop.SetInput(&data);
     noop.SetField(field_name);
 
     noop.Update();
 
     vtkh::DataSet *noop_output = noop.GetOutput();
-    set_output<vtkh::DataSet>(noop_output);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*noop_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete noop_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------

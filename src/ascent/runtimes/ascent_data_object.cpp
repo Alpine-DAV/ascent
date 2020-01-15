@@ -169,9 +169,13 @@ std::shared_ptr<conduit::Node>  DataObject::as_high_order_bp()
 
 std::shared_ptr<conduit::Node>  DataObject::as_node()
 {
-  if(m_source == Source::VTKH)
+  if(m_source == Source::VTKH && m_low_bp != nullptr)
   {
-    ASCENT_ERROR("Bad");
+    conduit::Node *out_data = new conduit::Node();
+    VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(m_vtkh.get(), *out_data);
+
+    std::shared_ptr<conduit::Node> bp(out_data);
+    m_low_bp = bp;
   }
   if(m_high_bp != nullptr)
   {
