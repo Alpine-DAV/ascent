@@ -94,7 +94,7 @@ namespace flow
 //-----------------------------------------------------------------------------
 // Make sure we treat cleanup of python objects correctly
 //-----------------------------------------------------------------------------
-template<> 
+template<>
 class FLOW_API DataWrapper<PyObject>: public Data
 {
  public:
@@ -147,7 +147,7 @@ flow::PythonInterpreter *PythonScript::interpreter()
             m_interp = NULL;
             CONDUIT_ERROR("PythonInterpreter initialize failed");
         }
-     
+
         // setup for conduit python c api
         if(!m_interp->run_script("import conduit"))
         {
@@ -224,7 +224,7 @@ PythonScript::verify_params(const conduit::Node &params,
 
     if( params.has_child("echo") )
     {
-        if( !params["echo"].dtype().is_string() || 
+        if( !params["echo"].dtype().is_string() ||
              (params["echo"].as_string() != "true" &&
               params["echo"].as_string() != "false") )
         {
@@ -277,46 +277,19 @@ PythonScript::verify_params(const conduit::Node &params,
         }
 
     }
-    
+
     return res;
 }
 
-
-
 //-----------------------------------------------------------------------------
-void
-PythonScript::execute()
+void PythonScript::execute_python(PyObject *py_input)
 {
-    // make sure we have our interpreter setup b/c
-    // we need the python env ready
-
-    PythonInterpreter *py_interp = interpreter();
-
-    PyObject *py_input = NULL;
-
-    if(input(0).check_type<PyObject>())
-    {
-        // input is already have python
-        py_input = input<PyObject>(0);
-    }
-    else if(input(0).check_type<conduit::Node>())
-    {
-        // input is conduit node, wrap into python
-        conduit::Node *n = input<conduit::Node>(0);
-        py_input = PyConduit_Node_Python_Wrap(n,0);
-    }
-    else
-    {
-        CONDUIT_ERROR("python_script input must be a python object "
-                      "or a conduit::Node");
-    }
-
     std::string module_name = "flow_script_filter";
     std::string input_func_name = "flow_input";
     std::string set_output_func_name = "flow_set_output";
 
     bool echo = false;
-    if( params().has_path("echo") && 
+    if( params().has_path("echo") &&
         params()["echo"].as_string() == "true")
     {
         echo = true;
@@ -369,7 +342,7 @@ PythonScript::execute()
     // sanity check
     if( !PyModule_Check(py_mod) )
     {
-        CONDUIT_ERROR("Unexpected error: " << module_name 
+        CONDUIT_ERROR("Unexpected error: " << module_name
                       << " is not a python module!");
     }
 
@@ -403,8 +376,8 @@ PythonScript::execute()
     // so the names are bound to the global ns
     filter_setup_src_oss.str("");
     filter_setup_src_oss << "\n"
-                         << "from " << module_name 
-                         << " import " 
+                         << "from " << module_name
+                         << " import "
                          << input_func_name << ", "
                          << set_output_func_name
                          << "\n";
@@ -430,11 +403,42 @@ PythonScript::execute()
         CONDUIT_ERROR("python_script failed to fetch output");
     }
 
-    // we need to incref b/c py_res is borrowed, and flow will decref 
+    // we need to incref b/c py_res is borrowed, and flow will decref
     // when it is done with the python object
     Py_INCREF(py_res);
 
     set_output<PyObject>(py_res);
+}
+
+//-----------------------------------------------------------------------------
+void
+PythonScript::execute()
+{
+    // make sure we have our interpreter setup b/c
+    // we need the python env ready
+
+    PythonInterpreter *py_interp = interpreter();
+
+    PyObject *py_input = NULL;
+
+    if(input(0).check_type<PyObject>())
+    {
+        // input is already have python
+        py_input = input<PyObject>(0);
+    }
+    else if(input(0).check_type<conduit::Node>())
+    {
+        // input is conduit node, wrap into python
+        conduit::Node *n = input<conduit::Node>(0);
+        py_input = PyConduit_Node_Python_Wrap(n,0);
+    }
+    else
+    {
+        CONDUIT_ERROR("python_script input must be a python object "
+                      "or a conduit::Node");
+    }
+
+    execute_python(py_input);
 }
 
 //-----------------------------------------------------------------------------
