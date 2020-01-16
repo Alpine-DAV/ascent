@@ -94,35 +94,6 @@ public:
     virtual void   execute();
 };
 
-#if 0
-
-//-----------------------------------------------------------------------------
-class ASCENT_API EnsureLowOrder : public ::flow::Filter
-{
-public:
-    EnsureLowOrder();
-   ~EnsureLowOrder();
-
-    bool is_high_order(const conduit::Node &data_set);
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class ASCENT_API EnsureBlueprint : public ::flow::Filter
-{
-public:
-    EnsureBlueprint();
-    virtual ~EnsureBlueprint();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-#endif
-
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --

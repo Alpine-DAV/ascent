@@ -125,13 +125,15 @@ public:
 
     static void              VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
                                                     conduit::Node &node,
-                                                    const std::string topo_name = "topo");
+                                                    const std::string topo_name,
+                                                    bool zero_copy);
 
     static void              VTKHToBlueprintDataSet(vtkh::DataSet *dset,
                                                     conduit::Node &node);
 
     static void              VTKHCollectionToBlueprintDataSet(VTKHCollection *collection,
-                                                              conduit::Node &node);
+                                                              conduit::Node &node,
+                                                              bool zero_copy = false);
 private:
     // helpers for specific conversion cases
     static vtkm::cont::DataSet  *UniformBlueprintToVTKmDataSet(const std::string &coords_name,
@@ -185,11 +187,13 @@ private:
 
     static bool VTKmTopologyToBlueprint(conduit::Node &output,
                                         const vtkm::cont::DataSet &data_set,
-                                        const std::string topo_name);
+                                        const std::string topo_name,
+                                        bool zero_copy);
 
     static void VTKmFieldToBlueprint(conduit::Node &output,
                                      const vtkm::cont::Field &field,
-                                     const std::string topo_name);
+                                     const std::string topo_name,
+                                     bool zero_copy);
 
 };
 

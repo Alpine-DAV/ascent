@@ -1449,7 +1449,8 @@ GetBlueprintCellName(vtkm::UInt8 shape_id)
 bool
 VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
                                          const vtkm::cont::DataSet &data_set,
-                                         const std::string topo_name)
+                                         const std::string topo_name,
+                                         bool zero_copy)
 {
 
   int topo_dims;
@@ -1523,9 +1524,18 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     output["topologies/"+topo_name+"/type"] = "rectilinear";
 
     output["coordsets/"+coords_name+"/type"] = "rectilinear";
-    output["coordsets/"+coords_name+"/values/x"].set(x_ptr, x_portal.GetNumberOfValues());
-    output["coordsets/"+coords_name+"/values/y"].set(y_ptr, y_portal.GetNumberOfValues());
-    output["coordsets/"+coords_name+"/values/z"].set(z_ptr, z_portal.GetNumberOfValues());
+    if(zero_copy)
+    {
+      output["coordsets/"+coords_name+"/values/x"].set_external(x_ptr, x_portal.GetNumberOfValues());
+      output["coordsets/"+coords_name+"/values/y"].set_external(y_ptr, y_portal.GetNumberOfValues());
+      output["coordsets/"+coords_name+"/values/z"].set_external(z_ptr, z_portal.GetNumberOfValues());
+    }
+    else
+    {
+      output["coordsets/"+coords_name+"/values/x"].set(x_ptr, x_portal.GetNumberOfValues());
+      output["coordsets/"+coords_name+"/values/y"].set(y_ptr, y_portal.GetNumberOfValues());
+      output["coordsets/"+coords_name+"/values/z"].set(z_ptr, z_portal.GetNumberOfValues());
+    }
   }
   else
   {
@@ -1558,9 +1568,26 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       point_dims[0] = x_handle.GetNumberOfValues();
       point_dims[1] = y_handle.GetNumberOfValues();
       point_dims[2] = z_handle.GetNumberOfValues();
-      output["coordsets/"+coords_name+"/values/x"].set(vtkh::GetVTKMPointer(x_handle), point_dims[0]);
-      output["coordsets/"+coords_name+"/values/y"].set(vtkh::GetVTKMPointer(y_handle), point_dims[1]);
-      output["coordsets/"+coords_name+"/values/z"].set(vtkh::GetVTKMPointer(z_handle), point_dims[2]);
+
+      if(zero_copy)
+      {
+        output["coordsets/"+coords_name+"/values/x"].
+          set_external(vtkh::GetVTKMPointer(x_handle), point_dims[0]);
+        output["coordsets/"+coords_name+"/values/y"].
+          set_external(vtkh::GetVTKMPointer(y_handle), point_dims[1]);
+        output["coordsets/"+coords_name+"/values/z"].
+          set_external(vtkh::GetVTKMPointer(z_handle), point_dims[2]);
+      }
+      else
+      {
+        output["coordsets/"+coords_name+"/values/x"].
+          set(vtkh::GetVTKMPointer(x_handle), point_dims[0]);
+        output["coordsets/"+coords_name+"/values/y"].
+          set(vtkh::GetVTKMPointer(y_handle), point_dims[1]);
+        output["coordsets/"+coords_name+"/values/z"].
+          set(vtkh::GetVTKMPointer(z_handle), point_dims[2]);
+
+      }
 
     }
     else if(coordsHandle.IsType<CoordsVec32>())
@@ -1571,18 +1598,37 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       vtkm::Float32 *points_ptr = (vtkm::Float32*)vtkh::GetVTKMPointer(points);
       const int byte_size = sizeof(vtkm::Float32);
 
-      output["coordsets/"+coords_name+"/values/x"].set(points_ptr,
-                                                       num_vals,
-                                                       byte_size*0,  // byte offset
-                                                       byte_size*3); // stride
-      output["coordsets/"+coords_name+"/values/y"].set(points_ptr,
-                                                       num_vals,
-                                                       byte_size*1,  // byte offset
-                                                       sizeof(vtkm::Float32)*3); // stride
-      output["coordsets/"+coords_name+"/values/z"].set(points_ptr,
-                                                       num_vals,
-                                                       byte_size*2,  // byte offset
-                                                       byte_size*3); // stride
+      if(zero_copy)
+      {
+        output["coordsets/"+coords_name+"/values/x"].set_external(points_ptr,
+                                                                  num_vals,
+                                                                  byte_size*0,  // byte offset
+                                                                  byte_size*3); // stride
+        output["coordsets/"+coords_name+"/values/y"].set_external(points_ptr,
+                                                                  num_vals,
+                                                                  byte_size*1,  // byte offset
+                                                                  sizeof(vtkm::Float32)*3); // stride
+        output["coordsets/"+coords_name+"/values/z"].set_external(points_ptr,
+                                                                  num_vals,
+                                                                  byte_size*2,  // byte offset
+                                                                  byte_size*3); // stride
+      }
+      else
+      {
+        output["coordsets/"+coords_name+"/values/x"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*0,  // byte offset
+                                                         byte_size*3); // stride
+        output["coordsets/"+coords_name+"/values/y"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*1,  // byte offset
+                                                         sizeof(vtkm::Float32)*3); // stride
+        output["coordsets/"+coords_name+"/values/z"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*2,  // byte offset
+                                                         byte_size*3); // stride
+
+      }
 
     }
     else if(coordsHandle.IsType<Coords64>())
@@ -1596,9 +1642,25 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       point_dims[0] = x_handle.GetNumberOfValues();
       point_dims[1] = y_handle.GetNumberOfValues();
       point_dims[2] = z_handle.GetNumberOfValues();
-      output["coordsets/"+coords_name+"/values/x"].set(vtkh::GetVTKMPointer(x_handle), point_dims[0]);
-      output["coordsets/"+coords_name+"/values/y"].set(vtkh::GetVTKMPointer(y_handle), point_dims[1]);
-      output["coordsets/"+coords_name+"/values/z"].set(vtkh::GetVTKMPointer(z_handle), point_dims[2]);
+      if(zero_copy)
+      {
+        output["coordsets/"+coords_name+"/values/x"].
+          set_external(vtkh::GetVTKMPointer(x_handle), point_dims[0]);
+        output["coordsets/"+coords_name+"/values/y"].
+          set_external(vtkh::GetVTKMPointer(y_handle), point_dims[1]);
+        output["coordsets/"+coords_name+"/values/z"].
+          set_external(vtkh::GetVTKMPointer(z_handle), point_dims[2]);
+      }
+      else
+      {
+        output["coordsets/"+coords_name+"/values/x"].
+          set(vtkh::GetVTKMPointer(x_handle), point_dims[0]);
+        output["coordsets/"+coords_name+"/values/y"].
+          set(vtkh::GetVTKMPointer(y_handle), point_dims[1]);
+        output["coordsets/"+coords_name+"/values/z"].
+          set(vtkh::GetVTKMPointer(z_handle), point_dims[2]);
+
+      }
 
     }
     else if(coordsHandle.IsType<CoordsVec64>())
@@ -1609,18 +1671,37 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       vtkm::Float64 *points_ptr = (vtkm::Float64*)vtkh::GetVTKMPointer(points);
       const int byte_size = sizeof(vtkm::Float64);
 
-      output["coordsets/"+coords_name+"/values/x"].set(points_ptr,
-                                                       num_vals,
-                                                       byte_size*0,  // byte offset
-                                                       byte_size*3); // stride
-      output["coordsets/"+coords_name+"/values/y"].set(points_ptr,
-                                                       num_vals,
-                                                       byte_size*1,  // byte offset
-                                                       byte_size*3); // stride
-      output["coordsets/"+coords_name+"/values/z"].set(points_ptr,
-                                                       num_vals,
-                                                       byte_size*2,  // byte offset
-                                                       byte_size*3); // stride
+      if(zero_copy)
+      {
+        output["coordsets/"+coords_name+"/values/x"].set_external(points_ptr,
+                                                                  num_vals,
+                                                                  byte_size*0,  // byte offset
+                                                                  byte_size*3); // stride
+        output["coordsets/"+coords_name+"/values/y"].set_external(points_ptr,
+                                                                  num_vals,
+                                                                  byte_size*1,  // byte offset
+                                                                  byte_size*3); // stride
+        output["coordsets/"+coords_name+"/values/z"].set_external(points_ptr,
+                                                                  num_vals,
+                                                                  byte_size*2,  // byte offset
+                                                                  byte_size*3); // stride
+      }
+      else
+      {
+        output["coordsets/"+coords_name+"/values/x"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*0,  // byte offset
+                                                         byte_size*3); // stride
+        output["coordsets/"+coords_name+"/values/y"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*1,  // byte offset
+                                                         byte_size*3); // stride
+        output["coordsets/"+coords_name+"/values/z"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*2,  // byte offset
+                                                         byte_size*3); // stride
+
+      }
 
     }
     else
@@ -1678,8 +1759,16 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
                                                vtkm::TopologyElementTagPoint());
 
-        output["topologies/"+topo_name+"/elements/connectivity"].set(vtkh::GetVTKMPointer(conn),
-                                                                     conn.GetNumberOfValues());
+        if(zero_copy)
+        {
+          output["topologies/"+topo_name+"/elements/connectivity"].
+            set_external(vtkh::GetVTKMPointer(conn), conn.GetNumberOfValues());
+        }
+        else
+        {
+          output["topologies/"+topo_name+"/elements/connectivity"].
+            set(vtkh::GetVTKMPointer(conn), conn.GetNumberOfValues());
+        }
       }
       else if(vtkh::VTKMDataSetInfo::IsSingleCellShape(dyn_cells, shape_id))
       {
@@ -1697,8 +1786,16 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
                                                vtkm::TopologyElementTagPoint());
 
-        output["topologies/"+topo_name+"/elements/connectivity"].set(vtkh::GetVTKMPointer(conn),
-                                                                     conn.GetNumberOfValues());
+        if(zero_copy)
+        {
+          output["topologies/"+topo_name+"/elements/connectivity"].
+            set_external(vtkh::GetVTKMPointer(conn), conn.GetNumberOfValues());
+        }
+        else
+        {
+          output["topologies/"+topo_name+"/elements/connectivity"].
+            set(vtkh::GetVTKMPointer(conn), conn.GetNumberOfValues());
+        }
 
       }
       else
@@ -1715,32 +1812,58 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
 template<typename T, int N>
 void ConvertVecToNode(conduit::Node &output,
                       std::string path,
-                      vtkm::cont::ArrayHandle<vtkm::Vec<T,N>> &handle)
+                      vtkm::cont::ArrayHandle<vtkm::Vec<T,N>> &handle,
+                      bool zero_copy)
 {
   static_assert(N > 1 && N < 4, "Vecs must be size 2 or 3");
   output[path + "/type"] = "vector";
-  output[path + "/values/u"].set((T*) vtkh::GetVTKMPointer(handle),
-                                 handle.GetNumberOfValues(),
-                                 sizeof(T)*0,   // starting offset in bytes
-                                 sizeof(T)*N);  // stride in bytes
-  output[path + "/values/v"].set((T*) vtkh::GetVTKMPointer(handle),
-                                 handle.GetNumberOfValues(),
-                                 sizeof(T)*1,   // starting offset in bytes
-                                 sizeof(T)*N);  // stride in bytes
+  if(zero_copy)
+  {
+    output[path + "/values/u"].set_external((T*) vtkh::GetVTKMPointer(handle),
+                                            handle.GetNumberOfValues(),
+                                            sizeof(T)*0,   // starting offset in bytes
+                                            sizeof(T)*N);  // stride in bytes
+    output[path + "/values/v"].set_external((T*) vtkh::GetVTKMPointer(handle),
+                                            handle.GetNumberOfValues(),
+                                            sizeof(T)*1,   // starting offset in bytes
+                                            sizeof(T)*N);  // stride in bytes
+  }
+  else
+  {
+    output[path + "/values/u"].set((T*) vtkh::GetVTKMPointer(handle),
+                                   handle.GetNumberOfValues(),
+                                   sizeof(T)*0,   // starting offset in bytes
+                                   sizeof(T)*N);  // stride in bytes
+    output[path + "/values/v"].set((T*) vtkh::GetVTKMPointer(handle),
+                                   handle.GetNumberOfValues(),
+                                   sizeof(T)*1,   // starting offset in bytes
+                                   sizeof(T)*N);  // stride in bytes
+  }
   if(N == 3)
   {
 
-    output[path + "/values/w"].set((T*) vtkh::GetVTKMPointer(handle),
-                                   handle.GetNumberOfValues(),
-                                   sizeof(T)*2,   // starting offset in bytes
-                                   sizeof(T)*N);  // stride in bytes
+    if(zero_copy)
+    {
+      output[path + "/values/w"].set_external((T*) vtkh::GetVTKMPointer(handle),
+                                              handle.GetNumberOfValues(),
+                                              sizeof(T)*2,   // starting offset in bytes
+                                              sizeof(T)*N);  // stride in bytes
+    }
+    else
+    {
+      output[path + "/values/w"].set((T*) vtkh::GetVTKMPointer(handle),
+                                     handle.GetNumberOfValues(),
+                                     sizeof(T)*2,   // starting offset in bytes
+                                     sizeof(T)*N);  // stride in bytes
+    }
   }
 }
 
 void
 VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
                                       const vtkm::cont::Field &field,
-                                      const std::string topo_name)
+                                      const std::string topo_name,
+                                      bool zero_copy)
 {
   std::string name = field.GetName();
   std::string path = "fields/" + name;
@@ -1767,25 +1890,57 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Float32>;
     HandleType handle = dyn_handle.Cast<HandleType>();
-    output[path + "/values"].set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    if(zero_copy)
+    {
+      output[path + "/values"].
+        set_external(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    }
+    else
+    {
+      output[path + "/values"].  set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    }
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Float64>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Float64>;
     HandleType handle = dyn_handle.Cast<HandleType>();
-    output[path + "/values"].set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    if(zero_copy)
+    {
+      output[path + "/values"].
+        set_external(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    }
+    else
+    {
+      output[path + "/values"].  set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    }
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int8>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Int8>;
     HandleType handle = dyn_handle.Cast<HandleType>();
-    output[path + "/values"].set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    if(zero_copy)
+    {
+      output[path + "/values"].
+        set_external(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    }
+    else
+    {
+      output[path + "/values"].  set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    }
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int32>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Int32>;
     HandleType handle = dyn_handle.Cast<HandleType>();
-    output[path + "/values"].set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    if(zero_copy)
+    {
+      output[path + "/values"].
+        set_external(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    }
+    else
+    {
+      output[path + "/values"].  set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    }
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int64>>())
   {
@@ -1798,49 +1953,65 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::UInt32>;
     HandleType handle = dyn_handle.Cast<HandleType>();
-    output[path + "/values"].set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    if(zero_copy)
+    {
+      output[path + "/values"].
+        set_external(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    }
+    else
+    {
+      output[path + "/values"].  set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    }
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::UInt8>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::UInt8>;
     HandleType handle = dyn_handle.Cast<HandleType>();
-    output[path + "/values"].set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    if(zero_copy)
+    {
+      output[path + "/values"].
+        set_external(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    }
+    else
+    {
+      output[path + "/values"].  set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+    }
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
     HandleType handle = dyn_handle.Cast<HandleType>();
-    ConvertVecToNode(output, path, handle);
+    ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
     HandleType handle = dyn_handle.Cast<HandleType>();
-    ConvertVecToNode(output, path, handle);
+    ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,3>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,3>>;
     HandleType handle = dyn_handle.Cast<HandleType>();
-    ConvertVecToNode(output, path, handle);
+    ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>;
     HandleType handle = dyn_handle.Cast<HandleType>();
-    ConvertVecToNode(output, path, handle);
+    ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>;
     HandleType handle = dyn_handle.Cast<HandleType>();
-    ConvertVecToNode(output, path, handle);
+    ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,2>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,2>>;
     HandleType handle = dyn_handle.Cast<HandleType>();
-    ConvertVecToNode(output, path, handle);
+    ConvertVecToNode(output, path, handle, zero_copy);
   }
   else
   {
@@ -1850,7 +2021,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
 }
 
 void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collection,
-                                                       conduit::Node &node)
+                                                       conduit::Node &node,
+                                                       bool zero_copy)
 {
   node.reset();
 
@@ -1872,7 +2044,7 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
     {
       const std::string topo_name = topo_it.first;
       vtkm::cont::DataSet &dataset = topo_it.second;
-      VTKHDataAdapter::VTKmToBlueprintDataSet(&dataset, dom, topo_name);
+      VTKHDataAdapter::VTKmToBlueprintDataSet(&dataset, dom, topo_name, zero_copy);
     }
   }
 
@@ -1891,7 +2063,8 @@ VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
     vtkm::Id domain_id;
     int cycle = dset->GetCycle();
     dset->GetDomain(i, vtkm_dom, domain_id);
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom);
+#warning "add zero_copy path"
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom, "topo", false);
     dom["state/domain_id"] = (int) domain_id;
     dom["state/cycle"] = cycle;
   }
@@ -1900,14 +2073,15 @@ VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
 void
 VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
                                         conduit::Node &node,
-                                        const std::string topo_name)
+                                        const std::string topo_name,
+                                        bool zero_copy)
 {
   //
   // with vtkm, we have no idea what the type is of anything inside
   // dataset, so we have to ask all fields, cell sets anc coordinate systems.
   //
 
-  bool is_empty = VTKmTopologyToBlueprint(node, *dset, topo_name);
+  bool is_empty = VTKmTopologyToBlueprint(node, *dset, topo_name, zero_copy);
 
   if(!is_empty)
   {
@@ -1915,7 +2089,7 @@ VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
     for(vtkm::Id i = 0; i < num_fields; ++i)
     {
       vtkm::cont::Field field = dset->GetField(i);
-      VTKmFieldToBlueprint(node, field, topo_name);
+      VTKmFieldToBlueprint(node, field, topo_name, zero_copy);
     }
   }
 }
