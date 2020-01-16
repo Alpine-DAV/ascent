@@ -3856,6 +3856,22 @@ VTKHRenderingSplit::verify_params(const conduit::Node &params,
     return res;
 }
 
+bool 
+decide_extract(const float avg, const float vis_budget)
+{
+  // TODO: calculate based on budget
+  float max_time = 200.;
+
+  if (avg > max_time)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
 //-----------------------------------------------------------------------------
 void
 VTKHRenderingSplit::execute()
@@ -3873,10 +3889,10 @@ VTKHRenderingSplit::execute()
     std::vector<std::vector<double>> *render_times = input<std::vector<std::vector<double>> >(0);
 
     // relative amount of visualization budget [0,1]
-    double vis_budget = 0.1;  // default to 10%
+    float vis_budget = 0.1;  // default to 10%
     if(params().has_path("vis_budget"))
     {
-      vis_budget = params()["vis_budget"].to_double();
+      vis_budget = params()["vis_budget"].to_float();
       if(vis_budget <= 0. || vis_budget > 1.)
       {
         ASCENT_ERROR("vtkh_rendering_split 'vis_budget' value '"<<vis_budget<<"'"
@@ -3886,9 +3902,38 @@ VTKHRenderingSplit::execute()
     }
 
     // DEBUG output
-    for (const auto &a : render_times->at(0))
-      std::cout << a << " "; 
-    std::cout << " frame render times in (RenderingSplit)" << std::endl;
+    // for (const auto &a : render_times->at(0))
+    //   std::cout << a << " "; 
+    float avg = accumulate(render_times->at(0).begin(), render_times->at(0).end(), 0.0) 
+                / render_times->at(0).size();  
+    std::cout << "~~~" << avg << " average frame time (RenderingSplit) " 
+              << render_times->at(0).size() << std::endl;
+
+    int rank = -1;
+    int total_ranks = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_size(mpi_comm, &total_ranks);
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
+    if (decide_extract(avg, vis_budget))
+    {
+      std::cout << "~~~rank " << rank
+                << " should send extract because of high average frame time: " 
+                << avg << std::endl;
+
+      // TODO make extract and send off to vis nodes
+    }
+
+    // mpi barrier sync ?
+    if (rank == 0)
+    {
+      std::cout << total_ranks << std::endl;
+      // // split the current comm into two comms
+      // Mpi_Comm_Spilt(my_comm, render_ranks, new_comm)
+
+    }
 
 
     // Matt's pseudo code
