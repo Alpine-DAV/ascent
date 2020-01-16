@@ -45,7 +45,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_python_script_filter.hpp
+/// file: ascent_python_script_filter.hpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -57,17 +57,17 @@
 /// python interpreter
 
 
-#ifndef FLOW_PYTHON_SCRIPT_FILTER_HPP
-#define FLOW_PYTHON_SCRIPT_FILTER_HPP
+#ifndef ASCENT_PYTHON_SCRIPT_FILTER_HPP
+#define ASCENT_PYTHON_SCRIPT_FILTER_HPP
 
-#include <flow_exports.h>
-#include <flow_config.h>
+#include <ascent_exports.h>
+#include <ascent_data_object.hpp>
 
-#include <flow_filter.hpp>
+#include <flow/filters/flow_python_script_filter.hpp>
 
 
 //-----------------------------------------------------------------------------
-// -- begin flow:: --
+// -- begin ascent:: --
 //-----------------------------------------------------------------------------
 namespace flow
 {
@@ -75,9 +75,14 @@ namespace flow
 class PythonInterpreter;
 
 //-----------------------------------------------------------------------------
-// -- begin flow::filters --
+// -- begin ascent::runtime--
 //-----------------------------------------------------------------------------
-namespace filters
+namespace runtime
+{
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::filters--
+//-----------------------------------------------------------------------------
+namespace fitlers
 {
 
 //-----------------------------------------------------------------------------
@@ -87,37 +92,35 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class FLOW_API PythonScript : public ::flow::Filter
+class ASCENT_API AscentPythonScript : public ::flow::PythonScript
 {
 public:
-    PythonScript();
-   ~PythonScript();
+    AscnetPythonScript();
+   ~AscnetPythonScript();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-
-protected:
-    void execute_python(PyObject *py_input);
-private:
-
-    static flow::PythonInterpreter *interpreter();
-    static flow::PythonInterpreter *m_interp;
+    virtual void   declare_interface(conduit::Node &i) override;
+    virtual void   execute() override;
 };
 
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end flow::filters --
+// -- end ascent::runtime::filters--
 //-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end flow:: --
+// -- end ascent::runtime--
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent:: --
 //-----------------------------------------------------------------------------
 
 
