@@ -99,7 +99,7 @@ public:
     virtual void   execute();
 
 protected:
-    void execute_python(PyObject *py_input);
+    void execute_python(conduit::Node *n);
 private:
 
     static flow::PythonInterpreter *interpreter();

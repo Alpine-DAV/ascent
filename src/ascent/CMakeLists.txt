@@ -156,14 +156,6 @@ set(ascent_headers
     # hola
     hola/ascent_hola.hpp)
 
-if(PYTHON_FOUND)
-   list(APPEND ascent_sources
-        runtimes/flow_filters/ascent_python_script_filter.cpp)
-
-   list(APPEND ascent_headers
-        runtimes/flow_filters/ascent_python_script_filter.hpp)
-endif()
-
 if(VTKM_FOUND)
 
     set(ascent_vtkh_dep_headers
@@ -225,7 +217,13 @@ endif()
 # support was selected
 ################################
 if(PYTHON_FOUND)
-    add_subdirectory(python)
+   add_subdirectory(python)
+
+   list(APPEND ascent_sources
+        runtimes/flow_filters/ascent_python_script_filter.cpp)
+
+   list(APPEND ascent_headers
+        runtimes/flow_filters/ascent_python_script_filter.hpp)
 endif()
 
 ##################
@@ -237,10 +235,6 @@ set(ascent_thirdparty_libs
     ascent_flow
     ascent_lodepng)
 
-if(PYTHON_FOUND)
-   # allow ascnt to link with python
-   list(APPEND ascent_thirdparty_libs python)
-endif()
 ##################
 # optional libs
 ##################

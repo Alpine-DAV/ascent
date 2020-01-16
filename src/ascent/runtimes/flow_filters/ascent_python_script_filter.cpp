@@ -49,19 +49,9 @@
 ///
 //-----------------------------------------------------------------------------
 
-// always include python's headers first
-#include <Python.h>
-
 #include "ascent_python_script_filter.hpp"
 
-// standard lib includes
-#include <iostream>
-#include <string.h>
-#include <limits.h>
-#include <cstdlib>
 
-// conduit python module capi header
-#include "conduit_python.hpp"
 //-----------------------------------------------------------------------------
 // flow includes
 //-----------------------------------------------------------------------------
@@ -117,29 +107,16 @@ AscentPythonScript::execute()
 {
     // make sure we have our interpreter setup b/c
     // we need the python env ready
-
-    PythonInterpreter *py_interp = interpreter();
-
-    PyObject *py_input = NULL;
-
-    if(input(0).check_type<PyObject>())
+    if(!input(0).check_type<DataObject>())
     {
-        // input is already have python
-        py_input = input<PyObject>(0);
-    }
-    else if(input(0).check_type<conduit::Node>())
-    {
-        // input is conduit node, wrap into python
-        conduit::Node *n = input<conduit::Node>(0);
-        py_input = PyConduit_Node_Python_Wrap(n,0);
-    }
-    else
-    {
-        CONDUIT_ERROR("python_script input must be a python object "
-                      "or a conduit::Node");
+        ASCENT_ERROR("AscentPythonScript input must be a DataObject");
     }
 
-    execute_python(py_input);
+    DataObject *data_object = input<DataObject>(0)
+
+    conduit::Node *n_input = data_object->as_node();
+
+    execute_python(n_input);
 }
 
 //-----------------------------------------------------------------------------

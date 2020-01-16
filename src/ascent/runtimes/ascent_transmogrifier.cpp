@@ -50,7 +50,9 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_transmogrifier.hpp"
+#if defined(ASCENT_MFEM_ENABLED)
 #include "ascent_mfem_data_adapter.hpp"
+#endif
 #include "ascent_logging.hpp"
 
 //-----------------------------------------------------------------------------

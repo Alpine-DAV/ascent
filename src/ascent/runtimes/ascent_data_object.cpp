@@ -56,7 +56,6 @@
 #include "ascent_vtkh_data_adapter.hpp"
 #endif
 
-#include "ascent_mfem_data_adapter.hpp"
 #include "ascent_transmogrifier.hpp"
 
 #include <ascent_logging.hpp>
@@ -159,12 +158,17 @@ std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
 
 std::shared_ptr<conduit::Node>  DataObject::as_high_order_bp()
 {
+
+#ifdef ASCENT_MFEM_ENABLED
   if(m_high_bp!= nullptr)
   {
     return m_high_bp;
   }
 
   ASCENT_ERROR("converting from low order to high order is not currenlty supported");
+#else
+  ASCENT_ERROR("Cannot provide high order blueprint. MFEM support not enabled.");
+#endif
 
   return nullptr;
 }
