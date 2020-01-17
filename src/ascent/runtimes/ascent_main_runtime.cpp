@@ -410,29 +410,8 @@ AscentRuntime::CreateDefaultFilters()
     w.graph().connect("source",
                       "verify",
                       0);        // default port
-    // conver high order MFEM meshes to low order
-    //conduit::Node low_params;
-    //w.graph().add_filter("ensure_low_order",
-    //                     "low_order",
-    //                     low_params);
 
-    //w.graph().connect("verify",
-    //                  "low_order",
-    //                  0);        // default port
-
-    //conduit::Node vtkh_params;
-    //vtkh_params["zero_copy"] = "true";
-
-
-    //w.graph().add_filter("ensure_vtkh",
-    //                     "vtkh_data",
-    //                     vtkh_params);
-
-    //w.graph().connect("low_order",
-    //                  "vtkh_data",
-    //                  0);        // default port
-#warning "This needs to be rethought"
-      // garbage zones have a value of 2
+    // garbage zones have a value of 2
     conduit::Node threshold_params;
     threshold_params["field"] = m_ghost_field_name;
     threshold_params["min_value"] = 0;
@@ -568,7 +547,7 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   // current special case filter setup
   if(extract_type == "python")
   {
-    filter_name = "python_script";
+    filter_name = "ascent_python_script";
 
     // customize the names of the script integration module and funcs
     params["interface/module"] = "ascent_extract";
@@ -638,7 +617,7 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   }
   else if(extract_type == "jupyter")
   {
-    filter_name = "python_script";
+    filter_name = "ascent_python_script";
 
     // customize the names of the script integration module and funcs
     params["interface/module"] = "ascent_extract";
@@ -687,22 +666,6 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
                  << " already exists");
   }
 
-  // currently these are special cases.
-  // TODO:
-  //bool special = false;
-  //if(extract_type == "xray" ||
-  //   extract_type == "volume" ||
-  //   extract_type == "histogram" ||
-  //   extract_type == "statistics") special = true;
-
-  //std::string ensure_name = "ensure_blueprint_" + extract_name;
-  //conduit::Node empty_params;
-  //if(!special)
-  //{
-  //  w.graph().add_filter("ensure_blueprint",
-  //                       ensure_name,
-  //                       empty_params);
-  //}
 
   w.graph().add_filter(filter_name,
                        extract_name,
@@ -719,25 +682,10 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   }
   else
   {
-    // this is the blueprint mesh
     extract_source = "source";
-    //current special case
-   // if(special)
-   // {
-   //   extract_source = "default";
-   // }
 
   }
-  //if(!special)
-  //{
-    //m_connections[ensure_name] = extract_source;
-    //m_connections[extract_name] = ensure_name;
-    m_connections[extract_name] = extract_source;
-  //}
-  //else
-  //{
-  //  m_connections[extract_name] = extract_source;
-  //}
+  m_connections[extract_name] = extract_source;
 
 }
 //-----------------------------------------------------------------------------

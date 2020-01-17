@@ -63,16 +63,14 @@
 #include <ascent_exports.h>
 #include <ascent_data_object.hpp>
 
-#include <flow/filters/flow_python_script_filter.hpp>
+#include <flow_python_script_filter.hpp>
 
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
-namespace flow
+namespace ascent
 {
-
-class PythonInterpreter;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent::runtime--
@@ -82,7 +80,7 @@ namespace runtime
 //-----------------------------------------------------------------------------
 // -- begin ascent::runtime::filters--
 //-----------------------------------------------------------------------------
-namespace fitlers
+namespace filters
 {
 
 //-----------------------------------------------------------------------------
@@ -92,11 +90,11 @@ namespace fitlers
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class ASCENT_API AscentPythonScript : public ::flow::PythonScript
+class ASCENT_API AscentPythonScript : public ::flow::filters::PythonScript
 {
 public:
-    AscnetPythonScript();
-   ~AscnetPythonScript();
+    AscentPythonScript();
+   ~AscentPythonScript();
 
     virtual void   declare_interface(conduit::Node &i) override;
     virtual void   execute() override;

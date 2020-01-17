@@ -731,12 +731,16 @@ VTKHGhostStripper::execute()
 
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+    //std::cout<<collection->summary()<<"\n";
+    //std::cout<<"topos "<<collection->number_of_topologies()<<"\n";;
 
     // ask what topology this field is associated with and
     // get the right data set
     std::string field_name = params()["field"].as_string();
 
+    std::cout<<"HERH\n";
     std::string topo_name = collection->field_topology(field_name);
+    std::cout<<"TOPO_name "<<topo_name<<"\n";
 
     bool field_exists = topo_name != "";
     // Check to see of the ghost field even exists

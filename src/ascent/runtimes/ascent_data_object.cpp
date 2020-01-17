@@ -119,7 +119,6 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
       vtkh_dset(VTKHDataAdapter::BlueprintToVTKHCollection(*m_low_bp, zero_copy));
 
      m_vtkh = vtkh_dset;
-
     return m_vtkh;
   }
 

@@ -158,7 +158,6 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_default_runtime)
     EXPECT_TRUE(check_test_image(output_file));
 }
 
-
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_render_3d, mpi_render_ranks_without_data)
 {
@@ -256,7 +255,6 @@ TEST(ascent_mpi_render_3d, mpi_render_ranks_without_data)
     // check that we created an image
     //EXPECT_TRUE(check_test_image(output_file));
 }
-
 
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_render_3d, mpi_render_no_data)

@@ -425,8 +425,8 @@ PythonScript::verify_params(const conduit::Node &params,
 //-----------------------------------------------------------------------------
 void PythonScript::execute_python(conduit::Node *n)
 {
-    PyObject * py_input = PyConduit_Node_Python_Wrap(n,0);
     PythonInterpreter *py_interp = interpreter();
+    PyObject * py_input = PyConduit_Node_Python_Wrap(n,0);
 
     PyObject *py_res = detail::execute_python(py_input, py_interp, params());
     set_output<PyObject>(py_res);

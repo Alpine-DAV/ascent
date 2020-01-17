@@ -56,16 +56,9 @@
 // flow includes
 //-----------------------------------------------------------------------------
 #include <flow_workspace.hpp>
-#include <flow_python_interpreter.hpp>
 
 using namespace conduit;
 using namespace std;
-
-//-----------------------------------------------------------------------------
-// -- begin ascent:: --
-//-----------------------------------------------------------------------------
-namespace ascent
-{
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -80,7 +73,7 @@ namespace filters
 {
 //-----------------------------------------------------------------------------
 AscentPythonScript::AscentPythonScript()
-:PythonScript()
+: PythonScript()
 {
 // empty
 }
@@ -112,9 +105,9 @@ AscentPythonScript::execute()
         ASCENT_ERROR("AscentPythonScript input must be a DataObject");
     }
 
-    DataObject *data_object = input<DataObject>(0)
+    DataObject *data_object = input<DataObject>(0);
 
-    conduit::Node *n_input = data_object->as_node();
+    conduit::Node *n_input = data_object->as_node().get();
 
     execute_python(n_input);
 }

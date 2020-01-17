@@ -52,15 +52,49 @@
 #include "ascent_vtkh_collection.hpp"
 #include "ascent_logging.hpp"
 
+#if defined(ASCENT_MPI_ENABLED)
+#include <mpi.h>
+#include <conduit_relay_mpi.hpp>
+#endif
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
 namespace ascent
 {
+namespace detail
+{
+//
+// returns true if all ranks say true
+//
+bool global_has(bool local)
+{
+  bool has = local;
+#if defined(ASCENT_MPI_ENABLED)
+
+  int local_boolean = local ? 1 : 0;
+  int global_boolean;
+  MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+  MPI_Allreduce((void *)(&local_boolean),
+                (void *)(&global_boolean),
+                1,
+                MPI_INT,
+                MPI_SUM,
+                mpi_comm);
+
+  if(global_boolean == 0)
+  {
+    has = false;
+  }
+#endif
+  return has;
+}
+
+} // namespace detail
 
 void VTKHCollection::add(vtkh::DataSet &dataset, const std::string topology_name)
 {
-  if(has_topology(topology_name))
+  bool has_topo = m_datasets.count(topology_name) != 0;
+  if(has_topo)
   {
     ASCENT_ERROR("VTKH collection already had topology '"<<topology_name<<"'");
   }
@@ -69,19 +103,53 @@ void VTKHCollection::add(vtkh::DataSet &dataset, const std::string topology_name
 
 bool VTKHCollection::has_topology(const std::string name) const
 {
-  return m_datasets.count(name) != 0;
-} std::string VTKHCollection::field_topology(const std::string field_name) {
+  bool has_topo = m_datasets.count(name) != 0;
+
+  return detail::global_has(has_topo);
+}
+
+std::string VTKHCollection::field_topology(const std::string field_name) {
   std::string topo_name = "";
+
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
     // Should we really have to ask an MPI questions? its safer
-    if(it->second.GlobalFieldExists(field_name))
+    if(it->second.FieldExists(field_name))
     {
       topo_name = it->first;
       break;
     }
   }
+#if defined(ASCENT_MPI_ENABLED)
+  // if the topology does not exist on this rank,
+  // but exists somewhere, we need to figure out what
+  // that name is for all ranks so all ranks
+  // can run the same code at the same time, avoiding deadlock
+  int rank;
+  MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+  MPI_Comm_rank(mpi_comm, &rank);
 
+  struct MaxLoc
+  {
+    double size;
+    int rank;
+  };
+
+  // there is no MPI_INT_INT so shove the "small" size into double
+  MaxLoc maxloc = {(double)topo_name.length(), rank};
+  MaxLoc maxloc_res;
+  MPI_Allreduce( &maxloc, &maxloc_res, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mpi_comm);
+
+  conduit::Node msg;
+  msg["topo"] = topo_name;
+  conduit::relay::mpi::broadcast_using_schema(msg,maxloc_res.rank,mpi_comm);
+
+  if(!msg["topo"].dtype().is_string())
+  {
+    ASCENT_ERROR("failed to broadcast topo name");
+  }
+  topo_name = msg["topo"].as_string();
+#endif
   return topo_name;
 }
 
@@ -140,11 +208,9 @@ VTKHCollection::cycle() const
 vtkh::DataSet&
 VTKHCollection::dataset_by_topology(const std::string topology_name)
 {
-  if(!has_topology(topology_name))
-  {
-    ASCENT_ERROR("VTKH collection has no topology '"<<topology_name<<"'");
-  }
-
+  // this will return a empty dataset if this rank
+  // does not actually have this topo, but it exists
+  // globally
   return m_datasets[topology_name];
 }
 

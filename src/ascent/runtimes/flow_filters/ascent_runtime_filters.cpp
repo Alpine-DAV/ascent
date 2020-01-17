@@ -69,6 +69,10 @@
     #include <ascent_runtime_rover_filters.hpp>
 #endif
 
+#if defined(ASCENT_PYTHON_ENABLED)
+    #include <ascent_python_script_filter.hpp>
+#endif
+
 #ifdef ASCENT_MPI_ENABLED
     #include <ascent_runtime_hola_filters.hpp>
 #if defined(ASCENT_ADIOS_ENABLED)
@@ -155,10 +159,14 @@ register_builtin()
 #if defined(ASCENT_MPI_ENABLED)
     AscentRuntime::register_filter_type<HolaMPIExtract>("extracts","hola_mpi");
 
-#if defined(ASCENT_ADIOS_ENABLED)
+   #if defined(ASCENT_ADIOS_ENABLED)
     AscentRuntime::register_filter_type<ADIOS>("extracts","adios");
+   #endif
+
 #endif
 
+#if defined(ASCENT_PYTHON_ENABLED)
+    AscentRuntime::register_filter_type<AscentPythonScript>();
 #endif
 
 }

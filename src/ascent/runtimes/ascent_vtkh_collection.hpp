@@ -78,23 +78,32 @@ protected:
 public:
   void add(vtkh::DataSet &dataset, const std::string topology_name);
 
+  // returns true if the topology exists on any rank
   bool has_topology(const std::string name) const;
 
+  // returns true if the field exists on any rank
   bool has_field(const std::string field_name) const;
 
+  // returns the local summary
   std::string summary() const;
 
-  // returns empty string if field not present
+  // returns empty string if field not present on
+  // any rank
   std::string field_topology(const std::string field_name);
 
+  // returns an empty dataset if topology does not exist on
+  // this rank
   vtkh::DataSet &dataset_by_topology(const std::string topology_name);
 
   vtkm::Bounds global_bounds() const;
 
+  // returns the local topology names
   std::vector<std::string> topology_names() const;
 
+  // returns the local domain ids
   std::vector<vtkm::Id> domain_ids() const;
 
+  // returns the local number of topologies
   int number_of_topologies() const;
 
   int cycle() const;
