@@ -44,25 +44,27 @@
 
 ###############################################################################
 #
-# file: src/examples/CMakeLists.txt
+# BabelFlow PMT example that reads an output file
+# Usage: mpirun -n N ./ascent_babelflow_example -f <input_data> 
+# 		-d <Xdim> <Ydim> <Zdim> -p <dx> <dy> <dz> -m <fanin> -t <threshold>
 #
-###############################################################################
-add_subdirectory(proxies/lulesh2.0.3)
-add_subdirectory(proxies/kripke)
-add_subdirectory(proxies/cloverleaf3d-ref)
-add_subdirectory(synthetic/noise)
-add_subdirectory(paraview-vis)
+##############################################################################
 
-if(MFEM_FOUND)
-  add_subdirectory(proxies/laghos)
+
+set(ascent_babelflow_example_sources
+    ascent_babelflow_example.cpp)
+
+set(ascent_babelflow_example_header)
+
+if(MPI_FOUND)
+	set(ascent_babelflow_example_deps ascent_mpi BabelFlow::babelflow ${MPI_CXX_LIBRARIES} PMT::pmt)
+
+    blt_add_executable(
+        NAME        ascent_babelflow_example
+        SOURCES     ${ascent_babelflow_example_sources}
+        DEPENDS_ON  ${ascent_babelflow_example_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
 endif()
-
-if(ENABLE_BABELFLOW)
-  add_subdirectory(babelflow/pmt)
-endif()
-
-# install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python tutorial 
-        DESTINATION examples/ascent)
 
 
