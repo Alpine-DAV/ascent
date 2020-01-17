@@ -2052,7 +2052,8 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
 
 void
 VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
-                                        conduit::Node &node)
+                                        conduit::Node &node,
+                                        bool zero_copy)
 {
   node.reset();
   const int num_doms = dset->GetNumberOfDomains();
@@ -2063,8 +2064,7 @@ VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
     vtkm::Id domain_id;
     int cycle = dset->GetCycle();
     dset->GetDomain(i, vtkm_dom, domain_id);
-#warning "add zero_copy path"
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom, "topo", false);
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom, "topo", zero_copy);
     dom["state/domain_id"] = (int) domain_id;
     dom["state/cycle"] = cycle;
   }

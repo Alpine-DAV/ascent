@@ -129,7 +129,8 @@ public:
                                                     bool zero_copy);
 
     static void              VTKHToBlueprintDataSet(vtkh::DataSet *dset,
-                                                    conduit::Node &node);
+                                                    conduit::Node &node,
+                                                    bool zero_copy);
 
     static void              VTKHCollectionToBlueprintDataSet(VTKHCollection *collection,
                                                               conduit::Node &node,
