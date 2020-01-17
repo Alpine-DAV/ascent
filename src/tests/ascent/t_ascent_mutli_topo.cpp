@@ -166,14 +166,29 @@ TEST(ascent_multi_topo, test_render)
     //
 
     conduit::Node scenes;
-    //scenes["s1/plots/p1/type"] = "volume";
-    //scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/type"] = "volume";
+    //scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/color_table/name"] = "Inferno";
+    conduit::Node & cp = scenes["s1/plots/p1/color_table/control_points"];
+    conduit::Node &p1 = cp.append();
+    p1["type"] = "alpha";
+    p1["position"] = 0.0f;
+    p1["alpha"] = 0.8f;
+
+    conduit::Node &p2 = cp.append();
+    p2["type"] = "alpha";
+    p2["position"] = 0.8f;
+    p2["alpha"] = 0.0f;
 
     scenes["s1/plots/p2/type"] = "pseudocolor";
     scenes["s1/plots/p2/field"] = "point_braid";
-    scenes["s1/plots/p2/points/radius"] = 1.f;
+    scenes["s1/plots/p2/points/radius"] = .5f;
 
-    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/annotations"] = "false";
+    scenes["s1/renders/r1/camera/azimuth"] = 30;
+    scenes["s1/renders/r1/camera/elevation"] = 11;
 
     conduit::Node actions;
     // add the scenes
