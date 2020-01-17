@@ -738,9 +738,7 @@ VTKHGhostStripper::execute()
     // get the right data set
     std::string field_name = params()["field"].as_string();
 
-    std::cout<<"HERH\n";
     std::string topo_name = collection->field_topology(field_name);
-    std::cout<<"TOPO_name "<<topo_name<<"\n";
 
     bool field_exists = topo_name != "";
     // Check to see of the ghost field even exists

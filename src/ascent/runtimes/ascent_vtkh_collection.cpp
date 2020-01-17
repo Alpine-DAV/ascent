@@ -141,14 +141,14 @@ std::string VTKHCollection::field_topology(const std::string field_name) {
   MPI_Allreduce( &maxloc, &maxloc_res, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mpi_comm);
 
   conduit::Node msg;
-  msg["topo"] = topo_name;
+  msg = topo_name;
   conduit::relay::mpi::broadcast_using_schema(msg,maxloc_res.rank,mpi_comm);
 
-  if(!msg["topo"].dtype().is_string())
+  if(!msg.dtype().is_string())
   {
     ASCENT_ERROR("failed to broadcast topo name");
   }
-  topo_name = msg["topo"].as_string();
+  topo_name = msg.as_string();
 #endif
   return topo_name;
 }

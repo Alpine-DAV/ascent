@@ -78,7 +78,7 @@ void build_multi_topo(Node &data)
   Node verify_info;
   Node &dom = data.append();
 
-  conduit::blueprint::mesh::examples::braid("hexs",
+  conduit::blueprint::mesh::examples::braid("uniform",
                                             EXAMPLE_MESH_SIDE_DIM,
                                             EXAMPLE_MESH_SIDE_DIM,
                                             EXAMPLE_MESH_SIDE_DIM,
@@ -131,9 +131,9 @@ TEST(ascent_multi_topo, adapter_test)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(out_data, verify_info));
     delete collection;
 }
-#if 0
+
 //-----------------------------------------------------------------------------
-TEST(ascent_log, test_log)
+TEST(ascent_multi_topo, test_render)
 {
     Node n;
     ascent::about(n);
@@ -150,11 +150,11 @@ TEST(ascent_log, test_log)
     Node data;
     build_multi_topo(data);
 
-    ASCENT_INFO("Testing log of field");
+    ASCENT_INFO("Render multiple topologies");
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_log_field");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_multi_topo");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -164,30 +164,16 @@ TEST(ascent_log, test_log)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "vector_magnitude";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "vel";         // name of the vector field
-    params["output_name"] = "mag";   // name of the output field
-
-    pipelines["pl1/f2/type"] = "log";
-    conduit::Node &params2 = pipelines["pl1/f2/params"];
-    params2["field"] = "mag";             // name of the input field
-    params2["output_name"] = "log_mag";   // name of the output field
-
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "log_mag";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/plots/p1/type"] = "volume";
+    scenes["s1/plots/p1/field"] = "braid";
+
+    scenes["s1/plots/p2/type"] = "pseudocolor";
+    scenes["s1/plots/p2/field"] = "point_braid";
 
     scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
     // add the scenes
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
@@ -208,10 +194,9 @@ TEST(ascent_log, test_log)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the log filter.";
+    std::string msg = "Example of rendering multiple topologies";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
-#endif
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
