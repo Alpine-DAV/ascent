@@ -731,8 +731,6 @@ VTKHGhostStripper::execute()
 
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
-    //std::cout<<collection->summary()<<"\n";
-    //std::cout<<"topos "<<collection->number_of_topologies()<<"\n";;
 
     // ask what topology this field is associated with and
     // get the right data set
@@ -1289,59 +1287,6 @@ VTKHIsoVolume::execute()
     delete clip_output;
     set_output<DataObject>(res);
 }
-
-
-#if 0
-//-----------------------------------------------------------------------------
-EnsureVTKM::EnsureVTKM()
-:Filter()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-EnsureVTKM::~EnsureVTKM()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-void
-EnsureVTKM::declare_interface(Node &i)
-{
-    i["type_name"]   = "ensure_vtkm";
-    i["port_names"].append() = "in";
-    i["output_port"] = "true";
-}
-
-
-//-----------------------------------------------------------------------------
-void
-EnsureVTKM::execute()
-{
-#if !defined(ASCENT_VTKM_ENABLED)
-        ASCENT_ERROR("ascent was not built with VTKm support!");
-#else
-    if(input(0).check_type<vtkm::cont::DataSet>())
-    {
-        set_output(input(0));
-    }
-    else if(input(0).check_type<Node>())
-    {
-        bool zero_copy = false;
-        // convert from conduit to vtkm
-        const Node *n_input = input<Node>(0);
-        const std::vector<std::string> &topologies = n_input->child(0)["topologies"].child_names();
-        vtkm::cont::DataSet  *res = VTKHDataAdapter::BlueprintToVTKmDataSet(*n_input, zero_copy, topologies[0]);
-        set_output<vtkm::cont::DataSet>(res);
-    }
-    else
-    {
-        ASCENT_ERROR("unsupported input type for ensure_vtkm");
-    }
-#endif
-}
-#endif
 //-----------------------------------------------------------------------------
 
 VTKHLagrangian::VTKHLagrangian()
