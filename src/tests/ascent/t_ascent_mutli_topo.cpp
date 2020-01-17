@@ -70,7 +70,7 @@ using namespace conduit;
 using namespace ascent;
 
 
-index_t EXAMPLE_MESH_SIDE_DIM = 2;
+index_t EXAMPLE_MESH_SIDE_DIM = 10;
 // outputs a mutli domain(size 1) multiple topo data
 // set
 void build_multi_topo(Node &data)
@@ -94,6 +94,7 @@ void build_multi_topo(Node &data)
   dom["state/domain_id"] = (int)0;
 
   dom["topologies/point_mesh"] = point_data["topologies/mesh"];
+  dom["topologies/point_mesh/coordset"] = "point_coords";
   dom["coordsets/point_coords"] = point_data["coordsets/coords"];
   dom["fields/point_braid"] = point_data["fields/braid"];
   dom["fields/point_braid/topology/"] = "point_mesh";
@@ -165,11 +166,12 @@ TEST(ascent_multi_topo, test_render)
     //
 
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"] = "volume";
-    scenes["s1/plots/p1/field"] = "braid";
+    //scenes["s1/plots/p1/type"] = "volume";
+    //scenes["s1/plots/p1/field"] = "braid";
 
     scenes["s1/plots/p2/type"] = "pseudocolor";
     scenes["s1/plots/p2/field"] = "point_braid";
+    scenes["s1/plots/p2/points/radius"] = 1.f;
 
     scenes["s1/image_prefix"] = output_file;
 

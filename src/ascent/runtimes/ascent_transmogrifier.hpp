@@ -53,10 +53,6 @@
 #define ASCENT_TRANSMOGRIGIFIER_HPP
 
 #include <flow_filter.hpp>
-#include "ascent_vtkh_collection.hpp"
-#include <vtkh/DataSet.hpp>
-#include <map>
-#include <memory>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
