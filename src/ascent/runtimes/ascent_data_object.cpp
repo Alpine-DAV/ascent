@@ -174,6 +174,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_high_order_bp()
 
 std::shared_ptr<conduit::Node>  DataObject::as_node()
 {
+#if defined(ASCENT_VTKM_ENABLED)
   if(m_source == Source::VTKH && m_low_bp == nullptr)
   {
     conduit::Node *out_data = new conduit::Node();
@@ -183,6 +184,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_node()
     std::shared_ptr<conduit::Node> bp(out_data);
     m_low_bp = bp;
   }
+#endif
   if(m_high_bp != nullptr)
   {
     return m_high_bp;
