@@ -1705,14 +1705,23 @@ VTKHHistSampling::execute()
     // TODO: write helper functions for this
     std::string ghost_field = "";
     Node * meta = graph().workspace().registry().fetch<Node>("metadata");
-#warning "fix topo ghost zone name"
+
     if(meta->has_path("ghost_field"))
     {
-      ghost_field = (*meta)["ghost_field"].as_string();
-      if(!data.GlobalFieldExists(ghost_field))
+
+      // there can be multiple ghost fields on different topologies
+      // We should only find one(max) associated with this vtkh data set
+      const conduit::Node ghost_list = (*meta)["ghost_field"];
+      const int num_ghosts = ghost_list.number_of_children();
+
+      for(int i = 0; i < num_ghosts; ++i)
       {
-        // can't find it
-        ghost_field = "";
+        std::string ghost = ghost_list.child(i).as_string();
+        if(data.GlobalFieldExists(ghost_field))
+        {
+          ghost_field = ghost;
+          break;
+        }
       }
 
     }

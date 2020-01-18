@@ -129,9 +129,9 @@ AscentRuntime::AscentRuntime()
 :Runtime(),
  m_data_object(new conduit::Node()), // trust me
  m_refinement_level(2), // default refinement level for high order meshes
- m_rank(0),
- m_ghost_field_name("ascent_ghosts")
+ m_rank(0)
 {
+    m_ghost_fields.append() = "ascent_ghosts";
     flow::filters::register_builtin();
     ResetInfo();
 }
@@ -222,7 +222,29 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
     if(options.has_path("ghost_field_name"))
     {
-      m_ghost_field_name = options["ghost_field_name"].as_string();
+      if(options["ghost_field_name"].dtype().is_string())
+      {
+        m_ghost_fields.reset();
+
+        std::string ghost_name = options["ghost_field_name"].as_string();
+        m_ghost_fields.append() = ghost_name;
+      }
+      else if(options["ghost_field_name"].dtype().is_list())
+      {
+        const int num_children = options["ghost_field_name"].number_of_children();
+        for(int i = 0; i < num_children; ++i)
+        {
+          const conduit::Node &child = options["ghost_field_name"].child(i);
+          if(!child.dtype().is_string())
+          {
+            ASCENT_ERROR("ghost_field_name list child is not a string");
+          }
+        }
+      }
+      else
+      {
+        ASCENT_ERROR("ghost_field_name is not a string or a list");
+      }
     }
 
     // standard flow filters
@@ -413,19 +435,50 @@ AscentRuntime::CreateDefaultFilters()
                       "verify",
                       0);        // default port
 
-    // garbage zones have a value of 2
-    conduit::Node threshold_params;
-    threshold_params["field"] = m_ghost_field_name;
-    threshold_params["min_value"] = 0;
-    threshold_params["max_value"] = 1;
+    // we can have multiple ghost fields
+    std::vector<std::string> ghost_fields;
+    const int num_children = m_ghost_fields.number_of_children();
+    for(int i = 0; i < num_children; ++i)
+    {
+      ghost_fields.push_back(m_ghost_fields.child(i).as_string());
+    }
 
-    w.graph().add_filter("vtkh_ghost_stripper",
-                         end_filter,
-                         threshold_params);
+    std::string prev_filter = "verify";
+    std::string first_stripper;
+    const int num_ghosts = ghost_fields.size();
+    for(int i = 0; i < num_ghosts; ++i)
+    {
+      std::string filter_name;
+      if(i == num_ghosts - 1)
+      {
+        filter_name = end_filter;
+      }
+      else
+      {
+        filter_name = end_filter + "_" + ghost_fields[i];
+      }
 
-    w.graph().connect("verify",
-                      end_filter,
-                      0);        // default port
+      if(i == 0)
+      {
+        first_stripper = filter_name;
+      }
+      // garbage zones have a value of 2
+      conduit::Node threshold_params;
+      threshold_params["field"] = ghost_fields[i];
+      threshold_params["min_value"] = 0;
+      threshold_params["max_value"] = 1;
+
+      w.graph().add_filter("vtkh_ghost_stripper",
+                           filter_name,
+                           threshold_params);
+
+      w.graph().connect(prev_filter,
+                        filter_name,
+                        0);        // default port
+
+      prev_filter = filter_name;
+    }
+
 
     return end_filter;
 }
@@ -783,18 +836,49 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
   std::string strip_name = plot_source + "_strip_real_ghosts";
   if(!w.graph().has_filter(strip_name))
   {
-    conduit::Node threshold_params;
-    threshold_params["field"] = m_ghost_field_name;
-    threshold_params["min_value"] = 0;
-    threshold_params["max_value"] = 0;
+    // we can have multiple ghost fields
+    std::vector<std::string> ghost_fields;
+    const int num_children = m_ghost_fields.number_of_children();
+    for(int i = 0; i < num_children; ++i)
+    {
+      ghost_fields.push_back(m_ghost_fields.child(i).as_string());
+    }
 
-    w.graph().add_filter("vtkh_ghost_stripper",
-                         strip_name,
-                         threshold_params);
+    std::string prev_filter = plot_source;
+    std::string first_stripper;
+    const int num_ghosts = ghost_fields.size();
+    for(int i = 0; i < num_ghosts; ++i)
+    {
+      std::string filter_name;
+      if(i == num_ghosts - 1)
+      {
+        filter_name = strip_name;
+      }
+      else
+      {
+        filter_name = strip_name + "_" + ghost_fields[i];
+      }
 
-    w.graph().connect(plot_source,
-                      strip_name,
-                      0);        // default port
+      if(i == 0)
+      {
+        first_stripper = filter_name;
+      }
+
+      conduit::Node threshold_params;
+      threshold_params["field"] = ghost_fields[i];
+      threshold_params["min_value"] = 0;
+      threshold_params["max_value"] = 0;
+
+      w.graph().add_filter("vtkh_ghost_stripper",
+                           filter_name,
+                           threshold_params);
+
+      w.graph().connect(prev_filter,
+                        filter_name,
+                        0);        // default port
+
+      prev_filter = filter_name;
+    }
   }
 
   plot_source = strip_name;
@@ -882,7 +966,7 @@ AscentRuntime::PopulateMetadata()
   (*meta)["cycle"] = cycle;
   (*meta)["time"] = time;
   (*meta)["refinement_level"] = m_refinement_level;
-  (*meta)["ghost_field"] = m_ghost_field_name;
+  (*meta)["ghost_field"] = m_ghost_fields;
 
 }
 //-----------------------------------------------------------------------------

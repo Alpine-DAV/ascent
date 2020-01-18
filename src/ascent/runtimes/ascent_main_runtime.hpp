@@ -110,7 +110,7 @@ private:
     WebInterface      m_web_interface;
     int               m_refinement_level;
     int               m_rank;
-    std::string       m_ghost_field_name;
+    conduit::Node     m_ghost_fields; // a list of strings
 
     void              ResetInfo();
 
