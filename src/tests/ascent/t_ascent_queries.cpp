@@ -141,6 +141,12 @@ TEST(ascent_queries, max_query_pipeline)
     Node n;
     ascent::about(n);
 
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
     //
     // Create example mesh.
     //
