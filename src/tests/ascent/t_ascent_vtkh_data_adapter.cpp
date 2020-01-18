@@ -403,6 +403,34 @@ TEST(ascent_data_adapter, interleaved_3d)
     EXPECT_TRUE(check_test_image(output_file,0.01f));
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_multi_topo, adapter_test)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    ASCENT_INFO("Testing round trip of multi_topo");
+    //
+    // Create an example mesh convert it, and convert it back.
+    //
+    Node data;
+    build_multi_topo(data, EXAMPLE_MESH_SIDE_DIM);
+
+    VTKHCollection* collection = VTKHDataAdapter::BlueprintToVTKHCollection(data,true);
+
+    Node out_data;
+    VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(collection, out_data);
+
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(out_data, verify_info));
+    delete collection;
+}
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

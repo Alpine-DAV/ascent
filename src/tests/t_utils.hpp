@@ -447,6 +447,36 @@ add_interleaved_vector(conduit::Node &dset)
   }
 }
 
+// outputs a mutli domain(size 1) multiple topo data
+// set
+void build_multi_topo(Node &data, const int dims)
+{
+  Node verify_info;
+  Node &dom = data.append();
+
+  conduit::blueprint::mesh::examples::braid("uniform",
+                                            dims,
+                                            dims,
+                                            dims,
+                                            dom);
+
+  Node point_data;
+  conduit::blueprint::mesh::examples::braid("points",
+                                            dims,
+                                            dims,
+                                            dims,
+                                            point_data);
+
+  dom["state/domain_id"] = (int)0;
+
+  dom["topologies/point_mesh"] = point_data["topologies/mesh"];
+  dom["topologies/point_mesh/coordset"] = "point_coords";
+  dom["coordsets/point_coords"] = point_data["coordsets/coords"];
+  dom["fields/point_braid"] = point_data["fields/braid"];
+  dom["fields/point_braid/topology/"] = "point_mesh";
+  dom["fields/point_radial"] = point_data["fields/radial"];
+  dom["fields/point_radial/topology/"] = "point_mesh";
+}
 // Macro to save ascent actions file
 #define ASCENT_ACTIONS_DUMP(actions,name,msg) \
   std::string actions_str = actions.to_yaml(); \

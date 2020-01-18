@@ -57,81 +57,13 @@
 #include <math.h>
 
 #include <conduit_blueprint.hpp>
-#include <runtimes/ascent_vtkh_data_adapter.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
 
-
-
-
 using namespace std;
 using namespace conduit;
 using namespace ascent;
-
-
-index_t EXAMPLE_MESH_SIDE_DIM = 10;
-// outputs a mutli domain(size 1) multiple topo data
-// set
-void build_multi_topo(Node &data)
-{
-  Node verify_info;
-  Node &dom = data.append();
-
-  conduit::blueprint::mesh::examples::braid("uniform",
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            dom);
-
-  Node point_data;
-  conduit::blueprint::mesh::examples::braid("points",
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            point_data);
-
-  dom["state/domain_id"] = (int)0;
-
-  dom["topologies/point_mesh"] = point_data["topologies/mesh"];
-  dom["topologies/point_mesh/coordset"] = "point_coords";
-  dom["coordsets/point_coords"] = point_data["coordsets/coords"];
-  dom["fields/point_braid"] = point_data["fields/braid"];
-  dom["fields/point_braid/topology/"] = "point_mesh";
-  dom["fields/point_radial"] = point_data["fields/radial"];
-  dom["fields/point_radial/topology/"] = "point_mesh";
-
-  EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_multi_topo, adapter_test)
-{
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
-        return;
-    }
-
-    ASCENT_INFO("Testing round trip of multi_topo");
-    //
-    // Create an example mesh convert it, and convert it back.
-    //
-    Node data;
-    build_multi_topo(data);
-
-    VTKHCollection* collection = VTKHDataAdapter::BlueprintToVTKHCollection(data,true);
-
-    Node out_data;
-    VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(collection, out_data);
-
-    Node verify_info;
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(out_data, verify_info));
-    delete collection;
-}
 
 //-----------------------------------------------------------------------------
 TEST(ascent_multi_topo, test_render)
@@ -149,7 +81,7 @@ TEST(ascent_multi_topo, test_render)
     // Create an example mesh.
     //
     Node data;
-    build_multi_topo(data);
+    build_multi_topo(data,10);
 
     ASCENT_INFO("Render multiple topologies");
 
@@ -220,12 +152,6 @@ int main(int argc, char* argv[])
     int result = 0;
 
     ::testing::InitGoogleTest(&argc, argv);
-
-    // allow override of the data size via the command line
-    if(argc == 2)
-    {
-        EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
-    }
 
     result = RUN_ALL_TESTS();
     return result;
