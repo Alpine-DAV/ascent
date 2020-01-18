@@ -92,7 +92,6 @@ TEST(ascent_web, test_ascent_main_web_launch)
     conduit::blueprint::mesh::examples::braid("hexs",100,100,100,data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_web_main_runtime");
