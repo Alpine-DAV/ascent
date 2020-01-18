@@ -71,6 +71,7 @@
 #include <flow.hpp>
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
+#include <ascent_transmogrifier.hpp>
 #include <ascent_data_object.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
@@ -208,6 +209,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     if(options.has_path("refinement_level"))
     {
       m_refinement_level = options["refinement_level"].to_int32();
+      Transmogrifier::m_refinement_level = m_refinement_level;
       if(m_refinement_level < 2)
       {
         ASCENT_ERROR("'refinement_level' must be greater than 1");
