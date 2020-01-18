@@ -7,6 +7,7 @@
 #include <conduit.hpp>
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
+#include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
 
 #ifdef ASCENT_MPI_ENABLED
@@ -329,14 +330,16 @@ void ascent::runtime::filters::BabelFlow::declare_interface(conduit::Node &i) {
 void ascent::runtime::filters::BabelFlow::execute() {
   if (op == PMT) {
     // connect to the input port and get the parameters
-    if(!input("in").check_type<conduit::Node>())
+    if(!input(0).check_type<DataObject>())
     {
-        // error
-        ASCENT_ERROR("BabelFlow filter requires a conduit::Node input");
+        ASCENT_ERROR("BabelFlow filter requires a DataObject");
     }
 
+    DataObject *d_input = input<DataObject>(0);
+    std::shared_ptr<conduit::Node> n_input = d_input->as_node();
+
     conduit::Node p = params();
-    auto *in = input<conduit::Node>("in");
+    auto *in = n_input.get();
     auto &data_node = in->children().next();
 
     // check if coordset uniform
