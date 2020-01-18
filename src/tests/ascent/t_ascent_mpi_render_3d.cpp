@@ -381,6 +381,19 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "volume";
     scenes["s1/plots/p1/field"] = "radial_vert";
+    scenes["s1/plots/p1/color_table"] = "cool to warm";
+    conduit::Node &cp = scenes["s1/plots/p1/color_table/control_points"];
+    conduit::Node &p1 = cp.append();
+    p1["type"] = "alpha";
+    p1["position"] = 0.0f;
+    p1["alpha"] = 0.8f;
+
+    conduit::Node &p2 = cp.append();
+    p2["type"] = "alpha";
+    p2["position"] = 1.0f;
+    p2["alpha"] = 0.0f;
+
+
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
     scenes["s1/renders/r1/image_prefix"]   = output_file;
