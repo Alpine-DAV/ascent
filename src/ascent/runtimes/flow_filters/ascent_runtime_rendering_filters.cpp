@@ -1295,7 +1295,6 @@ CreatePlot::execute()
       topo_name = collection->field_topology(field_name);
       if(topo_name == "")
       {
-#warning "we need to add error messages about valid fields"
         ASCENT_ERROR("create plot: unknown field '"<<field_name<<"'");
       }
     }
