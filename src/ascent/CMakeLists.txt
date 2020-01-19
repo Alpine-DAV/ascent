@@ -244,10 +244,6 @@ if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs openmp)
 endif()
 
-# if(PYTHON_FOUND)
-#     list(APPEND ascent_thirdparty_libs python)
-# endif()
-
 ##########################################
 # Build a serial version of ascent
 ##########################################
@@ -283,10 +279,6 @@ if(MPI_FOUND)
 
     # req'd libs
     set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi)
-
-    # if(PYTHON_FOUND)
-    #     list(APPEND ascent_mpi_thirdparty_libs python)
-    # endif()
 
     # hola mpi support is only in par (mpi ver)
 
