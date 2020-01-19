@@ -131,7 +131,7 @@ TEST(ascent_multi_topo, test_render)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file, 0.02));
     std::string msg = "Example of rendering multiple topologies";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
@@ -201,7 +201,7 @@ TEST(ascent_multi_topo, single_ghost)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file, 0.02));
     std::string msg = "Example of adding 1 ghost field with 2 topologies";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
@@ -272,7 +272,7 @@ TEST(ascent_multi_topo, multi_ghosts)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file, 0.02));
     std::string msg = "Example of adding multple ghosts with 2 topologies";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
