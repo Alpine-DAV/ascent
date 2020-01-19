@@ -185,12 +185,17 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name
     # also use distutils for the install ...
     # if PYTHON_MODULE_INSTALL_PREFIX is set, install there
     if(PYTHON_MODULE_INSTALL_PREFIX)
+        set(py_mod_inst_prefix ${PYTHON_MODULE_INSTALL_PREFIX})
+        # make sure windows style paths don't ruin our day (or night)
+        if(WIN32)
+            string(REGEX REPLACE "/" "\\\\" py_mod_inst_prefix  ${PYTHON_MODULE_INSTALL_PREFIX})
+        endif()
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                 COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
                     build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build_install
-                    install --install-purelib=${PYTHON_MODULE_INSTALL_PREFIX}
+                    install --install-purelib=${py_mod_inst_prefix}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
             ")
@@ -261,7 +266,7 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
     endif()
 
     install(TARGETS ${target_name}
-            EXPORT  conduit
+            EXPORT  ascent
             LIBRARY DESTINATION ${py_install_dir}/${py_module_dir}
             ARCHIVE DESTINATION ${py_install_dir}/${py_module_dir}
             RUNTIME DESTINATION ${py_install_dir}/${py_module_dir}
@@ -293,6 +298,9 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
 
 
+######################################################################
+# Extra logic for embedding a python interpreter
+######################################################################
 
 ##############################################################################
 # Check for GETTEXT_DIR, if defined find libintl and add it as
@@ -320,15 +328,14 @@ endif()
 
 message(STATUS "PYTHON_LIBRARIES=${PYTHON_LIBRARIES}")
 
-#
 # Register python as a BLT deps, to support the case were we link python,
 # as opposed to creating python modules via the above macros.
 #
 
-
+#
 # we need a deferred linking target, for cases where we may 
 # need to use our library with a python interpreter we aren't 
-# 
+#
 if(WIN32)
     # we have to link on windows for either case
     blt_register_library(NAME python_defered
