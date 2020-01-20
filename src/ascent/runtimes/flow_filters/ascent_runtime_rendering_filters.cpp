@@ -75,6 +75,7 @@
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
+#include <ascent_vtkh_collection.hpp>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
