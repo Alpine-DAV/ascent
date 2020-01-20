@@ -45,84 +45,61 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_python_script_filter.hpp
+/// file: ascent_data_object.hpp
 ///
 //-----------------------------------------------------------------------------
 
+#ifndef ASCENT_DATA_OBJECT_HPP
+#define ASCENT_DATA_OBJECT_HPP
 
-
-/// This support enables running python-based filter scripts
-/// in the case that the host code does not have python.
-/// if the host code is python, we don't need to bring our own
-/// python interpreter
-
-
-#ifndef FLOW_PYTHON_SCRIPT_FILTER_HPP
-#define FLOW_PYTHON_SCRIPT_FILTER_HPP
-
-#include <flow_exports.h>
-#include <flow_config.h>
-
-#include <flow_filter.hpp>
-
+#include <ascent.hpp>
+#include <conduit.hpp>
+#include <memory>
 
 //-----------------------------------------------------------------------------
-// -- begin flow:: --
+// -- begin ascent:: --
 //-----------------------------------------------------------------------------
-namespace flow
+namespace ascent
 {
 
-class PythonInterpreter;
 
-//-----------------------------------------------------------------------------
-// -- begin flow::filters --
-//-----------------------------------------------------------------------------
-namespace filters
-{
+#if defined(ASCENT_VTKM_ENABLED)
+// forward declare
+class VTKHCollection;
+#endif
 
-//-----------------------------------------------------------------------------
-///
-/// PythonScript runs a given python source.
-///
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-class FLOW_API PythonScript : public ::flow::Filter
+class DataObject
 {
 public:
-    PythonScript();
-   ~PythonScript();
+  enum class Source { VTKH, LOW_BP, HIGH_BP};
+  DataObject() = delete;
+  //
+  // Constructors take ownership of pointers
+  //
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+  DataObject(conduit::Node *dataset);
 
+#if defined(ASCENT_VTKM_ENABLED)
+  DataObject(VTKHCollection *dataset);
+  std::shared_ptr<VTKHCollection> as_vtkh_collection();
+#endif
+  std::shared_ptr<conduit::Node>  as_low_order_bp();
+  std::shared_ptr<conduit::Node>  as_high_order_bp();
+  std::shared_ptr<conduit::Node>  as_node();          // just return the coduit node
+  DataObject::Source              source() const;
 protected:
-    void execute_python(conduit::Node *n);
-private:
-    static flow::PythonInterpreter *interpreter();
-    static flow::PythonInterpreter *m_interp;
+  std::shared_ptr<conduit::Node>  m_low_bp;
+  std::shared_ptr<conduit::Node>  m_high_bp;
+#if defined(ASCENT_VTKM_ENABLED)
+  std::shared_ptr<VTKHCollection> m_vtkh;
+#endif
+
+  Source m_source;
 };
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow::filters --
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 };
-//-----------------------------------------------------------------------------
-// -- end flow:: --
-//-----------------------------------------------------------------------------
-
-
 #endif
 //-----------------------------------------------------------------------------
-// -- end header ifdef guard
+// -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-

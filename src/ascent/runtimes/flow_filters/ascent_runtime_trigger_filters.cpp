@@ -63,6 +63,7 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_expression_eval.hpp>
+#include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_runtime_param_check.hpp>
 
@@ -136,19 +137,19 @@ BasicTrigger::verify_params(const conduit::Node &params,
 void
 BasicTrigger::execute()
 {
-    if(!input(0).check_type<Node>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("Trigger input must be a conduit node");
+        ASCENT_ERROR("Trigger input must be a data object");
     }
+
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<Node> n_input = data_object->as_low_order_bp();
 
     std::string expression = params()["condition"].as_string();
     std::string actions_file = params()["actions_file"].as_string();
     conduit::Node actions;
 
-    Node v_info;
-    Node *n_input = input<Node>(0);
-
-    runtime::expressions::ExpressionEval eval(n_input);
+    runtime::expressions::ExpressionEval eval(n_input.get());
     conduit::Node res = eval.evaluate(expression);
 
     if(res["type"].as_string() != "bool")

@@ -45,84 +45,37 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_python_script_filter.hpp
+/// file: ascent_transmogrifier.hpp
 ///
 //-----------------------------------------------------------------------------
 
-
-
-/// This support enables running python-based filter scripts
-/// in the case that the host code does not have python.
-/// if the host code is python, we don't need to bring our own
-/// python interpreter
-
-
-#ifndef FLOW_PYTHON_SCRIPT_FILTER_HPP
-#define FLOW_PYTHON_SCRIPT_FILTER_HPP
-
-#include <flow_exports.h>
-#include <flow_config.h>
+#ifndef ASCENT_TRANSMOGRIGIFIER_HPP
+#define ASCENT_TRANSMOGRIGIFIER_HPP
 
 #include <flow_filter.hpp>
 
-
 //-----------------------------------------------------------------------------
-// -- begin flow:: --
+// -- begin ascent:: --
 //-----------------------------------------------------------------------------
-namespace flow
+namespace ascent
 {
 
-class PythonInterpreter;
-
-//-----------------------------------------------------------------------------
-// -- begin flow::filters --
-//-----------------------------------------------------------------------------
-namespace filters
-{
-
-//-----------------------------------------------------------------------------
-///
-/// PythonScript runs a given python source.
-///
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-class FLOW_API PythonScript : public ::flow::Filter
+// The Transmogrifier is an invention that would one thing into another.
+class Transmogrifier
 {
 public:
-    PythonScript();
-   ~PythonScript();
+// refinement level for high order data
+static int m_refinement_level;
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+static conduit::Node* low_order(conduit::Node &dataset);
 
-protected:
-    void execute_python(conduit::Node *n);
-private:
-    static flow::PythonInterpreter *interpreter();
-    static flow::PythonInterpreter *m_interp;
+static bool is_high_order(const conduit::Node &doms);
+
 };
-
 
 //-----------------------------------------------------------------------------
 };
-//-----------------------------------------------------------------------------
-// -- end flow::filters --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow:: --
-//-----------------------------------------------------------------------------
-
-
 #endif
 //-----------------------------------------------------------------------------
-// -- end header ifdef guard
+// -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-

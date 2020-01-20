@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_render_3d.cpp
+/// file: t_ascent_multi_topo.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -61,47 +61,33 @@
 #include "t_config.hpp"
 #include "t_utils.hpp"
 
-
-
-
 using namespace std;
 using namespace conduit;
 using namespace ascent;
 
-
-index_t EXAMPLE_MESH_SIDE_DIM = 20;
-
-
 //-----------------------------------------------------------------------------
-TEST(ascent_clip_with_field, test_clip_with_field)
+TEST(ascent_multi_topo, test_render)
 {
-    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping test");
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
 
     //
     // Create an example mesh.
     //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
+    Node data;
+    build_multi_topo(data,10);
 
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+    ASCENT_INFO("Render multiple topologies");
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_clip_with_field");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_multi_topo");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -111,25 +97,21 @@ TEST(ascent_clip_with_field, test_clip_with_field)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "clip_with_field";
-    // filter knobs
-    conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["field"] = "braid";
-    clip_params["clip_value"] = 0.;
-
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "radial";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/color_table/name"] = "Inferno";
+
+    scenes["s1/plots/p2/type"] = "pseudocolor";
+    scenes["s1/plots/p2/field"] = "point_braid";
+    scenes["s1/plots/p2/points/radius"] = .5f;
+
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/annotations"] = "false";
+    scenes["s1/renders/r1/camera/azimuth"] = 30;
+    scenes["s1/renders/r1/camera/elevation"] = 11;
 
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines= actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
     // add the scenes
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
@@ -149,41 +131,33 @@ TEST(ascent_clip_with_field, test_clip_with_field)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using clip with field.";
+    EXPECT_TRUE(check_test_image(output_file, 0.02));
+    std::string msg = "Example of rendering multiple topologies";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
-
 //-----------------------------------------------------------------------------
-TEST(ascent_clip_with_field, test_clip_with_field_inverted)
+TEST(ascent_multi_topo, single_ghost)
 {
-    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping test");
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
 
     //
     // Create an example mesh.
     //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
+    Node data;
+    build_multi_topo(data,10);
 
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+    ASCENT_INFO("single ghost test with multiple topologies");
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_clip_with_field_inverted");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_multi_topo_single_ghost");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -193,26 +167,20 @@ TEST(ascent_clip_with_field, test_clip_with_field_inverted)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "clip_with_field";
-    // filter knobs
-    conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["field"] = "braid";
-    clip_params["clip_value"] = 0.;
-    clip_params["invert"] = "true";
-
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "radial";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+
+    scenes["s1/plots/p2/type"] = "pseudocolor";
+    scenes["s1/plots/p2/field"] = "point_braid";
+    scenes["s1/plots/p2/points/radius"] = .5f;
+
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/annotations"] = "false";
+    scenes["s1/renders/r1/camera/azimuth"] = 30;
+    scenes["s1/renders/r1/camera/elevation"] = 11;
 
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines= actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
     // add the scenes
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
@@ -226,29 +194,94 @@ TEST(ascent_clip_with_field, test_clip_with_field_inverted)
 
     Node ascent_opts;
     ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["ghost_field_name"] = "cell_ghosts";
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using inverted clip with field.";
+    EXPECT_TRUE(check_test_image(output_file, 0.02));
+    std::string msg = "Example of adding 1 ghost field with 2 topologies";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
+//-----------------------------------------------------------------------------
+TEST(ascent_multi_topo, multi_ghosts)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
 
+    //
+    // Create an example mesh.
+    //
+    Node data;
+    build_multi_topo(data,10);
+
+    ASCENT_INFO("multi ghost test");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_multi_topo_ghosts");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+
+    scenes["s1/plots/p2/type"] = "pseudocolor";
+    scenes["s1/plots/p2/field"] = "point_braid";
+    scenes["s1/plots/p2/points/radius"] = .5f;
+
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/annotations"] = "false";
+    scenes["s1/renders/r1/camera/azimuth"] = 30;
+    scenes["s1/renders/r1/camera/elevation"] = 11;
+
+    conduit::Node actions;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["ghost_field_name"].append() = "cell_ghosts";
+    ascent_opts["ghost_field_name"].append() = "point_ghosts";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file, 0.02));
+    std::string msg = "Example of adding multple ghosts with 2 topologies";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
 
     ::testing::InitGoogleTest(&argc, argv);
-
-    // allow override of the data size via the command line
-    if(argc == 2)
-    {
-        EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
-    }
 
     result = RUN_ALL_TESTS();
     return result;

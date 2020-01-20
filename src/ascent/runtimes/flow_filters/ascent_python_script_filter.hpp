@@ -45,35 +45,26 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_hola_filters.cpp
+/// file: ascent_python_script_filter.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_runtime_hola_filters.hpp"
 
-#include "ascent_hola_mpi.hpp"
 
-//-----------------------------------------------------------------------------
-// thirdparty includes
-//-----------------------------------------------------------------------------
+/// This support enables running python-based filter scripts
+/// in the case that the host code does not have python.
+/// if the host code is python, we don't need to bring our own
+/// python interpreter
 
-// conduit includes
-#include <conduit.hpp>
-#include <conduit_relay.hpp>
-#include <conduit_relay_mpi.hpp>
 
-//-----------------------------------------------------------------------------
-// ascent includes
-//-----------------------------------------------------------------------------
-#include <ascent_logging.hpp>
+#ifndef ASCENT_PYTHON_SCRIPT_FILTER_HPP
+#define ASCENT_PYTHON_SCRIPT_FILTER_HPP
+
+#include <ascent_exports.h>
 #include <ascent_data_object.hpp>
-#include <flow_graph.hpp>
-#include <flow_workspace.hpp>
 
-using namespace conduit;
-using namespace std;
+#include <flow_python_script_filter.hpp>
 
-using namespace flow;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -82,95 +73,45 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
-// -- begin ascent::runtime --
+// -- begin ascent::runtime--
 //-----------------------------------------------------------------------------
 namespace runtime
 {
-
 //-----------------------------------------------------------------------------
-// -- begin ascent::runtime::filters --
+// -- begin ascent::runtime::filters--
 //-----------------------------------------------------------------------------
 namespace filters
 {
 
+//-----------------------------------------------------------------------------
+///
+/// PythonScript runs a given python source.
+///
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-HolaMPIExtract::HolaMPIExtract()
-:Filter()
+class ASCENT_API AscentPythonScript : public ::flow::filters::PythonScript
 {
-// empty
-}
+public:
+    AscentPythonScript();
+   ~AscentPythonScript();
 
-//-----------------------------------------------------------------------------
-HolaMPIExtract::~HolaMPIExtract()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-void
-HolaMPIExtract::declare_interface(Node &i)
-{
-    i["type_name"]   = "hola_mpi";
-    i["port_names"].append() = "in";
-    i["output_port"] = "false";
-}
-
-//-----------------------------------------------------------------------------
-bool
-HolaMPIExtract::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    if(! params.has_child("mpi_comm") ||
-       ! params["mpi_comm"].dtype().is_integer() )
-    {
-        info["errors"].append() = "Missing required integer parameter 'mpi_comm'";
-    }
-
-    if(! params.has_child("rank_split") ||
-       ! params["rank_split"].dtype().is_integer() )
-    {
-        info["errors"].append() = "Missing required integer parameter 'rank_split'";
-    }
-
-    return res;
-}
-
-
-//-----------------------------------------------------------------------------
-void
-HolaMPIExtract::execute()
-{
-
-    if(!input(0).check_type<DataObject>())
-    {
-        ASCENT_ERROR("hola_mpi input must be a DataObject");
-    }
-
-    DataObject * data_object = input<DataObject>(0);
-    Node *n_input = data_object->as_node().get();
-    // assumes multi domain input
-
-    hola_mpi(params(),*n_input);
-
-}
-
+    virtual void   declare_interface(conduit::Node &i) override;
+    virtual void   execute() override;
+};
 
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end ascent::runtime::filters --
+// -- end ascent::runtime::filters--
 //-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end ascent::runtime --
+// -- end ascent::runtime--
 //-----------------------------------------------------------------------------
 
 
@@ -181,6 +122,9 @@ HolaMPIExtract::execute()
 //-----------------------------------------------------------------------------
 
 
-
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------
 
 

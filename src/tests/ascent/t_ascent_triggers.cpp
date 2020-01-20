@@ -88,6 +88,7 @@ TEST(ascent_triggers, simple_rick)
 
     string output_path = prepare_output_dir();
     string trigger_file = conduit::utils::join_file_path(output_path,"simple_trigger_actions");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_simple_trigger_actions");
     // remove old file
     if(conduit::utils::is_file(trigger_file))
     {
@@ -99,6 +100,17 @@ TEST(ascent_triggers, simple_rick)
     // Create trigger actions.
     //
     Node trigger_actions;
+
+    conduit::Node extracts;
+
+    extracts["e1/type"]  = "relay";
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node &add_ext= trigger_actions.append();
+    add_ext["action"] = "add_extracts";
+    add_ext["extracts"] = extracts;
+
     trigger_actions.save(trigger_file, "json");
 
     //

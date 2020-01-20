@@ -93,7 +93,6 @@ TEST(ascent_vector_mag, test_vector_mag)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing vector magnitude");
 
@@ -175,7 +174,6 @@ TEST(ascent_vector_mag, test_vector_mag_interleaved)
                                               data);
     add_interleaved_vector(data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing vector magnitude interleaved");
 

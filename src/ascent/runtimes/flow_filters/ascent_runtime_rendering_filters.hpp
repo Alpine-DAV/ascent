@@ -45,35 +45,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_hola_filters.cpp
+/// file: ascent_runtime_rendering_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_runtime_hola_filters.hpp"
+#ifndef ASCENT_RUNTIME_RENDERING_FILTERS
+#define ASCENT_RUNTIME_RENDERING_FILTERS
 
-#include "ascent_hola_mpi.hpp"
+#include <ascent.hpp>
 
-//-----------------------------------------------------------------------------
-// thirdparty includes
-//-----------------------------------------------------------------------------
+#include <flow_filter.hpp>
 
-// conduit includes
-#include <conduit.hpp>
-#include <conduit_relay.hpp>
-#include <conduit_relay_mpi.hpp>
-
-//-----------------------------------------------------------------------------
-// ascent includes
-//-----------------------------------------------------------------------------
-#include <ascent_logging.hpp>
-#include <ascent_data_object.hpp>
-#include <flow_graph.hpp>
-#include <flow_workspace.hpp>
-
-using namespace conduit;
-using namespace std;
-
-using namespace flow;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -93,74 +75,123 @@ namespace runtime
 namespace filters
 {
 
+//-----------------------------------------------------------------------------
+///
+/// VTK-H Rendering Filters
+///
+//-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
-HolaMPIExtract::HolaMPIExtract()
-:Filter()
+class ASCENT_API DefaultRender : public ::flow::Filter
 {
-// empty
-}
+public:
+    DefaultRender();
+    virtual ~DefaultRender();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
 
 //-----------------------------------------------------------------------------
-HolaMPIExtract::~HolaMPIExtract()
+class ASCENT_API VTKHBounds: public ::flow::Filter
 {
-// empty
-}
+public:
+    VTKHBounds();
+    virtual ~VTKHBounds();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
 
 //-----------------------------------------------------------------------------
-void
-HolaMPIExtract::declare_interface(Node &i)
+class ASCENT_API VTKHUnionBounds: public ::flow::Filter
 {
-    i["type_name"]   = "hola_mpi";
-    i["port_names"].append() = "in";
-    i["output_port"] = "false";
-}
+public:
+    VTKHUnionBounds();
+    virtual ~VTKHUnionBounds();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
+
+
 
 //-----------------------------------------------------------------------------
-bool
-HolaMPIExtract::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
+class ASCENT_API VTKHDomainIds: public ::flow::Filter
 {
-    info.reset();
-    bool res = true;
+public:
+    VTKHDomainIds();
+    virtual ~VTKHDomainIds();
 
-    if(! params.has_child("mpi_comm") ||
-       ! params["mpi_comm"].dtype().is_integer() )
-    {
-        info["errors"].append() = "Missing required integer parameter 'mpi_comm'";
-    }
-
-    if(! params.has_child("rank_split") ||
-       ! params["rank_split"].dtype().is_integer() )
-    {
-        info["errors"].append() = "Missing required integer parameter 'rank_split'";
-    }
-
-    return res;
-}
-
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
 
 //-----------------------------------------------------------------------------
-void
-HolaMPIExtract::execute()
+class ASCENT_API VTKHUnionDomainIds: public ::flow::Filter
 {
+public:
+    VTKHUnionDomainIds();
+    virtual ~VTKHUnionDomainIds();
 
-    if(!input(0).check_type<DataObject>())
-    {
-        ASCENT_ERROR("hola_mpi input must be a DataObject");
-    }
-
-    DataObject * data_object = input<DataObject>(0);
-    Node *n_input = data_object->as_node().get();
-    // assumes multi domain input
-
-    hola_mpi(params(),*n_input);
-
-}
-
-
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
 
 //-----------------------------------------------------------------------------
+class ASCENT_API CreatePlot : public ::flow::Filter
+{
+public:
+    CreatePlot();
+    virtual ~CreatePlot();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API AddPlot : public ::flow::Filter
+{
+public:
+    AddPlot();
+    virtual ~AddPlot();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API CreateScene : public ::flow::Filter
+{
+public:
+    CreateScene();
+    virtual ~CreateScene();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API ExecScene : public ::flow::Filter
+{
+public:
+    ExecScene();
+
+   ~ExecScene();
+
+    virtual void declare_interface(conduit::Node &i);
+
+    virtual void execute();
+};
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
@@ -183,4 +214,7 @@ HolaMPIExtract::execute()
 
 
 
-
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------

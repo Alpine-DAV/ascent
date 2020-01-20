@@ -63,6 +63,7 @@
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
+#include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_file_system.hpp>
 
@@ -614,13 +615,17 @@ RelayIOSave::execute()
         protocol = params()["protocol"].as_string();
     }
 
-    if(!input("in").check_type<Node>())
+    if(!input("in").check_type<DataObject>())
     {
         // error
-        ASCENT_ERROR("relay_io_save requires a conduit::Node input");
+        ASCENT_ERROR("relay_io_save requires a DataObject input");
     }
 
-    Node *in = input<Node>("in");
+    DataObject *data_object  = input<DataObject>("in");
+    std::shared_ptr<Node> n_input = data_object->as_node();
+
+    Node *in = n_input.get();
+
     Node selected;
     conduit::Node test;
     if(params().has_path("fields"))

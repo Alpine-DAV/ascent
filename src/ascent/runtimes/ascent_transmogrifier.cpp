@@ -45,84 +45,70 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: flow_python_script_filter.hpp
+/// file: ascent_transmogrifier.cpp
 ///
 //-----------------------------------------------------------------------------
 
-
-
-/// This support enables running python-based filter scripts
-/// in the case that the host code does not have python.
-/// if the host code is python, we don't need to bring our own
-/// python interpreter
-
-
-#ifndef FLOW_PYTHON_SCRIPT_FILTER_HPP
-#define FLOW_PYTHON_SCRIPT_FILTER_HPP
-
-#include <flow_exports.h>
-#include <flow_config.h>
-
-#include <flow_filter.hpp>
-
-
-//-----------------------------------------------------------------------------
-// -- begin flow:: --
-//-----------------------------------------------------------------------------
-namespace flow
-{
-
-class PythonInterpreter;
-
-//-----------------------------------------------------------------------------
-// -- begin flow::filters --
-//-----------------------------------------------------------------------------
-namespace filters
-{
-
-//-----------------------------------------------------------------------------
-///
-/// PythonScript runs a given python source.
-///
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-class FLOW_API PythonScript : public ::flow::Filter
-{
-public:
-    PythonScript();
-   ~PythonScript();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-
-protected:
-    void execute_python(conduit::Node *n);
-private:
-    static flow::PythonInterpreter *interpreter();
-    static flow::PythonInterpreter *m_interp;
-};
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow::filters --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end flow:: --
-//-----------------------------------------------------------------------------
-
-
+#include "ascent_transmogrifier.hpp"
+#if defined(ASCENT_MFEM_ENABLED)
+#include "ascent_mfem_data_adapter.hpp"
 #endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
+#include "ascent_logging.hpp"
 
+//-----------------------------------------------------------------------------
+// -- begin ascent:: --
+//-----------------------------------------------------------------------------
+namespace ascent
+{
 
+int Transmogrifier::m_refinement_level = 3;
+
+bool Transmogrifier::is_high_order(const conduit::Node &doms)
+{
+  // treat everything as a multi-domain data set
+  const int num_domains = doms.number_of_children();
+  for(int i = 0; i < num_domains; ++i)
+  {
+    const conduit::Node &dom = doms.child(i);
+    if(dom.has_path("fields"))
+    {
+      const conduit::Node &fields = dom["fields"];
+      const int num_fields= fields.number_of_children();
+      for(int t = 0; t < num_fields; ++t)
+      {
+        const conduit::Node &field = fields.child(t);
+        if(field.has_path("basis")) return true;
+      }
+
+    }
+  }
+
+  return false;
+}
+
+conduit::Node* Transmogrifier::low_order(conduit::Node &dataset)
+{
+      if(!is_high_order(dataset))
+      {
+        ASCENT_ERROR("low_order requires high order data");
+      }
+#if defined(ASCENT_MFEM_ENABLED)
+      MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
+      conduit::Node *lo_dset = new conduit::Node;
+      MFEMDataAdapter::Linearize(domains, *lo_dset, m_refinement_level);
+      delete domains;
+      set_output<Node>(lo_dset);
+
+      // add a second registry entry for the output so it can be zero copied.
+      return lo_dset;
+#else
+      ASCENT_ERROR("Unable to convert high order mesh when MFEM is not enabled");
+      return nullptr;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent:: --
+//-----------------------------------------------------------------------------

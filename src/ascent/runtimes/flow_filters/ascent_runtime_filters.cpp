@@ -65,7 +65,12 @@
 
 #if defined(ASCENT_VTKM_ENABLED)
     #include <ascent_runtime_vtkh_filters.hpp>
+    #include <ascent_runtime_rendering_filters.hpp>
     #include <ascent_runtime_rover_filters.hpp>
+#endif
+
+#if defined(ASCENT_PYTHON_ENABLED)
+    #include <ascent_python_script_filter.hpp>
 #endif
 
 #ifdef ASCENT_MPI_ENABLED
@@ -108,8 +113,6 @@ void
 register_builtin()
 {
     AscentRuntime::register_filter_type<BlueprintVerify>();
-    AscentRuntime::register_filter_type<EnsureLowOrder>();
-    AscentRuntime::register_filter_type<EnsureBlueprint>();
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
     AscentRuntime::register_filter_type<RelayIOLoad>();
 
@@ -118,8 +121,6 @@ register_builtin()
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
-    AscentRuntime::register_filter_type<EnsureVTKH>();
-    AscentRuntime::register_filter_type<EnsureVTKM>();
 
     AscentRuntime::register_filter_type<VTKHBounds>();
     AscentRuntime::register_filter_type<VTKHUnionBounds>();
@@ -163,14 +164,18 @@ register_builtin()
 #if defined(ASCENT_MPI_ENABLED)
     AscentRuntime::register_filter_type<HolaMPIExtract>("extracts","hola_mpi");
 
-#if defined(ASCENT_BABELFLOW_ENABLED)
-    AscentRuntime::register_filter_type<BabelFlow>("extracts", "babelflow");
+  #if defined(ASCENT_BABELFLOW_ENABLED)
+      AscentRuntime::register_filter_type<BabelFlow>("extracts", "babelflow");
+  #endif
+
+  #if defined(ASCENT_ADIOS_ENABLED)
+      AscentRuntime::register_filter_type<ADIOS>("extracts","adios");
+  #endif
+
 #endif
 
-#if defined(ASCENT_ADIOS_ENABLED)
-    AscentRuntime::register_filter_type<ADIOS>("extracts","adios");
-#endif
-
+#if defined(ASCENT_PYTHON_ENABLED)
+    AscentRuntime::register_filter_type<AscentPythonScript>();
 #endif
 
 }
