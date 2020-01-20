@@ -69,7 +69,7 @@ After the download completes, create and run a container using this image:
 
 .. code::
 
-    docker run -p 8000:8000 run -p 8888:8888 -p 10000:10000 -t -i alpinedav/ascent
+    docker run -p 8000:8000 -p 8888:8888 -p 10000:10000 -t -i alpinedav/ascent
 
 (The ``-p`` is used to forward ports between the container and your host machine, we use these ports to allow web servers on the container to serve data to the host.)
 
