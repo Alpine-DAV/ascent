@@ -91,7 +91,6 @@ set(ascent_sources
     runtimes/ascent_main_runtime.cpp
     runtimes/ascent_empty_runtime.cpp
     runtimes/ascent_expression_eval.cpp
-    runtimes/ascent_data_object.cpp
     runtimes/ascent_transmogrifier.cpp
     runtimes/expressions/ascent_blueprint_architect.cpp
     runtimes/expressions/ascent_conduit_reductions.cpp
@@ -127,7 +126,6 @@ set(ascent_headers
     ascent_runtime.hpp
     runtimes/ascent_empty_runtime.hpp
     runtimes/ascent_expression_eval.hpp
-    runtimes/ascent_data_object.hpp
     runtimes/ascent_transmogrifier.hpp
     runtimes/expressions/ascent_blueprint_architect.hpp
     runtimes/expressions/ascent_conduit_reductions.hpp
@@ -159,6 +157,7 @@ set(ascent_headers
 if(VTKM_FOUND)
 
     set(ascent_vtkh_dep_headers
+        runtimes/ascent_data_object.hpp
         runtimes/ascent_vtkh_data_adapter.hpp
         runtimes/ascent_vtkh_collection.hpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
@@ -169,6 +168,7 @@ if(VTKM_FOUND)
         runtimes/ascent_main_runtime.hpp)
 
     set(ascent_vtkh_dep_sources
+        runtimes/ascent_data_object.cpp
         runtimes/ascent_vtkh_data_adapter.cpp
         runtimes/ascent_vtkh_collection.cpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
@@ -184,7 +184,9 @@ if(VTKM_FOUND)
     foreach( _itm ${ascent_vtkh_dep_sources} )
         list(APPEND ascent_sources ${_itm})
     endforeach()
-
+else()
+    list(APPEND ascent_headers runtimes/ascent_data_object.hpp)
+    list(APPEND ascent_sources runtimes/ascent_data_object.cpp)
 endif()
 
 if(MFEM_FOUND)
