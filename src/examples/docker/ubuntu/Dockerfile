@@ -111,11 +111,11 @@ RUN cd /home/user/ascent && python scripts/uberenv/uberenv.py \
        --spec "%gcc+mpi+mfem ^python@3.6.3" \
        --spack-config-dir=scripts/uberenv/spack_configs/docker/ubuntu/
 
-# install jupyter, matplotlib, and bash_kernel via pip
+# install jupyter, matplotlib, etc via pip
 RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
-    jupyter matplotlib bash_kernel
+    jupyter matplotlib bash_kernel scipy scikit-learn
 
 # configure a debug build with cmake
 RUN cd /home/user/ascent && mkdir build-debug
@@ -126,7 +126,7 @@ RUN cd /home/user/ascent/build-debug && \
     -C ../uberenv_libs/*.cmake \
     ../src
 
-# build, test, and install conduit
+# build, test, and install ascent
 RUN cd /home/user/ascent/build-debug && make
 RUN cd /home/user/ascent/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
 RUN cd /home/user/ascent/build-debug && make install
@@ -152,7 +152,9 @@ RUN chmod 0600 ~/.ssh/authorized_keys
 
 # setup jupyter password
 RUN mkdir /home/user/.jupyter/
-RUN echo "c.NotebookApp.password = 'sha1:d8baf2aa447b:aa60264fe892fc31c80c4650d49b1adeaa09944e'" > /home/user/.jupyter/jupyter_notebook_config.py
+# the password is:
+#  learn
+RUN echo "c.NotebookApp.password = 'sha1:9777986fd066:283f673e1a311e2d5ef58c174eaebf3e1cb536dd'" > /home/user/.jupyter/jupyter_notebook_config.py
 
 # gen env script that points to spack installs of tpls
 RUN cd /home/user/ascent && python scripts/gen_spack_env_script.py cmake mpi python

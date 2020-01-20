@@ -48,11 +48,11 @@ Tutorial Setup
 
 The tutorial examples are installed with Ascent to the subdirectory ``examples/ascent/tutorial/``.  Below are several options for using pre-built Ascent installs and links to info about building Ascent. If you have access to Docker, the easiest way to test the waters is via the ``alpinedav/ascent`` Docker image.
 
-SC19 Tutorial Cloud Option
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Tutorial Cloud Option
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For SC19, we plan to have several instances of our Ascent Docker image up and running the jupyter notebook server.
-We will provide IP addresses and login info to attendees.
+For in person tutorials (at Supercomputing, the ECP Annual Meeting, etc), we provide HTTP access to several instances of our Ascent Docker image running the jupyter notebook server.
+We hand out IP addresses and login info to attendees during these events.
 
 Using Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -92,7 +92,7 @@ To launch the a jupyter notebook server run:
 
     ./ascent_docker_run_jupyter.sh
 
-This will launch a notebook server on port 8888. Assuming you forwarded port 8888 from the Docker container to your host machine, you should be able to connect to the notebook server using http://localhost:8888. The current password for the notebook server is: ``ascentsc19``
+This will launch a notebook server on port 8888. Assuming you forwarded port 8888 from the Docker container to your host machine, you should be able to connect to the notebook server using http://localhost:8888. The current password for the notebook server is: ``learn``
 
 
 NERSC Cori Install
@@ -137,44 +137,44 @@ You can copy the tutorial examples from this install and use them as follows:
     cd python
     python ascent_first_light_example.py  
 
-
-SC19 Tutorial VM Option
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Ascent is also installed on the SC19 SENSEI + Ascent Example VM Image. The install is located at ``/home/in-situ-user/ascent/current``. You can use the tutorial examples as follows:
-
-.. code::
-
-    #
-    # source helper script with Ascent paths
-    #
-    source /home/in-situ-user/ascent/current/setup_ascent_env.sh
-
-    #
-    # build cpp examples and run the first one
-    #
-    cd /home/in-situ-user/ascent/current/ascent-install/examples/ascent/tutorial/ascent_intro/cpp
-    make
-    ./ascent_first_light_example
-
-    #
-    # run a python example
-    #
-    cd ..
-    cd python
-    python ascent_first_light_example.py  
-
-
-This install also includes jupyter, you can launch the notebook server with:
-
-.. code::
-
-   jupyter notebook
-
-
-The jupyter examples are at:
-
-`/home/in-situ-user/ascent/current/ascent-install/examples/ascent/tutorial/ascent_intro/`
+..
+.. SC19 Tutorial VM Option
+.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+..
+.. Ascent is also installed on the SC19 SENSEI + Ascent Example VM Image. The install is located at ``/home/in-situ-user/ascent/current``. You can use the tutorial examples as follows:
+..
+.. .. code::
+..
+..     #
+..     # source helper script with Ascent paths
+..     #
+..     source /home/in-situ-user/ascent/current/setup_ascent_env.sh
+..
+..     #
+..     # build cpp examples and run the first one
+..     #
+..     cd /home/in-situ-user/ascent/current/ascent-install/examples/ascent/tutorial/ascent_intro/cpp
+..     make
+..     ./ascent_first_light_example
+..
+..     #
+..     # run a python example
+..     #
+..     cd ..
+..     cd python
+..     python ascent_first_light_example.py
+..
+..
+.. This install also includes jupyter, you can launch the notebook server with:
+..
+.. .. code::
+..
+..    jupyter notebook
+..
+..
+.. The jupyter examples are at:
+..
+.. `/home/in-situ-user/ascent/current/ascent-install/examples/ascent/tutorial/ascent_intro/`
 
 
 Build and Install
