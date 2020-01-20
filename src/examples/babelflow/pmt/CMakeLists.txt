@@ -58,7 +58,11 @@ set(ascent_babelflow_example_header)
 
 if(MPI_FOUND)
 	set(ascent_babelflow_example_deps ascent_mpi BabelFlow::babelflow ${MPI_CXX_LIBRARIES} PMT::pmt)
-
+    
+    if(PYTHON_FOUND)
+        list(APPEND ascent_babelflow_example_deps python)
+    endif()
+    
     blt_add_executable(
         NAME        ascent_babelflow_example
         SOURCES     ${ascent_babelflow_example_sources}
