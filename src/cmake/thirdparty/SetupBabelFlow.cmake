@@ -42,85 +42,58 @@
 #
 ###############################################################################
 
-################################
-# Ascent 3rd Party Dependencies
-################################
-
 ###############################################################################
-# gtest, fruit, mpi,cuda, openmp, sphinx and doxygen are handled by blt
+# Setup BabelFlow and ParallelMergeTree
 ###############################################################################
 
-################################
-# Setup Python if requested
-################################
-if(ENABLE_PYTHON)
-    include(cmake/thirdparty/SetupPython.cmake)
-    message(STATUS "Using Python Include: ${PYTHON_INCLUDE_DIRS}")
-    include_directories(${PYTHON_INCLUDE_DIRS})
-    # if we don't find python, throw a fatal error
-    if(NOT PYTHON_FOUND)
-        message(FATAL_ERROR "ENABLE_PYTHON is true, but Python wasn't found.")
-    endif()
+if(NOT BabelFlow_DIR)
+    MESSAGE(FATAL_ERROR "BabelFlow support needs explicit BabelFlow_DIR")
 endif()
 
-################################
-# Conduit
-################################
-include(cmake/thirdparty/SetupConduit.cmake)
+MESSAGE(STATUS "Looking for BabelFlow using BabelFlow_DIR = ${BabelFlow_DIR}")
 
-
-################################################################
-################################################################
-#
-# 3rd Party Libs that underpin Ascent's Pipelines
-#
-################################################################
-################################################################
-
-
-################################
-# VTKm and supporting libs
-################################
-if(VTKM_DIR)
-    ################################
-    # VTKm
-    ################################
-    include(cmake/thirdparty/SetupVTKm.cmake)
-
-    ################################
-    # VTKh
-    ################################
-    include(cmake/thirdparty/SetupVTKh.cmake)
+# use BabelFlow_DIR to setup the options that cmake's find BabelFlow needs
+file(GLOB BabelFlow_DIR "${BabelFlow_DIR}/lib/cmake/BabelFlow*")
+if(NOT BabelFlow_DIR)
+    MESSAGE(FATAL_ERROR "Failed to find BabelFlow at BabelFlow_DIR=${BabelFlow_DIR}/lib/cmake/BabelFlow*")
 endif()
 
+find_package(MPI REQUIRED)
+find_package(BabelFlow REQUIRED)
 
-################################
-# Setup HDF5
-################################
-if(HDF5_DIR)
-    include(cmake/thirdparty/SetupHDF5.cmake)
+set(BabelFlow_INCLUDE_DIRS ${BabelFlow_DIR}/../../../include)
+
+message(STATUS "FOUND BabelFlow at ${BabelFlow_DIR}")
+#message(STATUS "BabelFlow_INCLUDE_DIRS = ${BabelFlow_INCLUDE_DIRS}")
+
+blt_register_library( NAME babelflow
+                      INCLUDES ${BabelFlow_INCLUDE_DIRS}
+                      LIBRARIES  babelflow babelflow_mpi)
+
+## Find also ParallelMergeTree analysis algorithm to build (based on BabelFlow)
+
+if(NOT PMT_DIR)
+    MESSAGE(FATAL_ERROR "ParallelMergeTree support needs explicit PMT_DIR")
 endif()
 
-################################
-# Setup MFEM
-################################
-if (MFEM_DIR)
-  include(cmake/thirdparty/SetupMFEM.cmake)
+MESSAGE(STATUS "Looking for ParallelMergeTree using PMT_DIR = ${PMT_DIR}")
+
+# use PMT_DIR to setup the options that cmake's find ParallelMergeTree needs
+file(GLOB PMT_DIR "${PMT_DIR}/lib/cmake/PMT*")
+if(NOT PMT_DIR)
+    MESSAGE(FATAL_ERROR "Failed to find ParallelMergeTree at PMT_DIR=${PMT_DIR}/lib/cmake/PMT*")
 endif()
 
+find_package(PMT REQUIRED)
 
-################################
-# Setup ADIOS
-################################
-if (ADIOS_DIR)
-  include(cmake/thirdparty/SetupADIOS.cmake)
-endif()
+set(PMT_INCLUDE_DIRS ${PMT_DIR}/../../../include/PMT)
 
-################################
-# Setup Babelflow
-################################
-if (ENABLE_BABELFLOW)
-    include(cmake/thirdparty/SetupBabelFlow.cmake)
-endif ()
+message(STATUS "FOUND PMT at ${PMT_DIR}")
+message(STATUS "PMT_INCLUDE_DIRS = ${PMT_INCLUDE_DIRS}")
+
+blt_register_library( NAME pmt
+                      INCLUDES ${PMT_INCLUDE_DIRS}
+                      LIBRARIES  pmt)
+
 
 
