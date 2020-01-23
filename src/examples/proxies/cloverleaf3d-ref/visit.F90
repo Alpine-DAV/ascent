@@ -212,7 +212,7 @@ SUBROUTINE visit(my_ascent)
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  IF( .FALSE. ) THEN
+  IF( .TRUE. ) THEN
       WRITE(chunk_name, '(i6)') parallel%task+100001
       chunk_name(1:1) = "."
       WRITE(step_name, '(i6)') step+100000

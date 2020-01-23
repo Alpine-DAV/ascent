@@ -35,7 +35,7 @@ SUBROUTINE hydro
   USE ascent
   IMPLICIT NONE
 
-  INTEGER         :: loc(1)
+  INTEGER         :: loc(1),err,rank,size,color,rank_split,sim_vis_comm
   REAL(KIND=8)    :: timer,timerstart,wall_clock,step_clock
 
   REAL(KIND=8)    :: grind_time,cells,rstep
@@ -48,6 +48,7 @@ SUBROUTINE hydro
 
   my_ascent   = ascent_create()
   ascent_opts = conduit_node_create()
+
   CALL conduit_node_set_path_int32(ascent_opts,"mpi_comm",MPI_COMM_WORLD)
   ! To Enable Web Streaming Add, change to "true"
   CALL conduit_node_set_path_char8_str(ascent_opts,"web/stream", "false")
@@ -175,7 +176,7 @@ SUBROUTINE hydro
           WRITE(g_out,'(a23,2f16.4)')"Total                 :",kernel_total,100.0*(kernel_total/wall_clock)
           WRITE(g_out,'(a23,2f16.4)')"The Rest              :",wall_clock-kernel_total,100.0*(wall_clock-kernel_total)/wall_clock
         ENDIF
-      ENDIF
+      ENDIF ! IF(FALSE)
       CALL ascent_close(my_ascent)
       CALL ascent_destroy(my_ascent)
       CALL clover_finalize

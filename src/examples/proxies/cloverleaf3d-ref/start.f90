@@ -55,6 +55,11 @@ SUBROUTINE start
 
   CALL clover_get_num_chunks(number_of_chunks)
 
+  IF(parallel%boss)THEN
+    WRITE(g_out,*) '++++ number_of_chunks',number_of_chunks
+    WRITE(g_out,*)
+  ENDIF
+
   ALLOCATE(chunks(1:chunks_per_task))
 
   ALLOCATE(left(1:chunks_per_task))

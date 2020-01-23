@@ -155,12 +155,37 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     ASCENT_ERROR("Missing Ascent::Open options missing MPI communicator (mpi_comm)");
   }
 
+  // ~~~ split mpi comm and set as default
+  //
+  int size = 1;
+  int world_rank = 0;
+  MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
+  MPI_Comm_rank(comm, &world_rank);
+
+  MPI_Comm_size(comm, &size);
+  int color = 0;
+  // TODO: remove/replace hard coded factor here -> get from options
+  int rank_split = int(size*0.75 + 0.5); // number of sim nodes: 3/4 * # nodes
+  // vis node
+  if (world_rank >= rank_split)
+    color = 1;
+  int sim_vis_comm = -1;
+  MPI_Comm_split(comm, color, m_rank, &sim_vis_comm);
+
+  int new_size = 0;
+  MPI_Comm_size(sim_vis_comm, &new_size);
+  // set new rank
+  MPI_Comm_rank(sim_vis_comm, &m_rank);
+  // ~~~
+
+
   flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
 #if defined(ASCENT_VTKM_ENABLED)
-  vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
+  // vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
+  vtkh::SetMPICommHandle(sim_vis_comm);
 #endif
-  MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
-  MPI_Comm_rank(comm, &m_rank);
+  // MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
+  // MPI_Comm_rank(comm, &m_rank);
   InfoHandler::m_rank = m_rank;
 #else // non mpi version
   if (options.has_child("mpi_comm"))

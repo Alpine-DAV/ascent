@@ -470,7 +470,6 @@ Workspace::default_mpi_comm()
     return m_default_mpi_comm;
 }
 
-
 //-----------------------------------------------------------------------------
 bool
 Workspace::supports_filter_type(const std::string &filter_type_name)

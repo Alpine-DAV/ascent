@@ -78,7 +78,7 @@ SUBROUTINE clover_init_comms
 
   IMPLICIT NONE
 
-  INTEGER :: err,rank,size,color,vis_comm,rank_split,MPI_COMM_VIS
+  INTEGER :: err,rank,size,color,rank_split,sim_vis_comm
 
   rank=0
   size=1
@@ -88,21 +88,19 @@ SUBROUTINE clover_init_comms
   CALL MPI_COMM_RANK(MPI_COMM_WORLD,rank,err)
   CALL MPI_COMM_SIZE(MPI_COMM_WORLD,size,err)
 
-
   !! split comm into sim and vis nodes
   ! color==0 is sim node; color==1 is a vis node
   !
   color = 0
-  rank_split = 1 - 1 ! number of sim nodes - 1
+  ! TODO: remove/replace hard coded factor here (use clover.in ?)
+  rank_split = ANINT(size*0.75) ! number of sim nodes: 3/4 * # nodes
   ! vis node
-  IF(rank.GT.rank_split) THEN
+  IF(rank.GE.rank_split) THEN
       color = 1
   ENDIF
 
-  CALL MPI_COMM_SPLIT(MPI_COMM_WORLD,color,0,MPI_COMM_VIS,err)
-  !
-  !! end sim/vis split
-
+  ! CALL MPI_COMM_SPLIT(MPI_COMM_WORLD,color,rank,sim_vis_comm,err)
+  WRITE(g_out,*)"size",size,"rank_split",rank_split," | rank",rank," | color",color 
   
   parallel%parallel=.TRUE.
   parallel%task=rank
@@ -112,7 +110,9 @@ SUBROUTINE clover_init_comms
   ENDIF
 
   parallel%boss_task=0
-  parallel%max_task=size
+  ! parallel%max_task=size
+  ! maximum tasks is number of sim nodes
+  parallel%max_task=rank_split
 
 END SUBROUTINE clover_init_comms
 
