@@ -789,7 +789,7 @@ PyFlow_Filter_input(PyFlow_Filter *self,
     // we need a deeper understanding of accounting of refs, but this solves
     // an issue with filters implemented in python that appeared in python 3.7
     // (needed in PyFlow_Filter_input and PyFlow_Filter_set_output)
-    Py_INCREF(py_data);
+    Py_INCREF(res);
 
     return res;
 }
