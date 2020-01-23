@@ -143,6 +143,7 @@ else
     ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
                             -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_cont-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_filter-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_rendering-$(ASCENT_VTKM_VERSION)
 endif
 

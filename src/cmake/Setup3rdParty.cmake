@@ -116,4 +116,11 @@ if (ADIOS_DIR)
   include(cmake/thirdparty/SetupADIOS.cmake)
 endif()
 
+################################
+# Setup Babelflow
+################################
+if (ENABLE_BABELFLOW)
+    include(cmake/thirdparty/SetupBabelFlow.cmake)
+endif ()
+
 

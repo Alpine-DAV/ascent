@@ -111,11 +111,11 @@ RUN cd /home/user/ascent && python scripts/uberenv/uberenv.py \
        --spec "%gcc+mpi+mfem ^python@3.6.3" \
        --spack-config-dir=scripts/uberenv/spack_configs/docker/ubuntu/
 
-# install jupyter and matplotlib via pip
+# install jupyter, matplotlib, and bash_kernel via pip
 RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
-    jupyter matplotlib
+    jupyter matplotlib bash_kernel
 
 # configure a debug build with cmake
 RUN cd /home/user/ascent && mkdir build-debug

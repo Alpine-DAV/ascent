@@ -492,12 +492,12 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   conduit::Node root;
 
-  //std::cout<<w.graph().to_dot()<<"\n";
-
   try
   {
     //expression->access();
     root = expression->build_graph(w);
+    //std::cout<<w.graph().to_dot()<<"\n";
+    //w.graph().save_dot_html("ascent_expressions_graph.html");
     w.execute();
   }
   catch(std::exception &e)

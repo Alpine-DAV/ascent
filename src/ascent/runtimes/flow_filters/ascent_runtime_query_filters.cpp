@@ -64,6 +64,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_expression_eval.hpp>
 #include <ascent_logging.hpp>
+#include <ascent_data_object.hpp>
 #include <ascent_runtime_param_check.hpp>
 
 #include <flow_graph.hpp>
@@ -136,21 +137,22 @@ BasicQuery::verify_params(const conduit::Node &params,
 void
 BasicQuery::execute()
 {
-    if(!input(0).check_type<Node>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("Query input must be a conduit node");
+        ASCENT_ERROR("Query input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<Node> n_input = data_object->as_low_order_bp();
 
     std::string expression = params()["expression"].as_string();
     std::string name = params()["name"].as_string();
     conduit::Node actions;
 
     Node v_info;
-    Node *n_input = input<Node>(0);
 
     // The mere act of a query stores the results
-    runtime::expressions::ExpressionEval eval(n_input);
+    runtime::expressions::ExpressionEval eval(n_input.get());
     conduit::Node res = eval.evaluate(expression, name);
 }
 

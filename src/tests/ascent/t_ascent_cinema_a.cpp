@@ -91,7 +91,6 @@ TEST(ascent_cinema_a, test_cinema_a)
                                                data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
     std::string db_name = "test_db";
     string output_path = "./cinema_databases/" + db_name;;
     string output_file = conduit::utils::join_file_path(output_path, "info.json");

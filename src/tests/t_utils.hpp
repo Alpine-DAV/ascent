@@ -148,11 +148,15 @@ check_test_image(const std::string &path, const float tolerance = 0.001f, std::s
     else
     {
       info["baseline_file/exists"] = "false";
+      res = false;
     }
 
-    ascent::PNGCompare compare;
+    if(res)
+    {
+      ascent::PNGCompare compare;
 
-    res &= compare.Compare(png_path, baseline, info, tolerance);
+      res &= compare.Compare(png_path, baseline, info, tolerance);
+    }
 
     if(!res)
     {
@@ -446,6 +450,79 @@ add_interleaved_vector(conduit::Node &dset)
       }
   }
 }
+
+void append_ghosts(conduit::Node &data,
+                   const int size,
+                   const std::string ghost_name,
+                   const std::string topo_name)
+{
+  std::vector<double> ghosts;
+  ghosts.resize(size);
+  const int garbage = 2;
+  const int actual = 1;
+  const int real = 0;
+
+  assert(size > 3);
+
+  for(int i = 0; i < size; ++i)
+  {
+    int value;
+    if(i == 0)
+    {
+      value = garbage;
+    }
+    else if(i == 1)
+    {
+      value = actual;
+    }
+    else
+    {
+      value = real;
+    }
+    ghosts[i] = value;
+  }
+
+  data["fields/"+ghost_name+"/values"].set(ghosts);
+  data["fields/"+ghost_name+"/association"] = "element";
+  data["fields/"+ghost_name+"/topology"] = topo_name;
+}
+
+// outputs a mutli domain(size 1) multiple topo data
+// set
+void build_multi_topo(Node &data, const int dims)
+{
+  Node verify_info;
+  Node &dom = data.append();
+
+  conduit::blueprint::mesh::examples::braid("uniform",
+                                            dims,
+                                            dims,
+                                            dims,
+                                            dom);
+
+  Node point_data;
+  conduit::blueprint::mesh::examples::braid("points",
+                                            dims,
+                                            dims,
+                                            dims,
+                                            point_data);
+
+  dom["state/domain_id"] = (int)0;
+
+  dom["topologies/point_mesh"] = point_data["topologies/mesh"];
+  dom["topologies/point_mesh/coordset"] = "point_coords";
+  dom["coordsets/point_coords"] = point_data["coordsets/coords"];
+  dom["fields/point_braid"] = point_data["fields/braid"];
+  dom["fields/point_braid/topology/"] = "point_mesh";
+  dom["fields/point_radial"] = point_data["fields/radial"];
+  dom["fields/point_radial/topology/"] = "point_mesh";
+  const int elements = (dims - 1) * (dims - 1) * (dims - 1);
+  const int points= (dims) * (dims) * (dims);
+  append_ghosts(dom, points, "point_ghosts", "point_mesh");
+  append_ghosts(dom, elements, "cell_ghosts", "mesh");
+  //data.print();
+}
+
 
 // Macro to save ascent actions file
 #define ASCENT_ACTIONS_DUMP(actions,name,msg) \
