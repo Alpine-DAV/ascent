@@ -412,9 +412,9 @@ public:
                                                (char*)"declare_interface",
                                                (char*)"O",
                                                 py_iface);
+        Py_DECREF(py_iface);
         if(py_res)
         {
-            Py_DECREF(py_iface);
             Py_DECREF(py_res);
         }
         else
@@ -785,6 +785,12 @@ PyFlow_Filter_input(PyFlow_Filter *self,
         res = (PyObject*) self->filter->input<PyObject>(idx);
     }
 
+    // TODO:
+    // we need a deeper understanding of accounting of refs, but this solves
+    // an issue with filters implemented in python that appeared in python 3.7
+    // (needed in PyFlow_Filter_input and PyFlow_Filter_set_output)
+    Py_INCREF(res);
+
     return res;
 }
 
@@ -800,6 +806,12 @@ PyFlow_Filter_set_output(PyFlow_Filter *self,
                         "Data must be a python object");
         return NULL;
     }
+
+    // TODO:
+    // we need a deeper understanding of accounting of refs, but this solves
+    // an issue with filters implemented in python that appeared in python 3.7
+    // (needed in PyFlow_Filter_input and PyFlow_Filter_set_output)
+    Py_INCREF(py_data);
 
     self->filter->set_output<PyObject>(py_data);
 
