@@ -82,9 +82,12 @@ public:
   mfem::GridFunction* get_field(const std::string &field_name);
   int num_fields();
   FieldMap get_field_map();
+  int cycle();
+  void cycle(int cycle);
 protected:
   FieldMap    m_fields;
   mfem::Mesh *m_mesh;
+  int m_cycle;
 
 };
 

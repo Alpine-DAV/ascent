@@ -95,7 +95,6 @@ TEST(ascent_clip, test_clip_sphere)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -183,7 +182,6 @@ TEST(ascent_clip, test_clip_inverted_sphere)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -271,7 +269,6 @@ TEST(ascent_clip, test_clip_box)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -361,7 +358,6 @@ TEST(ascent_clip, test_clip_plane)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 

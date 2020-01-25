@@ -55,6 +55,7 @@
 #include <ascent.hpp>
 #include <ascent_exports.h>
 #include <ascent_runtime.hpp>
+#include <ascent_data_object.hpp>
 #include <ascent_web_interface.hpp>
 #include <flow.hpp>
 
@@ -98,8 +99,8 @@ public:
 private:
     // holds options passed to initialize
     conduit::Node     m_runtime_options;
-    // conduit node that (externally) holds the data from the simulation
-    conduit::Node     m_data;
+    // DataObject that (externally) holds the data from the simulation
+    DataObject        m_data_object;
     conduit::Node     m_connections;
     conduit::Node     m_scene_connections;
 
@@ -109,7 +110,7 @@ private:
     WebInterface      m_web_interface;
     int               m_refinement_level;
     int               m_rank;
-    std::string       m_ghost_field_name;
+    conduit::Node     m_ghost_fields; // a list of strings
 
     void              ResetInfo();
 

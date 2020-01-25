@@ -88,7 +88,9 @@ TEST(ascent_data_adapter, vtkm_uniform_2d_to_blueprint)
     vtkm::cont::testing::MakeTestDataSet maker;
     vtkm::cont::DataSet ds = maker.Make2DUniformDataSet0();
     conduit::Node blueprint;
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint);
+    bool zero_copy = false;
+    std::string topo_name = "topo";
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint,topo_name, false);
     conduit::Node info;
     bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
@@ -111,7 +113,9 @@ TEST(ascent_data_adapter, vtkm_uniform_3d_to_blueprint)
     vtkm::cont::testing::MakeTestDataSet maker;
     vtkm::cont::DataSet ds = maker.Make3DUniformDataSet0();
     conduit::Node blueprint;
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint);
+    bool zero_copy = false;
+    std::string topo_name = "topo";
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint,topo_name, false);
     conduit::Node info;
     bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
@@ -133,7 +137,9 @@ TEST(ascent_data_adapter, vtkm_rectilinear_3d_to_blueprint)
     vtkm::cont::testing::MakeTestDataSet maker;
     vtkm::cont::DataSet ds = maker.Make3DRectilinearDataSet0();
     conduit::Node blueprint;
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint);
+    bool zero_copy = false;
+    std::string topo_name = "topo";
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint,topo_name, false);
     conduit::Node info;
     bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
@@ -156,7 +162,9 @@ TEST(ascent_data_adapter, vtkm_rectilinear_2d_to_blueprint)
     vtkm::cont::testing::MakeTestDataSet maker;
     vtkm::cont::DataSet ds = maker.Make2DRectilinearDataSet0();
     conduit::Node blueprint;
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint);
+    bool zero_copy = false;
+    std::string topo_name = "topo";
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint,topo_name, false);
     conduit::Node info;
     bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
@@ -178,7 +186,9 @@ TEST(ascent_data_adapter, vtkm_explicit_single_type_to_blueprint)
     vtkm::cont::testing::MakeTestDataSet maker;
     vtkm::cont::DataSet ds = maker.Make3DExplicitDataSetCowNose();
     conduit::Node blueprint;
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint);
+    bool zero_copy = false;
+    std::string topo_name = "topo";
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint,topo_name, false);
     conduit::Node info;
     bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
@@ -212,6 +222,77 @@ TEST(ascent_data_adapter, vtkm_explicit_single_type_to_blueprint)
     ascent.execute(actions);
     ascent.close();
 
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_data_adapter, zero_copy_test)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("testing zero copy bp -> vtkm -> bp");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_contour_extract");
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "contour";
+    // filter knobs
+    conduit::Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "braid";
+    contour_params["iso_values"] = 0.;
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"]  = "pl1";
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
 }
 
 
@@ -322,6 +403,34 @@ TEST(ascent_data_adapter, interleaved_3d)
     EXPECT_TRUE(check_test_image(output_file,0.01f));
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_multi_topo, adapter_test)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    ASCENT_INFO("Testing round trip of multi_topo");
+    //
+    // Create an example mesh convert it, and convert it back.
+    //
+    Node data;
+    build_multi_topo(data, EXAMPLE_MESH_SIDE_DIM);
+
+    VTKHCollection* collection = VTKHDataAdapter::BlueprintToVTKHCollection(data,true);
+
+    Node out_data;
+    VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(collection, out_data);
+
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(out_data, verify_info));
+    delete collection;
+}
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

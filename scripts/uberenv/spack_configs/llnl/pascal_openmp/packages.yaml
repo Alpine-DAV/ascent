@@ -16,7 +16,7 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    variants: +shared+openmp+python
+    variants: +shared+openmp
     compiler: [gcc, intel, pgi, clang, xl, nag]
     providers:
       awk: [gawk]
@@ -53,7 +53,7 @@ packages:
       buildable: False
       paths:
           pkg-config: /usr
-# LLNL toss3 CUDA 
+# LLNL toss3 CUDA
   cuda:
     modules:
        cuda@9.2: cuda/9.2.88

@@ -79,7 +79,6 @@ TEST(ascent_runtime, test_python_script_extract)
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     //
     // Create the actions.
@@ -124,7 +123,6 @@ TEST(ascent_runtime, test_python_script_extract_from_file)
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     //
     // Create the actions.
@@ -177,7 +175,6 @@ TEST(ascent_runtime, test_python_script_extract_from_bad_file)
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     //
     // Create the actions.
@@ -247,7 +244,6 @@ TEST(ascent_runtime, test_python_script_extract_import)
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     // write out the test module to a file
     std::ofstream ofs;
@@ -321,7 +317,6 @@ TEST(ascent_runtime, test_python_extract_inception)
     data["state/cycle"] = 101;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     //
     // Create the actions.

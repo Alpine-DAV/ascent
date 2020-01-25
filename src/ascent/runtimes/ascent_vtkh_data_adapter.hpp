@@ -72,6 +72,7 @@ class DataSet;
 };
 
 #include <ascent_exports.h>
+#include "ascent_vtkh_collection.hpp"
 // conduit includes
 #include <conduit.hpp>
 
@@ -92,6 +93,12 @@ class ASCENT_API VTKHDataAdapter
 {
 public:
 
+    //
+    // Convert a multi-domain blueprint data set to a VTKHCollection
+    //  assumes: conduit::blueprint::mesh::verify(n,info) == true
+    //
+    static VTKHCollection* BlueprintToVTKHCollection(const conduit::Node &n,
+                                                     bool zero_copy);
     // convert blueprint data to a vtkh Data Set
     // assumes "n" conforms to the mesh blueprint
     //
@@ -99,8 +106,8 @@ public:
     //
     // zero copy means attempt to zero copy
     static vtkh::DataSet  *BlueprintToVTKHDataSet(const conduit::Node &n,
-                                                  bool zero_copy = false,
-                                                  const std::string &topo_name="");
+                                                  const std::string &topo_name,
+                                                  bool zero_copy = false);
 
 
     // convert blueprint data to a vtkm Data Set
@@ -110,17 +117,24 @@ public:
     //
     static vtkm::cont::DataSet  *BlueprintToVTKmDataSet(const conduit::Node &n,
                                                         bool zero_copy,
-                                                        const std::string &topo_name="");
+                                                        const std::string &topo_name);
 
 
     // wraps a single VTKm data set into a VTKH dataset
     static vtkh::DataSet    *VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset);
 
     static void              VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
-                                                    conduit::Node &node);
+                                                    conduit::Node &node,
+                                                    const std::string topo_name,
+                                                    bool zero_copy);
 
     static void              VTKHToBlueprintDataSet(vtkh::DataSet *dset,
-                                                    conduit::Node &node);
+                                                    conduit::Node &node,
+                                                    bool zero_copy);
+
+    static void              VTKHCollectionToBlueprintDataSet(VTKHCollection *collection,
+                                                              conduit::Node &node,
+                                                              bool zero_copy = false);
 private:
     // helpers for specific conversion cases
     static vtkm::cont::DataSet  *UniformBlueprintToVTKmDataSet(const std::string &coords_name,
@@ -173,10 +187,14 @@ private:
                                                 bool zero_copy);
 
     static bool VTKmTopologyToBlueprint(conduit::Node &output,
-                                        const vtkm::cont::DataSet &data_set);
+                                        const vtkm::cont::DataSet &data_set,
+                                        const std::string topo_name,
+                                        bool zero_copy);
 
     static void VTKmFieldToBlueprint(conduit::Node &output,
-                                     const vtkm::cont::Field &field);
+                                     const vtkm::cont::Field &field,
+                                     const std::string topo_name,
+                                     bool zero_copy);
 
 };
 

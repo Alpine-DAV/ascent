@@ -64,6 +64,7 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <ascent_data_object.hpp>
 #include <ascent_string_utils.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -111,38 +112,6 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace filters
 {
-
-namespace detail
-{
-vtkh::DataSet *
-transmogrify_source(const conduit::Node *n_input, const int ref_level)
-{
-
-  EnsureLowOrder ensure;
-  vtkh::DataSet *dataset;
-  bool zero_copy = true;
-  if(ensure.is_high_order(*n_input))
-  {
-#if defined(ASCENT_MFEM_ENABLED)
-    MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
-    conduit::Node *lo_dset = new conduit::Node;
-    MFEMDataAdapter::Linearize(domains, *lo_dset, ref_level);
-    delete domains;
-
-    dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*lo_dset, zero_copy);
-#else
-    ASCENT_ERROR("Unable to convert high order mesh when MFEM is not enabled");
-#endif
-  }
-  else
-  {
-    dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*n_input, zero_copy);
-  }
-
-  return dataset;
-}
-
-}// namespace detail
 
 //-----------------------------------------------------------------------------
 RoverXRay::RoverXRay()
@@ -214,14 +183,26 @@ RoverXRay::verify_params(const conduit::Node &params,
 void
 RoverXRay::execute()
 {
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_slice input must be a vtk-h dataset");
+        ASCENT_ERROR("rover input must be a data object");
     }
-    vtkh::DataSet *dataset = input<vtkh::DataSet>(0);
+
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field_name = params()["absorption"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 
     vtkmCamera camera;
-    camera.ResetToBounds(dataset->GetGlobalBounds());
+    camera.ResetToBounds(dataset.GetGlobalBounds());
 
     if(params().has_path("camera"))
     {
@@ -269,9 +250,9 @@ RoverXRay::execute()
     settings.m_render_mode = rover::energy;
 
     tracer.set_render_settings(settings);
-    for(int i = 0; i < dataset->GetNumberOfDomains(); ++i)
+    for(int i = 0; i < dataset.GetNumberOfDomains(); ++i)
     {
-      tracer.add_data_set(dataset->GetDomain(i));
+      tracer.add_data_set(dataset.GetDomain(i));
     }
 
     tracer.set_ray_generator(&generator);
@@ -308,7 +289,6 @@ RoverXRay::execute()
     }
     tracer.finalize();
 
-    //delete dataset;
 }
 
 //-----------------------------------------------------------------------------
@@ -374,14 +354,26 @@ RoverVolume::verify_params(const conduit::Node &params,
 void
 RoverVolume::execute()
 {
-    if(!input(0).check_type<vtkh::DataSet>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_slice input must be a vtk-h dataset");
+        ASCENT_ERROR("rover input must be a data object");
     }
-    vtkh::DataSet *dataset = input<vtkh::DataSet>(0);
+
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 
     vtkmCamera camera;
-    camera.ResetToBounds(dataset->GetGlobalBounds());
+    camera.ResetToBounds(dataset.GetGlobalBounds());
 
     if(params().has_path("camera"))
     {
@@ -446,9 +438,9 @@ RoverVolume::execute()
     }
 
     tracer.set_render_settings(settings);
-    for(int i = 0; i < dataset->GetNumberOfDomains(); ++i)
+    for(int i = 0; i < dataset.GetNumberOfDomains(); ++i)
     {
-      tracer.add_data_set(dataset->GetDomain(i));
+      tracer.add_data_set(dataset.GetDomain(i));
     }
 
     tracer.set_ray_generator(&generator);
@@ -472,7 +464,6 @@ RoverVolume::execute()
     }
     tracer.finalize();
 
-    //delete dataset;
 }
 
 //-----------------------------------------------------------------------------

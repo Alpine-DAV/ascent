@@ -93,7 +93,7 @@ The default integration example for Cloverleaf3D sets up Ascent to volume render
 
 .. literalinclude:: ../../../src/examples/proxies/cloverleaf3d-ref/visit.F90
    :language: fortran
-   :lines: 267-282
+   :lines: 192-204
 
 
 Ascent also allows you to override compiled in actions with a  ``ascent_actions.yaml`` file. In this case, the file we provide with Cloverleaf3D mirrors the compiled in actions:

@@ -63,6 +63,7 @@
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
+#include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_file_system.hpp>
 
@@ -556,7 +557,7 @@ void mesh_blueprint_save(const Node &data,
         }
 
         root["protocol/name"]    =  file_protocol;
-        root["protocol/version"] = "0.4.0";
+        root["protocol/version"] = "0.5.0";
 
         root["number_of_files"]  = global_domains;
         // for now we will save one file per domain, so trees == files
@@ -614,13 +615,17 @@ RelayIOSave::execute()
         protocol = params()["protocol"].as_string();
     }
 
-    if(!input("in").check_type<Node>())
+    if(!input("in").check_type<DataObject>())
     {
         // error
-        ASCENT_ERROR("relay_io_save requires a conduit::Node input");
+        ASCENT_ERROR("relay_io_save requires a DataObject input");
     }
 
-    Node *in = input<Node>("in");
+    DataObject *data_object  = input<DataObject>("in");
+    std::shared_ptr<Node> n_input = data_object->as_node();
+
+    Node *in = n_input.get();
+
     Node selected;
     conduit::Node test;
     if(params().has_path("fields"))

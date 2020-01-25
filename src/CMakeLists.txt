@@ -53,7 +53,7 @@ cmake_policy(SET CMP0048 NEW)
 # Ascent
 ################################
 
-project(ascent VERSION "0.4.1")
+project(ascent VERSION "0.5.0")
 
 ################################
 # Build Options
@@ -71,6 +71,8 @@ option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
+
+option(ENABLE_BABELFLOW   "Enable BabelFlow runtime" OFF)
 
 if(NOT ENABLE_SERIAL AND NOT ENABLE_MPI)
   message(FATAL_ERROR "No libraries are built. "
@@ -101,6 +103,7 @@ set(CONDUIT_DIR "" CACHE PATH "path to conduit installation")
 if(ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
+
 
 ################################
 # Set BLT Options

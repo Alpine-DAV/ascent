@@ -6,14 +6,6 @@ except NameError:
     count = 0
 
 if count == 0:
-    import sys
-    # CHANGE this path to the result of:
-    # echo $(spack location --install-dir paraview)
-    paraview_path = ('/home/danlipsa/projects/spack/opt/spack/'
-                     'linux-ubuntu18.04-x86_64/gcc-7.4.0/'
-                     'paraview-develop-odtqjudmv53um5qyzvfojkcbyi64glmc')
-    sys.path.append(paraview_path)
-
     # ParaView API
     # WARNING: this does not work inside the plugin
     #          unless you have the same import in paraview-vis.py
@@ -22,16 +14,10 @@ if count == 0:
     paraview.options.symmetric = True
     from paraview.simple import LoadPlugin, Contour, \
         Show, ColorBy, GetColorTransferFunction, GetActiveCamera, Render,\
-        SaveScreenshot
+        SaveScreenshot, ResetCamera
     import ascent_extract
 
-    # CHANGE this path to the result of:
-    # echo $(spack location --install-dir ascent)/
-    #                  examples/ascent/paraview-vis/paraview_ascent_source.py
-    scriptName = ('/home/danlipsa/projects/ascent/src/examples/'
-                  'paraview-vis/paraview_ascent_source.py')
-    LoadPlugin(scriptName, remote=True, ns=globals())
-
+    LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())
     # create the pipeline
     ascentSource = AscentSource()
     asDisplay = Show()
@@ -69,6 +55,7 @@ cycle = node['state/cycle']
 imageName = 'warpx_{0:04d}.png'.format(int(cycle))
 dataName = 'warpx_data_{0:04d}'.format(int(cycle))
 ascentSource.Count = count
+ResetCamera()
 Render()
 SaveScreenshot(imageName, ImageResolution=(1024, 1024),
                FontScaling='Do not scale fonts')
