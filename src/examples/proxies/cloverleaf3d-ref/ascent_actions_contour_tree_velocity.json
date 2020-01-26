@@ -1,0 +1,107 @@
+[
+  {
+    "action": "add_pipelines",
+    "pipelines": 
+    {
+      "p1": 
+      {
+        "f1": 
+        {
+          "type" : "vector_magnitude",
+          "params" :
+          {
+            "field" : "velocity",
+            "output_name": "velocity_magnitude"
+          }
+        }
+      },
+      "p2": 
+      {
+        "f1": 
+        {
+          "type" : "vector_magnitude",
+          "params" :
+          {
+            "field" : "velocity",
+            "output_name": "velocity_magnitude"
+          }
+        },
+        "f2": 
+        {
+          "type" : "contour",
+          "params" :
+          {
+            "field" : "velocity_magnitude",
+            "levels": 10,
+            "use_contour_tree" : "true"            
+          }
+        }
+      },
+      "p3": 
+      {
+        "f1": 
+        {
+          "type" : "vector_magnitude",
+          "params" :
+          {
+            "field" : "velocity",
+            "output_name": "velocity_magnitude"
+          }
+        },
+        "f2": 
+        {
+          "type" : "contour",
+          "params" :
+          {
+            "field" : "velocity_magnitude",
+            "levels": 10
+          }
+        }
+      }      
+    }
+  },
+  {
+    "action": "add_scenes",
+    "scenes":
+    {
+      "s1":
+      {
+        "plots":
+        {
+          "p1":
+          {
+            "type": "volume",
+            "pipeline": "p1",
+            "field": "velocity_magnitude"
+          }
+        }
+      },
+      "s2": 
+      {
+        "image_prefix": "contour_tree_%04d",
+        "plots": 
+        {
+          "p1": 
+          {
+            "type": "pseudocolor",
+            "pipeline": "p2",
+            "field": "velocity_magnitude"
+          }
+        }
+      },
+      "s3": 
+      {
+        "image_prefix": "levels_%04d",
+        "plots": 
+        {
+          "p1": 
+          {
+            "type": "pseudocolor",
+            "pipeline": "p3",
+            "field": "velocity_magnitude"
+          }
+        }
+      }      
+    }
+  }
+]
