@@ -143,7 +143,6 @@ HolaMPIExtract::verify_params(const conduit::Node &params,
 void
 HolaMPIExtract::execute()
 {
-
     if(!input(0).check_type<Node>())
     {
         ASCENT_ERROR("hola_mpi input must be a conduit node");
@@ -153,8 +152,9 @@ HolaMPIExtract::execute()
 
     // assumes multi domain input
 
-    hola_mpi(params(),*n_input);
+    std::cout << "~~~ HOLA execute " << std::endl;
 
+    hola_mpi(params(),*n_input);
 }
 
 

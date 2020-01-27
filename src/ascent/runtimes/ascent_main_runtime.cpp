@@ -1058,7 +1058,7 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
                          exec_name);
     // connect the renders to the scene exec
     // on the second port
-    // TODO: redundand?
+    // TODO: this looks redundand
     // w.graph().connect(renders_name,   // src
     //                   exec_name,      // dest
     //                   1);             // port for renders
@@ -1070,6 +1070,8 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
     // "probe" defines percentage of total renders to be used for probing.
     conduit::Node probe_params;
     std::string exec_probe_name = "exec_probe_" + names[i];
+    std::string vtkh_rendering_split_name = "vtkh_rendering_split_" + names[i];
+    
     if (scene.has_path("probing_factor"))
     {
       probe_params["probing_factor"] = scene["probing_factor"].as_double();
@@ -1089,21 +1091,43 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
       {
         rendering_split_params["vis_budget"] = scene["vis_budget"].as_double();
       }
-      std::string vtkh_rendering_split_name = "vtkh_rendering_split_" + names[i];
       w.graph().add_filter("vtkh_rendering_split",
                            vtkh_rendering_split_name,
                            rendering_split_params);
 
       w.graph().connect(exec_probe_name,            // src
                         vtkh_rendering_split_name,  // dest
-                        "render_times");            // port 0 for render times
+                        "render_times");            // port 1 for render times
 
-      // FIXME: this connection exists to order graph, 
-      // we don't need render times in ExecScene --> find other solution
-      // mb pass dataset?
+
+      // add hola filter node for (partly) in transit visualization
+      conduit::Node hola_params;
+      // TODO: dynamic rank split (we have to split the in-transit subcomm) 
+      hola_params["rank_split"] = scene["sim_nodes"].as_int64();
+      // hola_params["interface/input"] = "vtkh_data";
+    #ifdef ASCENT_MPI_ENABLED 
+      // TODO in transit comm -> set during runtime
+      hola_params["mpi_comm"] = flow::Workspace::default_mpi_comm();
+    #endif
+      std::string hola_mpi_name = "hola_mpi_" + names[i];
+      w.graph().add_filter("hola_mpi",
+                           hola_mpi_name,
+                           hola_params);
+
+      w.graph().connect(vtkh_rendering_split_name,  // src
+                        hola_mpi_name,              // dest
+                        "in");                      // data
+
+      w.graph().connect(hola_mpi_name,  // src
+                        exec_name,      // dest
+                        "in");          // dummy port
+
+      // FIXME: this connection exists to order the graph (?), 
+      // we don't need actually need render times in ExecScene -> find other solution
+      // maybe pass dataset?
       w.graph().connect(vtkh_rendering_split_name,  // src
                         exec_name,                  // dest
-                        "render_times");            // port 2 for render times
+                        "in");                      // dummy port
 
       // TODO: connect to scene exec to pass on datasets ?
       // connect the probe exec with the scene exec to pass on the render times
@@ -1111,7 +1135,7 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
       //                   exec_name,        // dest
       //                   2);               // port 2 for render times
     }
-    // ~~~~~~~~~~~~ probing ~~~~~~~~~~~~
+    // ~~~~~~~~~~~~ end probing ~~~~~~~~~~~~
 
     std::vector<std::string> pipelines = GetPipelines(scene["plots"]);
     std::vector<std::string> plot_names = scene["plots"].child_names();
@@ -1294,6 +1318,10 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
       w.graph().connect(prev_add_plot_name, // src
                         exec_probe_name,    // dest
                         0);                 // scene port
+      // connect scene to rendering split (last resort for data access via registry?)
+      // w.graph().connect(prev_add_plot_name, // src
+      //                   vtkh_rendering_split_name,    // dest
+      //                   0);                 // scene port
     }
 
   } // each scene

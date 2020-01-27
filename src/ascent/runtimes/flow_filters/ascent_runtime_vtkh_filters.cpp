@@ -49,6 +49,8 @@
 
 #include "ascent_runtime_vtkh_filters.hpp"
 
+#include "ascent_runtime_hola_filters.hpp"
+
 //-----------------------------------------------------------------------------
 // thirdparty includes
 //-----------------------------------------------------------------------------
@@ -266,6 +268,11 @@ public:
   std::vector<std::vector<double>> *GetRenderTimes()
   {
     return &m_render_times;
+  }
+
+  int GetRendererCount()
+  {
+    return m_renderer_count;
   }
 
   void AddRenderer(RendererContainer *container)
@@ -2539,7 +2546,7 @@ void ExecScene::declare_interface(conduit::Node &i)
   i["type_name"] = "exec_scene";
   i["port_names"].append() = "scene";
   i["port_names"].append() = "renders";
-  i["port_names"].append() = "render_times";
+  i["port_names"].append() = "in";
   i["output_port"] = "false";
 }
 
@@ -3702,7 +3709,6 @@ VTKHRenderingSplit::~VTKHRenderingSplit()
 void VTKHRenderingSplit::declare_interface(Node &i)
 {
   i["type_name"] = "vtkh_rendering_split";
-  // i["port_names"].append() = "dataset";
   i["port_names"].append() = "render_times";
   i["output_port"] = "true"; // extract?
 }
@@ -3751,14 +3757,14 @@ void VTKHRenderingSplit::execute()
   ASCENT_INFO("~~~ Exec rendering split filter ~~~");
   // if(!input(0).check_type<vtkh::DataSet>())
   // {
-  //     ASCENT_ERROR("vtkh_rendering_split input 0 must be a vtkh DataSets");
+  //   ASCENT_ERROR("vtkh_rendering_split input 0 must be a vtkh DataSet");
   // }
-  if (!input(0).check_type<std::vector<std::vector<double>>>())
+  if (!input(0).check_type<vector<vector<double>>>())
   {
-    ASCENT_ERROR("vtkh_rendering_split input 0 must be a vector of vectors of doubles");
+    ASCENT_ERROR("vtkh_rendering_split input must be a vector of vectors of doubles");
   }
   // vtkh::DataSet *data = input<vtkh::DataSet>(0);
-  std::vector<std::vector<double>> *render_times = input<std::vector<std::vector<double>>>(0);
+  std::vector<std::vector<double>> *render_times = input<vector<vector<double>>>(0);
 
   // relative amount of visualization budget [0,1]
   float vis_budget = 0.1; // default to 10%
@@ -3817,15 +3823,26 @@ void VTKHRenderingSplit::execute()
   MPI_Comm receive_comm;
   MPI_Comm_split(intransit_comm, color_recv, 0, &receive_comm);
 
-  if (color_intransit && !color_recv) 
+  if (color_intransit) 
   {
-    std::cout << "~~~~~rank " << rank << " is going to send extract." << std::endl;
-    // TODO: make extract and send off to vis nodes
-  }
-  else if (color_intransit && color_recv)
-  {
-    std::cout << "~~~~~rank " << rank << " is going to receive extract(s)." << std::endl;
-    // TODO: receive data
+    // HolaMPIExtract hola;
+
+    // flow::Data *data = graph().workspace().registry().fetch<flow::Data>("p1_s1_cont_dset");
+    // vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    // conduit::Node blueprint;
+    // VTKHDataAdapter::VTKHToBlueprintDataSet(data, blueprint);
+    // hola.set_input(data);
+
+    if (color_recv)
+    {
+      std::cout << "~~~~~rank " << rank << " is going to receive extract(s)." << std::endl;
+      // TODO: receive data
+    }
+    else
+    {
+      std::cout << "~~~~~rank " << rank << " is going to send extract." << std::endl;
+      // TODO: make extract and send off to vis nodes
+    }
   }
   // else continue with local in-line rendering
 #endif // ASCENT_MPI_ENABLED
@@ -3847,19 +3864,14 @@ void VTKHRenderingSplit::execute()
   // {
   //   send_input_data(to the other resource)
   // }
+ 
+  vtkh::DataSet *data = graph().workspace().registry().fetch<vtkh::DataSet>("p1_s1_cont_dset");
 
-  // noop reference code
-  // vtkh::NoOp noop;
+  conduit::Node blueprint;
+  VTKHDataAdapter::VTKHToBlueprintDataSet(data, blueprint);
 
-  // noop.SetInput(data);
-  // noop.SetField(field_name);
-
-  // noop.Update();
-
-  // vtkh::DataSet *noop_output = noop.GetOutput();
-  // set_output<vtkh::DataSet>(noop_output);
-
-  set_output<std::vector<std::vector<double>>>(render_times);
+  set_output<conduit::Node>(&blueprint);
+  // set_output<vector<vector<double>>>(render_times);
 }
 
 //-----------------------------------------------------------------------------
