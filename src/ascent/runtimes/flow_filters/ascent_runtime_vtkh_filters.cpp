@@ -3867,10 +3867,10 @@ void VTKHRenderingSplit::execute()
  
   vtkh::DataSet *data = graph().workspace().registry().fetch<vtkh::DataSet>("p1_s1_cont_dset");
 
-  conduit::Node blueprint;
-  VTKHDataAdapter::VTKHToBlueprintDataSet(data, blueprint);
+  conduit::Node *blueprint = new conduit::Node();
+  VTKHDataAdapter::VTKHToBlueprintDataSet(data, *blueprint);
 
-  set_output<conduit::Node>(&blueprint);
+  set_output<conduit::Node>(blueprint);
   // set_output<vector<vector<double>>>(render_times);
 }
 
