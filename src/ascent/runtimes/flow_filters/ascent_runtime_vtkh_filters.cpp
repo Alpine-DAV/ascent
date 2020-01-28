@@ -3808,7 +3808,7 @@ void VTKHRenderingSplit::execute()
     color_intransit = 1;
     // vis nodes only receive and render data
     is_vis_node = true;
-    std::cout << "~~~" << "rank " << rank << "is a vis node." << std::endl; 
+    std::cout << "~~~ " << "rank " << rank << " is a vis node." << std::endl; 
   }
   else if (total_ranks > 1)
   {
@@ -3819,8 +3819,9 @@ void VTKHRenderingSplit::execute()
     std::cout << "~~~ " << avg << " ms mean frame time rank " << rank << std::endl; 
 
     // decide if this node wants to send data away
-    bool res = decide_intransit(avg, vis_budget);
-    color_intransit = 1;
+    bool is_inline = decide_intransit(avg, vis_budget);
+    if (is_inline)
+      color_intransit = 1;
   }
 
 #ifdef ASCENT_MPI_ENABLED
