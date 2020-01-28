@@ -93,7 +93,7 @@ SUBROUTINE clover_init_comms
   !
   color = 0
   ! TODO: remove/replace hard coded factor here (use clover.in ?)
-  rank_split = ANINT(size*0.75) ! number of sim nodes: 3/4 * # nodes
+  rank_split = ANINT(size*0.75 + 0.5) ! number of sim nodes: 3/4 * # nodes
   ! vis node
   IF(rank.GE.rank_split) THEN
       color = 1

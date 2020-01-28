@@ -3662,7 +3662,8 @@ void ExecProbe::execute()
   const int num_probe_renders = std::round(renders->size() * probing_factor);
   const int stride = renders->size() / num_probe_renders;
 
-  std::cout << "~~~ Probing: " << num_probe_renders << " " << stride << " " << renders->size() << std::endl;
+  std::cout << "~~~ Probing: " << num_probe_renders << " images "
+            << stride << " stride, total: " << renders->size() << std::endl;
 
   std::vector<vtkh::Render> probe_renders;
   for (size_t i = renders->size() - 1; i > 0; i -= stride)
@@ -3710,7 +3711,7 @@ void VTKHRenderingSplit::declare_interface(Node &i)
 {
   i["type_name"] = "vtkh_rendering_split";
   i["port_names"].append() = "render_times";
-  i["output_port"] = "true"; // extract?
+  i["output_port"] = "true"; // data set for hola extracts
 }
 
 //-----------------------------------------------------------------------------
@@ -3720,10 +3721,13 @@ bool VTKHRenderingSplit::verify_params(const conduit::Node &params,
   info.reset();
 
   // parameter for visualization performance budget in percent (default 10%)
+  // TODO: set default parameters
   bool res = check_numeric("vis_budget", params, info, true);
+  res = check_numeric("sim_nodes", params, info, true);
 
   std::vector<std::string> valid_paths;
   valid_paths.push_back("vis_budget");
+  valid_paths.push_back("sim_nodes");
 
   std::string surprises = surprise_check(valid_paths, params);
 
@@ -3739,7 +3743,7 @@ bool VTKHRenderingSplit::verify_params(const conduit::Node &params,
 bool decide_intransit(const float avg, const float vis_budget)
 {
   // TODO: calculate based on budget
-  float max_time = 100.;
+  float max_time = 80.f;
 
   if (avg > max_time)
   {
@@ -3754,11 +3758,7 @@ bool decide_intransit(const float avg, const float vis_budget)
 //-----------------------------------------------------------------------------
 void VTKHRenderingSplit::execute()
 {
-  ASCENT_INFO("~~~ Exec rendering split filter ~~~");
-  // if(!input(0).check_type<vtkh::DataSet>())
-  // {
-  //   ASCENT_ERROR("vtkh_rendering_split input 0 must be a vtkh DataSet");
-  // }
+  // ASCENT_INFO("~~~ Exec rendering split filter ~~~");
   if (!input(0).check_type<vector<vector<double>>>())
   {
     ASCENT_ERROR("vtkh_rendering_split input must be a vector of vectors of doubles");
@@ -3773,19 +3773,20 @@ void VTKHRenderingSplit::execute()
     vis_budget = params()["vis_budget"].to_float();
     if (vis_budget <= 0. || vis_budget > 1.)
     {
-      ASCENT_ERROR("vtkh_rendering_split 'vis_budget' value '" << 
-                    vis_budget << " must be in range [0,1]. Skipping split.");
+      ASCENT_ERROR("vtkh_rendering_split 'vis_budget' value '" << vis_budget
+                   << " must be in range [0,1]. Skipping split.");
       return;
     }
   }
 
+  // TODO: consider multiple scenes
+  float avg = accumulate(render_times->at(0).begin(), render_times->at(0).end(), 0.0) 
+                         / render_times->at(0).size();
   // DEBUG output
   // for (const auto &a : render_times->at(0))
   //   std::cout << a << " ";
-  float avg = accumulate(render_times->at(0).begin(), render_times->at(0).end(), 0.0) 
-              / render_times->at(0).size();
-  std::cout << "~~~" << avg << " average frame time (RenderingSplit) "
-            << render_times->at(0).size() << std::endl;
+  // std::cout << "~~~" << avg << " average frame time (RenderingSplit) "
+  //           << render_times->at(0).size() << std::endl;
 
   int rank = -1;
   int total_ranks = 0;
@@ -3795,20 +3796,32 @@ void VTKHRenderingSplit::execute()
   MPI_Comm_rank(mpi_comm_world, &rank);
 #endif
 
+  int sim_nodes = 0;
+  if (params().has_path("sim_nodes"))
+  {
+    sim_nodes = params()["sim_nodes"].to_int64();
+    // std::cout << "~~~~~ sim nodes: " << sim_nodes << "/" << total_ranks << std::endl;
+    if (sim_nodes <= 0 || sim_nodes > total_ranks)
+    {
+      ASCENT_ERROR("vtkh_rendering_split 'sim_nodes' value '" << sim_nodes 
+                   << " must be between 1 and" << total_ranks <<". Skipping split.");
+      return;
+    }
+  }
+
   int color_intransit = 0;
-  if (decide_intransit(avg, vis_budget))
+  if (total_ranks > 1 && decide_intransit(avg, vis_budget))
   {
     color_intransit = 1;
   }
 
-  int color_recv = 0;
-  // TODO: remove hardcoded value -> # vis nodes based on parameter
-  if (rank >= 3)
+  bool is_vis_node = false;
+  if (rank >= sim_nodes)
   {
     // vis nodes are always in the in-transit comm
     color_intransit = 1;
     // vis nodes only receive and render data
-    color_recv = 1;
+    is_vis_node = true;
   }
 
 #ifdef ASCENT_MPI_ENABLED
@@ -3818,60 +3831,46 @@ void VTKHRenderingSplit::execute()
   MPI_Comm intransit_comm;
   MPI_Comm_split(mpi_comm_world, color_intransit, 0, &intransit_comm);
 
-  MPI_Barrier(mpi_comm_world);
-  // split the in-transit nodes into sending and receiving nodes 
-  MPI_Comm receive_comm;
-  MPI_Comm_split(intransit_comm, color_recv, 0, &receive_comm);
+  int intransit_size = 0;
+  MPI_Comm_size(intransit_comm, &intransit_size);
 
-  if (color_intransit) 
+    // HACK: infer the hola filter name from the current filter name
+    std::string suffix = this->name().substr(this->name().find_last_of('_') + 1); 
+    std::string hola_mpi_name = "hola_mpi_" + suffix;  
+    conduit::Node hola_params;
+
+  if (color_intransit)
   {
-    // HolaMPIExtract hola;
-
-    // flow::Data *data = graph().workspace().registry().fetch<flow::Data>("p1_s1_cont_dset");
-    // vtkh::DataSet *data = input<vtkh::DataSet>(0);
-    // conduit::Node blueprint;
-    // VTKHDataAdapter::VTKHToBlueprintDataSet(data, blueprint);
-    // hola.set_input(data);
-
-    if (color_recv)
-    {
-      std::cout << "~~~~~rank " << rank << " is going to receive extract(s)." << std::endl;
-      // TODO: receive data
-    }
+    if (is_vis_node)
+      std::cout << "~~~~rank " << rank << ": receives extract(s)." << std::endl;
     else
-    {
-      std::cout << "~~~~~rank " << rank << " is going to send extract." << std::endl;
-      // TODO: make extract and send off to vis nodes
-    }
+      std::cout << "~~~~rank " << rank << ": sends extract." << std::endl;
+
+    // rank split is always determined by sim/vis nodes split
+    // TODO: adjust split based on in-transit size (also handle 0 and negative cases)
+    // barrier 
+    hola_params["rank_split"] = intransit_size - (total_ranks - sim_nodes); 
+    hola_params["mpi_comm"] = intransit_comm;
+    graph().update_params(hola_mpi_name, hola_params);
   }
-  // else continue with local in-line rendering
+  else
+  {
+    std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
+    hola_params["rank_split"] = 0;
+    graph().update_params(hola_mpi_name, hola_params);
+    // graph().remove_filter("hola_mpi_s1");
+    // graph().connect(this->name(),  // src
+    //                 "exec_s1",     // dest
+    //                 "in");         // dummy port
+  }
 #endif // ASCENT_MPI_ENABLED
 
-  // Matt's pseudo code
-  //
-  // Int total_ranks = mpi_comm_size(my_comm)
-  // Array  render_ranks = make_complicated_decision(dataset)
-
-  // // split the current comm into two comms
-  // Mpi_Comm_Spilt(my_comm, render_ranks, new_comm)
-
-  // If(my_rank  == a_render_rank)
-  // {
-  //   Vtkh::set_comm_handle(new_handle);
-  //   //do vtkh rendering
-  //   // send results to another place
-  // }
-  // {
-  //   send_input_data(to the other resource)
-  // }
- 
+  // TODO: get data set name from registry
   vtkh::DataSet *data = graph().workspace().registry().fetch<vtkh::DataSet>("p1_s1_cont_dset");
 
   conduit::Node *blueprint = new conduit::Node();
   VTKHDataAdapter::VTKHToBlueprintDataSet(data, *blueprint);
-
   set_output<conduit::Node>(blueprint);
-  // set_output<vector<vector<double>>>(render_times);
 }
 
 //-----------------------------------------------------------------------------

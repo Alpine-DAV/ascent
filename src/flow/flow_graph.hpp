@@ -116,6 +116,9 @@ public:
                  const std::string &des_name,
                  int port_idx);
 
+    /// update parameters of filter
+    void update_params(const std::string &filter_name,
+                       const conduit::Node &params);
 
     /// check if this graph has a filter with passed name
     bool has_filter(const std::string &name);

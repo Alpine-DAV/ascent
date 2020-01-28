@@ -279,7 +279,34 @@ Graph::connect(const std::string &src_name,
     connect(src_name,des_name,port_name);
 }
 
+//-----------------------------------------------------------------------------
+void 
+Graph::update_params(const std::string &filter_name,
+                     const conduit::Node &params)
+{
+    // make sure we have a filter with the given name
+    if(!has_filter(filter_name))
+    {
+        CONDUIT_WARN("filter named: " << filter_name
+                    << " does not exist in Filter Graph");
+        return;
+    }
 
+    Filter *f = m_filters[filter_name];
+    Node v_info;
+    if(!f->verify_params(params,v_info))
+    {
+        std::string f_name = f->detailed_name();
+        CONDUIT_WARN("Cannot update filter parameters of " << f_name
+                    << " because verify_params failed." << std::endl
+                    << "Details:" << std::endl
+                    << v_info.to_json());
+    }
+    else
+    {
+        f->params().update(params);
+    }
+}
 
 
 //-----------------------------------------------------------------------------

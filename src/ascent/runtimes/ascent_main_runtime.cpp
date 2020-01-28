@@ -1091,6 +1091,19 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
       {
         rendering_split_params["vis_budget"] = scene["vis_budget"].as_double();
       }
+      else
+      {
+        rendering_split_params["vis_budget"] = 0.1;   // default is 10%
+      }
+      if (scene.has_path("sim_nodes"))
+      {
+        rendering_split_params["sim_nodes"] = scene["sim_nodes"].as_int64();
+      }
+      else
+      {
+        rendering_split_params["sim_nodes"] = 1;  // TODO: default value based on total nodes
+      }      
+
       w.graph().add_filter("vtkh_rendering_split",
                            vtkh_rendering_split_name,
                            rendering_split_params);
@@ -1123,8 +1136,6 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
                         "in");          // dummy port
 
       // FIXME: this connection exists to order the graph (?), 
-      // we don't need actually need render times in ExecScene -> find other solution
-      // maybe pass dataset?
       w.graph().connect(vtkh_rendering_split_name,  // src
                         exec_name,                  // dest
                         "in");                      // dummy port
