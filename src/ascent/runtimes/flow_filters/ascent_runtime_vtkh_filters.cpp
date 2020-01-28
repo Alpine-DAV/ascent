@@ -3662,8 +3662,8 @@ void ExecProbe::execute()
   const int num_probe_renders = std::round(renders->size() * probing_factor);
   const int stride = renders->size() / num_probe_renders;
 
-  std::cout << "~~~ Probing: " << num_probe_renders << " images "
-            << stride << " stride, total: " << renders->size() << std::endl;
+  // std::cout << "~~~ Probing: " << num_probe_renders << " images "
+  //           << stride << " stride, total: " << renders->size() << std::endl;
 
   std::vector<vtkh::Render> probe_renders;
   for (size_t i = renders->size() - 1; i > 0; i -= stride)
@@ -3685,9 +3685,9 @@ void ExecProbe::execute()
     render_times->push_back(a);
 
   // DEBUG output
-  for (const auto &a : render_times->at(0))
-    std::cout << a << " ";
-  std::cout << " frame render times out" << std::endl;
+  // for (const auto &a : render_times->at(0))
+  //   std::cout << a << " ";
+  // std::cout << " frame render times out" << std::endl;
   // pass on render times
   set_output<std::vector<std::vector<double>>>(render_times);
 }
@@ -3743,7 +3743,7 @@ bool VTKHRenderingSplit::verify_params(const conduit::Node &params,
 bool decide_intransit(const float avg, const float vis_budget)
 {
   // TODO: calculate based on budget
-  float max_time = 80.f;
+  float max_time = 30.f;
 
   if (avg > max_time)
   {
@@ -3779,15 +3779,6 @@ void VTKHRenderingSplit::execute()
     }
   }
 
-  // TODO: consider multiple scenes
-  float avg = accumulate(render_times->at(0).begin(), render_times->at(0).end(), 0.0) 
-                         / render_times->at(0).size();
-  // DEBUG output
-  // for (const auto &a : render_times->at(0))
-  //   std::cout << a << " ";
-  // std::cout << "~~~" << avg << " average frame time (RenderingSplit) "
-  //           << render_times->at(0).size() << std::endl;
-
   int rank = -1;
   int total_ranks = 0;
 #ifdef ASCENT_MPI_ENABLED
@@ -3810,11 +3801,6 @@ void VTKHRenderingSplit::execute()
   }
 
   int color_intransit = 0;
-  if (total_ranks > 1 && decide_intransit(avg, vis_budget))
-  {
-    color_intransit = 1;
-  }
-
   bool is_vis_node = false;
   if (rank >= sim_nodes)
   {
@@ -3822,6 +3808,19 @@ void VTKHRenderingSplit::execute()
     color_intransit = 1;
     // vis nodes only receive and render data
     is_vis_node = true;
+    std::cout << "~~~" << "rank " << rank << "is a vis node." << std::endl; 
+  }
+  else if (total_ranks > 1)
+  {
+    // TODO: consider multiple scenes
+    assert(render_times->at(0).size() > 0);
+    float avg = accumulate(render_times->at(0).begin(), render_times->at(0).end(), 0.0) 
+                          / render_times->at(0).size();
+    std::cout << "~~~ " << avg << " ms mean frame time rank " << rank << std::endl; 
+
+    // decide if this node wants to send data away
+    bool res = decide_intransit(avg, vis_budget);
+    color_intransit = 1;
   }
 
 #ifdef ASCENT_MPI_ENABLED
@@ -3839,7 +3838,7 @@ void VTKHRenderingSplit::execute()
     std::string hola_mpi_name = "hola_mpi_" + suffix;  
     conduit::Node hola_params;
 
-  if (color_intransit)
+  if (color_intransit && (intransit_size > (total_ranks - sim_nodes)))
   {
     if (is_vis_node)
       std::cout << "~~~~rank " << rank << ": receives extract(s)." << std::endl;
@@ -3858,10 +3857,6 @@ void VTKHRenderingSplit::execute()
     std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
     hola_params["rank_split"] = 0;
     graph().update_params(hola_mpi_name, hola_params);
-    // graph().remove_filter("hola_mpi_s1");
-    // graph().connect(this->name(),  // src
-    //                 "exec_s1",     // dest
-    //                 "in");         // dummy port
   }
 #endif // ASCENT_MPI_ENABLED
 
