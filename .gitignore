@@ -14,3 +14,10 @@ s_env.sh
 _uberenv_test*
 .ipynb_checkpoints
 Untitle*.ipynb
+
+build*
+
+build_local/
+.vscode/settings.json
+src/.vscode/c_cpp_properties.json
+src/.vscode/settings.json

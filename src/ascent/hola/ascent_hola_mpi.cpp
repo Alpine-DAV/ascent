@@ -307,6 +307,9 @@ hola_mpi(const conduit::Node &options,
 
     int rank_split = options["rank_split"].to_int();
 
+    std::cout << "~~~ HOLA: rank " << rank << "/" << total_size << " with split " 
+              << rank_split << std::endl;
+
     //
     // TODO: We can enhance to also support the case
     // where client code passes in world to src and world to dest maps

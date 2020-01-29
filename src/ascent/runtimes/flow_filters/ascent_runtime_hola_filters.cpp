@@ -163,13 +163,11 @@ HolaMPIExtract::execute()
     // DEBUG out
     if (params()["rank_split"].to_int64() < 1)
     {
-        std::cout << "~~~ HOLA: rank " << rank << " skipping (rendering inline)."
+        std::cout << "~~~ HOLA: rank " << rank << " skipping (renders inline)."
                   << std::endl;
         return;
     }
 
-    std::cout << "~~~ HOLA: rank " << rank << "/" << ranks << " with split " 
-              << params()["rank_split"].to_int64() << std::endl;
     hola_mpi(params(),*n_input);
 }
 

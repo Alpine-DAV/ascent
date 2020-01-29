@@ -317,38 +317,29 @@ public:
       ostringstream oss;
       oss << "key_" << i;
 
-      if (isProbe)
-      {
-        vtkh::Renderer *r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
-        auto times = r->GetRenderTimes();
-        double t_avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
-        int rank = 0;
+      vtkh::Renderer *r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
+      auto times = r->GetRenderTimes();
+      double t_avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
+      int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
-        rank = r->GetMpiRank();
+      MPI_Comm_rank(MPI_Comm_f2c(Workspace::default_mpi_comm()), &rank);
+      // rank = r->GetMpiRank();
 #endif
 
-        // use registry
-        // conduit::Node render_data;
-        // render_data["renderer"] = i;
-        // render_data["rank"] = rank;
-        // render_data["average_time"] = t_avg;
-        // render_data["times"].set(times.data(), int(times.size()));
-        // render_times->append() = render_data;
+      // write render times to file
+      std::stringstream ss;
+      ss << "\n==========" << "\navg: " << t_avg << "\n";
+      for (auto &val : times)
+        ss << val << " ";
+      std::ofstream out("timings/frame_times" +
+                            std::to_string(rank) + ".txt",
+                        std::ios_base::app);
+      out << ss.str();
+      out.close();
 
-        // member version
+      if (isProbe)
+      {
         m_render_times.push_back(times);
-
-        // write render times to file
-        std::stringstream ss;
-        ss << "\n=========="
-           << "\navg: " << t_avg << "\n";
-        for (auto &val : times)
-          ss << val << " ";
-        std::ofstream out("timings/frame_times" +
-                              std::to_string(rank) + ".txt",
-                          std::ios_base::app);
-        out << ss.str();
-        out.close();
       }
       else
       {
@@ -2565,7 +2556,6 @@ void ExecScene::execute()
 
   detail::AscentScene *scene = input<detail::AscentScene>(0);
   std::vector<vtkh::Render> *renders = input<std::vector<vtkh::Render>>(1);
-  // std::vector<std::vector<double>> *render_times = input<std::vector<std::vector<double>>>(2);
 
   scene->Execute(*renders);
 
@@ -3743,7 +3733,7 @@ bool VTKHRenderingSplit::verify_params(const conduit::Node &params,
 bool decide_intransit(const float avg, const float vis_budget)
 {
   // TODO: calculate based on budget
-  float max_time = 30.f;
+  float max_time = 105.f;
 
   if (avg > max_time)
   {
@@ -3774,7 +3764,7 @@ void VTKHRenderingSplit::execute()
     if (vis_budget <= 0. || vis_budget > 1.)
     {
       ASCENT_ERROR("vtkh_rendering_split 'vis_budget' value '" << vis_budget
-                   << " must be in range [0,1]. Skipping split.");
+                                                               << " must be in range [0,1]. Skipping split.");
       return;
     }
   }
@@ -3794,8 +3784,8 @@ void VTKHRenderingSplit::execute()
     // std::cout << "~~~~~ sim nodes: " << sim_nodes << "/" << total_ranks << std::endl;
     if (sim_nodes <= 0 || sim_nodes > total_ranks)
     {
-      ASCENT_ERROR("vtkh_rendering_split 'sim_nodes' value '" << sim_nodes 
-                   << " must be between 1 and" << total_ranks <<". Skipping split.");
+      ASCENT_ERROR("vtkh_rendering_split 'sim_nodes' value '" << sim_nodes
+                                                              << " must be between 1 and" << total_ranks << ". Skipping split.");
       return;
     }
   }
@@ -3808,19 +3798,18 @@ void VTKHRenderingSplit::execute()
     color_intransit = 1;
     // vis nodes only receive and render data
     is_vis_node = true;
-    std::cout << "~~~ " << "rank " << rank << " is a vis node." << std::endl; 
+    std::cout << "~~~ "
+              << "rank " << rank << " is a vis node." << std::endl;
   }
   else if (total_ranks > 1)
   {
     // TODO: consider multiple scenes
     assert(render_times->at(0).size() > 0);
-    float avg = accumulate(render_times->at(0).begin(), render_times->at(0).end(), 0.0) 
-                          / render_times->at(0).size();
-    std::cout << "~~~ " << avg << " ms mean frame time rank " << rank << std::endl; 
+    float avg = accumulate(render_times->at(0).begin(), render_times->at(0).end(), 0.0) / render_times->at(0).size();
+    std::cout << "~~~ " << avg << " ms mean frame time rank " << rank << std::endl;
 
     // decide if this node wants to send data away
-    bool is_inline = decide_intransit(avg, vis_budget);
-    if (is_inline)
+    if (decide_intransit(avg, vis_budget))
       color_intransit = 1;
   }
 
@@ -3834,10 +3823,21 @@ void VTKHRenderingSplit::execute()
   int intransit_size = 0;
   MPI_Comm_size(intransit_comm, &intransit_size);
 
-    // HACK: infer the hola filter name from the current filter name
-    std::string suffix = this->name().substr(this->name().find_last_of('_') + 1); 
-    std::string hola_mpi_name = "hola_mpi_" + suffix;  
-    conduit::Node hola_params;
+  // comm w/ all rendering nodes (in-line + receiving in-transit (aka vis nodes))
+  MPI_Comm render_comm;
+  int color_rendering = 1;
+  if (color_intransit == 1 && !is_vis_node)  // all sending in transit nodes
+    color_rendering = 0;
+  MPI_Comm_split(mpi_comm_world, color_rendering, 0, &render_comm);
+  
+  // FIXME: causes deadlock
+  // if (color_rendering == 1)
+  //   vtkh::SetMPICommHandle(render_comm);
+
+  // HACK: infer the hola filter name from the current filter name
+  std::string suffix = this->name().substr(this->name().find_last_of('_') + 1);
+  std::string hola_mpi_name = "hola_mpi_" + suffix;
+  conduit::Node hola_params;
 
   if (color_intransit && (intransit_size > (total_ranks - sim_nodes)))
   {
@@ -3847,10 +3847,9 @@ void VTKHRenderingSplit::execute()
       std::cout << "~~~~rank " << rank << ": sends extract." << std::endl;
 
     // rank split is always determined by sim/vis nodes split
-    // TODO: adjust split based on in-transit size (also handle 0 and negative cases)
-    // barrier 
-    hola_params["rank_split"] = intransit_size - (total_ranks - sim_nodes); 
-    hola_params["mpi_comm"] = intransit_comm;
+    // barrier ?
+    hola_params["rank_split"] = intransit_size - (total_ranks - sim_nodes);
+    hola_params["mpi_comm"] = MPI_Comm_c2f(intransit_comm);
     graph().update_params(hola_mpi_name, hola_params);
   }
   else
@@ -3861,12 +3860,12 @@ void VTKHRenderingSplit::execute()
   }
 #endif // ASCENT_MPI_ENABLED
 
-  // TODO: get data set name from registry
-  vtkh::DataSet *data = graph().workspace().registry().fetch<vtkh::DataSet>("p1_s1_cont_dset");
+    // TODO: get data set name from registry
+    vtkh::DataSet *data = graph().workspace().registry().fetch<vtkh::DataSet>("p1_s1_cont_dset");
 
-  conduit::Node *blueprint = new conduit::Node();
-  VTKHDataAdapter::VTKHToBlueprintDataSet(data, *blueprint);
-  set_output<conduit::Node>(blueprint);
+    conduit::Node *blueprint = new conduit::Node();
+    VTKHDataAdapter::VTKHToBlueprintDataSet(data, *blueprint);
+    set_output<conduit::Node>(blueprint);
 }
 
 //-----------------------------------------------------------------------------

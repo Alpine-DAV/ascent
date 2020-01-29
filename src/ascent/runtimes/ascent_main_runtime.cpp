@@ -155,7 +155,8 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     ASCENT_ERROR("Missing Ascent::Open options missing MPI communicator (mpi_comm)");
   }
 
-  // ~~~ split mpi comm and set as default
+  // ~~~ split mpi comm and set as default 
+  // we only need as many rendering threads as we have sim nodes
   //
   int size = 1;
   int world_rank = 0;
@@ -169,20 +170,20 @@ void AscentRuntime::Initialize(const conduit::Node &options)
   // vis node
   if (world_rank >= rank_split)
     color = 1;
-  int sim_vis_comm = -1;
+  MPI_Comm sim_vis_comm;
   MPI_Comm_split(comm, color, m_rank, &sim_vis_comm);
 
   int new_size = 0;
   MPI_Comm_size(sim_vis_comm, &new_size);
   // set new rank
   MPI_Comm_rank(sim_vis_comm, &m_rank);
-  // ~~~
 
-
+  // comm world
   flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
 #if defined(ASCENT_VTKM_ENABLED)
   // vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
   vtkh::SetMPICommHandle(sim_vis_comm);
+  std::cout << ">>>>MPI size:" << vtkh::GetMPISize() << std::endl;
 #endif
   // MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
   // MPI_Comm_rank(comm, &m_rank);
@@ -1115,11 +1116,9 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
 
       // add hola filter node for (partly) in transit visualization
       conduit::Node hola_params;
-      // TODO: dynamic rank split (we have to split the in-transit subcomm) 
-      hola_params["rank_split"] = scene["sim_nodes"].as_int64();
-      // hola_params["interface/input"] = "vtkh_data";
+      hola_params["rank_split"] = 0; //scene["sim_nodes"].as_int64();
     #ifdef ASCENT_MPI_ENABLED 
-      // TODO in transit comm -> set during runtime
+      // this is updated during runtime
       hola_params["mpi_comm"] = flow::Workspace::default_mpi_comm();
     #endif
       std::string hola_mpi_name = "hola_mpi_" + names[i];
@@ -1135,7 +1134,7 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
                         exec_name,      // dest
                         "in");          // dummy port
 
-      // FIXME: this connection exists to order the graph (?), 
+      // FIXME: breaks if we remove this connection: why?
       w.graph().connect(vtkh_rendering_split_name,  // src
                         exec_name,                  // dest
                         "in");                      // dummy port

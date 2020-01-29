@@ -1,0 +1,28 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "pre-build",
+            "type": "shell",
+            "command": ""
+        },
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}/build_local/ && make -j4",
+        },
+        {
+            "label": "run",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}/build_local/examples/proxies/cloverleaf3d-ref/ && ./cloverleaf3d_par",
+            "dependsOn": [
+                "build"
+            ],
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+    ]
+}
