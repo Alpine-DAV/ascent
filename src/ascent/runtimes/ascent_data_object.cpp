@@ -103,11 +103,13 @@ void DataObject::reset(conduit::Node *dataset)
 
   std::shared_ptr<conduit::Node>  null_low(nullptr);
   std::shared_ptr<conduit::Node>  null_high(nullptr);
-  std::shared_ptr<VTKHCollection> null_vtkh(nullptr);
-
   m_low_bp = null_low;
   m_high_bp = null_high;
+
+#if defined(ASCENT_VTKM_ENABLED)
+  std::shared_ptr<VTKHCollection> null_vtkh(nullptr);
   m_vtkh = null_vtkh;
+#endif
 
   if(high_order)
   {
