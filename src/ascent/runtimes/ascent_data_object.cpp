@@ -66,6 +66,15 @@
 namespace ascent
 {
 
+DataObject::DataObject()
+  : m_low_bp(nullptr),
+    m_high_bp(nullptr),
+    m_vtkh(nullptr),
+    m_source(Source::INVALID)
+{
+
+}
+
 #if defined(ASCENT_VTKM_ENABLED)
 DataObject::DataObject(VTKHCollection *dataset)
   : m_low_bp(nullptr),
@@ -84,8 +93,22 @@ DataObject::DataObject(conduit::Node *dataset)
     ,m_vtkh(nullptr)
 #endif
 {
+  reset(dataset);
+}
+
+void DataObject::reset(conduit::Node *dataset)
+{
   bool high_order = Transmogrifier::is_high_order(*dataset);
   std::shared_ptr<conduit::Node>  bp(dataset);
+
+  std::shared_ptr<conduit::Node>  null_low(nullptr);
+  std::shared_ptr<conduit::Node>  null_high(nullptr);
+  std::shared_ptr<VTKHCollection> null_vtkh(nullptr);
+
+  m_low_bp = null_low;
+  m_high_bp = null_high;
+  m_vtkh = null_vtkh;
+
   if(high_order)
   {
     m_high_bp = bp;
@@ -101,6 +124,11 @@ DataObject::DataObject(conduit::Node *dataset)
 #if defined(ASCENT_VTKM_ENABLED)
 std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
 {
+  if(m_source == Source::INVALID)
+  {
+    ASCENT_ERROR("Source never initialized: default constructed");
+  }
+
   if(m_vtkh != nullptr)
   {
     return m_vtkh;
@@ -129,6 +157,11 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
 
 std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
 {
+  if(m_source == Source::INVALID)
+  {
+    ASCENT_ERROR("Source never initialized: default constructed");
+  }
+
   if(m_low_bp != nullptr)
   {
     return m_low_bp;
@@ -157,7 +190,10 @@ std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
 
 std::shared_ptr<conduit::Node>  DataObject::as_high_order_bp()
 {
-
+  if(m_source == Source::INVALID)
+  {
+    ASCENT_ERROR("Source never initialized: default constructed");
+  }
 #ifdef ASCENT_MFEM_ENABLED
   if(m_high_bp!= nullptr)
   {
@@ -174,8 +210,13 @@ std::shared_ptr<conduit::Node>  DataObject::as_high_order_bp()
 
 std::shared_ptr<conduit::Node>  DataObject::as_node()
 {
+  if(m_source == Source::INVALID)
+  {
+    ASCENT_ERROR("Source never initialized: default constructed");
+  }
 #if defined(ASCENT_VTKM_ENABLED)
   if(m_source == Source::VTKH && m_low_bp == nullptr)
+
   {
     conduit::Node *out_data = new conduit::Node();
     bool zero_copy = true;
