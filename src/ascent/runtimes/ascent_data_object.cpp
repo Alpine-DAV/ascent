@@ -69,7 +69,9 @@ namespace ascent
 DataObject::DataObject()
   : m_low_bp(nullptr),
     m_high_bp(nullptr),
-    m_vtkh(nullptr),
+#if defined(ASCENT_VTKM_ENABLED)
+    ,m_vtkh(nullptr)
+#endif
     m_source(Source::INVALID)
 {
 
