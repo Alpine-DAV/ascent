@@ -897,7 +897,7 @@ field_min(const conduit::Node &dataset,
   MinLoc minloc = {min_value, rank};
   MinLoc minloc_res;
   MPI_Allreduce( &minloc, &minloc_res, 1, MPI_DOUBLE_INT, MPI_MINLOC, mpi_comm);
-  min_value = minloc.value;
+  min_value = minloc_res.value;
 
   double * ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, minloc_res.rank, mpi_comm);
@@ -1034,7 +1034,7 @@ field_max(const conduit::Node &dataset,
   MaxLoc maxloc = {max_value, rank};
   MaxLoc maxloc_res;
   MPI_Allreduce( &maxloc, &maxloc_res, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mpi_comm);
-  max_value = maxloc.value;
+  max_value = maxloc_res.value;
 
   double * ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, maxloc_res.rank, mpi_comm);

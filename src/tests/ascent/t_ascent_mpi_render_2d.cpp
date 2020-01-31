@@ -100,7 +100,6 @@ TEST(ascent_mpi_render_2d, test_render_mpi_2d_default_runtime)
     create_2d_example_dataset(data,par_rank,par_size);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     // make sure the _output dir exists
     string output_path = "";
@@ -205,7 +204,6 @@ TEST(ascent_mpi_render_2d, test_render_mpi_2d_uniform_default_runtime)
     data["coordsets/coords/origin/x"] = x_origin;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     // make sure the _output dir exists
     string output_path = "";

@@ -66,6 +66,7 @@ TODO:
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
+#include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_file_system.hpp>
 
@@ -217,11 +218,15 @@ ADIOS::verify_params(const conduit::Node &params,
 void
 ADIOS::execute()
 {
-    if(!input("in").check_type<Node>())
+    if(!input(0).check_type<DataObject>())
     {
-        // error
-        ASCENT_ERROR("adios filter requires a conduit::Node input");
+        ASCENT_ERROR("adios filter requires a DataObject input");
     }
+
+    std::string protocol = params()["protocol"].as_string();
+
+    DataObject *d_input = input<DataObject>(0);
+    std::shared_ptr<conduit::Node> n_input = d_input->as_node();
 
     transportType = params()["transport"].as_string();
     fileName      = params()["filename"].as_string();
@@ -244,7 +249,7 @@ ADIOS::execute()
     adios_define_schema_version(adiosGroup, (char*)"1.1");
 
     //Fetch input data
-    Node *blueprint_data = input<Node>("in");
+    Node *blueprint_data = n_input.get();
 
     NodeConstIterator itr = (*blueprint_data)["coordsets"].children();
     while (itr.has_next())

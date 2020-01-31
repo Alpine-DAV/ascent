@@ -96,7 +96,6 @@ TEST(ascent_contour, test_single_contour_3d)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -179,7 +178,6 @@ TEST(ascent_contour, test_multi_contour_3d)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -263,7 +261,6 @@ TEST(ascent_contour, test_multi_contour_levels)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 

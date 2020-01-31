@@ -96,7 +96,6 @@ TEST(ascent_clip_with_field, test_clip_with_field)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
@@ -179,7 +178,6 @@ TEST(ascent_clip_with_field, test_clip_with_field_inverted)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 

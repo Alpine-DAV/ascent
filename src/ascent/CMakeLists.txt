@@ -70,12 +70,12 @@ set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
 set(ASCENT_HDF5_ENABLED ${HDF5_FOUND})
 set(ASCENT_ADIOS_ENABLED ${ADIOS_FOUND})
 set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
+set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
 
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
     set(ASCENT_VTKM_USE_OPENMP ${OPENMP_FOUND})
 endif()
-
 
 set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
 
@@ -91,6 +91,7 @@ set(ascent_sources
     runtimes/ascent_main_runtime.cpp
     runtimes/ascent_empty_runtime.cpp
     runtimes/ascent_expression_eval.cpp
+    runtimes/ascent_transmogrifier.cpp
     runtimes/expressions/ascent_blueprint_architect.cpp
     runtimes/expressions/ascent_conduit_reductions.cpp
     runtimes/expressions/ascent_expression_filters.cpp
@@ -125,6 +126,7 @@ set(ascent_headers
     ascent_runtime.hpp
     runtimes/ascent_empty_runtime.hpp
     runtimes/ascent_expression_eval.hpp
+    runtimes/ascent_transmogrifier.hpp
     runtimes/expressions/ascent_blueprint_architect.hpp
     runtimes/expressions/ascent_conduit_reductions.hpp
     runtimes/expressions/ascent_expression_filters.hpp
@@ -155,16 +157,22 @@ set(ascent_headers
 if(VTKM_FOUND)
 
     set(ascent_vtkh_dep_headers
+        runtimes/ascent_data_object.hpp
         runtimes/ascent_vtkh_data_adapter.hpp
+        runtimes/ascent_vtkh_collection.hpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
+        runtimes/flow_filters/ascent_runtime_rendering_filters.hpp
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
 
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
         runtimes/ascent_main_runtime.hpp)
 
     set(ascent_vtkh_dep_sources
+        runtimes/ascent_data_object.cpp
         runtimes/ascent_vtkh_data_adapter.cpp
+        runtimes/ascent_vtkh_collection.cpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
+        runtimes/flow_filters/ascent_runtime_rendering_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
         runtimes/ascent_main_runtime.cpp)
@@ -176,7 +184,9 @@ if(VTKM_FOUND)
     foreach( _itm ${ascent_vtkh_dep_sources} )
         list(APPEND ascent_sources ${_itm})
     endforeach()
-
+else()
+    list(APPEND ascent_headers runtimes/ascent_data_object.hpp)
+    list(APPEND ascent_sources runtimes/ascent_data_object.cpp)
 endif()
 
 if(MFEM_FOUND)
@@ -209,7 +219,13 @@ endif()
 # support was selected
 ################################
 if(PYTHON_FOUND)
-    add_subdirectory(python)
+   add_subdirectory(python)
+
+   list(APPEND ascent_sources
+        runtimes/flow_filters/ascent_python_script_filter.cpp)
+
+   list(APPEND ascent_headers
+        runtimes/flow_filters/ascent_python_script_filter.hpp)
 endif()
 
 ##################
@@ -280,6 +296,22 @@ if(MPI_FOUND)
     # req'd libs
     set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi)
 
+    if (ENABLE_BABELFLOW)
+	    if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+		add_compile_definitions("BABELFLOW_DEBUG")
+	    endif()
+
+	   # TODO get everything into one cpp and one hpp files
+	    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_filters.cpp)
+	    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
+
+	    list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
+	    list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
+	    add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
+            include_directories(${BABELFLOW_INCLUDE_DIRS})
+            include_directories(${PMT_INCLUDE_DIRS})
+    endif ()
+
     # hola mpi support is only in par (mpi ver)
 
     list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_hola_filters.hpp)
@@ -333,5 +365,6 @@ endif()
 # Extra Install Targets for ascent
 ########################################
 install(FILES ${ascent_headers} DESTINATION include/ascent)
+
 
 

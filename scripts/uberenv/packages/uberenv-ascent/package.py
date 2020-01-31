@@ -63,10 +63,8 @@ class UberenvAscent(Ascent):
             default=True,
             description="Build deps needed to create Conduit's Docs")
 
-
     # in upstream spack package
     depends_on("cmake@3.14.1:3.14.5", when="+cmake")
-
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
@@ -80,7 +78,10 @@ class UberenvAscent(Ascent):
         """
         with working_dir('spack-build', create=True):
             host_cfg_fname = self.create_host_config(spec, prefix)
+
             # place a copy in the spack install dir for the uberenv-conduit package
             mkdirp(prefix)
             install(host_cfg_fname,prefix)
             install(host_cfg_fname,env["SPACK_DEBUG_LOG_DIR"])
+
+

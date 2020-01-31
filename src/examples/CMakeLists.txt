@@ -57,8 +57,12 @@ if(MFEM_FOUND)
   add_subdirectory(proxies/laghos)
 endif()
 
+if(ENABLE_BABELFLOW)
+  add_subdirectory(babelflow/pmt)
+endif()
+
 # install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python tutorial
+install(DIRECTORY using-with-cmake using-with-make python tutorial 
         DESTINATION examples/ascent)
 
 

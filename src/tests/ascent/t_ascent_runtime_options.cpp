@@ -78,7 +78,6 @@ TEST(ascent_runtime_options, verbose_msgs)
     conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     Node actions;
     Node &hello = actions.append();
@@ -110,7 +109,6 @@ TEST(ascent_runtime_options, quiet_msgs)
     conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     Node actions;
     Node &hello = actions.append();
@@ -223,7 +221,6 @@ TEST(ascent_runtime_options, test_actions_file)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
     ASCENT_INFO("Testing custom actions file");
 
@@ -320,7 +317,6 @@ TEST(ascent_runtime_options, test_actions_yaml_file)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
     ASCENT_INFO("Testing custom actions yaml file");
 
