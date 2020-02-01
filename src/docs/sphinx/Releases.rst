@@ -61,7 +61,7 @@ https://github.com/Alpine-DAV/ascent/releases
 v0.5.1
 -------
 
-* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.5.1/ascent-v0.5.1-src-wth-blt.tar.gz>`_
+* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.5.1/ascent-v0.5.1-src-with-blt.tar.gz>`_
 
 Highlights
 +++++++++++++
@@ -83,7 +83,7 @@ Fixed
 v0.5.0
 -------
 
-* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.5.0/ascent-v0.5.0-src-wth-blt.tar.gz>`_
+* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.5.0/ascent-v0.5.0-src-with-blt.tar.gz>`_
 
 Highlights
 +++++++++++++
