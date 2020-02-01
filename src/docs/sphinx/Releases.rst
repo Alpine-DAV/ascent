@@ -58,6 +58,27 @@ Source distributions for Ascent are hosted on github:
 https://github.com/Alpine-DAV/ascent/releases
 
 
+v0.5.1
+-------
+
+* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.5.1/ascent-v0.5.1-src-wth-blt.tar.gz>`_
+
+Highlights
++++++++++++++
+
+(Extracted from Ascent's :download:`Changelog <../../../CHANGELOG.md>`)
+
+Added
+~~~~~~~~~
+
+* Added support to render multiple topologies in the same scene.
+* Added a Data Object construct to the main Ascent runtime to easily manage transformations between in-memory mesh representations. 
+
+Fixed
+~~~~~~~~~
+* Issue where cycle was not properly propagated when converting mfem data.
+* Cinema issue where zoom was applied additively each cycle to oblivion.
+* Cinema issue where cameras were not following the center of the data set.
 
 v0.5.0
 -------
