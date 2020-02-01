@@ -4,7 +4,11 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.5.1] - Released 2020-01-31
+
+### Added
+- Added support to render multiple topologies in the same scene.
+- Added a Data Object construct to the main Ascent runtime to easily manage transformations between in-memory mesh representations. 
 
 ### Fixed
 - Issue where cycle was not properly propagated when converting mfem data.
@@ -35,7 +39,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 - Several minor bug fixes
 
-[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/Alpine-DAV/ascent/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Alpine-DAV/ascent/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Alpine-DAV/ascent/compare/v0.3.0...v0.4.0
 
