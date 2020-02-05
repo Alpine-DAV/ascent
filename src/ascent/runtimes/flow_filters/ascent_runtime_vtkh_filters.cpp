@@ -69,6 +69,10 @@
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
+// hola
+#include <ascent_hola.hpp>
+#include <ascent_hola_mpi.hpp>
+
 // mpi
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -328,7 +332,8 @@ public:
 
       // write render times to file
       std::stringstream ss;
-      ss << "\n==========" << "\navg: " << t_avg << "\n";
+      ss << "\n=========="
+         << "\navg: " << t_avg << "\n";
       for (auto &val : times)
         ss << val << " ";
       std::ofstream out("timings/frame_times" +
@@ -3790,6 +3795,9 @@ void VTKHRenderingSplit::execute()
     }
   }
 
+  // we have sim-nodes, vis-nodes, intransit-nodes, inline-nodes,
+  // render-nodes (vis-nodes + inline-nodes), sender-nodes (intransit-nodes - vis-nodes)
+
   int color_intransit = 0;
   bool is_vis_node = false;
   if (rank >= sim_nodes)
@@ -3813,60 +3821,290 @@ void VTKHRenderingSplit::execute()
       color_intransit = 1;
   }
 
+  int color_rendering = 1;
+  int color_send = 0;
+  if (color_intransit == 1 && !is_vis_node) // all sending in transit nodes
+  {
+    color_rendering = 0;
+    color_send = 1;
+  }
+
+  // TODO: get data set name from registry
+  vtkh::DataSet *data_local = graph().workspace().registry().fetch<vtkh::DataSet>("p1_s1_cont_dset");
+  conduit::Node *blueprint = new conduit::Node();
+  VTKHDataAdapter::VTKHToBlueprintDataSet(data_local, *blueprint);
+
 #ifdef ASCENT_MPI_ENABLED
   // wait for all nodes to decide if they are rendering inline or intransit
-  MPI_Barrier(mpi_comm_world);
+  // MPI_Barrier(mpi_comm_world);
+
   // split the current comm into in-line and in-transit nodes
   MPI_Comm intransit_comm;
-  MPI_Comm_split(mpi_comm_world, color_intransit, 0, &intransit_comm);
-
   int intransit_size = 0;
+  MPI_Comm_split(mpi_comm_world, color_intransit, 0, &intransit_comm);
   MPI_Comm_size(intransit_comm, &intransit_size);
+  // Hola setup
+  MPI_Comm hola_comm;
+  MPI_Comm_split(intransit_comm, color_send, 0, &hola_comm);
+  int rank_split = intransit_size - (total_ranks - sim_nodes);
+
+  // HACK: infer the hola filter name from the current filter name
+  // std::string suffix = this->name().substr(this->name().find_last_of('_') + 1);
+  // std::string hola_mpi_name = "hola_mpi_" + suffix;
+  // conduit::Node hola_params;
+
+  // if (color_intransit) // && (intransit_size > (total_ranks - sim_nodes)))
+  // {
+  //   if (is_vis_node)
+  //     std::cout << "~~~~rank " << rank << ": receives extract(s)." << std::endl;
+  //   else
+  //     std::cout << "~~~~rank " << rank << ": sends extract." << std::endl;
+
+  //   // rank split is always determined by sim/vis nodes split
+  //   hola_params["rank_split"] = intransit_size - (total_ranks - sim_nodes);
+  //   hola_params["mpi_comm"] = MPI_Comm_c2f(intransit_comm);
+  //   graph().update_params(hola_mpi_name, hola_params);
+  // }
+  // else
+  // {
+  //   std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
+  //   hola_params["rank_split"] = 0; // 0 indicates to skip hola executions
+  //   graph().update_params(hola_mpi_name, hola_params);
+  // }
 
   // comm w/ all rendering nodes (in-line + receiving in-transit (aka vis nodes))
   MPI_Comm render_comm;
-  int color_rendering = 1;
-  if (color_intransit == 1 && !is_vis_node)  // all sending in transit nodes
-    color_rendering = 0;
   MPI_Comm_split(mpi_comm_world, color_rendering, 0, &render_comm);
-  
-  // FIXME: causes deadlock
-  // if (color_rendering == 1)
-  //   vtkh::SetMPICommHandle(render_comm);
 
-  // HACK: infer the hola filter name from the current filter name
-  std::string suffix = this->name().substr(this->name().find_last_of('_') + 1);
-  std::string hola_mpi_name = "hola_mpi_" + suffix;
-  conduit::Node hola_params;
-
-  if (color_intransit && (intransit_size > (total_ranks - sim_nodes)))
+  if (color_rendering) // all rendering nodes
   {
-    if (is_vis_node)
+    if (is_vis_node && rank_split > 0) // render on vis node
+    {
       std::cout << "~~~~rank " << rank << ": receives extract(s)." << std::endl;
-    else
-      std::cout << "~~~~rank " << rank << ": sends extract." << std::endl;
+      
+      // use hola to receive the extract data
+      Node data_recv, hola_opts, blank_actions;
 
-    // rank split is always determined by sim/vis nodes split
-    // barrier ?
-    hola_params["rank_split"] = intransit_size - (total_ranks - sim_nodes);
-    hola_params["mpi_comm"] = MPI_Comm_c2f(intransit_comm);
-    graph().update_params(hola_mpi_name, hola_params);
+      hola_opts["mpi_comm"]   = MPI_Comm_c2f(intransit_comm);
+      hola_opts["rank_split"] = rank_split;
+
+      // MPI_Barrier(intransit_comm);
+      ascent::hola("hola_mpi", hola_opts, data_recv);
+
+      // Render the data from hola with Ascent on render nodes
+      Node ascent_opts;
+      ascent_opts["actions_file"] = "cinema_actions.yaml";
+      ascent_opts["mpi_comm"] = MPI_Comm_c2f(render_comm);
+
+      // MPI_Barrier(render_comm);
+      Ascent ascent_recv;
+      ascent_recv.open(ascent_opts);
+      ascent_recv.publish(data_recv);
+      ascent_recv.execute(blank_actions);
+      ascent_recv.close();
+      std::cout << "~~~~rank " << rank << ": ascent_recv - finished rendering." << std::endl;
+    }
+    else // render local (inline)
+    {
+      std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
+
+      Node ascent_opts;
+      ascent_opts["mpi_comm"] = MPI_Comm_c2f(render_comm);
+      ascent_opts["actions_file"] = "cinema_actions.yaml";
+      Node blank_actions;
+
+      // Render the data locally with Ascent
+      // MPI_Barrier(render_comm);
+      Ascent ascent_inline;
+      ascent_inline.open(ascent_opts);
+      ascent_inline.publish(*blueprint);
+      ascent_inline.execute(blank_actions);
+
+      // WARNING ascent.open(render_comm); sets the static variable that holds 
+      // the VTK-h mpi comm. That means you will have to set this back to what 
+      // it was before. This is probably one of the reasons you are deadlocked.
+
+      // reset vtkh communicator
+      // MPI_Barrier(mpi_comm_world);
+      // vtkh::SetMPICommHandle(mpi_comm_world);
+      
+      // ascent_inline.close();
+      std::cout << "----rank " << rank << ": ascent_inline - finished rendering." << std::endl;
+    }
   }
-  else
+  else // all nodes not rendering: send extract to vis nodes using Hola
   {
-    std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
-    hola_params["rank_split"] = 0;
-    graph().update_params(hola_mpi_name, hola_params);
+    std::cout << "~~~~rank " << rank << ": sends extract." << std::endl;
+    // add the extract
+    conduit::Node actions;
+    conduit::Node &add_extract = actions.append();
+    add_extract["action"] = "add_extracts";
+    add_extract["extracts/e1/type"] = "hola_mpi";
+    add_extract["extracts/e1/params/mpi_comm"] = MPI_Comm_c2f(intransit_comm);
+    add_extract["extracts/e1/params/rank_split"] = rank_split;
+    
+    Node ascent_opts;
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(hola_comm);
+
+    // FIXME: ascent overrides compiled config with actions from file
+    // workaround: rename yaml file
+    int intransit_rank = 0;
+    MPI_Comm_rank(intransit_comm, &intransit_rank);
+    if (intransit_rank == 0)
+      rename("ascent_actions.yaml", "bak_ascent_actions.yaml");
+
+    // Send an extract of the data with Ascent
+    Ascent ascent_send;
+    ascent_send.open(ascent_opts);
+    ascent_send.publish(*blueprint);
+    ascent_send.execute(actions);   // extract
+    ascent_send.close();
+    std::cout << "----rank " << rank << ": ascent_send." << std::endl;
   }
+
+  MPI_Barrier(mpi_comm_world);
+  // (re-)setting the comm handle segfaults into corrupted executable
+  // vtkh::SetMPICommHandle(mpi_comm_world);
+
+  // freeing the comms brakes execution
+  // MPI_Comm_free(&render_comm);
+  // MPI_Comm_free(&hola_comm);
+  // MPI_Comm_free(&intransit_comm);
+
+  // restore the actions file name
+  if (rank == 0)
+    rename("bak_ascent_actions.yaml", "ascent_actions.yaml");
 #endif // ASCENT_MPI_ENABLED
 
-    // TODO: get data set name from registry
-    vtkh::DataSet *data = graph().workspace().registry().fetch<vtkh::DataSet>("p1_s1_cont_dset");
-
-    conduit::Node *blueprint = new conduit::Node();
-    VTKHDataAdapter::VTKHToBlueprintDataSet(data, *blueprint);
-    set_output<conduit::Node>(blueprint);
+  // TODO: remove. We don't need to output the data set anymore
+  set_output<conduit::Node>(blueprint);
 }
+
+//-----------------------------------------------------------------------------
+// void VTKHRenderingSplit::execute()
+// {
+//   // ASCENT_INFO("~~~ Exec rendering split filter ~~~");
+//   if (!input(0).check_type<vector<vector<double>>>())
+//   {
+//     ASCENT_ERROR("vtkh_rendering_split input must be a vector of vectors of doubles");
+//   }
+//   // vtkh::DataSet *data = input<vtkh::DataSet>(0);
+//   std::vector<std::vector<double>> *render_times = input<vector<vector<double>>>(0);
+
+//   // relative amount of visualization budget [0,1]
+//   float vis_budget = 0.1; // default to 10%
+//   if (params().has_path("vis_budget"))
+//   {
+//     vis_budget = params()["vis_budget"].to_float();
+//     if (vis_budget <= 0. || vis_budget > 1.)
+//     {
+//       ASCENT_ERROR("vtkh_rendering_split 'vis_budget' value '" << vis_budget
+//                                                                << " must be in range [0,1]. Skipping split.");
+//       return;
+//     }
+//   }
+
+//   int rank = -1;
+//   int total_ranks = 0;
+// #ifdef ASCENT_MPI_ENABLED
+//   MPI_Comm mpi_comm_world = MPI_Comm_f2c(Workspace::default_mpi_comm());
+//   MPI_Comm_size(mpi_comm_world, &total_ranks);
+//   MPI_Comm_rank(mpi_comm_world, &rank);
+// #endif
+
+//   int sim_nodes = 0;
+//   if (params().has_path("sim_nodes"))
+//   {
+//     sim_nodes = params()["sim_nodes"].to_int64();
+//     // std::cout << "~~~~~ sim nodes: " << sim_nodes << "/" << total_ranks << std::endl;
+//     if (sim_nodes <= 0 || sim_nodes > total_ranks)
+//     {
+//       ASCENT_ERROR("vtkh_rendering_split 'sim_nodes' value '" << sim_nodes
+//                                                               << " must be between 1 and" << total_ranks << ". Skipping split.");
+//       return;
+//     }
+//   }
+
+//   // we have sim-nodes, vis-nodes, intransit-nodes, inline-nodes,
+//   // render-nodes (vis-nodes + inline-nodes), sender-nodes (intransit-nodes - vis-nodes)
+
+//   int color_intransit = 0;
+//   bool is_vis_node = false;
+//   if (rank >= sim_nodes)
+//   {
+//     // vis nodes are always in the in-transit comm
+//     color_intransit = 1;
+//     // vis nodes only receive and render data
+//     is_vis_node = true;
+//     std::cout << "~~~ "
+//               << "rank " << rank << " is a vis node." << std::endl;
+//   }
+//   else if (total_ranks > 1)
+//   {
+//     // TODO: consider multiple scenes
+//     assert(render_times->at(0).size() > 0);
+//     float avg = accumulate(render_times->at(0).begin(), render_times->at(0).end(), 0.0) / render_times->at(0).size();
+//     std::cout << "~~~ " << avg << " ms mean frame time rank " << rank << std::endl;
+
+//     // decide if this node wants to send data away
+//     if (decide_intransit(avg, vis_budget))
+//       color_intransit = 1;
+//   }
+
+// #ifdef ASCENT_MPI_ENABLED
+//   // wait for all nodes to decide if they are rendering inline or intransit
+//   MPI_Barrier(mpi_comm_world);
+//   // split the current comm into in-line and in-transit nodes
+//   MPI_Comm intransit_comm;
+//   MPI_Comm_split(mpi_comm_world, color_intransit, 0, &intransit_comm);
+
+//   int intransit_size = 0;
+//   MPI_Comm_size(intransit_comm, &intransit_size);
+
+//   // comm w/ all rendering nodes (in-line + receiving in-transit (aka vis nodes))
+//   MPI_Comm render_comm;
+//   int color_rendering = 1;
+//   if (color_intransit == 1 && !is_vis_node)  // all sending in transit nodes
+//     color_rendering = 0;
+//   MPI_Comm_split(mpi_comm_world, color_rendering, 0, &render_comm);
+
+//   // FIXME: causes deadlock
+//   // if (color_rendering == 1)
+//   //   vtkh::SetMPICommHandle(render_comm);
+
+//   // HACK: infer the hola filter name from the current filter name
+//   std::string suffix = this->name().substr(this->name().find_last_of('_') + 1);
+//   std::string hola_mpi_name = "hola_mpi_" + suffix;
+//   conduit::Node hola_params;
+
+//   if (color_intransit && (intransit_size > (total_ranks - sim_nodes)))
+//   {
+//     if (is_vis_node)
+//       std::cout << "~~~~rank " << rank << ": receives extract(s)." << std::endl;
+//     else
+//       std::cout << "~~~~rank " << rank << ": sends extract." << std::endl;
+
+//     // rank split is always determined by sim/vis nodes split
+//     // barrier ?
+//     hola_params["rank_split"] = intransit_size - (total_ranks - sim_nodes);
+//     hola_params["mpi_comm"] = MPI_Comm_c2f(intransit_comm);
+//     graph().update_params(hola_mpi_name, hola_params);
+//   }
+//   else
+//   {
+//     std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
+//     hola_params["rank_split"] = 0;
+//     graph().update_params(hola_mpi_name, hola_params);
+//   }
+// #endif // ASCENT_MPI_ENABLED
+
+//     // TODO: get data set name from registry
+//     vtkh::DataSet *data = graph().workspace().registry().fetch<vtkh::DataSet>("p1_s1_cont_dset");
+
+//     conduit::Node *blueprint = new conduit::Node();
+//     VTKHDataAdapter::VTKHToBlueprintDataSet(data, *blueprint);
+//     set_output<conduit::Node>(blueprint);
+// }
 
 //-----------------------------------------------------------------------------
 }; // namespace filters

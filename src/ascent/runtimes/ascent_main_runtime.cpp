@@ -155,34 +155,34 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     ASCENT_ERROR("Missing Ascent::Open options missing MPI communicator (mpi_comm)");
   }
 
-  // ~~~ split mpi comm and set as default 
-  // we only need as many rendering threads as we have sim nodes
-  //
-  int size = 1;
-  int world_rank = 0;
-  MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
-  MPI_Comm_rank(comm, &world_rank);
+  // // ~~~ split mpi comm and set as default 
+  // // we only need as many rendering threads as we have sim nodes
+  // //
+  // int size = 1;
+  // int world_rank = 0;
+  // MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
+  // MPI_Comm_rank(comm, &world_rank);
 
-  MPI_Comm_size(comm, &size);
-  int color = 0;
-  // TODO: remove/replace hard coded factor here -> get from options
-  int rank_split = int(size*0.75 + 0.5); // number of sim nodes: 3/4 * # nodes
-  // vis node
-  if (world_rank >= rank_split)
-    color = 1;
-  MPI_Comm sim_vis_comm;
-  MPI_Comm_split(comm, color, m_rank, &sim_vis_comm);
+  // MPI_Comm_size(comm, &size);
+  // int color = 0;
+  // // TODO: remove/replace hard coded factor here -> get from options
+  // int rank_split = int(size*0.75 + 0.5); // number of sim nodes: 3/4 * # nodes
+  // // vis node
+  // if (world_rank >= rank_split)
+  //   color = 1;
+  // MPI_Comm sim_vis_comm;
+  // MPI_Comm_split(comm, color, m_rank, &sim_vis_comm);
 
-  int new_size = 0;
-  MPI_Comm_size(sim_vis_comm, &new_size);
-  // set new rank
-  MPI_Comm_rank(sim_vis_comm, &m_rank);
+  // int new_size = 0;
+  // MPI_Comm_size(sim_vis_comm, &new_size);
+  // // set new rank
+  // MPI_Comm_rank(sim_vis_comm, &m_rank);
 
   // comm world
   flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
 #if defined(ASCENT_VTKM_ENABLED)
-  // vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
-  vtkh::SetMPICommHandle(sim_vis_comm);
+  vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
+  // vtkh::SetMPICommHandle(sim_vis_comm);
   std::cout << ">>>>MPI size:" << vtkh::GetMPISize() << std::endl;
 #endif
   // MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
@@ -1060,9 +1060,9 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
     // connect the renders to the scene exec
     // on the second port
     // TODO: this looks redundand
-    // w.graph().connect(renders_name,   // src
-    //                   exec_name,      // dest
-    //                   1);             // port for renders
+    w.graph().connect(renders_name,   // src
+                      exec_name,      // dest
+                      1);             // port for renders
 
     // ------------ NEW -----------------
 
@@ -1076,6 +1076,34 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
     if (scene.has_path("probing_factor"))
     {
       probe_params["probing_factor"] = scene["probing_factor"].as_double();
+
+    #ifdef ASCENT_MPI_ENABLED 
+      // ~~~ split mpi comm and set as default 
+      // we only need as many rendering threads as we have sim nodes
+      //
+      int size = 1;
+      int world_rank = 0;
+      int comm_id = flow::Workspace::default_mpi_comm();
+      MPI_Comm comm = MPI_Comm_f2c(comm_id);
+      MPI_Comm_rank(comm, &world_rank);
+
+      MPI_Comm_size(comm, &size);
+      int color = 0;
+      // TODO: remove/replace hard coded factor here -> get from options
+      int rank_split = int(size*0.75 + 0.5); // number of sim nodes: 3/4 * # nodes
+      // vis node
+      if (world_rank >= rank_split)
+        color = 1;
+      MPI_Comm sim_vis_comm;
+      MPI_Comm_split(comm, color, m_rank, &sim_vis_comm);
+
+      int new_size = 0;
+      MPI_Comm_size(sim_vis_comm, &new_size);
+      // set new rank
+      MPI_Comm_rank(sim_vis_comm, &m_rank);
+      vtkh::SetMPICommHandle(sim_vis_comm);
+    #endif
+
 
       w.graph().add_filter("exec_probe",
                            exec_probe_name,
@@ -1115,29 +1143,27 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
 
 
       // add hola filter node for (partly) in transit visualization
-      conduit::Node hola_params;
-      hola_params["rank_split"] = 0; //scene["sim_nodes"].as_int64();
-    #ifdef ASCENT_MPI_ENABLED 
-      // this is updated during runtime
-      hola_params["mpi_comm"] = flow::Workspace::default_mpi_comm();
-    #endif
-      std::string hola_mpi_name = "hola_mpi_" + names[i];
-      w.graph().add_filter("hola_mpi",
-                           hola_mpi_name,
-                           hola_params);
-
-      w.graph().connect(vtkh_rendering_split_name,  // src
-                        hola_mpi_name,              // dest
-                        "in");                      // data
-
-      w.graph().connect(hola_mpi_name,  // src
-                        exec_name,      // dest
-                        "in");          // dummy port
+    //   conduit::Node hola_params;
+    //   hola_params["rank_split"] = 0; //scene["sim_nodes"].as_int64();
+    // #ifdef ASCENT_MPI_ENABLED 
+    //   // this is updated during runtime
+    //   hola_params["mpi_comm"] = flow::Workspace::default_mpi_comm();
+    // #endif
+      // std::string hola_mpi_name = "hola_mpi_" + names[i];
+      // w.graph().add_filter("hola_mpi",
+      //                      hola_mpi_name,
+      //                      hola_params);
+      // w.graph().connect(vtkh_rendering_split_name,  // src
+      //                   hola_mpi_name,              // dest
+      //                   "in");                      // data
+      // w.graph().connect(hola_mpi_name,  // src
+      //                   exec_name,      // dest
+      //                   "in");          // dummy port
 
       // FIXME: breaks if we remove this connection: why?
       w.graph().connect(vtkh_rendering_split_name,  // src
                         exec_name,                  // dest
-                        "in");                      // dummy port
+                        "in");                         // dummy port
 
       // TODO: connect to scene exec to pass on datasets ?
       // connect the probe exec with the scene exec to pass on the render times
@@ -1145,6 +1171,14 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
       //                   exec_name,        // dest
       //                   2);               // port 2 for render times
     }
+    else
+    {
+      // FIXME: dummy connection 
+      w.graph().connect(renders_name, // src
+                        exec_name,    // dest
+                        2);           // default port
+    }
+    
     // ~~~~~~~~~~~~ end probing ~~~~~~~~~~~~
 
     std::vector<std::string> pipelines = GetPipelines(scene["plots"]);
