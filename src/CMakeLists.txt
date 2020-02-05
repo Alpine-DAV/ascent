@@ -53,7 +53,7 @@ cmake_policy(SET CMP0048 NEW)
 # Ascent
 ################################
 
-project(ascent VERSION "0.5.0")
+project(ascent VERSION "0.5.1")
 
 ################################
 # Build Options

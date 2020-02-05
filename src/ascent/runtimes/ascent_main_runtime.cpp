@@ -127,7 +127,6 @@ int InfoHandler::m_rank = 0;
 //-----------------------------------------------------------------------------
 AscentRuntime::AscentRuntime()
 :Runtime(),
- m_data_object(new conduit::Node()), // trust me
  m_refinement_level(2), // default refinement level for high order meshes
  m_rank(0)
 {
@@ -317,8 +316,12 @@ AscentRuntime::Cleanup()
 void
 AscentRuntime::Publish(const conduit::Node &data)
 {
-    // create our own tree, with all data zero copied.
-    blueprint::mesh::to_multi_domain(data, *m_data_object.as_node());
+    // There is no promise that all data can be zero copied
+    // and conversions to vtkh/low order will be invalid.
+    // We must reset the source object
+    conduit::Node *multi_dom = new conduit::Node();
+    blueprint::mesh::to_multi_domain(data, *multi_dom);
+    m_data_object.reset(multi_dom);
     EnsureDomainIds();
 }
 
@@ -520,6 +523,13 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       }
 
       std::string type = filter["type"].as_string();
+
+      // support pipelines that specify "exa" style filters
+      if(type.find("exa") == (size_t)0 && 
+         type.size() > (size_t)3)
+      {
+          type = type.substr(3);
+      }
 
       if(registered_filter_types()["transforms"].has_child(type))
       {
@@ -1409,7 +1419,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
 
   }
 
-  // we are enforcing the order of exectution
+  // we are enforcing the order of execution
   for(int i = 0; i < pipelines.number_of_children(); ++i)
   {
     CreatePipelines(pipelines.child(i));

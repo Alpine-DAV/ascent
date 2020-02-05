@@ -71,13 +71,14 @@ class VTKHCollection;
 class DataObject
 {
 public:
-  enum class Source { VTKH, LOW_BP, HIGH_BP};
-  DataObject() = delete;
+  enum class Source { VTKH, LOW_BP, HIGH_BP, INVALID};
+  DataObject();
   //
   // Constructors take ownership of pointers
   //
 
   DataObject(conduit::Node *dataset);
+  void reset(conduit::Node *dataset);
 
 #if defined(ASCENT_VTKM_ENABLED)
   DataObject(VTKHCollection *dataset);
