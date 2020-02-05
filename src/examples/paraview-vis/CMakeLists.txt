@@ -24,3 +24,6 @@ endforeach()
 
 install(FILES ${install_files} ${configure_dest_files}
   DESTINATION examples/ascent/paraview-vis)
+
+install(DIRECTORY tests
+  DESTINATION examples/ascent/paraview-vis)
