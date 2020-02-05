@@ -524,6 +524,13 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
 
       std::string type = filter["type"].as_string();
 
+      // support pipelines that specify "exa" style filters
+      if(type.find("exa") == (size_t)0 && 
+         type.size() > (size_t)3)
+      {
+          type = type.substr(3);
+      }
+
       if(registered_filter_types()["transforms"].has_child(type))
       {
           filter_name = registered_filter_types()["transforms"][type].as_string();
@@ -1412,7 +1419,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
 
   }
 
-  // we are enforcing the order of exectution
+  // we are enforcing the order of execution
   for(int i = 0; i < pipelines.number_of_children(); ++i)
   {
     CreatePipelines(pipelines.child(i));
