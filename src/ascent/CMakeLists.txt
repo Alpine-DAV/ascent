@@ -90,6 +90,7 @@ set(ascent_sources
     ascent_runtime.cpp
     runtimes/ascent_main_runtime.cpp
     runtimes/ascent_empty_runtime.cpp
+    runtimes/ascent_probing_runtime.cpp
     runtimes/ascent_expression_eval.cpp
     runtimes/expressions/ascent_blueprint_architect.cpp
     runtimes/expressions/ascent_conduit_reductions.cpp
@@ -124,6 +125,7 @@ set(ascent_headers
     # runtimes
     ascent_runtime.hpp
     runtimes/ascent_empty_runtime.hpp
+    runtimes/ascent_probing_runtime.hpp
     runtimes/ascent_expression_eval.hpp
     runtimes/expressions/ascent_blueprint_architect.hpp
     runtimes/expressions/ascent_conduit_reductions.hpp

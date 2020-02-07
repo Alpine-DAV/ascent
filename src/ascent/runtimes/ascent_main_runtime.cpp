@@ -1073,7 +1073,7 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
     std::string exec_probe_name = "exec_probe_" + names[i];
     std::string vtkh_rendering_split_name = "vtkh_rendering_split_" + names[i];
     
-    if (scene.has_path("probing_factor"))
+    if (false && scene.has_path("probing_factor"))
     {
       probe_params["probing_factor"] = scene["probing_factor"].as_double();
 
@@ -1142,17 +1142,17 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
                         "render_times");            // port 1 for render times
 
       // FIXME: breaks if we remove this connection: why?
-      // w.graph().connect(vtkh_rendering_split_name,  // src
-      //                   exec_name,                  // dest
-      //                   "in");                         // dummy port
+      w.graph().connect(vtkh_rendering_split_name,  // src
+                        exec_name,                  // dest
+                        "in");                         // dummy port
 
       // TODO: connect to scene exec to pass on datasets ?
       // connect the probe exec with the scene exec to pass on the render times
       // w.graph().connect(exec_probe_name,  // src
       //                   exec_name,        // dest
       //                   2);               // port 2 for render times
-    }
-    else
+    } 
+    else  // not probing
     {
       // FIXME: dummy connection 
       // w.graph().connect(renders_name, // src
@@ -1331,14 +1331,14 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
     // add_plot and to the renders
     w.graph().connect(prev_add_plot_name, // src
                       exec_name,          // dest
-                      0);                 // default port
+                      0);                 // scene
 
     w.graph().connect(renders_name, // src
                       exec_name,    // dest
-                      1);           // default port
+                      1);           // renders
 
     // as well as exec probe filter if active
-    if (scene.has_path("probing_factor"))
+    if (false && scene.has_path("probing_factor"))
     {
       w.graph().connect(prev_add_plot_name, // src
                         exec_probe_name,    // dest

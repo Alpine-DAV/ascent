@@ -329,6 +329,7 @@ public:
       MPI_Comm_rank(MPI_Comm_f2c(Workspace::default_mpi_comm()), &rank);
       // rank = r->GetMpiRank();
 #endif
+      // r->GetInput();
 
       // write render times to file
       std::stringstream ss;
@@ -2567,6 +2568,26 @@ void ExecScene::execute()
   // the images should exist now so add them to the image list
   // this can be used for the web server or jupyter
   add_images(renders, &graph());
+
+  // add render times to data set
+  // {
+  //   vtkh::DataSet *data_local = graph().workspace().registry().fetch<vtkh::DataSet>("_ascent_input_data");
+  //   conduit::Node *node = new conduit::Node();
+  //   VTKHDataAdapter::VTKHToBlueprintDataSet(data_local, *node);
+
+  //   conduit::Node render_data;
+  //   int counter = 0;
+  //   for (std::vector<double> &scene_render_times : *scene->GetRenderTimes())
+  //   {
+  //     // for (double &t : scene_render_times)
+  //     Node &list_entry = render_data["render_times"].append();
+  //     list_entry.set(counter);
+  //     counter++;
+  //   }
+
+  //   node->append() = render_data;
+  //   node->print();
+  // }
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -3679,6 +3700,8 @@ void ExecProbe::execute()
   for (auto &a : *scene->GetRenderTimes())
     render_times->push_back(a);
 
+  
+
   // DEBUG output
   // for (const auto &a : render_times->at(0))
   //   std::cout << a << " ";
@@ -3706,7 +3729,7 @@ void VTKHRenderingSplit::declare_interface(Node &i)
 {
   i["type_name"] = "vtkh_rendering_split";
   i["port_names"].append() = "render_times";
-  i["output_port"] = "false"; // data set for hola extracts
+  i["output_port"] = "true"; // data set for hola extracts
 }
 
 //-----------------------------------------------------------------------------

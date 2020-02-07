@@ -54,8 +54,10 @@
 #include <ascent_runtime.hpp>
 
 #include <ascent_empty_runtime.hpp>
+#include <ascent_probing_runtime.hpp>
 #include <ascent_flow_runtime.hpp>
 #include <runtimes/ascent_main_runtime.hpp>
+#include <runtimes/ascent_PROBING_runtime.hpp>
 
 #if defined(ASCENT_VTKH_ENABLED)
     #include <vtkh/vtkh.hpp>
@@ -206,6 +208,35 @@ Ascent::open(const conduit::Node &options)
         if(runtime_type == "empty")
         {
             m_runtime = new EmptyRuntime();
+        }
+        else if(runtime_type == "probing")
+        {
+            m_runtime = new ProbingRuntime();
+            if(processed_opts.has_path("runtime/vtkm/backend"))
+            {
+    #if defined(ASCENT_VTKH_ENABLED)
+              std::string backend = processed_opts["runtime/vtkm/backend"].as_string();
+              if(backend == "serial")
+              {
+                vtkh::ForceSerial();
+              }
+              else if(backend == "openmp")
+              {
+                vtkh::ForceOpenMP();
+              }
+              else if(backend == "cuda")
+              {
+                vtkh::ForceCUDA();
+              }
+              else
+              {
+                ASCENT_ERROR("Ascent unrecognized backend "<<backend);
+              }
+    #else
+              ASCENT_ERROR("Ascent vtkm backend is disabled. "
+                          "Ascent was not built with vtk-m support");
+    #endif
+            }
         }
         else if(runtime_type == "ascent")
         {
