@@ -1141,29 +1141,10 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
                         vtkh_rendering_split_name,  // dest
                         "render_times");            // port 1 for render times
 
-
-      // add hola filter node for (partly) in transit visualization
-    //   conduit::Node hola_params;
-    //   hola_params["rank_split"] = 0; //scene["sim_nodes"].as_int64();
-    // #ifdef ASCENT_MPI_ENABLED 
-    //   // this is updated during runtime
-    //   hola_params["mpi_comm"] = flow::Workspace::default_mpi_comm();
-    // #endif
-      // std::string hola_mpi_name = "hola_mpi_" + names[i];
-      // w.graph().add_filter("hola_mpi",
-      //                      hola_mpi_name,
-      //                      hola_params);
-      // w.graph().connect(vtkh_rendering_split_name,  // src
-      //                   hola_mpi_name,              // dest
-      //                   "in");                      // data
-      // w.graph().connect(hola_mpi_name,  // src
-      //                   exec_name,      // dest
-      //                   "in");          // dummy port
-
       // FIXME: breaks if we remove this connection: why?
-      w.graph().connect(vtkh_rendering_split_name,  // src
-                        exec_name,                  // dest
-                        "in");                         // dummy port
+      // w.graph().connect(vtkh_rendering_split_name,  // src
+      //                   exec_name,                  // dest
+      //                   "in");                         // dummy port
 
       // TODO: connect to scene exec to pass on datasets ?
       // connect the probe exec with the scene exec to pass on the render times
@@ -1174,9 +1155,9 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
     else
     {
       // FIXME: dummy connection 
-      w.graph().connect(renders_name, // src
-                        exec_name,    // dest
-                        2);           // default port
+      // w.graph().connect(renders_name, // src
+      //                   exec_name,    // dest
+      //                   2);           // default port
     }
     
     // ~~~~~~~~~~~~ end probing ~~~~~~~~~~~~

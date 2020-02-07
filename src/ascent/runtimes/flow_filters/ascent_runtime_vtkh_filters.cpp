@@ -2542,7 +2542,7 @@ void ExecScene::declare_interface(conduit::Node &i)
   i["type_name"] = "exec_scene";
   i["port_names"].append() = "scene";
   i["port_names"].append() = "renders";
-  i["port_names"].append() = "in";
+  // i["port_names"].append() = "in";
   i["output_port"] = "false";
 }
 
@@ -3684,7 +3684,7 @@ void ExecProbe::execute()
   //   std::cout << a << " ";
   // std::cout << " frame render times out" << std::endl;
   // pass on render times
-  set_output<std::vector<std::vector<double>>>(render_times);
+  // set_output<std::vector<std::vector<double>>>(render_times);
 }
 
 //-----------------------------------------------------------------------------
@@ -3706,7 +3706,7 @@ void VTKHRenderingSplit::declare_interface(Node &i)
 {
   i["type_name"] = "vtkh_rendering_split";
   i["port_names"].append() = "render_times";
-  i["output_port"] = "true"; // data set for hola extracts
+  i["output_port"] = "false"; // data set for hola extracts
 }
 
 //-----------------------------------------------------------------------------
@@ -3977,7 +3977,10 @@ void VTKHRenderingSplit::execute()
 #endif // ASCENT_MPI_ENABLED
 
   // TODO: remove. We don't need to output the data set anymore
-  set_output<conduit::Node>(blueprint);
+  // set_output<conduit::Node>(blueprint);
+
+  // graph().reset();
+  // graph().workspace().registry().reset();
 }
 
 //-----------------------------------------------------------------------------
