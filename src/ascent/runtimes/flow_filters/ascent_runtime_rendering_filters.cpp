@@ -1211,7 +1211,7 @@ CreatePlot::verify_params(const conduit::Node &params,
     valid_paths.push_back("topology");
 
     if(res)
-    {
+   {
       if(params["type"].as_string() == "mesh")
       {
         is_mesh = true;
@@ -1281,7 +1281,6 @@ CreatePlot::execute()
       {
         if(!params().has_path("topology"))
         {
-          params().print();
           ASCENT_ERROR("create_plot: data set has multiple topologies "
                        <<"and no topology is specified.");
         }
