@@ -50,6 +50,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_transmogrifier.hpp"
+#include "ascent_config.h"
 #if defined(ASCENT_MFEM_ENABLED)
 #include "ascent_mfem_data_adapter.hpp"
 #endif
@@ -93,11 +94,10 @@ conduit::Node* Transmogrifier::low_order(conduit::Node &dataset)
         ASCENT_ERROR("low_order requires high order data");
       }
 #if defined(ASCENT_MFEM_ENABLED)
-      MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
+      MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(dataset);
       conduit::Node *lo_dset = new conduit::Node;
       MFEMDataAdapter::Linearize(domains, *lo_dset, m_refinement_level);
       delete domains;
-      set_output<Node>(lo_dset);
 
       // add a second registry entry for the output so it can be zero copied.
       return lo_dset;
