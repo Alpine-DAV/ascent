@@ -1200,13 +1200,14 @@ CreatePlot::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("type",params, info, true);
-    res &= check_string("topology",params, info, false);
 
     bool is_mesh = false;
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("type");
     valid_paths.push_back("pipeline");
+
+    res &= check_string("topology",params, info, false);
     valid_paths.push_back("topology");
 
     if(res)
@@ -1280,6 +1281,7 @@ CreatePlot::execute()
       {
         if(!params().has_path("topology"))
         {
+          params().print();
           ASCENT_ERROR("create_plot: data set has multiple topologies "
                        <<"and no topology is specified.");
         }

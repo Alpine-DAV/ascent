@@ -525,7 +525,7 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       std::string type = filter["type"].as_string();
 
       // support pipelines that specify "exa" style filters
-      if(type.find("exa") == (size_t)0 && 
+      if(type.find("exa") == (size_t)0 &&
          type.size() > (size_t)3)
       {
           type = type.substr(3);
@@ -1537,6 +1537,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
     }
     catch(vtkm::cont::Error &e)
     {
+      w.reset();
       ASCENT_ERROR("Execution failed with vtkm: "<<e.what());
     }
 #endif
@@ -1552,6 +1553,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
     }
     catch(...)
     {
+      w.reset();
       ASCENT_ERROR("Ascent: unknown exception thrown");
     }
 }
