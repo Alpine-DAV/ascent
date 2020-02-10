@@ -1352,7 +1352,9 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
   } // each scene
 }
 
-void AscentRuntime::FindRenders(conduit::Node &image_params, conduit::Node &image_list)
+void AscentRuntime::FindRenders(conduit::Node &image_params, 
+                                conduit::Node &image_list,
+                                conduit::Node &render_times)
 {
   image_list.reset();
 
@@ -1368,6 +1370,7 @@ void AscentRuntime::FindRenders(conduit::Node &image_params, conduit::Node &imag
   for (int i = 0; i < size; i++)
   {
     image_list.append() = images->child(i)["image_name"].as_string();
+    render_times.append() = images->child(i)["render_time"].as_double();
   }
 
   images->reset();
@@ -1543,8 +1546,10 @@ void AscentRuntime::Execute(const conduit::Node &actions)
 
     Node render_file_names;
     Node renders;
-    FindRenders(renders, render_file_names);
+    Node render_times;
+    FindRenders(renders, render_file_names, render_times);
     m_info["images"] = renders;
+    m_info["render_times"] = render_times;
 
     const conduit::Node &expression_cache =
         runtime::expressions::ExpressionEval::get_cache();

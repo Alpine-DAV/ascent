@@ -343,15 +343,15 @@ public:
       out << ss.str();
       out.close();
 
-      if (isProbe)
-      {
+      // if (isProbe)
+      // {
         m_render_times.push_back(times);
-      }
-      else
-      {
+      // }
+      // else
+      // {
         // only consume on regular rendering
         m_registry->consume(oss.str());
-      }
+      // }
     }
 
     // std::cout << "~~~ End execute scene" << std::endl;
@@ -2501,7 +2501,9 @@ ExecScene::~ExecScene()
 {
 }
 
-void add_images(std::vector<vtkh::Render> *renders, flow::Graph *graph)
+void add_images(std::vector<vtkh::Render> *renders, 
+                flow::Graph *graph, 
+                const std::vector<std::vector<double> > *scene_render_times)
 {
   if (!graph->workspace().registry().has_entry("image_list"))
   {
@@ -2515,6 +2517,7 @@ void add_images(std::vector<vtkh::Render> *renders, flow::Graph *graph)
     const std::string image_name = renders->at(i).GetImageName() + ".png";
     conduit::Node image_data;
     image_data["image_name"] = image_name;
+
     image_data["image_width"] = renders->at(i).GetWidth();
     image_data["image_height"] = renders->at(i).GetHeight();
 
@@ -2533,8 +2536,30 @@ void add_images(std::vector<vtkh::Render> *renders, flow::Graph *graph)
 
     image_data["scene_bounds"].set(coord_bounds, 6);
 
+    double avg_render_time = 0.0;
+    int count = 0;
+    // loop over renderers
+    for (size_t j = 0; j < scene_render_times->size(); ++j)
+    {
+      // HACK: average over render times for now
+      if (scene_render_times->at(j).size() > i)
+      {
+        avg_render_time += scene_render_times->at(j).at(i);
+        ++count;
+      }
+    }
+    avg_render_time /= double(count);
+
+    image_data["render_time"] = avg_render_time;
     image_list->append() = image_data;
+
+    // append name and frame time to ascent info
+    // conduit::Node image_info;
+    // image_info["image_name"] = image_name;
+    // image_info["render_times"] = render_times;
+    // info["renders"].append() = image_info;
   }
+
 }
 
 //-----------------------------------------------------------------------------
@@ -2565,9 +2590,18 @@ void ExecScene::execute()
 
   scene->Execute(*renders);
 
+  std::vector<std::vector<double> > *render_times = scene->GetRenderTimes();
+  
+  // merge timings of all renderers into one vector for now
+  // std::vector<double> all_times;
+  // for (size_t i = 0; i < render_times->size(); i++)
+  // {
+  //   all_times.insert(all_times.end(), render_times->at(i).begin(), render_times->at(i).end());
+  // }
+  
   // the images should exist now so add them to the image list
   // this can be used for the web server or jupyter
-  add_images(renders, &graph());
+  add_images(renders, &graph(), render_times);
 
   // add render times to data set
   // {
@@ -3692,15 +3726,21 @@ void ExecProbe::execute()
   // std::cout << "~~~ Execute probing " << std::endl;
   scene->Execute(probe_renders, true);
 
+  // std::vector<std::vector<double>> *render_times = scene->GetRenderTimes();
+  // // merge timings of all renderers into one vector for now
+  // std::vector<double> all_times;
+  // for (size_t i = 0; i < render_times->size(); i++)
+  // {
+  //   all_times.insert(all_times.end(), render_times->at(i).begin(), render_times->at(i).end());
+  // }
+
   // add probing images to the image list
-  add_images(renders, &graph());
+  // add_images(renders, &graph(), all_times);
 
   // get probing times and pass them on
-  std::vector<std::vector<double>> *render_times = new std::vector<std::vector<double>>();
-  for (auto &a : *scene->GetRenderTimes())
-    render_times->push_back(a);
-
-  
+  // std::vector<std::vector<double>> *render_times = new std::vector<std::vector<double>>();
+  // for (auto &a : *scene->GetRenderTimes())
+  //   render_times->push_back(a);  
 
   // DEBUG output
   // for (const auto &a : render_times->at(0))

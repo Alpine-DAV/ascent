@@ -42,7 +42,6 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_probing_runtime.cpp
@@ -51,8 +50,15 @@
 
 #include "ascent_probing_runtime.hpp"
 
+// hola
+#include <ascent_hola.hpp>
+#include <ascent_hola_mpi.hpp>
+
 // standard lib includes
 #include <string.h>
+#include <cassert>
+#include <numeric>
+#include <cmath>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -71,7 +77,6 @@
 using namespace conduit;
 using namespace std;
 
-
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -88,9 +93,8 @@ namespace ascent
 
 //-----------------------------------------------------------------------------
 ProbingRuntime::ProbingRuntime()
-:Runtime()
+    : Runtime()
 {
-
 }
 
 //-----------------------------------------------------------------------------
@@ -108,12 +112,11 @@ ProbingRuntime::~ProbingRuntime()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void
-ProbingRuntime::Initialize(const conduit::Node &options)
+void ProbingRuntime::Initialize(const conduit::Node &options)
 {
 #if ASCENT_MPI_ENABLED
-    if(!options.has_child("mpi_comm") ||
-       !options["mpi_comm"].dtype().is_integer())
+    if (!options.has_child("mpi_comm") ||
+        !options["mpi_comm"].dtype().is_integer())
     {
         ASCENT_ERROR("Missing Ascent::open options missing MPI communicator (mpi_comm)");
     }
@@ -124,27 +127,22 @@ ProbingRuntime::Initialize(const conduit::Node &options)
 }
 
 //-----------------------------------------------------------------------------
-void
-ProbingRuntime::Info(conduit::Node &out)
+void ProbingRuntime::Info(conduit::Node &out)
 {
     out.reset();
     out["runtime/type"] = "probing";
 }
 
-
 //-----------------------------------------------------------------------------
-void
-ProbingRuntime::Cleanup()
+void ProbingRuntime::Cleanup()
 {
-
 }
 
 //-----------------------------------------------------------------------------
-void
-ProbingRuntime::Publish(const conduit::Node &data)
+void ProbingRuntime::Publish(const conduit::Node &data)
 {
     Node verify_info;
-    bool verify_ok = conduit::blueprint::mesh::verify(data,verify_info);
+    bool verify_ok = conduit::blueprint::mesh::verify(data, verify_info);
 
 #if ASCENT_MPI_ENABLED
 
@@ -154,7 +152,7 @@ ProbingRuntime::Publish(const conduit::Node &data)
     // use an mpi sum to check if all is ok
     Node n_src, n_reduce;
 
-    if(verify_ok)
+    if (verify_ok)
         n_src = (int)0;
     else
         n_src = (int)1;
@@ -164,23 +162,21 @@ ProbingRuntime::Publish(const conduit::Node &data)
                                         mpi_comm);
 
     int num_failures = n_reduce.value();
-    if(num_failures != 0)
+    if (num_failures != 0)
     {
         ASCENT_ERROR("Mesh Blueprint Verify failed on "
-                       << num_failures
-                       << " MPI Tasks");
+                     << num_failures
+                     << " MPI Tasks");
 
         // you could use mpi to find out where things went wrong ...
     }
 
-
-
 #else
-    if(!verify_ok)
+    if (!verify_ok)
     {
-         ASCENT_ERROR("Mesh Blueprint Verify failed!"
-                        << std::endl
-                        << verify_info.to_json());
+        ASCENT_ERROR("Mesh Blueprint Verify failed!"
+                     << std::endl
+                     << verify_info.to_json());
     }
 #endif
 
@@ -189,81 +185,314 @@ ProbingRuntime::Publish(const conduit::Node &data)
 }
 
 //-----------------------------------------------------------------------------
-void
-ProbingRuntime::Execute(const conduit::Node &actions)
+bool decide_intransit(const double avg, const float vis_budget)
 {
-    std::cout << "===== execute probing runtime" << std::endl;
-    
-    // // Loop over the actions
-    // for (int i = 0; i < actions.number_of_children(); ++i)
-    // {
-    //     const Node &action = actions.child(i);
-    //     string action_name = action["action"].as_string();
-    //     // implement action
-    // }
+    // TODO: calculate based on budget
+    double max_time = 105.f;
 
-    // copy actions for probing
-    Node ascent_opt = m_runtime_options;
+    if (avg > max_time)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void splitAndRender(const MPI_Comm mpi_comm_world,
+                    const std::vector<double> &render_times,
+                    conduit::Node data,
+                    const int sim_node_count,
+                    const double vis_budget = 0.1)
+{
+    assert(vis_budget > 0.0 && vis_budget < 1.0);
+
+    int rank = -1;
+    int total_ranks = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm_size(mpi_comm_world, &total_ranks);
+    MPI_Comm_rank(mpi_comm_world, &rank);
+
+    assert(sim_node_count > 0 && sim_node_count <= total_ranks);
+#endif
+
+    int color_intransit = 0;
+    bool is_vis_node = false;
+    if (rank >= sim_node_count) // nodes with the highest rank are our vis nodes
+    {
+        // vis nodes are always in the in-transit comm
+        color_intransit = 1;
+        // vis nodes only receive and render data
+        is_vis_node = true;
+        std::cout << "~~~ "
+                  << "rank " << rank << " is a vis node." << std::endl;
+    }
+    else if (total_ranks > 1)
+    {
+        assert(render_times.size() > 0);
+        double avg = std::accumulate(render_times.begin(), render_times.end(), 0.0) / render_times.size();
+        std::cout << "~~~ " << avg << " ms mean frame time rank " << rank << std::endl;
+
+        // decide if this node wants to send data away
+        if (decide_intransit(avg, vis_budget))
+            color_intransit = 1;
+    }
+
+    int color_rendering = 1;
+    int color_send = 0;
+    if (color_intransit == 1 && !is_vis_node) // all sending in transit nodes
+    {
+        color_rendering = 0;
+        color_send = 1;
+    }
+
+#ifdef ASCENT_MPI_ENABLED
+    // split the current comm into in-line and in-transit nodes
+    MPI_Comm intransit_comm;
+    int intransit_size = 0;
+    MPI_Comm_split(mpi_comm_world, color_intransit, 0, &intransit_comm);
+    MPI_Comm_size(intransit_comm, &intransit_size);
+    // Hola setup
+    MPI_Comm hola_comm;
+    MPI_Comm_split(intransit_comm, color_send, 0, &hola_comm);
+    int rank_split = intransit_size - (total_ranks - sim_node_count);
+    // split world comm into rendering and sending nodes
+    MPI_Comm render_comm;
+    MPI_Comm_split(mpi_comm_world, color_rendering, 0, &render_comm);
+
+    if (color_rendering) // all rendering nodes
+    {
+        if (is_vis_node && rank_split > 0) // render on vis node
+        {
+            std::cout << "~~~~rank " << rank << ": receives extract(s)." << std::endl;
+
+            // use hola to receive the extract data
+            Node data_recv, hola_opts, blank_actions;
+
+            hola_opts["mpi_comm"] = MPI_Comm_c2f(intransit_comm);
+            hola_opts["rank_split"] = rank_split;
+
+            // MPI_Barrier(intransit_comm);
+            ascent::hola("hola_mpi", hola_opts, data_recv);
+
+            // Render the data from hola with Ascent on render nodes
+            Node ascent_opts;
+            ascent_opts["actions_file"] = "cinema_actions.yaml";
+            ascent_opts["mpi_comm"] = MPI_Comm_c2f(render_comm);
+
+            // MPI_Barrier(render_comm);
+            Ascent ascent_recv;
+            ascent_recv.open(ascent_opts);
+            ascent_recv.publish(data_recv);
+            ascent_recv.execute(blank_actions);
+            ascent_recv.close();
+            std::cout << "~~~~rank " << rank << ": ascent_recv - finished rendering."
+                      << std::endl;
+        }
+        else // render local (inline)
+        {
+            std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
+
+            Node ascent_opts;
+            ascent_opts["mpi_comm"] = MPI_Comm_c2f(render_comm);
+            ascent_opts["actions_file"] = "cinema_actions.yaml";
+            Node blank_actions;
+
+            // Render the data locally with Ascent
+            // MPI_Barrier(render_comm);
+            Ascent ascent_inline;
+            ascent_inline.open(ascent_opts);
+            ascent_inline.publish(data);
+            ascent_inline.execute(blank_actions);
+
+            // WARNING ascent.open(render_comm); sets the static variable that holds
+            // the VTK-h mpi comm. That means you will have to set this back to what
+            // it was before. This is probably one of the reasons you are deadlocked.
+
+            // reset vtkh communicator
+            // MPI_Barrier(mpi_comm_world);
+            // vtkh::SetMPICommHandle(mpi_comm_world);
+
+            ascent_inline.close();
+            std::cout << "----rank " << rank << ": ascent_inline - finished rendering."
+                      << std::endl;
+        }
+    }
+    else // all nodes not rendering: send extract to vis nodes using Hola
+    {
+        std::cout << "~~~~rank " << rank << ": sends extract." << std::endl;
+        // add the extract
+        conduit::Node actions;
+        conduit::Node &add_extract = actions.append();
+        add_extract["action"] = "add_extracts";
+        add_extract["extracts/e1/type"] = "hola_mpi";
+        add_extract["extracts/e1/params/mpi_comm"] = MPI_Comm_c2f(intransit_comm);
+        add_extract["extracts/e1/params/rank_split"] = rank_split;
+
+        Node ascent_opts;
+        ascent_opts["mpi_comm"] = MPI_Comm_c2f(hola_comm);
+
+        // FIXME: ascent overrides compiled config with actions from file
+        // workaround: rename yaml file
+        int intransit_rank = 0;
+        MPI_Comm_rank(intransit_comm, &intransit_rank);
+        if (intransit_rank == 0)
+            rename("ascent_actions.yaml", "bak_ascent_actions.yaml");
+
+        // Send an extract of the data with Ascent
+        Ascent ascent_send;
+        ascent_send.open(ascent_opts);
+        ascent_send.publish(data);
+        ascent_send.execute(actions); // extract
+        ascent_send.close();
+        std::cout << "----rank " << rank << ": ascent_send." << std::endl;
+    }
+    MPI_Barrier(mpi_comm_world);
+
+    // FIXME: freeing the comms brakes execution (test this again)
+    // MPI_Comm_free(&render_comm);
+    // MPI_Comm_free(&hola_comm);
+    // MPI_Comm_free(&intransit_comm);
+
+    // restore the actions file name
+    if (rank == 0)
+        rename("bak_ascent_actions.yaml", "ascent_actions.yaml");
+    MPI_Barrier(mpi_comm_world); 
+#endif // ASCENT_MPI_ENABLED
+}
+
+//-----------------------------------------------------------------------------
+void ProbingRuntime::Execute(const conduit::Node &actions)
+{    
     int world_rank = 0;
-    int size = 1;
-    int rank_split = 0;
-
+    int world_size = 1;
 #if ASCENT_MPI_ENABLED
     // split comm into sim and vis nodes
-    MPI_Comm comm_world  = MPI_Comm_f2c(m_runtime_options["mpi_comm"].to_int());
+    MPI_Comm comm_world = MPI_Comm_f2c(m_runtime_options["mpi_comm"].to_int());
     MPI_Comm_rank(comm_world, &world_rank);
-    MPI_Comm_size(comm_world, &size);
+    MPI_Comm_size(comm_world, &world_size);
 
-    // number of sim nodes: 3/4 * # nodes
-    // TODO: change to dynamic ratio (based on parameter given in ascent_actions.yaml)
-    rank_split = int(size*0.75 + 0.5); 
+    // FIXME: get rid of this ascent_action file mess
+    if (world_rank == 0)
+        rename("ascent_actions.yaml", "bak_ascent_actions.yaml");
+    MPI_Barrier(comm_world);
+#endif // ASCENT_MPI_ENABLED
+
+    // copy options and actions for probing run
+    conduit::Node ascent_opt = m_runtime_options;
+    conduit::Node probe_actions = actions;
+    // probing setup
+    double probing_factor = 0.0;
+    double vis_budget = 0.0;
+    double node_split = 0.0;
+    // cinema angle counts
+    int phi = 1;
+    int theta = 1;
+
+    // Loop over the actions
+    for (int i = 0; i < actions.number_of_children(); ++i)
+    {
+        const Node &action = actions.child(i);
+        string action_name = action["action"].as_string();
+
+        if (action_name == "add_scenes")
+        {
+            if (action.has_path("probing"))
+            {
+                if (action["probing"].has_path("factor"))
+                    probing_factor = action["probing/factor"].to_double();
+                else
+                    ASCENT_ERROR("action 'probing' missing child 'factor'");
+
+                if (action["probing"].has_path("vis_budget"))
+                    vis_budget = action["probing/vis_budget"].to_double();
+                else
+                    ASCENT_ERROR("action 'probing' missing child 'vis_budget'");
+
+                if (action["probing"].has_path("node_split"))
+                    node_split = action["probing/node_split"].to_double();
+                else
+                    ASCENT_ERROR("action 'probing' missing child 'node_split'");
+            }
+            if (action.has_path("scenes"))
+            {
+                // TODO: clean up this mess
+                conduit::Node scenes;
+                scenes.append() = action["scenes"];
+                conduit::Node renders;
+                renders.append() = scenes.child(0).child(0)["renders"];
+                phi = renders.child(0).child(0)["phi"].to_int();
+                theta = renders.child(0).child(0)["theta"].to_int();
+
+                // update angle count for probing run
+                int phi_probe = int(std::round(phi * probing_factor));
+                int theta_probe = int(std::round(theta * probing_factor));
+                probe_actions.child(i)["scenes"].child(0)["renders"].child(0)["phi"] = phi_probe;
+                probe_actions.child(i)["scenes"].child(0)["renders"].child(0)["theta"] = theta_probe;
+            }
+            else
+            {
+                ASCENT_ERROR("action 'add_scenes' missing child 'scenes'");
+            }
+        }
+    }
+
+    int rank_split = 0;
+#if ASCENT_MPI_ENABLED
+    rank_split = int(std::round(world_size * node_split));
     int color = 0;
     if (world_rank >= rank_split)
-      color = 1;
+        color = 1;
 
     MPI_Comm sim_comm;
     MPI_Comm_split(comm_world, color, 0, &sim_comm);
     ascent_opt["mpi_comm"] = sim_comm;
-#endif  // ASCENT_MPI_ENABLED
+#endif // ASCENT_MPI_ENABLED
 
+    std::vector<double> render_times;
+    // run probing only if this is a sim node (vis nodes don't have data yet)
     if (world_rank < rank_split)
     {
-        ascent_opt["runtime/type"] = "ascent";      // set to main runtime
-        
-        // TODO: manipulate actions to only include probe renderings
+        ascent_opt["runtime/type"] = "ascent"; // set to main runtime
 
         // all sim nodes run probing in a new ascent instance
         Ascent ascent_probing;
-        ascent_probing.open(ascent_opt); 
-        ascent_probing.publish(m_data);     // pass on data pointer
-        ascent_probing.execute(actions);    // pass on actions
+        ascent_probing.open(ascent_opt);
+        ascent_probing.publish(m_data);  // pass on data pointer
+        ascent_probing.execute(probe_actions); // pass on actions
 
-        // get execution time info
-        // conduit::Node info;
-        // ascent_probing.info(info);
-        // info.print();
+        // TODO we need the rendering times from ascent: use .info() interface ?
+        conduit::Node info;
+        ascent_probing.info(info);
 
+        NodeIterator itr = info["render_times"].children();
+        while (itr.has_next())
+        {
+            Node &t = itr.next();
+            render_times.push_back(t.to_double());
+            // std::cout << t.to_double() << std::endl;
+        }
         ascent_probing.close();
-
-        // -- the data should now contain the rendering times
-        // std::cout << ".......probing runtime: " << std::endl;
-        // m_data.print();
-
-        // TODO: run the (former) split filter
     }
 
+    // do we need to add a barrier here to wait for probing results ?
+
+    // TODO: sim node count
+#if ASCENT_MPI_ENABLED
+    MPI_Barrier(comm_world);
+    if (world_rank == 0)
+        rename("bak_ascent_actions.yaml", "ascent_actions.yaml");
+    MPI_Barrier(comm_world);
+
+    // split comm into sim and vis nodes and render on the respective nodes
+    splitAndRender(comm_world, render_times, m_data, rank_split, vis_budget);
+#endif
 }
 
-
-
-
-
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
