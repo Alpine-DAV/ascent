@@ -74,6 +74,13 @@
 #include <conduit_relay_mpi.hpp>
 #endif
 
+#if defined(ASCENT_VTKM_ENABLED)
+#include <vtkm/cont/Error.h>
+#include <vtkh/vtkh.hpp>
+#include <vtkh/Error.hpp>
+#include <vtkh/Logger.hpp>
+#endif // ASCENT_VTKM_ENABLED
+
 using namespace conduit;
 using namespace std;
 
@@ -188,7 +195,7 @@ void ProbingRuntime::Publish(const conduit::Node &data)
 bool decide_intransit(const double avg, const float vis_budget)
 {
     // TODO: calculate based on budget
-    double max_time = 105.f;
+    double max_time = 110.f;
 
     if (avg > max_time)
     {
@@ -279,8 +286,11 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         {
             std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
         }
+        
         // Render the data using Ascent
-        MPI_Barrier(render_comm);
+        Node verify_info;
+        if (!conduit::blueprint::mesh::verify(data, verify_info))
+            ASCENT_ERROR("ERROR on rank " << rank << ": could not verify data.")
 
         Node ascent_opts, blank_actions;
         ascent_opts["actions_file"] = "cinema_actions.yaml";
@@ -289,6 +299,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         Ascent ascent_render;
         ascent_render.open(ascent_opts);
         ascent_render.publish(data);
+
         // FIXME: brakes here if inline rendering
         ascent_render.execute(blank_actions);
 
@@ -333,7 +344,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     MPI_Comm_free(&hola_comm);
     MPI_Comm_free(&intransit_comm);
 
-    MPI_Barrier(mpi_comm_world);
+    // MPI_Barrier(mpi_comm_world);
 #endif // ASCENT_MPI_ENABLED
 }
 
