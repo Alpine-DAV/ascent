@@ -16,7 +16,6 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    variants: +shared+openmp
     compiler: [gcc, intel, pgi, clang, xl, nag]
     providers:
       awk: [gawk]

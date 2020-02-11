@@ -443,6 +443,11 @@ void VTKmCellShape(const std::string shape_type,
       shape_id = 1;
       num_indices = 1;
   }
+  else if(shape_type == "line")
+  {
+      shape_id = 3;
+      num_indices = 2;
+  }
   else
   {
     ASCENT_ERROR("Unsupported cell type "<<shape_type);
