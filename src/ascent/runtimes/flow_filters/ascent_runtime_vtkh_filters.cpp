@@ -323,25 +323,25 @@ public:
 
       vtkh::Renderer *r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
       auto times = r->GetRenderTimes();
-      double t_avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
-      int rank = 0;
-#ifdef ASCENT_MPI_ENABLED
-      MPI_Comm_rank(MPI_Comm_f2c(Workspace::default_mpi_comm()), &rank);
+      // double t_avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
+      // int rank = 0;
+// #ifdef ASCENT_MPI_ENABLED
+      // MPI_Comm_rank(MPI_Comm_f2c(Workspace::default_mpi_comm()), &rank);
       // rank = r->GetMpiRank();
-#endif
+// #endif
       // r->GetInput();
 
       // write render times to file
-      std::stringstream ss;
-      ss << "\n=========="
-         << "\navg: " << t_avg << "\n";
-      for (auto &val : times)
-        ss << val << " ";
-      std::ofstream out("timings/frame_times" +
-                            std::to_string(rank) + ".txt",
-                        std::ios_base::app);
-      out << ss.str();
-      out.close();
+      // std::stringstream ss;
+      // ss << "\n=========="
+      //    << "\navg: " << t_avg << "\n";
+      // for (auto &val : times)
+      //   ss << val << " ";
+      // std::ofstream out("timings/frame_times" +
+      //                       std::to_string(rank) + ".txt",
+      //                   std::ios_base::app);
+      // out << ss.str();
+      // out.close();
 
       // if (isProbe)
       // {

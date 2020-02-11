@@ -194,10 +194,10 @@ void ProbingRuntime::Publish(const conduit::Node &data)
 //-----------------------------------------------------------------------------
 bool decide_intransit(const double avg, const float vis_budget)
 {
-    // TODO: calculate based on budget
-    double max_time = 110.f;
+    // TODO: calculate based on budget and sim times
+    // double max_time = 120.f;
 
-    if (avg > max_time)
+    if (avg > vis_budget)
     {
         return true;
     }
@@ -214,7 +214,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     const int sim_node_count,
                     const double vis_budget = 0.1)
 {
-    assert(vis_budget > 0.0 && vis_budget < 1.0);
+    // assert(vis_budget > 0.0 && vis_budget < 1.0);
 
     int rank = -1;
     int total_ranks = 0;
@@ -241,7 +241,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     {
         assert(render_times.size() > 0);
         double avg = std::accumulate(render_times.begin(), render_times.end(), 0.0) / render_times.size();
-        // std::cout << "~~~ " << avg << " ms mean frame time rank " << rank << std::endl;
+        std::cout << "~~~ " << avg << " ms mean frame time rank " << rank << std::endl;
 
         // decide if this node wants to send data away
         if (decide_intransit(avg, vis_budget))
@@ -273,7 +273,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     {
         if (is_vis_node && rank_split > 0) // render on vis node
         {
-            // std::cout << "~~~~rank " << rank << ": receives extract(s)." << std::endl;
+            std::cout << "~~~~rank " << rank << ": receives extract(s)." << std::endl;
 
             // use hola to receive the extract data
             Node hola_opts;
@@ -281,9 +281,13 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             hola_opts["rank_split"] = rank_split;
             ascent::hola("hola_mpi", hola_opts, data);
         }
+        else if (is_vis_node)   // vis node with no data to receive
+        {
+            std::cout << "~~~~rank " << rank << ": idles." << std::endl;
+        }
         else // render local (inline)
         {
-            // std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
+            std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
         }
 
         // Render the data using Ascent
@@ -306,7 +310,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     }
     else // all nodes not rendering: send extract to vis nodes using Hola
     {
-        // std::cout << "~~~~rank " << rank << ": sends extract." << std::endl;
+        std::cout << "~~~~rank " << rank << ": sends extract." << std::endl;
         // add the extract
         conduit::Node actions;
         conduit::Node &add_extract = actions.append();
@@ -335,9 +339,31 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 #endif // ASCENT_MPI_ENABLED
 }
 
+std::string get_timing_file_name(const int value, const int precision)
+{
+     std::ostringstream oss;
+     oss << "timings/ascent_";
+     oss << std::setw(precision) << std::setfill('0') << value;
+     oss << ".txt";
+     return oss.str();
+}
+
+void log_time(std::chrono::time_point<std::chrono::system_clock> start, int rank)
+{
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    // std::cout << "Elapsed time: " << elapsed.count() 
+    //           << "s rank " << rank << std::endl;
+    std::ofstream out(get_timing_file_name(rank, 5), std::ios_base::app);
+    out << elapsed.count() << std::endl;
+    out.close();
+}
+
 //-----------------------------------------------------------------------------
 void ProbingRuntime::Execute(const conduit::Node &actions)
 {
+    auto start = std::chrono::system_clock::now();
+
     int world_rank = 0;
     int world_size = 1;
 #if ASCENT_MPI_ENABLED
@@ -385,7 +411,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
             }
             if (action.has_path("scenes"))
             {
-                // TODO: clean up this mess
+                // TODO: clean up this mess (deadlock if action files don't align?)
                 conduit::Node scenes;
                 scenes.append() = action["scenes"];
                 conduit::Node renders;
@@ -442,8 +468,11 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_probing.close();
     }
 #if ASCENT_MPI_ENABLED
+    // MPI_Barrier(comm_world);
     // split comm into sim and vis nodes and render on the respective nodes
     splitAndRender(comm_world, render_times, m_data, rank_split, vis_budget);
+
+    log_time(start, world_rank);
 #endif
 }
 
