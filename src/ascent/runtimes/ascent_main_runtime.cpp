@@ -183,7 +183,7 @@ void AscentRuntime::Initialize(const conduit::Node &options)
 #if defined(ASCENT_VTKM_ENABLED)
   vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
   // vtkh::SetMPICommHandle(sim_vis_comm);
-  std::cout << ">>>>MPI size:" << vtkh::GetMPISize() << std::endl;
+  // std::cout << ">>>>MPI size:" << vtkh::GetMPISize() << std::endl;
 #endif
   // MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
   // MPI_Comm_rank(comm, &m_rank);

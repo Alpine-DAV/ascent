@@ -235,14 +235,13 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         is_intransit = 1;
         // vis nodes only receive and render data
         is_vis_node = true;
-        std::cout << "~~~ "
-                  << "rank " << rank << " is a vis node." << std::endl;
+        // std::cout << "~~~ " << "rank " << rank << " is a vis node." << std::endl;
     }
     else if (total_ranks > 1)
     {
         assert(render_times.size() > 0);
         double avg = std::accumulate(render_times.begin(), render_times.end(), 0.0) / render_times.size();
-        std::cout << "~~~ " << avg << " ms mean frame time rank " << rank << std::endl;
+        // std::cout << "~~~ " << avg << " ms mean frame time rank " << rank << std::endl;
 
         // decide if this node wants to send data away
         if (decide_intransit(avg, vis_budget))
@@ -274,7 +273,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     {
         if (is_vis_node && rank_split > 0) // render on vis node
         {
-            std::cout << "~~~~rank " << rank << ": receives extract(s)." << std::endl;
+            // std::cout << "~~~~rank " << rank << ": receives extract(s)." << std::endl;
 
             // use hola to receive the extract data
             Node hola_opts;
@@ -284,9 +283,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         }
         else // render local (inline)
         {
-            std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
+            // std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
         }
-        
+
         // Render the data using Ascent
         Node verify_info;
         if (!conduit::blueprint::mesh::verify(data, verify_info))
@@ -299,25 +298,15 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         Ascent ascent_render;
         ascent_render.open(ascent_opts);
         ascent_render.publish(data);
-
-        // FIXME: brakes here if inline rendering
         ascent_render.execute(blank_actions);
-
-        // WARNING ascent.open(render_comm); sets the static variable that holds
-        // the VTK-h mpi comm. That means you will have to set this back to what
-        // it was before. This is probably one of the reasons you are deadlocked.
         ascent_render.close();
 
-        // reset vtkh communicator
-        // MPI_Barrier(mpi_comm_world);
-        // vtkh::SetMPICommHandle(mpi_comm_world);
-
-        std::cout << "----rank " << rank << ": ascent_render - finished."
-                  << std::endl;
+        // std::cout << "----rank " << rank << ": ascent_render - finished."
+        //           << std::endl;
     }
     else // all nodes not rendering: send extract to vis nodes using Hola
     {
-        std::cout << "~~~~rank " << rank << ": sends extract." << std::endl;
+        // std::cout << "~~~~rank " << rank << ": sends extract." << std::endl;
         // add the extract
         conduit::Node actions;
         conduit::Node &add_extract = actions.append();
@@ -335,16 +324,14 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         ascent_send.publish(data);
         ascent_send.execute(actions); // extract
         ascent_send.close();
-        std::cout << "----rank " << rank << ": ascent_send." << std::endl;
+        // std::cout << "----rank " << rank << ": ascent_send." << std::endl;
     }
-    MPI_Barrier(mpi_comm_world);
+    // MPI_Barrier(mpi_comm_world); // we probably don't need this barrier
 
-    // FIXME: freeing the comms brakes execution ??
+    // clean up the split comms
     MPI_Comm_free(&render_comm);
     MPI_Comm_free(&hola_comm);
     MPI_Comm_free(&intransit_comm);
-
-    // MPI_Barrier(mpi_comm_world);
 #endif // ASCENT_MPI_ENABLED
 }
 
@@ -444,21 +431,17 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_probing.publish(m_data);        // pass on data pointer
         ascent_probing.execute(probe_actions); // pass on actions
 
-        // TODO we need the rendering times from ascent: use .info() interface ?
         conduit::Node info;
         ascent_probing.info(info);
-
         NodeIterator itr = info["render_times"].children();
         while (itr.has_next())
         {
             Node &t = itr.next();
             render_times.push_back(t.to_double());
-            // std::cout << t.to_double() << std::endl;
         }
         ascent_probing.close();
     }
 #if ASCENT_MPI_ENABLED
-    // MPI_Barrier(comm_world);
     // split comm into sim and vis nodes and render on the respective nodes
     splitAndRender(comm_world, render_times, m_data, rank_split, vis_budget);
 #endif

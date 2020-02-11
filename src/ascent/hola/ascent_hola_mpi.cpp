@@ -249,8 +249,8 @@ hola_mpi_send(const conduit::Node &data,
 
         int32 dest_rank = dest_to_world[(int32)dest_idx];
 
-        std::cout << "src_idx " << src_idx << " send " << i << " to "
-                  << dest_idx << " (rank: " << dest_rank <<  " )" << std::endl;
+        // std::cout << "src_idx " << src_idx << " send " << i << " to "
+        //           << dest_idx << " (rank: " << dest_rank <<  " )" << std::endl;
 
         relay::mpi::send_using_schema(n_curr,dest_rank,0,comm);
     }
@@ -285,8 +285,10 @@ hola_mpi_recv(MPI_Comm comm,
         }
 
         int32 src_rank = src_to_world[(int32)src_idx];
-        std::cout << "dest_idx " << dest_idx << " rcv "
-                  << i <<  " from " << src_idx << " ( rank: " << src_rank << ") " <<std::endl;
+
+        // std::cout << "dest_idx " << dest_idx << " rcv "
+        //           << i <<  " from " << src_idx << " ( rank: " << src_rank << ") " <<std::endl;
+        
         Node &n_curr = data.append();
         // rcv n_curr
         relay::mpi::recv_using_schema(n_curr,src_rank,0,comm);
@@ -307,8 +309,8 @@ hola_mpi(const conduit::Node &options,
 
     int rank_split = options["rank_split"].to_int();
 
-    std::cout << "~~~ HOLA: rank " << rank << "/" << total_size << " with split " 
-              << rank_split << std::endl;
+    // std::cout << "~~~ HOLA: rank " << rank << "/" << total_size << " with split " 
+    //           << rank_split << std::endl;
 
     //
     // TODO: We can enhance to also support the case

@@ -347,7 +347,8 @@ Ascent::execute(const conduit::Node &actions)
 {
     try
     {
-        std::cout << "====== " << m_actions_file << std::endl;
+        // DEBUG output the used actions file
+        // std::cout << "====performing actions: " << m_actions_file << std::endl;
         if(m_runtime != NULL)
         {
             Node processed_actions(actions);
