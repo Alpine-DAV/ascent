@@ -62,6 +62,7 @@
 #include <ascent_runtime_blueprint_filters.hpp>
 #include <ascent_runtime_trigger_filters.hpp>
 #include <ascent_runtime_query_filters.hpp>
+#include <ascent_runtime_camera_filters.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
     #include <ascent_runtime_vtkh_filters.hpp>
@@ -118,6 +119,9 @@ register_builtin()
 
     AscentRuntime::register_filter_type<BasicTrigger>();
     AscentRuntime::register_filter_type<BasicQuery>();
+
+    //Magic Camera
+    AscentRuntime::register_filter_type<AutoCamera>("extracts","camera");
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
