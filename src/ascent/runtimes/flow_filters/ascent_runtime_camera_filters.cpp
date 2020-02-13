@@ -100,6 +100,8 @@
 #include <vtkh/filters/Histogram.hpp>
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkm/cont/DataSet.h>
+#include <vtkm/rendering/raytracing/Camera.h>
+
 
 #include <ascent_vtkh_data_adapter.hpp>
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
@@ -111,6 +113,8 @@ using namespace conduit;
 using namespace std;
 
 using namespace flow;
+
+typedef vtkm::rendering::Camera vtkmCamera;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -161,23 +165,28 @@ AutoCamera::verify_params(const conduit::Node &params,
                                  conduit::Node &info)
 {
     info.reset();
-
     bool res = check_string("field",params, info, true);
-    bool has_values = check_numeric("iso_values",params, info, false);
-    bool has_levels = check_numeric("levels",params, info, false);
+    bool metric = check_string("metric",params, info, true);
+    bool samples = check_numeric("samples",params, info, true);
 
-    if(!has_values && !has_levels)
+    if(!metric)
     {
-        info["errors"].append() = "Missing required numeric parameter. Contour must"
-                                  " specify 'iso_values' or 'levels'.";
+        info["errors"].append() = "Missing required metric parameter."
+                        	  " Currently only supports data_entropy.\n";
+        res = false;
+    }
+
+    if(!samples)
+    {
+        info["errors"].append() = "Missing required numeric parameter. "
+				  "Must specify number of samples.\n";
         res = false;
     }
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
-    valid_paths.push_back("levels");
-    valid_paths.push_back("iso_values");
-    valid_paths.push_back("use_contour_tree");
+    valid_paths.push_back("metric");
+    valid_paths.push_back("samples");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -187,71 +196,50 @@ AutoCamera::verify_params(const conduit::Node &params,
     }
 
     return res;
+    
 }
 
 //-----------------------------------------------------------------------------
 void
 AutoCamera::execute()
 {
-
-    if(!input(0).check_type<DataObject>())
-    {
-        ASCENT_ERROR("vtkh_vector_magnitude input must be a data object");
-    }
+    cout << "USING CAMERA PIPELINE" << endl;
 
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
-
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
       ASCENT_ERROR("Unknown field '"<<field_name<<"'");
     }
-
+    
     std::string topo_name = collection->field_topology(field_name);
 
-    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
-    vtkh::MarchingCubes marcher;
+    vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+//    cout << "dataset bounds: " << dataset.GetGlobalBounds() << endl;
+  
+    vtkmCamera camera;
+    vtkm::Bounds bounds = dataset.GetGlobalBounds();
+    vtkm::Float64 xb = vtkm::Float64(bounds.X.Length());
+    vtkm::Float64 yb = vtkm::Float64(bounds.Y.Length());
+    vtkm::Float64 zb = vtkm::Float64(bounds.Z.Length());
+//    cout << "x y z " << xb << " " << yb << " " << zb << endl;
 
-    marcher.SetInput(&data);
-    marcher.SetField(field_name);
+    camera.ResetToBounds(dataset.GetGlobalBounds());
+    camera.Print();
 
-    if(params().has_path("iso_values"))
-    {
-      const Node &n_iso_vals = params()["iso_values"];
+    vtkm::Float64 x_pos = .5;
+    vtkm::Float64 y_pos = .5;
+    vtkm::Float64 z_pos = .5;
 
-      // convert to contig doubles
-      Node n_iso_vals_dbls;
-      n_iso_vals.to_float64_array(n_iso_vals_dbls);
+    vtkm::Vec<vtkm::Float64, 3> pos{x_pos, y_pos, z_pos}; 
+    camera.SetPosition(pos);
 
-      marcher.SetIsoValues(n_iso_vals_dbls.as_double_ptr(),
-                           n_iso_vals_dbls.dtype().number_of_elements());
-    }
-    else
-    {
-      marcher.SetLevels(params()["levels"].to_int32());
-      if(params().has_path("use_contour_tree"))
-      {
-        std::string use = params()["use_contour_tree"].as_string();
-        if(use == "true")
-        {
-          ;//marcher.SetUseContourTree(true);
-        }
-      }
-    }
 
-    marcher.Update();
-
-    vtkh::DataSet *iso_output = marcher.GetOutput();
-    // we need to pass through the rest of the topologies, untouched,
-    // and add the result of this operation
-    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
-    new_coll->add(*iso_output, topo_name);
-    // re wrap in data object
-    DataObject *res =  new DataObject(new_coll);
-    delete iso_output;
-    set_output<DataObject>(res);
+    camera.Print();
+    set_output<DataObject>(input<DataObject>(0));
 }
+
 
 //-----------------------------------------------------------------------------
 };

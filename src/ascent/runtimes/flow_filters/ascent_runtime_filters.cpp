@@ -121,7 +121,7 @@ register_builtin()
     AscentRuntime::register_filter_type<BasicQuery>();
 
     //Magic Camera
-    AscentRuntime::register_filter_type<AutoCamera>("extracts","camera");
+    AscentRuntime::register_filter_type<AutoCamera>("transforms","camera");
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
