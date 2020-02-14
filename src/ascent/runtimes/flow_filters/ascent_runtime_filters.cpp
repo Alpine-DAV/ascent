@@ -156,8 +156,10 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
+#if defined(ASCENT_DRAY_ENABLED)
     AscentRuntime::register_filter_type<DRayPseudocolor>("extracts", "dray_pseudocolor");
     AscentRuntime::register_filter_type<DRay3Slice>("extracts", "dray_3slice");
+#endif
 
     AscentRuntime::register_filter_type<AddPlot>();
     AscentRuntime::register_filter_type<CreatePlot>();
