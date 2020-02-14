@@ -89,7 +89,11 @@ SUBROUTINE visit(my_ascent)
   fields(FIELD_YVEL0)=1
   fields(FIELD_ZVEL0)=1
   IF(profiler_on) kernel_time=timer()
-  CALL update_halo(fields,1)
+
+  IF(parallel%task.LT.parallel%max_task)THEN
+    CALL update_halo(fields,1)
+  ENDIF
+
   IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
 
   IF(profiler_on) kernel_time=timer()
@@ -151,41 +155,50 @@ SUBROUTINE visit(my_ascent)
       CALL conduit_node_set_path_int32(sim_data,"state/domain_id", parallel%task)
       CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
       CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", chunks(c)%field%vertexx, gnxv*1_8)
-      CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", chunks(c)%field%vertexy, gnyv*1_8)
-      CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", chunks(c)%field%vertexz, gnzv*1_8)
-      CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/type", "rectilinear")
-      CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/coordset", "coords")
-      ! ghost zone flags
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/ascent_ghosts/association", "element")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/ascent_ghosts/topology", "mesh")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/ascent_ghosts/type", "scalar")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/ascent_ghosts/values", ghost_flags, ncells)
-      ! density
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/density/association", "element")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/density/topology", "mesh")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/density/values", chunks(c)%field%density0, ncells)
-      ! energy
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/association", "element")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/topology", "mesh")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/energy/values", chunks(c)%field%energy0, ncells)
-      ! pressure
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/association", "element")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/topology", "mesh")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/pressure/values", chunks(c)%field%pressure, ncells)
-      ! velocity x,y,z
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/association", "vertex")
-      CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/topology", "mesh")
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/u", chunks(c)%field%xvel0, nnodes)
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/v", chunks(c)%field%yvel0, nnodes)
-      CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/w", chunks(c)%field%zvel0, nnodes)
-      ! CALL sim_data%print_detailed()
-
-      WRITE(chunk_name, '(i6)') parallel%task+100001
-      chunk_name(1:1) = "."
-      WRITE(step_name, '(i6)') step+100000
-      step_name(1:1) = "."
-      savename = trim(trim(name) //trim(chunk_name)//trim(step_name))
+      IF(parallel%task.GE.parallel%max_task)THEN
+        ! Vis nodes: send 'empty' data set
+        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", [0.0], 1)
+        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", [0.0], 1)
+        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", [0.0], 1)
+        CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/type", "rectilinear")
+        CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/coordset", "coords")
+      ELSE
+        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", chunks(c)%field%vertexx, gnxv*1_8)
+        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", chunks(c)%field%vertexy, gnyv*1_8)
+        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", chunks(c)%field%vertexz, gnzv*1_8)
+        CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/type", "rectilinear")
+        CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/coordset", "coords")
+        ! ghost zone flags
+        CALL conduit_node_set_path_char8_str(sim_data,"fields/ascent_ghosts/association", "element")
+        CALL conduit_node_set_path_char8_str(sim_data,"fields/ascent_ghosts/topology", "mesh")
+        CALL conduit_node_set_path_char8_str(sim_data,"fields/ascent_ghosts/type", "scalar")
+        CALL conduit_node_set_path_float64_ptr(sim_data,"fields/ascent_ghosts/values", ghost_flags, ncells)
+        ! density
+        CALL conduit_node_set_path_char8_str(sim_data,"fields/density/association", "element")
+        CALL conduit_node_set_path_char8_str(sim_data,"fields/density/topology", "mesh")
+        CALL conduit_node_set_path_float64_ptr(sim_data,"fields/density/values", chunks(c)%field%density0, ncells)
+        ! energy
+        CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/association", "element")
+        CALL conduit_node_set_path_char8_str(sim_data,"fields/energy/topology", "mesh")
+        CALL conduit_node_set_path_float64_ptr(sim_data,"fields/energy/values", chunks(c)%field%energy0, ncells)
+        ! pressure
+        CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/association", "element")
+        CALL conduit_node_set_path_char8_str(sim_data,"fields/pressure/topology", "mesh")
+        CALL conduit_node_set_path_float64_ptr(sim_data,"fields/pressure/values", chunks(c)%field%pressure, ncells)
+        ! velocity x,y,z
+        CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/association", "vertex")
+        CALL conduit_node_set_path_char8_str(sim_data,"fields/velocity/topology", "mesh")
+        CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/u", chunks(c)%field%xvel0, nnodes)
+        CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/v", chunks(c)%field%yvel0, nnodes)
+        CALL conduit_node_set_path_float64_ptr(sim_data,"fields/velocity/values/w", chunks(c)%field%zvel0, nnodes)
+        ! CALL sim_data%print_detailed()
+        
+        WRITE(chunk_name, '(i6)') parallel%task+100001
+        chunk_name(1:1) = "."
+        WRITE(step_name, '(i6)') step+100000
+        step_name(1:1) = "."
+        savename = trim(trim(name) //trim(chunk_name)//trim(step_name))
+      ENDIF
 
       CALL ascent_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
 

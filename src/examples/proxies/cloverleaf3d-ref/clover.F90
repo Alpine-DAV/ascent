@@ -51,8 +51,24 @@ SUBROUTINE clover_barrier
   INTEGER :: err
 
   CALL MPI_BARRIER(MPI_COMM_WORLD,err)
+  IF(err.NE.MPI_SUCCESS)THEN
+    WRITE(g_out,*)"ERROR in clover_barrier: ",err
+  ENDIF
 
 END SUBROUTINE clover_barrier
+
+
+SUBROUTINE clover_barrier_sim
+
+  INTEGER :: err
+
+  CALL MPI_BARRIER(parallel%sim_comm,err)
+  IF(err.NE.MPI_SUCCESS)THEN
+    WRITE(g_out,*)"ERROR in clover_barrier: ",err
+  ENDIF
+
+END SUBROUTINE clover_barrier_sim
+
 
 SUBROUTINE clover_abort
 
@@ -70,6 +86,7 @@ SUBROUTINE clover_finalize
   CALL FLUSH(0)
   CALL FLUSH(6)
   CALL FLUSH(g_out)
+  ! CALL MPI_Comm_free(parallel%sim_comm);
   CALL MPI_FINALIZE(err)
 
 END SUBROUTINE clover_finalize
@@ -78,10 +95,11 @@ SUBROUTINE clover_init_comms
 
   IMPLICIT NONE
 
-  INTEGER :: err,rank,size,color,rank_split,sim_vis_comm
+  INTEGER :: err,rank,size,color,rank_split,sim_comm
 
   rank=0
   size=1
+  color=0
 
   CALL MPI_INIT(err)
 
@@ -91,7 +109,6 @@ SUBROUTINE clover_init_comms
   !! split comm into sim and vis nodes
   ! color==0 is sim node; color==1 is a vis node
   !
-  color = 0
   ! TODO: remove/replace hard coded factor here (use clover.in ?)
   rank_split = ANINT(size*0.75 + 0.5) ! number of sim nodes: 3/4 * # nodes
   ! vis node
@@ -99,11 +116,12 @@ SUBROUTINE clover_init_comms
       color = 1
   ENDIF
 
-  ! CALL MPI_COMM_SPLIT(MPI_COMM_WORLD,color,rank,sim_vis_comm,err)
+  CALL MPI_COMM_SPLIT(MPI_COMM_WORLD,color,rank, sim_comm, err)
   WRITE(g_out,*)"size",size,"rank_split",rank_split," | rank",rank," | color",color 
   
   parallel%parallel=.TRUE.
   parallel%task=rank
+  parallel%sim_comm=sim_comm
 
   IF(rank.EQ.0) THEN
     parallel%boss=.TRUE.
@@ -764,10 +782,10 @@ SUBROUTINE clover_send_recv_message_left(left_snd_buffer, left_rcv_buffer,      
   left_task =chunks(chunk)%chunk_neighbours(chunk_left) - 1
 
   CALL MPI_ISEND(left_snd_buffer,total_size,MPI_DOUBLE_PRECISION,left_task,tag_send &
-                ,MPI_COMM_WORLD,req_send,err)
+                ,parallel%sim_comm,req_send,err)
 
   CALL MPI_IRECV(left_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,left_task,tag_recv &
-                ,MPI_COMM_WORLD,req_recv,err)
+                ,parallel%sim_comm,req_recv,err)
 
 END SUBROUTINE clover_send_recv_message_left
 
@@ -1384,10 +1402,10 @@ SUBROUTINE clover_send_recv_message_right(right_snd_buffer, right_rcv_buffer,   
   right_task=chunks(chunk)%chunk_neighbours(chunk_right) - 1
 
   CALL MPI_ISEND(right_snd_buffer,total_size,MPI_DOUBLE_PRECISION,right_task,tag_send, &
-                 MPI_COMM_WORLD,req_send,err)
+                 parallel%sim_comm,req_send,err)
 
   CALL MPI_IRECV(right_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,right_task,tag_recv, &
-                 MPI_COMM_WORLD,req_recv,err)
+                 parallel%sim_comm,req_recv,err)
 
 END SUBROUTINE clover_send_recv_message_right
 
@@ -2000,10 +2018,10 @@ SUBROUTINE clover_send_recv_message_top(top_snd_buffer, top_rcv_buffer,     &
     top_task=chunks(chunk)%chunk_neighbours(chunk_top) - 1
 
     CALL MPI_ISEND(top_snd_buffer,total_size,MPI_DOUBLE_PRECISION,top_task,tag_send, &
-                   MPI_COMM_WORLD,req_send,err)
+                   parallel%sim_comm,req_send,err)
 
     CALL MPI_IRECV(top_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,top_task,tag_recv, &
-                   MPI_COMM_WORLD,req_recv,err)
+                   parallel%sim_comm,req_recv,err)
 
 END SUBROUTINE clover_send_recv_message_top
 
@@ -2617,10 +2635,10 @@ SUBROUTINE clover_send_recv_message_bottom(bottom_snd_buffer, bottom_rcv_buffer,
   bottom_task=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
 
   CALL MPI_ISEND(bottom_snd_buffer,total_size,MPI_DOUBLE_PRECISION,bottom_task,tag_send &
-                ,MPI_COMM_WORLD,req_send,err)
+                ,parallel%sim_comm,req_send,err)
 
   CALL MPI_IRECV(bottom_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,bottom_task,tag_recv &
-                ,MPI_COMM_WORLD,req_recv,err)
+                ,parallel%sim_comm,req_recv,err)
 
 END SUBROUTINE clover_send_recv_message_bottom
 
@@ -3233,10 +3251,10 @@ SUBROUTINE clover_send_recv_message_back(back_snd_buffer, back_rcv_buffer,     &
   back_task=chunks(chunk)%chunk_neighbours(chunk_back)-1
 
   CALL MPI_ISEND(back_snd_buffer,total_size,MPI_DOUBLE_PRECISION,back_task,tag_send, &
-                 MPI_COMM_WORLD,req_send,err)
+                 parallel%sim_comm,req_send,err)
 
   CALL MPI_IRECV(back_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,back_task,tag_recv, &
-                 MPI_COMM_WORLD,req_recv,err)
+                 parallel%sim_comm,req_recv,err)
 
 END SUBROUTINE clover_send_recv_message_back
 
@@ -3849,10 +3867,10 @@ SUBROUTINE clover_send_recv_message_front(front_snd_buffer, front_rcv_buffer,   
   front_task=chunks(chunk)%chunk_neighbours(chunk_front)-1
 
   CALL MPI_ISEND(front_snd_buffer,total_size,MPI_DOUBLE_PRECISION,front_task,tag_send &
-                ,MPI_COMM_WORLD,req_send,err)
+                ,parallel%sim_comm,req_send,err)
 
   CALL MPI_IRECV(front_rcv_buffer,total_size,MPI_DOUBLE_PRECISION,front_task,tag_recv &
-                ,MPI_COMM_WORLD,req_recv,err)
+                ,parallel%sim_comm,req_recv,err)
 
 END SUBROUTINE clover_send_recv_message_front
 
@@ -4169,7 +4187,7 @@ SUBROUTINE clover_sum(value)
 
   total=value
 
-  CALL MPI_REDUCE(value,total,1,MPI_DOUBLE_PRECISION,MPI_SUM,0,MPI_COMM_WORLD,err)
+  CALL MPI_REDUCE(value,total,1,MPI_DOUBLE_PRECISION,MPI_SUM,0,parallel%sim_comm,err)
 
   value=total
 
@@ -4187,7 +4205,7 @@ SUBROUTINE clover_min(value)
 
   minimum=value
 
-  CALL MPI_ALLREDUCE(value,minimum,1,MPI_DOUBLE_PRECISION,MPI_MIN,MPI_COMM_WORLD,err)
+  CALL MPI_ALLREDUCE(value,minimum,1,MPI_DOUBLE_PRECISION,MPI_MIN,parallel%sim_comm,err)
 
   value=minimum
 
@@ -4205,7 +4223,7 @@ SUBROUTINE clover_max(value)
 
   maximum=value
 
-  CALL MPI_ALLREDUCE(value,maximum,1,MPI_DOUBLE_PRECISION,MPI_MAX,MPI_COMM_WORLD,err)
+  CALL MPI_ALLREDUCE(value,maximum,1,MPI_DOUBLE_PRECISION,MPI_MAX,parallel%sim_comm,err)
 
   value=maximum
 
@@ -4223,7 +4241,7 @@ SUBROUTINE clover_allgather(value,values)
 
   values(1)=value ! Just to ensure it will work in serial
 
-  CALL MPI_ALLGATHER(value,1,MPI_DOUBLE_PRECISION,values,1,MPI_DOUBLE_PRECISION,MPI_COMM_WORLD,err)
+  CALL MPI_ALLGATHER(value,1,MPI_DOUBLE_PRECISION,values,1,MPI_DOUBLE_PRECISION,parallel%sim_comm,err)
 
 END SUBROUTINE clover_allgather
 
@@ -4239,7 +4257,7 @@ SUBROUTINE clover_check_error(error)
 
   maximum=error
 
-  CALL MPI_ALLREDUCE(error,maximum,1,MPI_INTEGER,MPI_MAX,MPI_COMM_WORLD,err)
+  CALL MPI_ALLREDUCE(error,maximum,1,MPI_INTEGER,MPI_MAX,parallel%sim_comm,err)
 
   error=maximum
 

@@ -58,28 +58,34 @@ SUBROUTINE hydro
   CALL conduit_node_set_path_char8_str(ascent_opts,"actions_file", "probing_actions.yaml")
   CALL ascent_open(my_ascent,ascent_opts)
 
+  
   timerstart = timer()
   DO
-
+    
     CALL ascent_timer_start(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
     step_time = timer()
-
+    
     step = step + 1
 
-    CALL timestep()
+    IF(parallel%task.LT.parallel%max_task)THEN
+      CALL timestep()
 
-    CALL PdV(.TRUE.)
-
+      CALL PdV(.TRUE.)
+    ENDIF
+    
     CALL accelerate()
-
-    CALL PdV(.FALSE.)
-
+    IF(parallel%task.LT.parallel%max_task)THEN
+      CALL PdV(.FALSE.)
+    ENDIF
+    
     CALL flux_calc()
 
-    CALL advection()
-
+    IF(parallel%task.LT.parallel%max_task)THEN
+      CALL advection()
+    ENDIF
+    
     CALL reset_field()
-
+    
     advect_x = .NOT. advect_x
 
     time = time + dt
@@ -104,7 +110,7 @@ SUBROUTINE hydro
 
       complete=.TRUE.
       CALL field_summary()
-     ! IF(visit_frequency.NE.0) CALL visit()
+    ! IF(visit_frequency.NE.0) CALL visit()
 
 
       wall_clock=timer() - timerstart
@@ -180,13 +186,14 @@ SUBROUTINE hydro
           WRITE(g_out,'(a23,2f16.4)')"The Rest              :",wall_clock-kernel_total,100.0*(wall_clock-kernel_total)/wall_clock
         ENDIF
       ENDIF ! IF(FALSE)
+
       CALL ascent_close(my_ascent)
       CALL ascent_destroy(my_ascent)
       CALL clover_finalize
 
       EXIT
 
-    END IF
+    END IF ! actions after sim completion
 
     IF (parallel%boss) THEN
       wall_clock=timer()-timerstart
@@ -202,7 +209,8 @@ SUBROUTINE hydro
       WRITE(0    ,*)"Step time per cell    ",step_grind
       WRITE(g_out,*)"Step time per cell    ",step_grind
 
-     END IF
+    END IF
 
   END DO
+
 END SUBROUTINE hydro

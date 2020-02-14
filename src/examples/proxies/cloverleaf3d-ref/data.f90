@@ -91,10 +91,10 @@ MODULE data_module
    TYPE parallel_type
       LOGICAL           ::      parallel &
                                ,boss
-      INTEGER         ::        max_task &
-                               ,task     &
-                               ,boss_task
-
+      INTEGER         ::        max_task  &
+                               ,task      &
+                               ,boss_task &
+                               ,sim_comm
    END TYPE parallel_type
 
    TYPE(parallel_type) :: parallel

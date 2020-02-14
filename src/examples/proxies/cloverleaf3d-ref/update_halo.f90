@@ -36,7 +36,7 @@ SUBROUTINE update_halo(fields,depth)
   CALL clover_exchange(fields,depth)
 
   DO c=1,chunks_per_task
-
+    
     IF(chunks(c)%task.EQ.parallel%task) THEN
 
       IF(use_fortran_kernels)THEN

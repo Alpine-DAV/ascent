@@ -40,7 +40,6 @@ SUBROUTINE initialise
 
     OPEN(FILE='clover.out',ACTION='WRITE',UNIT=g_out,IOSTAT=ios)
     IF(ios.NE.0) CALL report_error('initialise','Error opening clover.out file.')
-
   ELSE
     g_out=6
   ENDIF
@@ -139,7 +138,7 @@ SUBROUTINE initialise
   step=0
 
   CALL start
-
+  
   CALL clover_barrier
 
   IF(parallel%boss)THEN

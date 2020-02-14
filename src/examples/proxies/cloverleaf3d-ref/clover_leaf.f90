@@ -62,14 +62,13 @@ subroutine clover_leaf() bind(C,name="clover_leaf")
       WRITE(0,'(a14,i6)') 'Task Count ',parallel%max_task !MPI
 !$    WRITE(0,'(a15,i5)') 'Thread Count: ',OMP_GET_NUM_THREADS()
       WRITE(0,*)
-!$  ENDIF
+      !$  ENDIF
   ENDIF
 !$OMP END PARALLEL
 
   CALL initialise
-
   CALL hydro
-
+    
   ! Deallocate everything
 
 end subroutine clover_leaf

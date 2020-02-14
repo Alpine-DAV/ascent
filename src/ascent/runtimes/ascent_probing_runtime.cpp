@@ -214,7 +214,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     const int sim_node_count,
                     const double vis_budget = 0.1)
 {
-    // assert(vis_budget > 0.0 && vis_budget < 1.0);
+    // assert(vis_budget > 0.0 && vis_budget < 1.0);    // currently absolute ms value
 
     int rank = -1;
     int total_ranks = 0;
@@ -330,7 +330,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         ascent_send.close();
         // std::cout << "----rank " << rank << ": ascent_send." << std::endl;
     }
-    // MPI_Barrier(mpi_comm_world); // we probably don't need this barrier
 
     // clean up the split comms
     MPI_Comm_free(&render_comm);
@@ -379,7 +378,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     // probing setup
     double probing_factor = 0.0;
     double vis_budget = 0.0;
-    double node_split = 0.0;
+    double node_split = 0.0; 
     // cinema angle counts
     int phi = 1;
     int theta = 1;
@@ -395,9 +394,15 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
             if (action.has_path("probing"))
             {
                 if (action["probing"].has_path("factor"))
+                {
                     probing_factor = action["probing/factor"].to_double();
+                    if (probing_factor <= 0 || probing_factor > 1)
+                        ASCENT_ERROR("action 'probing': 'probing_factor' must be in range [0,1]");
+                }
                 else
+                {
                     ASCENT_ERROR("action 'probing' missing child 'factor'");
+                }
 
                 if (action["probing"].has_path("vis_budget"))
                     vis_budget = action["probing/vis_budget"].to_double();
@@ -405,10 +410,21 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
                     ASCENT_ERROR("action 'probing' missing child 'vis_budget'");
 
                 if (action["probing"].has_path("node_split"))
+                {
                     node_split = action["probing/node_split"].to_double();
+                    if (node_split <= 0 || node_split > 1)
+                        ASCENT_ERROR("action 'probing': 'node_split' must be in range [0,1]");
+                }
                 else
+                {
                     ASCENT_ERROR("action 'probing' missing child 'node_split'");
+                }
             }
+            else
+            {
+                ASCENT_ERROR("missing action 'probing'");
+            }
+
             if (action.has_path("scenes"))
             {
                 // TODO: clean up this mess (deadlock if action files don't align?)
@@ -431,6 +447,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
             }
         }
     }
+    
 
     int rank_split = 0;
 #if ASCENT_MPI_ENABLED
@@ -446,7 +463,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 
     std::vector<double> render_times;
     // run probing only if this is a sim node (vis nodes don't have data yet)
-    // TODO: we could check for data validity instead
+    // TODO: we could check for data size instead (sim sends empty data on vis nodes)
     if (world_rank < rank_split)
     {
         ascent_opt["runtime/type"] = "ascent"; // set to main runtime

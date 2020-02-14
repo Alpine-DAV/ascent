@@ -125,17 +125,17 @@ SUBROUTINE start
   IF(parallel%boss)THEN
      WRITE(g_out,*) 'Generating chunks'
   ENDIF
-
+  
   DO c=1,chunks_per_task
     IF(chunks(c)%task.EQ.parallel%task)THEN
       CALL generate_chunk(c)
     ENDIF
   ENDDO
-
+  
   advect_x=.TRUE.
-
+  
   CALL clover_barrier
-
+  
   ! Do no profile the start up costs otherwise the total times will not add up
   ! at the end
   profiler_off=profiler_on
@@ -160,11 +160,13 @@ SUBROUTINE start
   fields(FIELD_YVEL1)=1
   fields(FIELD_ZVEL1)=1
 
-  CALL update_halo(fields,2)
+  IF(parallel%task.LT.parallel%max_task)THEN
+    CALL update_halo(fields,2)
+  ENDIF
 
   IF(parallel%boss)THEN
-     WRITE(g_out,*)
-     WRITE(g_out,*) 'Problem initialised and generated'
+    WRITE(g_out,*)
+    WRITE(g_out,*) 'Problem initialised and generated'
   ENDIF
 
   CALL field_summary()
