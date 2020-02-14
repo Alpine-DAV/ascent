@@ -45,62 +45,59 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_config.h
+/// file: ascent_dray_data_adapter.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_CONFIG_H
-#define ASCENT_CONFIG_H
-
-#cmakedefine ASCENT_INSTALL_PREFIX "${ASCENT_INSTALL_PREFIX}"
-
-#define ASCENT_VERSION "@PROJECT_VERSION@"
-
-#cmakedefine ASCENT_GIT_SHA1 "${ASCENT_GIT_SHA1}"
-
-#define ASCENT_SYSTEM_TYPE "@CMAKE_SYSTEM@"
-
-#define ASCENT_CPP_COMPILER "@CMAKE_CXX_COMPILER@"
-
-#cmakedefine ASCENT_FORTRAN_COMPILER "${ASCENT_FORTRAN_COMPILER}"
-
-// this path points to the web client js code tree
-#cmakedefine ASCENT_WEB_CLIENT_ROOT   "@ASCENT_WEB_CLIENT_ROOT@"
-
-// defs for general openmp support
-#cmakedefine ASCENT_USE_OPENMP        "@OPENMP_FOUND@"
-
-// defs for runtime support based on which 3rd-party libs we have
-
-#cmakedefine ASCENT_VTKH_ENABLED      "@VTKH_FOUND@"
-
-#cmakedefine ASCENT_VTKM_ENABLED      "@VTKM_FOUND@"
-#cmakedefine ASCENT_VTKM_USE_CUDA     "@CUDA_FOUND@"
-#cmakedefine ASCENT_VTKM_USE_OPENMP   "@OPENMP_FOUND@"
+#ifndef ASCENT_DRAY_DATA_ADAPTER_HPP
+#define ASCENT_DRAY_DATA_ADAPTER_HPP
 
 
-#cmakedefine ASCENT_ADIOS_ENABLED     "@ADIOS_FOUND@"
-#cmakedefine ASCENT_MFEM_ENABLED      "@MFEM_FOUND@"
-#cmakedefine ASCENT_DRAY_ENABLED      "@DRAY_FOUND@"
-#cmakedefine ASCENT_HDF5_ENABLED      "@HDF5_FOUND@"
-#cmakedefine ASCENT_PYTHON_ENABLED    "@PYTHON_FOUND@"
+// conduit includes
+#include <conduit.hpp>
+
+#include <dray/dray.hpp>
+#include <dray/data_set.hpp>
+
+#include <ascent_exports.h>
+
 //-----------------------------------------------------------------------------
-//
-// #define platform check helpers
-//
+// -- begin ascent:: --
 //-----------------------------------------------------------------------------
+namespace ascent
+{
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+class ASCENT_API DRayCollection
+{
+protected:
+  int m_mpi_comm_id;
+public:
 
-#define ASCENT_PLATFORM_WINDOWS
-#elif  defined(__APPLE__)
-#define ASCENT_PLATFORM_APPLE
-#else
-#define ASCENT_PLATFORM_UNIX
-#endif
+  DRayCollection();
 
+  void mpi_comm(int comm);
+
+  std::vector<dray::DataSet> m_domains;
+
+  dray::Range get_global_range(const std::string field_name);
+
+  dray::AABB<3> get_global_bounds();
+
+  DRayCollection boundary();
+
+  static DRayCollection* blueprint_to_dray(const conduit::Node &node);
+};
+
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent:: --
+//-----------------------------------------------------------------------------
 
 #endif
-
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------
 
 

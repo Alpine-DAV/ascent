@@ -45,16 +45,16 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_data_object.hpp
+/// file: ascent_runtime_dray_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_DATA_OBJECT_HPP
-#define ASCENT_DATA_OBJECT_HPP
+#ifndef ASCENT_RUNTIME_DRAY_FILTERS
+#define ASCENT_RUNTIME_DRAY_FILTERS
 
 #include <ascent.hpp>
-#include <conduit.hpp>
-#include <memory>
+
+#include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -62,57 +62,73 @@
 namespace ascent
 {
 
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime --
+//-----------------------------------------------------------------------------
+namespace runtime
+{
 
-#if defined(ASCENT_VTKM_ENABLED)
-// forward declare
-class VTKHCollection;
-#endif
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::filters --
+//-----------------------------------------------------------------------------
+namespace filters
+{
 
-#if defined(ASCENT_DRAY_ENABLED)
-// forward declare
-class DRayCollection;
-#endif
+//-----------------------------------------------------------------------------
+///
+/// Devil Ray Filters
+///
+//-----------------------------------------------------------------------------
 
-class DataObject
+//-----------------------------------------------------------------------------
+class DRayPseudocolor : public ::flow::Filter
 {
 public:
-  enum class Source { VTKH, LOW_BP, HIGH_BP, DRAY, INVALID};
-  DataObject();
-  //
-  // Constructors take ownership of pointers
-  //
+    DRayPseudocolor();
+    virtual ~DRayPseudocolor();
 
-  DataObject(conduit::Node *dataset);
-  void reset(conduit::Node *dataset);
-
-#if defined(ASCENT_VTKM_ENABLED)
-  DataObject(VTKHCollection *dataset);
-  std::shared_ptr<VTKHCollection> as_vtkh_collection();
-#endif
-#if defined(ASCENT_DRAY_ENABLED)
-  DataObject(DRayCollection *dataset);
-  std::shared_ptr<DRayCollection> as_dray_collection();
-#endif
-  std::shared_ptr<conduit::Node>  as_low_order_bp();
-  std::shared_ptr<conduit::Node>  as_high_order_bp();
-  std::shared_ptr<conduit::Node>  as_node();          // just return the coduit node
-  DataObject::Source              source() const;
-protected:
-  std::shared_ptr<conduit::Node>  m_low_bp;
-  std::shared_ptr<conduit::Node>  m_high_bp;
-#if defined(ASCENT_VTKM_ENABLED)
-  std::shared_ptr<VTKHCollection> m_vtkh;
-#endif
-#if defined(ASCENT_DRAY_ENABLED)
-  std::shared_ptr<DRayCollection> m_dray;
-#endif
-
-  Source m_source;
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
 };
 
 //-----------------------------------------------------------------------------
+class DRay3Slice : public ::flow::Filter
+{
+public:
+    DRay3Slice();
+    virtual ~DRay3Slice();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
 };
-#endif
+
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime::filters --
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime --
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+};
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
+//-----------------------------------------------------------------------------
+
+
+
+
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
 //-----------------------------------------------------------------------------
