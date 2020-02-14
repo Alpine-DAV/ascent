@@ -218,26 +218,27 @@ AutoCamera::execute()
     vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 //    cout << "dataset bounds: " << dataset.GetGlobalBounds() << endl;
   
-    vtkmCamera camera;
+    vtkmCamera *camera = new vtkmCamera;
     vtkm::Bounds bounds = dataset.GetGlobalBounds();
     vtkm::Float64 xb = vtkm::Float64(bounds.X.Length());
     vtkm::Float64 yb = vtkm::Float64(bounds.Y.Length());
     vtkm::Float64 zb = vtkm::Float64(bounds.Z.Length());
 //    cout << "x y z " << xb << " " << yb << " " << zb << endl;
 
-    camera.ResetToBounds(dataset.GetGlobalBounds());
-    camera.Print();
+    camera->ResetToBounds(dataset.GetGlobalBounds());
+    camera->Print();
 
-    vtkm::Float64 x_pos = .5;
-    vtkm::Float64 y_pos = .5;
-    vtkm::Float64 z_pos = .5;
+    vtkm::Float64 x_pos = 1.0/(rand() % 10 + 1);
+    vtkm::Float64 y_pos = 1.0/(rand() % 10 + 1);
+    vtkm::Float64 z_pos = 1.0/(rand() % 10 + 1);
 
     vtkm::Vec<vtkm::Float64, 3> pos{x_pos, y_pos, z_pos}; 
-    camera.SetPosition(pos);
+    camera->SetPosition(pos);
 
 
-    camera.Print();
+    camera->Print();
     set_output<DataObject>(input<DataObject>(0));
+    //set_output<vtkmCamera>(camera);
 }
 
 
