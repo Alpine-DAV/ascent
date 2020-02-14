@@ -71,24 +71,26 @@ SUBROUTINE hydro
       CALL timestep()
 
       CALL PdV(.TRUE.)
-    ENDIF
     
-    CALL accelerate()
-    IF(parallel%task.LT.parallel%max_task)THEN
-      CALL PdV(.FALSE.)
-    ENDIF
-    
-    CALL flux_calc()
+      CALL accelerate()
 
-    IF(parallel%task.LT.parallel%max_task)THEN
-      CALL advection()
-    ENDIF
+      CALL PdV(.FALSE.)
     
-    CALL reset_field()
+      CALL flux_calc()
+
+      CALL advection()
+      
+      CALL reset_field()
+    ENDIF
     
     advect_x = .NOT. advect_x
 
     time = time + dt
+
+    wall_clock=timer() - timerstart
+
+    ! write node sim time to file
+    WRITE(g_out_times,*) 'step time ', step, timer()-step_time
 
     CALL ascent_timer_stop(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
 
@@ -96,7 +98,11 @@ SUBROUTINE hydro
       IF(MOD(step, summary_frequency).EQ.0) CALL field_summary()
     ENDIF
     IF(visit_frequency.NE.0) THEN
-      IF(MOD(step, visit_frequency).EQ.0) CALL visit(my_ascent)
+      IF(MOD(step, visit_frequency).EQ.0) THEN
+        CALL visit(my_ascent)
+        wall_clock=timer() - timerstart
+        WRITE(g_out_times,*) '       vis ', step, timer()-step_time
+      ENDIF
     ENDIF
 
     ! Sometimes there can be a significant start up cost that appears in the first step.
@@ -209,7 +215,7 @@ SUBROUTINE hydro
       WRITE(0    ,*)"Step time per cell    ",step_grind
       WRITE(g_out,*)"Step time per cell    ",step_grind
 
-    END IF
+    END IF  
 
   END DO
 

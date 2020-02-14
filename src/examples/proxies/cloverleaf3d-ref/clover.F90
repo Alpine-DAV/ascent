@@ -83,9 +83,11 @@ SUBROUTINE clover_finalize
   INTEGER :: err
 
   CLOSE(g_out)
+  CLOSE(g_out_times)
   CALL FLUSH(0)
   CALL FLUSH(6)
   CALL FLUSH(g_out)
+  CALL FLUSH(g_out_times)
   ! CALL MPI_Comm_free(parallel%sim_comm);
   CALL MPI_FINALIZE(err)
 

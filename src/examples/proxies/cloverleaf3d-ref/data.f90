@@ -85,7 +85,8 @@ MODULE data_module
 
 
    INTEGER         ::            g_in           & ! File for input data.
-                                ,g_out
+                                ,g_out          &
+                                ,g_out_times
 
 
    TYPE parallel_type
