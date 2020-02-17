@@ -1101,7 +1101,7 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
       MPI_Comm_size(sim_vis_comm, &new_size);
       // set new rank
       MPI_Comm_rank(sim_vis_comm, &m_rank);
-      vtkh::SetMPICommHandle(sim_vis_comm);
+      vtkh::SetMPICommHandle(MPI_Comm_c2f(sim_vis_comm));
     #endif
 
 

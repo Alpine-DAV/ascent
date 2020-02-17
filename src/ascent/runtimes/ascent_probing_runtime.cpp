@@ -458,7 +458,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 
     MPI_Comm sim_comm;
     MPI_Comm_split(comm_world, color, 0, &sim_comm);
-    ascent_opt["mpi_comm"] = sim_comm;
+    ascent_opt["mpi_comm"] = MPI_Comm_c2f(sim_comm);
 #endif // ASCENT_MPI_ENABLED
 
     std::vector<double> render_times;

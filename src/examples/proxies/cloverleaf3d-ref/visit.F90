@@ -75,6 +75,9 @@ SUBROUTINE visit(my_ascent)
   INTEGER(8) :: nnodes, ncells
   REAL(8), ALLOCATABLE :: ghost_flags(:,:,:)
 
+  REAL(8), DIMENSION(1) :: array
+  INTEGER(C_SIZE_T) :: num_elements
+
   name = 'clover'
 
   IF(profiler_on) kernel_time=timer()
@@ -157,9 +160,11 @@ SUBROUTINE visit(my_ascent)
       CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")
       IF(parallel%task.GE.parallel%max_task)THEN
         ! Vis nodes: send 'empty' data set
-        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", [0.0], 1)
-        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", [0.0], 1)
-        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", [0.0], 1)
+        array(1) = 0.0
+        num_elements = 1
+        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", array, num_elements)
+        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", array, num_elements)
+        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", array, num_elements)
         CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/type", "rectilinear")
         CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/coordset", "coords")
       ELSE
