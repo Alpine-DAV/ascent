@@ -249,7 +249,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     }
 
     // all sending in transit nodes
-    if (is_intransit == 1 && !is_vis_node)
+    if (is_intransit && !is_vis_node)
     {
         is_rendering = 0;
         is_sending = 1;
@@ -265,50 +265,57 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     MPI_Comm hola_comm;
     MPI_Comm_split(intransit_comm, is_sending, 0, &hola_comm);
     int rank_split = intransit_size - (total_ranks - sim_node_count);
+
+    // if none of the sim nodes sends data, vis nodes skip rendering
+    if (is_vis_node && rank_split <= 0)
+    {
+        is_rendering = 0;
+        std::cout << "~~~~rank " << rank << ": idles." << std::endl;
+    }
+
     // split world comm into rendering and sending nodes
     MPI_Comm render_comm;
     MPI_Comm_split(mpi_comm_world, is_rendering, 0, &render_comm);
 
     if (is_rendering) // all rendering nodes
     {
-        if (is_vis_node && rank_split > 0) // render on vis node
+        if (is_vis_node) // render on vis node
         {
             std::cout << "~~~~rank " << rank << ": receives extract(s)." << std::endl;
-
             // use hola to receive the extract data
             Node hola_opts;
             hola_opts["mpi_comm"] = MPI_Comm_c2f(intransit_comm);
             hola_opts["rank_split"] = rank_split;
+            // TODO: add custom comm map
             ascent::hola("hola_mpi", hola_opts, data);
-        }
-        else if (is_vis_node)   // vis node with no data to receive
-        {
-            std::cout << "~~~~rank " << rank << ": idles." << std::endl;
         }
         else // render local (inline)
         {
             std::cout << "~~~~rank " << rank << ": renders inline." << std::endl;
         }
 
-        // Render the data using Ascent
+        // Full cinema render using Ascent
         Node verify_info;
-        if (!conduit::blueprint::mesh::verify(data, verify_info))
-            ASCENT_ERROR("ERROR on rank " << rank << ": could not verify data.")
+        if (conduit::blueprint::mesh::verify(data, verify_info))
+        {
+            Node ascent_opts, blank_actions;
+            // TODO: make the action file name variable
+            ascent_opts["actions_file"] = "cinema_actions.yaml";
+            ascent_opts["mpi_comm"] = MPI_Comm_c2f(render_comm);
 
-        Node ascent_opts, blank_actions;
-        ascent_opts["actions_file"] = "cinema_actions.yaml";
-        ascent_opts["mpi_comm"] = MPI_Comm_c2f(render_comm);
-
-        Ascent ascent_render;
-        ascent_render.open(ascent_opts);
-        ascent_render.publish(data);
-        ascent_render.execute(blank_actions);
-        ascent_render.close();
-
-        // std::cout << "----rank " << rank << ": ascent_render - finished."
-        //           << std::endl;
+            Ascent ascent_render;
+            ascent_render.open(ascent_opts);
+            ascent_render.publish(data);
+            ascent_render.execute(blank_actions);
+            ascent_render.close();
+        }
+        else    // vis node but less sending than receiving nodes
+        {
+            std::cout << "~~~~rank " << rank << ": idles." << std::endl;
+        }
+        
     }
-    else // all nodes not rendering: send extract to vis nodes using Hola
+    else if (!is_vis_node) // all sending nodes: send extract to vis nodes using Hola
     {
         std::cout << "~~~~rank " << rank << ": sends extract." << std::endl;
         // add the extract
@@ -340,18 +347,18 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
 std::string get_timing_file_name(const int value, const int precision)
 {
-     std::ostringstream oss;
-     oss << "timings/ascent_";
-     oss << std::setw(precision) << std::setfill('0') << value;
-     oss << ".txt";
-     return oss.str();
+    std::ostringstream oss;
+    oss << "timings/ascent_";
+    oss << std::setw(precision) << std::setfill('0') << value;
+    oss << ".txt";
+    return oss.str();
 }
 
 void log_time(std::chrono::time_point<std::chrono::system_clock> start, int rank)
 {
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
-    // std::cout << "Elapsed time: " << elapsed.count() 
+    // std::cout << "Elapsed time: " << elapsed.count()
     //           << "s rank " << rank << std::endl;
     std::ofstream out(get_timing_file_name(rank, 5), std::ios_base::app);
     out << elapsed.count() << std::endl;
@@ -378,7 +385,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     // probing setup
     double probing_factor = 0.0;
     double vis_budget = 0.0;
-    double node_split = 0.0; 
+    double node_split = 0.0;
     // cinema angle counts
     int phi = 1;
     int theta = 1;
@@ -447,7 +454,6 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
             }
         }
     }
-    
 
     int rank_split = 0;
 #if ASCENT_MPI_ENABLED

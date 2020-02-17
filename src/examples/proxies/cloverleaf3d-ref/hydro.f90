@@ -39,7 +39,7 @@ SUBROUTINE hydro
   REAL(KIND=8)    :: timer,timerstart,wall_clock,step_clock
 
   REAL(KIND=8)    :: grind_time,cells,rstep
-  REAL(KIND=8)    :: step_time,step_grind
+  REAL(KIND=8)    :: step_time,step_grind,vis_time
   REAL(KIND=8)    :: first_step,second_step
   REAL(KIND=8)    :: kernel_total,totals(parallel%max_task)
 
@@ -62,7 +62,7 @@ SUBROUTINE hydro
   timerstart = timer()
   DO
     
-    CALL ascent_timer_start(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
+    ! CALL ascent_timer_start(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
     step_time = timer()
     
     step = step + 1
@@ -92,16 +92,17 @@ SUBROUTINE hydro
     ! write node sim time to file
     WRITE(g_out_times,*) 'step time ', step, timer()-step_time
 
-    CALL ascent_timer_stop(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
+    ! CALL ascent_timer_stop(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
 
     IF(summary_frequency.NE.0) THEN
       IF(MOD(step, summary_frequency).EQ.0) CALL field_summary()
     ENDIF
     IF(visit_frequency.NE.0) THEN
       IF(MOD(step, visit_frequency).EQ.0) THEN
+        vis_time=timer()
         CALL visit(my_ascent)
         wall_clock=timer() - timerstart
-        WRITE(g_out_times,*) '       vis ', step, timer()-step_time
+        WRITE(g_out_times,*) '       vis ', step, timer()-vis_time
       ENDIF
     ENDIF
 

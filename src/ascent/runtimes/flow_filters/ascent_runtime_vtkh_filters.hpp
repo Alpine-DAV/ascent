@@ -486,32 +486,6 @@ public:
     virtual void   execute();
 };
 
-//-----------------------------------------------------------------------------
-class ASCENT_API ExecProbe : public ::flow::Filter
-{
-public:
-    ExecProbe();
-    virtual ~ExecProbe();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class ASCENT_API VTKHRenderingSplit : public ::flow::Filter
-{
-public:
-    VTKHRenderingSplit();
-    virtual ~VTKHRenderingSplit();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
 
 };
 //-----------------------------------------------------------------------------

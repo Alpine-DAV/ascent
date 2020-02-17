@@ -132,7 +132,7 @@ SUBROUTINE visit(my_ascent)
       !
       ! Ascent in situ visualization
       !
-      CALL ascent_timer_start(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
+      ! CALL ascent_timer_start(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
 
       ALLOCATE(ghost_flags(0:gnxc-1,0:gnyc-1,0:gnzc-1))
       DO l=0,gnzc-1
@@ -205,7 +205,7 @@ SUBROUTINE visit(my_ascent)
         savename = trim(trim(name) //trim(chunk_name)//trim(step_name))
       ENDIF
 
-      CALL ascent_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
+      ! CALL ascent_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
 
       sim_actions = conduit_node_create()
       add_scene_act = conduit_node_append(sim_actions)

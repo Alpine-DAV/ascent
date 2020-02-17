@@ -1066,102 +1066,6 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
 
     // ------------ NEW -----------------
 
-    // ~~~~~~~~~~~~ probing ~~~~~~~~~~~~
-    // Set up probe rendering filter if defined.
-    // "probe" defines percentage of total renders to be used for probing.
-    conduit::Node probe_params;
-    std::string exec_probe_name = "exec_probe_" + names[i];
-    std::string vtkh_rendering_split_name = "vtkh_rendering_split_" + names[i];
-    
-    if (false && scene.has_path("probing_factor"))
-    {
-      probe_params["probing_factor"] = scene["probing_factor"].as_double();
-
-    #ifdef ASCENT_MPI_ENABLED 
-      // ~~~ split mpi comm and set as default 
-      // we only need as many rendering threads as we have sim nodes
-      //
-      int size = 1;
-      int world_rank = 0;
-      int comm_id = flow::Workspace::default_mpi_comm();
-      MPI_Comm comm = MPI_Comm_f2c(comm_id);
-      MPI_Comm_rank(comm, &world_rank);
-
-      MPI_Comm_size(comm, &size);
-      int color = 0;
-      // TODO: remove/replace hard coded factor here -> get from options
-      int rank_split = int(size*0.75 + 0.5); // number of sim nodes: 3/4 * # nodes
-      // vis node
-      if (world_rank >= rank_split)
-        color = 1;
-      MPI_Comm sim_vis_comm;
-      MPI_Comm_split(comm, color, m_rank, &sim_vis_comm);
-
-      int new_size = 0;
-      MPI_Comm_size(sim_vis_comm, &new_size);
-      // set new rank
-      MPI_Comm_rank(sim_vis_comm, &m_rank);
-      vtkh::SetMPICommHandle(MPI_Comm_c2f(sim_vis_comm));
-    #endif
-
-
-      w.graph().add_filter("exec_probe",
-                           exec_probe_name,
-                           probe_params);
-
-      // connect renders to probe scene exec
-      w.graph().connect(renders_name,    // src
-                        exec_probe_name, // dest
-                        1);              // port 1 for renders
-
-      // add rendering split filter if probing is active
-      conduit::Node rendering_split_params;
-      if (scene.has_path("vis_budget"))
-      {
-        rendering_split_params["vis_budget"] = scene["vis_budget"].as_double();
-      }
-      else
-      {
-        rendering_split_params["vis_budget"] = 0.1;   // default is 10%
-      }
-      if (scene.has_path("sim_nodes"))
-      {
-        rendering_split_params["sim_nodes"] = scene["sim_nodes"].as_int64();
-      }
-      else
-      {
-        rendering_split_params["sim_nodes"] = 1;  // TODO: default value based on total nodes
-      }      
-
-      w.graph().add_filter("vtkh_rendering_split",
-                           vtkh_rendering_split_name,
-                           rendering_split_params);
-
-      w.graph().connect(exec_probe_name,            // src
-                        vtkh_rendering_split_name,  // dest
-                        "render_times");            // port 1 for render times
-
-      // FIXME: breaks if we remove this connection: why?
-      w.graph().connect(vtkh_rendering_split_name,  // src
-                        exec_name,                  // dest
-                        "in");                         // dummy port
-
-      // TODO: connect to scene exec to pass on datasets ?
-      // connect the probe exec with the scene exec to pass on the render times
-      // w.graph().connect(exec_probe_name,  // src
-      //                   exec_name,        // dest
-      //                   2);               // port 2 for render times
-    } 
-    else  // not probing
-    {
-      // FIXME: dummy connection 
-      // w.graph().connect(renders_name, // src
-      //                   exec_name,    // dest
-      //                   2);           // default port
-    }
-    
-    // ~~~~~~~~~~~~ end probing ~~~~~~~~~~~~
-
     std::vector<std::string> pipelines = GetPipelines(scene["plots"]);
     std::vector<std::string> plot_names = scene["plots"].child_names();
 
@@ -1336,18 +1240,6 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
     w.graph().connect(renders_name, // src
                       exec_name,    // dest
                       1);           // renders
-
-    // as well as exec probe filter if active
-    if (false && scene.has_path("probing_factor"))
-    {
-      w.graph().connect(prev_add_plot_name, // src
-                        exec_probe_name,    // dest
-                        0);                 // scene port
-      // connect scene to rendering split (last resort for data access via registry?)
-      // w.graph().connect(prev_add_plot_name, // src
-      //                   vtkh_rendering_split_name,    // dest
-      //                   0);                 // scene port
-    }
 
   } // each scene
 }

@@ -153,9 +153,6 @@ register_builtin()
     AscentRuntime::register_filter_type<CreatePlot>();
     AscentRuntime::register_filter_type<CreateScene>();
     AscentRuntime::register_filter_type<ExecScene>();
-
-    AscentRuntime::register_filter_type<ExecProbe>("transforms", "probe");
-    AscentRuntime::register_filter_type<VTKHRenderingSplit>("transforms", "split");
 #endif
 
 #if defined(ASCENT_MPI_ENABLED)
