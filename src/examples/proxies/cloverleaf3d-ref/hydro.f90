@@ -67,6 +67,7 @@ SUBROUTINE hydro
     
     step = step + 1
 
+    ! only on sim nodes
     IF(parallel%task.LT.parallel%max_task)THEN
       CALL timestep()
 
@@ -97,10 +98,13 @@ SUBROUTINE hydro
     IF(summary_frequency.NE.0) THEN
       IF(MOD(step, summary_frequency).EQ.0) CALL field_summary()
     ENDIF
+    ! visualization
     IF(visit_frequency.NE.0) THEN
       IF(MOD(step, visit_frequency).EQ.0) THEN
         vis_time=timer()
+
         CALL visit(my_ascent)
+
         wall_clock=timer() - timerstart
         WRITE(g_out_times,*) '       vis ', step, timer()-vis_time
       ENDIF
@@ -113,12 +117,12 @@ SUBROUTINE hydro
     IF(step.EQ.1) first_step=(timer() - step_time)
     IF(step.EQ.2) second_step=(timer() - step_time)
 
+    ! finalizing actions after sim completion
     IF(time+g_small.GT.end_time.OR.step.GE.end_step) THEN
 
       complete=.TRUE.
       CALL field_summary()
     ! IF(visit_frequency.NE.0) CALL visit()
-
 
       wall_clock=timer() - timerstart
       IF ( parallel%boss ) THEN
@@ -202,6 +206,7 @@ SUBROUTINE hydro
 
     END IF ! actions after sim completion
 
+    ! print out stats
     IF (parallel%boss) THEN
       wall_clock=timer()-timerstart
       step_clock=timer()-step_time
@@ -215,7 +220,6 @@ SUBROUTINE hydro
       WRITE(g_out,*)"Average time per cell ",grind_time
       WRITE(0    ,*)"Step time per cell    ",step_grind
       WRITE(g_out,*)"Step time per cell    ",step_grind
-
     END IF  
 
   END DO

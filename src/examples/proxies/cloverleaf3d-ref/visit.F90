@@ -93,15 +93,16 @@ SUBROUTINE visit(my_ascent)
   fields(FIELD_ZVEL0)=1
   IF(profiler_on) kernel_time=timer()
 
+  ! synchronization in here? -> skip for vis nodes
   IF(parallel%task.LT.parallel%max_task)THEN
     CALL update_halo(fields,1)
+    
+    IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
+    
+    IF(profiler_on) kernel_time=timer()
+    CALL viscosity()
+    IF(profiler_on) profiler%viscosity=profiler%viscosity+(timer()-kernel_time)
   ENDIF
-
-  IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
-
-  IF(profiler_on) kernel_time=timer()
-  CALL viscosity()
-  IF(profiler_on) profiler%viscosity=profiler%viscosity+(timer()-kernel_time)
 
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,64 +111,86 @@ SUBROUTINE visit(my_ascent)
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   IF(profiler_on) kernel_time=timer()
-  DO c = 1, chunks_per_task
-    IF(chunks(c)%task.EQ.parallel%task) THEN
-      nxc=chunks(c)%field%x_max-chunks(c)%field%x_min+1
-      nyc=chunks(c)%field%y_max-chunks(c)%field%y_min+1
-      nzc=chunks(c)%field%z_max-chunks(c)%field%z_min+1
-      nxv=nxc+1
-      nyv=nyc+1
-      nzv=nzc+1
 
-      ! dimensions with ghosts
-      gnxc=nxc+4
-      gnyc=nyc+4
-      gnzc=nzc+4
-      gnxv=gnxc+1
-      gnyv=gnyc+1
-      gnzv=gnzc+1
-      ncells = gnxc * gnyc * gnzc
-      nnodes = gnxv * gnyv * gnzv
+  sim_data = conduit_node_create()
+  IF(parallel%task.GE.parallel%max_task)THEN     ! vis nodes: send 'empty' data set
+    CALL conduit_node_set_path_float64(sim_data,"state/time", time)
+    CALL conduit_node_set_path_int32(sim_data,"state/domain_id", parallel%task)
+    CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
+    CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")
+    array(1) = 0.0
+    num_elements = 1
+    CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", array, num_elements)
+    CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", array, num_elements)
+    CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", array, num_elements)
+    CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/type", "rectilinear")
+    CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/coordset", "coords")
 
-      !
-      ! Ascent in situ visualization
-      !
-      ! CALL ascent_timer_start(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
+    sim_actions = conduit_node_create()
+    add_scene_act = conduit_node_append(sim_actions)
+    CALL conduit_node_set_path_char8_str(add_scene_act,"action", "add_scenes")
 
-      ALLOCATE(ghost_flags(0:gnxc-1,0:gnyc-1,0:gnzc-1))
-      DO l=0,gnzc-1
-        DO k=0, gnyc-1
-          DO j=0, gnxc-1
-            ghost_flag=0
-            IF(l < 2 .OR. l > gnzc - 3) THEN
-              ghost_flag = 1
-            END IF
-            IF(k < 2 .OR. k > gnyc - 3) THEN
-              ghost_flag = 1
-            END IF
-            IF(j < 2 .OR. j > gnxc - 3) THEN
-              ghost_flag = 1
-            END IF
-            ghost_flags(j,k,l)=ghost_flag
+    scenes = conduit_node_fetch(add_scene_act,"scenes")
+    CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/type", "volume")
+    CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/field", "energy")
+
+    CALL ascent_publish(my_ascent, sim_data)
+    CALL ascent_execute(my_ascent, sim_actions)
+
+    CALL conduit_node_destroy(sim_actions)
+    CALL conduit_node_destroy(sim_data)
+
+  ELSE  ! sim nodes
+    DO c = 1, chunks_per_task
+      ! skip this stuff for vis nodes
+      IF(chunks(c)%task.EQ.parallel%task) THEN
+        nxc=chunks(c)%field%x_max-chunks(c)%field%x_min+1
+        nyc=chunks(c)%field%y_max-chunks(c)%field%y_min+1
+        nzc=chunks(c)%field%z_max-chunks(c)%field%z_min+1
+        nxv=nxc+1
+        nyv=nyc+1
+        nzv=nzc+1
+
+        ! dimensions with ghosts
+        gnxc=nxc+4
+        gnyc=nyc+4
+        gnzc=nzc+4
+        gnxv=gnxc+1
+        gnyv=gnyc+1
+        gnzv=gnzc+1
+        ncells = gnxc * gnyc * gnzc
+        nnodes = gnxv * gnyv * gnzv
+
+        !
+        ! Ascent in situ visualization
+        !
+        ! CALL ascent_timer_start(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
+
+        ALLOCATE(ghost_flags(0:gnxc-1,0:gnyc-1,0:gnzc-1))
+        DO l=0,gnzc-1
+          DO k=0, gnyc-1
+            DO j=0, gnxc-1
+              ghost_flag=0
+              IF(l < 2 .OR. l > gnzc - 3) THEN
+                ghost_flag = 1
+              END IF
+              IF(k < 2 .OR. k > gnyc - 3) THEN
+                ghost_flag = 1
+              END IF
+              IF(j < 2 .OR. j > gnxc - 3) THEN
+                ghost_flag = 1
+              END IF
+              ghost_flags(j,k,l)=ghost_flag
+            ENDDO
           ENDDO
         ENDDO
-      ENDDO
+        
 
-      sim_data = conduit_node_create()
-      CALL conduit_node_set_path_float64(sim_data,"state/time", time)
-      CALL conduit_node_set_path_int32(sim_data,"state/domain_id", parallel%task)
-      CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
-      CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")
-      IF(parallel%task.GE.parallel%max_task)THEN
-        ! Vis nodes: send 'empty' data set
-        array(1) = 0.0
-        num_elements = 1
-        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", array, num_elements)
-        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", array, num_elements)
-        CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", array, num_elements)
-        CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/type", "rectilinear")
-        CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/coordset", "coords")
-      ELSE
+        CALL conduit_node_set_path_float64(sim_data,"state/time", time)
+        CALL conduit_node_set_path_int32(sim_data,"state/domain_id", parallel%task)
+        CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
+        CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")
+
         CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", chunks(c)%field%vertexx, gnxv*1_8)
         CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", chunks(c)%field%vertexy, gnyv*1_8)
         CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", chunks(c)%field%vertexz, gnzv*1_8)
@@ -203,26 +226,26 @@ SUBROUTINE visit(my_ascent)
         WRITE(step_name, '(i6)') step+100000
         step_name(1:1) = "."
         savename = trim(trim(name) //trim(chunk_name)//trim(step_name))
+        
+        ! CALL ascent_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
+        
+        sim_actions = conduit_node_create()
+        add_scene_act = conduit_node_append(sim_actions)
+        CALL conduit_node_set_path_char8_str(add_scene_act,"action", "add_scenes")
+        
+        scenes = conduit_node_fetch(add_scene_act,"scenes")
+        CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/type", "volume")
+        CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/field", "energy")
+        
+        CALL ascent_publish(my_ascent, sim_data)
+        CALL ascent_execute(my_ascent, sim_actions)
+        
+        CALL conduit_node_destroy(sim_actions)
+        CALL conduit_node_destroy(sim_data)
+        
+        DEALLOCATE(ghost_flags)
+
       ENDIF
-
-      ! CALL ascent_timer_stop(C_CHAR_"COPY_DATA"//C_NULL_CHAR)
-
-      sim_actions = conduit_node_create()
-      add_scene_act = conduit_node_append(sim_actions)
-      CALL conduit_node_set_path_char8_str(add_scene_act,"action", "add_scenes")
-
-      scenes = conduit_node_fetch(add_scene_act,"scenes")
-      CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/type", "volume")
-      CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/field", "energy")
-
-      CALL ascent_publish(my_ascent, sim_data)
-      CALL ascent_execute(my_ascent, sim_actions)
-
-      CALL conduit_node_destroy(sim_actions)
-      CALL conduit_node_destroy(sim_data)
-
-      DEALLOCATE(ghost_flags)
-
 
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -230,97 +253,99 @@ SUBROUTINE visit(my_ascent)
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  IF( .FALSE. ) THEN
-      WRITE(chunk_name, '(i6)') parallel%task+100001
-      chunk_name(1:1) = "."
-      WRITE(step_name, '(i6)') step+100000
-      step_name(1:1) = "."
-      filename = trim(trim(name) //trim(chunk_name)//trim(step_name))//".vtk"
-      u=get_unit(dummy)
-      OPEN(UNIT=u,FILE=filename,STATUS='UNKNOWN',IOSTAT=err)
-      WRITE(u,'(a)')'# vtk DataFile Version 3.0'
-      WRITE(u,'(a)')'vtk output'
-      WRITE(u,'(a)')'ASCII'
-      WRITE(u,'(a)')'DATASET RECTILINEAR_GRID'
-      WRITE(u,'(a,3i12)')'DIMENSIONS',nxv,nyv,nzv
-      WRITE(u,'(a,i5,a)')'X_COORDINATES ',nxv,' double'
-      DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
-        WRITE(u,'(e12.4)')chunks(c)%field%vertexx(j)
-      ENDDO
-      WRITE(u,'(a,i5,a)')'Y_COORDINATES ',nyv,' double'
-      DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
-        WRITE(u,'(e12.4)')chunks(c)%field%vertexy(k)
-      ENDDO
-      WRITE(u,'(a,i5,a)')'Z_COORDINATES ',nzv,' double'
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
-        WRITE(u,'(e12.4)')chunks(c)%field%vertexz(l)
-      ENDDO
-      WRITE(u,'(a,i20)')'CELL_DATA ',nxc*nyc*nzc
-      WRITE(u,'(a)')'FIELD FieldData 4'
-      WRITE(u,'(a,i20,a)')'density 1 ',nxc*nyc*nzc,' double'
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-          WRITE(u,'(e12.4)')(chunks(c)%field%density0(j,k,l),j=chunks(c)%field%x_min,chunks(c)%field%x_max)
+    IF( .FALSE. ) THEN
+        WRITE(chunk_name, '(i6)') parallel%task+100001
+        chunk_name(1:1) = "."
+        WRITE(step_name, '(i6)') step+100000
+        step_name(1:1) = "."
+        filename = trim(trim(name) //trim(chunk_name)//trim(step_name))//".vtk"
+        u=get_unit(dummy)
+        OPEN(UNIT=u,FILE=filename,STATUS='UNKNOWN',IOSTAT=err)
+        WRITE(u,'(a)')'# vtk DataFile Version 3.0'
+        WRITE(u,'(a)')'vtk output'
+        WRITE(u,'(a)')'ASCII'
+        WRITE(u,'(a)')'DATASET RECTILINEAR_GRID'
+        WRITE(u,'(a,3i12)')'DIMENSIONS',nxv,nyv,nzv
+        WRITE(u,'(a,i5,a)')'X_COORDINATES ',nxv,' double'
+        DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
+          WRITE(u,'(e12.4)')chunks(c)%field%vertexx(j)
         ENDDO
-      ENDDO
-      WRITE(u,'(a,i20,a)')'energy 1 ',nxc*nyc*nzc,' double'
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-          WRITE(u,'(e12.4)')(chunks(c)%field%energy0(j,k,l),j=chunks(c)%field%x_min,chunks(c)%field%x_max)
-        ENDDO
-      ENDDO
-      WRITE(u,'(a,i20,a)')'pressure 1 ',nxc*nyc*nzc,' double'
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-          WRITE(u,'(e12.4)')(chunks(c)%field%pressure(j,k,l),j=chunks(c)%field%x_min,chunks(c)%field%x_max)
-        ENDDO
-      ENDDO
-      WRITE(u,'(a,i20,a)')'viscosity 1 ',nxc*nyc*nzc,' double'
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max
-            temp_var=0.0
-            IF(chunks(c)%field%viscosity(j,k,l).GT.0.00000001) temp_var=chunks(c)%field%viscosity(j,k,l)
-            WRITE(u,'(e12.4)') temp_var
-          ENDDO
-        ENDDO
-      ENDDO
-      WRITE(u,'(a,i20)')'POINT_DATA ',nxv*nyv*nzv
-      WRITE(u,'(a)')'FIELD FieldData 3'
-      WRITE(u,'(a,i20,a)')'x_vel 1 ',nxv*nyv*nzv,' double'
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
+        WRITE(u,'(a,i5,a)')'Y_COORDINATES ',nyv,' double'
         DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
-            temp_var=0.0
-            IF(ABS(chunks(c)%field%xvel0(j,k,l)).GT.0.00000001) temp_var=chunks(c)%field%xvel0(j,k,l)
-            WRITE(u,'(e12.4)') temp_var
+          WRITE(u,'(e12.4)')chunks(c)%field%vertexy(k)
+        ENDDO
+        WRITE(u,'(a,i5,a)')'Z_COORDINATES ',nzv,' double'
+        DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
+          WRITE(u,'(e12.4)')chunks(c)%field%vertexz(l)
+        ENDDO
+        WRITE(u,'(a,i20)')'CELL_DATA ',nxc*nyc*nzc
+        WRITE(u,'(a)')'FIELD FieldData 4'
+        WRITE(u,'(a,i20,a)')'density 1 ',nxc*nyc*nzc,' double'
+        DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
+          DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
+            WRITE(u,'(e12.4)')(chunks(c)%field%density0(j,k,l),j=chunks(c)%field%x_min,chunks(c)%field%x_max)
           ENDDO
         ENDDO
-      ENDDO
-      WRITE(u,'(a,i20,a)')'y_vel 1 ',nxv*nyv*nzv,' double'
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
-            temp_var=0.0
-            IF(ABS(chunks(c)%field%yvel0(j,k,l)).GT.0.00000001) temp_var=chunks(c)%field%yvel0(j,k,l)
-            WRITE(u,'(e12.4)') temp_var
+        WRITE(u,'(a,i20,a)')'energy 1 ',nxc*nyc*nzc,' double'
+        DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
+          DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
+            WRITE(u,'(e12.4)')(chunks(c)%field%energy0(j,k,l),j=chunks(c)%field%x_min,chunks(c)%field%x_max)
           ENDDO
         ENDDO
-      ENDDO
-      WRITE(u,'(a,i20,a)')'z_vel 1 ',nxv*nyv*nzv,' double'
-      DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
-        DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
-          DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
-            temp_var=0.0
-            IF(ABS(chunks(c)%field%zvel0(j,k,l)).GT.0.00000001) temp_var=chunks(c)%field%zvel0(j,k,l)
-            WRITE(u,'(e12.4)') temp_var
+        WRITE(u,'(a,i20,a)')'pressure 1 ',nxc*nyc*nzc,' double'
+        DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
+          DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
+            WRITE(u,'(e12.4)')(chunks(c)%field%pressure(j,k,l),j=chunks(c)%field%x_min,chunks(c)%field%x_max)
           ENDDO
         ENDDO
-      ENDDO
-      CLOSE(u)
-    ENDIF
-ENDIF
-  ENDDO
+        WRITE(u,'(a,i20,a)')'viscosity 1 ',nxc*nyc*nzc,' double'
+        DO l=chunks(c)%field%z_min,chunks(c)%field%z_max
+          DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
+            DO j=chunks(c)%field%x_min,chunks(c)%field%x_max
+              temp_var=0.0
+              IF(chunks(c)%field%viscosity(j,k,l).GT.0.00000001) temp_var=chunks(c)%field%viscosity(j,k,l)
+              WRITE(u,'(e12.4)') temp_var
+            ENDDO
+          ENDDO
+        ENDDO
+        WRITE(u,'(a,i20)')'POINT_DATA ',nxv*nyv*nzv
+        WRITE(u,'(a)')'FIELD FieldData 3'
+        WRITE(u,'(a,i20,a)')'x_vel 1 ',nxv*nyv*nzv,' double'
+        DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
+          DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
+            DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
+              temp_var=0.0
+              IF(ABS(chunks(c)%field%xvel0(j,k,l)).GT.0.00000001) temp_var=chunks(c)%field%xvel0(j,k,l)
+              WRITE(u,'(e12.4)') temp_var
+            ENDDO
+          ENDDO
+        ENDDO
+        WRITE(u,'(a,i20,a)')'y_vel 1 ',nxv*nyv*nzv,' double'
+        DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
+          DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
+            DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
+              temp_var=0.0
+              IF(ABS(chunks(c)%field%yvel0(j,k,l)).GT.0.00000001) temp_var=chunks(c)%field%yvel0(j,k,l)
+              WRITE(u,'(e12.4)') temp_var
+            ENDDO
+          ENDDO
+        ENDDO
+        WRITE(u,'(a,i20,a)')'z_vel 1 ',nxv*nyv*nzv,' double'
+        DO l=chunks(c)%field%z_min,chunks(c)%field%z_max+1
+          DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
+            DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
+              temp_var=0.0
+              IF(ABS(chunks(c)%field%zvel0(j,k,l)).GT.0.00000001) temp_var=chunks(c)%field%zvel0(j,k,l)
+              WRITE(u,'(e12.4)') temp_var
+            ENDDO
+          ENDDO
+        ENDDO
+        CLOSE(u)
+      ENDIF
+
+    ENDDO
+
+  ENDIF ! sim nodes
 
   IF(profiler_on) profiler%visit=profiler%visit+(timer()-kernel_time)
 
