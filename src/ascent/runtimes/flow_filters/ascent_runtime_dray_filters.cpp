@@ -99,6 +99,7 @@
 
 #include <vtkh/vtkh.hpp>
 #include <vtkh/rendering/Compositor.hpp>
+#include <vtkh/rendering/PartialCompositor.hpp>
 
 using namespace conduit;
 using namespace std;
@@ -244,6 +245,180 @@ parse_camera(const conduit::Node camera_node, dray::Camera &camera)
   }
   return clipping;
 }
+
+dray::ColorMap
+parse_color_table(const conduit::Node &color_map_node)
+{
+  // default name
+  std::string color_map_name = "cool to warm";
+
+  if(color_table_node.number_of_children() == 0)
+  {
+    ASCENT_INFO("Color table node is empty (no children). Defaulting to "
+                <<color_map_name);
+  }
+
+  bool name_provided = false;
+  if(color_table_node.has_child("name"))
+  {
+    std::string name = color_table_node["name"].as_string();
+    name_provided = true;
+    if(is_valid_name(name))
+    {
+      color_map_name = name;
+    }
+    else
+    {
+      ASCENT_INFO("Invalid color table name '"<<name
+                  <<"'. Defaulting to "<<color_map_name);
+    }
+  }
+
+  vtkm::cont::ColorTable color_table(color_map_name);
+
+  if(color_table_node.has_child("control_points"))
+  {
+    bool clear = false;
+    // check to see if we have rgb points and clear the table
+    NodeConstIterator itr = color_table_node.fetch("control_points").children();
+    while(itr.has_next())
+    {
+        const Node &peg = itr.next();
+        if (peg["type"].as_string() == "rgb")
+        {
+          clear = true;
+          break;
+        }
+    }
+
+    if(clear && !name_provided)
+    {
+      color_table.ClearColors();
+    }
+
+    itr = color_table_node.fetch("control_points").children();
+    while(itr.has_next())
+    {
+        const Node &peg = itr.next();
+        if(!peg.has_child("position"))
+        {
+            ASCENT_WARN("Color map control point must have a position");
+        }
+
+        float64 position = peg["position"].to_float64();
+
+        if(position > 1.0 || position < 0.0)
+        {
+              ASCENT_WARN("Cannot add color map control point position "
+                            << position
+                            << ". Must be a normalized scalar.");
+        }
+
+        if (peg["type"].as_string() == "rgb")
+        {
+            conduit::Node n;
+            peg["color"].to_float64_array(n);
+            const float64 *color = n.as_float64_ptr();
+
+            vtkm::Vec<vtkm::Float64,3> ecolor(color[0], color[1], color[2]);
+
+            for(int i = 0; i < 3; ++i)
+            {
+              ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
+            }
+
+            color_table.AddPoint(position, ecolor);
+        }
+        else if (peg["type"].as_string() == "alpha")
+        {
+            float64 alpha = peg["alpha"].to_float64();
+            alpha = std::min(1., std::max(alpha, 0.));
+            color_table.AddPointAlpha(position, alpha);
+        }
+        else
+        {
+            ASCENT_WARN("Unknown color table control point type " << peg["type"].as_string()<<
+                        "\nValid types are 'alpha' and 'rgb'");
+        }
+    }
+  }
+
+  if(color_table_node.has_child("reverse"))
+  {
+    if(color_table_node["reverse"].as_string() == "true")
+    {
+      color_table.ReverseColors();
+    }
+  }
+  return color_table;
+}
+
+dray::Framebuffer partials_to_framebuffer(const std::vector<vtkh::VolumePartial<float>> &input,
+                                          const int width,
+                                          const int height)
+{
+  dray::Framebuffer fb(width, height);
+  fb.clear();
+  const int size = input.size();
+  dray::Vec<float,4> *colors = fb.colors().get_host_ptr();
+  float *depths = fb.depths().get_host_ptr();
+#ifdef ASCENT_USE_OPENMP
+  #pragma omp parallel for
+#endif
+  for(int i = 0; i < size; ++i)
+  {
+    const int id = input[i].m_pixel_id;
+    colors[id][0] = input[i].m_pixel[0];
+    colors[id][1] = input[i].m_pixel[1];
+    colors[id][2] = input[i].m_pixel[2];
+    colors[id][3] = input[i].m_alpha;
+    depths[id] = input[i].m_depth;
+  }
+  return fb;
+}
+
+void convert_partials(std::vector<dray::Array<dray::VolumePartial>> &input,
+                      std::vector<std::vector<vtkh::VolumePartial<float>>> &output)
+{
+  size_t total_size = 0;
+  const int in_size = input.size();
+  std::vector<size_t> offsets;
+  offsets.resize(in_size);
+  output.resize(1);
+
+  for(size_t i = 0; i< in_size; ++i)
+  {
+    offsets[i] = total_size;
+    total_size += input[i].size();
+  }
+
+  output[0].resize(total_size);
+
+  for(size_t a = 0; a < in_size; ++a)
+  {
+    const dray::VolumePartial *partial_ptr = input[a].get_host_ptr_const();
+    const size_t offset = offsets[a];
+    const size_t size = input[a].size();
+#ifdef ASCENT_USE_OPENMP
+    #pragma omp parallel for
+#endif
+    for(int i = 0; i < size; ++i)
+    {
+      const size_t index = offset + i;
+      const dray::VolumePartial p = partial_ptr[i];
+      output[0][index].m_pixel_id = p.m_pixel_id;
+      output[0][index].m_depth = p.m_depth;
+
+      output[0][index].m_pixel[0] = p.m_color[0];
+      output[0][index].m_pixel[1] = p.m_color[1];
+      output[0][index].m_pixel[2] = p.m_color[2];
+
+      output[0][index].m_alpha = p.m_color[3];
+    }
+  }
+
+}
+
 }; // namespace detail
 
 //-----------------------------------------------------------------------------
@@ -394,6 +569,7 @@ DRayPseudocolor::execute()
 #ifdef ASCENT_MPI_ENABLED
     vtkh::SetMPICommHandle(comm_id);
 #endif
+
     vtkh::Compositor compositor;
     compositor.SetCompositeMode(vtkh::Compositor::Z_BUFFER_SURFACE);
 
@@ -637,7 +813,7 @@ DRayVolume::~DRayVolume()
 void
 DRayVolume::declare_interface(Node &i)
 {
-    i["type_name"]   = "dray_3slice";
+    i["type_name"]   = "dray_volume";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
 }
@@ -651,30 +827,33 @@ DRayVolume::verify_params(const conduit::Node &params,
 
     bool res = true;
 
-    ///res &= check_string("field",params, info, true);
+    res &= check_string("field",params, info, true);
 
-    ///std::vector<std::string> valid_paths;
-    ///std::vector<std::string> ignore_paths;
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
 
-    ///valid_paths.push_back("field");
-    ///ignore_paths.push_back("camera");
+    valid_paths.push_back("field");
+    ignore_paths.push_back("camera");
 
-    ///res &= check_numeric("x_offset",params, info, false);
-    ///res &= check_numeric("y_offset",params, info, false);
-    ///res &= check_numeric("z_offset",params, info, false);
+    res &= check_numeric("samples",params, info, false);
+    res &= check_numeric("width",params, info, false);
+    res &= check_numeric("height",params, info, false);
+    res &= check_numeric("min_value",params, info, false);
+    res &= check_numeric("max_value",params, info, false);
 
-    ///valid_paths.push_back("x_offset");
-    ///valid_paths.push_back("y_offset");
-    ///valid_paths.push_back("z_offset");
+    valid_paths.push_back("samples");
+    valid_paths.push_back("width");
+    valid_paths.push_back("height");
+    valid_paths.push_back("min_value");
+    valid_paths.push_back("max_value");
 
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
-    ///std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    ///if(surprises != "")
-    ///{
-    ///  res = false;
-    ///  info["errors"].append() = surprises;
-    ///}
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
     return res;
 }
 
@@ -702,6 +881,16 @@ DRayVolume::execute()
     int width  = 512;
     int height = 512;
 
+    if(params().has_path("width"))
+    {
+      width = params()["width"].to_int32();
+    }
+
+    if(params().has_path("height"))
+    {
+      height = params()["height"].to_int32();
+    }
+
     dray::Camera camera;
     camera.set_width(width);
     camera.set_height(height);
@@ -715,9 +904,17 @@ DRayVolume::execute()
       const conduit::Node &n_camera = params()["camera"];
       clipping = detail::parse_camera(n_camera, camera);
     }
+
     std::string field_name = params()["field"].as_string();
 
     dray::ColorMap color_map("cool2warm");
+
+    color_map.color_table().add_alpha (0.f, 0.00f);
+    color_map.color_table().add_alpha (0.1f, 0.00f);
+    color_map.color_table().add_alpha (0.3f, 0.05f);
+    color_map.color_table().add_alpha (0.4f, 0.21f);
+    color_map.color_table().add_alpha (1.0f, 0.9f);
+
     dray::Range scalar_range = dcol->get_global_range(field_name);
     color_map.scalar_range(scalar_range);
 
@@ -750,7 +947,7 @@ DRayVolume::execute()
 
 
     }
-    exit(0);
+
     conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
 
     int cycle = 0;
@@ -760,7 +957,7 @@ DRayVolume::execute()
       cycle = (*meta)["cycle"].as_int32();
     }
 
-    std::string image_name = "dray_3slice_%06d";
+    std::string image_name = "dray_volume_%06d";
     if(params().has_path("image_prefix"))
     {
       image_name = params()["image_prefix"].as_string();
@@ -768,9 +965,22 @@ DRayVolume::execute()
 
     image_name = expand_family_name(image_name, cycle);
 
+    std::vector<std::vector<vtkh::VolumePartial<float>>> c_partials;
+    detail::convert_partials(dom_partials, c_partials);
+
+    std::vector<vtkh::VolumePartial<float>> result;
+
+    vtkh::PartialCompositor<vtkh::VolumePartial<float>> compositor;
 #ifdef ASCENT_MPI_ENABLED
-    vtkh::SetMPICommHandle(comm_id);
+    compositor.set_comm_handle(comm_id);
 #endif
+    //compositor.set_background(m_background);
+    std::cout<<"COMP\n";
+    compositor.composite(c_partials, result);
+    std::cout<<"done COMP\n";
+    dray::Framebuffer fb = detail::partials_to_framebuffer(result, width, height);
+    fb.composite_background();
+    fb.save(image_name);
     //vtkh::Compositor compositor;
     //compositor.SetCompositeMode(vtkh::Compositor::Z_BUFFER_SURFACE);
 
