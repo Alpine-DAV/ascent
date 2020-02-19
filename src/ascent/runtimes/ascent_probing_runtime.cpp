@@ -157,26 +157,26 @@ void ProbingRuntime::Publish(const conduit::Node &data)
 
     // parallel reduce to find if there were any verify errors across mpi tasks
     // use an mpi sum to check if all is ok
-    Node n_src, n_reduce;
+    // Node n_src, n_reduce;
 
-    if (verify_ok)
-        n_src = (int)0;
-    else
-        n_src = (int)1;
+    // if (verify_ok)
+    //     n_src = (int)0;
+    // else
+    //     n_src = (int)1;
 
-    conduit::relay::mpi::sum_all_reduce(n_src,
-                                        n_reduce,
-                                        mpi_comm);
+    // conduit::relay::mpi::sum_all_reduce(n_src,
+    //                                     n_reduce,
+    //                                     mpi_comm);
 
-    int num_failures = n_reduce.value();
-    if (num_failures != 0)
-    {
-        ASCENT_ERROR("Mesh Blueprint Verify failed on "
-                     << num_failures
-                     << " MPI Tasks");
+    // int num_failures = n_reduce.value();
+    // if (num_failures != 0)
+    // {
+    //     ASCENT_ERROR("Mesh Blueprint Verify failed on "
+    //                  << num_failures
+    //                  << " MPI Tasks");
 
-        // you could use mpi to find out where things went wrong ...
-    }
+    //     // you could use mpi to find out where things went wrong ...
+    // }
 
 #else
     if (!verify_ok)
@@ -212,17 +212,16 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     const std::vector<double> &render_times,
                     conduit::Node &data,
                     const int sim_node_count,
+                    const int world_size,
                     const double vis_budget = 0.1)
 {
     // assert(vis_budget > 0.0 && vis_budget < 1.0);    // currently absolute ms value
 
     int rank = -1;
-    int total_ranks = 0;
 #ifdef ASCENT_MPI_ENABLED
-    MPI_Comm_size(mpi_comm_world, &total_ranks);
     MPI_Comm_rank(mpi_comm_world, &rank);
 #endif
-    assert(sim_node_count > 0 && sim_node_count <= total_ranks);
+    assert(sim_node_count > 0 && sim_node_count <= world_size);
 
     int is_intransit = 0;
     int is_rendering = 1;
@@ -235,9 +234,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         is_intransit = 1;
         // vis nodes only receive and render data
         is_vis_node = true;
-        // std::cout << "~~~ " << "rank " << rank << " is a vis node." << std::endl;
     }
-    else if (total_ranks > 1)
+    else if (world_size > 1)
     {
         assert(render_times.size() > 0);
         double avg = std::accumulate(render_times.begin(), render_times.end(), 0.0) / render_times.size();
@@ -245,14 +243,12 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
         // decide if this node wants to send data away
         if (decide_intransit(avg, vis_budget))
+        {
+            // all sending in transit nodes
             is_intransit = 1;
-    }
-
-    // all sending in transit nodes
-    if (is_intransit && !is_vis_node)
-    {
-        is_rendering = 0;
-        is_sending = 1;
+            is_rendering = 0;
+            is_sending = 1;
+        }
     }
 
 #ifdef ASCENT_MPI_ENABLED
@@ -260,11 +256,13 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     MPI_Comm intransit_comm;
     MPI_Comm_split(mpi_comm_world, is_intransit, 0, &intransit_comm);
     int intransit_size = 0;
+    // TODO: implicit barrier (collective operation)? -> global sync anyway?
     MPI_Comm_size(intransit_comm, &intransit_size);
+
     // Hola setup
     MPI_Comm hola_comm;
     MPI_Comm_split(intransit_comm, is_sending, 0, &hola_comm);
-    int rank_split = intransit_size - (total_ranks - sim_node_count);
+    int rank_split = intransit_size - (world_size - sim_node_count);
 
     // if none of the sim nodes sends data, vis nodes skip rendering
     if (is_vis_node && rank_split <= 0)
@@ -368,8 +366,6 @@ void log_time(std::chrono::time_point<std::chrono::system_clock> start, int rank
 //-----------------------------------------------------------------------------
 void ProbingRuntime::Execute(const conduit::Node &actions)
 {
-    auto start = std::chrono::system_clock::now();
-
     int world_rank = 0;
     int world_size = 1;
 #if ASCENT_MPI_ENABLED
@@ -455,6 +451,8 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         }
     }
 
+    auto start = std::chrono::system_clock::now();
+
     int rank_split = 0;
 #if ASCENT_MPI_ENABLED
     rank_split = int(std::round(world_size * node_split));
@@ -490,10 +488,11 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         }
         ascent_probing.close();
     }
+    
 #if ASCENT_MPI_ENABLED
     // MPI_Barrier(comm_world);
     // split comm into sim and vis nodes and render on the respective nodes
-    splitAndRender(comm_world, render_times, m_data, rank_split, vis_budget);
+    splitAndRender(comm_world, render_times, m_data, rank_split, world_size, vis_budget);
 
     log_time(start, world_rank);
 #endif

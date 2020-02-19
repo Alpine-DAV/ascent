@@ -54,7 +54,7 @@ SUBROUTINE visit(my_ascent)
 
   INTEGER :: fields(NUM_FIELDS)
 
-  REAL(KIND=8) :: kernel_time,timer
+  REAL(KIND=8) :: kernel_time,timer,timerstart
 
   !
   ! Conduit variables
@@ -79,22 +79,22 @@ SUBROUTINE visit(my_ascent)
   INTEGER(C_SIZE_T) :: num_elements
 
   name = 'clover'
-
-  IF(profiler_on) kernel_time=timer()
-  DO c=1,chunks_per_task
-    CALL ideal_gas(c,.FALSE.)
-  ENDDO
-  IF(profiler_on) profiler%ideal_gas=profiler%ideal_gas+(timer()-kernel_time)
-
-  fields=0
-  fields(FIELD_PRESSURE)=1
-  fields(FIELD_XVEL0)=1
-  fields(FIELD_YVEL0)=1
-  fields(FIELD_ZVEL0)=1
-  IF(profiler_on) kernel_time=timer()
-
-  ! synchronization in here? -> skip for vis nodes
+  
+  ! skip for vis nodes
   IF(parallel%task.LT.parallel%max_task)THEN
+
+    IF(profiler_on) kernel_time=timer()
+    DO c=1,chunks_per_task
+      CALL ideal_gas(c,.FALSE.)
+    ENDDO
+    IF(profiler_on) profiler%ideal_gas=profiler%ideal_gas+(timer()-kernel_time)
+
+    fields=0
+    fields(FIELD_PRESSURE)=1
+    fields(FIELD_XVEL0)=1
+    fields(FIELD_YVEL0)=1
+    fields(FIELD_ZVEL0)=1
+    IF(profiler_on) kernel_time=timer()
     CALL update_halo(fields,1)
     
     IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
@@ -113,7 +113,9 @@ SUBROUTINE visit(my_ascent)
   IF(profiler_on) kernel_time=timer()
 
   sim_data = conduit_node_create()
-  IF(parallel%task.GE.parallel%max_task)THEN     ! vis nodes: send 'empty' data set
+
+  ! vis nodes: send 'empty' data set
+  IF(parallel%task.GE.parallel%max_task)THEN     
     CALL conduit_node_set_path_float64(sim_data,"state/time", time)
     CALL conduit_node_set_path_int32(sim_data,"state/domain_id", parallel%task)
     CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
@@ -237,7 +239,7 @@ SUBROUTINE visit(my_ascent)
         CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/type", "volume")
         CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/field", "energy")
         
-        CALL ascent_publish(my_ascent, sim_data)
+        CALL ascent_publish(my_ascent, sim_data)   
         CALL ascent_execute(my_ascent, sim_actions)
         
         CALL conduit_node_destroy(sim_actions)
