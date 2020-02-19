@@ -94,6 +94,7 @@
 #include <dray/rendering/renderer.hpp>
 #include <dray/rendering/surface.hpp>
 #include <dray/rendering/slice_plane.hpp>
+#include <dray/rendering/partial_renderer.hpp>
 #include <dray/io/blueprint_reader.hpp>
 
 #include <vtkh/vtkh.hpp>
@@ -617,6 +618,180 @@ DRay3Slice::execute()
       encoder.Save(image_name + ".png");
     }
     std::cout<<"xxxBN\n";
+}
+
+//-----------------------------------------------------------------------------
+DRayVolume::DRayVolume()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+DRayVolume::~DRayVolume()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayVolume::declare_interface(Node &i)
+{
+    i["type_name"]   = "dray_3slice";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+DRayVolume::verify_params(const conduit::Node &params,
+                               conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+
+    ///res &= check_string("field",params, info, true);
+
+    ///std::vector<std::string> valid_paths;
+    ///std::vector<std::string> ignore_paths;
+
+    ///valid_paths.push_back("field");
+    ///ignore_paths.push_back("camera");
+
+    ///res &= check_numeric("x_offset",params, info, false);
+    ///res &= check_numeric("y_offset",params, info, false);
+    ///res &= check_numeric("z_offset",params, info, false);
+
+    ///valid_paths.push_back("x_offset");
+    ///valid_paths.push_back("y_offset");
+    ///valid_paths.push_back("z_offset");
+
+
+    ///std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    ///if(surprises != "")
+    ///{
+    ///  res = false;
+    ///  info["errors"].append() = surprises;
+    ///}
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayVolume::execute()
+{
+    std::cout<<"BN\n";
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("dray 3slice input must be a DataObject");
+    }
+
+    DataObject *d_input = input<DataObject>(0);
+
+    DRayCollection *dcol = d_input->as_dray_collection().get();
+    int comm_id = -1;
+#ifdef ASCENT_MPI_ENABLED
+    comm_id = flow::Workspace::default_mpi_comm();
+#endif
+    dcol->mpi_comm(comm_id);
+
+    dray::AABB<3> bounds = dcol->get_global_bounds();
+
+    int width  = 512;
+    int height = 512;
+
+    dray::Camera camera;
+    camera.set_width(width);
+    camera.set_height(height);
+    camera.reset_to_bounds(bounds);
+
+    std::vector<float> clipping(2);
+    clipping[0] = 0.01f;
+    clipping[1] = 1000.f;
+    if(params().has_path("camera"))
+    {
+      const conduit::Node &n_camera = params()["camera"];
+      clipping = detail::parse_camera(n_camera, camera);
+    }
+    std::string field_name = params()["field"].as_string();
+
+    dray::ColorMap color_map("cool2warm");
+    dray::Range scalar_range = dcol->get_global_range(field_name);
+    color_map.scalar_range(scalar_range);
+
+    std::vector<dray::Array<dray::VolumePartial>> dom_partials;
+
+    dray::PointLight plight;
+    plight.m_pos = { 1.2f, -0.15f, 0.4f };
+    plight.m_amb = { 1.0f, 1.0f, 1.f };
+    plight.m_diff = { 0.5f, 0.5f, 0.5f };
+    plight.m_spec = { 0.0f, 0.0f, 0.0f };
+    plight.m_spec_pow = 90.0;
+    dray::Array<dray::PointLight> lights;
+    lights.resize(1);
+    dray::PointLight *l_ptr = lights.get_host_ptr();
+    l_ptr[0] = plight;
+
+    const int num_domains = dcol->m_domains.size();
+    for(int i = 0; i < num_domains; ++i)
+    {
+      std::shared_ptr<dray::PartialRenderer> volume
+        = std::make_shared<dray::PartialRenderer>(dcol->m_domains[i]);
+
+      dray::Array<dray::Ray> rays;
+      camera.create_rays (rays);
+
+      volume->field(field_name);
+      volume->color_map() = color_map;
+      dray::Array<dray::VolumePartial> partials = volume->integrate(rays, lights);
+      dom_partials.push_back(partials);
+
+
+    }
+    exit(0);
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+
+    int cycle = 0;
+
+    if(meta->has_path("cycle"))
+    {
+      cycle = (*meta)["cycle"].as_int32();
+    }
+
+    std::string image_name = "dray_3slice_%06d";
+    if(params().has_path("image_prefix"))
+    {
+      image_name = params()["image_prefix"].as_string();
+    }
+
+    image_name = expand_family_name(image_name, cycle);
+
+#ifdef ASCENT_MPI_ENABLED
+    vtkh::SetMPICommHandle(comm_id);
+#endif
+    //vtkh::Compositor compositor;
+    //compositor.SetCompositeMode(vtkh::Compositor::Z_BUFFER_SURFACE);
+
+    //for(int i = 0; i < num_domains; ++i)
+    //{
+    //  const float * cbuffer =
+    //    reinterpret_cast<const float*>(color_buffers[i].get_host_ptr_const());
+    //  compositor.AddImage(cbuffer,
+    //                      depth_buffers[i].get_host_ptr_const(),
+    //                      width,
+    //                      height);
+    //}
+    //vtkh::Image result = compositor.Composite();
+
+    //if(vtkh::GetMPIRank() == 0)
+    //{
+    //  PNGEncoder encoder;
+    //  encoder.Encode(&result.m_pixels[0], width, height);
+    //  encoder.Save(image_name + ".png");
+    //}
+    //std::cout<<"xxxBN\n";
 }
 
 
