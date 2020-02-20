@@ -127,6 +127,39 @@ namespace filters
 namespace detail
 {
 
+std::string
+dray_color_table_surprises(const conduit::Node &color_table)
+{
+  std::string surprises;
+
+  std::vector<std::string> valid_paths;
+  valid_paths.push_back("name");
+  valid_paths.push_back("reverse");
+
+  std::vector<std::string> ignore_paths;
+  ignore_paths.push_back("control_points");
+
+  surprises += surprise_check(valid_paths, ignore_paths, color_table);
+  if(color_table.has_path("control_points"))
+  {
+    std::vector<std::string> c_valid_paths;
+    c_valid_paths.push_back("type");
+    c_valid_paths.push_back("alpha");
+    c_valid_paths.push_back("color");
+    c_valid_paths.push_back("position");
+
+    const conduit::Node &control_points = color_table["control_points"];
+    const int num_points = control_points.number_of_children();
+    for(int i = 0; i < num_points; ++i)
+    {
+      const conduit::Node &point = control_points.child(i);
+      surprises += surprise_check(c_valid_paths, point);
+    }
+  }
+
+  return surprises;
+}
+
 std::vector<dray::Vec<float,3>>
 planes(const conduit::Node &params, const dray::AABB<3> bounds)
 {
@@ -246,11 +279,11 @@ parse_camera(const conduit::Node camera_node, dray::Camera &camera)
   return clipping;
 }
 
-dray::ColorMap
-parse_color_table(const conduit::Node &color_map_node)
+dray::ColorTable
+parse_color_table(const conduit::Node &color_table_node)
 {
   // default name
-  std::string color_map_name = "cool to warm";
+  std::string color_map_name = "cool2warm";
 
   if(color_table_node.number_of_children() == 0)
   {
@@ -263,22 +296,40 @@ parse_color_table(const conduit::Node &color_map_node)
   {
     std::string name = color_table_node["name"].as_string();
     name_provided = true;
-    if(is_valid_name(name))
+    std::vector<std::string> valid_names = dray::ColorTable::get_presets();
+    auto loc = find(valid_names.begin(), valid_names.end(), name);
+    if(loc != valid_names.end())
     {
       color_map_name = name;
     }
     else
     {
+      std::stringstream ss;
+      ss<<"[";
+      for(int i = 0; i < valid_names.size(); ++i)
+      {
+        ss<<valid_names[i];
+        if(i==valid_names.size()-1)
+        {
+          ss<<"]";
+        }
+        else
+        {
+          ss<<",";
+        }
+      }
       ASCENT_INFO("Invalid color table name '"<<name
-                  <<"'. Defaulting to "<<color_map_name);
+                  <<"'. Defaulting to "<<color_map_name
+                  <<". known names: "<<ss.str());
     }
   }
 
-  vtkm::cont::ColorTable color_table(color_map_name);
+  dray::ColorTable color_table(color_map_name);
 
   if(color_table_node.has_child("control_points"))
   {
     bool clear = false;
+    bool clear_alphas = false;
     // check to see if we have rgb points and clear the table
     NodeConstIterator itr = color_table_node.fetch("control_points").children();
     while(itr.has_next())
@@ -287,13 +338,21 @@ parse_color_table(const conduit::Node &color_map_node)
         if (peg["type"].as_string() == "rgb")
         {
           clear = true;
-          break;
+        }
+        if (peg["type"].as_string() == "alpha")
+        {
+          clear_alphas = true;
         }
     }
 
     if(clear && !name_provided)
     {
-      color_table.ClearColors();
+      color_table.clear_colors();
+    }
+
+    if(clear_alphas)
+    {
+      color_table.clear_alphas();
     }
 
     itr = color_table_node.fetch("control_points").children();
@@ -317,23 +376,23 @@ parse_color_table(const conduit::Node &color_map_node)
         if (peg["type"].as_string() == "rgb")
         {
             conduit::Node n;
-            peg["color"].to_float64_array(n);
-            const float64 *color = n.as_float64_ptr();
+            peg["color"].to_float32_array(n);
+            const float *color = n.as_float32_ptr();
 
-            vtkm::Vec<vtkm::Float64,3> ecolor(color[0], color[1], color[2]);
+            dray::Vec<float,3> ecolor({color[0], color[1], color[2]});
 
             for(int i = 0; i < 3; ++i)
             {
-              ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
+              ecolor[i] = std::min(1.f, std::max(ecolor[i], 0.f));
             }
 
-            color_table.AddPoint(position, ecolor);
+            color_table.add_point(position, ecolor);
         }
         else if (peg["type"].as_string() == "alpha")
         {
-            float64 alpha = peg["alpha"].to_float64();
-            alpha = std::min(1., std::max(alpha, 0.));
-            color_table.AddPointAlpha(position, alpha);
+            float alpha = peg["alpha"].to_float32();
+            alpha = std::min(1.f, std::max(alpha, 0.f));
+            color_table.add_alpha(position, alpha);
         }
         else
         {
@@ -347,7 +406,7 @@ parse_color_table(const conduit::Node &color_map_node)
   {
     if(color_table_node["reverse"].as_string() == "true")
     {
-      color_table.ReverseColors();
+      color_table.reverse();
     }
   }
   return color_table;
@@ -376,6 +435,94 @@ dray::Framebuffer partials_to_framebuffer(const std::vector<vtkh::VolumePartial<
   }
   return fb;
 }
+
+void
+parse_params(const conduit::Node &params,
+             DRayCollection *dcol,
+             const conduit::Node *meta,
+             dray::Camera &camera,
+             dray::ColorMap &color_map,
+             std::string &field_name,
+             std::string &image_name)
+{
+  field_name = params["field"].as_string();
+
+  int width  = 512;
+  int height = 512;
+
+  if(params.has_path("image_width"))
+  {
+    width = params["image_width"].to_int32();
+  }
+
+  if(params.has_path("image_height"))
+  {
+    height = params["image_height"].to_int32();
+  }
+
+  camera.set_width(width);
+  camera.set_height(height);
+  dray::AABB<3> bounds = dcol->get_global_bounds();
+  camera.reset_to_bounds(bounds);
+
+  std::vector<float> clipping(2);
+  clipping[0] = 0.01f;
+  clipping[1] = 1000.f;
+  if(params.has_path("camera"))
+  {
+    const conduit::Node &n_camera = params["camera"];
+    clipping = detail::parse_camera(n_camera, camera);
+  }
+
+  dray::Range scalar_range = dcol->get_global_range(field_name);
+  dray::Range range;
+  if(params.has_path("min_value"))
+  {
+    range.include(params["min_value"].to_float32());
+  }
+  else
+  {
+    range.include(scalar_range.min());
+  }
+
+  if(params.has_path("max_value"))
+  {
+    range.include(params["max_value"].to_float32());
+  }
+  else
+  {
+    range.include(scalar_range.max());
+  }
+
+  color_map.scalar_range(range);
+
+  bool log_scale = false;
+  if(params.has_path("log_scale"))
+  {
+    if(params["log_scale"].as_string() == "true")
+    {
+      log_scale = true;
+    }
+  }
+
+  color_map.log_scale(log_scale);
+
+  if(params.has_path("color_table"))
+  {
+    color_map.color_table(parse_color_table(params["color_table"]));
+  }
+
+  int cycle = 0;
+
+  if(meta->has_path("cycle"))
+  {
+    cycle = (*meta)["cycle"].as_int32();
+  }
+
+  image_name = params["image_prefix"].as_string();
+  image_name = expand_family_name(image_name, cycle);
+}
+
 
 void convert_partials(std::vector<dray::Array<dray::VolumePartial>> &input,
                       std::vector<std::vector<vtkh::VolumePartial<float>>> &output)
@@ -449,15 +596,49 @@ DRayPseudocolor::verify_params(const conduit::Node &params,
                                  conduit::Node &info)
 {
     info.reset();
+
     bool res = true;
 
-    if(! params.has_child("field") ||
-       ! params["field"].dtype().is_string() )
+    res &= check_string("field",params, info, true);
+    res &= check_string("image_prefix",params, info, true);
+    res &= check_numeric("min_value",params, info, false);
+    res &= check_numeric("max_value",params, info, false);
+    res &= check_numeric("image_width",params, info, false);
+    res &= check_numeric("image_height",params, info, false);
+    res &= check_string("log_scale",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
+
+    valid_paths.push_back("field");
+    valid_paths.push_back("image_prefix");
+    valid_paths.push_back("min_value");
+    valid_paths.push_back("max_value");
+    valid_paths.push_back("image_width");
+    valid_paths.push_back("image_height");
+    valid_paths.push_back("log_scale");
+
+    // filter knobs
+    valid_paths.push_back("draw_mesh");
+    valid_paths.push_back("line_thickness");
+    res &= check_string("line_thickness",params, info, false);
+    res &= check_string("draw_mesh",params, info, false);
+
+    ignore_paths.push_back("camera");
+    ignore_paths.push_back("color_table");
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(params.has_path("color_table"))
     {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
+      surprises += detail::dray_color_table_surprises(params["color_table"]);
     }
 
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
     return res;
 }
 
@@ -465,7 +646,6 @@ DRayPseudocolor::verify_params(const conduit::Node &params,
 void
 DRayPseudocolor::execute()
 {
-    std::cout<<"BN\n";
     if(!input(0).check_type<DataObject>())
     {
         ASCENT_ERROR("dray pseudocolor input must be a DataObject");
@@ -480,8 +660,22 @@ DRayPseudocolor::execute()
 #endif
     dcol->mpi_comm(comm_id);
 
-    std::string field_name = params()["field"].as_string();
-    dray::Range scalar_range = dcol->get_global_range(field_name);
+    DRayCollection faces = dcol->boundary();
+    faces.mpi_comm(comm_id);
+
+    dray::Camera camera;
+    dray::ColorMap color_map("cool2warm");
+    std::string field_name;
+    std::string image_name;
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+
+    detail::parse_params(params(),
+                         &faces,
+                         meta,
+                         camera,
+                         color_map,
+                         field_name,
+                         image_name);
 
     bool draw_mesh = false;
     if(params().has_path("draw_mesh"))
@@ -496,31 +690,6 @@ DRayPseudocolor::execute()
     {
       line_thickness = params()["line_thickness"].to_float32();
     }
-
-
-    DRayCollection faces = dcol->boundary();
-    faces.mpi_comm(comm_id);
-
-    dray::AABB<3> bounds = faces.get_global_bounds();
-    int width  = 512;
-    int height = 512;
-
-    dray::Camera camera;
-    camera.set_width(width);
-    camera.set_height(height);
-    camera.reset_to_bounds(bounds);
-
-    std::vector<float> clipping(2);
-    clipping[0] = 0.01f;
-    clipping[1] = 1000.f;
-    if(params().has_path("camera"))
-    {
-      const conduit::Node &n_camera = params()["camera"];
-      clipping = detail::parse_camera(n_camera, camera);
-    }
-
-    dray::ColorMap color_map("cool2warm");
-    color_map.scalar_range(scalar_range);
 
     std::vector<dray::Array<dray::Vec<dray::float32,4>>> color_buffers;
     std::vector<dray::Array<dray::float32>> depth_buffers;
@@ -544,27 +713,13 @@ DRayPseudocolor::execute()
 
       dray::Framebuffer fb = renderer.render(camera);
 
+      std::vector<float> clipping(2);
+      clipping[0] = 0.01f;
+      clipping[1] = 1000.f;
       dray::Array<float32> depth = camera.gl_depth(fb.depths(), clipping[0], clipping[1]);
       depth_buffers.push_back(depth);
       color_buffers.push_back(fb.colors());
     }
-
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
-
-    int cycle = 0;
-
-    if(meta->has_path("cycle"))
-    {
-      cycle = (*meta)["cycle"].as_int32();
-    }
-
-    std::string image_name = "dray_surface_%06d";
-    if(params().has_path("image_prefix"))
-    {
-      image_name = params()["image_prefix"].as_string();
-    }
-
-    image_name = expand_family_name(image_name, cycle);
 
 #ifdef ASCENT_MPI_ENABLED
     vtkh::SetMPICommHandle(comm_id);
@@ -579,18 +734,17 @@ DRayPseudocolor::execute()
         reinterpret_cast<const float*>(color_buffers[i].get_host_ptr_const());
       compositor.AddImage(cbuffer,
                           depth_buffers[i].get_host_ptr_const(),
-                          width,
-                          height);
+                          camera.get_width(),
+                          camera.get_height());
     }
     vtkh::Image result = compositor.Composite();
 
     if(vtkh::GetMPIRank() == 0)
     {
       PNGEncoder encoder;
-      encoder.Encode(&result.m_pixels[0], width, height);
+      encoder.Encode(&result.m_pixels[0], camera.get_width(), camera.get_height());
       encoder.Save(image_name + ".png");
     }
-    std::cout<<"xxxBN\n";
 }
 
 //-----------------------------------------------------------------------------
@@ -625,13 +779,25 @@ DRay3Slice::verify_params(const conduit::Node &params,
     bool res = true;
 
     res &= check_string("field",params, info, true);
+    res &= check_string("image_prefix",params, info, true);
+    res &= check_numeric("min_value",params, info, false);
+    res &= check_numeric("max_value",params, info, false);
+    res &= check_numeric("image_width",params, info, false);
+    res &= check_numeric("image_height",params, info, false);
+    res &= check_string("log_scale",params, info, false);
 
     std::vector<std::string> valid_paths;
     std::vector<std::string> ignore_paths;
 
     valid_paths.push_back("field");
-    ignore_paths.push_back("camera");
+    valid_paths.push_back("image_prefix");
+    valid_paths.push_back("min_value");
+    valid_paths.push_back("max_value");
+    valid_paths.push_back("image_width");
+    valid_paths.push_back("image_height");
+    valid_paths.push_back("log_scale");
 
+    // filter knobs
     res &= check_numeric("x_offset",params, info, false);
     res &= check_numeric("y_offset",params, info, false);
     res &= check_numeric("z_offset",params, info, false);
@@ -640,8 +806,15 @@ DRay3Slice::verify_params(const conduit::Node &params,
     valid_paths.push_back("y_offset");
     valid_paths.push_back("z_offset");
 
+    ignore_paths.push_back("camera");
+    ignore_paths.push_back("color_table");
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(params.has_path("color_table"))
+    {
+      surprises += detail::dray_color_table_surprises(params["color_table"]);
+    }
 
     if(surprises != "")
     {
@@ -655,7 +828,6 @@ DRay3Slice::verify_params(const conduit::Node &params,
 void
 DRay3Slice::execute()
 {
-    std::cout<<"BN\n";
     if(!input(0).check_type<DataObject>())
     {
         ASCENT_ERROR("dray 3slice input must be a DataObject");
@@ -670,29 +842,21 @@ DRay3Slice::execute()
 #endif
     dcol->mpi_comm(comm_id);
 
-    dray::AABB<3> bounds = dcol->get_global_bounds();
-
-    int width  = 512;
-    int height = 512;
-
     dray::Camera camera;
-    camera.set_width(width);
-    camera.set_height(height);
-    camera.reset_to_bounds(bounds);
-
-    std::vector<float> clipping(2);
-    clipping[0] = 0.01f;
-    clipping[1] = 1000.f;
-    if(params().has_path("camera"))
-    {
-      const conduit::Node &n_camera = params()["camera"];
-      clipping = detail::parse_camera(n_camera, camera);
-    }
-    std::string field_name = params()["field"].as_string();
-
     dray::ColorMap color_map("cool2warm");
-    dray::Range scalar_range = dcol->get_global_range(field_name);
-    color_map.scalar_range(scalar_range);
+    std::string field_name;
+    std::string image_name;
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+
+    detail::parse_params(params(),
+                         dcol,
+                         meta,
+                         camera,
+                         color_map,
+                         field_name,
+                         image_name);
+
+    dray::AABB<3> bounds = dcol->get_global_bounds();
 
     std::vector<dray::Array<dray::Vec<dray::float32,4>>> color_buffers;
     std::vector<dray::Array<dray::float32>> depth_buffers;
@@ -748,27 +912,13 @@ DRay3Slice::execute()
 
       dray::Framebuffer fb = renderer.render(camera);
 
+      std::vector<float> clipping(2);
+      clipping[0] = 0.01f;
+      clipping[1] = 1000.f;
       dray::Array<float32> depth = camera.gl_depth(fb.depths(), clipping[0], clipping[1]);
       depth_buffers.push_back(depth);
       color_buffers.push_back(fb.colors());
     }
-
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
-
-    int cycle = 0;
-
-    if(meta->has_path("cycle"))
-    {
-      cycle = (*meta)["cycle"].as_int32();
-    }
-
-    std::string image_name = "dray_3slice_%06d";
-    if(params().has_path("image_prefix"))
-    {
-      image_name = params()["image_prefix"].as_string();
-    }
-
-    image_name = expand_family_name(image_name, cycle);
 
 #ifdef ASCENT_MPI_ENABLED
     vtkh::SetMPICommHandle(comm_id);
@@ -782,18 +932,17 @@ DRay3Slice::execute()
         reinterpret_cast<const float*>(color_buffers[i].get_host_ptr_const());
       compositor.AddImage(cbuffer,
                           depth_buffers[i].get_host_ptr_const(),
-                          width,
-                          height);
+                          camera.get_width(),
+                          camera.get_height());
     }
     vtkh::Image result = compositor.Composite();
 
     if(vtkh::GetMPIRank() == 0)
     {
       PNGEncoder encoder;
-      encoder.Encode(&result.m_pixels[0], width, height);
+      encoder.Encode(&result.m_pixels[0], camera.get_width(), camera.get_height());
       encoder.Save(image_name + ".png");
     }
-    std::cout<<"xxxBN\n";
 }
 
 //-----------------------------------------------------------------------------
@@ -828,26 +977,40 @@ DRayVolume::verify_params(const conduit::Node &params,
     bool res = true;
 
     res &= check_string("field",params, info, true);
+    res &= check_string("image_prefix",params, info, true);
+    res &= check_numeric("min_value",params, info, false);
+    res &= check_numeric("max_value",params, info, false);
+    res &= check_numeric("image_width",params, info, false);
+    res &= check_numeric("image_height",params, info, false);
+    res &= check_string("log_scale",params, info, false);
 
     std::vector<std::string> valid_paths;
     std::vector<std::string> ignore_paths;
 
     valid_paths.push_back("field");
-    ignore_paths.push_back("camera");
-
-    res &= check_numeric("samples",params, info, false);
-    res &= check_numeric("width",params, info, false);
-    res &= check_numeric("height",params, info, false);
-    res &= check_numeric("min_value",params, info, false);
-    res &= check_numeric("max_value",params, info, false);
-
-    valid_paths.push_back("samples");
-    valid_paths.push_back("width");
-    valid_paths.push_back("height");
+    valid_paths.push_back("image_prefix");
     valid_paths.push_back("min_value");
     valid_paths.push_back("max_value");
+    valid_paths.push_back("image_width");
+    valid_paths.push_back("image_height");
+    valid_paths.push_back("log_scale");
+
+    // filter knobs
+    res &= check_numeric("samples",params, info, false);
+    res &= check_string("use_lighing",params, info, false);
+
+    valid_paths.push_back("samples");
+    valid_paths.push_back("use_lighting");
+
+    ignore_paths.push_back("camera");
+    ignore_paths.push_back("color_table");
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(params.has_path("color_table"))
+    {
+      surprises += detail::dray_color_table_surprises(params["color_table"]);
+    }
 
     if(surprises != "")
     {
@@ -861,7 +1024,6 @@ DRayVolume::verify_params(const conduit::Node &params,
 void
 DRayVolume::execute()
 {
-    std::cout<<"BN\n";
     if(!input(0).check_type<DataObject>())
     {
         ASCENT_ERROR("dray 3slice input must be a DataObject");
@@ -876,47 +1038,46 @@ DRayVolume::execute()
 #endif
     dcol->mpi_comm(comm_id);
 
-    dray::AABB<3> bounds = dcol->get_global_bounds();
-
-    int width  = 512;
-    int height = 512;
-
-    if(params().has_path("width"))
-    {
-      width = params()["width"].to_int32();
-    }
-
-    if(params().has_path("height"))
-    {
-      height = params()["height"].to_int32();
-    }
-
     dray::Camera camera;
-    camera.set_width(width);
-    camera.set_height(height);
-    camera.reset_to_bounds(bounds);
-
-    std::vector<float> clipping(2);
-    clipping[0] = 0.01f;
-    clipping[1] = 1000.f;
-    if(params().has_path("camera"))
-    {
-      const conduit::Node &n_camera = params()["camera"];
-      clipping = detail::parse_camera(n_camera, camera);
-    }
-
-    std::string field_name = params()["field"].as_string();
 
     dray::ColorMap color_map("cool2warm");
+    std::string field_name;
+    std::string image_name;
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
 
-    color_map.color_table().add_alpha (0.f, 0.00f);
-    color_map.color_table().add_alpha (0.1f, 0.00f);
-    color_map.color_table().add_alpha (0.3f, 0.05f);
-    color_map.color_table().add_alpha (0.4f, 0.21f);
-    color_map.color_table().add_alpha (1.0f, 0.9f);
+    detail::parse_params(params(),
+                         dcol,
+                         meta,
+                         camera,
+                         color_map,
+                         field_name,
+                         image_name);
 
-    dray::Range scalar_range = dcol->get_global_range(field_name);
-    color_map.scalar_range(scalar_range);
+    dray::AABB<3> bounds = dcol->get_global_bounds();
+
+    if(color_map.color_table().number_of_alpha_points() == 0)
+    {
+      color_map.color_table().add_alpha (0.f, 0.00f);
+      color_map.color_table().add_alpha (0.1f, 0.00f);
+      color_map.color_table().add_alpha (0.3f, 0.05f);
+      color_map.color_table().add_alpha (0.4f, 0.21f);
+      color_map.color_table().add_alpha (1.0f, 0.9f);
+    }
+
+    bool use_lighting = false;
+    if(params().has_path("use_lighting"))
+    {
+      if(params()["use_lighting"].as_string() == "true")
+      {
+        use_lighting = true;
+      }
+    }
+
+    int samples = 100;
+    if(params().has_path("samples"))
+    {
+      samples = params()["samples"].to_int32();
+    }
 
     std::vector<dray::Array<dray::VolumePartial>> dom_partials;
 
@@ -940,30 +1101,14 @@ DRayVolume::execute()
       dray::Array<dray::Ray> rays;
       camera.create_rays (rays);
 
+      volume->samples(samples,bounds);
+      volume->use_lighting(use_lighting);
       volume->field(field_name);
       volume->color_map() = color_map;
       dray::Array<dray::VolumePartial> partials = volume->integrate(rays, lights);
       dom_partials.push_back(partials);
 
-
     }
-
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
-
-    int cycle = 0;
-
-    if(meta->has_path("cycle"))
-    {
-      cycle = (*meta)["cycle"].as_int32();
-    }
-
-    std::string image_name = "dray_volume_%06d";
-    if(params().has_path("image_prefix"))
-    {
-      image_name = params()["image_prefix"].as_string();
-    }
-
-    image_name = expand_family_name(image_name, cycle);
 
     std::vector<std::vector<vtkh::VolumePartial<float>>> c_partials;
     detail::convert_partials(dom_partials, c_partials);
@@ -975,33 +1120,10 @@ DRayVolume::execute()
     compositor.set_comm_handle(comm_id);
 #endif
     //compositor.set_background(m_background);
-    std::cout<<"COMP\n";
     compositor.composite(c_partials, result);
-    std::cout<<"done COMP\n";
-    dray::Framebuffer fb = detail::partials_to_framebuffer(result, width, height);
+    dray::Framebuffer fb = detail::partials_to_framebuffer(result, camera.get_width(), camera.get_height());
     fb.composite_background();
     fb.save(image_name);
-    //vtkh::Compositor compositor;
-    //compositor.SetCompositeMode(vtkh::Compositor::Z_BUFFER_SURFACE);
-
-    //for(int i = 0; i < num_domains; ++i)
-    //{
-    //  const float * cbuffer =
-    //    reinterpret_cast<const float*>(color_buffers[i].get_host_ptr_const());
-    //  compositor.AddImage(cbuffer,
-    //                      depth_buffers[i].get_host_ptr_const(),
-    //                      width,
-    //                      height);
-    //}
-    //vtkh::Image result = compositor.Composite();
-
-    //if(vtkh::GetMPIRank() == 0)
-    //{
-    //  PNGEncoder encoder;
-    //  encoder.Encode(&result.m_pixels[0], width, height);
-    //  encoder.Save(image_name + ".png");
-    //}
-    //std::cout<<"xxxBN\n";
 }
 
 
