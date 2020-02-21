@@ -14,12 +14,14 @@ if count == 0:
     paraview.options.symmetric = True
     from paraview.simple import LoadPlugin, Contour, \
         Show, ColorBy, GetColorTransferFunction, GetActiveCamera, Render,\
-        SaveScreenshot, ResetCamera
-    import ascent_extract
+        SaveScreenshot, ResetCamera, GetProperty, CreateRenderView
 
     LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())
     # create the pipeline
     ascentSource = AscentSource()
+    view = CreateRenderView()
+    view.ViewSize = [1024, 1024]
+
     asDisplay = Show()
     asDisplay.SetRepresentationType('Outline')
 
@@ -49,15 +51,15 @@ if count == 0:
     cam.Elevation(30)
     cam.Azimuth(-30)
 
-node = ascent_extract.ascent_data().child(0)
-domain_id = node['state/domain_id']
-cycle = node['state/cycle']
+ascentSource.UpdateAscentData()
+ascentSource.UpdatePropertyInformation()
+cycle = GetProperty(ascentSource, "Cycle").GetElement(0)
+rank = GetProperty(ascentSource, "Rank").GetElement(0)
 imageName = 'warpx_{0:04d}.png'.format(int(cycle))
-dataName = 'warpx_data_{0:04d}'.format(int(cycle))
-ascentSource.Count = count
 ResetCamera()
 Render()
 SaveScreenshot(imageName, ImageResolution=(1024, 1024),
                FontScaling='Do not scale fonts')
+# dataName = 'warpx_data_{0:04d}'.format(int(cycle))
 # writer = CreateWriter(dataName + '.pvtr', ascentSource)
 # writer.UpdatePipeline()

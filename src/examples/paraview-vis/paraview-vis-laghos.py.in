@@ -14,11 +14,13 @@ if count == 0:
     paraview.options.symmetric = True
     from paraview.simple import LoadPlugin, Show, ColorBy,\
         GetColorTransferFunction, GetActiveView, ResetCamera, GetActiveCamera,\
-        GetScalarBar, Render, SaveScreenshot
-    import ascent_extract
+        GetScalarBar, Render, SaveScreenshot, GetProperty, CreateRenderView
 
     LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())
     ascentSource = AscentSource()
+    view = CreateRenderView()
+    view.ViewSize = [1024, 1024]
+
     # show the boundary topology. For the main topology use Port 0.
     ascentSource.Port = 1
     rep = Show()
@@ -41,15 +43,16 @@ if count == 0:
     cam.Elevation(30)
     cam.Azimuth(30)
 
-node = ascent_extract.ascent_data().child(0)
-domain_id = node["state/domain_id"]
-cycle = node["state/cycle"]
+ascentSource.UpdateAscentData()
+ascentSource.UpdatePropertyInformation()
+cycle = GetProperty(ascentSource, "Cycle").GetElement(0)
+rank = GetProperty(ascentSource, "Rank").GetElement(0)
 imageName = "image_{0:04d}.png".format(int(cycle))
-dataName = "paraviewdata_{0:04d}".format(int(cycle))
-ascentSource.Count = count
 ResetCamera()
 Render()
 SaveScreenshot(imageName, ImageResolution=(1024, 1024))
+
+# dataName = "paraviewdata_{0:04d}".format(int(cycle))
 # writer = CreateWriter(dataName + ".pvtu", ascentSource)
 # writer.UpdatePipeline()
 

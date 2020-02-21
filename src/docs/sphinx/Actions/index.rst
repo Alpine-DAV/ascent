@@ -53,6 +53,7 @@ Ascent Actions
    Pipelines
    Scenes
    Extracts
+   ParaViewVisualization
    Queries
    Triggers
    Examples

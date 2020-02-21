@@ -13,13 +13,13 @@ if count == 0:
     from paraview.simple import LoadPlugin, OpenDataFile, ResampleToImage,\
         ParallelComputeMoments, MomentInvariants, Show, ColorBy,\
         GetColorTransferFunction, GetActiveView, GetScalarBar, ResetCamera,\
-        Render, SaveScreenshot
-    import ascent_extract
+        Render, SaveScreenshot, GetProperty, CreateRenderView
 
     LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())
     v = OpenDataFile('expandingVortex.vti')
-
     ascentSource = AscentSource()
+    view = CreateRenderView()
+    view.ViewSize = [1024, 1024]
 
     r = ResampleToImage()
     r.SamplingDimensions = [40, 40, 40]
@@ -77,20 +77,19 @@ if count == 0:
     # # show color legend
     # rep.SetScalarBarVisibility(renderView1, True)
 
-node = ascent_extract.ascent_data().child(0)
-cycle = node['state/cycle']
-domain_id = node['state/domain_id']
-dataName = 'cloverleaf3d_data_{0:04d}'.format(int(cycle))
+ascentSource.UpdateAscentData()
+ascentSource.UpdatePropertyInformation()
+cycle = GetProperty(ascentSource, "Cycle").GetElement(0)
+rank = GetProperty(ascentSource, "Rank").GetElement(0)
 
 if cycle == 200:
     imageName = 'moment_{0:04d}.png'.format(int(cycle))
-    # read the next data
-    ascentSource.Count = count
     ResetCamera()
     Render()
 
     SaveScreenshot(imageName, ImageResolution=(1024, 1024))
 
+# dataName = 'cloverleaf3d_data_{0:04d}'.format(int(cycle))
 # writer = CreateWriter(dataName + '.pvtr', ascentSource)
 # writer.UpdatePipeline()
 
