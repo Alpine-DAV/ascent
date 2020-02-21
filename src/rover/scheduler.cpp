@@ -42,7 +42,7 @@
 
 #include <assert.h>
 #include <fstream>
-#include <vtkh/rendering/PartialCompositor.hpp>
+#include <vtkh/compositing/PartialCompositor.hpp>
 #include <scheduler.hpp>
 #include <utils/png_encoder.hpp>
 #include <utils/rover_logging.hpp>

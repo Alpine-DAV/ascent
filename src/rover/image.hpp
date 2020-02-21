@@ -61,9 +61,7 @@ public:
   Image();
   Image(PartialImage<FloatType> &partial);
 
-  FloatType * steal_intensity(const int &channel_num);
   HandleType  get_intensity(const int &channel_num);
-  FloatType * steal_optical_depth(const int &channel_num);
   HandleType  get_optical_depth(const int &channel_num);
   int get_num_channels() const;
   bool has_intensity(const int &channel_num) const;

@@ -118,6 +118,7 @@ else
     # If using VTKH without mpi
     ASCENT_VTKH_LIB_FLAGS=-L $(ASCENT_VTKH_DIR)/lib \
                           -lvtkh_rendering \
+                          -lvtkh_compositing \
                           -lvtkh_filters \
                           -lvtkh_core \
                           -lvtkh_lodepng \
@@ -126,6 +127,7 @@ else
     # If using VTKH with mpi
     ASCENT_VTKH_MPI_LIB_FLAGS=-L $(ASCENT_VTKH_DIR)/lib \
                               -lvtkh_rendering_mpi \
+                              -lvtkh_compositing_mpi \
                               -lvtkh_filters_mpi \
                               -lvtkh_core_mpi \
                               -lvtkh_lodepng \

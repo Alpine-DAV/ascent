@@ -203,46 +203,6 @@ Image<FloatType>::has_optical_depth(const int &channel_num) const
 }
 
 template<typename FloatType>
-FloatType *
-Image<FloatType>::steal_intensity(const int &channel_num)
-{
-  if(channel_num < 0 || channel_num >= m_intensities.size())
-  {
-    throw RoverException("Rover Image: invalid channel number");
-  }
-
-  if(!m_valid_intensities.at(channel_num))
-  {
-    throw RoverException("Rover Image: cannot steal an instensity channel that has already been stolen");
-  }
-  m_intensities[channel_num].SyncControlArray();
-  using StoreType = vtkm::cont::internal::Storage<FloatType, vtkm::cont::StorageTagBasic>;
-  StoreType *storage = reinterpret_cast<StoreType*>(m_intensities[channel_num].Internals->ControlArray);
-  FloatType *ptr = reinterpret_cast<FloatType*>(storage->StealArray().first);
-  return ptr;
-}
-
-template<typename FloatType>
-FloatType *
-Image<FloatType>::steal_optical_depth(const int &channel_num)
-{
-  if(channel_num < 0 || channel_num >= m_intensities.size())
-  {
-    throw RoverException("Rover Image: invalid channel number");
-  }
-
-  if(!m_valid_optical_depths.at(channel_num))
-  {
-    throw RoverException("Rover Image: cannot steal an optical depth channel that has already been stolen");
-  }
-  m_optical_depths[channel_num].SyncControlArray();
-  using StoreType = vtkm::cont::internal::Storage<FloatType, vtkm::cont::StorageTagBasic>;
-  StoreType *storage = reinterpret_cast<StoreType*>(m_optical_depths[channel_num].Internals->ControlArray);
-  FloatType *ptr = reinterpret_cast<FloatType*>(storage->StealArray().first);
-  return ptr;
-}
-
-template<typename FloatType>
 void
 Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
 {
