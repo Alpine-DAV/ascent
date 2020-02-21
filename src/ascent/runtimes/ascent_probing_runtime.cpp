@@ -233,6 +233,57 @@ void create_comm_maps(Node &my_maps, const int total_size, const int src_size)
     }
 }
 
+/**
+ * 
+ */
+std::vector<int> job_assignment(const std::vector<float> &sim_times, 
+                                const std::vector<float> &probing_times,
+                                const std::vector<int> &rank_order, 
+                                const int vis_node_count)
+{
+    assert(sim_times.size() == probing_times.size() == rank_order.size());
+    std::vector<int> map(rank_order.size(), -1);
+
+    // TODO: at the moment every vis node gets at least one package 
+    // -> no transfer overhead included yet
+    std::vector<float> sum(vis_node_count, 0.f);
+    
+    // loop over sorted ranks excluding vis nodes
+    for (int i,j = 0; i < rank_order.size() - vis_node_count; ++i, ++j)
+    {
+        int vis_node = j % vis_node_count;
+        if (probing_times[rank_order[i]] + sim_times[rank_order[i]] > sum[vis_node])
+        {
+            // assign to vis node
+            map[rank_order[i]] = vis_node;
+            sum[vis_node] += probing_times[rank_order[i]];
+        }
+    }
+    return map;
+}
+
+/**
+ * Sort ranks in descending order according to sim + vis times estimations.
+ * TODO: add transfer overhead
+ */
+std::vector<int> sort_ranks(const std::vector<float> &sim_times, 
+                            const std::vector<float> &probing_times)
+{
+    assert(sim_times.size() == probing_times.size());
+    std::vector<int> rank_order(sim_times.size());
+    std::iota(rank_order.begin(), rank_order.end(), 0);
+
+    std::stable_sort(rank_order.begin(), 
+                     rank_order.end(), 
+                     [&](int i, int j) 
+                     { 
+                         return sim_times[i] + probing_times[i] 
+                              > sim_times[j] + probing_times[j];
+                     } 
+                     );
+    return rank_order;
+}
+
 //-----------------------------------------------------------------------------
 void splitAndRender(const MPI_Comm mpi_comm_world,
                     const int world_size,
@@ -250,6 +301,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     int is_sending = 0;
     bool is_vis_node = false;
 
+    int vis_node_count = world_size - sim_node_count;
     float my_avg_probing_time = 0.f;
 
     // nodes with the highest rank are our vis nodes
@@ -270,13 +322,29 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     }
 
 #ifdef ASCENT_MPI_ENABLED
+    // gather all simulation time extimates
+    double my_sim_time = data["state/sim_time"].to_double();
+    std::cout << "~~~ " << my_sim_time << " sim time rank " << world_rank << std::endl;
+    std::vector<float> sim_times(world_size);
+    MPI_Allgather(&my_sim_time, 1, MPI_FLOAT, 
+                  sim_times.data(), 1, MPI_FLOAT, mpi_comm_world);
+    // gather all visualization time estimates
     std::vector<float> probing_times(world_size);
     MPI_Allgather(&my_avg_probing_time, 1, MPI_FLOAT, 
                   probing_times.data(), 1, MPI_FLOAT, mpi_comm_world);
-    // TODO: add global job assignment
 
-    // decide if this node wants to send data away
-    if (!is_vis_node && decide_intransit(probing_times, world_rank, vis_budget))
+    // job assignment
+    std::vector<int> rank_order = sort_ranks(sim_times, probing_times);
+    std::vector<int> intransit_map = job_assignment(sim_times, probing_times, rank_order, vis_node_count);
+
+    // Debug OUT: output in-transit map
+    // std::cout << "=== ";
+    // for (auto &a : intransit_map)
+    //     std::cout << a << " ";
+    // std::cout << std::endl;
+
+    // map contains the in transit assignment
+    if (intransit_map[world_rank] >= 0)
     {
         // all sending in-transit nodes
         is_intransit = 1;
@@ -296,7 +364,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     // if (is_intransit)
     //     create_comm_maps(&comm_maps, probing_times);
 
-    int vis_node_count = world_size - sim_node_count;
     int sending_node_count = intransit_size - vis_node_count;
 
     if (is_vis_node)

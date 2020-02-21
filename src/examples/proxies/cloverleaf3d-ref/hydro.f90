@@ -107,8 +107,8 @@ SUBROUTINE hydro
     IF(visit_frequency.NE.0) THEN
       IF(MOD(step, visit_frequency).EQ.0) THEN
         vis_time=timer()
-
-        CALL visit(my_ascent)
+        ! TODO: accumulate last sim times
+        CALL visit(my_ascent, timer()-step_time)
 
         wall_clock=timer() - timerstart
         WRITE(g_out_times,*) '       vis ', step, timer()-vis_time

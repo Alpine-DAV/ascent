@@ -22,7 +22,7 @@
 !>  The ideal gas and viscosity routines are invoked to make sure this data is
 !>  up to data with the current energy, density and velocity.
 
-SUBROUTINE visit(my_ascent)
+SUBROUTINE visit(my_ascent, sim_time)
 
   USE clover_module
   USE update_halo_module
@@ -74,8 +74,8 @@ SUBROUTINE visit(my_ascent)
 
   INTEGER(8) :: nnodes, ncells
   REAL(8), ALLOCATABLE :: ghost_flags(:,:,:)
-
   REAL(8), DIMENSION(1) :: array
+  REAL(8) :: sim_time
   INTEGER(C_SIZE_T) :: num_elements
 
   name = 'clover'
@@ -117,6 +117,7 @@ SUBROUTINE visit(my_ascent)
   ! vis nodes: send 'empty' data set
   IF(parallel%task.GE.parallel%max_task)THEN     
     CALL conduit_node_set_path_float64(sim_data,"state/time", time)
+    CALL conduit_node_set_path_float64(sim_data,"state/sim_time", sim_time*visit_frequency)
     CALL conduit_node_set_path_int32(sim_data,"state/domain_id", parallel%task)
     CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
     CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")
@@ -189,6 +190,7 @@ SUBROUTINE visit(my_ascent)
         
 
         CALL conduit_node_set_path_float64(sim_data,"state/time", time)
+        CALL conduit_node_set_path_float64(sim_data,"state/sim_time", sim_time*visit_frequency)
         CALL conduit_node_set_path_int32(sim_data,"state/domain_id", parallel%task)
         CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
         CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")

@@ -26,4 +26,5 @@ clover.in
 clover.in.tmp
 clover.out
 .vscode/launch.json
-src/examples/proxies/cloverleaf3d-ref/data_module.mod
+src/ascent/fortran/*.mod
+src/examples/proxies/cloverleaf3d-ref/*.mod

@@ -129,7 +129,6 @@ SUBROUTINE clover_init_comms
   CALL mpi_group_incl(mpi_group_world, rank_split, sim_ranks, mpi_sim_group, err)
   CALL mpi_comm_create_group(MPI_COMM_WORLD, mpi_sim_group, 0, sim_comm, err)
 
-
   ! CALL MPI_COMM_SPLIT(MPI_COMM_WORLD,color,rank, sim_comm, err)
   WRITE(g_out,*)"size",size,"rank_split",rank_split," | rank",rank," | color",color 
   
