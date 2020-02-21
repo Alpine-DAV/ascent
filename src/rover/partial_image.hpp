@@ -45,9 +45,9 @@
 #include <vector>
 
 #include <vtkm/cont/ArrayHandle.h>
-#include <vtkh/rendering/AbsorptionPartial.hpp>
-#include <vtkh/rendering/EmissionPartial.hpp>
-#include <vtkh/rendering/VolumePartial.hpp>
+#include <vtkh/compositing/AbsorptionPartial.hpp>
+#include <vtkh/compositing/EmissionPartial.hpp>
+#include <vtkh/compositing/VolumePartial.hpp>
 
 namespace rover
 {
