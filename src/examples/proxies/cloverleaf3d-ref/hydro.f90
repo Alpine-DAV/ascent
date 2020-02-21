@@ -68,7 +68,8 @@ SUBROUTINE hydro
     step = step + 1
 
     ! only on sim nodes
-    IF(parallel%task.LT.parallel%max_task)THEN
+    ! IF(parallel%task.LT.parallel%max_task)THEN
+    IF(MPI_COMM_NULL.NE.parallel%sim_comm)THEN
       CALL timestep()
 
       CALL PdV(.TRUE.)
@@ -96,7 +97,11 @@ SUBROUTINE hydro
     ! CALL ascent_timer_stop(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
 
     IF(summary_frequency.NE.0) THEN
-      IF(MOD(step, summary_frequency).EQ.0) CALL field_summary()
+      IF(MOD(step, summary_frequency).EQ.0)THEN
+        IF(MPI_COMM_NULL.NE.parallel%sim_comm)THEN
+          CALL field_summary()
+        ENDIF
+      ENDIF
     ENDIF
     ! visualization
     IF(visit_frequency.NE.0) THEN
@@ -121,7 +126,9 @@ SUBROUTINE hydro
     IF(time+g_small.GT.end_time.OR.step.GE.end_step) THEN
 
       complete=.TRUE.
-      CALL field_summary()
+      IF(MPI_COMM_NULL.NE.parallel%sim_comm)THEN
+        CALL field_summary()
+      ENDIF
     ! IF(visit_frequency.NE.0) CALL visit()
 
       wall_clock=timer() - timerstart

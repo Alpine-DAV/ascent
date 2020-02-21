@@ -160,7 +160,8 @@ SUBROUTINE start
   fields(FIELD_YVEL1)=1
   fields(FIELD_ZVEL1)=1
 
-  IF(parallel%task.LT.parallel%max_task)THEN
+  ! IF(parallel%task.LT.parallel%max_task)THEN
+  IF(MPI_COMM_NULL.NE.parallel%sim_comm)THEN
     CALL update_halo(fields,2)
   ENDIF
 
@@ -169,7 +170,9 @@ SUBROUTINE start
     WRITE(g_out,*) 'Problem initialised and generated'
   ENDIF
 
-  CALL field_summary()
+  IF(MPI_COMM_NULL.NE.parallel%sim_comm)THEN
+    CALL field_summary()
+  ENDIF
 
   !IF(visit_frequency.NE.0) CALL visit()
 

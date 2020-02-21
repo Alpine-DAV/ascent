@@ -81,8 +81,8 @@ SUBROUTINE visit(my_ascent)
   name = 'clover'
   
   ! skip for vis nodes
-  IF(parallel%task.LT.parallel%max_task)THEN
-
+  ! IF(parallel%task.LT.parallel%max_task)THEN
+  IF(MPI_COMM_NULL.NE.parallel%sim_comm)THEN
     IF(profiler_on) kernel_time=timer()
     DO c=1,chunks_per_task
       CALL ideal_gas(c,.FALSE.)

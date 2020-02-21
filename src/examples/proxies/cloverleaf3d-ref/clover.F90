@@ -97,7 +97,9 @@ SUBROUTINE clover_init_comms
 
   IMPLICIT NONE
 
-  INTEGER :: err,rank,size,color,rank_split,sim_comm
+  INTEGER :: err,rank,size,color,rank_split,i
+  INTEGER :: mpi_group_world,mpi_sim_group,sim_comm
+  INTEGER, DIMENSION(:),ALLOCATABLE :: sim_ranks
 
   rank=0
   size=1
@@ -118,7 +120,17 @@ SUBROUTINE clover_init_comms
       color = 1
   ENDIF
 
-  CALL MPI_COMM_SPLIT(MPI_COMM_WORLD,color,rank, sim_comm, err)
+  ALLOCATE( sim_ranks(rank_split) )  
+  DO i =1,rank_split
+    sim_ranks(i) = i - 1
+  END DO
+
+  CALL mpi_comm_group (MPI_COMM_WORLD, mpi_group_world, err)
+  CALL mpi_group_incl(mpi_group_world, rank_split, sim_ranks, mpi_sim_group, err)
+  CALL mpi_comm_create_group(MPI_COMM_WORLD, mpi_sim_group, 0, sim_comm, err)
+
+
+  ! CALL MPI_COMM_SPLIT(MPI_COMM_WORLD,color,rank, sim_comm, err)
   WRITE(g_out,*)"size",size,"rank_split",rank_split," | rank",rank," | color",color 
   
   parallel%parallel=.TRUE.
