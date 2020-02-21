@@ -98,8 +98,8 @@
 #include <dray/io/blueprint_reader.hpp>
 
 #include <vtkh/vtkh.hpp>
-#include <vtkh/rendering/Compositor.hpp>
-#include <vtkh/rendering/PartialCompositor.hpp>
+#include <vtkh/compositing/Compositor.hpp>
+#include <vtkh/compositing/PartialCompositor.hpp>
 
 using namespace conduit;
 using namespace std;
