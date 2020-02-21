@@ -28,12 +28,12 @@ stages:
           # run our sanity check script
           #######################################
           git fetch
-          python scripts/ci/check_blt_time_travel.py 
+          python scripts/ci/check_blt_time_travel.py
         displayName: 'BLT Time Travel Check'
 
 # main checks
 - stage: Main
-  jobs:  
+  jobs:
   ###############################################################################
   # Ubuntu build and test, using spack to build tpls
   ###############################################################################
@@ -136,8 +136,8 @@ stages:
            # vtkh
            if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
            # mfem
-           if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem"; fi
-           if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem"; fi
+           if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem+dray"; fi
+           if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem+dray"; fi
            # babelflow
            if [ $ENABLE_BABELFLOW  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+babelflow"; fi
            # python
@@ -329,8 +329,8 @@ stages:
            # vtkh
            if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
            # mfem
-           if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem"; fi
-           if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem"; fi
+           if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem+dray"; fi
+           if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem+dray"; fi
            # babelflow
            if [ $ENABLE_BABELFLOW  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+babelflow"; fi
            # python
@@ -670,7 +670,7 @@ stages:
 
 
 ###############################################################################
-# disable b/c macos recipie needs more work 
+# disable b/c macos recipie needs more work
 ###############################################################################
 
 ###############################################################################

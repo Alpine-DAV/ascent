@@ -621,7 +621,7 @@ DRayPseudocolor::verify_params(const conduit::Node &params,
     // filter knobs
     valid_paths.push_back("draw_mesh");
     valid_paths.push_back("line_thickness");
-    res &= check_string("line_thickness",params, info, false);
+    res &= check_numeric("line_thickness",params, info, false);
     res &= check_string("draw_mesh",params, info, false);
 
     ignore_paths.push_back("camera");
@@ -680,7 +680,7 @@ DRayPseudocolor::execute()
     bool draw_mesh = false;
     if(params().has_path("draw_mesh"))
     {
-      if(params()["draw_mesh"].as_string() == "on")
+      if(params()["draw_mesh"].as_string() == "true")
       {
         draw_mesh = true;
       }
@@ -861,13 +861,6 @@ DRay3Slice::execute()
     std::vector<dray::Array<dray::Vec<dray::float32,4>>> color_buffers;
     std::vector<dray::Array<dray::float32>> depth_buffers;
 
-    dray::PointLight plight;
-    plight.m_pos = { 1.2f, -0.15f, 0.4f };
-    plight.m_amb = { 1.0f, 1.0f, 1.f };
-    plight.m_diff = { 0.5f, 0.5f, 0.5f };
-    plight.m_spec = { 0.0f, 0.0f, 0.0f };
-    plight.m_spec_pow = 90.0;
-
     using Vec3f = dray::Vec<float,3>;
     Vec3f x_normal({1.f, 0.f, 0.f});
     Vec3f y_normal({0.f, 1.f, 0.f});
@@ -908,7 +901,6 @@ DRay3Slice::execute()
       renderer.add(slicer_x);
       renderer.add(slicer_y);
       renderer.add(slicer_z);
-      renderer.add_light(plight);
 
       dray::Framebuffer fb = renderer.render(camera);
 
