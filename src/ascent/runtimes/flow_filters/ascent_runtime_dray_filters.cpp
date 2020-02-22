@@ -249,15 +249,20 @@ parse_camera(const conduit::Node camera_node, dray::Camera &camera)
   // this is an offset from the current azimuth
   if(camera_node.has_child("azimuth"))
   {
-      vtkm::Float64 azimuth = camera_node["azimuth"].to_float64();
+      double azimuth = camera_node["azimuth"].to_float64();
       camera.azimuth(azimuth);
   }
   if(camera_node.has_child("elevation"))
   {
-      vtkm::Float64 elevation = camera_node["elevation"].to_float64();
+      double elevation = camera_node["elevation"].to_float64();
       camera.elevate(elevation);
   }
 
+  if(camera_node.has_child("zoom"))
+  {
+      float zoom = camera_node["zoom"].to_float32();
+      camera.set_zoom(zoom);
+  }
   //
   // With a new potential camera position. We need to reset the
   // clipping plane as not to cut out part of the data set
