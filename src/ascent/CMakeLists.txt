@@ -268,7 +268,7 @@ if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs openmp)
 endif()
 
-if(DRAY_FOUND)
+if(DRAY_FOUND AND VTKM_FOUND)
     list(APPEND ascent_thirdparty_libs dray)
 endif()
 

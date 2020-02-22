@@ -69,15 +69,19 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_VTKH_ENABLED @VTKH_FOUND@)
     set(ASCENT_VTKH_DIR "@VTKH_DIR@")
     set(ASCENT_VTKM_DIR "@VTKM_DIR@")
-    
+
     # advertise if mfem support is enabled
     set(ASCENT_MFEM_ENABLED @MFEM_FOUND@)
     set(ASCENT_MFEM_DIR "@MFEM_DIR@")
 
+    # advertise if devil ray support is enabled
+    set(ASCENT_DRAY_ENABLED @DRAY_FOUND@)
+    set(ASCENT_DRAY_DIR "@DRAY_DIR@")
+
     # advertise if python support is enabled
     set(ASCENT_PYTHON_ENABLED @PYTHON_FOUND@)
     set(ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
-    
+
     set(ASCENT_SERIAL_ENABLED @ENABLE_SERIAL@)
     set(ASCENT_MPI_ENABLED @ENABLE_MPI@)
 
@@ -92,7 +96,7 @@ if(NOT ASCENT_FOUND)
 
     # finish setup
     include("${ASCENT_CMAKE_CONFIG_DIR}/ascent_setup_targets.cmake")
-    
+
     set(ASCENT_FOUND TRUE)
 
 endif()
