@@ -741,6 +741,8 @@ DRayPseudocolor::execute()
 
     if(vtkh::GetMPIRank() == 0)
     {
+      const float bg_color[4] = {1.f, 1.f, 1.f, 1.f};
+      result.CompositeBackground(bg_color);
       PNGEncoder encoder;
       encoder.Encode(&result.m_pixels[0], camera.get_width(), camera.get_height());
       encoder.Save(image_name + ".png");
@@ -927,10 +929,13 @@ DRay3Slice::execute()
                           camera.get_width(),
                           camera.get_height());
     }
+
     vtkh::Image result = compositor.Composite();
 
     if(vtkh::GetMPIRank() == 0)
     {
+      const float bg_color[4] = {1.f, 1.f, 1.f, 1.f};
+      result.CompositeBackground(bg_color);
       PNGEncoder encoder;
       encoder.Encode(&result.m_pixels[0], camera.get_width(), camera.get_height());
       encoder.Save(image_name + ".png");
@@ -1111,9 +1116,10 @@ DRayVolume::execute()
 #ifdef ASCENT_MPI_ENABLED
     compositor.set_comm_handle(comm_id);
 #endif
-    //compositor.set_background(m_background);
     compositor.composite(c_partials, result);
-    dray::Framebuffer fb = detail::partials_to_framebuffer(result, camera.get_width(), camera.get_height());
+    dray::Framebuffer fb = detail::partials_to_framebuffer(result,
+                                                           camera.get_width(),
+                                                           camera.get_height());
     fb.composite_background();
     fb.save(image_name);
 }

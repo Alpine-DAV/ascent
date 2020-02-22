@@ -92,6 +92,13 @@ if(VTKH_DIR)
                    PATHS ${VTKH_DIR}/lib/)
 endif()
 
+###############################################################################
+# Setup Devil Ray
+###############################################################################
+if(NOT DRAY_DIR)
+  set(DRAY_DIR ${ASCENT_DRAY_DIR})
+endif()
+
 if(DRAY_DIR)
   if(NOT EXISTS ${DRAY_DIR}/lib/cmake/DRayConfig.cmake)
     MESSAGE(FATAL_ERROR "Could not find Devil Ray CMake include file (${DRAY_DIR}/lib/cmake/DRayConfig.cmake)")
