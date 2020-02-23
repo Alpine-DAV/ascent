@@ -137,9 +137,20 @@ class Ascent(Package, CudaPackage):
 
     depends_on("adios", when="+adios")
 
+    # devil ray variants wit mpi
+    # we have to specify both because mfem makes us
     depends_on("dray+mpi~test~utils+shared+cuda",        when="+dray+mpi+cuda+shared")
     depends_on("dray+mpi~test~utils+shared+openmp",      when="+dray+mpi+openmp+shared")
     depends_on("dray+mpi~test~utils+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
+
+    depends_on("dray+mpi~test~utils~shared+cuda",        when="+dray+mpi+cuda~shared")
+    depends_on("dray+mpi~test~utils~shared+openmp",      when="+dray+mpi+openmp~shared")
+    depends_on("dray+mpi~test~utils~shared~openmp~cuda", when="+dray+mpi~openmp~cuda~shared")
+
+    # devil ray variants without mpi
+    depends_on("dray~mpi~test~utils+shared+cuda",        when="+dray~mpi+cuda+shared")
+    depends_on("dray~mpi~test~utils+shared+openmp",      when="+dray~mpi+openmp+shared")
+    depends_on("dray~mpi~test~utils+shared~openmp~cuda", when="+dray~mpi~openmp~cuda+shared")
 
     depends_on("dray~mpi~test~utils~shared+cuda",        when="+dray~mpi+cuda~shared")
     depends_on("dray~mpi~test~utils~shared+openmp",      when="+dray~mpi+openmp~shared")

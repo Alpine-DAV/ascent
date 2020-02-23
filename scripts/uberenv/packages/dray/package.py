@@ -51,19 +51,19 @@ class Dray(Package):
     depends_on("conduit~shared", when="~shared")
     depends_on("conduit+shared", when="+shared")
 
-    depends_on("raja@0.9.0+cuda~openmp", when="+cuda~openmp")
-    depends_on("raja@0.9.0+cuda+openmp", when="+cuda+openmp")
-    depends_on("raja@0.9.0+cuda~openmp~shared", when="+dray+cuda~openmp~shared")
-    depends_on("raja@0.9.0+cuda+openmp~shared", when="+dray+cuda+openmp~shared")
+    depends_on("raja@0.9.0+cuda~openmp+shared", when="+cuda~openmp+shared")
+    depends_on("raja@0.9.0+cuda+openmp+shared", when="+cuda+openmp+shared")
+    depends_on("raja@0.9.0+cuda~openmp~shared", when="+cuda~openmp~shared")
+    depends_on("raja@0.9.0+cuda+openmp~shared", when="+cuda+openmp~shared")
 
-    depends_on("raja@0.9.0~cuda~openmp", when="~cuda~openmp")
-    depends_on("raja@0.9.0~cuda+openmp", when="~cuda+openmp")
+    depends_on("raja@0.9.0~cuda~openmp+shared", when="~cuda~openmp+shared")
+    depends_on("raja@0.9.0~cuda+openmp+shared", when="~cuda+openmp+shared")
     depends_on("raja@0.9.0~cuda~openmp~shared", when="~cuda~openmp~shared")
     depends_on("raja@0.9.0~cuda+openmp~shared", when="~cuda+openmp~shared")
 
-    depends_on("umpire@1.0.0+cuda", when="+cuda")
+    depends_on("umpire@1.0.0+cuda+shared", when="+cuda+shared")
     depends_on("umpire@1.0.0+cuda~shared", when="+cuda~shared")
-    depends_on("umpire@1.0.0~cuda", when="~cuda")
+    depends_on("umpire@1.0.0~cuda+shared", when="~cuda+shared")
     depends_on("umpire@1.0.0~cuda~shared", when="~cuda~shared")
 
     depends_on("mfem+shared+conduit~threadsafe", when="+shared")
