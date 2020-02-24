@@ -140,7 +140,7 @@ hola_mpi_comm_map(const conduit::Node &data,
 
     res.reset();
 
-    // maps from src and dest index spack to world ranks
+    // maps from src and dest index to world ranks
 
     res["src_to_world"]  = DataType::int32(src_size);
     res["dest_to_world"] = DataType::int32(dest_size);

@@ -28,3 +28,4 @@ clover.out
 .vscode/launch.json
 src/ascent/fortran/*.mod
 src/examples/proxies/cloverleaf3d-ref/*.mod
+src/ascent/fortran/ascent.mod

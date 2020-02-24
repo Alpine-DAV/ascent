@@ -209,30 +209,6 @@ bool decide_intransit(const std::vector<float> &times,
     }
 }
 
-//-----------------------------------------------------------------------------
-void create_comm_maps(Node &my_maps, const int total_size, const int src_size)
-{
-    my_maps["wts"] = DataType::int32(total_size);
-    my_maps["wtd"] = DataType::int32(total_size);
-
-    int32_array world_to_src  = my_maps["wts"].value();
-    int32_array world_to_dest = my_maps["wtd"].value();
-
-    for(int i=0; i < total_size; i++)
-    {
-        if(i < src_size)
-        {
-            world_to_dest[i] = -1;
-            world_to_src[i]  = i;
-        }
-        else
-        {
-            world_to_dest[i] = i - src_size;
-            world_to_src[i] = -1;
-        }
-    }
-}
-
 /**
  * 
  */
@@ -288,8 +264,9 @@ std::vector<int> sort_ranks(const std::vector<float> &sim_times,
 void splitAndRender(const MPI_Comm mpi_comm_world,
                     const int world_size,
                     const int world_rank,
+                    const MPI_Comm sim_comm,
                     const int sim_node_count,
-                    const std::vector<double> &render_times,
+                    const std::vector<double> &my_probing_times,
                     conduit::Node &data,
                     const double vis_budget = 0.1)
 {
@@ -297,9 +274,12 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     assert(sim_node_count > 0 && sim_node_count <= world_size);
 
     int is_intransit = 0;
-    int is_rendering = 1;
+    int is_rendering = 0;
     int is_sending = 0;
     bool is_vis_node = false;
+
+    int my_src_rank = -1;
+    int my_dest_rank = -1;
 
     int vis_node_count = world_size - sim_node_count;
     float my_avg_probing_time = 0.f;
@@ -307,82 +287,122 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     // nodes with the highest rank are our vis nodes
     if (world_rank >= sim_node_count) 
     {
-        // vis nodes are always in the in-transit comm
-        is_intransit = 1;
-        // vis nodes only receive and render data
         is_vis_node = true;
+        my_dest_rank = world_rank - sim_node_count;
     }
+    // otherwise we are a sim nodes
     else if (world_size > 1)
     {
-        assert(render_times.size() > 0);
-        my_avg_probing_time = float(std::accumulate(render_times.begin(), render_times.end(), 0.0) 
-                     / render_times.size());
-        std::cout << "~~~ " << my_avg_probing_time << " ms mean frame time rank " 
+        assert(my_probing_times.size() > 0);
+        my_avg_probing_time = float(std::accumulate(my_probing_times.begin(), 
+                                                    my_probing_times.end(), 0.0) 
+                              / my_probing_times.size());
+        std::cout << "~~~ " << my_avg_probing_time 
+                  << " ms mean frame time rank " 
                   << world_rank << std::endl;
     }
 
 #ifdef ASCENT_MPI_ENABLED
-    // gather all simulation time extimates
+    // gather all simulation time estimates
     double my_sim_time = data["state/sim_time"].to_double();
-    std::cout << "~~~ " << my_sim_time << " sim time rank " << world_rank << std::endl;
+    std::cout << "~~~ " << my_sim_time << " sim time rank " 
+              << world_rank << std::endl;
     std::vector<float> sim_times(world_size);
     MPI_Allgather(&my_sim_time, 1, MPI_FLOAT, 
                   sim_times.data(), 1, MPI_FLOAT, mpi_comm_world);
     // gather all visualization time estimates
-    std::vector<float> probing_times(world_size);
+    std::vector<float> probing_times(world_size, 0.f);
     MPI_Allgather(&my_avg_probing_time, 1, MPI_FLOAT, 
                   probing_times.data(), 1, MPI_FLOAT, mpi_comm_world);
 
-    // job assignment
+    // sort the ranks accroding to sim+vis time estimate
     std::vector<int> rank_order = sort_ranks(sim_times, probing_times);
-    std::vector<int> intransit_map = job_assignment(sim_times, probing_times, rank_order, vis_node_count);
+    // generate mapping between sending and receiving nodes
+    std::vector<int> intransit_map = job_assignment(sim_times, probing_times,
+                                                    rank_order, vis_node_count);
+    
+    std::vector<int> world_to_src(intransit_map.size(), -1); 
+    std::vector<int> dest_counts(vis_node_count);
+    std::vector<int> source_ranks;
+    std::vector<int> render_ranks;
+    int src_count = 0;
+    for (int i = 0; i < intransit_map.size(); i++)
+    {
+        if (intransit_map[i] >= 0)
+        {
+            dest_counts[intransit_map[i]]++;
+            if (i == world_rank)
+            {
+                // we are sending -> calc our source rank
+                my_src_rank = src_count;
+            }
+            else if (intransit_map[i] == my_dest_rank)
+            {
+                // we are a vis node and someone is sending to us
+                is_intransit = 1;
+                is_rendering = 1;
+            }
+            // add source to map
+            world_to_src[i] = src_count;
+            ++src_count;
+            source_ranks.push_back(i);
+        }
+        else
+        {
+            render_ranks.push_back(i);
+        }
+    }
+
+    // total number of receiveing nodes
+    int dest_count = 0;
+    for (auto &a : dest_counts)
+        dest_count += (a > 0) ? 1 : 0;
+
+    int intransit_size = src_count + dest_count;
+    while (vis_node_count > dest_count)
+    {
+        render_ranks.pop_back();
+        --vis_node_count;
+    }
 
     // Debug OUT: output in-transit map
     // std::cout << "=== ";
-    // for (auto &a : intransit_map)
+    // for (auto &a : render_ranks)
     //     std::cout << a << " ";
     // std::cout << std::endl;
+
+    std::vector<int> intransit_ranks(source_ranks);
+    for (size_t i = sim_node_count; i < world_size; i++)
+        intransit_ranks.push_back(i);
 
     // map contains the in transit assignment
     if (intransit_map[world_rank] >= 0)
     {
-        // all sending in-transit nodes
+        // this node is sending in-transit
         is_intransit = 1;
-        is_rendering = 0;
         is_sending = 1;
     }
-
-    // TODO: change comm_split to comm_create_group
-    // split the current comm into in-line and in-transit nodes
-    MPI_Comm intransit_comm;
-    MPI_Comm_split(mpi_comm_world, is_intransit, 0, &intransit_comm);
-    int intransit_size = 0;
-    // NOTE: implicit barrier (collective operation)? -> global sync anyway?
-    MPI_Comm_size(intransit_comm, &intransit_size);
-
-    // Node comm_maps;
-    // if (is_intransit)
-    //     create_comm_maps(&comm_maps, probing_times);
-
-    int sending_node_count = intransit_size - vis_node_count;
-
-    if (is_vis_node)
+    else    
     {
-        int my_vis_rank = world_rank - sim_node_count;
-        // if less sim nodes than vis nodes sends data
-        // vis nodes skip rendering accordingly
-        if (sending_node_count <= my_vis_rank)
-        {
-            is_rendering = 0;
-            std::cout << "~~~~rank " << world_rank << ": idles." << std::endl;
-            // FIXME: deadlock if #vis_nodes > #sending_nodes > 0
-        }
+        // this node renders in line
+        is_rendering = 1;
     }
 
+    // create in-transit group of nodes
+    MPI_Group world_group;
+    MPI_Comm_group(mpi_comm_world, &world_group);
+    MPI_Group intransit_group;
+    MPI_Group_incl(world_group, intransit_size, intransit_ranks.data(), &intransit_group);
+    MPI_Comm intransit_comm;
+    MPI_Comm_create_group(mpi_comm_world, intransit_group, 0, &intransit_comm);
+    // MPI_Comm_split(mpi_comm_world, is_intransit, 0, &intransit_comm);
+
     // Hola setup
-    MPI_Comm hola_comm;
-    MPI_Comm_split(intransit_comm, is_sending, 0, &hola_comm);
+    // MPI_Comm hola_comm;
+    // MPI_Comm_split(intransit_comm, is_sending, 0, &hola_comm);
     // split world comm into rendering and sending nodes
+    // MPI_Group render_group;
+    // MPI_Group_incl(world_group, render_ranks.size(), render_ranks.data(), &render_group);
     MPI_Comm render_comm;
     MPI_Comm_split(mpi_comm_world, is_rendering, 0, &render_comm);
 
@@ -390,15 +410,26 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     {
         if (is_vis_node) // render on vis node
         {
-            std::cout << "~~~~rank " << world_rank << ": receives extract(s)." << std::endl;
+            std::cout << "~~~~rank " << world_rank << " / " << my_dest_rank
+                      << ": receives extract(s) from " ;
             // use hola to receive the extract data
-            Node hola_opts;
-            hola_opts["mpi_comm"] = MPI_Comm_c2f(intransit_comm);
-            hola_opts["rank_split"] = sending_node_count;
-            // TODO: add custom comm map
-            // hola_opts["comm_maps"] = comm_maps;
+            // conduit::Node hola_opts;
+            // hola_opts["mpi_comm"] = MPI_Comm_c2f(intransit_comm);
+            // hola_opts["rank_split"] = src_count;
+            // ascent::hola("hola_mpi", hola_opts, data);
 
-            ascent::hola("hola_mpi", hola_opts, data);
+            // receive data from corresponding sources
+            for (int i = 0; i < intransit_map.size(); ++i)
+            {
+                if (intransit_map[i] == my_dest_rank)
+                {   
+                    std::cout << i << " ";
+                    conduit::Node &n_curr = data.append();
+                    int32 src_rank = static_cast<int32>(world_to_src[i]);
+                    relay::mpi::recv_using_schema(n_curr,src_rank,0,intransit_comm);
+                }
+            }
+            std::cout << std::endl;
         }
         else // render local (inline)
         {
@@ -428,31 +459,40 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     }
     else if (!is_vis_node) // all sending nodes: send extract to vis nodes using Hola
     {
-        std::cout << "~~~~rank " << world_rank << ": sends extract." << std::endl;
+        // destination as intransit rank
+        int destination = intransit_map[world_rank] + src_count;
+        std::cout << "~~~~rank " << world_rank << ": sends extract to " 
+                  << destination << std::endl;
+
+        relay::mpi::send_using_schema(data, destination, 0, intransit_comm);
+
         // add the extract
-        conduit::Node actions;
-        conduit::Node &add_extract = actions.append();
-        add_extract["action"] = "add_extracts";
-        add_extract["extracts/e1/type"] = "hola_mpi";
-        add_extract["extracts/e1/params/mpi_comm"] = MPI_Comm_c2f(intransit_comm);
-        add_extract["extracts/e1/params/rank_split"] = sending_node_count;
+        // conduit::Node actions;
+        // conduit::Node &add_extract = actions.append();
+        // add_extract["action"] = "add_extracts";
+        // add_extract["extracts/e1/type"] = "hola_mpi";
+        // add_extract["extracts/e1/params/mpi_comm"] = MPI_Comm_c2f(intransit_comm);
+        // add_extract["extracts/e1/params/rank_split"] = sending_node_count;
 
-        Node ascent_opts;
-        ascent_opts["mpi_comm"] = MPI_Comm_c2f(hola_comm);
+        // Node ascent_opts;
+        // ascent_opts["mpi_comm"] = MPI_Comm_c2f(hola_comm);
 
-        // Send an extract of the data with Ascent
-        Ascent ascent_send;
-        ascent_send.open(ascent_opts);
-        ascent_send.publish(data);
-        ascent_send.execute(actions); // extract
-        ascent_send.close();
+        // // Send an extract of the data with Ascent
+        // Ascent ascent_send;
+        // ascent_send.open(ascent_opts);
+        // ascent_send.publish(data);
+        // ascent_send.execute(actions); // extract
+        // ascent_send.close();
         // std::cout << "----rank " << world_rank << ": ascent_send." << std::endl;
     }
 
-    // clean up the split comms
+    // clean up the additional comms and groups
+    MPI_Group_free(&world_group);
+    // MPI_Group_free(&render_group);
     MPI_Comm_free(&render_comm);
-    MPI_Comm_free(&hola_comm);
-    MPI_Comm_free(&intransit_comm);
+    // MPI_Comm_free(&hola_comm);
+    MPI_Group_free(&intransit_group);
+    // MPI_Comm_free(&intransit_comm); // Fatal error in PMPI_Comm_free: Invalid communicator
 #endif // ASCENT_MPI_ENABLED
 }
 
@@ -482,10 +522,9 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     int world_rank = 0;
     int world_size = 1;
 #if ASCENT_MPI_ENABLED
-    // split comm into sim and vis nodes
-    MPI_Comm comm_world = MPI_Comm_f2c(m_runtime_options["mpi_comm"].to_int());
-    MPI_Comm_rank(comm_world, &world_rank);
-    MPI_Comm_size(comm_world, &world_size);
+    MPI_Comm mpi_comm_world = MPI_Comm_f2c(m_runtime_options["mpi_comm"].to_int());
+    MPI_Comm_rank(mpi_comm_world, &world_rank);
+    MPI_Comm_size(mpi_comm_world, &world_size);
 #endif // ASCENT_MPI_ENABLED
 
     // copy options and actions for probing run
@@ -573,8 +612,15 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     if (world_rank >= rank_split)
         color = 1;
 
+    // construct simulation comm
+    MPI_Group world_group;
+    MPI_Comm_group(mpi_comm_world, &world_group);
+    MPI_Group sim_group;
+    std::vector<int> sim_ranks(rank_split);
+    std::iota(sim_ranks.begin(), sim_ranks.end(), 0);
+    MPI_Group_incl(world_group, rank_split, sim_ranks.data(), &sim_group);
     MPI_Comm sim_comm;
-    MPI_Comm_split(comm_world, color, 0, &sim_comm);
+    MPI_Comm_create_group(mpi_comm_world, sim_group, 0, &sim_comm);
     ascent_opt["mpi_comm"] = MPI_Comm_c2f(sim_comm);
 #endif // ASCENT_MPI_ENABLED
 
@@ -604,10 +650,14 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 
 #if ASCENT_MPI_ENABLED
     // split comm into sim and vis nodes and render on the respective nodes
-    splitAndRender(comm_world, world_size, world_rank, rank_split, 
+    splitAndRender(mpi_comm_world, world_size, world_rank, sim_comm, rank_split, 
                    render_times, m_data, vis_budget);
 
     log_time(start, world_rank);
+
+    MPI_Group_free(&world_group);
+    MPI_Group_free(&sim_group);
+    // MPI_Comm_free(&sim_comm); // Fatal error in PMPI_Comm_free: Invalid communicator
 #endif
 }
 

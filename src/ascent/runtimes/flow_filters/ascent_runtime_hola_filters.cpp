@@ -152,21 +152,21 @@ HolaMPIExtract::execute()
 
     // assumes multi domain input
 
-    int rank = -1;
-    int ranks = 0;
-#ifdef ASCENT_MPI_ENABLED
-    MPI_Comm mpi_comm = MPI_Comm_f2c(params()["mpi_comm"].to_int64());
-    MPI_Comm_size(mpi_comm, &ranks);
-    MPI_Comm_rank(mpi_comm, &rank);
-#endif
+    // int rank = -1;
+    // int ranks = 0;
+// #ifdef ASCENT_MPI_ENABLED
+    // MPI_Comm mpi_comm = MPI_Comm_f2c(params()["mpi_comm"].to_int64());
+    // MPI_Comm_size(mpi_comm, &ranks);
+    // MPI_Comm_rank(mpi_comm, &rank);
 
-    // DEBUG out
-    if (params()["rank_split"].to_int64() < 1)
-    {
-        std::cout << "~~~ HOLA: rank " << rank << " skipping (renders inline)."
-                  << std::endl;
-        return;
-    }
+    // // DEBUG out
+    // if (params()["rank_split"].to_int64() < 1)
+    // {
+    //     std::cout << "~~~ HOLA: rank " << rank << " skipping (renders inline)."
+    //               << std::endl;
+    //     return;
+    // }
+// #endif
 
     hola_mpi(params(),*n_input);
 }
