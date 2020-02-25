@@ -268,6 +268,28 @@ std::vector<int> sort_ranks(const std::vector<float> &sim_estimates,
 }
 
 //-----------------------------------------------------------------------------
+std::string get_timing_file_name(const int value, const int precision)
+{
+    std::ostringstream oss;
+    oss << "timings/vis_";
+    oss << std::setw(precision) << std::setfill('0') << value;
+    oss << ".txt";
+    return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void log_time(std::chrono::time_point<std::chrono::system_clock> start, int rank)
+{
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    // std::cout << "Elapsed time: " << elapsed.count()
+    //           << "s rank " << rank << std::endl;
+    std::ofstream out(get_timing_file_name(rank, 5), std::ios_base::app);
+    out << elapsed.count() << std::endl;
+    out.close();
+}
+
+//-----------------------------------------------------------------------------
 void splitAndRender(const MPI_Comm mpi_comm_world,
                     const int world_size,
                     const int world_rank,
@@ -327,6 +349,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     std::vector<float> vis_estimates(world_size, 0.f);
     MPI_Allgather(&my_vis_estimate, 1, MPI_FLOAT, 
                   vis_estimates.data(), 1, MPI_FLOAT, mpi_comm_world);
+
+    auto start = std::chrono::system_clock::now();
 
     // sort the ranks accroding to sim+vis time estimate
     std::vector<int> rank_order = sort_ranks(sim_estimates, vis_estimates);
@@ -462,7 +486,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             Ascent ascent_render;
             ascent_render.open(ascent_opts);
             ascent_render.publish(data);
-            ascent_render.execute(blank_actions);
+            ascent_render.execute(blank_actions);   // FIXME: check for sync
             ascent_render.close();
         }
         else
@@ -507,27 +531,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     // MPI_Comm_free(&hola_comm);
     MPI_Group_free(&intransit_group);
     // MPI_Comm_free(&intransit_comm); // Fatal error in PMPI_Comm_free: Invalid communicator
+
+    log_time(start, world_rank);
 #endif // ASCENT_MPI_ENABLED
-}
-
-std::string get_timing_file_name(const int value, const int precision)
-{
-    std::ostringstream oss;
-    oss << "timings/ascent_";
-    oss << std::setw(precision) << std::setfill('0') << value;
-    oss << ".txt";
-    return oss.str();
-}
-
-void log_time(std::chrono::time_point<std::chrono::system_clock> start, int rank)
-{
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    // std::cout << "Elapsed time: " << elapsed.count()
-    //           << "s rank " << rank << std::endl;
-    std::ofstream out(get_timing_file_name(rank, 5), std::ios_base::app);
-    out << elapsed.count() << std::endl;
-    out.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -617,8 +623,6 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         }
     }
 
-    auto start = std::chrono::system_clock::now();
-
     int rank_split = 0;
 #if ASCENT_MPI_ENABLED
     rank_split = int(std::round(world_size * node_split));
@@ -666,8 +670,6 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     // split comm into sim and vis nodes and render on the respective nodes
     splitAndRender(mpi_comm_world, world_size, world_rank, sim_comm, rank_split, 
                    render_times, phi*theta, m_data, vis_budget);
-
-    log_time(start, world_rank);
 
     MPI_Group_free(&world_group);
     MPI_Group_free(&sim_group);
