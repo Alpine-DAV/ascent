@@ -278,14 +278,16 @@ std::string get_timing_file_name(const int value, const int precision)
 }
 
 //-----------------------------------------------------------------------------
-void log_time(std::chrono::time_point<std::chrono::system_clock> start, int rank)
+void log_time(std::chrono::time_point<std::chrono::system_clock> start, 
+              const std::string &description,
+              const int rank)
 {
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     // std::cout << "Elapsed time: " << elapsed.count()
     //           << "s rank " << rank << std::endl;
     std::ofstream out(get_timing_file_name(rank, 5), std::ios_base::app);
-    out << elapsed.count() << std::endl;
+    out << description << elapsed.count() << std::endl;
     out.close();
 }
 
@@ -439,12 +441,14 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     // MPI_Comm hola_comm;
     // MPI_Comm_split(intransit_comm, is_sending, 0, &hola_comm);
     // split world comm into rendering and sending nodes
-    // MPI_Group render_group;
-    // MPI_Group_incl(world_group, render_ranks.size(), render_ranks.data(), &render_group);
+    MPI_Group render_group;
+    MPI_Group_incl(world_group, render_ranks.size(), render_ranks.data(), &render_group);
     MPI_Comm render_comm;
-    MPI_Comm_split(mpi_comm_world, is_rendering, 0, &render_comm);
+    MPI_Comm_create_group(mpi_comm_world, render_group, 0, &render_comm);
 
-    if (is_rendering) // all rendering nodes
+    // MPI_Comm_split(mpi_comm_world, is_rendering, 0, &render_comm); // TODO: sync???
+
+    if (is_rendering && MPI_COMM_NULL != render_comm) // all rendering nodes
     {
         if (is_vis_node) // render on vis node
         {
@@ -485,8 +489,10 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
             Ascent ascent_render;
             ascent_render.open(ascent_opts);
-            ascent_render.publish(data);
-            ascent_render.execute(blank_actions);   // FIXME: check for sync
+            ascent_render.publish(data);    // sync happens here
+
+            log_time(start, "before render ascent execute ", world_rank);
+            ascent_render.execute(blank_actions);   // TODO: check for sync
             ascent_render.close();
         }
         else
@@ -495,12 +501,12 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                       << std::endl;
         }
     }
-    else if (!is_vis_node) // all sending nodes: send extract to vis nodes using Hola
+    else if (!is_vis_node) // all sending nodes: send extract to vis nodes
     {
         // destination as intransit rank
         int destination = intransit_map[world_rank] + src_count;
         std::cout << "~~~~rank " << world_rank << ": sends extract to " 
-                  << destination << std::endl;
+                  <<  intransit_map[world_rank] + sim_node_count << std::endl;
 
         relay::mpi::send_using_schema(data, destination, 0, intransit_comm);
 
@@ -526,13 +532,13 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
     // clean up the additional comms and groups
     MPI_Group_free(&world_group);
-    // MPI_Group_free(&render_group);
-    MPI_Comm_free(&render_comm);
+    MPI_Group_free(&render_group);
+    // MPI_Comm_free(&render_comm);
     // MPI_Comm_free(&hola_comm);
     MPI_Group_free(&intransit_group);
     // MPI_Comm_free(&intransit_comm); // Fatal error in PMPI_Comm_free: Invalid communicator
 
-    log_time(start, world_rank);
+    log_time(start, "end splitAndRun ", world_rank);
 #endif // ASCENT_MPI_ENABLED
 }
 

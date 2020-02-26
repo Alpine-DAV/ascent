@@ -155,30 +155,6 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     ASCENT_ERROR("Missing Ascent::Open options missing MPI communicator (mpi_comm)");
   }
 
-  // // ~~~ split mpi comm and set as default 
-  // // we only need as many rendering threads as we have sim nodes
-  // //
-  // int size = 1;
-  // int world_rank = 0;
-  // MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
-  // MPI_Comm_rank(comm, &world_rank);
-
-  // MPI_Comm_size(comm, &size);
-  // int color = 0;
-  // // TODO: remove/replace hard coded factor here -> get from options
-  // int rank_split = int(size*0.75 + 0.5); // number of sim nodes: 3/4 * # nodes
-  // // vis node
-  // if (world_rank >= rank_split)
-  //   color = 1;
-  // MPI_Comm sim_vis_comm;
-  // MPI_Comm_split(comm, color, m_rank, &sim_vis_comm);
-
-  // int new_size = 0;
-  // MPI_Comm_size(sim_vis_comm, &new_size);
-  // // set new rank
-  // MPI_Comm_rank(sim_vis_comm, &m_rank);
-
-  // comm world
   flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
 #if defined(ASCENT_VTKM_ENABLED)
   vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
