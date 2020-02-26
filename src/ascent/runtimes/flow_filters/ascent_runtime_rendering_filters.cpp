@@ -319,8 +319,10 @@ vtkh::Render parse_render(const conduit::Node &render_node,
   {
     vtkm::rendering::Camera camera = render.GetCamera();
     parse_camera(render_node["camera"], camera);
+    camera.Print();
     render.SetCamera(camera);
   }
+  else
 
   if(render_node.has_path("annotations"))
   {
@@ -799,7 +801,6 @@ void
 DefaultRender::execute()
 {
 
-
     if(!input(0).check_type<vtkm::Bounds>())
     {
       ASCENT_ERROR("'a' input must be a vktm::Bounds * instance");
@@ -929,12 +930,35 @@ DefaultRender::execute()
         image_name = expand_family_name(image_name, cycle);
       }
 
-      vtkh::Render render = vtkh::MakeRender(1024,
-                                             1024,
-                                             *bounds,
-                                             v_domain_ids,
-                                             image_name);
+      //check for camera in registery
+      //
+      vtkh::Render render;
+      if(graph().workspace().registry().has_entry("camera"))
+      {
+	cout << "grabbing camera from registry" << endl;
+        vtkm::rendering::Camera *camera = graph().workspace().registry().fetch<vtkm::rendering::Camera>("camera");
 
+        /*render = vtkh::MakeRender(1024,
+                                  1024,
+                                  *camera,
+                                  data,
+                                  image_name);
+        */
+	render = vtkh::MakeRender(1024,
+                                  1024,
+                                  *bounds,
+                                  v_domain_ids,
+				  *camera,
+                                  image_name);
+      }
+      else
+      {  
+        render = vtkh::MakeRender(1024,
+                                  1024,
+                                  *bounds,
+                                  v_domain_ids,
+                                  image_name);
+      }
       renders->push_back(render);
     }
     set_output<std::vector<vtkh::Render>>(renders);

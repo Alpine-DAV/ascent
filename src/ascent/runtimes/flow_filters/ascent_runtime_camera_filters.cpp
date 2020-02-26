@@ -116,6 +116,1251 @@ using namespace flow;
 
 typedef vtkm::rendering::Camera vtkmCamera;
 
+//Camera Class Functions
+
+Matrix
+Camera::CameraTransform(void) {
+        bool print = false;
+	double* v3 = new double[3]; //camera position - focus
+	v3[0] = (position[0] - focus[0]);
+	v3[1] = (position[1] - focus[1]);
+	v3[2] = (position[2] - focus[2]);
+	normalize(v3);
+
+	double* v1 = new double[3]; //UP x (camera position - focus)
+	v1 = crossProduct(up, v3);
+	normalize(v1);
+
+	double* v2 = new double[3]; // (camera position - focus) x v1
+	v2 = crossProduct(v3, v1);
+	normalize(v2);
+
+	double* t = new double[3]; // (0,0,0) - camera position
+	t[0] = (0 - position[0]);
+	t[1] = (0 - position[1]);
+	t[2] = (0 - position[2]);
+
+
+	if (print){
+		cout << "position " << position[0] << " " << position[1] << " " << position[2] << endl;
+		cout << "focus " << focus[0] << " " << focus[1] << " " << focus[2] << endl;
+		cout << "up " << up[0] << " " << up[1] << " " << up[2] << endl;
+		cout << "v1 " << v1[0] << " " << v1[1] << " " << v1[2] << endl;
+		cout << "v2 " << v2[0] << " " << v2[1] << " " << v2[2] << endl;
+		cout << "v3 " << v3[0] << " " << v3[1] << " " << v3[2] << endl;
+		cout << "t " << t[0] << " " << t[1] << " " << t[2] << endl;
+	}
+
+
+
+
+/*
+| v1.x v2.x v3.x 0 |
+| v1.y v2.y v3.y 0 |
+| v1.z v2.z v3.z 0 |
+| v1*t v2*t v3*t 1 |
+*/
+	Matrix camera;
+
+	camera.A[0][0] = v1[0]; //v1.x
+	camera.A[0][1] = v2[0]; //v2.x
+	camera.A[0][2] = v3[0]; //v3.x
+	camera.A[0][3] = 0; //0
+	camera.A[1][0] = v1[1]; //v1.y
+	camera.A[1][1] = v2[1]; //v2.y
+	camera.A[1][2] = v3[1]; //v3.y
+	camera.A[1][3] = 0; //0
+	camera.A[2][0] = v1[2]; //v1.z
+	camera.A[2][1] = v2[2]; //v2.z
+	camera.A[2][2] = v3[2]; //v3.z
+	camera.A[2][3] = 0; //0
+	camera.A[3][0] = dotProduct(v1, t, 3); //v1 dot t
+	camera.A[3][1] = dotProduct(v2, t, 3); //v2 dot t
+	camera.A[3][2] = dotProduct(v3, t, 3); //v3 dot t
+	camera.A[3][3] = 1.0; //1
+
+	if(print){
+		cout << "camera" << endl;
+		camera.Print(cout);
+	}
+	delete[] v1;
+	delete[] v2;
+	delete[] v3;
+	delete[] t;
+	return camera;
+
+};
+
+Matrix
+Camera::ViewTransform(void) {
+
+        bool print = false;
+
+/*
+| cot(a/2)    0         0            0     |
+|    0     cot(a/2)     0            0     |
+|    0        0    (f+n)/(f-n)      -1     |
+|    0        0         0      (2fn)/(f-n) |
+*/
+    	Matrix view;
+	double c = (1.0/(tan(angle/2.0))); //cot(a/2) =    1
+				     //		   -----
+				     //		  tan(a/2)
+	double f = ((far + near)/(far - near));
+	double f2 = ((2*far*near)/(far - near));
+
+	view.A[0][0] = c;
+	view.A[0][1] = 0;
+	view.A[0][2] = 0;
+	view.A[0][3] = 0;
+	view.A[1][0] = 0;
+	view.A[1][1] = c;
+	view.A[1][2] = 0;
+	view.A[1][3] = 0;
+	view.A[2][0] = 0;
+	view.A[2][1] = 0;
+	view.A[2][2] = f;
+	view.A[2][3] = -1.0;
+	view.A[3][0] = 0;
+	view.A[3][1] = 0;
+	view.A[3][2] = f2;
+	view.A[3][3] = 0;
+	if (print){
+		cout << "view" << endl;
+		view.Print(cout);
+	}
+	return view;
+
+    };
+
+
+Matrix
+Camera::DeviceTransform() { //(double x, double y, double z){
+
+        bool print = false;
+	/*if (x > screen.width)
+		x = screen.width;
+	if (x < 0)
+		x = 0;
+
+	if (y > screen.height)
+		y = screen.height;
+	if (y < 0)
+		y = 0;
+	double x_, y_, z_;
+	x_ = (((screen.width)*(x+1))/2); //n*(x+1)/2
+	y_ = (((screen.height)*(y+1))/2); //m*(y+1)/2
+	z_ = z; //z
+	if (print){
+		cout << "x " << x << " x_ " << x_ << endl;
+		cout << " screen width " << screen.width << endl;
+	}*/
+
+/*
+| x' 0  0  0 |
+| 0  y' 0  0 |
+| 0  0  z' 0 |
+| 0  0  0  1 |
+*/
+	Matrix device;
+/*
+	device.A[0][0] = x_;
+	device.A[0][1] = 0;
+	device.A[0][2] = 0;
+	device.A[0][3] = 0;
+	device.A[1][0] = 0;
+	device.A[1][1] = y_;
+	device.A[1][2] = 0;
+	device.A[1][3] = 0;
+	device.A[2][0] = 0;
+	device.A[2][1] = 0;
+	device.A[2][2] = z_;
+	device.A[2][3] = 0;
+	device.A[3][0] = 0;
+	device.A[3][1] = 0;
+	device.A[3][2] = 0;
+	device.A[3][3] = 1;
+*/
+
+/*This is the matrix Andy posted on piazza*/
+
+	device.A[0][0] = (screen.width/2);
+	device.A[0][1] = 0;
+	device.A[0][2] = 0;
+	device.A[0][3] = 0;
+	device.A[1][0] = 0;
+	device.A[1][1] = (screen.height/2);
+	device.A[1][2] = 0;
+	device.A[1][3] = 0;
+	device.A[2][0] = 0;
+	device.A[2][1] = 0;
+	device.A[2][2] = 1;
+	device.A[2][3] = 0;
+	device.A[3][0] = (screen.width/2);
+	device.A[3][1] = (screen.height/2);
+	device.A[3][2] = 0;
+	device.A[3][3] = 1;
+
+
+	if(print){
+		cout << "device" << endl;
+		device.Print(cout);
+	}
+	return device;
+}
+
+
+//Edge Class Functions
+
+
+Edge::Edge (double x_1, double y_1, double z_1, double r_1, double g_1, double b_1, double* norm1, double s1, double x_2, double y_2, double z_2, double r_2, double g_2, double b_2, double* norm2, double s2){
+		x1 = x_1;
+		x2 = x_2;
+		y1 = y_1;
+		y2 = y_2;
+		z1 = z_1;
+		z2 = z_2;
+		r1 = r_1;
+		r2 = r_2;
+		g1 = g_1;
+		g2 = g_2;
+		b1 = b_1;
+		b2 = b_2;
+		normal1 = norm1;
+		normal2 = norm2;
+		shade1  = s1;
+		shade2  = s2;
+
+		// find relationship of y1 and y2 for min and max bounds of the line
+		if (y1 < y2)
+			minY = y1;
+		else
+			minY = y2;
+		if (y1 > y2)
+			maxY = y1;
+		else
+			maxY = y2;
+
+		if (x2 - x1 == 0){ //if vertical, return x
+			vertical = true;
+			slope = x1;
+		}
+		else{
+			vertical = false;
+			slope = (y2 - y1)/(x2 - x1); //slope is 0 if horizontal, else it has a slope
+		}
+		b = y1 - slope*x1;
+		if (y2 - y1 == 0) //if horizontal disregard
+			relevant = false;
+		else
+			relevant = true;
+	}
+
+//find x on the line of y1 and y2 and given y with ymin <= y <= ymax.
+double
+Edge::findX(double y){
+  if (vertical == true){
+    return slope;
+  }
+  else{
+    if (slope == 0)
+      return 0;
+    else{
+      double x = (y - b)/slope;
+      return x;
+    }
+  }
+}
+
+	//A = y1, B = y2, fX = interpolated point, X = desired point, fA = value at A, fB = value at B
+	//(x-A)/(B-A) ratio of y between y1 and y2
+	//interpolate finds the value (z or rgb or norm vector) at y between y1 and y2.
+double
+Edge::interpolate(double a, double b, double C, double D, double fa, double fb, double x){
+		double A, B, fA, fB;
+		if(C < D){
+			A = a;
+			B = b;
+			fA = fa;
+			fB = fb;
+		}
+		else{
+			A = b;
+			B = a;
+			fA = fb;
+			fB = fa;
+		}
+		double fX = fA + ((x - A)/(B - A))*(fB-fA);
+		return fX;
+	}
+
+double
+Edge::findZ(double y){
+		double z = interpolate(y1, y2, x1, x2, z1, z2, y);
+		return z;
+	}
+
+double
+Edge::findRed(double y){
+		double red = interpolate(y1, y2, x1, x2, r1, r2, y);
+		return red;
+	}
+
+double
+Edge::findGreen(double y){
+		double green = interpolate(y1, y2, x1, x2, g1, g2, y);
+		return green;
+	}
+
+
+double
+Edge::findBlue(double y){
+		double blue = interpolate(y1, y2, x1, x2, b1, b2, y);
+		return blue;
+	}
+
+double
+Edge::normalZ(double y){
+		double normZ = interpolate(y1, y2, x1, x2, normal1[2], normal2[2], y);
+		return normZ;
+	}
+
+double
+Edge::normalX(double y){
+		double normX = interpolate(y1, y2, x1, x2, normal1[0], normal2[0], y);
+		return normX;
+	}
+
+double
+Edge::normalY(double y){
+		double normY = interpolate(y1, y2, x1, x2, normal1[1], normal2[1], y);
+		return normY;
+	}
+
+double
+Edge::findShade(double y){
+		double normY = interpolate(y1, y2, x1, x2, shade1, shade2, y);
+		return normY;
+	}
+
+
+bool
+Edge::applicableY(double y){
+		if (y >= minY && y <= maxY)
+			return true;
+		else if (nabs(minY - y) < 0.00001 || nabs(maxY - y) < 0.00001)
+			return true;
+		else
+			return false;
+	}
+
+//Matrix Class Functions
+void
+Matrix::Print(ostream &o)
+{
+    for (int i = 0 ; i < 4 ; i++)
+    {
+        char str[256];
+        sprintf(str, "(%.7f %.7f %.7f %.7f)\n", A[i][0], A[i][1], A[i][2], A[i][3]);
+        o << str;
+    }
+}
+
+//multiply two matrices
+Matrix
+Matrix::ComposeMatrices(const Matrix &M1, const Matrix &M2)
+{
+    Matrix rv;
+    for (int i = 0 ; i < 4 ; i++)
+        for (int j = 0 ; j < 4 ; j++)
+        {
+            rv.A[i][j] = 0;
+            for (int k = 0 ; k < 4 ; k++)
+                rv.A[i][j] += M1.A[i][k]*M2.A[k][j];
+        }
+
+    return rv;
+}
+
+//multiply vector by matrix
+void
+Matrix::TransformPoint(const double *ptIn, double *ptOut)
+{
+    ptOut[0] = ptIn[0]*A[0][0]
+             + ptIn[1]*A[1][0]
+             + ptIn[2]*A[2][0]
+             + ptIn[3]*A[3][0];
+    ptOut[1] = ptIn[0]*A[0][1]
+             + ptIn[1]*A[1][1]
+             + ptIn[2]*A[2][1]
+             + ptIn[3]*A[3][1];
+    ptOut[2] = ptIn[0]*A[0][2]
+             + ptIn[1]*A[1][2]
+             + ptIn[2]*A[2][2]
+             + ptIn[3]*A[3][2];
+    ptOut[3] = ptIn[0]*A[0][3]
+             + ptIn[1]*A[1][3]
+             + ptIn[2]*A[2][3]
+             + ptIn[3]*A[3][3];
+}
+
+
+//Screen Class Functions
+void 
+Screen::zBufferInitialize()
+{
+  zBuff = new double[width*height];
+  int i;
+  for (i = 0; i < width*height; i++)
+    zBuff[i] = -1.0;
+}
+
+void 
+Screen::triScreenInitialize()
+{
+  triScreen = new int[width*height];
+  int i;
+  for (i = 0; i < width*height; i++)
+    triScreen[i] = -1;
+}
+
+void 
+Screen::triCameraInitialize()
+{
+  triCamera = new double*[width*height];
+  int i;
+  double* position = new double[3];
+  position[0] = 0;
+  position[1] = 0;
+  position[2] = 0;
+  for (i = 0; i < width*height; i++)
+    triCamera[i] = position;
+}
+
+//Triangle Class 
+
+void
+Triangle::printTri(){
+	cout << "X: " << X[0] << " " << X[1] << " " << X[2] << endl;
+	cout << "Y: " << Y[0] << " " << Y[1] << " " << Y[2] << endl;
+	cout << "Z: " << Z[0] << " " << Z[1] << " " << Z[2] << endl;
+}
+
+void
+Triangle::findDepth()
+{
+  minDepth = std::min({Z[0], Z[1], Z[3]});
+  maxDepth = std::max({Z[0], Z[1], Z[3]});
+}
+
+void
+Triangle::calculateTriArea(){
+  bool print = false;
+  area = 0.0;
+  double AC[3];
+  double BC[3];
+
+  AC[0] = X[1] - X[0];
+  AC[1] = Y[1] - Y[0];
+  AC[2] = Z[1] - Z[0];
+
+  BC[0] = X[2] - X[0];
+  BC[1] = Y[2] - Y[0];
+  BC[2] = Z[2] - Z[0];
+
+  double orthogonal_vec[3];
+
+  orthogonal_vec[0] = AC[1]*BC[2] - BC[1]*AC[2];
+  orthogonal_vec[1] = AC[0]*BC[2] - BC[0]*AC[2];
+  orthogonal_vec[2] = AC[0]*BC[1] - BC[1]*AC[1];
+
+  area = sqrt(pow(orthogonal_vec[0], 2) +
+              pow(orthogonal_vec[1], 2) +
+              pow(orthogonal_vec[2], 2))/2.0;
+
+  if(print)
+  {
+  cout << "Triangle: (" << X[0] << " , " << Y[0] << " , " << Z[0] << ") " << endl <<
+                   " (" << X[1] << " , " << Y[1] << " , " << Z[1] << ") " << endl <<
+                   " (" << X[2] << " , " << Y[2] << " , " << Z[2] << ") " << endl <<
+           " has surface area: " << area << endl;
+  }
+  return;
+}
+
+void
+Triangle::calculateCentroid(){
+  bool print = false;
+  radius = 0;
+  centroid[0] = (X[0]+X[1]+X[2])/3;
+  centroid[1] = (Y[0]+Y[1]+Y[2])/3;
+  centroid[2] = (Z[0]+Z[1]+Z[2])/3;
+
+
+  double median[3];
+  median[0] = (X[0]+X[1])/2;
+  median[1] = (Y[0]+Y[1])/2;
+  median[2] = (Z[0]+Z[1])/2;
+
+  radius = sqrt(pow(median[0] - centroid[0], 2) +
+                pow(median[1] - centroid[1], 2));
+
+  if(print)
+  {
+    cout << endl << "centroid: (" << centroid[0] << " , " << centroid[1] << " , " << centroid[2] << ")" << endl;
+    cout << "radius: " << radius << endl;
+  }
+}
+
+  // would some methods for transforming the triangle in place be helpful?
+void
+Triangle::scanline(int i, Camera c){
+        bool print = false;
+	double minX;
+	double maxX;
+
+	double minY = findMin(Y[0], Y[1], Y[2]);
+	double maxY = findMax(Y[0], Y[1], Y[2]);
+	minY = ceil441(minY);
+	maxY = floor441(maxY);
+
+	if (minY < 0)
+		minY = 0;
+	if (maxY > screen.height-1)
+		maxY = screen.height-1;
+
+	Edge e1 = Edge(X[0], Y[0], Z[0], colors[0][0], colors[0][1], colors[0][2], normals[0], shading[0], X[1], Y[1], Z[1], colors[1][0], colors[1][1], colors[1][2], normals[1], shading[1]);
+	Edge e2 = Edge(X[1], Y[1], Z[1], colors[1][0], colors[1][1], colors[1][2], normals[1], shading[1], X[2], Y[2], Z[2], colors[2][0], colors[2][1], colors[2][2], normals[2], shading[2]);
+	Edge e3 = Edge(X[2], Y[2], Z[2], colors[2][0], colors[2][1], colors[2][2], normals[2], shading[2], X[0], Y[0], Z[0], colors[0][0], colors[0][1], colors[0][2], normals[0], shading[0]);
+
+	double t, rightEnd, leftEnd;
+	Edge leftLine, rightLine;
+	//loop through Y and find X values, then color the pixels given min and max X found
+	for(int y = minY; y <= maxY; y++){
+		int row = screen.width*3*y;
+
+		leftEnd = 1000*1000;
+		rightEnd = -1000*1000;
+
+		if (e1.relevant){ //not horizontal
+			if( e1.applicableY(y)){ // y is within y1 and y2 for e1
+				t = e1.findX(y);
+				if (t < leftEnd){ //find applicable left edge of triangle for given y
+					leftEnd = t;
+					leftLine = e1;
+				}
+				if (t > rightEnd){ //find applicable right edge of triangle for given y
+					rightEnd = t;
+					rightLine = e1;
+				}
+			}
+		}
+		if (e2.relevant){ //not horizontal
+			if ( e2.applicableY(y)){ //y is on e2s line
+				t = e2.findX(y);
+				if (t < leftEnd){
+					leftEnd = t;
+					leftLine = e2;
+				}
+				if (t > rightEnd){
+					rightEnd = t;
+					rightLine = e2;
+				}
+			}
+		}
+		if (e3.relevant){ //not horizontal
+			if ( e3.applicableY(y)){ //line has given y
+				t = e3.findX(y);
+				if (t < leftEnd){
+					leftEnd = t;
+					leftLine = e3;
+				}
+				if (t > rightEnd){
+					rightEnd = t;
+					rightLine = e3;
+				}
+			}
+		}
+
+		if(print){
+			cout << " leftend " << leftEnd << " rightend " << rightEnd << endl;
+		}
+		minX = leftEnd;
+		minX = ceil441(minX);
+		maxX = rightEnd;
+		maxX = floor441(maxX);
+		if (minX < 0)
+			minX = 0;
+		if (maxX > screen.width-1)
+			maxX = screen.width;
+
+		//use the y value to interpolate and find the value at the end points of each x-line.-->[Xmin, Xmax]
+		double leftZ, rightZ, leftRed, rightRed, leftBlue, rightBlue, leftGreen, rightGreen, leftShading, rightShading;
+                double leftNormal[3], rightNormal[3];
+		leftZ          = leftLine.findZ((double)y); //leftmost z value of x
+		rightZ         = rightLine.findZ((double)y); //rightmost z value of x
+		leftRed        = leftLine.findRed((double)y);
+		rightRed       = rightLine.findRed((double)y);
+		leftBlue       = leftLine.findBlue((double)y);
+		rightBlue      = rightLine.findBlue((double)y);
+		leftGreen      = leftLine.findGreen((double)y);
+		rightGreen     = rightLine.findGreen((double)y);
+		leftShading    = leftLine.findShade((double)y);
+		rightShading   = rightLine.findShade((double)y);
+                leftNormal[0]  = leftLine.normalX((double)y);
+                leftNormal[1]  = leftLine.normalY((double)y);
+                leftNormal[2]  = leftLine.normalZ((double)y);
+                rightNormal[0] = rightLine.normalX((double)y);
+                rightNormal[1] = rightLine.normalY((double)y);
+                rightNormal[2] = rightLine.normalZ((double)y);
+		//loop through all the pixels that have the bottom left in the triangle.
+
+                //cout << "left norms: " << leftNormal[0] << " " << leftNormal[1] << " " << leftNormal[2] << endl;
+                //cout << "right norms: " << rightNormal[0] << " " << rightNormal[1] << " " << rightNormal[2] << endl;
+
+		double ratio, z;
+
+		for (int x = minX; x <= maxX; x++){
+
+			if (leftEnd == rightEnd)//don't divide by 0 & do not use rounded x min/max values
+				ratio = 1.0;
+			else
+				ratio = ((double)x - leftEnd)/(rightEnd - leftEnd);//ratio between unrounded x values on the current row (y)
+
+                        double distance = sqrt(pow(centroid[0] - x, 2) + pow(centroid[1] - y,2));
+			z = leftZ + ratio*(rightZ - leftZ);
+			if(z > screen.zBuff[y*screen.width + x])
+                        {
+                          screen.triScreen[y*screen.width + x] = i;
+                          screen.triCamera[y*screen.width + x] = c.position;
+                          /*if(distance <= radius)//inside radius to the centroid
+                          {
+                            screen.triScreen[y*screen.width + x] = i;
+                          }*/
+
+			  double shading = leftShading + ratio*(rightShading - leftShading);
+			  if (print)
+		            cout << "shading for x y " << x <<  " " << y << " "  << shading << endl;
+			  double red, green, blue;
+			  red = (leftRed + ratio*(rightRed - leftRed))*shading;
+			  if (red > 1.0)
+			    red = 1.0;
+			  if (red < 0)
+			    red = 0;
+			  green = (leftGreen + ratio*(rightGreen - leftGreen))*shading;
+			  if (green > 1.0)
+			    green = 1.0;
+			  if (green < 0)
+			    green = 0;
+			  blue = (leftBlue + ratio*(rightBlue - leftBlue))*shading;
+			  if (blue > 1.0)
+			    blue = 1.0;
+			  if (blue < 0)
+			    blue = 0;
+
+			  screen.zBuff[y*screen.width + x] = z;
+			  screen.buffer[row + 3*x]     = (unsigned char) ceil441(255.0*red);
+		          screen.buffer[row + 3*x + 1] = (unsigned char) ceil441(255.0*green);
+			  screen.buffer[row + 3*x + 2] = (unsigned char) ceil441(255.0*blue);
+			}
+		}
+	}
+}
+
+double
+Triangle::findMin(double a, double b, double c){
+		double min = a;
+		if (b < min)
+			min = b;
+		if (c < min)
+			min = c;
+		return min;
+	}
+
+double
+Triangle::findMax(double a, double b, double c){
+		double max = a;
+		if (b > max)
+			max = b;
+		if (c > max)
+			max = c;
+		return max;
+
+}
+
+
+//Misc Functions
+double ceil441(double f)
+{
+    return ceil(f-0.00001);
+}
+
+double floor441(double f)
+{
+    return floor(f+0.00001);
+}
+
+double nabs(double x){
+	if (x < 0)
+		x = (x*(-1));
+	return x;
+}
+
+double calculateArea(double x0, double y0, double z0, double x1, double y1, double z1, double x2, double y2, double z2)
+{
+  double area = 0.0;
+  double AC[3];
+  double BC[3];
+
+  AC[0] = x1 - x0;
+  AC[1] = y1 - y0;
+  AC[2] = z1 - x0;
+
+  BC[0] = x2 - x0;
+  BC[1] = y2 - y0;
+  BC[2] = z2 - z0;
+
+  double orthogonal_vec[3];
+
+  orthogonal_vec[0] = AC[1]*BC[2] - BC[1]*AC[2];
+  orthogonal_vec[1] = AC[0]*BC[2] - BC[0]*AC[2];
+  orthogonal_vec[2] = AC[0]*BC[1] - BC[1]*AC[1];
+
+  area = sqrt(pow(orthogonal_vec[0], 2) +
+              pow(orthogonal_vec[1], 2) +
+              pow(orthogonal_vec[2], 2))/2.0;
+ 
+  return area;
+}
+
+void normalize(double * normal) {
+	double total = pow(normal[0], 2.0) + pow(normal[1], 2.0) + pow(normal[2], 2.0);
+	//if (nabs(total) < 0.0001){	
+	//	normal[0] = 0;
+	//	normal[1] = 0;
+	//	normal[2] = 0;
+	//}
+	//else{
+		total = pow(total, 0.5);
+		normal[0] = normal[0] / total;
+		normal[1] = normal[1] / total;
+		normal[2] = normal[2] / total;
+	//}
+}
+
+double* normalize2(double * normal) {
+	double total = pow(normal[0], 2.0) + pow(normal[1], 2.0) + pow(normal[2], 2.0);
+	if (nabs(total) < 0.0001){	
+		normal[0] = 0;
+		normal[1] = 0;
+		normal[2] = 0;
+	}
+	else{
+		total = pow(total, 0.5);
+		normal[0] = normal[0] / total;
+		normal[1] = normal[1] / total;
+		normal[2] = normal[2] / total;
+	}
+
+return normal;
+}
+
+double dotProduct(double* v1, double* v2, int length){
+	double dotproduct = 0;	
+	for (int i = 0; i < length; i++){
+		dotproduct += (v1[i]*v2[i]);
+	}
+	return dotproduct;
+}
+
+double magnitude2d(double* vec)
+{
+  return sqrt(vec[0]*vec[0] + vec[1]*vec[1]);
+}
+
+
+double magnitude3d(double* vec)
+{
+  return sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+}
+
+
+double* crossProduct(double * a, double * b){
+	double* cross = new double[3]; 
+	cross[0] = ((a[1]*b[2]) - (a[2]*b[1])); //ay*bz-az*by
+	cross[1] = ((a[2]*b[0]) - (a[0]*b[2])); //az*bx-ax*bz
+	cross[2] = ((a[0]*b[1]) - (a[1]*b[0])); //ax*by-ay*bx
+
+	return cross;
+}
+
+
+double SineParameterize(int curFrame, int nFrames, int ramp)
+{
+    int nNonRamp = nFrames-2*ramp;
+    double height = 1./(nNonRamp + 4*ramp/M_PI);
+    if (curFrame < ramp)
+    {
+        double factor = 2*height*ramp/M_PI;
+        double eval = cos(M_PI/2*((double)curFrame)/ramp);
+        return (1.-eval)*factor;
+    }
+    else if (curFrame > nFrames-ramp)
+    {
+        int amount_left = nFrames-curFrame;
+        double factor = 2*height*ramp/M_PI;
+        double eval =cos(M_PI/2*((double)amount_left/ramp));
+        return 1. - (1-eval)*factor;
+    }
+    double amount_in_quad = ((double)curFrame-ramp);
+    double quad_part = amount_in_quad*height;
+    double curve_part = height*(2*ramp)/M_PI;
+    return quad_part+curve_part;
+}
+
+Camera
+GetCamera(int frame, int nframes, double* bounds)
+{
+    double t = SineParameterize(frame, nframes, nframes/10);
+    double points[3];
+    fibonacci_sphere(frame, nframes, points);
+    Camera c;
+    double zoom = 6.0;
+    c.near = zoom/8;
+    c.far = zoom*5;
+    c.angle = M_PI/6;
+    //MINE 
+    c.position[0] = zoom*points[0] + (bounds[0]+bounds[1])/2;
+    c.position[1] = zoom*points[1] + (bounds[2] + bounds[3])/2;
+    c.position[2] = zoom*points[2]  + (bounds[4]+bounds[5])/2;
+    //Hanks
+    //c.position[0] = zoom*sin(2*M_PI*t) + (bounds[0]+bounds[1])/2;
+    //c.position[1] = zoom*cos(2*M_PI*t) + (bounds[2] + bounds[3])/2;
+    //c.position[2] = zoom;// + (bounds[4]+bounds[5])/2;
+
+//cout << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
+
+    c.focus[0] = (bounds[0]+bounds[1])/2;
+    c.focus[1] = (bounds[2]+bounds[3])/2;
+    c.focus[2] = (bounds[4]+bounds[5])/2;
+    c.up[0] = 0;
+    c.up[1] = 1;
+    c.up[2] = 0;
+    return c;
+}
+
+Camera
+GetCamera(int frame, int nframes)
+{   
+    double t = SineParameterize(frame, nframes, nframes/10);
+    double points[3];
+    fibonacci_sphere(frame, nframes, points);
+    Camera c;
+    c.near = 5;
+    c.far = 200;
+    c.angle = M_PI/6;
+    //MINE 
+//    c.position[0] = 40*points[0];
+//    c.position[1] = 40*points[1];
+//    c.position[2] = 40*points[2];
+    //Hanks
+    double zoom = 5.0;
+    c.position[0] = zoom*sin(2*M_PI*t);
+    c.position[1] = zoom*cos(2*M_PI*t);
+    c.position[2] = zoom;
+//cout << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
+    c.focus[0] = 0;
+    c.focus[1] = 0;
+    c.focus[2] = 0;
+    c.up[0] = 0;
+    c.up[1] = 1;
+    c.up[2] = 0;
+    return c;
+}
+
+void GetRange(double* range, int size, double* values)
+{
+  vector<double> vector;
+  for(int i = 0; i < size; i++)
+    vector.push_back(values[i]);
+
+  sort(vector.begin(), vector.end());
+  range[0] = 0;
+  range[1] = 0;
+  //cout << "vector front and back " << vector.front() << " " << vector.back() << endl;
+  range[0] = vector.front();
+  range[1] = vector.back();
+}
+
+/*
+std::vector<Triangle>
+GetTriangles(const char* file, int type, double* bounds)
+{
+  if(type == 0){
+    vtkOBJReader *rdr = vtkOBJReader::New();
+    rdr->SetFileName(file);
+    cerr << "Reading" << endl;
+    rdr->Update();
+    cerr << "Done reading" << endl;
+    if (rdr->GetOutput()->GetNumberOfCells() == 0)
+    {
+      cerr << "Unable to open file!!" << endl;
+      exit(EXIT_FAILURE);
+    }
+    vtkPolyData *pd = rdr->GetOutput();
+//vtkDataSetWriter *writer = vtkDataSetWriter::New();
+//writer->SetInput(pd);
+//writer->SetFileName("hrc.vtk");
+//writer->Write();
+
+    int numTris = pd->GetNumberOfCells();
+    vtkPoints *pts = pd->GetPoints();
+    vtkCellArray *cells = pd->GetPolys();
+    vtkFloatArray *n = (vtkFloatArray *) pd->GetPointData()->GetNormals();
+    if(n == NULL)
+    {
+      pd->Print(cout);
+      cerr << "normals are null" << endl;
+      exit(EXIT_FAILURE);
+    }
+    float *normals = n->GetPointer(0);
+    std::vector<Triangle> tris(numTris);
+    vtkIdType npts;
+    vtkIdType *ptIds;
+    int idx;
+    for (idx = 0, cells->InitTraversal() ; cells->GetNextCell(npts, ptIds) ; idx++)
+    {
+      if (npts != 3)
+      {
+          cerr << "Non-triangles!! ???" << endl;
+          exit(EXIT_FAILURE);
+      }
+      double *pt = NULL;
+      pt = pts->GetPoint(ptIds[0]);
+      tris[idx].compID = 0;
+      tris[idx].X[0] = pt[0];
+      tris[idx].Y[0] = pt[1];
+      tris[idx].Z[0] = pt[2];
+      tris[idx].normals[0][0] = normals[3*ptIds[0]+0];
+      tris[idx].normals[0][1] = normals[3*ptIds[0]+1];
+      tris[idx].normals[0][2] = normals[3*ptIds[0]+2];
+      pt = pts->GetPoint(ptIds[1]);
+      tris[idx].X[1] = pt[0];
+      tris[idx].Y[1] = pt[1];
+      tris[idx].Z[1] = pt[2];
+      tris[idx].normals[1][0] = normals[3*ptIds[1]+0];
+      tris[idx].normals[1][1] = normals[3*ptIds[1]+1];
+      tris[idx].normals[1][2] = normals[3*ptIds[1]+2];
+      pt = pts->GetPoint(ptIds[2]);
+      tris[idx].X[2] = pt[0];
+      tris[idx].Y[2] = pt[1];
+      tris[idx].Z[2] = pt[2];
+      tris[idx].normals[2][0] = normals[3*ptIds[2]+0];
+      tris[idx].normals[2][1] = normals[3*ptIds[2]+1];
+      tris[idx].normals[2][2] = normals[3*ptIds[2]+2];
+
+        // 1->2 interpolate between light blue, dark blue
+        // 2->2.5 interpolate between dark blue, cyan
+        // 2.5->3 interpolate between cyan, green
+        // 3->3.5 interpolate between green, yellow
+        // 3.5->4 interpolate between yellow, orange
+        // 4->5 interpolate between orange, brick
+        // 5->6 interpolate between brick, salmon
+      double mins[7] = { 0, 2, 2.5, 3, 3.5, 4, 5 };
+      double maxs[7] = { 2, 2.5, 3, 3.5, 4, 5, 6 };
+      unsigned char RGB[8][3] = { { 71, 71, 219 },
+                                  { 0, 0, 91 },
+                                  { 0, 255, 255 },
+                                  { 0, 128, 0 },
+                                  { 255, 255, 0 },
+                                  { 255, 96, 0 },
+                                  { 107, 0, 0 },
+                                  { 224, 76, 76 }
+                                };
+      for (int j = 0 ; j < 3 ; j++)
+      {
+        double val = 3.5; //color_ptr[ptIds[j]];
+        int r;
+        for (r = 0 ; r < 7 ; r++)
+        {
+          if (mins[r] <= val && val < maxs[r])
+          break;
+        }
+        if (r == 7)
+        {
+          cerr << "Could not interpolate color for " << val << endl;
+          exit(EXIT_FAILURE);
+        }
+        double proportion = (val-mins[r]) / (maxs[r]-mins[r]);
+        tris[idx].colors[j][0] = (RGB[r][0]+proportion*(RGB[r+1][0]-RGB[r][0]))/255.0;
+        tris[idx].colors[j][1] = (RGB[r][1]+proportion*(RGB[r+1][1]-RGB[r][1]))/255.0;
+        tris[idx].colors[j][2] = (RGB[r][2]+proportion*(RGB[r+1][2]-RGB[r][2]))/255.0;
+      }
+    }
+    return tris;
+  }
+  else
+  {
+    int count = 0;
+    vtkPolyDataReader *rdr = vtkPolyDataReader::New();
+    rdr->SetFileName(file);
+    cerr << "Reading" << endl;
+    rdr->Update();
+    cerr << "Done reading" << endl;
+    if (rdr->GetOutput()->GetNumberOfCells() == 0)
+    {
+      cerr << "Unable to open file!!" << endl;
+      exit(EXIT_FAILURE);
+    }
+    vtkPolyData *pd = rdr->GetOutput();
+    double* bds = pd->GetBounds();
+    for(int i = 0; i < 6; i++)
+      bounds[i] = bds[i];
+    cout << "BOUNDS=======" << endl;
+    for(int i = 0; i < 6; i++)
+      cout << bounds[i] << " ";
+    cout << endl;
+
+    int numTris = pd->GetNumberOfCells();
+    vtkPoints *pts = pd->GetPoints();
+    vtkCellArray *cells = pd->GetPolys();
+    vtkDoubleArray *var = (vtkDoubleArray *) pd->GetPointData()->GetArray("hardyglobal");
+    double *color_ptr = var->GetPointer(0);
+    int num_colors = cells->GetNumberOfCells()*3;
+      double mins[7] = { -DBL_MAX, 2, 2.5, 3, 3.5, 4, 5 };
+      double maxs[7] = { 2, 2.5, 3, 3.5, 4, 5, DBL_MAX};
+      bool color = true;
+      if(color)
+      {
+        double range[2];
+        range[0] = range[1] = 0;
+        GetRange(range, num_colors, color_ptr);
+        //cout << "RANGE: " << range[0] << " " << range[1] << endl;
+        double diff = (range[1] - range[0]);
+        diff = abs(diff);
+        //cout << "diff " << diff << endl;
+        double step = diff/7;
+        //cout << "step " << step << endl;
+        mins[0] = range[0]; 
+        mins[1] =                   range[0] + step;
+        mins[2] =                   range[0] + 2*step;
+        mins[3] =                   range[0] + 3*step;
+        mins[4] =                   range[0] + 4*step; 
+        mins[5] =                   range[0] + 5*step; 
+        mins[6] =                   range[0] + 6*step;
+        maxs[0] =                   range[0] + step;
+        maxs[1] =                   range[0] + 2*step;
+        maxs[2] =                   range[0] + 3*step;
+        maxs[3] =                   range[0] + 4*step;
+        maxs[4] =                   range[0] + 5*step; 
+        maxs[5] =                   range[0] + 6*step; 
+        maxs[6] =                   range[0] + 8*step;
+      }    
+
+
+    vtkFloatArray *n = (vtkFloatArray *) pd->GetPointData()->GetNormals();
+    if(n == NULL)
+    {
+      pd->Print(cout);
+      cerr << "normals are null" << endl;
+      exit(EXIT_FAILURE);
+    }
+    float *normals = n->GetPointer(0);
+    std::vector<Triangle> tris(numTris);
+    vtkIdType npts;
+    vtkIdType *ptIds;
+    int idx;
+    for (idx = 0, cells->InitTraversal() ; cells->GetNextCell(npts, ptIds) ; idx++)
+    {
+      if (npts != 3)
+      {
+          cerr << "Non-triangles!! ???" << endl;
+          exit(EXIT_FAILURE);
+      }
+      double *pt = NULL;
+      pt = pts->GetPoint(ptIds[0]);
+      tris[idx].compID = 0;
+      tris[idx].X[0] = pt[0];
+      tris[idx].Y[0] = pt[1];
+      tris[idx].Z[0] = pt[2];
+      tris[idx].normals[0][0] = normals[3*ptIds[0]+0];
+      tris[idx].normals[0][1] = normals[3*ptIds[0]+1];
+      tris[idx].normals[0][2] = normals[3*ptIds[0]+2];
+      pt = pts->GetPoint(ptIds[1]);
+      tris[idx].X[1] = pt[0];
+      tris[idx].Y[1] = pt[1];
+      tris[idx].Z[1] = pt[2];
+      tris[idx].normals[1][0] = normals[3*ptIds[1]+0];
+      tris[idx].normals[1][1] = normals[3*ptIds[1]+1];
+      tris[idx].normals[1][2] = normals[3*ptIds[1]+2];
+      pt = pts->GetPoint(ptIds[2]);
+      tris[idx].X[2] = pt[0];
+      tris[idx].Y[2] = pt[1];
+      tris[idx].Z[2] = pt[2];
+      tris[idx].normals[2][0] = normals[3*ptIds[2]+0];
+      tris[idx].normals[2][1] = normals[3*ptIds[2]+1];
+      tris[idx].normals[2][2] = normals[3*ptIds[2]+2];
+
+
+        // 0->2 interpolate between light blue, dark blue
+        // 2->2.5 interpolate between dark blue, cyan
+        // 2.5->3 interpolate between cyan, green
+        // 3->3.5 interpolate between green, yellow
+        // 3.5->4 interpolate between yellow, orange
+        // 4->5 interpolate between orange, brick
+        // 5->6 interpolate between brick, salmon
+      unsigned char RGB[8][3] = { { 71, 71, 255 },
+                                  { 0, 128, 0 },
+                                  { 255, 255, 0 },
+                                  { 0, 0, 91 },
+                                  { 0, 255, 255 },
+                                  { 255, 96, 0 },
+                                  { 107, 0, 0 },
+                                  { 224, 76, 76 }
+                                };
+      //for(int i = 0; i < 7; i++)
+        //cout << mins[i] << " " << maxs[i] << endl;
+      for (int j = 0 ; j < 3 ; j++)
+      {
+        double val = color_ptr[ptIds[j]];
+        count++;
+        int r;
+        for (r = 0 ; r < 7 ; r++)
+        {
+          if (mins[r] <= val && val < maxs[r])
+          break;
+        }
+        if (r == 7)
+        {
+          cerr << "Could not interpolate color for " << val << endl;
+          exit(EXIT_FAILURE);
+        }
+        double proportion = (val-mins[r]) / (maxs[r]-mins[r]);
+        tris[idx].colors[j][0] = (RGB[r][0]+proportion*(RGB[r+1][0]-RGB[r][0]))/255.0;
+        tris[idx].colors[j][1] = (RGB[r][1]+proportion*(RGB[r+1][1]-RGB[r][1]))/255.0;
+        tris[idx].colors[j][2] = (RGB[r][2]+proportion*(RGB[r+1][2]-RGB[r][2]))/255.0;
+      }
+    }
+    cout << "SIZE: " << count << endl;
+    return tris;
+  }
+}
+*/
+
+Triangle transformTriangle(Triangle t, Camera c){
+        bool print = false;
+
+	Matrix camToView, m0, cam, view;
+	cam = c.CameraTransform();
+	view = c.ViewTransform();
+	camToView = Matrix::ComposeMatrices(cam, view);
+	m0 = Matrix::ComposeMatrices(camToView, c.DeviceTransform());
+	if (print){
+		cout<< "m0" << endl;
+		m0.Print(cout);
+	}
+  if(print)
+  {
+    cout << "triangle in: (" << t.X[0] << " , " << t.Y[0] << " , " << t.Z[0] << ") " << endl <<
+                        " (" << t.X[1] << " , " << t.Y[1] << " , " << t.Z[1] << ") " << endl <<
+                        " (" << t.X[2] << " , " << t.Y[2] << " , " << t.Z[2] << ") " << endl;
+  }
+
+	Triangle triangle;
+	// Zero XYZ
+	double * pointOut = new double[4];
+	double * pointIn  = new double[4];
+	pointIn[0] = t.X[0];
+	pointIn[1] = t.Y[0];
+	pointIn[2] = t.Z[0];
+	pointIn[3] = 1; //w
+	m0.TransformPoint(pointIn, pointOut);
+	triangle.X[0] = (pointOut[0]/pointOut[3]); //DIVIDE BY W!!	
+	triangle.Y[0] = (pointOut[1]/pointOut[3]);
+	triangle.Z[0] = (pointOut[2]/pointOut[3]);
+
+	//One XYZ
+	pointIn[0] = t.X[1];
+	pointIn[1] = t.Y[1];
+	pointIn[2] = t.Z[1];
+	pointIn[3] = 1; //w
+	m0.TransformPoint(pointIn, pointOut);
+	triangle.X[1] = (pointOut[0]/pointOut[3]); //DIVIDE BY W!!	
+	triangle.Y[1] = (pointOut[1]/pointOut[3]);
+	triangle.Z[1] = (pointOut[2]/pointOut[3]);
+
+	//Two XYZ
+	pointIn[0] = t.X[2];
+	pointIn[1] = t.Y[2];
+	pointIn[2] = t.Z[2];
+	pointIn[3] = 1; //w
+	m0.TransformPoint(pointIn, pointOut);
+	triangle.X[2] = (pointOut[0]/pointOut[3]); //DIVIDE BY W!!	
+	triangle.Y[2] = (pointOut[1]/pointOut[3]);
+	triangle.Z[2] = (pointOut[2]/pointOut[3]);
+
+
+  if(print)
+  {
+    cout << "triangle out: (" << triangle.X[0] << " , " << triangle.Y[0] << " , " << triangle.Z[0] << ") " << endl <<
+                         " (" << triangle.X[1] << " , " << triangle.Y[1] << " , " << triangle.Z[1] << ") " << endl <<
+                         " (" << triangle.X[2] << " , " << triangle.Y[2] << " , " << triangle.Z[2] << ") " << endl;
+  }
+	//transfor colors and normals
+	int i, j;
+	for (i = 0; i < 3; i++){
+		for (j = 0; j < 3; j++){
+			triangle.colors[i][j]  = t.colors[i][j];
+			triangle.normals[i][j] = t.normals[i][j];
+		}
+	}
+	for (i = 0; i < 3; i++){
+		triangle.shading[i] = t.shading[i];
+	}
+        triangle.compID = t.compID;
+
+	delete[] pointOut;
+	delete[] pointIn;
+
+	return triangle;
+
+}
+
+double CalculateNormalCameraDot(double* cameraPositions, Triangle tri)
+{
+  double interpolatedNormals[3];
+  interpolatedNormals[0] = (tri.normals[0][0] + tri.normals[1][0] + tri.normals[2][0])/3;
+  interpolatedNormals[1] = (tri.normals[0][1] + tri.normals[1][1] + tri.normals[2][1])/3;
+  interpolatedNormals[2] = (tri.normals[0][2] + tri.normals[1][2] + tri.normals[2][2])/3;
+
+  normalize(interpolatedNormals);
+  normalize(cameraPositions);
+  return dotProduct(cameraPositions, interpolatedNormals, 3);  
+}
+
+
+void fibonacci_sphere(int i, int samples, double* points)
+{
+  int rnd = 1;
+  //if randomize:
+  //    rnd = random.random() * samples
+
+  double offset = 2./samples;
+  double increment = M_PI * (3. - sqrt(5.));
+
+
+  double y = ((i * offset) - 1) + (offset / 2);
+  double r = sqrt(1 - pow(y,2));
+
+  double phi = ((i + rnd) % samples) * increment;
+
+  double x = cos(phi) * r;
+  double z = sin(phi) * r;
+  points[0] = x;
+  points[1] = y;
+  points[2] = z;
+}
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -220,20 +1465,43 @@ AutoCamera::execute()
   
     vtkmCamera *camera = new vtkmCamera;
     vtkm::Bounds bounds = dataset.GetGlobalBounds();
-    vtkm::Float64 xb = vtkm::Float64(bounds.X.Length());
-    vtkm::Float64 yb = vtkm::Float64(bounds.Y.Length());
-    vtkm::Float64 zb = vtkm::Float64(bounds.Z.Length());
-//    cout << "x y z " << xb << " " << yb << " " << zb << endl;
-
+    vtkm::Float32 xb = vtkm::Float32(bounds.X.Length());
+    vtkm::Float32 yb = vtkm::Float32(bounds.Y.Length());
+    vtkm::Float32 zb = vtkm::Float32(bounds.Z.Length());
+    //cout << "x y z " << xb << " " << yb << " " << zb << endl;
+    vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
+    //cout << "radius " << radius << endl;
+    if(radius<1)
+      radius = radius + 1;
     camera->ResetToBounds(dataset.GetGlobalBounds());
     camera->Print();
+    double sphere_points[3];
+    //TODO: loop through number of samples THEN add parallelism + z buffer.
+    //fibonacci_sphere(sample, num_samples, sphere_points);
+    fibonacci_sphere(1, 100, sphere_points);
+    cout << "sphere points: " << sphere_points[0] << " " << sphere_points[1] << " " << sphere_points[2] << endl;
+    cout << "sphere points* radius: " << sphere_points[0]*radius << " " << sphere_points[1]*radius << " " << sphere_points[2]*radius << endl;
+    
+    vtkm::Float32 x_pos = sphere_points[0]*radius;// + xb/2.0;
+    vtkm::Float32 y_pos = sphere_points[1]*radius;// + yb/2.0;
+    vtkm::Float32 z_pos = sphere_points[2]*radius;// + zb/2.0;
 
-    vtkm::Float64 x_pos = 1.0/(rand() % 10 + 1);
-    vtkm::Float64 y_pos = 1.0/(rand() % 10 + 1);
-    vtkm::Float64 z_pos = 1.0/(rand() % 10 + 1);
-
-    vtkm::Vec<vtkm::Float64, 3> pos{x_pos, y_pos, z_pos}; 
+    if(x_pos < radius && y_pos < radius && z_pos < radius)
+      z_pos += radius;
+/*    
+    vtkm::Float32 x_pos = zoom*sphere_points[0] + xb/2.0;
+    vtkm::Float32 y_pos = zoom*sphere_points[1] + yb/2.0;
+    vtkm::Float32 z_pos = zoom*sphere_points[2] + zb/2.0;
+*/
+    vtkm::Vec<vtkm::Float32, 3> pos{x_pos, y_pos, z_pos}; 
     camera->SetPosition(pos);
+
+
+    if(!graph().workspace().registry().has_entry("camera"))
+    {
+      cout << "making camera in registry" << endl;
+      graph().workspace().registry().add<vtkm::rendering::Camera>("camera",camera,1);
+    }
 
 
     camera->Print();
