@@ -170,10 +170,10 @@ Graph::add_filter(const std::string &filter_type,
         std::string f_name = f->detailed_name();
         // cleanup f ...
         delete f;
-        CONDUIT_WARN("Cannot create filter " << f_name
-                    << " because verify_params failed." << std::endl
-                    << "Details:" << std::endl
-                    << v_info.to_json());
+        CONDUIT_ERROR("Cannot create filter " << f_name
+                      << " because verify_params failed." << std::endl
+                      << "Details:" << std::endl
+                      << v_info.to_json());
         return NULL;
     }
 
