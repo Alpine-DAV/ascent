@@ -521,7 +521,8 @@ public:
       if(!zoom.dtype().is_empty())
       {
         // Allow default zoom to be overridden
-        camera.Zoom(zoom.to_float32());
+        double vtkm_zoom = zoom_to_vtkm_zoom(zoom.to_float64());
+        camera.Zoom(vtkm_zoom);
       }
 
       render.SetCamera(camera);
