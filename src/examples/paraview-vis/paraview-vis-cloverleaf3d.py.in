@@ -6,55 +6,54 @@ except NameError:
     count = 0
 
 if count == 0:
-    # ParaView API
-
-    # WARNING: this does not work inside the plugin
-    #          unless you have the same import in paraview-vis.py
+    # Initialize ParaView
     import paraview
     paraview.options.batch = True
     paraview.options.symmetric = True
     from paraview.simple import LoadPlugin, Show, ColorBy, SelectCells, \
         GetColorTransferFunction, GetActiveView, GetScalarBar, ResetCamera,\
-        Render, SaveScreenshot, ExtractSelection, GetActiveCamera
-    import ascent_extract
+        Render, SaveScreenshot, ExtractSelection, GetActiveCamera,\
+        GetProperty, CreateRenderView
 
+    # load AscentSource to present simulation data as a VTK dataset
     LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())
     ascentSource = AscentSource()
+    view = CreateRenderView()
+    view.ViewSize = [1024, 1024]
 
-    # ghosts are not supported in rectilinear grids so
-    # we just extract the regular cells.
+    # show non-ghost cells colored by "energy"
     sel = SelectCells("vtkGhostType < 1")
     e = ExtractSelection(Selection=sel)
-    # render the data
     rep = Show()
     ColorBy(rep, ("CELLS", "energy"))
-    # rescale transfer function
-    energyLUT = GetColorTransferFunction('energy')
-    energyLUT.RescaleTransferFunction(1, 5.5)
-    # show color bar
+    # rescale transfer function and show color bar
+    transferFunction = GetColorTransferFunction('energy')
+    transferFunction.RescaleTransferFunction(1, 5.5)
     renderView1 = GetActiveView()
-    energyLUT = GetScalarBar(energyLUT, renderView1)
-    energyLUT.Title = 'energy'
-    energyLUT.ComponentTitle = ''
-    # set color bar visibility
-    energyLUT.Visibility = 1
-    # show color legend
+    scalarBar = GetScalarBar(transferFunction, renderView1)
+    scalarBar.Title = 'energy'
+    scalarBar.ComponentTitle = ''
+    scalarBar.Visibility = 1
     rep.SetScalarBarVisibility(renderView1, True)
-
     cam = GetActiveCamera()
     cam.Elevation(30)
     cam.Azimuth(-30)
 
-
-node = ascent_extract.ascent_data().child(0)
-domain_id = node["state/domain_id"]
-cycle = node["state/cycle"]
+ascentSource.UpdateAscentData()
+ascentSource.UpdatePropertyInformation()
+cycle = GetProperty(ascentSource, "Cycle").GetElement(0)
+rank = GetProperty(ascentSource, "Rank").GetElement(0)
+if (rank == 0):
+    print(
+        "=======================================Called: {} {} {}".format(
+            GetProperty(ascentSource, "TimeStep"),
+            GetProperty(ascentSource, "Cycle"),
+            GetProperty(ascentSource, "Time")))
 imageName = "image_{0:04d}.png".format(int(cycle))
-dataName = "cloverleaf3d_data_{0:04d}".format(int(cycle))
-ascentSource.Count = count
 ResetCamera()
 Render()
 SaveScreenshot(imageName, ImageResolution=(1024, 1024))
+# dataName = "cloverleaf3d_data_{0:04d}".format(int(cycle))
 # writer = CreateWriter(dataName + ".pvtr", ascentSource)
 # writer.UpdatePipeline()
 

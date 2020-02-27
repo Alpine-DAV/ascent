@@ -482,6 +482,198 @@ Settings for LLNL TOSS 3 Systems:
  * :download:`compilers.yaml <spack_configs/toss_3_x86_64_ib/compilers.yaml>`
  * :download:`packages.yaml <spack_configs/toss_3_x86_64_ib/packages.yaml>`
 
+.. _paraview_ascent_support:
+
+ParaView Support
+----------------
+
+Ascent ParaView support is in `src/examples/paraview-vis <https://github.com/Alpine-DAV/ascent/blob/develop/src/examples/paraview-vis>`_ directory.
+This section describes how to configure, build and run the example
+integrations provided with Ascent and visualize the results insitu
+using ParaView. ParaView pipelines are provided for all example
+integrations.  We describe in details the ParaView pipeline for
+``cloverleaf3d`` in the :ref:`paraview_visualization` section.
+
+.. _paraview_setup_spack:
+
+Setup spack
+^^^^^^^^^^^
+Install spack, modules and shell support.
+
+- Clone the spack repository:
+
+  .. code:: bash
+
+            git clone https://github.com/spack/spack.git
+            cd spack
+            source share/spack/setup-env.sh
+
+- If the ``module`` command does not exist:
+
+  - install ``environment-modules`` using the package manager for your system.
+
+  - run ``add.modules`` to add the ``module`` command to your ``.bashrc`` file
+
+  - Alternatively run ``spack bootstrap``
+
+.. _paraview_install:
+
+Install ParaView and Ascent
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- For MomentInvariants (optional module in ParaView for pattern
+  detection) visualization patch ParaView to enable this module:
+
+  - Download the `MomentInvariants patch <https://github.com/Alpine-DAV/ascent/blob/develop/src/examples/paraview-vis/paraview-package-momentinvariants.patch>`_
+
+  - Patch paraview: ``patch -p1 < paraview-package-momentinvariants.patch``
+
+- Install ParaView (any version >= 5.7.0)
+
+  - ``spack install paraview@develop+python3+mpi+osmesa~opengl2^mpich``
+
+  - for CUDA use: ``spack install paraview@develop+python3+mpi+osmesa~opengl2+cuda^mpich``
+
+- Install Ascent (any version)
+
+  - ``spack install ascent@develop~vtkh^mpich``
+
+  - If you need ascent built with vtkh you can use ``spack install
+    ascent@develop^mpich``. Note that you need specific versions of
+    ``vtkh`` and ``vtkm`` that work with the latest Ascent.  Those
+    versions can be read from ``ascent/scripts/uberenv/packages/``
+    ``vtkh/package.py`` and ``vtkm/package.py``.
+    ``paraview-package-momentinvariants.patch`` is already setup to
+    patch ``vtkh`` and ``vthm`` with the correct versions.
+
+- Load required modules: ``spack load conduit;spack load python;spack load py-numpy;spack load py-mpi4py;spack load paraview``
+
+.. _paraview_run_integrations:
+
+Setup and run example integrations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can test Ascent with ParaView support by running the available
+integrations. Visualization images will be generated in the current
+directory. These images can be checked against the images in
+``src/examples/paraview-vis/tests/baseline_images``.
+
+- Test ``proxies/cloverleaf3d``
+
+  - Go to a directory where you intend to run cloverleaf3d integration
+    (for ``summit.olcf.ornl.gov`` use a member work directory such as
+    ``cd $MEMBERWORK/csc340``).
+
+  - Create links to required files for cloverleaf3d:
+
+    - ``ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview_ascent_source.py``
+
+    - ``ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview-vis-cloverleaf3d.py paraview-vis.py``
+      for surface visualization.
+
+    - Or ``ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview-vis-cloverleaf3d-momentinvariants.py paraview-vis.py``
+      for MomentInvariants visualization (Optional)
+
+    - 
+      .. code:: bash
+
+              ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/ascent_actions.json
+              ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/expandingVortex.vti
+              ln -s $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/clover.in
+
+  - Run the simulation
+
+    ``$(spack location --install-dir mpi)/bin/mpiexec -n 2 $(spack location --install-dir ascent)/examples/ascent/proxies/cloverleaf3d/cloverleaf3d_par > output.txt 2>&1``
+
+  - Examine the generated images
+
+- Similarily test ``proxies/kripke``, ``proxies/laghos``,
+  ``proxies/lulesh``, ``synthetic/noise``. After you create the
+  apropriate links similarily with ``cloverleaf3d`` you can run these
+  simulations with:
+
+  - ``$(spack location --install-dir mpi)/bin/mpiexec -np 8 ./kripke_par --procs 2,2,2 --zones 32,32,32 --niter 5 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4 > output.txt 2>&1``
+
+  - ``$(spack location --install-dir mpi)/bin/mpiexec -n 8 ./laghos_mpi -p 1 -m data/cube01_hex.mesh -rs 2 -tf 0.6 -visit -pa > output.txt 2>&1``
+
+  - ``$(spack location --install-dir mpi)/bin/mpiexec -np 8 ./lulesh_par -i 10 -s 32 > output.txt 2>&1``
+
+  - ``$(spack location --install-dir mpi)/bin/mpiexec -np 8 ./noise_par  --dims=32,32,32 --time_steps=5 --time_delta=1 > output.txt 2>&1``
+
+
+Setup and run on summit.olcf.ornl.gov
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Execute section :ref:`paraview_setup_spack`
+
+- Configure spack
+
+  - add a file ``~/.spack/packages.yaml`` with the following content:
+
+    .. code:: yaml
+
+          packages:
+           spectrum-mpi:
+             modules:
+               spectrum-mpi@10.3.0.1-20190611: spectrum-mpi/10.3.0.1-20190611
+             buildable: False
+           cuda:
+             modules:
+               cuda@10.1.168: cuda/10.1.168
+             buildable: False
+
+
+  - Load the correct compiler:
+
+    .. code:: bash
+
+          module load gcc/7.4.0
+          spack compiler add
+          spack compiler remove gcc@4.8.5
+
+
+- Compile spack packages on a compute node
+
+  - For busy summit I got ``internal compiler error`` when
+    compiling ``llvm`` and ``paraview`` on the login node. To fix this, move
+    the spack installation on ``$MEMBERWORK/csc340`` and
+    compile everything on a compute node.
+
+    - First login to a compute node (for an hour): ``bsub -W 1:00 -nnodes 1 -P CSC340 -Is /bin/bash``
+
+    - Install all spack packages as in :ref:`paraview_install` with ``-j80`` option (there are 84 threads)
+
+    - Disconnect from the compute node: ``exit``.
+
+- Continue with :ref:`paraview_run_integrations` but run the integrations as described next:
+
+  - Execute cloverleaf
+    ``bsub $(spack location --install-dir ascent)/examples/ascent/paraview-vis/summit-moment-invariants.lsf``
+  - To check if the integration finished use: ``bjobs -a``
+
+Nightly tests
+^^^^^^^^^^^^^
+
+We provide a docker file for Ubuntu 18.04 and a script that installs
+the latest ParaView and Ascent, runs the integrations provided with
+Ascent, runs visualizations using ParaView pipelines and checks the
+results. See ``tests/README-docker.md`` for how to create the docker
+image, run the container and execute the test script.
+
+Notes
+^^^^^
+
+- Global extents are computed for uniform and rectilinear topologies but
+  they are not yet computed for a structured topology (lulesh). This
+  means that for lulesh and datasets that have a structured topology we
+  cannot save a correct parallel file that represents the whole dataset.
+
+- For the ``laghos`` simulation accessed through Python extracts
+  interface, only the higher order mesh is accessible at the moment,
+  which is a uniform dataset. The documentation shows a non-uniform mesh but
+  that is only available in the ``vtkm`` pipelines.
+
+
 
 Using Ascent in Another Project
 ---------------------------------
@@ -637,39 +829,39 @@ build configuration:
 
 .. code-block:: json
 
-	{
-		"version": "0.4.0",
-		"compilers":
-		{
-			"cpp": "/usr/tce/packages/gcc/gcc-4.9.3/bin/g++",
-			"fortran": "/usr/tce/packages/gcc/gcc-4.9.3/bin/gfortran"
-		},
-		"platform": "linux",
-		"system": "Linux-3.10.0-862.6.3.1chaos.ch6.x86_64",
-		"install_prefix": "/usr/local",
-		"mpi": "disabled",
-		"runtimes":
-		{
-			"ascent":
-			{
-				"status": "enabled",
-				"vtkm":
-				{
-					"status": "enabled",
-					"backends":
-					{
-						"serial": "enabled",
-						"openmp": "enabled",
-						"cuda": "disabled"
-					}
-				}
-			},
-			"flow":
-			{
-				"status": "enabled"
-			}
-		},
-		"default_runtime": "ascent"
-	}
+        {
+                "version": "0.4.0",
+                "compilers":
+                {
+                        "cpp": "/usr/tce/packages/gcc/gcc-4.9.3/bin/g++",
+                        "fortran": "/usr/tce/packages/gcc/gcc-4.9.3/bin/gfortran"
+                },
+                "platform": "linux",
+                "system": "Linux-3.10.0-862.6.3.1chaos.ch6.x86_64",
+                "install_prefix": "/usr/local",
+                "mpi": "disabled",
+                "runtimes":
+                {
+                        "ascent":
+                        {
+                                "status": "enabled",
+                                "vtkm":
+                                {
+                                        "status": "enabled",
+                                        "backends":
+                                        {
+                                                "serial": "enabled",
+                                                "openmp": "enabled",
+                                                "cuda": "disabled"
+                                        }
+                                }
+                        },
+                        "flow":
+                        {
+                                "status": "enabled"
+                        }
+                },
+                "default_runtime": "ascent"
+        }
 
 In this case, the non-MPI version of Ascent was used, so MPI reportsa as disabled.
