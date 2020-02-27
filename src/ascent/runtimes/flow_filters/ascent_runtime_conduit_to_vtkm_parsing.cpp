@@ -72,6 +72,18 @@ namespace runtime
 namespace filters
 {
 
+double zoom_to_vtkm_zoom(double in_zoom)
+{
+  // vtkm is weird. increasing the value of zoom, zooms out.
+  // we dont want that, so we have to convert what normal
+  // people think of zoom into what vtkm wants.
+  // vtkm zoom factor = pow(4.0, zoom)
+  // log4 factor = vtkm_zoom
+  // Ascent't input expects a zoom factor, ie 1= nozoom
+  double vtkm_zoom = log(in_zoom) / log(4.0);
+  return vtkm_zoom;
+}
+
 void
 parse_image_dims(const conduit::Node &node, int &width, int &height)
 {
@@ -142,7 +154,8 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
 
   if(camera_node.has_child("zoom"))
   {
-      camera.Zoom(camera_node["zoom"].to_float64());
+      double zoom = camera_node["zoom"].to_float64();
+      camera.Zoom(zoom_to_vtkm_zoom(zoom));
   }
   //
   // With a new potential camera position. We need to reset the

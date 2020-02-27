@@ -499,6 +499,7 @@ int main(int argc, char** argv)
 
   scenes["scene1/renders/r1/bg_color"].set(bg_color);
   scenes["scene1/renders/r1/fg_color"].set(fg_color);
+  scenes["scene1/renders/r1/image_prefix"] = "noise_%06d";
 
   conduit::Node actions;
   conduit::Node &add_pipelines = actions.append();

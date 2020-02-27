@@ -232,7 +232,8 @@ public:
 
   ~RendererContainer()
   {
-    // we reset the workspace  so this will be consumed.
+    // we reset the registry in the runtime
+    // which will automatically delete this pointer
     // m_registry->consume(m_key);
   }
 };
@@ -522,7 +523,8 @@ public:
       if(!zoom.dtype().is_empty())
       {
         // Allow default zoom to be overridden
-        camera.Zoom(zoom.to_float32());
+        double vtkm_zoom = zoom_to_vtkm_zoom(zoom.to_float64());
+        camera.Zoom(vtkm_zoom);
       }
 
       render.SetCamera(camera);
