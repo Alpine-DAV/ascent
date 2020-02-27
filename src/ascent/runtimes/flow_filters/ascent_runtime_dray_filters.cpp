@@ -296,6 +296,11 @@ parse_color_table(const conduit::Node &color_table_node)
                 <<color_map_name);
   }
 
+  std::vector<std::string> valid_names = dray::ColorTable::get_presets();
+  for(int i = 0; i < valid_names.size(); ++i)
+  {
+    std::cout<<valid_names[i]<<"\n";
+  }
   bool name_provided = false;
   if(color_table_node.has_child("name"))
   {

@@ -378,7 +378,7 @@ VTKH3Slice::verify_params(const conduit::Node &params,
     std::vector<std::string> valid_paths;
     res &= check_string("topology",params, info, false);
     valid_paths.push_back("topology");
-    
+
     res &= check_numeric("x_offset",params, info, false);
     res &= check_numeric("y_offset",params, info, false);
     res &= check_numeric("z_offset",params, info, false);
@@ -387,7 +387,7 @@ VTKH3Slice::verify_params(const conduit::Node &params,
     valid_paths.push_back("x_offset");
     valid_paths.push_back("y_offset");
     valid_paths.push_back("z_offset");
-    
+
     std::string surprises = surprise_check(valid_paths, params);
     if(surprises != "")
     {
@@ -635,7 +635,19 @@ VTKHSlice::execute()
       topo_name = params()["topology"].as_string();
       if(!collection->has_topology(topo_name))
       {
-        ASCENT_ERROR("no topology named '"<<topo_name<<"'");
+        std::stringstream ss;
+        ss<<" possible topology names: ";
+        std::vector<std::string> names = collection->topology_names();
+        for(int i = 0; i < names.size(); ++i)
+        {
+          ss<<"'"<<names[i]<<"'";
+          if(i != names.size() -1)
+          {
+            ss<<", ";
+          }
+        }
+        ASCENT_ERROR("no topology named '"<<topo_name<<"'."
+                     <<ss.str());
 
       }
     }
@@ -1052,9 +1064,22 @@ VTKHClip::execute()
       }
 
       topo_name = params()["topology"].as_string();
+
       if(!collection->has_topology(topo_name))
       {
-        ASCENT_ERROR("no topology named '"<<topo_name<<"'");
+        std::stringstream ss;
+        ss<<" possible topology names: ";
+        std::vector<std::string> names = collection->topology_names();
+        for(int i = 0; i < names.size(); ++i)
+        {
+          ss<<"'"<<names[i]<<"'";
+          if(i != names.size() -1)
+          {
+            ss<<", ";
+          }
+        }
+        ASCENT_ERROR("no topology named '"<<topo_name<<"'."
+                     <<ss.str());
 
       }
     }
