@@ -232,7 +232,9 @@ public:
 
   ~RendererContainer()
   {
-    m_registry->consume(m_key);
+    // we reset the registry in the runtime
+    // which will automatically delete this pointer
+    // m_registry->consume(m_key);
   }
 };
 
