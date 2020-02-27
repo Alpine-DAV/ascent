@@ -2487,7 +2487,6 @@ VTKHProject2d::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-
     bool res = check_string("topology",params, info, false);
 
     std::vector<std::string> valid_paths;
@@ -2525,7 +2524,7 @@ VTKHProject2d::execute()
     {
       if(!params().has_path("topology"))
       {
-        ASCENT_ERROR("VTKH3Slice: data set has multiple topologies "
+        ASCENT_ERROR("VTKHProject2d: data set has multiple topologies "
                      <<"and no topology is specified.");
       }
 
@@ -2536,17 +2535,10 @@ VTKHProject2d::execute()
       topo_name = collection->topology_names()[0];
     }
 
-    std::string field_name = params()["field"].as_string();
-    if(!collection->has_field(field_name))
-    {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
-    }
-
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkm::Bounds bounds = data.GetGlobalBounds();
     vtkm::rendering::Camera camera;
     camera.ResetToBounds(bounds);
-
     vtkh::ScalarRenderer tracer;
 
     tracer.SetInput(&data);
@@ -2557,6 +2549,7 @@ VTKHProject2d::execute()
     vtkh::DataSet *output = tracer.GetOutput();
     VTKHCollection *new_coll = new VTKHCollection();
     new_coll->add(*output, topo_name);
+    //delete output;
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     delete output;
