@@ -232,7 +232,8 @@ public:
 
   ~RendererContainer()
   {
-    m_registry->consume(m_key);
+    // we reset the workspace  so this will be consumed.
+    // m_registry->consume(m_key);
   }
 };
 

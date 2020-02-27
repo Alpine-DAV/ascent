@@ -475,7 +475,7 @@ int main(int argc, char** argv)
   scenes["scene1/plots/plt1/field"] = "zonal_noise";
 
   conduit::Node ctable;
-  ctable["name"] = "Black, Blue and White";
+  ctable["name"] = "cool to warm";
   ctable["control_points/p1/type"] = "alpha";
   ctable["control_points/p1/position"] = 0.0;
   ctable["control_points/p1/alpha"] = 0.01;

@@ -2536,20 +2536,23 @@ VTKHProject2d::execute()
     }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    //std::cout<<"RANGE "<<data.GetGlobalRange("energy").GetPortalControl().Get(0)<<"\n";
     vtkm::Bounds bounds = data.GetGlobalBounds();
     vtkm::rendering::Camera camera;
     camera.ResetToBounds(bounds);
     vtkh::ScalarRenderer tracer;
 
     tracer.SetInput(&data);
+    camera.Azimuth(-30.0);
+    camera.Elevation(-30.0);
     tracer.SetCamera(camera);
 
     tracer.Update();
 
     vtkh::DataSet *output = tracer.GetOutput();
+    //std::cout<<"out RANGE "<<output->GetGlobalRange("energy").GetPortalControl().Get(0)<<"\n";
     VTKHCollection *new_coll = new VTKHCollection();
     new_coll->add(*output, topo_name);
-    //delete output;
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     delete output;
