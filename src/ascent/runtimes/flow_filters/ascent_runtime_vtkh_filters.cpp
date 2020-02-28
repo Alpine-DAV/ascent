@@ -379,7 +379,7 @@ VTKH3Slice::verify_params(const conduit::Node &params,
     std::vector<std::string> valid_paths;
     res &= check_string("topology",params, info, false);
     valid_paths.push_back("topology");
-    
+
     res &= check_numeric("x_offset",params, info, false);
     res &= check_numeric("y_offset",params, info, false);
     res &= check_numeric("z_offset",params, info, false);
@@ -388,7 +388,7 @@ VTKH3Slice::verify_params(const conduit::Node &params,
     valid_paths.push_back("x_offset");
     valid_paths.push_back("y_offset");
     valid_paths.push_back("z_offset");
-    
+
     std::string surprises = surprise_check(valid_paths, params);
     if(surprises != "")
     {
@@ -636,8 +636,19 @@ VTKHSlice::execute()
       topo_name = params()["topology"].as_string();
       if(!collection->has_topology(topo_name))
       {
-        ASCENT_ERROR("no topology named '"<<topo_name<<"'");
-
+        std::stringstream ss;
+        ss<<" possible topology names: ";
+        std::vector<std::string> names = collection->topology_names();
+        for(int i = 0; i < names.size(); ++i)
+        {
+          ss<<"'"<<names[i]<<"'";
+          if(i != names.size() -1)
+          {
+            ss<<", ";
+          }
+        }
+        ASCENT_ERROR("no topology named '"<<topo_name<<"'."
+                     <<ss.str());
       }
     }
     else
@@ -1055,8 +1066,19 @@ VTKHClip::execute()
       topo_name = params()["topology"].as_string();
       if(!collection->has_topology(topo_name))
       {
-        ASCENT_ERROR("no topology named '"<<topo_name<<"'");
-
+        std::stringstream ss;
+        ss<<" possible topology names: ";
+        std::vector<std::string> names = collection->topology_names();
+        for(int i = 0; i < names.size(); ++i)
+        {
+          ss<<"'"<<names[i]<<"'";
+          if(i != names.size() -1)
+          {
+            ss<<", ";
+          }
+        }
+        ASCENT_ERROR("no topology named '"<<topo_name<<"'."
+                     <<ss.str());
       }
     }
     else
@@ -2552,6 +2574,7 @@ VTKHProject2d::execute()
 
     int num_topologies = collection->number_of_topologies();
     std::string topo_name;
+
     if(num_topologies > 1)
     {
       if(!params().has_path("topology"))
@@ -2561,6 +2584,22 @@ VTKHProject2d::execute()
       }
 
       topo_name = params()["topology"].as_string();
+      if(!collection->has_topology(topo_name))
+      {
+        std::stringstream ss;
+        ss<<" possible topology names: ";
+        std::vector<std::string> names = collection->topology_names();
+        for(int i = 0; i < names.size(); ++i)
+        {
+          ss<<"'"<<names[i]<<"'";
+          if(i != names.size() -1)
+          {
+            ss<<", ";
+          }
+        }
+        ASCENT_ERROR("no topology named '"<<topo_name<<"'."
+                     <<ss.str());
+      }
     }
     else
     {
@@ -2568,7 +2607,6 @@ VTKHProject2d::execute()
     }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
-    //std::cout<<"RANGE "<<data.GetGlobalRange("energy").GetPortalControl().Get(0)<<"\n";
     vtkm::Bounds bounds = data.GetGlobalBounds();
     vtkm::rendering::Camera camera;
     camera.ResetToBounds(bounds);
@@ -2582,7 +2620,6 @@ VTKHProject2d::execute()
     tracer.Update();
 
     vtkh::DataSet *output = tracer.GetOutput();
-    //std::cout<<"out RANGE "<<output->GetGlobalRange("energy").GetPortalControl().Get(0)<<"\n";
     VTKHCollection *new_coll = new VTKHCollection();
     new_coll->add(*output, topo_name);
     // re wrap in data object

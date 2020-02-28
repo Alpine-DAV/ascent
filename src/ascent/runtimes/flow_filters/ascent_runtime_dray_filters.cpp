@@ -94,6 +94,7 @@
 #include <dray/rendering/renderer.hpp>
 #include <dray/rendering/surface.hpp>
 #include <dray/rendering/slice_plane.hpp>
+#include <dray/rendering/scalar_renderer.hpp>
 #include <dray/rendering/partial_renderer.hpp>
 #include <dray/io/blueprint_reader.hpp>
 
@@ -1130,6 +1131,144 @@ DRayVolume::execute()
 }
 
 
+//-----------------------------------------------------------------------------
+DRayProject2d::DRayProject2d()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+DRayProject2d::~DRayProject2d()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayProject2d::declare_interface(Node &i)
+{
+    i["type_name"]   = "dray_project_2d";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+DRayProject2d::verify_params(const conduit::Node &params,
+                               conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+
+    res &= check_numeric("image_width",params, info, false);
+    res &= check_numeric("image_height",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
+
+    valid_paths.push_back("image_width");
+    valid_paths.push_back("image_height");
+
+    ignore_paths.push_back("camera");
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayProject2d::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("dray_project2d input must be a DataObject");
+    }
+
+    DataObject *d_input = input<DataObject>(0);
+
+    DRayCollection *dcol = d_input->as_dray_collection().get();
+    int comm_id = -1;
+#ifdef ASCENT_MPI_ENABLED
+    comm_id = flow::Workspace::default_mpi_comm();
+#endif
+    dcol->mpi_comm(comm_id);
+
+    DRayCollection faces = dcol->boundary();
+    faces.mpi_comm(comm_id);
+
+    dray::Camera camera;
+    dray::ColorMap color_map("cool2warm");
+    std::string field_name;
+    std::string image_name;
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+
+    detail::parse_params(params(),
+                         &faces,
+                         meta,
+                         camera,
+                         color_map,
+                         field_name,
+                         image_name);
+
+    dray::AABB<3> bounds = dcol->get_global_bounds();
+
+    std::vector<dray::ScalarBuffer> buffers;
+
+    const int num_domains = dcol->m_domains.size();
+#if 0
+    for(int i = 0; i < num_domains; ++i)
+    {
+      std::shared_ptr<dray::Surface> surface
+            = std::make_shared<dray::Surface>(faces);
+      dray::ScalarRenderer renderer;
+
+
+      dray::Framebuffer fb = renderer.render(camera);
+
+      std::vector<float> clipping(2);
+      clipping[0] = 0.01f;
+      clipping[1] = 1000.f;
+      dray::Array<float32> depth = camera.gl_depth(fb.depths(), clipping[0], clipping[1]);
+      depth_buffers.push_back(depth);
+      color_buffers.push_back(fb.colors());
+    }
+
+#ifdef ASCENT_MPI_ENABLED
+    vtkh::SetMPICommHandle(comm_id);
+#endif
+    vtkh::Compositor compositor;
+    compositor.SetCompositeMode(vtkh::Compositor::Z_BUFFER_SURFACE);
+
+    for(int i = 0; i < num_domains; ++i)
+    {
+      const float * cbuffer =
+        reinterpret_cast<const float*>(color_buffers[i].get_host_ptr_const());
+      compositor.AddImage(cbuffer,
+                          depth_buffers[i].get_host_ptr_const(),
+                          camera.get_width(),
+                          camera.get_height());
+    }
+
+    vtkh::Image result = compositor.Composite();
+
+    if(vtkh::GetMPIRank() == 0)
+    {
+      const float bg_color[4] = {1.f, 1.f, 1.f, 1.f};
+      result.CompositeBackground(bg_color);
+      PNGEncoder encoder;
+      encoder.Encode(&result.m_pixels[0], camera.get_width(), camera.get_height());
+      encoder.Save(image_name + ".png");
+    }
+#endif
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
