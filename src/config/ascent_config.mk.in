@@ -169,6 +169,7 @@ ifeq ($(ASCENT_DRAY_DIR),)
    # not set, do not include config
 else
    include $(ASCENT_DRAY_DIR)/share/dray/dray_config.mk
+   ASCENT_LINK_RPATH += $(DRAY_LINK_RPATH)
 endif
 
 # MFEM isn't in the interface, so we don't need include flags
