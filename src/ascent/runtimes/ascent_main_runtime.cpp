@@ -1078,7 +1078,7 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
       // A render, needs two inputs:
       //     1) a set of domain ids to create canvases
       //     2) the coordinate bounds of all the input pipelines
-      //        to be able to create a defailt camera
+      //        to be able to create a default camera
       // Thus, we have to call bounds and domain id filters and
       // create unions of all inputs to feed to the render.
       //

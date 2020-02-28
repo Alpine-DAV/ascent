@@ -1093,6 +1093,8 @@ void VTKH3Slice::execute()
   slicer.SetInput(data);
 
   using Vec3f = vtkm::Vec<vtkm::Float32, 3>;
+  std::cout << "### GetGlobalBounds VTKH3Slice" << std::endl;
+
   vtkm::Bounds bounds = data->GetGlobalBounds();
   Vec3f center = bounds.Center();
   Vec3f x_point = center;
@@ -1247,6 +1249,9 @@ void VTKHSlice::execute()
   const Node &n_normal = params()["normal"];
 
   using Vec3f = vtkm::Vec<vtkm::Float32, 3>;
+
+  std::cout << "### GetGlobalBounds VTKHSlice" << std::endl;
+
   vtkm::Bounds bounds = data->GetGlobalBounds();
   Vec3f point;
 
@@ -1352,7 +1357,8 @@ void VTKHGhostStripper::execute()
   vtkh::DataSet *data = input<vtkh::DataSet>(0);
 
   // Check to see of the ghost field even exists
-  bool do_strip = data->GlobalFieldExists(field_name);
+  // std::cout << "### GlobalFieldExists VTKHGhostStripper" << std::endl;
+  bool do_strip = true;// data->GlobalFieldExists(field_name);
 
   if (do_strip)
   {
@@ -2079,7 +2085,17 @@ void VTKHBounds::execute()
   }
 
   vtkh::DataSet *data = input<vtkh::DataSet>(0);
-  bounds->Include(data->GetGlobalBounds());
+
+  // std::cout << "### GetGlobalBounds VTKHBounds" << std::endl;
+  // bounds->Include(data->GetGlobalBounds());
+
+  bounds->X.Min = 0.0;
+  bounds->X.Max = 0.5;
+  bounds->Y.Min = 0.0;
+  bounds->Y.Max = 0.5;
+  bounds->Z.Min = 0.0;
+  bounds->Z.Max = 0.5;
+
   set_output<vtkm::Bounds>(bounds);
 }
 
@@ -2344,10 +2360,12 @@ void CreatePlot::execute()
   conduit::Node plot_params = params();
   std::string type = params()["type"].as_string();
 
-  if (data->GlobalIsEmpty())
-  {
-    ASCENT_INFO(type << " plot yielded no data, i.e., no cells remain");
-  }
+  // std::cout << "### GlobalIsEmpty CreatePlot" << std::endl;
+
+  // if (data->GlobalIsEmpty())
+  // {
+  //   ASCENT_INFO(type << " plot yielded no data, i.e., no cells remain");
+  // }
 
   vtkh::Renderer *renderer = nullptr;
 
@@ -2415,10 +2433,11 @@ void CreatePlot::execute()
   if (plot_params.has_path("field"))
   {
     std::string field_name = plot_params["field"].as_string();
-    if (!data->GlobalFieldExists(field_name))
-    {
-      ASCENT_INFO("Plot variable '" << field_name << "' does not exist");
-    }
+    // std::cout << "### GlobalFieldExists CreatePlot" << std::endl;
+    // if (!data->GlobalFieldExists(field_name))
+    // {
+    //   ASCENT_INFO("Plot variable '" << field_name << "' does not exist");
+    // }
     renderer->SetField(field_name);
   }
 
@@ -2976,6 +2995,8 @@ void VTKHHistSampling::execute()
   if (meta->has_path("ghost_field"))
   {
     ghost_field = (*meta)["ghost_field"].as_string();
+
+    std::cout << "### GlobalFieldExists VTKHHistSampling" << std::endl;
     if (!data->GlobalFieldExists(ghost_field))
     {
       // can't find it
