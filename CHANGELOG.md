@@ -4,6 +4,12 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Changed
+
+- Modified Cinema output so it can be viewed without a webserver.
+
 ## [0.5.1] - Released 2020-01-31
 
 ### Added
