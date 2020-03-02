@@ -2544,9 +2544,12 @@ VTKHProject2d::verify_params(const conduit::Node &params,
     bool res = check_string("topology",params, info, false);
 
     std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
     valid_paths.push_back("topology");
+    valid_paths.push_back("camera");
+    ignore_paths.push_back("camera");
 
-    std::string surprises = surprise_check(valid_paths, params);
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
     if(surprises != "")
     {
@@ -2610,11 +2613,15 @@ VTKHProject2d::execute()
     vtkm::Bounds bounds = data.GetGlobalBounds();
     vtkm::rendering::Camera camera;
     camera.ResetToBounds(bounds);
+
+    if(params().has_path("camera"))
+    {
+      parse_camera(params()["camera"], camera);
+    }
+
     vtkh::ScalarRenderer tracer;
 
     tracer.SetInput(&data);
-    camera.Azimuth(-30.0);
-    camera.Elevation(-30.0);
     tracer.SetCamera(camera);
 
     tracer.Update();

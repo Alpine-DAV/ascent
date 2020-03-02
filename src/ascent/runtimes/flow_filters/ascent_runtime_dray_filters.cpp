@@ -101,6 +101,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/compositing/Compositor.hpp>
 #include <vtkh/compositing/PartialCompositor.hpp>
+#include <vtkh/compositing/PayloadCompositor.hpp>
 
 using namespace conduit;
 using namespace std;
@@ -572,6 +573,86 @@ void convert_partials(std::vector<dray::Array<dray::VolumePartial>> &input,
 
 }
 
+
+vtkh::PayloadImage * convert(dray::ScalarBuffer &result)
+{
+  const int num_fields = result.m_scalars.size();
+  const int payload_size = num_fields * sizeof(float);
+  vtkm::Bounds bounds;
+  bounds.X.Min = 1;
+  bounds.Y.Min = 1;
+  bounds.X.Max = result.m_width;
+  bounds.Y.Max = result.m_height;
+  const size_t size = result.m_width * result.m_height;
+
+  vtkh::PayloadImage *image = new vtkh::PayloadImage(bounds, payload_size);
+  unsigned char *loads = &image->m_payloads[0];
+
+  const float* dbuffer = result.m_depths.get_host_ptr();
+  memcpy(&image->m_depths[0], dbuffer, sizeof(float) * size);
+  // copy scalars into payload
+  std::vector<float*> buffers;
+  for(int i = 0; i < num_fields; ++i)
+  {
+    float* buffer = result.m_scalars[i].get_host_ptr();
+    buffers.push_back(buffer);
+  }
+#ifdef ASCENT_USE_OPENMP
+    #pragma omp parallel for
+#endif
+  for(size_t x = 0; x < size; ++x)
+  {
+    for(int i = 0; i < num_fields; ++i)
+    {
+      const size_t offset = x * payload_size + i * sizeof(float);
+      memcpy(loads + offset, &buffers[i][x], sizeof(float));
+    }
+  }
+  return image;
+}
+
+dray::ScalarBuffer  convert(vtkh::PayloadImage &image, std::vector<std::string> &names)
+{
+  dray::ScalarBuffer result;
+  result.m_names = names;
+  const int num_fields = names.size();
+
+  const int dx  = image.m_bounds.X.Max - image.m_bounds.X.Min + 1;
+  const int dy  = image.m_bounds.Y.Max - image.m_bounds.Y.Min + 1;
+  const int size = dx * dy;
+
+  result.m_width = dx;
+  result.m_height = dy;
+
+  std::vector<float*> buffers;
+  for(int i = 0; i < num_fields; ++i)
+  {
+    dray::Array<float> array;
+    array.resize(size);
+    result.m_scalars.push_back(array);
+    float* buffer = result.m_scalars[i].get_host_ptr();
+    buffers.push_back(buffer);
+  }
+
+  const unsigned char *loads = &image.m_payloads[0];
+  const size_t payload_size = image.m_payload_bytes;
+
+  for(size_t x = 0; x < size; ++x)
+  {
+    for(int i = 0; i < num_fields; ++i)
+    {
+      const size_t offset = x * payload_size + i * sizeof(float);
+      memcpy(&buffers[i][x], loads + offset, sizeof(float));
+    }
+  }
+
+  //
+  result.m_depths.resize(size);
+  float* dbuffer = result.m_depths.get_host_ptr();
+  memcpy(dbuffer, &image.m_depths[0], sizeof(float) * size);
+
+  return result;
+}
 }; // namespace detail
 
 //-----------------------------------------------------------------------------
@@ -1150,7 +1231,7 @@ DRayProject2d::declare_interface(Node &i)
 {
     i["type_name"]   = "dray_project_2d";
     i["port_names"].append() = "in";
-    i["output_port"] = "false";
+    i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
@@ -1204,70 +1285,96 @@ DRayProject2d::execute()
     DRayCollection faces = dcol->boundary();
     faces.mpi_comm(comm_id);
 
-    dray::Camera camera;
-    dray::ColorMap color_map("cool2warm");
-    std::string field_name;
     std::string image_name;
+
     conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    int width  = 512;
+    int height = 512;
 
-    detail::parse_params(params(),
-                         &faces,
-                         meta,
-                         camera,
-                         color_map,
-                         field_name,
-                         image_name);
+    if(params().has_path("image_width"))
+    {
+      width = params()["image_width"].to_int32();
+    }
 
+    if(params().has_path("image_height"))
+    {
+      height = params()["image_height"].to_int32();
+    }
+
+    dray::Camera camera;
+    camera.set_width(width);
+    camera.set_height(height);
     dray::AABB<3> bounds = dcol->get_global_bounds();
+    camera.reset_to_bounds(bounds);
+
+    //std::cout<<camera.print()<<"\n";
+
+    std::vector<float> clipping(2);
+    clipping[0] = 0.01f;
+    clipping[1] = 1000.f;
+    if(params().has_path("camera"))
+    {
+      const conduit::Node &n_camera = params()["camera"];
+      clipping = detail::parse_camera(n_camera, camera);
+    }
 
     std::vector<dray::ScalarBuffer> buffers;
 
+    // basic sanity checking
+    int min_p = std::numeric_limits<int>::max();
+    int max_p = std::numeric_limits<int>::min();
+
+    std::vector<std::string> field_names;
+    vtkh::PayloadCompositor compositor;
     const int num_domains = dcol->m_domains.size();
-#if 0
-    for(int i = 0; i < num_domains; ++i)
-    {
-      std::shared_ptr<dray::Surface> surface
-            = std::make_shared<dray::Surface>(faces);
-      dray::ScalarRenderer renderer;
-
-
-      dray::Framebuffer fb = renderer.render(camera);
-
-      std::vector<float> clipping(2);
-      clipping[0] = 0.01f;
-      clipping[1] = 1000.f;
-      dray::Array<float32> depth = camera.gl_depth(fb.depths(), clipping[0], clipping[1]);
-      depth_buffers.push_back(depth);
-      color_buffers.push_back(fb.colors());
-    }
-
-#ifdef ASCENT_MPI_ENABLED
-    vtkh::SetMPICommHandle(comm_id);
-#endif
-    vtkh::Compositor compositor;
-    compositor.SetCompositeMode(vtkh::Compositor::Z_BUFFER_SURFACE);
 
     for(int i = 0; i < num_domains; ++i)
     {
-      const float * cbuffer =
-        reinterpret_cast<const float*>(color_buffers[i].get_host_ptr_const());
-      compositor.AddImage(cbuffer,
-                          depth_buffers[i].get_host_ptr_const(),
-                          camera.get_width(),
-                          camera.get_height());
+      std::shared_ptr<dray::Surface> surface =
+        std::make_shared<dray::Surface>(faces.m_domains[i]);
+      dray::ScalarRenderer renderer(surface);
+      renderer.field_names(faces.m_domains[i].fields());
+      if(i == 0)
+      {
+        field_names = faces.m_domains[i].fields();
+      }
+
+      dray::ScalarBuffer buffer = renderer.render(camera);
+      vtkh::PayloadImage *pimage = detail::convert(buffer);
+
+      min_p = std::min(min_p, pimage->m_payload_bytes);
+      max_p = std::max(max_p, pimage->m_payload_bytes);
+
+      compositor.AddImage(*pimage);
+      delete pimage;
     }
 
-    vtkh::Image result = compositor.Composite();
+    if(min_p != max_p)
+    {
+      ASCENT_ERROR("VERY BAD "<<min_p<<" "<<max_p);
+    }
 
+    vtkh::PayloadImage final_image = compositor.Composite();
+    conduit::Node *output = new conduit::Node();
     if(vtkh::GetMPIRank() == 0)
     {
-      const float bg_color[4] = {1.f, 1.f, 1.f, 1.f};
-      result.CompositeBackground(bg_color);
-      PNGEncoder encoder;
-      encoder.Encode(&result.m_pixels[0], camera.get_width(), camera.get_height());
-      encoder.Save(image_name + ".png");
+      dray::ScalarBuffer final_result = detail::convert(final_image, field_names);
+      conduit::Node &dom = output->append();
+      final_result.to_node(dom);
+      dom["state/domain_id"] = 0;
+
+      int cycle = 0;
+
+      if(meta->has_path("cycle"))
+      {
+        cycle = (*meta)["cycle"].as_int32();
+      }
+      dom["state/cycle"] = cycle;
     }
-#endif
+
+    DataObject *res =  new DataObject(output);
+    set_output<DataObject>(res);
+
 }
 //-----------------------------------------------------------------------------
 };
