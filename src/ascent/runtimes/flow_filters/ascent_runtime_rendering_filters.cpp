@@ -591,6 +591,15 @@ public:
     meta["arguments/theta"] = thetas;
     meta.save(m_db_path + "/info.json","json");
 
+    // also generate info.js, a simple javascript variant of  
+    // info.json that our index.html reads directly to
+    // avoid ajax
+
+    std::ofstream out_js(m_db_path + "/info.js");
+    out_js<<"var info =";
+    meta.to_json_stream(out_js);
+    out_js.close();
+
     //append current data to our csv file
     std::stringstream csv;
 
