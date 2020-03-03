@@ -14,11 +14,21 @@ if [[ -z $keep_going ]]; then
     keep_going=0
 fi
 
+build_option=$2
+if [[ -z $build_option ]]; then
+    build_option="-j40"
+fi
+
+build_dependency=$3
+if [[ -z $build_dependency ]]; then
+    build_dependency=""
+fi
+
 # Patch spack to fix eventual issues
-git reset --hard
+cd spack || exit;git reset --hard;cd ..
 if [[ -f ${ascentDir}/spack.patch ]]; then
-    cd spack;patch -p1 < ${ascentDir}/spack.patch;cd ..
+    cd spack || exit;patch -p1 < ${ascentDir}/src/examples/paraview-vis/tests/spack.patch;cd ..
     . spack/share/spack/setup-env.sh
 fi
 # the env variable is needed because we run this as root
-FORCE_UNSAFE_CONFIGURE=1 ${ascentDir}/src/examples/paraview-vis/tests/build_and_run_sim.sh /root/spack /root/tests $keep_going
+FORCE_UNSAFE_CONFIGURE=1 ${ascentDir}/src/examples/paraview-vis/tests/build_and_run_sim.sh /root/spack /root/tests $keep_going $build_option $build_dependency
