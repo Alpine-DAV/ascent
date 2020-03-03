@@ -31,7 +31,9 @@ class Dray(Package):
 
     homepage = "https://github.com/LLNL/devil_ray"
     git      = "https://github.com/LLNL/devil_ray.git"
+    url      = "https://github.com/LLNL/devil_ray/releases/download/v0.1.0/dray-v0.1.0.tar.gz"
 
+    version('0.1.0',  sha256='8b341138e1069361351e0a94478608c5af479cca76e2f97d556229aed45c0169')
     version('develop',  branch='develop',  submodules='True')
 
     variant('cuda', default=False, description='Build with CUDA backend')
