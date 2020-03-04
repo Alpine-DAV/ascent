@@ -218,7 +218,8 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
                                  const int image_count,
                                  const int sim_node_count,
                                  const int vis_node_count, 
-                                 const double vis_budget)
+                                 const double vis_budget,
+                                 const int world_rank)
 {
     assert(sim_estimate.size() == vis_estimates.size());
     
@@ -287,27 +288,30 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
     image_counts_combined.insert(image_counts_combined.end(), 
                                  image_counts_vis.begin(), 
                                  image_counts_vis.end());
-                            
-    // Debug OUT: 
-    // std::cout << "=== t_inline ";
-    // for (auto &a : t_inline)
-    //     std::cout << a << " ";
-    // std::cout << std::endl;
 
-    // std::cout << "=== t_inline_sim ";
-    // for (auto &a : t_inline_sim)
-    //     std::cout << a << " ";
-    // std::cout << std::endl;
+    if (world_rank == 0)
+    {    
+        // Debug OUT: 
+        // std::cout << "=== t_inline ";
+        // for (auto &a : t_inline)
+        //     std::cout << a << " ";
+        // std::cout << std::endl;
 
-    // std::cout << "=== t_intransit ";
-    // for (auto &a : t_intransit)
-    //     std::cout << a << " ";
-    // std::cout << std::endl;
+        // std::cout << "=== t_inline_sim ";
+        // for (auto &a : t_inline_sim)
+        //     std::cout << a << " ";
+        // std::cout << std::endl;
 
-    std::cout << "=== image_counts ";
-    for (auto &a : image_counts_combined)
-        std::cout << a << " ";
-    std::cout << std::endl;
+        // std::cout << "=== t_intransit ";
+        // for (auto &a : t_intransit)
+        //     std::cout << a << " ";
+        // std::cout << std::endl;
+
+        std::cout << "=== image_counts ";
+        for (auto &a : image_counts_combined)
+            std::cout << a << " ";
+        std::cout << std::endl;
+    }
 
     return image_counts_combined;
 }
@@ -486,18 +490,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
     auto start = std::chrono::system_clock::now();
 
-    /** TODO: add new load balancer based on: 
-     * 
-     * on sim nodes:
-     *      my_t_vis = cinema_image_count * my_vis_estimate
-     *
-     * t_vis = t_inline + t_intransit
-     * 
-     * t_intransit = sum_sim_node_count {t_vis_i - t_inline_i}
-     * min( sim_node_count * t_inline ) <= t_intransit + t_sim_avg 
-     * => 
-     */
-
     // sort the ranks accroding to sim+vis time estimate
     std::vector<int> rank_order = sort_ranks(sim_estimates, vis_estimates);
     // generate mapping between sending and receiving nodes
@@ -508,18 +500,79 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     std::vector<int> node_map = node_assignment(rank_order, vis_estimates, vis_node_count);
 
     // DEBUG: OUT
-    std::cout << "=== node_map ";
-    for (auto &a : node_map)
-        std::cout << a << " ";
-    std::cout << std::endl;
+    if (world_rank == 0)
+    {
+        std::cout << "=== node_map ";
+        for (auto &a : node_map)
+            std::cout << a << " ";
+        std::cout << std::endl;
+    }
 
     // distribute rendering load across sim and vis loads
     std::vector<int> image_counts = load_assignment(sim_estimates, vis_estimates,
                                                     node_map,
                                                     cinema_image_count,
                                                     sim_node_count, vis_node_count,
-                                                    vis_budget);
+                                                    vis_budget, world_rank);
 
+    if (is_vis_node) // all vis nodes: receive data 
+    {
+        std::cout << "~~~~rank " << world_rank << " / " << my_dest_rank
+                    << ": receives extract(s) from " ;
+
+        // receive data from corresponding sources
+        for (int i = 0; i < node_map.size(); ++i)
+        {
+            if (node_map[i] == my_dest_rank)
+            {   
+                std::cout << i << " ";
+                conduit::Node &n_curr = data.append();
+                relay::mpi::recv_using_schema(n_curr, i, 0, mpi_comm_world);
+            }
+        }
+        std::cout << std::endl;
+    }
+    else // all sim nodes: send extract to vis nodes
+    {
+        int destination = node_map[world_rank] + sim_node_count;
+        std::cout << "~~~~rank " << world_rank << ": sends extract to " 
+                  <<  node_map[world_rank] + sim_node_count << std::endl;
+
+        relay::mpi::send_using_schema(data, destination, 0, mpi_comm_world);
+    }
+
+    // TODO: 3) render images
+    // Full cinema render using Ascent
+    Node verify_info;
+    if (conduit::blueprint::mesh::verify(data, verify_info))
+    {
+        Node ascent_opts, blank_actions;
+        // TODO: make the action file name variable
+        ascent_opts["actions_file"] = "cinema_actions.yaml";
+        ascent_opts["mpi_comm"] = MPI_Comm_c2f(mpi_comm_world);
+// TODO: 
+// read in cinema_actions.yaml and put that into ascent actions
+// add the image_counts[world_rank] (or percentage?) 
+
+        Ascent ascent_render;
+        ascent_render.open(ascent_opts);
+        ascent_render.publish(data);    // sync happens here
+
+        log_time(start, "before render ascent execute ", world_rank);
+        ascent_render.execute(blank_actions);   // TODO: check for sync
+        ascent_render.close();
+    }
+    else
+    {
+        std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
+                    << std::endl;
+    }
+
+
+    /*
+    // -------------------------------
+    // here goes the old stuff
+    //
     std::vector<int> world_to_src(intransit_map.size(), -1); 
     std::vector<int> dest_counts(vis_node_count);
     std::vector<int> source_ranks;
@@ -690,6 +743,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     // MPI_Comm_free(&hola_comm);
     MPI_Group_free(&intransit_group);
     // MPI_Comm_free(&intransit_comm); // Fatal error in PMPI_Comm_free: Invalid communicator
+
+    */
 
     log_time(start, "end splitAndRun ", world_rank);
 #endif // ASCENT_MPI_ENABLED
