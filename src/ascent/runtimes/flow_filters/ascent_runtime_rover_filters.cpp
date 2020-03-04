@@ -164,6 +164,31 @@ RoverXRay::verify_params(const conduit::Node &params,
         res = false;
     }
 
+
+    if(params.has_path("image_params"))
+    {
+      if( !params.has_path("image_params/log_scale") ||
+         ! params["image_params/log_scale"].dtype().is_string() )
+      {
+          info["errors"].append() = "Missing required image parameter 'log_scale' must be a string";
+          res = false;
+      }
+
+      if( !params.has_path("image_params/min_value") ||
+         ! params["image_params/min_value"].dtype().is_number() )
+      {
+          info["errors"].append() = "Missing required image parameter 'min_value' must be a number";
+          res = false;
+      }
+
+      if( !params.has_path("image_params/max_value") ||
+         ! params["image_params/max_value"].dtype().is_number() )
+      {
+          info["errors"].append() = "Missing required image parameter 'max_value' must be a number";
+          res = false;
+      }
+    }
+
     if( params.has_child("precision") &&
        ! params["precision"].dtype().is_string() )
     {
@@ -268,11 +293,20 @@ RoverXRay::execute()
     std::string filename = params()["filename"].as_string();
     if(cycle != -1)
     {
-      tracer.save_png(expand_family_name(filename, cycle));
+      filename = expand_family_name(filename, cycle);
+    }
+
+    if(params().has_path("image_params"))
+    {
+      float min_value = params()["image_params/min_value"].to_float32();
+      float max_value = params()["image_params/max_value"].to_float32();
+      bool log_scale = params()["image_params/log_scale"].as_string() == "true";
+      tracer.save_png(filename, min_value, max_value, log_scale);
+
     }
     else
     {
-      tracer.save_png(expand_family_name(filename));
+      tracer.save_png(filename);
     }
 
     if(params().has_path("bov_filename"))

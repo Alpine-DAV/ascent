@@ -67,6 +67,11 @@ public:
   bool has_intensity(const int &channel_num) const;
   bool has_optical_depth(const int &channel_num) const;
   void normalize_intensity(const int &channel_num);
+  void normalize_intensity(const int &channel_num,
+                           const float min_val,
+                           const float max_val,
+                           const bool log_scale);
+
   void normalize_optical_depth(const int &channel_num);
   void operator=(PartialImage<FloatType> partial);
   template<typename O> void operator=(Image<O> &other);
@@ -87,6 +92,7 @@ protected:
 
   void init_from_partial(PartialImage<FloatType> &);
   void normalize_handle(HandleType &, bool);
+  void normalize_handle(HandleType &, bool, float, float, bool);
 };
 } // namespace rover
 #endif
