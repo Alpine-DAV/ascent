@@ -547,9 +547,71 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     if (conduit::blueprint::mesh::verify(data, verify_info))
     {
         Node ascent_opts, blank_actions;
-        // TODO: make the action file name variable
-        ascent_opts["actions_file"] = "cinema_actions.yaml";
         ascent_opts["mpi_comm"] = MPI_Comm_c2f(mpi_comm_world);
+        // FIXME: Hardcoded cinema actions for testing
+        std::string actions_file = ""
+                                   "-\n"
+                                   "  action: add_scenes\n"
+                                   "  scenes:\n"
+                                   "    s1:\n"
+                                   "      plots:\n"
+                                   "        p1: \n"
+                                   "          type: volume\n"
+                                   "          field: energy\n"
+                                   "          min_value: 0.0\n"
+                                   "          max_value: 0.5\n"
+                                   "          color_table:\n"
+                                   "            name: rainbow desaturated\n"
+                                   "            control_points: \n"
+                                   "              - \n"
+                                   "                type: alpha\n"
+                                   "                position: 0.0\n"
+                                   "                alpha: 0.0\n"
+                                   "              - \n"
+                                   "                type: alpha\n"
+                                   "                position: 0.5\n"
+                                   "                alpha: 0.0\n"
+                                   "              - \n"
+                                   "                type: alpha\n"
+                                   "                position: 0.51\n"
+                                   "                alpha: 1.0\n"
+                                   "              - \n"
+                                   "                type: alpha\n"
+                                   "                position: 1.0\n"
+                                   "                alpha: 1.0\n"
+                                   "      renders:\n"
+                                   "        r1:\n"
+                                   "          type: cinema\n"
+                                   "          phi: 7\n"
+                                   "          theta: 7\n"
+                                   "          camera:\n"
+                                   "            zoom: 0.3\n"
+                                   "          db_name: clover_db\n"
+                                   "          image_count: ";
+        actions_file += std::to_string(image_counts[world_rank]);
+        actions_file += "\n";
+
+        if (is_vis_node)
+        {
+            actions_file += "          ";
+            actions_file += "image_offsets: [";
+            for (int i = 0; i < world_size; i++)
+            {
+                actions_file += std::to_string(image_counts[i]);
+                if (i == world_size - 1)
+                    actions_file += "]\n";
+                else
+                    actions_file += ",";
+            }
+        }
+
+        std::string actions_file_name = "cinema_actions" + std::to_string(world_rank) + ".yaml";
+        std::ofstream file(actions_file_name);
+        file << actions_file;
+        file.close();
+
+        ascent_opts["actions_file"] = actions_file_name;
+
 // TODO: 
 // read in cinema_actions.yaml and put that into ascent actions
 // add the image_counts[world_rank] (or percentage?) 

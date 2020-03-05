@@ -471,6 +471,8 @@ protected:
   vtkm::Bounds m_bounds;
   const int m_phi;
   const int m_theta;
+  const int m_image_count;
+  const int m_image_offset;
   std::string m_image_name;
   std::string m_image_path;
   std::string m_db_path;
@@ -481,11 +483,15 @@ public:
   CinemaManager(vtkm::Bounds bounds,
                 const int phi,
                 const int theta,
+                const int image_count,
+                const int image_offset,
                 const std::string image_name,
                 const std::string path)
       : m_bounds(bounds),
         m_phi(phi),
         m_theta(theta),
+        m_image_count(image_count),
+        m_image_offset(image_offset),
         m_image_name(image_name),
         m_time(0.f)
   {
@@ -497,7 +503,9 @@ public:
 
   CinemaManager()
       : m_phi(0),
-        m_theta(0)
+        m_theta(0),
+        m_image_count(0),
+        m_image_offset(0)
   {
     ASCENT_ERROR("Cannot create un-initialized CinemaManger");
   }
@@ -700,15 +708,30 @@ private:
     const double pi = 3.141592653589793;
     double phi_inc = 360.0 / double(m_phi);
     double theta_inc = 180.0 / double(m_theta);
-    for (int p = 0; p < m_phi; ++p)
+
+    int phi_start = m_image_offset / m_phi;
+    int theta_start_first = m_image_offset % m_theta;
+    int phi_end = m_image_count / m_phi;
+    int theta_end_last = m_image_count % m_theta;
+    if (theta_end_last == 0)
+      theta_end_last = m_theta;
+
+    // TODO: validate start and end values for angles
+    std::cout << "phi " << phi_start << " " << phi_end << std::endl;
+    std::cout << "theta " << theta_start_first << " " << theta_end_last << std::endl;
+
+    for (int p = phi_start; p < phi_end; ++p)
     {
       float phi = -180.f + phi_inc * p;
       m_phi_values.push_back(phi);
 
-      for (int t = 0; t < m_theta; ++t)
+      int theta_start = (p == 0) ? theta_start_first : 0;
+      int theta_end = (p == phi_end - 1) ? theta_end_last : m_theta;
+
+      for (int t = theta_start; t < theta_end; ++t)
       {
         float theta = theta_inc * t;
-        if (p == 0)
+        if (p == phi_start)
         {
           m_theta_values.push_back(theta);
         }
@@ -772,6 +795,8 @@ public:
   static void create_db(vtkm::Bounds bounds,
                         const int phi,
                         const int theta,
+                        const int image_count,
+                        const int image_offset,
                         std::string db_name,
                         std::string path)
   {
@@ -780,7 +805,9 @@ public:
       ASCENT_ERROR("Creation failed: cinema database already exists");
     }
 
-    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, phi, theta, db_name, path)));
+    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, phi, theta, 
+                                                              image_count, image_offset, 
+                                                              db_name, path)));
   }
 
   static CinemaManager &get_db(std::string db_name)
@@ -1575,11 +1602,6 @@ void DefaultRender::execute()
 
       if (is_cinema)
       {
-        // if(!render_node.has_path("phi") || !render_node.has_path("theta"))
-        // {
-        //   ASCENT_ERROR("Cinema must have 'phi' and 'theta'");
-        // }
-
         // default values for theta & phi
         int phi = 5;
         int theta = 5;
@@ -1587,6 +1609,15 @@ void DefaultRender::execute()
           phi = render_node["phi"].to_int32();
         if (render_node.has_path("theta"))
           theta = render_node["theta"].to_int32();
+
+        int image_count = phi*theta;
+        int offset = 0;
+        // check for distribution of image rendering
+        // TODO: add to render node
+        if (render_node.has_path("image_count"))
+          image_count = render_node["image_count"].to_int32();
+        // if (render_node.has_path("image_offsets"))
+          // offset = render_node["image_offsets"].to_int32();
 
         std::string output_path = "";
 
@@ -1608,7 +1639,8 @@ void DefaultRender::execute()
         bool exists = detail::CinemaDatabases::db_exists(db_name);
         if (!exists)
         {
-          detail::CinemaDatabases::create_db(*bounds, phi, theta, db_name, output_path);
+          detail::CinemaDatabases::create_db(*bounds, phi, theta, image_count, offset, 
+                                             db_name, output_path);
         }
         detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
 
