@@ -64,6 +64,7 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <ascent_config.h>
 #include <runtimes/ascent_data_object.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -84,6 +85,10 @@
 
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkh/DataSet.hpp>
+#endif
+
+#ifdef ASCENT_VTKM_USE_CUDA
+#include "cublas_v2.h"
 #endif
 
 using namespace conduit;
@@ -208,6 +213,188 @@ BlueprintVerify::execute()
 
 
     set_output<DataObject>(d_input);
+}
+//-----------------------------------------------------------------------------
+Learn::Learn()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Learn::~Learn()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Learn::declare_interface(Node &i)
+{
+    i["type_name"]   = "blueprint_learn";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Learn::verify_params(const conduit::Node &params,
+                     conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    if(! params.has_child("protocol") ||
+       ! params["protocol"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'protocol'";
+    }
+
+    return res;
+}
+
+#ifdef ASCENT_VTKM_USE_CUDA
+__global__ void ColumnwiseKronecker( int R, int C, const double *A, double *B)
+{
+    int cols_per_block = C/gridDim.y;
+    int col_start = cols_per_block*blockIdx.y;
+    int col_end = col_start + cols_per_block - 1;
+    //int vec_col_idx = 0;
+    int row = threadIdx.x + blockIdx.x * blockDim.x;
+    int left_vec_row_idx = row/R;
+    int right_vec_row_idx = row % R;
+    for(int col = col_start; col <= col_end; col++) {
+       int col_offset = col * R * R;
+       if (row < R*R)
+           B[col_offset + row] = A[col*R + left_vec_row_idx] * A[col*R + right_vec_row_idx];
+    }
+    //if(blockIdx.x == 0 && threadIdx.x==0){
+    //   printf("from block %d cols %d range %d--%d\n", blockIdx.y, cols_per_block, col_start, col_end);
+    //}
+}
+void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double *kVecs)
+{
+    //              0 1 2 .. n-1
+    // A = pressure
+    //      temp
+    printf("Entered C wrapper from Fortran side\n");
+
+    //Sanity checking
+    //for(int i=0; i<nRows*nRows*nRows*nRows; i++) {
+    //  C[i] = double(i);
+    //}
+
+    size_t bytes;
+
+    //Allocate memory for matrices A, B and C on device
+    double *d_A, *d_B, *d_C, *d_kV;
+
+    //This is A, the raw data matrix, passed in from Fortran
+    bytes = nRows * nCols * sizeof(double);
+    cudaMalloc(&d_A, bytes);
+
+    //This is the Khatri Rao product of A with itsel
+    //B = KhatriRao(A,A)
+    bytes = nRows * nRows * nCols * sizeof(double);
+    cudaMalloc(&d_B, bytes);
+
+    //This is the maticised cokurtosis tensor, obtained by matrix multiply of B*B'
+    //C = (1/nCols)(B * B'); size(C) = (nRows*nRows) x (nRows,nRows)
+    bytes = nRows * nRows * nRows * nRows * sizeof(double);
+    cudaMalloc(&d_C, bytes);
+
+    //We desire SVD(reshaped(C, nRows, nRows^3)).
+    //Instead we do (reshaped(C)) * (reshaped(C))'
+    //Pass this back to Fortran so it can do DSYEV at its end
+    bytes = nRows * nRows * sizeof(double);
+    cudaMalloc(&d_kV, bytes);
+
+    cublasStatus_t stat;
+
+    //Set Matrices A and C on device
+    stat = cublasSetMatrix(nRows, nCols, sizeof(double), A, nRows, d_A, nRows);
+
+    //stat = cublasSetMatrix(nRows*nRows, nRows*nRows, sizeof(double), C, nRows*nRows, d_C, nRows*nRows);
+
+    //Form the Matrix Khatri Rao product i.e. B = KhatriRao(A,A)
+    dim3 threadsPerBlock(64);
+    dim3 numblocks(13, 32);
+    ColumnwiseKronecker<<<numblocks, threadsPerBlock>>>(nRows, nCols, d_A, d_B);
+
+    // Now compute the matricised cokurt tensor in C
+    // C = B * B'
+    cublasHandle_t handle;
+    stat = cublasCreate(&handle);
+
+    double alpha = 1.0/double(nCols); double beta = 0.0;
+    stat = cublasDgemm(handle,
+                       CUBLAS_OP_N,
+                       CUBLAS_OP_T,
+                       nRows*nRows,
+                       nRows*nRows,
+                       nCols,
+                       &alpha,
+                       d_B,
+                       nRows*nRows,
+                       d_B,
+                       nRows*nRows,
+                       &beta,
+                       d_C,
+                       nRows*nRows);
+
+    // Now that the matricised cokurt tensor is done, multiply C*C'
+    // C is implicitly reshaped to (nRows)x(nRows^3) in the call to DGEMM itself
+    double alpha2 = 1.0;
+    stat = cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_T,
+                       nRows, nRows, nRows*nRows*nRows,
+                       &alpha2,
+                       d_C, nRows,
+                       d_C, nRows,
+                       &beta,
+                       d_kV, nRows);
+
+    // Now get the matrix from device memory, to copy into C, to pass back to Fortran
+    stat = cublasGetMatrix( nRows, nRows, sizeof(double), d_kV, nRows, kVecs, nRows);
+
+    cudaFree(d_A); cudaFree(d_B); cudaFree(d_C); cudaFree(d_kV);
+}
+#endif
+//-----------------------------------------------------------------------------
+void
+Learn::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("blueprint_learn input must be a DataObject");
+    }
+
+    std::string protocol = params()["protocol"].as_string();
+
+    Node v_info;
+    DataObject *d_input = input<DataObject>(0);
+    std::shared_ptr<conduit::Node> n_input = d_input->as_low_order_bp();
+#ifdef ASCENT_VTKM_USE_CUDA
+    for(int i = 0; i < n_input->number_of_children(); ++i)
+    {
+      const conduit::Node &dom = n_input->child(0);
+      const double * e = dom["fields/energy/values"].value();
+      const double * p = dom["fields/pressure/values"].value();
+      const int size = dom["fields/pressure/values"].dtype().number_of_elements();
+      double *A = new double[size*2];
+      for(int a = 0; a < size; ++a)
+      {
+        int offset = a * 2;
+        A[offset] = e[a];
+        A[offset+1] = p[a];
+      }
+      double *kVecs = new double[4];
+      f_cokurt_vecs_cublas_wrapper(2, size, A, kVecs);
+      delete[] A;
+      std::cout<<"kVecs "<<kVecs[0]<<" "<<kVecs[1]<<" "<<kVecs[2]<<" "<<kVecs[3]<<"\n";
+    }
+#endif
+
+    //set_output<DataObject>(d_input);
 }
 
 

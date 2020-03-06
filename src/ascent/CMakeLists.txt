@@ -163,6 +163,7 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
         runtimes/flow_filters/ascent_runtime_rendering_filters.hpp
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
+        runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp
 
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
         runtimes/ascent_main_runtime.hpp)
@@ -253,7 +254,7 @@ if(MFEM_FOUND)
 endif()
 
 if(CUDA_FOUND)
-    list(APPEND ascent_thirdparty_libs cuda_runtime)
+    list(APPEND ascent_thirdparty_libs cuda_runtime cublas)
 endif()
 
 if(OPENMP_FOUND)

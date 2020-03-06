@@ -129,6 +129,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHUnionDomainIds>();
 
     // transforms, the current crop expect vtk-h input data
+    AscentRuntime::register_filter_type<Learn>("extracts","learn");
     AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
     AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");
     AscentRuntime::register_filter_type<VTKHGhostStripper>("transforms","ghost_stripper");
