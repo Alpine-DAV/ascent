@@ -265,7 +265,8 @@ TEST(ascent_rover, test_volume_min_max)
     // populate some param examples
     extracts["e1/params/field"] = "radial";
     extracts["e1/params/min_value"] = -1.0;
-    extracts["e1/params/max_value"] = 1.0;
+    extracts["e1/params/emission"] = "radial";
+    extracts["e1/params/precision"] = "double";
     extracts["e1/params/filename"] = output_file;
 
     conduit::Node actions;

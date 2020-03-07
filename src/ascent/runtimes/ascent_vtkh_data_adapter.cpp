@@ -239,8 +239,8 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
         y_coords_handle.Allocate(nverts);
         z_coords_handle.Allocate(nverts);
 
-        auto x_portal = x_coords_handle.GetPortalControl();
-        auto y_portal = y_coords_handle.GetPortalControl();
+        auto x_portal = x_coords_handle.WritePortal();
+        auto y_portal = y_coords_handle.WritePortal();
 
         const T* coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
 
@@ -764,8 +764,8 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
 
     const vtkm::UInt8 shape_value = shape_id;
     const vtkm::IdComponent indices_value = indices;
-    auto shapes_portal = shapes.GetPortalControl();
-    auto num_indices_portal = num_indices.GetPortalControl();
+    auto shapes_portal = shapes.WritePortal();
+    auto num_indices_portal = num_indices.WritePortal();
 #ifdef ASCENT_USE_OPENMP
     #pragma omp parallel for
 #endif
@@ -981,7 +981,7 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
     else
     {
         z_coords_handle.Allocate(1);
-        z_coords_handle.GetPortalControl().Set(0, 0.0);
+        z_coords_handle.WritePortal().Set(0, 0.0);
     }
 
     static_assert(std::is_same<vtkm::FloatDefault, double>::value,
@@ -1481,7 +1481,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
   if(is_uniform)
   {
     auto points = coords.GetData().Cast<vtkm::cont::ArrayHandleUniformPointCoordinates>();
-    auto portal = points.GetPortalConstControl();
+    auto portal = points.ReadPortal();
 
     auto origin = portal.GetOrigin();
     auto spacing = portal.GetSpacing();
@@ -1512,7 +1512,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     typedef typename vtkm::cont::ArrayPortalToIterators<PortalType>::IteratorType IteratorType;
 
     const auto points = coords.GetData().Cast<Cartesian>();
-    auto portal = points.GetPortalConstControl();
+    auto portal = points.ReadPortal();
     auto x_portal = portal.GetFirstPortal();
     auto y_portal = portal.GetSecondPortal();
     auto z_portal = portal.GetThirdPortal();

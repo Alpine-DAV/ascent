@@ -284,6 +284,7 @@ void Scheduler<FloatType>::composite()
     {
       // data only valid on rank = 0
       p_result.store(result,m_background, width, height);
+      p_result.make_red_pixel(629, 566);
     }
 
     m_result = p_result;
