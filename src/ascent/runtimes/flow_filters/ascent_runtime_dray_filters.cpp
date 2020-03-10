@@ -626,6 +626,8 @@ DRayPseudocolor::verify_params(const conduit::Node &params,
     // filter knobs
     valid_paths.push_back("draw_mesh");
     valid_paths.push_back("line_thickness");
+    valid_paths.push_back("line_color");
+    res &= check_numeric("line_color",params, info, false);
     res &= check_numeric("line_thickness",params, info, false);
     res &= check_string("draw_mesh",params, info, false);
 
@@ -690,10 +692,28 @@ DRayPseudocolor::execute()
         draw_mesh = true;
       }
     }
+
     float line_thickness = 0.05f;
     if(params().has_path("line_thickness"))
     {
       line_thickness = params()["line_thickness"].to_float32();
+    }
+
+    dray::Vec<float,4> vcolor = {0.f, 0.f, 0.f, 1.f};
+    if(params().has_path("line_color"))
+    {
+      conduit::Node n;
+      params()["line_color"].to_float32_array(n);
+      if(n.dtype().number_of_elements() != 4)
+      {
+        ASCENT_ERROR("line_color is expected to be 4 floating "
+                     "point values (RGBA)");
+      }
+      const float32 *color = n.as_float32_ptr();
+      vcolor[0] = color[0];
+      vcolor[1] = color[1];
+      vcolor[2] = color[2];
+      vcolor[3] = color[3];
     }
 
     std::vector<dray::Array<dray::Vec<dray::float32,4>>> color_buffers;
@@ -711,6 +731,7 @@ DRayPseudocolor::execute()
       surface->field(field_name);
       surface->color_map(color_map);
       surface->line_thickness(line_thickness);
+      surface->line_color(vcolor);
       surface->draw_mesh(draw_mesh);
 
       dray::Renderer renderer;

@@ -106,6 +106,8 @@ TEST(ascent_devil_ray, test_pseudocolor)
 
     params["draw_mesh"] = "true";
     params["line_thickness"] = 0.1;
+    float line_color[4] = {0.f, 0.f, 0.f, 1.0f};
+    params["line_color"].set(line_color, 4);;
 
     conduit::Node actions;
     // add the extracts
