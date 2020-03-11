@@ -55,6 +55,7 @@
 #include <ascent.hpp>
 
 #include <flow_filter.hpp>
+#include <vtkh/DataSet.hpp>
 
 
 
@@ -170,6 +171,7 @@ class Triangle
       double         X[3];
       double         Y[3];
       double         Z[3];
+      double         value[3];
       double         colors[3][3];
       double         normals[3][3];
       Screen         screen;
@@ -199,7 +201,7 @@ class Triangle
 
 Triangle transformTriangle(Triangle t, Camera c);
 std::vector<Triangle>
-GetTriangles(const char *, int type);
+GetTriangles(vtkh::DataSet &vtkhData, std::string field_name );
 double CalculateNormalCameraDot(double* cameraPositions, Triangle tri);
 
 //-----------------------------------------------------------------------------

@@ -992,260 +992,104 @@ void GetRange(double* range, int size, double* values)
   range[1] = vector.back();
 }
 
-/*
-std::vector<Triangle>
-GetTriangles(const char* file, int type, double* bounds)
+
+#include <vtkm/cont/DataSet.h>
+#include <vtkm/cont/Invoker.h>
+#include <vtkm/worklet/WorkletMapTopology.h>
+
+class ProcessTriangle : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
-  if(type == 0){
-    vtkOBJReader *rdr = vtkOBJReader::New();
-    rdr->SetFileName(file);
-    cerr << "Reading" << endl;
-    rdr->Update();
-    cerr << "Done reading" << endl;
-    if (rdr->GetOutput()->GetNumberOfCells() == 0)
-    {
-      cerr << "Unable to open file!!" << endl;
-      exit(EXIT_FAILURE);
-    }
-    vtkPolyData *pd = rdr->GetOutput();
-//vtkDataSetWriter *writer = vtkDataSetWriter::New();
-//writer->SetInput(pd);
-//writer->SetFileName("hrc.vtk");
-//writer->Write();
+public:
+  // This is to tell the compiler what inputs to expect.
+  // For now we'll be providing the CellSet, CooridnateSystem,
+  // an input variable, and an output variable.
+  using ControlSignature = void(CellSetIn cellset,
+                                FieldInPoint points,
+                                FieldInPoint variable,
+                                FieldOutCell output);
 
-    int numTris = pd->GetNumberOfCells();
-    vtkPoints *pts = pd->GetPoints();
-    vtkCellArray *cells = pd->GetPolys();
-    vtkFloatArray *n = (vtkFloatArray *) pd->GetPointData()->GetNormals();
-    if(n == NULL)
-    {
-      pd->Print(cout);
-      cerr << "normals are null" << endl;
-      exit(EXIT_FAILURE);
-    }
-    float *normals = n->GetPointer(0);
-    std::vector<Triangle> tris(numTris);
-    vtkIdType npts;
-    vtkIdType *ptIds;
-    int idx;
-    for (idx = 0, cells->InitTraversal() ; cells->GetNextCell(npts, ptIds) ; idx++)
-    {
-      if (npts != 3)
-      {
-          cerr << "Non-triangles!! ???" << endl;
-          exit(EXIT_FAILURE);
-      }
-      double *pt = NULL;
-      pt = pts->GetPoint(ptIds[0]);
-      tris[idx].compID = 0;
-      tris[idx].X[0] = pt[0];
-      tris[idx].Y[0] = pt[1];
-      tris[idx].Z[0] = pt[2];
-      tris[idx].normals[0][0] = normals[3*ptIds[0]+0];
-      tris[idx].normals[0][1] = normals[3*ptIds[0]+1];
-      tris[idx].normals[0][2] = normals[3*ptIds[0]+2];
-      pt = pts->GetPoint(ptIds[1]);
-      tris[idx].X[1] = pt[0];
-      tris[idx].Y[1] = pt[1];
-      tris[idx].Z[1] = pt[2];
-      tris[idx].normals[1][0] = normals[3*ptIds[1]+0];
-      tris[idx].normals[1][1] = normals[3*ptIds[1]+1];
-      tris[idx].normals[1][2] = normals[3*ptIds[1]+2];
-      pt = pts->GetPoint(ptIds[2]);
-      tris[idx].X[2] = pt[0];
-      tris[idx].Y[2] = pt[1];
-      tris[idx].Z[2] = pt[2];
-      tris[idx].normals[2][0] = normals[3*ptIds[2]+0];
-      tris[idx].normals[2][1] = normals[3*ptIds[2]+1];
-      tris[idx].normals[2][2] = normals[3*ptIds[2]+2];
+  // After VTK-m does it's magic, you need to tell what information you need
+  // from the provided inputs from the ControlSignature.
+  // For now :
+  // 1. number of points making an individual cell
+  // 2. _2 is the 2nd input to ControlSignature : this should give you all points of the triangle.
+  // 3. _3 is the 3rd input to ControlSignature : this should give you the variables at those points.
+  // 4. _4 is the 4rd input to ControlSignature : this will help you store the output of your calculation.
+  using ExecutionSignature = void(PointCount, _2, _3, _4);
 
-        // 1->2 interpolate between light blue, dark blue
-        // 2->2.5 interpolate between dark blue, cyan
-        // 2.5->3 interpolate between cyan, green
-        // 3->3.5 interpolate between green, yellow
-        // 3.5->4 interpolate between yellow, orange
-        // 4->5 interpolate between orange, brick
-        // 5->6 interpolate between brick, salmon
-      double mins[7] = { 0, 2, 2.5, 3, 3.5, 4, 5 };
-      double maxs[7] = { 2, 2.5, 3, 3.5, 4, 5, 6 };
-      unsigned char RGB[8][3] = { { 71, 71, 219 },
-                                  { 0, 0, 91 },
-                                  { 0, 255, 255 },
-                                  { 0, 128, 0 },
-                                  { 255, 255, 0 },
-                                  { 255, 96, 0 },
-                                  { 107, 0, 0 },
-                                  { 224, 76, 76 }
-                                };
-      for (int j = 0 ; j < 3 ; j++)
-      {
-        double val = 3.5; //color_ptr[ptIds[j]];
-        int r;
-        for (r = 0 ; r < 7 ; r++)
-        {
-          if (mins[r] <= val && val < maxs[r])
-          break;
-        }
-        if (r == 7)
-        {
-          cerr << "Could not interpolate color for " << val << endl;
-          exit(EXIT_FAILURE);
-        }
-        double proportion = (val-mins[r]) / (maxs[r]-mins[r]);
-        tris[idx].colors[j][0] = (RGB[r][0]+proportion*(RGB[r+1][0]-RGB[r][0]))/255.0;
-        tris[idx].colors[j][1] = (RGB[r][1]+proportion*(RGB[r+1][1]-RGB[r][1]))/255.0;
-        tris[idx].colors[j][2] = (RGB[r][2]+proportion*(RGB[r+1][2]-RGB[r][2]))/255.0;
-      }
-    }
-    return tris;
-  }
-  else
+  template <typename PointVecType, typename FieldVecType>
+  VTKM_EXEC
+  void operator()(const vtkm::IdComponent& numPoints,
+                  const PointVecType& points,
+                  const FieldVecType& variable,
+                  Triangle& output) const
   {
-    int count = 0;
-    vtkPolyDataReader *rdr = vtkPolyDataReader::New();
-    rdr->SetFileName(file);
-    cerr << "Reading" << endl;
-    rdr->Update();
-    cerr << "Done reading" << endl;
-    if (rdr->GetOutput()->GetNumberOfCells() == 0)
-    {
-      cerr << "Unable to open file!!" << endl;
-      exit(EXIT_FAILURE);
-    }
-    vtkPolyData *pd = rdr->GetOutput();
-    double* bds = pd->GetBounds();
-    for(int i = 0; i < 6; i++)
-      bounds[i] = bds[i];
-    cout << "BOUNDS=======" << endl;
-    for(int i = 0; i < 6; i++)
-      cout << bounds[i] << " ";
-    cout << endl;
+    if(numPoints != 3)
+      ASCENT_ERROR("We only play with triangles here");
+    // Since you only have triangles, numPoints should always be 3
+    // PointType is an abstraction of vtkm::Vec3f, which is {x, y, z} of a point
+    using PointType = typename PointVecType::ComponentType;
+    using FieldType = typename FieldVecType::ComponentType;
+    // Following lines will help you extract points for a single triangle
+    //PointType vertex0 = points[0]; // {x0, y0, z0}
+    //PointType vertex1 = points[1]; // {x1, y1, z1}
+    //PointType vertex2 = points[2]; // {x2, y2, z2}
+    FieldType v = variable[1];
+    cout << "variable " << v << endl;
+    output.X[0] = points[0][0];
+    output.Y[0] = points[0][1];
+    output.Z[0] = points[0][2];
+    output.X[1] = points[1][0];
+    output.Y[1] = points[1][1];
+    output.Z[1] = points[1][2];
+    output.X[2] = points[2][0];
+    output.Y[2] = points[2][1];
+    output.Z[2] = points[2][2]; 
+    //output.value[0] = v;
+    //output.value[1] = variable[1];
+    //output.value[2] = variable[2];
+  
+    output.printTri();
 
-    int numTris = pd->GetNumberOfCells();
-    vtkPoints *pts = pd->GetPoints();
-    vtkCellArray *cells = pd->GetPolys();
-    vtkDoubleArray *var = (vtkDoubleArray *) pd->GetPointData()->GetArray("hardyglobal");
-    double *color_ptr = var->GetPointer(0);
-    int num_colors = cells->GetNumberOfCells()*3;
-      double mins[7] = { -DBL_MAX, 2, 2.5, 3, 3.5, 4, 5 };
-      double maxs[7] = { 2, 2.5, 3, 3.5, 4, 5, DBL_MAX};
-      bool color = true;
-      if(color)
-      {
-        double range[2];
-        range[0] = range[1] = 0;
-        GetRange(range, num_colors, color_ptr);
-        //cout << "RANGE: " << range[0] << " " << range[1] << endl;
-        double diff = (range[1] - range[0]);
-        diff = abs(diff);
-        //cout << "diff " << diff << endl;
-        double step = diff/7;
-        //cout << "step " << step << endl;
-        mins[0] = range[0]; 
-        mins[1] =                   range[0] + step;
-        mins[2] =                   range[0] + 2*step;
-        mins[3] =                   range[0] + 3*step;
-        mins[4] =                   range[0] + 4*step; 
-        mins[5] =                   range[0] + 5*step; 
-        mins[6] =                   range[0] + 6*step;
-        maxs[0] =                   range[0] + step;
-        maxs[1] =                   range[0] + 2*step;
-        maxs[2] =                   range[0] + 3*step;
-        maxs[3] =                   range[0] + 4*step;
-        maxs[4] =                   range[0] + 5*step; 
-        maxs[5] =                   range[0] + 6*step; 
-        maxs[6] =                   range[0] + 8*step;
-      }    
-
-
-    vtkFloatArray *n = (vtkFloatArray *) pd->GetPointData()->GetNormals();
-    if(n == NULL)
-    {
-      pd->Print(cout);
-      cerr << "normals are null" << endl;
-      exit(EXIT_FAILURE);
-    }
-    float *normals = n->GetPointer(0);
-    std::vector<Triangle> tris(numTris);
-    vtkIdType npts;
-    vtkIdType *ptIds;
-    int idx;
-    for (idx = 0, cells->InitTraversal() ; cells->GetNextCell(npts, ptIds) ; idx++)
-    {
-      if (npts != 3)
-      {
-          cerr << "Non-triangles!! ???" << endl;
-          exit(EXIT_FAILURE);
-      }
-      double *pt = NULL;
-      pt = pts->GetPoint(ptIds[0]);
-      tris[idx].compID = 0;
-      tris[idx].X[0] = pt[0];
-      tris[idx].Y[0] = pt[1];
-      tris[idx].Z[0] = pt[2];
-      tris[idx].normals[0][0] = normals[3*ptIds[0]+0];
-      tris[idx].normals[0][1] = normals[3*ptIds[0]+1];
-      tris[idx].normals[0][2] = normals[3*ptIds[0]+2];
-      pt = pts->GetPoint(ptIds[1]);
-      tris[idx].X[1] = pt[0];
-      tris[idx].Y[1] = pt[1];
-      tris[idx].Z[1] = pt[2];
-      tris[idx].normals[1][0] = normals[3*ptIds[1]+0];
-      tris[idx].normals[1][1] = normals[3*ptIds[1]+1];
-      tris[idx].normals[1][2] = normals[3*ptIds[1]+2];
-      pt = pts->GetPoint(ptIds[2]);
-      tris[idx].X[2] = pt[0];
-      tris[idx].Y[2] = pt[1];
-      tris[idx].Z[2] = pt[2];
-      tris[idx].normals[2][0] = normals[3*ptIds[2]+0];
-      tris[idx].normals[2][1] = normals[3*ptIds[2]+1];
-      tris[idx].normals[2][2] = normals[3*ptIds[2]+2];
-
-
-        // 0->2 interpolate between light blue, dark blue
-        // 2->2.5 interpolate between dark blue, cyan
-        // 2.5->3 interpolate between cyan, green
-        // 3->3.5 interpolate between green, yellow
-        // 3.5->4 interpolate between yellow, orange
-        // 4->5 interpolate between orange, brick
-        // 5->6 interpolate between brick, salmon
-      unsigned char RGB[8][3] = { { 71, 71, 255 },
-                                  { 0, 128, 0 },
-                                  { 255, 255, 0 },
-                                  { 0, 0, 91 },
-                                  { 0, 255, 255 },
-                                  { 255, 96, 0 },
-                                  { 107, 0, 0 },
-                                  { 224, 76, 76 }
-                                };
-      //for(int i = 0; i < 7; i++)
-        //cout << mins[i] << " " << maxs[i] << endl;
-      for (int j = 0 ; j < 3 ; j++)
-      {
-        double val = color_ptr[ptIds[j]];
-        count++;
-        int r;
-        for (r = 0 ; r < 7 ; r++)
-        {
-          if (mins[r] <= val && val < maxs[r])
-          break;
-        }
-        if (r == 7)
-        {
-          cerr << "Could not interpolate color for " << val << endl;
-          exit(EXIT_FAILURE);
-        }
-        double proportion = (val-mins[r]) / (maxs[r]-mins[r]);
-        tris[idx].colors[j][0] = (RGB[r][0]+proportion*(RGB[r+1][0]-RGB[r][0]))/255.0;
-        tris[idx].colors[j][1] = (RGB[r][1]+proportion*(RGB[r+1][1]-RGB[r][1]))/255.0;
-        tris[idx].colors[j][2] = (RGB[r][2]+proportion*(RGB[r+1][2]-RGB[r][2]))/255.0;
-      }
-    }
-    cout << "SIZE: " << count << endl;
-    return tris;
   }
+};
+
+
+std::vector<Triangle>
+GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
+{
+    
+    //vtkm::cont::Field field = vtkhData->GetField(field_name);
+    //Get domain Ids on this rank
+    std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
+    std::vector<Triangle> tris;
+    cout << "number of domains: " << localDomainIds.size() << endl;
+    //loop through domains and grab all triangles.
+    for(int i = 0; i < localDomainIds.size(); i++)
+    {
+      vtkm::cont::DataSet dataset = vtkhData.GetDomain(localDomainIds[i]);
+      //Get Data points
+      vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
+      //Get triangles
+      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+      //Get variable
+      vtkm::cont::Field field = dataset.GetField(field_name);
+
+      int numTris = cellset.GetNumberOfCells();
+      cout << "number of cells " << cellset.GetNumberOfCells() << endl;
+      std::vector<Triangle> tmp_tris(numTris);
+     
+      vtkm::cont::ArrayHandle<Triangle> triangles = vtkm::cont::make_ArrayHandle(tmp_tris);
+      vtkm::cont::Invoker invoker;
+      invoker(ProcessTriangle{}, cellset, coords,field.GetData(), triangles);
+
+      //combine all domain triangles
+      tris.insert(tris.end(), tmp_tris.begin(), tmp_tris.end());
+
+    }
+    return tris;
 }
-*/
+
 
 Triangle transformTriangle(Triangle t, Camera c){
         bool print = false;
@@ -1461,6 +1305,7 @@ AutoCamera::execute()
     std::string topo_name = collection->field_topology(field_name);
 
     vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+    GetTriangles(dataset,field_name);
 //    cout << "dataset bounds: " << dataset.GetGlobalBounds() << endl;
   
     vtkmCamera *camera = new vtkmCamera;
@@ -1479,20 +1324,16 @@ AutoCamera::execute()
     //TODO: loop through number of samples THEN add parallelism + z buffer.
     //fibonacci_sphere(sample, num_samples, sphere_points);
     fibonacci_sphere(1, 100, sphere_points);
-    cout << "sphere points: " << sphere_points[0] << " " << sphere_points[1] << " " << sphere_points[2] << endl;
-    cout << "sphere points* radius: " << sphere_points[0]*radius << " " << sphere_points[1]*radius << " " << sphere_points[2]*radius << endl;
     
     vtkm::Float32 x_pos = sphere_points[0]*radius;// + xb/2.0;
     vtkm::Float32 y_pos = sphere_points[1]*radius;// + yb/2.0;
     vtkm::Float32 z_pos = sphere_points[2]*radius;// + zb/2.0;
 
-    if(x_pos < radius && y_pos < radius && z_pos < radius)
-      z_pos += radius;
-/*    
-    vtkm::Float32 x_pos = zoom*sphere_points[0] + xb/2.0;
-    vtkm::Float32 y_pos = zoom*sphere_points[1] + yb/2.0;
-    vtkm::Float32 z_pos = zoom*sphere_points[2] + zb/2.0;
-*/
+    if(abs(x_pos) < radius && abs(y_pos) < radius && abs(z_pos) < radius)
+      if(z_pos >= 0)
+        z_pos += radius;
+      if(z_pos < 0)
+        z_pos -= radius;
     vtkm::Vec<vtkm::Float32, 3> pos{x_pos, y_pos, z_pos}; 
     camera->SetPosition(pos);
 
