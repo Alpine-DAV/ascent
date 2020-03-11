@@ -25,7 +25,9 @@ Ubuntu 18.04 for running `build_and_run_sim.sh`
 
 - To add the script to crontab run:
   `crontab -e` and add the following line:
-  `01 01  * * * cd /home/danlipsa/projects/ascent/src/examples/paraview-vis/tests && ./build_and_run_sim_with_docker.sh > build_and_run_sim.log 2>&1`
+
+  `01 01  * * * cd /home/danlipsa/projects/ascent/src/examples/paraview-vis/tests/build && make clean && make && ctest -D Experimental`
+
   To run the `build_and_test.sh` script at 1:01 am.
 
 - Exit the container

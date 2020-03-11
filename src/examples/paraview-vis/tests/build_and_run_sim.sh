@@ -234,6 +234,7 @@ main()
     fi
     echo "$result"
     if [[ "$result" = "Already up to date." && "$keep_going" -eq 0 ]]; then
+        echo "Success"
         return 0
     fi
     if [[ $keep_going -gt 0 ]]; then
@@ -245,6 +246,8 @@ main()
     if ! testParaViewAscent paraview@develop+python3+mpi+osmesa~opengl2~shared${build_dependency} ascent@develop~vtkh${build_dependency}; then
         return 1
     fi
+    echo "Success"
+    return 0
 }
 
 main "$@"
