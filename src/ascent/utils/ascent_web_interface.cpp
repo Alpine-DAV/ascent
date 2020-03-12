@@ -50,6 +50,7 @@
 
 #include "ascent_web_interface.hpp"
 
+#include <ascent.hpp>
 #include <ascent_config.h>
 #include <ascent_file_system.hpp>
 #include <ascent_logging.hpp>
@@ -82,7 +83,7 @@ web_client_root_directory()
     }
 
     Node n;
-    conduit::relay::about(n);
+    ascent::about(n);
 
     if(!n.has_child("web_client_root"))
     {
@@ -157,17 +158,20 @@ WebInterface::Connection()
     {
         m_server.set_port(8081);
 
+        std::string  default_root =conduit::utils::join_file_path(web_client_root_directory(),
+                                                                  "ascent");
+
         // support default doc root
         if(m_doc_root == "")
         {
-           m_doc_root =  web_client_root_directory();
+           m_doc_root = default_root;
         }
         // if we aren't using the standard doc root loc, copy
         // the necessary web client files to the requested doc root
 
-        if(m_doc_root != web_client_root_directory())
+        if(m_doc_root != default_root)
         {
-            copy_directory(web_client_root_directory(),
+            copy_directory(default_root,
                            m_doc_root);
         }
 
