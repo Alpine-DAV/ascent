@@ -66,6 +66,8 @@
 #include <ascent_string_utils.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_web_interface.hpp> // -- for web_client_root_directory()
+///
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -463,7 +465,7 @@ public:
     {
         conduit::utils::create_directory(m_db_path);
         // copy over cinema web resources
-        std::string cinema_root = conduit::utils::join_file_path(ASCENT_WEB_CLIENT_ROOT,
+        std::string cinema_root = conduit::utils::join_file_path(web_client_root_directory(),
                                                                  "cinema");
         ascent::copy_directory(cinema_root, m_db_path);
     }
@@ -591,7 +593,7 @@ public:
     meta["arguments/theta"] = thetas;
     meta.save(m_db_path + "/info.json","json");
 
-    // also generate info.js, a simple javascript variant of  
+    // also generate info.js, a simple javascript variant of
     // info.json that our index.html reads directly to
     // avoid ajax
 

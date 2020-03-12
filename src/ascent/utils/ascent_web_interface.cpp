@@ -70,11 +70,44 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
+std::string
+web_client_root_directory()
+{
+    // check for source dir
+    std::string web_root = ASCENT_SOURCE_WEB_CLIENT_ROOT;
+
+    if(conduit::utils::is_directory(web_root))
+    {
+        return web_root;
+    }
+
+    Node n;
+    conduit::relay::about(n);
+
+    if(!n.has_child("web_client_root"))
+    {
+        ASCENT_ERROR("ascent:about result missing 'web_client_root'"
+                      << std::endl
+                      << n.to_yaml());
+    }
+
+    web_root = n["web_client_root"].as_string();
+
+    if(!conduit::utils::is_directory(web_root))
+    {
+         ASCENT_ERROR("Web client root directory (" << web_root << ") "
+                       " is missing");
+    }
+
+    return web_root;
+}
+
+//-----------------------------------------------------------------------------
 WebInterface::WebInterface()
 :m_enabled(false),
  m_ms_poll(100),
  m_ms_timeout(100),
- m_doc_root(ASCENT_WEB_CLIENT_ROOT)
+ m_doc_root("")
 {}
 
 //-----------------------------------------------------------------------------
@@ -124,11 +157,17 @@ WebInterface::Connection()
     {
         m_server.set_port(8081);
 
+        // support default doc root
+        if(m_doc_root == "")
+        {
+           m_doc_root =  web_client_root_directory();
+        }
         // if we aren't using the standard doc root loc, copy
         // the necessary web client files to the requested doc root
-        if(m_doc_root != ASCENT_WEB_CLIENT_ROOT)
+
+        if(m_doc_root != web_client_root_directory())
         {
-            copy_directory(ASCENT_WEB_CLIENT_ROOT,
+            copy_directory(web_client_root_directory(),
                            m_doc_root);
         }
 

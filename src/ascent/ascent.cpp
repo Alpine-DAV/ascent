@@ -511,6 +511,12 @@ about(conduit::Node &n)
     n["install_prefix"] = ASCENT_INSTALL_PREFIX;
     n["license"] = ASCENT_LICENSE_TEXT;
 
+    std::string install_prefix = n["install_prefix"].as_string();
+    std::string web_root = utils::join_file_path(install_prefix,"share");
+    web_root = utils::join_file_path(web_root,"ascent");
+    web_root = utils::join_file_path(web_root,"web_clients");
+    n["web_client_root"] =  web_root;
+
 #if defined(ASCENT_MPI_ENABLED)
     n["mpi"] = "enabled";
 #else
@@ -568,6 +574,8 @@ about(conduit::Node &n)
     n["runtimes/flow/status"] = "enabled";
 
     n["default_runtime"] = "ascent";
+
+
 }
 
 
