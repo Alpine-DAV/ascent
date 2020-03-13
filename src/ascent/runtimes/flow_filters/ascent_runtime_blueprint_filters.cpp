@@ -360,6 +360,68 @@ void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double 
 }
 #endif
 //-----------------------------------------------------------------------------
+void compute_fmms(const int & nfields, 
+                  double * kVecs, 
+                  double * fmms)
+{
+   //Stuff to call LAPACK routine dsyev_
+   //dsyev----Routine to compute eigen decomposition of real symmetric matrix
+   char jobz, uplo;
+   int lwork, info;
+   double best_work_val;
+   double *work;
+   
+   jobz = 'V'; //Means we want to compute both eigenvalues and eigenvectors
+   uplo = 'U'; //Whether input matrix is upper or lower triangular stored
+
+   double* eigenvalues = malloc(sizeof(double)*nfields);
+
+   //First call dsyev to do a workspace query
+   lwork = -1;
+   dsyev_(&jobz, &uplo, &nfields, kvecs, &nfields, eigenvalues, &best_work_val, &lwork, &info);
+
+   lwork = best_work_val + 0.1;
+
+   double* work = malloc(sizeof(double)*lwork);
+
+   //Now the actual call that does the eigen decomposition
+   dsyev_(&jobz, &uplo, &nfields, kvecs, &nfields, eigenvalues, work, &lwork, &info);
+
+   //Now that we have the eigenvalues/vectores, compute the fmms
+
+   double sum_eigvals = 0.0;
+   for(int i = 0; i<nfields; i++)
+   {
+     fmms[i] = 0.0; //important initialization
+     //This could be better, probably, with std::transform
+     eigenvalues[i] = std::sqrt(std::abs(eigenvalues[i])); //Need to include cmath.h
+     sum_eigvals += eigenvalues[i];
+   }   
+
+   for(int j = 0; j<nfields; j++)
+   {
+     for(int i = 0; i<nfields; i++)
+     {
+       fmms[i] += eigenvalues[j] * ( kvecs[i + j*nfields]
+                                    *kvecs[i + j*nfields]) ;
+     }
+   }
+
+   //Normalise
+   for(int i = 0; i<nfields; i++)
+   {
+     fmms[i] = std::abs(fmms[i]) / sum_eigvals;
+   }
+
+   //If everything is correct sum of fmms should be close to 1.0
+   //Consider an assert to check that sum is in neighbourhood of 1.0
+
+
+   free(eigenvalues);
+   free(work);
+
+}
+//-----------------------------------------------------------------------------
 void
 Learn::execute()
 {
@@ -391,6 +453,10 @@ Learn::execute()
       f_cokurt_vecs_cublas_wrapper(2, size, A, kVecs);
       delete[] A;
       std::cout<<"kVecs "<<kVecs[0]<<" "<<kVecs[1]<<" "<<kVecs[2]<<" "<<kVecs[3]<<"\n";
+
+      //Code to compute 'feature moment metrics (fmms)' from kVecs
+      double *fmms = new double[2];
+      compute_fmms(2, kVecs, fmms);
     }
 #endif
 
