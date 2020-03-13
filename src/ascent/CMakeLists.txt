@@ -254,7 +254,7 @@ if(MFEM_FOUND)
 endif()
 
 if(CUDA_FOUND)
-    list(APPEND ascent_thirdparty_libs cuda_runtime cublas)
+    list(APPEND ascent_thirdparty_libs cuda_runtime cublas cusolver)
 endif()
 
 if(OPENMP_FOUND)
