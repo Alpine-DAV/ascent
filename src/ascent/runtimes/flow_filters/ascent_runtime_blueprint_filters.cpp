@@ -272,7 +272,7 @@ __global__ void ColumnwiseKronecker( int R, int C, const double *A, double *B)
     //   printf("from block %d cols %d range %d--%d\n", blockIdx.y, cols_per_block, col_start, col_end);
     //}
 }
-void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double *kVecs)
+void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double *kVecs, double *kVals)
 {
     //              0 1 2 .. n-1
     // A = pressure
@@ -285,16 +285,16 @@ void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double 
     //}
 
     size_t bytes;
-
+   
     //Allocate memory for matrices A, B and C on device
     double *d_A, *d_B, *d_C, *d_kV;
 
     //This is A, the raw data matrix, passed in from Fortran
-    bytes = nRows * nCols * sizeof(double);
+    bytes = nRows * nCols * sizeof(double); 
     cudaMalloc(&d_A, bytes);
 
     //This is the Khatri Rao product of A with itsel
-    //B = KhatriRao(A,A)
+    //B = KhatriRao(A,A) 
     bytes = nRows * nRows * nCols * sizeof(double);
     cudaMalloc(&d_B, bytes);
 
@@ -303,18 +303,18 @@ void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double 
     bytes = nRows * nRows * nRows * nRows * sizeof(double);
     cudaMalloc(&d_C, bytes);
 
-    //We desire SVD(reshaped(C, nRows, nRows^3)).
-    //Instead we do (reshaped(C)) * (reshaped(C))'
-    //Pass this back to Fortran so it can do DSYEV at its end
+    //We desire SVD(reshaped(C, nRows, nRows^3)). 
+    //Instead we do kV = (reshaped(C)) * (reshaped(C))'
+    //Then we do kV, kVals = eigen_decomp(kV),
+    //Pass kV and kVals back to Fortran as final results
     bytes = nRows * nRows * sizeof(double);
-    cudaMalloc(&d_kV, bytes);
+    cudaMalloc(&d_kV, bytes);  
 
-    cublasStatus_t stat;
+    cublasStatus_t stat; 
 
-    //Set Matrices A and C on device
+    //Set Matrices A on device
     stat = cublasSetMatrix(nRows, nCols, sizeof(double), A, nRows, d_A, nRows);
 
-    //stat = cublasSetMatrix(nRows*nRows, nRows*nRows, sizeof(double), C, nRows*nRows, d_C, nRows*nRows);
 
     //Form the Matrix Khatri Rao product i.e. B = KhatriRao(A,A)
     dim3 threadsPerBlock(64);
@@ -327,23 +327,17 @@ void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double 
     stat = cublasCreate(&handle);
 
     double alpha = 1.0/double(nCols); double beta = 0.0;
-    stat = cublasDgemm(handle,
-                       CUBLAS_OP_N,
-                       CUBLAS_OP_T,
-                       nRows*nRows,
-                       nRows*nRows,
-                       nCols,
-                       &alpha,
-                       d_B,
-                       nRows*nRows,
-                       d_B,
-                       nRows*nRows,
-                       &beta,
-                       d_C,
-                       nRows*nRows);
+    stat = cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_T, 
+                       nRows*nRows, nRows*nRows, nCols, 
+                       &alpha, 
+                       d_B, nRows*nRows, 
+                       d_B, nRows*nRows,
+                       &beta, 
+                       d_C, nRows*nRows);
 
+    
     // Now that the matricised cokurt tensor is done, multiply C*C'
-    // C is implicitly reshaped to (nRows)x(nRows^3) in the call to DGEMM itself
+    // C is implicitly reshaped to (nRows)x(nRows^3) in the call to DGEMM itself 
     double alpha2 = 1.0;
     stat = cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_T,
                        nRows, nRows, nRows*nRows*nRows,
@@ -353,7 +347,63 @@ void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double 
                        &beta,
                        d_kV, nRows);
 
-    // Now get the matrix from device memory, to copy into C, to pass back to Fortran
+    
+
+    // Now we perform the Eigen decomposition of kV
+    // We use the dense-symmetric-eigenvalue-solver 'cusolverDnDsyevd'
+    // The solver OVERWRITES THE INPUT MATRIX WITH THE EIGENVECTORS
+
+    cusolverDnHandle_t cusolverH = NULL;
+    cusolverStatus_t cusolver_status = CUSOLVER_STATUS_SUCCESS;
+    cudaError_t cudaStat = cudaSuccess;
+    
+    // Allocate memory on device for the vector of eigenvalues, W
+    double *d_W;
+    bytes = nRows * sizeof(double);
+    cudaMalloc(&d_W, bytes);
+
+    // Eigenvalue step 1: create cusolver/cublas handle
+    cusolver_status = cusolverDnCreate(&cusolverH);
+    assert(CUSOLVER_STATUS_SUCCESS == cusolver_status);
+    
+    // Eigenvalue step 2: query working space of syevd
+    int lwork = 0;
+    cusolverEigMode_t jobz = CUSOLVER_EIG_MODE_VECTOR; // compute eigenvalues and eigenvectors.
+    cublasFillMode_t uplo = CUBLAS_FILL_MODE_LOWER;
+    cusolver_status = cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo,
+						  nRows,  // M of input matrix
+						  d_kV,   // input matrix
+						  nRows,  // leading dimension of input matrix
+						  d_W,    // vector of eigenvalues
+						  &lwork);// on return size of working array
+    assert (cusolver_status == CUSOLVER_STATUS_SUCCESS);
+
+    double *d_work = NULL;
+    int *devInfo = NULL;
+    
+    cudaMalloc((void**)&d_work , sizeof(double)*lwork);
+    cudaMalloc ((void**)&devInfo, sizeof(int));
+
+    //Eigenvalue step 3: compute actualy eigen decomposition
+    
+    cusolver_status = cusolverDnDsyevd(cusolverH, jobz, uplo,
+				       nRows,  // M of input matrix
+				       d_kV,   // input matrix
+				       nRows,  // leading dimension of input matrix
+				       d_W,    // vector of eigenvalues
+				       d_work,
+				       lwork,
+				       devInfo);
+
+    cudaStat = cudaDeviceSynchronize();
+    assert(CUSOLVER_STATUS_SUCCESS == cusolver_status);
+    assert(cudaSuccess == cudaStat);
+
+      
+    // Now copy the eigen vector vector back to host
+    cudaStat = cudaMemcpy(kVals, d_W, sizeof(double)*nRows, cudaMemcpyDeviceToHost);
+
+    // Now get the eigenvectors matrix from device memory, to copy into kVecs, to pass back to Fortran
     stat = cublasGetMatrix( nRows, nRows, sizeof(double), d_kV, nRows, kVecs, nRows);
 
     cudaFree(d_A); cudaFree(d_B); cudaFree(d_C); cudaFree(d_kV);
@@ -362,31 +412,10 @@ void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double 
 //-----------------------------------------------------------------------------
 #if 0
 void compute_fmms(const int & nfields,
-                  double * kVecs,
+                  const double * kVecs,
+		  const double * eigenvalues,
                   double * fmms) // output of size fields
 {
-   //Stuff to call LAPACK routine dsyev_
-   //dsyev----Routine to compute eigen decomposition of real symmetric matrix
-   char jobz, uplo;
-   int lwork, info;
-   double best_work_val;
-   double *work;
-
-   jobz = 'V'; //Means we want to compute both eigenvalues and eigenvectors
-   uplo = 'U'; //Whether input matrix is upper or lower triangular stored
-
-   double* eigenvalues = malloc(sizeof(double)*nfields);
-
-   //First call dsyev to do a workspace query
-   lwork = -1;
-   dsyev_(&jobz, &uplo, &nfields, kvecs, &nfields, eigenvalues, &best_work_val, &lwork, &info);
-
-   lwork = best_work_val + 0.1;
-
-   double* work = malloc(sizeof(double)*lwork);
-
-   //Now the actual call that does the eigen decomposition
-   dsyev_(&jobz, &uplo, &nfields, kvecs, &nfields, eigenvalues, work, &lwork, &info);
 
    //Now that we have the eigenvalues/vectores, compute the fmms
 
@@ -418,9 +447,6 @@ void compute_fmms(const int & nfields,
    //Consider an assert to check that sum is in neighbourhood of 1.0
 
 
-   free(eigenvalues);
-   free(work);
-
 }
 #endif
 //-----------------------------------------------------------------------------
@@ -439,6 +465,7 @@ Learn::execute()
     std::shared_ptr<conduit::Node> n_input = d_input->as_low_order_bp();
 #ifdef ASCENT_VTKM_USE_CUDA
     double *kVecs = new double[4]; // TODO: need one per domain!!!!
+    double *eigvals = new double[2];
     double *fmms = new double[2];
     for(int i = 0; i < n_input->number_of_children(); ++i)
     {
@@ -453,12 +480,12 @@ Learn::execute()
         A[offset] = e[a];
         A[offset+1] = p[a];
       }
-      f_cokurt_vecs_cublas_wrapper(2, size, A, kVecs);
+      f_cokurt_vecs_cublas_wrapper(2, size, A, kVecs, eigvals);
       delete[] A;
       std::cout<<"kVecs "<<kVecs[0]<<" "<<kVecs[1]<<" "<<kVecs[2]<<" "<<kVecs[3]<<"\n";
 
       //Code to compute 'feature moment metrics (fmms)' from kVecs
-      //compute_fmms(2, kVecs, fmms);
+      //compute_fmms(2, kVecs, eigvals, fmms);
 
     }
 #ifdef ASCENT_MPI_ENABLED
