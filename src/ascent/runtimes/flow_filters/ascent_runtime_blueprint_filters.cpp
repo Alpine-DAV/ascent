@@ -360,9 +360,10 @@ void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double 
 }
 #endif
 //-----------------------------------------------------------------------------
-void compute_fmms(const int & nfields, 
-                  double * kVecs, 
-                  double * fmms)
+#if 0
+void compute_fmms(const int & nfields,
+                  double * kVecs,
+                  double * fmms) // output of size fields
 {
    //Stuff to call LAPACK routine dsyev_
    //dsyev----Routine to compute eigen decomposition of real symmetric matrix
@@ -370,7 +371,7 @@ void compute_fmms(const int & nfields,
    int lwork, info;
    double best_work_val;
    double *work;
-   
+
    jobz = 'V'; //Means we want to compute both eigenvalues and eigenvectors
    uplo = 'U'; //Whether input matrix is upper or lower triangular stored
 
@@ -396,7 +397,7 @@ void compute_fmms(const int & nfields,
      //This could be better, probably, with std::transform
      eigenvalues[i] = std::sqrt(std::abs(eigenvalues[i])); //Need to include cmath.h
      sum_eigvals += eigenvalues[i];
-   }   
+   }
 
    for(int j = 0; j<nfields; j++)
    {
@@ -421,6 +422,7 @@ void compute_fmms(const int & nfields,
    free(work);
 
 }
+#endif
 //-----------------------------------------------------------------------------
 void
 Learn::execute()
@@ -436,6 +438,8 @@ Learn::execute()
     DataObject *d_input = input<DataObject>(0);
     std::shared_ptr<conduit::Node> n_input = d_input->as_low_order_bp();
 #ifdef ASCENT_VTKM_USE_CUDA
+    double *kVecs = new double[4]; // TODO: need one per domain!!!!
+    double *fmms = new double[2];
     for(int i = 0; i < n_input->number_of_children(); ++i)
     {
       const conduit::Node &dom = n_input->child(0);
@@ -449,15 +453,29 @@ Learn::execute()
         A[offset] = e[a];
         A[offset+1] = p[a];
       }
-      double *kVecs = new double[4];
       f_cokurt_vecs_cublas_wrapper(2, size, A, kVecs);
       delete[] A;
       std::cout<<"kVecs "<<kVecs[0]<<" "<<kVecs[1]<<" "<<kVecs[2]<<" "<<kVecs[3]<<"\n";
 
       //Code to compute 'feature moment metrics (fmms)' from kVecs
-      double *fmms = new double[2];
-      compute_fmms(2, kVecs, fmms);
+      //compute_fmms(2, kVecs, fmms);
+
     }
+#ifdef ASCENT_MPI_ENABLED
+    int comm_id = flow::Workspace::default_mpi_comm();
+    int comm_size = 1;
+    int rank = 0;
+
+    MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+    MPI_Comm_rank(mpi_comm,&rank);
+
+    MPI_Comm_size(mpi_comm, &comm_size);
+    //int *domains_per_rank = new int[comm_size];
+    const int fields  = 2;
+    double sum[2];
+    MPI_Allreduce(fmms, sum,2, MPI_DOUBLE, MPI_SUM, mpi_comm);
+#endif //MPI
+
 #endif
 
     //set_output<DataObject>(d_input);
