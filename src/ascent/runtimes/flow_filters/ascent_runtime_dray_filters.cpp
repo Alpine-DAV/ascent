@@ -772,6 +772,7 @@ DRayPseudocolor::execute()
       PNGEncoder encoder;
       encoder.Encode(&result.m_pixels[0], camera.get_width(), camera.get_height());
       encoder.Save(image_name + ".png");
+      //std::cout<<camera.print()<<"\n";
     }
 }
 

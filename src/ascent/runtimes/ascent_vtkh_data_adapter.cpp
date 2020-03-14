@@ -350,6 +350,7 @@ void ExtractVector(vtkm::cont::DataSet *dset,
                    const conduit::Node &v,
                    const conduit::Node &w,
                    const int num_vals,
+                   const int dims,
                    const std::string field_name,
                    const std::string assoc_str,
                    const std::string topo_name,
@@ -357,39 +358,9 @@ void ExtractVector(vtkm::cont::DataSet *dset,
 {
   // TODO: Do we need to fix this for striding?
   // GetField<T> expects compact
-
-  std::string u_name = field_name + "_" + "x";
-  dset->AddField(detail::GetField<T>(u, u_name, assoc_str, topo_name, zero_copy));
-
-  std::string v_name = field_name + "_" + "y";
-  dset->AddField(detail::GetField<T>(v, v_name, assoc_str, topo_name, zero_copy));
-
-  std::string w_name = field_name + "_" + "z";
-  dset->AddField(detail::GetField<T>(w, w_name, assoc_str, topo_name, zero_copy));
-
-  const T *x_ptr = GetNodePointer<T>(u);
-  const T *y_ptr = GetNodePointer<T>(v);
-  const T *z_ptr = GetNodePointer<T>(w);
-
-  vtkm::cont::ArrayHandle<T> x_handle;
-  vtkm::cont::ArrayHandle<T> y_handle;
-  vtkm::cont::ArrayHandle<T> z_handle;
-
-  // always zero copy because we are about to make a copy
-  detail::CopyArray(x_handle, x_ptr, num_vals, true);
-  detail::CopyArray(y_handle, y_ptr, num_vals, true);
-  detail::CopyArray(z_handle, z_ptr, num_vals, true);
-
-  auto composite  = make_ArrayHandleCompositeVector(x_handle,
-                                                    y_handle,
-                                                    z_handle);
-
-  vtkm::cont::ArrayHandle<vtkm::Vec<T,3>> interleaved_handle;
-  interleaved_handle.Allocate(num_vals);
-  // Calling this without forcing serial could cause serious problems
+  if(dims != 2 && dims != 3)
   {
-    vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
-    vtkm::cont::ArrayCopy(composite, interleaved_handle);
+    ASCENT_ERROR("Extract vector: only 2 and 3 dims supported given "<<dims);
   }
 
   vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
@@ -407,8 +378,72 @@ void ExtractVector(vtkm::cont::DataSet *dset,
                  <<assoc_str<<" field_name "<<field_name);
   }
 
-  vtkm::cont::Field field(field_name, vtkm_assoc, interleaved_handle);
-  dset->AddField(field);
+  std::string u_name = field_name + "_" + "x";
+  dset->AddField(detail::GetField<T>(u, u_name, assoc_str, topo_name, zero_copy));
+
+  std::string v_name = field_name + "_" + "y";
+  dset->AddField(detail::GetField<T>(v, v_name, assoc_str, topo_name, zero_copy));
+
+  if(dims == 2)
+  {
+    const T *x_ptr = GetNodePointer<T>(u);
+    const T *y_ptr = GetNodePointer<T>(v);
+
+    vtkm::cont::ArrayHandle<T> x_handle;
+    vtkm::cont::ArrayHandle<T> y_handle;
+
+    // always zero copy because we are about to make a copy
+    detail::CopyArray(x_handle, x_ptr, num_vals, true);
+    detail::CopyArray(y_handle, y_ptr, num_vals, true);
+
+    auto composite  = make_ArrayHandleCompositeVector(x_handle,
+                                                      y_handle);
+
+    vtkm::cont::ArrayHandle<vtkm::Vec<T,2>> interleaved_handle;
+    interleaved_handle.Allocate(num_vals);
+    // Calling this without forcing serial could cause serious problems
+    {
+      vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
+      vtkm::cont::ArrayCopy(composite, interleaved_handle);
+    }
+
+    vtkm::cont::Field field(field_name, vtkm_assoc, interleaved_handle);
+    dset->AddField(field);
+  }
+
+  if(dims == 3)
+  {
+    std::string w_name = field_name + "_" + "z";
+    dset->AddField(detail::GetField<T>(w, w_name, assoc_str, topo_name, zero_copy));
+
+    const T *x_ptr = GetNodePointer<T>(u);
+    const T *y_ptr = GetNodePointer<T>(v);
+    const T *z_ptr = GetNodePointer<T>(w);
+
+    vtkm::cont::ArrayHandle<T> x_handle;
+    vtkm::cont::ArrayHandle<T> y_handle;
+    vtkm::cont::ArrayHandle<T> z_handle;
+
+    // always zero copy because we are about to make a copy
+    detail::CopyArray(x_handle, x_ptr, num_vals, true);
+    detail::CopyArray(y_handle, y_ptr, num_vals, true);
+    detail::CopyArray(z_handle, z_ptr, num_vals, true);
+
+    auto composite  = make_ArrayHandleCompositeVector(x_handle,
+                                                      y_handle,
+                                                      z_handle);
+
+    vtkm::cont::ArrayHandle<vtkm::Vec<T,3>> interleaved_handle;
+    interleaved_handle.Allocate(num_vals);
+    // Calling this without forcing serial could cause serious problems
+    {
+      vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
+      vtkm::cont::ArrayCopy(composite, interleaved_handle);
+    }
+
+    vtkm::cont::Field field(field_name, vtkm_assoc, interleaved_handle);
+    dset->AddField(field);
+  }
 }
 
 
@@ -646,15 +681,16 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
             std::string field_name = itr.name();
             if(n_field["topology"].as_string() != topo_name)
             {
-              // this is not the fields we are looking for
+              // these are not the fields we are looking for
               continue;
             }
 
+            std::cout<<"field "<<field_name<<"\n";
             // skip vector fields for now, we need to add
             // more logic to AddField
             const int num_children = n_field["values"].number_of_children();
 
-            if(n_field["values"].number_of_children() == 0 )
+            if(num_children == 0 )
             {
 
                 AddField(field_name,
@@ -665,7 +701,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                          result,
                          zero_copy);
             }
-            if(n_field["values"].number_of_children() == 3 )
+            else if(num_children == 2 )
             {
               AddVectorField(field_name,
                              n_field,
@@ -673,7 +709,23 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                              neles,
                              nverts,
                              result,
+                             2,
                              zero_copy);
+            }
+            else if(num_children == 3 )
+            {
+              AddVectorField(field_name,
+                             n_field,
+                             topo_name,
+                             neles,
+                             nverts,
+                             result,
+                             3,
+                             zero_copy);
+            }
+            else
+            {
+              std::cout<<"skipping field "<<field_name<<" with "<<num_children<<" comps \n";
             }
         }
     }
@@ -1304,6 +1356,7 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
                                 int neles,
                                 int nverts,
                                 vtkm::cont::DataSet *dset,
+                                const int dims,
                                 bool zero_copy)                 // attempt to zero copy
 {
     string assoc_str = n_field["association"].as_string();
@@ -1336,68 +1389,147 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
 
         if(interleaved)
         {
-            // we compile vtk-h with fp types
-            if(u.dtype().is_float32())
+            if(dims == 3)
             {
+              // we compile vtk-h with fp types
+              if(u.dtype().is_float32())
+              {
 
-              using Vec3f32 = vtkm::Vec<vtkm::Float32,3>;
-              const Vec3f32 *vec_ptr = reinterpret_cast<const Vec3f32*>(u.as_float32_ptr());
+                using Vec3f32 = vtkm::Vec<vtkm::Float32,3>;
+                const Vec3f32 *vec_ptr = reinterpret_cast<const Vec3f32*>(u.as_float32_ptr());
 
-              dset->AddField(detail::GetVectorField(vec_ptr,
-                                                    num_vals,
-                                                    field_name,
-                                                    assoc_str,
-                                                    topo_name,
-                                                    zero_copy));
-              supported_type = true;
+                dset->AddField(detail::GetVectorField(vec_ptr,
+                                                      num_vals,
+                                                      field_name,
+                                                      assoc_str,
+                                                      topo_name,
+                                                      zero_copy));
+                supported_type = true;
+              }
+              else if(u.dtype().is_float64())
+              {
+
+                using Vec3f64 = vtkm::Vec<vtkm::Float64,3>;
+                const Vec3f64 *vec_ptr = reinterpret_cast<const Vec3f64*>(u.as_float64_ptr());
+
+                dset->AddField(detail::GetVectorField(vec_ptr,
+                                                      num_vals,
+                                                      field_name,
+                                                      assoc_str,
+                                                      topo_name,
+                                                      zero_copy));
+                supported_type = true;
+              }
             }
-            else if(u.dtype().is_float64())
+            else if(dims == 2)
             {
+              // we compile vtk-h with fp types
+              if(u.dtype().is_float32())
+              {
 
-              using Vec3f64 = vtkm::Vec<vtkm::Float64,3>;
-              const Vec3f64 *vec_ptr = reinterpret_cast<const Vec3f64*>(u.as_float64_ptr());
+                using Vec2f32 = vtkm::Vec<vtkm::Float32,2>;
+                const Vec2f32 *vec_ptr = reinterpret_cast<const Vec2f32*>(u.as_float32_ptr());
 
-              dset->AddField(detail::GetVectorField(vec_ptr,
-                                                    num_vals,
-                                                    field_name,
-                                                    assoc_str,
-                                                    topo_name,
-                                                    zero_copy));
-              supported_type = true;
+                dset->AddField(detail::GetVectorField(vec_ptr,
+                                                      num_vals,
+                                                      field_name,
+                                                      assoc_str,
+                                                      topo_name,
+                                                      zero_copy));
+                supported_type = true;
+              }
+              else if(u.dtype().is_float64())
+              {
+
+                using Vec2f64 = vtkm::Vec<vtkm::Float64,2>;
+                const Vec2f64 *vec_ptr = reinterpret_cast<const Vec2f64*>(u.as_float64_ptr());
+
+                dset->AddField(detail::GetVectorField(vec_ptr,
+                                                      num_vals,
+                                                      field_name,
+                                                      assoc_str,
+                                                      topo_name,
+                                                      zero_copy));
+                supported_type = true;
+              }
+            }
+            else
+            {
+              ASCENT_ERROR("Vector unsupported dims " << dims);
             }
         }
         else
         {
-          // we have a vector with three separate arrays
+          // we have a vector with 2/3 separate arrays
           // While vtkm supports ArrayHandleCompositeVectors for
           // coordinate systems, it does not support composites
           // for fields. Thus we have to copy the data.
-          const conduit::Node &v = n_field["values"].child(1);
-          const conduit::Node &w = n_field["values"].child(2);
+          if(dims == 3)
+          {
+            const conduit::Node &v = n_field["values"].child(1);
+            const conduit::Node &w = n_field["values"].child(2);
 
-          if(u.dtype().is_float32())
-          {
-            detail::ExtractVector<float32>(dset,
-                                           u,
-                                           v,
-                                           w,
-                                           num_vals,
-                                           field_name,
-                                           assoc_str,
-                                           topo_name,
-                                           zero_copy);
+            if(u.dtype().is_float32())
+            {
+              detail::ExtractVector<float32>(dset,
+                                             u,
+                                             v,
+                                             w,
+                                             num_vals,
+                                             dims,
+                                             field_name,
+                                             assoc_str,
+                                             topo_name,
+                                             zero_copy);
+            }
+            else if(u.dtype().is_float64())
+            {
+              detail::ExtractVector<float64>(dset,
+                                             u,
+                                             v,
+                                             w,
+                                             num_vals,
+                                             dims,
+                                             field_name,
+                                             assoc_str,
+                                             topo_name,
+                                             zero_copy);
+            }
           }
-          else if(u.dtype().is_float64())
+          else if(dims == 2)
           {
-            detail::ExtractVector<float64>(dset,
-                                           u,
-                                           v,
-                                           w,
-                                           num_vals,
-                                           field_name,
-                                           assoc_str,
-                                           topo_name,
-                                           zero_copy);
+            const conduit::Node &v = n_field["values"].child(1);
+            conduit::Node fake_w;
+            if(u.dtype().is_float32())
+            {
+              detail::ExtractVector<float32>(dset,
+                                             u,
+                                             v,
+                                             fake_w,
+                                             num_vals,
+                                             dims,
+                                             field_name,
+                                             assoc_str,
+                                             topo_name,
+                                             zero_copy);
+            }
+            else if(u.dtype().is_float64())
+            {
+              detail::ExtractVector<float64>(dset,
+                                             u,
+                                             v,
+                                             fake_w,
+                                             num_vals,
+                                             dims,
+                                             field_name,
+                                             assoc_str,
+                                             topo_name,
+                                             zero_copy);
+            }
+          }
+          else
+          {
+            ASCENT_ERROR("Vector unsupported dims " << dims);
           }
         }
     }
