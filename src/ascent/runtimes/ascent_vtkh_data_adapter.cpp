@@ -685,7 +685,6 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
               continue;
             }
 
-            std::cout<<"field "<<field_name<<"\n";
             // skip vector fields for now, we need to add
             // more logic to AddField
             const int num_children = n_field["values"].number_of_children();
@@ -725,7 +724,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
             }
             else
             {
-              std::cout<<"skipping field "<<field_name<<" with "<<num_children<<" comps \n";
+              ASCENT_INFO("skipping field "<<field_name<<" with "<<num_children<<" comps");
             }
         }
     }
