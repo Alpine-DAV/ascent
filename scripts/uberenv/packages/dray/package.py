@@ -33,7 +33,7 @@ class Dray(Package):
     git      = "https://github.com/LLNL/devil_ray.git"
     url      = "https://github.com/LLNL/devil_ray/releases/download/v0.1.1/dray-v0.1.1.tar.gz"
 
-    version('0.1.1',  sha256='fd09ac1e76a202eea1a815b0a06059c092fa34fbb3f56c002f509833066215d0')
+    version('0.1.1',  sha256='a17f570cee782501a5f33c6f16dcfd11f76296a92d4cb1c92d799e68acd31bc4')
     version('0.1.0',  sha256='8b341138e1069361351e0a94478608c5af479cca76e2f97d556229aed45c0169')
     version('develop',  branch='develop',  submodules='True')
 

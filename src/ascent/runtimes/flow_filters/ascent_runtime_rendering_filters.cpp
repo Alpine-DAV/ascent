@@ -1284,8 +1284,19 @@ CreatePlot::execute()
       {
         if(!params().has_path("topology"))
         {
+          std::stringstream ss;
+          ss<<" possible topology names: ";
+          std::vector<std::string> names = collection->topology_names();
+          for(int i = 0; i < names.size(); ++i)
+          {
+            ss<<"'"<<names[i]<<"'";
+            if(i != names.size() -1)
+            {
+              ss<<", ";
+            }
+          }
           ASCENT_ERROR("create_plot: data set has multiple topologies "
-                       <<"and no topology is specified.");
+                       <<"and no topology is specified."<<ss.str());
         }
 
         topo_name = params()["topology"].as_string();
@@ -1302,6 +1313,23 @@ CreatePlot::execute()
       {
         ASCENT_ERROR("create plot: unknown field '"<<field_name<<"'");
       }
+    }
+
+    if(!collection->has_topology(topo_name))
+    {
+      std::stringstream ss;
+      ss<<" possible topology names: ";
+      std::vector<std::string> names = collection->topology_names();
+      for(int i = 0; i < names.size(); ++i)
+      {
+        ss<<"'"<<names[i]<<"'";
+        if(i != names.size() -1)
+        {
+          ss<<", ";
+        }
+      }
+      ASCENT_ERROR("no topology named '"<<topo_name<<"'."
+                   <<ss.str());
     }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
