@@ -1269,17 +1269,16 @@ CreatePlot::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     conduit::Node &plot_params = params();
-    const int num_topologies = collection->number_of_topologies();
 
     std::string field_name;
     if(plot_params.has_path("field"))
     {
       field_name = plot_params["field"].as_string();
     }
-
     std::string topo_name;
     if(field_name == "")
     {
+      const int num_topologies = collection->number_of_topologies();
       if(num_topologies > 1)
       {
         if(!params().has_path("topology"))
@@ -1295,6 +1294,8 @@ CreatePlot::execute()
               ss<<", ";
             }
           }
+          // issue is that there might be empty data so this path
+          // might not be taken by all ranks !!!!!
           ASCENT_ERROR("create_plot: data set has multiple topologies "
                        <<"and no topology is specified."<<ss.str());
         }
