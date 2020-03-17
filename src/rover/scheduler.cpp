@@ -284,6 +284,7 @@ void Scheduler<FloatType>::composite()
     {
       // data only valid on rank = 0
       p_result.store(result,m_background, width, height);
+      p_result.make_red_pixel(629, 566);
     }
 
     m_result = p_result;
@@ -570,6 +571,39 @@ void Scheduler<FloatType>::save_result(std::string file_name)
     encoder.Save(file_name + ".png");
   }
 
+}
+
+template<typename FloatType>
+void Scheduler<FloatType>::save_result(std::string file_name,
+                   float min_val,
+                   float max_val,
+                   bool log_scale)
+{
+  int height = 0;
+  int width = 0;
+  m_ray_generator->get_dims(height, width);
+  assert( height > 0 );
+  assert( width > 0 );
+  ROVER_INFO("Saving file " << height << " "<<width);
+  PNGEncoder encoder;
+  if(!(m_render_settings.m_render_mode == energy))
+  {
+    throw RoverException("Error: can only save images with min and max in enerhy mode");
+  }
+
+   const int num_channels = m_result.get_num_channels();
+   ROVER_INFO("Saving "<<num_channels<<" channels ");
+   for(int i = 0; i < num_channels; ++i)
+   {
+     std::stringstream sstream;
+     sstream<<file_name<<"_"<<i<<".png";
+     m_result.normalize_intensity(i, min_val, max_val, log_scale);
+     FloatType * buffer
+       = get_vtkm_ptr(m_result.get_intensity(i));
+
+     encoder.EncodeChannel(buffer, width, height);
+     encoder.Save(sstream.str());
+   }
 }
 
 template<typename FloatType>

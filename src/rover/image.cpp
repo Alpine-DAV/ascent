@@ -50,6 +50,57 @@ namespace rover
 
 template<typename FloatType>
 void
+Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle,
+                                   bool invert,
+                                   float min_val,
+                                   float max_val,
+                                   bool log_scale)
+{
+
+  vtkm::cont::Field as_field("name meaningless",
+                             vtkm::cont::Field::Association::POINTS,
+                             handle);
+  vtkm::Range range;
+  as_field.GetRange(&range);
+  FloatType min_scalar = static_cast<FloatType>(min_val);
+  FloatType max_scalar = static_cast<FloatType>(max_val);
+  if(min_scalar > max_scalar)
+  {
+    throw RoverException("Rover Image: min_value > max_value");
+  }
+  if(log_scale)
+  {
+    if(min_scalar <= 0.f)
+    {
+      throw RoverException("Rover Image: log scale range contains values <= 0");
+    }
+    min_scalar = log(min_scalar);
+    max_scalar = log(max_scalar);
+  }
+
+  FloatType inv_delta;
+  inv_delta = min_scalar == max_scalar ? 1.f : 1.f / (max_scalar - min_scalar);
+  auto portal = handle.WritePortal();
+  const int size = m_width * m_height;
+#ifdef ROVER_ENABLE_OPENMP
+  #pragma omp parallel for
+#endif
+  for(int i = 0; i < size; ++i)
+  {
+    FloatType val = portal.Get(i);
+    if(log_scale)
+    {
+      val = log(val);
+    }
+    val = fmin(max_scalar, fmax(val, min_scalar));
+    val = (val - min_scalar) * inv_delta;
+    if(invert) val = 1.f - val;
+    portal.Set(i, val);
+  }
+}
+
+template<typename FloatType>
+void
 Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle, bool invert)
 {
 
@@ -62,7 +113,7 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle, b
   FloatType max_scalar = static_cast<FloatType>(range.Max);
   FloatType inv_delta;
   inv_delta = min_scalar == max_scalar ? 1.f : 1.f / (max_scalar - min_scalar);
-  auto portal = handle.GetPortalControl();
+  auto portal = handle.WritePortal();
   const int size = m_width * m_height;
 #ifdef ROVER_ENABLE_OPENMP
   #pragma omp parallel for
@@ -105,8 +156,8 @@ void cast_array_handle(vtkm::cont::ArrayHandle<T> &cast_to,
 {
   const vtkm::Id size = cast_from.GetNumberOfValues();
   cast_to.Allocate(size);
-  auto portal_to = cast_to.GetPortalControl();
-  auto portal_from = cast_to.GetPortalConstControl();
+  auto portal_to = cast_to.WritePortal();
+  auto portal_from = cast_to.ReadPortal();
 #ifdef ROVER_ENABLE_OPENMP
   #pragma omp parallel for
 #endif
@@ -295,10 +346,10 @@ Image<FloatType>::flatten_intensities()
   HandleType res;
   const int size = m_width * m_height;
   res.Allocate(num_channels * size);
-  auto output = res.GetPortalControl();
+  auto output = res.WritePortal();
   for(int c = 0; c < num_channels; ++c)
   {
-    auto channel = m_intensities[c].GetPortalControl();
+    auto channel = m_intensities[c].ReadPortal();
 
 #ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for
@@ -326,10 +377,10 @@ Image<FloatType>::flatten_optical_depths()
   HandleType res;
   const int size = m_width * m_height;
   res.Allocate(num_channels * size);
-  auto output = res.GetPortalControl();
+  auto output = res.WritePortal();
   for(int c = 0; c < num_channels; ++c)
   {
-    auto channel = m_optical_depths[c].GetPortalControl();
+    auto channel = m_optical_depths[c].ReadPortal();
 #ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for
 #endif
@@ -362,6 +413,25 @@ Image<FloatType>::normalize_intensity(const int &channel_num)
   }
   bool invert = false;
   normalize_handle(m_intensities[channel_num], invert);
+}
+
+template<typename FloatType>
+void
+Image<FloatType>::normalize_intensity(const int &channel_num,
+                                      const float min_val,
+                                      const float max_val,
+                                      const bool log_scale)
+{
+  if(channel_num < 0 || channel_num >= m_intensities.size())
+  {
+    throw RoverException("Rover Image: invalid channel number");
+  }
+  if(!m_valid_intensities.at(channel_num))
+  {
+    throw RoverException("Rover Image: cannot normalize an intensity channel that has already been stolen");
+  }
+  bool invert = false;
+  normalize_handle(m_intensities[channel_num], invert, min_val, max_val, log_scale);
 }
 
 template<typename FloatType>
