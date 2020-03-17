@@ -70,6 +70,7 @@ set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
 set(ASCENT_HDF5_ENABLED ${HDF5_FOUND})
 set(ASCENT_ADIOS_ENABLED ${ADIOS_FOUND})
 set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
+set(ASCENT_DRAY_ENABLED ${DRAY_FOUND})
 set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
 
 if(ASCENT_VTKM_ENABLED)
@@ -195,6 +196,13 @@ if(MFEM_FOUND)
     list(APPEND ascent_sources runtimes/ascent_mfem_data_adapter.cpp)
 endif()
 
+#for now, we depend on compositing so we need vtkh
+if(DRAY_FOUND AND VTKM_FOUND)
+  list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
+  list(APPEND ascent_headers runtimes/ascent_dray_data_adapter.hpp)
+  list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
+  list(APPEND ascent_sources runtimes/ascent_dray_data_adapter.cpp)
+endif()
 
 ##############################
 # optional features
@@ -258,6 +266,10 @@ endif()
 
 if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs openmp)
+endif()
+
+if(DRAY_FOUND AND VTKM_FOUND)
+    list(APPEND ascent_thirdparty_libs dray)
 endif()
 
 ##########################################

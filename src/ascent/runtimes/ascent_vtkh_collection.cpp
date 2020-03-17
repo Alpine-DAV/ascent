@@ -70,7 +70,6 @@ bool global_has(bool local)
 {
   bool has = local;
 #if defined(ASCENT_MPI_ENABLED)
-
   int local_boolean = local ? 1 : 0;
   int global_boolean;
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
@@ -85,8 +84,29 @@ bool global_has(bool local)
   {
     has = false;
   }
+  else
+  {
+    has = true;
+  }
 #endif
   return has;
+}
+
+int global_max(int local)
+{
+   int global_count = local;
+#if defined(ASCENT_MPI_ENABLED)
+
+  MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+  MPI_Allreduce((void *)(&local),
+                (void *)(&global_count),
+                1,
+                MPI_INT,
+                MPI_MAX,
+                mpi_comm);
+
+#endif
+  return global_count;
 }
 
 } // namespace detail
@@ -245,7 +265,13 @@ VTKHCollection::by_domain_id()
   return res;
 }
 
-int VTKHCollection::number_of_topologies() const { return m_datasets.size(); }
+int VTKHCollection::number_of_topologies() const
+{
+  // this is not perfect. For example, we could
+  // random topology names on different ranks,
+  // but this is 99% of our possible use cases
+  return detail::global_max(m_datasets.size());
+}
 
 VTKHCollection* VTKHCollection::copy_without_topology(const std::string topology_name)
 {

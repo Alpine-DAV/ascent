@@ -114,6 +114,10 @@ if(PYTHON_FOUND AND ENABLE_PYTHON)
     list(APPEND MPI_TESTS t_ascent_mpi_python_extract)
 endif()
 
+if(DRAY_FOUND)
+    list(APPEND BASIC_TESTS t_ascent_dray)
+endif()
+
 
 ################################
 # Add main tests
@@ -149,10 +153,10 @@ if(MPI_FOUND AND ENABLE_MPI)
     # add the hola mpi test which uses 8 ranks
     add_cpp_mpi_test(TEST t_ascent_hola_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
 
-	if(ENABLE_BABELFLOW)
-		# add the babelflow pmt mpi test
-    	add_cpp_mpi_test(TEST t_ascent_babelflow_pmt_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
-	endif()
+  if(ENABLE_BABELFLOW)
+  # add the babelflow pmt mpi test
+    add_cpp_mpi_test(TEST t_ascent_babelflow_pmt_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
+  endif()
 else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()
