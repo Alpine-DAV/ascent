@@ -81,7 +81,7 @@ TEST(ascent_utils, ascent_copy_dir)
     }
 
 
-    ascent::copy_directory(ASCENT_WEB_CLIENT_ROOT, output_path);
+    ascent::copy_directory(ASCENT_SOURCE_WEB_CLIENT_ROOT, output_path);
 
     EXPECT_TRUE(directory_exists(conduit::utils::join_path(output_path,"resources")));
     EXPECT_TRUE(conduit::utils::is_file(idx_fpath));

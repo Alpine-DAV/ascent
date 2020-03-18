@@ -62,7 +62,7 @@ if(FORTRAN_FOUND)
     set(ASCENT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
 endif()
 
-set(ASCENT_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_client)
+set(ASCENT_SOURCE_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
 
 set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
 set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
@@ -378,5 +378,10 @@ endif()
 ########################################
 install(FILES ${ascent_headers} DESTINATION include/ascent)
 
+##############################################################
+# install files needed for cinema viewer and web client
+#############################################################
+install(DIRECTORY web_clients/
+        DESTINATION share/ascent/web_clients/)
 
 
