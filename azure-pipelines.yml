@@ -458,7 +458,7 @@ stages:
       matrix:
         static_vtkh:
           BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Debug
+          CMAKE_BUILD_TYPE: Release
     steps:
       - checkout: self
         clean: boolean
@@ -670,7 +670,7 @@ stages:
 
 
 ###############################################################################
-# disable b/c macos recipie needs more work
+# disable b/c macos recipe needs more work
 ###############################################################################
 
 ###############################################################################
