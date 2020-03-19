@@ -290,7 +290,8 @@ public:
 
   void Execute(std::vector<vtkh::Render> &renders, bool isProbe = false)
   {
-    // std::cout << "~~~ Execute scene: " << renders.size() << std::endl;
+    std::cout << "~~~ Execute scene: " << renders.size() << std::endl;
+    // TODO: add modified renders offset and image count
     vtkh::Scene scene;
     for (int i = 0; i < m_renderer_count; i++)
     {
@@ -469,10 +470,8 @@ protected:
   std::string m_csv;
 
   vtkm::Bounds m_bounds;
-  const int m_phi;
-  const int m_theta;
-  const int m_image_count;
-  const int m_image_offset;
+  const int m_phi = 5;
+  const int m_theta = 5;
   std::string m_image_name;
   std::string m_image_path;
   std::string m_db_path;
@@ -483,15 +482,11 @@ public:
   CinemaManager(vtkm::Bounds bounds,
                 const int phi,
                 const int theta,
-                const int image_count,
-                const int image_offset,
                 const std::string image_name,
                 const std::string path)
       : m_bounds(bounds),
         m_phi(phi),
         m_theta(theta),
-        m_image_count(image_count),
-        m_image_offset(image_offset),
         m_image_name(image_name),
         m_time(0.f)
   {
@@ -503,9 +498,7 @@ public:
 
   CinemaManager()
       : m_phi(0),
-        m_theta(0),
-        m_image_count(0),
-        m_image_offset(0)
+        m_theta(0)
   {
     ASCENT_ERROR("Cannot create un-initialized CinemaManger");
   }
@@ -515,7 +508,7 @@ public:
     if (bounds != m_bounds)
     {
       this->create_cinema_cameras(bounds);
-    }
+    } 
   }
 
   void add_time_step()
@@ -560,7 +553,9 @@ public:
 
   void fill_renders(std::vector<vtkh::Render> *renders,
                     const std::vector<vtkm::Id> &domain_ids,
-                    const conduit::Node &render_node)
+                    const conduit::Node &render_node,
+                    const int image_count = 0,
+                    const int image_offset = 0)
   {
     conduit::Node render_copy = render_node;
 
@@ -583,9 +578,16 @@ public:
                                                m_bounds,
                                                domain_ids,
                                                tmp_name);
-    const int num_renders = m_image_names.size();
+    int num_renders = m_image_names.size();
 
-    for (int i = 0; i < num_renders; ++i)
+    // TODO: adjust image count
+    if (image_count > 0)
+    {
+      num_renders = image_count;
+      std::cout << "num_renders " << num_renders << std::endl;
+    }
+
+    for (int i = image_offset; i < image_offset + num_renders; ++i)
     {
       std::string image_name = conduit::utils::join_file_path(m_image_path, m_image_names[i]);
 
@@ -709,29 +711,15 @@ private:
     double phi_inc = 360.0 / double(m_phi);
     double theta_inc = 180.0 / double(m_theta);
 
-    int phi_start = m_image_offset / m_phi;
-    int theta_start_first = m_image_offset % m_theta;
-    int phi_end = m_image_count / m_phi;
-    int theta_end_last = m_image_count % m_theta;
-    if (theta_end_last == 0)
-      theta_end_last = m_theta;
-
-    // TODO: validate start and end values for angles
-    std::cout << "phi " << phi_start << " " << phi_end << std::endl;
-    std::cout << "theta " << theta_start_first << " " << theta_end_last << std::endl;
-
-    for (int p = phi_start; p < phi_end; ++p)
+    for (int p = 0; p < m_phi; ++p)
     {
       float phi = -180.f + phi_inc * p;
       m_phi_values.push_back(phi);
 
-      int theta_start = (p == 0) ? theta_start_first : 0;
-      int theta_end = (p == phi_end - 1) ? theta_end_last : m_theta;
-
-      for (int t = theta_start; t < theta_end; ++t)
+      for (int t = 0; t < m_theta; ++t)
       {
         float theta = theta_inc * t;
-        if (p == phi_start)
+        if (p == 0)
         {
           m_theta_values.push_back(theta);
         }
@@ -773,7 +761,6 @@ private:
 
         m_image_names.push_back(ss.str() + m_image_name);
         m_cameras.push_back(camera);
-
       } // theta
     }   // phi
   }
@@ -795,8 +782,6 @@ public:
   static void create_db(vtkm::Bounds bounds,
                         const int phi,
                         const int theta,
-                        const int image_count,
-                        const int image_offset,
                         std::string db_name,
                         std::string path)
   {
@@ -805,8 +790,7 @@ public:
       ASCENT_ERROR("Creation failed: cinema database already exists");
     }
 
-    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, phi, theta, 
-                                                              image_count, image_offset, 
+    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, phi, theta,
                                                               db_name, path)));
   }
 
@@ -1611,13 +1595,29 @@ void DefaultRender::execute()
           theta = render_node["theta"].to_int32();
 
         int image_count = phi*theta;
-        int offset = 0;
+        int image_offset = 0;
         // check for distribution of image rendering
-        // TODO: add to render node
-        if (render_node.has_path("image_count"))
-          image_count = render_node["image_count"].to_int32();
-        // if (render_node.has_path("image_offsets"))
-          // offset = render_node["image_offsets"].to_int32();
+        // double probing_factor = 1.0;
+        // Node *meta = graph().workspace().registry().fetch<Node>("metadata");
+        // if (meta->has_path("probing"))
+        // {
+        //   if ((*meta)["probing"].as_double() > 0.0)
+        //     probing_factor = (*meta)["probing"].as_double();
+        // }
+        if (meta->has_path("image_count"))
+        {
+          if ((*meta)["image_count"].as_int32() > 0)
+          {
+            image_count = (*meta)["image_count"].as_int32();
+          }
+        }
+        if (meta->has_path("image_offset"))
+        {
+          image_offset = (*meta)["image_offset"].as_int32();
+        }
+
+        // phi = int(std::round(phi * probing_factor));
+        // theta = int(std::round(theta * probing_factor));
 
         std::string output_path = "";
 
@@ -1639,7 +1639,7 @@ void DefaultRender::execute()
         bool exists = detail::CinemaDatabases::db_exists(db_name);
         if (!exists)
         {
-          detail::CinemaDatabases::create_db(*bounds, phi, theta, image_count, offset, 
+          detail::CinemaDatabases::create_db(*bounds, phi, theta,
                                              db_name, output_path);
         }
         detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
@@ -1650,7 +1650,7 @@ void DefaultRender::execute()
 
         manager.set_bounds(*bounds);
         manager.add_time_step();
-        manager.fill_renders(renders, v_domain_ids, render_node);
+        manager.fill_renders(renders, v_domain_ids, render_node, image_count, image_offset);
         manager.write_metadata();
       }
       else

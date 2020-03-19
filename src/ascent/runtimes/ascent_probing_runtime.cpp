@@ -59,6 +59,7 @@
 #include <cassert>
 #include <numeric>
 #include <cmath>
+#include <thread>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -422,6 +423,7 @@ void log_time(std::chrono::time_point<std::chrono::system_clock> start,
     out.close();
 }
 
+
 //-----------------------------------------------------------------------------
 void splitAndRender(const MPI_Comm mpi_comm_world,
                     const int world_size,
@@ -465,7 +467,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         assert(my_probing_times.size() > 0);
         // my_avg_probing_time is in milliseconds
         my_avg_probing_time = float(std::accumulate(my_probing_times.begin(), 
-                                                     my_probing_times.end(), 0.0) 
+                                                    my_probing_times.end(), 0.0) 
                                           / my_probing_times.size());
         // convert from milliseconds to seconds 
         my_avg_probing_time /= 1000;
@@ -520,17 +522,21 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         std::cout << "~~~~rank " << world_rank << " / " << my_dest_rank
                     << ": receives extract(s) from " ;
 
+        std::vector<conduit::Node> data_sets; 
         // receive data from corresponding sources
         for (int i = 0; i < node_map.size(); ++i)
         {
             if (node_map[i] == my_dest_rank)
             {   
                 std::cout << i << " ";
-                conduit::Node &n_curr = data.append();
+                conduit::Node n_curr; // = data.append();
                 relay::mpi::recv_using_schema(n_curr, i, 0, mpi_comm_world);
+                data_sets.push_back(n_curr);
             }
         }
         std::cout << std::endl;
+
+        // TODO: create ascent instances == # data packages received?
     }
     else // all sim nodes: send extract to vis nodes
     {
@@ -548,73 +554,14 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     {
         Node ascent_opts, blank_actions;
         ascent_opts["mpi_comm"] = MPI_Comm_c2f(mpi_comm_world);
-        // FIXME: Hardcoded cinema actions for testing
-        std::string actions_file = ""
-                                   "-\n"
-                                   "  action: add_scenes\n"
-                                   "  scenes:\n"
-                                   "    s1:\n"
-                                   "      plots:\n"
-                                   "        p1: \n"
-                                   "          type: volume\n"
-                                   "          field: energy\n"
-                                   "          min_value: 0.0\n"
-                                   "          max_value: 0.5\n"
-                                   "          color_table:\n"
-                                   "            name: rainbow desaturated\n"
-                                   "            control_points: \n"
-                                   "              - \n"
-                                   "                type: alpha\n"
-                                   "                position: 0.0\n"
-                                   "                alpha: 0.0\n"
-                                   "              - \n"
-                                   "                type: alpha\n"
-                                   "                position: 0.5\n"
-                                   "                alpha: 0.0\n"
-                                   "              - \n"
-                                   "                type: alpha\n"
-                                   "                position: 0.51\n"
-                                   "                alpha: 1.0\n"
-                                   "              - \n"
-                                   "                type: alpha\n"
-                                   "                position: 1.0\n"
-                                   "                alpha: 1.0\n"
-                                   "      renders:\n"
-                                   "        r1:\n"
-                                   "          type: cinema\n"
-                                   "          phi: 7\n"
-                                   "          theta: 7\n"
-                                   "          camera:\n"
-                                   "            zoom: 0.3\n"
-                                   "          db_name: clover_db\n"
-                                   "          image_count: ";
-        actions_file += std::to_string(image_counts[world_rank]);
-        actions_file += "\n";
+        ascent_opts["actions_file"] = "cinema_actions.yaml";
+        ascent_opts["probing"] = 0.0;
 
-        if (is_vis_node)
-        {
-            actions_file += "          ";
-            actions_file += "image_offsets: [";
-            for (int i = 0; i < world_size; i++)
-            {
-                actions_file += std::to_string(image_counts[i]);
-                if (i == world_size - 1)
-                    actions_file += "]\n";
-                else
-                    actions_file += ",";
-            }
-        }
-
-        std::string actions_file_name = "cinema_actions" + std::to_string(world_rank) + ".yaml";
-        std::ofstream file(actions_file_name);
-        file << actions_file;
-        file.close();
-
-        ascent_opts["actions_file"] = actions_file_name;
+        ascent_opts["image_count"] = image_counts[world_rank];
+        ascent_opts["image_offset"] = 0;
 
 // TODO: 
-// read in cinema_actions.yaml and put that into ascent actions
-// add the image_counts[world_rank] (or percentage?) 
+// pass image_counts[world_rank] and offset to ascent instance
 
         Ascent ascent_render;
         ascent_render.open(ascent_opts);
@@ -878,7 +825,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 
             if (action.has_path("scenes"))
             {
-                // TODO: clean up this mess (deadlock if action files don't align?)
+                // TODO: clean up this mess
                 conduit::Node scenes;
                 scenes.append() = action["scenes"];
                 conduit::Node renders;
@@ -889,8 +836,11 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
                 // update angle count for probing run
                 int phi_probe = int(std::round(phi * probing_factor));
                 int theta_probe = int(std::round(theta * probing_factor));
-                probe_actions.child(i)["scenes"].child(0)["renders"].child(0)["phi"] = phi_probe;
-                probe_actions.child(i)["scenes"].child(0)["renders"].child(0)["theta"] = theta_probe;
+                // probe_actions.child(i)["scenes"].child(0)["renders"].child(0)["phi"] = phi_probe;
+                // probe_actions.child(i)["scenes"].child(0)["renders"].child(0)["theta"] = theta_probe;
+                
+                // std::cout << "phi " << phi << " _ probing phi " << phi_probe << std::endl;
+                // std::cout << "theta " << theta << " _ probing theta " << theta_probe << std::endl;
             }
             else
             {
@@ -898,6 +848,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
             }
         }
     }
+
 
     int rank_split = 0;
 #if ASCENT_MPI_ENABLED
@@ -925,6 +876,10 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     {
         auto start = std::chrono::system_clock::now();
         ascent_opt["runtime/type"] = "ascent"; // set to main runtime
+        ascent_opt["probing"] = probing_factor;
+        ascent_opt["image_count"] = int(std::round(probing_factor * phi * 
+                                                   probing_factor * theta));
+        ascent_opt["image_offset"] = 0;
 
         // all sim nodes run probing in a new ascent instance
         Ascent ascent_probing;

@@ -110,6 +110,10 @@ private:
     int               m_refinement_level;
     int               m_rank;
     std::string       m_ghost_field_name;
+    
+    double            m_is_probing = 0.0;
+    int               m_image_count = 0;
+    int               m_image_offset = 0;
 
     void              ResetInfo();
 

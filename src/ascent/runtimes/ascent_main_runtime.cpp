@@ -125,7 +125,10 @@ AscentRuntime::AscentRuntime()
     : Runtime(),
       m_refinement_level(2), // default refinement level for high order meshes
       m_rank(0),
-      m_ghost_field_name("ascent_ghosts")
+      m_ghost_field_name("ascent_ghosts"),
+      m_is_probing(0.0),
+      m_image_count(0),
+      m_image_offset(0)
 {
   flow::filters::register_builtin();
   ResetInfo();
@@ -237,6 +240,16 @@ void AscentRuntime::Initialize(const conduit::Node &options)
 
     m_web_interface.Enable();
   }
+
+  if (options.has_path("probing"))
+  {
+    m_is_probing = options["probing"].as_double();
+    // std::cout << "*** probing" << std::endl;
+  }
+  if (options.has_path("image_count"))
+    m_image_count = options["image_count"].as_int32();
+  if (options.has_path("image_offset"))
+    m_image_offset = options["image_offset"].as_int32();    
 
   Node msg;
   this->Info(msg["info"]);
@@ -893,6 +906,9 @@ void AscentRuntime::PopulateMetadata()
   (*meta)["time"] = time;
   (*meta)["refinement_level"] = m_refinement_level;
   (*meta)["ghost_field"] = m_ghost_field_name;
+  (*meta)["probing"] = m_is_probing;
+  (*meta)["image_count"] = m_image_count;
+  (*meta)["image_offset"] = m_image_offset;
 }
 //-----------------------------------------------------------------------------
 void AscentRuntime::ConnectSource()
