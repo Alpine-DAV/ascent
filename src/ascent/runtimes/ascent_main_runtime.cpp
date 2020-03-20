@@ -323,39 +323,39 @@ void AscentRuntime::EnsureDomainIds()
     }
   }
 
-#ifdef ASCENT_MPI_ENABLED
-  int comm_id = flow::Workspace::default_mpi_comm();
+// #ifdef ASCENT_MPI_ENABLED
+//   int comm_id = flow::Workspace::default_mpi_comm();
 
-  MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+//   MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
 
-  int comm_size = 1;
-  MPI_Comm_size(mpi_comm, &comm_size);
-  int *has_ids_array = new int[comm_size];
-  int *no_ids_array = new int[comm_size];
-  int boolean = has_ids ? 1 : 0;
+//   int comm_size = 1;
+//   MPI_Comm_size(mpi_comm, &comm_size);
+//   int *has_ids_array = new int[comm_size];
+//   int *no_ids_array = new int[comm_size];
+//   int boolean = has_ids ? 1 : 0;
 
-  MPI_Allgather(&boolean, 1, MPI_INT, has_ids_array, 1, MPI_INT, mpi_comm);
-  boolean = no_ids ? 1 : 0;
-  MPI_Allgather(&boolean, 1, MPI_INT, no_ids_array, 1, MPI_INT, mpi_comm);
+//   MPI_Allgather(&boolean, 1, MPI_INT, has_ids_array, 1, MPI_INT, mpi_comm);
+//   boolean = no_ids ? 1 : 0;
+//   MPI_Allgather(&boolean, 1, MPI_INT, no_ids_array, 1, MPI_INT, mpi_comm);
 
-  bool global_has_ids = true;
-  bool global_no_ids = false;
-  for (int i = 0; i < comm_size; ++i)
-  {
-    if (has_ids_array[i] == 0)
-    {
-      global_has_ids = false;
-    }
-    if (no_ids_array[i] == 1)
-    {
-      global_no_ids = true;
-    }
-  }
-  has_ids = global_has_ids;
-  no_ids = global_no_ids;
-  delete[] has_ids_array;
-  delete[] no_ids_array;
-#endif
+//   bool global_has_ids = true;
+//   bool global_no_ids = false;
+//   for (int i = 0; i < comm_size; ++i)
+//   {
+//     if (has_ids_array[i] == 0)
+//     {
+//       global_has_ids = false;
+//     }
+//     if (no_ids_array[i] == 1)
+//     {
+//       global_no_ids = true;
+//     }
+//   }
+//   has_ids = global_has_ids;
+//   no_ids = global_no_ids;
+//   delete[] has_ids_array;
+//   delete[] no_ids_array;
+// #endif
 
   bool consistent_ids = (has_ids || no_ids);
   if (!consistent_ids)
@@ -365,15 +365,15 @@ void AscentRuntime::EnsureDomainIds()
   }
 
   int domain_offset = 0;
-#ifdef ASCENT_MPI_ENABLED
-  int *domains_per_rank = new int[comm_size];
-  MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
-  for (int i = 0; i < m_rank; ++i)
-  {
-    domain_offset += domains_per_rank[i];
-  }
-  delete[] domains_per_rank;
-#endif
+// #ifdef ASCENT_MPI_ENABLED
+//   int *domains_per_rank = new int[comm_size];
+//   MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
+//   for (int i = 0; i < m_rank; ++i)
+//   {
+//     domain_offset += domains_per_rank[i];
+//   }
+//   delete[] domains_per_rank;
+// #endif
   for (int i = 0; i < num_domains; ++i)
   {
     conduit::Node &dom = m_data.child(i);
@@ -1398,7 +1398,6 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     m_previous_actions = actions;
 
     PopulateMetadata(); // add metadata so filters can access it
-
     w.info(m_info["flow_graph"]);
     m_info["actions"] = actions;
     //w.print();
@@ -1418,7 +1417,8 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
 #endif
     // now execute the data flow graph
-    w.execute();
+    std::cout << "**** Execute " << std::endl;
+    w.execute();  // FIXME: sync happens here
 
 #if defined(ASCENT_VTKM_ENABLED)
     vtkh::DataLogger::GetInstance()->CloseLogEntry();

@@ -580,12 +580,9 @@ public:
                                                tmp_name);
     int num_renders = m_image_names.size();
 
-    // TODO: adjust image count
+    // adjust image count
     if (image_count > 0)
-    {
       num_renders = image_count;
-      std::cout << "num_renders " << num_renders << std::endl;
-    }
 
     for (int i = image_offset; i < image_offset + num_renders; ++i)
     {
@@ -1368,8 +1365,8 @@ void VTKHGhostStripper::execute()
   vtkh::DataSet *data = input<vtkh::DataSet>(0);
 
   // Check to see of the ghost field even exists
-  // std::cout << "### GlobalFieldExists VTKHGhostStripper" << std::endl;
-  bool do_strip = true;// data->GlobalFieldExists(field_name);
+  // TODO: revert back to action check and avoid sync in stripper.Update() [deadlock]
+  bool do_strip = false;// data->GlobalFieldExists(field_name);
 
   if (do_strip)
   {
@@ -1387,7 +1384,7 @@ void VTKHGhostStripper::execute()
     stripper.SetMaxValue(max_val);
     stripper.SetMinValue(min_val);
 
-    stripper.Update();
+    stripper.Update();  // FIXME: deadlock 
 
     vtkh::DataSet *stripper_output = stripper.GetOutput();
 
@@ -1530,7 +1527,6 @@ bool DefaultRender::verify_params(const conduit::Node &params,
     res = false;
     info["errors"].append() = surprises;
   }
-
   return res;
 }
 
@@ -1614,6 +1610,7 @@ void DefaultRender::execute()
         if (meta->has_path("image_offset"))
         {
           image_offset = (*meta)["image_offset"].as_int32();
+          std::cout << "image_offset " << image_offset << std::endl;
         }
 
         // phi = int(std::round(phi * probing_factor));

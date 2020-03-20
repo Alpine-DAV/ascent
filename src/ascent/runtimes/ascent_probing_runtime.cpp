@@ -431,7 +431,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     const MPI_Comm sim_comm,
                     const int sim_node_count,
                     const std::vector<double> &my_probing_times,
-                    const int cinema_image_count,
+                    const int max_image_count,
                     conduit::Node &data,
                     const double vis_budget = 0.1)
 {
@@ -471,7 +471,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                                           / my_probing_times.size());
         // convert from milliseconds to seconds 
         my_avg_probing_time /= 1000;
-        // my_vis_estimate = (my_avg_probing_time * cinema_image_count) / 1000.f;
+        // my_vis_estimate = (my_avg_probing_time * max_image_count) / 1000.f;
         std::cout << "~~~ " << my_avg_probing_time 
                   << " sec vis time estimate " 
                   << world_rank << std::endl;
@@ -513,9 +513,16 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     // distribute rendering load across sim and vis loads
     std::vector<int> image_counts = load_assignment(sim_estimates, vis_estimates,
                                                     node_map,
-                                                    cinema_image_count,
+                                                    max_image_count,
                                                     sim_node_count, vis_node_count,
                                                     vis_budget, world_rank);
+
+
+    Node ascent_opts, blank_actions;
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(mpi_comm_world);
+    ascent_opts["actions_file"] = "cinema_actions.yaml";
+    ascent_opts["probing"] = 0.0;   // TODO: remove?
+    Node verify_info;
 
     if (is_vis_node) // all vis nodes: receive data 
     {
@@ -531,12 +538,37 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 std::cout << i << " ";
                 conduit::Node n_curr; // = data.append();
                 relay::mpi::recv_using_schema(n_curr, i, 0, mpi_comm_world);
-                data_sets.push_back(n_curr);
+                // data_sets.push_back(n_curr);
+        //     }
+        // }
+        // std::cout << std::endl;
+
+        // // create ascent instances equal to the number of data packages received
+        // for (conduit::Node &data : data_sets)
+        // {
+                std::cout << "~~~~vis node " << world_rank << " rendering data " << std::endl;
+                if (conduit::blueprint::mesh::verify(n_curr, verify_info))
+                {
+                    // TODO: adjust image count: max count - sending node count
+                    ascent_opts["image_count"] = image_counts[i];
+                    ascent_opts["image_offset"] = max_image_count - image_counts[i];
+
+                    Ascent ascent_render;
+                    ascent_render.open(ascent_opts);
+                    ascent_render.publish(n_curr);    
+
+                    log_time(start, "before render ascent execute ", world_rank);
+                    ascent_render.execute(blank_actions);   // FIXME: sync happens here
+                    std::cout << "**** vis node " << world_rank << " open " << std::endl;
+                    ascent_render.close();
+                }
+                else
+                {
+                    std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
+                                << std::endl;
+                }
             }
         }
-        std::cout << std::endl;
-
-        // TODO: create ascent instances == # data packages received?
     }
     else // all sim nodes: send extract to vis nodes
     {
@@ -545,36 +577,26 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                   <<  node_map[world_rank] + sim_node_count << std::endl;
 
         relay::mpi::send_using_schema(data, destination, 0, mpi_comm_world);
-    }
 
-    // TODO: 3) render images
-    // Full cinema render using Ascent
-    Node verify_info;
-    if (conduit::blueprint::mesh::verify(data, verify_info))
-    {
-        Node ascent_opts, blank_actions;
-        ascent_opts["mpi_comm"] = MPI_Comm_c2f(mpi_comm_world);
-        ascent_opts["actions_file"] = "cinema_actions.yaml";
-        ascent_opts["probing"] = 0.0;
+        // in line rendering using ascent and cinema
+        if (conduit::blueprint::mesh::verify(data, verify_info))
+        {
+            ascent_opts["image_count"] = image_counts[world_rank];
+            ascent_opts["image_offset"] = 0;
 
-        ascent_opts["image_count"] = image_counts[world_rank];
-        ascent_opts["image_offset"] = 0;
+            Ascent ascent_render;
+            ascent_render.open(ascent_opts);
+            ascent_render.publish(data);    // sync happens here
 
-// TODO: 
-// pass image_counts[world_rank] and offset to ascent instance
-
-        Ascent ascent_render;
-        ascent_render.open(ascent_opts);
-        ascent_render.publish(data);    // sync happens here
-
-        log_time(start, "before render ascent execute ", world_rank);
-        ascent_render.execute(blank_actions);   // TODO: check for sync
-        ascent_render.close();
-    }
-    else
-    {
-        std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
-                    << std::endl;
+            log_time(start, "before render ascent execute ", world_rank);
+            ascent_render.execute(blank_actions);   // TODO: check for sync
+            ascent_render.close();
+        }
+        else
+        {
+            std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
+                        << std::endl;
+        }
     }
 
 

@@ -187,17 +187,18 @@ BlueprintVerify::execute()
     }
     
     // make sure some MPI task actually had bp data
-#ifdef ASCENT_MPI_ENABLED
-    int global_verify_ok = 0;
-    MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-    MPI_Allreduce((void *)(&local_verify_ok),
-                (void *)(&global_verify_ok),
-                1,
-                MPI_INT,
-                MPI_SUM,
-                mpi_comm);
-    local_verify_ok = global_verify_ok;
-#endif
+    // NOTE: removed for probing 
+// #ifdef ASCENT_MPI_ENABLED
+//     int global_verify_ok = 0;
+//     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+//     MPI_Allreduce((void *)(&local_verify_ok),
+//                 (void *)(&global_verify_ok),
+//                 1,
+//                 MPI_INT,
+//                 MPI_SUM,
+//                 mpi_comm);
+//     local_verify_ok = global_verify_ok;
+// #endif
 
     if(local_verify_ok == 0)
     {
