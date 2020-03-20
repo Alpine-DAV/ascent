@@ -209,9 +209,9 @@ AscentRuntime::Initialize(const conduit::Node &options)
     {
       m_refinement_level = options["refinement_level"].to_int32();
       Transmogrifier::m_refinement_level = m_refinement_level;
-      if(m_refinement_level < 2)
+      if(m_refinement_level < 1)
       {
-        ASCENT_ERROR("'refinement_level' must be greater than 1");
+        ASCENT_ERROR("'refinement_level' must be greater than 0");
       }
     }
 #endif
