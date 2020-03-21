@@ -67,23 +67,11 @@ Here is a file that would set the runtime to the main ascent runtime using a Ope
 
   {
     "runtime/type"    : "ascent",
-    "runtine/backend" : "openmp"
+    "runtine/vtkm/backend" : "openmp"
   }
 
-If MFEM is enabled, one additional options argument, ``refinement`` can be specified.
-High-order meshes variable are continuous polynomial functions that cannot be captured
-by linear low-order meshes. In order to approximate the functions with less error,
-high-order elements are discretized into many linear elements. The minimum value for refinement
-is ``2``. There is a memory-accuracy trade-off when using refinement. The higher the value,
-the more accurate the low-order representation is, but more discretization means more memory
-usage and more time tp process the additional elements.
-
-.. code-block:: json
-
-  {
-    "refinement" : 4
-  }
-
+Example Options
+"""""""""""""""
 A typical integration will include the following code:
 
 .. code-block:: c++
@@ -99,6 +87,43 @@ A typical integration will include the following code:
 
   ascent.Open(ascent_options);
 
+
+Default Directory
+"""""""""""""""""
+By default, Ascent will output files in the current working directory.
+This can be overrided by specifying the ``default_dir``. This directory
+must be a valid directory, i.e., Ascent will not create this director for
+you. Many Ascent filters have parameters that specify output files, and Ascent
+will only place files that do not have an absolue path specified.
+For example, the ``my_image`` would be written to the default directory, but
+``/some/other/path/my_image`` would be written in the directory
+``/some/other/path/``.
+
+.. code-block:: json
+
+  {
+    "default_dir" : "/path/to/output/dir"
+  }
+
+High Order Mesh Refinement
+""""""""""""""""""""""""""
+If MFEM is enabled, one additional options argument, ``refinement`` can be specified.
+High-order meshes variable are continuous polynomial functions that cannot be captured
+by linear low-order meshes. In order to approximate the functions with less error,
+high-order elements are discretized into many linear elements. The minimum value for refinement
+is ``1``, i.e., no refinement. There is a memory-accuracy trade-off when using refinement.
+The higher the value,
+the more accurate the low-order representation is, but more discretization means more memory
+usage and more time tp process the additional elements.
+
+.. code-block:: json
+
+  {
+    "refinement" : 4
+  }
+
+Runtime Options
+"""""""""""""""
 Valid runtimes include:
 
   - ``ascent``
@@ -108,6 +133,8 @@ Valid runtimes include:
   - ``empty``
 
 
+Logging Options
+"""""""""""""""
 There are a few other options that control behaviors common to all runtimes:
 
  * ``messages``
@@ -120,6 +147,8 @@ There are a few other options that control behaviors common to all runtimes:
 
     - ``verbose``  Logged info messages are printed
 
+Exception Handling
+""""""""""""""""""
 If ascent is not behaving as expected, a good first step is to enable verbose messaging.
 There are often warnings and other information that can indicate potential issues.
 

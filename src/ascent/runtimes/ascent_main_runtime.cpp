@@ -218,7 +218,14 @@ AscentRuntime::Initialize(const conduit::Node &options)
 #endif
     if(options.has_path("default_dir"))
     {
-      m_default_output_dir = options["default_dir"].as_string();
+      std::string dir = options["default_dir"].as_string();
+
+      if(!directory_exists(dir))
+      {
+        ASCENT_INFO("'default_dir' '"<<dir<<"' does not exist."
+                    <<" Output dir will default to the cwd.");
+      }
+      m_default_output_dir = dir;
     }
 
     m_runtime_options = options;
