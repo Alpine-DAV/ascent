@@ -128,7 +128,8 @@ int InfoHandler::m_rank = 0;
 AscentRuntime::AscentRuntime()
 :Runtime(),
  m_refinement_level(2), // default refinement level for high order meshes
- m_rank(0)
+ m_rank(0),
+ m_default_output_dir(".")
 {
     m_ghost_fields.append() = "ascent_ghosts";
     flow::filters::register_builtin();
@@ -215,6 +216,10 @@ AscentRuntime::Initialize(const conduit::Node &options)
       }
     }
 #endif
+    if(options.has_path("default_dir"))
+    {
+      m_default_output_dir = options["default_dir"].as_string();
+    }
 
     m_runtime_options = options;
 
@@ -977,6 +982,7 @@ AscentRuntime::PopulateMetadata()
   (*meta)["time"] = time;
   (*meta)["refinement_level"] = m_refinement_level;
   (*meta)["ghost_field"] = m_ghost_fields;
+  (*meta)["default_dir"] = m_default_output_dir;
 
 }
 //-----------------------------------------------------------------------------

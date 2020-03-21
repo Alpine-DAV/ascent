@@ -65,6 +65,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_runtime_utils.hpp>
 #include <ascent_png_encoder.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -771,6 +772,7 @@ DRayPseudocolor::execute()
       result.CompositeBackground(bg_color);
       PNGEncoder encoder;
       encoder.Encode(&result.m_pixels[0], camera.get_width(), camera.get_height());
+      image_name = output_dir(image_name, graph());
       encoder.Save(image_name + ".png");
       //std::cout<<camera.print()<<"\n";
     }
@@ -965,6 +967,7 @@ DRay3Slice::execute()
       result.CompositeBackground(bg_color);
       PNGEncoder encoder;
       encoder.Encode(&result.m_pixels[0], camera.get_width(), camera.get_height());
+      image_name = output_dir(image_name, graph());
       encoder.Save(image_name + ".png");
     }
 }
@@ -1144,11 +1147,16 @@ DRayVolume::execute()
     compositor.set_comm_handle(comm_id);
 #endif
     compositor.composite(c_partials, result);
-    dray::Framebuffer fb = detail::partials_to_framebuffer(result,
-                                                           camera.get_width(),
-                                                           camera.get_height());
-    fb.composite_background();
-    fb.save(image_name);
+
+    if(vtkh::GetMPIRank() == 0)
+    {
+      dray::Framebuffer fb = detail::partials_to_framebuffer(result,
+                                                             camera.get_width(),
+                                                             camera.get_height());
+      fb.composite_background();
+      image_name = output_dir(image_name, graph());
+      fb.save(image_name);
+    }
 }
 
 

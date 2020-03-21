@@ -66,6 +66,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_string_utils.hpp>
+#include <ascent_runtime_utils.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -295,6 +296,7 @@ RoverXRay::execute()
     {
       filename = expand_family_name(filename, cycle);
     }
+    filename = output_dir(filename, graph());
 
     if(params().has_path("image_params"))
     {
@@ -312,6 +314,7 @@ RoverXRay::execute()
     if(params().has_path("bov_filename"))
     {
       std::string bov_filename = params()["bov_filename"].as_string();
+      bov_filename = output_dir(bov_filename, graph());
       if(cycle != -1)
       {
         tracer.save_bov(expand_family_name(bov_filename, cycle));
@@ -490,12 +493,15 @@ RoverVolume::execute()
     std::string filename = params()["filename"].as_string();
     if(cycle != -1)
     {
-      tracer.save_png(expand_family_name(filename, cycle));
+      filename = expand_family_name(filename, cycle);
     }
     else
     {
-      tracer.save_png(expand_family_name(filename));
+      filename = expand_family_name(filename);
     }
+    filename = output_dir(filename, graph());
+
+    tracer.save_png(filename);
     tracer.finalize();
 
 }
