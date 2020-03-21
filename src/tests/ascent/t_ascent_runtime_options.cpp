@@ -229,9 +229,13 @@ TEST(ascent_runtime_options, test_timings)
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_actions_img");
     string output_actions = conduit::utils::join_file_path(output_path,"tout_render_actions.json");
 
+    string timings_file = "ascent_filter_times.csv";
+    timings_file = conduit::utils::join_file_path(output_path,timings_file);
+
     // remove old images before rendering
     remove_test_image(output_file);
     remove_test_file(output_actions);
+    remove_test_file(timings_file);
 
 
     //
@@ -289,11 +293,8 @@ TEST(ascent_runtime_options, test_timings)
     EXPECT_TRUE(check_test_image(output_file));
     EXPECT_TRUE(check_test_file(output_actions));
     // check to see if we created the timings
-    string timings_file = "ascent_filter_times.csv";
-    timings_file = conduit::utils::join_file_path(output_path,timings_file);
     EXPECT_TRUE(check_test_file(timings_file));
 }
-
 
 //-----------------------------------------------------------------------------
 TEST(ascent_runtime_options, test_actions_file)
