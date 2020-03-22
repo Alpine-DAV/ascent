@@ -1697,9 +1697,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       Coords32 points = coordsHandle.Cast<Coords32>();
 
-      auto x_handle = vtkmstd::get<0>(points.GetStorage().GetArrayTuple());
-      auto y_handle = vtkmstd::get<1>(points.GetStorage().GetArrayTuple());
-      auto z_handle = vtkmstd::get<2>(points.GetStorage().GetArrayTuple());
+      auto x_handle = vtkm::get<0>(points.GetStorage().GetArrayTuple());
+      auto y_handle = vtkm::get<1>(points.GetStorage().GetArrayTuple());
+      auto z_handle = vtkm::get<2>(points.GetStorage().GetArrayTuple());
 
       point_dims[0] = x_handle.GetNumberOfValues();
       point_dims[1] = y_handle.GetNumberOfValues();
@@ -1771,9 +1771,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       Coords64 points = coordsHandle.Cast<Coords64>();
 
-      auto x_handle = vtkmstd::get<0>(points.GetStorage().GetArrayTuple());
-      auto y_handle = vtkmstd::get<1>(points.GetStorage().GetArrayTuple());
-      auto z_handle = vtkmstd::get<2>(points.GetStorage().GetArrayTuple());
+      auto x_handle = vtkm::get<0>(points.GetStorage().GetArrayTuple());
+      auto y_handle = vtkm::get<1>(points.GetStorage().GetArrayTuple());
+      auto z_handle = vtkm::get<2>(points.GetStorage().GetArrayTuple());
 
       point_dims[0] = x_handle.GetNumberOfValues();
       point_dims[1] = y_handle.GetNumberOfValues();

@@ -66,6 +66,7 @@
 #include <ascent_string_utils.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_runtime_utils.hpp>
 #include <ascent_web_interface.hpp> // -- for web_client_root_directory()
 ///
 #include <flow_graph.hpp>
@@ -182,7 +183,6 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("db_name");
   r_valid_paths.push_back("render_bg");
   r_valid_paths.push_back("annotations");
-  r_valid_paths.push_back("output_path");
   r_valid_paths.push_back("fg_color");
   r_valid_paths.push_back("bg_color");
 
@@ -874,12 +874,7 @@ DefaultRender::execute()
             ASCENT_ERROR("Cinema must specify a 'db_name'");
           }
 
-          std::string output_path = "";
-
-          if(render_node.has_path("output_path"))
-          {
-            output_path = render_node["output_path"].as_string();
-          }
+          std::string output_path = default_dir(graph());
 
           if(!render_node.has_path("db_name"))
           {
@@ -909,12 +904,14 @@ DefaultRender::execute()
           if(render_node.has_path("image_name"))
           {
             image_name = render_node["image_name"].as_string();
+            image_name = output_dir(image_name, graph());
           }
           else if(render_node.has_path("image_prefix"))
           {
             std::stringstream ss;
             ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
             image_name = ss.str();
+            image_name = output_dir(image_name, graph());
           }
           else
           {

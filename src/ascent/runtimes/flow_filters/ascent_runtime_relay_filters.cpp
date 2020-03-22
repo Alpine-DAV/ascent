@@ -66,6 +66,7 @@
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_file_system.hpp>
+#include <ascent_runtime_utils.hpp>
 
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -609,6 +610,7 @@ RelayIOSave::execute()
 {
     std::string path, protocol;
     path = params()["path"].as_string();
+    path = output_dir(path, graph());
     // TODO check if we need to expand the path (MPI) case for std protocols
     if(params().has_child("protocol"))
     {

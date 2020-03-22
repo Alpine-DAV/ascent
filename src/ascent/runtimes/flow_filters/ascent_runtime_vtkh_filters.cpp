@@ -65,6 +65,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_runtime_utils.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 #include <ascent_data_object.hpp>
