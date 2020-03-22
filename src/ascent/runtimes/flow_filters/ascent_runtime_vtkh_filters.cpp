@@ -197,7 +197,7 @@ VTKHMarchingCubes::execute()
 
     if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_vector_magnitude input must be a data object");
+        ASCENT_ERROR("vtkh_marching cubes input must be a data object");
     }
 
     DataObject *data_object = input<DataObject>(0);
@@ -240,8 +240,14 @@ VTKHMarchingCubes::execute()
         }
       }
     }
-
     marcher.Update();
+
+    conduit::Node did;
+    did["filter_name"] = name();
+    did["filter_type"] = type_name();
+    did["params/field"] = field_name;
+    did["params/iso_values"].set(marcher.GetIsoValues());
+    std::cout<<did.to_yaml()<<"\n";
 
     vtkh::DataSet *iso_output = marcher.GetOutput();
     // we need to pass through the rest of the topologies, untouched,
