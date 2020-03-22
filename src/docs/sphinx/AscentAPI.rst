@@ -107,7 +107,7 @@ For example, the ``my_image`` would be written to the default directory, but
 
 High Order Mesh Refinement
 """"""""""""""""""""""""""
-If MFEM is enabled, one additional options argument, ``refinement`` can be specified.
+If MFEM is enabled, one additional options argument, ``refinement_level`` can be specified.
 High-order meshes variable are continuous polynomial functions that cannot be captured
 by linear low-order meshes. In order to approximate the functions with less error,
 high-order elements are discretized into many linear elements. The minimum value for refinement
@@ -119,7 +119,7 @@ usage and more time tp process the additional elements.
 .. code-block:: json
 
   {
-    "refinement" : 4
+    "refinement_level" : 4
   }
 
 Runtime Options
