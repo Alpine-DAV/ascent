@@ -592,8 +592,9 @@ the data set has more than one domain. Without ghost, the averaging will not be 
 
 Gradient
 ~~~~~~~~
-Computes the gradient of a point based input field for every element
-in the input data set.
+Computes the gradient of a vertex-centered input field for every element
+in the input data set. Fields will be automaticall recentered if they
+are elemenet-centered.
 The gradient computation can either generate cell center based gradients,
 which are fast but less accurate, or more accurate but slower
 point based gradients (default).
@@ -605,7 +606,48 @@ point based gradients (default).
   pipelines["pl1/f1/type"] = "gradient";
   // filter knobs (all these are optional)
   conduit::Node &params = pipelines["pl1/f1/params"];
-  params["field"] = "pressure";          // (required)
+  params["field"] = "velocity";          // (required)
   params["output_name"] = "my_grad";     // (required) name of the output field
-  params["use_cell_gradient"] = "false"; // (optional) index of the component
+  params["use_cell_gradient"] = "false"; // (optional)
+
+
+Vorticity
+~~~~~~~~~
+Computes the vorticity of a vertex-centered input field for every element
+in the input data set. Fields will be automaticall recentered if they
+are elemenet-centered.
+The vorticity computation (based on the gradient) can either generate
+cell center based gradients, which are fast but less accurate, or more
+accurate but slower point based gradients (default).
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "vorticity";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "velocity";          // (required)
+  params["output_name"] = "my_vorticity";// (required) name of the output field
+  params["use_cell_gradient"] = "false"; // (optional)
+
+Q-Criterion
+~~~~~~~~~~~
+Computes the qcriterion of a vertex-centered input field for every element
+in the input data set. Fields will be automaticall recentered if they
+are elemenet-centered.
+The qcriterion computation (based on the gradient) can either generate
+cell center based gradients, which are fast but less accurate, or more
+accurate but slower point based gradients (default).
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "qcriterion";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "velocity";          // (required)
+  params["output_name"] = "my_q";        // (required) name of the output field
+  params["use_cell_gradient"] = "false"; // (optional)
 
