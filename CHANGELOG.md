@@ -9,12 +9,19 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 
 - Modified Cinema output so it can be viewed without a webserver.
+- Added support for Devil Ray (high-order) ray tracer
+- Added vector operations
+  - composite vector (create vector from three scalars)
+  - vector component (extract scalar component)
+- removed default behavior of publishing individual vector components when vectors were three separate arrays. This can be achieved by using the vector component filter.
+- allow no refinement for high-order meshes
+- added support for multiple topologies (e.g., volume and particles in the same mesh)
 
 ## [0.5.1] - Released 2020-01-31
 
 ### Added
 - Added support to render multiple topologies in the same scene.
-- Added a Data Object construct to the main Ascent runtime to easily manage transformations between in-memory mesh representations. 
+- Added a Data Object construct to the main Ascent runtime to easily manage transformations between in-memory mesh representations.
 
 ### Fixed
 - Issue where cycle was not properly propagated when converting mfem data.

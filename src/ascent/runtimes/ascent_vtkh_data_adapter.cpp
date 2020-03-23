@@ -378,12 +378,6 @@ void ExtractVector(vtkm::cont::DataSet *dset,
                  <<assoc_str<<" field_name "<<field_name);
   }
 
-  std::string u_name = field_name + "_" + "x";
-  dset->AddField(detail::GetField<T>(u, u_name, assoc_str, topo_name, zero_copy));
-
-  std::string v_name = field_name + "_" + "y";
-  dset->AddField(detail::GetField<T>(v, v_name, assoc_str, topo_name, zero_copy));
-
   if(dims == 2)
   {
     const T *x_ptr = GetNodePointer<T>(u);
@@ -413,9 +407,6 @@ void ExtractVector(vtkm::cont::DataSet *dset,
 
   if(dims == 3)
   {
-    std::string w_name = field_name + "_" + "z";
-    dset->AddField(detail::GetField<T>(w, w_name, assoc_str, topo_name, zero_copy));
-
     const T *x_ptr = GetNodePointer<T>(u);
     const T *y_ptr = GetNodePointer<T>(v);
     const T *z_ptr = GetNodePointer<T>(w);
