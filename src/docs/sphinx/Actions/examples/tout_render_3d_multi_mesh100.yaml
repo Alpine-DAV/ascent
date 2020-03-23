@@ -21,4 +21,4 @@
         p2: 
           type: "mesh"
           pipeline: "pl1"
-      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_render_3d_multi_mesh"
+      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_render_3d_multi_mesh"

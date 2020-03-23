@@ -530,6 +530,47 @@ and the name of the new field.
     An example of creating a pseudocolor plot of vector magnitude
 
 
+Vector Component
+~~~~~~~~~~~~~~~~
+Vector component creates a new scalar field on the data set by
+extracting a component of a vector field. There are three required
+parameters: the input field, the output field name, and the index
+of the component to extract.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "vector_component";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "vel";         // name of the vector field
+  params["output_name"] = "vel_x"; // name of the output field
+  params["component"] = 0; // index of the component
+
+Composite Vector
+~~~~~~~~~~~~~~~~
+Composite Vector creates a new vector field on the data set
+by combining two or three scalar fields into a vector.
+The first two fields are required and the presense of the
+third field dictates whether a 2D or 3D vector is created.
+Input fields can be different types (e.g., int32 and float32),
+and the resulting vector field will be a float64.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "vector_component";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field1"] = "pressure";      // (required)
+  params["field1"] = "temperature";   // (required)
+  params["field1"] = "bananas";       // (optional, 2D vector if not present)
+  params["output_name"] = "my_vec";   // (required) name of the output field
+  params["component"] = 0; // (required) index of the component
+
+
 Recenter
 ~~~~~~~~
 Recenter changes the association of a field. Fields associated with either `element` or `vertex` can
@@ -548,4 +589,23 @@ the data set has more than one domain. Without ghost, the averaging will not be 
   params["field"] = "braid";         // name of the vector field
   params["association"] = "vertex";   // output field association
   // or params["association"] = "element";   // output field association
+
+Gradient
+~~~~~~~~
+Computes the gradient of a point based input field for every element
+in the input data set.
+The gradient computation can either generate cell center based gradients,
+which are fast but less accurate, or more accurate but slower
+point based gradients (default).
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "gradient";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "pressure";          // (required)
+  params["output_name"] = "my_grad";     // (required) name of the output field
+  params["use_cell_gradient"] = "false"; // (optional) index of the component
 

@@ -8,4 +8,4 @@
         plt1: 
           type: "pseudocolor"
           field: "braid"
-      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_render_2d_default_runtime"
+      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_render_2d_default_runtime"
