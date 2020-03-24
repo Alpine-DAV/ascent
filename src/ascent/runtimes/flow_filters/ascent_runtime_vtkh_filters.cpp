@@ -609,9 +609,8 @@ public:
 
       render.SetCamera(camera);
       renders->push_back(render);
+      // std::cout << "**** " << i << " --- " << image_name << std::endl;
 
-      std::cout << "**** " << i << " --- " << image_name << std::endl;
-      
       if (is_probing)
         i += stride;
       else
