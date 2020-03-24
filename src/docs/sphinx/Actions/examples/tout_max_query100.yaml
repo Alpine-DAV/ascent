@@ -5,5 +5,5 @@
   queries: 
     q1: 
       params: 
-        expression: "max(\"braid\")"
+        expression: "max(field('braid'))"
         name: "max_braid"

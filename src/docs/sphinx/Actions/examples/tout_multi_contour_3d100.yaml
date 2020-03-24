@@ -18,4 +18,4 @@
           type: "pseudocolor"
           field: "radial"
           pipeline: "pl1"
-      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_multi_contour_3d"
+      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_multi_contour_3d"

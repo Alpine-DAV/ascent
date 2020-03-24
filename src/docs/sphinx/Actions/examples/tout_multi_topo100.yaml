@@ -1,0 +1,24 @@
+#Example of rendering multiple topologies
+
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          color_table: 
+            name: "Inferno"
+        p2: 
+          type: "pseudocolor"
+          field: "point_braid"
+          points: 
+            radius: 0.5
+      renders: 
+        r1: 
+          image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_multi_topo"
+          annotations: "false"
+          camera: 
+            azimuth: 30
+            elevation: 11

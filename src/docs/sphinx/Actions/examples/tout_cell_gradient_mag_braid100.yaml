@@ -1,0 +1,27 @@
+#An example of using the gradient filter and plotting the magnitude.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f2: 
+        type: "gradient"
+        params: 
+          field: "braid"
+          output_name: "braid_gradient"
+          use_cell_gradient: "true"
+      f1: 
+        type: "vector_magnitude"
+        params: 
+          field: "braid_gradient"
+          output_name: "mag_grad"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "mag_grad"
+          pipeline: "pl1"
+      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_cell_gradient_mag_braid"

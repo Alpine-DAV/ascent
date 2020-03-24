@@ -1,0 +1,28 @@
+#An example if using the composite vector filter  to compose three scalar fields into a vector.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "composite_vector"
+        params: 
+          field1: "braid"
+          field2: "braid"
+          field3: "braid"
+          output_name: "my_vec"
+      f2: 
+        type: "vector_magnitude"
+        params: 
+          field: "my_vec"
+          output_name: "my_vec_mag"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "my_vec_mag"
+          pipeline: "pl1"
+      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_composite_vector"
