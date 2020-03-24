@@ -667,6 +667,7 @@ DRayPseudocolor::execute()
     comm_id = flow::Workspace::default_mpi_comm();
 #endif
     dcol->mpi_comm(comm_id);
+    bool is_3d = dcol->topo_dims() == 3;
 
     DRayCollection faces = dcol->boundary();
     faces.mpi_comm(comm_id);
@@ -737,6 +738,7 @@ DRayPseudocolor::execute()
 
       dray::Renderer renderer;
       renderer.add(surface);
+      renderer.use_lighting(is_3d);
 
       dray::Framebuffer fb = renderer.render(camera);
 

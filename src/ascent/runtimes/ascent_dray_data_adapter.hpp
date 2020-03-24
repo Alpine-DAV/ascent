@@ -83,6 +83,8 @@ public:
 
   dray::AABB<3> get_global_bounds();
 
+  int topo_dims();
+
   DRayCollection boundary();
 
   static DRayCollection* blueprint_to_dray(const conduit::Node &node);
