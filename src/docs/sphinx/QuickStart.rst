@@ -73,6 +73,18 @@ We also provide spack settings for several well known HPC clusters, here is an e
 For more details about building and installing Ascent see :ref:`building`. This page provides detailed info about Ascent's CMake options, :ref:`uberenv <building_with_uberenv>` and :ref:`Spack <building_with_spack>` support. We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>` and a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
 
+Public Installs of Ascent
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NERSC Cori Install
+++++++++++++++++++++
+
+We have a public ascent install for use on NERSC's Cori System. This install was built with the default
+gnu compiler (8.2.0). You need to use `module load gcc` to use this install.
+
+
+The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install``.
+
 Using Ascent in Your Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -90,6 +102,12 @@ Makefile-based build system example (see: ``examples/ascent/using-with-make``):
 .. literalinclude:: ../../examples/using-with-make/Makefile
    :lines: 46-61
    :dedent: 2
+
+
+
+
+
+
 
 
 
