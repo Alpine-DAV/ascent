@@ -554,8 +554,10 @@ public:
   void fill_renders(std::vector<vtkh::Render> *renders,
                     const std::vector<vtkm::Id> &domain_ids,
                     const conduit::Node &render_node,
-                    const int image_count = 0,
-                    const int image_offset = 0)
+                    const int image_count,
+                    const int image_offset,
+                    const int stride,
+                    const bool is_probing)
   {
     conduit::Node render_copy = render_node;
 
@@ -584,8 +586,14 @@ public:
     if (image_count > 0)
       num_renders = image_count;
 
-    for (int i = image_offset; i < image_offset + num_renders; ++i)
+    for (int i = image_offset; i < image_offset + num_renders; )
     {
+      if (!is_probing && (i % stride == 0))
+      {
+        ++i;
+        continue; // skip render, already rendered while probing
+      }
+
       std::string image_name = conduit::utils::join_file_path(m_image_path, m_image_names[i]);
 
       render.SetImageName(image_name);
@@ -601,6 +609,13 @@ public:
 
       render.SetCamera(camera);
       renders->push_back(render);
+
+      std::cout << "**** " << i << " --- " << image_name << std::endl;
+      
+      if (is_probing)
+        i += stride;
+      else
+        ++i;
     }
   }
 
@@ -1383,7 +1398,7 @@ void VTKHGhostStripper::execute()
 
     stripper.SetMaxValue(max_val);
     stripper.SetMinValue(min_val);
-    stripper.Update();  // FIXME: deadlock 
+    stripper.Update();
 
     vtkh::DataSet *stripper_output = stripper.GetOutput();
 
@@ -1591,14 +1606,7 @@ void DefaultRender::execute()
 
         int image_count = phi*theta;
         int image_offset = 0;
-        // check for distribution of image rendering
-        // double probing_factor = 1.0;
-        // Node *meta = graph().workspace().registry().fetch<Node>("metadata");
-        // if (meta->has_path("probing"))
-        // {
-        //   if ((*meta)["probing"].as_double() > 0.0)
-        //     probing_factor = (*meta)["probing"].as_double();
-        // }
+        
         if (meta->has_path("image_count"))
         {
           if ((*meta)["image_count"].as_int32() > 0)
@@ -1611,8 +1619,21 @@ void DefaultRender::execute()
           image_offset = (*meta)["image_offset"].as_int32();
         }
 
-        // phi = int(std::round(phi * probing_factor));
-        // theta = int(std::round(theta * probing_factor));
+        // check if probing run
+        double probing_factor = 1.0;
+        int stride = 1;
+        bool is_probing = false;
+        Node *meta = graph().workspace().registry().fetch<Node>("metadata");
+        if (meta->has_path("is_probing") && meta->has_path("probing_factor"))
+        {
+          probing_factor = (*meta)["probing_factor"].as_double();
+          if (probing_factor > 0.0)
+          {
+            stride = int(std::round(image_count / (probing_factor*image_count)));
+            if ((*meta)["is_probing"].as_int32())
+              is_probing = true;
+          }
+        }
 
         std::string output_path = "";
 
@@ -1645,7 +1666,8 @@ void DefaultRender::execute()
 
         manager.set_bounds(*bounds);
         manager.add_time_step();
-        manager.fill_renders(renders, v_domain_ids, render_node, image_count, image_offset);
+        manager.fill_renders(renders, v_domain_ids, render_node, 
+                             image_count, image_offset, stride, is_probing);
         manager.write_metadata();
       }
       else

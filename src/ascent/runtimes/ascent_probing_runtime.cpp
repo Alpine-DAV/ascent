@@ -433,6 +433,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     const std::vector<double> &my_probing_times,
                     const int max_image_count,
                     conduit::Node &data,
+                    const double probing_factor,
                     const double vis_budget = 0.1)
 {
     assert(vis_budget >= 0.0 && vis_budget <= 1.0);
@@ -521,7 +522,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     Node ascent_opts, blank_actions;
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(mpi_comm_world);
     ascent_opts["actions_file"] = "cinema_actions.yaml";
-    ascent_opts["probing"] = 0.0;   // TODO: remove?
+    ascent_opts["is_probing"] = 0;
+    ascent_opts["probing_factor"] = probing_factor;
     Node verify_info;
 
     if (is_vis_node) // all vis nodes: receive data 
@@ -722,9 +724,9 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     {
         auto start = std::chrono::system_clock::now();
         ascent_opt["runtime/type"] = "ascent"; // set to main runtime
-        ascent_opt["probing"] = probing_factor;
-        ascent_opt["image_count"] = int(std::round(probing_factor * phi * 
-                                                   probing_factor * theta));
+        ascent_opt["is_probing"] = 1;
+        ascent_opt["probing_factor"] = probing_factor;
+        ascent_opt["image_count"] = phi * theta;
         ascent_opt["image_offset"] = 0;
 
         // all sim nodes run probing in a new ascent instance
@@ -748,7 +750,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 #if ASCENT_MPI_ENABLED
     // split comm into sim and vis nodes and render on the respective nodes
     splitAndRender(mpi_comm_world, world_size, world_rank, sim_comm, rank_split, 
-                   render_times, phi*theta, m_data, vis_budget);
+                   render_times, phi*theta, m_data, probing_factor, vis_budget);
 
     MPI_Group_free(&world_group);
     MPI_Group_free(&sim_group);

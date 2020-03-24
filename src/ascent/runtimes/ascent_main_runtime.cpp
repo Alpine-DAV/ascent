@@ -126,7 +126,8 @@ AscentRuntime::AscentRuntime()
       m_refinement_level(2), // default refinement level for high order meshes
       m_rank(0),
       m_ghost_field_name("ascent_ghosts"),
-      m_is_probing(0.0),
+      m_is_probing(0),
+      m_probing_factor(0.0),
       m_image_count(0),
       m_image_offset(0)
 {
@@ -241,9 +242,10 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     m_web_interface.Enable();
   }
 
-  if (options.has_path("probing"))
+  if (options.has_path("is_probing") && options.has_path("probing_factor"))
   {
-    m_is_probing = options["probing"].as_double();
+    m_is_probing = options["is_probing"].as_int32();
+    m_probing_factor = options["probing_factor"].as_double();
     // std::cout << "*** probing" << std::endl;
   }
   if (options.has_path("image_count"))
@@ -906,10 +908,12 @@ void AscentRuntime::PopulateMetadata()
   (*meta)["time"] = time;
   (*meta)["refinement_level"] = m_refinement_level;
   (*meta)["ghost_field"] = m_ghost_field_name;
-  (*meta)["probing"] = m_is_probing;
+  (*meta)["is_probing"] = m_is_probing;
+  (*meta)["probing_factor"] = m_probing_factor;
   (*meta)["image_count"] = m_image_count;
   (*meta)["image_offset"] = m_image_offset;
 }
+
 //-----------------------------------------------------------------------------
 void AscentRuntime::ConnectSource()
 {
@@ -1417,7 +1421,7 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
 #endif
     // now execute the data flow graph
-    w.execute();  // FIXME: sync happens here
+    w.execute();
 
 #if defined(ASCENT_VTKM_ENABLED)
     vtkh::DataLogger::GetInstance()->CloseLogEntry();
