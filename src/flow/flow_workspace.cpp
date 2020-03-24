@@ -336,10 +336,10 @@ Workspace::execute()
             }
 
             Timer t_flt_exec;
-    std::cout << "***** flow workspace begin " << f_name << std::endl; // DEBUG: 
+    // std::cout << "***** flow workspace begin " << f_name << std::endl; // DEBUG: 
             // execute
             f->execute();
-    std::cout << "***** flow workspace end " << f_name << std::endl; // DEBUG: 
+    // std::cout << "***** flow workspace end " << f_name << std::endl; // DEBUG: 
 
             m_timing_info << m_timing_exec_count
                           << " " << f->name()

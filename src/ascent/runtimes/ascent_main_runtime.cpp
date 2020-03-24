@@ -1417,7 +1417,6 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
 #endif
     // now execute the data flow graph
-    std::cout << "**** Execute " << std::endl;
     w.execute();  // FIXME: sync happens here
 
 #if defined(ASCENT_VTKM_ENABLED)

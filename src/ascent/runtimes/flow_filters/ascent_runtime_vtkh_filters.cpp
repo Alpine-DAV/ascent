@@ -290,7 +290,6 @@ public:
 
   void Execute(std::vector<vtkh::Render> &renders, bool isProbe = false)
   {
-    std::cout << "~~~ Execute scene: " << renders.size() << std::endl;
     // TODO: add modified renders offset and image count
     vtkh::Scene scene;
     for (int i = 0; i < m_renderer_count; i++)
@@ -307,6 +306,7 @@ public:
       scene.AddRender(renders[i]);
     }
 
+    std::cout << "~~~ Execute scene: " << renders.size() << std::endl;
     scene.Render();
 
     // add the rendering times to the node
@@ -1383,7 +1383,6 @@ void VTKHGhostStripper::execute()
 
     stripper.SetMaxValue(max_val);
     stripper.SetMinValue(min_val);
-
     stripper.Update();  // FIXME: deadlock 
 
     vtkh::DataSet *stripper_output = stripper.GetOutput();
@@ -1610,7 +1609,6 @@ void DefaultRender::execute()
         if (meta->has_path("image_offset"))
         {
           image_offset = (*meta)["image_offset"].as_int32();
-          std::cout << "image_offset " << image_offset << std::endl;
         }
 
         // phi = int(std::round(phi * probing_factor));

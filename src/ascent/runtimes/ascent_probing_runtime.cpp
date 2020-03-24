@@ -538,29 +538,28 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 std::cout << i << " ";
                 conduit::Node n_curr; // = data.append();
                 relay::mpi::recv_using_schema(n_curr, i, 0, mpi_comm_world);
-                // data_sets.push_back(n_curr);
-        //     }
-        // }
-        // std::cout << std::endl;
 
-        // // create ascent instances equal to the number of data packages received
-        // for (conduit::Node &data : data_sets)
-        // {
-                std::cout << "~~~~vis node " << world_rank << " rendering data " << std::endl;
                 if (conduit::blueprint::mesh::verify(n_curr, verify_info))
                 {
-                    // TODO: adjust image count: max count - sending node count
-                    ascent_opts["image_count"] = image_counts[i];
-                    ascent_opts["image_offset"] = max_image_count - image_counts[i];
+                    int image_count_vis = max_image_count - image_counts[i];
+                    int offset = max_image_count - image_count_vis;
 
-                    Ascent ascent_render;
-                    ascent_render.open(ascent_opts);
-                    ascent_render.publish(n_curr);    
+                    if (image_count_vis > 0)
+                    {
+                        std::cout   << "~~~~ VIS node " << world_rank << " rendering " 
+                                    << offset << " - " 
+                                    << offset + image_count_vis << std::endl;
+                        ascent_opts["image_count"] = image_count_vis;
+                        ascent_opts["image_offset"] = offset;
 
-                    log_time(start, "before render ascent execute ", world_rank);
-                    ascent_render.execute(blank_actions);   // FIXME: sync happens here
-                    std::cout << "**** vis node " << world_rank << " open " << std::endl;
-                    ascent_render.close();
+                        Ascent ascent_render;
+                        ascent_render.open(ascent_opts);
+                        ascent_render.publish(n_curr);    
+
+                        log_time(start, "before render ascent execute ", world_rank);
+                        ascent_render.execute(blank_actions);
+                        ascent_render.close();
+                    }
                 }
                 else
                 {
@@ -581,6 +580,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         // in line rendering using ascent and cinema
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
+            std::cout   << "~~~~ SIM node " << world_rank << " rendering " 
+                        << 0 << " - " 
+                        << image_counts[world_rank] << std::endl;
             ascent_opts["image_count"] = image_counts[world_rank];
             ascent_opts["image_offset"] = 0;
 
@@ -589,7 +591,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             ascent_render.publish(data);    // sync happens here
 
             log_time(start, "before render ascent execute ", world_rank);
-            ascent_render.execute(blank_actions);   // TODO: check for sync
+            ascent_render.execute(blank_actions);
             ascent_render.close();
         }
         else
@@ -598,184 +600,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                         << std::endl;
         }
     }
-
-
-    /*
-    // -------------------------------
-    // here goes the old stuff
-    //
-    std::vector<int> world_to_src(intransit_map.size(), -1); 
-    std::vector<int> dest_counts(vis_node_count);
-    std::vector<int> source_ranks;
-    std::vector<int> render_ranks;
-    int src_count = 0;
-    for (int i = 0; i < intransit_map.size(); i++)
-    {
-        if (intransit_map[i] >= 0)
-        {
-            dest_counts[intransit_map[i]]++;
-            if (i == world_rank)
-            {
-                // we are sending -> calc our source rank
-                my_src_rank = src_count;
-            }
-            else if (intransit_map[i] == my_dest_rank)
-            {
-                // we are a vis node and someone is sending to us
-                is_intransit = 1;
-                is_rendering = 1;
-            }
-            // add source to map
-            world_to_src[i] = src_count;
-            ++src_count;
-            source_ranks.push_back(i);
-        }
-        else
-        {
-            render_ranks.push_back(i);
-        }
-    }
-
-    // total number of receiveing nodes
-    int dest_count = 0;
-    for (auto &a : dest_counts)
-        dest_count += (a > 0) ? 1 : 0;
-
-    int intransit_size = src_count + dest_count;
-    while (vis_node_count > dest_count)
-    {
-        render_ranks.pop_back();
-        --vis_node_count;
-    }
-
-    std::vector<int> intransit_ranks(source_ranks);
-    for (size_t i = sim_node_count; i < world_size; i++)
-        intransit_ranks.push_back(i);
-
-    // map contains the in transit assignment
-    if (intransit_map[world_rank] >= 0)
-    {
-        // this node is sending in-transit
-        is_intransit = 1;
-        is_sending = 1;
-    }
-    else    
-    {
-        // this node renders in line
-        is_rendering = 1;
-    }
-
-    // create in-transit group of nodes
-    MPI_Group world_group;
-    MPI_Comm_group(mpi_comm_world, &world_group);
-    MPI_Group intransit_group;
-    MPI_Group_incl(world_group, intransit_size, intransit_ranks.data(), &intransit_group);
-    MPI_Comm intransit_comm;
-    MPI_Comm_create_group(mpi_comm_world, intransit_group, 0, &intransit_comm);
-    // MPI_Comm_split(mpi_comm_world, is_intransit, 0, &intransit_comm);
-
-    // Hola setup
-    // MPI_Comm hola_comm;
-    // MPI_Comm_split(intransit_comm, is_sending, 0, &hola_comm);
-    // split world comm into rendering and sending nodes
-    MPI_Group render_group;
-    MPI_Group_incl(world_group, render_ranks.size(), render_ranks.data(), &render_group);
-    MPI_Comm render_comm;
-    MPI_Comm_create_group(mpi_comm_world, render_group, 0, &render_comm);
-
-    // MPI_Comm_split(mpi_comm_world, is_rendering, 0, &render_comm); // TODO: sync???
-
-    if (is_rendering && MPI_COMM_NULL != render_comm) // all rendering nodes
-    {
-        if (is_vis_node) // render on vis node
-        {
-            std::cout << "~~~~rank " << world_rank << " / " << my_dest_rank
-                      << ": receives extract(s) from " ;
-            // use hola to receive the extract data
-            // conduit::Node hola_opts;
-            // hola_opts["mpi_comm"] = MPI_Comm_c2f(intransit_comm);
-            // hola_opts["rank_split"] = src_count;
-            // ascent::hola("hola_mpi", hola_opts, data);
-
-            // receive data from corresponding sources
-            for (int i = 0; i < intransit_map.size(); ++i)
-            {
-                if (intransit_map[i] == my_dest_rank)
-                {   
-                    std::cout << i << " ";
-                    conduit::Node &n_curr = data.append();
-                    int32 src_rank = static_cast<int32>(world_to_src[i]);
-                    relay::mpi::recv_using_schema(n_curr,src_rank,0,intransit_comm);
-                }
-            }
-            std::cout << std::endl;
-        }
-        else // render local (inline)
-        {
-            std::cout << "~~~~rank " << world_rank << ": renders inline." << std::endl;
-        }
-
-        // Full cinema render using Ascent
-        Node verify_info;
-        if (conduit::blueprint::mesh::verify(data, verify_info))
-        {
-            Node ascent_opts, blank_actions;
-            // TODO: make the action file name variable
-            ascent_opts["actions_file"] = "cinema_actions.yaml";
-            ascent_opts["mpi_comm"] = MPI_Comm_c2f(render_comm);
-
-            Ascent ascent_render;
-            ascent_render.open(ascent_opts);
-            ascent_render.publish(data);    // sync happens here
-
-            log_time(start, "before render ascent execute ", world_rank);
-            ascent_render.execute(blank_actions);   // TODO: check for sync
-            ascent_render.close();
-        }
-        else
-        {
-            std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
-                      << std::endl;
-        }
-    }
-    else if (!is_vis_node) // all sending nodes: send extract to vis nodes
-    {
-        // destination as intransit rank
-        int destination = intransit_map[world_rank] + src_count;
-        std::cout << "~~~~rank " << world_rank << ": sends extract to " 
-                  <<  intransit_map[world_rank] + sim_node_count << std::endl;
-
-        relay::mpi::send_using_schema(data, destination, 0, intransit_comm);
-
-        // add the extract
-        // conduit::Node actions;
-        // conduit::Node &add_extract = actions.append();
-        // add_extract["action"] = "add_extracts";
-        // add_extract["extracts/e1/type"] = "hola_mpi";
-        // add_extract["extracts/e1/params/mpi_comm"] = MPI_Comm_c2f(intransit_comm);
-        // add_extract["extracts/e1/params/rank_split"] = sending_node_count;
-
-        // Node ascent_opts;
-        // ascent_opts["mpi_comm"] = MPI_Comm_c2f(hola_comm);
-
-        // // Send an extract of the data with Ascent
-        // Ascent ascent_send;
-        // ascent_send.open(ascent_opts);
-        // ascent_send.publish(data);
-        // ascent_send.execute(actions); // extract
-        // ascent_send.close();
-        // std::cout << "----rank " << world_rank << ": ascent_send." << std::endl;
-    }
-
-    // clean up the additional comms and groups
-    MPI_Group_free(&world_group);
-    MPI_Group_free(&render_group);
-    // MPI_Comm_free(&render_comm);
-    // MPI_Comm_free(&hola_comm);
-    MPI_Group_free(&intransit_group);
-    // MPI_Comm_free(&intransit_comm); // Fatal error in PMPI_Comm_free: Invalid communicator
-
-    */
 
     log_time(start, "end splitAndRun ", world_rank);
 #endif // ASCENT_MPI_ENABLED
