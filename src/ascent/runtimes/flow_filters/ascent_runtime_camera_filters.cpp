@@ -313,7 +313,7 @@ Camera::DeviceTransform() { //(double x, double y, double z){
 //Edge Class Functions
 
 
-Edge::Edge (double x_1, double y_1, double z_1, double r_1, double g_1, double b_1, double* norm1, double s1, double x_2, double y_2, double z_2, double r_2, double g_2, double b_2, double* norm2, double s2){
+Edge::Edge (double x_1, double y_1, double z_1, double r_1, double g_1, double b_1, double* norm1, double s1, double x_2, double y_2, double z_2, double r_2, double g_2, double b_2, double* norm2, double s2, double v_1, double v_2){
 		x1 = x_1;
 		x2 = x_2;
 		y1 = y_1;
@@ -330,6 +330,8 @@ Edge::Edge (double x_1, double y_1, double z_1, double r_1, double g_1, double b
 		normal2 = norm2;
 		shade1  = s1;
 		shade2  = s2;
+		value1  = v_1;
+		value2  = v_2;
 
 		// find relationship of y1 and y2 for min and max bounds of the line
 		if (y1 < y2)
@@ -443,6 +445,13 @@ Edge::findShade(double y){
 		return normY;
 	}
 
+double
+Edge::findValue(double y)
+{
+  double value = interpolate(y1, y2, x1, x2, value1, value2, y);
+  return value;
+}
+
 
 bool
 Edge::applicableY(double y){
@@ -537,6 +546,15 @@ Screen::triCameraInitialize()
     triCamera[i] = position;
 }
 
+void 
+Screen::valueInitialize()
+{
+  values = new double[width*height];
+  int i;
+  for (i = 0; i < width*height; i++)
+    values[i] = 0.0;
+}
+
 //Triangle Class 
 
 void
@@ -623,15 +641,15 @@ Triangle::scanline(int i, Camera c){
 	double maxY = findMax(Y[0], Y[1], Y[2]);
 	minY = ceil441(minY);
 	maxY = floor441(maxY);
-
+//        cout << "from scanline " << value[0] << " " << value[1] << " " << value[2] << endl;
 	if (minY < 0)
 		minY = 0;
 	if (maxY > screen.height-1)
 		maxY = screen.height-1;
 
-	Edge e1 = Edge(X[0], Y[0], Z[0], colors[0][0], colors[0][1], colors[0][2], normals[0], shading[0], X[1], Y[1], Z[1], colors[1][0], colors[1][1], colors[1][2], normals[1], shading[1]);
-	Edge e2 = Edge(X[1], Y[1], Z[1], colors[1][0], colors[1][1], colors[1][2], normals[1], shading[1], X[2], Y[2], Z[2], colors[2][0], colors[2][1], colors[2][2], normals[2], shading[2]);
-	Edge e3 = Edge(X[2], Y[2], Z[2], colors[2][0], colors[2][1], colors[2][2], normals[2], shading[2], X[0], Y[0], Z[0], colors[0][0], colors[0][1], colors[0][2], normals[0], shading[0]);
+	Edge e1 = Edge(X[0], Y[0], Z[0], colors[0][0], colors[0][1], colors[0][2], normals[0], shading[0], X[1], Y[1], Z[1], colors[1][0], colors[1][1], colors[1][2], normals[1], shading[1], value[0], value[1]);
+	Edge e2 = Edge(X[1], Y[1], Z[1], colors[1][0], colors[1][1], colors[1][2], normals[1], shading[1], X[2], Y[2], Z[2], colors[2][0], colors[2][1], colors[2][2], normals[2], shading[2], value[1], value[2]);
+	Edge e3 = Edge(X[2], Y[2], Z[2], colors[2][0], colors[2][1], colors[2][2], normals[2], shading[2], X[0], Y[0], Z[0], colors[0][0], colors[0][1], colors[0][2], normals[0], shading[0], value[2], value[0]);
 
 	double t, rightEnd, leftEnd;
 	Edge leftLine, rightLine;
@@ -695,30 +713,16 @@ Triangle::scanline(int i, Camera c){
 			maxX = screen.width;
 
 		//use the y value to interpolate and find the value at the end points of each x-line.-->[Xmin, Xmax]
-		double leftZ, rightZ, leftRed, rightRed, leftBlue, rightBlue, leftGreen, rightGreen, leftShading, rightShading;
+		double leftZ, rightZ, leftRed, rightRed, leftBlue, rightBlue, leftGreen, rightGreen, leftShading, rightShading, leftV, rightV;
                 double leftNormal[3], rightNormal[3];
 		leftZ          = leftLine.findZ((double)y); //leftmost z value of x
 		rightZ         = rightLine.findZ((double)y); //rightmost z value of x
-		leftRed        = leftLine.findRed((double)y);
-		rightRed       = rightLine.findRed((double)y);
-		leftBlue       = leftLine.findBlue((double)y);
-		rightBlue      = rightLine.findBlue((double)y);
-		leftGreen      = leftLine.findGreen((double)y);
-		rightGreen     = rightLine.findGreen((double)y);
-		leftShading    = leftLine.findShade((double)y);
-		rightShading   = rightLine.findShade((double)y);
-                leftNormal[0]  = leftLine.normalX((double)y);
-                leftNormal[1]  = leftLine.normalY((double)y);
-                leftNormal[2]  = leftLine.normalZ((double)y);
-                rightNormal[0] = rightLine.normalX((double)y);
-                rightNormal[1] = rightLine.normalY((double)y);
-                rightNormal[2] = rightLine.normalZ((double)y);
+		leftV          = leftLine.findValue((double)y);
+		rightV         = rightLine.findValue((double)y);
+//		cout << "left v: " << leftV << " right v: " << rightV << endl;
 		//loop through all the pixels that have the bottom left in the triangle.
 
-                //cout << "left norms: " << leftNormal[0] << " " << leftNormal[1] << " " << leftNormal[2] << endl;
-                //cout << "right norms: " << rightNormal[0] << " " << rightNormal[1] << " " << rightNormal[2] << endl;
-
-		double ratio, z;
+		double ratio, z, value = 0.0;
 
 		for (int x = minX; x <= maxX; x++){
 
@@ -729,39 +733,18 @@ Triangle::scanline(int i, Camera c){
 
                         double distance = sqrt(pow(centroid[0] - x, 2) + pow(centroid[1] - y,2));
 			z = leftZ + ratio*(rightZ - leftZ);
+			value = leftV + ratio*(rightV - leftV);
 			if(z > screen.zBuff[y*screen.width + x])
                         {
                           screen.triScreen[y*screen.width + x] = i;
                           screen.triCamera[y*screen.width + x] = c.position;
+			  screen.values[y*screen.width + x]    = value;
                           /*if(distance <= radius)//inside radius to the centroid
                           {
                             screen.triScreen[y*screen.width + x] = i;
                           }*/
 
-			  double shading = leftShading + ratio*(rightShading - leftShading);
-			  if (print)
-		            cout << "shading for x y " << x <<  " " << y << " "  << shading << endl;
-			  double red, green, blue;
-			  red = (leftRed + ratio*(rightRed - leftRed))*shading;
-			  if (red > 1.0)
-			    red = 1.0;
-			  if (red < 0)
-			    red = 0;
-			  green = (leftGreen + ratio*(rightGreen - leftGreen))*shading;
-			  if (green > 1.0)
-			    green = 1.0;
-			  if (green < 0)
-			    green = 0;
-			  blue = (leftBlue + ratio*(rightBlue - leftBlue))*shading;
-			  if (blue > 1.0)
-			    blue = 1.0;
-			  if (blue < 0)
-			    blue = 0;
-
 			  screen.zBuff[y*screen.width + x] = z;
-			  screen.buffer[row + 3*x]     = (unsigned char) ceil441(255.0*red);
-		          screen.buffer[row + 3*x + 1] = (unsigned char) ceil441(255.0*green);
-			  screen.buffer[row + 3*x + 2] = (unsigned char) ceil441(255.0*blue);
 			}
 		}
 	}
@@ -919,30 +902,34 @@ double SineParameterize(int curFrame, int nFrames, int ramp)
 }
 
 Camera
-GetCamera(int frame, int nframes, double* bounds)
+GetCamera(int frame, int nframes, double radius, double* bounds)
 {
     double t = SineParameterize(frame, nframes, nframes/10);
     double points[3];
     fibonacci_sphere(frame, nframes, points);
     Camera c;
-    double zoom = 6.0;
-    c.near = zoom/8;
-    c.far = zoom*5;
+    double zoom = 1.0;
+    c.near = zoom/20;
+    c.far = zoom*25;
     c.angle = M_PI/6;
-    //MINE 
-    c.position[0] = zoom*points[0] + (bounds[0]+bounds[1])/2;
-    c.position[1] = zoom*points[1] + (bounds[2] + bounds[3])/2;
-    c.position[2] = zoom*points[2]  + (bounds[4]+bounds[5])/2;
-    //Hanks
-    //c.position[0] = zoom*sin(2*M_PI*t) + (bounds[0]+bounds[1])/2;
-    //c.position[1] = zoom*cos(2*M_PI*t) + (bounds[2] + bounds[3])/2;
-    //c.position[2] = zoom;// + (bounds[4]+bounds[5])/2;
+
+    if(abs(points[0]) < radius && abs(points[1]) < radius && abs(points[2]) < radius)
+    {
+      if(points[2] >= 0)
+        points[2] += radius;
+      if(points[2] < 0)
+        points[2] -= radius;
+    }
+
+    c.position[0] = radius*points[0];
+    c.position[1] = radius*points[1];
+    c.position[2] = radius*points[2];
 
 //cout << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
-
-    c.focus[0] = (bounds[0]+bounds[1])/2;
-    c.focus[1] = (bounds[2]+bounds[3])/2;
-    c.focus[2] = (bounds[4]+bounds[5])/2;
+    
+    c.focus[0] = (bounds[0])/2;
+    c.focus[1] = (bounds[1])/2;
+    c.focus[2] = (bounds[2])/2;
     c.up[0] = 0;
     c.up[1] = 1;
     c.up[2] = 0;
@@ -1034,8 +1021,6 @@ public:
     //PointType vertex0 = points[0]; // {x0, y0, z0}
     //PointType vertex1 = points[1]; // {x1, y1, z1}
     //PointType vertex2 = points[2]; // {x2, y2, z2}
-    FieldType v = variable[1];
-    cout << "variable " << v << endl;
     output.X[0] = points[0][0];
     output.Y[0] = points[0][1];
     output.Z[0] = points[0][2];
@@ -1045,11 +1030,9 @@ public:
     output.X[2] = points[2][0];
     output.Y[2] = points[2][1];
     output.Z[2] = points[2][2]; 
-    //output.value[0] = v;
-    //output.value[1] = variable[1];
-    //output.value[2] = variable[2];
-  
-    output.printTri();
+    output.value[0] = variable[0];
+    output.value[1] = variable[1];
+    output.value[2] = variable[2];
 
   }
 };
@@ -1063,7 +1046,6 @@ GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
     //Get domain Ids on this rank
     std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
     std::vector<Triangle> tris;
-    cout << "number of domains: " << localDomainIds.size() << endl;
     //loop through domains and grab all triangles.
     for(int i = 0; i < localDomainIds.size(); i++)
     {
@@ -1076,12 +1058,11 @@ GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
       vtkm::cont::Field field = dataset.GetField(field_name);
 
       int numTris = cellset.GetNumberOfCells();
-      cout << "number of cells " << cellset.GetNumberOfCells() << endl;
       std::vector<Triangle> tmp_tris(numTris);
      
       vtkm::cont::ArrayHandle<Triangle> triangles = vtkm::cont::make_ArrayHandle(tmp_tris);
       vtkm::cont::Invoker invoker;
-      invoker(ProcessTriangle{}, cellset, coords,field.GetData(), triangles);
+      invoker(ProcessTriangle{}, cellset, coords, field.GetData().ResetTypes(vtkm::TypeListTagFieldScalar{}), triangles);
 
       //combine all domain triangles
       tris.insert(tris.end(), tmp_tris.begin(), tmp_tris.end());
@@ -1159,7 +1140,8 @@ Triangle transformTriangle(Triangle t, Camera c){
 		}
 	}
 	for (i = 0; i < 3; i++){
-		triangle.shading[i] = t.shading[i];
+          triangle.value[i] = t.value[i];
+          triangle.shading[i] = t.shading[i];
 	}
         triangle.compID = t.compID;
 
@@ -1301,41 +1283,86 @@ AutoCamera::execute()
     {
       ASCENT_ERROR("Unknown field '"<<field_name<<"'");
     }
+    int samples = (int)params()["samples"].as_int64();
+    //TODO:Get the height and width of the image from Ascent
+    int width  = 1000;
+    int height = 1000;
     
     std::string topo_name = collection->field_topology(field_name);
 
     vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
-    GetTriangles(dataset,field_name);
+    std::vector<Triangle> triangles = GetTriangles(dataset,field_name);
 //    cout << "dataset bounds: " << dataset.GetGlobalBounds() << endl;
   
-    vtkmCamera *camera = new vtkmCamera;
-    vtkm::Bounds bounds = dataset.GetGlobalBounds();
-    vtkm::Float32 xb = vtkm::Float32(bounds.X.Length());
-    vtkm::Float32 yb = vtkm::Float32(bounds.Y.Length());
-    vtkm::Float32 zb = vtkm::Float32(bounds.Z.Length());
-    //cout << "x y z " << xb << " " << yb << " " << zb << endl;
+    vtkm::Bounds b = dataset.GetGlobalBounds();
+    vtkm::Float32 xb = vtkm::Float32(b.X.Length());
+    vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
+    vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
+    double bounds[3] = {(double)xb, (double)yb, (double)zb};
+    cout << "x y z " << xb << " " << yb << " " << zb << endl;
     vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
     //cout << "radius " << radius << endl;
     if(radius<1)
       radius = radius + 1;
-    camera->ResetToBounds(dataset.GetGlobalBounds());
-    camera->Print();
-    double sphere_points[3];
-    //TODO: loop through number of samples THEN add parallelism + z buffer.
-    //fibonacci_sphere(sample, num_samples, sphere_points);
-    fibonacci_sphere(1, 100, sphere_points);
-    
-    vtkm::Float32 x_pos = sphere_points[0]*radius;// + xb/2.0;
-    vtkm::Float32 y_pos = sphere_points[1]*radius;// + yb/2.0;
-    vtkm::Float32 z_pos = sphere_points[2]*radius;// + zb/2.0;
+    vtkm::Float32 x_pos = 0., y_pos = 0., z_pos = 0.;
 
-    if(abs(x_pos) < radius && abs(y_pos) < radius && abs(z_pos) < radius)
-      if(z_pos >= 0)
-        z_pos += radius;
-      if(z_pos < 0)
-        z_pos -= radius;
-    vtkm::Vec<vtkm::Float32, 3> pos{x_pos, y_pos, z_pos}; 
-    camera->SetPosition(pos);
+    Screen screen;
+    double scores[samples];
+    unsigned char buffer[height*width*3];
+    //TODO: loop through number of samples THEN add parallelism + z buffer
+    //loop through number of camera samples.
+    vtkmCamera *camera = new vtkmCamera;
+    camera->ResetToBounds(dataset.GetGlobalBounds());
+    for(int sample = 0; sample < samples; sample++)
+    {
+      //pretty sure I don't need buffer -- this is for color/pixels
+      for(int i = 0; i < width*height*3; i++)
+        buffer[i] = 0;
+      screen.buffer = buffer;
+      screen.width = width;
+      screen.height = height;
+      screen.visible = 0.0;
+      screen.occluded = 0.0;
+      screen.zBufferInitialize();
+      screen.triScreenInitialize();
+      screen.triCameraInitialize();
+      screen.valueInitialize();
+
+      Camera c = GetCamera(sample, samples, radius, bounds);
+      c.screen = screen;
+      vtkm::Vec<vtkm::Float32, 3> pos{(float)c.position[0], (float)c.position[1],(float) c.position[2]}; 
+      camera->SetPosition(pos);
+      int num_tri = triangles.size();
+      //loop through all triangles
+      for(int tri = 0; tri < num_tri; tri++)
+      {
+	//triangle in world space
+        Triangle w_t = triangles[tri];
+	
+	//triangle in image space
+	Triangle i_t = transformTriangle(w_t, c);
+	i_t.vis_counted = false;
+	i_t.screen = screen;
+	i_t.scanline(tri, c);
+	screen = i_t.screen;
+
+
+      }//end of triangle loop
+
+      if(sample == 0){
+	      cout << "printing values " << endl;
+	      for(int k = 0; k < width*height; k++)
+		      cout << screen.values[k] << " ";
+      }
+      //TODO: Add metric after the scanline algorithm
+      //Add parallism to pass the metric results
+    } //end of sample loop
+
+    //TODO:This should be after all the calculatoins when we have a winning camera
+//    vtkmCamera *camera = new vtkmCamera;
+//    camera->ResetToBounds(dataset.GetGlobalBounds());
+//    vtkm::Vec<vtkm::Float32, 3> pos{x_pos, y_pos, z_pos}; 
+//    camera->SetPosition(pos);
 
 
     if(!graph().workspace().registry().has_entry("camera"))
