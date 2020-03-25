@@ -243,46 +243,50 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         image_counts_vis[target_vis_node] += image_count;
     }
 
-    // push back load to sim nodes until 
-    // intransit time is smaller than max(inline + sim)
-    // NOTE: this loop is potentially ineffective w/ higher node counts
-    int i = 0;
-    std::valarray<float> t_inline_sim = t_inline + t_sim;
-    while (t_inline_sim.max() < t_intransit.max()) 
+    // vis budget of 1 means in transit only (i.e., only vis nodes render)
+    if (vis_budget < 1.0)
     {
-        // always push back to the fastest sim node
-        int min_id = std::min_element(begin(t_inline_sim), 
-                                      end(t_inline_sim))
-                                      - begin(t_inline_sim);
-
-        // find the corresponding vis node 
-        int source_vis_node = node_map[min_id];
-
-        if (image_counts_vis[source_vis_node] > 0)
+        // push back load to sim nodes until 
+        // intransit time is smaller than max(inline + sim)
+        // NOTE: this loop is potentially ineffective w/ higher node counts
+        int i = 0;
+        std::valarray<float> t_inline_sim = t_inline + t_sim;
+        while (t_inline_sim.max() < t_intransit.max()) 
         {
-            t_intransit[source_vis_node] -= vis_estimates[min_id];
-            image_counts_vis[source_vis_node]--;
-        
-            t_inline[min_id] += vis_estimates[min_id];
-            image_counts_sim[min_id]++;
-        }
-        else    // we ran out of renderings on this vis node
-        {
-            std::cout << "=== Ran out of renderings on node " 
-                      << source_vis_node << std::endl;
-            break;
-        }
+            // always push back to the fastest sim node
+            int min_id = std::min_element(begin(t_inline_sim), 
+                                        end(t_inline_sim))
+                                        - begin(t_inline_sim);
 
-        // sim node got all its images back for inline rendering
-        // -> throw it out of consideration
-        if (image_counts_sim[min_id] == image_count)
-            t_inline[min_id] = std::numeric_limits<float>::max() - t_sim[min_id];
+            // find the corresponding vis node 
+            int source_vis_node = node_map[min_id];
 
-        // recalculate inline + sim time
-        t_inline_sim = t_inline + t_sim;
-        ++i;
-        if (i > image_count*sim_node_count)
-            ASCENT_ERROR("Error during load distribution.")
+            if (image_counts_vis[source_vis_node] > 0)
+            {
+                t_intransit[source_vis_node] -= vis_estimates[min_id];
+                image_counts_vis[source_vis_node]--;
+            
+                t_inline[min_id] += vis_estimates[min_id];
+                image_counts_sim[min_id]++;
+            }
+            else    // we ran out of renderings on this vis node
+            {
+                std::cout << "=== Ran out of renderings on node " 
+                        << source_vis_node << std::endl;
+                break;
+            }
+
+            // sim node got all its images back for inline rendering
+            // -> throw it out of consideration
+            if (image_counts_sim[min_id] == image_count)
+                t_inline[min_id] = std::numeric_limits<float>::max() - t_sim[min_id];
+
+            // recalculate inline + sim time
+            t_inline_sim = t_inline + t_sim;
+            ++i;
+            if (i > image_count*sim_node_count)
+                ASCENT_ERROR("Error during load distribution.")
+        }
     }
 
     std::vector<int> image_counts_combined(image_counts_sim);
@@ -291,23 +295,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
                                  image_counts_vis.end());
 
     if (world_rank == 0)
-    {    
-        // Debug OUT: 
-        // std::cout << "=== t_inline ";
-        // for (auto &a : t_inline)
-        //     std::cout << a << " ";
-        // std::cout << std::endl;
-
-        // std::cout << "=== t_inline_sim ";
-        // for (auto &a : t_inline_sim)
-        //     std::cout << a << " ";
-        // std::cout << std::endl;
-
-        // std::cout << "=== t_intransit ";
-        // for (auto &a : t_intransit)
-        //     std::cout << a << " ";
-        // std::cout << std::endl;
-
+    {
         std::cout << "=== image_counts ";
         for (auto &a : image_counts_combined)
             std::cout << a << " ";
@@ -454,6 +442,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     float my_vis_estimate = 0.f;
     float my_avg_probing_time = 0.f;
     float my_sim_estimate = data["state/sim_time"].to_float();
+    // max image count without probing images
+    int image_count = max_image_count - int(std::round(probing_factor*max_image_count));
 
     // nodes with the highest rank are our vis nodes
     if (world_rank >= sim_node_count) 
@@ -470,8 +460,14 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         my_avg_probing_time = float(std::accumulate(my_probing_times.begin(), 
                                                     my_probing_times.end(), 0.0) 
                                           / my_probing_times.size());
+
+        std::cout << "+++ probing times ";
+        for (auto &a : my_probing_times)
+            std::cout << a << " ";
+        std::cout << std::endl;
+
         // convert from milliseconds to seconds 
-        my_avg_probing_time /= 1000;
+        my_avg_probing_time /= 1000.f;
         // my_vis_estimate = (my_avg_probing_time * max_image_count) / 1000.f;
         std::cout << "~~~ " << my_avg_probing_time 
                   << " sec vis time estimate " 
@@ -495,10 +491,12 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
     // sort the ranks accroding to sim+vis time estimate
     std::vector<int> rank_order = sort_ranks(sim_estimates, vis_estimates);
+    
     // generate mapping between sending and receiving nodes
-    std::vector<int> intransit_map = job_assignment(sim_estimates, vis_estimates,
-                                                    rank_order, vis_node_count,
-                                                    vis_budget);
+    // std::vector<int> intransit_map = job_assignment(sim_estimates, vis_estimates,
+    //                                                 rank_order, vis_node_count,
+    //                                                 vis_budget);
+
     // assign sim nodes to vis nodes
     std::vector<int> node_map = node_assignment(rank_order, vis_estimates, vis_node_count);
 
@@ -514,7 +512,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     // distribute rendering load across sim and vis loads
     std::vector<int> image_counts = load_assignment(sim_estimates, vis_estimates,
                                                     node_map,
-                                                    max_image_count,
+                                                    image_count,
                                                     sim_node_count, vis_node_count,
                                                     vis_budget, world_rank);
 
@@ -532,7 +530,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     << ": receives extract(s) from " ;
 
         std::vector<conduit::Node> data_sets; 
-        // receive data from corresponding sources
+        std::vector<int> image_count_vis;
+
+        // receive all data from corresponding sources
         for (int i = 0; i < node_map.size(); ++i)
         {
             if (node_map[i] == my_dest_rank)
@@ -540,35 +540,43 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 std::cout << i << " ";
                 conduit::Node n_curr; // = data.append();
                 relay::mpi::recv_using_schema(n_curr, i, 0, mpi_comm_world);
+                data_sets.push_back(n_curr);
+                image_count_vis.push_back(max_image_count - image_counts[i]);
+            }
+        }
+        std::cout << std::endl;
 
-                if (conduit::blueprint::mesh::verify(n_curr, verify_info))
+        // render data
+        int count = 0;
+        for (auto &dataset : data_sets)
+        {
+            if (conduit::blueprint::mesh::verify(dataset, verify_info))
+            {
+                int offset = max_image_count - image_count_vis[count];
+
+                if (image_count_vis[count] > 0)
                 {
-                    int image_count_vis = max_image_count - image_counts[i];
-                    int offset = max_image_count - image_count_vis;
+                    std::cout   << "~~~~ VIS node " << world_rank << " rendering " 
+                                << offset << " - " 
+                                << offset + image_count_vis[count] << std::endl;
+                    ascent_opts["image_count"] = image_count_vis[count];
+                    ascent_opts["image_offset"] = offset;
 
-                    if (image_count_vis > 0)
-                    {
-                        std::cout   << "~~~~ VIS node " << world_rank << " rendering " 
-                                    << offset << " - " 
-                                    << offset + image_count_vis << std::endl;
-                        ascent_opts["image_count"] = image_count_vis;
-                        ascent_opts["image_offset"] = offset;
+                    Ascent ascent_render;
+                    ascent_render.open(ascent_opts);
+                    ascent_render.publish(dataset);    
 
-                        Ascent ascent_render;
-                        ascent_render.open(ascent_opts);
-                        ascent_render.publish(n_curr);    
-
-                        log_time(start, "before render ascent execute ", world_rank);
-                        ascent_render.execute(blank_actions);
-                        ascent_render.close();
-                    }
-                }
-                else
-                {
-                    std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
-                                << std::endl;
+                    log_time(start, "before render ascent execute ", world_rank);
+                    ascent_render.execute(blank_actions);
+                    ascent_render.close();
                 }
             }
+            else
+            {
+                std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
+                            << std::endl;
+            }
+            ++count;
         }
     }
     else // all sim nodes: send extract to vis nodes
@@ -642,7 +650,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
                 if (action["probing"].has_path("factor"))
                 {
                     probing_factor = action["probing/factor"].to_double();
-                    if (probing_factor <= 0 || probing_factor > 1)
+                    if (probing_factor < 0 || probing_factor > 1)
                         ASCENT_ERROR("action 'probing': 'probing_factor' must be in range [0,1]");
                 }
                 else
@@ -720,7 +728,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     std::vector<double> render_times;
     // run probing only if this is a sim node (vis nodes don't have data yet)
     // NOTE: we could check for data size instead (sim sends empty data on vis nodes)
-    if (world_rank < rank_split)
+    if (world_rank < rank_split && probing_factor > 0.0)
     {
         auto start = std::chrono::system_clock::now();
         ascent_opt["runtime/type"] = "ascent"; // set to main runtime
@@ -746,11 +754,18 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_probing.close();
         log_time(start, "probing ", world_rank);
     }
+    else
+    {
+        render_times.push_back(100.f); // add dummy value for in transit only
+    }
 
 #if ASCENT_MPI_ENABLED
-    // split comm into sim and vis nodes and render on the respective nodes
-    splitAndRender(mpi_comm_world, world_size, world_rank, sim_comm, rank_split, 
-                   render_times, phi*theta, m_data, probing_factor, vis_budget);
+    if (probing_factor < 1.0)
+    {
+        // split comm into sim and vis nodes and render on the respective nodes
+        splitAndRender(mpi_comm_world, world_size, world_rank, sim_comm, rank_split, 
+                    render_times, phi*theta, m_data, probing_factor, vis_budget);
+    }
 
     MPI_Group_free(&world_group);
     MPI_Group_free(&sim_group);
