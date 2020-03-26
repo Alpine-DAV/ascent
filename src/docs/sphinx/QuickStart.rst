@@ -79,11 +79,24 @@ Public Installs of Ascent
 NERSC Cori Install
 ++++++++++++++++++++
 
-We have a public ascent install for use on NERSC's Cori System. This install was built with the default
-gnu compiler (8.2.0). You need to use `module load gcc` to use this install.
+We have a public ascent install for use on NERSC's Cori System. This install was built using the default
+gnu compiler (8.2.0) with OpenMP and MPI support. You need to use `module load gcc` to use this install.
 
 
 The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install``.
+
+
+OLCF Summit Install
+++++++++++++++++++++
+
+We have a public ascent install for use on OLCF's Summit System. This install was built using the default
+gnu compiler (6.4.0) with OpenMP and MPI support. You need to use `module load gcc` to use this install.
+
+.. warning::
+    This install exists on a file system that is occasionally purged. We are looking for a better place to put our world accessable installs.
+
+The install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``.
+
 
 Using Ascent in Your Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

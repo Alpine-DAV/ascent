@@ -98,8 +98,8 @@ This will launch a notebook server on port 8888. Assuming you forwarded port 888
 NERSC Cori Install
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We have a public ascent install for use on NERSC's Cori System. This install was built with the default
-gnu compiler (8.2.0). You need to use `module load gcc` to build and run the installed examples.
+We have a public ascent install for use on NERSC's Cori System. This install was built using the default
+gnu compiler (8.2.0) with OpenMP and MPI support. You need to use `module load gcc` to build and run the installed examples.
 
 
 The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install``.
@@ -128,7 +128,7 @@ You can copy the tutorial examples from this install and use them as follows:
     #
     cd ascent_intro/cpp
     make
-    ./ascent_first_light_example
+    env OMP_NUM_THREADS=1 ./ascent_first_light_example
     
     #
     # run a python example
@@ -136,6 +136,52 @@ You can copy the tutorial examples from this install and use them as follows:
     cd ..
     cd python
     python ascent_first_light_example.py  
+
+OLCF Summit Install
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We have a public ascent install for use on OLCF's Summit System. This install was built using the default
+gnu compiler (6.4.0) with OpenMP and MPI support. You need to use `module load gcc` to build and run the installed examples.
+
+.. warning::
+    This install exists on a file system that is occasionally purged. We are looking for a better place to put our world accessable installs.
+
+
+The install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``.
+You can copy the tutorial examples from this install and use them as follows:
+
+.. code::
+
+    #
+    # source helper script that loads the default gcc module, sets python paths, and ASCENT_DIR env var
+    #
+    source /gpfs/alpine/csc340/world-shared/software/ascent/current/summit/ascent_summit_setup_env_gcc_openmp.sh
+    
+    #
+    # make your own dir to hold the tutorial examples
+    #
+    mkdir ascent_tutorial
+    cd ascent_tutorial
+    
+    #
+    # copy the examples from the public install
+    #
+    cp -r /gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/examples/ascent/tutorial/* .
+    
+    #
+    # build cpp examples and run the first one
+    #
+    cd ascent_intro/cpp
+    make
+    env OMP_NUM_THREADS=1 ./ascent_first_light_example
+    
+    #
+    # run a python example
+    #
+    cd ..
+    cd python
+    env OMP_NUM_THREADS=1 python ascent_first_light_example.py
+
 
 ..
 .. SC19 Tutorial VM Option
