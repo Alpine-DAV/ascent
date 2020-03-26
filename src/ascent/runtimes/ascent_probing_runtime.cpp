@@ -412,6 +412,55 @@ void log_time(std::chrono::time_point<std::chrono::system_clock> start,
 }
 
 
+int isend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm, 
+                       MPI_Request *request) 
+{     
+    conduit::Schema s_data_compact;
+    
+    // schema will only be valid if compact and contig
+    if( node.is_compact() && node.is_contiguous())
+    {
+        s_data_compact = node.schema();
+    }
+    else
+    {
+        node.schema().compact_to(s_data_compact);
+    }
+    
+    std::string snd_schema_json = s_data_compact.to_json();
+
+    conduit::Schema s_msg;
+    s_msg["schema_len"].set(DataType::int64());
+    s_msg["schema"].set(DataType::char8_str(snd_schema_json.size()+1));
+    s_msg["data"].set(s_data_compact);
+    
+    // create a compact schema to use
+    conduit::Schema s_msg_compact;
+    s_msg.compact_to(s_msg_compact);
+    
+    Node n_msg(s_msg_compact);
+    // these sets won't realloc since schemas are compatible
+    n_msg["schema_len"].set((int64)snd_schema_json.length());
+    n_msg["schema"].set(snd_schema_json);
+    n_msg["data"].update(node);
+
+    index_t msg_data_size = n_msg.total_bytes_compact();
+
+    int mpi_error = MPI_Isend(const_cast<void*>(n_msg.data_ptr()),
+                              static_cast<int>(msg_data_size),
+                              MPI_BYTE,
+                              dest,
+                              tag,
+                              comm,
+                              request);
+    
+    if (mpi_error)
+        std::cout << "ERROR sending dataset to " << dest << std::endl;
+    // CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
+    return mpi_error;
+}
+
 //-----------------------------------------------------------------------------
 void splitAndRender(const MPI_Comm mpi_comm_world,
                     const int world_size,
@@ -516,6 +565,22 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                                                     sim_node_count, vis_node_count,
                                                     vis_budget, world_rank);
 
+    // // split comm: one comm per vis node
+    // MPI_Group world_group;
+    // MPI_Comm_group(mpi_comm_world, &world_group);
+    // std::vector<MPI_Group> vis_groups(vis_node_count);
+    // std::vector<MPI_Comm> vis_comms(vis_node_count);
+    // std::vector< std::vector<int> > assigned_sim_nodes(vis_node_count);
+
+    // for (int i = 0; i < node_map.size(); i++)
+    //     assigned_sim_nodes[node_map[i]].push_back(i); 
+
+    // for (int i = 0; i < vis_node_count; i++)
+    // {
+    //     MPI_Group_incl(world_group, assigned_sim_nodes[i].size(), 
+    //                     assigned_sim_nodes[i].data(), &vis_groups[i]);
+    //     MPI_Comm_create_group(mpi_comm_world, vis_groups[i], 0, &vis_comms[i]);
+    // }
 
     Node ascent_opts, blank_actions;
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(mpi_comm_world);
@@ -526,40 +591,58 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
     if (is_vis_node) // all vis nodes: receive data 
     {
+        std::vector<int> image_counts_vis;
+        std::vector<int> sending_node_ranks;
+
         std::cout << "~~~~rank " << world_rank << " / " << my_dest_rank
                     << ": receives extract(s) from " ;
-
-        std::vector<conduit::Node> data_sets; 
-        std::vector<int> image_count_vis;
-
-        // receive all data from corresponding sources
         for (int i = 0; i < node_map.size(); ++i)
         {
             if (node_map[i] == my_dest_rank)
             {   
                 std::cout << i << " ";
-                conduit::Node n_curr; // = data.append();
-                relay::mpi::recv_using_schema(n_curr, i, 0, mpi_comm_world);
-                data_sets.push_back(n_curr);
-                image_count_vis.push_back(max_image_count - image_counts[i]);
+                // conduit::Node n_curr; // = data.append();
+                // datasets.push_back(n_curr);
+                image_counts_vis.push_back(max_image_count - image_counts[i]);
+                sending_node_ranks.push_back(i);
             }
         }
         std::cout << std::endl;
 
-        // render data
-        int count = 0;
-        for (auto &dataset : data_sets)
+        // relay::mpi::gather(Node &send_node, Node &recv_node, int root, vis_comms(my_dest_rank));
+
+        int sending_count = int(sending_node_ranks.size());
+        // MPI_Request requests[sending_count];
+        // MPI_Status statuses[sending_count];
+        // std::vector<conduit::Node> datasets(sending_count);
+
+        for (int i = 0; i < sending_count; ++i)
         {
+            std::cout << "~~~~ receiving " << sending_node_ranks[i] << std::endl;
+            conduit::Node dataset;
+            int err = relay::mpi::recv_using_schema(dataset, sending_node_ranks[i], 0, 
+                                                    mpi_comm_world);
+            // std::cout << "MPI ERROR RECV " << err << std::endl;
+        // }
+
+        // std::cout << "~~! wait_all_recv " << std::endl;
+        // relay::mpi::wait_all_recv(sending_count, requests, statuses);
+        // std::cout << "~~! wait_all_recv END " << std::endl;
+
+        // render data
+        // int count = 0;
+        // for (auto &dataset : datasets)
+        // {
             if (conduit::blueprint::mesh::verify(dataset, verify_info))
             {
-                int offset = max_image_count - image_count_vis[count];
+                int offset = max_image_count - image_counts_vis[i];
 
-                if (image_count_vis[count] > 0)
+                if (image_counts_vis[i] > 0)
                 {
                     std::cout   << "~~~~ VIS node " << world_rank << " rendering " 
                                 << offset << " - " 
-                                << offset + image_count_vis[count] << std::endl;
-                    ascent_opts["image_count"] = image_count_vis[count];
+                                << offset + image_counts_vis[i] << std::endl;
+                    ascent_opts["image_count"] = image_counts_vis[i];
                     ascent_opts["image_offset"] = offset;
 
                     Ascent ascent_render;
@@ -576,20 +659,21 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
                             << std::endl;
             }
-            ++count;
+            // ++count;
         }
     }
     else // all sim nodes: send extract to vis nodes
     {
-        int destination = node_map[world_rank] + sim_node_count;
+        const int destination = node_map[world_rank] + sim_node_count;
         std::cout << "~~~~rank " << world_rank << ": sends extract to " 
                   <<  node_map[world_rank] + sim_node_count << std::endl;
-
-        relay::mpi::send_using_schema(data, destination, 0, mpi_comm_world);
 
         // in line rendering using ascent and cinema
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
+            MPI_Request request;
+            isend_using_schema(data, destination, 0, mpi_comm_world, &request);
+
             std::cout   << "~~~~ SIM node " << world_rank << " rendering " 
                         << 0 << " - " 
                         << image_counts[world_rank] << std::endl;
@@ -609,6 +693,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
                         << std::endl;
         }
+
+        // conduit::relay::mpi::wait_send(&request, MPI_STATUS_IGNORE);
+        // MPI_Wait(&request, MPI_STATUS_IGNORE);
     }
 
     log_time(start, "end splitAndRun ", world_rank);
@@ -762,7 +849,6 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 #if ASCENT_MPI_ENABLED
     if (probing_factor < 1.0)
     {
-        // split comm into sim and vis nodes and render on the respective nodes
         splitAndRender(mpi_comm_world, world_size, world_rank, sim_comm, rank_split, 
                     render_times, phi*theta, m_data, probing_factor, vis_budget);
     }
