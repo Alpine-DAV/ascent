@@ -233,6 +233,7 @@ main()
     fi
     echo "$result"
     if [[ "$result" = "Already up to date." && "$keep_going" -eq 0 ]]; then
+        echo "Repository up to date, no need to run tests"
         return 0
     fi
     if [[ $keep_going -gt 0 ]]; then

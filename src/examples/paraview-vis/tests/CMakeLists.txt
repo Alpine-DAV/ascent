@@ -16,5 +16,5 @@ add_test(
   )
 set_tests_properties(BuildAndRunSim
   PROPERTIES PASS_REGULAR_EXPRESSION
-  "All Ascent ParaView tests passed;Already up to date;No new package installed, no need to run tests"
+  "All Ascent ParaView tests passed;Repository up to date, no need to run tests;No new package installed, no need to run tests"
   )
