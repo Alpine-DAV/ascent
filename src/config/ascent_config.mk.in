@@ -76,6 +76,10 @@ ASCENT_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
 
 ASCENT_PYTHON_LIBS =@ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS@
 
+ASCENT_ENABLE_CUDA = @ENABLE_CUDA@
+
+ASCENT_CUDA_LIBS = @CUDA_cudart_static_LIBRARY@
+
 # include vars from conduit_config.mk
 include $(ASCENT_CONDUIT_DIR)/share/conduit/conduit_config.mk
 
@@ -91,7 +95,6 @@ ASCENT_MFEM_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_MFEM_DIR)/lib
 ASCENT_LINK_RPATH += $(if $(ASCENT_VTKH_DIR), $(ASCENT_VTKH_RPATH_FLAGS_VALUE))
 ASCENT_LINK_RPATH += $(if $(ASCENT_VTKM_DIR), $(ASCENT_VTKM_RPATH_FLAGS_VALUE))
 ASCENT_LINK_RPATH += $(if $(ASCENT_MFEM_DIR), $(ASCENT_MFEM_RPATH_FLAGS_VALUE))
-
 
 #################
 # Linking Flags
@@ -149,6 +152,14 @@ else
                             -lvtkm_filter-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_cont-$(ASCENT_VTKM_VERSION)
+
+ifeq ($(ASCENT_ENABLE_CUDA),)
+   # not set, do not include config.mk
+else
+    ASCENT_DEVICE_OBJECT = $(ASCENT_DIR)/lib/bcal_vtkm.o
+    ASCENT_CUDA_LIB_FLAGS = $(ASCENT_CUDA_LIBS)
+endif
+
 endif
 
 ##########
@@ -193,11 +204,12 @@ ASCENT_INCLUDE_FLAGS = $(CONDUIT_INCLUDE_FLAGS) \
 # Ascent Lib Flags
 ####################
 # if using Ascent without mpi
-ASCENT_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
+ASCENT_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT) \
+                   -L $(ASCENT_DIR)/lib \
                    -lascent \
                    -lascent_flow \
                    -lascent_lodepng \
-                   -lrover $(DRAY_LIB_FLAGS) $(ASCENT_VTKH_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS)
+                   -lrover $(DRAY_LIB_FLAGS) $(ASCENT_VTKH_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
 
 # if using Ascent with mpi
 ASCENT_MPI_LIB_FLAGS = -L $(ASCENT_DIR)/lib \

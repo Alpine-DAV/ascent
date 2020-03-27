@@ -130,8 +130,13 @@ include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 ################################
 include(cmake/CMakeBasics.cmake)
 
+##################################
+# Helpers for  VTKm device symbols
+##################################
+include(cmake/VTKmDeviceSymbols.cmake)
+
 ################################
-# Set a default build type 
+# Set a default build type
 ################################
 include(cmake/AscentBuildType.cmake)
 
