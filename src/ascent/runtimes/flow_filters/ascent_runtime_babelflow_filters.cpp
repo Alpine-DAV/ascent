@@ -9,6 +9,7 @@
 #include <conduit_blueprint.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
+#include <flow_workspace.hpp>
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -36,6 +37,9 @@
 
 #include <iomanip>
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <float.h>
 
 
 
@@ -230,44 +234,50 @@ int ParallelMergeTree::DownSizeGhosts(std::vector<BabelFlow::Payload> &inputs, s
 
 int pre_proc(std::vector<BabelFlow::Payload> &inputs,
              std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task) {
+
+  return ParallelMergeTree::DownSizeGhosts(inputs, output, task);
   //printf("this is where the preprocessing supposed to happend for Task %d\n", task);
-  output = inputs;
-  return 1;
+  //output = inputs;
+  //return 1;
 }
 
 
 void ParallelMergeTree::Initialize() {
-  int my_rank;
-  int mpi_size;
+  int my_rank = 0;
+  int mpi_size = 1;
+
+#ifdef ASCENT_MPI_ENABLED
+  MPI_Comm comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+
   MPI_Comm_rank(comm, &my_rank);
   MPI_Comm_size(comm, &mpi_size);
+#endif
 
   graph = KWayMerge(n_blocks, fanin);
   task_map = KWayTaskMap(mpi_size, &graph);
 
-  SimplificationGraph g(&graph, &task_map, mpi_size);
-  SimpTaskMap m(&task_map);
-  m.update(g);
-  if (my_rank == 0){
-    FILE *fp = fopen("simpgraph.dot", "w");
-    g.output_graph(mpi_size, &m, fp);
-    fclose(fp);
-  }
-
+  // SimplificationGraph g(&graph, &task_map, mpi_size);
+  // SimpTaskMap m(&task_map);
+  // m.update(g);
+  // if (my_rank == 0){
+  //   FILE *fp = fopen("simpgraph.dot", "w");
+  //   g.output_graph(mpi_size, &m, fp);
+  //   fclose(fp);
+  // }
 
   modGraph = BabelFlow::PreProcessInputTaskGraph<KWayMerge>(mpi_size, &graph, &task_map);
   modMap = BabelFlow::ModTaskMap<KWayTaskMap>(&task_map);
   modMap.update(modGraph);
 
   MergeTree::setDimension(data_size);
-  if (my_rank == 0) {
-    FILE *ofp = fopen("original_graph.dot", "w");
-    graph.output_graph(mpi_size, &task_map, ofp);
-    fclose(ofp);
-    FILE *fp = fopen("graph.dot", "w");
-    modGraph.output_graph(mpi_size, &modMap, fp);
-    fclose(fp);
-  }
+  // if (my_rank == 0) {
+  //   FILE *ofp = fopen("original_graph.dot", "w");
+  //   graph.output_graph(mpi_size, &task_map, ofp);
+  //   fclose(ofp);
+  //   FILE *fp = fopen("graph.dot", "w");
+  //   modGraph.output_graph(mpi_size, &modMap, fp);
+  //   fclose(fp);
+  // }
 
   master.initialize(modGraph, &modMap, MPI_COMM_WORLD, &c_map);
   master.registerCallback(1, local_compute);
@@ -326,8 +336,34 @@ void ascent::runtime::filters::BabelFlow::declare_interface(conduit::Node &i) {
   i["output_port"] = "false";
 }
 
+#define IN_SCALAR
 
 void ascent::runtime::filters::BabelFlow::execute() {
+
+  // DEBUG prints
+#if 0
+  {
+    auto in = input<DataObject>(0)->as_node();
+    auto itr_dnode = in->children();
+    while(itr_dnode.has_next())
+    {
+      auto& data_node = itr_dnode.next();
+      std::string cld_dname = data_node.name();
+      std::cout << "dnode name " <<cld_dname  << std::endl; //<< ": " << cld.to_json()
+
+      conduit::NodeIterator itr = data_node["fields/"].children();
+      while(itr.has_next())
+      {
+            conduit::Node &cld = itr.next();
+            std::string cld_name = itr.name();
+            std::cout << "\tname " <<cld_name  << std::endl; //<< ": " << cld.to_json()
+      }
+    }
+
+  }
+
+#endif
+
   if (op == PMT) {
     // connect to the input port and get the parameters
     if(!input(0).check_type<DataObject>())
@@ -340,6 +376,7 @@ void ascent::runtime::filters::BabelFlow::execute() {
 
     conduit::Node p = params();
     auto *in = n_input.get();
+    
     auto &data_node = in->children().next();
 
     // check if coordset uniform
@@ -355,28 +392,124 @@ void ascent::runtime::filters::BabelFlow::execute() {
     else
       ASCENT_ERROR("BabelFlow filter could not find coordsets/coords/type");
 
-    // get the data handle
-    conduit::DataArray<float> array = data_node[p["data_path"].as_string()].as_float32_array();
-
-    // get the parameters
-    MPI_Comm comm = MPI_Comm_f2c(p["mpi_comm"].as_int());
-    int rank;
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
     MPI_Comm_rank(comm, &rank);
-    int32_t *data_size = p["data_size"].as_int32_ptr();
-    int32_t *low = p["low"].as_int32_ptr();
-    int32_t *high = p["high"].as_int32_ptr();
-    int32_t *n_blocks = p["n_blocks"].as_int32_ptr();
-    int32_t task_id;
-    if (!p.has_child("task_id") || p["task_id"].as_int32() == -1) {
-      MPI_Comm_rank(comm, &task_id);
-    } else {
-      task_id = p["task_id"].as_int32();
+#endif
+
+    //data_node["coordsets/coords"].print();
+    //data_node["topologies"].print();
+    
+    // NOTE: when field is a vector the coords/spacing has dx/dy/dz
+    int32_t dims[3] = {data_node["coordsets/coords/dims/i"].value(),data_node["coordsets/coords/dims/j"].value(),data_node["coordsets/coords/dims/k"].value()};
+
+#ifdef IN_SCALAR
+    int32_t spacing[3] = {data_node["coordsets/coords/spacing/x"].value(),data_node["coordsets/coords/spacing/y"].value(),data_node["coordsets/coords/spacing/z"].value()};
+    int32_t origin[3] = {data_node["coordsets/coords/origin/x"].value(),data_node["coordsets/coords/origin/y"].value(),data_node["coordsets/coords/origin/z"].value()};
+#else
+    double spacing[3] = {data_node["coordsets/coords/spacing/dx"].value(),data_node["coordsets/coords/spacing/dy"].value(),data_node["coordsets/coords/spacing/dz"].value()};
+    double origin[3] = {data_node["coordsets/coords/origin/x"].value(),data_node["coordsets/coords/origin/y"].value(),data_node["coordsets/coords/origin/z"].value()};
+#endif
+
+    int32_t low[3];
+    int32_t high[3];
+
+    int32_t global_low[3];
+    int32_t global_high[3];
+    int32_t data_size[3];
+
+    int32_t n_blocks[3];
+    std::cout<<"----------"<<rank<<"----------"<<std::endl;
+
+    // TODO check dimensionality
+    for(int i=0; i<3; i++){
+      low[i] = origin[i]/spacing[i];
+      high[i] = low[i] + dims[i];
+      MPI_Allreduce(&low[i], &global_low[i], 1, MPI_INT, MPI_MIN, comm);
+      MPI_Allreduce(&high[i], &global_high[i], 1, MPI_INT, MPI_MAX, comm);
+      data_size[i] = global_high[i]-global_low[i];
+
+      // normalize box
+      low[i] -= global_low[i];
+      high[i] = low[i] + dims[i] -1;
+
+      n_blocks[i] = std::ceil(data_size[i]*1.0/dims[i]);
     }
-    int32_t fanin = p["fanin"].as_int32();
-    FunctionType threshold = p["threshold"].as_float();
+
+    std::cout<<"----------"<<rank<<"----------"<<std::endl;
+
+    // Reduce all of the local sums into the global sum
+    
+    std::cout << "dims " << dims[0] << " " << dims[1] << " " << dims[2] << std::endl;
+    std::cout << "low " << low[0] << " " << low[1] << " " << low[2] << std::endl;
+    std::cout << "high " << high[0] << " " << high[1] << " " << high[2] << std::endl;
+
+    if(rank==0){
+      std::cout << "*data_size " << data_size[0] << " " << data_size[1] << " " << data_size[2] << std::endl;
+      std::cout << "*global_low " << global_low[0] << " " << global_low[1] << " " << global_low[2] << std::endl;
+      std::cout << "*global_high " << global_high[0] << " " << global_high[1] << " " << global_high[2] << std::endl;
+      std::cout << "*n_blocks " << n_blocks[0] << " " << n_blocks[1] << " " << n_blocks[2] << std::endl;
+    }
+
+    //data_node["fields/"].print();
+    std::cout<<"----------------------"<<std::endl;
+
+    for(int i=0;i<3;i++){
+      ParallelMergeTree::o_ghosts[i] = 2;
+      ParallelMergeTree::n_ghosts[i] = 1;
+    }
+    //std::cout << p["field"].as_string() <<std::endl;
+
+    //std::cout << "dtype " << data_node["fields/something/values"].dtype().print() <<std::endl;
+    // get the data handle
+#ifdef IN_SCALAR
+    conduit::DataArray<double> array_mag = data_node["fields/mag/values"].as_float64_array();
+#else
+    conduit::DataArray<double> array_x = data_node["fields/something/values/x"].as_float64_array();
+    conduit::DataArray<double> array_y = data_node["fields/something/values/y"].as_float64_array();
+    conduit::DataArray<double> array_z = data_node["fields/something/values/z"].as_float64_array();
+#endif
+    //printf("NUMBER OF E %d\n", array_x.number_of_elements());
+
+#ifndef IN_SCALAR
+    FunctionType* array = new FunctionType[array_x.number_of_elements()]; 
+    for(int i=0; i < array_x.number_of_elements(); i++)
+      array[i] = std::sqrt(array_x[i]*array_x[i] + array_y[i]*array_y[i] + array_z[i]*array_z[i]);
+
+    assert((dims[0]*dims[1]*dims[2]) == array_x.number_of_elements());
+#else
+    FunctionType* array = reinterpret_cast<FunctionType *>(array_mag.data_ptr());
+#endif
+
+    //conduit::DataArray<float> array = data_node[p["data_path"].as_string()].as_float32_array();
+
+#if 0
+    std::stringstream ss;
+    ss << "block_" << dims[0] << "_" << dims[1] << "_" << dims[2] <<"_low_"<< low[0] << "_"<< low[1] << "_"<< low[2] << ".raw";
+    std::fstream fil;
+    fil.open(ss.str().c_str(), std::ios::out | std::ios::binary);
+    fil.write(reinterpret_cast<char *>(array), (dims[0]*dims[1]*dims[2])*sizeof(FunctionType));
+    fil.close();
+
+    MPI_Barrier(comm);
+#endif
+
+    // int32_t *data_size = p["data_size"].as_int32_ptr();
+    // int32_t *low = p["low"].as_int32_ptr();
+    // int32_t *high = p["high"].as_int32_ptr();
+    // int32_t *n_blocks = p["n_blocks"].as_int32_ptr();
+    int32_t task_id = rank;
+    // if (!p.has_child("task_id") || p["task_id"].as_int32() == -1) {
+    //   MPI_Comm_rank(comm, &task_id);
+    // } else {
+    //   task_id = p["task_id"].as_int32();
+    // }
+    int32_t fanin = 2; //p["fanin"].as_int32();
+    FunctionType threshold = -FLT_MAX;//0.0;//-999999.9; //p["threshold"].as_float();
 
     // create ParallelMergeTree instance and run
-    ParallelMergeTree pmt(reinterpret_cast<FunctionType *>(array.data_ptr()),
+    ParallelMergeTree pmt(array, 
                           task_id,
                           data_size,
                           n_blocks,
@@ -387,10 +520,11 @@ void ascent::runtime::filters::BabelFlow::execute() {
     ParallelMergeTree::s_data_size[1] = data_size[1];
     ParallelMergeTree::s_data_size[2] = data_size[2];
 
-
-
     pmt.Initialize();
     pmt.Execute();
+
+    //delete [] array;
+
   } else {
     return;
   }
