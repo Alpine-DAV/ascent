@@ -412,7 +412,7 @@ void log_time(std::chrono::time_point<std::chrono::system_clock> start,
 }
 
 
-int isend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm, 
+int bsend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm, 
                        MPI_Request *request) 
 {     
     conduit::Schema s_data_compact;
@@ -446,13 +446,23 @@ int isend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm,
 
     index_t msg_data_size = n_msg.total_bytes_compact();
 
-    int mpi_error = MPI_Isend(const_cast<void*>(n_msg.data_ptr()),
+    int size;
+    char *bsend_buf;
+    // block until all messages currently in the buffer have been transmitted
+    MPI_Buffer_detach(&bsend_buf, &size);
+    // clean up old buffer
+    free(bsend_buf);
+
+    MPI_Buffer_attach(malloc(msg_data_size + 8*MPI_BSEND_OVERHEAD), 
+                             msg_data_size + 8*MPI_BSEND_OVERHEAD);
+
+    int mpi_error = MPI_Bsend(const_cast<void*>(n_msg.data_ptr()),
                               static_cast<int>(msg_data_size),
                               MPI_BYTE,
                               dest,
                               tag,
-                              comm,
-                              request);
+                              comm);
+                            //   ,request);
     
     if (mpi_error)
         std::cout << "ERROR sending dataset to " << dest << std::endl;
@@ -524,6 +534,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     }
 
 #ifdef ASCENT_MPI_ENABLED
+    MPI_Barrier(mpi_comm_world);
     std::cout << "~~~ " << my_sim_estimate << " sec sim time estimate " 
               << world_rank << std::endl;
 
@@ -672,7 +683,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
             MPI_Request request;
-            isend_using_schema(data, destination, 0, mpi_comm_world, &request);
+            bsend_using_schema(data, destination, 0, mpi_comm_world, &request);
 
             std::cout   << "~~~~ SIM node " << world_rank << " rendering " 
                         << 0 << " - " 
