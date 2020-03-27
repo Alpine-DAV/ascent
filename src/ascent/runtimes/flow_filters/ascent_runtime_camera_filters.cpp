@@ -1041,12 +1041,14 @@ public:
 std::vector<Triangle>
 GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
 {
+    cout << "In get triangles" << endl;
     
     //vtkm::cont::Field field = vtkhData->GetField(field_name);
     //Get domain Ids on this rank
     std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
     std::vector<Triangle> tris;
     //loop through domains and grab all triangles.
+    cout << "local domains " << localDomainIds.size() << endl;
     for(int i = 0; i < localDomainIds.size(); i++)
     {
       vtkm::cont::DataSet dataset = vtkhData.GetDomain(localDomainIds[i]);
@@ -1080,16 +1082,6 @@ Triangle transformTriangle(Triangle t, Camera c){
 	view = c.ViewTransform();
 	camToView = Matrix::ComposeMatrices(cam, view);
 	m0 = Matrix::ComposeMatrices(camToView, c.DeviceTransform());
-	if (print){
-		cout<< "m0" << endl;
-		m0.Print(cout);
-	}
-  if(print)
-  {
-    cout << "triangle in: (" << t.X[0] << " , " << t.Y[0] << " , " << t.Z[0] << ") " << endl <<
-                        " (" << t.X[1] << " , " << t.Y[1] << " , " << t.Z[1] << ") " << endl <<
-                        " (" << t.X[2] << " , " << t.Y[2] << " , " << t.Z[2] << ") " << endl;
-  }
 
 	Triangle triangle;
 	// Zero XYZ
@@ -1187,6 +1179,92 @@ void fibonacci_sphere(int i, int samples, double* points)
   points[2] = z;
 }
 
+template< typename T >
+T calcentropy( const T* array, long len, int nBins )
+{
+    T max = std::abs(array[0]);
+    T min = std::abs(array[0]);
+    for( long i = 0; i < len; i++ )
+    {
+        max = max > std::abs(array[i]) ? max : std::abs(array[i]);
+        min = min < std::abs(array[i]) ? min : std::abs(array[i]);
+    }
+    T stepSize = (max-min) / (T)nBins;
+
+    long* hist = new long[ nBins ];
+    for( int i = 0; i < nBins; i++ )
+        hist[i] = 0;
+
+    for( long i = 0; i < len; i++ )
+    {
+        T idx = (std::abs(array[i]) - min) / stepSize;
+        if( (int)idx == nBins )
+            idx -= 1.0;
+        hist[(int)idx]++;
+    }
+
+    T entropy = 0.0;
+    for( int i = 0; i < nBins; i++ )
+    {
+        T prob = (T)hist[i] / (T)len;
+        if( prob != 0.0 )
+            entropy += prob * std::log( prob );
+    }
+
+    delete[] hist;
+
+    return (entropy * -1.0);
+}
+
+double
+calculateMetric(Screen screen, std::string metric)
+{
+  if(metric == "data_entropy")
+  {
+    #if ASCENT_MPI_ENABLED //pass screens among all ranks
+        // Get the number of processes
+      int world_size;
+      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+      // Get the rank of the process
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      MPI_Status status;
+      if(rank != 0)
+      { 
+	//send values to rank 0
+        MPI_Send(screen.values, screen.width*screen.height, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+	//send z-buffer to rank 0
+        MPI_Send(screen.zBuff, screen.width*screen.height, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+        //Get final values back from rank 0
+	MPI_Recv(screen.values, screen.width*screen.height, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &status);
+      }
+      if(rank == 0)
+      {
+	double zBuff[screen.width*screen.height];
+	double values[screen.width*screen.height];
+        for(int i = 1; i < world_size; i++)
+        {
+          MPI_Recv(values, screen.width*screen.height, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &status);
+          MPI_Recv(zBuff, screen.width*screen.height, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &status);
+	  for(int pixel = 0; pixel < screen.height*screen.width; pixel++)
+          {
+            //new buffer wins, replace with new value
+            if(zBuff[pixel] > screen.zBuff[pixel])
+	      screen.values[pixel] = values[pixel]; 
+          }
+	}
+	for(int i = 1; i < world_size; i++)
+        {
+	  //send values back
+          MPI_Send(screen.values, screen.width*screen.height, MPI_DOUBLE, i, 1, MPI_COMM_WORLD);
+        }
+      }
+    #endif
+    return calcentropy(screen.values, screen.width*screen.height, 100);
+  }
+}
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -1279,6 +1357,8 @@ AutoCamera::execute()
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
     std::string field_name = params()["field"].as_string();
+    std::string metric     = params()["metric"].as_string();
+
     if(!collection->has_field(field_name))
     {
       ASCENT_ERROR("Unknown field '"<<field_name<<"'");
@@ -1307,12 +1387,12 @@ AutoCamera::execute()
     vtkm::Float32 x_pos = 0., y_pos = 0., z_pos = 0.;
 
     Screen screen;
-    double scores[samples];
     unsigned char buffer[height*width*3];
     //TODO: loop through number of samples THEN add parallelism + z buffer
     //loop through number of camera samples.
-    vtkmCamera *camera = new vtkmCamera;
-    camera->ResetToBounds(dataset.GetGlobalBounds());
+
+    double winning_score = -DBL_MAX;
+    int    winning_sample = -1;
     for(int sample = 0; sample < samples; sample++)
     {
       //pretty sure I don't need buffer -- this is for color/pixels
@@ -1330,8 +1410,6 @@ AutoCamera::execute()
 
       Camera c = GetCamera(sample, samples, radius, bounds);
       c.screen = screen;
-      vtkm::Vec<vtkm::Float32, 3> pos{(float)c.position[0], (float)c.position[1],(float) c.position[2]}; 
-      camera->SetPosition(pos);
       int num_tri = triangles.size();
       //loop through all triangles
       for(int tri = 0; tri < num_tri; tri++)
@@ -1348,21 +1426,37 @@ AutoCamera::execute()
 
 
       }//end of triangle loop
-
+/*
       if(sample == 0){
 	      cout << "printing values " << endl;
 	      for(int k = 0; k < width*height; k++)
 		      cout << screen.values[k] << " ";
       }
+*/    
       //TODO: Add metric after the scanline algorithm
+
+      double score = calculateMetric(screen, metric);
+      cout << "sample " << sample << " score: " << score << endl;
+      if(winning_score < score)
+      {
+        winning_score = score;
+	winning_sample = sample;
+      }
       //Add parallism to pass the metric results
     } //end of sample loop
 
+    if(winning_sample == -1)
+      ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
+    cout << "winning_sample " << winning_sample << " score: " << winning_score << endl;
+    Camera best_c = GetCamera(winning_sample, samples, radius, bounds);
+
     //TODO:This should be after all the calculatoins when we have a winning camera
-//    vtkmCamera *camera = new vtkmCamera;
-//    camera->ResetToBounds(dataset.GetGlobalBounds());
-//    vtkm::Vec<vtkm::Float32, 3> pos{x_pos, y_pos, z_pos}; 
-//    camera->SetPosition(pos);
+    vtkmCamera *camera = new vtkmCamera;
+    camera->ResetToBounds(dataset.GetGlobalBounds());
+    vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
+	                            (float)best_c.position[1], 
+				    (float)best_c.position[2]}; 
+    camera->SetPosition(pos);
 
 
     if(!graph().workspace().registry().has_entry("camera"))
