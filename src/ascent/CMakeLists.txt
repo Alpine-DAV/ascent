@@ -300,6 +300,94 @@ if (ENABLE_SERIAL)
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib
     )
+        set(locations_on_disk "")
+
+        set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent.dir")
+        ##get_target_property(source_files ascent SOURCES)
+        foreach(source IN LISTS ascent_device_sources)
+          #CMake name object files "name.<ext>.o" so that it can handle multiple
+          #files with the same name but different ext in the same project
+          if("${source}" MATCHES "cpp*")
+            string(APPEND locations_on_disk "${binary_dir}/${source}.o ")
+          endif()
+          if("${source}" MATCHES "cxx*")
+            string(APPEND locations_on_disk "${binary_dir}/${source}.o ")
+          endif()
+          #message(STATUS "${source}")
+        endforeach()
+
+        #hack in rover for now
+        string(APPEND locations_on_disk "${CMAKE_BINARY_DIR}/lib/librover.a ")
+
+        set(targets_to_link rover
+                            vtkh_rendering
+                            vtkh_compositing
+                            vtkh_filters
+                            vtkh_core
+                            vtkh_lodepng
+                            vtkh_utils
+                            vtkm_rendering
+                            vtkm_filter
+                            vtkm_worklet
+                            vtkm_source
+                            vtkm_cont
+                            )
+
+        foreach(item IN LISTS targets_to_link)
+          message(STATUS "looking for location of target ${item}")
+          # also look for LOCATION, since rover isn't an imported
+          set(props_to_search IMPORTED_LOCATION
+                              IMPORTED_LOCATION_RELEASE
+                              IMPORTED_LOCATION_MINSIZEREL
+                              IMPORTED_LOCATION_DEBUG)
+          # also tried to look for LOCATION, since rover isn't an imported
+          # doesn't work
+                              #LOCATION
+                              #LOCATION_RELEASE
+                              #LOCATION_MINSIZEREL
+                              #LOCATION_DEBUG)
+          foreach(prop IN LISTS props_to_search)
+            message(STATUS "looking for prop ${prop} of target ${item}")
+            get_target_property(location ${item} ${prop})
+            if(location)
+              string(APPEND locations_on_disk "${location} ")
+              message(STATUS "**LOCATION ${location}")
+              break()
+            endif()
+          endforeach()
+        endforeach()
+        #string(APPEND locations_on_disk $<TARGET_OBJECTS:ascent>)
+
+
+        separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
+        message(STATUS "@@LOCATION ${locations_on_disk}")
+        message(STATUS "@@PARAMS ${params}")
+
+        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart -lnvidia-ml --output-file device_link.o")
+        add_custom_command(
+          #TARGET ascent POST_BUILD
+          TARGET ascent PRE_LINK
+          DEPENDS ascent rover
+          COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart -lnvidia-ml --output-file device_link.o
+          COMMENT "manual device link step for Ascent"
+          )
+
+        message(STATUS "***********${CMAKE_BINARY_DIR}/device_link.o")
+        add_library(bananas STATIC ${CMAKE_BINARY_DIR}/ascent/device_link.o)
+        set_target_properties(bananas PROPERTIES LINKER_LANGUAGE CUDA)
+        target_link_libraries(bananas ascent)
+        #add_dependencies(bananas ascent)
+        #blt_add_library(
+        #    NAME        bananas
+        #    SOURCES     ${CMAKE_BINARY_DIR}/ascent/device_link.o
+        #    DEPENDS_ON  ascent)
+
+        install(TARGETS bananas
+                EXPORT  ascent
+                LIBRARY DESTINATION lib
+                ARCHIVE DESTINATION lib
+                RUNTIME DESTINATION lib
+        )
 endif()
 
 ################################################
