@@ -326,10 +326,7 @@ if (ENABLE_SERIAL)
                      "${targets_to_link}"
                      locations_on_disk)
 
-      message(STATUS "!!!!!!!!!${locations_on_disk}")
-
       separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
-      message(STATUS "COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o")
       add_custom_command(
         TARGET ascent PRE_LINK
         DEPENDS ascent rover
@@ -337,7 +334,6 @@ if (ENABLE_SERIAL)
         COMMENT "manual device link step for Ascent"
         )
       install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm.o DESTINATION lib)
-      message(STATUS "CUDA DIR ${ENABLE_CUDA}")
     endif()
 
 endif()
@@ -412,6 +408,40 @@ if(MPI_FOUND)
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib
     )
+
+    if(VTKM_FOUND AND CUDA_FOUND)
+      set(locations_on_disk "")
+
+      set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
+
+      set(targets_to_link rover
+                          vtkh_rendering_mpi
+                          vtkh_compositing_mpi
+                          vtkh_filters_mpi
+                          vtkh_core_mpi
+                          vtkh_lodepng
+                          vtkh_utils_mpi
+                          vtkm_rendering
+                          vtkm_filter
+                          vtkm_worklet
+                          vtkm_cont
+                          )
+
+      source_objects(${binary_dir}
+                     "${ascent_device_sources}"
+                     "${CMAKE_BINARY_DIR}/lib/librover_mpi.a"
+                     "${targets_to_link}"
+                     locations_on_disk)
+
+      separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
+      add_custom_command(
+        TARGET ascent PRE_LINK
+        DEPENDS ascent rover
+        COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
+        COMMENT "manual device link step for Ascent parallel"
+        )
+      install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm_mpi.o DESTINATION lib)
+    endif()
 
 endif()
 

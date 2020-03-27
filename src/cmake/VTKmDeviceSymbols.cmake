@@ -17,23 +17,22 @@ function(source_objects binary_dir sources rover targets locations)
   string(APPEND locations_on_disk "${rover} ")
 
   foreach(item IN LISTS targets)
-    message(STATUS "looking for location of target ${item}")
+    #message(STATUS "looking for location of target ${item}")
     set(props_to_search IMPORTED_LOCATION
                         IMPORTED_LOCATION_RELEASE
                         IMPORTED_LOCATION_MINSIZEREL
                         IMPORTED_LOCATION_DEBUG)
     foreach(prop IN LISTS props_to_search)
-      message(STATUS "looking for prop ${prop} of target ${item}")
+      #message(STATUS "looking for prop ${prop} of target ${item}")
       get_target_property(location ${item} ${prop})
       if(location)
         string(APPEND locations_on_disk "${location} ")
-        message(STATUS "**LOCATION ${location}")
+        #message(STATUS "**LOCATION ${location}")
         break()
       endif()
     endforeach()
   endforeach()
 
-  message(STATUS "@@@@@@@@@@@@@@@@ ${locations_on_disk}")
   set(${locations} ${locations_on_disk} PARENT_SCOPE)
 endfunction()
 
