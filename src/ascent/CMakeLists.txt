@@ -435,8 +435,8 @@ if(MPI_FOUND)
 
       separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
       add_custom_command(
-        TARGET ascent PRE_LINK
-        DEPENDS ascent rover
+        TARGET ascent_mpi PRE_LINK
+        DEPENDS ascent_mpi rover_mpi
         COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
         COMMENT "manual device link step for Ascent parallel"
         )
