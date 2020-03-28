@@ -76,8 +76,6 @@ ASCENT_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
 
 ASCENT_PYTHON_LIBS =@ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS@
 
-ASCENT_ENABLE_CUDA = @ENABLE_CUDA@
-
 ASCENT_CUDA_LIBS = @CUDA_cudadevrt_LIBRARY@ @CUDA_cudart_static_LIBRARY@
 
 # include vars from conduit_config.mk
@@ -153,7 +151,7 @@ else
                             -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_cont-$(ASCENT_VTKM_VERSION)
 
-ifeq ($(ASCENT_ENABLE_CUDA),)
+ifeq ($(ASCENT_CUDA_LIBS),)
    # not set, do not include config.mk
 else
     ASCENT_DEVICE_OBJECT = $(ASCENT_DIR)/lib/bcal_vtkm.o
