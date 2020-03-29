@@ -8,6 +8,6 @@
                      "py-mpi4py" : ["+python", "+mpi"],
                      "conduit"   : ["+python"],
                      "py-sphinx" : ["+python", "+doc"],
-                     "py-sphinx-rtd-theme" : ["+python", "+doc"],},
+                     "py-sphinx-rtd-theme" : ["+python", "+doc"]},
 "spack_clean_packages" : ["vtkm", "vtkh","conduit"]
 }
