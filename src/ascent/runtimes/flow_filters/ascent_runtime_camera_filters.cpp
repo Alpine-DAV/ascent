@@ -119,40 +119,39 @@ typedef vtkm::rendering::Camera vtkmCamera;
 //Camera Class Functions
 
 Matrix
-Camera::CameraTransform(void) {
-        bool print = false;
-	double* v3 = new double[3]; //camera position - focus
-	v3[0] = (position[0] - focus[0]);
-	v3[1] = (position[1] - focus[1]);
-	v3[2] = (position[2] - focus[2]);
-	normalize(v3);
+Camera::CameraTransform(void)
+{
+  bool print = false;
+  double* v3 = new double[3]; //camera position - focus
+  v3[0] = (position[0] - focus[0]);
+  v3[1] = (position[1] - focus[1]);
+  v3[2] = (position[2] - focus[2]);
+  normalize(v3);
 
-	double* v1 = new double[3]; //UP x (camera position - focus)
-	v1 = crossProduct(up, v3);
-	normalize(v1);
+  double* v1 = new double[3]; //UP x (camera position - focus)
+  v1 = crossProduct(up, v3);
+  normalize(v1);
 
-	double* v2 = new double[3]; // (camera position - focus) x v1
-	v2 = crossProduct(v3, v1);
-	normalize(v2);
+  double* v2 = new double[3]; // (camera position - focus) x v1
+  v2 = crossProduct(v3, v1);
+  normalize(v2);
 
-	double* t = new double[3]; // (0,0,0) - camera position
-	t[0] = (0 - position[0]);
-	t[1] = (0 - position[1]);
-	t[2] = (0 - position[2]);
-
-
-	if (print){
-		cout << "position " << position[0] << " " << position[1] << " " << position[2] << endl;
-		cout << "focus " << focus[0] << " " << focus[1] << " " << focus[2] << endl;
-		cout << "up " << up[0] << " " << up[1] << " " << up[2] << endl;
-		cout << "v1 " << v1[0] << " " << v1[1] << " " << v1[2] << endl;
-		cout << "v2 " << v2[0] << " " << v2[1] << " " << v2[2] << endl;
-		cout << "v3 " << v3[0] << " " << v3[1] << " " << v3[2] << endl;
-		cout << "t " << t[0] << " " << t[1] << " " << t[2] << endl;
-	}
+  double* t = new double[3]; // (0,0,0) - camera position
+  t[0] = (0 - position[0]);
+  t[1] = (0 - position[1]);
+  t[2] = (0 - position[2]);
 
 
-
+  if (print)
+  {
+    cout << "position " << position[0] << " " << position[1] << " " << position[2] << endl;
+    cout << "focus " << focus[0] << " " << focus[1] << " " << focus[2] << endl;
+    cout << "up " << up[0] << " " << up[1] << " " << up[2] << endl;
+    cout << "v1 " << v1[0] << " " << v1[1] << " " << v1[2] << endl;
+    cout << "v2 " << v2[0] << " " << v2[1] << " " << v2[2] << endl;
+    cout << "v3 " << v3[0] << " " << v3[1] << " " << v3[2] << endl;
+    cout << "t " << t[0] << " " << t[1] << " " << t[2] << endl;
+  }
 
 /*
 | v1.x v2.x v3.x 0 |
@@ -160,41 +159,41 @@ Camera::CameraTransform(void) {
 | v1.z v2.z v3.z 0 |
 | v1*t v2*t v3*t 1 |
 */
-	Matrix camera;
+  Matrix camera;
 
-	camera.A[0][0] = v1[0]; //v1.x
-	camera.A[0][1] = v2[0]; //v2.x
-	camera.A[0][2] = v3[0]; //v3.x
-	camera.A[0][3] = 0; //0
-	camera.A[1][0] = v1[1]; //v1.y
-	camera.A[1][1] = v2[1]; //v2.y
-	camera.A[1][2] = v3[1]; //v3.y
-	camera.A[1][3] = 0; //0
-	camera.A[2][0] = v1[2]; //v1.z
-	camera.A[2][1] = v2[2]; //v2.z
-	camera.A[2][2] = v3[2]; //v3.z
-	camera.A[2][3] = 0; //0
-	camera.A[3][0] = dotProduct(v1, t, 3); //v1 dot t
-	camera.A[3][1] = dotProduct(v2, t, 3); //v2 dot t
-	camera.A[3][2] = dotProduct(v3, t, 3); //v3 dot t
-	camera.A[3][3] = 1.0; //1
+  camera.A[0][0] = v1[0]; //v1.x
+  camera.A[0][1] = v2[0]; //v2.x
+  camera.A[0][2] = v3[0]; //v3.x
+  camera.A[0][3] = 0; //0
+  camera.A[1][0] = v1[1]; //v1.y
+  camera.A[1][1] = v2[1]; //v2.y
+  camera.A[1][2] = v3[1]; //v3.y
+  camera.A[1][3] = 0; //0
+  camera.A[2][0] = v1[2]; //v1.z
+  camera.A[2][1] = v2[2]; //v2.z
+  camera.A[2][2] = v3[2]; //v3.z
+  camera.A[2][3] = 0; //0
+  camera.A[3][0] = dotProduct(v1, t, 3); //v1 dot t
+  camera.A[3][1] = dotProduct(v2, t, 3); //v2 dot t
+  camera.A[3][2] = dotProduct(v3, t, 3); //v3 dot t
+  camera.A[3][3] = 1.0; //1
 
-	if(print){
-		cout << "camera" << endl;
-		camera.Print(cout);
-	}
-	delete[] v1;
-	delete[] v2;
-	delete[] v3;
-	delete[] t;
-	return camera;
+  if(print)
+  {
+    cout << "Camera:" << endl;
+    camera.Print(cout);
+  }
+  delete[] v1;
+  delete[] v2;
+  delete[] v3;
+  delete[] t;
+  return camera;
 
 };
 
 Matrix
-Camera::ViewTransform(void) {
-
-        bool print = false;
+Camera::ViewTransform(void) 
+{
 
 /*
 | cot(a/2)    0         0            0     |
@@ -202,59 +201,37 @@ Camera::ViewTransform(void) {
 |    0        0    (f+n)/(f-n)      -1     |
 |    0        0         0      (2fn)/(f-n) |
 */
-    	Matrix view;
-	double c = (1.0/(tan(angle/2.0))); //cot(a/2) =    1
+  Matrix view;
+  double c = (1.0/(tan(angle/2.0))); //cot(a/2) =    1
 				     //		   -----
 				     //		  tan(a/2)
-	double f = ((far + near)/(far - near));
-	double f2 = ((2*far*near)/(far - near));
+  double f = ((far + near)/(far - near));
+  double f2 = ((2*far*near)/(far - near));
 
-	view.A[0][0] = c;
-	view.A[0][1] = 0;
-	view.A[0][2] = 0;
-	view.A[0][3] = 0;
-	view.A[1][0] = 0;
-	view.A[1][1] = c;
-	view.A[1][2] = 0;
-	view.A[1][3] = 0;
-	view.A[2][0] = 0;
-	view.A[2][1] = 0;
-	view.A[2][2] = f;
-	view.A[2][3] = -1.0;
-	view.A[3][0] = 0;
-	view.A[3][1] = 0;
-	view.A[3][2] = f2;
-	view.A[3][3] = 0;
-	if (print){
-		cout << "view" << endl;
-		view.Print(cout);
-	}
-	return view;
+  view.A[0][0] = c;
+  view.A[0][1] = 0;
+  view.A[0][2] = 0;
+  view.A[0][3] = 0;
+  view.A[1][0] = 0;
+  view.A[1][1] = c;
+  view.A[1][2] = 0;
+  view.A[1][3] = 0;
+  view.A[2][0] = 0;
+  view.A[2][1] = 0;
+  view.A[2][2] = f;
+  view.A[2][3] = -1.0;
+  view.A[3][0] = 0;
+  view.A[3][1] = 0;
+  view.A[3][2] = f2;
+  view.A[3][3] = 0;
+  return view;
 
-    };
+};
 
 
 Matrix
-Camera::DeviceTransform() { //(double x, double y, double z){
-
-        bool print = false;
-	/*if (x > screen.width)
-		x = screen.width;
-	if (x < 0)
-		x = 0;
-
-	if (y > screen.height)
-		y = screen.height;
-	if (y < 0)
-		y = 0;
-	double x_, y_, z_;
-	x_ = (((screen.width)*(x+1))/2); //n*(x+1)/2
-	y_ = (((screen.height)*(y+1))/2); //m*(y+1)/2
-	z_ = z; //z
-	if (print){
-		cout << "x " << x << " x_ " << x_ << endl;
-		cout << " screen width " << screen.width << endl;
-	}*/
+Camera::DeviceTransform() 
+{ //(double x, double y, double z){
 
 /*
 | x' 0  0  0 |
@@ -262,101 +239,69 @@ Camera::DeviceTransform() { //(double x, double y, double z){
 | 0  0  z' 0 |
 | 0  0  0  1 |
 */
-	Matrix device;
-/*
-	device.A[0][0] = x_;
-	device.A[0][1] = 0;
-	device.A[0][2] = 0;
-	device.A[0][3] = 0;
-	device.A[1][0] = 0;
-	device.A[1][1] = y_;
-	device.A[1][2] = 0;
-	device.A[1][3] = 0;
-	device.A[2][0] = 0;
-	device.A[2][1] = 0;
-	device.A[2][2] = z_;
-	device.A[2][3] = 0;
-	device.A[3][0] = 0;
-	device.A[3][1] = 0;
-	device.A[3][2] = 0;
-	device.A[3][3] = 1;
-*/
+  Matrix device;
 
-/*This is the matrix Andy posted on piazza*/
+  device.A[0][0] = (screen.width/2);
+  device.A[0][1] = 0;
+  device.A[0][2] = 0;
+  device.A[0][3] = 0;
+  device.A[1][0] = 0;
+  device.A[1][1] = (screen.height/2);
+  device.A[1][2] = 0;
+  device.A[1][3] = 0;
+  device.A[2][0] = 0;
+  device.A[2][1] = 0;
+  device.A[2][2] = 1;
+  device.A[2][3] = 0;
+  device.A[3][0] = (screen.width/2);
+  device.A[3][1] = (screen.height/2);
+  device.A[3][2] = 0;
+  device.A[3][3] = 1;
 
-	device.A[0][0] = (screen.width/2);
-	device.A[0][1] = 0;
-	device.A[0][2] = 0;
-	device.A[0][3] = 0;
-	device.A[1][0] = 0;
-	device.A[1][1] = (screen.height/2);
-	device.A[1][2] = 0;
-	device.A[1][3] = 0;
-	device.A[2][0] = 0;
-	device.A[2][1] = 0;
-	device.A[2][2] = 1;
-	device.A[2][3] = 0;
-	device.A[3][0] = (screen.width/2);
-	device.A[3][1] = (screen.height/2);
-	device.A[3][2] = 0;
-	device.A[3][3] = 1;
-
-
-	if(print){
-		cout << "device" << endl;
-		device.Print(cout);
-	}
-	return device;
+  return device;
 }
 
 
 //Edge Class Functions
 
 
-Edge::Edge (double x_1, double y_1, double z_1, double r_1, double g_1, double b_1, double* norm1, double s1, double x_2, double y_2, double z_2, double r_2, double g_2, double b_2, double* norm2, double s2, double v_1, double v_2){
-		x1 = x_1;
-		x2 = x_2;
-		y1 = y_1;
-		y2 = y_2;
-		z1 = z_1;
-		z2 = z_2;
-		r1 = r_1;
-		r2 = r_2;
-		g1 = g_1;
-		g2 = g_2;
-		b1 = b_1;
-		b2 = b_2;
-		normal1 = norm1;
-		normal2 = norm2;
-		shade1  = s1;
-		shade2  = s2;
-		value1  = v_1;
-		value2  = v_2;
+Edge::Edge (double x_1, double y_1, double z_1,  double x_2, double y_2, double z_2, double v_1, double v_2)
+{
+  x1 = x_1;
+  x2 = x_2;
+  y1 = y_1;
+  y2 = y_2;
+  z1 = z_1;
+  z2 = z_2;
+  value1  = v_1;
+  value2  = v_2;
 
-		// find relationship of y1 and y2 for min and max bounds of the line
-		if (y1 < y2)
-			minY = y1;
-		else
-			minY = y2;
-		if (y1 > y2)
-			maxY = y1;
-		else
-			maxY = y2;
+  // find relationship of y1 and y2 for min and max bounds of the line
+  if (y1 < y2)
+    minY = y1;
+  else
+    minY = y2;
+  if (y1 > y2)
+    maxY = y1;
+  else
+    maxY = y2;
 
-		if (x2 - x1 == 0){ //if vertical, return x
-			vertical = true;
-			slope = x1;
-		}
-		else{
-			vertical = false;
-			slope = (y2 - y1)/(x2 - x1); //slope is 0 if horizontal, else it has a slope
-		}
-		b = y1 - slope*x1;
-		if (y2 - y1 == 0) //if horizontal disregard
-			relevant = false;
-		else
-			relevant = true;
-	}
+  if (x2 - x1 == 0)
+  { //if vertical, return x
+    vertical = true;
+    slope = x1;
+  }
+  else
+  {
+    vertical = false;
+    slope = (y2 - y1)/(x2 - x1); //slope is 0 if horizontal, else it has a slope
+  }
+  b = y1 - slope*x1;
+  if (y2 - y1 == 0) //if horizontal disregard
+    relevant = false;
+  else
+    relevant = true;
+}
 
 //find x on the line of y1 and y2 and given y with ymin <= y <= ymax.
 double
@@ -378,72 +323,33 @@ Edge::findX(double y){
 	//(x-A)/(B-A) ratio of y between y1 and y2
 	//interpolate finds the value (z or rgb or norm vector) at y between y1 and y2.
 double
-Edge::interpolate(double a, double b, double C, double D, double fa, double fb, double x){
-		double A, B, fA, fB;
-		if(C < D){
-			A = a;
-			B = b;
-			fA = fa;
-			fB = fb;
-		}
-		else{
-			A = b;
-			B = a;
-			fA = fb;
-			fB = fa;
-		}
-		double fX = fA + ((x - A)/(B - A))*(fB-fA);
-		return fX;
-	}
+Edge::interpolate(double a, double b, double C, double D, double fa, double fb, double x)
+{
+  double A, B, fA, fB;
+  if(C < D)
+  {
+    A = a;
+    B = b;
+    fA = fa;
+    fB = fb;
+  }
+  else
+  {
+    A = b;
+    B = a;
+    fA = fb;
+    fB = fa;
+  }
+  double fX = fA + ((x - A)/(B - A))*(fB-fA);
+  return fX;
+}
 
 double
-Edge::findZ(double y){
-		double z = interpolate(y1, y2, x1, x2, z1, z2, y);
-		return z;
-	}
-
-double
-Edge::findRed(double y){
-		double red = interpolate(y1, y2, x1, x2, r1, r2, y);
-		return red;
-	}
-
-double
-Edge::findGreen(double y){
-		double green = interpolate(y1, y2, x1, x2, g1, g2, y);
-		return green;
-	}
-
-
-double
-Edge::findBlue(double y){
-		double blue = interpolate(y1, y2, x1, x2, b1, b2, y);
-		return blue;
-	}
-
-double
-Edge::normalZ(double y){
-		double normZ = interpolate(y1, y2, x1, x2, normal1[2], normal2[2], y);
-		return normZ;
-	}
-
-double
-Edge::normalX(double y){
-		double normX = interpolate(y1, y2, x1, x2, normal1[0], normal2[0], y);
-		return normX;
-	}
-
-double
-Edge::normalY(double y){
-		double normY = interpolate(y1, y2, x1, x2, normal1[1], normal2[1], y);
-		return normY;
-	}
-
-double
-Edge::findShade(double y){
-		double normY = interpolate(y1, y2, x1, x2, shade1, shade2, y);
-		return normY;
-	}
+Edge::findZ(double y)
+{
+  double z = interpolate(y1, y2, x1, x2, z1, z2, y);
+  return z;
+}
 
 double
 Edge::findValue(double y)
@@ -454,63 +360,64 @@ Edge::findValue(double y)
 
 
 bool
-Edge::applicableY(double y){
-		if (y >= minY && y <= maxY)
-			return true;
-		else if (nabs(minY - y) < 0.00001 || nabs(maxY - y) < 0.00001)
-			return true;
-		else
-			return false;
-	}
+Edge::applicableY(double y)
+{
+  if (y >= minY && y <= maxY)
+    return true;
+  else if (nabs(minY - y) < 0.00001 || nabs(maxY - y) < 0.00001)
+    return true;
+  else
+    return false;
+}
 
 //Matrix Class Functions
 void
 Matrix::Print(ostream &o)
 {
-    for (int i = 0 ; i < 4 ; i++)
-    {
-        char str[256];
-        sprintf(str, "(%.7f %.7f %.7f %.7f)\n", A[i][0], A[i][1], A[i][2], A[i][3]);
-        o << str;
-    }
+  for (int i = 0 ; i < 4 ; i++)
+  {
+      char str[256];
+      sprintf(str, "(%.7f %.7f %.7f %.7f)\n", A[i][0], A[i][1], A[i][2], A[i][3]);
+      o << str;
+  }
 }
 
 //multiply two matrices
 Matrix
 Matrix::ComposeMatrices(const Matrix &M1, const Matrix &M2)
 {
-    Matrix rv;
-    for (int i = 0 ; i < 4 ; i++)
-        for (int j = 0 ; j < 4 ; j++)
-        {
-            rv.A[i][j] = 0;
-            for (int k = 0 ; k < 4 ; k++)
-                rv.A[i][j] += M1.A[i][k]*M2.A[k][j];
-        }
+  Matrix rv;
+  for (int i = 0 ; i < 4 ; i++)
+      for (int j = 0 ; j < 4 ; j++)
+      {
+          rv.A[i][j] = 0;
+          for (int k = 0 ; k < 4 ; k++)
+              rv.A[i][j] += M1.A[i][k]*M2.A[k][j];
+      }
 
-    return rv;
+  return rv;
 }
 
 //multiply vector by matrix
 void
 Matrix::TransformPoint(const double *ptIn, double *ptOut)
 {
-    ptOut[0] = ptIn[0]*A[0][0]
-             + ptIn[1]*A[1][0]
-             + ptIn[2]*A[2][0]
-             + ptIn[3]*A[3][0];
-    ptOut[1] = ptIn[0]*A[0][1]
-             + ptIn[1]*A[1][1]
-             + ptIn[2]*A[2][1]
-             + ptIn[3]*A[3][1];
-    ptOut[2] = ptIn[0]*A[0][2]
-             + ptIn[1]*A[1][2]
-             + ptIn[2]*A[2][2]
-             + ptIn[3]*A[3][2];
-    ptOut[3] = ptIn[0]*A[0][3]
-             + ptIn[1]*A[1][3]
-             + ptIn[2]*A[2][3]
-             + ptIn[3]*A[3][3];
+  ptOut[0] = ptIn[0]*A[0][0]
+           + ptIn[1]*A[1][0]
+           + ptIn[2]*A[2][0]
+           + ptIn[3]*A[3][0];
+  ptOut[1] = ptIn[0]*A[0][1]
+           + ptIn[1]*A[1][1]
+           + ptIn[2]*A[2][1]
+           + ptIn[3]*A[3][1];
+  ptOut[2] = ptIn[0]*A[0][2]
+           + ptIn[1]*A[1][2]
+           + ptIn[2]*A[2][2]
+           + ptIn[3]*A[3][2];
+  ptOut[3] = ptIn[0]*A[0][3]
+           + ptIn[1]*A[1][3]
+           + ptIn[2]*A[2][3]
+           + ptIn[3]*A[3][3];
 }
 
 
@@ -558,10 +465,11 @@ Screen::valueInitialize()
 //Triangle Class 
 
 void
-Triangle::printTri(){
-	cout << "X: " << X[0] << " " << X[1] << " " << X[2] << endl;
-	cout << "Y: " << Y[0] << " " << Y[1] << " " << Y[2] << endl;
-	cout << "Z: " << Z[0] << " " << Z[1] << " " << Z[2] << endl;
+Triangle::printTri()
+{
+  cout << "X: " << X[0] << " " << X[1] << " " << X[2] << endl;
+  cout << "Y: " << Y[0] << " " << Y[1] << " " << Y[2] << endl;
+  cout << "Z: " << Z[0] << " " << Z[1] << " " << Z[2] << endl;
 }
 
 void
@@ -630,163 +538,167 @@ Triangle::calculateCentroid(){
   }
 }
 
-  // would some methods for transforming the triangle in place be helpful?
 void
-Triangle::scanline(int i, Camera c){
-        bool print = false;
-	double minX;
-	double maxX;
+Triangle::scanline(int i, Camera c)
+{
+  double minX;
+  double maxX;
 
-	double minY = findMin(Y[0], Y[1], Y[2]);
-	double maxY = findMax(Y[0], Y[1], Y[2]);
-	minY = ceil441(minY);
-	maxY = floor441(maxY);
-//        cout << "from scanline " << value[0] << " " << value[1] << " " << value[2] << endl;
-	if (minY < 0)
-		minY = 0;
-	if (maxY > screen.height-1)
-		maxY = screen.height-1;
+  double minY = findMin(Y[0], Y[1], Y[2]);
+  double maxY = findMax(Y[0], Y[1], Y[2]);
+  minY = ceil441(minY);
+  maxY = floor441(maxY);
+  if (minY < 0)
+    minY = 0;
+  if (maxY > screen.height-1)
+    maxY = screen.height-1;
 
-	Edge e1 = Edge(X[0], Y[0], Z[0], colors[0][0], colors[0][1], colors[0][2], normals[0], shading[0], X[1], Y[1], Z[1], colors[1][0], colors[1][1], colors[1][2], normals[1], shading[1], value[0], value[1]);
-	Edge e2 = Edge(X[1], Y[1], Z[1], colors[1][0], colors[1][1], colors[1][2], normals[1], shading[1], X[2], Y[2], Z[2], colors[2][0], colors[2][1], colors[2][2], normals[2], shading[2], value[1], value[2]);
-	Edge e3 = Edge(X[2], Y[2], Z[2], colors[2][0], colors[2][1], colors[2][2], normals[2], shading[2], X[0], Y[0], Z[0], colors[0][0], colors[0][1], colors[0][2], normals[0], shading[0], value[2], value[0]);
+  Edge e1 = Edge(X[0], Y[0], Z[0], X[1], Y[1], Z[1], value[0], value[1]);
+  Edge e2 = Edge(X[1], Y[1], Z[1], X[2], Y[2], Z[2], value[1], value[2]);
+  Edge e3 = Edge(X[2], Y[2], Z[2], X[0], Y[0], Z[0], value[2], value[0]);
 
-	double t, rightEnd, leftEnd;
-	Edge leftLine, rightLine;
-	//loop through Y and find X values, then color the pixels given min and max X found
-	for(int y = minY; y <= maxY; y++){
-		int row = screen.width*3*y;
+  double t, rightEnd, leftEnd;
+  Edge leftLine, rightLine;
+  //loop through Y and find X values, then color the pixels given min and max X found
+  for(int y = minY; y <= maxY; y++){
+    int row = screen.width*3*y;
+    leftEnd = 1000*1000;
+    rightEnd = -1000*1000;
 
-		leftEnd = 1000*1000;
-		rightEnd = -1000*1000;
-
-		if (e1.relevant){ //not horizontal
-			if( e1.applicableY(y)){ // y is within y1 and y2 for e1
-				t = e1.findX(y);
-				if (t < leftEnd){ //find applicable left edge of triangle for given y
-					leftEnd = t;
-					leftLine = e1;
-				}
-				if (t > rightEnd){ //find applicable right edge of triangle for given y
-					rightEnd = t;
-					rightLine = e1;
-				}
-			}
-		}
-		if (e2.relevant){ //not horizontal
-			if ( e2.applicableY(y)){ //y is on e2s line
-				t = e2.findX(y);
-				if (t < leftEnd){
-					leftEnd = t;
-					leftLine = e2;
-				}
-				if (t > rightEnd){
-					rightEnd = t;
-					rightLine = e2;
-				}
-			}
-		}
-		if (e3.relevant){ //not horizontal
-			if ( e3.applicableY(y)){ //line has given y
-				t = e3.findX(y);
-				if (t < leftEnd){
-					leftEnd = t;
-					leftLine = e3;
-				}
-				if (t > rightEnd){
-					rightEnd = t;
-					rightLine = e3;
-				}
-			}
-		}
-
-		if(print){
-			cout << " leftend " << leftEnd << " rightend " << rightEnd << endl;
-		}
-		minX = leftEnd;
-		minX = ceil441(minX);
-		maxX = rightEnd;
-		maxX = floor441(maxX);
-		if (minX < 0)
-			minX = 0;
-		if (maxX > screen.width-1)
-			maxX = screen.width;
-
-		//use the y value to interpolate and find the value at the end points of each x-line.-->[Xmin, Xmax]
-		double leftZ, rightZ, leftRed, rightRed, leftBlue, rightBlue, leftGreen, rightGreen, leftShading, rightShading, leftV, rightV;
-                double leftNormal[3], rightNormal[3];
-		leftZ          = leftLine.findZ((double)y); //leftmost z value of x
-		rightZ         = rightLine.findZ((double)y); //rightmost z value of x
-		leftV          = leftLine.findValue((double)y);
-		rightV         = rightLine.findValue((double)y);
-//		cout << "left v: " << leftV << " right v: " << rightV << endl;
-		//loop through all the pixels that have the bottom left in the triangle.
-
-		double ratio, z, value = 0.0;
-
-		for (int x = minX; x <= maxX; x++){
-
-			if (leftEnd == rightEnd)//don't divide by 0 & do not use rounded x min/max values
-				ratio = 1.0;
-			else
-				ratio = ((double)x - leftEnd)/(rightEnd - leftEnd);//ratio between unrounded x values on the current row (y)
-
-                        double distance = sqrt(pow(centroid[0] - x, 2) + pow(centroid[1] - y,2));
-			z = leftZ + ratio*(rightZ - leftZ);
-			value = leftV + ratio*(rightV - leftV);
-			if(z > screen.zBuff[y*screen.width + x])
-                        {
-                          screen.triScreen[y*screen.width + x] = i;
-                          screen.triCamera[y*screen.width + x] = c.position;
-			  screen.values[y*screen.width + x]    = value;
-                          /*if(distance <= radius)//inside radius to the centroid
-                          {
-                            screen.triScreen[y*screen.width + x] = i;
-                          }*/
-
-			  screen.zBuff[y*screen.width + x] = z;
-			}
-		}
+    if (e1.relevant)
+    { //not horizontal
+      if(e1.applicableY(y))
+      { // y is within y1 and y2 for e1
+        t = e1.findX(y);
+        if(t < leftEnd)
+	{ //find applicable left edge of triangle for given y
+          leftEnd = t;
+          leftLine = e1;
+        }
+        if(t > rightEnd)
+	{ //find applicable right edge of triangle for given y
+          rightEnd = t;
+          rightLine = e1;
 	}
+      }
+    }
+    if(e2.relevant)
+    { //not horizontal
+      if(e2.applicableY(y))
+      { //y is on e2s line
+        t = e2.findX(y);
+        if(t < leftEnd)
+	{
+          leftEnd = t;
+          leftLine = e2;
+        }
+        if(t > rightEnd)
+	{
+          rightEnd = t;
+          rightLine = e2;
+        }
+      }
+    }
+    if(e3.relevant)
+    { //not horizontal
+      if(e3.applicableY(y))
+      { //line has given y
+        t = e3.findX(y);
+        if(t < leftEnd)
+	{
+          leftEnd = t;
+          leftLine = e3;
+        }
+        if(t > rightEnd)
+	{
+          rightEnd = t;
+          rightLine = e3;
+        }
+      }
+    }
+
+    minX = leftEnd;
+    minX = ceil441(minX);
+    maxX = rightEnd;
+    maxX = floor441(maxX);
+    if (minX < 0)
+      minX = 0;
+    if (maxX > screen.width-1)
+      maxX = screen.width;
+
+    //use the y value to interpolate and find the value at the end points of each x-line.-->[Xmin, Xmax]
+    double leftZ, rightZ, leftV, rightV;
+    leftZ  = leftLine.findZ((double)y); //leftmost z value of x
+    rightZ = rightLine.findZ((double)y); //rightmost z value of x
+    leftV  = leftLine.findValue((double)y);
+    rightV = rightLine.findValue((double)y);
+    
+    //loop through all the pixels that have the bottom left in the triangle.
+    double ratio, z, value = 0.0;
+    for (int x = minX; x <= maxX; x++)
+    {
+      if (leftEnd == rightEnd)//don't divide by 0 & do not use rounded x min/max values
+        ratio = 1.0;
+      else
+        ratio = ((double)x - leftEnd)/(rightEnd - leftEnd);//ratio between unrounded x values on the current row (y)
+
+      //double distance = sqrt(pow(centroid[0] - x, 2) + pow(centroid[1] - y,2));
+      z = leftZ + ratio*(rightZ - leftZ);
+      value = leftV + ratio*(rightV - leftV);
+      if(z > screen.zBuff[y*screen.width + x])
+      {
+        screen.triScreen[y*screen.width + x] = i;
+        screen.triCamera[y*screen.width + x] = c.position;
+        screen.values[y*screen.width + x]    = value;
+        screen.zBuff[y*screen.width + x] = z;
+        /*if(distance <= radius)//inside radius to the centroid
+        {
+          screen.triScreen[y*screen.width + x] = i;
+        }*/
+      }
+    }
+  }
 }
 
 double
-Triangle::findMin(double a, double b, double c){
-		double min = a;
-		if (b < min)
-			min = b;
-		if (c < min)
-			min = c;
-		return min;
-	}
+Triangle::findMin(double a, double b, double c)
+{
+  double min = a;
+  if (b < min)
+    min = b;
+  if (c < min)
+    min = c;
+  return min;
+}
 
 double
-Triangle::findMax(double a, double b, double c){
-		double max = a;
-		if (b > max)
-			max = b;
-		if (c > max)
-			max = c;
-		return max;
-
+Triangle::findMax(double a, double b, double c)
+{
+  double max = a;
+  if (b > max)
+    max = b;
+  if (c > max)
+    max = c;
+  return max;
 }
 
 
 //Misc Functions
 double ceil441(double f)
 {
-    return ceil(f-0.00001);
+  return ceil(f-0.00001);
 }
 
 double floor441(double f)
 {
-    return floor(f+0.00001);
+  return floor(f+0.00001);
 }
 
-double nabs(double x){
-	if (x < 0)
-		x = (x*(-1));
-	return x;
+double nabs(double x)
+{
+  if (x < 0)
+    x = (x*(-1));
+  return x;
 }
 
 double calculateArea(double x0, double y0, double z0, double x1, double y1, double z1, double x2, double y2, double z2)
@@ -816,167 +728,92 @@ double calculateArea(double x0, double y0, double z0, double x1, double y1, doub
   return area;
 }
 
-void normalize(double * normal) {
-	double total = pow(normal[0], 2.0) + pow(normal[1], 2.0) + pow(normal[2], 2.0);
-	//if (nabs(total) < 0.0001){	
-	//	normal[0] = 0;
-	//	normal[1] = 0;
-	//	normal[2] = 0;
-	//}
-	//else{
-		total = pow(total, 0.5);
-		normal[0] = normal[0] / total;
-		normal[1] = normal[1] / total;
-		normal[2] = normal[2] / total;
-	//}
-}
-
-double* normalize2(double * normal) {
-	double total = pow(normal[0], 2.0) + pow(normal[1], 2.0) + pow(normal[2], 2.0);
-	if (nabs(total) < 0.0001){	
-		normal[0] = 0;
-		normal[1] = 0;
-		normal[2] = 0;
-	}
-	else{
-		total = pow(total, 0.5);
-		normal[0] = normal[0] / total;
-		normal[1] = normal[1] / total;
-		normal[2] = normal[2] / total;
-	}
-
-return normal;
-}
-
-double dotProduct(double* v1, double* v2, int length){
-	double dotproduct = 0;	
-	for (int i = 0; i < length; i++){
-		dotproduct += (v1[i]*v2[i]);
-	}
-	return dotproduct;
-}
-
-double magnitude2d(double* vec)
+void normalize(double * normal) 
 {
-  return sqrt(vec[0]*vec[0] + vec[1]*vec[1]);
+  double total = pow(normal[0], 2.0) + pow(normal[1], 2.0) + pow(normal[2], 2.0);
+  total = pow(total, 0.5);
+  normal[0] = normal[0] / total;
+  normal[1] = normal[1] / total;
+  normal[2] = normal[2] / total;
 }
 
-
-double magnitude3d(double* vec)
+double dotProduct(double* v1, double* v2, int length)
 {
-  return sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+  double dotproduct = 0;	
+  for (int i = 0; i < length; i++)
+  {
+    dotproduct += (v1[i]*v2[i]);
+  }
+  return dotproduct;
 }
 
+double* crossProduct(double * a, double * b)
+{
+  double* cross = new double[3]; 
+  cross[0] = ((a[1]*b[2]) - (a[2]*b[1])); //ay*bz-az*by
+  cross[1] = ((a[2]*b[0]) - (a[0]*b[2])); //az*bx-ax*bz
+  cross[2] = ((a[0]*b[1]) - (a[1]*b[0])); //ax*by-ay*bx
 
-double* crossProduct(double * a, double * b){
-	double* cross = new double[3]; 
-	cross[0] = ((a[1]*b[2]) - (a[2]*b[1])); //ay*bz-az*by
-	cross[1] = ((a[2]*b[0]) - (a[0]*b[2])); //az*bx-ax*bz
-	cross[2] = ((a[0]*b[1]) - (a[1]*b[0])); //ax*by-ay*bx
-
-	return cross;
+  return cross;
 }
 
 
 double SineParameterize(int curFrame, int nFrames, int ramp)
 {
-    int nNonRamp = nFrames-2*ramp;
-    double height = 1./(nNonRamp + 4*ramp/M_PI);
-    if (curFrame < ramp)
-    {
-        double factor = 2*height*ramp/M_PI;
-        double eval = cos(M_PI/2*((double)curFrame)/ramp);
-        return (1.-eval)*factor;
-    }
-    else if (curFrame > nFrames-ramp)
-    {
-        int amount_left = nFrames-curFrame;
-        double factor = 2*height*ramp/M_PI;
-        double eval =cos(M_PI/2*((double)amount_left/ramp));
-        return 1. - (1-eval)*factor;
-    }
-    double amount_in_quad = ((double)curFrame-ramp);
-    double quad_part = amount_in_quad*height;
-    double curve_part = height*(2*ramp)/M_PI;
-    return quad_part+curve_part;
+  int nNonRamp = nFrames-2*ramp;
+  double height = 1./(nNonRamp + 4*ramp/M_PI);
+  if (curFrame < ramp)
+  {
+    double factor = 2*height*ramp/M_PI;
+    double eval = cos(M_PI/2*((double)curFrame)/ramp);
+    return (1.-eval)*factor;
+  }
+  else if (curFrame > nFrames-ramp)
+  {
+    int amount_left = nFrames-curFrame;
+    double factor = 2*height*ramp/M_PI;
+    double eval =cos(M_PI/2*((double)amount_left/ramp));
+    return 1. - (1-eval)*factor;
+  }
+  double amount_in_quad = ((double)curFrame-ramp);
+  double quad_part = amount_in_quad*height;
+  double curve_part = height*(2*ramp)/M_PI;
+  return quad_part+curve_part;
 }
 
 Camera
 GetCamera(int frame, int nframes, double radius, double* bounds)
 {
-    double t = SineParameterize(frame, nframes, nframes/10);
-    double points[3];
-    fibonacci_sphere(frame, nframes, points);
-    Camera c;
-    double zoom = 1.0;
-    c.near = zoom/20;
-    c.far = zoom*25;
-    c.angle = M_PI/6;
+  double t = SineParameterize(frame, nframes, nframes/10);
+  double points[3];
+  fibonacci_sphere(frame, nframes, points);
+  Camera c;
+  double zoom = 1.0;
+  c.near = zoom/20;
+  c.far = zoom*25;
+  c.angle = M_PI/6;
 
-    if(abs(points[0]) < radius && abs(points[1]) < radius && abs(points[2]) < radius)
-    {
-      if(points[2] >= 0)
-        points[2] += radius;
-      if(points[2] < 0)
-        points[2] -= radius;
-    }
+  if(abs(points[0]) < radius && abs(points[1]) < radius && abs(points[2]) < radius)
+  {
+    if(points[2] >= 0)
+      points[2] += radius;
+    if(points[2] < 0)
+      points[2] -= radius;
+  }
 
-    c.position[0] = radius*points[0];
-    c.position[1] = radius*points[1];
-    c.position[2] = radius*points[2];
+  c.position[0] = radius*points[0];
+  c.position[1] = radius*points[1];
+  c.position[2] = radius*points[2];
 
 //cout << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
     
-    c.focus[0] = (bounds[0])/2;
-    c.focus[1] = (bounds[1])/2;
-    c.focus[2] = (bounds[2])/2;
-    c.up[0] = 0;
-    c.up[1] = 1;
-    c.up[2] = 0;
-    return c;
-}
-
-Camera
-GetCamera(int frame, int nframes)
-{   
-    double t = SineParameterize(frame, nframes, nframes/10);
-    double points[3];
-    fibonacci_sphere(frame, nframes, points);
-    Camera c;
-    c.near = 5;
-    c.far = 200;
-    c.angle = M_PI/6;
-    //MINE 
-//    c.position[0] = 40*points[0];
-//    c.position[1] = 40*points[1];
-//    c.position[2] = 40*points[2];
-    //Hanks
-    double zoom = 5.0;
-    c.position[0] = zoom*sin(2*M_PI*t);
-    c.position[1] = zoom*cos(2*M_PI*t);
-    c.position[2] = zoom;
-//cout << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
-    c.focus[0] = 0;
-    c.focus[1] = 0;
-    c.focus[2] = 0;
-    c.up[0] = 0;
-    c.up[1] = 1;
-    c.up[2] = 0;
-    return c;
-}
-
-void GetRange(double* range, int size, double* values)
-{
-  vector<double> vector;
-  for(int i = 0; i < size; i++)
-    vector.push_back(values[i]);
-
-  sort(vector.begin(), vector.end());
-  range[0] = 0;
-  range[1] = 0;
-  //cout << "vector front and back " << vector.front() << " " << vector.back() << endl;
-  range[0] = vector.front();
-  range[1] = vector.back();
+  c.focus[0] = (bounds[0])/2;
+  c.focus[1] = (bounds[1])/2;
+  c.focus[2] = (bounds[2])/2;
+  c.up[0] = 0;
+  c.up[1] = 1;
+  c.up[2] = 0;
+  return c;
 }
 
 
@@ -1033,7 +870,6 @@ public:
     output.value[0] = variable[0];
     output.value[1] = variable[1];
     output.value[2] = variable[2];
-
   }
 };
 
@@ -1041,18 +877,20 @@ public:
 std::vector<Triangle>
 GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
 {
-    cout << "In get triangles" << endl;
-    
-    //vtkm::cont::Field field = vtkhData->GetField(field_name);
-    //Get domain Ids on this rank
-    std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
-    std::vector<Triangle> tris;
-    //loop through domains and grab all triangles.
-    cout << "local domains " << localDomainIds.size() << endl;
+  //Get domain Ids on this rank
+  //will be nonzero even if there is no data
+  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
+  std::vector<Triangle> tris;
+
+   
+  //if there is data: loop through domains and grab all triangles.
+  if(!vtkhData.IsEmpty())
+  {
     for(int i = 0; i < localDomainIds.size(); i++)
     {
       vtkm::cont::DataSet dataset = vtkhData.GetDomain(localDomainIds[i]);
       //Get Data points
+      //dataset.PrintSummary(std::cout);
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
       //Get triangles
       vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
@@ -1062,6 +900,7 @@ GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
       int numTris = cellset.GetNumberOfCells();
       std::vector<Triangle> tmp_tris(numTris);
      
+     
       vtkm::cont::ArrayHandle<Triangle> triangles = vtkm::cont::make_ArrayHandle(tmp_tris);
       vtkm::cont::Invoker invoker;
       invoker(ProcessTriangle{}, cellset, coords, field.GetData().ResetTypes(vtkm::TypeListTagFieldScalar{}), triangles);
@@ -1070,51 +909,52 @@ GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
       tris.insert(tris.end(), tmp_tris.begin(), tmp_tris.end());
 
     }
-    return tris;
+  }
+  return tris;
 }
 
 
-Triangle transformTriangle(Triangle t, Camera c){
-        bool print = false;
+Triangle transformTriangle(Triangle t, Camera c)
+{
+  bool print = false;
+  Matrix camToView, m0, cam, view;
+  cam = c.CameraTransform();
+  view = c.ViewTransform();
+  camToView = Matrix::ComposeMatrices(cam, view);
+  m0 = Matrix::ComposeMatrices(camToView, c.DeviceTransform());
 
-	Matrix camToView, m0, cam, view;
-	cam = c.CameraTransform();
-	view = c.ViewTransform();
-	camToView = Matrix::ComposeMatrices(cam, view);
-	m0 = Matrix::ComposeMatrices(camToView, c.DeviceTransform());
+  Triangle triangle;
+  // Zero XYZ
+  double * pointOut = new double[4];
+  double * pointIn  = new double[4];
+  pointIn[0] = t.X[0];
+  pointIn[1] = t.Y[0];
+  pointIn[2] = t.Z[0];
+  pointIn[3] = 1; //w
+  m0.TransformPoint(pointIn, pointOut);
+  triangle.X[0] = (pointOut[0]/pointOut[3]); //DIVIDE BY W!!	
+  triangle.Y[0] = (pointOut[1]/pointOut[3]);
+  triangle.Z[0] = (pointOut[2]/pointOut[3]);
 
-	Triangle triangle;
-	// Zero XYZ
-	double * pointOut = new double[4];
-	double * pointIn  = new double[4];
-	pointIn[0] = t.X[0];
-	pointIn[1] = t.Y[0];
-	pointIn[2] = t.Z[0];
-	pointIn[3] = 1; //w
-	m0.TransformPoint(pointIn, pointOut);
-	triangle.X[0] = (pointOut[0]/pointOut[3]); //DIVIDE BY W!!	
-	triangle.Y[0] = (pointOut[1]/pointOut[3]);
-	triangle.Z[0] = (pointOut[2]/pointOut[3]);
+  //One XYZ
+  pointIn[0] = t.X[1];
+  pointIn[1] = t.Y[1];
+  pointIn[2] = t.Z[1];
+  pointIn[3] = 1; //w
+  m0.TransformPoint(pointIn, pointOut);
+  triangle.X[1] = (pointOut[0]/pointOut[3]); //DIVIDE BY W!!	
+  triangle.Y[1] = (pointOut[1]/pointOut[3]);
+  triangle.Z[1] = (pointOut[2]/pointOut[3]);
 
-	//One XYZ
-	pointIn[0] = t.X[1];
-	pointIn[1] = t.Y[1];
-	pointIn[2] = t.Z[1];
-	pointIn[3] = 1; //w
-	m0.TransformPoint(pointIn, pointOut);
-	triangle.X[1] = (pointOut[0]/pointOut[3]); //DIVIDE BY W!!	
-	triangle.Y[1] = (pointOut[1]/pointOut[3]);
-	triangle.Z[1] = (pointOut[2]/pointOut[3]);
-
-	//Two XYZ
-	pointIn[0] = t.X[2];
-	pointIn[1] = t.Y[2];
-	pointIn[2] = t.Z[2];
-	pointIn[3] = 1; //w
-	m0.TransformPoint(pointIn, pointOut);
-	triangle.X[2] = (pointOut[0]/pointOut[3]); //DIVIDE BY W!!	
-	triangle.Y[2] = (pointOut[1]/pointOut[3]);
-	triangle.Z[2] = (pointOut[2]/pointOut[3]);
+  //Two XYZ
+  pointIn[0] = t.X[2];
+  pointIn[1] = t.Y[2];
+  pointIn[2] = t.Z[2];
+  pointIn[3] = 1; //w
+  m0.TransformPoint(pointIn, pointOut);
+  triangle.X[2] = (pointOut[0]/pointOut[3]); //DIVIDE BY W!!	
+  triangle.Y[2] = (pointOut[1]/pointOut[3]);
+  triangle.Z[2] = (pointOut[2]/pointOut[3]);
 
 
   if(print)
@@ -1123,38 +963,22 @@ Triangle transformTriangle(Triangle t, Camera c){
                          " (" << triangle.X[1] << " , " << triangle.Y[1] << " , " << triangle.Z[1] << ") " << endl <<
                          " (" << triangle.X[2] << " , " << triangle.Y[2] << " , " << triangle.Z[2] << ") " << endl;
   }
-	//transfor colors and normals
-	int i, j;
-	for (i = 0; i < 3; i++){
-		for (j = 0; j < 3; j++){
-			triangle.colors[i][j]  = t.colors[i][j];
-			triangle.normals[i][j] = t.normals[i][j];
-		}
-	}
-	for (i = 0; i < 3; i++){
-          triangle.value[i] = t.value[i];
-          triangle.shading[i] = t.shading[i];
-	}
-        triangle.compID = t.compID;
+  //transfor values
+  int i;
+  for (i = 0; i < 3; i++)
+  {
+    triangle.value[i] = t.value[i];
+  }
+  //component ID -- currently unused
+  triangle.compID = t.compID;
 
-	delete[] pointOut;
-	delete[] pointIn;
+  delete[] pointOut;
+  delete[] pointIn;
 
-	return triangle;
+  return triangle;
 
 }
 
-double CalculateNormalCameraDot(double* cameraPositions, Triangle tri)
-{
-  double interpolatedNormals[3];
-  interpolatedNormals[0] = (tri.normals[0][0] + tri.normals[1][0] + tri.normals[2][0])/3;
-  interpolatedNormals[1] = (tri.normals[0][1] + tri.normals[1][1] + tri.normals[2][1])/3;
-  interpolatedNormals[2] = (tri.normals[0][2] + tri.normals[1][2] + tri.normals[2][2])/3;
-
-  normalize(interpolatedNormals);
-  normalize(cameraPositions);
-  return dotProduct(cameraPositions, interpolatedNormals, 3);  
-}
 
 
 void fibonacci_sphere(int i, int samples, double* points)
@@ -1182,38 +1006,38 @@ void fibonacci_sphere(int i, int samples, double* points)
 template< typename T >
 T calcentropy( const T* array, long len, int nBins )
 {
-    T max = std::abs(array[0]);
-    T min = std::abs(array[0]);
-    for( long i = 0; i < len; i++ )
-    {
-        max = max > std::abs(array[i]) ? max : std::abs(array[i]);
-        min = min < std::abs(array[i]) ? min : std::abs(array[i]);
-    }
-    T stepSize = (max-min) / (T)nBins;
+  T max = std::abs(array[0]);
+  T min = std::abs(array[0]);
+  for(long i = 0; i < len; i++ )
+  {
+    max = max > std::abs(array[i]) ? max : std::abs(array[i]);
+    min = min < std::abs(array[i]) ? min : std::abs(array[i]);
+  }
+  T stepSize = (max-min) / (T)nBins;
 
-    long* hist = new long[ nBins ];
-    for( int i = 0; i < nBins; i++ )
-        hist[i] = 0;
+  long* hist = new long[ nBins ];
+  for(int i = 0; i < nBins; i++ )
+    hist[i] = 0;
 
-    for( long i = 0; i < len; i++ )
-    {
-        T idx = (std::abs(array[i]) - min) / stepSize;
-        if( (int)idx == nBins )
-            idx -= 1.0;
-        hist[(int)idx]++;
-    }
+  for(long i = 0; i < len; i++ )
+  {
+    T idx = (std::abs(array[i]) - min) / stepSize;
+    if((int)idx == nBins )
+      idx -= 1.0;
+    hist[(int)idx]++;
+  }
 
-    T entropy = 0.0;
-    for( int i = 0; i < nBins; i++ )
-    {
-        T prob = (T)hist[i] / (T)len;
-        if( prob != 0.0 )
-            entropy += prob * std::log( prob );
-    }
+  T entropy = 0.0;
+  for(int i = 0; i < nBins; i++ )
+  {
+    T prob = (T)hist[i] / (T)len;
+    if(prob != 0.0 )
+      entropy += prob * std::log( prob );
+  }
 
-    delete[] hist;
+  delete[] hist;
 
-    return (entropy * -1.0);
+  return (entropy * -1.0);
 }
 
 double
@@ -1222,11 +1046,11 @@ calculateMetric(Screen screen, std::string metric)
   if(metric == "data_entropy")
   {
     #if ASCENT_MPI_ENABLED //pass screens among all ranks
-        // Get the number of processes
+      // Get the number of processes
       int world_size;
       MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-      // Get the rank of the process
+      // Get the rank of this process
       int rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
       MPI_Status status;
@@ -1241,8 +1065,8 @@ calculateMetric(Screen screen, std::string metric)
       }
       if(rank == 0)
       {
-	double zBuff[screen.width*screen.height];
-	double values[screen.width*screen.height];
+	double *zBuff  = (double *) malloc(sizeof(double)*screen.width*screen.height);
+	double *values = (double *)  malloc(sizeof(double)*screen.width*screen.height);
         for(int i = 1; i < world_size; i++)
         {
           MPI_Recv(values, screen.width*screen.height, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &status);
@@ -1254,6 +1078,9 @@ calculateMetric(Screen screen, std::string metric)
 	      screen.values[pixel] = values[pixel]; 
           }
 	}
+	free(zBuff);
+	free(values);
+
 	for(int i = 1; i < world_size; i++)
         {
 	  //send values back
@@ -1371,6 +1198,7 @@ AutoCamera::execute()
     std::string topo_name = collection->field_topology(field_name);
 
     vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+
     std::vector<Triangle> triangles = GetTriangles(dataset,field_name);
 //    cout << "dataset bounds: " << dataset.GetGlobalBounds() << endl;
   
@@ -1379,7 +1207,7 @@ AutoCamera::execute()
     vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
     vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
     double bounds[3] = {(double)xb, (double)yb, (double)zb};
-    cout << "x y z " << xb << " " << yb << " " << zb << endl;
+    //cout << "x y z bounds " << xb << " " << yb << " " << zb << endl;
     vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
     //cout << "radius " << radius << endl;
     if(radius<1)
@@ -1387,18 +1215,18 @@ AutoCamera::execute()
     vtkm::Float32 x_pos = 0., y_pos = 0., z_pos = 0.;
 
     Screen screen;
-    unsigned char buffer[height*width*3];
-    //TODO: loop through number of samples THEN add parallelism + z buffer
-    //loop through number of camera samples.
+    screen.width = width;
+    screen.height = height;
+    screen.zBufferInitialize();
+    screen.triScreenInitialize();
+    screen.triCameraInitialize();
+    screen.valueInitialize();
 
     double winning_score = -DBL_MAX;
     int    winning_sample = -1;
+    //loop through number of camera samples.
     for(int sample = 0; sample < samples; sample++)
     {
-      //pretty sure I don't need buffer -- this is for color/pixels
-      for(int i = 0; i < width*height*3; i++)
-        buffer[i] = 0;
-      screen.buffer = buffer;
       screen.width = width;
       screen.height = height;
       screen.visible = 0.0;
@@ -1424,25 +1252,15 @@ AutoCamera::execute()
 	i_t.scanline(tri, c);
 	screen = i_t.screen;
 
-
       }//end of triangle loop
-/*
-      if(sample == 0){
-	      cout << "printing values " << endl;
-	      for(int k = 0; k < width*height; k++)
-		      cout << screen.values[k] << " ";
-      }
-*/    
-      //TODO: Add metric after the scanline algorithm
 
       double score = calculateMetric(screen, metric);
-      cout << "sample " << sample << " score: " << score << endl;
+      //cout << "sample " << sample << " score: " << score << endl;
       if(winning_score < score)
       {
         winning_score = score;
 	winning_sample = sample;
       }
-      //Add parallism to pass the metric results
     } //end of sample loop
 
     if(winning_sample == -1)
@@ -1450,7 +1268,6 @@ AutoCamera::execute()
     cout << "winning_sample " << winning_sample << " score: " << winning_score << endl;
     Camera best_c = GetCamera(winning_sample, samples, radius, bounds);
 
-    //TODO:This should be after all the calculatoins when we have a winning camera
     vtkmCamera *camera = new vtkmCamera;
     camera->ResetToBounds(dataset.GetGlobalBounds());
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 

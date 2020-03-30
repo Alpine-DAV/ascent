@@ -58,8 +58,6 @@
 #include <vtkh/DataSet.hpp>
 
 
-
-
 //-----------------------------------------------------------------------------
 //Misc Functions
 //-----------------------------------------------------------------------------
@@ -68,10 +66,7 @@ double floor441(double f);
 double nabs(double x);
 double calculateArea(double x0, double y0, double z0, double x1, double y1, double z1, double x2, double y2, double z2);
 void normalize(double * normal);
-double* normalize2(double * normal);
 double dotProduct(double* v1, double* v2, int length);
-double magnitude2d(double* vec);
-double magnitude3d(double* vec);
 double* crossProduct(double * a, double * b);
 double SineParameterize(int curFrame, int nFrames, int ramp);
 void fibonacci_sphere(int i, int samples, double* points);
@@ -99,7 +94,6 @@ class Matrix
 class Screen
 {
   public:
-      unsigned char *buffer;
       int           width, height;
       double*       zBuff;
       double*       values;
@@ -140,21 +134,13 @@ Camera GetCamera(int frame, int nframes);
 
 class Edge{
   public:
-	double x1, x2, y1, y2, z1, z2, r1, r2, g1, g2, b1, b2, slope, b, minY, maxY, shade1, shade2, value1, value2; //as in y = mx + b
-	double *normal1, *normal2;
+	double x1, x2, y1, y2, z1, z2, slope, b, minY, maxY, value1, value2; //as in y = mx + b
 	bool   vertical, relevant; //find the vertical line, horizontal line and hypotenuse. relevant = hypotenuse; not relevant = horizontal
 	Edge(){}
-	Edge (double x_1, double y_1, double z_1, double r_1, double g_1, double b_1, double* norm1, double s1, double x_2, double y_2, double z_2, double r_2, double g_2, double b_2, double* norm2, double s2, double v_1, double v_2);
+	Edge (double x_1, double y_1, double z_1, double x_2, double y_2, double z_2, double v_1, double v_2);
 	double findX(double y);
 	double interpolate(double a, double b, double C, double D, double fa, double fb, double x);
 	double findZ(double y);
-	double findRed(double y);
-	double findGreen(double y);
-	double findBlue(double y);
-	double normalZ(double y);
-	double normalX(double y);
-	double normalY(double y);
-	double findShade(double y);
 	double findValue(double y);
 	bool   applicableY(double y);
 };
@@ -175,8 +161,6 @@ class Triangle
       double         Y[3];
       double         Z[3];
       double         value[3];
-      double         colors[3][3];
-      double         normals[3][3];
       Screen         screen;
       double         view[3];
       double         shading[3];
