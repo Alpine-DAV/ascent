@@ -371,13 +371,13 @@ void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double 
     int lwork = 0;
     cusolverEigMode_t jobz = CUSOLVER_EIG_MODE_VECTOR; // compute eigenvalues and eigenvectors.
     cublasFillMode_t uplo = CUBLAS_FILL_MODE_LOWER;
-//    cusolver_status = cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo,
-//						  nRows,  // M of input matrix
-//						  d_kV,   // input matrix
-//						  nRows,  // leading dimension of input matrix
-//						  d_W,    // vector of eigenvalues
-//						  &lwork);// on return size of working array
-//    assert (cusolver_status == CUSOLVER_STATUS_SUCCESS);
+    cusolver_status = cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo,
+                                                    nRows,  // M of input matrix
+                                                    d_kV,   // input matrix
+                                                    nRows,  // leading dimension of input matrix
+                                                    d_W,    // vector of eigenvalues
+                                                    &lwork);// on return size of working array
+    assert (cusolver_status == CUSOLVER_STATUS_SUCCESS);
 
     double *d_work = NULL;
     int *devInfo = NULL;
@@ -387,14 +387,14 @@ void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double 
 
     //Eigenvalue step 3: compute actualy eigen decomposition
 
-//    cusolver_status = cusolverDnDsyevd(cusolverH, jobz, uplo,
-//				       nRows,  // M of input matrix
-//				       d_kV,   // input matrix
-//				       nRows,  // leading dimension of input matrix
-//				       d_W,    // vector of eigenvalues
-//				       d_work,
-//				       lwork,
-//				       devInfo);
+    cusolver_status = cusolverDnDsyevd(cusolverH, jobz, uplo,
+                                       nRows,  // M of input matrix
+                                       d_kV,   // input matrix
+                                       nRows,  // leading dimension of input matrix
+                                       d_W,    // vector of eigenvalues
+                                       d_work,
+                                       lwork,
+                                       devInfo);
 
     cudaStat = cudaDeviceSynchronize();
     assert(CUSOLVER_STATUS_SUCCESS == cusolver_status);
@@ -456,38 +456,119 @@ Learn::execute()
         ASCENT_ERROR("blueprint_learn input must be a DataObject");
     }
     std::cout<<"******************* LEARN *******************\n";
-    std::string protocol = params()["protocol"].as_string();
+    //std::string protocol = params()["protocol"].as_string();
 
     Node v_info;
     DataObject *d_input = input<DataObject>(0);
     std::shared_ptr<conduit::Node> n_input = d_input->as_low_order_bp();
-#ifdef ASCENT_VTKM_USE_CUDA
-    double *kVecs = new double[4]; // TODO: need one per domain!!!!
-    double *eigvals = new double[2];
-    double *fmms = new double[2];
+
+    std::vector<std::string> field_selection;
+    if(params().has_path("fields"))
+    {
+      const conduit::Node &flist = params()["fields"];
+      const int num_fields = flist.number_of_children();
+      if(num_fields == 0)
+      {
+        ASCENT_ERROR("Learn: field list must be non-empty");
+      }
+      for(int i = 0; i < num_fields; ++i)
+      {
+        const conduit::Node &f = flist.child(i);
+        if(!f.dtype().is_string())
+        {
+           ASCENT_ERROR("Learn: field list values must be a string");
+        }
+        field_selection.push_back(f.as_string());
+      }
+    }
+    else
+    {
+      ASCENT_ERROR("Learn: missing field list");
+    }
+    const int num_fields = field_selection.size();
+
+    std::string assoc =  "";
+    int field_size = 0;
     for(int i = 0; i < n_input->number_of_children(); ++i)
     {
-      const conduit::Node &dom = n_input->child(0);
-      const double * e = dom["fields/energy/values"].value();
-      const double * p = dom["fields/pressure/values"].value();
-      const int size = dom["fields/pressure/values"].dtype().number_of_elements();
-      double *A = new double[size*2];
-      for(int a = 0; a < size; ++a)
+      const conduit::Node &dom = n_input->child(i);
+      for(int f = 0; f < num_fields; ++f)
       {
-        int offset = a * 2;
-        A[offset] = e[a];
-        A[offset+1] = p[a];
+        std::string fpath = "fields/"+field_selection[f];
+        if(!dom.has_path(fpath))
+        {
+          ASCENT_ERROR("Learn: no field named '"<<field_selection[f]<<"'");
+        }
+        std::string f_assoc = dom[fpath + "/association"].as_string();
+        if(f == 0)
+        {
+          assoc = f_assoc;
+          field_size = dom[fpath + "/values"].dtype().number_of_elements();
+        }
+        else
+        {
+          if(f_assoc != assoc)
+          {
+            ASCENT_ERROR("Learn: field association mismatch");
+          }
+        }
       }
-      f_cokurt_vecs_cublas_wrapper(2, size, A, kVecs, eigvals);
+    }
+
+#ifdef ASCENT_VTKM_USE_CUDA
+    const int num_domains = n_input->number_of_children();
+    double *kVecs = new double[num_fields*num_fields]; // TODO: need one per domain!!!!
+    double *eigvals = new double[num_fields];
+    double *fmms = new double[num_fields * num_domains];
+    for(int i = 0; i < num_domains; ++i)
+    {
+      const conduit::Node &dom = n_input->child(0);
+
+      std::vector<const double*> fields;
+      for(int f = 0; f < num_fields; ++f)
+      {
+        std::string fpath = "fields/"+field_selection[f] + "/values";
+        const double * field_ptr = dom[fpath].value();
+        fields.push_back(field_ptr);
+      }
+      double *A = new double[field_size*num_fields];
+      for(int a = 0; a < field_size; ++a)
+      {
+        int offset = a * num_fields;
+        for(int f = 0; f < num_fields; ++f)
+        {
+          A[offset + f] = fields[f][a];
+        }
+      }
+
+      f_cokurt_vecs_cublas_wrapper(num_fields, field_size, A, kVecs, eigvals);
       delete[] A;
-      std::cout<<"kVecs "<<kVecs[0]<<" "<<kVecs[1]<<" "<<kVecs[2]<<" "<<kVecs[3]<<"\n";
+      //std::cout<<"kVecs "<<kVecs[0]<<" "<<kVecs[1]<<" "<<kVecs[2]<<" "<<kVecs[3]<<"\n";
+      //std::cout<<"eigvals "<<eigvals[0]<<" "<<eigvals[1]<<"\n";
 
       //Code to compute 'feature moment metrics (fmms)' from kVecs
-      compute_fmms(2, kVecs, eigvals, fmms);
+      // offset for current domain
+      double * domain_fmms = fmms + num_fields * i;
+      compute_fmms(num_fields, kVecs, eigvals, domain_fmms);
 
     }
     int rank = 0;
     int comm_size = 1;
+    double *sum = new double[num_fields];
+    double *local_sum = new double[num_fields];
+    for(int i = 0; i < num_fields; ++i)
+    {
+      local_sum[i] = 0.;
+    }
+
+    for(int i = 0; i < num_domains; ++i)
+    {
+      int offset = i * num_fields;
+      for(int f = 0; f < num_fields; f++)
+      {
+        local_sum[f] += fmms[offset + f];
+      }
+    }
 #ifdef ASCENT_MPI_ENABLED
     int comm_id = flow::Workspace::default_mpi_comm();
 
@@ -496,18 +577,23 @@ Learn::execute()
 
     MPI_Comm_size(mpi_comm, &comm_size);
     //int *domains_per_rank = new int[comm_size];
-    const int fields  = 2;
-    double sum[2];
-    MPI_Allreduce(fmms, sum,2, MPI_DOUBLE, MPI_SUM, mpi_comm);
+    MPI_Allreduce(local_sum, sum, num_fields, MPI_DOUBLE, MPI_SUM, mpi_comm);
 #endif //MPI
 
     if(rank  == 0)
     {
-      std::cout<<"Ave 0 "<<sum[0] / double(comm_size)<<"\n";
-      std::cout<<"Ave 1 "<<sum[1] / double(comm_size)<<"\n";
+      for(int f = 0; f < num_fields; f++)
+      {
+        std::cout<<field_selection[f]<<" ave "<<sum[f] / double(comm_size)<<"\n";;
+      }
     }
 
-#endif
+    delete[] kVecs;
+    delete[] eigvals;
+    delete[] fmms;
+    delete[] sum;
+    delete[] local_sum;
+#endif // cuda
 
     //set_output<DataObject>(d_input);
 }
