@@ -92,7 +92,7 @@ TEST(ascent_cinema_a, test_cinema_a)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     std::string db_name = "test_db";
-    string output_path = "./cinema_databases/" + db_name;;
+    string output_path = "./cinema_databases/" + db_name;
     string output_file = conduit::utils::join_file_path(output_path, "info.json");
     // remove old file before rendering
     if(conduit::utils::is_file(output_file))
@@ -114,7 +114,7 @@ TEST(ascent_cinema_a, test_cinema_a)
     scenes["scene1/renders/r1/theta"] = 2;
     scenes["scene1/renders/r1/db_name"] = "test_db";
     scenes["scene1/renders/r1/annotations"] = "false";
-    scenes["scene1/renders/r1/camera/zoom"] = 0.0;
+    scenes["scene1/renders/r1/camera/zoom"] = 1.0; // no zoom
 
     conduit::Node &add_scenes = actions.append();
     add_scenes["action"] = "add_scenes";

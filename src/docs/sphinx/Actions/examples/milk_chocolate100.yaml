@@ -22,9 +22,9 @@
                 type: "rgb"
                 position: 1.0
                 color: [0.99, 1.0, 0.96]
-      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/milk_chocolate"
+      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/milk_chocolate"
       renders: 
         r1: 
           image_width: 512
           image_height: 512
-          image_name: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/milk_chocolate"
+          image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/milk_chocolate"

@@ -66,6 +66,9 @@
 #include <ascent_string_utils.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_runtime_utils.hpp>
+#include <ascent_web_interface.hpp> // -- for web_client_root_directory()
+///
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -180,7 +183,6 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("db_name");
   r_valid_paths.push_back("render_bg");
   r_valid_paths.push_back("annotations");
-  r_valid_paths.push_back("output_path");
   r_valid_paths.push_back("fg_color");
   r_valid_paths.push_back("bg_color");
 
@@ -232,7 +234,9 @@ public:
 
   ~RendererContainer()
   {
-    m_registry->consume(m_key);
+    // we reset the registry in the runtime
+    // which will automatically delete this pointer
+    // m_registry->consume(m_key);
   }
 };
 
@@ -463,7 +467,7 @@ public:
     {
         conduit::utils::create_directory(m_db_path);
         // copy over cinema web resources
-        std::string cinema_root = conduit::utils::join_file_path(ASCENT_WEB_CLIENT_ROOT,
+        std::string cinema_root = conduit::utils::join_file_path(web_client_root_directory(),
                                                                  "cinema");
         ascent::copy_directory(cinema_root, m_db_path);
     }
@@ -521,7 +525,8 @@ public:
       if(!zoom.dtype().is_empty())
       {
         // Allow default zoom to be overridden
-        camera.Zoom(zoom.to_float32());
+        double vtkm_zoom = zoom_to_vtkm_zoom(zoom.to_float64());
+        camera.Zoom(vtkm_zoom);
       }
 
       render.SetCamera(camera);
@@ -591,7 +596,7 @@ public:
     meta["arguments/theta"] = thetas;
     meta.save(m_db_path + "/info.json","json");
 
-    // also generate info.js, a simple javascript variant of  
+    // also generate info.js, a simple javascript variant of
     // info.json that our index.html reads directly to
     // avoid ajax
 
@@ -869,12 +874,7 @@ DefaultRender::execute()
             ASCENT_ERROR("Cinema must specify a 'db_name'");
           }
 
-          std::string output_path = "";
-
-          if(render_node.has_path("output_path"))
-          {
-            output_path = render_node["output_path"].as_string();
-          }
+          std::string output_path = default_dir(graph());
 
           if(!render_node.has_path("db_name"))
           {
@@ -904,12 +904,14 @@ DefaultRender::execute()
           if(render_node.has_path("image_name"))
           {
             image_name = render_node["image_name"].as_string();
+            image_name = output_dir(image_name, graph());
           }
           else if(render_node.has_path("image_prefix"))
           {
             std::stringstream ss;
             ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
             image_name = ss.str();
+            image_name = output_dir(image_name, graph());
           }
           else
           {
@@ -1275,23 +1277,35 @@ CreatePlot::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     conduit::Node &plot_params = params();
-    const int num_topologies = collection->number_of_topologies();
 
     std::string field_name;
     if(plot_params.has_path("field"))
     {
       field_name = plot_params["field"].as_string();
     }
-
     std::string topo_name;
     if(field_name == "")
     {
+      const int num_topologies = collection->number_of_topologies();
       if(num_topologies > 1)
       {
         if(!params().has_path("topology"))
         {
+          std::stringstream ss;
+          ss<<" possible topology names: ";
+          std::vector<std::string> names = collection->topology_names();
+          for(int i = 0; i < names.size(); ++i)
+          {
+            ss<<"'"<<names[i]<<"'";
+            if(i != names.size() -1)
+            {
+              ss<<", ";
+            }
+          }
+          // issue is that there might be empty data so this path
+          // might not be taken by all ranks !!!!!
           ASCENT_ERROR("create_plot: data set has multiple topologies "
-                       <<"and no topology is specified.");
+                       <<"and no topology is specified."<<ss.str());
         }
 
         topo_name = params()["topology"].as_string();
@@ -1308,6 +1322,23 @@ CreatePlot::execute()
       {
         ASCENT_ERROR("create plot: unknown field '"<<field_name<<"'");
       }
+    }
+
+    if(!collection->has_topology(topo_name))
+    {
+      std::stringstream ss;
+      ss<<" possible topology names: ";
+      std::vector<std::string> names = collection->topology_names();
+      for(int i = 0; i < names.size(); ++i)
+      {
+        ss<<"'"<<names[i]<<"'";
+        if(i != names.size() -1)
+        {
+          ss<<", ";
+        }
+      }
+      ASCENT_ERROR("no topology named '"<<topo_name<<"'."
+                   <<ss.str());
     }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);

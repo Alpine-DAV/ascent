@@ -10,4 +10,4 @@
           field: "braid"
           points: 
             radius: 1.0
-      image_prefix: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_render_3d_points_const_radius"
+      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_render_3d_points_const_radius"

@@ -258,6 +258,7 @@ Color Tables
 ^^^^^^^^^^^^
 The color map translates normalized scalars to color values. Color maps
 can be applied to each each plot in a scene.
+Image of the color tables provided by VTK-m can be found in :ref:`vtkm_color_tables`.
 Minimally, a color table name needs to be specified, but the ``color_table`` node allows you to specify RGB and Alpha (opacity) control points for complete customization of color maps.
 Alpha control points are used when rendering volumes.
 The built-in Color map names are: ``Cool to Warm``, ``Black-Body Radiation``, ``Samsel Fire``, ``Inferno``, ``Linear YGB``, ``Cold and Hot``, ``Rainbow Desaturated``, ``Cool to Warm (Extended)``, ``X Ray``, ``Black, Blue and White``, ``Viridis``, ``Linear Green``, ``Jet``, and ``Rainbow``.

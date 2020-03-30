@@ -58,6 +58,7 @@ Ascent Actions
    Triggers
    Examples
    Expressions
-
+   VTKmColorTables
+   DRayColorTables
 ..
 

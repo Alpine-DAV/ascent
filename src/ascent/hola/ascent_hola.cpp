@@ -307,7 +307,12 @@ void relay_blueprint_mesh_read(const Node &options,
         snprintf(domain_fmt_buff, sizeof(domain_fmt_buff), "%06d",i);
         oss.str("");
         oss << "domain_" << std::string(domain_fmt_buff);
-        relay::io::load(gen.GenerateFilePath(i),
+
+        string current, next;
+        utils::rsplit_file_path (root_fname, current, next);
+        string domain_file = utils::join_path (next, gen.GenerateFilePath (i));
+
+        relay::io::load(domain_file,
                         data_protocol,
                         data[oss.str()]);
     }

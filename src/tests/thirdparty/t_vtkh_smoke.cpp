@@ -103,10 +103,10 @@ TEST(vtkh_smoke, vtkh_simple_dset)
   res.AddConstantPointField(42.0, "myfield");
 
   vtkm::cont::ArrayHandle<vtkm::Range> range = res.GetGlobalRange("myfield");
-  EXPECT_EQ(1, range.GetPortalControl().GetNumberOfValues());
+  EXPECT_EQ(1, range.GetNumberOfValues());
 
-  EXPECT_EQ(range.GetPortalControl().Get(0).Min,42.0);
-  EXPECT_EQ(range.GetPortalControl().Get(0).Max,42.0);
+  EXPECT_EQ(range.ReadPortal().Get(0).Min,42.0);
+  EXPECT_EQ(range.ReadPortal().Get(0).Max,42.0);
 
 }
 

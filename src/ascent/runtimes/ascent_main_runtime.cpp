@@ -128,7 +128,8 @@ int InfoHandler::m_rank = 0;
 AscentRuntime::AscentRuntime()
 :Runtime(),
  m_refinement_level(2), // default refinement level for high order meshes
- m_rank(0)
+ m_rank(0),
+ m_default_output_dir(".")
 {
     m_ghost_fields.append() = "ascent_ghosts";
     flow::filters::register_builtin();
@@ -209,12 +210,23 @@ AscentRuntime::Initialize(const conduit::Node &options)
     {
       m_refinement_level = options["refinement_level"].to_int32();
       Transmogrifier::m_refinement_level = m_refinement_level;
-      if(m_refinement_level < 2)
+      if(m_refinement_level < 1)
       {
-        ASCENT_ERROR("'refinement_level' must be greater than 1");
+        ASCENT_ERROR("'refinement_level' must be greater than 0");
       }
     }
 #endif
+    if(options.has_path("default_dir"))
+    {
+      std::string dir = options["default_dir"].as_string();
+
+      if(!directory_exists(dir))
+      {
+        ASCENT_INFO("'default_dir' '"<<dir<<"' does not exist."
+                    <<" Output dir will default to the cwd.");
+      }
+      m_default_output_dir = dir;
+    }
 
     m_runtime_options = options;
 
@@ -306,7 +318,9 @@ AscentRuntime::Cleanup()
 #endif
         fname << ".csv";
         std::ofstream ftimings;
-        ftimings.open(fname.str());
+        std::string file_name = fname.str();
+        file_name = conduit::utils::join_file_path(m_default_output_dir,file_name);
+        ftimings.open(file_name);
         ftimings << w.timing_info();
         ftimings.close();
     }
@@ -977,6 +991,7 @@ AscentRuntime::PopulateMetadata()
   (*meta)["time"] = time;
   (*meta)["refinement_level"] = m_refinement_level;
   (*meta)["ghost_field"] = m_ghost_fields;
+  (*meta)["default_dir"] = m_default_output_dir;
 
 }
 //-----------------------------------------------------------------------------

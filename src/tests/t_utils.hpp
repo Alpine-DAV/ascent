@@ -113,6 +113,15 @@ output_dir()
 }
 
 //-----------------------------------------------------------------------------
+inline std::string
+test_data_file(const std::string &file_name)
+{
+    string data_dir = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"test_data");
+    string file = conduit::utils::join_file_path(data_dir,file_name);
+    return file;
+}
+
+//-----------------------------------------------------------------------------
 inline bool
 check_test_image(const std::string &path, const float tolerance = 0.001f, std::string num = "100")
 {

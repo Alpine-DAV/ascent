@@ -128,15 +128,15 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
   far_dx  = (2. * far_width)   / m_width;
   far_dy  = (2. * far_height)  / m_height;
 
-  auto origin_x = rays.OriginX.GetPortalControl();
-  auto origin_y = rays.OriginY.GetPortalControl();
-  auto origin_z = rays.OriginZ.GetPortalControl();
+  auto origin_x = rays.OriginX.WritePortal();
+  auto origin_y = rays.OriginY.WritePortal();
+  auto origin_z = rays.OriginZ.WritePortal();
 
-  auto dir_x = rays.DirX.GetPortalControl();
-  auto dir_y = rays.DirY.GetPortalControl();
-  auto dir_z = rays.DirZ.GetPortalControl();
+  auto dir_x = rays.DirX.WritePortal();
+  auto dir_y = rays.DirY.WritePortal();
+  auto dir_z = rays.DirZ.WritePortal();
 
-  auto pixel_id = rays.PixelIdx.GetPortalControl();
+  auto pixel_id = rays.PixelIdx.WritePortal();
   const int x_size = m_width;
   const int y_size = m_height;
 
@@ -181,9 +181,9 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
 
     }
   }
- auto hit_portal = rays.HitIdx.GetPortalControl();
- auto min_portal = rays.MinDistance.GetPortalControl();
- auto max_portal = rays.MaxDistance.GetPortalControl();
+ auto hit_portal = rays.HitIdx.WritePortal();
+ auto min_portal = rays.MinDistance.WritePortal();
+ auto max_portal = rays.MaxDistance.WritePortal();
 
   // set a couple other ray variables
   ROVER_INFO("Ray size "<<size);
