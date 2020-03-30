@@ -74,6 +74,7 @@ endif()
 # static builds require python 
 set(ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS "")
 if(PYTHON_FOUND)
+    set(ASCENT_CONFIG_MK_PYTHON_LIB_DIR ${PYTHON_LIB_DIR})
     foreach(_lib ${PYTHON_LIBRARY})
         set(ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS "${ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS} ${_lib}")
     endforeach()

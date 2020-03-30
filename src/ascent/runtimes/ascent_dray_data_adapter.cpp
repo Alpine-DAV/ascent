@@ -113,7 +113,35 @@ DRayCollection::get_global_range(const std::string field_name)
   res.include(global_max);
 #endif
     return res;
+}
+
+int DRayCollection::topo_dims()
+{
+  int dims = 0;
+  for(dray::DataSet &dom : m_domains)
+  {
+    dims = std::max(dom.topology()->dims(), dims);
   }
+#ifdef ASCENT_MPI_ENABLED
+  if(m_mpi_comm_id == -1)
+  {
+    ASCENT_ERROR("DRayCollection: mpi_comm never set");
+  }
+  int global_dims;
+
+  MPI_Comm mpi_comm = MPI_Comm_f2c(m_mpi_comm_id);
+
+  MPI_Allreduce((void *)(&dims),
+                (void *)(&global_dims),
+                1,
+                MPI_INT,
+                MPI_MAX,
+                mpi_comm);
+
+  dims = global_dims;
+#endif
+  return dims;
+}
 
 dray::AABB<3>
 DRayCollection::get_global_bounds()

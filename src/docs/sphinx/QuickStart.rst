@@ -73,6 +73,31 @@ We also provide spack settings for several well known HPC clusters, here is an e
 For more details about building and installing Ascent see :ref:`building`. This page provides detailed info about Ascent's CMake options, :ref:`uberenv <building_with_uberenv>` and :ref:`Spack <building_with_spack>` support. We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>` and a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
 
+Public Installs of Ascent
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NERSC Cori Install
+++++++++++++++++++++
+
+We have a public ascent install for use on NERSC's Cori System. This install was built using the default
+gnu compiler (8.2.0) with OpenMP and MPI support. You need to use `module load gcc` to use this install.
+
+
+The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install``.
+
+
+OLCF Summit Install
+++++++++++++++++++++
+
+We have a public ascent install for use on OLCF's Summit System. This install was built using the default
+gnu compiler (6.4.0) with OpenMP and MPI support. You need to use `module load gcc` to use this install.
+
+.. warning::
+    This install exists on a file system that is occasionally purged. We are looking for a better place to put our world accessable installs.
+
+The install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``.
+
+
 Using Ascent in Your Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -90,6 +115,12 @@ Makefile-based build system example (see: ``examples/ascent/using-with-make``):
 .. literalinclude:: ../../examples/using-with-make/Makefile
    :lines: 46-61
    :dedent: 2
+
+
+
+
+
+
 
 
 
