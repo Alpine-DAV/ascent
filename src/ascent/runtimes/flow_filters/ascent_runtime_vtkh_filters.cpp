@@ -290,7 +290,6 @@ public:
 
   void Execute(std::vector<vtkh::Render> &renders, bool isProbe = false)
   {
-    // TODO: add modified renders offset and image count
     vtkh::Scene scene;
     for (int i = 0; i < m_renderer_count; i++)
     {
@@ -309,14 +308,6 @@ public:
     std::cout << "~~~ Execute scene: " << renders.size() << std::endl;
     scene.Render();
 
-    // add the rendering times to the node
-    // if(!m_registry->has_entry("render_times"))
-    // {
-    //   conduit::Node *render_times = new conduit::Node();
-    //   m_registry->add<Node>("render_times", render_times, 1);
-    // }
-    // conduit::Node *render_times = m_registry->fetch<Node>("render_times");
-
     for (int i = 0; i < m_renderer_count; i++)
     {
       ostringstream oss;
@@ -324,38 +315,10 @@ public:
 
       vtkh::Renderer *r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
       auto times = r->GetRenderTimes();
-      // double t_avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
-      // int rank = 0;
-// #ifdef ASCENT_MPI_ENABLED
-      // MPI_Comm_rank(MPI_Comm_f2c(Workspace::default_mpi_comm()), &rank);
-      // rank = r->GetMpiRank();
-// #endif
-      // r->GetInput();
-
-      // write render times to file
-      // std::stringstream ss;
-      // ss << "\n=========="
-      //    << "\navg: " << t_avg << "\n";
-      // for (auto &val : times)
-      //   ss << val << " ";
-      // std::ofstream out("timings/frame_times" +
-      //                       std::to_string(rank) + ".txt",
-      //                   std::ios_base::app);
-      // out << ss.str();
-      // out.close();
-
-      // if (isProbe)
-      // {
-        m_render_times.push_back(times);
-      // }
-      // else
-      // {
-        // only consume on regular rendering
-        m_registry->consume(oss.str());
-      // }
+      m_render_times.push_back(times);
+      
+      m_registry->consume(oss.str());
     }
-
-    // std::cout << "~~~ End execute scene" << std::endl;
   }
 }; // Ascent Scene
 
@@ -588,7 +551,7 @@ public:
 
     for (int i = image_offset; i < image_offset + num_renders; )
     {
-      if (!is_probing && (i % stride == 0))
+      if (!is_probing && (stride > 1) && (i % stride == 0))
       {
         ++i;
         continue; // skip render, already rendered while probing
@@ -2658,37 +2621,10 @@ void ExecScene::execute()
   scene->Execute(*renders);
 
   std::vector<std::vector<double> > *render_times = scene->GetRenderTimes();
-  
-  // merge timings of all renderers into one vector for now
-  // std::vector<double> all_times;
-  // for (size_t i = 0; i < render_times->size(); i++)
-  // {
-  //   all_times.insert(all_times.end(), render_times->at(i).begin(), render_times->at(i).end());
-  // }
-  
+
   // the images should exist now so add them to the image list
   // this can be used for the web server or jupyter
   add_images(renders, &graph(), render_times);
-
-  // add render times to data set
-  // {
-  //   vtkh::DataSet *data_local = graph().workspace().registry().fetch<vtkh::DataSet>("_ascent_input_data");
-  //   conduit::Node *node = new conduit::Node();
-  //   VTKHDataAdapter::VTKHToBlueprintDataSet(data_local, *node);
-
-  //   conduit::Node render_data;
-  //   int counter = 0;
-  //   for (std::vector<double> &scene_render_times : *scene->GetRenderTimes())
-  //   {
-  //     // for (double &t : scene_render_times)
-  //     Node &list_entry = render_data["render_times"].append();
-  //     list_entry.set(counter);
-  //     counter++;
-  //   }
-
-  //   node->append() = render_data;
-  //   node->print();
-  // }
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

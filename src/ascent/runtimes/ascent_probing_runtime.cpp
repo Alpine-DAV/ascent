@@ -255,16 +255,16 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         {
             // always push back to the fastest sim node
             int min_id = std::min_element(begin(t_inline_sim), 
-                                        end(t_inline_sim))
-                                        - begin(t_inline_sim);
+                                            end(t_inline_sim))
+                                            - begin(t_inline_sim);
 
             // find the corresponding vis node 
-            int source_vis_node = node_map[min_id];
+            int target_vis_node = node_map[min_id];
 
-            if (image_counts_vis[source_vis_node] > 0)
+            if (image_counts_vis[target_vis_node] > 0)
             {
-                t_intransit[source_vis_node] -= vis_estimates[min_id];
-                image_counts_vis[source_vis_node]--;
+                t_intransit[target_vis_node] -= vis_estimates[min_id];
+                image_counts_vis[target_vis_node]--;
             
                 t_inline[min_id] += vis_estimates[min_id];
                 image_counts_sim[min_id]++;
@@ -272,11 +272,11 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
             else    // we ran out of renderings on this vis node
             {
                 std::cout << "=== Ran out of renderings on node " 
-                        << source_vis_node << std::endl;
+                        << target_vis_node << std::endl;
                 break;
             }
 
-            // sim node got all its images back for inline rendering
+            // if sim node got all its images back for inline rendering
             // -> throw it out of consideration
             if (image_counts_sim[min_id] == image_count)
                 t_inline[min_id] = std::numeric_limits<float>::max() - t_sim[min_id];
@@ -456,12 +456,14 @@ int bsend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm,
     MPI_Buffer_attach(malloc(msg_data_size + 8*MPI_BSEND_OVERHEAD), 
                              msg_data_size + 8*MPI_BSEND_OVERHEAD);
 
-    int mpi_error = MPI_Bsend(const_cast<void*>(n_msg.data_ptr()),
+    MPI_Request req;
+    int mpi_error = MPI_Ibsend(const_cast<void*>(n_msg.data_ptr()),
                               static_cast<int>(msg_data_size),
                               MPI_BYTE,
                               dest,
                               tag,
-                              comm);
+                              comm,
+                              &req);
                             //   ,request);
     
     if (mpi_error)
@@ -629,10 +631,12 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
         for (int i = 0; i < sending_count; ++i)
         {
+            log_time(start, "- before receive ", world_rank);
             std::cout << "~~~~ receiving " << sending_node_ranks[i] << std::endl;
             conduit::Node dataset;
             int err = relay::mpi::recv_using_schema(dataset, sending_node_ranks[i], 0, 
                                                     mpi_comm_world);
+            log_time(start, "--- after receive ", world_rank);
             // std::cout << "MPI ERROR RECV " << err << std::endl;
         // }
 
@@ -660,9 +664,10 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     ascent_render.open(ascent_opts);
                     ascent_render.publish(dataset);    
 
-                    log_time(start, "before render ascent execute ", world_rank);
+                    log_time(start, "+ before render vis ", world_rank);
                     ascent_render.execute(blank_actions);
                     ascent_render.close();
+                    log_time(start, "+++ after render vis ", world_rank);
                 }
             }
             else
@@ -685,19 +690,23 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             MPI_Request request;
             bsend_using_schema(data, destination, 0, mpi_comm_world, &request);
 
-            std::cout   << "~~~~ SIM node " << world_rank << " rendering " 
-                        << 0 << " - " 
-                        << image_counts[world_rank] << std::endl;
-            ascent_opts["image_count"] = image_counts[world_rank];
-            ascent_opts["image_offset"] = 0;
+            if (image_counts[world_rank] > 0)
+            {
+                std::cout   << "~~~~ SIM node " << world_rank << " rendering " 
+                            << 0 << " - " 
+                            << image_counts[world_rank] << std::endl;
+                ascent_opts["image_count"] = image_counts[world_rank];
+                ascent_opts["image_offset"] = 0;
 
-            Ascent ascent_render;
-            ascent_render.open(ascent_opts);
-            ascent_render.publish(data);    // sync happens here
+                Ascent ascent_render;
+                ascent_render.open(ascent_opts);
+                ascent_render.publish(data);    // sync happens here
 
-            log_time(start, "before render ascent execute ", world_rank);
-            ascent_render.execute(blank_actions);
-            ascent_render.close();
+                log_time(start, "+ before render sim ", world_rank);
+                ascent_render.execute(blank_actions);
+                ascent_render.close();
+                log_time(start, "+++ after render sim ", world_rank);
+            }
         }
         else
         {
