@@ -618,8 +618,9 @@ Learn::execute()
     delete[] kVecs;
     delete[] eigvals;
     delete[] fmms;
-    delete[] sum;
+    delete[] average_fmms;
     delete[] local_sum;
+    delete[] spatial_metric;
 #endif // cuda
 
     //set_output<DataObject>(d_input);
