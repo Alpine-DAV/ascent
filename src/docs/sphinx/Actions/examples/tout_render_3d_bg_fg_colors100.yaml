@@ -10,6 +10,6 @@
           field: "braid"
       renders: 
         r1: 
-          image_name: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_render_3d_bg_fg_colors"
+          image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_render_3d_bg_fg_colors"
           bg_color: [1.0, 1.0, 1.0]
           fg_color: [0.0, 0.0, 0.0]

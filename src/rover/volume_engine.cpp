@@ -79,10 +79,10 @@ VolumeEngine::init_rays(Ray32 &rays)
 {
   vtkm::cont::ArrayHandle<vtkm::Float32> signature;
   signature.Allocate(4);
-  signature.GetPortalControl().Set(0,1.f);
-  signature.GetPortalControl().Set(1,1.f);
-  signature.GetPortalControl().Set(2,1.f);
-  signature.GetPortalControl().Set(3,0.f);
+  signature.WritePortal().Set(0,1.f);
+  signature.WritePortal().Set(1,1.f);
+  signature.WritePortal().Set(2,1.f);
+  signature.WritePortal().Set(3,0.f);
   rays.Buffers.at(0).InitChannels(signature);
 }
 
@@ -91,10 +91,10 @@ VolumeEngine::init_rays(Ray64 &rays)
 {
   vtkm::cont::ArrayHandle<vtkm::Float64> signature;
   signature.Allocate(4);
-  signature.GetPortalControl().Set(0,1.);
-  signature.GetPortalControl().Set(1,1.);
-  signature.GetPortalControl().Set(2,1.);
-  signature.GetPortalControl().Set(3,0.);
+  signature.WritePortal().Set(0,1.);
+  signature.WritePortal().Set(1,1.);
+  signature.WritePortal().Set(2,1.);
+  signature.WritePortal().Set(3,0.);
   rays.Buffers.at(0).InitChannels(signature);
 }
 
@@ -130,10 +130,6 @@ VolumeEngine::partial_trace(Ray64 &rays)
   {
     throw RoverException("Primary field is not set. Unable to render\n");
   }
-  else
-  {
-    m_tracer->SetScalarField(this->m_primary_field);
-  }
 
   ROVER_INFO("tracing  rays");
   rays.Buffers.at(0).InitConst(0.);
@@ -158,8 +154,8 @@ VolumeEngine::correct_opacity()
   vtkmColorMap corrected;
   corrected.Allocate(m_color_map.GetNumberOfValues());
 
-  auto map_portal = m_color_map.GetPortalControl();
-  auto corr_portal = corrected.GetPortalControl();
+  auto map_portal = m_color_map.ReadPortal();
+  auto corr_portal = corrected.WritePortal();
 
   const int num_points = m_color_map.GetNumberOfValues();
 #ifdef ROVER_ENABLE_OPENMP

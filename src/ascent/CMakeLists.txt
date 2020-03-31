@@ -62,7 +62,7 @@ if(FORTRAN_FOUND)
     set(ASCENT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
 endif()
 
-set(ASCENT_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_client)
+set(ASCENT_SOURCE_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
 
 set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
 set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
@@ -70,6 +70,7 @@ set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
 set(ASCENT_HDF5_ENABLED ${HDF5_FOUND})
 set(ASCENT_ADIOS_ENABLED ${ADIOS_FOUND})
 set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
+set(ASCENT_DRAY_ENABLED ${DRAY_FOUND})
 set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
 
 if(ASCENT_VTKM_ENABLED)
@@ -105,6 +106,7 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp
     runtimes/flow_filters/ascent_runtime_trigger_filters.cpp
     runtimes/flow_filters/ascent_runtime_query_filters.cpp
+    runtimes/flow_filters/ascent_runtime_utils.cpp
     # utils
     utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
@@ -142,6 +144,7 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
     runtimes/flow_filters/ascent_runtime_trigger_filters.hpp
     runtimes/flow_filters/ascent_runtime_query_filters.hpp
+    runtimes/flow_filters/ascent_runtime_utils.hpp
     # utils
     utils/ascent_logging.hpp
     utils/ascent_file_system.hpp
@@ -195,6 +198,13 @@ if(MFEM_FOUND)
     list(APPEND ascent_sources runtimes/ascent_mfem_data_adapter.cpp)
 endif()
 
+#for now, we depend on compositing so we need vtkh
+if(DRAY_FOUND AND VTKM_FOUND)
+  list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
+  list(APPEND ascent_headers runtimes/ascent_dray_data_adapter.hpp)
+  list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
+  list(APPEND ascent_sources runtimes/ascent_dray_data_adapter.cpp)
+endif()
 
 ##############################
 # optional features
@@ -258,6 +268,10 @@ endif()
 
 if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs openmp)
+endif()
+
+if(DRAY_FOUND AND VTKM_FOUND)
+    list(APPEND ascent_thirdparty_libs dray)
 endif()
 
 ##########################################
@@ -366,5 +380,10 @@ endif()
 ########################################
 install(FILES ${ascent_headers} DESTINATION include/ascent)
 
+##############################################################
+# install files needed for cinema viewer and web client
+#############################################################
+install(DIRECTORY web_clients/
+        DESTINATION share/ascent/web_clients/)
 
 

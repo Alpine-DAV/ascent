@@ -54,7 +54,7 @@ struct ArraySizeFunctor
   template<typename T, typename Storage>
   void operator()(const vtkm::cont::ArrayHandle<T, Storage> &array) const
   {
-    *m_size = array.GetPortalConstControl().GetNumberOfValues();
+    *m_size = array.GetNumberOfValues();
   } //operator
 };
 

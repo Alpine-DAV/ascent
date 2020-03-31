@@ -269,7 +269,7 @@ Uberenv Options for Building Third Party Dependencies
   --spack-config-dir   Folder with Spack settings files               linux: (empty)
                                                                       osx: ``scripts/uberenv/spack_configs/darwin/``
   -k                   Ignore SSL Errors                              **False**
-  --install            Fully install conduit, not just dependencies   **False**
+  --install            Fully install ascent not just dependencies     **False**
   --run_tests          Invoke tests during build and against install  **False**
  ==================== ============================================== ================================================
 
@@ -574,7 +574,7 @@ directory. These images can be checked against the images in
     - Or ``ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/paraview-vis-cloverleaf3d-momentinvariants.py paraview-vis.py``
       for MomentInvariants visualization (Optional)
 
-    - 
+    -
       .. code:: bash
 
               ln -s $(spack location --install-dir ascent)/examples/ascent/paraview-vis/ascent_actions.json
@@ -791,7 +791,7 @@ This is the current commit we build and test against:
 
 .. code:: bash
 
-    git clone https://github.com/Alpine-DAV/vtk-h.git
+    git clone --recursive https://github.com/Alpine-DAV/vtk-h.git
     cd vtk-h
     git checkout commit_hash_listed_above
     mkdir build

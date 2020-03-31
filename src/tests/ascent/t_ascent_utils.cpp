@@ -69,7 +69,7 @@ TEST(ascent_utils, ascent_copy_dir)
 {
     string output_path = conduit::utils::join_path(prepare_output_dir(),"my_folder");
 
-    string idx_fpath = conduit::utils::join_path(output_path,"index.html");
+    string idx_fpath = conduit::utils::join_path(output_path,"ascent/index.html");
 
     // for multiple runs of this test:
     //  we don't have a util to kill the entire dir, so
@@ -81,9 +81,8 @@ TEST(ascent_utils, ascent_copy_dir)
     }
 
 
-    ascent::copy_directory(ASCENT_WEB_CLIENT_ROOT, output_path);
-
-    EXPECT_TRUE(directory_exists(conduit::utils::join_path(output_path,"resources")));
+    ascent::copy_directory(ASCENT_SOURCE_WEB_CLIENT_ROOT, output_path);
+    EXPECT_TRUE(directory_exists(conduit::utils::join_path(output_path,"ascent/resources")));
     EXPECT_TRUE(conduit::utils::is_file(idx_fpath));
 }
 

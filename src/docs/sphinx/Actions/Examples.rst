@@ -47,6 +47,17 @@ Resulting image:
 
 .. image:: examples/tout_rover_volume100.png
 
+An example if using the vector component filter  to extract a scalar component of a vector field.
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_vector_component100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_vector_component100.png
+
 An example of creating a render, specifying all camera parameters.
 -------------------------------------------------------------------
 
@@ -146,6 +157,17 @@ Resulting image:
 
 .. image:: examples/tout_pipelines100.png
 
+An example of using the gradient filter and plotting the magnitude.
+--------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_vorticity_vel100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_vorticity_vel100.png
+
 An example of the three slice filter.
 --------------------------------------
 
@@ -234,6 +256,17 @@ Resulting image:
 
 .. image:: examples/tout_vec_mag100.png
 
+An example of using the log filter and clamping the min value. This can help when there are negative values present.
+---------------------------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_log_field_clamp100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_log_field_clamp100.png
+
 An example of the slice filter with a single plane (off-axis).
 ---------------------------------------------------------------
 
@@ -244,6 +277,17 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_slice_3d_off_axis100.png
+
+An example of the slice filter with a single plane.
+----------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_exaslice_3d100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_exaslice_3d100.png
 
 An example of creating a plot specifying the min and max values of the scalar range.
 -------------------------------------------------------------------------------------
@@ -344,6 +388,39 @@ Resulting image:
 
 .. image:: examples/tout_divergence_vel100.png
 
+An example of the slice filter with a single plane.
+----------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_slice_offset_3d100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_slice_offset_3d100.png
+
+An example of using the gradient filter and plotting the magnitude.
+--------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_qcriterion_vel100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_qcriterion_vel100.png
+
+Example of rendering multiple topologies
+-----------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_multi_topo100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_multi_topo100.png
+
 An example of creating a render specifying the image size.
 -----------------------------------------------------------
 
@@ -377,6 +454,17 @@ Resulting image:
 
 .. image:: examples/milk_chocolate100.png
 
+An example if using the composite vector filter  to compose three scalar fields into a vector.
+-----------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_composite_vector100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_composite_vector100.png
+
 An example a sphere clip using a center and radius
 ---------------------------------------------------
 
@@ -387,6 +475,28 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_clip_sphere100.png
+
+Example of adding 1 ghost field with 2 topologies
+--------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_multi_topo_single_ghost100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_multi_topo_single_ghost100.png
+
+An example of using the gradient filter and plotting the magnitude.
+--------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_cell_gradient_mag_braid100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_cell_gradient_mag_braid100.png
 
 An example of rendering a point field with variable radius.
 ------------------------------------------------------------
@@ -421,6 +531,17 @@ Resulting image:
 
 .. image:: examples/tout_complex_trigger_actions100.png
 
+Example of adding multple ghosts with 2 topologies
+---------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_multi_topo_ghosts100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_multi_topo_ghosts100.png
+
 An example of using the gradient filter and plotting the magnitude.
 --------------------------------------------------------------------
 
@@ -431,6 +552,24 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_gradient_mag_braid100.png
+
+An example of using the gradient filter using cell gradients on a element centered field and plotting the magnitude.
+---------------------------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_cell_gradient_mag_radial100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_cell_gradient_mag_radial100.png
+
+An example of using the xray extract.
+--------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_rover_xray_params100.yaml
 
 An example of using a relay extract to save a subset of the data.
 ------------------------------------------------------------------
@@ -467,6 +606,27 @@ YAML actions:
 
 .. literalinclude:: examples/tout_cycle_query100.yaml
 
+An example of using devil ray for pseudocolor plot.
+----------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_dray_3slice100.yaml
+
+An example of using devil ray for pseudocolor plot.
+----------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_dray_volume100.yaml
+
+An example of using devil ray for pseudocolor plot.
+----------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_dray_surface100.yaml
+
 An example of using an relay extract to save the results of  a pipeline to the file system.
 --------------------------------------------------------------------------------------------
 
@@ -480,6 +640,13 @@ An example of using an relay extract to save the published mesh to the file syst
 YAML actions:
 
 .. literalinclude:: examples/tout_hd5f_mesh100.yaml
+
+An example of quiering the maximum value of a field from the result of a pipeline.
+-----------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_max_pipeline_query100.yaml
 
 
 -
