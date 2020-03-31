@@ -83,6 +83,10 @@ public:
 #if defined(ASCENT_VTKM_ENABLED)
   DataObject(VTKHCollection *dataset);
   std::shared_ptr<VTKHCollection> as_vtkh_collection();
+
+  bool                            is_vtkh_coll_exists() const { return m_vtkh != nullptr; }
+  void                            reset_vtkh_collection();
+
 #endif
   std::shared_ptr<conduit::Node>  as_low_order_bp();
   std::shared_ptr<conduit::Node>  as_high_order_bp();

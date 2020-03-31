@@ -45,7 +45,7 @@ int main(int argc, char **argv)
   int share_face = 1;           // share a face among the blocks
 
   int test_block_size[3];
-  uint32_t valence = 2;
+  int32_t valence = 2;
   //FunctionType threshold_ = (FunctionType)(-1)*FLT_MAX;
   float threshold_ = (int)(-1)*FLT_MAX;
   char* dataset;
@@ -56,8 +56,8 @@ int main(int argc, char **argv)
       data_size_[2] = atoi(argv[++i]); 
     }
     if (!strcmp(argv[i],"-p")){
-      block_decomp[0] = atoi(argv[++i]);                                                                                                           
-      block_decomp[1] = atoi(argv[++i]);                                                                                                           
+      block_decomp[0] = atoi(argv[++i]);
+      block_decomp[1] = atoi(argv[++i]);
       block_decomp[2] = atoi(argv[++i]);
     }
     if (!strcmp(argv[i],"-m"))
@@ -151,7 +151,13 @@ int main(int argc, char **argv)
   mesh["coordsets/coords/type"] = "uniform";
   mesh["coordsets/coords/dims/i"] = num_x;
   mesh["coordsets/coords/dims/j"] = num_y;
-  mesh["coordsets/coords/dims/k"] = num_z;
+  if (num_z > 1)    // if it's a 3D dataset
+    mesh["coordsets/coords/dims/k"] = num_z;
+  mesh["coordsets/coords/origin/x"] = low[0];
+  mesh["coordsets/coords/origin/y"] = low[1];
+  if (num_z > 1)    // if it's a 3D dataset
+    mesh["coordsets/coords/origin/z"] = low[2];
+
   mesh["topologies/topo/type"] = "uniform";
   mesh["topologies/topo/coordset"] = "coords";
   mesh["fields/braids/association"] = "vertex";
@@ -160,7 +166,6 @@ int main(int argc, char **argv)
 
   // assuming # of ranks == # of leaves
   int32_t task_id = mpi_rank;
-
 
   // output binary blocks for debugging purpose
   //  data<mpi_rank>.bin
@@ -172,36 +177,40 @@ int main(int argc, char **argv)
     bofs.close();
   }
   // output text block parameters
-  //  uint32 low[0], uint32 low[1], uint32 low[2], uint32 high[0], uint32 high[1], uint32 high[2]
   //  data<mpi_rank>.params
   {
     stringstream ss;
     ss << "data" << mpi_rank << ".params";
     ofstream ofs(ss.str());
-    ofs << low[0] << " " << low[1] << " " << low[2] << " " << high[0] << " " << high[1] << " " << high[2];
+    ofs << "dims/i = " << num_x << std::endl;
+    ofs << "dims/j = " << num_y << std::endl;
+    ofs << "dims/k = " << num_z << std::endl;
+    ofs << "origin/x = " << low[0] << std::endl;
+    ofs << "origin/y = " << low[1] << std::endl;
+    ofs << "origin/z = " << low[2] << std::endl;
+    ofs << "high[0] = " << high[0] << std::endl;
+    ofs << "high[1] = " << high[1] << std::endl;
+    ofs << "high[2] = " << high[2] << std::endl;
     ofs.flush();
     ofs.close();
   }
   // publish
   a.publish(mesh);
-  // build extracts Node
-  Node extract;
-  extract["e1/type"] = "babelflow"; // use the babelflow runtime filter
-
-  // extracts params:
-  int32_t fanin = 2;
-  float threshold = -FLT_MAX;
-
-  extract["e1/params/task"] = "pmt";
-  extract["e1/params/mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
-  extract["e1/params/data_path"] = "fields/braids/values";
-  extract["e1/params/data_size"].set_int32_vector(data_size);
-  extract["e1/params/n_blocks"].set_int32_vector(n_blocks);
-  extract["e1/params/fanin"] = fanin;
-  extract["e1/params/threshold"] = threshold;
-  extract["e1/params/low"].set_int32_vector(low);
-  extract["e1/params/high"].set_int32_vector(high);
-  extract["e1/params/task_id"] = task_id;
+  
+  // build pipeline Node for the filter
+  Node pipelines;
+  pipelines["pl1/f1/type"] = "babelflow";
+  pipelines["pl1/f1/params/task"] = "pmt";
+  pipelines["pl1/f1/params/mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+  pipelines["pl1/f1/params/field_path"] = "fields/braids";
+  pipelines["pl1/f1/params/data_size"].set_int32_vector(data_size);
+  pipelines["pl1/f1/params/n_blocks"].set_int32_vector(n_blocks);
+  pipelines["pl1/f1/params/fanin"] = valence;
+  pipelines["pl1/f1/params/threshold"] = threshold_;
+  pipelines["pl1/f1/params/low"].set_int32_vector(low);
+  pipelines["pl1/f1/params/high"].set_int32_vector(high);
+  pipelines["pl1/f1/params/task_id"] = task_id;
+  pipelines["pl1/f1/params/gen_segment"] = 1;    // 1 -- means create a field with segmentation
 
   //  ### future work: supporting multiple blocks per node
   //  ### low and high should be defined in TaskId
@@ -213,10 +222,37 @@ int main(int argc, char **argv)
   //  ### task_id.size() = n_jobs
   //  ### data in form of <block_1, block_2, ..., block_n> size of each block is defined by high - low + 1 per dimension
 
+  //Node action;
+  //Node &add_extract = action.append();
+  //add_extract["action"] = "add_extracts";
+  //add_extract["extracts"] = extract;
+
   Node action;
-  Node &add_extract = action.append();
-  add_extract["action"] = "add_extracts";
-  add_extract["extracts"] = extract;
+  Node &add_pipelines = action.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
+
+  Node& add_act2 = action.append();
+  add_act2["action"] = "add_scenes";
+  Node& scenes = add_act2["scenes"];
+
+  // add a scene (s1) with one pseudocolor plot (p1) that
+  // will render the result of our pipeline (pl1)
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/plots/p1/field"] = "braids";
+  scenes["s1/image_name"] = "dataset";
+
+  // our second scene (named 's2') will render the field 'var2'
+  // to the file out_scene_ex1_render_var2.png
+  scenes["s2/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s2/plots/p1/field"] = "segment";
+  scenes["s2/plots/p1/color_table/name"] = "Jet";
+  scenes["s2/image_name"] = "segmentation";
+
+  // print our full actions tree
+  std::cout << action.to_yaml() << std::endl;
 
   action.append()["action"] = "execute";
   start = clock();

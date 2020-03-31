@@ -164,13 +164,13 @@ register_builtin()
 #if defined(ASCENT_MPI_ENABLED)
     AscentRuntime::register_filter_type<HolaMPIExtract>("extracts","hola_mpi");
 
-  #if defined(ASCENT_BABELFLOW_ENABLED)
-      AscentRuntime::register_filter_type<BabelFlow>("extracts", "babelflow");
-  #endif
+#if defined(ASCENT_BABELFLOW_ENABLED)
+    AscentRuntime::register_filter_type<BabelFlow>("transforms", "babelflow");
+#endif
 
-  #if defined(ASCENT_ADIOS_ENABLED)
-      AscentRuntime::register_filter_type<ADIOS>("extracts","adios");
-  #endif
+#if defined(ASCENT_ADIOS_ENABLED)
+    AscentRuntime::register_filter_type<ADIOS>("extracts","adios");
+#endif
 
 #endif
 
@@ -200,4 +200,3 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-

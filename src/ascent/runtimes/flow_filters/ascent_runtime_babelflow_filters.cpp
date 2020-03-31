@@ -49,6 +49,8 @@ public:
 
   void Execute();
 
+  void ExtractSegmentation(FunctionType* output_data_ptr);
+
   static int DownSizeGhosts(std::vector<BabelFlow::Payload> &inputs, std::vector<BabelFlow::Payload> &output,
                             BabelFlow::TaskId task);
 
@@ -87,6 +89,10 @@ static const BabelFlow::TaskId sPrefixMask = ((1 << sPrefixSize) - 1) << sPostfi
 uint32_t ParallelMergeTree::o_ghosts[];
 uint32_t ParallelMergeTree::n_ghosts[];
 uint32_t ParallelMergeTree::s_data_size[];
+
+// Static ptr for local data to be passed to computeSegmentation()
+FunctionType* sLocalData = NULL;
+
 
 int local_compute(std::vector<BabelFlow::Payload> &inputs,
                   std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task) {
@@ -156,10 +162,13 @@ int write_results(std::vector<BabelFlow::Payload> &inputs,
   t.id(task & ~sPrefixMask);
   //t.writeToFile(task & ~sPrefixMask);
   t.persistenceSimplification(1.f);
-  t.computeSegmentation();
+  t.computeSegmentation(sLocalData);
   t.writeToFileBinary(task & ~sPrefixMask);
   t.writeToFile(task & ~sPrefixMask);
+  //t.writeToHtmlFile(task & ~sPrefixMask);
 
+  // Set the final tree as an output so that it could be extracted later
+  output[0] = t.encode();
 
   // Deleting input data
   for (int i = 0; i < inputs.size(); i++) {
@@ -167,7 +176,6 @@ int write_results(std::vector<BabelFlow::Payload> &inputs,
   }
   inputs.clear();
 
-  assert(output.size() == 0);
   //fprintf(stderr,"WRITING RESULTS performed by %d\n", task & ~sPrefixMask);
   return 1;
 }
@@ -284,6 +292,26 @@ void ParallelMergeTree::Execute() {
   master.run(inputs);
 }
 
+void ParallelMergeTree::ExtractSegmentation(FunctionType* output_data_ptr) {
+
+  // Get the outputs map (maps task IDs to outputs) from the controller
+  std::map<BabelFlow::TaskId,std::vector<BabelFlow::Payload> >& outputs = master.getAllOutputs();
+
+  for (auto iter = outputs.begin(); iter != outputs.end(); ++iter) {
+    // Output task should be only 'write_results' task
+    assert(graph.task(graph.gId(iter->first)).callback() == 4);
+
+    AugmentedMergeTree t;
+    t.decode((iter->second)[0]);    // only one output per task
+
+    // Copy the segmentation labels into the provided data array -- assume it
+    // has enough space (sampleCount() -- the local data size)
+    for (uint32_t i = 0; i < t.sampleCount(); ++i)
+      output_data_ptr[i] = (float)t.label(i);
+  }
+}
+
+
 ParallelMergeTree::ParallelMergeTree(FunctionType *data_ptr, int32_t task_id, const int32_t *data_size,
                                      const int32_t *n_blocks,
                                      const int32_t *low, const int32_t *high, int32_t fanin,
@@ -305,6 +333,10 @@ ParallelMergeTree::ParallelMergeTree(FunctionType *data_ptr, int32_t task_id, co
   this->fanin = static_cast<uint32_t>(fanin);
   this->threshold = threshold;
   this->comm = mpi_comm;
+
+  // Store the local data as a static pointer so that it could be passed later to
+  // computeSegmentation function -- probably a better solution is needed
+  sLocalData = data_ptr;
 }
 
 
@@ -323,7 +355,7 @@ ParallelMergeTree::ParallelMergeTree(FunctionType *data_ptr, int32_t task_id, co
 void ascent::runtime::filters::BabelFlow::declare_interface(conduit::Node &i) {
   i["type_name"] = "babelflow";
   i["port_names"].append() = "in";
-  i["output_port"] = "false";
+  i["output_port"] = "true";  // true -- means filter, false -- means extract
 }
 
 
@@ -356,7 +388,8 @@ void ascent::runtime::filters::BabelFlow::execute() {
       ASCENT_ERROR("BabelFlow filter could not find coordsets/coords/type");
 
     // get the data handle
-    conduit::DataArray<float> array = data_node[p["data_path"].as_string()].as_float32_array();
+    conduit::Node& field_node = data_node[p["field_path"].as_string()];
+    conduit::DataArray<float> array = field_node["values"].as_float32_array();
 
     // get the parameters
     MPI_Comm comm = MPI_Comm_f2c(p["mpi_comm"].as_int());
@@ -374,6 +407,7 @@ void ascent::runtime::filters::BabelFlow::execute() {
     }
     int32_t fanin = p["fanin"].as_int32();
     FunctionType threshold = p["threshold"].as_float();
+    int32_t gen_field = p["gen_segment"].as_int32();
 
     // create ParallelMergeTree instance and run
     ParallelMergeTree pmt(reinterpret_cast<FunctionType *>(array.data_ptr()),
@@ -391,6 +425,42 @@ void ascent::runtime::filters::BabelFlow::execute() {
 
     pmt.Initialize();
     pmt.Execute();
+
+    if (gen_field) {
+      // Generate new field 'segment'
+      data_node["fields/segment/association"] = field_node["association"].as_string();
+      data_node["fields/segment/topology"] = field_node["topology"].as_string();
+
+      // New field data
+      int32_t num_x = high[0] - low[0] + 1;
+      int32_t num_y = high[1] - low[1] + 1;
+      int32_t num_z = high[2] - low[2] + 1;
+      std::vector<float> seg_data(num_x*num_y*num_z, 0.f);
+
+      pmt.ExtractSegmentation(seg_data.data());
+
+      data_node["fields/segment/values"].set(seg_data);
+
+      // DEBUG -- write raw segment data to disk
+      // {
+      //   std::stringstream ss;
+      //   ss << "segment_data_" << rank << ".bin";
+      //   std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
+      //   bofs.write(reinterpret_cast<char *>(reldata.data()), num_x*num_y*num_z * sizeof(float));
+      //   bofs.close();
+      // }
+
+      // DEBUG -- verify modified BP node with 'segment' field
+      // conduit::Node info;
+      // if (conduit::blueprint::verify("mesh", *in, info))
+      //   std::cout << "BP with new field verify -- successful" << std::endl;
+      // else
+      //   std::cout << "BP with new field verify -- failed" << std::endl;
+      
+      d_input->reset_vtkh_collection();
+    }
+    
+    set_output<DataObject>(d_input);
   } else {
     return;
   }
