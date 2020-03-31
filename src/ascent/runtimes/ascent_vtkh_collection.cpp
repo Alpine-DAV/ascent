@@ -191,11 +191,70 @@ bool VTKHCollection::has_field(const std::string field_name) const
 
 vtkm::Bounds VTKHCollection::global_bounds() const
 {
+  // ranks may have different numbers of local vtk-h datasets
+  // depending on the toplogies at play
+  // can't use vtk-h to get global bounds b/c could create
+  // unmatched collectives.
+
+  // to get the global bounds, we include all local bounds
+  // then do a mpi reduce here
   vtkm::Bounds bounds;
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
-    bounds.Include(it->second.GetGlobalBounds());
+    bounds.Include(it->second.GetBounds());
   }
+
+  #ifdef VTKH_PARALLEL
+    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+
+    vtkm::Float64 loc_mins[3];
+    //x,y,z
+    loc_mins[0] = bounds.X.Min;
+    loc_mins[1] = bounds.Y.Min;
+    loc_mins[2] = bounds.Z.Min;
+    
+    vtkm::Float64 loc_maxs[3];
+    //x,y,z
+    loc_maxs[0] = bounds.X.Max;
+    loc_maxs[1] = bounds.Y.Max;
+    loc_maxs[2] = bounds.Z.Max;
+
+    vtkm::Float64 global_mins[3];
+    //x,y,z
+    global_mins[0] = 0.0;
+    global_mins[1] = 0.0;
+    global_mins[2] = 0.0;
+
+    vtkm::Float64 global_maxs[3];
+    //x,y,z
+    global_maxs[0] = 0.0;
+    global_maxs[1] = 0.0;
+    global_maxs[2] = 0.0;
+
+    MPI_Allreduce((void *)(&loc_mins),
+                  (void *)(&global_mins),
+                  3,
+                  MPI_DOUBLE,
+                  MPI_MIN,
+                  mpi_comm);
+
+    MPI_Allreduce((void *)(&loc_maxs),
+                  (void *)(&global_maxs),
+                  3,
+                  MPI_DOUBLE,
+                  MPI_MAX,
+                  mpi_comm);
+
+    bounds.X.Min = global_mins[0];
+    bounds.X.Max = global_maxs[0];
+    
+    bounds.Y.Min = global_mins[1];
+    bounds.Y.Max = global_maxs[1];
+    
+    bounds.Z.Min = global_mins[2];
+    bounds.Z.Max = global_maxs[2];
+  #endif
+
   return bounds;
 }
 

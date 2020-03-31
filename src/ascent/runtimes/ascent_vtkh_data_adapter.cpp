@@ -1270,7 +1270,8 @@ VTKHDataAdapter::AddField(const std::string &field_name,
 
     if(assoc_str == "vertex" && nverts != num_vals)
     {
-      ASCENT_INFO("Field '"<<field_name<<"' number of values "<<num_vals<<
+      ASCENT_INFO("Field '"<<field_name<<"' (topology: '" << topo_name <<
+                  "') number of values "<<num_vals<<
                   " does not match the number of points "<<nverts<<". Skipping");
       return;
     }
@@ -1279,7 +1280,8 @@ VTKHDataAdapter::AddField(const std::string &field_name,
     {
       if(field_name != "boundary_attribute")
       {
-        ASCENT_INFO("Field '"<<field_name<<"' number of values "<<num_vals<<
+        ASCENT_INFO("Field '"<<field_name<<"' (topology: '" << topo_name  <<
+                    "') number of values "<<num_vals<<
                     " does not match the number of elements " << neles << ". Skipping");
       }
       return;
