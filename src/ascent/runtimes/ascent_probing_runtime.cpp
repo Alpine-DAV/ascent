@@ -412,8 +412,8 @@ void log_time(std::chrono::time_point<std::chrono::system_clock> start,
 }
 
 
-int bsend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm, 
-                       MPI_Request *request) 
+int ibsend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm, 
+                        MPI_Request *request) 
 {     
     conduit::Schema s_data_compact;
     
@@ -453,18 +453,16 @@ int bsend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm,
     // clean up old buffer
     free(bsend_buf);
 
-    MPI_Buffer_attach(malloc(msg_data_size + 8*MPI_BSEND_OVERHEAD), 
-                             msg_data_size + 8*MPI_BSEND_OVERHEAD);
+    MPI_Buffer_attach(malloc(msg_data_size + MPI_BSEND_OVERHEAD), 
+                             msg_data_size + MPI_BSEND_OVERHEAD);
 
-    MPI_Request req;
     int mpi_error = MPI_Ibsend(const_cast<void*>(n_msg.data_ptr()),
                               static_cast<int>(msg_data_size),
                               MPI_BYTE,
                               dest,
                               tag,
                               comm,
-                              &req);
-                            //   ,request);
+                              request);
     
     if (mpi_error)
         std::cout << "ERROR sending dataset to " << dest << std::endl;
@@ -688,7 +686,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
             MPI_Request request;
-            bsend_using_schema(data, destination, 0, mpi_comm_world, &request);
+            log_time(start, " before send ", world_rank);
+            ibsend_using_schema(data, destination, 0, mpi_comm_world, &request);
+            log_time(start, " after send ", world_rank);
 
             if (image_counts[world_rank] > 0)
             {
@@ -795,15 +795,6 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
                 renders.append() = scenes.child(0).child(0)["renders"];
                 phi = renders.child(0).child(0)["phi"].to_int();
                 theta = renders.child(0).child(0)["theta"].to_int();
-
-                // update angle count for probing run
-                int phi_probe = int(std::round(phi * probing_factor));
-                int theta_probe = int(std::round(theta * probing_factor));
-                // probe_actions.child(i)["scenes"].child(0)["renders"].child(0)["phi"] = phi_probe;
-                // probe_actions.child(i)["scenes"].child(0)["renders"].child(0)["theta"] = theta_probe;
-                
-                // std::cout << "phi " << phi << " _ probing phi " << phi_probe << std::endl;
-                // std::cout << "theta " << theta << " _ probing theta " << theta_probe << std::endl;
             }
             else
             {

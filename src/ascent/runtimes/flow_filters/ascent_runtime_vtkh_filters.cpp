@@ -305,7 +305,7 @@ public:
       scene.AddRender(renders[i]);
     }
 
-    std::cout << "~~~ Execute scene: " << renders.size() << std::endl;
+    // std::cout << "~~~ Execute scene: " << renders.size() << std::endl;
     scene.Render();
 
     for (int i = 0; i < m_renderer_count; i++)
@@ -1343,7 +1343,7 @@ void VTKHGhostStripper::execute()
 
   // Check to see of the ghost field even exists
   // TODO: revert back to action check and avoid sync in stripper.Update() [deadlock]
-  bool do_strip = false;// data->GlobalFieldExists(field_name);
+  bool do_strip = data->FieldExists(field_name); // data->GlobalFieldExists(field_name);
 
   if (do_strip)
   {
