@@ -435,7 +435,7 @@ void ascent::runtime::filters::BabelFlow::execute() {
       int32_t num_x = high[0] - low[0] + 1;
       int32_t num_y = high[1] - low[1] + 1;
       int32_t num_z = high[2] - low[2] + 1;
-      std::vector<float> seg_data(num_x*num_y*num_z, 0.f);
+      std::vector<FunctionType> seg_data(num_x*num_y*num_z, 0.f);
 
       pmt.ExtractSegmentation(seg_data.data());
 
