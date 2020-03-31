@@ -258,7 +258,7 @@ VTKHCollection::by_domain_id()
     for(int i = 0; i < domain_ids.size(); ++i)
     {
       const int domain_id = domain_ids[i];
-      res[domain_id][topo_name] = vtkh_dataset.GetDomain(domain_id);
+      res[domain_id][topo_name] = vtkh_dataset.GetDomain(i);
     }
   }
 
