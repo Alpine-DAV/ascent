@@ -521,7 +521,7 @@ Learn::execute()
     double *eigvals = new double[num_fields];
     double *fmms = new double[num_fields * num_domains];
     for(int i = 0; i < num_domains; ++i)
-    {
+     double *anomaly_metric = new double{
       const conduit::Node &dom = n_input->child(0);
 
       std::vector<const double*> fields;
@@ -554,7 +554,7 @@ Learn::execute()
     }
     int rank = 0;
     int comm_size = 1;
-    double *sum = new double[num_fields];
+    double *average_fmms = new double[num_fields];
     double *local_sum = new double[num_fields];
     for(int i = 0; i < num_fields; ++i)
     {
@@ -577,14 +577,41 @@ Learn::execute()
 
     MPI_Comm_size(mpi_comm, &comm_size);
     //int *domains_per_rank = new int[comm_size];
-    MPI_Allreduce(local_sum, sum, num_fields, MPI_DOUBLE, MPI_SUM, mpi_comm);
+    MPI_Allreduce(local_sum, average_fmms, num_fields, MPI_DOUBLE, MPI_SUM, mpi_comm);
 #endif //MPI
+
+    for(int f = 0; f< num_fields; f++)
+    {
+      average_fmms[f] /= double(comm_size * num_domains);
+    }
 
     if(rank  == 0)
     {
       for(int f = 0; f < num_fields; f++)
       {
-        std::cout<<field_selection[f]<<" ave "<<sum[f] / double(comm_size)<<"\n";;
+        std::cout<<field_selection[f]<<" ave "<<average_fmms[f] <<"\n";;
+      }
+    }
+
+    //Compute the spatial anomaly metric for each domain. If metric is above threshold = 0.7
+    //the domain is anomalous, so paint all its cells 'red'
+    double *spatial_metric = new double[num_domains]; 
+    for(int i = 0; i < num_domains; ++i)
+    {
+      spatial_metric[i] = 0.0;
+      double * domain_fmms = fmms + num_fields * i;
+  
+      //Compute Hellinger distance between domain fmms and average fmms
+      for(int f = 0; f< num_fields; f++)
+      {
+        spatial_metric[i] += ( std::sqrt(domain_fmms[f]) - std::sqrt(average_fmms[f]) ) *
+                             ( std::sqrt(domain_fmms[f]) - std::sqrt(average_fmms[f]) )
+      }
+      spatial_metric[i] = std::sqrt(spatial_metric[i] * 0.5);
+
+      if(spatial_metric[i] > 0.7) //This threshold is user specified, and a "hyper parameter" (fudge factor)
+      {
+        //TO DO: Take whatever actions, e.g. painting all cells of this domain
       }
     }
 
