@@ -207,6 +207,7 @@ stages:
            # gen img diff report
            #################################
            # run cmake target to gen report
+           cd build
            make gen_report
         displayName: 'Run Gen Test Image Diff Report'
         condition: always()
