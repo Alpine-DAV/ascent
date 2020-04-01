@@ -76,6 +76,35 @@ For more details about building and installing Ascent see :ref:`building`. This 
 Public Installs of Ascent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Summary table of public ascent installs:
+
+.. list-table:: 
+   :widths: 10 15 10 10 50
+   :header-rows: 1
+
+   * - Site
+     - System
+     - Compiler
+     - Runtime
+     - Install Path
+   * - LLNL LC
+     - CZ TOSS 3 (Pascal)
+     - gcc 4.9.3
+     - OpenMP
+     - ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install``
+   * - NERSC
+     - Cori
+     - gcc 8.2.0
+     - OpenMP
+     - ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install/``
+
+   * - OLCF
+     - Summit
+     - gcc 6.4.0
+     - OpenMP
+     - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``
+
+
 NERSC Cori Install
 ++++++++++++++++++++
 
@@ -101,7 +130,7 @@ The install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/cur
 Using Ascent in Your Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The install includes examples that demonstrate how to use Ascent in a CMake-based build system  and via a Makefile.
+The install includes examples that demonstrate how to use Ascent in a CMake-based build system and via a Makefile.
 
 CMake-based build system example (see: ``examples/ascent/using-with-cmake``):
 
