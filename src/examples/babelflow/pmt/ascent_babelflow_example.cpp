@@ -16,6 +16,8 @@
 #include <ctime>
 #include <cassert>
 
+typedef double FunctionType;
+
 using namespace ascent;
 using namespace conduit;
 
@@ -47,7 +49,7 @@ int main(int argc, char **argv)
   int test_block_size[3];
   int32_t valence = 2;
   //FunctionType threshold_ = (FunctionType)(-1)*FLT_MAX;
-  float threshold_ = (int)(-1)*FLT_MAX;
+  FunctionType threshold_ = (int)(-1)*FLT_MAX;
   char* dataset;
   for (int i = 1; i < argc; i++){
     if (!strcmp(argv[i],"-d")){
@@ -110,7 +112,7 @@ int main(int argc, char **argv)
   // NOTE: PMT assumes Ghost Layers only in positive x,y,z directions
 
   // set the gloabl data
-  vector<int> global_data(data_size[0]*data_size[1]*data_size[2], 0);
+  vector<FunctionType> global_data(data_size[0]*data_size[1]*data_size[2], 0);
   {
   ifstream rf(dataset, ios::out | ios::binary);
     if(!rf) {
@@ -119,7 +121,7 @@ int main(int argc, char **argv)
   }
 
     for(int i = 0; i < data_size[0]*data_size[1]*data_size[2] ; i++)
-      rf.read( (char *)&global_data[i], sizeof(int));
+      rf.read( (char *)&global_data[i], sizeof(FunctionType));
 
     rf.close();
   }
@@ -128,7 +130,7 @@ int main(int argc, char **argv)
   int32_t num_x = high[0] - low[0] + 1;
   int32_t num_y = high[1] - low[1] + 1;
   int32_t num_z = high[2] - low[2] + 1;
-  vector<float> block_data(num_x * num_y * num_z, 0.f);
+  vector<FunctionType> block_data(num_x * num_y * num_z, 0.f);
 
   // copy values from global data
   {
@@ -139,7 +141,7 @@ int main(int argc, char **argv)
       for (uint32_t by = 0; by < num_y; ++by) {
         int data_idx = start + bz * data_size[0] * data_size[1] + by * data_size[0];
         for (uint32_t i = 0; i < num_x; ++i) {
-          block_data[offset + i] = static_cast<float>(global_data[data_idx + i]);
+          block_data[offset + i] = static_cast<FunctionType>(global_data[data_idx + i]);
         }
         offset += num_x;
       }
@@ -173,7 +175,7 @@ int main(int argc, char **argv)
     stringstream ss;
     ss << "data" << mpi_rank << ".bin";
     ofstream bofs(ss.str(), ios::out | ios::binary);
-    bofs.write(reinterpret_cast<char *>(block_data.data()), block_data.size() * sizeof(float));
+    bofs.write(reinterpret_cast<char *>(block_data.data()), block_data.size() * sizeof(FunctionType));
     bofs.close();
   }
   // output text block parameters
@@ -201,17 +203,19 @@ int main(int argc, char **argv)
   Node pipelines;
   pipelines["pl1/f1/type"] = "babelflow";
   pipelines["pl1/f1/params/task"] = "pmt";
-  pipelines["pl1/f1/params/mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
-  pipelines["pl1/f1/params/field_path"] = "fields/braids";
-  pipelines["pl1/f1/params/data_size"].set_int32_vector(data_size);
-  pipelines["pl1/f1/params/n_blocks"].set_int32_vector(n_blocks);
-  pipelines["pl1/f1/params/fanin"] = valence;
+  pipelines["pl1/f1/params/field"] = "braids";
+  pipelines["pl1/f1/params/fanin"] = int64_t(valence);
   pipelines["pl1/f1/params/threshold"] = threshold_;
-  pipelines["pl1/f1/params/low"].set_int32_vector(low);
-  pipelines["pl1/f1/params/high"].set_int32_vector(high);
-  pipelines["pl1/f1/params/task_id"] = task_id;
-  pipelines["pl1/f1/params/gen_segment"] = 1;    // 1 -- means create a field with segmentation
+  pipelines["pl1/f1/params/gen_segment"] = int64_t(1);    // 1 -- means create a field with segmentation
 
+  // Old parameters that we were using, now automatically computed by the filter
+  //pipelines["pl1/f1/params/mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+  //pipelines["pl1/f1/params/data_size"].set_int32_vector(data_size);
+  //pipelines["pl1/f1/params/n_blocks"].set_int32_vector(n_blocks);
+  //pipelines["pl1/f1/params/low"].set_int32_vector(low);
+  //pipelines["pl1/f1/params/high"].set_int32_vector(high);
+  //pipelines["pl1/f1/params/task_id"] = task_id;
+  
   //  ### future work: supporting multiple blocks per node
   //  ### low and high should be defined in TaskId
   //  ### the following parameters should be defined in form of lists ###
@@ -222,12 +226,23 @@ int main(int argc, char **argv)
   //  ### task_id.size() = n_jobs
   //  ### data in form of <block_1, block_2, ..., block_n> size of each block is defined by high - low + 1 per dimension
 
-  //Node action;
-  //Node &add_extract = action.append();
-  //add_extract["action"] = "add_extracts";
-  //add_extract["extracts"] = extract;
+  // extract to save to file the output
+  Node extract;
+  extract["e1/type"] = "relay";
+  extract["e1/pipeline"] = "pl1";
+  extract["e1/params/path"] = "seg";
+  extract["e1/params/protocol"] = "blueprint/mesh/hdf5";
+  extract["e1/params/fields"].append() = "segment";
+
+  // pipelines
 
   Node action;
+  Node &add_extract = action.append();
+  add_extract["action"] = "add_extracts";
+  add_extract["extracts"] = extract;
+
+  action.append()["action"] = "execute";
+
   Node &add_pipelines = action.append();
   add_pipelines["action"] = "add_pipelines";
   add_pipelines["pipelines"] = pipelines;
@@ -243,8 +258,7 @@ int main(int argc, char **argv)
   scenes["s1/plots/p1/field"] = "braids";
   scenes["s1/image_name"] = "dataset";
 
-  // our second scene (named 's2') will render the field 'var2'
-  // to the file out_scene_ex1_render_var2.png
+  // render segmentation
   scenes["s2/plots/p1/type"] = "pseudocolor";
   scenes["s1/plots/p1/pipeline"] = "pl1";
   scenes["s2/plots/p1/field"] = "segment";
