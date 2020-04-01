@@ -228,7 +228,7 @@ stages:
       - task: PublishBuildArtifacts@1
         inputs:
           pathToPublish: $(Build.ArtifactStagingDirectory)
-          artifactName: Test Outputs
+          artifactName: Ascent_Test_Outputs
         condition: always()
 
       - script: |
@@ -443,7 +443,7 @@ stages:
       - task: PublishBuildArtifacts@1
         inputs:
           pathToPublish: $(Build.ArtifactStagingDirectory)
-          artifactName: Test Outputs
+          artifactName: Ascent_Test_Outputs
         condition: always()
 
       - script: |
