@@ -854,7 +854,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     }
     else
     {
-        render_times.push_back(100.f); // add dummy value for in transit only
+        render_times.push_back(100.f); // add dummy value for in transit test only
     }
 
 #if ASCENT_MPI_ENABLED

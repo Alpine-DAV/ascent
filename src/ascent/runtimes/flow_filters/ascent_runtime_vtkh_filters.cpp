@@ -1078,7 +1078,6 @@ void VTKH3Slice::execute()
   slicer.SetInput(data);
 
   using Vec3f = vtkm::Vec<vtkm::Float32, 3>;
-  std::cout << "### GetGlobalBounds VTKH3Slice" << std::endl;
 
   vtkm::Bounds bounds = data->GetGlobalBounds();
   Vec3f center = bounds.Center();
@@ -1234,8 +1233,6 @@ void VTKHSlice::execute()
   const Node &n_normal = params()["normal"];
 
   using Vec3f = vtkm::Vec<vtkm::Float32, 3>;
-
-  std::cout << "### GetGlobalBounds VTKHSlice" << std::endl;
 
   vtkm::Bounds bounds = data->GetGlobalBounds();
   Vec3f point;
@@ -2098,14 +2095,18 @@ void VTKHBounds::execute()
   vtkh::DataSet *data = input<vtkh::DataSet>(0);
 
   // std::cout << "### GetGlobalBounds VTKHBounds" << std::endl;
+  // TODO: calculate bounds (hardcoded for now)
   // bounds->Include(data->GetGlobalBounds());
 
+  // local -> extrapolate based on number of nodes? (clover split pattern)
+  // bounds->Include(data->GetBounds());
+
   bounds->X.Min = 0.0;
-  bounds->X.Max = 0.5;
+  bounds->X.Max = 6.0;
   bounds->Y.Min = 0.0;
-  bounds->Y.Max = 0.5;
+  bounds->Y.Max = 6.0;
   bounds->Z.Min = 0.0;
-  bounds->Z.Max = 0.5;
+  bounds->Z.Max = 6.0;
 
   set_output<vtkm::Bounds>(bounds);
 }

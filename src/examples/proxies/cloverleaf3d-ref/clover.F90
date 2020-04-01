@@ -121,11 +121,11 @@ SUBROUTINE clover_init_comms
   ENDIF
 
   ALLOCATE( sim_ranks(rank_split) )  
-  DO i =1,rank_split
+  DO i=1,rank_split
     sim_ranks(i) = i - 1
   END DO
 
-  CALL mpi_comm_group (MPI_COMM_WORLD, mpi_group_world, err)
+  CALL mpi_comm_group(MPI_COMM_WORLD, mpi_group_world, err)
   CALL mpi_group_incl(mpi_group_world, rank_split, sim_ranks, mpi_sim_group, err)
   CALL mpi_comm_create_group(MPI_COMM_WORLD, mpi_sim_group, 0, sim_comm, err)
 

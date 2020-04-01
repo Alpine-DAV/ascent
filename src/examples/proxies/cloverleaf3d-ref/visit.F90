@@ -115,19 +115,19 @@ SUBROUTINE visit(my_ascent, sim_time)
   sim_data = conduit_node_create()
 
   ! vis nodes: send 'empty' data set
-  IF(parallel%task.GE.parallel%max_task)THEN     
-    CALL conduit_node_set_path_float64(sim_data,"state/time", time)
-    CALL conduit_node_set_path_float64(sim_data,"state/sim_time", sim_time*visit_frequency)
-    CALL conduit_node_set_path_int32(sim_data,"state/domain_id", parallel%task)
-    CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
-    CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")
-    array(1) = 0.0
-    num_elements = 1
-    CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", array, num_elements)
-    CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", array, num_elements)
-    CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", array, num_elements)
-    CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/type", "rectilinear")
-    CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/coordset", "coords")
+  IF(parallel%task.GE.parallel%max_task)THEN   
+    ! CALL conduit_node_set_path_float64(sim_data,"state/time", time)
+    ! CALL conduit_node_set_path_float64(sim_data,"state/sim_time", sim_time*visit_frequency)
+    ! CALL conduit_node_set_path_int32(sim_data,"state/domain_id", parallel%task)
+    ! CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
+    ! CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")
+    ! array(1) = 0.0
+    ! num_elements = 1
+    ! CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", array, num_elements)
+    ! CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", array, num_elements)
+    ! CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", array, num_elements)
+    ! CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/type", "rectilinear")
+    ! CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/coordset", "coords")
 
     sim_actions = conduit_node_create()
     add_scene_act = conduit_node_append(sim_actions)
@@ -137,7 +137,7 @@ SUBROUTINE visit(my_ascent, sim_time)
     CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/type", "volume")
     CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/field", "energy")
 
-    CALL ascent_publish(my_ascent, sim_data)
+    ! CALL ascent_publish(my_ascent, sim_data)
     CALL ascent_execute(my_ascent, sim_actions)
 
     CALL conduit_node_destroy(sim_actions)
@@ -145,7 +145,6 @@ SUBROUTINE visit(my_ascent, sim_time)
 
   ELSE  ! sim nodes
     DO c = 1, chunks_per_task
-      ! skip this stuff for vis nodes
       IF(chunks(c)%task.EQ.parallel%task) THEN
         nxc=chunks(c)%field%x_max-chunks(c)%field%x_min+1
         nyc=chunks(c)%field%y_max-chunks(c)%field%y_min+1
@@ -257,7 +256,7 @@ SUBROUTINE visit(my_ascent, sim_time)
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    IF( .FALSE. ) THEN
+      IF( .TRUE. ) THEN
         WRITE(chunk_name, '(i6)') parallel%task+100001
         chunk_name(1:1) = "."
         WRITE(step_name, '(i6)') step+100000
