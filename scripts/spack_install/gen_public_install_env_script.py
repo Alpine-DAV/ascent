@@ -104,7 +104,7 @@ def find_pkg(pkg_name, spath = None):
            not lstrip.startswith("--"):
             return {"name": pkg_name, "path": l.split()[-1]}
     print("[Warning: failed to find package named '{}', skipping]".format(pkg_name))
-    reutnr None
+    return None
 
 def path_cmd(pkg):
     return('export PATH={}:$PATH\n'.format((pjoin(pkg["path"],"bin"))))
