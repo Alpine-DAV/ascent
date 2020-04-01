@@ -62,7 +62,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_web_flow
                 t_ascent_web_main
                 t_ascent_clip
-                t_ascent_mutli_topo
+                t_ascent_multi_topo
                 t_ascent_gradient
                 t_ascent_qcriterion
                 t_ascent_divergence
@@ -91,6 +91,7 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_render_2d
                t_ascent_mpi_render_3d
                t_ascent_mpi_statistics
+               t_ascent_mpi_multi_topo
                t_ascent_mpi_slice)
 
 # t_ascent_hola_mpi uses 8 mpi tasks, so its added manually
