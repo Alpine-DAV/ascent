@@ -76,6 +76,8 @@ For more details about building and installing Ascent see :ref:`building`. This 
 Public Installs of Ascent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+We also provide public installs of Ascent for the default compilers at a few  DOE HPC centers.
+
 Summary table of public ascent installs:
 
 .. list-table:: 
@@ -87,11 +89,13 @@ Summary table of public ascent installs:
      - Compiler
      - Runtime
      - Install Path
+
    * - LLNL LC
      - CZ TOSS 3 (Pascal)
      - gcc 4.9.3
      - OpenMP
      - ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install``
+
    * - NERSC
      - Cori
      - gcc 8.2.0
@@ -104,27 +108,14 @@ Summary table of public ascent installs:
      - OpenMP
      - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``
 
-
-NERSC Cori Install
-++++++++++++++++++++
-
-We have a public ascent install for use on NERSC's Cori System. This install was built using the default
-gnu compiler (8.2.0) with OpenMP and MPI support. You need to use `module load gcc` to use this install.
-
-
-The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install``.
+   * - OLCF
+     - Summit
+     - gcc 6.4.0
+     - CUDA
+     - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``
 
 
-OLCF Summit Install
-++++++++++++++++++++
-
-We have a public ascent install for use on OLCF's Summit System. This install was built using the default
-gnu compiler (6.4.0) with OpenMP and MPI support. You need to use `module load gcc` to use this install.
-
-.. warning::
-    This install exists on a file system that is occasionally purged. We are looking for a better place to put our world accessable installs.
-
-The install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``.
+See :ref:`tutorial_setup_public_installs` for more details on using these installs.
 
 
 Using Ascent in Your Project
