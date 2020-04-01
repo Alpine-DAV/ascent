@@ -54,6 +54,7 @@
 #include <ascent_logging.hpp>
 
 #include <cstring>
+#include <cmath>
 #include <limits>
 
 //-----------------------------------------------------------------------------
@@ -211,6 +212,80 @@ struct SumFunctor
   }
 };
 
+struct NanFunctor
+{
+  template<typename T>
+  conduit::Node operator()(const T* values, const int &size) const
+  {
+    T sum = 0;
+#ifdef ASCENT_USE_OPENMP
+    #pragma omp parallel for reduction(+:sum)
+#endif
+    for(int v = 0; v < size; ++v)
+    {
+      T is_nan = T(0);
+      const T value = values[v];
+      if(value != value)
+      {
+        is_nan = T(1);
+      }
+      sum += is_nan;
+    }
+
+    conduit::Node res;
+    res["value"] = sum;
+    res["count"] = (int)size;
+    return res;
+  }
+};
+
+struct InfFunctor
+{
+  template<typename T>
+  conduit::Node operator()(const T* values, const int &size) const
+  {
+    T sum = 0;
+    conduit::Node res;
+    res["value"] = sum;
+    res["count"] = (int)size;
+    return res;
+  }
+
+  conduit::Node operator()(const float* values, const int &size) const
+  {
+    double sum = 0;
+#ifdef ASCENT_USE_OPENMP
+    #pragma omp parallel for reduction(+:sum)
+#endif
+    for(int v = 0; v < size; ++v)
+    {
+      sum += isinf(values[v]) ? 1. : 0.;
+    }
+
+    conduit::Node res;
+    res["value"] = sum;
+    res["count"] = (int)size;
+    return res;
+  }
+
+  conduit::Node operator()(const double* values, const int &size) const
+  {
+    double sum = 0;
+#ifdef ASCENT_USE_OPENMP
+    #pragma omp parallel for reduction(+:sum)
+#endif
+    for(int v = 0; v < size; ++v)
+    {
+      sum += isinf(values[v]) ? 1. : 0.;
+    }
+
+    conduit::Node res;
+    res["value"] = sum;
+    res["count"] = (int)size;
+    return res;
+  }
+};
+
 struct HistogramFunctor
 {
   double m_min_val;
@@ -277,6 +352,18 @@ conduit::Node
 array_sum(const conduit::Node &values)
 {
   return detail::type_dispatch(values, detail::SumFunctor());
+}
+
+conduit::Node
+array_nan_count(const conduit::Node &values)
+{
+  return detail::type_dispatch(values, detail::NanFunctor());
+}
+
+conduit::Node
+array_inf_count(const conduit::Node &values)
+{
+  return detail::type_dispatch(values, detail::InfFunctor());
 }
 
 conduit::Node
