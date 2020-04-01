@@ -421,6 +421,7 @@ stages:
            # gen img diff report
            #################################
            # run cmake target to gen report
+           cd build
            make gen_report
         displayName: 'Run Gen Test Image Diff Report'
         condition: always()
@@ -434,7 +435,7 @@ stages:
 
       - task: CopyFiles@2
         inputs:
-          contents: '_output/**'
+          contents: 'build/tests/_output/**'
           targetFolder: $(Build.ArtifactStagingDirectory)
         condition: always()
 
