@@ -221,7 +221,7 @@ stages:
 
       - task: CopyFiles@2
         inputs:
-          contents: '_output/**'
+          contents: 'build/tests/_output/**'
           targetFolder: $(Build.ArtifactStagingDirectory)
         condition: always()
 
