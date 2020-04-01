@@ -202,11 +202,32 @@ stages:
            ctest -T test --output-on-failure -V
         displayName: 'Run Unit Tests'
 
+      - script: |
+           #################################
+           # gen img diff report
+           #################################
+           # run cmake target to gen report
+           make gen_report
+        displayName: 'Run Gen Test Image Diff Report'
+        condition: always()
+
       - task: PublishTestResults@2
         inputs:
           testResultsFormat: 'cTest'
           testResultsFiles: '**/Test.xml'
         displayName: 'Unit Test Results'
+        condition: always()
+
+      - task: CopyFiles@2
+        inputs:
+          contents: '_output/**'
+          targetFolder: $(Build.ArtifactStagingDirectory)
+        condition: always()
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathToPublish: $(Build.ArtifactStagingDirectory)
+          artifactName: Test Outputs
         condition: always()
 
       - script: |
@@ -395,11 +416,32 @@ stages:
            ctest -T test --output-on-failure -V
         displayName: 'Run Unit Tests'
 
+      - script: |
+           #################################
+           # gen img diff report
+           #################################
+           # run cmake target to gen report
+           make gen_report
+        displayName: 'Run Gen Test Image Diff Report'
+        condition: always()
+
       - task: PublishTestResults@2
         inputs:
           testResultsFormat: 'cTest'
           testResultsFiles: '**/Test.xml'
         displayName: 'Unit Test Results'
+        condition: always()
+
+      - task: CopyFiles@2
+        inputs:
+          contents: '_output/**'
+          targetFolder: $(Build.ArtifactStagingDirectory)
+        condition: always()
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathToPublish: $(Build.ArtifactStagingDirectory)
+          artifactName: Test Outputs
         condition: always()
 
       - script: |
