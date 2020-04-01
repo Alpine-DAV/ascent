@@ -204,7 +204,7 @@ vtkm::Bounds VTKHCollection::global_bounds() const
     bounds.Include(it->second.GetBounds());
   }
 
-  #ifdef VTKH_PARALLEL
+#if defined(ASCENT_MPI_ENABLED)
     MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
 
     vtkm::Float64 loc_mins[3];
