@@ -103,8 +103,8 @@ def find_pkg(pkg_name, spath = None):
            not lstrip.startswith("==>") and  \
            not lstrip.startswith("--"):
             return {"name": pkg_name, "path": l.split()[-1]}
-    print("[ERROR: failed to find package named '{}']".format(pkg_name))
-    sys.exit(-1)
+    print("[Warning: failed to find package named '{}', skipping]".format(pkg_name))
+    return None
 
 def path_cmd(pkg):
     return('export PATH={}:$PATH\n'.format((pjoin(pkg["path"],"bin"))))
@@ -119,10 +119,11 @@ def write_env_script(install_path, pkgs, modules):
         ofile.write("module load {}\n".format(m))
     ofile.write("\n#spack built packages\n")
     for p in pkgs:
-        print("[found {} at {}]".format(p["name"],p["path"]))
-        ofile.write("# {}\n".format(p["name"]))
-        ofile.write(path_cmd(p))
-        ofile.write("\n")
+        if not p is None:
+            print("[found {} at {}]".format(p["name"],p["path"]))
+            ofile.write("# {}\n".format(p["name"]))
+            ofile.write(path_cmd(p))
+            ofile.write("\n")
     ofile.write("# ascent install path\n")
     ofile.write("export ASCENT_DIR={}/ascent-install\n".format(os.path.abspath(install_path)))
     print("[created {}]".format(os.path.abspath("public_env.sh")))
