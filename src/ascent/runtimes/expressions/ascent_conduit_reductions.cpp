@@ -259,7 +259,7 @@ struct InfFunctor
 #endif
     for(int v = 0; v < size; ++v)
     {
-      sum += isinf(values[v]) ? 1. : 0.;
+      sum += std::isinf(values[v]) ? 1. : 0.;
     }
 
     conduit::Node res;
@@ -276,7 +276,7 @@ struct InfFunctor
 #endif
     for(int v = 0; v < size; ++v)
     {
-      sum += isinf(values[v]) ? 1. : 0.;
+      sum += std::isinf(values[v]) ? 1. : 0.;
     }
 
     conduit::Node res;
