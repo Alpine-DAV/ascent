@@ -217,6 +217,7 @@ int ParallelMergeTree::DownSizeGhosts(std::vector<BabelFlow::Payload> &inputs, s
         if (y >= dny && y < ysize - dpy) {
           FunctionType *data_ptr = block_data + y * xsize + z * ysize * xsize;
           memcpy(n_block_data + offset, (char *) data_ptr, numx * sizeof(FunctionType));
+          offset += numx * sizeof(FunctionType);
         }
       }
     }
@@ -235,8 +236,6 @@ int ParallelMergeTree::DownSizeGhosts(std::vector<BabelFlow::Payload> &inputs, s
   output.resize(1);
   output[0] = make_local_block((FunctionType*)n_block_data, n_low, n_high, threshold);
 
-  sLocalData = (FunctionType*)n_block_data;
-
   delete[] inputs[0].buffer();
   return 0;
 }
@@ -244,10 +243,10 @@ int ParallelMergeTree::DownSizeGhosts(std::vector<BabelFlow::Payload> &inputs, s
 int pre_proc(std::vector<BabelFlow::Payload> &inputs,
              std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task) {
 
-  //return ParallelMergeTree::DownSizeGhosts(inputs, output, task);
+  return ParallelMergeTree::DownSizeGhosts(inputs, output, task);
   //printf("this is where the preprocessing supposed to happend for Task %d\n", task);
-  output = inputs;
-  return 1;
+  // output = inputs;
+  // return 1;
 }
 
 
