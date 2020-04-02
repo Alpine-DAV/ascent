@@ -105,7 +105,7 @@ NERSC Cori Install
 +++++++++++++++++++++++
 
 We have a public ascent install for use on NERSC's Cori System. This install was built using the default
-gnu compiler (8.2.0) with OpenMP and MPI support. You need to use `module load gcc` to build and run the installed examples.
+gnu compiler (8.2.0) with OpenMP and MPI support. You need to use ``module load gcc`` to build and run the installed examples.
 
 
 The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install``.
@@ -117,18 +117,29 @@ You can copy the tutorial examples from this install and use them as follows:
 OLCF Summit Install
 +++++++++++++++++++++++
 
-We have a public ascent install for use on OLCF's Summit System. This install was built using the default
+We have two public ascents install for use on OLCF's Summit System. One install was built using the default
 gnu compiler (6.4.0) with OpenMP and MPI support. You need to use `module load gcc` to build and run the installed examples.
 
 .. warning::
     This install exists on a file system that is occasionally purged. We are looking for a better place to put our world accessable installs.
 
 
-The install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``.
+This install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``.
 You can copy the tutorial examples from this install and use them as follows:
 
 .. literalinclude:: tutorial_setup_olcf_summit_openmp_test.sh
    :language: bash
+
+
+The second was built using the default
+gnu compiler (6.4.0) with CUDA and MPI support. You need to use ``module load gcc`` and ``module load cuda`` to build and run the installed examples.
+
+This install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``.
+You can copy the tutorial examples from this install and use them as follows:
+
+.. literalinclude:: tutorial_setup_olcf_summit_cuda_test.sh
+   :language: bash
+
 
 LLNL CZ TOSS 3 Install
 +++++++++++++++++++++++
