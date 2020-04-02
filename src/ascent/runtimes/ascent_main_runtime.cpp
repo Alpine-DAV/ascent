@@ -1242,7 +1242,9 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
 
 void AscentRuntime::FindRenders(conduit::Node &image_params, 
                                 conduit::Node &image_list,
-                                conduit::Node &render_times)
+                                conduit::Node &render_times,
+                                conduit::Node &color_buffers,
+                                conduit::Node &depth_buffers)
 {
   image_list.reset();
 
@@ -1259,6 +1261,9 @@ void AscentRuntime::FindRenders(conduit::Node &image_params,
   {
     image_list.append() = images->child(i)["image_name"].as_string();
     render_times.append() = images->child(i)["render_time"].as_double();
+
+    color_buffers.append() = images->child(i)["color_buffer"];
+    depth_buffers.append() = images->child(i)["depth_buffer"];
   }
 
   images->reset();
@@ -1434,9 +1439,13 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     Node render_file_names;
     Node renders;
     Node render_times;
-    FindRenders(renders, render_file_names, render_times);
+    Node color_buffers;
+    Node depth_buffers;
+    FindRenders(renders, render_file_names, render_times, color_buffers, depth_buffers);
     m_info["images"] = renders;
     m_info["render_times"] = render_times;
+    m_info["color_buffers"] = color_buffers;
+    m_info["depth_buffers"] = depth_buffers;
 
     const conduit::Node &expression_cache =
         runtime::expressions::ExpressionEval::get_cache();

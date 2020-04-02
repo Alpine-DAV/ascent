@@ -685,6 +685,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                                 << offset + current_image_count << std::endl;
                     ascent_opts["image_count"] = current_image_count;
                     ascent_opts["image_offset"] = offset;
+                    // add compositing flag?
 
                     Ascent ascent_render;
                     ascent_render.open(ascent_opts);
@@ -702,6 +703,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                             << std::endl;
             }
         }
+        // TODO: recv image chunks from sim nodes (recv any)
+        // TODO: compositing
     }
     else // all sim nodes: send extract to vis nodes
     {
@@ -727,12 +730,13 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
                 Ascent ascent_render;
                 ascent_render.open(ascent_opts);
-                ascent_render.publish(data);    // sync happens here
+                ascent_render.publish(data);
 
                 log_time(start, "+ before render sim ", world_rank);
                 ascent_render.execute(blank_actions);
                 ascent_render.close();
                 log_time(start, "+++ after render sim ", world_rank);
+                // TODO: send image chunks to vis nodes (ibsend)
             }
         }
         else
@@ -876,6 +880,26 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
             Node &t = itr.next();
             render_times.push_back(t.to_double());
         }
+
+        std::vector<Node> color_buffers;
+        itr = info["color_buffers"].children();
+        while (itr.has_next())
+        {
+            Node &b = itr.next();
+            color_buffers.push_back(b);
+        }
+        
+        // color_buffers[0].dtype().number_of_elements()
+
+        // std::cout << "$$$ color buffer \n";
+        // for (size_t i = 0; i < color_buffers[0].dtype().number_of_elements(); i++)
+        // {
+        //     float v = color_buffers[0].as_float_ptr()[i];
+        //     if (v > 0)
+        //         std::cout << v << " ";
+        // }
+        // std::cout << std::endl;
+
         ascent_probing.close();
         log_time(start, "probing ", world_rank);
     }

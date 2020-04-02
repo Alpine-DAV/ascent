@@ -60,6 +60,8 @@
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
 
+#include <vtkh/utils/vtkm_array_utils.hpp>
+
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
@@ -308,6 +310,25 @@ public:
     // std::cout << "~~~ Execute scene: " << renders.size() << std::endl;
     scene.Render();
 
+      // // TODO: renders buffers
+      // auto renders2 = r->GetRenders();
+      // for (size_t i = 0; i < renders2.size(); i++)
+      // {
+      //   int size = renders2.at(i).GetWidth() * renders2.at(i).GetHeight();
+      //   // TODO: only getting canvas from domain 0 for now
+      //   float* color_buffer = &vtkh::GetVTKMPointer(renders2.at(i).GetCanvas(0)->GetColorBuffer())[0][0];
+      //   float* depth_buffer = vtkh::GetVTKMPointer(renders2.at(i).GetCanvas(0)->GetDepthBuffer());
+
+      //   std::cout << "$$$ color buffer \n";
+      //   for (size_t j = 0; j < size*4; j++)
+      //   {
+      //     float v = color_buffer[j];
+      //     if (v > 0)
+      //       std::cout << v << " ";
+      //   }
+      //   std::cout << std::endl;
+      // }
+
     for (int i = 0; i < m_renderer_count; i++)
     {
       ostringstream oss;
@@ -316,7 +337,13 @@ public:
       vtkh::Renderer *r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
       auto times = r->GetRenderTimes();
       m_render_times.push_back(times);
-      
+
+
+      int size = renders.at(i).GetWidth() * renders.at(i).GetHeight();
+      // TODO: only getting canvas from domain 0 for now
+      std::vector<float> color_buffer = r->GetColorBuffers().at(i);
+      // TODO: save color buffers
+     
       m_registry->consume(oss.str());
     }
   }
@@ -2580,8 +2607,26 @@ void add_images(std::vector<vtkh::Render> *renders,
       }
     }
     avg_render_time /= double(count);
-
     image_data["render_time"] = avg_render_time;
+
+    // FIXME: color buffer: only 0, depth buffer only ~1.001
+    int size = renders->at(i).GetWidth() * renders->at(i).GetHeight();
+    // TODO: only getting canvas from domain 0 for now
+    float* color_buffer = &vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetColorBuffer())[0][0];
+    float* depth_buffer = vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer());
+
+    // std::cout << "$$$ color buffer " << std::endl;
+    // for (size_t j = 0; j < size*4; j++)
+    // {
+    //   float v = color_buffer[j];
+    //   if (v > 0)
+    //     std::cout << v << " ";
+    // }
+    // std::cout << std::endl;
+
+    image_data["color_buffer"].set(color_buffer, size * 4); // TODO:
+    image_data["depth_buffer"].set(depth_buffer, size); // TODO:
+
     image_list->append() = image_data;
 
     // append name and frame time to ascent info
