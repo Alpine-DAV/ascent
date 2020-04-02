@@ -411,6 +411,53 @@ void log_time(std::chrono::time_point<std::chrono::system_clock> start,
     out.close();
 }
 
+int recv_any_using_schema(Node &node, int src, int tag, MPI_Comm comm)
+{  
+    MPI_Status status;
+    
+    int mpi_error = MPI_Probe(src, tag, comm, &status);
+    
+    int buffer_size = 0;
+    MPI_Get_count(&status, MPI_BYTE, &buffer_size);
+
+    Node n_buffer(DataType::uint8(buffer_size));
+    
+    mpi_error = MPI_Recv(n_buffer.data_ptr(),
+                         buffer_size,
+                         MPI_BYTE,
+                         src,
+                         tag,
+                         comm,
+                         &status);
+
+    uint8 *n_buff_ptr = (uint8*)n_buffer.data_ptr();
+
+    Node n_msg;
+    // length of the schema is sent as a 64-bit signed int
+    // NOTE: we aren't using this value  ... 
+    n_msg["schema_len"].set_external((int64*)n_buff_ptr);
+    n_buff_ptr +=8;
+    // wrap the schema string
+    n_msg["schema"].set_external_char8_str((char*)(n_buff_ptr));
+    // create the schema
+    Schema rcv_schema;
+    Generator gen(n_msg["schema"].as_char8_str());
+    gen.walk(rcv_schema);
+
+    // advance by the schema length
+    n_buff_ptr += n_msg["schema"].total_bytes_compact();
+    
+    // apply the schema to the data
+    n_msg["data"].set_external(rcv_schema,n_buff_ptr);
+    
+    // copy out to our result node
+    node.update(n_msg["data"]);
+    
+    if (mpi_error)
+        std::cout << "ERROR receiving dataset from " << status.MPI_SOURCE << std::endl;
+
+    return status.MPI_SOURCE;
+}
 
 int ibsend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm, 
                         MPI_Request *request) 
@@ -466,7 +513,6 @@ int ibsend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm,
     
     if (mpi_error)
         std::cout << "ERROR sending dataset to " << dest << std::endl;
-    // CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
     return mpi_error;
 }
@@ -602,60 +648,42 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
     if (is_vis_node) // all vis nodes: receive data 
     {
-        std::vector<int> image_counts_vis;
         std::vector<int> sending_node_ranks;
 
-        std::cout << "~~~~rank " << world_rank << " / " << my_dest_rank
-                    << ": receives extract(s) from " ;
         for (int i = 0; i < node_map.size(); ++i)
         {
             if (node_map[i] == my_dest_rank)
-            {   
-                std::cout << i << " ";
-                // conduit::Node n_curr; // = data.append();
-                // datasets.push_back(n_curr);
-                image_counts_vis.push_back(max_image_count - image_counts[i]);
                 sending_node_ranks.push_back(i);
-            }
         }
-        std::cout << std::endl;
 
-        // relay::mpi::gather(Node &send_node, Node &recv_node, int root, vis_comms(my_dest_rank));
+        std::stringstream node_string;
+        std::copy(sending_node_ranks.begin(), sending_node_ranks.end(), 
+                    std::ostream_iterator<int>(node_string, " "));
+        std::cout << "~~~~ vis node " << world_rank << ": receives extract(s) from " 
+                  << node_string.str() << std::endl;
 
         int sending_count = int(sending_node_ranks.size());
-        // MPI_Request requests[sending_count];
-        // MPI_Status statuses[sending_count];
-        // std::vector<conduit::Node> datasets(sending_count);
 
         for (int i = 0; i < sending_count; ++i)
         {
             log_time(start, "- before receive ", world_rank);
-            std::cout << "~~~~ receiving " << sending_node_ranks[i] << std::endl;
             conduit::Node dataset;
-            int err = relay::mpi::recv_using_schema(dataset, sending_node_ranks[i], 0, 
-                                                    mpi_comm_world);
-            log_time(start, "--- after receive ", world_rank);
-            // std::cout << "MPI ERROR RECV " << err << std::endl;
-        // }
+            int srcId = recv_any_using_schema(dataset, MPI_ANY_SOURCE, 0, mpi_comm_world);
+            std::cout << "~~~ vis node " << world_rank << " received data from "
+                      << srcId << std::endl;
+            log_time(start, "-- after receive ", world_rank);
 
-        // std::cout << "~~! wait_all_recv " << std::endl;
-        // relay::mpi::wait_all_recv(sending_count, requests, statuses);
-        // std::cout << "~~! wait_all_recv END " << std::endl;
-
-        // render data
-        // int count = 0;
-        // for (auto &dataset : datasets)
-        // {
             if (conduit::blueprint::mesh::verify(dataset, verify_info))
             {
-                int offset = max_image_count - image_counts_vis[i];
+                int current_image_count = max_image_count - image_counts[srcId];
+                int offset = max_image_count - current_image_count;
 
-                if (image_counts_vis[i] > 0)
+                if (current_image_count > 0)
                 {
                     std::cout   << "~~~~ VIS node " << world_rank << " rendering " 
                                 << offset << " - " 
-                                << offset + image_counts_vis[i] << std::endl;
-                    ascent_opts["image_count"] = image_counts_vis[i];
+                                << offset + current_image_count << std::endl;
+                    ascent_opts["image_count"] = current_image_count;
                     ascent_opts["image_offset"] = offset;
 
                     Ascent ascent_render;
@@ -665,7 +693,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     log_time(start, "+ before render vis ", world_rank);
                     ascent_render.execute(blank_actions);
                     ascent_render.close();
-                    log_time(start, "+++ after render vis ", world_rank);
+                    log_time(start, "++ after render vis ", world_rank);
                 }
             }
             else
@@ -673,7 +701,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
                             << std::endl;
             }
-            // ++count;
         }
     }
     else // all sim nodes: send extract to vis nodes
