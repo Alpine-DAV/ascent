@@ -92,6 +92,7 @@
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/NoOp.hpp>
 #include <vtkh/filters/Lagrangian.hpp>
+#include <vtkh/filters/LagrangianInterpolation.hpp>
 #include <vtkh/filters/Log.hpp>
 #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Recenter.hpp>
@@ -1458,6 +1459,127 @@ VTKHLagrangian::execute()
     lagrangian.Update();
 
     vtkh::DataSet *lagrangian_output = lagrangian.GetOutput();
+    vtkm::cont::DataSet ds = lagrangian_output->GetDomain(0);
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    if(ds.GetNumberOfPoints() > 0)
+    {
+      new_coll->add(*lagrangian_output, topo_name);
+    }
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete lagrangian_output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+VTKHLagrangianInterpolation::VTKHLagrangianInterpolation()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHLagrangianInterpolation::~VTKHLagrangianInterpolation()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLagrangianInterpolation::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_lagrangianinterpolation";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHLagrangianInterpolation::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_numeric("radius", params, info, true);
+    res &= check_numeric("num_seeds", params, info, true);
+    res &= check_numeric("interval", params, info, true);
+    res &= check_numeric("start_cycle", params, info, true);
+    res &= check_numeric("end_cycle", params, info, true);
+    res &= check_string("seed_path", params, info, true);
+    res &= check_string("basis_path", params, info, true);
+    res &= check_string("output_path", params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("radius");
+    valid_paths.push_back("num_seeds");
+    valid_paths.push_back("interval");
+    valid_paths.push_back("start_cycle");
+    valid_paths.push_back("end_cycle");
+    valid_paths.push_back("seed_path");
+    valid_paths.push_back("basis_path");
+    valid_paths.push_back("output_path");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLagrangianInterpolation::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_lagrangianinterpolation input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+
+    double radius = params()["radius"].to_float64();
+    int num_seeds = params()["num_seeds"].to_int32();
+    int interval = params()["interval"].to_int32();
+    int start_cycle = params()["start_cycle"].to_int32();
+    int end_cycle = params()["end_cycle"].to_int32();
+    std::string seed_path = params()["seed_path"].as_string();
+    std::string basis_path = params()["basis_path"].as_string();
+    std::string output_path = params()["output_path"].as_string();
+
+    vtkh::LagrangianInterpolation lagrangian;
+
+    lagrangian.SetInput(&data);
+    lagrangian.SetField(field_name);
+    lagrangian.SetRadius(radius);
+    lagrangian.SetNumSeeds(num_seeds);
+    lagrangian.SetInterval(interval);
+    lagrangian.SetStartCycle(start_cycle);
+    lagrangian.SetEndCycle(end_cycle);
+    lagrangian.SetSeedPath(seed_path);
+    lagrangian.SetBasisPath(basis_path);
+    lagrangian.SetOutputPath(output_path);
+    lagrangian.Update();
+
+    vtkh::DataSet *lagrangian_output = lagrangian.GetOutput();
 
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
@@ -1468,6 +1590,7 @@ VTKHLagrangian::execute()
     delete lagrangian_output;
     set_output<DataObject>(res);
 }
+
 
 //-----------------------------------------------------------------------------
 

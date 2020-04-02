@@ -138,6 +138,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHGhostStripper>("transforms","ghost_stripper");
     AscentRuntime::register_filter_type<VTKHIsoVolume>("transforms","isovolume");
     AscentRuntime::register_filter_type<VTKHLagrangian>("transforms","lagrangian");
+    AscentRuntime::register_filter_type<VTKHLagrangianInterpolation>("transforms","lagrangian_interpolation");
     AscentRuntime::register_filter_type<VTKHLog>("transforms","log");
     AscentRuntime::register_filter_type<VTKHMarchingCubes>("transforms","contour");
     AscentRuntime::register_filter_type<VTKHThreshold>("transforms","threshold");

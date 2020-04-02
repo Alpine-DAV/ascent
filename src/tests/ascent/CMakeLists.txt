@@ -88,6 +88,7 @@ set(BASIC_TESTS t_ascent_smoke
 set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_empty_runtime
                t_ascent_mpi_expressions
+               t_ascent_lagrangian_interpolation
                t_ascent_mpi_render_2d
                t_ascent_mpi_render_3d
                t_ascent_mpi_statistics

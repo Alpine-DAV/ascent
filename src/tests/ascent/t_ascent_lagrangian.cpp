@@ -99,13 +99,12 @@ TEST(ascent_lagrangian, test_lagrangian_multistep)
     }
 
     // remove old images before rendering
-    string output_file1 = conduit::utils::join_file_path(output_path,"basisflows_0_5.vtk");
+    string output_file1 = conduit::utils::join_file_path(output_path,"basisflows");
+    string output_file2 = conduit::utils::join_file_path(output_path,"basisflows_json");
     remove_test_file(output_file1);
-    string output_file2 = conduit::utils::join_file_path(output_path,"basisflows_0_10.vtk");
     remove_test_file(output_file2);
 
     ASCENT_INFO(output_file1);
-    ASCENT_INFO(output_file2);
 
     //
     // Create the actions.
@@ -118,18 +117,26 @@ TEST(ascent_lagrangian, test_lagrangian_multistep)
     conduit::Node &lagrangian_params = pipelines["pl1/f1/params"];
     lagrangian_params["field"] = "vel";
     lagrangian_params["step_size"] = 0.1;
-    lagrangian_params["write_frequency"] = 5;
+    lagrangian_params["write_frequency"] = 2;
     lagrangian_params["cust_res"] = 1;
     lagrangian_params["x_res"] = 2;
     lagrangian_params["y_res"] = 2;
     lagrangian_params["z_res"] = 2;
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"]  = "pl1";
+    extracts["e1/params/path"] = output_file1;
 
     conduit::Node actions;
     // add the pipeline
     conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
-
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
     //
     // Run Ascent
     //
@@ -160,10 +167,9 @@ TEST(ascent_lagrangian, test_lagrangian_multistep)
     ascent.close();
 
     // check that we created the right output
-    //EXPECT_TRUE(check_test_file(output_file1));
-    //EXPECT_TRUE(check_test_file(output_file2));
+    EXPECT_TRUE(check_test_file(output_file1));
     std::string msg = "An example of using the lagrangian flow filter.";
-    ASCENT_ACTIONS_DUMP(actions,output_file1,msg);
+//    ASCENT_ACTIONS_DUMP(actions,output_file1,msg);
 
     // clean up
     remove_test_file(output_file1);

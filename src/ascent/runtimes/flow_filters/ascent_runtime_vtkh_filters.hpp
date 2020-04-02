@@ -212,6 +212,19 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class ASCENT_API VTKHLagrangianInterpolation : public ::flow::Filter
+{
+public:
+    VTKHLagrangianInterpolation();
+    virtual ~VTKHLagrangianInterpolation();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class ASCENT_API VTKHLog: public ::flow::Filter
 {
 public:
