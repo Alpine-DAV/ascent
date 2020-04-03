@@ -129,7 +129,8 @@ AscentRuntime::AscentRuntime()
       m_is_probing(0),
       m_probing_factor(0.0),
       m_image_count(0),
-      m_image_offset(0)
+      m_image_offset(0),
+      m_is_vis_node(0)
 {
   flow::filters::register_builtin();
   ResetInfo();
@@ -252,6 +253,8 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     m_image_count = options["image_count"].as_int32();
   if (options.has_path("image_offset"))
     m_image_offset = options["image_offset"].as_int32();    
+  if (options.has_path("vis_node"))
+    m_is_vis_node = options["vis_node"].as_int32();   
 
   Node msg;
   this->Info(msg["info"]);
@@ -912,6 +915,7 @@ void AscentRuntime::PopulateMetadata()
   (*meta)["probing_factor"] = m_probing_factor;
   (*meta)["image_count"] = m_image_count;
   (*meta)["image_offset"] = m_image_offset;
+  (*meta)["vis_node"] = m_is_vis_node;
 }
 
 //-----------------------------------------------------------------------------
@@ -1259,7 +1263,7 @@ void AscentRuntime::FindRenders(conduit::Node &image_params,
   image_params = *images;
   for (int i = 0; i < size; i++)
   {
-    image_list.append() = images->child(i)["image_name"].as_string();
+    image_list.append()   = images->child(i)["image_name"].as_string();
     render_times.append() = images->child(i)["render_time"].as_double();
 
     color_buffers.append() = images->child(i)["color_buffer"];

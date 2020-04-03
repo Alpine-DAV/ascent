@@ -685,6 +685,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                                 << offset + current_image_count << std::endl;
                     ascent_opts["image_count"] = current_image_count;
                     ascent_opts["image_offset"] = offset;
+                    ascent_opts["vis_node"] = true;
                     // add compositing flag?
 
                     Ascent ascent_render;
@@ -727,6 +728,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                             << image_counts[world_rank] << std::endl;
                 ascent_opts["image_count"] = image_counts[world_rank];
                 ascent_opts["image_offset"] = 0;
+                ascent_opts["vis_node"] = false;
 
                 Ascent ascent_render;
                 ascent_render.open(ascent_opts);
@@ -888,10 +890,17 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
             Node &b = itr.next();
             color_buffers.push_back(b);
         }
+        std::vector<Node> depth_buffers;
+        itr = info["depth_buffers"].children();
+        while (itr.has_next())
+        {
+            Node &b = itr.next();
+            depth_buffers.push_back(b);
+        }
         
         // color_buffers[0].dtype().number_of_elements()
 
-        // std::cout << "$$$ color buffer \n";
+        std::cout << "$$$ depth_buffers " << depth_buffers.size() << std::endl;
         // for (size_t i = 0; i < color_buffers[0].dtype().number_of_elements(); i++)
         // {
         //     float v = color_buffers[0].as_float_ptr()[i];
@@ -912,7 +921,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     if (probing_factor < 1.0)
     {
         splitAndRender(mpi_comm_world, world_size, world_rank, sim_comm, rank_split, 
-                    render_times, phi*theta, m_data, probing_factor, vis_budget);
+                       render_times, phi*theta, m_data, probing_factor, vis_budget);
     }
 
     MPI_Group_free(&world_group);

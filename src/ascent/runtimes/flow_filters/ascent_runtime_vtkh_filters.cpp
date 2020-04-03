@@ -256,7 +256,12 @@ class AscentScene
 {
 protected:
   int m_renderer_count;
-  std::vector<std::vector<double>> m_render_times; // render times per renderer
+  std::vector< std::vector<double>> m_render_times; // render times per renderer
+  // color buffer per render per renderer
+  std::vector< std::vector< std::vector<float>>> m_color_buffers;
+  // depth buffer per render per renderer
+  std::vector< std::vector< std::vector<float>>> m_depth_buffers;
+
   flow::Registry *m_registry;
   AscentScene(){};
 
@@ -271,9 +276,27 @@ public:
   {
   }
 
-  std::vector<std::vector<double>> *GetRenderTimes()
+  std::vector< std::vector<double>> *GetRenderTimes()
   {
     return &m_render_times;
+  }
+
+  // return color buffers of all renders of selected renderer 
+  std::vector< std::vector<float>> *GetColorBuffers(int rendererId)
+  {
+    if(rendererId >= m_renderer_count)
+      ASCENT_ERROR("Trying to access data of non-existend renderer.");
+
+    return &m_color_buffers.at(rendererId);
+  }
+
+  // return color buffers of all renders of selected renderer 
+  std::vector< std::vector<float>> *GetDepthBuffers(int rendererId)
+  {
+    if(rendererId >= m_renderer_count)
+      ASCENT_ERROR("Trying to access data of non-existend renderer.");
+
+    return &m_depth_buffers.at(rendererId);
   }
 
   int GetRendererCount()
@@ -290,7 +313,7 @@ public:
     m_renderer_count++;
   }
 
-  void Execute(std::vector<vtkh::Render> &renders, bool isProbe = false)
+  void Execute(std::vector<vtkh::Render> &renders, bool is_vis_node = false)
   {
     vtkh::Scene scene;
     for (int i = 0; i < m_renderer_count; i++)
@@ -307,27 +330,8 @@ public:
       scene.AddRender(renders[i]);
     }
 
-    // std::cout << "~~~ Execute scene: " << renders.size() << std::endl;
-    scene.Render();
-
-      // // TODO: renders buffers
-      // auto renders2 = r->GetRenders();
-      // for (size_t i = 0; i < renders2.size(); i++)
-      // {
-      //   int size = renders2.at(i).GetWidth() * renders2.at(i).GetHeight();
-      //   // TODO: only getting canvas from domain 0 for now
-      //   float* color_buffer = &vtkh::GetVTKMPointer(renders2.at(i).GetCanvas(0)->GetColorBuffer())[0][0];
-      //   float* depth_buffer = vtkh::GetVTKMPointer(renders2.at(i).GetCanvas(0)->GetDepthBuffer());
-
-      //   std::cout << "$$$ color buffer \n";
-      //   for (size_t j = 0; j < size*4; j++)
-      //   {
-      //     float v = color_buffer[j];
-      //     if (v > 0)
-      //       std::cout << v << " ";
-      //   }
-      //   std::cout << std::endl;
-      // }
+    // TODO: bool do_composite = true for vis nodes
+    scene.Render(is_vis_node);
 
     for (int i = 0; i < m_renderer_count; i++)
     {
@@ -338,11 +342,10 @@ public:
       auto times = r->GetRenderTimes();
       m_render_times.push_back(times);
 
-
       int size = renders.at(i).GetWidth() * renders.at(i).GetHeight();
-      // TODO: only getting canvas from domain 0 for now
-      std::vector<float> color_buffer = r->GetColorBuffers().at(i);
-      // TODO: save color buffers
+      // NOTE: only getting canvas from domain 0 for now
+      m_color_buffers.push_back(r->GetColorBuffers());
+      m_depth_buffers.push_back(r->GetDepthBuffers());
      
       m_registry->consume(oss.str());
     }
@@ -1609,7 +1612,6 @@ void DefaultRender::execute()
         double probing_factor = 1.0;
         int stride = 1;
         bool is_probing = false;
-        Node *meta = graph().workspace().registry().fetch<Node>("metadata");
         if (meta->has_path("is_probing") && meta->has_path("probing_factor"))
         {
           probing_factor = (*meta)["probing_factor"].as_double();
@@ -2561,7 +2563,9 @@ ExecScene::~ExecScene()
 
 void add_images(std::vector<vtkh::Render> *renders, 
                 flow::Graph *graph, 
-                const std::vector<std::vector<double> > *scene_render_times)
+                const std::vector<std::vector<double> > *scene_render_times,
+                std::vector< std::vector<float>> *color_buffers,
+                std::vector< std::vector<float>> *depth_buffers)
 {
   if (!graph->workspace().registry().has_entry("image_list"))
   {
@@ -2609,23 +2613,10 @@ void add_images(std::vector<vtkh::Render> *renders,
     avg_render_time /= double(count);
     image_data["render_time"] = avg_render_time;
 
-    // FIXME: color buffer: only 0, depth buffer only ~1.001
     int size = renders->at(i).GetWidth() * renders->at(i).GetHeight();
-    // TODO: only getting canvas from domain 0 for now
-    float* color_buffer = &vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetColorBuffer())[0][0];
-    float* depth_buffer = vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer());
-
-    // std::cout << "$$$ color buffer " << std::endl;
-    // for (size_t j = 0; j < size*4; j++)
-    // {
-    //   float v = color_buffer[j];
-    //   if (v > 0)
-    //     std::cout << v << " ";
-    // }
-    // std::cout << std::endl;
-
-    image_data["color_buffer"].set(color_buffer, size * 4); // TODO:
-    image_data["depth_buffer"].set(depth_buffer, size); // TODO:
+    // NOTE: only getting canvas from domain 0 for now
+    image_data["color_buffer"].set(color_buffers->at(i).data(), size * 4);
+    image_data["depth_buffer"].set(depth_buffers->at(i).data(), size);
 
     image_list->append() = image_data;
 
@@ -2634,7 +2625,7 @@ void add_images(std::vector<vtkh::Render> *renders,
     // image_info["image_name"] = image_name;
     // image_info["render_times"] = render_times;
     // info["renders"].append() = image_info;
-  }
+  } // for renders
 
 }
 
@@ -2664,13 +2655,21 @@ void ExecScene::execute()
   detail::AscentScene *scene = input<detail::AscentScene>(0);
   std::vector<vtkh::Render> *renders = input<std::vector<vtkh::Render>>(1);
 
-  scene->Execute(*renders);
+  bool is_vis_node = false;
+  Node *meta = graph().workspace().registry().fetch<Node>("metadata");
+  if (meta->has_path("vis_node"))
+    is_vis_node = (*meta)["vis_node"].as_int32();
 
-  std::vector<std::vector<double> > *render_times = scene->GetRenderTimes();
+  scene->Execute(*renders, is_vis_node);
+
+  std::vector< std::vector<double>> *render_times = scene->GetRenderTimes();
+  // NOTE: only domain 0 for now
+  std::vector< std::vector<float>> *color_buffers = scene->GetColorBuffers(0);
+  std::vector< std::vector<float>> *depth_buffers = scene->GetDepthBuffers(0);
 
   // the images should exist now so add them to the image list
   // this can be used for the web server or jupyter
-  add_images(renders, &graph(), render_times);
+  add_images(renders, &graph(), render_times, color_buffers, depth_buffers);
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
