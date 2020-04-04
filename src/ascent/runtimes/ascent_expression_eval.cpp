@@ -94,6 +94,8 @@ void register_builtin()
   flow::Workspace::register_filter_type<expressions::FieldMax>();
   flow::Workspace::register_filter_type<expressions::FieldMin>();
   flow::Workspace::register_filter_type<expressions::FieldAvg>();
+  flow::Workspace::register_filter_type<expressions::FieldNanCount>();
+  flow::Workspace::register_filter_type<expressions::FieldInfCount>();
   flow::Workspace::register_filter_type<expressions::FieldSum>();
   flow::Workspace::register_filter_type<expressions::ArrayMax>();
   flow::Workspace::register_filter_type<expressions::ArrayMin>();
@@ -183,6 +185,22 @@ initialize_functions()
   field_avg_sig["filter_name"] = "field_avg";
   field_avg_sig["args/arg1/type"] = "field"; // arg names match input port names
   field_avg_sig["description"] = "Return the field average of a mesh variable.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &field_nan_sig = (*functions)["field_nan_count"].append();
+  field_nan_sig["return_type"] = "double";
+  field_nan_sig["filter_name"] = "field_nan_count";
+  field_nan_sig["args/arg1/type"] = "field"; // arg names match input port names
+  field_nan_sig["description"] = "Return the number  of NaNs in a mesh variable.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &field_inf_sig = (*functions)["field_inf_count"].append();
+  field_inf_sig["return_type"] = "double";
+  field_inf_sig["filter_name"] = "field_inf_count";
+  field_inf_sig["args/arg1/type"] = "field"; // arg names match input port names
+  field_inf_sig["description"] = "Return the number  of -inf and +inf in a mesh variable.";
 
   // -------------------------------------------------------------
 

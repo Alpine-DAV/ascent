@@ -82,7 +82,7 @@ get_vtkm_ptr(vtkm::cont::ArrayHandle<T> handle)
   typedef typename HandleType::template ExecutionTypes<vtkm::cont::DeviceAdapterTagSerial>::Portal PortalType;
   typedef typename vtkm::cont::ArrayPortalToIterators<PortalType>::IteratorType IteratorType;
 
-  IteratorType iter = vtkm::cont::ArrayPortalToIterators<PortalType>(handle.GetPortalControl()).GetBegin();
+  IteratorType iter = vtkm::cont::ArrayPortalToIterators<PortalType>(handle.WritePortal()).GetBegin();
   return &(*iter);
 }
 

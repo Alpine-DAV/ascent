@@ -646,6 +646,7 @@ MFEMDataAdapter::ElementTypeToShapeName(mfem::Element::Type element_type)
      case mfem::Element::QUADRILATERAL:  return "quad";
      case mfem::Element::TETRAHEDRON:    return "tet";
      case mfem::Element::HEXAHEDRON:     return "hex";
+     case mfem::Element::WEDGE:          return "wedge";
    }
 
    return "unknown";

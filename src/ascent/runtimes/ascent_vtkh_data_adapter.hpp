@@ -184,6 +184,7 @@ private:
                                                 int neles,
                                                 int nverts,
                                                 vtkm::cont::DataSet *dset,
+                                                const int dims,
                                                 bool zero_copy);
 
     static bool VTKmTopologyToBlueprint(conduit::Node &output,

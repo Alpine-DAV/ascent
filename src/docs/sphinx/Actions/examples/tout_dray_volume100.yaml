@@ -1,0 +1,17 @@
+#An example of using devil ray for pseudocolor plot.
+
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      type: "dray_volume"
+      params: 
+        field: "density"
+        min_value: 0.98
+        max_value: 1.04
+        log_scale: "false"
+        image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_dray_volume"
+        camera: 
+          azimuth: -30
+          elevation: 35
+        samples: 100

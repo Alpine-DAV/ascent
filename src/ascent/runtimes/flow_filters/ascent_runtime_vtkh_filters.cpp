@@ -65,6 +65,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_runtime_utils.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 #include <ascent_data_object.hpp>
@@ -85,6 +86,7 @@
 #include <vtkh/rendering/ScalarRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
+#include <vtkh/filters/CompositeVector.hpp>
 #include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/GhostStripper.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
@@ -98,6 +100,7 @@
 #include <vtkh/filters/Statistics.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
+#include <vtkh/filters/VectorComponent.hpp>
 #include <vtkh/filters/Histogram.hpp>
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkm/cont/DataSet.h>
@@ -2688,7 +2691,7 @@ VTKHNoOp::execute()
 
     if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_particle_advection input must be a data object");
+        ASCENT_ERROR("vtkh_no_op input must be a data object");
     }
 
     // grab the data collection and ask for a vtkh collection
@@ -2721,6 +2724,224 @@ VTKHNoOp::execute()
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     delete noop_output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHVectorComponent::VTKHVectorComponent()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHVectorComponent::~VTKHVectorComponent()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHVectorComponent::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_vector_component";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHVectorComponent::verify_params(const conduit::Node &params,
+                                   conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_numeric("component",params, info, true);
+    res &= check_string("output_name",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("component");
+    valid_paths.push_back("output_name");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHVectorComponent::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_vector_component input must be a data object");
+    }
+
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+    int component = params()["component"].to_int32();
+    std::string res_name = params()["output_name"].as_string();
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    vtkh::VectorComponent comp;
+
+    comp.SetInput(&data);
+    comp.SetField(field_name);
+    comp.SetComponent(component);
+    comp.SetResultField(res_name);
+
+    comp.Update();
+
+    vtkh::DataSet *comp_output = comp.GetOutput();
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*comp_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete comp_output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHCompositeVector::VTKHCompositeVector()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHCompositeVector::~VTKHCompositeVector()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHCompositeVector::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_composite_vector";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHCompositeVector::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field1",params, info, true);
+    res &= check_string("field2",params, info, true);
+    res &= check_string("field3",params, info, false);
+    res &= check_string("output_name",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field1");
+    valid_paths.push_back("field2");
+    valid_paths.push_back("field3");
+    valid_paths.push_back("output_name");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHCompositeVector::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_composite_vector input must be a data object");
+    }
+
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field_name1 = params()["field1"].as_string();
+    if(!collection->has_field(field_name1))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name1<<"'");
+    }
+
+    std::string field_name2 = params()["field2"].as_string();
+    if(!collection->has_field(field_name2))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name2<<"'");
+    }
+
+    std::string field_name3;
+
+    if(params().has_path("field3"))
+    {
+      field_name3 = params()["field3"].as_string();
+      if(!collection->has_field(field_name3))
+      {
+        ASCENT_ERROR("Unknown field '"<<field_name2<<"'");
+      }
+    }
+
+    std::string topo_name = collection->field_topology(field_name1);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+
+    vtkh::CompositeVector comp;
+
+    comp.SetInput(&data);
+    if(field_name3 == "")
+    {
+      comp.SetFields(field_name1, field_name2);
+    }
+    else
+    {
+      comp.SetFields(field_name1, field_name2, field_name3);
+    }
+    std::string res_name = params()["output_name"].as_string();
+    comp.SetResultField(res_name);
+    comp.Update();
+
+    vtkh::DataSet *comp_output = comp.GetOutput();
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*comp_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete comp_output;
     set_output<DataObject>(res);
 }
 

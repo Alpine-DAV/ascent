@@ -75,6 +75,9 @@ ASCENT_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
 ASCENT_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
 
 ASCENT_PYTHON_LIBS =@ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS@
+ASCENT_PYTHON_LIB_DIR=@ASCENT_CONFIG_MK_PYTHON_LIB_DIR@
+
+ASCENT_CUDA_LIBS = @CUDA_cudadevrt_LIBRARY@ @CUDA_cudart_static_LIBRARY@
 
 # include vars from conduit_config.mk
 include $(ASCENT_CONDUIT_DIR)/share/conduit/conduit_config.mk
@@ -84,14 +87,15 @@ ASCENT_LINK_RPATH = -Wl,-rpath,$(ASCENT_DIR)/lib $(CONDUIT_LINK_RPATH)
 
 # two steps are used b/c there are commas in the linker commands
 # which will undermine parsing of the makefile
+ASCENT_PYTHON_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_PYTHON_LIB_DIR)
 ASCENT_VTKH_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_VTKH_DIR)/lib
 ASCENT_VTKM_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_VTKM_DIR)/lib
 ASCENT_MFEM_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_MFEM_DIR)/lib
 
+ASCENT_LINK_RPATH += $(if $(ASCENT_PYTHON_LIBS), $(ASCENT_PYTHON_RPATH_FLAGS_VALUE))
 ASCENT_LINK_RPATH += $(if $(ASCENT_VTKH_DIR), $(ASCENT_VTKH_RPATH_FLAGS_VALUE))
 ASCENT_LINK_RPATH += $(if $(ASCENT_VTKM_DIR), $(ASCENT_VTKM_RPATH_FLAGS_VALUE))
 ASCENT_LINK_RPATH += $(if $(ASCENT_MFEM_DIR), $(ASCENT_MFEM_RPATH_FLAGS_VALUE))
-
 
 #################
 # Linking Flags
@@ -145,10 +149,19 @@ ifeq ($(ASCENT_VTKM_DIR),)
    # not set, do not include config.mk
 else
     ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
-                            -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_cont-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_rendering-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_filter-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_rendering-$(ASCENT_VTKM_VERSION)
+                            -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_cont-$(ASCENT_VTKM_VERSION)
+
+ifeq ($(ASCENT_CUDA_LIBS),)
+   # not set, do not include config.mk
+else
+    ASCENT_DEVICE_OBJECT = $(ASCENT_DIR)/lib/bcal_vtkm.o
+    ASCENT_DEVICE_OBJECT_MPI = $(ASCENT_DIR)/lib/bcal_vtkm_mpi.o
+    ASCENT_CUDA_LIB_FLAGS = $(ASCENT_CUDA_LIBS)
+endif
+
 endif
 
 ##########
@@ -169,6 +182,7 @@ ifeq ($(ASCENT_DRAY_DIR),)
    # not set, do not include config
 else
    include $(ASCENT_DRAY_DIR)/share/dray/dray_config.mk
+   ASCENT_LINK_RPATH += $(DRAY_LINK_RPATH)
 endif
 
 # MFEM isn't in the interface, so we don't need include flags
@@ -192,17 +206,28 @@ ASCENT_INCLUDE_FLAGS = $(CONDUIT_INCLUDE_FLAGS) \
 # Ascent Lib Flags
 ####################
 # if using Ascent without mpi
-ASCENT_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
+ASCENT_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT) \
+                   -L $(ASCENT_DIR)/lib \
                    -lascent \
                    -lascent_flow \
                    -lascent_lodepng \
+<<<<<<< HEAD
                    -lrover $(DRAY_LIB_FLAGS) $(ASCENT_VTKH_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS)
+=======
+                   -lrover $(DRAY_LIB_FLAGS) $(ASCENT_VTKH_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+>>>>>>> develop
 
 # if using Ascent with mpi
-ASCENT_MPI_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
+ASCENT_MPI_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT_MPI) \
+                       -L $(ASCENT_DIR)/lib \
                        -lascent_mpi \
                        -lascent_flow \
                        -lascent_lodepng \
+<<<<<<< HEAD
                        -lrover_mpi $(DRAY_LINK_RPATH) $(DRAY_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS)
+=======
+                       -lrover_mpi $(DRAY_LINK_RPATH) $(DRAY_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+
+>>>>>>> develop
 
 

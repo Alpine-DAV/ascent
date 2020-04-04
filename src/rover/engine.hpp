@@ -83,8 +83,8 @@ public:
 
     color_map.Sample(samples, temp);
     m_color_map.Allocate(samples);
-    auto portal = m_color_map.GetPortalControl();
-    auto colorPortal = temp.GetPortalConstControl();
+    auto portal = m_color_map.WritePortal();
+    auto colorPortal = temp.ReadPortal();
 
     for (vtkm::Id i = 0; i < samples; ++i)
     {

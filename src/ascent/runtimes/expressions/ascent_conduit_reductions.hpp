@@ -80,6 +80,11 @@ conduit::Node array_min(const conduit::Node &values);
 
 conduit::Node array_sum(const conduit::Node &values);
 
+conduit::Node array_nan_count(const conduit::Node &values);
+
+// count of all inf or -inf
+conduit::Node array_inf_count(const conduit::Node &values);
+
 conduit::Node array_histogram(const conduit::Node &values,
                               const double &min_value,
                               const double &max_value,

@@ -56,8 +56,10 @@ class UberenvAscent(Ascent):
 
     homepage = "https://github.com/alpine-DAV/ascent"
 
-    version('0.5.1', '21d3663781975432144037270698d493a7f8fa876ede7da51618335be468168f')
-    version('0.5.0', '21d3663781975432144037270698d493a7f8fa876ede7da51618335be468168f')
+    # these are commented out b/c if they are active they undermine using develop
+    # develop uses the set of deps that we keep healthy
+    # version('0.5.1', '21d3663781975432144037270698d493a7f8fa876ede7da51618335be468168f')
+    # version('0.5.0', '21d3663781975432144037270698d493a7f8fa876ede7da51618335be468168f')
 
     # default to building docs when using uberenv
     variant("doc",

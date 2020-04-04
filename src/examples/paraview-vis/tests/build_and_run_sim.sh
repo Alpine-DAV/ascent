@@ -201,10 +201,12 @@ testParaViewAscent()
 # spack_dir: directory where spack repo is cloned
 # sim_dir: directory where to run simulations
 # keep_going: optional count that says how many time we keep going when we should stop
+# build_option: option to build packages such as -j40
+# build_dependency: dependency to fix spack issues (such as ^mpich)
 main()
 {
     if [ $# -lt 2 ]; then
-        echo "$0 spack_dir sim_dir [keep_going] [build_option]"
+        echo "$0 spack_dir sim_dir [keep_going] [build_option] [build_dependency]"
         return 1
     fi
     local spack_dir=$1
@@ -217,6 +219,10 @@ main()
     if [[ -z $build_option ]]; then
         build_option=""
     fi
+    local build_dependency=$5
+    if [[ -z $build_dependency ]]; then
+        build_dependency=""
+    fi
     cd "$spack_dir" || return 1
     # update spack
     local result
@@ -228,17 +234,20 @@ main()
     fi
     echo "$result"
     if [[ "$result" = "Already up to date." && "$keep_going" -eq 0 ]]; then
+        echo "Success"
         return 0
     fi
     if [[ $keep_going -gt 0 ]]; then
         keep_going=$((keep_going - 1))
     fi
-    if ! testParaViewAscent paraview@develop+python3+mpi+osmesa~opengl2+shared^mpich ascent@develop~vtkh^mpich; then
+    if ! testParaViewAscent paraview@develop+python3+mpi+osmesa~opengl2+shared${build_dependency} ascent@develop~vtkh${build_dependency}; then
         return 1
     fi
-    if ! testParaViewAscent paraview@develop+python3+mpi+osmesa~opengl2~shared^mpich ascent@develop~vtkh^mpich; then
+    if ! testParaViewAscent paraview@develop+python3+mpi+osmesa~opengl2~shared${build_dependency} ascent@develop~vtkh${build_dependency}; then
         return 1
     fi
+    echo "Success"
+    return 0
 }
 
 main "$@"

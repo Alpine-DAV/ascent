@@ -72,6 +72,28 @@ namespace runtime
 namespace filters
 {
 
+bool string_equal(const std::string& str1, const std::string& str2)
+{
+  if (str1.size() != str2.size())
+  {
+    return false;
+  }
+
+  auto itr1 = str1.begin();
+  auto itr2 = str2.begin();
+  while ((itr1 != str1.end()) && (itr2 != str2.end()))
+  {
+    if (std::tolower(*itr1) != std::tolower(*itr2))
+    {
+      return false;
+    }
+    ++itr1;
+    ++itr2;
+  }
+
+  return true;
+}
+
 double zoom_to_vtkm_zoom(double in_zoom)
 {
   // vtkm is weird. increasing the value of zoom, zooms out.
@@ -192,32 +214,23 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
 bool is_valid_name(const std::string &name)
 {
   std::string lower_name;
+
   for(std::string::size_type i = 0; i < name.length(); ++i)
   {
     lower_name += std::tolower(name[i]);
   }
+
+  std::set<std::string> presets = vtkm::cont::ColorTable::GetPresets();
   bool valid = false;
-  if(lower_name == "default" ||
-     lower_name == "cool to warm" ||
-     lower_name == "cool to warm extended" ||
-     lower_name == "viridis" ||
-     lower_name == "inferno" ||
-     lower_name == "plasma" ||
-     lower_name == "black-body radiation" ||
-     lower_name == "x ray" ||
-     lower_name == "green" ||
-     lower_name == "black - blue - white" ||
-     lower_name == "blue to orange" ||
-     lower_name == "gray to red" ||
-     lower_name == "cool and hot" ||
-     lower_name == "blue - green - orange" ||
-     lower_name == "yellow - gray - blue" ||
-     lower_name == "rainbow uniform" ||
-     lower_name == "jet" ||
-     lower_name == "rainbow desaturated")
+  for( auto s : presets)
   {
-    valid = true;
+    valid = string_equal(s, name);
+    if(valid)
+    {
+      break;
+    }
   }
+
   return valid;
 }
 //-----------------------------------------------------------------------------
@@ -312,7 +325,8 @@ parse_color_table(const conduit::Node &color_table_node)
         }
         else
         {
-            ASCENT_WARN("Unknown color table control point type " << peg["type"].as_string()<<
+            ASCENT_WARN("Unknown color table control point type "
+                        << peg["type"].as_string()<<
                         "\nValid types are 'alpha' and 'rgb'");
         }
     }

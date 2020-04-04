@@ -14,6 +14,16 @@ if [[ -z $keep_going ]]; then
     keep_going=0
 fi
 
+build_option=$2
+if [[ -z $build_option ]]; then
+    build_option="-j40"
+fi
+
+build_dependency=$3
+if [[ -z $build_dependency ]]; then
+    build_dependency=""
+fi
+
 docker container start ubuntu-paraview-ascent
-docker exec ubuntu-paraview-ascent ${ascentDir}/src/examples/paraview-vis/tests/build_and_run_sim_inside_docker.sh $keep_going
+docker exec ubuntu-paraview-ascent ${ascentDir}/src/examples/paraview-vis/tests/build_and_run_sim_inside_docker.sh $keep_going $build_option $build_dependency
 date

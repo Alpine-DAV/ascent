@@ -65,7 +65,7 @@
 #cmakedefine ASCENT_FORTRAN_COMPILER "${ASCENT_FORTRAN_COMPILER}"
 
 // this path points to the web client js code tree
-#cmakedefine ASCENT_WEB_CLIENT_ROOT   "@ASCENT_WEB_CLIENT_ROOT@"
+#cmakedefine ASCENT_SOURCE_WEB_CLIENT_ROOT   "@ASCENT_SOURCE_WEB_CLIENT_ROOT@"
 
 // defs for general openmp support
 #cmakedefine ASCENT_USE_OPENMP        "@OPENMP_FOUND@"

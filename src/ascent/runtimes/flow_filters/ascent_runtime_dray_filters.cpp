@@ -65,6 +65,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_runtime_utils.hpp>
 #include <ascent_png_encoder.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -94,14 +95,20 @@
 #include <dray/rendering/renderer.hpp>
 #include <dray/rendering/surface.hpp>
 #include <dray/rendering/slice_plane.hpp>
+<<<<<<< HEAD
 #include <dray/rendering/scalar_renderer.hpp>
+=======
+>>>>>>> develop
 #include <dray/rendering/partial_renderer.hpp>
 #include <dray/io/blueprint_reader.hpp>
 
 #include <vtkh/vtkh.hpp>
 #include <vtkh/compositing/Compositor.hpp>
 #include <vtkh/compositing/PartialCompositor.hpp>
+<<<<<<< HEAD
 #include <vtkh/compositing/PayloadCompositor.hpp>
+=======
+>>>>>>> develop
 
 using namespace conduit;
 using namespace std;
@@ -573,6 +580,7 @@ void convert_partials(std::vector<dray::Array<dray::VolumePartial>> &input,
 
 }
 
+<<<<<<< HEAD
 
 vtkh::PayloadImage * convert(dray::ScalarBuffer &result)
 {
@@ -653,6 +661,8 @@ dray::ScalarBuffer  convert(vtkh::PayloadImage &image, std::vector<std::string> 
 
   return result;
 }
+=======
+>>>>>>> develop
 }; // namespace detail
 
 //-----------------------------------------------------------------------------
@@ -708,6 +718,11 @@ DRayPseudocolor::verify_params(const conduit::Node &params,
     // filter knobs
     valid_paths.push_back("draw_mesh");
     valid_paths.push_back("line_thickness");
+<<<<<<< HEAD
+=======
+    valid_paths.push_back("line_color");
+    res &= check_numeric("line_color",params, info, false);
+>>>>>>> develop
     res &= check_numeric("line_thickness",params, info, false);
     res &= check_string("draw_mesh",params, info, false);
 
@@ -746,6 +761,10 @@ DRayPseudocolor::execute()
     comm_id = flow::Workspace::default_mpi_comm();
 #endif
     dcol->mpi_comm(comm_id);
+<<<<<<< HEAD
+=======
+    bool is_3d = dcol->topo_dims() == 3;
+>>>>>>> develop
 
     DRayCollection faces = dcol->boundary();
     faces.mpi_comm(comm_id);
@@ -772,12 +791,36 @@ DRayPseudocolor::execute()
         draw_mesh = true;
       }
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     float line_thickness = 0.05f;
     if(params().has_path("line_thickness"))
     {
       line_thickness = params()["line_thickness"].to_float32();
     }
 
+<<<<<<< HEAD
+=======
+    dray::Vec<float,4> vcolor = {0.f, 0.f, 0.f, 1.f};
+    if(params().has_path("line_color"))
+    {
+      conduit::Node n;
+      params()["line_color"].to_float32_array(n);
+      if(n.dtype().number_of_elements() != 4)
+      {
+        ASCENT_ERROR("line_color is expected to be 4 floating "
+                     "point values (RGBA)");
+      }
+      const float32 *color = n.as_float32_ptr();
+      vcolor[0] = color[0];
+      vcolor[1] = color[1];
+      vcolor[2] = color[2];
+      vcolor[3] = color[3];
+    }
+
+>>>>>>> develop
     std::vector<dray::Array<dray::Vec<dray::float32,4>>> color_buffers;
     std::vector<dray::Array<dray::float32>> depth_buffers;
 
@@ -793,10 +836,18 @@ DRayPseudocolor::execute()
       surface->field(field_name);
       surface->color_map(color_map);
       surface->line_thickness(line_thickness);
+<<<<<<< HEAD
+=======
+      surface->line_color(vcolor);
+>>>>>>> develop
       surface->draw_mesh(draw_mesh);
 
       dray::Renderer renderer;
       renderer.add(surface);
+<<<<<<< HEAD
+=======
+      renderer.use_lighting(is_3d);
+>>>>>>> develop
 
       dray::Framebuffer fb = renderer.render(camera);
 
@@ -832,7 +883,13 @@ DRayPseudocolor::execute()
       result.CompositeBackground(bg_color);
       PNGEncoder encoder;
       encoder.Encode(&result.m_pixels[0], camera.get_width(), camera.get_height());
+<<<<<<< HEAD
       encoder.Save(image_name + ".png");
+=======
+      image_name = output_dir(image_name, graph());
+      encoder.Save(image_name + ".png");
+      //std::cout<<camera.print()<<"\n";
+>>>>>>> develop
     }
 }
 
@@ -1025,6 +1082,10 @@ DRay3Slice::execute()
       result.CompositeBackground(bg_color);
       PNGEncoder encoder;
       encoder.Encode(&result.m_pixels[0], camera.get_width(), camera.get_height());
+<<<<<<< HEAD
+=======
+      image_name = output_dir(image_name, graph());
+>>>>>>> develop
       encoder.Save(image_name + ".png");
     }
 }
@@ -1204,6 +1265,7 @@ DRayVolume::execute()
     compositor.set_comm_handle(comm_id);
 #endif
     compositor.composite(c_partials, result);
+<<<<<<< HEAD
     dray::Framebuffer fb = detail::partials_to_framebuffer(result,
                                                            camera.get_width(),
                                                            camera.get_height());
@@ -1376,6 +1438,21 @@ DRayProject2d::execute()
     set_output<DataObject>(res);
 
 }
+=======
+
+    if(vtkh::GetMPIRank() == 0)
+    {
+      dray::Framebuffer fb = detail::partials_to_framebuffer(result,
+                                                             camera.get_width(),
+                                                             camera.get_height());
+      fb.composite_background();
+      image_name = output_dir(image_name, graph());
+      fb.save(image_name);
+    }
+}
+
+
+>>>>>>> develop
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
