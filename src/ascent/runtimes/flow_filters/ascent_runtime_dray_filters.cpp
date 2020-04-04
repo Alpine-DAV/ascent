@@ -1227,6 +1227,7 @@ DRayVolume::execute()
 #ifdef ASCENT_MPI_ENABLED
     compositor.set_comm_handle(comm_id);
 #endif
+    compositor.composite(c_partials, result);
     if(vtkh::GetMPIRank() == 0)
     {
       dray::Framebuffer fb = detail::partials_to_framebuffer(result,
