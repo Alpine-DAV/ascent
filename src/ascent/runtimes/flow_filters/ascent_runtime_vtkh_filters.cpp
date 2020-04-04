@@ -2545,10 +2545,14 @@ VTKHProject2d::verify_params(const conduit::Node &params,
 {
     info.reset();
     bool res = check_string("topology",params, info, false);
+    res &= check_numeric("image_width",params, info, false);
+    res &= check_numeric("image_height",params, info, false);
 
     std::vector<std::string> valid_paths;
     std::vector<std::string> ignore_paths;
     valid_paths.push_back("topology");
+    valid_paths.push_back("image_width");
+    valid_paths.push_back("image_height");
     valid_paths.push_back("camera");
     ignore_paths.push_back("camera");
 
@@ -2622,8 +2626,21 @@ VTKHProject2d::execute()
       parse_camera(params()["camera"], camera);
     }
 
+    int width = 512;
+    int height = 512;
+    if(params().has_path("image_width"))
+    {
+      width = params()["image_width"].to_int32();
+    }
+    if(params().has_path("image_height"))
+    {
+      height = params()["image_height"].to_int32();
+    }
+
     vtkh::ScalarRenderer tracer;
 
+    tracer.SetWidth(width);
+    tracer.SetHeight(height);
     tracer.SetInput(&data);
     tracer.SetCamera(camera);
 
