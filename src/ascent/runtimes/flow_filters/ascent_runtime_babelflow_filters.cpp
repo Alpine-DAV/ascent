@@ -57,7 +57,9 @@ public:
 
   static int DownSizeGhosts(std::vector<BabelFlow::Payload> &inputs, std::vector<BabelFlow::Payload> &output,
                             BabelFlow::TaskId task);
-
+  static void ComputeGhostOffsets(uint32_t low[3], uint32_t high[3],
+                                  uint32_t& dnx, uint32_t& dny, uint32_t& dnz,
+                                  uint32_t& dpx, uint32_t& dpy, uint32_t& dpz);
   static uint32_t o_ghosts[6];
   static uint32_t n_ghosts[6];
   static uint32_t s_data_size[3];
@@ -90,9 +92,9 @@ private:
 static const uint8_t sPrefixSize = 4;
 static const uint8_t sPostfixSize = sizeof(BabelFlow::TaskId) * 8 - sPrefixSize;
 static const BabelFlow::TaskId sPrefixMask = ((1 << sPrefixSize) - 1) << sPostfixSize;
-uint32_t ParallelMergeTree::o_ghosts[];
-uint32_t ParallelMergeTree::n_ghosts[];
-uint32_t ParallelMergeTree::s_data_size[];
+uint32_t ParallelMergeTree::o_ghosts[6] = {1, 1, 1, 1, 1, 1};
+uint32_t ParallelMergeTree::n_ghosts[6] = {1, 1, 1, 1, 1, 1};
+uint32_t ParallelMergeTree::s_data_size[3];
 
 // Static ptr for local data to be passed to computeSegmentation()
 FunctionType* sLocalData = NULL;
@@ -184,6 +186,16 @@ int write_results(std::vector<BabelFlow::Payload> &inputs,
   return 1;
 }
 
+void ParallelMergeTree::ComputeGhostOffsets(uint32_t low[3], uint32_t high[3],
+                                            uint32_t& dnx, uint32_t& dny, uint32_t& dnz,
+                                            uint32_t& dpx, uint32_t& dpy, uint32_t& dpz) {
+  dnx = (low[0] == s_data_size[0]) ? 0 : o_ghosts[0] - n_ghosts[0];
+  dny = (low[1] == s_data_size[1]) ? 0 : o_ghosts[1] - n_ghosts[1];
+  dnz = (low[2] == s_data_size[2]) ? 0 : o_ghosts[2] - n_ghosts[2];
+  dpx = (high[0] == s_data_size[0] - 1) ? 0 : o_ghosts[3] - n_ghosts[3];
+  dpy = (high[1] == s_data_size[1] - 1) ? 0 : o_ghosts[4] - n_ghosts[4];
+  dpz = (high[2] == s_data_size[2] - 1) ? 0 : o_ghosts[5] - n_ghosts[5];
+}
 
 int ParallelMergeTree::DownSizeGhosts(std::vector<BabelFlow::Payload> &inputs, std::vector<BabelFlow::Payload> &output,
                                       BabelFlow::TaskId task) {
@@ -198,22 +210,18 @@ int ParallelMergeTree::DownSizeGhosts(std::vector<BabelFlow::Payload> &inputs, s
   GlobalIndexType ysize = high[1] - low[1] + 1;
   GlobalIndexType zsize = high[2] - low[2] + 1;
 
-  int dnx = (low[0] == s_data_size[0]) ? 0 : o_ghosts[0] - n_ghosts[0];
-  int dny = (low[1] == s_data_size[1]) ? 0 : o_ghosts[1] - n_ghosts[1];
-  int dnz = (low[2] == s_data_size[2]) ? 0 : o_ghosts[2] - n_ghosts[2];
-  int dpx = (high[0] == s_data_size[0] - 1) ? 0 : o_ghosts[3] - n_ghosts[3];
-  int dpy = (high[1] == s_data_size[1] - 1) ? 0 : o_ghosts[4] - n_ghosts[4];
-  int dpz = (high[2] == s_data_size[2] - 1) ? 0 : o_ghosts[5] - n_ghosts[5];
+  uint32_t dnx, dny, dnz, dpx, dpy, dpz;
+  ParallelMergeTree::ComputeGhostOffsets(low, high, dnx, dny, dnz, dpx, dpy, dpz);
 
-  int numx = xsize - dnx - dpx;
-  int numy = ysize - dny - dpy;
-  int numz = zsize - dnz - dpz;
+  uint32_t numx = xsize - dnx - dpx;
+  uint32_t numy = ysize - dny - dpy;
+  uint32_t numz = zsize - dnz - dpz;
 
   char *n_block_data = new char[numx * numy * numz * sizeof(FunctionType)];
   size_t offset = 0;
-  for (int z = 0; z < zsize; ++z) {
+  for (uint32_t z = 0; z < zsize; ++z) {
     if (z >= dnz && z < zsize - dpz) {
-      for (int y = 0; y < ysize; ++y) {
+      for (uint32_t y = 0; y < ysize; ++y) {
         if (y >= dny && y < ysize - dpy) {
           FunctionType *data_ptr = block_data + y * xsize + z * ysize * xsize;
           memcpy(n_block_data + offset, (char *) data_ptr, numx * sizeof(FunctionType));
@@ -235,6 +243,8 @@ int ParallelMergeTree::DownSizeGhosts(std::vector<BabelFlow::Payload> &inputs, s
 
   output.resize(1);
   output[0] = make_local_block((FunctionType*)n_block_data, n_low, n_high, threshold);
+  
+  sLocalData = (FunctionType*)n_block_data;
 
   delete[] inputs[0].buffer();
   return 0;
@@ -303,24 +313,45 @@ void ParallelMergeTree::Execute() {
 }
 
 void ParallelMergeTree::ExtractSegmentation(FunctionType* output_data_ptr) {
-
+  
+  // Sizes of the output data
+  GlobalIndexType xsize = high[0] - low[0] + 1;
+  GlobalIndexType ysize = high[1] - low[1] + 1;
+  GlobalIndexType zsize = high[2] - low[2] + 1;
+  
+  // Output data includes ghost cells so we have to embed the smaller segmentation
+  // part in the output data. The first step is to intialize all output
+  std::fill(output_data_ptr, output_data_ptr + xsize*ysize*zsize, (FunctionType)GNULL);
+  
+  uint32_t dnx, dny, dnz, dpx, dpy, dpz;
+  ParallelMergeTree::ComputeGhostOffsets(low, high, dnx, dny, dnz, dpx, dpy, dpz);
+  
   // Get the outputs map (maps task IDs to outputs) from the controller
   std::map<BabelFlow::TaskId,std::vector<BabelFlow::Payload> >& outputs = master.getAllOutputs();
+  
+  // Only one task per rank should have output
+  assert(outputs.size() == 1);
+  
+  auto iter = outputs.begin();
+  // Output task should be only 'write_results' task
+  assert(graph.task(graph.gId(iter->first)).callback() == 4);
+  
+  AugmentedMergeTree t;
+  t.decode((iter->second)[0]);    // only one output per task
 
-  for (auto iter = outputs.begin(); iter != outputs.end(); ++iter) {
-    // Output task should be only 'write_results' task
-    assert(graph.task(graph.gId(iter->first)).callback() == 4);
-
-    AugmentedMergeTree t;
-    t.decode((iter->second)[0]);    // only one output per task
-
-    // Copy the segmentation labels into the provided data array -- assume it
-    // has enough space (sampleCount() -- the local data size)
-    for (uint32_t i = 0; i < t.sampleCount(); ++i)
-      output_data_ptr[i] = (float)t.label(i);
+  // Copy the segmentation labels into the provided data array -- assume it
+  // has enough space (sampleCount() -- the local data size w/o ghost cells)
+  uint32_t label_idx = 0;   // runs from 0 to t.sampleCount()
+  for (uint32_t z = dnz; z < zsize - dpz; ++z) {
+    for (uint32_t y = dny; y < ysize - dpy; ++y) {
+      for (uint32_t x = dnx; x < xsize - dpx; ++x) {
+        uint32_t out_data_idx = x + y * xsize + z * ysize * xsize;
+        output_data_ptr[out_data_idx] = (FunctionType)t.label(label_idx);
+        ++label_idx;
+      }
+    }
   }
 }
-
 
 ParallelMergeTree::ParallelMergeTree(FunctionType *data_ptr, int32_t task_id, const int32_t *data_size,
                                      const int32_t *n_blocks,
@@ -436,16 +467,16 @@ void ascent::runtime::filters::BabelFlow::execute() {
     const int ndims = data_node.has_path("coordsets/coords/dims/k") ? 3 : 2;
 
     // NOTE: when field is a vector the coords/spacing has dx/dy/dz
-    int32_t dims[ndims];
+    int32_t dims[3] = {1, 1, 1};
+    int32_t spacing[3] = {1, 1, 1};
+    int32_t origin[3] = {0, 0, 0};
+    
     dims[0] = data_node["coordsets/coords/dims/i"].value();
     dims[1] = data_node["coordsets/coords/dims/j"].value();
     if(ndims > 2)
       dims[2] = data_node["coordsets/coords/dims/k"].value();
 
 // #ifdef INPUT_SCALAR
-    int32_t spacing[ndims];
-    for(int i=0; i < ndims; i++) spacing[i] = 1;
-
     if(data_node.has_path("coordsets/coords/spacing")){
       spacing[0] = data_node["coordsets/coords/spacing/x"].value();
       spacing[1] = data_node["coordsets/coords/spacing/y"].value();
@@ -453,10 +484,8 @@ void ascent::runtime::filters::BabelFlow::execute() {
         spacing[2] = data_node["coordsets/coords/spacing/z"].value();
     }
 
-    int32_t origin[ndims];
     origin[0] = data_node["coordsets/coords/origin/x"].value();
     origin[1] = data_node["coordsets/coords/origin/y"].value();
-    
     if(ndims > 2)
       origin[2] = data_node["coordsets/coords/origin/z"].value();
 // #else
@@ -466,10 +495,10 @@ void ascent::runtime::filters::BabelFlow::execute() {
 
     // Inputs of PMT assume 3D dataset
     int32_t low[3] = {0,0,0};
-    int32_t high[3] = {1,1,1};
+    int32_t high[3] = {0,0,0};
 
     int32_t global_low[3] = {0,0,0};
-    int32_t global_high[3] = {1,1,1};
+    int32_t global_high[3] = {0,0,0};
     int32_t data_size[3] = {1,1,1};
 
     int32_t n_blocks[3] = {1,1,1};
@@ -486,9 +515,13 @@ void ascent::runtime::filters::BabelFlow::execute() {
     for(int i=0; i<ndims; i++){
       low[i] = origin[i]/spacing[i];
       high[i] = low[i] + dims[i] -1;
-
+#ifdef ASCENT_MPI_ENABLED
       MPI_Allreduce(&low[i], &global_low[i], 1, MPI_INT, MPI_MIN, comm);
       MPI_Allreduce(&high[i], &global_high[i], 1, MPI_INT, MPI_MAX, comm);
+#elif
+      global_low[i] = low[i];
+      global_high[i] = high[i];
+#endif
       data_size[i] = global_high[i]-global_low[i]+1;
 
       // normalize box
@@ -513,23 +546,29 @@ void ascent::runtime::filters::BabelFlow::execute() {
     
 
 #if 0
-    std::cout<<"----------"<<rank<<"----------"<<std::endl;
+    //std::cout<<"----------"<<rank<<"----------"<<std::endl;
 
     // Reduce all of the local sums into the global sum
-    
-    std::cout << "dims " << dims[0] << " " << dims[1] << " " << dims[2] << std::endl;
-    std::cout << "low " << low[0] << " " << low[1] << " " << low[2] << std::endl;
-    std::cout << "high " << high[0] << " " << high[1] << " " << high[2] << std::endl;
-
-    if(rank==0){
-      std::cout << "*data_size " << data_size[0] << " " << data_size[1] << " " << data_size[2] << std::endl;
-      std::cout << "*global_low " << global_low[0] << " " << global_low[1] << " " << global_low[2] << std::endl;
-      std::cout << "*global_high " << global_high[0] << " " << global_high[1] << " " << global_high[2] << std::endl;
-      std::cout << "*n_blocks " << n_blocks[0] << " " << n_blocks[1] << " " << n_blocks[2] << std::endl;
+    {
+      std::stringstream ss;
+      ss << "data_params_" << rank << ".txt";
+      std::ofstream ofs(ss.str());
+      ofs << "origin " << origin[0] << " " << origin[1] << " " << origin[2] << std::endl;
+      ofs << "spacing " << spacing[0] << " " << spacing[1] << " " << spacing[2] << std::endl;
+      ofs << "dims " << dims[0] << " " << dims[1] << " " << dims[2] << std::endl;
+      ofs << "low " << low[0] << " " << low[1] << " " << low[2] << std::endl;
+      ofs << "high " << high[0] << " " << high[1] << " " << high[2] << std::endl;
+      if(rank==0){
+        ofs << "*data_size " << data_size[0] << " " << data_size[1] << " " << data_size[2] << std::endl;
+        ofs << "*global_low " << global_low[0] << " " << global_low[1] << " " << global_low[2] << std::endl;
+        ofs << "*global_high " << global_high[0] << " " << global_high[1] << " " << global_high[2] << std::endl;
+        ofs << "*n_blocks " << n_blocks[0] << " " << n_blocks[1] << " " << n_blocks[2] << std::endl;
+      }
+      ofs.close();
     }
 
     //data_node["fields/"].print();
-    std::cout<<"----------------------"<<std::endl;
+    //std::cout<<"----------------------"<<std::endl;
 #endif
 
     //std::cout << p["field"].as_string() <<std::endl;
@@ -617,13 +656,15 @@ void ascent::runtime::filters::BabelFlow::execute() {
       data_node["fields/segment/values"].set(seg_data);
 
       // DEBUG -- write raw segment data to disk
-      // {
-      //   std::stringstream ss;
-      //   ss << "segment_data_" << rank << ".bin";
-      //   std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
-      //   bofs.write(reinterpret_cast<char *>(reldata.data()), num_x*num_y*num_z * sizeof(float));
-      //   bofs.close();
-      // }
+#if 0
+      {
+        std::stringstream ss;
+        ss << "segment_data_" << rank << ".bin";
+        std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
+        bofs.write(reinterpret_cast<char *>(seg_data.data()), num_x*num_y*num_z * sizeof(FunctionType));
+        bofs.close();
+      }
+#endif
 
       // DEBUG -- verify modified BP node with 'segment' field
       // conduit::Node info;
