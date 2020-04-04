@@ -110,8 +110,8 @@ void compare(conduit::Node &info,
   {
     const float lval = p1[i];
     const float rval = p2[i];
-    bool lnan = isnan(lval);
-    bool rnan = isnan(rval);
+    bool lnan = std::isnan(lval);
+    bool rnan = std::isnan(rval);
 
     if(lnan || rnan)
     {
