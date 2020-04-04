@@ -1379,7 +1379,7 @@ DRayProject2d::execute()
 
     if(min_p != max_p)
     {
-      ASCENT_ERROR("VERY BAD "<<min_p<<" "<<max_p);
+      ASCENT_ERROR("VERY BAD "<<min_p<<" "<<max_p<<" contact someone.");
     }
 
     vtkh::PayloadImage final_image = compositor.Composite();
