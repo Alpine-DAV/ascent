@@ -208,7 +208,8 @@ VTKHMarchingCubes::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("Contour("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
