@@ -2792,14 +2792,14 @@ VTKHCompositeVector::execute()
     if(!collection->has_field(field_name1))
     {
       std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name1<<"'");
     }
 
     std::string field_name2 = params()["field2"].as_string();
     if(!collection->has_field(field_name2))
     {
       std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name2<<"'");
     }
 
     std::string field_name3;
@@ -2810,7 +2810,7 @@ VTKHCompositeVector::execute()
       if(!collection->has_field(field_name3))
       {
         std::string fpath = filter_to_path(this->name());
-        ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+        ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name3<<"'");
       }
     }
 

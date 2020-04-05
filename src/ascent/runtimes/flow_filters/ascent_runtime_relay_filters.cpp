@@ -67,6 +67,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_file_system.hpp>
 #include <ascent_runtime_utils.hpp>
+#include <ascent_runtime_param_check.hpp>
 
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -330,6 +331,18 @@ verify_io_params(const conduit::Node &params,
         {
             info["info"].append() = "includes 'protocol'";
         }
+    }
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("path");
+    valid_paths.push_back("protocol");
+    valid_paths.push_back("fields");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;
