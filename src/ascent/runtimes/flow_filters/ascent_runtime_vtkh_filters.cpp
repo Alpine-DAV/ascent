@@ -83,6 +83,7 @@
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
+#include <vtkh/rendering/ScalarRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
 #include <vtkh/filters/CompositeVector.hpp>
@@ -651,7 +652,6 @@ VTKHSlice::execute()
         }
         ASCENT_ERROR("no topology named '"<<topo_name<<"'."
                      <<ss.str());
-
       }
     }
     else
@@ -1067,7 +1067,6 @@ VTKHClip::execute()
       }
 
       topo_name = params()["topology"].as_string();
-
       if(!collection->has_topology(topo_name))
       {
         std::stringstream ss;
@@ -1083,7 +1082,6 @@ VTKHClip::execute()
         }
         ASCENT_ERROR("no topology named '"<<topo_name<<"'."
                      <<ss.str());
-
       }
     }
     else
@@ -2510,6 +2508,146 @@ VTKHParticleAdvection::execute()
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
     VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHProject2d::VTKHProject2d()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHProject2d::~VTKHProject2d()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHProject2d::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_project_2d";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHProject2d::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("topology",params, info, false);
+    res &= check_numeric("image_width",params, info, false);
+    res &= check_numeric("image_height",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
+    valid_paths.push_back("topology");
+    valid_paths.push_back("image_width");
+    valid_paths.push_back("image_height");
+    valid_paths.push_back("camera");
+    ignore_paths.push_back("camera");
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHProject2d::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_project2d input must be a data object");
+    }
+
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    int num_topologies = collection->number_of_topologies();
+    std::string topo_name;
+
+    if(num_topologies > 1)
+    {
+      if(!params().has_path("topology"))
+      {
+        ASCENT_ERROR("VTKHProject2d: data set has multiple topologies "
+                     <<"and no topology is specified.");
+      }
+
+      topo_name = params()["topology"].as_string();
+      if(!collection->has_topology(topo_name))
+      {
+        std::stringstream ss;
+        ss<<" possible topology names: ";
+        std::vector<std::string> names = collection->topology_names();
+        for(int i = 0; i < names.size(); ++i)
+        {
+          ss<<"'"<<names[i]<<"'";
+          if(i != names.size() -1)
+          {
+            ss<<", ";
+          }
+        }
+        ASCENT_ERROR("no topology named '"<<topo_name<<"'."
+                     <<ss.str());
+      }
+    }
+    else
+    {
+      topo_name = collection->topology_names()[0];
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    vtkm::Bounds bounds = data.GetGlobalBounds();
+    vtkm::rendering::Camera camera;
+    camera.ResetToBounds(bounds);
+
+    if(params().has_path("camera"))
+    {
+      parse_camera(params()["camera"], camera);
+    }
+
+    int width = 512;
+    int height = 512;
+    if(params().has_path("image_width"))
+    {
+      width = params()["image_width"].to_int32();
+    }
+    if(params().has_path("image_height"))
+    {
+      height = params()["image_height"].to_int32();
+    }
+
+    vtkh::ScalarRenderer tracer;
+
+    tracer.SetWidth(width);
+    tracer.SetHeight(height);
+    tracer.SetInput(&data);
+    tracer.SetCamera(camera);
+
+    tracer.Update();
+
+    vtkh::DataSet *output = tracer.GetOutput();
+    VTKHCollection *new_coll = new VTKHCollection();
     new_coll->add(*output, topo_name);
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);

@@ -121,15 +121,15 @@ class Ascent(Package, CudaPackage):
     # TPLs for Runtime Features
     #############################
 
-    depends_on("vtk-h@0.5.4",             when="+vtkh")
-    depends_on("vtk-h@0.5.4~openmp",      when="+vtkh~openmp")
-    depends_on("vtk-h@0.5.4+cuda+openmp", when="+vtkh+cuda+openmp")
-    depends_on("vtk-h@0.5.4+cuda~openmp", when="+vtkh+cuda~openmp")
+    depends_on("vtk-h@0.5.6",             when="+vtkh")
+    depends_on("vtk-h@0.5.6~openmp",      when="+vtkh~openmp")
+    depends_on("vtk-h@0.5.6+cuda+openmp", when="+vtkh+cuda+openmp")
+    depends_on("vtk-h@0.5.6+cuda~openmp", when="+vtkh+cuda~openmp")
 
-    depends_on("vtk-h@0.5.4~shared",             when="~shared+vtkh")
-    depends_on("vtk-h@0.5.4~shared~openmp",      when="~shared+vtkh~openmp")
-    depends_on("vtk-h@0.5.4~shared+cuda",        when="~shared+vtkh+cuda")
-    depends_on("vtk-h@0.5.4~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
+    depends_on("vtk-h@0.5.6~shared",             when="~shared+vtkh")
+    depends_on("vtk-h@0.5.6~shared~openmp",      when="~shared+vtkh~openmp")
+    depends_on("vtk-h@0.5.6~shared+cuda",        when="~shared+vtkh+cuda")
+    depends_on("vtk-h@0.5.6~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
 
     # mfem
     depends_on("mfem@4.0.2~threadsafe~openmp+shared+mpi+conduit", when="+shared+mfem+mpi")

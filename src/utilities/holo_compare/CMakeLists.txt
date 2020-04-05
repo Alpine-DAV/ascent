@@ -44,9 +44,31 @@
 
 ###############################################################################
 #
-# file: src/utilites/CMakeLists.txt
+# HOLO CMake Build for Ascent
 #
 ###############################################################################
-add_subdirectory(replay)
-add_subdirectory(actions_conversions)
-add_subdirectory(holo_compare)
+
+set(HOLO_SOURCES
+    holo_compare.cpp)
+
+set(holo_deps ascent)
+
+if(OPENMP_FOUND)
+   list(APPEND deps openmp)
+endif()
+
+if (ENABLE_SERIAL)
+    blt_add_executable(
+        NAME        holo
+        SOURCES     ${HOLO_SOURCES}
+        DEPENDS_ON  ${holo_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+    # install target for replay serial
+    install(TARGETS holo
+            EXPORT  ascent
+            LIBRARY DESTINATION utilities/ascent/holo_compare
+            ARCHIVE DESTINATION utilities/ascent/holo_compare
+            RUNTIME DESTINATION utilities/ascent/holo_compare
+    )
+endif()
