@@ -1,3 +1,5 @@
+#!/bin/bash
+set -e
 #
 # run at root of ascent repo
 #
