@@ -117,7 +117,9 @@ CheckForSettingsFile(std::string file_name,
 #ifdef ASCENT_MPI_ENABLED
     if(mpi_comm_id == -1)
     {
-      ASCENT_ERROR("MPI comm not initialized");
+      // do nothing, an error will be thrown later
+      // so we can respect the exception handling
+      return;
     }
     MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
     MPI_Comm_size(mpi_comm, &comm_size);
