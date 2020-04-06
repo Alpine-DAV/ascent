@@ -51,6 +51,7 @@
 #define ASCENT_STRING_UTILS_HPP
 
 #include <string>
+#include <vector>
 
 
 //-----------------------------------------------------------------------------
@@ -64,6 +65,7 @@ namespace ascent
 // If no formatting is present, the count is appended to the name.
 std::string expand_family_name(const std::string name, int counter = 0);
 
+std::vector<std::string> split(const std::string &s, char delim = ' ');
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

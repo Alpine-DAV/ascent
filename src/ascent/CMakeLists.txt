@@ -113,6 +113,7 @@ set(ascent_sources
     utils/ascent_png_compare.cpp
     utils/ascent_png_decoder.cpp
     utils/ascent_png_encoder.cpp
+    utils/ascent_mpi_utils.cpp
     utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp
     # hola
@@ -152,6 +153,7 @@ set(ascent_headers
     utils/ascent_png_compare.hpp
     utils/ascent_png_decoder.hpp
     utils/ascent_png_encoder.hpp
+    utils/ascent_mpi_utils.hpp
     utils/ascent_string_utils.hpp
     utils/ascent_web_interface.hpp
     # hola
