@@ -199,6 +199,8 @@ int main(int argc, char **argv)
   // publish
   a.publish(mesh);
   
+  vector<int64_t> in_ghosts({1, 1, 1});
+  
   // build pipeline Node for the filter
   Node pipelines;
   pipelines["pl1/f1/type"] = "babelflow";
@@ -206,6 +208,7 @@ int main(int argc, char **argv)
   pipelines["pl1/f1/params/field"] = "braids";
   pipelines["pl1/f1/params/fanin"] = int64_t(valence);
   pipelines["pl1/f1/params/threshold"] = threshold_;
+  pipelines["pl1/f1/params/in_ghosts"].set_int64_vector(in_ghosts);
   pipelines["pl1/f1/params/gen_segment"] = int64_t(1);    // 1 -- means create a field with segmentation
 
   // Old parameters that we were using, now automatically computed by the filter

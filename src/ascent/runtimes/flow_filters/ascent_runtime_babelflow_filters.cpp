@@ -189,9 +189,9 @@ int write_results(std::vector<BabelFlow::Payload> &inputs,
 void ParallelMergeTree::ComputeGhostOffsets(uint32_t low[3], uint32_t high[3],
                                             uint32_t& dnx, uint32_t& dny, uint32_t& dnz,
                                             uint32_t& dpx, uint32_t& dpy, uint32_t& dpz) {
-  dnx = (low[0] == s_data_size[0]) ? 0 : o_ghosts[0] - n_ghosts[0];
-  dny = (low[1] == s_data_size[1]) ? 0 : o_ghosts[1] - n_ghosts[1];
-  dnz = (low[2] == s_data_size[2]) ? 0 : o_ghosts[2] - n_ghosts[2];
+  dnx = (low[0] == 0) ? 0 : o_ghosts[0] - n_ghosts[0];
+  dny = (low[1] == 0) ? 0 : o_ghosts[1] - n_ghosts[1];
+  dnz = (low[2] == 0) ? 0 : o_ghosts[2] - n_ghosts[2];
   dpx = (high[0] == s_data_size[0] - 1) ? 0 : o_ghosts[3] - n_ghosts[3];
   dpy = (high[1] == s_data_size[1] - 1) ? 0 : o_ghosts[4] - n_ghosts[4];
   dpz = (high[2] == s_data_size[2] - 1) ? 0 : o_ghosts[5] - n_ghosts[5];
@@ -223,7 +223,7 @@ int ParallelMergeTree::DownSizeGhosts(std::vector<BabelFlow::Payload> &inputs, s
     if (z >= dnz && z < zsize - dpz) {
       for (uint32_t y = 0; y < ysize; ++y) {
         if (y >= dny && y < ysize - dpy) {
-          FunctionType *data_ptr = block_data + y * xsize + z * ysize * xsize;
+          FunctionType *data_ptr = block_data + dnx + y * xsize + z * ysize * xsize;
           memcpy(n_block_data + offset, (char *) data_ptr, numx * sizeof(FunctionType));
           offset += numx * sizeof(FunctionType);
         }
@@ -502,14 +502,13 @@ void ascent::runtime::filters::BabelFlow::execute() {
     int32_t data_size[3] = {1,1,1};
 
     int32_t n_blocks[3] = {1,1,1};
-
-    for(int i=0;i<ndims;i++){
-      if(p.has_path("in_ghosts"))
-        ParallelMergeTree::o_ghosts[i] = p["in_ghosts"].as_int64();
-      else
-        ParallelMergeTree::o_ghosts[i] = 1;
-
-      ParallelMergeTree::n_ghosts[i] = 1;
+    
+    if(p.has_path("in_ghosts")) {
+      int64_t* in_ghosts = p["in_ghosts"].as_int64_ptr();
+      for(int i=0;i<ndims;i++) {
+        ParallelMergeTree::o_ghosts[i] = (uint32_t)in_ghosts[i];
+        ParallelMergeTree::o_ghosts[i + 3] = (uint32_t)in_ghosts[i];
+      }
     }
 
     for(int i=0; i<ndims; i++){
@@ -543,33 +542,6 @@ void ascent::runtime::filters::BabelFlow::execute() {
     //   low[i] += dn[i];
     //   high[i] -= dp[i];
     // }
-    
-
-#if 0
-    //std::cout<<"----------"<<rank<<"----------"<<std::endl;
-
-    // Reduce all of the local sums into the global sum
-    {
-      std::stringstream ss;
-      ss << "data_params_" << rank << ".txt";
-      std::ofstream ofs(ss.str());
-      ofs << "origin " << origin[0] << " " << origin[1] << " " << origin[2] << std::endl;
-      ofs << "spacing " << spacing[0] << " " << spacing[1] << " " << spacing[2] << std::endl;
-      ofs << "dims " << dims[0] << " " << dims[1] << " " << dims[2] << std::endl;
-      ofs << "low " << low[0] << " " << low[1] << " " << low[2] << std::endl;
-      ofs << "high " << high[0] << " " << high[1] << " " << high[2] << std::endl;
-      if(rank==0){
-        ofs << "*data_size " << data_size[0] << " " << data_size[1] << " " << data_size[2] << std::endl;
-        ofs << "*global_low " << global_low[0] << " " << global_low[1] << " " << global_low[2] << std::endl;
-        ofs << "*global_high " << global_high[0] << " " << global_high[1] << " " << global_high[2] << std::endl;
-        ofs << "*n_blocks " << n_blocks[0] << " " << n_blocks[1] << " " << n_blocks[2] << std::endl;
-      }
-      ofs.close();
-    }
-
-    //data_node["fields/"].print();
-    //std::cout<<"----------------------"<<std::endl;
-#endif
 
     //std::cout << p["field"].as_string() <<std::endl;
 
@@ -637,6 +609,41 @@ void ascent::runtime::filters::BabelFlow::execute() {
     ParallelMergeTree::s_data_size[1] = data_size[1];
     ParallelMergeTree::s_data_size[2] = data_size[2];
 
+#if 0
+    //std::cout<<"----------"<<rank<<"----------"<<std::endl;
+
+    // Reduce all of the local sums into the global sum
+    {
+      std::stringstream ss;
+      ss << "data_params_" << rank << ".txt";
+      std::ofstream ofs(ss.str());
+      ofs << "origin " << origin[0] << " " << origin[1] << " " << origin[2] << std::endl;
+      ofs << "spacing " << spacing[0] << " " << spacing[1] << " " << spacing[2] << std::endl;
+      ofs << "dims " << dims[0] << " " << dims[1] << " " << dims[2] << std::endl;
+      ofs << "low " << low[0] << " " << low[1] << " " << low[2] << std::endl;
+      ofs << "high " << high[0] << " " << high[1] << " " << high[2] << std::endl;
+      
+      uint32_t dnx, dny, dnz, dpx, dpy, dpz;
+      uint32_t loc_low[3] = {(uint32_t)low[0], (uint32_t)low[1], (uint32_t)low[2]};
+      uint32_t loc_high[3] = {(uint32_t)high[0], (uint32_t)high[1], (uint32_t)high[2]};
+      ParallelMergeTree::ComputeGhostOffsets(loc_low, loc_high, dnx, dny, dnz, dpx, dpy, dpz);
+      
+      ofs << "ghosts offsets " << dnx << " " << dny << " " << dnz << " "
+                               << dpx << " " << dpy << " " << dpz << std::endl;
+                                                
+      if(rank==0){
+        ofs << "*data_size " << data_size[0] << " " << data_size[1] << " " << data_size[2] << std::endl;
+        ofs << "*global_low " << global_low[0] << " " << global_low[1] << " " << global_low[2] << std::endl;
+        ofs << "*global_high " << global_high[0] << " " << global_high[1] << " " << global_high[2] << std::endl;
+        ofs << "*n_blocks " << n_blocks[0] << " " << n_blocks[1] << " " << n_blocks[2] << std::endl;
+      }
+      ofs.close();
+    }
+
+    //data_node["fields/"].print();
+    //std::cout<<"----------------------"<<std::endl;
+#endif
+    
     pmt.Initialize();
     pmt.Execute();
 
