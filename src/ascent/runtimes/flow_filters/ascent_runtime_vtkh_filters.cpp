@@ -261,6 +261,8 @@ protected:
   std::vector< std::vector< std::vector<float>>> m_color_buffers;
   // depth buffer per render per renderer
   std::vector< std::vector< std::vector<float>>> m_depth_buffers;
+  // distance camera position to data center per render per renderer
+  std::vector< std::vector<float>> m_depths;
 
   flow::Registry *m_registry;
   AscentScene(){};
@@ -297,6 +299,15 @@ public:
       ASCENT_ERROR("Trying to access data of non-existend renderer.");
 
     return &m_depth_buffers.at(rendererId);
+  }
+
+  // return depth of all renders of selected renderer 
+  std::vector<float> *GetDepths(int rendererId)
+  {
+    if(rendererId >= m_renderer_count)
+      ASCENT_ERROR("Trying to access data of non-existend renderer.");
+
+    return &m_depths.at(rendererId);
   }
 
   int GetRendererCount()
@@ -346,7 +357,8 @@ public:
       // NOTE: only getting canvas from domain 0 for now
       m_color_buffers.push_back(r->GetColorBuffers());
       m_depth_buffers.push_back(r->GetDepthBuffers());
-     
+      m_depths.push_back(r->GetDepths());
+      
       m_registry->consume(oss.str());
     }
   }
@@ -2565,7 +2577,8 @@ void add_images(std::vector<vtkh::Render> *renders,
                 flow::Graph *graph, 
                 const std::vector<std::vector<double> > *scene_render_times,
                 std::vector< std::vector<float>> *color_buffers,
-                std::vector< std::vector<float>> *depth_buffers)
+                std::vector< std::vector<float>> *depth_buffers,
+                std::vector<float> *depths)
 {
   if (!graph->workspace().registry().has_entry("image_list"))
   {
@@ -2595,7 +2608,6 @@ void add_images(std::vector<vtkh::Render> *renders,
                               bounds.X.Max,
                               bounds.Y.Max,
                               bounds.Z.Max};
-
     image_data["scene_bounds"].set(coord_bounds, 6);
 
     double avg_render_time = 0.0;
@@ -2617,6 +2629,7 @@ void add_images(std::vector<vtkh::Render> *renders,
     // NOTE: only getting canvas from domain 0 for now
     image_data["color_buffer"].set(color_buffers->at(i).data(), size * 4);
     image_data["depth_buffer"].set(depth_buffers->at(i).data(), size);
+    image_data["depth"] = depths->at(i);
 
     image_list->append() = image_data;
 
@@ -2666,10 +2679,11 @@ void ExecScene::execute()
   // NOTE: only domain 0 for now
   std::vector< std::vector<float>> *color_buffers = scene->GetColorBuffers(0);
   std::vector< std::vector<float>> *depth_buffers = scene->GetDepthBuffers(0);
+  std::vector<float> *depths = scene->GetDepths(0);
 
   // the images should exist now so add them to the image list
   // this can be used for the web server or jupyter
-  add_images(renders, &graph(), render_times, color_buffers, depth_buffers);
+  add_images(renders, &graph(), render_times, color_buffers, depth_buffers, depths);
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

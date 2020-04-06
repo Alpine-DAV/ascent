@@ -152,7 +152,8 @@ private:
                      conduit::Node &image_list,
                      conduit::Node &render_times,
                      conduit::Node &color_buffers,
-                     conduit::Node &depth_buffers);
+                     conduit::Node &depth_buffers,
+                     conduit::Node &depths);
 
     // internal reg helper
     static void RegisterFilterType(const std::string &role_path,

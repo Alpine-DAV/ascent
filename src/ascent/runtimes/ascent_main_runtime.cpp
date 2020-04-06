@@ -1248,7 +1248,8 @@ void AscentRuntime::FindRenders(conduit::Node &image_params,
                                 conduit::Node &image_list,
                                 conduit::Node &render_times,
                                 conduit::Node &color_buffers,
-                                conduit::Node &depth_buffers)
+                                conduit::Node &depth_buffers,
+                                conduit::Node &depths)
 {
   image_list.reset();
 
@@ -1268,6 +1269,7 @@ void AscentRuntime::FindRenders(conduit::Node &image_params,
 
     color_buffers.append() = images->child(i)["color_buffer"];
     depth_buffers.append() = images->child(i)["depth_buffer"];
+    depths.append() = images->child(i)["depth"];
   }
 
   images->reset();
@@ -1445,11 +1447,13 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     Node render_times;
     Node color_buffers;
     Node depth_buffers;
-    FindRenders(renders, render_file_names, render_times, color_buffers, depth_buffers);
+    Node depths;
+    FindRenders(renders, render_file_names, render_times, color_buffers, depth_buffers, depths);
     m_info["images"] = renders;
     m_info["render_times"] = render_times;
     m_info["color_buffers"] = color_buffers;
     m_info["depth_buffers"] = depth_buffers;
+    m_info["depths"] = depths;
 
     const conduit::Node &expression_cache =
         runtime::expressions::ExpressionEval::get_cache();
