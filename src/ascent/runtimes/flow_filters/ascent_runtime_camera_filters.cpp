@@ -107,10 +107,12 @@
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
 #endif
 
+#include <chrono>
 #include <stdio.h>
 
 using namespace conduit;
 using namespace std;
+using namespace std::chrono;
 
 using namespace flow;
 
@@ -782,7 +784,7 @@ double SineParameterize(int curFrame, int nFrames, int ramp)
 }
 
 Camera
-GetCamera(int frame, int nframes, double radius, double* bounds)
+GetCamera(int frame, int nframes, double radius, double* lookat)
 {
   double t = SineParameterize(frame, nframes, nframes/10);
   double points[3];
@@ -793,13 +795,13 @@ GetCamera(int frame, int nframes, double radius, double* bounds)
   c.far = zoom*25;
   c.angle = M_PI/6;
 
-  if(abs(points[0]) < radius && abs(points[1]) < radius && abs(points[2]) < radius)
+/*  if(abs(points[0]) < radius && abs(points[1]) < radius && abs(points[2]) < radius)
   {
     if(points[2] >= 0)
       points[2] += radius;
     if(points[2] < 0)
       points[2] -= radius;
-  }
+  }*/
 
   c.position[0] = radius*points[0];
   c.position[1] = radius*points[1];
@@ -807,9 +809,9 @@ GetCamera(int frame, int nframes, double radius, double* bounds)
 
 //cout << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
     
-  c.focus[0] = (bounds[0])/2;
-  c.focus[1] = (bounds[1])/2;
-  c.focus[2] = (bounds[2])/2;
+  c.focus[0] = lookat[0];
+  c.focus[1] = lookat[1];
+  c.focus[2] = lookat[2];
   c.up[0] = 0;
   c.up[1] = 1;
   c.up[2] = 0;
@@ -1179,7 +1181,13 @@ AutoCamera::verify_params(const conduit::Node &params,
 void
 AutoCamera::execute()
 {
-    cout << "USING CAMERA PIPELINE" << endl;
+    double time = 0.;
+    auto time_start = high_resolution_clock::now();
+    //cout << "USING CAMERA PIPELINE" << endl;
+    #if ASCENT_MPI_ENABLED
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    #endif  
 
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
@@ -1198,21 +1206,34 @@ AutoCamera::execute()
     std::string topo_name = collection->field_topology(field_name);
 
     vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
-
+    
+    double triangle_time = 0.;
+    auto triangle_start = high_resolution_clock::now();
     std::vector<Triangle> triangles = GetTriangles(dataset,field_name);
-//    cout << "dataset bounds: " << dataset.GetGlobalBounds() << endl;
-  
+    auto triangle_stop = high_resolution_clock::now();
+    triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
+    #if ASCENT_MPI_ENABLED
+      cout << "rank: " << rank << " has " << triangles.size() << " triangles. " << endl;
+      cout << "rank: " << rank << " GetTri " << triangle_time << endl;
+    //cout << "dataset bounds: " << dataset.GetGlobalBounds() << endl;
+      
+    #endif
+
     vtkm::Bounds b = dataset.GetGlobalBounds();
     vtkm::Float32 xb = vtkm::Float32(b.X.Length());
     vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
     vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
-    double bounds[3] = {(double)xb, (double)yb, (double)zb};
+    //double bounds[3] = {(double)xb, (double)yb, (double)zb};
     //cout << "x y z bounds " << xb << " " << yb << " " << zb << endl;
     vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
     //cout << "radius " << radius << endl;
-    if(radius<1)
-      radius = radius + 1;
-    vtkm::Float32 x_pos = 0., y_pos = 0., z_pos = 0.;
+    //if(radius<1)
+      //radius = radius + 1;
+    //vtkm::Float32 x_pos = 0., y_pos = 0., z_pos = 0.;
+    vtkmCamera *camera = new vtkmCamera;
+    camera->ResetToBounds(dataset.GetGlobalBounds());
+    vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
+    double focus[3] = {(double)lookat[0],(double)lookat[1],(double)lookat[2]};
 
     Screen screen;
     screen.width = width;
@@ -1225,6 +1246,8 @@ AutoCamera::execute()
     double winning_score = -DBL_MAX;
     int    winning_sample = -1;
     //loop through number of camera samples.
+    double scanline_time = 0.;
+    double metric_time   = 0.;
     for(int sample = 0; sample < samples; sample++)
     {
       screen.width = width;
@@ -1236,9 +1259,12 @@ AutoCamera::execute()
       screen.triCameraInitialize();
       screen.valueInitialize();
 
-      Camera c = GetCamera(sample, samples, radius, bounds);
+      Camera c = GetCamera(sample, samples, radius, focus);
       c.screen = screen;
       int num_tri = triangles.size();
+      
+      //Scanline timings
+      auto scanline_start = high_resolution_clock::now();
       //loop through all triangles
       for(int tri = 0; tri < num_tri; tri++)
       {
@@ -1253,8 +1279,15 @@ AutoCamera::execute()
 	screen = i_t.screen;
 
       }//end of triangle loop
+      auto scanline_stop = high_resolution_clock::now();
 
+      scanline_time += duration_cast<microseconds>(scanline_stop - scanline_start).count();
+
+      //metric timings
+      auto metric_start = high_resolution_clock::now();
       double score = calculateMetric(screen, metric);
+      auto metric_stop = high_resolution_clock::now();
+      metric_time += duration_cast<microseconds>(metric_stop - metric_start).count();
       //cout << "sample " << sample << " score: " << score << endl;
       if(winning_score < score)
       {
@@ -1263,29 +1296,53 @@ AutoCamera::execute()
       }
     } //end of sample loop
 
+    #if ASCENT_MPI_ENABLED
+      cout << "rank: " << rank << " scanline: " << scanline_time/(double)samples << endl;
+      cout << "rank: " << rank << " metric: " << metric_time/(double)samples << endl;
+    #endif
+
     if(winning_sample == -1)
       ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
-    cout << "winning_sample " << winning_sample << " score: " << winning_score << endl;
-    Camera best_c = GetCamera(winning_sample, samples, radius, bounds);
+    //cout << "winning_sample " << winning_sample << " score: " << winning_score << endl;
+    Camera best_c = GetCamera(winning_sample, samples, radius, focus);
 
-    vtkmCamera *camera = new vtkmCamera;
-    camera->ResetToBounds(dataset.GetGlobalBounds());
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
 				    (float)best_c.position[2]}; 
+/*
+#if ASCENT_MPI_ENABLED
+    if(rank == 0)
+    {
+      cout << "look at: " << endl;
+      vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
+      cout << lookat[0] << " " << lookat[1] << " " << lookat[2] << endl;
+      camera->Print();
+    }
+#endif
+*/
     camera->SetPosition(pos);
 
 
     if(!graph().workspace().registry().has_entry("camera"))
     {
-      cout << "making camera in registry" << endl;
+      //cout << "making camera in registry" << endl;
       graph().workspace().registry().add<vtkm::rendering::Camera>("camera",camera,1);
     }
 
-
-    camera->Print();
+/*
+#if ASCENT_MPI_ENABLED
+    if(rank == 0)
+      camera->Print();
+#endif
+*/
     set_output<DataObject>(input<DataObject>(0));
     //set_output<vtkmCamera>(camera);
+    auto time_stop = high_resolution_clock::now();
+    time += duration_cast<seconds>(time_stop - time_start).count();
+
+    #if ASCENT_MPI_ENABLED
+      cout << "rank: " << rank << " secs total: " << time << endl;
+    #endif
 }
 
 

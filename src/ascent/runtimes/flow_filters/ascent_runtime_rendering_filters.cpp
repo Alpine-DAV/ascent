@@ -935,7 +935,6 @@ DefaultRender::execute()
       vtkh::Render render;
       if(graph().workspace().registry().has_entry("camera"))
       {
-	cout << "grabbing camera from registry" << endl;
         vtkm::rendering::Camera *camera = graph().workspace().registry().fetch<vtkm::rendering::Camera>("camera");
 
         /*render = vtkh::MakeRender(1024,
