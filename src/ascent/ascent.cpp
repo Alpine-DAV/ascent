@@ -372,7 +372,7 @@ Ascent::execute(const conduit::Node &actions)
 
             CheckForSettingsFile(m_actions_file,
                                  processed_actions,
-                                 true,
+                                 false,
                                  m_options["mpi_comm"].to_int32());
 
             m_runtime->Execute(processed_actions);
