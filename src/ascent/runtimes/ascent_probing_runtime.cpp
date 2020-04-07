@@ -682,6 +682,21 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
         for (int i = 0; i < sending_count; ++i)
         {
+            // receive all render chunks
+            auto start = std::chrono::system_clock::now();
+            // receive render chunks from all associated sim nodes
+            conduit::Node render_chunks;
+            int srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 1, mpi_comm_world);
+            std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
+                    << srcId << std::endl;
+            // srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 2, mpi_comm_world);
+            // std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
+            //         << srcId << std::endl;
+            log_time(start, "- receive img ", world_rank);
+        }
+
+        for (int i = 0; i < sending_count; ++i)
+        {
             conduit::Node dataset = datasets[i];
             if (conduit::blueprint::mesh::verify(dataset, verify_info))
             {
@@ -714,21 +729,24 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                             << std::endl;
             }
 
-            if (i == 0)
-            {
-                // receive all render chunks
-                for (int i = 0; i < sending_count; ++i)
-                {
-                    auto start = std::chrono::system_clock::now();
-                    // receive render chunks from all associated sim nodes
-                    conduit::Node render_chunks;
-                    int srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 1, mpi_comm_world);
-                    std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
-                            << srcId << std::endl;
+            // if (i == 0)
+            // {
+            //     // receive all render chunks after first rendering batch
+            //     for (int i = 0; i < sending_count; ++i)
+            //     {
+            //         auto start = std::chrono::system_clock::now();
+            //         // receive render chunks from all associated sim nodes
+            //         conduit::Node render_chunks;
+            //         int srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 1, mpi_comm_world);
+            //         std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
+            //                 << srcId << std::endl;
 
-                    log_time(start, "- receive img ", world_rank);
-                }
-            }
+            //         // srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 2, mpi_comm_world);
+            //         // std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
+            //         //         << srcId << std::endl;
+            //         log_time(start, "- receive img ", world_rank);
+            //     }
+            // }
         }
         // TODO: compositing
     }
@@ -746,6 +764,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             ibsend_using_schema(data, destination, 0, mpi_comm_world, &request);
             log_time(start, "- send data ", world_rank);
 
+            Node render_chunks_inline;
             if (image_counts[world_rank] > 0)
             {
                 std::cout   << "~~~~ SIM node " << world_rank << " rendering " 
@@ -766,25 +785,27 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 // send render chunks from in line rendering
                 conduit::Node info;
                 ascent_render.info(info);
-                Node render_chunks_inline;
+                
                 render_chunks_inline["depths"] = info["depths"];
                 render_chunks_inline["color_buffers"] = info["color_buffers"];
                 render_chunks_inline["depth_buffers"] = info["depth_buffers"];
 
-                // send render chunks from probing and inline rendering
-                Node render_chunks;
-                render_chunks["inline"] = render_chunks_inline;
-                render_chunks["probing"] = render_chunks_probing;
-
-                start = std::chrono::system_clock::now();
-                ibsend_using_schema(render_chunks, destination, 1, 
-                                    mpi_comm_world, &request);
-                log_time(start, "- send sim img ", world_rank);
                 ascent_render.close();
             }
+
+            // send render chunks from probing and inline rendering
+            Node render_chunks;
+            render_chunks["inline"] = render_chunks_inline;
+            render_chunks["probing"] = render_chunks_probing;
+
+            start = std::chrono::system_clock::now();
+            ibsend_using_schema(render_chunks, destination, 1, 
+                                mpi_comm_world, &request);
+            log_time(start, "- send sim img ", world_rank);
+
             // send render chunks from probing
-            // ibsend_using_schema(render_chunks_probing, destination, 1, mpi_comm_world, 
-                                // &request);
+            // ibsend_using_schema(render_chunks_probing, destination, 
+            //                     2, mpi_comm_world, &request);
         }
         else
         {
@@ -962,7 +983,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         // std::cout << "$$$ depth_buffers " << depth_buffers.size() << std::endl;
         // for (size_t i = 0; i < color_buffers[0].dtype().number_of_elements(); i++)
         // {
-        //     float v = color_buffers[0].as_float_ptr()[i];
+        //     unsigned char v = color_buffers[0].as_char_ptr()[i];
         //     if (v > 0)
         //         std::cout << v << " ";
         // }

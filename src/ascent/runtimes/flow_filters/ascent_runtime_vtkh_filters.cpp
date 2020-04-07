@@ -258,9 +258,9 @@ protected:
   int m_renderer_count;
   std::vector< std::vector<double>> m_render_times; // render times per renderer
   // color buffer per render per renderer
-  std::vector< std::vector< std::vector<float>>> m_color_buffers;
+  std::vector< std::vector< std::vector<unsigned char>>> m_color_buffers;
   // depth buffer per render per renderer
-  std::vector< std::vector< std::vector<float>>> m_depth_buffers;
+  std::vector< std::vector< std::vector<unsigned char>>> m_depth_buffers;
   // distance camera position to data center per render per renderer
   std::vector< std::vector<float>> m_depths;
 
@@ -284,7 +284,7 @@ public:
   }
 
   // return color buffers of all renders of selected renderer 
-  std::vector< std::vector<float>> *GetColorBuffers(int rendererId)
+  std::vector< std::vector<unsigned char>> *GetColorBuffers(int rendererId)
   {
     if(rendererId >= m_renderer_count)
       ASCENT_ERROR("Trying to access data of non-existend renderer.");
@@ -293,7 +293,7 @@ public:
   }
 
   // return color buffers of all renders of selected renderer 
-  std::vector< std::vector<float>> *GetDepthBuffers(int rendererId)
+  std::vector< std::vector<unsigned char>> *GetDepthBuffers(int rendererId)
   {
     if(rendererId >= m_renderer_count)
       ASCENT_ERROR("Trying to access data of non-existend renderer.");
@@ -357,6 +357,7 @@ public:
       // NOTE: only getting canvas from domain 0 for now
       m_color_buffers.push_back(r->GetColorBuffers());
       m_depth_buffers.push_back(r->GetDepthBuffers());
+
       m_depths.push_back(r->GetDepths());
       
       m_registry->consume(oss.str());
@@ -2576,8 +2577,8 @@ ExecScene::~ExecScene()
 void add_images(std::vector<vtkh::Render> *renders, 
                 flow::Graph *graph, 
                 const std::vector<std::vector<double> > *scene_render_times,
-                std::vector< std::vector<float>> *color_buffers,
-                std::vector< std::vector<float>> *depth_buffers,
+                std::vector< std::vector<unsigned char>> *color_buffers,
+                std::vector< std::vector<unsigned char>> *depth_buffers,
                 std::vector<float> *depths)
 {
   if (!graph->workspace().registry().has_entry("image_list"))
@@ -2677,8 +2678,8 @@ void ExecScene::execute()
 
   std::vector< std::vector<double>> *render_times = scene->GetRenderTimes();
   // NOTE: only domain 0 for now
-  std::vector< std::vector<float>> *color_buffers = scene->GetColorBuffers(0);
-  std::vector< std::vector<float>> *depth_buffers = scene->GetDepthBuffers(0);
+  std::vector< std::vector<unsigned char>> *color_buffers = scene->GetColorBuffers(0);
+  std::vector< std::vector<unsigned char>> *depth_buffers = scene->GetDepthBuffers(0);
   std::vector<float> *depths = scene->GetDepths(0);
 
   // the images should exist now so add them to the image list
