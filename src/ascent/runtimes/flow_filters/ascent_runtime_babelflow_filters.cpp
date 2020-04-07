@@ -32,7 +32,7 @@
 #include "AugmentedMergeTree.h"
 #include "BabelFlow/PreProcessInputTaskGraph.hpp"
 #include "BabelFlow/ModTaskMap.hpp"
-#include "SimplificationGraph.h"
+//#include "SimplificationGraph.h"
 #include "SimpTaskMap.h"
 
 #include <iomanip>
@@ -265,10 +265,8 @@ void ParallelMergeTree::Initialize() {
   int mpi_size = 1;
 
 #ifdef ASCENT_MPI_ENABLED
-  MPI_Comm comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-
-  MPI_Comm_rank(comm, &my_rank);
-  MPI_Comm_size(comm, &mpi_size);
+  MPI_Comm_rank(this->comm, &my_rank);
+  MPI_Comm_size(this->comm, &mpi_size);
 #endif
 
   graph = KWayMerge(n_blocks, fanin);
@@ -297,7 +295,7 @@ void ParallelMergeTree::Initialize() {
   //   fclose(fp);
   // }
 
-  master.initialize(modGraph, &modMap, MPI_COMM_WORLD, &c_map);
+  master.initialize(modGraph, &modMap, this->comm, &c_map);
   master.registerCallback(1, local_compute);
   master.registerCallback(2, join);
   master.registerCallback(3, local_correction);
@@ -305,6 +303,7 @@ void ParallelMergeTree::Initialize() {
   master.registerCallback(modGraph.newCallBackId, pre_proc);
 
   BabelFlow::Payload payload = make_local_block(this->data_ptr, this->low, this->high, this->threshold);
+
   inputs[modGraph.new_tids[this->task_id]] = payload;
 }
 
@@ -403,6 +402,12 @@ void ascent::runtime::filters::BabelFlow::declare_interface(conduit::Node &i) {
 
 void ascent::runtime::filters::BabelFlow::execute() {
 
+    int world_rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm world_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+    MPI_Comm_rank(world_comm, &world_rank);
+#endif
+
   // DEBUG prints
 #if 0
   {
@@ -442,246 +447,262 @@ void ascent::runtime::filters::BabelFlow::execute() {
     
     auto &data_node = in->children().next();
 
+    int color = 0;
+
+    //std::cout << world_rank << ": " << data_node["coordsets/coords/type"].as_string() << std::endl;
+
     // check if coordset uniform
     if(data_node.has_path("coordsets/coords/type"))
     {
       std::string coordSetType = data_node["coordsets/coords/type"].as_string();
       if (coordSetType != "uniform")
       {
+          color=0;
           // error
-          ASCENT_ERROR("BabelFlow filter currenlty only works with uniform grids");
+          //ASCENT_ERROR("BabelFlow filter currenlty only works with uniform grids");
+      }
+      else{
+        int32_t tspa = data_node["coordsets/coords/spacing/x"].value();
+        if (tspa == 100)
+          color = 1;
       }
     }
     else
       ASCENT_ERROR("BabelFlow filter could not find coordsets/coords/type");
 
-    int rank = 0;
-#ifdef ASCENT_MPI_ENABLED
-    MPI_Comm comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+    MPI_Comm comm;
+    MPI_Comm_split(world_comm, color, world_rank, &comm);
+
+    int rank, comm_size;
     MPI_Comm_rank(comm, &rank);
-#endif
+    MPI_Comm_size(comm, &comm_size);
 
-    //data_node["coordsets/coords"].print();
-    //data_node["topologies"].print();
+    if(color) {
+      std::cout << rank << ": comm size " << comm_size << " color " << color << std::endl;
+      //data_node["coordsets/coords"].print();
+      //data_node["topologies"].print();
 
-    const int ndims = data_node.has_path("coordsets/coords/dims/k") ? 3 : 2;
+      const int ndims = data_node.has_path("coordsets/coords/dims/k") ? 3 : 2;
 
-    // NOTE: when field is a vector the coords/spacing has dx/dy/dz
-    int32_t dims[3] = {1, 1, 1};
-    int32_t spacing[3] = {1, 1, 1};
-    int32_t origin[3] = {0, 0, 0};
-    
-    dims[0] = data_node["coordsets/coords/dims/i"].value();
-    dims[1] = data_node["coordsets/coords/dims/j"].value();
-    if(ndims > 2)
-      dims[2] = data_node["coordsets/coords/dims/k"].value();
-
-// #ifdef INPUT_SCALAR
-    if(data_node.has_path("coordsets/coords/spacing")){
-      spacing[0] = data_node["coordsets/coords/spacing/x"].value();
-      spacing[1] = data_node["coordsets/coords/spacing/y"].value();
+      // NOTE: when field is a vector the coords/spacing has dx/dy/dz
+      int32_t dims[3] = {1, 1, 1};
+      int32_t spacing[3] = {1, 1, 1};
+      int32_t origin[3] = {0, 0, 0};
+      
+      dims[0] = data_node["coordsets/coords/dims/i"].value();
+      dims[1] = data_node["coordsets/coords/dims/j"].value();
       if(ndims > 2)
-        spacing[2] = data_node["coordsets/coords/spacing/z"].value();
-    }
+        dims[2] = data_node["coordsets/coords/dims/k"].value();
 
-    origin[0] = data_node["coordsets/coords/origin/x"].value();
-    origin[1] = data_node["coordsets/coords/origin/y"].value();
-    if(ndims > 2)
-      origin[2] = data_node["coordsets/coords/origin/z"].value();
-// #else
-//     double spacing[ndims] = {data_node["coordsets/coords/spacing/dx"].value(),data_node["coordsets/coords/spacing/dy"].value(),data_node["coordsets/coords/spacing/dz"].value()};
-//     double origin[ndims] = {data_node["coordsets/coords/origin/x"].value(),data_node["coordsets/coords/origin/y"].value(),data_node["coordsets/coords/origin/z"].value()};
-// #endif
-
-    // Inputs of PMT assume 3D dataset
-    int32_t low[3] = {0,0,0};
-    int32_t high[3] = {0,0,0};
-
-    int32_t global_low[3] = {0,0,0};
-    int32_t global_high[3] = {0,0,0};
-    int32_t data_size[3] = {1,1,1};
-
-    int32_t n_blocks[3] = {1,1,1};
-    
-    if(p.has_path("in_ghosts")) {
-      int64_t* in_ghosts = p["in_ghosts"].as_int64_ptr();
-      for(int i=0;i<ndims;i++) {
-        ParallelMergeTree::o_ghosts[i] = (uint32_t)in_ghosts[i];
-        ParallelMergeTree::o_ghosts[i + 3] = (uint32_t)in_ghosts[i];
+  // #ifdef INPUT_SCALAR
+      if(data_node.has_path("coordsets/coords/spacing")){
+        spacing[0] = data_node["coordsets/coords/spacing/x"].value();
+        spacing[1] = data_node["coordsets/coords/spacing/y"].value();
+        if(ndims > 2)
+          spacing[2] = data_node["coordsets/coords/spacing/z"].value();
       }
-    }
 
-    for(int i=0; i<ndims; i++){
-      low[i] = origin[i]/spacing[i];
-      high[i] = low[i] + dims[i] -1;
-#ifdef ASCENT_MPI_ENABLED
-      MPI_Allreduce(&low[i], &global_low[i], 1, MPI_INT, MPI_MIN, comm);
-      MPI_Allreduce(&high[i], &global_high[i], 1, MPI_INT, MPI_MAX, comm);
-#elif
-      global_low[i] = low[i];
-      global_high[i] = high[i];
-#endif
-      data_size[i] = global_high[i]-global_low[i]+1;
+      origin[0] = data_node["coordsets/coords/origin/x"].value();
+      origin[1] = data_node["coordsets/coords/origin/y"].value();
+      if(ndims > 2)
+        origin[2] = data_node["coordsets/coords/origin/z"].value();
+  // #else
+  //     double spacing[ndims] = {data_node["coordsets/coords/spacing/dx"].value(),data_node["coordsets/coords/spacing/dy"].value(),data_node["coordsets/coords/spacing/dz"].value()};
+  //     double origin[ndims] = {data_node["coordsets/coords/origin/x"].value(),data_node["coordsets/coords/origin/y"].value(),data_node["coordsets/coords/origin/z"].value()};
+  // #endif
 
-      // normalize box
-      low[i] -= global_low[i];
-      high[i] = low[i] + dims[i] -1;
+      // Inputs of PMT assume 3D dataset
+      int32_t low[3] = {0,0,0};
+      int32_t high[3] = {0,0,0};
 
-      n_blocks[i] = std::ceil(data_size[i]*1.0/dims[i]);
-    }
+      int32_t global_low[3] = {0,0,0};
+      int32_t global_high[3] = {0,0,0};
+      int32_t data_size[3] = {1,1,1};
 
-    // int32_t dn[3], dp[3];
-    // dn[0] = (low[0] == data_size[0]) ? 0 : ParallelMergeTree::o_ghosts[0] - ParallelMergeTree::n_ghosts[0];
-    // dn[1] = (low[1] == data_size[1]) ? 0 : ParallelMergeTree::o_ghosts[1] - ParallelMergeTree::n_ghosts[1];
-    // dn[2] = (low[2] == data_size[2]) ? 0 : ParallelMergeTree::o_ghosts[2] - ParallelMergeTree::n_ghosts[2];
-    // dp[0] = (high[0] == data_size[0] - 1) ? 0 : ParallelMergeTree::o_ghosts[3] - ParallelMergeTree::n_ghosts[3];
-    // dp[1] = (high[1] == data_size[1] - 1) ? 0 : ParallelMergeTree::o_ghosts[4] - ParallelMergeTree::n_ghosts[4];
-    // dp[2] = (high[2] == data_size[2] - 1) ? 0 : ParallelMergeTree::o_ghosts[5] - ParallelMergeTree::n_ghosts[5];
+      int32_t n_blocks[3] = {1,1,1};
+      
+      if(p.has_path("in_ghosts")) {
+        int64_t* in_ghosts = p["in_ghosts"].as_int64_ptr();
+        for(int i=0;i<ndims;i++) {
+          ParallelMergeTree::o_ghosts[i] = (uint32_t)in_ghosts[i];
+          ParallelMergeTree::o_ghosts[i + 3] = (uint32_t)in_ghosts[i];
+        }
+      }
 
-    // for(int i=0; i<ndims; i++){
-    //   low[i] += dn[i];
-    //   high[i] -= dp[i];
-    // }
+      for(int i=0; i<ndims; i++){
+        low[i] = origin[i]/spacing[i];
+        high[i] = low[i] + dims[i] -1;
+        
+  #ifdef ASCENT_MPI_ENABLED
+        MPI_Allreduce(&low[i], &global_low[i], 1, MPI_INT, MPI_MIN, comm);
+        MPI_Allreduce(&high[i], &global_high[i], 1, MPI_INT, MPI_MAX, comm);
+  #elif
+        global_low[i] = low[i];
+        global_high[i] = high[i];
+  #endif
+        data_size[i] = global_high[i]-global_low[i]+1;
+        // normalize box
+        low[i] -= global_low[i];
+        high[i] = low[i] + dims[i] -1;
 
-    //std::cout << p["field"].as_string() <<std::endl;
+        n_blocks[i] = std::ceil(data_size[i]*1.0/dims[i]);
+      }
+      // int32_t dn[3], dp[3];
+      // dn[0] = (low[0] == data_size[0]) ? 0 : ParallelMergeTree::o_ghosts[0] - ParallelMergeTree::n_ghosts[0];
+      // dn[1] = (low[1] == data_size[1]) ? 0 : ParallelMergeTree::o_ghosts[1] - ParallelMergeTree::n_ghosts[1];
+      // dn[2] = (low[2] == data_size[2]) ? 0 : ParallelMergeTree::o_ghosts[2] - ParallelMergeTree::n_ghosts[2];
+      // dp[0] = (high[0] == data_size[0] - 1) ? 0 : ParallelMergeTree::o_ghosts[3] - ParallelMergeTree::n_ghosts[3];
+      // dp[1] = (high[1] == data_size[1] - 1) ? 0 : ParallelMergeTree::o_ghosts[4] - ParallelMergeTree::n_ghosts[4];
+      // dp[2] = (high[2] == data_size[2] - 1) ? 0 : ParallelMergeTree::o_ghosts[5] - ParallelMergeTree::n_ghosts[5];
 
-    //std::cout << "dtype " << data_node["fields/something/values"].dtype().print() <<std::endl;
-    // get the data handle
+      // for(int i=0; i<ndims; i++){
+      //   low[i] += dn[i];
+      //   high[i] -= dp[i];
+      // }
 
-    conduit::Node& fields_root_node = data_node["fields"];
-    conduit::Node& field_node = fields_root_node[p["field"].as_string()];
+      //std::cout << p["field"].as_string() <<std::endl;
 
-// #ifdef INPUT_SCALAR
-    conduit::DataArray<double> array_mag = field_node["values"].as_float64_array();
-// #else
-//     conduit::DataArray<double> array_x = data_node["fields/something/values/x"].as_float64_array();
-//     conduit::DataArray<double> array_y = data_node["fields/something/values/y"].as_float64_array();
-//     conduit::DataArray<double> array_z = data_node["fields/something/values/z"].as_float64_array();
-// #endif
-    //printf("NUMBER OF E %d\n", array_x.number_of_elements());
+      //std::cout << "dtype " << data_node["fields/something/values"].dtype().print() <<std::endl;
+      // get the data handle
 
-// #ifndef INPUT_SCALAR
-//     FunctionType* array = new FunctionType[array_x.number_of_elements()]; 
-//     for(int i=0; i < array_x.number_of_elements(); i++)
-//       array[i] = std::sqrt(array_x[i]*array_x[i] + array_y[i]*array_y[i] + array_z[i]*array_z[i]);
+      conduit::Node& fields_root_node = data_node["fields"];
+      conduit::Node& field_node = fields_root_node[p["field"].as_string()];
 
-//     //assert((dims[0]*dims[1]*dims[2]) == array_x.number_of_elements());
-// #else
-    FunctionType* array = reinterpret_cast<FunctionType *>(array_mag.data_ptr());
-//#endif
+  // #ifdef INPUT_SCALAR
+      conduit::DataArray<double> array_mag = field_node["values"].as_float64_array();
+  // #else
+  //     conduit::DataArray<double> array_x = data_node["fields/something/values/x"].as_float64_array();
+  //     conduit::DataArray<double> array_y = data_node["fields/something/values/y"].as_float64_array();
+  //     conduit::DataArray<double> array_z = data_node["fields/something/values/z"].as_float64_array();
+  // #endif
+      //printf("NUMBER OF E %d\n", array_x.number_of_elements());
 
-    //conduit::DataArray<float> array = data_node[p["data_path"].as_string()].as_float32_array();
+  // #ifndef INPUT_SCALAR
+  //     FunctionType* array = new FunctionType[array_x.number_of_elements()]; 
+  //     for(int i=0; i < array_x.number_of_elements(); i++)
+  //       array[i] = std::sqrt(array_x[i]*array_x[i] + array_y[i]*array_y[i] + array_z[i]*array_z[i]);
 
-#if 0
-    std::stringstream ss;
-    ss << "block_" << dims[0] << "_" << dims[1] << "_" << dims[2] <<"_low_"<< low[0] << "_"<< low[1] << "_"<< low[2] << ".raw";
-    std::fstream fil;
-    fil.open(ss.str().c_str(), std::ios::out | std::ios::binary);
-    fil.write(reinterpret_cast<char *>(array), (dims[0]*dims[1]*dims[2])*sizeof(FunctionType));
-    fil.close();
+  //     //assert((dims[0]*dims[1]*dims[2]) == array_x.number_of_elements());
+  // #else
+      FunctionType* array = reinterpret_cast<FunctionType *>(array_mag.data_ptr());
+  //#endif
 
-    MPI_Barrier(comm);
-#endif
+      //conduit::DataArray<float> array = data_node[p["data_path"].as_string()].as_float32_array();
 
-    // int32_t *data_size = p["data_size"].as_int32_ptr();
-    // int32_t *low = p["low"].as_int32_ptr();
-    // int32_t *high = p["high"].as_int32_ptr();
-    // int32_t *n_blocks = p["n_blocks"].as_int32_ptr();
-    int32_t task_id = rank;
-    // if (!p.has_child("task_id") || p["task_id"].as_int32() == -1) {
-    //   MPI_Comm_rank(comm, &task_id);
-    // } else {
-    //   task_id = p["task_id"].as_int32();
-    // }
-    int64_t fanin = p["fanin"].as_int64();
-    FunctionType threshold = p["threshold"].as_float64();
-    int64_t gen_field = p["gen_segment"].as_int64();
-
-    // create ParallelMergeTree instance and run
-    ParallelMergeTree pmt(array, 
-                          task_id,
-                          data_size,
-                          n_blocks,
-                          low, high,
-                          fanin, threshold, comm);
-
-    ParallelMergeTree::s_data_size[0] = data_size[0];
-    ParallelMergeTree::s_data_size[1] = data_size[1];
-    ParallelMergeTree::s_data_size[2] = data_size[2];
-
-#if 0
-    //std::cout<<"----------"<<rank<<"----------"<<std::endl;
-
-    // Reduce all of the local sums into the global sum
-    {
+  #if 1
       std::stringstream ss;
-      ss << "data_params_" << rank << ".txt";
-      std::ofstream ofs(ss.str());
-      ofs << "origin " << origin[0] << " " << origin[1] << " " << origin[2] << std::endl;
-      ofs << "spacing " << spacing[0] << " " << spacing[1] << " " << spacing[2] << std::endl;
-      ofs << "dims " << dims[0] << " " << dims[1] << " " << dims[2] << std::endl;
-      ofs << "low " << low[0] << " " << low[1] << " " << low[2] << std::endl;
-      ofs << "high " << high[0] << " " << high[1] << " " << high[2] << std::endl;
-      
-      uint32_t dnx, dny, dnz, dpx, dpy, dpz;
-      uint32_t loc_low[3] = {(uint32_t)low[0], (uint32_t)low[1], (uint32_t)low[2]};
-      uint32_t loc_high[3] = {(uint32_t)high[0], (uint32_t)high[1], (uint32_t)high[2]};
-      ParallelMergeTree::ComputeGhostOffsets(loc_low, loc_high, dnx, dny, dnz, dpx, dpy, dpz);
-      
-      ofs << "ghosts offsets " << dnx << " " << dny << " " << dnz << " "
-                               << dpx << " " << dpy << " " << dpz << std::endl;
-                                                
-      if(rank==0){
-        ofs << "*data_size " << data_size[0] << " " << data_size[1] << " " << data_size[2] << std::endl;
-        ofs << "*global_low " << global_low[0] << " " << global_low[1] << " " << global_low[2] << std::endl;
-        ofs << "*global_high " << global_high[0] << " " << global_high[1] << " " << global_high[2] << std::endl;
-        ofs << "*n_blocks " << n_blocks[0] << " " << n_blocks[1] << " " << n_blocks[2] << std::endl;
-      }
-      ofs.close();
-    }
+      ss << "block_" << dims[0] << "_" << dims[1] << "_" << dims[2] <<"_low_"<< low[0] << "_"<< low[1] << "_"<< low[2] << ".raw";
+      std::fstream fil;
+      fil.open(ss.str().c_str(), std::ios::out | std::ios::binary);
+      fil.write(reinterpret_cast<char *>(array), (dims[0]*dims[1]*dims[2])*sizeof(FunctionType));
+      fil.close();
 
-    //data_node["fields/"].print();
-    //std::cout<<"----------------------"<<std::endl;
-#endif
-    
-    pmt.Initialize();
-    pmt.Execute();
+      MPI_Barrier(comm);
+  #endif
 
-    if (gen_field) {
-      // Generate new field 'segment'
-      data_node["fields/segment/association"] = field_node["association"].as_string();
-      data_node["fields/segment/topology"] = field_node["topology"].as_string();
+      // int32_t *data_size = p["data_size"].as_int32_ptr();
+      // int32_t *low = p["low"].as_int32_ptr();
+      // int32_t *high = p["high"].as_int32_ptr();
+      // int32_t *n_blocks = p["n_blocks"].as_int32_ptr();
+      int32_t task_id = rank;
+      // if (!p.has_child("task_id") || p["task_id"].as_int32() == -1) {
+      //   MPI_Comm_rank(comm, &task_id);
+      // } else {
+      //   task_id = p["task_id"].as_int32();
+      // }
+      int64_t fanin = p["fanin"].as_int64();
+      FunctionType threshold = p["threshold"].as_float64();
+      int64_t gen_field = p["gen_segment"].as_int64();
 
-      // New field data
-      int32_t num_x = high[0] - low[0] + 1;
-      int32_t num_y = high[1] - low[1] + 1;
-      int32_t num_z = high[2] - low[2] + 1;
-      std::vector<FunctionType> seg_data(num_x*num_y*num_z, 0.f);
+      // create ParallelMergeTree instance and run
+      ParallelMergeTree pmt(array, 
+                            task_id,
+                            data_size,
+                            n_blocks,
+                            low, high,
+                            fanin, threshold, comm);
 
-      pmt.ExtractSegmentation(seg_data.data());
+      ParallelMergeTree::s_data_size[0] = data_size[0];
+      ParallelMergeTree::s_data_size[1] = data_size[1];
+      ParallelMergeTree::s_data_size[2] = data_size[2];
 
-      data_node["fields/segment/values"].set(seg_data);
-
-      // DEBUG -- write raw segment data to disk
-#if 0
+  #if 1
+      // Reduce all of the local sums into the global sum
       {
         std::stringstream ss;
-        ss << "segment_data_" << rank << ".bin";
-        std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
-        bofs.write(reinterpret_cast<char *>(seg_data.data()), num_x*num_y*num_z * sizeof(FunctionType));
-        bofs.close();
-      }
-#endif
+        ss << "data_params_" << rank << ".txt";
+        std::ofstream ofs(ss.str());
+        ofs << "origin " << origin[0] << " " << origin[1] << " " << origin[2] << std::endl;
+        ofs << "spacing " << spacing[0] << " " << spacing[1] << " " << spacing[2] << std::endl;
+        ofs << "dims " << dims[0] << " " << dims[1] << " " << dims[2] << std::endl;
+        ofs << "low " << low[0] << " " << low[1] << " " << low[2] << std::endl;
+        ofs << "high " << high[0] << " " << high[1] << " " << high[2] << std::endl;
+        
+        uint32_t dnx, dny, dnz, dpx, dpy, dpz;
+        uint32_t loc_low[3] = {(uint32_t)low[0], (uint32_t)low[1], (uint32_t)low[2]};
+        uint32_t loc_high[3] = {(uint32_t)high[0], (uint32_t)high[1], (uint32_t)high[2]};
+        ParallelMergeTree::ComputeGhostOffsets(loc_low, loc_high, dnx, dny, dnz, dpx, dpy, dpz);
+        
+        ofs << "ghosts offsets " << dnx << " " << dny << " " << dnz << " "
+                                 << dpx << " " << dpy << " " << dpz << std::endl;
+                                                  
+        if(rank==0){
+          ofs << "*data_size " << data_size[0] << " " << data_size[1] << " " << data_size[2] << std::endl;
+          ofs << "*global_low " << global_low[0] << " " << global_low[1] << " " << global_low[2] << std::endl;
+          ofs << "*global_high " << global_high[0] << " " << global_high[1] << " " << global_high[2] << std::endl;
+          ofs << "*n_blocks " << n_blocks[0] << " " << n_blocks[1] << " " << n_blocks[2] << std::endl;
+        }
 
-      // DEBUG -- verify modified BP node with 'segment' field
-      // conduit::Node info;
-      // if (conduit::blueprint::verify("mesh", *in, info))
-      //   std::cout << "BP with new field verify -- successful" << std::endl;
-      // else
-      //   std::cout << "BP with new field verify -- failed" << std::endl;
+        ofs.close();
+      }
+      MPI_Barrier(comm);
+      //data_node["fields/"].print();
+      //std::cout<<"----------------------"<<std::endl;
+  #endif
       
-      d_input->reset_vtkh_collection();
+      pmt.Initialize();
+      pmt.Execute();
+
+      MPI_Barrier(comm);
+
+      if (gen_field) {
+        // Generate new field 'segment'
+        data_node["fields/segment/association"] = field_node["association"].as_string();
+        data_node["fields/segment/topology"] = field_node["topology"].as_string();
+
+        // New field data
+        int32_t num_x = high[0] - low[0] + 1;
+        int32_t num_y = high[1] - low[1] + 1;
+        int32_t num_z = high[2] - low[2] + 1;
+        std::vector<FunctionType> seg_data(num_x*num_y*num_z, 0.f);
+
+        pmt.ExtractSegmentation(seg_data.data());
+
+        data_node["fields/segment/values"].set(seg_data);
+
+        // DEBUG -- write raw segment data to disk
+  #if 0
+        {
+          std::stringstream ss;
+          ss << "segment_data_" << rank << ".bin";
+          std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
+          bofs.write(reinterpret_cast<char *>(seg_data.data()), num_x*num_y*num_z * sizeof(FunctionType));
+          bofs.close();
+        }
+  #endif
+
+        // DEBUG -- verify modified BP node with 'segment' field
+        // conduit::Node info;
+        // if (conduit::blueprint::verify("mesh", *in, info))
+        //   std::cout << "BP with new field verify -- successful" << std::endl;
+        // else
+        //   std::cout << "BP with new field verify -- failed" << std::endl;
+        
+        d_input->reset_vtkh_collection();
+      }
+
     }
+    MPI_Barrier(world_comm);
     
     set_output<DataObject>(d_input);
   } else {
