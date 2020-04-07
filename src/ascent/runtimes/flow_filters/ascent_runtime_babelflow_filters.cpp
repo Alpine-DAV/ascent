@@ -40,7 +40,7 @@
 #include <fstream>
 #include <sstream>
 #include <float.h>
-
+#include <climits>
 
 
 class ParallelMergeTree {
@@ -477,6 +477,13 @@ void ascent::runtime::filters::BabelFlow::execute() {
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &comm_size);
 
+    conduit::Node& fields_root_node = data_node["fields"];
+    conduit::Node& field_node = fields_root_node[p["field"].as_string()];
+
+// #ifdef INPUT_SCALAR
+    conduit::DataArray<double> array_mag = field_node["values"].as_float64_array();
+
+
     if(color) {
       std::cout << rank << ": comm size " << comm_size << " color " << color << std::endl;
       //data_node["coordsets/coords"].print();
@@ -565,11 +572,11 @@ void ascent::runtime::filters::BabelFlow::execute() {
       //std::cout << "dtype " << data_node["fields/something/values"].dtype().print() <<std::endl;
       // get the data handle
 
-      conduit::Node& fields_root_node = data_node["fields"];
-      conduit::Node& field_node = fields_root_node[p["field"].as_string()];
+  //     conduit::Node& fields_root_node = data_node["fields"];
+  //     conduit::Node& field_node = fields_root_node[p["field"].as_string()];
 
-  // #ifdef INPUT_SCALAR
-      conduit::DataArray<double> array_mag = field_node["values"].as_float64_array();
+  // // #ifdef INPUT_SCALAR
+  //     conduit::DataArray<double> array_mag = field_node["values"].as_float64_array();
   // #else
   //     conduit::DataArray<double> array_x = data_node["fields/something/values/x"].as_float64_array();
   //     conduit::DataArray<double> array_y = data_node["fields/something/values/y"].as_float64_array();
@@ -681,10 +688,10 @@ void ascent::runtime::filters::BabelFlow::execute() {
         data_node["fields/segment/values"].set(seg_data);
 
         // DEBUG -- write raw segment data to disk
-  #if 0
+  #if 1
         {
           std::stringstream ss;
-          ss << "segment_data_" << rank << ".bin";
+          ss << "segment_data_" << rank << "_" << num_x << "_" << num_y << "_" << num_z <<"_low_"<< low[0] << "_"<< low[1] << "_"<< low[2] << ".raw";
           std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
           bofs.write(reinterpret_cast<char *>(seg_data.data()), num_x*num_y*num_z * sizeof(FunctionType));
           bofs.close();
@@ -702,9 +709,19 @@ void ascent::runtime::filters::BabelFlow::execute() {
       }
 
     }
+    else{
+      data_node["fields/segment/association"] = field_node["association"].as_string();
+      data_node["fields/segment/topology"] = field_node["topology"].as_string();
+
+      std::vector<FunctionType> seg_data(array_mag.number_of_elements(), (FunctionType)GNULL);
+      data_node["fields/segment/values"].set(seg_data);
+      
+      d_input->reset_vtkh_collection();
+    }
     MPI_Barrier(world_comm);
     
     set_output<DataObject>(d_input);
+    
   } else {
     return;
   }
