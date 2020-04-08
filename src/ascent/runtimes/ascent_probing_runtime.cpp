@@ -461,9 +461,8 @@ int recv_any_using_schema(Node &node, int src, int tag, MPI_Comm comm)
     return status.MPI_SOURCE;
 }
 
-int ibsend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm, 
-                        MPI_Request *request) 
-{     
+void pack_node(const Node &node, Node &n_msg)
+{
     conduit::Schema s_data_compact;
     
     // schema will only be valid if compact and contig
@@ -487,31 +486,37 @@ int ibsend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm,
     conduit::Schema s_msg_compact;
     s_msg.compact_to(s_msg_compact);
     
-    Node n_msg(s_msg_compact);
+    n_msg.set_schema(s_msg_compact);
     // these sets won't realloc since schemas are compatible
     n_msg["schema_len"].set((int64)snd_schema_json.length());
     n_msg["schema"].set(snd_schema_json);
     n_msg["data"].update(node);
 
+    // return n_msg;
+}
+
+int ibsend_using_schema(const Node &n_msg, int dest, int tag, MPI_Comm comm, 
+                        MPI_Request *request) 
+{     
     index_t msg_data_size = n_msg.total_bytes_compact();
 
-    int size;
-    char *bsend_buf;
-    // block until all messages currently in the buffer have been transmitted
-    MPI_Buffer_detach(&bsend_buf, &size);
-    // clean up old buffer
-    free(bsend_buf);
+    // int size;
+    // char *bsend_buf;
+    // // block until all messages currently in the buffer have been transmitted
+    // MPI_Buffer_detach(&bsend_buf, &size);
+    // // clean up old buffer
+    // free(bsend_buf);
 
-    MPI_Buffer_attach(malloc(msg_data_size + MPI_BSEND_OVERHEAD), 
-                             msg_data_size + MPI_BSEND_OVERHEAD);
+    // MPI_Buffer_attach(malloc(msg_data_size + MPI_BSEND_OVERHEAD), 
+    //                          msg_data_size + MPI_BSEND_OVERHEAD);
 
     int mpi_error = MPI_Ibsend(const_cast<void*>(n_msg.data_ptr()),
-                              static_cast<int>(msg_data_size),
-                              MPI_BYTE,
-                              dest,
-                              tag,
-                              comm,
-                              request);
+                               static_cast<int>(msg_data_size),
+                               MPI_BYTE,
+                               dest,
+                               tag,
+                               comm,
+                               request);
     
     if (mpi_error)
         std::cout << "ERROR sending dataset to " << dest << std::endl;
@@ -642,6 +647,25 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     //     MPI_Comm_create_group(mpi_comm_world, vis_groups[i], 0, &vis_comms[i]);
     // }
 
+    // TODO: remove the magic numbers
+    // (# probing images + # inline images) * (RGBA + depth) * width*height + distance cam/dom center
+    int image_size = (my_probing_times.size() + image_counts[world_rank]) * 5 * 1024*1024 + 4;
+    Node n_msg;
+    pack_node(data, n_msg);
+    index_t msg_data_size = n_msg.total_bytes_compact();
+
+    int size;
+    char *bsend_buf;
+    // block until all messages currently in the buffer have been transmitted
+    MPI_Buffer_detach(&bsend_buf, &size);
+    // clean up old buffer
+    free(bsend_buf);
+    // attach new buffer
+    MPI_Buffer_attach(malloc(msg_data_size + image_size + MPI_BSEND_OVERHEAD), 
+                             msg_data_size + image_size + MPI_BSEND_OVERHEAD);
+    std::cout << "-- buffer size: " << (msg_data_size + image_size + MPI_BSEND_OVERHEAD) << std::endl;
+
+
     Node ascent_opts, blank_actions;
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(mpi_comm_world);
     ascent_opts["actions_file"] = "cinema_actions.yaml";
@@ -677,30 +701,19 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             std::cout << "~~~ vis node " << world_rank << " received data from "
                       << srcIds[i] << std::endl;
             log_time(start, "- receive data ", world_rank);
-            datasets[i] = dataset;
-        }
+            // datasets[i] = dataset;
+        // }
 
-        for (int i = 0; i < sending_count; ++i)
-        {
-            // receive all render chunks
-            auto start = std::chrono::system_clock::now();
-            // receive render chunks from all associated sim nodes
-            conduit::Node render_chunks;
-            int srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 1, mpi_comm_world);
-            std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
-                    << srcId << std::endl;
-            // srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 2, mpi_comm_world);
-            // std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
-            //         << srcId << std::endl;
-            log_time(start, "- receive img ", world_rank);
-        }
+        // for (int i = 0; i < sending_count; ++i)
+        // {
+        // }
 
-        for (int i = 0; i < sending_count; ++i)
-        {
-            conduit::Node dataset = datasets[i];
+        // for (int i = 0; i < sending_count; ++i)
+        // {
+            // conduit::Node dataset = datasets[i];
             if (conduit::blueprint::mesh::verify(dataset, verify_info))
             {
-                auto start = std::chrono::system_clock::now();
+                start = std::chrono::system_clock::now();
                 int current_image_count = max_image_count - image_counts[srcIds[i]];
                 int offset = max_image_count - current_image_count;
 
@@ -728,6 +741,18 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
                             << std::endl;
             }
+
+            // receive render chunks
+            start = std::chrono::system_clock::now();
+            // receive render chunks from all associated sim nodes
+            conduit::Node render_chunks;
+            int srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 1, mpi_comm_world);
+            std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
+                    << srcId << std::endl;
+            // srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 2, mpi_comm_world);
+            // std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
+            //         << srcId << std::endl;
+            log_time(start, "- receive img ", world_rank);
 
             // if (i == 0)
             // {
@@ -761,7 +786,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
             auto start = std::chrono::system_clock::now();
-            ibsend_using_schema(data, destination, 0, mpi_comm_world, &request);
+            ibsend_using_schema(n_msg, destination, 0, mpi_comm_world, &request);
             log_time(start, "- send data ", world_rank);
 
             Node render_chunks_inline;
@@ -799,8 +824,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             render_chunks["probing"] = render_chunks_probing;
 
             start = std::chrono::system_clock::now();
-            ibsend_using_schema(render_chunks, destination, 1, 
-                                mpi_comm_world, &request);
+            Node compact_img;
+            pack_node(render_chunks, compact_img);    // this takes too long
+            ibsend_using_schema(compact_img, destination, 1, mpi_comm_world, &request);
             log_time(start, "- send sim img ", world_rank);
 
             // send render chunks from probing
