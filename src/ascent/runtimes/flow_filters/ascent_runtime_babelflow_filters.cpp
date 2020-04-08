@@ -411,13 +411,14 @@ void ascent::runtime::filters::BabelFlow::execute() {
   // DEBUG prints
 #if 0
   {
+    
     auto in = input<DataObject>(0)->as_node();
     auto itr_dnode = in->children();
     while(itr_dnode.has_next())
     {
       auto& data_node = itr_dnode.next();
       std::string cld_dname = data_node.name();
-      std::cout << "dnode name " <<cld_dname  << std::endl; //<< ": " << cld.to_json()
+      //std::cout << " dnode name " <<cld_dname  << std::endl; //<< ": " << cld.to_json()
 
       conduit::NodeIterator itr = data_node["fields/"].children();
       while(itr.has_next())
@@ -426,10 +427,18 @@ void ascent::runtime::filters::BabelFlow::execute() {
             std::string cld_name = itr.name();
             std::cout << "\tname " <<cld_name  << std::endl; //<< ": " << cld.to_json()
       }
+      
+      std::cout << world_rank<< ": dnode name " <<cld_dname<<" coordtype " << data_node["coordsets/coords/type"].as_string() 
+      <<  " uniform " << data_node.has_path("coordsets/coords/spacing/x") << std::endl;
+      if (data_node.has_path("coordsets/coords/spacing/dx"))
+        data_node["coordsets/coords/spacing"].print();
+      
     }
 
   }
 
+  // MPI_Barrier(world_comm);
+  // return;
 #endif
 
   if (op == PMT) {
@@ -449,8 +458,6 @@ void ascent::runtime::filters::BabelFlow::execute() {
 
     int color = 0;
 
-    //std::cout << world_rank << ": " << data_node["coordsets/coords/type"].as_string() << std::endl;
-
     // check if coordset uniform
     if(data_node.has_path("coordsets/coords/type"))
     {
@@ -463,12 +470,14 @@ void ascent::runtime::filters::BabelFlow::execute() {
       }
       else{
         int32_t tspa = data_node["coordsets/coords/spacing/x"].value();
-        if (tspa == 100)
+        if (tspa == 200)
           color = 1;
       }
     }
     else
       ASCENT_ERROR("BabelFlow filter could not find coordsets/coords/type");
+
+    std::cout << world_rank << ": " << data_node["coordsets/coords/type"].as_string() << " color " << color <<std::endl;
 
     MPI_Comm comm;
     MPI_Comm_split(world_comm, color, world_rank, &comm);
@@ -480,9 +489,7 @@ void ascent::runtime::filters::BabelFlow::execute() {
     conduit::Node& fields_root_node = data_node["fields"];
     conduit::Node& field_node = fields_root_node[p["field"].as_string()];
 
-// #ifdef INPUT_SCALAR
     conduit::DataArray<double> array_mag = field_node["values"].as_float64_array();
-
 
     if(color) {
       std::cout << rank << ": comm size " << comm_size << " color " << color << std::endl;
@@ -501,22 +508,35 @@ void ascent::runtime::filters::BabelFlow::execute() {
       if(ndims > 2)
         dims[2] = data_node["coordsets/coords/dims/k"].value();
 
-  // #ifdef INPUT_SCALAR
       if(data_node.has_path("coordsets/coords/spacing")){
-        spacing[0] = data_node["coordsets/coords/spacing/x"].value();
-        spacing[1] = data_node["coordsets/coords/spacing/y"].value();
-        if(ndims > 2)
-          spacing[2] = data_node["coordsets/coords/spacing/z"].value();
+
+        // uniform grid should not have spacing as {x,y,z}
+        // this is a workaround to support old Ascent dataset using {x,y,z}
+        // TODO: we should probably remove {x,y,z} from the dataset
+        if(data_node.has_path("coordsets/coords/spacing/x")){
+          spacing[0] = data_node["coordsets/coords/spacing/x"].value();
+          spacing[1] = data_node["coordsets/coords/spacing/y"].value();
+          if(ndims > 2)
+            spacing[2] = data_node["coordsets/coords/spacing/z"].value();
+
+          data_node["coordsets/coords/spacing/dx"] = spacing[0];
+          data_node["coordsets/coords/spacing/dy"] = spacing[0];
+          data_node["coordsets/coords/spacing/dz"] = spacing[0];
+        }
+        else if(data_node.has_path("coordsets/coords/spacing/dx")){
+          spacing[0] = data_node["coordsets/coords/spacing/dx"].value();
+          spacing[1] = data_node["coordsets/coords/spacing/dy"].value();
+          if(ndims > 2)
+            spacing[2] = data_node["coordsets/coords/spacing/dz"].value();
+        }
+        
       }
+
 
       origin[0] = data_node["coordsets/coords/origin/x"].value();
       origin[1] = data_node["coordsets/coords/origin/y"].value();
       if(ndims > 2)
         origin[2] = data_node["coordsets/coords/origin/z"].value();
-  // #else
-  //     double spacing[ndims] = {data_node["coordsets/coords/spacing/dx"].value(),data_node["coordsets/coords/spacing/dy"].value(),data_node["coordsets/coords/spacing/dz"].value()};
-  //     double origin[ndims] = {data_node["coordsets/coords/origin/x"].value(),data_node["coordsets/coords/origin/y"].value(),data_node["coordsets/coords/origin/z"].value()};
-  // #endif
 
       // Inputs of PMT assume 3D dataset
       int32_t low[3] = {0,0,0};
@@ -530,9 +550,9 @@ void ascent::runtime::filters::BabelFlow::execute() {
       
       if(p.has_path("in_ghosts")) {
         int64_t* in_ghosts = p["in_ghosts"].as_int64_ptr();
-        for(int i=0;i<ndims;i++) {
+        for(int i=0;i< ndims*2;i++) {
           ParallelMergeTree::o_ghosts[i] = (uint32_t)in_ghosts[i];
-          ParallelMergeTree::o_ghosts[i + 3] = (uint32_t)in_ghosts[i];
+          //ParallelMergeTree::o_ghosts[i + 3] = (uint32_t)in_ghosts[i];
         }
       }
 
@@ -575,24 +595,7 @@ void ascent::runtime::filters::BabelFlow::execute() {
   //     conduit::Node& fields_root_node = data_node["fields"];
   //     conduit::Node& field_node = fields_root_node[p["field"].as_string()];
 
-  // // #ifdef INPUT_SCALAR
-  //     conduit::DataArray<double> array_mag = field_node["values"].as_float64_array();
-  // #else
-  //     conduit::DataArray<double> array_x = data_node["fields/something/values/x"].as_float64_array();
-  //     conduit::DataArray<double> array_y = data_node["fields/something/values/y"].as_float64_array();
-  //     conduit::DataArray<double> array_z = data_node["fields/something/values/z"].as_float64_array();
-  // #endif
-      //printf("NUMBER OF E %d\n", array_x.number_of_elements());
-
-  // #ifndef INPUT_SCALAR
-  //     FunctionType* array = new FunctionType[array_x.number_of_elements()]; 
-  //     for(int i=0; i < array_x.number_of_elements(); i++)
-  //       array[i] = std::sqrt(array_x[i]*array_x[i] + array_y[i]*array_y[i] + array_z[i]*array_z[i]);
-
-  //     //assert((dims[0]*dims[1]*dims[2]) == array_x.number_of_elements());
-  // #else
       FunctionType* array = reinterpret_cast<FunctionType *>(array_mag.data_ptr());
-  //#endif
 
       //conduit::DataArray<float> array = data_node[p["data_path"].as_string()].as_float32_array();
 
@@ -677,6 +680,7 @@ void ascent::runtime::filters::BabelFlow::execute() {
         data_node["fields/segment/association"] = field_node["association"].as_string();
         data_node["fields/segment/topology"] = field_node["topology"].as_string();
 
+        std::cout << "setting ass " << field_node["association"].as_string() << " topo " << field_node["topology"].as_string() << std::endl;
         // New field data
         int32_t num_x = high[0] - low[0] + 1;
         int32_t num_y = high[1] - low[1] + 1;
@@ -708,16 +712,17 @@ void ascent::runtime::filters::BabelFlow::execute() {
         d_input->reset_vtkh_collection();
       }
 
-    }
-    else{
-      data_node["fields/segment/association"] = field_node["association"].as_string();
-      data_node["fields/segment/topology"] = field_node["topology"].as_string();
-
-      std::vector<FunctionType> seg_data(array_mag.number_of_elements(), (FunctionType)GNULL);
-      data_node["fields/segment/values"].set(seg_data);
       
-      d_input->reset_vtkh_collection();
     }
+    // else{
+    //   data_node["fields/segment/association"] = field_node["association"].as_string();
+    //   data_node["fields/segment/topology"] = field_node["topology"].as_string();
+
+    //   std::vector<FunctionType> seg_data(array_mag.number_of_elements(), (FunctionType)GNULL);
+    //   data_node["fields/segment/values"].set(seg_data);
+
+    //   //d_input->reset_vtkh_collection();
+    // }
     MPI_Barrier(world_comm);
     
     set_output<DataObject>(d_input);
