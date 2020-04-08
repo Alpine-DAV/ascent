@@ -42,83 +42,33 @@
 #
 ###############################################################################
 
-##################################
-# empty  host-config
-##################################
-# insert compiler name here
-##################################
-
-#######
-# using [insert compiler name here] compiler spec
-#######
-
-# c compiler
-set(CMAKE_C_COMPILER "/usr/bin/mpicc" CACHE PATH "")
-set(C_COMPILE_FLAGS "-fPIC" CACHE PATH "")
-
-# cpp compiler
-set(CMAKE_CXX_COMPILER "/usr/bin/mpicxx" CACHE PATH "")
-set(CXX_COMPILE_FLAGS "-fPIC" CACHE PATH "")
-
-# fortran compiler (need for cloverleaf)
-set(CMAKE_Fortran_COMPILER  "/usr/bin/f95" CACHE PATH "")
-
-# OPENMP (optional: for proxy apps)
-set(ENABLE_OPENMP OFF CACHE BOOL "")
-
-# MPI Support
-set(ENABLE_MPI  ON CACHE BOOL "")
-
-set(MPI_C_COMPILER  "/usr/bin/mpicc" CACHE PATH "")
-set(MPI_C_COMPILE_FLAGS "-fPIC" CACHE PATH "")
-
-set(MPI_CXX_COMPILER "/usr/bin/mpicxx" CACHE PATH "")
-set(MPI_CXX_COMPILE_FLAGS "-fPIC" CACHE PATH "")
-
-set(MPI_Fortran_COMPILER "/usr/bin/mpif90" CACHE PATH "")
-
-set(MPIEXEC /usr/bin/mpirun CACHE PATH "")
-
-set(MPIEXEC_NUMPROC_FLAG -n CACHE PATH "")
-
-##Disable python
-set(ENABLE_PYTHON OFF)
-
-
-
-# CUDA support
-#set(ENABLE_CUDA ON CACHE PATH "")
-
-# NO CUDA Support
-set(ENABLE_CUDA OFF CACHE PATH "")
-
-# conduit
-set(CONDUIT_DIR "/home/pugmire/proj/alpine/conduit/install-debug" CACHE PATH "")
-
-# icet
-set(ICET_DIR "/disk2TB/proj/alpine/icet/install" CACHE PATH "")
-
+###############################################################################
 #
-# vtkm
+# HOLO CMake Build for Ascent
 #
+###############################################################################
 
-# tbb
-set(ASCENT_VTKM_USE_TBB OFF CACHE PATH "")
-#set(TBB_DIR "/usr/include" CACHE PATH "")
+set(HOLO_SOURCES
+    holo_compare.cpp)
 
-# vtkm
-set(VTKM_DIR "/disk2TB/proj/alpine/vtkm/install" CACHE PATH "")
+set(holo_deps ascent)
 
-# HDF5 support (optional)
-#
-# hdf5v
-set(HDF5_DIR "/apps/visit/thirdparty/visit/hdf5/1.8.14/linux-x86_64_gcc-5.4" CACHE PATH "")
+if(OPENMP_FOUND)
+   list(APPEND deps openmp)
+endif()
 
-set(ADIOS_DIR "/apps/adios" CACHE PATH "")
+if (ENABLE_SERIAL)
+    blt_add_executable(
+        NAME        holo
+        SOURCES     ${HOLO_SOURCES}
+        DEPENDS_ON  ${holo_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-#SPHINX documentation building
-#set("SPHINX_EXECUTABLE" "/path/to/sphinx-build" CACHE PATH "")
-
-##################################
-# end boilerplate host-config
-##################################
+    # install target for replay serial
+    install(TARGETS holo
+            EXPORT  ascent
+            LIBRARY DESTINATION utilities/ascent/holo_compare
+            ARCHIVE DESTINATION utilities/ascent/holo_compare
+            RUNTIME DESTINATION utilities/ascent/holo_compare
+    )
+endif()

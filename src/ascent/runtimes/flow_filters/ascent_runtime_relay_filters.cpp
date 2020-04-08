@@ -66,7 +66,9 @@
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_file_system.hpp>
+#include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
+#include <ascent_runtime_param_check.hpp>
 
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -282,6 +284,34 @@ void filter_fields(const conduit::Node &input,
     }
   }
 
+  const int num_out_doms = output.number_of_children();
+  bool has_data = false;
+  // check to see if this resulted in any data
+  for(int d = 0; d < num_out_doms; ++d)
+  {
+    const conduit::Node &dom = output.child(d);
+    if(dom.has_path("fields"))
+    {
+      int fsize = dom["fields"].number_of_children();
+      if(fsize != 0)
+      {
+        has_data = true;
+        break;
+      }
+    }
+  }
+
+  has_data = global_agreement(has_data);
+  if(!has_data)
+  {
+    ASCENT_ERROR("Relay: field selection resulted in no data."
+                 "This can occur if the fields did not exist "
+                 "in the simulaiton data or if the fields were "
+                 "created as a result of a pipeline, but the "
+                 "relay extract did not recieve the result of "
+                 "a pipeline");
+  }
+
 }
 //-----------------------------------------------------------------------------
 };
@@ -344,6 +374,22 @@ verify_io_params(const conduit::Node &params,
         {
             info["info"].append() = "includes 'num_files'";
         }
+    }
+    
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
+    valid_paths.push_back("path");
+    valid_paths.push_back("protocol");
+    valid_paths.push_back("fields");
+    valid_paths.push_back("num_files");
+    ignore_paths.push_back("fields");
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;
@@ -519,7 +565,7 @@ void mesh_blueprint_save(const Node &data,
     {
       if(par_rank == 0)
       {
-          ASCENT_WARN("There no data to save. Doing nothing");
+          ASCENT_WARN("There no data to save. Doing nothing.");
       }
       return;
     }

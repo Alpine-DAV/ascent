@@ -915,7 +915,11 @@ DefaultRender::execute()
           }
           else
           {
-            ASCENT_ERROR("Render must have either a 'image_name' or 'image_prefix' parameter");
+            std::string render_name = renders_node.child_names()[i];
+            std::string fpath = filter_to_path(this->name());
+            ASCENT_ERROR("Render ("<<fpath<<"/"<<render_name<<")"<<
+                         " must have either a 'image_name' or "
+                         "'image_prefix' parameter");
           }
 
           vtkh::Render render = detail::parse_render(render_node,
@@ -1277,7 +1281,6 @@ CreatePlot::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     conduit::Node &plot_params = params();
-
     std::string field_name;
     if(plot_params.has_path("field"))
     {
@@ -1304,7 +1307,8 @@ CreatePlot::execute()
           }
           // issue is that there might be empty data so this path
           // might not be taken by all ranks !!!!!
-          ASCENT_ERROR("create_plot: data set has multiple topologies "
+          std::string fpath = filter_to_path(this->name());
+          ASCENT_ERROR("create_plot("<<fpath<<"): data set has multiple topologies "
                        <<"and no topology is specified."<<ss.str());
         }
 
@@ -1320,7 +1324,8 @@ CreatePlot::execute()
       topo_name = collection->field_topology(field_name);
       if(topo_name == "")
       {
-        ASCENT_ERROR("create plot: unknown field '"<<field_name<<"'");
+        std::string fpath = filter_to_path(this->name());
+        ASCENT_ERROR("create plot("<<fpath<<"): unknown field '"<<field_name<<"'");
       }
     }
 
@@ -1337,7 +1342,8 @@ CreatePlot::execute()
           ss<<", ";
         }
       }
-      ASCENT_ERROR("no topology named '"<<topo_name<<"'."
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("create_plot("<<fpath<<") no topology named '"<<topo_name<<"'."
                    <<ss.str());
     }
 
@@ -1347,7 +1353,8 @@ CreatePlot::execute()
 
     if(data.GlobalIsEmpty())
     {
-      ASCENT_INFO(type<<" plot yielded no data, i.e., no cells remain");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_INFO(fpath<<" "<<type<<" plot yielded no data, i.e., no cells remain");
     }
 
     vtkh::Renderer *renderer = nullptr;

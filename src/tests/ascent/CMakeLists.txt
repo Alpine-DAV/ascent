@@ -62,6 +62,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_web_flow
                 t_ascent_web_main
                 t_ascent_clip
+                t_ascent_scalar_renderer
                 t_ascent_multi_topo
                 t_ascent_gradient
                 t_ascent_qcriterion
@@ -75,6 +76,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_pipelines_to_pipelines
                 t_ascent_threshold
                 t_ascent_slice
+                t_ascent_patch_amr
                 t_ascent_vector_ops
                 t_ascent_flow_runtime
                 t_ascent_recenter

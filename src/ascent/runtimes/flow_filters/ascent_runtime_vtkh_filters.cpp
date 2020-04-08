@@ -83,6 +83,7 @@
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
+#include <vtkh/rendering/ScalarRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
 #include <vtkh/filters/CompositeVector.hpp>
@@ -208,7 +209,8 @@ VTKHMarchingCubes::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -318,7 +320,8 @@ VTKHVectorMagnitude::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -651,7 +654,6 @@ VTKHSlice::execute()
         }
         ASCENT_ERROR("no topology named '"<<topo_name<<"'."
                      <<ss.str());
-
       }
     }
     else
@@ -895,7 +897,8 @@ VTKHThreshold::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1067,7 +1070,6 @@ VTKHClip::execute()
       }
 
       topo_name = params()["topology"].as_string();
-
       if(!collection->has_topology(topo_name))
       {
         std::stringstream ss;
@@ -1083,7 +1085,6 @@ VTKHClip::execute()
         }
         ASCENT_ERROR("no topology named '"<<topo_name<<"'."
                      <<ss.str());
-
       }
     }
     else
@@ -1221,7 +1222,8 @@ VTKHClipWithField::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1325,7 +1327,8 @@ VTKHIsoVolume::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1430,7 +1433,8 @@ VTKHLagrangian::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1535,7 +1539,8 @@ VTKHLog::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1633,7 +1638,8 @@ VTKHRecenter::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1741,7 +1747,8 @@ VTKHHistSampling::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1884,7 +1891,8 @@ VTKHQCriterion::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1988,7 +1996,8 @@ VTKHDivergence::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2093,7 +2102,8 @@ VTKHVorticity::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2199,7 +2209,8 @@ VTKHGradient::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2301,7 +2312,8 @@ VTKHStats::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2385,7 +2397,8 @@ VTKHHistogram::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2478,7 +2491,8 @@ VTKHParticleAdvection::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2510,6 +2524,146 @@ VTKHParticleAdvection::execute()
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
     VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHProject2d::VTKHProject2d()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHProject2d::~VTKHProject2d()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHProject2d::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_project_2d";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHProject2d::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("topology",params, info, false);
+    res &= check_numeric("image_width",params, info, false);
+    res &= check_numeric("image_height",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
+    valid_paths.push_back("topology");
+    valid_paths.push_back("image_width");
+    valid_paths.push_back("image_height");
+    valid_paths.push_back("camera");
+    ignore_paths.push_back("camera");
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHProject2d::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_project2d input must be a data object");
+    }
+
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    int num_topologies = collection->number_of_topologies();
+    std::string topo_name;
+
+    if(num_topologies > 1)
+    {
+      if(!params().has_path("topology"))
+      {
+        ASCENT_ERROR("VTKHProject2d: data set has multiple topologies "
+                     <<"and no topology is specified.");
+      }
+
+      topo_name = params()["topology"].as_string();
+      if(!collection->has_topology(topo_name))
+      {
+        std::stringstream ss;
+        ss<<" possible topology names: ";
+        std::vector<std::string> names = collection->topology_names();
+        for(int i = 0; i < names.size(); ++i)
+        {
+          ss<<"'"<<names[i]<<"'";
+          if(i != names.size() -1)
+          {
+            ss<<", ";
+          }
+        }
+        ASCENT_ERROR("no topology named '"<<topo_name<<"'."
+                     <<ss.str());
+      }
+    }
+    else
+    {
+      topo_name = collection->topology_names()[0];
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    vtkm::Bounds bounds = data.GetGlobalBounds();
+    vtkm::rendering::Camera camera;
+    camera.ResetToBounds(bounds);
+
+    if(params().has_path("camera"))
+    {
+      parse_camera(params()["camera"], camera);
+    }
+
+    int width = 512;
+    int height = 512;
+    if(params().has_path("image_width"))
+    {
+      width = params()["image_width"].to_int32();
+    }
+    if(params().has_path("image_height"))
+    {
+      height = params()["image_height"].to_int32();
+    }
+
+    vtkh::ScalarRenderer tracer;
+
+    tracer.SetWidth(width);
+    tracer.SetHeight(height);
+    tracer.SetInput(&data);
+    tracer.SetCamera(camera);
+
+    tracer.Update();
+
+    vtkh::DataSet *output = tracer.GetOutput();
+    VTKHCollection *new_coll = new VTKHCollection();
     new_coll->add(*output, topo_name);
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
@@ -2581,7 +2735,8 @@ VTKHNoOp::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2674,7 +2829,8 @@ VTKHVectorComponent::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
     }
     int component = params()["component"].to_int32();
     std::string res_name = params()["output_name"].as_string();
@@ -2773,13 +2929,15 @@ VTKHCompositeVector::execute()
     std::string field_name1 = params()["field1"].as_string();
     if(!collection->has_field(field_name1))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name1<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name1<<"'");
     }
 
     std::string field_name2 = params()["field2"].as_string();
     if(!collection->has_field(field_name2))
     {
-      ASCENT_ERROR("Unknown field '"<<field_name2<<"'");
+      std::string fpath = filter_to_path(this->name());
+      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name2<<"'");
     }
 
     std::string field_name3;
@@ -2789,7 +2947,8 @@ VTKHCompositeVector::execute()
       field_name3 = params()["field3"].as_string();
       if(!collection->has_field(field_name3))
       {
-        ASCENT_ERROR("Unknown field '"<<field_name2<<"'");
+        std::string fpath = filter_to_path(this->name());
+        ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name3<<"'");
       }
     }
 

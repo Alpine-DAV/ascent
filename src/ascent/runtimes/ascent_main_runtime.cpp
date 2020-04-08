@@ -527,6 +527,18 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
         // It specifies the input to the pipeline itself
         continue;
       }
+
+      if(cname == "type")
+      {
+        // this is common error to put a filter directly
+        // under pipelines
+        ASCENT_ERROR("Detected 'type' with a pipeline definition "<<
+                     "("<<pipeline_name<<"). This occurs when a "
+                     "filter type is mistakenly placed outside "
+                     "a filter");
+
+      }
+
       conduit::Node filter = pipeline.child(i);
       std::string filter_name;
 
@@ -556,7 +568,7 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
 
       // create a unique name for the filter
       std::stringstream ss;
-      ss<<pipeline_name<<"_"<<i<<"_"<<filter_name;
+      ss<<pipeline_name<<"_"<<cname<<"_"<<type;
       std::string name = ss.str();
       w.graph().add_filter(filter_name,
                            name,
@@ -1150,11 +1162,11 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     std::vector<std::string> pipelines = GetPipelines(scene["plots"]);
     std::vector<std::string> plot_names = scene["plots"].child_names();
 
-    // create plots with scene name appended
+    // create plots with scene name + plot_name
     conduit::Node appended_plots;
     for(int k = 0; k < plot_names.size(); ++k)
     {
-      std::string p_name = plot_names[k] + "_" + names[i];
+      std::string p_name = names[i] + "_" + plot_names[k];
       appended_plots[p_name] = scene["plots/" + plot_names[k]];
     }
 

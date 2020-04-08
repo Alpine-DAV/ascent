@@ -51,6 +51,7 @@
 
 #include "ascent_runtime_utils.hpp"
 #include <ascent_logging.hpp>
+#include <ascent_string_utils.hpp>
 
 #include <flow_workspace.hpp>
 
@@ -101,6 +102,21 @@ std::string default_dir(flow::Graph &graph)
   Node * meta = graph.workspace().registry().fetch<Node>("metadata");
   std::string dir = (*meta)["default_dir"].as_string();
   return dir;
+}
+
+std::string filter_to_path(const std::string filter_name)
+{
+  std::string res;
+  std::vector<std::string> path = split(filter_name, '_');
+  for(size_t i = 0; i < path.size(); ++i)
+  {
+    res += path[i];
+    if(i != path.size() - 1)
+    {
+      res += "/";
+    }
+  }
+  return res;
 }
 //-----------------------------------------------------------------------------
 };

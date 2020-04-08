@@ -42,108 +42,27 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_dray_filters.hpp
+/// file: ascent_mpi_utils.hpp
 ///
 //-----------------------------------------------------------------------------
+#ifndef ASCENT_MPI_UTILS_HPP
+#define ASCENT_MPI_UTILS_HPP
 
-#ifndef ASCENT_RUNTIME_DRAY_FILTERS
-#define ASCENT_RUNTIME_DRAY_FILTERS
 
-#include <ascent.hpp>
-
-#include <flow_filter.hpp>
-
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#endif
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
 namespace ascent
 {
 
-//-----------------------------------------------------------------------------
-// -- begin ascent::runtime --
-//-----------------------------------------------------------------------------
-namespace runtime
-{
-
-//-----------------------------------------------------------------------------
-// -- begin ascent::runtime::filters --
-//-----------------------------------------------------------------------------
-namespace filters
-{
-
-//-----------------------------------------------------------------------------
-///
-/// Devil Ray Filters
-///
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-class DRayPseudocolor : public ::flow::Filter
-{
-public:
-    DRayPseudocolor();
-    virtual ~DRayPseudocolor();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class DRay3Slice : public ::flow::Filter
-{
-public:
-    DRay3Slice();
-    virtual ~DRay3Slice();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class DRayVolume : public ::flow::Filter
-{
-public:
-    DRayVolume();
-    virtual ~DRayVolume();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class DRayProject2d: public ::flow::Filter
-{
-public:
-    DRayProject2d();
-    virtual ~DRayProject2d();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-};
-//-----------------------------------------------------------------------------
-// -- end ascent::runtime::filters --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end ascent::runtime --
-//-----------------------------------------------------------------------------
-
+bool global_agreement(bool vote);
+int mpi_rank();
+int mpi_size();
 
 //-----------------------------------------------------------------------------
 };
@@ -152,9 +71,9 @@ public:
 //-----------------------------------------------------------------------------
 
 
-
-
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
+
+

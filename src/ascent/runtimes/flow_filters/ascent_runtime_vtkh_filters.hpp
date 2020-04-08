@@ -380,6 +380,20 @@ public:
     virtual void   execute();
 };
 
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHProject2d : public ::flow::Filter
+{
+public:
+    VTKHProject2d();
+    virtual ~VTKHProject2d();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --

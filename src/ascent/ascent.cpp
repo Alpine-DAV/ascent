@@ -56,11 +56,16 @@
 #include <ascent_empty_runtime.hpp>
 #include <ascent_flow_runtime.hpp>
 #include <runtimes/ascent_main_runtime.hpp>
+#include <flow.hpp>
 
 #if defined(ASCENT_VTKH_ENABLED)
     #include <vtkh/vtkh.hpp>
 #endif
 
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#include <conduit_relay_mpi.hpp>
+#endif
 using namespace conduit;
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -83,6 +88,7 @@ Ascent::Ascent()
   m_forward_exceptions(false),
   m_actions_file("<<UNSET>>")
 {
+  m_options["mpi_comm"] = -1;
 }
 
 //-----------------------------------------------------------------------------
@@ -101,36 +107,66 @@ Ascent::open()
 
 //-----------------------------------------------------------------------------
 void
-CheckForSettingsFile(std::string file_name, conduit::Node &node, bool merge)
+CheckForSettingsFile(std::string file_name,
+                     conduit::Node &node,
+                     bool merge,
+                     int mpi_comm_id)
 {
-    if(!conduit::utils::is_file(file_name))
+    int comm_size = 1;
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    if(mpi_comm_id == -1)
     {
-        return;
+      // do nothing, an error will be thrown later
+      // so we can respect the exception handling
+      return;
+    }
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_size(mpi_comm, &comm_size);
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    int has_file = 0;
+    if(rank == 0 && conduit::utils::is_file(file_name))
+    {
+      has_file = 1;
+    }
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Bcast(&has_file, 1, MPI_INT, 0, mpi_comm);
+#endif
+    if(has_file == 0)
+    {
+      return;
     }
 
-    std::string curr,next;
+    if(rank == 0)
+    {
+      std::string curr,next;
 
-    std::string protocol = "json";
-    // if file ends with yaml, use yaml as proto
-    conduit::utils::rsplit_string(file_name,
-                                  ".",
-                                  curr,
-                                  next);
-    if(curr == "yaml")
-    {
-        protocol = "yaml";
-    }
+      std::string protocol = "json";
+      // if file ends with yaml, use yaml as proto
+      conduit::utils::rsplit_string(file_name,
+                                    ".",
+                                    curr,
+                                    next);
+      if(curr == "yaml")
+      {
+          protocol = "yaml";
+      }
 
-    conduit::Node file_node;
-    file_node.load(file_name, protocol);
-    if(merge)
-    {
-      node.update(file_node);
+      conduit::Node file_node;
+      file_node.load(file_name, protocol);
+      if(merge)
+      {
+        node.update(file_node);
+      }
+      else
+      {
+        node = file_node;
+      }
     }
-    else
-    {
-      node = file_node;
-    }
+#ifdef ASCENT_MPI_ENABLED
+    relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -145,6 +181,10 @@ Ascent::open(const conduit::Node &options)
         }
 
         Node processed_opts(options);
+        if(options.has_path("mpi_comm"))
+        {
+          m_options = options;
+        }
 
         std::string opts_file = "ascent_options.json";
 
@@ -153,7 +193,10 @@ Ascent::open(const conduit::Node &options)
             opts_file = "ascent_options.yaml";
         }
 
-        CheckForSettingsFile(opts_file, processed_opts, true);
+        CheckForSettingsFile(opts_file,
+                             processed_opts,
+                             true,
+                             m_options["mpi_comm"].to_int32());
 
         if(options.has_path("messages") &&
            options["messages"].dtype().is_string() )
@@ -329,7 +372,11 @@ Ascent::execute(const conduit::Node &actions)
                 }
             }
 
-            CheckForSettingsFile(m_actions_file, processed_actions, false);
+            CheckForSettingsFile(m_actions_file,
+                                 processed_actions,
+                                 false,
+                                 m_options["mpi_comm"].to_int32());
+
             m_runtime->Execute(processed_actions);
         }
         else
