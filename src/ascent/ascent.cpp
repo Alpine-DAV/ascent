@@ -491,7 +491,7 @@ about(conduit::Node &n)
     n["version"] = ASCENT_VERSION;
 
 #ifdef ASCENT_GIT_SHA1
-    n["git_sha1"] = CONDUIT_GIT_SHA1;
+    n["git_sha1"] = ASCENT_GIT_SHA1;
 #endif
 
     n["compilers/cpp"] = ASCENT_CPP_COMPILER;
