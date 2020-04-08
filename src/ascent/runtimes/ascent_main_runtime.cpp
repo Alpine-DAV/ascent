@@ -452,6 +452,14 @@ AscentRuntime::CreateDefaultFilters()
                       "verify",
                       0);        // default port
 
+    w.graph().add_filter("blueprint_amr_mask",  // registered filter name
+                         "amr_mask",            // "unique" filter name
+                         params);
+
+    w.graph().connect("verify",
+                      "amr_mask",
+                      0);        // default port
+
     // we can have multiple ghost fields
     std::vector<std::string> ghost_fields;
     const int num_children = m_ghost_fields.number_of_children();
@@ -460,7 +468,7 @@ AscentRuntime::CreateDefaultFilters()
       ghost_fields.push_back(m_ghost_fields.child(i).as_string());
     }
 
-    std::string prev_filter = "verify";
+    std::string prev_filter = "amr_mask";
     std::string first_stripper;
     const int num_ghosts = ghost_fields.size();
     for(int i = 0; i < num_ghosts; ++i)

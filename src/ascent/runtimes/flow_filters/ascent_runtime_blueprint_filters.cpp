@@ -55,6 +55,9 @@
 // thirdparty includes
 //-----------------------------------------------------------------------------
 
+
+#include <cstring>
+
 // conduit includes
 #include <conduit.hpp>
 #include <conduit_relay.hpp>
@@ -206,6 +209,206 @@ BlueprintVerify::execute()
         ASCENT_ERROR("blueprint verify failed: published data is empty");
     }
 
+
+    set_output<DataObject>(d_input);
+}
+
+//-----------------------------------------------------------------------------
+BlueprintAMRMask::BlueprintAMRMask()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+BlueprintAMRMask::~BlueprintAMRMask()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+BlueprintAMRMask::declare_interface(Node &i)
+{
+    i["type_name"]   = "blueprint_amr_mask";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+void calc_mask(const conduit::Node &nest,
+               const conduit::Node &topo,
+               int dims[3],
+               conduit::Node &mask)
+{
+  std::cout<<"************************\n";
+  std::cout<<"dims "<<dims[0]<<" "<<dims[1]<<"  "<<dims[2]<<"\n";
+  nest.print();
+  topo.print();
+
+  int size = dims[0];
+  if(dims[1] != 0)
+  {
+    size *= dims[1];
+  }
+  if(dims[2] != 0)
+  {
+    size *= dims[2];
+  }
+
+  mask.set(DataType::int32(size));
+  int *mask_ptr = mask.value();
+
+  std::memset(mask_ptr, 0, sizeof(int) * size);
+
+  if(nest.has_path("windows"))
+  {
+    const int num_wins = nest["windows"].number_of_children();
+    for(int i = 0; i < num_wins; ++i)
+    {
+      const conduit::Node &win = nest["windows"].child(i);
+      if(win["domain_type"].as_string() == "parent")
+      {
+        // we care about zones covered by children
+        continue;
+      }
+
+      int cdims[3] = {0,0,0};
+      int corig[3] = {0,0,0};
+
+      cdims[0] = win["dims/i"].to_int32();
+      corig[0] = win["origin/i"].to_int32();
+
+      if(win["origin"].has_path("j"))
+      {
+        cdims[1] = win["dims/j"].to_int32();
+        corig[1] = win["origin/j"].to_int32();
+      }
+      if(win["origin"].has_path("k"))
+      {
+        cdims[2] = win["dims/k"].to_int32();
+        corig[2] = win["origin/k"].to_int32();
+      }
+
+      bool is_2d = dims[2] == 0;
+      int overlap_start[3] = {0,0,0};
+      int overlap_end[3] = {0,0,0};
+      int origin[3] = {0,0,0}; // TODO: get origin
+
+      for(int d = 0; d < 3; ++d)
+      {
+        overlap_start[d] = std::max(origin[d], corig[d]);
+        overlap_end[d] = std::min(origin[d] + dims[d], corig[d] + cdims[d]) - 1;
+        std::cout<<"overlap ("<<d<<") "<<overlap_start[d]<<" - "<<overlap_end[d]<<"\n";
+      }
+
+      //if(is_2d)
+      //{
+      //  const int y_size = overlap_end[1] - overlap_start[1] + 1;
+      //  for(int y = 0; y <
+      //}
+
+    }
+  }
+
+
+}
+
+void topology_dims(const conduit::Node &dom,
+                   const std::string topo_name,
+                   int dims[3])
+{
+  const conduit::Node &topo = dom["topologies/"+topo_name];
+  const std::string coord_name = topo["coordset"].as_string();
+  const conduit::Node &coords = dom["coordsets/"+coord_name];
+
+  const std::string topo_type = topo["type"].as_string();
+  dims[0] = 0;
+  dims[1] = 0;
+  dims[2] = 0;
+
+  if(topo_type == "structured")
+  {
+    dims[0] = topo["elements/i"].to_int32();
+    if(topo["elements"].has_path("j"))
+    {
+      dims[1] = topo["elements/j"].to_int32();
+    }
+    if(topo["elements"].has_path("k"))
+    {
+      dims[2] = topo["elements/k"].to_int32();
+    }
+  }
+  else if(topo_type == "uniform")
+  {
+    dims[0] = coords["dims/i"].to_int32() - 1;
+    if(coords["dims"].has_path("j"))
+    {
+      dims[1] = coords["dims/j"].to_int32() - 1;
+    }
+    if(coords["dims"].has_path("k"))
+    {
+      dims[2] = coords["dims/k"].to_int32() - 1;
+    }
+  }
+  else if(topo_type == "rectilinear")
+  {
+    dims[0] = coords["values/x"].dtype().number_of_elements() - 1;
+    if(coords["values"].has_path("y"))
+    {
+      dims[1] = coords["values/y"].dtype().number_of_elements() - 1;
+    }
+    if(coords["values"].has_path("z"))
+    {
+      dims[2] = coords["values/z"].dtype().number_of_elements() - 1;
+    }
+  }
+  else
+  {
+    ASCENT_ERROR("NO "<<topo_type<<"\n");
+  }
+
+}
+
+//-----------------------------------------------------------------------------
+void
+BlueprintAMRMask::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("blueprint_amr_mask input must be a DataObject");
+    }
+
+    Node v_info;
+    DataObject *d_input = input<DataObject>(0);
+    std::shared_ptr<conduit::Node> n_input = d_input->as_node();
+
+    const int num_doms = n_input->number_of_children();
+
+    for(int i = 0; i < num_doms; ++i)
+    {
+      conduit::Node &dom = n_input->child(i);
+      bool has_amr = dom.has_child("nestsets");
+      if(has_amr)
+      {
+        const int num_nests = dom["nestsets"].number_of_children();
+        for (int n = 0; n < num_nests; ++n)
+        {
+          const conduit::Node &nest = dom["nestsets"].child(n);
+          if(!nest.has_path("topology"))
+          {
+            ASCENT_ERROR("verify should have caught this");
+          }
+          const std::string topo_name = nest["topology"].as_string();
+          const conduit::Node &topo = dom["topologies/" + topo_name];
+          int dims[3];
+          topology_dims(dom, topo_name, dims);
+          conduit::Node mask; //TODO get this  from dom
+          calc_mask(nest, topo, dims, mask);
+        }
+
+      }
+
+    }
 
     set_output<DataObject>(d_input);
 }

@@ -124,6 +124,16 @@ TEST(ascent_amr, test_patct_amr_2d)
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
 
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+
+    extracts["e1/params/path"] = "arm_example";
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+
     //
     // Run Ascent
     //

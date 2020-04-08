@@ -94,6 +94,17 @@ public:
     virtual void   execute();
 };
 
+//-----------------------------------------------------------------------------
+class ASCENT_API BlueprintAMRMask : public ::flow::Filter
+{
+public:
+    BlueprintAMRMask();
+   ~BlueprintAMRMask();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
