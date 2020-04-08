@@ -1621,9 +1621,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     output["coordsets/"+coords_name+"/origin/x"] = (int) origin[0];
     output["coordsets/"+coords_name+"/origin/y"] = (int) origin[1];
     output["coordsets/"+coords_name+"/origin/z"] = (int) origin[2];
-    output["coordsets/"+coords_name+"/spacing/x"] = (int) spacing[0];
-    output["coordsets/"+coords_name+"/spacing/y"] = (int) spacing[1];
-    output["coordsets/"+coords_name+"/spacing/z"] = (int) spacing[2];
+    output["coordsets/"+coords_name+"/spacing/dx"] = (int) spacing[0];
+    output["coordsets/"+coords_name+"/spacing/dy"] = (int) spacing[1];
+    output["coordsets/"+coords_name+"/spacing/dz"] = (int) spacing[2];
   }
   else if(is_rectilinear)
   {
