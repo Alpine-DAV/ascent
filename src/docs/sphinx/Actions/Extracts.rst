@@ -174,6 +174,16 @@ To save the files in HDF5 format:
 
     extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
 
+
+By default, the relay extract creates one file per mesh domain saved. You can control
+the number of files written (aggregating multiple domains per file) using the
+``num_files`` parameter:
+
+.. code-block:: c++
+
+    extracts["e1/params/num_files"] = 2;
+
+
 Additionally, Relay supports saving out only a subset of the data. The ``fields`` parameters is a list of
 strings that indicate which fields should be saved.
 
