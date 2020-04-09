@@ -1270,7 +1270,8 @@ VTKHDataAdapter::AddField(const std::string &field_name,
 
     if(assoc_str == "vertex" && nverts != num_vals)
     {
-      ASCENT_INFO("Field '"<<field_name<<"' number of values "<<num_vals<<
+      ASCENT_INFO("Field '"<<field_name<<"' (topology: '" << topo_name <<
+                  "') number of values "<<num_vals<<
                   " does not match the number of points "<<nverts<<". Skipping");
       return;
     }
@@ -1279,7 +1280,8 @@ VTKHDataAdapter::AddField(const std::string &field_name,
     {
       if(field_name != "boundary_attribute")
       {
-        ASCENT_INFO("Field '"<<field_name<<"' number of values "<<num_vals<<
+        ASCENT_INFO("Field '"<<field_name<<"' (topology: '" << topo_name  <<
+                    "') number of values "<<num_vals<<
                     " does not match the number of elements " << neles << ". Skipping");
       }
       return;
@@ -1619,9 +1621,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     output["coordsets/"+coords_name+"/origin/x"] = (int) origin[0];
     output["coordsets/"+coords_name+"/origin/y"] = (int) origin[1];
     output["coordsets/"+coords_name+"/origin/z"] = (int) origin[2];
-    output["coordsets/"+coords_name+"/spacing/x"] = (int) spacing[0];
-    output["coordsets/"+coords_name+"/spacing/y"] = (int) spacing[1];
-    output["coordsets/"+coords_name+"/spacing/z"] = (int) spacing[2];
+    output["coordsets/"+coords_name+"/spacing/dx"] = (int) spacing[0];
+    output["coordsets/"+coords_name+"/spacing/dy"] = (int) spacing[1];
+    output["coordsets/"+coords_name+"/spacing/dz"] = (int) spacing[2];
   }
   else if(is_rectilinear)
   {

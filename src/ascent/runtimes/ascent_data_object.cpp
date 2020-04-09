@@ -319,6 +319,32 @@ DataObject::Source DataObject::source() const
   return m_source;
 }
 
+std::string DataObject::source_string() const
+{
+  std::string res;
+  if(m_source == Source::INVALID)
+  {
+    res = "Invalid";
+  }
+  if(m_source == Source::VTKH)
+  {
+    res = "VTKH";
+  }
+  if(m_source == Source::LOW_BP)
+  {
+    res = "LOW_BP";
+  }
+  if(m_source == Source::HIGH_BP)
+  {
+    res = "HIGH_BP";
+  }
+  if(m_source == Source::DRAY)
+  {
+    res = "DRAY";
+  }
+  return res;
+}
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

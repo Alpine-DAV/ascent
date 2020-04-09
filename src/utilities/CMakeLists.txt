@@ -49,3 +49,4 @@
 ###############################################################################
 add_subdirectory(replay)
 add_subdirectory(actions_conversions)
+add_subdirectory(holo_compare)

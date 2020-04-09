@@ -311,6 +311,30 @@ public:
     virtual void   execute();
 };
 
+class FieldNanCount : public ::flow::Filter
+{
+public:
+    FieldNanCount();
+   ~FieldNanCount();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+class FieldInfCount : public ::flow::Filter
+{
+public:
+    FieldInfCount();
+   ~FieldInfCount();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 class Vector : public ::flow::Filter
 {
 public:

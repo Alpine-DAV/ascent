@@ -325,7 +325,8 @@ parse_color_table(const conduit::Node &color_table_node)
         }
         else
         {
-            ASCENT_WARN("Unknown color table control point type " << peg["type"].as_string()<<
+            ASCENT_WARN("Unknown color table control point type "
+                        << peg["type"].as_string()<<
                         "\nValid types are 'alpha' and 'rgb'");
         }
     }

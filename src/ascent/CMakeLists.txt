@@ -113,6 +113,7 @@ set(ascent_sources
     utils/ascent_png_compare.cpp
     utils/ascent_png_decoder.cpp
     utils/ascent_png_encoder.cpp
+    utils/ascent_mpi_utils.cpp
     utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp
     # hola
@@ -152,6 +153,7 @@ set(ascent_headers
     utils/ascent_png_compare.hpp
     utils/ascent_png_decoder.hpp
     utils/ascent_png_encoder.hpp
+    utils/ascent_mpi_utils.hpp
     utils/ascent_string_utils.hpp
     utils/ascent_web_interface.hpp
     # hola
@@ -300,6 +302,42 @@ if (ENABLE_SERIAL)
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib
     )
+
+
+    if(VTKM_FOUND AND CUDA_FOUND)
+      set(locations_on_disk "")
+
+      set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent.dir")
+
+      set(targets_to_link rover
+                          vtkh_rendering
+                          vtkh_compositing
+                          vtkh_filters
+                          vtkh_core
+                          vtkh_lodepng
+                          vtkh_utils
+                          vtkm_rendering
+                          vtkm_filter
+                          vtkm_worklet
+                          vtkm_cont
+                          )
+
+      source_objects(${binary_dir}
+                     "${ascent_device_sources}"
+                     "${CMAKE_BINARY_DIR}/lib/librover.a"
+                     "${targets_to_link}"
+                     locations_on_disk)
+
+      separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
+      add_custom_command(
+        TARGET ascent PRE_LINK
+        DEPENDS ascent rover
+        COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o
+        COMMENT "manual device link step for Ascent"
+        )
+      install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm.o DESTINATION lib)
+    endif()
+
 endif()
 
 ################################################
@@ -372,6 +410,40 @@ if(MPI_FOUND)
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib
     )
+
+    if(VTKM_FOUND AND CUDA_FOUND)
+      set(locations_on_disk "")
+
+      set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
+
+      set(targets_to_link rover
+                          vtkh_rendering_mpi
+                          vtkh_compositing_mpi
+                          vtkh_filters_mpi
+                          vtkh_core_mpi
+                          vtkh_lodepng
+                          vtkh_utils_mpi
+                          vtkm_rendering
+                          vtkm_filter
+                          vtkm_worklet
+                          vtkm_cont
+                          )
+
+      source_objects(${binary_dir}
+                     "${ascent_device_sources}"
+                     "${CMAKE_BINARY_DIR}/lib/librover_mpi.a"
+                     "${targets_to_link}"
+                     locations_on_disk)
+
+      separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
+      add_custom_command(
+        TARGET ascent_mpi PRE_LINK
+        DEPENDS ascent_mpi rover_mpi
+        COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
+        COMMENT "manual device link step for Ascent parallel"
+        )
+      install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm_mpi.o DESTINATION lib)
+    endif()
 
 endif()
 
