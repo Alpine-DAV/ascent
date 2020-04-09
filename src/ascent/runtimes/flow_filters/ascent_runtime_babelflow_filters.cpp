@@ -37,6 +37,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <float.h>
@@ -458,29 +459,76 @@ void ascent::runtime::filters::BabelFlow::execute() {
 
     int color = 0;
 
+    int uniform_color = 0;
+
     // check if coordset uniform
     if(data_node.has_path("coordsets/coords/type"))
     {
       std::string coordSetType = data_node["coordsets/coords/type"].as_string();
       if (coordSetType != "uniform")
       {
-          color=0;
+          uniform_color=0;
           // error
           //ASCENT_ERROR("BabelFlow filter currenlty only works with uniform grids");
       }
       else{
-        int32_t tspa = data_node["coordsets/coords/spacing/x"].value();
-        if (tspa == 200)
-          color = 1;
+        uniform_color = 1;
       }
     }
     else
       ASCENT_ERROR("BabelFlow filter could not find coordsets/coords/type");
 
-    std::cout << world_rank << ": " << data_node["coordsets/coords/type"].as_string() << " color " << color <<std::endl;
+    //std::cout << world_rank << ": " << data_node["coordsets/coords/type"].as_string() << " color " << color <<std::endl;
+
+    // Decide which uniform grid to work on (default 0, the finest spacing)
+    int32_t selected_spacing = 0;
+
+    MPI_Comm uniform_comm;
+    MPI_Comm_split(world_comm, uniform_color, world_rank, &uniform_comm);
+    int uniform_rank, uniform_comm_size;
+    MPI_Comm_rank(uniform_comm, &uniform_rank);
+    MPI_Comm_size(uniform_comm, &uniform_comm_size);
+
+    if(uniform_color){
+      int32_t myspacing = 0;
+      
+      // uniform grid should not have spacing as {x,y,z}
+      // this is a workaround to support old Ascent dataset using {x,y,z}
+      if(data_node.has_path("coordsets/coords/spacing/x"))
+        myspacing = data_node["coordsets/coords/spacing/x"].value();
+      else if(data_node.has_path("coordsets/coords/spacing/dx"))
+        myspacing = data_node["coordsets/coords/spacing/dx"].value();
+
+       {
+        std::vector<int32_t> uniform_spacing(uniform_comm_size);
+        
+        MPI_Allgather(&myspacing, 1, MPI_INT, uniform_spacing.data(), 1, MPI_INT, uniform_comm);
+        
+        std::sort(uniform_spacing.begin(),uniform_spacing.end());
+
+        std::set<int32_t> spacing_sizes;
+        for(auto& us : uniform_spacing){
+          //std::cout << us << " ";
+          spacing_sizes.insert(us);
+        }
+        //std::cout << "\n";
+
+        if(p.has_path("ugrid_select")) 
+          selected_spacing = *std::next(spacing_sizes.begin(), p["ugrid_select"].as_int64());
+        else
+          selected_spacing = *std::next(spacing_sizes.begin(), 0);
+
+      }
+
+      color = (myspacing == selected_spacing);
+
+      std::cout << "Selected spacing "<< selected_spacing << " rank " << world_rank << " contributing " << color <<"\n";
+    }
+
+    MPI_Barrier(uniform_comm);
 
     MPI_Comm comm;
-    MPI_Comm_split(world_comm, color, world_rank, &comm);
+    MPI_Comm_split(uniform_comm, color, uniform_rank, &comm);
 
     int rank, comm_size;
     MPI_Comm_rank(comm, &rank);
@@ -492,7 +540,7 @@ void ascent::runtime::filters::BabelFlow::execute() {
     conduit::DataArray<double> array_mag = field_node["values"].as_float64_array();
 
     if(color) {
-      std::cout << rank << ": comm size " << comm_size << " color " << color << std::endl;
+      //std::cout << rank << ": comm size " << comm_size << " color " << color << std::endl;
       //data_node["coordsets/coords"].print();
       //data_node["topologies"].print();
 
@@ -589,17 +637,12 @@ void ascent::runtime::filters::BabelFlow::execute() {
 
       //std::cout << p["field"].as_string() <<std::endl;
 
-      //std::cout << "dtype " << data_node["fields/something/values"].dtype().print() <<std::endl;
       // get the data handle
-
-  //     conduit::Node& fields_root_node = data_node["fields"];
-  //     conduit::Node& field_node = fields_root_node[p["field"].as_string()];
-
       FunctionType* array = reinterpret_cast<FunctionType *>(array_mag.data_ptr());
 
       //conduit::DataArray<float> array = data_node[p["data_path"].as_string()].as_float32_array();
 
-  #if 1
+  #if 0
       std::stringstream ss;
       ss << "block_" << dims[0] << "_" << dims[1] << "_" << dims[2] <<"_low_"<< low[0] << "_"<< low[1] << "_"<< low[2] << ".raw";
       std::fstream fil;
@@ -636,7 +679,7 @@ void ascent::runtime::filters::BabelFlow::execute() {
       ParallelMergeTree::s_data_size[1] = data_size[1];
       ParallelMergeTree::s_data_size[2] = data_size[2];
 
-  #if 1
+  #if 0
       // Reduce all of the local sums into the global sum
       {
         std::stringstream ss;
@@ -680,7 +723,6 @@ void ascent::runtime::filters::BabelFlow::execute() {
         data_node["fields/segment/association"] = field_node["association"].as_string();
         data_node["fields/segment/topology"] = field_node["topology"].as_string();
 
-        std::cout << "setting ass " << field_node["association"].as_string() << " topo " << field_node["topology"].as_string() << std::endl;
         // New field data
         int32_t num_x = high[0] - low[0] + 1;
         int32_t num_y = high[1] - low[1] + 1;
@@ -692,7 +734,7 @@ void ascent::runtime::filters::BabelFlow::execute() {
         data_node["fields/segment/values"].set(seg_data);
 
         // DEBUG -- write raw segment data to disk
-  #if 1
+  #if 0
         {
           std::stringstream ss;
           ss << "segment_data_" << rank << "_" << num_x << "_" << num_y << "_" << num_z <<"_low_"<< low[0] << "_"<< low[1] << "_"<< low[2] << ".raw";
@@ -711,18 +753,7 @@ void ascent::runtime::filters::BabelFlow::execute() {
         
         d_input->reset_vtkh_collection();
       }
-
-      
     }
-    // else{
-    //   data_node["fields/segment/association"] = field_node["association"].as_string();
-    //   data_node["fields/segment/topology"] = field_node["topology"].as_string();
-
-    //   std::vector<FunctionType> seg_data(array_mag.number_of_elements(), (FunctionType)GNULL);
-    //   data_node["fields/segment/values"].set(seg_data);
-
-    //   //d_input->reset_vtkh_collection();
-    // }
     MPI_Barrier(world_comm);
     
     set_output<DataObject>(d_input);
