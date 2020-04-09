@@ -108,6 +108,7 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_query_filters.cpp
     runtimes/flow_filters/ascent_runtime_utils.cpp
     # utils
+    utils/ascent_actions_utils.cpp
     utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
     utils/ascent_png_compare.cpp
@@ -147,6 +148,7 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_query_filters.hpp
     runtimes/flow_filters/ascent_runtime_utils.hpp
     # utils
+    utils/ascent_actions_utils.hpp
     utils/ascent_logging.hpp
     utils/ascent_file_system.hpp
     utils/ascent_block_timer.hpp

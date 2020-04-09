@@ -69,6 +69,7 @@
 #endif
 
 #include <flow.hpp>
+#include <ascent_actions_utils.hpp>
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
 #include <ascent_transmogrifier.hpp>
@@ -1499,6 +1500,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         }
 
         m_previous_actions = actions;
+        auto f = field_list(actions);
 
         PopulateMetadata(); // add metadata so filters can access it
 
