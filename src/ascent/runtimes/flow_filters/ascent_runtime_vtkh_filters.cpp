@@ -560,8 +560,8 @@ public:
   void fill_renders(std::vector<vtkh::Render> *renders,
                     const std::vector<vtkm::Id> &domain_ids,
                     const conduit::Node &render_node,
-                    const int image_count,
-                    const int image_offset,
+                    const int current_render_count,
+                    const int render_offset,
                     const int stride,
                     const bool is_probing)
   {
@@ -586,13 +586,13 @@ public:
                                                m_bounds,
                                                domain_ids,
                                                tmp_name);
-    int num_renders = m_image_names.size();
+    int render_count = m_image_names.size();
 
-    // adjust image count
-    if (image_count > 0)
-      num_renders = image_count;
+    // adjust render count
+    if (current_render_count > 0)
+      render_count = current_render_count;
 
-    for (int i = image_offset; i < image_offset + num_renders; )
+    for (int i = render_offset; i < render_offset + render_count; )
     {
       if (!is_probing && (stride > 1) && (i % stride == 0))
       {
@@ -1606,19 +1606,20 @@ void DefaultRender::execute()
         if (render_node.has_path("theta"))
           theta = render_node["theta"].to_int32();
 
-        int image_count = phi*theta;
-        int image_offset = 0;
+        const int full_render_count = phi*theta;
+        int current_render_count = full_render_count;
+        int render_offset = 0;
         
-        if (meta->has_path("image_count"))
+        if (meta->has_path("render_count"))
         {
-          if ((*meta)["image_count"].as_int32() > 0)
+          if ((*meta)["render_count"].as_int32() > 0)
           {
-            image_count = (*meta)["image_count"].as_int32();
+            current_render_count = (*meta)["render_count"].as_int32();
           }
         }
-        if (meta->has_path("image_offset"))
+        if (meta->has_path("render_offset"))
         {
-          image_offset = (*meta)["image_offset"].as_int32();
+          render_offset = (*meta)["render_offset"].as_int32();
         }
 
         // check if probing run
@@ -1630,7 +1631,7 @@ void DefaultRender::execute()
           probing_factor = (*meta)["probing_factor"].as_double();
           if (probing_factor > 0.0)
           {
-            stride = int(std::round(image_count / (probing_factor*image_count)));
+            stride = int(std::round(full_render_count / (probing_factor*full_render_count)));
             if ((*meta)["is_probing"].as_int32())
               is_probing = true;
           }
@@ -1668,7 +1669,7 @@ void DefaultRender::execute()
         manager.set_bounds(*bounds);
         manager.add_time_step();
         manager.fill_renders(renders, v_domain_ids, render_node, 
-                             image_count, image_offset, stride, is_probing);
+                             current_render_count, render_offset, stride, is_probing);
         manager.write_metadata();
       }
       else

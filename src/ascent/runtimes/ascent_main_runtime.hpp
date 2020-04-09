@@ -113,8 +113,8 @@ private:
     
     int               m_is_probing = 0;
     double            m_probing_factor = 0.0;    
-    int               m_image_count = 0;
-    int               m_image_offset = 0;
+    int               m_render_count = 0;
+    int               m_render_offset = 0;
     int               m_is_vis_node = 0;
 
     void              ResetInfo();

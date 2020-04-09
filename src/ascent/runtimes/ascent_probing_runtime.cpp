@@ -218,7 +218,7 @@ bool decide_intransit(const std::vector<float> &times,
 std::vector<int> load_assignment(const std::vector<float> &sim_estimate, 
                                  const std::vector<float> &vis_estimates,
                                  const std::vector<int> &node_map,
-                                 const int image_count,
+                                 const int render_count,
                                  const int sim_node_count,
                                  const int vis_node_count, 
                                  const double vis_budget,
@@ -228,24 +228,24 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
     
     std::valarray<float> t_inline(0.f, sim_node_count);
     for (size_t i = 0; i < sim_node_count; i++)
-        t_inline[i] = vis_estimates[i] * image_count;
+        t_inline[i] = vis_estimates[i] * render_count;
     std::valarray<float> t_intransit(0.f, vis_node_count);
     std::valarray<float> t_sim(sim_estimate.data(), sim_node_count);
 
-    std::vector<int> image_counts_sim(sim_node_count, 0);
-    std::vector<int> image_counts_vis(vis_node_count, 0);
+    std::vector<int> render_counts_sim(sim_node_count, 0);
+    std::vector<int> render_counts_vis(vis_node_count, 0);
 
-    // initially: push all vis load to vis nodes (all intransit)
+    // initially: push all vis load to vis nodes (=> all intransit case)
     for (size_t i = 0; i < sim_node_count; i++)
     {
-        int target_vis_node = node_map[i];
+        const int target_vis_node = node_map[i];
 
         t_intransit[target_vis_node] += t_inline[i];
         t_inline[i] = 0.f;
-        image_counts_vis[target_vis_node] += image_count;
+        render_counts_vis[target_vis_node] += render_count;
     }
 
-    // vis budget of 1 means in transit only (i.e., only vis nodes render)
+    // vis budget of 1 implies intransit only (i.e., only vis nodes render)
     if (vis_budget < 1.0)
     {
         // push back load to sim nodes until 
@@ -256,20 +256,20 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         while (t_inline_sim.max() < t_intransit.max()) 
         {
             // always push back to the fastest sim node
-            int min_id = std::min_element(begin(t_inline_sim), 
-                                            end(t_inline_sim))
-                                            - begin(t_inline_sim);
+            const int min_id = std::min_element(begin(t_inline_sim), 
+                                                end(t_inline_sim))
+                                                - begin(t_inline_sim);
 
             // find the corresponding vis node 
-            int target_vis_node = node_map[min_id];
+            const int target_vis_node = node_map[min_id];
 
-            if (image_counts_vis[target_vis_node] > 0)
+            if (render_counts_vis[target_vis_node] > 0)
             {
                 t_intransit[target_vis_node] -= vis_estimates[min_id];
-                image_counts_vis[target_vis_node]--;
+                render_counts_vis[target_vis_node]--;
             
                 t_inline[min_id] += vis_estimates[min_id];
-                image_counts_sim[min_id]++;
+                render_counts_sim[min_id]++;
             }
             else    // we ran out of renderings on this vis node
             {
@@ -280,31 +280,31 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
 
             // if sim node got all its images back for inline rendering
             // -> throw it out of consideration
-            if (image_counts_sim[min_id] == image_count)
+            if (render_counts_sim[min_id] == render_count)
                 t_inline[min_id] = std::numeric_limits<float>::max() - t_sim[min_id];
 
             // recalculate inline + sim time
             t_inline_sim = t_inline + t_sim;
             ++i;
-            if (i > image_count*sim_node_count)
+            if (i > render_count*sim_node_count)
                 ASCENT_ERROR("Error during load distribution.")
         }
     }
 
-    std::vector<int> image_counts_combined(image_counts_sim);
-    image_counts_combined.insert(image_counts_combined.end(), 
-                                 image_counts_vis.begin(), 
-                                 image_counts_vis.end());
+    std::vector<int> render_counts_combined(render_counts_sim);
+    render_counts_combined.insert(render_counts_combined.end(), 
+                                  render_counts_vis.begin(), 
+                                  render_counts_vis.end());
 
     if (world_rank == 0)
     {
-        std::cout << "=== image_counts ";
-        for (auto &a : image_counts_combined)
+        std::cout << "=== render_counts ";
+        for (auto &a : render_counts_combined)
             std::cout << a << " ";
         std::cout << std::endl;
     }
 
-    return image_counts_combined;
+    return render_counts_combined;
 }
 
 /**
@@ -321,8 +321,8 @@ std::vector<int> node_assignment(const std::vector<int> &rank_order,
     for (int i = 0; i < sim_node_count; ++i)
     {
         // pick node with lowest cost
-        int target_vis_node = std::min_element(vis_node_cost.begin(), vis_node_cost.end())
-                              - vis_node_cost.begin();
+        const int target_vis_node = std::min_element(vis_node_cost.begin(), vis_node_cost.end())
+                                    - vis_node_cost.begin();
         // asssign the sim to to the vis node
         map[rank_order[i]] = target_vis_node;
         // adapt the cost on the vis node
@@ -524,6 +524,20 @@ int ibsend_using_schema(const Node &n_msg, int dest, int tag, MPI_Comm comm,
     return mpi_error;
 }
 
+/**
+ * Detach and free MPI buffer.
+ * Blocks until all buffered send messanges got received.
+ */
+void detach_mpi_buffer()
+{
+    int size;
+    char *bsend_buf;
+    // block until all messages currently in the buffer have been transmitted
+    MPI_Buffer_detach(&bsend_buf, &size);
+    // clean up old buffer
+    free(bsend_buf);
+}
+
 //-----------------------------------------------------------------------------
 void splitAndRender(const MPI_Comm mpi_comm_world,
                     const int world_size,
@@ -531,7 +545,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     const MPI_Comm sim_comm,
                     const int sim_node_count,
                     const std::vector<double> &my_probing_times,
-                    const int max_image_count,
+                    const int max_render_count,
                     conduit::Node &data,
                     conduit::Node &render_chunks_probing,
                     const double probing_factor,
@@ -555,8 +569,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     float my_vis_estimate = 0.f;
     float my_avg_probing_time = 0.f;
     float my_sim_estimate = data["state/sim_time"].to_float();
-    // max image count without probing images
-    int image_count = max_image_count - int(std::round(probing_factor*max_image_count));
+    // max render count without probing renders
+    const int probing_count = int(std::round(probing_factor*max_render_count));
+    const int render_count = max_render_count - probing_count;
 
     // nodes with the highest rank are our vis nodes
     if (world_rank >= sim_node_count) 
@@ -577,11 +592,11 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         std::cout << "+++ probing times ";
         for (auto &a : my_probing_times)
             std::cout << a << " ";
-        std::cout << std::endl;
+        std::cout << world_rank << std::endl;
 
         // convert from milliseconds to seconds 
         my_avg_probing_time /= 1000.f;
-        // my_vis_estimate = (my_avg_probing_time * max_image_count) / 1000.f;
+        // my_vis_estimate = (my_avg_probing_time * max_render_count) / 1000.f;
         std::cout << "~~~ " << my_avg_probing_time 
                   << " sec vis time estimate " 
                   << world_rank << std::endl;
@@ -624,11 +639,11 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     }
 
     // distribute rendering load across sim and vis loads
-    std::vector<int> image_counts = load_assignment(sim_estimates, vis_estimates,
-                                                    node_map,
-                                                    image_count,
-                                                    sim_node_count, vis_node_count,
-                                                    vis_budget, world_rank);
+    std::vector<int> render_counts = load_assignment(sim_estimates, vis_estimates,
+                                                     node_map,
+                                                     render_count,
+                                                     sim_node_count, vis_node_count,
+                                                     vis_budget, world_rank);
 
     // // split comm: one comm per vis node
     // MPI_Group world_group;
@@ -649,22 +664,15 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
     // TODO: remove the magic numbers
     // (# probing images + # inline images) * (RGBA + depth) * width*height + distance cam/dom center
-    int image_size = (my_probing_times.size() + image_counts[world_rank]) * 5 * 1024*1024 + 4;
+    const int render_size = (probing_count + render_counts[world_rank]) * 5 * 1024*1024 + 4;
     Node n_msg;
     pack_node(data, n_msg);
     index_t msg_data_size = n_msg.total_bytes_compact();
-
-    int size;
-    char *bsend_buf;
-    // block until all messages currently in the buffer have been transmitted
-    MPI_Buffer_detach(&bsend_buf, &size);
-    // clean up old buffer
-    free(bsend_buf);
+    detach_mpi_buffer();
     // attach new buffer
-    MPI_Buffer_attach(malloc(msg_data_size + image_size + MPI_BSEND_OVERHEAD), 
-                             msg_data_size + image_size + MPI_BSEND_OVERHEAD);
-    std::cout << "-- buffer size: " << (msg_data_size + image_size + MPI_BSEND_OVERHEAD) << std::endl;
-
+    MPI_Buffer_attach(malloc(msg_data_size + render_size + MPI_BSEND_OVERHEAD), 
+                             msg_data_size + render_size + MPI_BSEND_OVERHEAD);
+    // std::cout << "-- buffer size: " << (msg_data_size + render_size + MPI_BSEND_OVERHEAD) << std::endl;
 
     Node ascent_opts, blank_actions;
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(mpi_comm_world);
@@ -713,25 +721,36 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             // conduit::Node dataset = datasets[i];
             if (conduit::blueprint::mesh::verify(dataset, verify_info))
             {
-                start = std::chrono::system_clock::now();
-                int current_image_count = max_image_count - image_counts[srcIds[i]];
-                int offset = max_image_count - current_image_count;
+                const int current_render_count = max_render_count - render_counts[srcIds[i]];
+                const int render_offset = max_render_count - current_render_count;
 
-                if (current_image_count > 0)
+                if (current_render_count > 0)
                 {
                     std::cout   << "~~~~ VIS node " << world_rank << " rendering " 
-                                << offset << " - " 
-                                << offset + current_image_count << std::endl;
-                    ascent_opts["image_count"] = current_image_count;
-                    ascent_opts["image_offset"] = offset;
+                                << render_offset << " - " 
+                                << render_offset + current_render_count << std::endl;
+                    ascent_opts["render_count"] = current_render_count;
+                    ascent_opts["render_offset"] = render_offset;
                     ascent_opts["vis_node"] = true;
                     // add compositing flag?
 
+                    start = std::chrono::system_clock::now();
                     Ascent ascent_render;
                     ascent_render.open(ascent_opts);
-                    ascent_render.publish(dataset);    
-
+                    ascent_render.publish(dataset);
                     ascent_render.execute(blank_actions);
+                    
+                    conduit::Node info;
+                    ascent_render.info(info);
+                    NodeIterator itr = info["render_times"].children();
+                    while (itr.has_next())
+                    {
+                        Node &t = itr.next();
+                        // render_times.push_back(t.to_double());
+                        std::cout << t.to_double() << " ";
+                    }
+                    std::cout << "render times VIS node +++ " << world_rank << std::endl;
+
                     ascent_render.close();
                     log_time(start, "+ render vis ", world_rank);
                 }
@@ -742,36 +761,13 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                             << std::endl;
             }
 
-            // receive render chunks
             start = std::chrono::system_clock::now();
             // receive render chunks from all associated sim nodes
             conduit::Node render_chunks;
             int srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 1, mpi_comm_world);
             std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
                     << srcId << std::endl;
-            // srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 2, mpi_comm_world);
-            // std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
-            //         << srcId << std::endl;
             log_time(start, "- receive img ", world_rank);
-
-            // if (i == 0)
-            // {
-            //     // receive all render chunks after first rendering batch
-            //     for (int i = 0; i < sending_count; ++i)
-            //     {
-            //         auto start = std::chrono::system_clock::now();
-            //         // receive render chunks from all associated sim nodes
-            //         conduit::Node render_chunks;
-            //         int srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 1, mpi_comm_world);
-            //         std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
-            //                 << srcId << std::endl;
-
-            //         // srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 2, mpi_comm_world);
-            //         // std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
-            //         //         << srcId << std::endl;
-            //         log_time(start, "- receive img ", world_rank);
-            //     }
-            // }
         }
         // TODO: compositing
     }
@@ -790,20 +786,20 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             log_time(start, "- send data ", world_rank);
 
             Node render_chunks_inline;
-            if (image_counts[world_rank] > 0)
+            if (render_counts[world_rank] > 0)
             {
                 std::cout   << "~~~~ SIM node " << world_rank << " rendering " 
                             << 0 << " - " 
-                            << image_counts[world_rank] << std::endl;
-                ascent_opts["image_count"] = image_counts[world_rank];
+                            << render_counts[world_rank] << std::endl;
+                ascent_opts["render_count"] = render_counts[world_rank];
                 ascent_opts["image_offset"] = 0;
                 ascent_opts["vis_node"] = false;
 
+                start = std::chrono::system_clock::now();
                 Ascent ascent_render;
                 ascent_render.open(ascent_opts);
                 ascent_render.publish(data);
 
-                auto start = std::chrono::system_clock::now();
                 ascent_render.execute(blank_actions);
                 log_time(start, "+ render sim ", world_rank);
 
@@ -814,6 +810,15 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 render_chunks_inline["depths"] = info["depths"];
                 render_chunks_inline["color_buffers"] = info["color_buffers"];
                 render_chunks_inline["depth_buffers"] = info["depth_buffers"];
+
+                NodeIterator itr = info["render_times"].children();
+                while (itr.has_next())
+                {
+                    Node &t = itr.next();
+                    // render_times.push_back(t.to_double());
+                    std::cout << t.to_double() << " ";
+                }
+                std::cout << "render times SIM node +++ " << world_rank << std::endl;
 
                 ascent_render.close();
             }
@@ -828,17 +833,12 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             pack_node(render_chunks, compact_img);    // this takes too long
             ibsend_using_schema(compact_img, destination, 1, mpi_comm_world, &request);
             log_time(start, "- send sim img ", world_rank);
-
-            // send render chunks from probing
-            // ibsend_using_schema(render_chunks_probing, destination, 
-            //                     2, mpi_comm_world, &request);
         }
         else
         {
             std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
                         << std::endl;
         }
-
         // conduit::relay::mpi::wait_send(&request, MPI_STATUS_IGNORE);
         // MPI_Wait(&request, MPI_STATUS_IGNORE);
     }
@@ -960,7 +960,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_opt["runtime/type"] = "ascent"; // set to main runtime
         ascent_opt["is_probing"] = 1;
         ascent_opt["probing_factor"] = probing_factor;
-        ascent_opt["image_count"] = phi * theta;
+        ascent_opt["render_count"] = phi * theta;
         ascent_opt["image_offset"] = 0;
 
         // all sim nodes run probing in a new ascent instance
@@ -1017,6 +1017,10 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 
         ascent_probing.close();
         log_time(start, "probing ", world_rank);
+        // TODO: test: use total time measurement instead of image times
+        render_times.clear();
+        std::chrono::duration<double> elapsed = std::chrono::system_clock::now() - start;
+        render_times.push_back(elapsed.count() * 1000.0);
     }
     else
     {

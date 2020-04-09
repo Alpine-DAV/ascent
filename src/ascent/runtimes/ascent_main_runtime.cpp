@@ -128,8 +128,8 @@ AscentRuntime::AscentRuntime()
       m_ghost_field_name("ascent_ghosts"),
       m_is_probing(0),
       m_probing_factor(0.0),
-      m_image_count(0),
-      m_image_offset(0),
+      m_render_count(0),
+      m_render_offset(0),
       m_is_vis_node(0)
 {
   flow::filters::register_builtin();
@@ -249,10 +249,10 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     m_probing_factor = options["probing_factor"].as_double();
     // std::cout << "*** probing" << std::endl;
   }
-  if (options.has_path("image_count"))
-    m_image_count = options["image_count"].as_int32();
-  if (options.has_path("image_offset"))
-    m_image_offset = options["image_offset"].as_int32();    
+  if (options.has_path("render_count"))
+    m_render_count = options["render_count"].as_int32();
+  if (options.has_path("render_offset"))
+    m_render_offset = options["render_offset"].as_int32();    
   if (options.has_path("vis_node"))
     m_is_vis_node = options["vis_node"].as_int32();   
 
@@ -913,8 +913,8 @@ void AscentRuntime::PopulateMetadata()
   (*meta)["ghost_field"] = m_ghost_field_name;
   (*meta)["is_probing"] = m_is_probing;
   (*meta)["probing_factor"] = m_probing_factor;
-  (*meta)["image_count"] = m_image_count;
-  (*meta)["image_offset"] = m_image_offset;
+  (*meta)["render_count"] = m_render_count;
+  (*meta)["render_offset"] = m_render_offset;
   (*meta)["vis_node"] = m_is_vis_node;
 }
 
