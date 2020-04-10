@@ -498,31 +498,22 @@ void ascent::runtime::filters::BabelFlow::execute() {
         myspacing = data_node["coordsets/coords/spacing/x"].value();
       else if(data_node.has_path("coordsets/coords/spacing/dx"))
         myspacing = data_node["coordsets/coords/spacing/dx"].value();
-
-       {
-        std::vector<int32_t> uniform_spacing(uniform_comm_size);
-        
-        MPI_Allgather(&myspacing, 1, MPI_INT, uniform_spacing.data(), 1, MPI_INT, uniform_comm);
-        
-        std::sort(uniform_spacing.begin(),uniform_spacing.end());
-
-        std::set<int32_t> spacing_sizes;
-        for(auto& us : uniform_spacing){
-          //std::cout << us << " ";
-          spacing_sizes.insert(us);
-        }
-        //std::cout << "\n";
-
-        if(p.has_path("ugrid_select")) 
-          selected_spacing = *std::next(spacing_sizes.begin(), p["ugrid_select"].as_int64());
-        else
-          selected_spacing = *std::next(spacing_sizes.begin(), 0);
-
-      }
-
+      
+      std::vector<int32_t> uniform_spacing(uniform_comm_size);
+      
+      MPI_Allgather(&myspacing, 1, MPI_INT, uniform_spacing.data(), 1, MPI_INT, uniform_comm);
+      
+      std::sort(uniform_spacing.begin(), uniform_spacing.end());
+      std::unique(uniform_spacing.begin(), uniform_spacing.end());
+      
+      if(p.has_path("ugrid_select")) 
+        selected_spacing = *std::next(uniform_spacing.begin(), p["ugrid_select"].as_int64());
+      else
+        selected_spacing = *std::next(uniform_spacing.begin(), 0);
+      
       color = (myspacing == selected_spacing);
-
-      std::cout << "Selected spacing "<< selected_spacing << " rank " << world_rank << " contributing " << color <<"\n";
+      
+      //std::cout << "Selected spacing "<< selected_spacing << " rank " << world_rank << " contributing " << color <<"\n";
     }
 
     MPI_Barrier(uniform_comm);
@@ -568,8 +559,8 @@ void ascent::runtime::filters::BabelFlow::execute() {
             spacing[2] = data_node["coordsets/coords/spacing/z"].value();
 
           data_node["coordsets/coords/spacing/dx"] = spacing[0];
-          data_node["coordsets/coords/spacing/dy"] = spacing[0];
-          data_node["coordsets/coords/spacing/dz"] = spacing[0];
+          data_node["coordsets/coords/spacing/dy"] = spacing[1];
+          data_node["coordsets/coords/spacing/dz"] = spacing[2];
         }
         else if(data_node.has_path("coordsets/coords/spacing/dx")){
           spacing[0] = data_node["coordsets/coords/spacing/dx"].value();
@@ -598,9 +589,8 @@ void ascent::runtime::filters::BabelFlow::execute() {
       
       if(p.has_path("in_ghosts")) {
         int64_t* in_ghosts = p["in_ghosts"].as_int64_ptr();
-        for(int i=0;i< ndims*2;i++) {
+        for(int i=0;i< 6;i++) {
           ParallelMergeTree::o_ghosts[i] = (uint32_t)in_ghosts[i];
-          //ParallelMergeTree::o_ghosts[i + 3] = (uint32_t)in_ghosts[i];
         }
       }
 
@@ -724,10 +714,7 @@ void ascent::runtime::filters::BabelFlow::execute() {
         data_node["fields/segment/topology"] = field_node["topology"].as_string();
 
         // New field data
-        int32_t num_x = high[0] - low[0] + 1;
-        int32_t num_y = high[1] - low[1] + 1;
-        int32_t num_z = high[2] - low[2] + 1;
-        std::vector<FunctionType> seg_data(num_x*num_y*num_z, 0.f);
+        std::vector<FunctionType> seg_data(dims[0]*dims[1]*dims[2], 0.f);
 
         pmt.ExtractSegmentation(seg_data.data());
 
@@ -737,9 +724,9 @@ void ascent::runtime::filters::BabelFlow::execute() {
   #if 0
         {
           std::stringstream ss;
-          ss << "segment_data_" << rank << "_" << num_x << "_" << num_y << "_" << num_z <<"_low_"<< low[0] << "_"<< low[1] << "_"<< low[2] << ".raw";
+          ss << "segment_data_" << rank << "_" << dims[0] << "_" << dims[1] << "_" << dims[2] <<"_low_"<< low[0] << "_"<< low[1] << "_"<< low[2] << ".raw";
           std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
-          bofs.write(reinterpret_cast<char *>(seg_data.data()), num_x*num_y*num_z * sizeof(FunctionType));
+          bofs.write(reinterpret_cast<char *>(seg_data.data()), dims[0]*dims[1]*dims[2]*sizeof(FunctionType));
           bofs.close();
         }
   #endif
@@ -751,6 +738,21 @@ void ascent::runtime::filters::BabelFlow::execute() {
         // else
         //   std::cout << "BP with new field verify -- failed" << std::endl;
         
+        d_input->reset_vtkh_collection();
+      }
+    }
+    else {
+      // If needed add the new field with GNULL data so that 
+      // we're consistent with other ranks that do have data
+      int64_t gen_field = p["gen_segment"].as_int64();
+      if (gen_field) {
+        data_node["fields/segment/association"] = field_node["association"].as_string();
+        data_node["fields/segment/topology"] = field_node["topology"].as_string();
+        conduit::DataArray<double> array_mag = field_node["values"].as_float64_array();
+
+        std::vector<FunctionType> seg_data(array_mag.number_of_elements(), (FunctionType)GNULL);
+
+        data_node["fields/segment/values"].set(seg_data);
         d_input->reset_vtkh_collection();
       }
     }
