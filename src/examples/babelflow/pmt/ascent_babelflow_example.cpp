@@ -199,7 +199,7 @@ int main(int argc, char **argv)
   // publish
   a.publish(mesh);
   
-  vector<int64_t> in_ghosts({1, 1, 1});
+  vector<int64_t> in_ghosts({1, 1, 1, 1, 1, 1});
   
   // build pipeline Node for the filter
   Node pipelines;
