@@ -16,6 +16,8 @@
 #include <ctime>
 #include <cassert>
 
+typedef double FunctionType;
+
 using namespace ascent;
 using namespace conduit;
 
@@ -45,9 +47,9 @@ int main(int argc, char **argv)
   int share_face = 1;           // share a face among the blocks
 
   int test_block_size[3];
-  uint32_t valence = 2;
+  int32_t valence = 2;
   //FunctionType threshold_ = (FunctionType)(-1)*FLT_MAX;
-  float threshold_ = (int)(-1)*FLT_MAX;
+  FunctionType threshold_ = (int)(-1)*FLT_MAX;
   char* dataset;
   for (int i = 1; i < argc; i++){
     if (!strcmp(argv[i],"-d")){
@@ -56,8 +58,8 @@ int main(int argc, char **argv)
       data_size_[2] = atoi(argv[++i]); 
     }
     if (!strcmp(argv[i],"-p")){
-      block_decomp[0] = atoi(argv[++i]);                                                                                                           
-      block_decomp[1] = atoi(argv[++i]);                                                                                                           
+      block_decomp[0] = atoi(argv[++i]);
+      block_decomp[1] = atoi(argv[++i]);
       block_decomp[2] = atoi(argv[++i]);
     }
     if (!strcmp(argv[i],"-m"))
@@ -110,7 +112,7 @@ int main(int argc, char **argv)
   // NOTE: PMT assumes Ghost Layers only in positive x,y,z directions
 
   // set the gloabl data
-  vector<int> global_data(data_size[0]*data_size[1]*data_size[2], 0);
+  vector<FunctionType> global_data(data_size[0]*data_size[1]*data_size[2], 0);
   {
   ifstream rf(dataset, ios::out | ios::binary);
     if(!rf) {
@@ -119,7 +121,7 @@ int main(int argc, char **argv)
   }
 
     for(int i = 0; i < data_size[0]*data_size[1]*data_size[2] ; i++)
-      rf.read( (char *)&global_data[i], sizeof(int));
+      rf.read( (char *)&global_data[i], sizeof(FunctionType));
 
     rf.close();
   }
@@ -128,7 +130,7 @@ int main(int argc, char **argv)
   int32_t num_x = high[0] - low[0] + 1;
   int32_t num_y = high[1] - low[1] + 1;
   int32_t num_z = high[2] - low[2] + 1;
-  vector<float> block_data(num_x * num_y * num_z, 0.f);
+  vector<FunctionType> block_data(num_x * num_y * num_z, 0.f);
 
   // copy values from global data
   {
@@ -139,7 +141,7 @@ int main(int argc, char **argv)
       for (uint32_t by = 0; by < num_y; ++by) {
         int data_idx = start + bz * data_size[0] * data_size[1] + by * data_size[0];
         for (uint32_t i = 0; i < num_x; ++i) {
-          block_data[offset + i] = static_cast<float>(global_data[data_idx + i]);
+          block_data[offset + i] = static_cast<FunctionType>(global_data[data_idx + i]);
         }
         offset += num_x;
       }
@@ -151,7 +153,13 @@ int main(int argc, char **argv)
   mesh["coordsets/coords/type"] = "uniform";
   mesh["coordsets/coords/dims/i"] = num_x;
   mesh["coordsets/coords/dims/j"] = num_y;
-  mesh["coordsets/coords/dims/k"] = num_z;
+  if (num_z > 1)    // if it's a 3D dataset
+    mesh["coordsets/coords/dims/k"] = num_z;
+  mesh["coordsets/coords/origin/x"] = low[0];
+  mesh["coordsets/coords/origin/y"] = low[1];
+  if (num_z > 1)    // if it's a 3D dataset
+    mesh["coordsets/coords/origin/z"] = low[2];
+
   mesh["topologies/topo/type"] = "uniform";
   mesh["topologies/topo/coordset"] = "coords";
   mesh["fields/braids/association"] = "vertex";
@@ -161,48 +169,56 @@ int main(int argc, char **argv)
   // assuming # of ranks == # of leaves
   int32_t task_id = mpi_rank;
 
-
   // output binary blocks for debugging purpose
   //  data<mpi_rank>.bin
   {
     stringstream ss;
     ss << "data" << mpi_rank << ".bin";
     ofstream bofs(ss.str(), ios::out | ios::binary);
-    bofs.write(reinterpret_cast<char *>(block_data.data()), block_data.size() * sizeof(float));
+    bofs.write(reinterpret_cast<char *>(block_data.data()), block_data.size() * sizeof(FunctionType));
     bofs.close();
   }
   // output text block parameters
-  //  uint32 low[0], uint32 low[1], uint32 low[2], uint32 high[0], uint32 high[1], uint32 high[2]
   //  data<mpi_rank>.params
   {
     stringstream ss;
     ss << "data" << mpi_rank << ".params";
     ofstream ofs(ss.str());
-    ofs << low[0] << " " << low[1] << " " << low[2] << " " << high[0] << " " << high[1] << " " << high[2];
+    ofs << "dims/i = " << num_x << std::endl;
+    ofs << "dims/j = " << num_y << std::endl;
+    ofs << "dims/k = " << num_z << std::endl;
+    ofs << "origin/x = " << low[0] << std::endl;
+    ofs << "origin/y = " << low[1] << std::endl;
+    ofs << "origin/z = " << low[2] << std::endl;
+    ofs << "high[0] = " << high[0] << std::endl;
+    ofs << "high[1] = " << high[1] << std::endl;
+    ofs << "high[2] = " << high[2] << std::endl;
     ofs.flush();
     ofs.close();
   }
   // publish
   a.publish(mesh);
-  // build extracts Node
-  Node extract;
-  extract["e1/type"] = "babelflow"; // use the babelflow runtime filter
+  
+  vector<int64_t> in_ghosts({1, 1, 1, 1, 1, 1});
+  
+  // build pipeline Node for the filter
+  Node pipelines;
+  pipelines["pl1/f1/type"] = "babelflow";
+  pipelines["pl1/f1/params/task"] = "pmt";
+  pipelines["pl1/f1/params/field"] = "braids";
+  pipelines["pl1/f1/params/fanin"] = int64_t(valence);
+  pipelines["pl1/f1/params/threshold"] = threshold_;
+  pipelines["pl1/f1/params/in_ghosts"].set_int64_vector(in_ghosts);
+  pipelines["pl1/f1/params/gen_segment"] = int64_t(1);    // 1 -- means create a field with segmentation
 
-  // extracts params:
-  int32_t fanin = 2;
-  float threshold = -FLT_MAX;
-
-  extract["e1/params/task"] = "pmt";
-  extract["e1/params/mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
-  extract["e1/params/data_path"] = "fields/braids/values";
-  extract["e1/params/data_size"].set_int32_vector(data_size);
-  extract["e1/params/n_blocks"].set_int32_vector(n_blocks);
-  extract["e1/params/fanin"] = fanin;
-  extract["e1/params/threshold"] = threshold;
-  extract["e1/params/low"].set_int32_vector(low);
-  extract["e1/params/high"].set_int32_vector(high);
-  extract["e1/params/task_id"] = task_id;
-
+  // Old parameters that we were using, now automatically computed by the filter
+  //pipelines["pl1/f1/params/mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+  //pipelines["pl1/f1/params/data_size"].set_int32_vector(data_size);
+  //pipelines["pl1/f1/params/n_blocks"].set_int32_vector(n_blocks);
+  //pipelines["pl1/f1/params/low"].set_int32_vector(low);
+  //pipelines["pl1/f1/params/high"].set_int32_vector(high);
+  //pipelines["pl1/f1/params/task_id"] = task_id;
+  
   //  ### future work: supporting multiple blocks per node
   //  ### low and high should be defined in TaskId
   //  ### the following parameters should be defined in form of lists ###
@@ -213,10 +229,47 @@ int main(int argc, char **argv)
   //  ### task_id.size() = n_jobs
   //  ### data in form of <block_1, block_2, ..., block_n> size of each block is defined by high - low + 1 per dimension
 
+  // extract to save to file the output
+  Node extract;
+  extract["e1/type"] = "relay";
+  extract["e1/pipeline"] = "pl1";
+  extract["e1/params/path"] = "seg";
+  extract["e1/params/protocol"] = "blueprint/mesh/hdf5";
+  extract["e1/params/fields"].append() = "segment";
+
+  // pipelines
+
   Node action;
   Node &add_extract = action.append();
   add_extract["action"] = "add_extracts";
   add_extract["extracts"] = extract;
+
+  action.append()["action"] = "execute";
+
+  Node &add_pipelines = action.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
+
+  Node& add_act2 = action.append();
+  add_act2["action"] = "add_scenes";
+  Node& scenes = add_act2["scenes"];
+
+  // add a scene (s1) with one pseudocolor plot (p1) that
+  // will render the result of our pipeline (pl1)
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/plots/p1/field"] = "braids";
+  scenes["s1/image_name"] = "dataset";
+
+  // render segmentation
+  scenes["s2/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s2/plots/p1/field"] = "segment";
+  scenes["s2/plots/p1/color_table/name"] = "Jet";
+  scenes["s2/image_name"] = "segmentation";
+
+  // print our full actions tree
+  std::cout << action.to_yaml() << std::endl;
 
   action.append()["action"] = "execute";
   start = clock();
