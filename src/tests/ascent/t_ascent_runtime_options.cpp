@@ -282,7 +282,7 @@ TEST(ascent_runtime_options, test_timings)
     //ascent_opts["ascent_info"] = "verbose";
     ascent_opts["runtime/type"] = "ascent";
     ascent_opts["actions_file"] = output_actions;
-    ascent_opts["timings"] = "enabled";
+    ascent_opts["timings"] = "true";
     ascent_opts["default_dir"] = output_path;
     ascent.open(ascent_opts);
     ascent.publish(data);
