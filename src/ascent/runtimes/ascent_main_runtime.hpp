@@ -140,6 +140,7 @@ private:
     void ConvertSceneToFlow(const conduit::Node &scenes);
     void ConnectSource();
     void ConnectGraphs();
+    void SourceFieldFilter();
 
     void BuildGraph(const conduit::Node &actions);
     void EnsureDomainIds();

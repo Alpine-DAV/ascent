@@ -1501,9 +1501,8 @@ AscentRuntime::Execute(const conduit::Node &actions)
           {
             // check to see if we can determine what
             // fields the actions need
-            std::vector<std::string> fields;
             conduit::Node info;
-            bool success = field_list(actions, fields, info);
+            bool success = field_list(actions, m_field_list, info);
             if(!success)
             {
               ASCENT_ERROR("Field filtering failed: "<<info.to_yaml());
@@ -1521,6 +1520,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
           ConnectSource();
         }
 
+        SourceFieldFilter();
         m_previous_actions = actions;
 
         PopulateMetadata(); // add metadata so filters can access it
@@ -1647,7 +1647,49 @@ AscentRuntime::RegisterFilterType(const std::string  &role_path,
     }
 }
 
+//-----------------------------------------------------------------------------
+void AscentRuntime::SourceFieldFilter()
+{
+  if(!m_field_filtering)
+  {
+    return;
+  }
 
+  bool high_order = m_data_object.source() == DataObject::Source::HIGH_BP;
+  conduit::Node *data = m_data_object.as_node().get();
+  const int num_domains = data->number_of_children();
+  for(int i = 0; i < num_domains; ++i)
+  {
+    conduit::Node &dom = data->child(i);
+    if(dom.has_path("fields"))
+    {
+
+      const int num_fields = dom["fields"].number_of_children();
+      std::vector<std::string> names = dom["fields"].child_names();
+      for(int f = 0; f < num_fields; ++f)
+      {
+        if(high_order)
+        {
+          // handle special mfem fields
+          if(names[f] == "element_attribute" ||
+             names[f] == "boundary_attribute" ||
+             names[f] == "mesh_nodes")
+          {
+            continue;
+          }
+        }
+        if(std::find(m_field_list.begin(),
+                     m_field_list.end(),
+                     names[f]) == m_field_list.end())
+        {
+          // remove the field
+          dom.remove("fields/"+names[f]);
+        }
+      } // for fields
+    }
+  } // for doms
+
+}
 
 
 
