@@ -340,13 +340,9 @@ AscentRuntime::Cleanup()
 void
 AscentRuntime::Publish(const conduit::Node &data)
 {
-    // There is no promise that all data can be zero copied
-    // and conversions to vtkh/low order will be invalid.
-    // We must reset the source object
-    conduit::Node *multi_dom = new conduit::Node();
-    blueprint::mesh::to_multi_domain(data, *multi_dom);
-    m_data_object.reset(multi_dom);
+    blueprint::mesh::to_multi_domain(data, m_source);
     EnsureDomainIds();
+    //EnsureDomainIds();
 }
 
 //-----------------------------------------------------------------------------
@@ -358,12 +354,11 @@ AscentRuntime::EnsureDomainIds()
     bool has_ids = true;
     bool no_ids = true;
 
-    conduit::Node *data = m_data_object.as_node().get();
     // get the number of domains and check for id consistency
-    num_domains = data->number_of_children();
+    num_domains = m_source.number_of_children();
     for(int i = 0; i < num_domains; ++i)
     {
-      const conduit::Node &dom = data->child(i);
+      const conduit::Node &dom = m_source.child(i);
       if(dom.has_path("state/domain_id"))
       {
         no_ids = false;
@@ -428,7 +423,7 @@ AscentRuntime::EnsureDomainIds()
 #endif
     for(int i = 0; i < num_domains; ++i)
     {
-      conduit::Node &dom = data->child(i);
+      conduit::Node &dom = m_source.child(i);
 
       if(!dom.has_path("state/domain_id"))
       {
@@ -984,14 +979,13 @@ void
 AscentRuntime::PopulateMetadata()
 {
   // add global state meta data to the registry
-  const conduit::Node *data = m_data_object.as_node().get();
-  const int num_domains = data->number_of_children();
+  const int num_domains = m_source.number_of_children();
   int cycle = 0;
   float time = 0.f;
 
   for(int i = 0; i < num_domains; ++i)
   {
-    const conduit::Node &dom = data->child(i);
+    const conduit::Node &dom = m_source.child(i);
     if(dom.has_path("state/cycle"))
     {
       cycle = dom["state/cycle"].to_int32();
@@ -1020,10 +1014,18 @@ AscentRuntime::PopulateMetadata()
 void
 AscentRuntime::ConnectSource()
 {
+    // There is no promise that all data can be zero copied
+    // and conversions to vtkh/low order will be invalid.
+    // We must reset the source object
+    conduit::Node *data_node = new conduit::Node();
+    data_node->set_external(m_source);
+    m_data_object.reset(data_node);
+
+    SourceFieldFilter();
+
     // note: if the reg entry for data was already added
     // the set_external updates everything,
     // we don't need to remove and re-add.
-
 
     if(!w.registry().has_entry("_ascent_input_data"))
     {
@@ -1520,7 +1522,6 @@ AscentRuntime::Execute(const conduit::Node &actions)
           ConnectSource();
         }
 
-        SourceFieldFilter();
         m_previous_actions = actions;
 
         PopulateMetadata(); // add metadata so filters can access it

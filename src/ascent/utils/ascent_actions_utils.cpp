@@ -62,12 +62,12 @@ namespace ascent
 namespace detail
 {
 void parse_expression(const std::string &expression,
-                      std::vector<std::string> &fields)
+                      std::set<std::string> &fields)
 {
   std::regex e ("field\\('(.*?)'\\)");
   std::smatch m;
 
-  std::vector<std::string> matches;
+  std::set<std::string> matches;
   std::string s = expression;
   while (std::regex_search (s,m,e))
   {
@@ -79,7 +79,7 @@ void parse_expression(const std::string &expression,
       // quotes
       if(count == 1)
       {
-        fields.push_back(x);
+        fields.insert(x);
       }
       count++;
     }
@@ -89,7 +89,7 @@ void parse_expression(const std::string &expression,
 }
 
 void filter_fields(const conduit::Node &node,
-                   std::vector<std::string> &fields,
+                   std::set<std::string> &fields,
                    conduit::Node &info)
 {
   const int num_children = node.number_of_children();
@@ -100,9 +100,12 @@ void filter_fields(const conduit::Node &node,
     bool is_leaf = child.number_of_children() == 0;
     if(is_leaf)
     {
-      if(names[i] == "field")
+      if( names[i] == "field" ||
+          names[i] == "field1" || // support for composite vector
+          names[i] == "field2" ||
+          names[i] == "field3" )
       {
-        fields.push_back(child.as_string());
+        fields.insert(child.as_string());
       }
       if(names[i] == "expression")
       {
@@ -110,7 +113,7 @@ void filter_fields(const conduit::Node &node,
       }
       // special detection for filters that use
       // all fields by default
-      if(is_leaf && (names[i]  == "type") )
+      if(names[i] == "type")
       {
         const std::string type = child.as_string();
         if(type == "relay" ||
@@ -121,12 +124,25 @@ void filter_fields(const conduit::Node &node,
           {
             conduit::Node &error = info.append();
             error["filter"] = type;
-            error["message"] = "filter does not specify what fields "
-                               "to use.";
+            error["message"] = "The filter does not specify what fields "
+                               "to use. In order to use field filtering, "
+                               "please consult the Ascent user documentation "
+                               "for this filter type to learn how to specify "
+                               "specific fields";
           }
         }
 
       } // is type
+
+      if(names[i] == "actions_file")
+      {
+        conduit::Node &error = info.append();
+        error["message"] = "Field filtering does not support "
+                           "scanning actions files specified "
+                           "by triggers. Please specifiy the "
+                           "trigger actions directly in the "
+                           "trigger parameters.";
+      } // actions file
     } // is leaf
 
     if(!is_leaf)
@@ -146,7 +162,7 @@ void filter_fields(const conduit::Node &node,
             const conduit::Node &item = child.child(e);
             if(item.dtype().is_string())
             {
-              fields.push_back(item.as_string());
+              fields.insert(item.as_string());
             }
           } // for list  entries
         } // is  field list
@@ -158,13 +174,13 @@ void filter_fields(const conduit::Node &node,
 } // namespace detail
 
 bool field_list(const conduit::Node &actions,
-                              std::vector<std::string> &fields,
-                              conduit::Node &info)
+                std::set<std::string> &fields,
+                conduit::Node &info)
 {
   info.reset();
   fields.clear();
   detail::filter_fields(actions, fields, info);
-  for(int i = 0; i < fields.size(); ++i) std::cout<<fields[i]<<"\n";
+  for(auto field : fields) std::cout<<field<<"\n";
   if(info.number_of_children() != 0)
   {
     info.print();

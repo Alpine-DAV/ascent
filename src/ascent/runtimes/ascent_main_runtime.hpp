@@ -100,6 +100,7 @@ private:
     // holds options passed to initialize
     conduit::Node     m_runtime_options;
     // DataObject that (externally) holds the data from the simulation
+    conduit::Node     m_source;
     DataObject        m_data_object;
     conduit::Node     m_connections;
     conduit::Node     m_scene_connections;
@@ -114,7 +115,7 @@ private:
     std::string       m_default_output_dir;
 
     bool              m_field_filtering;
-    std::vector<std::string> m_field_list;
+    std::set<std::string> m_field_list;
 
     void              ResetInfo();
 

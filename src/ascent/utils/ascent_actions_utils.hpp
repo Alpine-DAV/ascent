@@ -53,7 +53,7 @@
 #include <ascent_exports.h>
 #include <conduit.hpp>
 #include <string>
-#include <vector>
+#include <set>
 
 
 //-----------------------------------------------------------------------------
@@ -62,7 +62,7 @@
 namespace ascent
 {
 ASCENT_API bool field_list(const conduit::Node &actions,
-                           std::vector<std::string> &fields,
+                           std::set<std::string> &fields,
                            conduit::Node &info);
 //-----------------------------------------------------------------------------
 };
