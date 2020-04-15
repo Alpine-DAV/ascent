@@ -50,6 +50,7 @@
 #ifndef ASCENT_ACTIONS_UTILS_HPP
 #define ASCENT_ACTIONS_UTILS_HPP
 
+#include <ascent_exports.h>
 #include <conduit.hpp>
 #include <string>
 #include <vector>
@@ -60,7 +61,9 @@
 //-----------------------------------------------------------------------------
 namespace ascent
 {
-std::vector<std::string> field_list(const conduit::Node &actions);
+ASCENT_API bool field_list(const conduit::Node &actions,
+                           std::vector<std::string> &fields,
+                           conduit::Node &info);
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

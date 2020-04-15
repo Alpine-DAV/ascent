@@ -62,7 +62,8 @@ namespace detail
 {
 
 void filter_fields(const conduit::Node &node,
-                   std::vector<std::string> &fields)
+                   std::vector<std::string> &fields,
+                   conduit::Node &info)
 {
   const int num_children = node.number_of_children();
   const std::vector<std::string> names = node.child_names();
@@ -74,12 +75,30 @@ void filter_fields(const conduit::Node &node,
     {
       fields.push_back(child.as_string());
     }
+    // special detection for filters that use
+    // all fields by default
+    if(is_leaf && (names[i]  == "type") )
+    {
+      const std::string type = child.as_string();
+      if(type == "relay" ||
+         type == "project_2d" ||
+         type == "dray_project_2d")
+      {
+        if(!node.has_path("params/fields"))
+        {
+          conduit::Node &error = info.append();
+          error["filter"] = type;
+          error["message"] = "filter does not specify what fields "
+                             "to use.";
+        }
+      }
+    }
 
     if(!is_leaf)
     {
       if(!child.dtype().is_list())
       {
-        filter_fields(child, fields);
+        filter_fields(child, fields, info);
       }
       else
       {
@@ -103,13 +122,20 @@ void filter_fields(const conduit::Node &node,
 
 } // namespace detail
 
-std::vector<std::string> field_list(const conduit::Node &actions)
+bool field_list(const conduit::Node &actions,
+                              std::vector<std::string> &fields,
+                              conduit::Node &info)
 {
-  std::vector<std::string> fields;
-  detail::filter_fields(actions, fields);
+  info.reset();
+  fields.clear();
+  detail::filter_fields(actions, fields, info);
   std::cout<<"fields : \n";
   for(int i = 0; i < fields.size(); ++i) std::cout<<fields[i]<<"\n";
-  return fields;
+  if(info.number_of_children() != 0)
+  {
+    info.print();
+  }
+  return info.number_of_children() == 0;
 }
 
 

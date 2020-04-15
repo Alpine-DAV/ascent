@@ -113,6 +113,9 @@ private:
     conduit::Node     m_ghost_fields; // a list of strings
     std::string       m_default_output_dir;
 
+    bool              m_field_filtering;
+    std::vector<std::string> m_field_list;
+
     void              ResetInfo();
 
     flow::Workspace w;

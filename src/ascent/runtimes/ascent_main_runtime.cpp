@@ -130,7 +130,8 @@ AscentRuntime::AscentRuntime()
 :Runtime(),
  m_refinement_level(2), // default refinement level for high order meshes
  m_rank(0),
- m_default_output_dir(".")
+ m_default_output_dir("."),
+ m_field_filtering(false)
 {
     m_ghost_fields.append() = "ascent_ghosts";
     flow::filters::register_builtin();
@@ -231,7 +232,6 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
     m_runtime_options = options;
 
-
     if(options.has_path("ghost_field_name"))
     {
       if(options["ghost_field_name"].dtype().is_string())
@@ -279,9 +279,18 @@ AscentRuntime::Initialize(const conduit::Node &options)
         m_web_interface.Enable();
     }
 
+    if(options.has_path("field_filtering"))
+    {
+      if(options["field_filtering"].as_string() == "true")
+      {
+        m_field_filtering = true;
+      }
+    }
+
     Node msg;
-    this->Info(msg["info"]);
     ascent::about(msg["about"]);
+    msg["options"] = options;
+    this->Info(msg["info"]);
     m_web_interface.PushMessage(msg);
 }
 
@@ -1488,6 +1497,19 @@ AscentRuntime::Execute(const conduit::Node &actions)
 
         if(different_actions)
         {
+          if(m_field_filtering)
+          {
+            // check to see if we can determine what
+            // fields the actions need
+            std::vector<std::string> fields;
+            conduit::Node info;
+            bool success = field_list(actions, fields, info);
+            if(!success)
+            {
+              ASCENT_ERROR("Field filtering failed: "<<info.to_yaml());
+            }
+          }
+
           // destroy existing graph an start anew
           w.reset();
           ConnectSource();
@@ -1500,7 +1522,6 @@ AscentRuntime::Execute(const conduit::Node &actions)
         }
 
         m_previous_actions = actions;
-        auto f = field_list(actions);
 
         PopulateMetadata(); // add metadata so filters can access it
 
