@@ -317,7 +317,7 @@ void
 AscentRuntime::Cleanup()
 {
     if(m_runtime_options.has_child("timings") &&
-       m_runtime_options["timings"].as_string() == "enabled")
+       m_runtime_options["timings"].as_string() == "true")
     {
         // save out timing info on close
         std::stringstream fname;
