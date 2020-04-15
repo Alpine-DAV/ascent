@@ -52,6 +52,7 @@
 #include <map>
 #include <sstream>
 #include <stdio.h>
+#include <regex>
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -60,6 +61,32 @@ namespace ascent
 
 namespace detail
 {
+void parse_expression(const std::string &expression,
+                      std::vector<std::string> &fields)
+{
+  std::regex e ("field\\('(.*?)'\\)");
+  std::smatch m;
+
+  std::vector<std::string> matches;
+  std::string s = expression;
+  while (std::regex_search (s,m,e))
+  {
+    int count = 0;
+    for (auto x:m)
+    {
+      // we  want the second submatch that
+      // matches the regex  inside the single
+      // quotes
+      if(count == 1)
+      {
+        fields.push_back(x);
+      }
+      count++;
+    }
+    std::cout << std::endl;
+    s = m.suffix().str();
+  }
+}
 
 void filter_fields(const conduit::Node &node,
                    std::vector<std::string> &fields,
@@ -71,28 +98,36 @@ void filter_fields(const conduit::Node &node,
   {
     const conduit::Node &child = node.child(i);
     bool is_leaf = child.number_of_children() == 0;
-    if(is_leaf && (names[i]  == "field") )
+    if(is_leaf)
     {
-      fields.push_back(child.as_string());
-    }
-    // special detection for filters that use
-    // all fields by default
-    if(is_leaf && (names[i]  == "type") )
-    {
-      const std::string type = child.as_string();
-      if(type == "relay" ||
-         type == "project_2d" ||
-         type == "dray_project_2d")
+      if(names[i] == "field")
       {
-        if(!node.has_path("params/fields"))
-        {
-          conduit::Node &error = info.append();
-          error["filter"] = type;
-          error["message"] = "filter does not specify what fields "
-                             "to use.";
-        }
+        fields.push_back(child.as_string());
       }
-    }
+      if(names[i] == "expression")
+      {
+        parse_expression(child.as_string(), fields);
+      }
+      // special detection for filters that use
+      // all fields by default
+      if(is_leaf && (names[i]  == "type") )
+      {
+        const std::string type = child.as_string();
+        if(type == "relay" ||
+           type == "project_2d" ||
+           type == "dray_project_2d")
+        {
+          if(!node.has_path("params/fields"))
+          {
+            conduit::Node &error = info.append();
+            error["filter"] = type;
+            error["message"] = "filter does not specify what fields "
+                               "to use.";
+          }
+        }
+
+      } // is type
+    } // is leaf
 
     if(!is_leaf)
     {
@@ -129,7 +164,6 @@ bool field_list(const conduit::Node &actions,
   info.reset();
   fields.clear();
   detail::filter_fields(actions, fields, info);
-  std::cout<<"fields : \n";
   for(int i = 0; i < fields.size(); ++i) std::cout<<fields[i]<<"\n";
   if(info.number_of_children() != 0)
   {
