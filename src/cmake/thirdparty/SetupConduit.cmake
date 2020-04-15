@@ -93,7 +93,7 @@ endif()
 set(CONDUIT_FOUND TRUE)
 set(CONDUIT_INCLUDE_DIRS ${CONDUIT_DIR}/include/conduit)
 
-if(PYTHON_FOUND)
+if(ENABLE_PYTHON)
     find_package(PythonInterp)
     if(PYTHONINTERP_FOUND)
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
