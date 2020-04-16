@@ -166,6 +166,12 @@ There are often warnings and other information that can indicate potential issue
 By default, Ascent looks for a file called ``ascent_actions.json`` that can append additional actions at runtime.
 This default file name can be overridden in the Ascent options:
 
+.. code-block:: json
+
+  {
+    "field_filtering" : "true"
+  }
+
 
 .. code-block:: c++
 
@@ -180,6 +186,35 @@ launch one MPI task per GPU. This default behavior can be overridden with the fo
     ascent_opts["cuda/init"] = "false";
 
 By disabling CUDA GPU initialization, an application is free to set the active device.
+
+Filter Timings
+""""""""""""""
+Ascent has internal timings for filters. The timings output is one csv file
+per MPI rank.
+
+.. code-block:: json
+
+  {
+    "timings" : "true"
+  }
+
+
+Field Filtering
+"""""""""""""""
+By default, Ascent passes all of the published data to. Some simulations
+have just a few variables that they publish, but other simulations an
+publish 100s of variables to Ascent. In this case, its undesirable to
+use all fields when the actions only need a single variable. This reduces
+the memory overhead Ascent uses.
+
+Field filtering scans the user's actions to identify what fields are required,
+only passing the required fields into Ascent. However, there are several
+actions where the required fields cannot be resolved. For example, saving simulation
+data to the file system saves all fields, and in this case, it is not possible to resolve
+the required fields. If field filtering encounters this case, then an error is generated.
+Alternatively, if the actions specify which fields to save, then this field filtering
+can resolve the fields.
+
 
 publish
 -------
