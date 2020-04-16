@@ -53,6 +53,7 @@
 
 // standard lib includes
 #include <string.h>
+#include <algorithm>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
