@@ -1510,6 +1510,10 @@ AscentRuntime::Execute(const conduit::Node &actions)
             {
               ASCENT_ERROR("Field filtering failed: "<<info.to_yaml());
             }
+            if(m_field_list.size() == 0)
+            {
+              ASCENT_ERROR("Field filtering failed to find any fields");
+            }
           }
 
           // destroy existing graph an start anew
