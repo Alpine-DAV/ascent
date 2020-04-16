@@ -166,13 +166,6 @@ There are often warnings and other information that can indicate potential issue
 By default, Ascent looks for a file called ``ascent_actions.json`` that can append additional actions at runtime.
 This default file name can be overridden in the Ascent options:
 
-.. code-block:: json
-
-  {
-    "field_filtering" : "true"
-  }
-
-
 .. code-block:: c++
 
     ascent_opts["actions_file"] = custom_ascent_actions_file;
@@ -214,6 +207,13 @@ data to the file system saves all fields, and in this case, it is not possible t
 the required fields. If field filtering encounters this case, then an error is generated.
 Alternatively, if the actions specify which fields to save, then this field filtering
 can resolve the fields.
+
+.. code-block:: json
+
+  {
+    "field_filtering" : "true"
+  }
+
 
 
 publish
