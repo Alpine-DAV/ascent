@@ -413,22 +413,6 @@ void log_time(std::chrono::time_point<std::chrono::system_clock> start,
     out.close();
 }
 
-void irecv_any_using_schema(Node &node, const int buffer_size, const int src, const int tag, 
-                            MPI_Comm comm, MPI_Request* req)
-{  
-    Node n_buffer(DataType::uint8(buffer_size));
-    
-    int mpi_error = MPI_Irecv(n_buffer.data_ptr(),
-                                buffer_size,
-                                MPI_BYTE,
-                                src,
-                                tag,
-                                comm,
-                                req);
-    
-    if (mpi_error)
-        std::cout << "ERROR receiving dataset from " << src << std::endl;
-}
 
 int recv_any_using_schema(Node &node, int src, int tag, MPI_Comm comm)
 {  
@@ -787,6 +771,45 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             datasets.push_back(dataset);
         }
 
+        // post receives for the render chunks to receive asynchronous while rendering
+        std::vector< std::vector<Node>> render_chunks_sim(sending_count);
+        std::vector<MPI_Request> requests;
+        const int batch_size = 10;
+        auto t_start = std::chrono::system_clock::now();        //< timer receive
+        for (int i = 0; i < sending_count; ++i)
+        {
+            int batch_rest = render_counts[srcIds[i]] % batch_size;
+            int batch_runs = render_counts[srcIds[i]] / batch_size + 1;
+
+            std::cout << " ~~~ vis node " << world_rank << " receiving " << batch_runs 
+                      << " render chunks from " << srcIds[i] << std::endl;
+
+            for (int j = 0; j < batch_runs; ++j)
+            {
+                const int current_batch_size = (j == batch_runs - 1) ? batch_rest : batch_size;
+                if (current_batch_size == 0)
+                    break;
+
+                const int buffer_size = calc_render_msg_size(current_batch_size, probing_count, 
+                                                             probing_factor);
+                Node n_buffer(DataType::uint8(buffer_size));
+                render_chunks_sim[i].push_back(n_buffer);
+                MPI_Request req = MPI_REQUEST_NULL;
+                requests.push_back(req);
+
+                int mpi_error = MPI_Irecv(n_buffer.data_ptr(),
+                                          buffer_size,
+                                          MPI_BYTE,
+                                          srcIds[i],
+                                          j+1,
+                                          mpi_comm_world,
+                                          &req);
+                if (mpi_error)
+                    std::cout << "ERROR receiving dataset from " << srcIds[i] << std::endl;
+            }
+        }
+        log_time(t_start, "- receive img ", world_rank);        //< timer
+
         // render all data sets
         for (int i = 0; i < sending_count; ++i)
         {
@@ -838,35 +861,41 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             }
         }
 
-        std::vector<Node> render_chunks_sim;
-        std::vector<MPI_Request> requests(sending_count);
-        // post recv for render chunks
-        for (int i = 0; i < sending_count; ++i)
-        {
-            std::cout << " ~~~ vis node " << world_rank << " receiving render chunks from "
-                    << srcIds[i] << std::endl;
-            const int render_size = calc_render_msg_size(render_counts[srcIds[i]], 
-                                                        probing_count, probing_factor);
-            // std::cout << "++ estimate " << world_rank << " " << render_size
-            //             << std::endl;
+        // wait for all render chunks to be received
+        t_start = std::chrono::system_clock::now();
+        for (MPI_Request req : requests)
+            MPI_Wait(&req, MPI_STATUS_IGNORE);
+        log_time(t_start, "+ wait receive img ", world_rank);
 
-            auto start = std::chrono::system_clock::now();
-            // receive render chunks from all associated sim nodes
-            // TODO: replace render_size with actual one from probing
-            conduit::Node render_chunks(DataType::uint8(render_size));
+        // std::vector<Node> render_chunks_sim;
+        // std::vector<MPI_Request> requests(sending_count);
+        // // recv render chunks
+        // for (int i = 0; i < sending_count; ++i)
+        // {
+        //     std::cout << " ~~~ vis node " << world_rank << " receiving render chunks from "
+        //             << srcIds[i] << std::endl;
+        //     const int render_size = calc_render_msg_size(render_counts[srcIds[i]], 
+        //                                                 probing_count, probing_factor);
+        //     // std::cout << "++ estimate " << world_rank << " " << render_size
+        //     //             << std::endl;
 
-            // int mpi_error = MPI_Recv(render_chunks.data_ptr(), render_size, 
-            //                          MPI_BYTE, srcIds[i], 1, mpi_comm_world, MPI_STATUS_IGNORE);//, &(requests[i]));
-            // if (mpi_error)
-            //     std::cout << "ERROR receiving render chunks from " << srcIds[i] << std::endl;
+        //     auto start = std::chrono::system_clock::now();
+        //     // receive render chunks from all associated sim nodes
+        //     // TODO: replace render_size with actual one from probing
+        //     conduit::Node render_chunks(DataType::uint8(render_size));
 
-            recv_any_using_schema(render_chunks, srcIds[i], 1, mpi_comm_world);
+        //     // int mpi_error = MPI_Recv(render_chunks.data_ptr(), render_size, 
+        //     //                          MPI_BYTE, srcIds[i], 1, mpi_comm_world, MPI_STATUS_IGNORE);//, &(requests[i]));
+        //     // if (mpi_error)
+        //     //     std::cout << "ERROR receiving render chunks from " << srcIds[i] << std::endl;
+
+        //     recv_any_using_schema(render_chunks, srcIds[i], 1, mpi_comm_world);
             
-            // std::cout << "~~~ vis node " << world_rank << " post irecv RENDER CHUNKS from "
-            //           << srcIds[i] << std::endl;
-            render_chunks_sim.push_back(render_chunks);
-            log_time(start, "- receive img ", world_rank);
-        }
+        //     // std::cout << "~~~ vis node " << world_rank << " post irecv RENDER CHUNKS from "
+        //     //           << srcIds[i] << std::endl;
+        //     render_chunks_sim.push_back(render_chunks);
+        //     log_time(start, "- receive img ", world_rank);
+        // }
 
         // receive all render chunks
         // for (int i = 0; i < sending_count; ++i)
@@ -933,82 +962,142 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         std::cout << "~~~~rank " << world_rank << ": sends extract to " 
                   <<  node_map[world_rank] + sim_node_count << std::endl;
 
-        MPI_Request request;
+        std::vector<Node> compact_img_batches;
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
             // send data to vis node
-            auto start = std::chrono::system_clock::now();
-            MPI_Request req;
+            auto t_start = std::chrono::system_clock::now();
 
             conduit::relay::mpi::send_using_schema(data, destination, 0, mpi_comm_world);
             // isend_using_schema(data, destination, 0, mpi_comm_world, &req);
-            log_time(start, "- send data ", world_rank);
+            log_time(t_start, "- send data ", world_rank);
 
             // in line rendering using ascent
             Node render_chunks_inline;
-            if (render_counts[world_rank] > 0)
+            const int batch_size = 20;
+            const int batch_rest = render_counts[world_rank] % batch_size;
+            const int batch_runs = render_counts[world_rank] / batch_size + 1;
+
+            std::vector<MPI_Request> requests;
+            t_start = std::chrono::system_clock::now();
+            for (int i = 0; i < batch_runs; ++i)
             {
+                const int begin = i*batch_size;
+                const int current_batch_size = (i == batch_runs - 1) ? batch_rest : batch_size;
+                if (current_batch_size == 0)
+                    break;
+                const int end = i*batch_size + current_batch_size;
+
                 std::cout   << "~~~~ SIM node " << world_rank << " rendering " 
-                            << 0 << " - " 
-                            << render_counts[world_rank] << std::endl;
-                ascent_opts["render_count"] = render_counts[world_rank];
-                ascent_opts["image_offset"] = 0;
+                            << begin << " - " << end << std::endl;
+                
+                ascent_opts["render_count"] = end - begin;
+                ascent_opts["image_offset"] = begin;
                 ascent_opts["vis_node"] = false;
 
-                start = std::chrono::system_clock::now();
                 Ascent ascent_render;
                 ascent_render.open(ascent_opts);
                 ascent_render.publish(data);
-
                 ascent_render.execute(blank_actions);
-                log_time(start, "+ render sim " + std::to_string(render_counts[world_rank]) + " ", world_rank);
 
-                // send render chunks from in line rendering
+                // send render chunks
                 conduit::Node info;
                 ascent_render.info(info);
                 render_chunks_inline["depths"] = info["depths"];
                 render_chunks_inline["color_buffers"] = info["color_buffers"];
                 render_chunks_inline["depth_buffers"] = info["depth_buffers"];
 
-                NodeIterator itr = info["render_times"].children();
-                while (itr.has_next())
-                {
-                    Node &t = itr.next();
-                    // render_times.push_back(t.to_double());
-                    std::cout << t.to_double() << " ";
-                }
-                std::cout << "render times SIM node +++ " << world_rank << std::endl;
                 ascent_render.close();
 
-                // wait for sending data to finish
-                // MPI_Wait(&req, MPI_STATUS_IGNORE);
-
-                // send render chunks from probing and inline rendering
-                Node render_chunks;
-                render_chunks["inline"] = render_chunks_inline;
-                render_chunks["probing"] = render_chunks_probing;
-
-                start = std::chrono::system_clock::now();
                 Node compact_img;
-                pack_node(render_chunks, compact_img);    // this takes too long
+                compact_img_batches.push_back(compact_img); // keep the buffer alive
+                pack_node(render_chunks_inline, compact_img); 
+                const int render_size = compact_img.total_bytes_compact();
+                // const int render_size = calc_render_msg_size(current_batch_size, probing_count, 
+                //                                              probing_factor);
+                MPI_Request req = MPI_REQUEST_NULL;
+                requests.push_back(req);
+                int mpi_error = MPI_Isend(const_cast<void*>(compact_img.data_ptr()),
+                                          static_cast<int>(render_size),
+                                          MPI_BYTE,
+                                          destination,
+                                          i+1,
+                                          mpi_comm_world,
+                                          &req);
+                if (mpi_error)
+                    std::cout << "ERROR sending dataset to " << destination << std::endl;
 
-                const index_t msg_data_size = compact_img.total_bytes_compact();
-                std::cout << "++ msg_data_size " << world_rank << " " <<  msg_data_size
-                            << std::endl;
-
-                const int render_size = calc_render_msg_size(render_counts[world_rank], probing_count, 
-                                                            probing_factor);
-                std::cout << "++ estimate " << world_rank << " " << render_size
-                            << std::endl;
-
-                detach_mpi_buffer();
-                MPI_Buffer_attach(malloc(msg_data_size + MPI_BSEND_OVERHEAD), 
-                                         msg_data_size + MPI_BSEND_OVERHEAD);
-                
-                // conduit::relay::mpi::send_using_schema(compact_img, destination, 1, mpi_comm_world);
-                ibsend_using_schema(compact_img, destination, 1, mpi_comm_world, &request);
-                log_time(start, "- send sim img ", world_rank);
             }
+            log_time(t_start, "+ render sim " + std::to_string(render_counts[world_rank]) + " ", world_rank);
+
+            // wait for all render chunks to be received
+            t_start = std::chrono::system_clock::now();
+            for (auto req : requests)
+                MPI_Wait(&req, MPI_STATUS_IGNORE);
+            log_time(t_start, "+ wait send img ", world_rank);
+
+            // TODO: send probing chunks
+
+            // if (render_counts[world_rank] > 0)
+            // {
+            //     ascent_opts["render_count"] = render_counts[world_rank];
+            //     ascent_opts["image_offset"] = 0;
+            //     ascent_opts["vis_node"] = false;
+
+            //     t_start = std::chrono::system_clock::now();
+            //     Ascent ascent_render;
+            //     ascent_render.open(ascent_opts);
+            //     ascent_render.publish(data);
+
+            //     ascent_render.execute(blank_actions);
+            //     log_time(t_start, "+ render sim " + std::to_string(render_counts[world_rank]) + " ", world_rank);
+
+            //     // send render chunks from in line rendering
+            //     conduit::Node info;
+            //     ascent_render.info(info);
+            //     render_chunks_inline["depths"] = info["depths"];
+            //     render_chunks_inline["color_buffers"] = info["color_buffers"];
+            //     render_chunks_inline["depth_buffers"] = info["depth_buffers"];
+
+            //     NodeIterator itr = info["render_times"].children();
+            //     while (itr.has_next())
+            //     {
+            //         Node &t = itr.next();
+            //         // render_times.push_back(t.to_double());
+            //         std::cout << t.to_double() << " ";
+            //     }
+            //     std::cout << "render times SIM node +++ " << world_rank << std::endl;
+            //     ascent_render.close();
+
+            //     // wait for sending data to finish
+            //     // MPI_Wait(&req, MPI_STATUS_IGNORE);
+
+            //     // send render chunks from probing and inline rendering
+            //     Node render_chunks;
+            //     render_chunks["inline"] = render_chunks_inline;
+            //     render_chunks["probing"] = render_chunks_probing;
+
+            //     t_start = std::chrono::system_clock::now();
+            //     Node compact_img;
+            //     pack_node(render_chunks, compact_img);    // this takes too long
+
+            //     const index_t msg_data_size = compact_img.total_bytes_compact();
+            //     std::cout << "++ msg_data_size " << world_rank << " " <<  msg_data_size
+            //                 << std::endl;
+
+            //     const int render_size = calc_render_msg_size(render_counts[world_rank], probing_count, 
+            //                                                 probing_factor);
+            //     std::cout << "++ estimate " << world_rank << " " << render_size
+            //                 << std::endl;
+
+            //     detach_mpi_buffer();
+            //     MPI_Buffer_attach(malloc(msg_data_size + MPI_BSEND_OVERHEAD), 
+            //                              msg_data_size + MPI_BSEND_OVERHEAD);
+                
+            //     conduit::relay::mpi::send_using_schema(compact_img, destination, 1, mpi_comm_world);
+            //     // ibsend_using_schema(compact_img, destination, 1, mpi_comm_world, &request);
+            //     log_time(t_start, "- send sim img ", world_rank);
+            // }
         }
         else
         {
