@@ -349,16 +349,19 @@ public:
       ostringstream oss;
       oss << "key_" << i;
 
-      vtkh::Renderer *r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
-      auto times = r->GetRenderTimes();
-      m_render_times.push_back(times);
+      // if (!is_vis_node) 
+      {
+        vtkh::Renderer *r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
+        auto times = r->GetRenderTimes();
+        m_render_times.push_back(times);
 
-      int size = renders.at(i).GetWidth() * renders.at(i).GetHeight();
-      // NOTE: only getting canvas from domain 0 for now
-      m_color_buffers.push_back(r->GetColorBuffers());
-      m_depth_buffers.push_back(r->GetDepthBuffers());
+        int size = renders.at(i).GetWidth() * renders.at(i).GetHeight();
+        // NOTE: only getting canvas from domain 0 for now
+        m_color_buffers.push_back(r->GetColorBuffers());
+        m_depth_buffers.push_back(r->GetDepthBuffers());
 
-      m_depths.push_back(r->GetDepths());
+        m_depths.push_back(r->GetDepths());
+      }
       
       m_registry->consume(oss.str());
     }

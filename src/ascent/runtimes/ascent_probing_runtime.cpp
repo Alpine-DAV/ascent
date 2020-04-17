@@ -413,6 +413,23 @@ void log_time(std::chrono::time_point<std::chrono::system_clock> start,
     out.close();
 }
 
+void irecv_any_using_schema(Node &node, const int buffer_size, const int src, const int tag, 
+                            MPI_Comm comm, MPI_Request* req)
+{  
+    Node n_buffer(DataType::uint8(buffer_size));
+    
+    int mpi_error = MPI_Irecv(n_buffer.data_ptr(),
+                                buffer_size,
+                                MPI_BYTE,
+                                src,
+                                tag,
+                                comm,
+                                req);
+    
+    if (mpi_error)
+        std::cout << "ERROR receiving dataset from " << src << std::endl;
+}
+
 int recv_any_using_schema(Node &node, int src, int tag, MPI_Comm comm)
 {  
     MPI_Status status;
@@ -495,28 +512,18 @@ void pack_node(const Node &node, Node &n_msg)
     // return n_msg;
 }
 
-int ibsend_using_schema(const Node &n_msg, int dest, int tag, MPI_Comm comm, 
-                        MPI_Request *request) 
+int ibsend_using_schema(const Node &n_msg, const int dest, const int tag, 
+                        MPI_Comm comm, MPI_Request *request) 
 {     
     index_t msg_data_size = n_msg.total_bytes_compact();
 
-    // int size;
-    // char *bsend_buf;
-    // // block until all messages currently in the buffer have been transmitted
-    // MPI_Buffer_detach(&bsend_buf, &size);
-    // // clean up old buffer
-    // free(bsend_buf);
-
-    // MPI_Buffer_attach(malloc(msg_data_size + MPI_BSEND_OVERHEAD), 
-    //                          msg_data_size + MPI_BSEND_OVERHEAD);
-
-    int mpi_error = MPI_Ibsend(const_cast<void*>(n_msg.data_ptr()),
+    int mpi_error = MPI_Bsend(const_cast<void*>(n_msg.data_ptr()),
                                static_cast<int>(msg_data_size),
                                MPI_BYTE,
                                dest,
                                tag,
-                               comm,
-                               request);
+                               comm);
+                            //    request);
     
     if (mpi_error)
         std::cout << "ERROR sending dataset to " << dest << std::endl;
@@ -536,6 +543,21 @@ void detach_mpi_buffer()
     MPI_Buffer_detach(&bsend_buf, &size);
     // clean up old buffer
     free(bsend_buf);
+}
+
+/**
+ * Calculate the message size for sending the render chunks.  
+ */
+int calc_render_msg_size(const int render_count, const int probing_count, 
+                         const double probing_factor, const int width = 1024,
+                         const int height = 1024, const int channels = 4+1)
+{
+    const int inline_renders = render_count - int(probing_factor * render_count);
+    const int total_renders = probing_count + inline_renders;
+    const int overhead_render = 396;
+    const int overhead_global = 288;
+    return total_renders * channels * width * height + 
+            total_renders * overhead_render + overhead_global;
 }
 
 //-----------------------------------------------------------------------------
@@ -664,15 +686,19 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
     // TODO: remove the magic numbers
     // (# probing images + # inline images) * (RGBA + depth) * width*height + distance cam/dom center
-    const int render_size = (probing_count + render_counts[world_rank]) * 5 * 1024*1024 + 4;
-    Node n_msg;
-    pack_node(data, n_msg);
-    index_t msg_data_size = n_msg.total_bytes_compact();
-    detach_mpi_buffer();
-    // attach new buffer
-    MPI_Buffer_attach(malloc(msg_data_size + render_size + MPI_BSEND_OVERHEAD), 
-                             msg_data_size + render_size + MPI_BSEND_OVERHEAD);
+    // const int width = 1024;
+    // const int height = 1024;
+    // const int channels = 4 + 1; // RGBA + depth
+    // const int render_size = (probing_count + render_counts[world_rank]) * channels * width*height + 4;
+    // // Node n_msg;
+    // // pack_node(data, n_msg);
+    // index_t msg_data_size = 10000000; //compact_img.total_bytes_compact();
+    // detach_mpi_buffer();
+    // // attach new buffer
+    // MPI_Buffer_attach(malloc(msg_data_size + render_size + MPI_BSEND_OVERHEAD), 
+    //                         msg_data_size + render_size + MPI_BSEND_OVERHEAD);
     // std::cout << "-- buffer size: " << (msg_data_size + render_size + MPI_BSEND_OVERHEAD) << std::endl;
+
 
     Node ascent_opts, blank_actions;
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(mpi_comm_world);
@@ -681,10 +707,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     ascent_opts["probing_factor"] = probing_factor;
     Node verify_info;
 
-    if (is_vis_node) // all vis nodes: receive data 
+    if (is_vis_node) // vis nodes 
     {
         std::vector<int> sending_node_ranks;
-
         for (int i = 0; i < node_map.size(); ++i)
         {
             if (node_map[i] == my_dest_rank)
@@ -697,10 +722,12 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         std::cout << "~~~~ vis node " << world_rank << ": receives extract(s) from " 
                   << node_string.str() << std::endl;
 
-        int sending_count = int(sending_node_ranks.size());
+        const int sending_count = int(sending_node_ranks.size());
 
-        std::vector<Node> datasets(sending_count);
         std::vector<int> srcIds(sending_count);
+        std::vector<Node> render_chunks_vis;
+        std::vector<Node> datasets;
+        // receive all data sets
         for (int i = 0; i < sending_count; ++i)
         {
             auto start = std::chrono::system_clock::now();
@@ -709,17 +736,13 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             std::cout << "~~~ vis node " << world_rank << " received data from "
                       << srcIds[i] << std::endl;
             log_time(start, "- receive data ", world_rank);
-            // datasets[i] = dataset;
-        // }
+            datasets.push_back(dataset);
+        }
 
-        // for (int i = 0; i < sending_count; ++i)
-        // {
-        // }
-
-        // for (int i = 0; i < sending_count; ++i)
-        // {
-            // conduit::Node dataset = datasets[i];
-            if (conduit::blueprint::mesh::verify(dataset, verify_info))
+        // render all data sets
+        for (int i = 0; i < sending_count; ++i)
+        {
+            if (conduit::blueprint::mesh::verify(datasets[i], verify_info))
             {
                 const int current_render_count = max_render_count - render_counts[srcIds[i]];
                 const int render_offset = max_render_count - current_render_count;
@@ -732,13 +755,13 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     ascent_opts["render_count"] = current_render_count;
                     ascent_opts["render_offset"] = render_offset;
                     ascent_opts["vis_node"] = true;
-                    // add compositing flag?
 
-                    start = std::chrono::system_clock::now();
+                    auto start = std::chrono::system_clock::now();
                     Ascent ascent_render;
                     ascent_render.open(ascent_opts);
-                    ascent_render.publish(dataset);
+                    ascent_render.publish(datasets[i]);
                     ascent_render.execute(blank_actions);
+                    log_time(start, "+ render vis " + std::to_string(current_render_count) + " ", world_rank);
                     
                     conduit::Node info;
                     ascent_render.info(info);
@@ -751,8 +774,13 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     }
                     std::cout << "render times VIS node +++ " << world_rank << std::endl;
 
+                    Node render_chunks;
+                    render_chunks["depths"] = info["depths"];
+                    render_chunks["color_buffers"] = info["color_buffers"];
+                    render_chunks["depth_buffers"] = info["depth_buffers"];
+                    render_chunks_vis.push_back(render_chunks);
+
                     ascent_render.close();
-                    log_time(start, "+ render vis ", world_rank);
                 }
             }
             else
@@ -760,17 +788,98 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 std::cout << "~~~~rank " << world_rank << ": could not verify sent data." 
                             << std::endl;
             }
+        }
 
-            start = std::chrono::system_clock::now();
+        std::vector<Node> render_chunks_sim;
+        std::vector<MPI_Request> requests(sending_count);
+        // post recv for render chunks
+        for (int i = 0; i < sending_count; ++i)
+        {
+            std::cout << " ~~~ vis node " << world_rank << " receiving render chunks from "
+                      << srcIds[i] << std::endl;
+            const int render_size = calc_render_msg_size(render_counts[srcIds[i]], 
+                                                         probing_count, probing_factor);
+            // std::cout << "++ estimate " << world_rank << " " << render_size
+            //             << std::endl;
+
+            auto start = std::chrono::system_clock::now();
             // receive render chunks from all associated sim nodes
-            conduit::Node render_chunks;
-            int srcId = recv_any_using_schema(render_chunks, MPI_ANY_SOURCE, 1, mpi_comm_world);
-            std::cout << "~~~ vis node " << world_rank << " received RENDER CHUNKS from "
-                    << srcId << std::endl;
+            // TODO: replace render_size with actual one from probing
+            conduit::Node render_chunks(DataType::uint8(render_size));
+
+            int mpi_error = MPI_Recv(render_chunks.data_ptr(), render_size, 
+                                     MPI_BYTE, srcIds[i], 1, mpi_comm_world, MPI_STATUS_IGNORE);//, &(requests[i]));
+            if (mpi_error)
+                std::cout << "ERROR receiving render chunks from " << srcIds[i] << std::endl;
+            // irecv_any_using_schema(render_chunks, render_size, srcIds[i], 1, 
+            //                         mpi_comm_world, &(requests[i]));
+            
+            // std::cout << "~~~ vis node " << world_rank << " post irecv RENDER CHUNKS from "
+            //           << srcIds[i] << std::endl;
+            render_chunks_sim.push_back(render_chunks);
             log_time(start, "- receive img ", world_rank);
         }
-        // TODO: compositing
-    }
+
+
+        // receive all render chunks
+        // for (int i = 0; i < sending_count; ++i)
+        // {
+        //     std::cout << " ~~~ vis node " << world_rank << " receiving render chunks from "
+        //               << srcIds[i] << std::endl;
+
+        //     auto start = std::chrono::system_clock::now();
+        //     // receive render chunks from all associated sim nodes
+        //     MPI_Wait(&(requests[i]), MPI_STATUS_IGNORE);
+
+        //     std::cout << " ~~~ vis node " << world_rank << " done" << std::endl;
+
+        //     // unpack
+        //     {
+        //         uint8 *n_buff_ptr = (uint8*)render_chunks_sim[i].data_ptr();
+
+        //         Node n_msg;
+        //         // length of the schema is sent as a 64-bit signed int
+        //         // NOTE: we aren't using this value  ... 
+        //         n_msg["schema_len"].set_external((int64*)n_buff_ptr);
+        //         n_buff_ptr +=8;
+        //         // wrap the schema string
+        //         n_msg["schema"].set_external_char8_str((char*)(n_buff_ptr));
+        //         // create the schema
+        //         Schema rcv_schema;
+        //         Generator gen(n_msg["schema"].as_char8_str());
+        //         gen.walk(rcv_schema);
+
+        //         // advance by the schema length
+        //         n_buff_ptr += n_msg["schema"].total_bytes_compact();
+                
+        //         // apply the schema to the data
+        //         n_msg["data"].set_external(rcv_schema,n_buff_ptr);
+                
+        //         // copy out to our result node
+        //         render_chunks_sim[i].update(n_msg["data"]);
+        //     }
+        //     log_time(start, "- receive img wait ", world_rank);
+        // }
+
+        // {
+        //     // TODO: compositing (move to separate method)
+        //     vtkh::Scene scene;
+        //     vtkh::Renderer *renderer = new vtkh::VolumeRenderer();
+        //     scene.AddRenderer(renderer);
+
+        //     std::vector<vtkh::Render> renders;
+
+        //     // unpack render_chunks_sim + render_chunks_vis
+        //     for (size_t i = 0; i < count; i++)
+        //     {
+        //         vtkh::Render r;
+        //         // r.SetCamera(const vtkm::rendering::Camera &camera)
+        //         renders.push_back(render);
+        //     }            
+        //     scene.SetRenders(renders);
+        //     (*renderer)->Composite(total_renders);
+        // }
+    } // end vis node
     else // all sim nodes: send extract to vis nodes
     {
         const int destination = node_map[world_rank] + sim_node_count;
@@ -782,7 +891,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
             auto start = std::chrono::system_clock::now();
-            ibsend_using_schema(n_msg, destination, 0, mpi_comm_world, &request);
+            // blocking send, use isend? (may be blocking if vis finishes late and fast probing)
+            conduit::relay::mpi::send_using_schema(data, destination, 0, mpi_comm_world);
             log_time(start, "- send data ", world_rank);
 
             Node render_chunks_inline;
@@ -801,12 +911,11 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 ascent_render.publish(data);
 
                 ascent_render.execute(blank_actions);
-                log_time(start, "+ render sim ", world_rank);
+                log_time(start, "+ render sim " + std::to_string(render_counts[world_rank]) + " ", world_rank);
 
                 // send render chunks from in line rendering
                 conduit::Node info;
                 ascent_render.info(info);
-                
                 render_chunks_inline["depths"] = info["depths"];
                 render_chunks_inline["color_buffers"] = info["color_buffers"];
                 render_chunks_inline["depth_buffers"] = info["depth_buffers"];
@@ -831,6 +940,21 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             start = std::chrono::system_clock::now();
             Node compact_img;
             pack_node(render_chunks, compact_img);    // this takes too long
+
+            const index_t msg_data_size = compact_img.total_bytes_compact();
+            std::cout << "++ msg_data_size " << world_rank << " " <<  msg_data_size
+                        << std::endl;
+
+            const int render_size = calc_render_msg_size(render_counts[world_rank], probing_count, 
+                                                        probing_factor);
+            std::cout << "++ estimate " << world_rank << " " << render_size
+                        << std::endl;
+
+            detach_mpi_buffer();
+            MPI_Buffer_attach(malloc(msg_data_size + MPI_BSEND_OVERHEAD), 
+                                     msg_data_size + MPI_BSEND_OVERHEAD);
+            
+            // conduit::relay::mpi::send_using_schema(compact_img, destination, 1, mpi_comm_world);
             ibsend_using_schema(compact_img, destination, 1, mpi_comm_world, &request);
             log_time(start, "- send sim img ", world_rank);
         }
@@ -841,7 +965,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         }
         // conduit::relay::mpi::wait_send(&request, MPI_STATUS_IGNORE);
         // MPI_Wait(&request, MPI_STATUS_IGNORE);
-    }
+    } // end vis node
 
     log_time(start0, "___splitAndRun ", world_rank);
 #endif // ASCENT_MPI_ENABLED
@@ -952,7 +1076,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     std::vector<double> render_times;
     // TODO: handle case where there is no probing (and no probing chunks)
     Node render_chunks;
-    // run probing only if this is a sim node (vis nodes don't have data yet)
+    // run probing only if this is a sim node
     // NOTE: we could check for data size instead (sim sends empty data on vis nodes)
     if (world_rank < rank_split && probing_factor > 0.0)
     {
@@ -1016,7 +1140,8 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         // std::cout << std::endl;
 
         ascent_probing.close();
-        log_time(start, "probing ", world_rank);
+        int probing_images = int(std::round(probing_factor * phi * theta));
+        log_time(start, "probing " + std::to_string(probing_images) + " ", world_rank);
         // TODO: test: use total time measurement instead of image times
         render_times.clear();
         std::chrono::duration<double> elapsed = std::chrono::system_clock::now() - start;
