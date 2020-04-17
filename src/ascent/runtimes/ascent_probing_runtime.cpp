@@ -512,6 +512,54 @@ void pack_node(const Node &node, Node &n_msg)
     // return n_msg;
 }
 
+int 
+isend_using_schema(const Node &node, int dest, int tag, MPI_Comm comm, MPI_Request* request)
+{     
+    Schema s_data_compact;
+    
+    // schema will only be valid if compact and contig
+    if( node.is_compact() && node.is_contiguous())
+    {
+        s_data_compact = node.schema();
+    }
+    else
+    {
+        node.schema().compact_to(s_data_compact);
+    }
+    
+    std::string snd_schema_json = s_data_compact.to_json();
+        
+    Schema s_msg;
+    s_msg["schema_len"].set(DataType::int64());
+    s_msg["schema"].set(DataType::char8_str(snd_schema_json.size()+1));
+    s_msg["data"].set(s_data_compact);
+    
+    // create a compact schema to use
+    Schema s_msg_compact;
+    s_msg.compact_to(s_msg_compact);
+    
+    Node n_msg(s_msg_compact);
+    // these sets won't realloc since schemas are compatible
+    n_msg["schema_len"].set((int64)snd_schema_json.length());
+    n_msg["schema"].set(snd_schema_json);
+    n_msg["data"].update(node);
+
+    index_t msg_data_size = n_msg.total_bytes_compact();
+
+    int mpi_error = MPI_Isend(const_cast<void*>(n_msg.data_ptr()),
+                             static_cast<int>(msg_data_size),
+                             MPI_BYTE,
+                             dest,
+                             tag,
+                             comm,
+                             request);
+    if (mpi_error)
+        std::cout << "ERROR sending dataset to " << dest << std::endl;
+
+    return mpi_error;
+}
+
+
 int ibsend_using_schema(const Node &n_msg, const int dest, const int tag, 
                         MPI_Comm comm, MPI_Request *request) 
 {     
@@ -796,9 +844,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         for (int i = 0; i < sending_count; ++i)
         {
             std::cout << " ~~~ vis node " << world_rank << " receiving render chunks from "
-                      << srcIds[i] << std::endl;
+                    << srcIds[i] << std::endl;
             const int render_size = calc_render_msg_size(render_counts[srcIds[i]], 
-                                                         probing_count, probing_factor);
+                                                        probing_count, probing_factor);
             // std::cout << "++ estimate " << world_rank << " " << render_size
             //             << std::endl;
 
@@ -807,19 +855,18 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             // TODO: replace render_size with actual one from probing
             conduit::Node render_chunks(DataType::uint8(render_size));
 
-            int mpi_error = MPI_Recv(render_chunks.data_ptr(), render_size, 
-                                     MPI_BYTE, srcIds[i], 1, mpi_comm_world, MPI_STATUS_IGNORE);//, &(requests[i]));
-            if (mpi_error)
-                std::cout << "ERROR receiving render chunks from " << srcIds[i] << std::endl;
-            // irecv_any_using_schema(render_chunks, render_size, srcIds[i], 1, 
-            //                         mpi_comm_world, &(requests[i]));
+            // int mpi_error = MPI_Recv(render_chunks.data_ptr(), render_size, 
+            //                          MPI_BYTE, srcIds[i], 1, mpi_comm_world, MPI_STATUS_IGNORE);//, &(requests[i]));
+            // if (mpi_error)
+            //     std::cout << "ERROR receiving render chunks from " << srcIds[i] << std::endl;
+
+            recv_any_using_schema(render_chunks, srcIds[i], 1, mpi_comm_world);
             
             // std::cout << "~~~ vis node " << world_rank << " post irecv RENDER CHUNKS from "
             //           << srcIds[i] << std::endl;
             render_chunks_sim.push_back(render_chunks);
             log_time(start, "- receive img ", world_rank);
         }
-
 
         // receive all render chunks
         // for (int i = 0; i < sending_count; ++i)
@@ -880,21 +927,24 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         //     (*renderer)->Composite(total_renders);
         // }
     } // end vis node
-    else // all sim nodes: send extract to vis nodes
+    else // SIM nodes
     {
         const int destination = node_map[world_rank] + sim_node_count;
         std::cout << "~~~~rank " << world_rank << ": sends extract to " 
                   <<  node_map[world_rank] + sim_node_count << std::endl;
 
         MPI_Request request;
-        // in line rendering using ascent and cinema
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
+            // send data to vis node
             auto start = std::chrono::system_clock::now();
-            // blocking send, use isend? (may be blocking if vis finishes late and fast probing)
+            MPI_Request req;
+
             conduit::relay::mpi::send_using_schema(data, destination, 0, mpi_comm_world);
+            // isend_using_schema(data, destination, 0, mpi_comm_world, &req);
             log_time(start, "- send data ", world_rank);
 
+            // in line rendering using ascent
             Node render_chunks_inline;
             if (render_counts[world_rank] > 0)
             {
@@ -928,35 +978,37 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     std::cout << t.to_double() << " ";
                 }
                 std::cout << "render times SIM node +++ " << world_rank << std::endl;
-
                 ascent_render.close();
+
+                // wait for sending data to finish
+                // MPI_Wait(&req, MPI_STATUS_IGNORE);
+
+                // send render chunks from probing and inline rendering
+                Node render_chunks;
+                render_chunks["inline"] = render_chunks_inline;
+                render_chunks["probing"] = render_chunks_probing;
+
+                start = std::chrono::system_clock::now();
+                Node compact_img;
+                pack_node(render_chunks, compact_img);    // this takes too long
+
+                const index_t msg_data_size = compact_img.total_bytes_compact();
+                std::cout << "++ msg_data_size " << world_rank << " " <<  msg_data_size
+                            << std::endl;
+
+                const int render_size = calc_render_msg_size(render_counts[world_rank], probing_count, 
+                                                            probing_factor);
+                std::cout << "++ estimate " << world_rank << " " << render_size
+                            << std::endl;
+
+                detach_mpi_buffer();
+                MPI_Buffer_attach(malloc(msg_data_size + MPI_BSEND_OVERHEAD), 
+                                         msg_data_size + MPI_BSEND_OVERHEAD);
+                
+                // conduit::relay::mpi::send_using_schema(compact_img, destination, 1, mpi_comm_world);
+                ibsend_using_schema(compact_img, destination, 1, mpi_comm_world, &request);
+                log_time(start, "- send sim img ", world_rank);
             }
-
-            // send render chunks from probing and inline rendering
-            Node render_chunks;
-            render_chunks["inline"] = render_chunks_inline;
-            render_chunks["probing"] = render_chunks_probing;
-
-            start = std::chrono::system_clock::now();
-            Node compact_img;
-            pack_node(render_chunks, compact_img);    // this takes too long
-
-            const index_t msg_data_size = compact_img.total_bytes_compact();
-            std::cout << "++ msg_data_size " << world_rank << " " <<  msg_data_size
-                        << std::endl;
-
-            const int render_size = calc_render_msg_size(render_counts[world_rank], probing_count, 
-                                                        probing_factor);
-            std::cout << "++ estimate " << world_rank << " " << render_size
-                        << std::endl;
-
-            detach_mpi_buffer();
-            MPI_Buffer_attach(malloc(msg_data_size + MPI_BSEND_OVERHEAD), 
-                                     msg_data_size + MPI_BSEND_OVERHEAD);
-            
-            // conduit::relay::mpi::send_using_schema(compact_img, destination, 1, mpi_comm_world);
-            ibsend_using_schema(compact_img, destination, 1, mpi_comm_world, &request);
-            log_time(start, "- send sim img ", world_rank);
         }
         else
         {
