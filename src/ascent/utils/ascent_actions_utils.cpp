@@ -180,7 +180,6 @@ bool field_list(const conduit::Node &actions,
   info.reset();
   fields.clear();
   detail::filter_fields(actions, fields, info);
-  for(auto field : fields) std::cout<<field<<"\n";
   if(info.number_of_children() != 0)
   {
     info.print();
