@@ -53,6 +53,7 @@
 
 // standard lib includes
 #include <string.h>
+#include <algorithm>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -69,6 +70,7 @@
 #endif
 
 #include <flow.hpp>
+#include <ascent_actions_utils.hpp>
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
 #include <ascent_transmogrifier.hpp>
@@ -129,7 +131,8 @@ AscentRuntime::AscentRuntime()
 :Runtime(),
  m_refinement_level(2), // default refinement level for high order meshes
  m_rank(0),
- m_default_output_dir(".")
+ m_default_output_dir("."),
+ m_field_filtering(false)
 {
     m_ghost_fields.append() = "ascent_ghosts";
     flow::filters::register_builtin();
@@ -230,7 +233,6 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
     m_runtime_options = options;
 
-
     if(options.has_path("ghost_field_name"))
     {
       if(options["ghost_field_name"].dtype().is_string())
@@ -278,9 +280,18 @@ AscentRuntime::Initialize(const conduit::Node &options)
         m_web_interface.Enable();
     }
 
+    if(options.has_path("field_filtering"))
+    {
+      if(options["field_filtering"].as_string() == "true")
+      {
+        m_field_filtering = true;
+      }
+    }
+
     Node msg;
-    this->Info(msg["info"]);
     ascent::about(msg["about"]);
+    msg["options"] = options;
+    this->Info(msg["info"]);
     m_web_interface.PushMessage(msg);
 }
 
@@ -307,7 +318,7 @@ void
 AscentRuntime::Cleanup()
 {
     if(m_runtime_options.has_child("timings") &&
-       m_runtime_options["timings"].as_string() == "enabled")
+       m_runtime_options["timings"].as_string() == "true")
     {
         // save out timing info on close
         std::stringstream fname;
@@ -330,13 +341,9 @@ AscentRuntime::Cleanup()
 void
 AscentRuntime::Publish(const conduit::Node &data)
 {
-    // There is no promise that all data can be zero copied
-    // and conversions to vtkh/low order will be invalid.
-    // We must reset the source object
-    conduit::Node *multi_dom = new conduit::Node();
-    blueprint::mesh::to_multi_domain(data, *multi_dom);
-    m_data_object.reset(multi_dom);
+    blueprint::mesh::to_multi_domain(data, m_source);
     EnsureDomainIds();
+    //EnsureDomainIds();
 }
 
 //-----------------------------------------------------------------------------
@@ -348,12 +355,11 @@ AscentRuntime::EnsureDomainIds()
     bool has_ids = true;
     bool no_ids = true;
 
-    conduit::Node *data = m_data_object.as_node().get();
     // get the number of domains and check for id consistency
-    num_domains = data->number_of_children();
+    num_domains = m_source.number_of_children();
     for(int i = 0; i < num_domains; ++i)
     {
-      const conduit::Node &dom = data->child(i);
+      const conduit::Node &dom = m_source.child(i);
       if(dom.has_path("state/domain_id"))
       {
         no_ids = false;
@@ -418,7 +424,7 @@ AscentRuntime::EnsureDomainIds()
 #endif
     for(int i = 0; i < num_domains; ++i)
     {
-      conduit::Node &dom = data->child(i);
+      conduit::Node &dom = m_source.child(i);
 
       if(!dom.has_path("state/domain_id"))
       {
@@ -974,14 +980,13 @@ void
 AscentRuntime::PopulateMetadata()
 {
   // add global state meta data to the registry
-  const conduit::Node *data = m_data_object.as_node().get();
-  const int num_domains = data->number_of_children();
+  const int num_domains = m_source.number_of_children();
   int cycle = 0;
   float time = 0.f;
 
   for(int i = 0; i < num_domains; ++i)
   {
-    const conduit::Node &dom = data->child(i);
+    const conduit::Node &dom = m_source.child(i);
     if(dom.has_path("state/cycle"))
     {
       cycle = dom["state/cycle"].to_int32();
@@ -1010,10 +1015,18 @@ AscentRuntime::PopulateMetadata()
 void
 AscentRuntime::ConnectSource()
 {
+    // There is no promise that all data can be zero copied
+    // and conversions to vtkh/low order will be invalid.
+    // We must reset the source object
+    conduit::Node *data_node = new conduit::Node();
+    data_node->set_external(m_source);
+    m_data_object.reset(data_node);
+
+    SourceFieldFilter();
+
     // note: if the reg entry for data was already added
     // the set_external updates everything,
     // we don't need to remove and re-add.
-
 
     if(!w.registry().has_entry("_ascent_input_data"))
     {
@@ -1487,6 +1500,22 @@ AscentRuntime::Execute(const conduit::Node &actions)
 
         if(different_actions)
         {
+          if(m_field_filtering)
+          {
+            // check to see if we can determine what
+            // fields the actions need
+            conduit::Node info;
+            bool success = field_list(actions, m_field_list, info);
+            if(!success)
+            {
+              ASCENT_ERROR("Field filtering failed: "<<info.to_yaml());
+            }
+            if(m_field_list.size() == 0)
+            {
+              ASCENT_ERROR("Field filtering failed to find any fields");
+            }
+          }
+
           // destroy existing graph an start anew
           w.reset();
           ConnectSource();
@@ -1624,7 +1653,49 @@ AscentRuntime::RegisterFilterType(const std::string  &role_path,
     }
 }
 
+//-----------------------------------------------------------------------------
+void AscentRuntime::SourceFieldFilter()
+{
+  if(!m_field_filtering)
+  {
+    return;
+  }
 
+  bool high_order = m_data_object.source() == DataObject::Source::HIGH_BP;
+  conduit::Node *data = m_data_object.as_node().get();
+  const int num_domains = data->number_of_children();
+  for(int i = 0; i < num_domains; ++i)
+  {
+    conduit::Node &dom = data->child(i);
+    if(dom.has_path("fields"))
+    {
+
+      const int num_fields = dom["fields"].number_of_children();
+      std::vector<std::string> names = dom["fields"].child_names();
+      for(int f = 0; f < num_fields; ++f)
+      {
+        if(high_order)
+        {
+          // handle special mfem fields
+          if(names[f] == "element_attribute" ||
+             names[f] == "boundary_attribute" ||
+             names[f] == "mesh_nodes")
+          {
+            continue;
+          }
+        }
+        if(std::find(m_field_list.begin(),
+                     m_field_list.end(),
+                     names[f]) == m_field_list.end())
+        {
+          // remove the field
+          dom.remove("fields/"+names[f]);
+        }
+      } // for fields
+    }
+  } // for doms
+
+}
 
 
 
