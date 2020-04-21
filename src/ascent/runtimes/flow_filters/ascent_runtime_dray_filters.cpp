@@ -1279,8 +1279,10 @@ DRayProject2d::verify_params(const conduit::Node &params,
 
     valid_paths.push_back("image_width");
     valid_paths.push_back("image_height");
+    valid_paths.push_back("fields");
 
     ignore_paths.push_back("camera");
+    ignore_paths.push_back("fields");
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
@@ -1329,13 +1331,31 @@ DRayProject2d::execute()
       height = params()["image_height"].to_int32();
     }
 
+    std::vector<std::string> field_selection;
+    if(params().has_path("fields"))
+    {
+      const conduit::Node &flist = params()["fields"];
+      const int num_fields = flist.number_of_children();
+      if(num_fields == 0)
+      {
+        ASCENT_ERROR("dray_project_2d  field selection list must be non-empty");
+      }
+      for(int i = 0; i < num_fields; ++i)
+      {
+        const conduit::Node &f = flist.child(i);
+        if(!f.dtype().is_string())
+        {
+           ASCENT_ERROR("relay_io_save field selection list values must be a string");
+        }
+        field_selection.push_back(f.as_string());
+      }
+    }
+
     dray::Camera camera;
     camera.set_width(width);
     camera.set_height(height);
     dray::AABB<3> bounds = dcol->get_global_bounds();
     camera.reset_to_bounds(bounds);
-
-    //std::cout<<camera.print()<<"\n";
 
     std::vector<float> clipping(2);
     clipping[0] = 0.01f;
@@ -1361,11 +1381,16 @@ DRayProject2d::execute()
       std::shared_ptr<dray::Surface> surface =
         std::make_shared<dray::Surface>(faces.m_domains[i]);
       dray::ScalarRenderer renderer(surface);
-      renderer.field_names(faces.m_domains[i].fields());
-      if(i == 0)
+      if(field_selection.size() == 0)
       {
         field_names = faces.m_domains[i].fields();
       }
+      else
+      {
+        field_names = field_selection;
+      }
+
+      renderer.field_names(field_names);
 
       dray::ScalarBuffer buffer = renderer.render(camera);
       vtkh::PayloadImage *pimage = detail::convert(buffer);
