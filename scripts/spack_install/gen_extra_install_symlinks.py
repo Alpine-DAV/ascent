@@ -112,7 +112,7 @@ def main():
     install_path = sys.argv[1]
     pkgs = []
     if len(sys.argv) > 2:
-        packages = sys.argv[2:]
+        pkgs = sys.argv[2:]
     pkgs = [find_pkg(pkg,pjoin(install_path,"spack")) for pkg in pkgs]
     if len(pkgs) > 0:
         gen_symlinks(install_path, pkgs)
