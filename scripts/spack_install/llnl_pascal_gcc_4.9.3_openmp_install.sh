@@ -10,6 +10,7 @@ export ASCENT_VERSION=0.5.2-pre
 export DEST_DIR=${BASE_DIR}/${ASCENT_VERSION}/toss_3_x86_64_ib/openmp/gnu
 mkdir -p $DEST_DIR
 python scripts/uberenv/uberenv.py --spec="%gcc" \
+       --pull \
        --install \
        --spack-config-dir="scripts/uberenv/spack_configs/llnl/pascal_openmp/" \
        --prefix=${DEST_DIR}

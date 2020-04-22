@@ -9,6 +9,7 @@ export ASCENT_VERSION=0.5.2-pre
 export DEST_DIR=$WORLDWORK/csc340/software/ascent/${ASCENT_VERSION}/summit/openmp/gnu
 mkdir -p $DEST_DIR
 python scripts/uberenv/uberenv.py --spec="%gcc" \
+       --pull \
        --install \
        --spack-config-dir="scripts/uberenv/spack_configs/olcf/summit_openmp/" \
        --prefix=${DEST_DIR}

@@ -9,6 +9,7 @@ export ASCENT_VERSION=0.5.2-pre
 export DEST_DIR=/project/projectdirs/alpine/software/ascent/${ASCENT_VERSION}/cori/gnu
 mkdir -p $DEST_DIR
 python scripts/uberenv/uberenv.py --spec="%gcc" \
+       --pull \
        --install \
        --spack-config-dir="scripts/uberenv/spack_configs/nersc/cori/" \
        --prefix=${DEST_DIR}
