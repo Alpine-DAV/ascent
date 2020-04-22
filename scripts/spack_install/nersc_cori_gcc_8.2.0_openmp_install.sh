@@ -14,6 +14,8 @@ python scripts/uberenv/uberenv.py --spec="%gcc" \
        --spack-config-dir="scripts/uberenv/spack_configs/nersc/cori/" \
        --prefix=${DEST_DIR}
 
+# gen symlinks to important deps
+python scripts/spack_install/gen_extra_install_symlinks.py ${DEST_DIR} cmake python conduit
 # gen env helper script
 rm public_env.sh
 python scripts/spack_install/gen_public_install_env_script.py ${DEST_DIR} gcc/8.2.0
