@@ -94,7 +94,7 @@ def find_pkg(pkg_name, spath = None):
     print("[Warning: failed to find package named '{}', skipping]".format(pkg_name))
     return None
 
-def gen_symlinks(install_path, pkgs, modules):
+def gen_symlinks(install_path, pkgs):
     for p in pkgs:
         if not p is None:
             print("[found {} at {}]".format(p["name"],p["path"]))
