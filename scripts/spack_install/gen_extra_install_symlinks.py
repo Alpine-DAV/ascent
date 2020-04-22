@@ -101,12 +101,10 @@ def gen_symlinks(install_path, pkgs):
             # check for existing symlink
             p_lnk_dest = pjoin(install_path,"{}-install".format(p["name"]))
             if os.path.isdir(p_lnk_dest):
-                print("it exists! {}".format(p_lnk_dest))
-                #os.unlink(p_lnk_dest)
+                os.unlink(p_lnk_dest)
             # create it:
-            print("creating ",p["path"],p_lnk_dest)
-            #os.symlink(p["path"],p_lnk_dest)
-            print("[created {}-install symlink to ]".format(p["name"],p["path"]))
+            os.symlink(p["path"],p_lnk_dest)
+            print("[created {}-install symlink to {} ]".format(p["name"],p["path"]))
 
 def main():
     install_path = sys.argv[1]
