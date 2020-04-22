@@ -297,6 +297,7 @@ TEST(ascent_devil_ray, test_scalar_rendering)
     conduit::Node &params = pipelines["pl1/f1/params"];
     params["image_width"] = 512;
     params["image_height"] = 512;
+    params["fields"].append() = "density";
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
