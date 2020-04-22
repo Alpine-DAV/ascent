@@ -10,6 +10,7 @@ export BASE_DIR=$WORLDWORK/csc340/software/ascent
 export DEST_DIR=$BASE_DIR/${ASCENT_VERSION}/summit/cuda/gnu
 mkdir -p $DEST_DIR
 python scripts/uberenv/uberenv.py --spec="%gcc" \
+       --pull \
        --install \
        --spack-config-dir="scripts/uberenv/spack_configs/olcf/summit/" \
        --prefix=${DEST_DIR}

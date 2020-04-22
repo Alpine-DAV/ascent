@@ -10,6 +10,7 @@ export ASCENT_VERSION=0.5.2-pre
 export DEST_DIR=${BASE_DIR}/${ASCENT_VERSION}/lassen/openmp/gnu
 mkdir -p $DEST_DIR
 python scripts/uberenv/uberenv.py --spec="%gcc +openmp" \
+       --pull \
        --install \
        --spack-config-dir="scripts/uberenv/spack_configs/blueos_3_ppc64le_ib_p9" \
        --prefix=${DEST_DIR}
