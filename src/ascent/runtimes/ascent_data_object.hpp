@@ -88,6 +88,10 @@ public:
 #if defined(ASCENT_VTKM_ENABLED)
   DataObject(VTKHCollection *dataset);
   std::shared_ptr<VTKHCollection> as_vtkh_collection();
+
+  bool                            is_vtkh_coll_exists() const { return m_vtkh != nullptr; }
+  void                            reset_vtkh_collection();
+
 #endif
 #if defined(ASCENT_DRAY_ENABLED)
   DataObject(DRayCollection *dataset);

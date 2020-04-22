@@ -85,6 +85,8 @@ std::string ASCENT_API output_dir(const std::string file_name,
 
 std::string ASCENT_API default_dir(flow::Graph &graph);
 
+std::string ASCENT_API filter_to_path(const std::string filter_name);
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

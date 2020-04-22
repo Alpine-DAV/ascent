@@ -221,6 +221,12 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
   ASCENT_ERROR("this should never happen");
   return nullptr;
 }
+
+void DataObject::reset_vtkh_collection()
+{
+  if(m_source != Source::VTKH)
+    m_vtkh.reset();
+}
 #endif
 
 std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()

@@ -44,78 +44,66 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_string_utils.cpp
+/// file: ascent_mpi_utils.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_string_utils.hpp"
-#include <map>
-#include <sstream>
-#include <stdio.h>
+#include "ascent_mpi_utils.hpp"
+#include <flow.hpp>
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
 namespace ascent
 {
+//
+// returns true if all ranks say true
+//
+bool global_agreement(bool vote)
+{
+  bool agreement = vote;
+#ifdef ASCENT_MPI_ENABLED
+  int local_boolean = vote ? 1 : 0;
+  int global_boolean;
 
-namespace detail
-{
-void split_string(const std::string &s,
-                  char delim,
-                  std::vector<std::string> &elems)
-{
-  std::stringstream ss(s);
-  std::string item;
-  while(std::getline(ss, item, delim))
+  int comm_id = flow::Workspace::default_mpi_comm();
+  MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+  MPI_Allreduce((void *)(&local_boolean),
+                (void *)(&global_boolean),
+                1,
+                MPI_INT,
+                MPI_SUM,
+                mpi_comm);
+
+  if(global_boolean != mpi_size())
   {
-    elems.push_back(item);
+    agreement = false;
   }
+#endif
+  return agreement;
 }
 
-} // namespace detail
-
-std::string expand_family_name(const std::string name, int counter)
+int mpi_size()
 {
-  if(counter == 0)
-  {
-    static std::map<std::string, int> s_file_family_map;
-    bool exists = s_file_family_map.find(name) != s_file_family_map.end();
-    if(!exists)
-    {
-      s_file_family_map[name] = counter;
-    }
-    else
-    {
-      counter = s_file_family_map[name];
-      s_file_family_map[name] = counter + 1;
-    }
-  }
-
-  std::string result;
-  bool has_format = name.find("%") != std::string::npos;
-  if(has_format)
-  {
-    // allow for long file paths
-    char buffer[1000];
-    sprintf(buffer, name.c_str(), counter);
-    result = std::string(buffer);
-  }
-  else
-  {
-    std::stringstream ss;
-    ss<<name<<counter;
-    result = ss.str();
-  }
-  return result;
+  int comm_size = 1;
+#ifdef ASCENT_MPI_ENABLED
+  int comm_id = flow::Workspace::default_mpi_comm();
+  MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+  MPI_Comm_size(mpi_comm, &comm_size);
+#endif
+  return comm_size;
 }
 
-std::vector<std::string> split(const std::string &s, char delim)
+int mpi_rank()
 {
-  std::vector<std::string> elems;
-  detail::split_string(s, delim, elems);
-  return elems;
+  int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+  int comm_id = flow::Workspace::default_mpi_comm();
+  MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+  MPI_Comm_rank(mpi_comm, &rank);
+#endif
+  return rank;
 }
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

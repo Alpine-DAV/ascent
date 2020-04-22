@@ -66,7 +66,9 @@
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_file_system.hpp>
+#include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
+#include <ascent_runtime_param_check.hpp>
 
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -158,6 +160,7 @@ void make_domain_ids(conduit::Node &domains)
 //
 bool clean_mesh(const conduit::Node &data, conduit::Node &output)
 {
+  output.reset();
   const int potential_doms = data.number_of_children();
   bool maybe_multi_dom = true;
 
@@ -181,7 +184,7 @@ bool clean_mesh(const conduit::Node &data, conduit::Node &output)
       }
     }
   }
-  // if there is nothing in the outut, lets see if it is a
+  // if there is nothing in the output, lets see if it is a
   // valid single domain
   if(output.number_of_children() == 0)
   {
@@ -281,6 +284,34 @@ void filter_fields(const conduit::Node &input,
     }
   }
 
+  const int num_out_doms = output.number_of_children();
+  bool has_data = false;
+  // check to see if this resulted in any data
+  for(int d = 0; d < num_out_doms; ++d)
+  {
+    const conduit::Node &dom = output.child(d);
+    if(dom.has_path("fields"))
+    {
+      int fsize = dom["fields"].number_of_children();
+      if(fsize != 0)
+      {
+        has_data = true;
+        break;
+      }
+    }
+  }
+
+  has_data = global_agreement(has_data);
+  if(!has_data)
+  {
+    ASCENT_ERROR("Relay: field selection resulted in no data."
+                 "This can occur if the fields did not exist "
+                 "in the simulaiton data or if the fields were "
+                 "created as a result of a pipeline, but the "
+                 "relay extract did not recieve the result of "
+                 "a pipeline");
+  }
+
 }
 //-----------------------------------------------------------------------------
 };
@@ -332,18 +363,90 @@ verify_io_params(const conduit::Node &params,
         }
     }
 
+    if( params.has_child("num_files") )
+    {
+        if(!params["num_files"].dtype().is_integer())
+        {
+            info["errors"].append() = "optional entry 'num_files' must be an integer";
+            res = false;
+        }
+        else
+        {
+            info["info"].append() = "includes 'num_files'";
+        }
+    }
+    
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
+    valid_paths.push_back("path");
+    valid_paths.push_back("protocol");
+    valid_paths.push_back("fields");
+    valid_paths.push_back("num_files");
+    ignore_paths.push_back("fields");
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
     return res;
 }
 
+//-----------------------------------------------------------------------------
+void gen_domain_to_file_map(int num_domains,
+                            int num_files,
+                            Node &out)
+{
+    int num_domains_per_file = num_domains / num_files;
+    int left_overs = num_domains % num_files;
+
+    out["global_domains_per_file"].set(DataType::int32(num_files));
+    out["global_domain_offsets"].set(DataType::int32(num_files));
+    out["global_domain_to_file"].set(DataType::int32(num_domains));
+    
+    int32_array v_domains_per_file = out["global_domains_per_file"].value();
+    int32_array v_domains_offsets  = out["global_domain_offsets"].value();
+    int32_array v_domain_to_file   = out["global_domain_to_file"].value();
+    
+    // setup domains per file
+    for(int f=0; f < num_files; f++)
+    {
+        v_domains_per_file[f] = num_domains_per_file;
+        if( f < left_overs)
+            v_domains_per_file[f]+=1;
+    }
+
+    // prefix sum to calc offsets
+    for(int f=0; f < num_files; f++)
+    {
+        v_domains_offsets[f] = v_domains_per_file[f];
+        if(f > 0)
+            v_domains_offsets[f] += v_domains_offsets[f-1];
+    }
+    
+    // do assignment, create simple map
+    int f_idx = 0;
+    for(int d=0; d < num_domains; d++)
+    {
+        if(d >= v_domains_offsets[f_idx])
+            f_idx++;
+        v_domain_to_file[d] = f_idx;
+    }
+}
 
 //-----------------------------------------------------------------------------
 void mesh_blueprint_save(const Node &data,
                          const std::string &path,
-                         const std::string &file_protocol)
+                         const std::string &file_protocol,
+                         int num_files)
 {
     // The assumption here is that everything is multi domain
 
     Node multi_dom;
+
     bool is_valid = detail::clean_mesh(data, multi_dom);
 
     int par_rank = 0;
@@ -373,15 +476,16 @@ void mesh_blueprint_save(const Node &data,
       return;
     }
 
-    int num_domains = multi_dom.number_of_children();
+    int local_num_domains = multi_dom.number_of_children();
     // figure out what cycle we are
-    if(num_domains > 0 && is_valid)
+    if(local_num_domains > 0 && is_valid)
     {
       Node dom = multi_dom.child(0);
       if(!dom.has_path("state/cycle"))
       {
         static std::map<string,int> counters;
-        ASCENT_INFO("no 'state/cycle' present. Defaulting to counter");
+        ASCENT_INFO("Blueprint save: no 'state/cycle' present."
+                    " Defaulting to counter");
         cycle = counters[path];
         counters[path]++;
       }
@@ -404,7 +508,7 @@ void mesh_blueprint_save(const Node &data,
 #endif
 
     // setup the directory
-    char fmt_buff[64];
+    char fmt_buff[64] = {0};
     snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
 
     std::string output_base_path = path;
@@ -426,7 +530,9 @@ void mesh_blueprint_save(const Node &data,
             dir_ok = create_directory(output_dir);
         }
     }
-    int global_domains = num_domains;
+
+    int global_num_domains = local_num_domains;
+
 #ifdef ASCENT_MPI_ENABLED
     // TODO:
     // This a reduce to check for an error ...
@@ -446,43 +552,211 @@ void mesh_blueprint_save(const Node &data,
 
     dir_ok = (n_reduce.as_int() == 1);
 
-    n_src = num_domains;
+    n_src = local_num_domains;
 
     mpi::sum_all_reduce(n_src,
                         n_reduce,
                         mpi_comm);
 
-    global_domains = n_reduce.as_int();
+    global_num_domains = n_reduce.as_int();
 #endif
 
-    if(global_domains == 0)
+    if(global_num_domains == 0)
     {
       if(par_rank == 0)
       {
-          ASCENT_WARN("There no data to save. Doing nothing");
+          ASCENT_WARN("There no data to save. Doing nothing.");
       }
       return;
+    }
+
+
+    // zero or negative (default cases), use one file per domain
+    if(num_files <= 0)
+    {
+        num_files = global_num_domains;
+    }
+
+    // if global domains > num_files, warn and use one file per domain
+    if(global_num_domains < num_files)
+    {
+        ASCENT_INFO("Requested more files than actual domains, "
+                    "writing one file per domain");
+        num_files = global_num_domains;
     }
 
     if(!dir_ok)
     {
         ASCENT_ERROR("Error: failed to create directory " << output_dir);
     }
-    // write out each domain
-    for(int i = 0; i < num_domains; ++i)
-    {
-        const Node &dom = multi_dom.child(i);
-        uint64 domain = dom["state/domain_id"].to_uint64();
 
-        snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain);
-        oss.str("");
-        oss << "domain_" << fmt_buff << "." << file_protocol;
-        string output_file  = conduit::utils::join_file_path(output_dir,oss.str());
-        relay::io::save(dom, output_file);
+    if(global_num_domains == num_files)
+    {
+        // write out each domain
+        for(int i = 0; i < local_num_domains; ++i)
+        {
+            const Node &dom = multi_dom.child(i);
+            uint64 domain = dom["state/domain_id"].to_uint64();
+
+            snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain);
+            oss.str("");
+            oss << "domain_" << fmt_buff << "." << file_protocol;
+            string output_file  = conduit::utils::join_file_path(output_dir,oss.str());
+            relay::io::save(dom, output_file);
+        }
+    }
+    else // more complex case
+    {
+        //
+        // recall: we have re-labeled domain ids from 0 - > N-1, however
+        // some mpi tasks may have no data.
+        //
+
+        // books we keep:
+
+        Node books;
+        books["local_domain_to_file"].set(DataType::int32(local_num_domains));
+        books["local_domain_status"].set(DataType::int32(local_num_domains));
+        books["local_file_batons"].set(DataType::int32(num_files));
+        books["global_file_batons"].set(DataType::int32(num_files));
+
+        // local # of domains
+        int32_array local_domain_to_file = books["local_domain_to_file"].value();
+        int32_array local_domain_status  = books["local_domain_status"].value();
+        // num total files
+        int32_array local_file_batons    = books["local_file_batons"].value();
+        int32_array global_file_batons   = books["global_file_batons"].value();
+
+        Node d2f_map;
+        gen_domain_to_file_map(global_num_domains,
+                               num_files,
+                               books);
+
+        int32_array global_d2f = books["global_domain_to_file"].value();
+
+        // init our local map and status array
+        for(int d = 0; d < local_num_domains; ++d)
+        {
+            const Node &dom = multi_dom.child(d);
+            uint64 domain = dom["state/domain_id"].to_uint64();
+            // local domain index to file map
+            local_domain_to_file[d] = global_d2f[domain];
+            local_domain_status[d] = 1; // pending (1), vs done (0)
+        }
+
+        //
+        // Round and round we go, will we deadlock I believe no :-)
+        //
+        // Here is how this works:
+        //  At each round, if a rank has domains pending to write to a file, 
+        //  we put the rank id in the local file_batons vec.
+        //  This vec is then mpi max'ed, and the highest rank
+        //  that needs access to each file will write this round.
+        // 
+        //  When a rank does not need to write to a file, we 
+        //  put -1 for this rank.
+        //
+        //  During each round, max of # files writers are participating
+        //
+        //  We are done when the mpi max of the batons is -1 for all files.
+        //
+
+        bool another_twirl = true;
+        int twirls = 0;
+        while(another_twirl)
+        {
+            // update baton requests
+            for(int f = 0; f < num_files; ++f)
+            {
+                for(int d = 0; d < local_num_domains; ++d)
+                {
+                    if(local_domain_status[d] == 1)
+                        local_file_batons[f] = par_rank;
+                    else
+                        local_file_batons[f] = -1;
+                }
+            }
+
+            // mpi max file batons array
+            #ifdef ASCENT_MPI_ENABLED
+                mpi::max_all_reduce(books["local_file_batons"],
+                                    books["global_file_batons"],
+                                    mpi_comm);
+            #else
+                global_file_batons.set(local_file_batons);
+            #endif
+
+            // we now have valid batons (global_file_batons)
+            for(int f = 0; f < num_files; ++f)
+            {
+                // check if this rank has the global baton for this file
+                if( global_file_batons[f] == par_rank )
+                {
+                    // check the domains this rank has pending
+                    for(int d = 0; d < local_num_domains; ++d)
+                    {
+                        // reuse this handle for all domains in the file
+                        relay::io::IOHandle hnd;
+                        if(local_domain_status[d] == 1 &&  // pending
+                           local_domain_to_file[d] == f) // destined for this file
+                        {
+                            // now is the time to write!
+                            // pattern is:
+                            //  file_%06llu.{protocol}:/domain_%06llu/...
+                            const Node &dom = multi_dom.child(d);
+                            uint64 domain_id = dom["state/domain_id"].to_uint64();
+                            // construct file name
+                            snprintf(fmt_buff, sizeof(fmt_buff), "%06d",f);
+                            oss.str("");
+                            oss << "file_" << fmt_buff << "." << file_protocol;
+                            std::string file_name = oss.str();
+                            oss.str("");
+                            // and now domain id
+                            snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain_id);
+                            oss << "domain_" << fmt_buff;
+
+                            std::string path = oss.str();
+                            string output_file = conduit::utils::join_file_path(output_dir,file_name);
+
+                            if(!hnd.is_open())
+                            {
+                                hnd.open(output_file);
+                            }
+
+                            hnd.write(dom,path);
+                            ASCENT_INFO("rank " << par_rank << " output_file"
+                                      << output_file << " path " << path);
+
+                            // update status, we are done with this doman
+                            local_domain_status[d] = 0;
+                        }
+                    }
+                }
+            }
+
+            // If you  need to debug the baton alog:
+            // std::cout << "[" << par_rank << "] "
+            //              << " twirls: " << twirls
+            //              << " details\n"
+            //              << books.to_yaml();
+
+            // check if we have another round
+            // stop when all batons are -1
+            another_twirl = false;
+            for(int f = 0; f < num_files && !another_twirl; ++f)
+            {
+                // if any entry is not -1, we still have more work to do
+                if(global_file_batons[f] != -1)
+                {
+                    another_twirl = true;
+                    twirls++;
+                }
+            }
+        }
     }
 
     int root_file_writer = 0;
-    if(num_domains == 0)
+    if(local_num_domains == 0)
     {
       root_file_writer = -1;
     }
@@ -490,7 +764,7 @@ void mesh_blueprint_save(const Node &data,
     // Rank 0 could have an empty domain, so we have to check
     // to find someone with a data set to write out the root file.
     Node out;
-    out = num_domains;
+    out = local_num_domains;
     Node rcv;
 
     mpi::all_gather_using_schema(out, rcv, mpi_comm);
@@ -513,6 +787,7 @@ void mesh_blueprint_save(const Node &data,
         // this should not happen. global doms is already 0
         ASCENT_WARN("Relay: there are no domains to write out");
     }
+
     // let rank zero write out the root file
     if(par_rank == root_file_writer)
     {
@@ -534,8 +809,21 @@ void mesh_blueprint_save(const Node &data,
                                       output_dir_base,
                                       output_dir_path);
 
-        string output_file_pattern = conduit::utils::join_file_path(output_dir_base,
-                                                                    "domain_%06d." + file_protocol);
+        string output_tree_pattern;
+        string output_file_pattern;
+
+        if(global_num_domains == num_files)
+        {
+            output_tree_pattern = "/";
+            output_file_pattern = conduit::utils::join_file_path(output_dir_base,
+                                                                 "domain_%06d." + file_protocol);
+        }
+        else
+        {
+            output_tree_pattern = "/domain_%06d";
+            output_file_pattern = conduit::utils::join_file_path(output_dir_base,
+                                                                 "file_%06d." + file_protocol);
+        }
 
 
         Node root;
@@ -543,7 +831,7 @@ void mesh_blueprint_save(const Node &data,
 
         blueprint::mesh::generate_index(multi_dom.child(0),
                                         "",
-                                        global_domains,
+                                        global_num_domains,
                                         bp_idx["mesh"]);
 
         // work around conduit and manually add state fields
@@ -557,15 +845,14 @@ void mesh_blueprint_save(const Node &data,
           bp_idx["mesh/state/time"] = multi_dom.child(0)["state/time"].to_double();
         }
 
-        root["protocol/name"]    =  file_protocol;
+        root["protocol/name"]    = file_protocol;
         root["protocol/version"] = "0.5.1";
 
-        root["number_of_files"]  = global_domains;
-        // for now we will save one file per domain, so trees == files
-        root["number_of_trees"]  = global_domains;
+        root["number_of_files"]  = num_files;
+        root["number_of_trees"]  = global_num_domains;
         // TODO: make sure this is relative
         root["file_pattern"]     = output_file_pattern;
-        root["tree_pattern"]     = "/";
+        root["tree_pattern"]     = output_tree_pattern;
 
         relay::io::save(root,root_file,file_protocol);
     }
@@ -611,7 +898,7 @@ RelayIOSave::execute()
     std::string path, protocol;
     path = params()["path"].as_string();
     path = output_dir(path, graph());
-    // TODO check if we need to expand the path (MPI) case for std protocols
+
     if(params().has_child("protocol"))
     {
         protocol = params()["protocol"].as_string();
@@ -656,17 +943,28 @@ RelayIOSave::execute()
       selected.set_external(*in);
     }
 
+    int num_files = -1;
+
+    if(params().has_path("num_files"))
+    {
+        num_files = params()["num_files"].to_int();
+    }
+
     if(protocol.empty())
     {
         conduit::relay::io::save(selected,path);
     }
     else if( protocol == "blueprint/mesh/hdf5")
     {
-        mesh_blueprint_save(selected,path,"hdf5");
+        mesh_blueprint_save(selected,path,"hdf5",num_files);
     }
     else if( protocol == "blueprint/mesh/json")
     {
-        mesh_blueprint_save(selected,path,"json");
+        mesh_blueprint_save(selected,path,"json",num_files);
+    }
+    else if( protocol == "blueprint/mesh/yaml")
+    {
+        mesh_blueprint_save(selected,path,"yaml",num_files);
     }
     else
     {

@@ -65,6 +65,9 @@ if(MPI_FOUND)
         DEPENDS_ON  ${ascent_babelflow_example_deps}
         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
+  install(TARGETS ascent_babelflow_example
+      EXPORT  ascent
+      LIBRARY DESTINATION examples/ascent/babelflow/pmt
+      ARCHIVE DESTINATION examples/ascent/babelflow/pmt
+      RUNTIME DESTINATION examples/ascent/babelflow/pmt)
 endif()
-
-
