@@ -543,10 +543,20 @@ stages:
            echo $SPACK_SPEC
            # run uber to build tpls
            python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_cuda/
-           # lets cleanup the spack build stuff to free up space
-           uberenv_libs/spack/bin/spack clean --all
         displayName: 'Spack Build Tpls'
-
+      - script: |
+           #################################
+           # spack cleanup
+           #################################
+           echo "uberenv_libs usage: pre spack cleanup"
+           du -sh uberenv_libs
+           # lets cleanup the spack build stuff to free up disk space
+           uberenv_libs/spack/bin/spack clean --all
+           echo "uberenv_libs usage: post spack cleanup"
+           du -sh uberenv_libs
+           echo "total usage (/)"
+           du -sh /
+        displayName: 'Spack Cleanup'
       - script: |
            #################################
            # configure
