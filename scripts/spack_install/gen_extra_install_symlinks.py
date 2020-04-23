@@ -94,39 +94,28 @@ def find_pkg(pkg_name, spath = None):
     print("[Warning: failed to find package named '{}', skipping]".format(pkg_name))
     return None
 
-def path_cmd(pkg):
-    return('export PATH={}:$PATH\n'.format((pjoin(pkg["path"],"bin"))))
-
-def write_env_script(install_path, pkgs, modules):
-    ofile = open("public_env.sh","w")
-    ofile.write("#!/bin/bash\n")
-    ofile.write("#\n# ascent env helper script\n#\n\n")
-    ofile.write("# modules\n")
-    for m in modules:
-        ofile.write("# {}\n".format(m))
-        ofile.write("module load {}\n".format(m))
-    ofile.write("\n#spack built packages\n")
+def gen_symlinks(install_path, pkgs):
     for p in pkgs:
         if not p is None:
             print("[found {} at {}]".format(p["name"],p["path"]))
-            ofile.write("# {}\n".format(p["name"]))
-            ofile.write(path_cmd(p))
-            ofile.write("\n")
-    ofile.write("# ascent install path\n")
-    ofile.write("export ASCENT_DIR={}/ascent-install\n".format(os.path.abspath(install_path)))
-    print("[created {}]".format(os.path.abspath("public_env.sh")))
+            # check for existing symlink
+            p_lnk_dest = pjoin(install_path,"{}-install".format(p["name"]))
+            if os.path.isdir(p_lnk_dest):
+                os.unlink(p_lnk_dest)
+            # create it:
+            os.symlink(p["path"],p_lnk_dest)
+            print("[created {}-install symlink to {} ]".format(p["name"],p["path"]))
 
 def main():
     install_path = sys.argv[1]
-    modules = []
+    pkgs = []
     if len(sys.argv) > 2:
-        modules = sys.argv[2:]
-    pkgs = ["cmake", "python"]
+        pkgs = sys.argv[2:]
     pkgs = [find_pkg(pkg,pjoin(install_path,"spack")) for pkg in pkgs]
     if len(pkgs) > 0:
-        write_env_script(install_path, pkgs, modules)
+        gen_symlinks(install_path, pkgs)
     else:
-        print("usage: python gen_public_install.py path modules")
+        print("usage: python gen_public_install.py path packages")
 
 if __name__ == "__main__":
     main()

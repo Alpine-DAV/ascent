@@ -1,3 +1,5 @@
+#!/bin/bash
+set -e
 #
 # run at root of ascent repo
 #
@@ -8,10 +10,13 @@ export BASE_DIR=$WORLDWORK/csc340/software/ascent
 export DEST_DIR=$BASE_DIR/${ASCENT_VERSION}/summit/cuda/gnu
 mkdir -p $DEST_DIR
 python scripts/uberenv/uberenv.py --spec="%gcc" \
+       --pull \
        --install \
        --spack-config-dir="scripts/uberenv/spack_configs/olcf/summit/" \
        --prefix=${DEST_DIR}
 
+# gen symlinks to important deps
+python scripts/spack_install/gen_extra_install_symlinks.py ${DEST_DIR} cmake conduit
 # gen env helper script
 rm public_env.sh
 python scripts/spack_install/gen_public_install_env_script.py ${DEST_DIR} gcc/6.4.0 cuda
