@@ -556,6 +556,7 @@ stages:
            du -sh uberenv_libs
            echo "total usage (/)"
            du -sh /
+           echo "done with cleanup"
         displayName: 'Spack Cleanup'
       - script: |
            #################################
