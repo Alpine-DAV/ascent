@@ -150,6 +150,21 @@ stages:
 
       - script: |
            #################################
+           # spack cleanup
+           #################################
+           echo "uberenv_libs usage: pre spack cleanup"
+           du -sh uberenv_libs
+           # lets cleanup the spack build stuff to free up disk space
+           uberenv_libs/spack/bin/spack clean --all
+           echo "uberenv_libs usage: post spack cleanup"
+           du -sh uberenv_libs
+           echo "total usage (/)"
+           du -sh /
+           echo "done with cleanup"
+        displayName: 'Spack Cleanup'
+
+      - script: |
+           #################################
            # configure
            #################################
            # setup compiler env vars
@@ -238,6 +253,15 @@ stages:
            cd build
            make install
         displayName: 'Install'
+
+      - script: |
+           #################################
+           # install usage check
+           #################################
+           echo "total usage (/)"
+           du -sh /
+           echo "done with use check"
+        displayName: 'Install Usage Check'
 
       - script: |
           ###########################
@@ -363,6 +387,22 @@ stages:
            # run uber to build tpls
            python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_18/
         displayName: 'Spack Build Tpls'
+
+      - script: |
+           #################################
+           # spack cleanup
+           #################################
+           echo "uberenv_libs usage: pre spack cleanup"
+           du -sh uberenv_libs
+           # lets cleanup the spack build stuff to free up disk space
+           uberenv_libs/spack/bin/spack clean --all
+           echo "uberenv_libs usage: post spack cleanup"
+           du -sh uberenv_libs
+           echo "total usage (/)"
+           du -sh /
+           echo "done with cleanup"
+        displayName: 'Spack Cleanup'
+
       - script: |
            #################################
            # configure
@@ -455,6 +495,15 @@ stages:
         displayName: 'Install'
 
       - script: |
+           #################################
+           # install usage check
+           #################################
+           echo "total usage (/)"
+           du -sh /
+           echo "done with use check"
+        displayName: 'Install Usage Check'
+
+      - script: |
           ###########################
           # using with cmake example
           ###########################
@@ -544,6 +593,7 @@ stages:
            # run uber to build tpls
            python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_cuda/
         displayName: 'Spack Build Tpls'
+
       - script: |
            #################################
            # spack cleanup
@@ -558,6 +608,22 @@ stages:
            du -sh /
            echo "done with cleanup"
         displayName: 'Spack Cleanup'
+
+      - script: |
+           #################################
+           # spack cleanup
+           #################################
+           echo "uberenv_libs usage: pre spack cleanup"
+           du -sh uberenv_libs
+           # lets cleanup the spack build stuff to free up disk space
+           uberenv_libs/spack/bin/spack clean --all
+           echo "uberenv_libs usage: post spack cleanup"
+           du -sh uberenv_libs
+           echo "total usage (/)"
+           du -sh /
+           echo "done with cleanup"
+        displayName: 'Spack Cleanup'
+
       - script: |
            #################################
            # configure
@@ -583,6 +649,10 @@ stages:
            cd build
            # setup cmake options
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+           # compromise
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_TESTS=OFF"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_EXAMPLES=OFF"
+           export CMAKE_OPTS="${CMAKE_OPTS} -ENABLE_UTILS=OFF"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
            # configure
@@ -600,11 +670,29 @@ stages:
 
       - script: |
            #################################
+           # build usage check
+           #################################
+           echo "total usage (/)"
+           du -sh /
+           echo "done with use check"
+        displayName: 'Build Usage Check'
+
+      - script: |
+           #################################
            # install
            #################################
            cd build
            make install
         displayName: 'Install'
+
+      - script: |
+           #################################
+           # install usage check
+           #################################
+           echo "total usage (/)"
+           du -sh /
+           echo "done with use check"
+        displayName: 'Install Usage Check'
 
       - script: |
             #################################
