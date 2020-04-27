@@ -125,6 +125,18 @@ class DRayProject2d: public ::flow::Filter
 public:
     DRayProject2d();
     virtual ~DRayProject2d();
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class DRayReflect : public ::flow::Filter
+{
+public:
+    DRayReflect();
+    virtual ~DRayReflect();
 
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,

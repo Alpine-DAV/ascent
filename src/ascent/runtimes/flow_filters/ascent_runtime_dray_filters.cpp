@@ -92,6 +92,7 @@
 #include <dray/data_set.hpp>
 #include <dray/filters/mesh_boundary.hpp>
 
+#include <dray/filters/reflect.hpp>
 #include <dray/rendering/renderer.hpp>
 #include <dray/rendering/surface.hpp>
 #include <dray/rendering/slice_plane.hpp>
@@ -1237,6 +1238,121 @@ DRayVolume::execute()
       image_name = output_dir(image_name, graph());
       fb.save(image_name);
     }
+}
+
+//-----------------------------------------------------------------------------
+DRayReflect::DRayReflect()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+DRayReflect::~DRayReflect()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayReflect::declare_interface(Node &i)
+{
+    i["type_name"]   = "dray_reflect";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+DRayReflect::verify_params(const conduit::Node &params,
+                           conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+
+    res &= check_numeric("point/x",params, info, true);
+    res &= check_numeric("point/y",params, info, true);
+    res &= check_numeric("point/z",params, info, false);
+    res &= check_numeric("normal/x",params, info, true);
+    res &= check_numeric("normal/y",params, info, true);
+    res &= check_numeric("normal/z",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
+
+    valid_paths.push_back("point/x");
+    valid_paths.push_back("point/y");
+    valid_paths.push_back("point/z");
+    valid_paths.push_back("normal/x");
+    valid_paths.push_back("normal/y");
+    valid_paths.push_back("normal/z");
+
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayReflect::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("dray reflect input must be a DataObject");
+    }
+
+    DataObject *d_input = input<DataObject>(0);
+
+    DRayCollection *dcol = d_input->as_dray_collection().get();
+    int comm_id = -1;
+#ifdef ASCENT_MPI_ENABLED
+    comm_id = flow::Workspace::default_mpi_comm();
+#endif
+    dcol->mpi_comm(comm_id);
+
+
+
+    dray::Vec<float,3> point = {0.f, 0.f, 0.f};
+    point[0] = params()["point/x"].to_float32();
+    point[1] = params()["point/y"].to_float32();
+    if(params().has_path("point/z"))
+    {
+      point[2] = params()["point/z"].to_float32();
+    }
+
+    dray::Vec<float,3> normal= {0.f, 1.f, 0.f};
+    normal[0] = params()["normal/x"].to_float32();
+    normal[1] = params()["normal/y"].to_float32();
+    if(params().has_path("normal/z"))
+    {
+      normal[2] = params()["normal/z"].to_float32();
+    }
+
+    dray::Reflect reflector;
+    reflector.plane(point,normal);
+
+    DRayCollection *output = new DRayCollection();
+    const int num_domains = dcol->m_domains.size();
+    for(int i = 0; i < num_domains; ++i)
+    {
+      dray::DataSet dset = reflector.execute(dcol->m_domains[i]);
+      output->m_domains.push_back(dset);
+    }
+
+    for(int i = 0; i < num_domains; ++i)
+    {
+      output->m_domains.push_back(dcol->m_domains[i]);
+    }
+
+    DataObject *res =  new DataObject(output);
+    set_output<DataObject>(res);
 }
 
 
