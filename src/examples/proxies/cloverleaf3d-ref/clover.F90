@@ -97,7 +97,7 @@ SUBROUTINE clover_init_comms
 
   IMPLICIT NONE
 
-  INTEGER :: err,rank,size,color,rank_split,i
+  INTEGER :: err,rank,size,color,rank_split,i,provided
   INTEGER :: mpi_group_world,mpi_sim_group,sim_comm
   INTEGER, DIMENSION(:),ALLOCATABLE :: sim_ranks
 
@@ -105,7 +105,12 @@ SUBROUTINE clover_init_comms
   size=1
   color=0
 
-  CALL MPI_INIT(err)
+  CALL MPI_INIT_THREAD(MPI_THREAD_MULTIPLE, provided, err)
+  IF (provided .LT. MPI_THREAD_MULTIPLE) THEN
+    WRITE(*,'(A)') 'The threading support level is lesser than that demanded.'
+  ELSE
+    WRITE(*,'(A)') 'The threading support level corresponds to MPI_THREAD_MULTIPLE.'
+  END IF
 
   CALL MPI_COMM_RANK(MPI_COMM_WORLD,rank,err)
   CALL MPI_COMM_SIZE(MPI_COMM_WORLD,size,err)
