@@ -662,6 +662,12 @@ void post_irecv_renders(std::vector< std::vector< std::vector<int>>> &renders,
     }
 }
 
+template<typename T, typename... Args>
+unique_ptr<T> make_unique(Args&&... args) 
+{
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
 //-----------------------------------------------------------------------------
 void splitAndRender(const MPI_Comm mpi_comm_world,
                     const int world_size,
@@ -843,25 +849,22 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             sum_batches += b.runs;
 
         // senders / batches / buffer
-        std::vector< std::vector<Node> > render_chunks_sim(sending_count);
+        std::vector< std::vector< std::unique_ptr<Node> > > render_chunks_sim(sending_count);
         std::vector< std::vector<MPI_Request>> requests(sending_count);
         // pre-allocate the mpi receive buffers
         for (int i = 0; i < sending_count; i++)
-        {
+        {   
+            // int approx_size = calc_render_msg_size(batch_size, probing_count, probing_factor);
+            render_chunks_sim[i].resize(batches[i].runs);
+            requests[i].resize(batches[i].runs, MPI_REQUEST_NULL);
+
             for (int j = 0; j < batches[i].runs; ++j)
             {
                 int current_batch_size = (j == batches[i].runs - 1) ? batches[i].rest : batch_size;
                 int buffer_size = calc_render_msg_size(current_batch_size, probing_count, 
-                                                             probing_factor);
-                Node n_buffer(DataType::uint8(buffer_size));
-                render_chunks_sim[i].push_back(n_buffer);
+                                                       probing_factor);
+                render_chunks_sim[i][j] = make_unique<Node>(DataType::uint8(buffer_size));
             }
-
-            // render_chunks_sim[i].resize(batches[i].runs);
-            // for (size_t j = 0; j < render_chunks_sim[i].size(); j++)
-            //     render_chunks_sim[i][j].resize(dbg_size*sizeof(unsigned char), 10 + j+1);
-
-            requests[i].resize(batches[i].runs, MPI_REQUEST_NULL);
         }
 
         // post receives for the render chunks to receive asynchronous (non-blocking)
@@ -877,8 +880,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 if (current_batch_size == 0)
                     break;
 
-                int mpi_error = MPI_Irecv(render_chunks_sim[i][j].data_ptr(),
-                                          render_chunks_sim[i][j].total_bytes_compact(),
+                int mpi_error = MPI_Irecv(render_chunks_sim[i][j]->data_ptr(),
+                                          render_chunks_sim[i][j]->total_bytes_compact(),
                                           MPI_BYTE,
                                           src_ranks[i],
                                           tag_inline + j,
