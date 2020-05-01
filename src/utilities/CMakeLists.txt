@@ -53,4 +53,4 @@ add_subdirectory(holo_compare)
 
 # install visit scripts
 install(DIRECTORY visit_session_converters
-        DESTINATION examples/visit_session_converters)
+        DESTINATION utilities/ascent/visit_session_converters)
