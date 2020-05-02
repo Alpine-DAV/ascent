@@ -79,13 +79,11 @@ testSimulation()
         local base=${file%%.*}
         # normalized cross corelation
         local ncc
-        if ! ncc=$(compare -metric NCC "$file" "$(spack location --install-dir ascent)/examples/ascent/paraview-vis/tests/baseline_images/$sim/$file" "diff_${base}.png" 2>&1); then
-            echo "Error compare $file"
-            cd ..
-            return 1
-        fi
+        # don't test the return value as it returns 1 (error) if not exact comparison
+        ncc=$(compare -metric NCC "$file" "$(spack location --install-dir ascent)/examples/ascent/paraview-vis/tests/baseline_images/$sim/$file" "diff_${base}.png" 2>&1)
         local lessThan
         if ! lessThan=$(echo "${ncc} < 0.98" | bc -l); then
+            echo "Error: $file too different from baseline"
             return 1
         fi
         if [[ "$lessThan" == 1 ]]; then
@@ -155,13 +153,14 @@ testParaViewAscent()
     fi
     rm -f result.txt
     if [[ $installed -eq 0 && "$keep_going" -eq 0 ]]; then
-        echo "No new package installed, not need to run tests."
+        echo "No new package installed, no need to run tests."
     else
         echo "Remove older packages ..."
         local paraviewSha
         paraviewSha=$(removeOlder "$paraviewSpec")
         echo "$paraviewSha"
         paraviewSha=${paraviewSha#*: }
+        removeOlder mpich
         removeOlder py-mpi4py
         removeOlder py-numpy
         removeOlder python
@@ -188,7 +187,7 @@ testParaViewAscent()
             testsPassed=$((testsPassed + 1))
         fi
         echo "Tests passed: $testsPassed of 4"        
-        if [[ $testsPassed -lt 1 ]]; then
+        if [[ $testsPassed -ne 4 ]]; then
             return 1
         fi
     fi
@@ -234,7 +233,7 @@ main()
     fi
     echo "$result"
     if [[ "$result" = "Already up to date." && "$keep_going" -eq 0 ]]; then
-        echo "Success"
+        echo "Repository up to date, no need to run tests"
         return 0
     fi
     if [[ $keep_going -gt 0 ]]; then
@@ -246,7 +245,7 @@ main()
     if ! testParaViewAscent paraview@develop+python3+mpi+osmesa~opengl2~shared${build_dependency} ascent@develop~vtkh${build_dependency}; then
         return 1
     fi
-    echo "Success"
+    echo "All Ascent ParaView tests passed"
     return 0
 }
 
