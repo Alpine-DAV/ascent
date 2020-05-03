@@ -824,8 +824,9 @@ DRayPseudocolor::execute()
       dray::Framebuffer fb = renderer.render(camera);
 
       std::vector<float> clipping(2);
-      clipping[0] = 0.01f;
-      clipping[1] = 1000.f;
+      float dist  = (camera.get_look_at() - camera.get_pos()).magnitude();
+      clipping[0] = 0.01*dist;
+      clipping[1] = 100.f*dist;
       dray::Array<float32> depth = camera.gl_depth(fb.depths(), clipping[0], clipping[1]);
       depth_buffers.push_back(depth);
       color_buffers.push_back(fb.colors());
@@ -1018,8 +1019,9 @@ DRay3Slice::execute()
       dray::Framebuffer fb = renderer.render(camera);
 
       std::vector<float> clipping(2);
-      clipping[0] = 0.01f;
-      clipping[1] = 1000.f;
+      float dist  = (camera.get_look_at() - camera.get_pos()).magnitude();
+      clipping[0] = 0.01*dist;
+      clipping[1] = 100.f*dist;
       dray::Array<float32> depth = camera.gl_depth(fb.depths(), clipping[0], clipping[1]);
       depth_buffers.push_back(depth);
       color_buffers.push_back(fb.colors());
