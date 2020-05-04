@@ -23,6 +23,7 @@ python scripts/spack_install/gen_public_install_env_script.py ${DEST_DIR} gcc/6.
 chmod a+x public_env.sh
 cp public_env.sh $BASE_DIR/${ASCENT_VERSION}/summit/ascent_summit_setup_env_gcc_openmp.sh
 # change perms to group write
-chmod g+rwX -R /project/projectdirs/alpine/software/ascent/${ASCENT_VERSION}/
+chgrp -R csc340 $BASE_DIR/${ASCENT_VERSION}
+chmod g+rwX -R $BASE_DIR/${ASCENT_VERSION}
 # this space is already world readable, no need to change world perms
 date
