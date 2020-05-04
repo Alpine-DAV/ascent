@@ -662,11 +662,31 @@ void post_irecv_renders(std::vector< std::vector< std::vector<int>>> &renders,
     }
 }
 
+/**
+ * Make a unique pointer (for backward compatability, native since c++14).
+ */
 template<typename T, typename... Args>
 unique_ptr<T> make_unique(Args&&... args) 
 {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
+
+/**
+ * @return the number of probing renders in a given render sequence.
+ */
+int get_probing_count(const int render_offset, const int render_count, const int stride)
+{
+    int probing_count = 0;
+    for (int i = render_offset; i < render_offset + render_count; i++)
+    {
+        if (i % stride == 0)
+            ++probing_count;
+    }
+
+    return probing_count;
+}
+
+
 
 //-----------------------------------------------------------------------------
 void splitAndRender(const MPI_Comm mpi_comm_world,
@@ -703,9 +723,10 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     std::cout << "~~~ " << my_sim_estimate << " sec sim time estimate " 
               << world_rank << std::endl;
 
-    // max render count without probing renders
     const int probing_count = int(std::round(probing_factor*max_render_count));
+    // render count without probing renders
     const int render_count = max_render_count - probing_count;
+    const int probing_stride = max_render_count / (probing_factor*max_render_count);
 
     // nodes with the highest rank are our vis nodes
     if (world_rank >= sim_node_count) 
@@ -797,6 +818,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     const int height = 1024;
     const int channels = 4 + 1; // RGBA + depth
 
+    // common options for both sim and vis nodes
     Node ascent_opts, blank_actions;
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(mpi_comm_world);
     ascent_opts["actions_file"] = "cinema_actions.yaml";
@@ -839,10 +861,13 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             log_time(start, "- receive data ", world_rank);
         }
 
-        // every associated sim node sends 1-n batches of renders to this vis node
+        // every associated sim node sends n batches of renders to this vis node
         std::vector<RenderBatch> batches(sending_count);
         for (int i = 0; i < batches.size(); ++i)
-            batches[i] = get_batch(render_counts[src_ranks[i]], batch_size);
+        {
+            int render_count = render_counts[src_ranks[i]] + int(render_counts[src_ranks[i]]*probing_factor);
+            batches[i] = get_batch(render_count, batch_size);
+        }
 
         int sum_batches = 0;
         for (const auto &b : batches)
@@ -877,7 +902,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             {
                 // correct size for last iteration
                 const int current_batch_size = (j == batches[i].runs - 1) ? batches[i].rest : batch_size;
-                if (current_batch_size == 0)
+                if (current_batch_size <= 1)
                     break;
 
                 int mpi_error = MPI_Irecv(render_chunks_sim[i][j]->data_ptr(),
@@ -1067,10 +1092,11 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 log_time(t_start, "- send data ", world_rank);
             }
 
-            RenderBatch batch = get_batch(render_counts[world_rank], batch_size);
+            const int my_render_count = render_counts[world_rank] + int(render_counts[world_rank]*probing_factor);
+            RenderBatch batch = get_batch(my_render_count, batch_size);
             {   // init send buffer TODO: add data size for async data send
                 detach_mpi_buffer();
-                const index_t msg_size = calc_render_msg_size(render_counts[world_rank], 
+                const index_t msg_size = calc_render_msg_size(my_render_count, 
                                                               probing_count, probing_factor);
                 const int overhead = MPI_BSEND_OVERHEAD * (batch.runs + 1); // 1 probing batch
                 // attach new buffer TODO: validate size
@@ -1087,7 +1113,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             {
                 const int begin = i*batch_size;
                 const int current_batch_size = (i == batch.runs - 1) ? batch.rest : batch_size;
-                if (current_batch_size == 0)
+                if (current_batch_size <= 1)
                     break;
                 const int end = i*batch_size + current_batch_size;
 
@@ -1141,8 +1167,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     if (mpi_error)
                         std::cout << "ERROR sending dataset to " << destination << std::endl;
 
-                    std::cout << "end render sim " << world_rank << " renders size "
-                              << compact_renders.total_bytes_compact() << std::endl;
+                    std::cout << world_rank << " end render sim " << current_batch_size
+                                << " renders size " << compact_renders.total_bytes_compact() 
+                                << std::endl;
                 }                 
             }
             log_time(t_start, "+ render sim " + std::to_string(render_counts[world_rank]) + " ", world_rank);
