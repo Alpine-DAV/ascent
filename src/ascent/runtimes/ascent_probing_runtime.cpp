@@ -194,24 +194,6 @@ void ProbingRuntime::Publish(const conduit::Node &data)
     m_data.set_external(data);
 }
 
-//-----------------------------------------------------------------------------
-bool decide_intransit(const std::vector<float> &times,
-                      const int world_rank,
-                      const float vis_budget)
-{
-    // TODO: calculate based on budget and sim times
-    // double max_time = 120.f;
-
-    if (times.at(world_rank) > vis_budget)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
 /**
  * Assign part of the vis load to the vis nodes.
  */
@@ -581,12 +563,11 @@ void detach_mpi_buffer()
 /**
  * Calculate the message size for sending the render chunks.  
  */
-int calc_render_msg_size(const int render_count, const int probing_count, 
-                         const double probing_factor, const int width = 1024,
-                         const int height = 1024, const int channels = 4+1)
+int calc_render_msg_size(const int render_count, const double probing_factor,
+                         const int width = 1024, const int height = 1024, 
+                         const int channels = 4+1)
 {
-    const int inline_renders = render_count - int(probing_factor * render_count);
-    const int total_renders = inline_renders; // TODO: probing_count + inline_renders;
+    const int total_renders = render_count - int(probing_factor * render_count);
     const int overhead_render = 396;
     const int overhead_global = 288;
     return total_renders * channels * width * height + 
@@ -641,8 +622,7 @@ void post_irecv_renders(std::vector< std::vector< std::vector<int>>> &renders,
             if (current_batch_size == 0)
                 break;
 
-            const int buffer_size = calc_render_msg_size(current_batch_size, probing_count, 
-                                                         probing_factor);
+            const int buffer_size = calc_render_msg_size(current_batch_size, probing_factor);
 
             // Node n_buffer(DataType::uint8(buffer_size));
             std::vector<int> buffer(buffer_size);
@@ -653,7 +633,6 @@ void post_irecv_renders(std::vector< std::vector< std::vector<int>>> &renders,
                                         src_ranks[i],
                                         j+1,
                                         comm,
-                                    //   MPI_STATUS_IGNORE
                                         &requests[i]
                                         );
             if (mpi_error)
@@ -689,6 +668,7 @@ int get_probing_count(const int render_offset, const int render_count, const int
 
 
 //-----------------------------------------------------------------------------
+// TODO: refactor this method: split up into prep, sim and vis parts
 void splitAndRender(const MPI_Comm mpi_comm_world,
                     const int world_size,
                     const int world_rank,
@@ -702,8 +682,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     const double vis_budget = 0.1)
 {
     assert(vis_budget >= 0.0 && vis_budget <= 1.0);
-    // HACK: hijack the vis_budget for rendering tests
-    // vis_budget of 0.0 => all in line; vis_budget of 1.0 => all in transit
+    // vis_budget of 1.0 => all in transit
 
     assert(sim_node_count > 0 && sim_node_count <= world_size);
 
@@ -811,8 +790,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     // reset mpi buffer with current size
     const int batch_size = 20;  // TODO: make this variable by config
     const int tag_data = 0;
-    const int tag_probe = tag_data + 1;
-    const int tag_inline = tag_probe + 1;
+    const int tag_probing = tag_data + 1;
+    const int tag_inline = tag_probing + 1;
 
     const int width = 1024;
     const int height = 1024;
@@ -873,20 +852,27 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         for (const auto &b : batches)
             sum_batches += b.runs;
 
+        // probing chunks
+        std::vector< std::unique_ptr<Node> > render_chunks_probe(sending_count);
+        std::vector<MPI_Request> requests_probing(sending_count, MPI_REQUEST_NULL);
+        // render chunks sim
         // senders / batches / buffer
         std::vector< std::vector< std::unique_ptr<Node> > > render_chunks_sim(sending_count);
         std::vector< std::vector<MPI_Request>> requests(sending_count);
+
         // pre-allocate the mpi receive buffers
         for (int i = 0; i < sending_count; i++)
         {   
+            int buffer_size = calc_render_msg_size(probing_count + 1, 0.0); // TODO: why do we need +1 here?
+            render_chunks_probe[i] = make_unique<Node>(DataType::uint8(buffer_size));
+
             render_chunks_sim[i].resize(batches[i].runs);
-            requests[i].resize(batches[i].runs, MPI_REQUEST_NULL);
+            requests[i].resize(batches[i].runs + 1, MPI_REQUEST_NULL);
 
             for (int j = 0; j < batches[i].runs; ++j)
             {
                 int current_batch_size = (j == batches[i].runs - 1) ? batches[i].rest : batch_size;
-                int buffer_size = calc_render_msg_size(current_batch_size, probing_count, 
-                                                       probing_factor);
+                buffer_size = calc_render_msg_size(current_batch_size, probing_factor);
                 render_chunks_sim[i][j] = make_unique<Node>(DataType::uint8(buffer_size));
                 std::cout << current_batch_size << " expected render_msg_size " << buffer_size << std::endl;
             }
@@ -897,6 +883,21 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         {
             std::cout << " ~~~ vis node " << world_rank << " receiving " << batches[i].runs
                       << " render chunks from " << src_ranks[i] << std::endl;
+
+            // receive probing render chunks
+            if (vis_budget < 1.0)   // 1 implies in transit only, i.e. we don't use probing
+            {
+                int mpi_error = MPI_Irecv(render_chunks_probe[i]->data_ptr(),
+                                          render_chunks_probe[i]->total_bytes_compact(),
+                                          MPI_BYTE,
+                                          src_ranks[i],
+                                          tag_probing,
+                                          mpi_comm_world,
+                                          &requests_probing[i]
+                                          );
+                if (mpi_error)
+                    std::cout << "ERROR receiving probing data from " << src_ranks[i] << std::endl;
+            }
 
             for (int j = 0; j < batches[i].runs; ++j)
             {
@@ -975,7 +976,10 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         // debug_break();
 
         {   // wait for receive of render chunks to complete
-            std::cout << "~~~~wait for receive  " << world_rank << std::endl;
+            std::cout << "~~~~wait for receive probing " << world_rank << std::endl;
+            // renders from probing            
+            MPI_Waitall(requests_probing.size(), requests_probing.data(), MPI_STATUSES_IGNORE);
+            std::cout << "~~~~wait for receive in line " << world_rank << std::endl;
             // wait for all render chunks to be received
             auto t_start = std::chrono::system_clock::now();
             for (auto &batch_requests : requests)
@@ -991,8 +995,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         // {
         //     std::cout << " ~~~ vis node " << world_rank << " receiving render chunks from "
         //             << src_ranks[i] << std::endl;
-        //     const int render_size = calc_render_msg_size(render_counts[src_ranks[i]], 
-        //                                                 probing_count, probing_factor);
+        //     const int render_size = calc_render_msg_size(render_counts[src_ranks[i]], probing_factor);
         //     // std::cout << "++ estimate " << world_rank << " " << render_size
         //     //             << std::endl;
 
@@ -1092,17 +1095,34 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 log_time(t_start, "- send data ", world_rank);
             }
 
+            Node compact_probing_renders = pack_node(render_chunks_probing);
             const int my_render_count = render_counts[world_rank] + int(render_counts[world_rank]*probing_factor);
             RenderBatch batch = get_batch(my_render_count, batch_size);
             {   // init send buffer TODO: add data size for async data send
                 detach_mpi_buffer();
-                const index_t msg_size = calc_render_msg_size(my_render_count, 
-                                                              probing_count, probing_factor);
+                const index_t msg_size = calc_render_msg_size(my_render_count, probing_factor);
+                const index_t msg_size_probing = compact_probing_renders.total_bytes_compact();
                 const int overhead = MPI_BSEND_OVERHEAD * (batch.runs + 1); // 1 probing batch
                 // attach new buffer TODO: validate size
-                MPI_Buffer_attach(malloc(msg_size + overhead), msg_size + overhead);
-                // std::cout << "-- buffer size: " << (msg_size + overhead) << std::endl;
+                MPI_Buffer_attach(malloc(msg_size + msg_size_probing + overhead), 
+                                         msg_size + msg_size_probing + overhead);
+                // std::cout << "-- buffer size: " << (msg_size + msg_size_probing + overhead) << std::endl;
             }
+
+            // send probing chunks
+            MPI_Request request_probing = MPI_REQUEST_NULL;
+            {
+                int mpi_error = MPI_Ibsend(compact_probing_renders.data_ptr(),
+                                           compact_probing_renders.total_bytes_compact(),
+                                           MPI_BYTE,
+                                           destination,
+                                           tag_probing,
+                                           mpi_comm_world,
+                                           &request_probing
+                                           );
+                if (mpi_error)
+                    std::cout << "ERROR sending probing renders to " << destination << std::endl;
+            } 
 
             // in line rendering using ascent
             Ascent ascent_render;
@@ -1178,8 +1198,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             {   // wait for all send data to be received
                 std::cout << "~~~~wait for send  " << world_rank << std::endl;
                 t_start = std::chrono::system_clock::now();
-                // data
-                // MPI_Wait(&req_data_send, MPI_STATUSES_IGNORE);
+                // TODO: data
+                // probing
+                MPI_Wait(&request_probing, MPI_STATUSES_IGNORE);
                 // render chunks
                 MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
                 log_time(t_start, "+ wait send img ", world_rank);
@@ -1234,8 +1255,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             //     std::cout << "++ msg_data_size " << world_rank << " " <<  msg_data_size
             //                 << std::endl;
 
-            //     const int render_size = calc_render_msg_size(render_counts[world_rank], probing_count, 
-            //                                                 probing_factor);
+            //     const int render_size = calc_render_msg_size(render_counts[world_rank], probing_factor);
             //     std::cout << "++ estimate " << world_rank << " " << render_size
             //                 << std::endl;
 
@@ -1370,7 +1390,6 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     // TODO: handle case where there is no probing (and no probing chunks)
     Node render_chunks;
     // run probing only if this is a sim node
-    // NOTE: we could check for data size instead (sim sends empty data on vis nodes)
     if (world_rank < rank_split && probing_factor > 0.0)
     {
         auto start = std::chrono::system_clock::now();
@@ -1446,7 +1465,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     }
 
 #if ASCENT_MPI_ENABLED
-    if (probing_factor < 1.0)
+    if (probing_factor < 1.0) // probing_factor of 1 implies inline rendering only
     {
         splitAndRender(mpi_comm_world, world_size, world_rank, sim_comm, rank_split, 
                        render_times, phi*theta, m_data, render_chunks, 
