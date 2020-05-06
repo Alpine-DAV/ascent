@@ -520,8 +520,9 @@ Learn::execute()
     double *kVecs = new double[num_fields*num_fields]; // TODO: need one per domain!!!!
     double *eigvals = new double[num_fields];
     double *fmms = new double[num_fields * num_domains];
+    //double *anomaly_metric = new double
     for(int i = 0; i < num_domains; ++i)
-     double *anomaly_metric = new double{
+    {
       const conduit::Node &dom = n_input->child(0);
 
       std::vector<const double*> fields;
@@ -595,17 +596,17 @@ Learn::execute()
 
     //Compute the spatial anomaly metric for each domain. If metric is above threshold = 0.7
     //the domain is anomalous, so paint all its cells 'red'
-    double *spatial_metric = new double[num_domains]; 
+    double *spatial_metric = new double[num_domains];
     for(int i = 0; i < num_domains; ++i)
     {
       spatial_metric[i] = 0.0;
       double * domain_fmms = fmms + num_fields * i;
-  
+
       //Compute Hellinger distance between domain fmms and average fmms
       for(int f = 0; f< num_fields; f++)
       {
         spatial_metric[i] += ( std::sqrt(domain_fmms[f]) - std::sqrt(average_fmms[f]) ) *
-                             ( std::sqrt(domain_fmms[f]) - std::sqrt(average_fmms[f]) )
+                             ( std::sqrt(domain_fmms[f]) - std::sqrt(average_fmms[f]) );
       }
       spatial_metric[i] = std::sqrt(spatial_metric[i] * 0.5);
 
