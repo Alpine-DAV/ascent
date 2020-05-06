@@ -54,13 +54,13 @@ packages:
 # ORNL blueos CUDA
   cuda:
     paths:
-      cuda@10.1.168: /sw/summit/cuda/10.1.168 
+      cuda@10.1.168: /sw/summit/cuda/10.1.168
     buildable: False
 # ORNL blueos mpi
 # note, we need to fake this as an existing mpi package
 # so even though this is spectrum mpi, we call it mvapich2
   mvapich2:
     paths:
-      mvapich2@2.2%xl: /autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/xl-16.1.1-1/spectrum-mpi-10.2.0.11-20190201-6qypd6rixwrkcyd5gnijoacjqxrtblzk/ 
-      mvapich2@2.2%gcc: /autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-5.4.0/spectrum-mpi-10.3.0.0-20190419-qz2r4lhch6h3xf64hqht3covyj7o4hqp/ 
+      mvapich2@2.2%xl: /autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/xl-16.1.1-5/spectrum-mpi-10.3.1.2-20200121-p6nrnt6vtvkn356wqg6f74n6jspnpjd2/
+      mvapich2@2.2%gcc: /autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-6.4.0/spectrum-mpi-10.3.1.2-20200121-awz2q5brde7wgdqqw4ugalrkukeub4eb/
     buildable: False

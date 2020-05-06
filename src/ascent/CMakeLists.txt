@@ -108,11 +108,13 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_query_filters.cpp
     runtimes/flow_filters/ascent_runtime_utils.cpp
     # utils
+    utils/ascent_actions_utils.cpp
     utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
     utils/ascent_png_compare.cpp
     utils/ascent_png_decoder.cpp
     utils/ascent_png_encoder.cpp
+    utils/ascent_mpi_utils.cpp
     utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp
     # hola
@@ -146,12 +148,14 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_query_filters.hpp
     runtimes/flow_filters/ascent_runtime_utils.hpp
     # utils
+    utils/ascent_actions_utils.hpp
     utils/ascent_logging.hpp
     utils/ascent_file_system.hpp
     utils/ascent_block_timer.hpp
     utils/ascent_png_compare.hpp
     utils/ascent_png_decoder.hpp
     utils/ascent_png_encoder.hpp
+    utils/ascent_mpi_utils.hpp
     utils/ascent_string_utils.hpp
     utils/ascent_web_interface.hpp
     # hola

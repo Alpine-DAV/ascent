@@ -121,15 +121,15 @@ class Ascent(Package, CudaPackage):
     # TPLs for Runtime Features
     #############################
 
-    depends_on("vtk-h@0.5.4",             when="+vtkh")
-    depends_on("vtk-h@0.5.4~openmp",      when="+vtkh~openmp")
-    depends_on("vtk-h@0.5.4+cuda+openmp", when="+vtkh+cuda+openmp")
-    depends_on("vtk-h@0.5.4+cuda~openmp", when="+vtkh+cuda~openmp")
+    depends_on("vtk-h@0.5.7",             when="+vtkh")
+    depends_on("vtk-h@0.5.7~openmp",      when="+vtkh~openmp")
+    depends_on("vtk-h@0.5.7+cuda+openmp", when="+vtkh+cuda+openmp")
+    depends_on("vtk-h@0.5.7+cuda~openmp", when="+vtkh+cuda~openmp")
 
-    depends_on("vtk-h@0.5.4~shared",             when="~shared+vtkh")
-    depends_on("vtk-h@0.5.4~shared~openmp",      when="~shared+vtkh~openmp")
-    depends_on("vtk-h@0.5.4~shared+cuda",        when="~shared+vtkh+cuda")
-    depends_on("vtk-h@0.5.4~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
+    depends_on("vtk-h@0.5.7~shared",             when="~shared+vtkh")
+    depends_on("vtk-h@0.5.7~shared~openmp",      when="~shared+vtkh~openmp")
+    depends_on("vtk-h@0.5.7~shared+cuda",        when="~shared+vtkh+cuda")
+    depends_on("vtk-h@0.5.7~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
 
     # mfem
     depends_on("mfem@4.0.2~threadsafe~openmp+shared+mpi+conduit", when="+shared+mfem+mpi")
@@ -142,22 +142,22 @@ class Ascent(Package, CudaPackage):
 
     # devil ray variants wit mpi
     # we have to specify both because mfem makes us
-    depends_on("dray@0.1.1+mpi~test~utils+shared+cuda",        when="+dray+mpi+cuda+shared")
-    depends_on("dray@0.1.1+mpi~test~utils+shared+openmp",      when="+dray+mpi+openmp+shared")
-    depends_on("dray@0.1.1+mpi~test~utils+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
+    depends_on("dray@0.1.2+mpi~test~utils+shared+cuda",        when="+dray+mpi+cuda+shared")
+    depends_on("dray@0.1.2+mpi~test~utils+shared+openmp",      when="+dray+mpi+openmp+shared")
+    depends_on("dray@0.1.2+mpi~test~utils+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
 
-    depends_on("dray@0.1.1+mpi~test~utils~shared+cuda",        when="+dray+mpi+cuda~shared")
-    depends_on("dray@0.1.1+mpi~test~utils~shared+openmp",      when="+dray+mpi+openmp~shared")
-    depends_on("dray@0.1.1+mpi~test~utils~shared~openmp~cuda", when="+dray+mpi~openmp~cuda~shared")
+    depends_on("dray@0.1.2+mpi~test~utils~shared+cuda",        when="+dray+mpi+cuda~shared")
+    depends_on("dray@0.1.2+mpi~test~utils~shared+openmp",      when="+dray+mpi+openmp~shared")
+    depends_on("dray@0.1.2+mpi~test~utils~shared~openmp~cuda", when="+dray+mpi~openmp~cuda~shared")
 
-    # devil ray variants 1ithout mpi
-    depends_on("dray@0.1.1~mpi~test~utils+shared+cuda",        when="+dray~mpi+cuda+shared")
-    depends_on("dray@0.1.1~mpi~test~utils+shared+openmp",      when="+dray~mpi+openmp+shared")
-    depends_on("dray@0.1.1~mpi~test~utils+shared~openmp~cuda", when="+dray~mpi~openmp~cuda+shared")
+    # devil ray variants 2ithout mpi
+    depends_on("dray@0.1.2~mpi~test~utils+shared+cuda",        when="+dray~mpi+cuda+shared")
+    depends_on("dray@0.1.2~mpi~test~utils+shared+openmp",      when="+dray~mpi+openmp+shared")
+    depends_on("dray@0.1.2~mpi~test~utils+shared~openmp~cuda", when="+dray~mpi~openmp~cuda+shared")
 
-    depends_on("dray@0.1.1~mpi~test~utils~shared+cuda",        when="+dray~mpi+cuda~shared")
-    depends_on("dray@0.1.1~mpi~test~utils~shared+openmp",      when="+dray~mpi+openmp~shared")
-    depends_on("dray@0.1.1~mpi~test~utils~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
+    depends_on("dray@0.1.2~mpi~test~utils~shared+cuda",        when="+dray~mpi+cuda~shared")
+    depends_on("dray@0.1.2~mpi~test~utils~shared+openmp",      when="+dray~mpi+openmp~shared")
+    depends_on("dray@0.1.2~mpi~test~utils~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
 
 
     #######################

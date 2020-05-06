@@ -837,6 +837,52 @@ conduit::Node quantile(const conduit::Node &cdf,
 }
 
 conduit::Node
+field_nan_count(const conduit::Node &dataset,
+                const std::string &field)
+{
+  double nan_count = 0;
+
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/"+field))
+    {
+      const std::string path = "fields/" + field + "/values";
+      conduit::Node res;
+      res = array_nan_count(dom[path]);
+      nan_count += res["value"].to_float64();
+    }
+  }
+  conduit::Node res;
+  res["value"] = nan_count;
+
+  return res;
+}
+
+conduit::Node
+field_inf_count(const conduit::Node &dataset,
+                const std::string &field)
+{
+  double inf_count = 0;
+
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/"+field))
+    {
+      const std::string path = "fields/" + field + "/values";
+      conduit::Node res;
+      res = array_inf_count(dom[path]);
+      inf_count += res["value"].to_float64();
+    }
+  }
+  conduit::Node res;
+  res["value"] = inf_count;
+
+  return res;
+}
+
+conduit::Node
 field_min(const conduit::Node &dataset,
           const std::string &field)
 {

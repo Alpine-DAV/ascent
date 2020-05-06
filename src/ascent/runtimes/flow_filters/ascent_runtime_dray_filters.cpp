@@ -92,15 +92,18 @@
 #include <dray/data_set.hpp>
 #include <dray/filters/mesh_boundary.hpp>
 
+#include <dray/filters/reflect.hpp>
 #include <dray/rendering/renderer.hpp>
 #include <dray/rendering/surface.hpp>
 #include <dray/rendering/slice_plane.hpp>
+#include <dray/rendering/scalar_renderer.hpp>
 #include <dray/rendering/partial_renderer.hpp>
 #include <dray/io/blueprint_reader.hpp>
 
 #include <vtkh/vtkh.hpp>
 #include <vtkh/compositing/Compositor.hpp>
 #include <vtkh/compositing/PartialCompositor.hpp>
+#include <vtkh/compositing/PayloadCompositor.hpp>
 
 using namespace conduit;
 using namespace std;
@@ -572,6 +575,85 @@ void convert_partials(std::vector<dray::Array<dray::VolumePartial>> &input,
 
 }
 
+vtkh::PayloadImage * convert(dray::ScalarBuffer &result)
+{
+  const int num_fields = result.m_scalars.size();
+  const int payload_size = num_fields * sizeof(float);
+  vtkm::Bounds bounds;
+  bounds.X.Min = 1;
+  bounds.Y.Min = 1;
+  bounds.X.Max = result.m_width;
+  bounds.Y.Max = result.m_height;
+  const size_t size = result.m_width * result.m_height;
+
+  vtkh::PayloadImage *image = new vtkh::PayloadImage(bounds, payload_size);
+  unsigned char *loads = &image->m_payloads[0];
+
+  const float* dbuffer = result.m_depths.get_host_ptr();
+  memcpy(&image->m_depths[0], dbuffer, sizeof(float) * size);
+  // copy scalars into payload
+  std::vector<float*> buffers;
+  for(int i = 0; i < num_fields; ++i)
+  {
+    float* buffer = result.m_scalars[i].get_host_ptr();
+    buffers.push_back(buffer);
+  }
+#ifdef ASCENT_USE_OPENMP
+    #pragma omp parallel for
+#endif
+  for(size_t x = 0; x < size; ++x)
+  {
+    for(int i = 0; i < num_fields; ++i)
+    {
+      const size_t offset = x * payload_size + i * sizeof(float);
+      memcpy(loads + offset, &buffers[i][x], sizeof(float));
+    }
+  }
+  return image;
+}
+
+dray::ScalarBuffer  convert(vtkh::PayloadImage &image, std::vector<std::string> &names)
+{
+  dray::ScalarBuffer result;
+  result.m_names = names;
+  const int num_fields = names.size();
+
+  const int dx  = image.m_bounds.X.Max - image.m_bounds.X.Min + 1;
+  const int dy  = image.m_bounds.Y.Max - image.m_bounds.Y.Min + 1;
+  const int size = dx * dy;
+
+  result.m_width = dx;
+  result.m_height = dy;
+
+  std::vector<float*> buffers;
+  for(int i = 0; i < num_fields; ++i)
+  {
+    dray::Array<float> array;
+    array.resize(size);
+    result.m_scalars.push_back(array);
+    float* buffer = result.m_scalars[i].get_host_ptr();
+    buffers.push_back(buffer);
+  }
+
+  const unsigned char *loads = &image.m_payloads[0];
+  const size_t payload_size = image.m_payload_bytes;
+
+  for(size_t x = 0; x < size; ++x)
+  {
+    for(int i = 0; i < num_fields; ++i)
+    {
+      const size_t offset = x * payload_size + i * sizeof(float);
+      memcpy(&buffers[i][x], loads + offset, sizeof(float));
+    }
+  }
+
+  //
+  result.m_depths.resize(size);
+  float* dbuffer = result.m_depths.get_host_ptr();
+  memcpy(dbuffer, &image.m_depths[0], sizeof(float) * size);
+
+  return result;
+}
 }; // namespace detail
 
 //-----------------------------------------------------------------------------
@@ -694,7 +776,6 @@ DRayPseudocolor::execute()
         draw_mesh = true;
       }
     }
-
     float line_thickness = 0.05f;
     if(params().has_path("line_thickness"))
     {
@@ -743,8 +824,9 @@ DRayPseudocolor::execute()
       dray::Framebuffer fb = renderer.render(camera);
 
       std::vector<float> clipping(2);
-      clipping[0] = 0.01f;
-      clipping[1] = 1000.f;
+      float dist  = (camera.get_look_at() - camera.get_pos()).magnitude();
+      clipping[0] = 0.01*dist;
+      clipping[1] = 100.f*dist;
       dray::Array<float32> depth = camera.gl_depth(fb.depths(), clipping[0], clipping[1]);
       depth_buffers.push_back(depth);
       color_buffers.push_back(fb.colors());
@@ -776,7 +858,6 @@ DRayPseudocolor::execute()
       encoder.Encode(&result.m_pixels[0], camera.get_width(), camera.get_height());
       image_name = output_dir(image_name, graph());
       encoder.Save(image_name + ".png");
-      //std::cout<<camera.print()<<"\n";
     }
 }
 
@@ -938,8 +1019,9 @@ DRay3Slice::execute()
       dray::Framebuffer fb = renderer.render(camera);
 
       std::vector<float> clipping(2);
-      clipping[0] = 0.01f;
-      clipping[1] = 1000.f;
+      float dist  = (camera.get_look_at() - camera.get_pos()).magnitude();
+      clipping[0] = 0.01*dist;
+      clipping[1] = 100.f*dist;
       dray::Array<float32> depth = camera.gl_depth(fb.depths(), clipping[0], clipping[1]);
       depth_buffers.push_back(depth);
       color_buffers.push_back(fb.colors());
@@ -1149,7 +1231,6 @@ DRayVolume::execute()
     compositor.set_comm_handle(comm_id);
 #endif
     compositor.composite(c_partials, result);
-
     if(vtkh::GetMPIRank() == 0)
     {
       dray::Framebuffer fb = detail::partials_to_framebuffer(result,
@@ -1161,6 +1242,311 @@ DRayVolume::execute()
     }
 }
 
+//-----------------------------------------------------------------------------
+DRayReflect::DRayReflect()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+DRayReflect::~DRayReflect()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayReflect::declare_interface(Node &i)
+{
+    i["type_name"]   = "dray_reflect";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+DRayReflect::verify_params(const conduit::Node &params,
+                           conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+
+    res &= check_numeric("point/x",params, info, true);
+    res &= check_numeric("point/y",params, info, true);
+    res &= check_numeric("point/z",params, info, false);
+    res &= check_numeric("normal/x",params, info, true);
+    res &= check_numeric("normal/y",params, info, true);
+    res &= check_numeric("normal/z",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
+
+    valid_paths.push_back("point/x");
+    valid_paths.push_back("point/y");
+    valid_paths.push_back("point/z");
+    valid_paths.push_back("normal/x");
+    valid_paths.push_back("normal/y");
+    valid_paths.push_back("normal/z");
+
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayReflect::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("dray reflect input must be a DataObject");
+    }
+
+    DataObject *d_input = input<DataObject>(0);
+
+    DRayCollection *dcol = d_input->as_dray_collection().get();
+    int comm_id = -1;
+#ifdef ASCENT_MPI_ENABLED
+    comm_id = flow::Workspace::default_mpi_comm();
+#endif
+    dcol->mpi_comm(comm_id);
+
+
+
+    dray::Vec<float,3> point = {0.f, 0.f, 0.f};
+    point[0] = params()["point/x"].to_float32();
+    point[1] = params()["point/y"].to_float32();
+    if(params().has_path("point/z"))
+    {
+      point[2] = params()["point/z"].to_float32();
+    }
+
+    dray::Vec<float,3> normal= {0.f, 1.f, 0.f};
+    normal[0] = params()["normal/x"].to_float32();
+    normal[1] = params()["normal/y"].to_float32();
+    if(params().has_path("normal/z"))
+    {
+      normal[2] = params()["normal/z"].to_float32();
+    }
+
+    dray::Reflect reflector;
+    reflector.plane(point,normal);
+
+    DRayCollection *output = new DRayCollection();
+    const int num_domains = dcol->m_domains.size();
+    for(int i = 0; i < num_domains; ++i)
+    {
+      dray::DataSet dset = reflector.execute(dcol->m_domains[i]);
+      output->m_domains.push_back(dset);
+    }
+
+    for(int i = 0; i < num_domains; ++i)
+    {
+      output->m_domains.push_back(dcol->m_domains[i]);
+    }
+
+    DataObject *res =  new DataObject(output);
+    set_output<DataObject>(res);
+}
+
+
+//-----------------------------------------------------------------------------
+DRayProject2d::DRayProject2d()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+DRayProject2d::~DRayProject2d()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayProject2d::declare_interface(Node &i)
+{
+    i["type_name"]   = "dray_project_2d";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+DRayProject2d::verify_params(const conduit::Node &params,
+                               conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+
+    res &= check_numeric("image_width",params, info, false);
+    res &= check_numeric("image_height",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
+
+    valid_paths.push_back("image_width");
+    valid_paths.push_back("image_height");
+    valid_paths.push_back("fields");
+
+    ignore_paths.push_back("camera");
+    ignore_paths.push_back("fields");
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayProject2d::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("dray_project2d input must be a DataObject");
+    }
+
+    DataObject *d_input = input<DataObject>(0);
+
+    DRayCollection *dcol = d_input->as_dray_collection().get();
+    int comm_id = -1;
+#ifdef ASCENT_MPI_ENABLED
+    comm_id = flow::Workspace::default_mpi_comm();
+#endif
+    dcol->mpi_comm(comm_id);
+
+    DRayCollection faces = dcol->boundary();
+    faces.mpi_comm(comm_id);
+
+    std::string image_name;
+
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    int width  = 512;
+    int height = 512;
+
+    if(params().has_path("image_width"))
+    {
+      width = params()["image_width"].to_int32();
+    }
+
+    if(params().has_path("image_height"))
+    {
+      height = params()["image_height"].to_int32();
+    }
+
+    std::vector<std::string> field_selection;
+    if(params().has_path("fields"))
+    {
+      const conduit::Node &flist = params()["fields"];
+      const int num_fields = flist.number_of_children();
+      if(num_fields == 0)
+      {
+        ASCENT_ERROR("dray_project_2d  field selection list must be non-empty");
+      }
+      for(int i = 0; i < num_fields; ++i)
+      {
+        const conduit::Node &f = flist.child(i);
+        if(!f.dtype().is_string())
+        {
+           ASCENT_ERROR("relay_io_save field selection list values must be a string");
+        }
+        field_selection.push_back(f.as_string());
+      }
+    }
+
+    dray::Camera camera;
+    camera.set_width(width);
+    camera.set_height(height);
+    dray::AABB<3> bounds = dcol->get_global_bounds();
+    camera.reset_to_bounds(bounds);
+
+    std::vector<float> clipping(2);
+    clipping[0] = 0.01f;
+    clipping[1] = 1000.f;
+    if(params().has_path("camera"))
+    {
+      const conduit::Node &n_camera = params()["camera"];
+      clipping = detail::parse_camera(n_camera, camera);
+    }
+
+    std::vector<dray::ScalarBuffer> buffers;
+
+    // basic sanity checking
+    int min_p = std::numeric_limits<int>::max();
+    int max_p = std::numeric_limits<int>::min();
+
+    std::vector<std::string> field_names;
+    vtkh::PayloadCompositor compositor;
+    const int num_domains = dcol->m_domains.size();
+
+    for(int i = 0; i < num_domains; ++i)
+    {
+      std::shared_ptr<dray::Surface> surface =
+        std::make_shared<dray::Surface>(faces.m_domains[i]);
+      dray::ScalarRenderer renderer(surface);
+      if(field_selection.size() == 0)
+      {
+        field_names = faces.m_domains[i].fields();
+      }
+      else
+      {
+        field_names = field_selection;
+      }
+
+      renderer.field_names(field_names);
+
+      dray::ScalarBuffer buffer = renderer.render(camera);
+      vtkh::PayloadImage *pimage = detail::convert(buffer);
+
+      min_p = std::min(min_p, pimage->m_payload_bytes);
+      max_p = std::max(max_p, pimage->m_payload_bytes);
+
+      compositor.AddImage(*pimage);
+      delete pimage;
+    }
+
+    if(min_p != max_p)
+    {
+      ASCENT_ERROR("VERY BAD "<<min_p<<" "<<max_p<<" contact someone.");
+    }
+
+    vtkh::PayloadImage final_image = compositor.Composite();
+    conduit::Node *output = new conduit::Node();
+    if(vtkh::GetMPIRank() == 0)
+    {
+      dray::ScalarBuffer final_result = detail::convert(final_image, field_names);
+      conduit::Node &dom = output->append();
+      final_result.to_node(dom);
+      dom["state/domain_id"] = 0;
+
+      int cycle = 0;
+
+      if(meta->has_path("cycle"))
+      {
+        cycle = (*meta)["cycle"].as_int32();
+      }
+      dom["state/cycle"] = cycle;
+    }
+
+    DataObject *res =  new DataObject(output);
+    set_output<DataObject>(res);
+
+}
 
 //-----------------------------------------------------------------------------
 };

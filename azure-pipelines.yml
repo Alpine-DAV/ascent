@@ -202,11 +202,33 @@ stages:
            ctest -T test --output-on-failure -V
         displayName: 'Run Unit Tests'
 
+      - script: |
+           #################################
+           # gen img diff report
+           #################################
+           # run cmake target to gen report
+           cd build
+           make gen_report
+        displayName: 'Run Gen Test Image Diff Report'
+        condition: eq(variables['ENABLE_PYTHON'], 'ON')
+
       - task: PublishTestResults@2
         inputs:
           testResultsFormat: 'cTest'
           testResultsFiles: '**/Test.xml'
         displayName: 'Unit Test Results'
+        condition: always()
+
+      - task: CopyFiles@2
+        inputs:
+          contents: 'build/tests/_output/**'
+          targetFolder: $(Build.ArtifactStagingDirectory)
+        condition: always()
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathToPublish: $(Build.ArtifactStagingDirectory)
+          artifactName: Ascent_Test_Outputs
         condition: always()
 
       - script: |
@@ -395,11 +417,33 @@ stages:
            ctest -T test --output-on-failure -V
         displayName: 'Run Unit Tests'
 
+      - script: |
+           #################################
+           # gen img diff report
+           #################################
+           # run cmake target to gen report
+           cd build
+           make gen_report
+        displayName: 'Run Gen Test Image Diff Report'
+        condition: eq(variables['ENABLE_PYTHON'], 'ON')
+
       - task: PublishTestResults@2
         inputs:
           testResultsFormat: 'cTest'
           testResultsFiles: '**/Test.xml'
         displayName: 'Unit Test Results'
+        condition: always()
+
+      - task: CopyFiles@2
+        inputs:
+          contents: 'build/tests/_output/**'
+          targetFolder: $(Build.ArtifactStagingDirectory)
+        condition: always()
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathToPublish: $(Build.ArtifactStagingDirectory)
+          artifactName: Ascent_Test_Outputs
         condition: always()
 
       - script: |
@@ -499,6 +543,8 @@ stages:
            echo $SPACK_SPEC
            # run uber to build tpls
            python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_cuda/
+           # lets cleanup the spack build stuff to free up space
+           uberenv_libs/spack/bin/spack clean --all
         displayName: 'Spack Build Tpls'
 
       - script: |

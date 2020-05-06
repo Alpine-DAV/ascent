@@ -541,8 +541,8 @@ Install ParaView and Ascent
   - If you need ascent built with vtkh you can use ``spack install
     ascent@develop^mpich``. Note that you need specific versions of
     ``vtkh`` and ``vtkm`` that work with the latest Ascent.  Those
-    versions can be read from ``ascent/scripts/uberenv/packages/``
-    ``vtkh/package.py`` and ``vtkm/package.py``.
+    versions can be read from ``scripts/uberenv/project.json``
+    by cloning ``spack_url``, branch ``spack_branch``.
     ``paraview-package-momentinvariants.patch`` is already setup to
     patch ``vtkh`` and ``vthm`` with the correct versions.
 

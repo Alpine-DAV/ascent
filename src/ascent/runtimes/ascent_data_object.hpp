@@ -88,6 +88,10 @@ public:
 #if defined(ASCENT_VTKM_ENABLED)
   DataObject(VTKHCollection *dataset);
   std::shared_ptr<VTKHCollection> as_vtkh_collection();
+
+  bool                            is_vtkh_coll_exists() const { return m_vtkh != nullptr; }
+  void                            reset_vtkh_collection();
+
 #endif
 #if defined(ASCENT_DRAY_ENABLED)
   DataObject(DRayCollection *dataset);
@@ -97,6 +101,7 @@ public:
   std::shared_ptr<conduit::Node>  as_high_order_bp();
   std::shared_ptr<conduit::Node>  as_node();          // just return the coduit node
   DataObject::Source              source() const;
+  std::string source_string() const;
 protected:
   std::shared_ptr<conduit::Node>  m_low_bp;
   std::shared_ptr<conduit::Node>  m_high_bp;

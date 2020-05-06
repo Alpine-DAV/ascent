@@ -156,6 +156,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHGradient>("transforms","gradient");
     AscentRuntime::register_filter_type<VTKHDivergence>("transforms","divergence");
     AscentRuntime::register_filter_type<VTKHVorticity>("transforms","vorticity");
+    AscentRuntime::register_filter_type<VTKHProject2d>("transforms","project_2d");
     AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
@@ -163,6 +164,8 @@ register_builtin()
     AscentRuntime::register_filter_type<DRayPseudocolor>("extracts", "dray_pseudocolor");
     AscentRuntime::register_filter_type<DRay3Slice>("extracts", "dray_3slice");
     AscentRuntime::register_filter_type<DRayVolume>("extracts", "dray_volume");
+    AscentRuntime::register_filter_type<DRayProject2d>("transforms", "dray_project_2d");
+    AscentRuntime::register_filter_type<DRayReflect>("transforms", "dray_reflect");
 #endif
 
     AscentRuntime::register_filter_type<AddPlot>();
@@ -176,13 +179,13 @@ register_builtin()
 #if defined(ASCENT_MPI_ENABLED)
     AscentRuntime::register_filter_type<HolaMPIExtract>("extracts","hola_mpi");
 
-  #if defined(ASCENT_BABELFLOW_ENABLED)
-      AscentRuntime::register_filter_type<BabelFlow>("extracts", "babelflow");
-  #endif
+#if defined(ASCENT_BABELFLOW_ENABLED)
+    AscentRuntime::register_filter_type<BabelFlow>("transforms", "babelflow");
+#endif
 
-  #if defined(ASCENT_ADIOS_ENABLED)
-      AscentRuntime::register_filter_type<ADIOS>("extracts","adios");
-  #endif
+#if defined(ASCENT_ADIOS_ENABLED)
+    AscentRuntime::register_filter_type<ADIOS>("extracts","adios");
+#endif
 
 #endif
 
@@ -212,4 +215,3 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-

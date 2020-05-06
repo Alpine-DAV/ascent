@@ -137,6 +137,7 @@ check_test_image(const std::string &path, const float tolerance = 0.001f, std::s
     else
     {
       info["test_file/exists"] = "false";
+      res = false;
     }
 
     std::string file_name;
@@ -530,6 +531,64 @@ void build_multi_topo(Node &data, const int dims)
   append_ghosts(dom, points, "point_ghosts", "point_mesh");
   append_ghosts(dom, elements, "cell_ghosts", "mesh");
   //data.print();
+}
+
+
+//-----------------------------------------------------------------------------
+// create an example multi domain multi topo dataset
+// where one topo only lives on rank 0
+//-----------------------------------------------------------------------------
+inline void
+create_example_multi_domain_multi_topo_dataset(Node &data,
+                                               int par_rank=0,
+                                               int par_size=1)
+{
+    int dims = 5;
+    data.reset();
+    Node &mesh = data.append();
+
+    // rank zero will also include braid points
+    if(par_rank == 0)
+    {
+        conduit::blueprint::mesh::examples::braid("points",
+                                                  dims,
+                                                  dims,
+                                                  1,
+                                                  mesh);
+    }
+
+    // create the coordinate set
+    mesh["coordsets/ucoords/type"] = "uniform";
+    mesh["coordsets/ucoords/dims/i"] = 3;
+    mesh["coordsets/ucoords/dims/j"] = 3;
+
+    // add origin and spacing to the coordset (optional)
+    mesh["coordsets/ucoords/origin/x"] = -10.0;
+    mesh["coordsets/ucoords/origin/y"] = -10.0;
+    mesh["coordsets/ucoords/spacing/dx"] = 10.0;
+    mesh["coordsets/ucoords/spacing/dy"] = 10.0;
+
+    // add the topology
+    // this case is simple b/c it's implicitly derived from the coordinate set
+    mesh["topologies/utopo/type"] = "uniform";
+    // reference the coordinate set by name
+    mesh["topologies/utopo/coordset"] = "ucoords";
+
+    // add a simple element-associated field
+    mesh["fields/ele_example/association"] =  "element";
+    // reference the topology this field is defined on by name
+    mesh["fields/ele_example/topology"] =  "utopo";
+    // set the field values, for this case we have 4 elements
+    mesh["fields/ele_example/values"].set(DataType::float64(4));
+
+    float64 *ele_vals_ptr = mesh["fields/ele_example/values"].value();
+
+    for(int i=0;i<4;i++)
+    {
+        ele_vals_ptr[i] = float64(i);
+    }
+
+    // std::cout  << mesh.to_yaml() << std::endl;
 }
 
 

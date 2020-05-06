@@ -221,6 +221,12 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
   ASCENT_ERROR("this should never happen");
   return nullptr;
 }
+
+void DataObject::reset_vtkh_collection()
+{
+  if(m_source != Source::VTKH)
+    m_vtkh.reset();
+}
 #endif
 
 std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
@@ -311,6 +317,32 @@ std::shared_ptr<conduit::Node>  DataObject::as_node()
 DataObject::Source DataObject::source() const
 {
   return m_source;
+}
+
+std::string DataObject::source_string() const
+{
+  std::string res;
+  if(m_source == Source::INVALID)
+  {
+    res = "Invalid";
+  }
+  if(m_source == Source::VTKH)
+  {
+    res = "VTKH";
+  }
+  if(m_source == Source::LOW_BP)
+  {
+    res = "LOW_BP";
+  }
+  if(m_source == Source::HIGH_BP)
+  {
+    res = "HIGH_BP";
+  }
+  if(m_source == Source::DRAY)
+  {
+    res = "DRAY";
+  }
+  return res;
 }
 
 //-----------------------------------------------------------------------------
