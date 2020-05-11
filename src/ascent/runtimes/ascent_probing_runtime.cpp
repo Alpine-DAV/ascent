@@ -77,12 +77,16 @@
 
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkm/cont/Error.h>
+#include <vtkm/filter/VectorMagnitude.h>
+
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
+#include <vtkh/rendering/Image.hpp>
+#include <vtkh/rendering/ImageCompositor.hpp>
+
 #endif // ASCENT_VTKM_ENABLED
 
-#include <vtkm/filter/VectorMagnitude.h>
 
 using namespace conduit;
 using namespace std;
@@ -383,6 +387,24 @@ std::vector<int> sort_ranks(const std::vector<float> &sim_estimates,
     return rank_order;
 }
 
+/**
+ * 
+ */
+std::vector<int> get_depth_ordering(const std::vector<float> &depths)
+{
+    std::vector<int> depth_order(depths.size());
+    std::iota(depth_order.begin(), depth_order.end(), 0);
+
+    std::stable_sort(depth_order.begin(), 
+                     depth_order.end(), 
+                     [&](int i, int j) 
+                     { 
+                         return depths[i] < depths[j];
+                     } 
+                     );
+    return depth_order;
+}
+
 //-----------------------------------------------------------------------------
 std::string get_timing_file_name(const int value, const int precision)
 {
@@ -606,7 +628,7 @@ void detach_mpi_buffer()
  */
 int calc_render_msg_size(const int render_count, const double probing_factor,
                          const int width = 1024, const int height = 1024, 
-                         const int channels = 4+1)
+                         const int channels = 4+4)
 {
     const int total_renders = render_count - int(probing_factor * render_count);
     const int overhead_render = 396;
@@ -684,7 +706,7 @@ unique_ptr<T> make_unique(Args&&... args)
 /**
  * @return the number of probing renders in a given render sequence.
  */
-int get_probing_count(const int render_offset, const int render_count, const int stride)
+int get_probing_count(const int render_count, const int stride, const int render_offset = 0)
 {
     int probing_count = 0;
     for (int i = render_offset; i < render_offset + render_count; i++)
@@ -735,10 +757,11 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     std::cout << "~~~ " << my_sim_estimate << " sec sim time estimate " 
               << world_rank << std::endl;
 
-    const int probing_count = int(std::round(probing_factor*max_render_count));
+    const int probing_stride = max_render_count / (probing_factor*max_render_count);
+    const int probing_count = get_probing_count(max_render_count, probing_stride);
+    // int(std::round(probing_factor*max_render_count));
     // render count without probing renders
     const int render_count = max_render_count - probing_count;
-    const int probing_stride = max_render_count / (probing_factor*max_render_count);
 
     // nodes with the highest rank are vis nodes
     if (world_rank >= sim_node_count) 
@@ -918,14 +941,14 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         std::vector< std::unique_ptr<Node> > render_chunks_probe(sending_count);
         std::vector<MPI_Request> requests_probing(sending_count, MPI_REQUEST_NULL);
         // render chunks sim
-        // senders / batches / buffer
+        // senders / batches / renders
         std::vector< std::vector< std::unique_ptr<Node> > > render_chunks_sim(sending_count);
         std::vector< std::vector<MPI_Request>> requests_inline_sim(sending_count);
 
         // pre-allocate the mpi receive buffers
         for (int i = 0; i < sending_count; i++)
         {   
-            int buffer_size = calc_render_msg_size(probing_count + 1, 0.0); // TODO: why do we need +1 here?
+            int buffer_size = calc_render_msg_size(probing_count, 0.0);
             render_chunks_probe[i] = make_unique<Node>(DataType::uint8(buffer_size));
 
             render_chunks_sim[i].resize(batches[i].runs);
@@ -1071,28 +1094,90 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 render_parts.emplace_back(make_unique<Node>());
                 unpack_node(*p, *render_parts.back());
             }
-            for (auto const& src : render_chunks_sim)
+            // for (auto const& src : render_chunks_sim)
+            // {
+            //     for (auto const& batch : src)
+            //     {
+            //         render_parts.emplace_back(make_unique<Node>());
+            //         unpack_node(*batch, *render_parts.back());
+            //     }
+            // }
+
+            std::cout << "-- probing depths order: ";
+            std::vector< std::vector<float> > depths(probing_count);
+            std::vector< std::vector<Node> > color_buffers(probing_count);
+            std::vector< std::vector<Node> > depth_buffers(probing_count);
+            for (int i = 0; i < sending_count; ++i)
             {
-                for (auto const& batch : src)
+                int j = 0;
+                depths[j].reserve(sending_count);
+                NodeIterator itr = (*render_parts[i])["depths"].children();
+                while (itr.has_next())
                 {
-                    render_parts.emplace_back(make_unique<Node>());
-                    unpack_node(*batch, *render_parts.back());
+                    Node &depth = itr.next();
+                    depths[j].push_back(depth.to_float());
+                    ++j;
+                }
+
+                j = 0;
+                itr = (*render_parts[i])["color_buffers"].children();
+                while (itr.has_next())
+                {
+                    Node &color_buffer = itr.next();
+                    color_buffers[j].push_back(color_buffer);
+                    ++j;
+                }
+
+                j = 0;
+                itr = (*render_parts[i])["depth_buffers"].children();
+                while (itr.has_next())
+                {
+                    Node &depth_buffer = itr.next();
+                    depth_buffers[j].push_back(depth_buffer);
+                    ++j;
                 }
             }
+
+            std::vector<int> depths_order = get_depth_ordering(depths[0]);
+
+            // for (auto const& a : depths_order)
+            //     std::cout << a << " " << depths[0][a] << "  ;  ";
+            // std::cout << std::endl;
+
+            int height = 1024;
+            int width = 1024;
 
             // loop over images (camera positions)
-            for (int i = 0; i < max_render_count; ++i)
+            for (int j = 0; j < probing_count; ++j)
             {
-                // loop over render parts (= 1 per sim node)
-                for (int j = 0; j < sending_count; ++j)
+                std::vector<vtkh::Image> images(sending_count);
+                std::vector<int> depths_order = get_depth_ordering(depths[j]);
+                // loop over render parts (= 1 per sim node) and add as images
+                for (int i = 0; i < sending_count; ++i)
                 {
-                    
-            // 1 image is composited from sim node count renders 
-            //      - source_count in-line renders from sim nodes / vis node
-            //      - source_count renders from vis nodes
+                    images[i].Init(color_buffers[j][i].as_unsigned_char_ptr(),
+                                   depth_buffers[j][i].as_float_ptr(),
+                                   width,
+                                   height,
+                                   depths_order[i] //depths[j][i]
+                                   );
+                    std::cout << depths_order[i] << " " << depths[j][i] << std::endl;
                 }
-            }
+                // composite
+                // vtkh::Image result = m_compositor->Composite();
+                vtkh::ImageCompositor compositor;
+                compositor.OrderedComposite(images);
 
+                // const std::string image_name = m_renders[i].GetImageName() + ".png";
+                // ImageToCanvas(result, *m_renders[i].GetCanvas(0), true);
+                // m_compositor->ClearImages();
+
+                // write to disk
+                std::string name = "img_";
+                name += std::to_string(i);
+                name += ".png";
+                images[0].Save(name);
+            }
 
             // vtkh::Scene scene;
             // vtkh::Renderer *renderer = new vtkh::VolumeRenderer();
@@ -1329,7 +1414,6 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 
             if (action.has_path("scenes"))
             {
-                // TODO: clean up this mess
                 conduit::Node scenes;
                 scenes.append() = action["scenes"];
                 conduit::Node renders;
