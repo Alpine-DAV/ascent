@@ -390,20 +390,18 @@ std::vector<int> sort_ranks(const std::vector<float> &sim_estimates,
 /**
  * 
  */
-std::vector<int> get_depth_ordering(const std::vector<float> &depths)
+template <typename T>
+std::vector<int> sort_indices(const std::vector<T> &v)
 {
-    std::vector<int> depth_order(depths.size());
-    std::iota(depth_order.begin(), depth_order.end(), 0);
+    std::vector<int> indices(v.size());
+    std::iota(indices.begin(), indices.end(), 0);
 
-    std::stable_sort(depth_order.begin(), 
-                     depth_order.end(), 
-                     [&](int i, int j) 
-                     { 
-                         return depths[i] < depths[j];
-                     } 
-                     );
-    return depth_order;
+    std::sort(indices.begin(), indices.end(), 
+              [&v](int i, int j) { return v[i] < v[j]; } 
+             );
+    return indices;
 }
+
 
 //-----------------------------------------------------------------------------
 std::string get_timing_file_name(const int value, const int precision)
@@ -1086,6 +1084,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
         // TODO: compositing
         {
+            auto t_start = std::chrono::system_clock::now();
             std::vector< std::unique_ptr<Node> > render_parts;
 
             // render parts from this vis node don't need to be unpacked
@@ -1094,6 +1093,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 render_parts.emplace_back(make_unique<Node>());
                 unpack_node(*p, *render_parts.back());
             }
+
+            // TODO: add vis chunks and inline chunks
             // for (auto const& src : render_chunks_sim)
             // {
             //     for (auto const& batch : src)
@@ -1103,7 +1104,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             //     }
             // }
 
-            std::cout << "-- probing depths order: ";
+            std::cout << "-- probing depths order: " << std::endl;
             std::vector< std::vector<float> > depths(probing_count);
             std::vector< std::vector<Node> > color_buffers(probing_count);
             std::vector< std::vector<Node> > depth_buffers(probing_count);
@@ -1138,12 +1139,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 }
             }
 
-            std::vector<int> depths_order = get_depth_ordering(depths[0]);
-
-            // for (auto const& a : depths_order)
-            //     std::cout << a << " " << depths[0][a] << "  ;  ";
-            // std::cout << std::endl;
-
             int height = 1024;
             int width = 1024;
 
@@ -1151,7 +1146,10 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             for (int j = 0; j < probing_count; ++j)
             {
                 std::vector<vtkh::Image> images(sending_count);
-                std::vector<int> depths_order = get_depth_ordering(depths[j]);
+
+                std::vector<int> depths_order = sort_indices(depths[j]);
+                std::vector<int> depths_order_id = sort_indices(depths_order);
+                
                 // loop over render parts (= 1 per sim node) and add as images
                 for (int i = 0; i < sending_count; ++i)
                 {
@@ -1159,10 +1157,19 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                                    depth_buffers[j][i].as_float_ptr(),
                                    width,
                                    height,
-                                   depths_order[i] //depths[j][i]
+                                   depths_order_id[i] //depths[j][i]
                                    );
-                    std::cout << depths_order[i] << " " << depths[j][i] << std::endl;
+                    // std::cout << depths_order_id[i] << " " << depths[j][i] << std::endl;
+
+                    // DEBUG: save render parts                    
+                    // std::string name = "img_part_";
+                    // name += std::to_string(j);
+                    // name += "_";
+                    // name += std::to_string(i);
+                    // name += ".png";
+                    // images[i].Save(name);
                 }
+
                 // composite
                 // vtkh::Image result = m_compositor->Composite();
                 vtkh::ImageCompositor compositor;
@@ -1171,12 +1178,16 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 // const std::string image_name = m_renders[i].GetImageName() + ".png";
                 // ImageToCanvas(result, *m_renders[i].GetCanvas(0), true);
                 // m_compositor->ClearImages();
+                log_time(t_start, "+ compositing ", world_rank);
 
-                // write to disk
-                std::string name = "img_";
-                name += std::to_string(i);
-                name += ".png";
-                images[0].Save(name);
+                {   // write to disk 
+                    t_start = std::chrono::system_clock::now();
+                    std::string name = "img_";
+                    name += std::to_string(j);
+                    name += ".png";
+                    images[0].Save(name);
+                    log_time(t_start, "+ save image ", world_rank);
+                }
             }
 
             // vtkh::Scene scene;
