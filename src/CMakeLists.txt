@@ -72,7 +72,9 @@ option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
 
-option(ENABLE_BABELFLOW   "Enable BabelFlow runtime" OFF)
+option(ENABLE_BABELFLOW   "Enable BabelFlow runtime"  OFF)
+
+option(ENABLE_VTK         "Enable VTK support"        OFF)
 
 if(NOT ENABLE_SERIAL AND NOT ENABLE_MPI)
   message(FATAL_ERROR "No libraries are built. "
