@@ -1454,6 +1454,7 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     m_info["color_buffers"] = color_buffers;
     m_info["depth_buffers"] = depth_buffers;
     m_info["depths"] = depths;
+    m_info["render_file_names"] = render_file_names;
 
     const conduit::Node &expression_cache =
         runtime::expressions::ExpressionEval::get_cache();

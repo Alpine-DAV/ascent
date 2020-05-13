@@ -629,7 +629,7 @@ int calc_render_msg_size(const int render_count, const double probing_factor,
                          const int channels = 4+4)
 {
     const int total_renders = render_count - int(probing_factor * render_count);
-    const int overhead_render = 396;
+    const int overhead_render = 396 + 256;    // TODO: add bytes for name
     const int overhead_global = 288;
     return total_renders * channels * width * height + 
             total_renders * overhead_render + overhead_global;
@@ -849,7 +849,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     // TODO: make batch_size variable by config, 
     // TODO: adapt batch_size to probing size so that first render is always probing,
     //       this would avoid batch size 1 issues
-    const int batch_size = 20;  
+    const int BATCH_SIZE = 20;  
     
     const int tag_data = 0;
     const int tag_probing = tag_data + 1;
@@ -928,7 +928,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         for (int i = 0; i < batches.size(); ++i)
         {
             int render_count = g_render_counts[src_ranks[i]] + int(g_render_counts[src_ranks[i]]*probing_factor);
-            batches[i] = get_batch(render_count, batch_size);
+            batches[i] = get_batch(render_count, BATCH_SIZE);
         }
 
         int sum_batches = 0;
@@ -954,16 +954,16 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
             for (int j = 0; j < batches[i].runs; ++j)
             {
-                const int current_batch_size = (j == batches[i].runs - 1) ? batches[i].rest : batch_size;
+                const int current_batch_size = (j == batches[i].runs - 1) ? batches[i].rest : BATCH_SIZE;
                 buffer_size = calc_render_msg_size(current_batch_size, probing_factor);
                 render_chunks_sim[i][j] = make_unique<Node>(DataType::uint8(buffer_size));
                 if (current_batch_size <= 1)    // TODO: single render that was already probed
                     render_chunks_sim[i].pop_back();
-                // std::cout << current_batch_size << " expected render_msg_size " << buffer_size << std::endl;
+                std::cout << current_batch_size << " expected render_msg_size " << buffer_size << std::endl;
             }
         }
 
-        // post receives for the render chunks to receive asynchronous (non-blocking)
+        // post the receives for the render chunks to receive asynchronous (non-blocking)
         for (int i = 0; i < sending_count; ++i)
         {
             std::cout << " ~~~ vis node " << world_rank << " receiving " << batches[i].runs
@@ -987,7 +987,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             for (int j = 0; j < batches[i].runs; ++j)
             {
                 // correct size for last iteration
-                const int current_batch_size = (j == batches[i].runs - 1) ? batches[i].rest : batch_size;
+                const int current_batch_size = (j == batches[i].runs - 1) ? batches[i].rest : BATCH_SIZE;
                 if (current_batch_size <= 1)
                     break;
 
@@ -1004,6 +1004,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             }
         }
 
+        // wait for all data sets to arrive
         for (int i = 0; i < sending_count; ++i)
         {
             int id = -1;
@@ -1051,10 +1052,12 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     // }
                     // std::cout << "render times VIS node +++ " << world_rank << std::endl;
 
+                    // TODO: deep copy happening here? (if so directly use info node)
                     Node render_chunks;
                     render_chunks["depths"] = info["depths"];
                     render_chunks["color_buffers"] = info["color_buffers"];
                     render_chunks["depth_buffers"] = info["depth_buffers"];
+                    render_chunks["render_file_names"] = info["render_file_names"];
                     render_chunks_vis[i] = make_unique<Node>(render_chunks);
 
                     ascent_render.close();
@@ -1085,65 +1088,118 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         // TODO: compositing
         {
             auto t_start = std::chrono::system_clock::now();
-            std::vector< std::unique_ptr<Node> > render_parts;
 
+            // unpack sent renders
+            std::vector<std::unique_ptr<Node> > parts_probing;
             // render parts from this vis node don't need to be unpacked
             for (auto const& p : render_chunks_probe)
             {
-                render_parts.emplace_back(make_unique<Node>());
-                unpack_node(*p, *render_parts.back());
+                parts_probing.emplace_back(make_unique<Node>());
+                unpack_node(*p, *parts_probing.back());
             }
-
-            // TODO: add vis chunks and inline chunks
-            // for (auto const& src : render_chunks_sim)
-            // {
-            //     for (auto const& batch : src)
-            //     {
-            //         render_parts.emplace_back(make_unique<Node>());
-            //         unpack_node(*batch, *render_parts.back());
-            //     }
-            // }
-
-            std::cout << "-- probing depths order: " << std::endl;
-            std::vector< std::vector<float> > depths(probing_count);
-            std::vector< std::vector<Node> > color_buffers(probing_count);
-            std::vector< std::vector<Node> > depth_buffers(probing_count);
+            // std::cout << "parts probing " << parts_probing.size() << std::endl;
+            // sender / batches
+            std::vector<std::vector<std::unique_ptr<Node> > > parts_sim(sending_count);
             for (int i = 0; i < sending_count; ++i)
             {
-                int j = 0;
-                depths[j].reserve(sending_count);
-                NodeIterator itr = (*render_parts[i])["depths"].children();
-                while (itr.has_next())
+                for (auto const& batch : render_chunks_sim[i])
                 {
-                    Node &depth = itr.next();
-                    depths[j].push_back(depth.to_float());
-                    ++j;
+                    parts_sim[i].emplace_back(make_unique<Node>());
+                    unpack_node(*batch, *parts_sim[i].back());
                 }
+                // std::cout << "parts sim " << i << " " << parts_sim[i].size() << std::endl;
+            }
+            log_time(t_start, "+ unpack images ", world_rank);
 
-                j = 0;
-                itr = (*render_parts[i])["color_buffers"].children();
-                while (itr.has_next())
+            // arrange render order
+            //
+            int probing_enum_sim = 0;
+            int probing_enum_vis = 0;
+            // images / sender / values
+            std::vector<std::vector<float> > depths(max_render_count);
+            std::vector<std::vector<std::string> > render_file_names(max_render_count);
+            std::vector<std::vector<std::unique_ptr<Node> > > color_buffers(max_render_count);
+            std::vector<std::vector<std::unique_ptr<Node> > > depth_buffers(max_render_count);
+            for (int j = 0; j < max_render_count; ++j)
+            {
+                // std::cout << "\nimage " << j << std::endl;
+                for (int i = 0; i < sending_count; ++i)
                 {
-                    Node &color_buffer = itr.next();
-                    color_buffers[j].push_back(color_buffer);
-                    ++j;
-                }
+                    // std::cout << "  " << i << " ";
+                    depths[j].reserve(sending_count);
+                    color_buffers[j].reserve(sending_count);
+                    depth_buffers[j].reserve(sending_count);
 
-                j = 0;
-                itr = (*render_parts[i])["depth_buffers"].children();
-                while (itr.has_next())
-                {
-                    Node &depth_buffer = itr.next();
-                    depth_buffers[j].push_back(depth_buffer);
-                    ++j;
+                    if (j % probing_stride == 0)    // probing image
+                    {
+                        const index_t id = j / probing_stride;
+                        // std::cout << " probe  " << id << std::endl;
+
+                        depths[j].push_back((*parts_probing[i])["depths"].child(id).to_float());
+                        render_file_names[j].push_back((*parts_probing[i])["render_file_names"].child(id).as_string());
+                        std::unique_ptr<Node> cb = make_unique<Node>((*parts_probing[i])["color_buffers"].child(id));
+                        color_buffers[j].push_back(std::move(cb));
+                        std::unique_ptr<Node> db = make_unique<Node>((*parts_probing[i])["depth_buffers"].child(id));
+                        depth_buffers[j].push_back(std::move(db));
+                        // keep track of probing images
+                        if (i == 0)
+                        {
+                            // reset counter if first in batch
+                            if (j % BATCH_SIZE == 0)   
+                                probing_enum_sim = 0;
+                            ++probing_enum_sim;
+
+                            // reset probing counter if first render in vis chunks
+                            if (j - g_render_counts[src_ranks[i]] == 0)
+                                probing_enum_vis = 0;
+                            ++probing_enum_vis;
+                        }
+                    }
+                    else if (j < g_render_counts[src_ranks[i]]) // part comes from sim node (inline)
+                    {
+                        // reset probing counter if first in batch and not a probing render
+                        if (j % BATCH_SIZE == 0)
+                            probing_enum_sim = 0;
+
+                        const int batch_id = j / BATCH_SIZE;
+                        const index_t id = (j % BATCH_SIZE) - probing_enum_sim;
+                        // std::cout << " sim  " << id << std::endl;
+
+                        depths[j].push_back((*parts_sim[i][batch_id])["depths"].child(id).to_float());                        
+                        render_file_names[j].push_back((*parts_sim[i][batch_id])["render_file_names"].child(id).as_string());
+                        std::unique_ptr<Node> cb = make_unique<Node>((*parts_sim[i][batch_id])["color_buffers"].child(id));
+                        color_buffers[j].push_back(std::move(cb));
+                        std::unique_ptr<Node> db = make_unique<Node>((*parts_sim[i][batch_id])["depth_buffers"].child(id));
+                        depth_buffers[j].push_back(std::move(db));
+                    }
+                    else    // part rendered on this vis node
+                    {
+                        // reset probing counter if first render in vis chunks and not a probing render
+                        if (j - g_render_counts[src_ranks[i]] == 0)
+                            probing_enum_vis = 0;
+
+                        const index_t id = (j - g_render_counts[src_ranks[i]]) - probing_enum_vis;
+                        // std::cout << " vis  " << id << std::endl;
+
+                        depths[j].push_back((*render_chunks_vis[i])["depths"].child(id).to_float());
+                        render_file_names[j].push_back((*render_chunks_vis[i])["render_file_names"].child(id).as_string());
+                        std::unique_ptr<Node> cb = make_unique<Node>((*render_chunks_vis[i])["color_buffers"].child(id));
+                        color_buffers[j].push_back(std::move(cb));
+                        std::unique_ptr<Node> db = make_unique<Node>((*render_chunks_vis[i])["depth_buffers"].child(id));
+                        depth_buffers[j].push_back(std::move(db));
+                    }
                 }
             }
 
-            int height = 1024;
-            int width = 1024;
+            // composite
+            //
+            const int height = 1024;
+            const int width = 1024;
+
+            t_start = std::chrono::system_clock::now();
 
             // loop over images (camera positions)
-            for (int j = 0; j < probing_count; ++j)
+            for (int j = 0; j < max_render_count; ++j)
             {
                 std::vector<vtkh::Image> images(sending_count);
 
@@ -1153,8 +1209,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 // loop over render parts (= 1 per sim node) and add as images
                 for (int i = 0; i < sending_count; ++i)
                 {
-                    images[i].Init(color_buffers[j][i].as_unsigned_char_ptr(),
-                                   depth_buffers[j][i].as_float_ptr(),
+                    images[i].Init(color_buffers[j][i]->as_unsigned_char_ptr(),
+                                   depth_buffers[j][i]->as_float_ptr(),
                                    width,
                                    height,
                                    depths_order_id[i] //depths[j][i]
@@ -1182,10 +1238,11 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
                 {   // write to disk 
                     t_start = std::chrono::system_clock::now();
-                    std::string name = "img_";
-                    name += std::to_string(j);
-                    name += ".png";
-                    images[0].Save(name);
+                    // std::string name = "img_";
+                    // name += std::to_string(j);
+                    // name += ".png";
+                    std::cout << render_file_names[j][0] << std::endl;
+                    images[0].Save(render_file_names[j][0]);
                     log_time(t_start, "+ save image ", world_rank);
                 }
             }
@@ -1210,7 +1267,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         //     scene.SetRenders(renders);
         //     (*renderer)->Composite(total_renders);
 
-            std::cout << "-- Compositing " << render_parts.size() << std::endl;
+            // std::cout << "-- Compositing " << std::endl;
         }
 
     } // end vis node
@@ -1226,7 +1283,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         {
             Node compact_probing_renders = pack_node(render_chunks_probing);
             const int my_render_count = g_render_counts[world_rank] + int(g_render_counts[world_rank]*probing_factor);
-            RenderBatch batch = get_batch(my_render_count, batch_size);
+            RenderBatch batch = get_batch(my_render_count, BATCH_SIZE);
 
             {   // init send buffer
                 detach_mpi_buffer();
@@ -1257,13 +1314,13 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             MPI_Request request_probing = MPI_REQUEST_NULL;
             {   // send probing chunks to vis node
                 int mpi_error = MPI_Ibsend(compact_probing_renders.data_ptr(),
-                                            compact_probing_renders.total_bytes_compact(),
-                                            MPI_BYTE,
-                                            destination,
-                                            tag_probing,
-                                            mpi_comm_world,
-                                            &request_probing
-                                            );
+                                           compact_probing_renders.total_bytes_compact(),
+                                           MPI_BYTE,
+                                           destination,
+                                           tag_probing,
+                                           mpi_comm_world,
+                                           &request_probing
+                                           );
                 if (mpi_error)
                     std::cout << "ERROR sending probing renders to " << destination << std::endl;
             }
@@ -1274,11 +1331,11 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             auto t_start = std::chrono::system_clock::now();
             for (int i = 0; i < batch.runs; ++i)
             {
-                const int begin = i*batch_size;
-                const int current_batch_size = (i == batch.runs - 1) ? batch.rest : batch_size;
+                const int begin = i*BATCH_SIZE;
+                const int current_batch_size = (i == batch.runs - 1) ? batch.rest : BATCH_SIZE;
                 if (current_batch_size <= 1)
                     break;
-                const int end = i*batch_size + current_batch_size;
+                const int end = i*BATCH_SIZE + current_batch_size;
 
                 std::cout   << "~~ SIM node " << world_rank << " rendering " 
                             << begin << " - " << end << std::endl;
@@ -1298,6 +1355,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 render_chunks_inline["depths"] = info["depths"];
                 render_chunks_inline["color_buffers"] = info["color_buffers"];
                 render_chunks_inline["depth_buffers"] = info["depth_buffers"];
+                render_chunks_inline["render_file_names"] = info["render_file_names"];
 
                 // NodeIterator itr = info["color_buffers"].children();
                 // while (itr.has_next())
@@ -1329,9 +1387,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     if (mpi_error)
                         std::cout << "ERROR sending dataset to " << destination << std::endl;
 
-                    // std::cout << world_rank << " end render sim " << current_batch_size
-                    //             << " renders size " << compact_renders.total_bytes_compact() 
-                    //             << std::endl;
+                    std::cout << world_rank << " end render sim " << current_batch_size
+                                << " renders size " << compact_renders.total_bytes_compact() 
+                                << std::endl;
                 }                 
             }
             log_time(t_start, "+ render sim " + std::to_string(g_render_counts[world_rank]) + " ", world_rank);
@@ -1490,39 +1548,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         render_chunks["depths"] = info["depths"];
         render_chunks["color_buffers"] = info["color_buffers"];
         render_chunks["depth_buffers"] = info["depth_buffers"];
-
-        // std::vector<float> depths;
-        // itr = info["depths"].children();
-        // while (itr.has_next())
-        // {
-        //     Node &depth = itr.next();
-        //     depths.push_back(depth.to_float());
-        // }
-        // std::vector<Node> color_buffers;
-        // itr = info["color_buffers"].children();
-        // while (itr.has_next())
-        // {
-        //     Node &b = itr.next();
-        //     color_buffers.push_back(b);
-        // }
-        // std::vector<Node> depth_buffers;
-        // itr = info["depth_buffers"].children();
-        // while (itr.has_next())
-        // {
-        //     Node &b = itr.next();
-        //     depth_buffers.push_back(b);
-        // }
-        
-        // color_buffers[0].dtype().number_of_elements()
-
-        // std::cout << "$$$ depth_buffers " << depth_buffers.size() << std::endl;
-        // for (size_t i = 0; i < color_buffers[0].dtype().number_of_elements(); i++)
-        // {
-        //     unsigned char v = color_buffers[0].as_char_ptr()[i];
-        //     if (v > 0)
-        //         std::cout << v << " ";
-        // }
-        // std::cout << std::endl;
+        render_chunks["render_file_names"] = info["render_file_names"];
 
         ascent_probing.close();
         int probing_images = int(std::round(probing_factor * phi * theta));

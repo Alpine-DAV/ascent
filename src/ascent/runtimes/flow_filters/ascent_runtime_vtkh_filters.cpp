@@ -292,7 +292,7 @@ public:
     return &m_color_buffers.at(rendererId);
   }
 
-  // return color buffers of all renders of selected renderer 
+  // return depth buffers of all renders of selected renderer 
   std::vector< std::vector<float>> *GetDepthBuffers(int rendererId)
   {
     if(rendererId >= m_renderer_count)
