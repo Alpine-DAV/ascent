@@ -177,17 +177,17 @@ endif()
 add_subdirectory(ascent)
 
 ################################
-# Add our tests
-################################
-if(ENABLE_TESTS)
-    add_subdirectory(tests)
-endif()
-
-################################
 # Add mini-app examples
 ################################
 if(ENABLE_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+################################
+# Add our tests
+################################
+if(ENABLE_TESTS)
+    add_subdirectory(tests)
 endif()
 
 ################################
