@@ -1034,7 +1034,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                                 << render_offset + current_render_count << std::endl;
                     ascent_opts["render_count"] = current_render_count;
                     ascent_opts["render_offset"] = render_offset;
-                    ascent_opts["vis_node"] = true;
+                    ascent_opts["vis_node"] = (i == 0) ? true : false;  // TODO: change name to cinema increment indicator
 
                     Ascent ascent_render;
                     ascent_render.open(ascent_opts);
@@ -1241,8 +1241,10 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     // std::string name = "img_";
                     // name += std::to_string(j);
                     // name += ".png";
+                    
                     std::cout << render_file_names[j][0] << std::endl;
-                    images[0].Save(render_file_names[j][0]);
+
+                    images[0].Save(render_file_names[j][0] + std::to_string(j) + ".png");
                     log_time(t_start, "+ save image ", world_rank);
                 }
             }
@@ -1518,7 +1520,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 #endif // ASCENT_MPI_ENABLED
 
     std::vector<double> render_times;
-    // TODO: handle case where there is no probing (and no probing chunks)
+    // TODO: handle corner case where there is no probing (and no probing chunks)
     Node render_chunks;
     // run probing only if this is a sim node
     if (world_rank < rank_split && probing_factor > 0.0)

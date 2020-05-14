@@ -1639,6 +1639,9 @@ void DefaultRender::execute()
               is_probing = true;
           }
         }
+        bool is_vis_node = false;
+        if (meta->has_path("vis_node"))
+          is_vis_node = (*meta)["vis_node"].as_int32();
 
         std::string output_path = "";
 
@@ -1670,7 +1673,8 @@ void DefaultRender::execute()
         parse_image_dims(render_node, image_width, image_height);
 
         manager.set_bounds(*bounds);
-        manager.add_time_step();
+        if (is_probing || (!is_probing && is_vis_node)) // new timestep only for probing run otherwise we generate too many
+          manager.add_time_step();
         manager.fill_renders(renders, v_domain_ids, render_node, 
                              current_render_count, render_offset, stride, is_probing);
         manager.write_metadata();
