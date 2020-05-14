@@ -68,10 +68,15 @@ namespace ascent
 class VTKHCollection;
 #endif
 
+#if defined(ASCENT_DRAY_ENABLED)
+// forward declare
+class DRayCollection;
+#endif
+
 class DataObject
 {
 public:
-  enum class Source { VTKH, LOW_BP, HIGH_BP, INVALID};
+  enum class Source { VTKH, LOW_BP, HIGH_BP, DRAY, INVALID};
   DataObject();
   //
   // Constructors take ownership of pointers
@@ -83,16 +88,28 @@ public:
 #if defined(ASCENT_VTKM_ENABLED)
   DataObject(VTKHCollection *dataset);
   std::shared_ptr<VTKHCollection> as_vtkh_collection();
+
+  bool                            is_vtkh_coll_exists() const { return m_vtkh != nullptr; }
+  void                            reset_vtkh_collection();
+
+#endif
+#if defined(ASCENT_DRAY_ENABLED)
+  DataObject(DRayCollection *dataset);
+  std::shared_ptr<DRayCollection> as_dray_collection();
 #endif
   std::shared_ptr<conduit::Node>  as_low_order_bp();
   std::shared_ptr<conduit::Node>  as_high_order_bp();
   std::shared_ptr<conduit::Node>  as_node();          // just return the coduit node
   DataObject::Source              source() const;
+  std::string source_string() const;
 protected:
   std::shared_ptr<conduit::Node>  m_low_bp;
   std::shared_ptr<conduit::Node>  m_high_bp;
 #if defined(ASCENT_VTKM_ENABLED)
   std::shared_ptr<VTKHCollection> m_vtkh;
+#endif
+#if defined(ASCENT_DRAY_ENABLED)
+  std::shared_ptr<DRayCollection> m_dray;
 #endif
 
   Source m_source;

@@ -73,6 +73,10 @@ public:
   virtual ~Scheduler();
   void trace_rays() override;
   void save_result(std::string file_name) override;
+  void save_result(std::string file_name,
+                   float min_val,
+                   float max_val,
+                   bool log_scale) override;
   void save_bov(std::string file_name) override;
 
   virtual void get_result(Image<vtkm::Float32> &image) override;

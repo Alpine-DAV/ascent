@@ -56,6 +56,10 @@
 #include "ascent_vtkh_data_adapter.hpp"
 #endif
 
+#if defined(ASCENT_DRAY_ENABLED)
+#include "ascent_dray_data_adapter.hpp"
+#endif
+
 #include "ascent_transmogrifier.hpp"
 
 #include <ascent_logging.hpp>
@@ -72,6 +76,9 @@ DataObject::DataObject()
 #if defined(ASCENT_VTKM_ENABLED)
     m_vtkh(nullptr),
 #endif
+#if defined(ASCENT_DRAY_ENABLED)
+    m_dray(nullptr),
+#endif
     m_source(Source::INVALID)
 {
 
@@ -82,7 +89,24 @@ DataObject::DataObject(VTKHCollection *dataset)
   : m_low_bp(nullptr),
     m_high_bp(nullptr),
     m_vtkh(dataset),
+#if defined(ASCENT_DRAY_ENABLED)
+    m_dray(nullptr),
+#endif
     m_source(Source::VTKH)
+{
+
+}
+#endif
+
+#if defined(ASCENT_DRAY_ENABLED)
+DataObject::DataObject(DRayCollection *dataset)
+  : m_low_bp(nullptr),
+    m_high_bp(nullptr),
+#if defined(ASCENT_VTKM_ENABLED)
+    m_vtkh(nullptr),
+#endif
+    m_dray(dataset),
+    m_source(Source::DRAY)
 {
 
 }
@@ -93,6 +117,9 @@ DataObject::DataObject(conduit::Node *dataset)
     m_high_bp(nullptr)
 #if defined(ASCENT_VTKM_ENABLED)
     ,m_vtkh(nullptr)
+#endif
+#if defined(ASCENT_DRAY_ENABLED)
+    ,m_dray(nullptr)
 #endif
 {
   reset(dataset);
@@ -113,6 +140,11 @@ void DataObject::reset(conduit::Node *dataset)
   m_vtkh = null_vtkh;
 #endif
 
+#if defined(ASCENT_DRAY_ENABLED)
+  std::shared_ptr<DRayCollection> null_dray(nullptr);
+  m_dray = null_dray;
+#endif
+
   if(high_order)
   {
     m_high_bp = bp;
@@ -124,6 +156,38 @@ void DataObject::reset(conduit::Node *dataset)
     m_source = Source::LOW_BP;
   }
 }
+
+#if defined(ASCENT_DRAY_ENABLED)
+std::shared_ptr<DRayCollection> DataObject::as_dray_collection()
+{
+  if(m_source == Source::INVALID)
+  {
+    ASCENT_ERROR("Source never initialized: default constructed");
+  }
+
+  if(m_dray != nullptr)
+  {
+    return m_dray;
+  }
+  else
+  {
+    if(m_source == Source::HIGH_BP)
+    {
+      std::shared_ptr<DRayCollection> dray(DRayCollection::blueprint_to_dray(*m_high_bp));
+      m_dray = dray;
+      return m_dray;
+    }
+    else
+    {
+      ASCENT_ERROR("converting from low order to devil ray is not currenlty supported");
+    }
+
+  }
+
+  ASCENT_ERROR("this should never happen");
+  return nullptr;
+}
+#endif
 
 #if defined(ASCENT_VTKM_ENABLED)
 std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
@@ -156,6 +220,12 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
 
   ASCENT_ERROR("this should never happen");
   return nullptr;
+}
+
+void DataObject::reset_vtkh_collection()
+{
+  if(m_source != Source::VTKH)
+    m_vtkh.reset();
 }
 #endif
 
@@ -247,6 +317,32 @@ std::shared_ptr<conduit::Node>  DataObject::as_node()
 DataObject::Source DataObject::source() const
 {
   return m_source;
+}
+
+std::string DataObject::source_string() const
+{
+  std::string res;
+  if(m_source == Source::INVALID)
+  {
+    res = "Invalid";
+  }
+  if(m_source == Source::VTKH)
+  {
+    res = "VTKH";
+  }
+  if(m_source == Source::LOW_BP)
+  {
+    res = "LOW_BP";
+  }
+  if(m_source == Source::HIGH_BP)
+  {
+    res = "HIGH_BP";
+  }
+  if(m_source == Source::DRAY)
+  {
+    res = "DRAY";
+  }
+  return res;
 }
 
 //-----------------------------------------------------------------------------

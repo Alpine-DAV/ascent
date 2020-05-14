@@ -62,7 +62,8 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_web_flow
                 t_ascent_web_main
                 t_ascent_clip
-                t_ascent_mutli_topo
+                t_ascent_scalar_renderer
+                t_ascent_multi_topo
                 t_ascent_gradient
                 t_ascent_qcriterion
                 t_ascent_divergence
@@ -75,7 +76,8 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_pipelines_to_pipelines
                 t_ascent_threshold
                 t_ascent_slice
-                t_ascent_vector_magnitude
+                t_ascent_patch_amr
+                t_ascent_vector_ops
                 t_ascent_flow_runtime
                 t_ascent_recenter
                 t_ascent_rover
@@ -91,6 +93,7 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_render_2d
                t_ascent_mpi_render_3d
                t_ascent_mpi_statistics
+               t_ascent_mpi_multi_topo
                t_ascent_mpi_slice)
 
 # t_ascent_hola_mpi uses 8 mpi tasks, so its added manually
@@ -112,6 +115,10 @@ endif()
 if(PYTHON_FOUND AND ENABLE_PYTHON)
     list(APPEND BASIC_TESTS t_ascent_python_extract)
     list(APPEND MPI_TESTS t_ascent_mpi_python_extract)
+endif()
+
+if(DRAY_FOUND)
+    list(APPEND BASIC_TESTS t_ascent_dray)
 endif()
 
 
@@ -149,10 +156,10 @@ if(MPI_FOUND AND ENABLE_MPI)
     # add the hola mpi test which uses 8 ranks
     add_cpp_mpi_test(TEST t_ascent_hola_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
 
-	if(ENABLE_BABELFLOW)
-		# add the babelflow pmt mpi test
-    	add_cpp_mpi_test(TEST t_ascent_babelflow_pmt_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
-	endif()
+  if(ENABLE_BABELFLOW)
+  # add the babelflow pmt mpi test
+    add_cpp_mpi_test(TEST t_ascent_babelflow_pmt_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
+  endif()
 else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()

@@ -66,6 +66,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_string_utils.hpp>
+#include <ascent_runtime_utils.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -162,6 +163,31 @@ RoverXRay::verify_params(const conduit::Node &params,
     {
         info["errors"].append() = "Optional parameter 'emission' must be a string";
         res = false;
+    }
+
+
+    if(params.has_path("image_params"))
+    {
+      if( !params.has_path("image_params/log_scale") ||
+         ! params["image_params/log_scale"].dtype().is_string() )
+      {
+          info["errors"].append() = "Missing required image parameter 'log_scale' must be a string";
+          res = false;
+      }
+
+      if( !params.has_path("image_params/min_value") ||
+         ! params["image_params/min_value"].dtype().is_number() )
+      {
+          info["errors"].append() = "Missing required image parameter 'min_value' must be a number";
+          res = false;
+      }
+
+      if( !params.has_path("image_params/max_value") ||
+         ! params["image_params/max_value"].dtype().is_number() )
+      {
+          info["errors"].append() = "Missing required image parameter 'max_value' must be a number";
+          res = false;
+      }
     }
 
     if( params.has_child("precision") &&
@@ -268,16 +294,27 @@ RoverXRay::execute()
     std::string filename = params()["filename"].as_string();
     if(cycle != -1)
     {
-      tracer.save_png(expand_family_name(filename, cycle));
+      filename = expand_family_name(filename, cycle);
+    }
+    filename = output_dir(filename, graph());
+
+    if(params().has_path("image_params"))
+    {
+      float min_value = params()["image_params/min_value"].to_float32();
+      float max_value = params()["image_params/max_value"].to_float32();
+      bool log_scale = params()["image_params/log_scale"].as_string() == "true";
+      tracer.save_png(filename, min_value, max_value, log_scale);
+
     }
     else
     {
-      tracer.save_png(expand_family_name(filename));
+      tracer.save_png(filename);
     }
 
     if(params().has_path("bov_filename"))
     {
       std::string bov_filename = params()["bov_filename"].as_string();
+      bov_filename = output_dir(bov_filename, graph());
       if(cycle != -1)
       {
         tracer.save_bov(expand_family_name(bov_filename, cycle));
@@ -456,12 +493,15 @@ RoverVolume::execute()
     std::string filename = params()["filename"].as_string();
     if(cycle != -1)
     {
-      tracer.save_png(expand_family_name(filename, cycle));
+      filename = expand_family_name(filename, cycle);
     }
     else
     {
-      tracer.save_png(expand_family_name(filename));
+      filename = expand_family_name(filename);
     }
+    filename = output_dir(filename, graph());
+
+    tracer.save_png(filename);
     tracer.finalize();
 
 }

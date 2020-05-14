@@ -390,9 +390,10 @@ int main(int argc, char *argv[])
             ascent.publish(n_dset);
 
             conduit::Node scenes;
-            scenes["s1/plots/p1/type"]         = "pseudocolor";
+            scenes["s1/plots/p1/type"]  = "pseudocolor";
             scenes["s1/plots/p1/field"] = "density";
-            scenes["s1/plots/p2/type"]         = "mesh";
+            scenes["s1/plots/p2/type"]  = "mesh";
+            scenes["s1/plots/p2/topology"]  = "main";
 
             conduit::Node actions;
             conduit::Node &add_plots = actions.append();

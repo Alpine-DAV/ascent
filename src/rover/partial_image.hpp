@@ -45,9 +45,9 @@
 #include <vector>
 
 #include <vtkm/cont/ArrayHandle.h>
-#include <vtkh/rendering/AbsorptionPartial.hpp>
-#include <vtkh/rendering/EmissionPartial.hpp>
-#include <vtkh/rendering/VolumePartial.hpp>
+#include <vtkh/compositing/AbsorptionPartial.hpp>
+#include <vtkh/compositing/EmissionPartial.hpp>
+#include <vtkh/compositing/VolumePartial.hpp>
 
 namespace rover
 {
@@ -84,9 +84,9 @@ struct PartialImage
 
   void extract_partials(std::vector<vtkh::VolumePartial<FloatType>> &partials)
   {
-    auto id_portal = m_pixel_ids.GetPortalConstControl();
-    auto buffer_portal = m_buffer.Buffer.GetPortalConstControl();
-    auto depth_portal = m_distances.GetPortalConstControl();
+    auto id_portal = m_pixel_ids.ReadPortal();
+    auto buffer_portal = m_buffer.Buffer.ReadPortal();
+    auto depth_portal = m_distances.ReadPortal();
     const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
     partials.resize(size);
 
@@ -109,9 +109,9 @@ struct PartialImage
   void extract_partials(std::vector<vtkh::AbsorptionPartial<FloatType>> &partials)
   {
     const int num_bins = m_buffer.GetNumChannels();
-    auto id_portal = m_pixel_ids.GetPortalConstControl();
-    auto buffer_portal = m_buffer.Buffer.GetPortalConstControl();
-    auto depth_portal = m_distances.GetPortalConstControl();
+    auto id_portal = m_pixel_ids.ReadPortal();
+    auto buffer_portal = m_buffer.Buffer.ReadPortal();
+    auto depth_portal = m_distances.ReadPortal();
     const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
     partials.resize(size);
 
@@ -135,11 +135,11 @@ struct PartialImage
   void extract_partials(std::vector<vtkh::EmissionPartial<FloatType>> &partials)
   {
     const int num_bins = m_buffer.GetNumChannels();
-    auto id_portal = m_pixel_ids.GetPortalConstControl();
-    auto buffer_portal = m_buffer.Buffer.GetPortalConstControl();
-    auto intensity_portal = m_intensities.Buffer.GetPortalConstControl();
+    auto id_portal = m_pixel_ids.ReadPortal();
+    auto buffer_portal = m_buffer.Buffer.ReadPortal();
+    auto intensity_portal = m_intensities.Buffer.ReadPortal();
 
-    auto depth_portal = m_distances.GetPortalConstControl();
+    auto depth_portal = m_distances.ReadPortal();
     const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
 
     partials.resize(size);
@@ -173,10 +173,10 @@ struct PartialImage
     const int size = static_cast<int>(partials.size());
     allocate(size,4);
 
-    auto id_portal = m_pixel_ids.GetPortalControl();
-    auto buffer_portal = m_buffer.Buffer.GetPortalControl();
-    auto depth_portal = m_distances.GetPortalControl();
-    auto intensity_portal = m_intensities.Buffer.GetPortalControl();
+    auto id_portal = m_pixel_ids.WritePortal();
+    auto buffer_portal = m_buffer.Buffer.WritePortal();
+    auto depth_portal = m_distances.WritePortal();
+    auto intensity_portal = m_intensities.Buffer.WritePortal();
 
     vtkh::VolumePartial<FloatType> bg_color;
     bg_color.m_pixel[0] = static_cast<FloatType>(background[0]);
@@ -224,10 +224,10 @@ struct PartialImage
     const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
     allocate(size,num_bins);
 
-    auto id_portal = m_pixel_ids.GetPortalControl();
-    auto buffer_portal = m_buffer.Buffer.GetPortalControl();
-    auto depth_portal = m_distances.GetPortalControl();
-    auto intensity_portal = m_intensities.Buffer.GetPortalControl();
+    auto id_portal = m_pixel_ids.WritePortal();
+    auto buffer_portal = m_buffer.Buffer.WritePortal();
+    auto depth_portal = m_distances.WritePortal();
+    auto intensity_portal = m_intensities.Buffer.WritePortal();
 
 #ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for
@@ -262,10 +262,10 @@ struct PartialImage
     const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
     allocate(size,num_bins);
 
-    auto id_portal = m_pixel_ids.GetPortalControl();
-    auto buffer_portal = m_buffer.Buffer.GetPortalControl();
-    auto depth_portal = m_distances.GetPortalControl();
-    auto intensity_portal = m_intensities.Buffer.GetPortalControl();
+    auto id_portal = m_pixel_ids.WritePortal();
+    auto buffer_portal = m_buffer.Buffer.WritePortal();
+    auto depth_portal = m_distances.WritePortal();
+    auto intensity_portal = m_intensities.Buffer.WritePortal();
 
 #ifdef ROVER_ENABLE_OPENMP
     #pragma omp parallel for
@@ -293,9 +293,9 @@ struct PartialImage
 
   void add_source_sig()
   {
-    auto buffer_portal = m_buffer.Buffer.GetPortalControl();
-    auto int_portal = m_intensities.Buffer.GetPortalControl();
-    const int size = m_pixel_ids.GetPortalControl().GetNumberOfValues();
+    auto buffer_portal = m_buffer.Buffer.WritePortal();
+    auto int_portal = m_intensities.Buffer.WritePortal();
+    const int size = m_pixel_ids.GetNumberOfValues();
     const int num_channels = m_buffer.GetNumChannels();
 
     bool has_emission = m_intensities.Buffer.GetNumberOfValues() != 0;
@@ -326,22 +326,22 @@ struct PartialImage
 
   void print_pixel(const int x, const int y)
   {
-    const int size = m_pixel_ids.GetPortalControl().GetNumberOfValues();
+    const int size = m_pixel_ids.GetNumberOfValues();
     const int num_channels = m_buffer.GetNumChannels();
     bool has_emission = m_intensities.Buffer.GetNumberOfValues() != 0;
     int debug = m_width * ( m_height - y) + x;
 
     for(int i = 0; i < size; ++i)
     {
-      if(m_pixel_ids.GetPortalControl().Get(i) == debug)
+      if(m_pixel_ids.ReadPortal().Get(i) == debug)
       {
         int offset = i * num_channels;
         for(int j = 0; j < num_channels ; ++j)
         {
-          std::cout<<m_buffer.Buffer.GetPortalControl().Get(offset + j)<<" ";
+          std::cout<<m_buffer.Buffer.ReadPortal().Get(offset + j)<<" ";
           if(has_emission)
           {
-            std::cout<<"("<<m_intensities.Buffer.GetPortalControl().Get(offset + j)<<") ";
+            std::cout<<"("<<m_intensities.Buffer.ReadPortal().Get(offset + j)<<") ";
           }
         }
         std::cout<<"\n";
@@ -352,21 +352,21 @@ struct PartialImage
 
   void make_red_pixel(const int x, const int y)
   {
-    const int size = m_pixel_ids.GetPortalControl().GetNumberOfValues();
+    const int size = m_pixel_ids.GetNumberOfValues();
     const int num_channels = m_buffer.GetNumChannels();
     int debug = m_width * ( m_height - y) + x;
 
     for(int i = 0; i < size; ++i)
     {
-      if(m_pixel_ids.GetPortalControl().Get(i) == debug)
+      if(m_pixel_ids.ReadPortal().Get(i) == debug)
       {
         int offset = i * num_channels;
-        m_buffer.Buffer.GetPortalControl().Set(offset , 1.f);
+        m_buffer.Buffer.WritePortal().Set(offset , 1.f);
         for(int j = 1; j < num_channels -1; ++j)
         {
-          m_buffer.Buffer.GetPortalControl().Set(offset + j, 0.f);
+          m_buffer.Buffer.WritePortal().Set(offset + j, 0.f);
         }
-        m_buffer.Buffer.GetPortalControl().Set(offset + num_channels-1,1.f);
+        m_buffer.Buffer.WritePortal().Set(offset + num_channels-1,1.f);
       }
     }
   }

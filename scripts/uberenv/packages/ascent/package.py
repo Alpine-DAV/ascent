@@ -41,10 +41,13 @@ class Ascent(Package, CudaPackage):
 
     version('develop',
             branch='develop',
-            submodules=True)
+            submodules=True,
+            prefered=True)
 
-    version('0.5.1', sha256='6ad426d92a37dc9466e55e8c0cc5fccf02d0107d1035f8ee1c43fb1539592174')
-    version('0.5.0', sha256='2837b7371db3ac1bcc31a479d7cf0eb62a503cacadfa4187061502b3c4a89fa0')
+    # these are commented out b/c if they are active they undermine using develop
+    # develop uses the set of deps that we keep healthy
+    # version('0.5.1', sha256='6ad426d92a37dc9466e55e8c0cc5fccf02d0107d1035f8ee1c43fb1539592174')
+    # version('0.5.0', sha256='2837b7371db3ac1bcc31a479d7cf0eb62a503cacadfa4187061502b3c4a89fa0')
 
     ###########################################################################
     # package variants
@@ -69,6 +72,7 @@ class Ascent(Package, CudaPackage):
     variant("cuda", default=False, description="Build cuda support")
     variant("mfem", default=False, description="Build MFEM filter support")
     variant("adios", default=False, description="Build Adios filter support")
+    variant("dray", default=False, description="Build with Devil Ray support")
 
     # variants for dev-tools (docs, etc)
     variant("doc", default=False, description="Build Conduit's documentation")
@@ -117,24 +121,44 @@ class Ascent(Package, CudaPackage):
     # TPLs for Runtime Features
     #############################
 
-    depends_on("vtk-h@0.5.1",             when="+vtkh")
-    depends_on("vtk-h@0.5.1~openmp",      when="+vtkh~openmp")
-    depends_on("vtk-h@0.5.1+cuda+openmp", when="+vtkh+cuda+openmp")
-    depends_on("vtk-h@0.5.1+cuda~openmp", when="+vtkh+cuda~openmp")
+    depends_on("vtk-h@0.5.7",             when="+vtkh")
+    depends_on("vtk-h@0.5.7~openmp",      when="+vtkh~openmp")
+    depends_on("vtk-h@0.5.7+cuda+openmp", when="+vtkh+cuda+openmp")
+    depends_on("vtk-h@0.5.7+cuda~openmp", when="+vtkh+cuda~openmp")
 
-    depends_on("vtk-h@0.5.1~shared",             when="~shared+vtkh")
-    depends_on("vtk-h@0.5.1~shared~openmp",      when="~shared+vtkh~openmp")
-    depends_on("vtk-h@0.5.1~shared+cuda",        when="~shared+vtkh+cuda")
-    depends_on("vtk-h@0.5.1~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
+    depends_on("vtk-h@0.5.7~shared",             when="~shared+vtkh")
+    depends_on("vtk-h@0.5.7~shared~openmp",      when="~shared+vtkh~openmp")
+    depends_on("vtk-h@0.5.7~shared+cuda",        when="~shared+vtkh+cuda")
+    depends_on("vtk-h@0.5.7~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
 
     # mfem
-    depends_on("mfem+threadsafe+shared+mpi+conduit", when="+shared+mfem+mpi")
-    depends_on("mfem+threadsafe~shared+mpi+conduit", when="~shared+mfem+mpi")
+    depends_on("mfem@4.0.2~threadsafe~openmp+shared+mpi+conduit", when="+shared+mfem+mpi")
+    depends_on("mfem@4.0.2~threadsafe~openmp~shared+mpi+conduit", when="~shared+mfem+mpi")
 
-    depends_on("mfem+threadsafe+shared~mpi+conduit", when="+shared+mfem~mpi")
-    depends_on("mfem+threadsafe~shared~mpi+conduit", when="~shared+mfem~mpi")
+    depends_on("mfem@4.0.2~threadsafe~openmp+shared~mpi+conduit", when="+shared+mfem~mpi")
+    depends_on("mfem@4.0.2~threadsafe~openmp~shared~mpi+conduit", when="~shared+mfem~mpi")
 
     depends_on("adios", when="+adios")
+
+    # devil ray variants wit mpi
+    # we have to specify both because mfem makes us
+    depends_on("dray@0.1.2+mpi~test~utils+shared+cuda",        when="+dray+mpi+cuda+shared")
+    depends_on("dray@0.1.2+mpi~test~utils+shared+openmp",      when="+dray+mpi+openmp+shared")
+    depends_on("dray@0.1.2+mpi~test~utils+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
+
+    depends_on("dray@0.1.2+mpi~test~utils~shared+cuda",        when="+dray+mpi+cuda~shared")
+    depends_on("dray@0.1.2+mpi~test~utils~shared+openmp",      when="+dray+mpi+openmp~shared")
+    depends_on("dray@0.1.2+mpi~test~utils~shared~openmp~cuda", when="+dray+mpi~openmp~cuda~shared")
+
+    # devil ray variants 2ithout mpi
+    depends_on("dray@0.1.2~mpi~test~utils+shared+cuda",        when="+dray~mpi+cuda+shared")
+    depends_on("dray@0.1.2~mpi~test~utils+shared+openmp",      when="+dray~mpi+openmp+shared")
+    depends_on("dray@0.1.2~mpi~test~utils+shared~openmp~cuda", when="+dray~mpi~openmp~cuda+shared")
+
+    depends_on("dray@0.1.2~mpi~test~utils~shared+cuda",        when="+dray~mpi+cuda~shared")
+    depends_on("dray@0.1.2~mpi~test~utils~shared+openmp",      when="+dray~mpi+openmp~shared")
+    depends_on("dray@0.1.2~mpi~test~utils~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
+
 
     #######################
     # Documentation related
@@ -468,6 +492,15 @@ class Ascent(Package, CudaPackage):
             cfg.write(cmake_cache_entry("MFEM_DIR", spec['mfem'].prefix))
         else:
             cfg.write("# mfem not built by spack \n")
+
+        #######################
+        # Devil Ray
+        #######################
+        if "+dray" in spec:
+            cfg.write("# devil ray from spack \n")
+            cfg.write(cmake_cache_entry("DRAY_DIR", spec['dray'].prefix))
+        else:
+            cfg.write("# devil ray not built by spack \n")
 
         #######################
         # Adios

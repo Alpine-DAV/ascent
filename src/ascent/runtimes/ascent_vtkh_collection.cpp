@@ -70,7 +70,6 @@ bool global_has(bool local)
 {
   bool has = local;
 #if defined(ASCENT_MPI_ENABLED)
-
   int local_boolean = local ? 1 : 0;
   int global_boolean;
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
@@ -85,8 +84,29 @@ bool global_has(bool local)
   {
     has = false;
   }
+  else
+  {
+    has = true;
+  }
 #endif
   return has;
+}
+
+int global_max(int local)
+{
+   int global_count = local;
+#if defined(ASCENT_MPI_ENABLED)
+
+  MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+  MPI_Allreduce((void *)(&local),
+                (void *)(&global_count),
+                1,
+                MPI_INT,
+                MPI_MAX,
+                mpi_comm);
+
+#endif
+  return global_count;
 }
 
 } // namespace detail
@@ -171,11 +191,70 @@ bool VTKHCollection::has_field(const std::string field_name) const
 
 vtkm::Bounds VTKHCollection::global_bounds() const
 {
+  // ranks may have different numbers of local vtk-h datasets
+  // depending on the toplogies at play
+  // can't use vtk-h to get global bounds b/c could create
+  // unmatched collectives.
+
+  // to get the global bounds, we include all local bounds
+  // then do a mpi reduce here
   vtkm::Bounds bounds;
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
-    bounds.Include(it->second.GetGlobalBounds());
+    bounds.Include(it->second.GetBounds());
   }
+
+#if defined(ASCENT_MPI_ENABLED)
+    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+
+    vtkm::Float64 loc_mins[3];
+    //x,y,z
+    loc_mins[0] = bounds.X.Min;
+    loc_mins[1] = bounds.Y.Min;
+    loc_mins[2] = bounds.Z.Min;
+    
+    vtkm::Float64 loc_maxs[3];
+    //x,y,z
+    loc_maxs[0] = bounds.X.Max;
+    loc_maxs[1] = bounds.Y.Max;
+    loc_maxs[2] = bounds.Z.Max;
+
+    vtkm::Float64 global_mins[3];
+    //x,y,z
+    global_mins[0] = 0.0;
+    global_mins[1] = 0.0;
+    global_mins[2] = 0.0;
+
+    vtkm::Float64 global_maxs[3];
+    //x,y,z
+    global_maxs[0] = 0.0;
+    global_maxs[1] = 0.0;
+    global_maxs[2] = 0.0;
+
+    MPI_Allreduce((void *)(&loc_mins),
+                  (void *)(&global_mins),
+                  3,
+                  MPI_DOUBLE,
+                  MPI_MIN,
+                  mpi_comm);
+
+    MPI_Allreduce((void *)(&loc_maxs),
+                  (void *)(&global_maxs),
+                  3,
+                  MPI_DOUBLE,
+                  MPI_MAX,
+                  mpi_comm);
+
+    bounds.X.Min = global_mins[0];
+    bounds.X.Max = global_maxs[0];
+    
+    bounds.Y.Min = global_mins[1];
+    bounds.Y.Max = global_maxs[1];
+    
+    bounds.Z.Min = global_mins[2];
+    bounds.Z.Max = global_maxs[2];
+  #endif
+
   return bounds;
 }
 
@@ -238,14 +317,20 @@ VTKHCollection::by_domain_id()
     for(int i = 0; i < domain_ids.size(); ++i)
     {
       const int domain_id = domain_ids[i];
-      res[domain_id][topo_name] = vtkh_dataset.GetDomain(domain_id);
+      res[domain_id][topo_name] = vtkh_dataset.GetDomain(i);
     }
   }
 
   return res;
 }
 
-int VTKHCollection::number_of_topologies() const { return m_datasets.size(); }
+int VTKHCollection::number_of_topologies() const
+{
+  // this is not perfect. For example, we could
+  // random topology names on different ranks,
+  // but this is 99% of our possible use cases
+  return detail::global_max(m_datasets.size());
+}
 
 VTKHCollection* VTKHCollection::copy_without_topology(const std::string topology_name)
 {

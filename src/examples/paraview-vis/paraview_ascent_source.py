@@ -44,7 +44,8 @@ def read_fields(node, topology, data):
         if type(values) is np.ndarray:
             if (ghostField):
                 # The values stored in ascent_ghosts match what VTK expects:
-                # (0 real cell, 1 = vtkDataSetAttribute::DUPLICATEPOINT ghost cell)
+                # (0 real cell, 1 = vtkDataSetAttribute::DUPLICATEPOINT ghost
+                # cell)
                 values = values.astype(np.uint8)
             va = numpy_support.numpy_to_vtk(values)
         else:
@@ -184,6 +185,7 @@ def ascent_to_vtk(node, topology=None, extent=None):
     read_fields(node, topology, data)
     return data
 
+
 def get_filenoext(prefix, node):
     '''
     Returns the prefix followed by domain_id and cycle.
@@ -202,6 +204,7 @@ def write_hdf(prefix, node):
     '''
     fileNoExt = get_filenoext(prefix, node)
     conduit.relay.io.save(node, fileNoExt + ".hdf5")
+
 
 def write_json(prefix, node):
     '''
@@ -333,7 +336,10 @@ class AscentSource(VTKPythonAlgorithmBase):
         #          unless you have the same import in paraview-vis.py
         from mpi4py import MPI
         self._node = ascent_extract.ascent_data().child(0)
-        self._count = 0
+        self._timeStep = -1
+        self._cycle = self._node["state/cycle"]
+        self._time = self._node["state/time"]
+        self._domain_id = self._node["state/domain_id"]
         # topology and coords are set only if there is only one topology,
         # otherwise they are none.
         self._topology = None
@@ -358,17 +364,51 @@ class AscentSource(VTKPythonAlgorithmBase):
             self, nInputPorts=0, nOutputPorts=len(self._topologies),
             outputType=None)
 
-    def GetNode(self):
-        return self._node
+    @smproperty.doublevector(name="Cycle", command="GetCycle",
+                             information_only="1")
+    def GetCycle(self):
+        """
+        Returns state/cycle. See
+        https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html
+        for more information.
+        """
+        return (float(self._cycle))
 
+    @smproperty.doublevector(name="Time", command="GetTime",
+                             information_only="1")
+    def GetTime(self):
+        """
+        Returns state/time. See
+        https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html
+        for more information.
+        """
+        return (float(self._time))
 
-    @smproperty.intvector(name="Count", default_values=0)
-    def SetCount(self, x):
+    @smproperty.intvector(name="Rank", command="GetRank",
+                          information_only="1")
+    def GetRank(self):
+        """
+        Returns the MPI rank for this process.
+        """
+        return (int(self._domain_id))
+
+    @smproperty.intvector(name="TimeStep", command="GetTimeStep",
+                          information_only="1")
+    def GetTimeStep(self):
+        """
+        Returns an incrementing counter 0, 1, 2, ...
+        """
+        return (self._timeStep)
+
+    @smproperty.xml("""
+    <Property command="UpdateAscentData" name="UpdateAscentData">
+    </Property>
+    """)
+    def UpdateAscentData(self):
         self._node = ascent_extract.ascent_data().child(0)
-        cycle = self._node["state/cycle"]
-        self._count = x
-        # if self._mpi_rank == 0:
-        #     print("SetCount: count={}, cycle={}".format(self._count, cycle))
+        self._cycle = self._node["state/cycle"]
+        self._time = self._node["state/time"]
+        self._timeStep = self._timeStep + 1
         self.Modified()
 
     def RequestData(self, request, inVector, outVector):

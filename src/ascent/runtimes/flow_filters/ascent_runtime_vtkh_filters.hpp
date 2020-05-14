@@ -316,6 +316,32 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class ASCENT_API VTKHVectorComponent : public ::flow::Filter
+{
+public:
+    VTKHVectorComponent();
+    virtual ~VTKHVectorComponent();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHCompositeVector : public ::flow::Filter
+{
+public:
+    VTKHCompositeVector();
+    virtual ~VTKHCompositeVector();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class ASCENT_API VTKHStats : public ::flow::Filter
 {
 public:
@@ -353,6 +379,20 @@ public:
                                  conduit::Node &info);
     virtual void   execute();
 };
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHProject2d : public ::flow::Filter
+{
+public:
+    VTKHProject2d();
+    virtual ~VTKHProject2d();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 
 };
 //-----------------------------------------------------------------------------

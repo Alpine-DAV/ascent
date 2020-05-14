@@ -42,6 +42,7 @@
 .. #
 .. ############################################################################
 
+.. _tutorial_setup:
 
 Tutorial Setup
 =================
@@ -95,47 +96,64 @@ To launch the a jupyter notebook server run:
 This will launch a notebook server on port 8888. Assuming you forwarded port 8888 from the Docker container to your host machine, you should be able to connect to the notebook server using http://localhost:8888. The current password for the notebook server is: ``learn``
 
 
-NERSC Cori Install
+.. _tutorial_setup_public_installs:
+
+Using Public Installs of Ascent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We have a public ascent install for use on NERSC's Cori System. This install was built with the default
-gnu compiler (8.2.0). You need to use `module load gcc` to build and run the installed examples.
+NERSC Cori Install
++++++++++++++++++++++++
+
+We have a public ascent install for use on NERSC's Cori System. This install was built using the default
+gnu compiler (8.2.0) with OpenMP and MPI support. You need to use ``module load gcc`` to build and run the installed examples.
 
 
 The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install``.
 You can copy the tutorial examples from this install and use them as follows:
 
-.. code::
+.. literalinclude:: tutorial_setup_nersc_cori_test.sh
+   :language: bash
 
-    #
-    # source helper script that loads the default gcc module, sets python paths, and ASCENT_DIR env var
-    #
-    source /project/projectdirs/alpine/software/ascent/current/cori/ascent_cori_setup_env_gcc.sh
-    
-    #
-    # make your own dir to hold the tutorial examples
-    #
-    mkdir ascent_tutorial
-    cd ascent_tutorial
-    
-    #
-    # copy the examples from the public install
-    #
-    cp -r /project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install/examples/ascent/tutorial/* .
-    
-    #
-    # build cpp examples and run the first one
-    #
-    cd ascent_intro/cpp
-    make
-    ./ascent_first_light_example
-    
-    #
-    # run a python example
-    #
-    cd ..
-    cd python
-    python ascent_first_light_example.py  
+OLCF Summit Install
++++++++++++++++++++++++
+
+We have two public ascents install for use on OLCF's Summit System. One install was built using the default
+gnu compiler (6.4.0) with OpenMP and MPI support. You need to use `module load gcc` to build and run the installed examples.
+
+.. warning::
+    This install exists on a file system that is occasionally purged. We are looking for a better place to put our world accessable installs.
+
+
+This install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``.
+You can copy the tutorial examples from this install and use them as follows:
+
+.. literalinclude:: tutorial_setup_olcf_summit_openmp_test.sh
+   :language: bash
+
+
+The second was built using the default
+gnu compiler (6.4.0) with CUDA and MPI support. You need to use ``module load gcc`` and ``module load cuda`` to build and run the installed examples.
+
+This install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``.
+You can copy the tutorial examples from this install and use them as follows:
+
+.. literalinclude:: tutorial_setup_olcf_summit_cuda_test.sh
+   :language: bash
+
+
+LLNL CZ TOSS 3 Install
++++++++++++++++++++++++
+
+We have a public ascent install on LLNL CZ TOSS 3 Systems. This install was built using the default
+gnu compiler (4.9.3) with OpenMP and MPI support.
+
+
+The install is located at ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install/``.
+You can copy the tutorial examples from this install and use them as follows:
+
+.. literalinclude:: tutorial_setup_llnl_pascal_openmp_test.sh
+   :language: bash
+
 
 ..
 .. SC19 Tutorial VM Option

@@ -2074,6 +2074,98 @@ FieldSum::execute()
 }
 
 //-----------------------------------------------------------------------------
+FieldNanCount::FieldNanCount()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+FieldNanCount::~FieldNanCount()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+FieldNanCount::declare_interface(Node &i)
+{
+  i["type_name"]   = "field_nan_count";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+FieldNanCount::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+FieldNanCount::execute()
+{
+  std::string field = (*input<Node>("arg1"))["value"].as_string();
+  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = field_nan_count(*dataset, field)["value"];
+  (*output)["type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+FieldInfCount::FieldInfCount()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+FieldInfCount::~FieldInfCount()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+FieldInfCount::declare_interface(Node &i)
+{
+  i["type_name"]   = "field_inf_count";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+FieldInfCount::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+FieldInfCount::execute()
+{
+  std::string field = (*input<Node>("arg1"))["value"].as_string();
+  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = field_inf_count(*dataset, field)["value"];
+  (*output)["type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 ArraySum::ArraySum()
 :Filter()
 {

@@ -278,6 +278,31 @@ TEST(ascent_expressions, functional_correctness)
         ele_vals_ptr[i] = float64(i);
     }
 
+    // add a element-associated field  with nans
+    data["fields/ele_nan_example/association"] =  "element";
+    // reference the topology this field is defined on by name
+    data["fields/ele_nan_example/topology"] =  "topo";
+    // set the field values, for this case we have 9 elements
+    data["fields/ele_nan_example/values"].set(DataType::float64(16));
+
+    float64 *ele_nan_vals_ptr = data["fields/ele_nan_example/values"].value();
+
+    for(int i = 0; i < 16; i++)
+    {
+      if(i == 0)
+      {
+        ele_nan_vals_ptr[i] = std::nan("");
+      }
+      else if(i == 1)
+      {
+        ele_nan_vals_ptr[i] = -1./ 0.;
+      }
+      else
+      {
+        ele_nan_vals_ptr[i] = float64(i);
+      }
+    }
+
     data["state/cycle"] = 100;
 
     // make sure we conform:
@@ -340,6 +365,16 @@ TEST(ascent_expressions, functional_correctness)
     EXPECT_EQ(res["type"].as_string(), "bool");
 
     expr = "16 == sum(histogram(field('ele_example')).value)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_uint8(), 1);
+    EXPECT_EQ(res["type"].as_string(), "bool");
+
+    expr = "1 == field_nan_count(field('ele_nan_example'))";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_uint8(), 1);
+    EXPECT_EQ(res["type"].as_string(), "bool");
+
+    expr = "1 == field_inf_count(field('ele_nan_example'))";
     res = eval.evaluate(expr);
     EXPECT_EQ(res["value"].to_uint8(), 1);
     EXPECT_EQ(res["type"].as_string(), "bool");

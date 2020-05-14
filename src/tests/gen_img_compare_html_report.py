@@ -52,6 +52,7 @@
 import json
 import glob
 import os
+import shutil
 
 from os.path import join as pjoin
 
@@ -63,9 +64,8 @@ def file_name(fpath):
     return os.path.split(fpath)[1]
 
 def baseline_file_path(fname):
-    baseline_dir = pjoin("..","..","..","src","tests","baseline_images")
+    baseline_dir = pjoin("..","..","src","tests","baseline_images")
     return pjoin(baseline_dir,fname)
-
 
 def find_img_compare_results():
     return glob.glob(pjoin(output_dir(),"*_img_compare_results.json"))
@@ -89,12 +89,16 @@ def gen_html_report():
            ofile.write("{0} = {1} <br>\n".format(k,v[k]))
         ofile.write("</td>\n")
         if v["test_file"]["exists"] == "true":
-            ofile.write('<td> <img width="200" src="{0}"></td>\n'.format(file_name(v["test_file"]["path"])))
+            ofile.write('<td><img width="200" src="{0}"><br>current</td>\n'.format(file_name(v["test_file"]["path"])))
         else:
             ofile.write("<td> TEST IMAGE MISSING!</td>\n")
         if v["baseline_file"]["exists"] == "true":
-            baseline_img = baseline_file_path(file_name(v["baseline_file"]["path"]))
-            ofile.write('<td> <img width="200" src="{0}"></td>\n'.format(baseline_img))
+            baseline_img_src = baseline_file_path(file_name(v["baseline_file"]["path"]))
+            # copy baseline file into output dir, so we can use relative paths in html
+            # easily package up the results
+            baseline_img = "baseline_" + file_name(baseline_img_src)
+            shutil.copy(baseline_img_src,pjoin("_output",baseline_img))
+            ofile.write('<td><img width="200" src="{0}"><br>baseline</td>\n'.format(baseline_img))
         else:
             ofile.write("<td> BASELINE IMAGE MISSING!</td>\n")
         if "diff_image" in v.keys():
