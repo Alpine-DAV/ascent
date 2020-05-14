@@ -109,6 +109,7 @@ else()
 
     add_test(NAME ${_test_name}
              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+             CONFIGURATIONS Perf
              COMMAND ${py_command} "run_ascent_clover_perf_tests.py")
 
     set_tests_properties(${_test_name} PROPERTIES LABELS "Perf")
