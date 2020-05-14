@@ -82,6 +82,7 @@
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
+#include <vtkh/rendering/ScalarRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
 #include <vtkh/filters/Gradient.hpp>
@@ -905,7 +906,7 @@ GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
      
       vtkm::cont::ArrayHandle<Triangle> triangles = vtkm::cont::make_ArrayHandle(tmp_tris);
       vtkm::cont::Invoker invoker;
-      invoker(ProcessTriangle{}, cellset, coords, field.GetData().ResetTypes(vtkm::TypeListTagFieldScalar{}), triangles);
+      invoker(ProcessTriangle{}, cellset, coords, field.GetData().ResetTypes(vtkm::TypeListFieldScalar{}), triangles);
 
       //combine all domain triangles
       tris.insert(tris.end(), tmp_tris.begin(), tmp_tris.end());
@@ -1235,6 +1236,7 @@ AutoCamera::execute()
     vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
     double focus[3] = {(double)lookat[0],(double)lookat[1],(double)lookat[2]};
 
+
     Screen screen;
     screen.width = width;
     screen.height = height;
@@ -1250,6 +1252,42 @@ AutoCamera::execute()
     double metric_time   = 0.;
     for(int sample = 0; sample < samples; sample++)
     {
+    /*================ Scalar Renderer Code ======================*/
+    //What it does: Quick ray tracing of data (replaces get triangles and scanline).
+    //What we need: z buffer, any other important buffers (tri ids, scalar values, etc.)
+      
+      Camera cam = GetCamera(sample, samples, radius, focus);
+      vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
+                                (float)cam.position[1],
+                                (float)cam.position[2]};
+
+      camera->SetPosition(pos);
+      vtkh::ScalarRenderer tracer;
+      tracer.SetWidth(width);
+      tracer.SetHeight(height);
+      tracer.SetInput(&dataset); //vtkh dataset by toponame
+      tracer.SetCamera(*camera);
+      //if(!dataset.IsEmpty()) //not sure if necessary? 
+      //all ranks get stuck whether they are empty or not.
+      tracer.Update();
+      //Getting stuck
+      cout << "here " << endl;
+
+      vtkh::DataSet *output = tracer.GetOutput();
+    #if ASCENT_MPI_ENABLED
+      if(output != NULL)
+	      cout << "output is not null on rank: " << rank << endl;
+      else
+	      cout << "output is NULL on rank: " << rank << endl;
+    #endif
+      //VTKHCollection *new_coll = new VTKHCollection();
+      //new_coll->add(*output, topo_name);
+      //DataObject *res = new DataObject(new_coll);
+      delete output;
+      //set_output<DataObject>(res); //don't actually want this
+
+    /*================ End Scalar Renderer  ======================*/
+
       screen.width = width;
       screen.height = height;
       screen.visible = 0.0;
