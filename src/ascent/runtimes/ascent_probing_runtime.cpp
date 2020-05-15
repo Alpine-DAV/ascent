@@ -850,14 +850,16 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     // TODO: adapt batch_size to probing size so that first render is always probing,
     //       this would avoid batch size 1 issues
     const int BATCH_SIZE = 20;  
+
+    // renders setup
+    const int WIDTH = 1024;
+    const int HEIGHT = 1024;
+    const int CHANNELS = 4 + 4; // RGBA + depth (float)
     
+    // mpi message tags
     const int tag_data = 0;
     const int tag_probing = tag_data + 1;
     const int tag_inline = tag_probing + 1;
-
-    const int width = 1024;
-    const int height = 1024;
-    const int channels = 4 + 1; // RGBA + depth
 
     // common options for both sim and vis nodes
     Node ascent_opts, blank_actions;
@@ -981,7 +983,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                                           &requests_probing[i]
                                           );
                 if (mpi_error)
-                    std::cout << "ERROR receiving probing data from " << src_ranks[i] << std::endl;
+                    std::cout << "ERROR receiving probing parts from " << src_ranks[i] << std::endl;
             }
 
             for (int j = 0; j < batches[i].runs; ++j)
@@ -1034,7 +1036,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                                 << render_offset + current_render_count << std::endl;
                     ascent_opts["render_count"] = current_render_count;
                     ascent_opts["render_offset"] = render_offset;
-                    ascent_opts["vis_node"] = (i == 0) ? true : false;  // TODO: change name to cinema increment indicator
+                    // TODO: change variable name to cinema increment indicator
+                    ascent_opts["vis_node"] = (i == 0) ? true : false;  
 
                     Ascent ascent_render;
                     ascent_render.open(ascent_opts);
@@ -1085,11 +1088,11 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             log_time(t_start, "+ wait receive img ", world_rank);
         }
 
-        // TODO: compositing
+        // TODO: multi node compositing
         {
             auto t_start = std::chrono::system_clock::now();
 
-            // unpack sent renders
+            // unpack sent renders -> NOTE: takes too long, can we avoid copies?
             std::vector<std::unique_ptr<Node> > parts_probing;
             // render parts from this vis node don't need to be unpacked
             for (auto const& p : render_chunks_probe)
@@ -1097,7 +1100,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 parts_probing.emplace_back(make_unique<Node>());
                 unpack_node(*p, *parts_probing.back());
             }
-            // std::cout << "parts probing " << parts_probing.size() << std::endl;
             // sender / batches
             std::vector<std::vector<std::unique_ptr<Node> > > parts_sim(sending_count);
             for (int i = 0; i < sending_count; ++i)
@@ -1107,7 +1109,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     parts_sim[i].emplace_back(make_unique<Node>());
                     unpack_node(*batch, *parts_sim[i].back());
                 }
-                // std::cout << "parts sim " << i << " " << parts_sim[i].size() << std::endl;
             }
             log_time(t_start, "+ unpack images ", world_rank);
 
@@ -1193,9 +1194,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
             // composite
             //
-            const int height = 1024;
-            const int width = 1024;
-
             t_start = std::chrono::system_clock::now();
 
             // loop over images (camera positions)
@@ -1211,8 +1209,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 {
                     images[i].Init(color_buffers[j][i]->as_unsigned_char_ptr(),
                                    depth_buffers[j][i]->as_float_ptr(),
-                                   width,
-                                   height,
+                                   WIDTH,
+                                   HEIGHT,
                                    depths_order_id[i] //depths[j][i]
                                    );
                     // std::cout << depths_order_id[i] << " " << depths[j][i] << std::endl;
@@ -1238,13 +1236,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
                 {   // write to disk 
                     t_start = std::chrono::system_clock::now();
-                    // std::string name = "img_";
-                    // name += std::to_string(j);
-                    // name += ".png";
-                    
-                    std::cout << render_file_names[j][0] << std::endl;
-
-                    images[0].Save(render_file_names[j][0] + std::to_string(j) + ".png");
+                    images[0].Save(render_file_names[j][0]);
                     log_time(t_start, "+ save image ", world_rank);
                 }
             }
@@ -1268,8 +1260,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             // }
         //     scene.SetRenders(renders);
         //     (*renderer)->Composite(total_renders);
-
-            // std::cout << "-- Compositing " << std::endl;
         }
 
     } // end vis node
@@ -1343,7 +1333,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                             << begin << " - " << end << std::endl;
                 
                 ascent_opts["render_count"] = end - begin;
-                ascent_opts["image_offset"] = begin;
+                ascent_opts["render_offset"] = begin;
                 ascent_opts["vis_node"] = false;
 
                 ascent_render.open(ascent_opts);
@@ -1411,8 +1401,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                         << std::endl;
         }
     } // end sim node
-
-    // MPI_Barrier(mpi_comm_world);
 
     log_time(start0, "___splitAndRun ", world_rank);
 #endif // ASCENT_MPI_ENABLED
