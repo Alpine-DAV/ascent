@@ -84,6 +84,7 @@
 #include <vtkh/Logger.hpp>
 #include <vtkh/rendering/Image.hpp>
 #include <vtkh/rendering/ImageCompositor.hpp>
+#include <vtkh/rendering/Compositor.hpp>
 
 #endif // ASCENT_VTKM_ENABLED
 
@@ -716,13 +717,20 @@ int get_probing_count(const int render_count, const int stride, const int render
     return probing_count;
 }
 
+int get_current_batch_size(const int batch_size, const RenderBatch batch, const int iteration)
+{
+    int current_batch_size = batch_size;
+    if ((iteration == batch.runs - 1) && (batch.rest != 0))
+        current_batch_size = batch.rest;
+    return current_batch_size;
+}
 
 //-----------------------------------------------------------------------------
 // TODO: refactor this method: split up into prep, sim and vis parts
 void splitAndRender(const MPI_Comm mpi_comm_world,
                     const int world_size,
                     const int world_rank,
-                    const MPI_Comm sim_comm,
+                    const MPI_Comm vis_comm,
                     const int sim_node_count,
                     const std::vector<double> &my_probing_times,
                     const int max_render_count,
@@ -929,7 +937,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         std::vector<RenderBatch> batches(sending_count);
         for (int i = 0; i < batches.size(); ++i)
         {
-            int render_count = g_render_counts[src_ranks[i]] + int(g_render_counts[src_ranks[i]]*probing_factor);
+            int render_count = g_render_counts[src_ranks[i]] 
+                                + int(g_render_counts[src_ranks[i]]*probing_factor);
             batches[i] = get_batch(render_count, BATCH_SIZE);
         }
 
@@ -952,14 +961,14 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             render_chunks_probe[i] = make_unique<Node>(DataType::uint8(buffer_size));
 
             render_chunks_sim[i].resize(batches[i].runs);
-            requests_inline_sim[i].resize(batches[i].runs + 1, MPI_REQUEST_NULL);
+            requests_inline_sim[i].resize(batches[i].runs, MPI_REQUEST_NULL); // +1 ??
 
             for (int j = 0; j < batches[i].runs; ++j)
             {
-                const int current_batch_size = (j == batches[i].runs - 1) ? batches[i].rest : BATCH_SIZE;
+                const int current_batch_size = get_current_batch_size(BATCH_SIZE, batches[i], j);
                 buffer_size = calc_render_msg_size(current_batch_size, probing_factor);
                 render_chunks_sim[i][j] = make_unique<Node>(DataType::uint8(buffer_size));
-                if (current_batch_size <= 1)    // TODO: single render that was already probed
+                if (current_batch_size == 1)    // TODO: single render that was already probed
                     render_chunks_sim[i].pop_back();
                 std::cout << current_batch_size << " expected render_msg_size " << buffer_size << std::endl;
             }
@@ -989,8 +998,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             for (int j = 0; j < batches[i].runs; ++j)
             {
                 // correct size for last iteration
-                const int current_batch_size = (j == batches[i].runs - 1) ? batches[i].rest : BATCH_SIZE;
-                if (current_batch_size <= 1)
+                const int current_batch_size = get_current_batch_size(BATCH_SIZE, batches[i], j);
+                if (current_batch_size <= 1) // TODO: single render that was already probed
                     break;
 
                 int mpi_error = MPI_Irecv(render_chunks_sim[i][j]->data_ptr(),
@@ -1074,9 +1083,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             }
         }   // for: render all datasets sent
 
-        // DEBUG: 
-        // debug_break();
-
         {   // wait for receive of render chunks to complete
             auto t_start = std::chrono::system_clock::now();
             // renders from probing            
@@ -1111,11 +1117,12 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 }
             }
             log_time(t_start, "+ unpack images ", world_rank);
+            std::cout << "~~~~finished unpacking images, compositing... " << world_rank << std::endl;
 
             // arrange render order
             //
-            int probing_enum_sim = 0;
-            int probing_enum_vis = 0;
+            vector<int> probing_enum_sim(sending_count, 0);
+            vector<int> probing_enum_vis(sending_count, 0);
             // images / sender / values
             std::vector<std::vector<float> > depths(max_render_count);
             std::vector<std::vector<std::string> > render_file_names(max_render_count);
@@ -1123,7 +1130,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             std::vector<std::vector<std::unique_ptr<Node> > > depth_buffers(max_render_count);
             for (int j = 0; j < max_render_count; ++j)
             {
-                // std::cout << "\nimage " << j << std::endl;
+                std::cout << "\nimage " << j << std::endl;
                 for (int i = 0; i < sending_count; ++i)
                 {
                     // std::cout << "  " << i << " ";
@@ -1134,7 +1141,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     if (j % probing_stride == 0)    // probing image
                     {
                         const index_t id = j / probing_stride;
-                        // std::cout << " probe  " << id << std::endl;
+                        std::cout << " " << world_rank << " probe  " << id << std::endl;
 
                         depths[j].push_back((*parts_probing[i])["depths"].child(id).to_float());
                         render_file_names[j].push_back((*parts_probing[i])["render_file_names"].child(id).as_string());
@@ -1143,28 +1150,27 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                         std::unique_ptr<Node> db = make_unique<Node>((*parts_probing[i])["depth_buffers"].child(id));
                         depth_buffers[j].push_back(std::move(db));
                         // keep track of probing images
-                        if (i == 0)
                         {
                             // reset counter if first in batch
                             if (j % BATCH_SIZE == 0)   
-                                probing_enum_sim = 0;
-                            ++probing_enum_sim;
+                                probing_enum_sim[i] = 0;
+                            ++probing_enum_sim[i];
 
                             // reset probing counter if first render in vis chunks
                             if (j - g_render_counts[src_ranks[i]] == 0)
-                                probing_enum_vis = 0;
-                            ++probing_enum_vis;
+                                probing_enum_vis[i] = 0;
+                            ++probing_enum_vis[i];
                         }
                     }
                     else if (j < g_render_counts[src_ranks[i]]) // part comes from sim node (inline)
                     {
                         // reset probing counter if first in batch and not a probing render
                         if (j % BATCH_SIZE == 0)
-                            probing_enum_sim = 0;
+                            probing_enum_sim[i] = 0;
 
                         const int batch_id = j / BATCH_SIZE;
-                        const index_t id = (j % BATCH_SIZE) - probing_enum_sim;
-                        // std::cout << " sim  " << id << std::endl;
+                        const index_t id = (j % BATCH_SIZE) - probing_enum_sim[i];
+                        std::cout << " " << world_rank << " sim  " << id << std::endl;
 
                         depths[j].push_back((*parts_sim[i][batch_id])["depths"].child(id).to_float());                        
                         render_file_names[j].push_back((*parts_sim[i][batch_id])["render_file_names"].child(id).as_string());
@@ -1177,10 +1183,10 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     {
                         // reset probing counter if first render in vis chunks and not a probing render
                         if (j - g_render_counts[src_ranks[i]] == 0)
-                            probing_enum_vis = 0;
+                            probing_enum_vis[i] = 0;
 
-                        const index_t id = (j - g_render_counts[src_ranks[i]]) - probing_enum_vis;
-                        // std::cout << " vis  " << id << std::endl;
+                        const index_t id = (j - g_render_counts[src_ranks[i]]) - probing_enum_vis[i];
+                        std::cout << " " << world_rank << " vis  " << id << std::endl;
 
                         depths[j].push_back((*render_chunks_vis[i])["depths"].child(id).to_float());
                         render_file_names[j].push_back((*render_chunks_vis[i])["render_file_names"].child(id).as_string());
@@ -1195,24 +1201,36 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             // composite
             //
             t_start = std::chrono::system_clock::now();
+            
+            std::cout << world_rank << " vtkh comm " << vtkh::GetMPICommHandle() << std::endl;
+            vtkh::SetMPICommHandle(int(MPI_Comm_c2f(vis_comm)));
+            std::cout << world_rank << " vis comm " << MPI_Comm_c2f(vis_comm) << std::endl;
+
+            // DEBUG: 
+            debug_break();
 
             // loop over images (camera positions)
             for (int j = 0; j < max_render_count; ++j)
             {
-                std::vector<vtkh::Image> images(sending_count);
+                // std::vector<vtkh::Image> images(sending_count);
 
                 std::vector<int> depths_order = sort_indices(depths[j]);
                 std::vector<int> depths_order_id = sort_indices(depths_order);
+
+                vtkh::Compositor compositor;
+                compositor.SetCompositeMode(vtkh::Compositor::VIS_ORDER_BLEND);
+                
                 
                 // loop over render parts (= 1 per sim node) and add as images
                 for (int i = 0; i < sending_count; ++i)
                 {
-                    images[i].Init(color_buffers[j][i]->as_unsigned_char_ptr(),
-                                   depth_buffers[j][i]->as_float_ptr(),
-                                   WIDTH,
-                                   HEIGHT,
-                                   depths_order_id[i] //depths[j][i]
-                                   );
+                    // images[i].Init(
+                    compositor.AddImage(color_buffers[j][i]->as_unsigned_char_ptr(),
+                                        depth_buffers[j][i]->as_float_ptr(),
+                                        WIDTH,
+                                        HEIGHT,
+                                        depths_order_id[i] //depths[j][i]
+                                        );
                     // std::cout << depths_order_id[i] << " " << depths[j][i] << std::endl;
 
                     // DEBUG: save render parts                    
@@ -1225,18 +1243,24 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 }
 
                 // composite
+                vtkh::Image result = compositor.Composite();
+
                 // vtkh::Image result = m_compositor->Composite();
-                vtkh::ImageCompositor compositor;
-                compositor.OrderedComposite(images);
+                // vtkh::ImageCompositor compositor;
+                // compositor.OrderedComposite(images);
 
                 // const std::string image_name = m_renders[i].GetImageName() + ".png";
                 // ImageToCanvas(result, *m_renders[i].GetCanvas(0), true);
                 // m_compositor->ClearImages();
                 log_time(t_start, "+ compositing ", world_rank);
 
+                int vis_rank = 0;
+                MPI_Comm_rank(vis_comm, &vis_rank);
+                if (vis_rank == 0)
                 {   // write to disk 
                     t_start = std::chrono::system_clock::now();
-                    images[0].Save(render_file_names[j][0]);
+                    // images[0].Save(render_file_names[j][0]);
+                    result.Save(render_file_names[j][0]);
                     log_time(t_start, "+ save image ", world_rank);
                 }
             }
@@ -1324,7 +1348,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             for (int i = 0; i < batch.runs; ++i)
             {
                 const int begin = i*BATCH_SIZE;
-                const int current_batch_size = (i == batch.runs - 1) ? batch.rest : BATCH_SIZE;
+                const int current_batch_size = get_current_batch_size(BATCH_SIZE, batch, i);
                 if (current_batch_size <= 1)
                     break;
                 const int end = i*BATCH_SIZE + current_batch_size;
@@ -1488,22 +1512,33 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     }
 
 
-    int rank_split = 0;
+    int sim_count = 0;
 #if ASCENT_MPI_ENABLED
-    rank_split = int(std::round(world_size * node_split));
+    sim_count = int(std::round(world_size * node_split));
     int color = 0;
-    if (world_rank >= rank_split)
+    if (world_rank >= sim_count)
         color = 1;
+    const int vis_count = world_size - sim_count;
 
     // construct simulation comm
+    std::vector<int> sim_ranks(sim_count);
+    std::iota(sim_ranks.begin(), sim_ranks.end(), 0);
+    std::vector<int> vis_ranks(vis_count);
+    std::iota(vis_ranks.begin(), vis_ranks.end(), sim_count);
+
     MPI_Group world_group;
     MPI_Comm_group(mpi_comm_world, &world_group);
+
     MPI_Group sim_group;
-    std::vector<int> sim_ranks(rank_split);
-    std::iota(sim_ranks.begin(), sim_ranks.end(), 0);
-    MPI_Group_incl(world_group, rank_split, sim_ranks.data(), &sim_group);
+    MPI_Group_incl(world_group, sim_count, sim_ranks.data(), &sim_group);
     MPI_Comm sim_comm;
     MPI_Comm_create_group(mpi_comm_world, sim_group, 0, &sim_comm);
+
+    MPI_Group vis_group;
+    MPI_Group_incl(world_group, vis_count, vis_ranks.data(), &vis_group);
+    MPI_Comm vis_comm;
+    MPI_Comm_create_group(mpi_comm_world, vis_group, 1, &vis_comm);
+
     ascent_opt["mpi_comm"] = MPI_Comm_c2f(sim_comm);
 #endif // ASCENT_MPI_ENABLED
 
@@ -1511,7 +1546,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     // TODO: handle corner case where there is no probing (and no probing chunks)
     Node render_chunks;
     // run probing only if this is a sim node
-    if (world_rank < rank_split && probing_factor > 0.0)
+    if (world_rank < sim_count && probing_factor > 0.0)
     {
         auto start = std::chrono::system_clock::now();
         ascent_opt["runtime/type"] = "ascent"; // set to main runtime
@@ -1556,13 +1591,14 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 #if ASCENT_MPI_ENABLED
     if (probing_factor < 1.0) // probing_factor of 1 implies inline rendering only
     {
-        splitAndRender(mpi_comm_world, world_size, world_rank, sim_comm, rank_split, 
+        splitAndRender(mpi_comm_world, world_size, world_rank, vis_comm, sim_count, 
                        render_times, phi*theta, m_data, render_chunks, 
                        probing_factor, vis_budget);
     }
 
     MPI_Group_free(&world_group);
     MPI_Group_free(&sim_group);
+    MPI_Group_free(&vis_group);
     // MPI_Comm_free(&sim_comm); // Fatal error in PMPI_Comm_free: Invalid communicator
 #endif
 }
