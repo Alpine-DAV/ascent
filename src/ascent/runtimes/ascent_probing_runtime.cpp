@@ -882,12 +882,33 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     {
         // find all sim nodes sending data to this vis node
         std::vector<int> sending_node_ranks;
-        for (int i = 0; i < node_map.size(); ++i)
+        for (int i = 0; i < sim_node_count; ++i)
         {
             if (node_map[i] == my_dest_rank)
                 sending_node_ranks.push_back(i);
         }
         const int sending_count = int(sending_node_ranks.size());
+        std::map<int, int> sending_counts;
+        for (auto n : node_map)
+            ++sending_counts[n];
+
+        std::vector<int> depth_id_order;
+        for (int i = 0; i < vis_node_count; i++)
+        {
+            std::vector<int>::iterator it = node_map.begin();
+            while ((it = std::find_if(it, node_map.end(), [&](int x){return x == i; })) 
+                    != node_map.end())
+            {
+                int d = std::distance(node_map.begin(), it);
+                depth_id_order.push_back(d);
+                it++;
+            }
+        }
+        std::cout << "== depth_id_order ";
+        for(auto a : depth_id_order)
+            std::cout << a << " ";
+        std::cout << std::endl;
+
 
         std::stringstream node_string;
         std::copy(sending_node_ranks.begin(), sending_node_ranks.end(), 
@@ -895,8 +916,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         std::cout << "~~~~ vis node " << world_rank << ": receives extract(s) from " 
                   << node_string.str() << std::endl;
 
-        std::vector<int> src_ranks(sending_count);
-        src_ranks = sending_node_ranks;
+        const std::vector<int> src_ranks = sending_node_ranks;
         std::vector< std::unique_ptr<Node> > render_chunks_vis(sending_count);
         std::vector< std::unique_ptr<Node> > datasets(sending_count);
 
@@ -929,8 +949,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             if (mpi_error)
                 std::cout << "ERROR receiving dataset from " << src_ranks[i] << std::endl;
 
-            std::cout << "~~~ vis node " << world_rank << " receiving " << g_data_sizes[src_ranks[i]]
-                      << " bytes from " << src_ranks[i] << std::endl;
+            // std::cout << "~~~ vis node " << world_rank << " receiving " << g_data_sizes[src_ranks[i]]
+            //           << " bytes from " << src_ranks[i] << std::endl;
         }
 
         // every associated sim node sends n batches of renders to this vis node
@@ -970,7 +990,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 render_chunks_sim[i][j] = make_unique<Node>(DataType::uint8(buffer_size));
                 if (current_batch_size == 1)    // TODO: single render that was already probed
                     render_chunks_sim[i].pop_back();
-                std::cout << current_batch_size << " expected render_msg_size " << buffer_size << std::endl;
+                // std::cout << current_batch_size << " expected render_msg_size " 
+                //           << buffer_size << std::endl;
             }
         }
 
@@ -1130,7 +1151,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             std::vector<std::vector<std::unique_ptr<Node> > > depth_buffers(max_render_count);
             for (int j = 0; j < max_render_count; ++j)
             {
-                std::cout << "\nimage " << j << std::endl;
+                // std::cout << "\nimage " << j << std::endl;
                 for (int i = 0; i < sending_count; ++i)
                 {
                     // std::cout << "  " << i << " ";
@@ -1141,7 +1162,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     if (j % probing_stride == 0)    // probing image
                     {
                         const index_t id = j / probing_stride;
-                        std::cout << " " << world_rank << " probe  " << id << std::endl;
+                        // std::cout << " " << world_rank << " probe  " << id << std::endl;
 
                         depths[j].push_back((*parts_probing[i])["depths"].child(id).to_float());
                         render_file_names[j].push_back((*parts_probing[i])["render_file_names"].child(id).as_string());
@@ -1170,7 +1191,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
                         const int batch_id = j / BATCH_SIZE;
                         const index_t id = (j % BATCH_SIZE) - probing_enum_sim[i];
-                        std::cout << " " << world_rank << " sim  " << id << std::endl;
+                        // std::cout << " " << world_rank << " sim  " << id << std::endl;
 
                         depths[j].push_back((*parts_sim[i][batch_id])["depths"].child(id).to_float());                        
                         render_file_names[j].push_back((*parts_sim[i][batch_id])["render_file_names"].child(id).as_string());
@@ -1186,7 +1207,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                             probing_enum_vis[i] = 0;
 
                         const index_t id = (j - g_render_counts[src_ranks[i]]) - probing_enum_vis[i];
-                        std::cout << " " << world_rank << " vis  " << id << std::endl;
+                        // std::cout << " " << world_rank << " vis  " << id << std::endl;
 
                         depths[j].push_back((*render_chunks_vis[i])["depths"].child(id).to_float());
                         render_file_names[j].push_back((*render_chunks_vis[i])["render_file_names"].child(id).as_string());
@@ -1202,36 +1223,70 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             //
             t_start = std::chrono::system_clock::now();
             
+            // set vtkh comm to vis comm
             std::cout << world_rank << " vtkh comm " << vtkh::GetMPICommHandle() << std::endl;
             vtkh::SetMPICommHandle(int(MPI_Comm_c2f(vis_comm)));
             std::cout << world_rank << " vis comm " << MPI_Comm_c2f(vis_comm) << std::endl;
 
             // DEBUG: 
-            debug_break();
+            // debug_break();
+
+            std::vector<int> counts_recv;
+            std::vector<int> displacements(1, 0); 
+            for (const auto &e : sending_counts)
+            {
+                counts_recv.push_back(e.second);
+                displacements.push_back(e.second);
+            }
+            displacements.pop_back();
 
             // loop over images (camera positions)
             for (int j = 0; j < max_render_count; ++j)
             {
                 // std::vector<vtkh::Image> images(sending_count);
+                
+                // TODO: gather all depht values from vis nodes
+                std::vector<float> v_depths(sim_node_count, 0.f);
+                MPI_Allgatherv(depths[j].data(), depths[j].size(), MPI_FLOAT, 
+                               v_depths.data(), counts_recv.data(), displacements.data(), 
+                               MPI_FLOAT, vis_comm);
 
-                std::vector<int> depths_order = sort_indices(depths[j]);
-                std::vector<int> depths_order_id = sort_indices(depths_order);
+                std::vector<std::pair<float, int> > depth_id;
+                for (int k = 0; k < v_depths.size(); k++)
+                    depth_id.push_back(std::make_pair(v_depths[k], depth_id_order[k]));
+                std::sort(depth_id.begin(), depth_id.end());
+
+                std::map<int, float> reverse_depth_id;
+                for(auto it = depth_id.begin(); it != depth_id.end(); it++)
+                    reverse_depth_id[it->second] = it->first;
+
+                // depth ordering based on all parts
+                for (auto a : reverse_depth_id)
+                    std::cout << a.first << " " << a.second << " | ";
+                std::cout << std::endl;
+
+                // put depth in index map
+                // sort 
+
+                // std::vector<int> depths_order = sort_indices(depths[j]);
+                // std::vector<int> depths_order_id = sort_indices(depths_order);
 
                 vtkh::Compositor compositor;
                 compositor.SetCompositeMode(vtkh::Compositor::VIS_ORDER_BLEND);
-                
                 
                 // loop over render parts (= 1 per sim node) and add as images
                 for (int i = 0; i < sending_count; ++i)
                 {
                     // images[i].Init(
+                    const int id = std::distance(reverse_depth_id.begin(), 
+                                                 reverse_depth_id.find(src_ranks[i]));
                     compositor.AddImage(color_buffers[j][i]->as_unsigned_char_ptr(),
                                         depth_buffers[j][i]->as_float_ptr(),
                                         WIDTH,
                                         HEIGHT,
-                                        depths_order_id[i] //depths[j][i]
+                                        id
                                         );
-                    // std::cout << depths_order_id[i] << " " << depths[j][i] << std::endl;
+                    std::cout << world_rank << ": " << id << " " << v_depths[id] << std::endl;
 
                     // DEBUG: save render parts                    
                     // std::string name = "img_part_";
@@ -1241,6 +1296,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     // name += ".png";
                     // images[i].Save(name);
                 }
+                std::cout << std::endl;
 
                 // composite
                 vtkh::Image result = compositor.Composite();
