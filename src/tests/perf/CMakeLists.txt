@@ -53,15 +53,15 @@ if (NOT TARGET cloverleaf3d_par)
   # Do something when target found
   message(STATUS "cloverleaf3d not built, skipping performance tests that leverage cloverleaf3d")
 else()
-    
+
     message(STATUS " [*] Adding performance test: t_perf_clover")
 
     ########################################################################
     # Here we setup a python script that can run performance tests for us
     # and wire that into ctest
     #
-    # this is pretty messy, it could be a macro-ized but 
-    # avoiding cart before horse, i expect we will want to evolve to 
+    # this is pretty messy, it could be a macro-ized but
+    # avoiding cart before horse, i expect we will want to evolve to
     # something cleaner
     ########################################################################
 
@@ -82,19 +82,20 @@ else()
 
     configure_file ("opts.json.in"
                     "${CMAKE_CURRENT_BINARY_DIR}/opts.json" @ONLY)
-    
-    # copy over script and supporting files 
+
+    # copy over script and supporting files
     configure_file ("run_ascent_clover_perf_tests.py"
                     "${CMAKE_CURRENT_BINARY_DIR}/run_ascent_clover_perf_tests.py"
                     COPYONLY)
     set(_PERF_ACTIONS_FILES "ascent_actions_contour_and_render.yaml")
+    list(APPEND _PERF_ACTIONS_FILES "ascent_actions_sampling_and_render.yaml")
 
     foreach(_ACTION_FILE ${_PERF_ACTIONS_FILES})
         configure_file (${_ACTION_FILE}
                         "${CMAKE_CURRENT_BINARY_DIR}/${_ACTION_FILE}"
                         COPYONLY)
     endforeach()
-    
+
     # wire up our script as a labeled test
     # working dir is ${CMAKE_CURRENT_BINARY_DIR}
     # if we built python use our python, otherwise defer to system python

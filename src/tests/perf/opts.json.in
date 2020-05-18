@@ -5,6 +5,10 @@
              "contour": {
                         "actions_yaml_file": "ascent_actions_contour_and_render.yaml",
                         "ntasks" : 2
+                        },
+             "sampling": {
+                        "actions_yaml_file": "ascent_actions_sampling_and_render.yaml",
+                        "ntasks" : 2
                         }
         }
 }

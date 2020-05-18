@@ -43,8 +43,8 @@
 ###############################################################################
 #
 # file: run_ascent_clover_perf_tests.py
-# 
-# purpose: 
+#
+# purpose:
 #  Helper that executes parameterized cloverleaf runs to gather performance
 #  data.
 #
@@ -102,8 +102,11 @@ def gen_clover_input_deck(side_ncells=100,
 def process_results():
     # FUTURE: look for and digest timings yaml files
     yaml_out = glob.glob("vtkh_data_*.yaml")
-    print("[Found timing output!]")
-    print(yaml_out)
+    if not yaml_out:
+      print("[No timing output found!]")
+    else:
+      print("[Found timing output!]")
+      print(yaml_out)
 
 def run_clover(tag, test_opts):
     # setup unique run-dir using tag
@@ -135,7 +138,7 @@ def run_tests():
 
 def usage():
     print("[usage: python run_ascent_clover_perf_tests.py <opts.json>]")
-    
+
 def parse_args():
     # use default opts.json if nothing is passed
     if len(sys.argv) < 2:
