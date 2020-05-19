@@ -734,31 +734,8 @@ int get_current_batch_size(const int batch_size, const RenderBatch batch, const 
     return current_batch_size;
 }
 
-typedef std::vector<std::unique_ptr<conduit::Node> > vec_node_ptr;
+typedef std::vector<std::shared_ptr<conduit::Node> > vec_node_ptr;
 typedef std::vector<vec_node_ptr> vec_vec_node_ptr;
-
-struct RenderChunks
-{
-    vec_node_ptr names;
-    vec_node_ptr color_buf;
-    vec_node_ptr depth_buf;
-    std::vector<float> depths;
-};
-
-void add_to_render_chunks(const std::unique_ptr<Node> &source, 
-                          RenderChunks &chunks, const index_t id)
-{
-    chunks.depths.push_back((*source)["depths"].child(id).to_float());
-    std::unique_ptr<Node> name = make_unique<Node>((*source)["render_file_names"].child(id));
-    chunks.names.push_back(std::move(name));
-
-    std::unique_ptr<Node> cb = make_unique<Node>((*source)["color_buffers"].child(id));
-    chunks.color_buf.push_back(std::move(cb));
-
-    std::unique_ptr<Node> db = make_unique<Node>((*source)["depth_buffers"].child(id));
-    chunks.depth_buf.push_back(std::move(db));
-}
-
 
 //-----------------------------------------------------------------------------
 // TODO: refactor this method: split up into prep, sim and vis parts
@@ -952,8 +929,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                   << node_string.str() << std::endl;
 
         const std::vector<int> src_ranks = sending_node_ranks;
-        std::vector< std::unique_ptr<Node> > render_chunks_vis(sending_count);
-        std::vector< std::unique_ptr<Node> > datasets(sending_count);
+        vec_node_ptr render_chunks_vis(sending_count);
+        std::vector<std::unique_ptr<Node> > datasets(sending_count);
 
         // receive all data sets (blocking)
         // for (int i = 0; i < sending_count; ++i)
@@ -1126,7 +1103,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     render_chunks["color_buffers"] = info["color_buffers"];
                     render_chunks["depth_buffers"] = info["depth_buffers"];
                     render_chunks["render_file_names"] = info["render_file_names"];
-                    render_chunks_vis[i] = make_unique<Node>(render_chunks);
+                    render_chunks_vis[i] = make_shared<Node>(render_chunks);
 
                     ascent_render.close();
                 }
@@ -1154,23 +1131,25 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             auto t_start = std::chrono::system_clock::now();
 
             // unpack sent renders -> NOTE: takes too long, can we avoid copies?
-            std::vector<std::unique_ptr<Node> > parts_probing;
+            vec_node_ptr parts_probing;
             for (auto const& p : render_chunks_probe)
             {
-                parts_probing.emplace_back(make_unique<Node>());
+                parts_probing.emplace_back(make_shared<Node>());
                 unpack_node(*p, *parts_probing.back());
             }
             // sender / batches
-            std::vector<std::vector<std::unique_ptr<Node> > > parts_sim(sending_count);
+            vec_vec_node_ptr parts_sim(sending_count);
             for (int i = 0; i < sending_count; ++i)
             {
                 for (auto const& batch : render_chunks_sim[i])
                 {
-                    parts_sim[i].emplace_back(make_unique<Node>());
+                    parts_sim[i].emplace_back(make_shared<Node>());
                     unpack_node(*batch, *parts_sim[i].back());
                 }
             }
             log_time(t_start, "+ unpack images ", world_rank);
+            print_time(t_start, "+ unpacking renders ", world_rank);
+            
             std::cout << "~~~~finished unpacking images, compositing... " << world_rank << std::endl;
 
             // arrange render order
@@ -1178,16 +1157,14 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             
             vector<int> probing_enum_sim(sending_count, 0);
             vector<int> probing_enum_vis(sending_count, 0);
-
             // images / sender / values
-            std::vector<RenderChunks> render_chunks(max_render_count);
+            vec_vec_node_ptr render_ptrs(max_render_count);
+            std::vector<std::vector<int> > render_arrangement(max_render_count);
 
             for (int j = 0; j < max_render_count; ++j)
             {
-                render_chunks[j].names.reserve(sending_count);
-                render_chunks[j].color_buf.reserve(sending_count);
-                render_chunks[j].depth_buf.reserve(sending_count);
-                render_chunks[j].depths.reserve(sending_count);
+                render_ptrs[j].reserve(sending_count);
+                render_arrangement[j].reserve(sending_count);
 
                 // std::cout << "\nimage " << j << std::endl;
                 for (int i = 0; i < sending_count; ++i)
@@ -1197,7 +1174,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     {
                         const index_t id = j / probing_stride;
                         // std::cout << " " << world_rank << " probe  " << id << std::endl;
-                        add_to_render_chunks(parts_probing[i], render_chunks[j], id);
+                        render_ptrs[j].emplace_back(parts_probing[i]);
+                        render_arrangement[j].emplace_back(id);
 
                         {   // keep track of probing images
                             // reset counter if first in batch
@@ -1220,7 +1198,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                         const int batch_id = j / BATCH_SIZE;
                         const index_t id = (j % BATCH_SIZE) - probing_enum_sim[i];
                         // std::cout << " " << world_rank << " sim  " << id << std::endl;
-                        add_to_render_chunks(parts_sim[i][batch_id], render_chunks[j], id);
+                        render_ptrs[j].emplace_back(parts_sim[i][batch_id]);
+                        render_arrangement[j].emplace_back(id);
                     }
                     else    // part rendered on this vis node
                     {
@@ -1231,12 +1210,12 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
                         const index_t id = (j - g_render_counts[src_ranks[i]]) - probing_enum_vis[i];
                         // std::cout << " " << world_rank << " vis  " << id << std::endl;
-                        add_to_render_chunks(render_chunks_vis[i], render_chunks[j], id);
+                        render_ptrs[j].emplace_back(render_chunks_vis[i]);
+                        render_arrangement[j].emplace_back(id);
                     }
                 }
             }
             log_time(t_start, "+ arrange renders ", world_rank);
-            print_time(t_start, "+ arrange renders ", world_rank);
 
             // actual compositing
             auto t_start0 = std::chrono::system_clock::now();
@@ -1266,13 +1245,19 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 t_start = std::chrono::system_clock::now();
                 // gather all dephts values from vis nodes
                 std::vector<float> v_depths(sim_node_count, 0.f);
-                MPI_Allgatherv(render_chunks[j].depths.data(), render_chunks[j].depths.size(), 
+
+                std::vector<float> depths(sending_count);
+                for (int i = 0; i < sending_count; i++)
+                    depths[i] = (*render_ptrs[j][i])["depths"].child(render_arrangement[j][i]).to_float();
+
+                MPI_Allgatherv(
+                               depths.data(), depths.size(), 
                                MPI_FLOAT, v_depths.data(), counts_recv.data(), displacements.data(), 
                                MPI_FLOAT, vis_comm);
 
-                std::vector<std::pair<float, int> > depth_id;
+                std::vector<std::pair<float, int> > depth_id(v_depths.size());
                 for (int k = 0; k < v_depths.size(); k++)
-                    depth_id.push_back(std::make_pair(v_depths[k], depth_id_order[k]));
+                    depth_id[k] = std::make_pair(v_depths[k], depth_id_order[k]);
                 // sort based on depth values
                 std::sort(depth_id.begin(), depth_id.end());
 
@@ -1291,8 +1276,10 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 for (int i = 0; i < sending_count; ++i)
                 {
                     const int id = depths_order_id[src_ranks[i]];
-                    compositor.AddImage(render_chunks[j].color_buf[i]->as_unsigned_char_ptr(),
-                                        render_chunks[j].depth_buf[i]->as_float_ptr(),
+                    compositor.AddImage((*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr(),
+                                        (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr(),
+                                        // render_chunks[j].color_buf[i]->as_unsigned_char_ptr(),
+                                        // render_chunks[j].depth_buf[i]->as_float_ptr(),
                                         WIDTH, HEIGHT, id);
                 }
 
@@ -1303,7 +1290,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 if (vis_rank == 0)
                 {   // write to disk 
                     t_start = std::chrono::system_clock::now();
-                    result.Save((*render_chunks[j].names[0]).as_string());
+                    result.Save((*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string());
                     log_time(t_start, "+ save image ", world_rank);
                 }
             }
