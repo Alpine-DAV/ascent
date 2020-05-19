@@ -1115,8 +1115,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             log_time(t_start, "+ wait receive img ", world_rank);
         }
 
-        // TODO: multi node compositing
-        {
+        {   // multi node compositing
             auto t_start = std::chrono::system_clock::now();
 
             // unpack sent renders -> NOTE: takes too long, can we avoid copies?
@@ -1141,7 +1140,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             std::cout << "~~~~finished unpacking images, compositing... " << world_rank << std::endl;
 
             // arrange render order
-            //
+            t_start = std::chrono::system_clock::now();
+            
             vector<int> probing_enum_sim(sending_count, 0);
             vector<int> probing_enum_vis(sending_count, 0);
             // images / sender / values
@@ -1218,34 +1218,35 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     }
                 }
             }
+            log_time(t_start, "+ arrange renders ", world_rank);
 
-            // composite
-            //
-            t_start = std::chrono::system_clock::now();
+            // actual compositing
+            auto t_start0 = std::chrono::system_clock::now();
             
-            // set vtkh comm to vis comm
-            std::cout << world_rank << " vtkh comm " << vtkh::GetMPICommHandle() << std::endl;
+            // Set the vis_comm to be the vtkh comm.
             vtkh::SetMPICommHandle(int(MPI_Comm_c2f(vis_comm)));
-            std::cout << world_rank << " vis comm " << MPI_Comm_c2f(vis_comm) << std::endl;
+            int vis_rank = 0;
+            MPI_Comm_rank(vis_comm, &vis_rank);
 
             // DEBUG: 
             // debug_break();
 
+            // Set the number of receiving depth values per node 
+            // and the according displacements.
             std::vector<int> counts_recv;
             std::vector<int> displacements(1, 0); 
             for (const auto &e : sending_counts)
             {
                 counts_recv.push_back(e.second);
-                displacements.push_back(e.second);
+                displacements.push_back(displacements.back() + e.second);
             }
             displacements.pop_back();
 
             // loop over images (camera positions)
             for (int j = 0; j < max_render_count; ++j)
             {
-                // std::vector<vtkh::Image> images(sending_count);
-                
-                // TODO: gather all depht values from vis nodes
+                t_start = std::chrono::system_clock::now();
+                // gather all dephts values from vis nodes
                 std::vector<float> v_depths(sim_node_count, 0.f);
                 MPI_Allgatherv(depths[j].data(), depths[j].size(), MPI_FLOAT, 
                                v_depths.data(), counts_recv.data(), displacements.data(), 
@@ -1254,22 +1255,16 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 std::vector<std::pair<float, int> > depth_id;
                 for (int k = 0; k < v_depths.size(); k++)
                     depth_id.push_back(std::make_pair(v_depths[k], depth_id_order[k]));
+                // sort based on depth values
                 std::sort(depth_id.begin(), depth_id.end());
 
-                std::map<int, float> reverse_depth_id;
+                // convert the depth order to an integer ranking
+                std::vector<int> depths_order;
                 for(auto it = depth_id.begin(); it != depth_id.end(); it++)
-                    reverse_depth_id[it->second] = it->first;
-
-                // depth ordering based on all parts
-                for (auto a : reverse_depth_id)
-                    std::cout << a.first << " " << a.second << " | ";
-                std::cout << std::endl;
-
-                // put depth in index map
-                // sort 
-
-                // std::vector<int> depths_order = sort_indices(depths[j]);
-                // std::vector<int> depths_order_id = sort_indices(depths_order);
+                    depths_order.push_back(it->second);
+                
+                // get a mapping from MPI src rank to depth rank
+                std::vector<int> depths_order_id = sort_indices(depths_order);
 
                 vtkh::Compositor compositor;
                 compositor.SetCompositeMode(vtkh::Compositor::VIS_ORDER_BLEND);
@@ -1277,69 +1272,27 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 // loop over render parts (= 1 per sim node) and add as images
                 for (int i = 0; i < sending_count; ++i)
                 {
-                    // images[i].Init(
-                    const int id = std::distance(reverse_depth_id.begin(), 
-                                                 reverse_depth_id.find(src_ranks[i]));
+                    const int id = depths_order_id[src_ranks[i]];
                     compositor.AddImage(color_buffers[j][i]->as_unsigned_char_ptr(),
                                         depth_buffers[j][i]->as_float_ptr(),
                                         WIDTH,
                                         HEIGHT,
                                         id
                                         );
-                    std::cout << world_rank << ": " << id << " " << v_depths[id] << std::endl;
-
-                    // DEBUG: save render parts                    
-                    // std::string name = "img_part_";
-                    // name += std::to_string(j);
-                    // name += "_";
-                    // name += std::to_string(i);
-                    // name += ".png";
-                    // images[i].Save(name);
                 }
-                std::cout << std::endl;
 
                 // composite
                 vtkh::Image result = compositor.Composite();
+                log_time(t_start, "+ compositing image ", world_rank);
 
-                // vtkh::Image result = m_compositor->Composite();
-                // vtkh::ImageCompositor compositor;
-                // compositor.OrderedComposite(images);
-
-                // const std::string image_name = m_renders[i].GetImageName() + ".png";
-                // ImageToCanvas(result, *m_renders[i].GetCanvas(0), true);
-                // m_compositor->ClearImages();
-                log_time(t_start, "+ compositing ", world_rank);
-
-                int vis_rank = 0;
-                MPI_Comm_rank(vis_comm, &vis_rank);
                 if (vis_rank == 0)
                 {   // write to disk 
                     t_start = std::chrono::system_clock::now();
-                    // images[0].Save(render_file_names[j][0]);
                     result.Save(render_file_names[j][0]);
                     log_time(t_start, "+ save image ", world_rank);
                 }
             }
-
-            // vtkh::Scene scene;
-            // vtkh::Renderer *renderer = new vtkh::VolumeRenderer();
-            // scene.AddRenderer(renderer);
-            // std::vector<vtkh::Render> renders;
-
-            // for (auto &p : render_parts)
-            // {
-                // NodeIterator itr_depth = p["depths"].children();
-                // NodeIterator itr_color_buffer = p["color_buffers"].children();
-                // NodeIterator itr_depth_buffer = p["depth_buffers"].children();
-                
-                // loop over cam position
-
-        //         vtkh::Render r;
-        //         // r.SetCamera(const vtkm::rendering::Camera &camera)
-        //         renders.push_back(render);
-            // }
-        //     scene.SetRenders(renders);
-        //     (*renderer)->Composite(total_renders);
+            log_time(t_start0, "+ compositing total ", world_rank);
         }
 
     } // end vis node
@@ -1459,9 +1412,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     if (mpi_error)
                         std::cout << "ERROR sending dataset to " << destination << std::endl;
 
-                    std::cout << world_rank << " end render sim " << current_batch_size
-                                << " renders size " << compact_renders.total_bytes_compact() 
-                                << std::endl;
+                    // std::cout << world_rank << " end render sim " << current_batch_size
+                    //             << " renders size " << compact_renders.total_bytes_compact() 
+                    //             << std::endl;
                 }                 
             }
             log_time(t_start, "+ render sim " + std::to_string(g_render_counts[world_rank]) + " ", world_rank);
