@@ -428,6 +428,15 @@ void log_time(std::chrono::time_point<std::chrono::system_clock> start,
     out.close();
 }
 
+void print_time(std::chrono::time_point<std::chrono::system_clock> start, 
+                const std::string &description,
+                const int rank)
+{
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << description << elapsed.count() << " rank " << rank << std::endl;
+}
+
 
 int recv_any_using_schema(Node &node, const int src, const int tag, const MPI_Comm comm)
 {  
@@ -724,6 +733,32 @@ int get_current_batch_size(const int batch_size, const RenderBatch batch, const 
         current_batch_size = batch.rest;
     return current_batch_size;
 }
+
+typedef std::vector<std::unique_ptr<conduit::Node> > vec_node_ptr;
+typedef std::vector<vec_node_ptr> vec_vec_node_ptr;
+
+struct RenderChunks
+{
+    vec_node_ptr names;
+    vec_node_ptr color_buf;
+    vec_node_ptr depth_buf;
+    std::vector<float> depths;
+};
+
+void add_to_render_chunks(const std::unique_ptr<Node> &source, 
+                          RenderChunks &chunks, const index_t id)
+{
+    chunks.depths.push_back((*source)["depths"].child(id).to_float());
+    std::unique_ptr<Node> name = make_unique<Node>((*source)["render_file_names"].child(id));
+    chunks.names.push_back(std::move(name));
+
+    std::unique_ptr<Node> cb = make_unique<Node>((*source)["color_buffers"].child(id));
+    chunks.color_buf.push_back(std::move(cb));
+
+    std::unique_ptr<Node> db = make_unique<Node>((*source)["depth_buffers"].child(id));
+    chunks.depth_buf.push_back(std::move(db));
+}
+
 
 //-----------------------------------------------------------------------------
 // TODO: refactor this method: split up into prep, sim and vis parts
@@ -1120,7 +1155,6 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
             // unpack sent renders -> NOTE: takes too long, can we avoid copies?
             std::vector<std::unique_ptr<Node> > parts_probing;
-            // render parts from this vis node don't need to be unpacked
             for (auto const& p : render_chunks_probe)
             {
                 parts_probing.emplace_back(make_unique<Node>());
@@ -1144,39 +1178,32 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             
             vector<int> probing_enum_sim(sending_count, 0);
             vector<int> probing_enum_vis(sending_count, 0);
+
             // images / sender / values
-            std::vector<std::vector<float> > depths(max_render_count);
-            std::vector<std::vector<std::string> > render_file_names(max_render_count);
-            std::vector<std::vector<std::unique_ptr<Node> > > color_buffers(max_render_count);
-            std::vector<std::vector<std::unique_ptr<Node> > > depth_buffers(max_render_count);
+            std::vector<RenderChunks> render_chunks(max_render_count);
+
             for (int j = 0; j < max_render_count; ++j)
             {
+                render_chunks[j].names.reserve(sending_count);
+                render_chunks[j].color_buf.reserve(sending_count);
+                render_chunks[j].depth_buf.reserve(sending_count);
+                render_chunks[j].depths.reserve(sending_count);
+
                 // std::cout << "\nimage " << j << std::endl;
                 for (int i = 0; i < sending_count; ++i)
                 {
                     // std::cout << "  " << i << " ";
-                    depths[j].reserve(sending_count);
-                    color_buffers[j].reserve(sending_count);
-                    depth_buffers[j].reserve(sending_count);
-
                     if (j % probing_stride == 0)    // probing image
                     {
                         const index_t id = j / probing_stride;
                         // std::cout << " " << world_rank << " probe  " << id << std::endl;
+                        add_to_render_chunks(parts_probing[i], render_chunks[j], id);
 
-                        depths[j].push_back((*parts_probing[i])["depths"].child(id).to_float());
-                        render_file_names[j].push_back((*parts_probing[i])["render_file_names"].child(id).as_string());
-                        std::unique_ptr<Node> cb = make_unique<Node>((*parts_probing[i])["color_buffers"].child(id));
-                        color_buffers[j].push_back(std::move(cb));
-                        std::unique_ptr<Node> db = make_unique<Node>((*parts_probing[i])["depth_buffers"].child(id));
-                        depth_buffers[j].push_back(std::move(db));
-                        // keep track of probing images
-                        {
+                        {   // keep track of probing images
                             // reset counter if first in batch
                             if (j % BATCH_SIZE == 0)   
                                 probing_enum_sim[i] = 0;
                             ++probing_enum_sim[i];
-
                             // reset probing counter if first render in vis chunks
                             if (j - g_render_counts[src_ranks[i]] == 0)
                                 probing_enum_vis[i] = 0;
@@ -1185,40 +1212,31 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     }
                     else if (j < g_render_counts[src_ranks[i]]) // part comes from sim node (inline)
                     {
-                        // reset probing counter if first in batch and not a probing render
+                        // Reset the probing counter if this is the first render in a batch 
+                        // and this is not a probing render.
                         if (j % BATCH_SIZE == 0)
                             probing_enum_sim[i] = 0;
 
                         const int batch_id = j / BATCH_SIZE;
                         const index_t id = (j % BATCH_SIZE) - probing_enum_sim[i];
                         // std::cout << " " << world_rank << " sim  " << id << std::endl;
-
-                        depths[j].push_back((*parts_sim[i][batch_id])["depths"].child(id).to_float());                        
-                        render_file_names[j].push_back((*parts_sim[i][batch_id])["render_file_names"].child(id).as_string());
-                        std::unique_ptr<Node> cb = make_unique<Node>((*parts_sim[i][batch_id])["color_buffers"].child(id));
-                        color_buffers[j].push_back(std::move(cb));
-                        std::unique_ptr<Node> db = make_unique<Node>((*parts_sim[i][batch_id])["depth_buffers"].child(id));
-                        depth_buffers[j].push_back(std::move(db));
+                        add_to_render_chunks(parts_sim[i][batch_id], render_chunks[j], id);
                     }
                     else    // part rendered on this vis node
                     {
-                        // reset probing counter if first render in vis chunks and not a probing render
+                        // Reset the probing counter if this is the first render in vis node chunks 
+                        // and not this is not a probing render.
                         if (j - g_render_counts[src_ranks[i]] == 0)
                             probing_enum_vis[i] = 0;
 
                         const index_t id = (j - g_render_counts[src_ranks[i]]) - probing_enum_vis[i];
                         // std::cout << " " << world_rank << " vis  " << id << std::endl;
-
-                        depths[j].push_back((*render_chunks_vis[i])["depths"].child(id).to_float());
-                        render_file_names[j].push_back((*render_chunks_vis[i])["render_file_names"].child(id).as_string());
-                        std::unique_ptr<Node> cb = make_unique<Node>((*render_chunks_vis[i])["color_buffers"].child(id));
-                        color_buffers[j].push_back(std::move(cb));
-                        std::unique_ptr<Node> db = make_unique<Node>((*render_chunks_vis[i])["depth_buffers"].child(id));
-                        depth_buffers[j].push_back(std::move(db));
+                        add_to_render_chunks(render_chunks_vis[i], render_chunks[j], id);
                     }
                 }
             }
             log_time(t_start, "+ arrange renders ", world_rank);
+            print_time(t_start, "+ arrange renders ", world_rank);
 
             // actual compositing
             auto t_start0 = std::chrono::system_clock::now();
@@ -1248,8 +1266,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 t_start = std::chrono::system_clock::now();
                 // gather all dephts values from vis nodes
                 std::vector<float> v_depths(sim_node_count, 0.f);
-                MPI_Allgatherv(depths[j].data(), depths[j].size(), MPI_FLOAT, 
-                               v_depths.data(), counts_recv.data(), displacements.data(), 
+                MPI_Allgatherv(render_chunks[j].depths.data(), render_chunks[j].depths.size(), 
+                               MPI_FLOAT, v_depths.data(), counts_recv.data(), displacements.data(), 
                                MPI_FLOAT, vis_comm);
 
                 std::vector<std::pair<float, int> > depth_id;
@@ -1273,12 +1291,9 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 for (int i = 0; i < sending_count; ++i)
                 {
                     const int id = depths_order_id[src_ranks[i]];
-                    compositor.AddImage(color_buffers[j][i]->as_unsigned_char_ptr(),
-                                        depth_buffers[j][i]->as_float_ptr(),
-                                        WIDTH,
-                                        HEIGHT,
-                                        id
-                                        );
+                    compositor.AddImage(render_chunks[j].color_buf[i]->as_unsigned_char_ptr(),
+                                        render_chunks[j].depth_buf[i]->as_float_ptr(),
+                                        WIDTH, HEIGHT, id);
                 }
 
                 // composite
@@ -1288,7 +1303,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 if (vis_rank == 0)
                 {   // write to disk 
                     t_start = std::chrono::system_clock::now();
-                    result.Save(render_file_names[j][0]);
+                    result.Save((*render_chunks[j].names[0]).as_string());
                     log_time(t_start, "+ save image ", world_rank);
                 }
             }
