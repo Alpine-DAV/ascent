@@ -145,14 +145,14 @@ def post_results():
     dir_name = now.strftime('%m.%d.%y-%H.%M')
     sexe('mkdir ' + dir_name)
     sexe('cp -R _test* ' + dir_name)
-    tar = dir_name + 'tar.gz'
+    tar = dir_name + '.tar.gz'
     sexe('tar cvf '+tar+' '+dir_name)
     if os.path.isdir('ascent_gpu_dashboard'):
       sexe('git clone git@github.com:Alpine-DAV/ascent_gpu_dashboard.git')
     sexe('mkdir -p ascent_gpu_dashboard/perf_data')
     sexe('cp '+tar+' ascent_gpu_dashboard/perf_data')
     sexe('cd ascent_gpu_dashboard')
-    sexe('git add perf_data/'+tar)
+    sexe('git add ./perf_data/'+tar)
     sexe('git commit -am \"adding perf data '+dir_name+'\"')
     sexe('git push')
     sexe('cd ..')
