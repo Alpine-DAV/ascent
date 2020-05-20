@@ -144,7 +144,7 @@ def post_results():
     now = datetime.now()
     dir_name = now.strftime('%m.%d.%y-%H.%M')
     sexe('mkdir ' + dir_name)
-    sexe('cp -R _test*' + dir_name)
+    sexe('cp -R _test* ' + dir_name)
     tar = dir_name + 'tar.gz'
     sexe('tar cvf '+tar+' '+dir_name)
     if os.path.isdir('ascent_gpu_dashboard'):
