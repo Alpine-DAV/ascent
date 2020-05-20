@@ -58,6 +58,7 @@ import shutil
 # json instead of yaml b/c it is built-in
 import json
 import subprocess
+from datetime import datetime
 
 from os.path import join as pjoin
 
@@ -108,6 +109,7 @@ def process_results():
       print("[Found timing output!]")
       print(yaml_out)
 
+
 def run_clover(tag, test_opts):
     # setup unique run-dir using tag
     rdir = "_test_" + tag
@@ -136,6 +138,22 @@ def run_tests():
     for k,v in opts["tests"].items():
         run_clover(k, v)
 
+def post_results():
+    res_dirs = glob.glob("_test*")
+    print(res_dirs)
+    now = datetime.now()
+    dir_name = now.strftime('%m.%d.%y-%H.%M')
+    sexe('mkdir ' + dir_name)
+    sexe('cp -R _test*' + dir_name)
+    tar = dir_name + 'tar.gz'
+    sexe('tar cvf '+tar+' '+dir_name)
+    sexe('git clone git@github.com:Alpine-DAV/ascent_gpu_dashboard.git')
+    sexe('mkdir -p ascent_gpu_dashboard/perf_data')
+    sexe('cp '+tar+' ascent_gpu_dashboard/perf_data')
+    sexe('cd ascent_gpu_dashboard')
+    sexe('git add perf_data/'+tar)
+    sexe('git commit -am \"adding perf data '+dir_name+'\"')
+
 def usage():
     print("[usage: python run_ascent_clover_perf_tests.py <opts.json>]")
 
@@ -152,6 +170,7 @@ def parse_args():
 def main():
     parse_args()
     run_tests()
+    post_results()
 
 if __name__ == "__main__":
     main()
