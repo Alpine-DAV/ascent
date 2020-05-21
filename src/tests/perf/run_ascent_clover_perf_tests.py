@@ -70,7 +70,7 @@ def sexe(cmd):
     subprocess.call(cmd,shell=True)
 
 def mpiexec_cmd(ntasks):
-    return "{} {}".format(opts["mpiexec_cmd"],ntasks)
+    return opts["mpiexec_cmd"].format(ntasks)
 
 def clover_cmd():
     return opts["clover_cmd"]
