@@ -75,7 +75,7 @@ else()
     else()
             set(_mpiexec ${MPIEXEC})
     endif()
-    set(_PERF_MPIEXEC_CMD "${_mpiexec} ${MPIEXEC_NUMPROC_FLAG} ${arg_NUM_MPI_TASKS} ${BLT_MPI_COMMAND_APPEND}")
+    set(_PERF_MPIEXEC_CMD "${_mpiexec} ${MPIEXEC_NUMPROC_FLAG} {0} ${BLT_MPI_COMMAND_APPEND}")
 
     # Grab path to clover and bake into the options file
     set(_PERF_CLOVER_CMD  ${CMAKE_BINARY_DIR}/examples/proxies/cloverleaf3d-ref/cloverleaf3d_par)
