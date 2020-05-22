@@ -65,9 +65,24 @@ from os.path import join as pjoin
 # bake in "base_path", the abs path to the dir we are running from
 opts = { "base_path": os.path.abspath(os.path.split(__file__)[0])}
 
-def sexe(cmd):
-    print("[executing: {}".format(cmd))
-    subprocess.call(cmd,shell=True)
+#def sexe(cmd):
+#    print("[executing: {}".format(cmd))
+#    subprocess.call(cmd,shell=True)
+
+def sexe(cmd,ret_output=False,echo = False):
+    """ Helper for executing shell commands. """
+    if echo:
+        print("[exe: {}]".format(cmd))
+    if ret_output:
+        p = subprocess.Popen(cmd,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
+        res = p.communicate()[0]
+        res = res.decode('utf8')
+        return p.returncode,res
+    else:
+        return subprocess.call(cmd,shell=True)
 
 def mpiexec_cmd(ntasks):
     return opts["mpiexec_cmd"].format(ntasks)
@@ -148,10 +163,10 @@ def post_results():
     tar = dir_name + '.tar.gz'
     sexe('tar cvf '+tar+' '+dir_name)
     if not os.path.isdir('ascent_gpu_dashboard'):
-      sexe('git clone git@github.com:Alpine-DAV/ascent_gpu_dashboard.git')
+      res = sexe('git clone git@github.com:Alpine-DAV/ascent_gpu_dashboard.git')
+      print(res)
     sexe('mkdir -p ascent_gpu_dashboard/perf_data')
     sexe('cp '+tar+' ascent_gpu_dashboard/perf_data')
-    #sexe('cd ascent_gpu_dashboard')
     os.chdir('ascent_gpu_dashboard')
     sexe('git add ./perf_data/'+tar)
     sexe('git commit -am \"adding perf data '+dir_name+'\"')
