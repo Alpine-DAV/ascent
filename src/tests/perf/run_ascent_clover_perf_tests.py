@@ -88,7 +88,7 @@ def clover_cmd():
 
 def gen_clover_input_deck(side_ncells=100,
                           ascent_freq=10,
-                          end_step=20):
+                          end_step=100):
   res = ('*clover\n'
          ' state 1 density=0.2 energy=1.0\n'
          ' state 2 density=1.0 energy=2.5 geometry=cuboid xmin=0.0 xmax=2.0 ymin=0.0 ymax=2.0 zmin=0.0 zmax=2.0\n'
@@ -128,6 +128,8 @@ def run_clover(tag, test_opts):
         os.mkdir(rdir)
     # change into this dir to run our test
     os.chdir(rdir)
+    # clean up data from pervious tests
+    sexe('rm vtkh_*.yaml')
     if "actions_yaml_file" in test_opts.keys():
         actions_file = pjoin(opts["base_path"],test_opts["actions_yaml_file"])
         shutil.copyfile(actions_file, "ascent_actions.yaml")
