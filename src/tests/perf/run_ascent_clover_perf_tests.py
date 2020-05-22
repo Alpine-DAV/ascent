@@ -162,9 +162,14 @@ def post_results():
     sexe('cp -R _test* ' + dir_name)
     tar = dir_name + '.tar.gz'
     sexe('tar cvf '+tar+' '+dir_name)
+    success = True
     if not os.path.isdir('ascent_gpu_dashboard'):
-      res = sexe('git clone git@github.com:Alpine-DAV/ascent_gpu_dashboard.git')
-      print(res)
+      res = sexe('git clone git@github.com:Alpine-DAV/bascent_gpu_dashboard.git')
+      if res != 0:
+        success = False
+    if not success:
+      print('Failed to clone dashboard')
+      return
     sexe('mkdir -p ascent_gpu_dashboard/perf_data')
     sexe('cp '+tar+' ascent_gpu_dashboard/perf_data')
     os.chdir('ascent_gpu_dashboard')
@@ -172,6 +177,8 @@ def post_results():
     sexe('git commit -am \"adding perf data '+dir_name+'\"')
     sexe('git push')
     os.chdir('..')
+    sexe('rm -rf ascent_gpu_dashboard')
+
 
 def usage():
     print("[usage: python run_ascent_clover_perf_tests.py <opts.json>]")
