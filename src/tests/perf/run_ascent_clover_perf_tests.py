@@ -65,10 +65,6 @@ from os.path import join as pjoin
 # bake in "base_path", the abs path to the dir we are running from
 opts = { "base_path": os.path.abspath(os.path.split(__file__)[0])}
 
-#def sexe(cmd):
-#    print("[executing: {}".format(cmd))
-#    subprocess.call(cmd,shell=True)
-
 def sexe(cmd,ret_output=False,echo = False):
     """ Helper for executing shell commands. """
     if echo:
@@ -162,13 +158,14 @@ def post_results():
     sexe('cp -R _test* ' + dir_name)
     tar = dir_name + '.tar.gz'
     sexe('tar cvf '+tar+' '+dir_name)
-    success = True
+    clone_success = True
     if not os.path.isdir('ascent_gpu_dashboard'):
-      res = sexe('git clone git@github.com:Alpine-DAV/bascent_gpu_dashboard.git')
+      res = sexe('git clone git@github.com:Alpine-DAV/ascent_gpu_dashboard.git')
+      print(res)
       if res != 0:
-        success = False
-    if not success:
-      print('Failed to clone dashboard')
+        clone_success = False
+    if not clone_success:
+      print('Failed to clone dashboard: bailing')
       return
     sexe('mkdir -p ascent_gpu_dashboard/perf_data')
     sexe('cp '+tar+' ascent_gpu_dashboard/perf_data')
@@ -178,7 +175,6 @@ def post_results():
     sexe('git push')
     os.chdir('..')
     sexe('rm -rf ascent_gpu_dashboard')
-
 
 def usage():
     print("[usage: python run_ascent_clover_perf_tests.py <opts.json>]")
