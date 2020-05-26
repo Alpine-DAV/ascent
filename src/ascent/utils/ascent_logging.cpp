@@ -44,39 +44,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_logging.hpp
+/// file: ascent_logging.cpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ASCENT_LOGGING_HPP
-#define ASCENT_LOGGING_HPP
 
-#include <conduit.hpp>
-#include <ascent_exports.h>
-
-//-----------------------------------------------------------------------------
-//
-/// The ASCENT_INFO macro is the primary mechanism used to log basic messages.
-///
-/// We use CONDUIT_INFO, b/c conduit's logging infrastructure allows use
-/// it to be easily rewire messages into a client code's logging mechanism.
-///
-/// See conduit::utils docs for details.
-///
-//-----------------------------------------------------------------------------
-#define ASCENT_INFO( msg ) CONDUIT_INFO( msg );
-
-//-----------------------------------------------------------------------------
-//
-/// The ASCENT_WARN macro is the primary mechanism used to capture warnings
-/// in ascent.
-///
-/// We use CONDUIT_WARN, b/c conduit's logging infrastructure allows use
-/// it to be easily rewire messages into a client code's logging mechanism.
-///
-/// See conduit::utils docs for details.
-///
-//-----------------------------------------------------------------------------
-#define ASCENT_WARN( msg ) CONDUIT_WARN( msg );
+#include "ascent_logging.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -84,28 +56,15 @@
 namespace ascent
 {
 
-void ASCENT_API handle_error(const std::string &msg,
-                             const std::string &file,
-                             int line);
+void handle_error(const std::string &msg,
+                  const std::string &file,
+                  int line)
+{
+  throw conduit::Error( msg, file, line);
+}
 
 //-----------------------------------------------------------------------------
-//
-/// The ASCENT_ERROR macro is the primary mechanism used to capture errors
-/// in ascent.
-///
+};
 //-----------------------------------------------------------------------------
-#define ASCENT_ERROR( msg )                                         \
-{                                                                   \
-    std::ostringstream ascent_oss_error;                            \
-    ascent_oss_error << msg;                                        \
-    handle_error( ascent_oss_error.str(),                           \
-                  std::string(__FILE__),                            \
-                  __LINE__);                                        \
-}                                                                   \
-
-#endif
+// -- end ascent:: --
 //-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
-
-
