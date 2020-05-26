@@ -98,11 +98,12 @@ void ASCENT_API handle_error(const std::string &msg,
 {                                                                   \
     std::ostringstream ascent_oss_error;                            \
     ascent_oss_error << msg;                                        \
-    handle_error( ascent_oss_error.str(),                           \
+    ::ascent::handle_error( ascent_oss_error.str(),                           \
                   std::string(__FILE__),                            \
                   __LINE__);                                        \
 }                                                                   \
 
+} //namespace ascent
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
