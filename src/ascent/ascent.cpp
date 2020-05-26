@@ -388,7 +388,7 @@ Ascent::execute(const conduit::Node &actions)
                                  <<m_actions_file<<"' was specified "
                                  " but could not be found. Please "
                                  "check if the file is in the current "
-                                 "directory or proide an absolute path.")
+                                 "directory or provide an absolute path.")
                 }
             }
 
