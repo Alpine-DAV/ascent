@@ -195,7 +195,6 @@ Ascent::open(const conduit::Node &options)
                              options["mpi_comm"].to_int32());
 
         m_options = processed_opts;
-        m_options.print();
 
         // gaurd against funky things happening in the
         // user provided options
