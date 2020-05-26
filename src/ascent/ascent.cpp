@@ -157,13 +157,7 @@ CheckForSettingsFile(std::string file_name,
       file_node.load(file_name, protocol);
       if(merge)
       {
-        std::cout<<"1111\n";
-        file_node.print();
-        std::cout<<"2222\n";
-        node.print();
         node.update(file_node);
-        std::cout<<"*****\n";
-        node.print();
       }
       else
       {
