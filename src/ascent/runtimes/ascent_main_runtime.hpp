@@ -115,7 +115,8 @@ private:
     double            m_probing_factor = 0.0;    
     int               m_render_count = 0;
     int               m_render_offset = 0;
-    int               m_is_vis_node = 0;
+    int               m_is_inline = 0;
+    int               m_is_cinema_increment = 0;
 
     void              ResetInfo();
 

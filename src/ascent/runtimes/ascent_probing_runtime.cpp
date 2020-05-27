@@ -717,12 +717,14 @@ unique_ptr<T> make_unique(Args&&... args)
 int get_probing_count(const int render_count, const int stride, const int render_offset = 0)
 {
     int probing_count = 0;
+    if (stride <= 0)
+        return probing_count;
+
     for (int i = render_offset; i < render_offset + render_count; i++)
     {
         if (i % stride == 0)
             ++probing_count;
     }
-
     return probing_count;
 }
 
@@ -902,6 +904,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 sending_node_ranks.push_back(i);
         }
         const int my_recv_cnt = int(sending_node_ranks.size());
+        // count of nodes that do inline rendering (0 for in transit case)
+        int my_render_recv_cnt = vis_budget >= 1.0 ? 0 : my_recv_cnt; 
         std::map<int, int> recv_counts;
         for (const auto &n : node_map)
             ++recv_counts[n];
@@ -968,7 +972,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         }
 
         // every associated sim node sends n batches of renders to this vis node
-        std::vector<RenderBatch> batches(my_recv_cnt);
+        std::vector<RenderBatch> batches(my_render_recv_cnt);
         for (int i = 0; i < batches.size(); ++i)
         {
             int render_count = g_render_counts[src_ranks[i]] 
@@ -981,21 +985,21 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             sum_batches += b.runs;
 
         // probing chunks
-        std::vector< std::unique_ptr<Node> > render_chunks_probe(my_recv_cnt);
-        std::vector<MPI_Request> requests_probing(my_recv_cnt, MPI_REQUEST_NULL);
+        std::vector< std::unique_ptr<Node> > render_chunks_probe(my_render_recv_cnt);
+        std::vector<MPI_Request> requests_probing(my_render_recv_cnt, MPI_REQUEST_NULL);
         // render chunks sim
         // senders / batches / renders
-        std::vector< std::vector< std::unique_ptr<Node> > > render_chunks_sim(my_recv_cnt);
-        std::vector< std::vector<MPI_Request>> requests_inline_sim(my_recv_cnt);
+        std::vector< std::vector< std::unique_ptr<Node> > > render_chunks_sim(my_render_recv_cnt);
+        std::vector< std::vector<MPI_Request>> requests_inline_sim(my_render_recv_cnt);
 
         // pre-allocate the mpi receive buffers
-        for (int i = 0; i < my_recv_cnt; i++)
+        for (int i = 0; i < my_render_recv_cnt; i++)
         {   
             int buffer_size = calc_render_msg_size(probing_count, 0.0);
             render_chunks_probe[i] = make_unique<Node>(DataType::uint8(buffer_size));
 
             render_chunks_sim[i].resize(batches[i].runs);
-            requests_inline_sim[i].resize(batches[i].runs, MPI_REQUEST_NULL); // +1 ??
+            requests_inline_sim[i].resize(batches[i].runs, MPI_REQUEST_NULL);
 
             for (int j = 0; j < batches[i].runs; ++j)
             {
@@ -1010,7 +1014,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         }
 
         // post the receives for the render chunks to receive asynchronous (non-blocking)
-        for (int i = 0; i < my_recv_cnt; ++i)
+        for (int i = 0; i < my_render_recv_cnt; ++i)
         {
             std::cout << " ~~~ vis node " << world_rank << " receiving " << batches[i].runs
                       << " render chunks from " << src_ranks[i] << std::endl;
@@ -1080,8 +1084,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                                 << render_offset + current_render_count << std::endl;
                     ascent_opts["render_count"] = current_render_count;
                     ascent_opts["render_offset"] = render_offset;
-                    // TODO: change variable name to cinema increment indicator
-                    ascent_opts["vis_node"] = (i == 0) ? true : false;  
+                    ascent_opts["cinema_increment"] = (i == 0) ? true : false;  
 
                     Ascent ascent_render;
                     ascent_render.open(ascent_opts);
@@ -1092,7 +1095,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     // TODO: the node copy is too expensive (4-5 sec / render)
                     render_chunks_vis[i] = std::make_shared<Node>();
                     // error in png save if AscentRuntime::Info -> out.set_external(m_info);
-                    ascent_render.info(*render_chunks_vis[i]);   
+                    ascent_render.info(*render_chunks_vis[i]);
 
                     // Node info;
                     // ascent_render.info(info);
@@ -1140,6 +1143,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
         {   // multi node compositing
             auto t_start = std::chrono::system_clock::now();
 
+            // TODO: SEGFAULT
             // unpack sent renders -> NOTE: takes too long, can we avoid copies?
             vec_node_ptr parts_probing;
             for (auto const& p : render_chunks_probe)
@@ -1148,8 +1152,8 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 unpack_node(*p, *parts_probing.back());
             }
             // sender / batches
-            vec_vec_node_ptr parts_sim(my_recv_cnt);
-            for (int i = 0; i < my_recv_cnt; ++i)
+            vec_vec_node_ptr parts_sim(my_render_recv_cnt);
+            for (int i = 0; i < my_render_recv_cnt; ++i)
             {
                 for (auto const& batch : render_chunks_sim[i])
                 {
@@ -1164,7 +1168,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
             // arrange render order
             t_start = std::chrono::system_clock::now();
             
-            vector<int> probing_enum_sim(my_recv_cnt, 0);
+            vector<int> probing_enum_sim(my_render_recv_cnt, 0);
             vector<int> probing_enum_vis(my_recv_cnt, 0);
             // images / sender / values
             vec_vec_node_ptr render_ptrs(max_render_count);
@@ -1213,7 +1217,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                     else    // part rendered on this vis node
                     {
                         // Reset the probing counter if this is the first render in vis node chunks 
-                        // and not this is not a probing render.
+                        // and this is not a probing render.
                         if (j - g_render_counts[src_ranks[i]] == 0)
                             probing_enum_vis[i] = 0;
 
@@ -1376,7 +1380,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 
                 ascent_opts["render_count"] = end - begin;
                 ascent_opts["render_offset"] = begin;
-                ascent_opts["vis_node"] = false;
+                ascent_opts["inline"] = false;
 
                 ascent_render.open(ascent_opts);
                 ascent_render.publish(data);
@@ -1560,6 +1564,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_opt["probing_factor"] = probing_factor;
         ascent_opt["render_count"] = phi * theta;
         ascent_opt["image_offset"] = 0;
+        ascent_opt["inline"] = (probing_factor >= 1.0) ? true : false;  
 
         // all sim nodes run probing in a new ascent instance
         Ascent ascent_probing;

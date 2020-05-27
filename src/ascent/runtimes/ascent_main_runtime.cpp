@@ -130,7 +130,8 @@ AscentRuntime::AscentRuntime()
       m_probing_factor(0.0),
       m_render_count(0),
       m_render_offset(0),
-      m_is_vis_node(0)
+      m_is_inline(0),
+      m_is_cinema_increment(0)
 {
   flow::filters::register_builtin();
   ResetInfo();
@@ -253,8 +254,10 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     m_render_count = options["render_count"].as_int32();
   if (options.has_path("render_offset"))
     m_render_offset = options["render_offset"].as_int32();    
-  if (options.has_path("vis_node"))
-    m_is_vis_node = options["vis_node"].as_int32();   
+  if (options.has_path("inline"))
+    m_is_inline = options["inline"].as_int32();
+  if (options.has_path("cinema_increment"))
+    m_is_cinema_increment = options["cinema_increment"].as_int32();
 
   Node msg;
   this->Info(msg["info"]);
@@ -916,7 +919,8 @@ void AscentRuntime::PopulateMetadata()
   (*meta)["probing_factor"] = m_probing_factor;
   (*meta)["render_count"] = m_render_count;
   (*meta)["render_offset"] = m_render_offset;
-  (*meta)["vis_node"] = m_is_vis_node;
+  (*meta)["inline"] = m_is_inline;
+  (*meta)["cinema_increment"] = m_is_cinema_increment;
 }
 
 //-----------------------------------------------------------------------------

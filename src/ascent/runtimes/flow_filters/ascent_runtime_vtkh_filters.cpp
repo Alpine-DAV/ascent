@@ -324,7 +324,7 @@ public:
     m_renderer_count++;
   }
 
-  void Execute(std::vector<vtkh::Render> &renders, bool is_vis_node = false)
+  void Execute(std::vector<vtkh::Render> &renders, bool is_inline = false)
   {
     vtkh::Scene scene;
     for (int i = 0; i < m_renderer_count; i++)
@@ -342,14 +342,13 @@ public:
     }
 
     // TODO: bool do_composite = true for vis nodes
-    scene.Render(is_vis_node);
+    scene.Render(is_inline);
 
     for (int i = 0; i < m_renderer_count; i++)
     {
       ostringstream oss;
       oss << "key_" << i;
 
-      // if (!is_vis_node) 
       {
         vtkh::Renderer *r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
         auto times = r->GetRenderTimes();
@@ -1639,9 +1638,9 @@ void DefaultRender::execute()
               is_probing = true;
           }
         }
-        bool is_vis_node = false;
-        if (meta->has_path("vis_node"))
-          is_vis_node = (*meta)["vis_node"].as_int32();
+        bool is_cinema_increment = false;
+        if (meta->has_path("cinema_increment"))
+          is_cinema_increment = (*meta)["cinema_increment"].as_int32();
 
         std::string output_path = "";
 
@@ -1673,7 +1672,7 @@ void DefaultRender::execute()
         parse_image_dims(render_node, image_width, image_height);
 
         manager.set_bounds(*bounds);
-        if (is_probing || (!is_probing && is_vis_node)) // new timestep only for probing run otherwise we generate too many
+        if (is_probing || (!is_probing && is_cinema_increment)) // new timestep only for probing run otherwise we generate too many
           manager.add_time_step();
         manager.fill_renders(renders, v_domain_ids, render_node, 
                              current_render_count, render_offset, stride, is_probing);
@@ -2677,12 +2676,12 @@ void ExecScene::execute()
   detail::AscentScene *scene = input<detail::AscentScene>(0);
   std::vector<vtkh::Render> *renders = input<std::vector<vtkh::Render>>(1);
 
-  bool is_vis_node = false;
+  bool is_inline = false;
   Node *meta = graph().workspace().registry().fetch<Node>("metadata");
-  if (meta->has_path("vis_node"))
-    is_vis_node = (*meta)["vis_node"].as_int32();
+  if (meta->has_path("inline"))
+    is_inline = (*meta)["inline"].as_int32();
 
-  scene->Execute(*renders, is_vis_node);
+  scene->Execute(*renders, is_inline);
 
   std::vector< std::vector<double>> *render_times = scene->GetRenderTimes();
   // NOTE: only domain 0 for now
