@@ -102,6 +102,7 @@
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/rendering/raytracing/Camera.h>
+#include <vtkm/cont/ArrayCopy.h>
 
 
 #include <ascent_vtkh_data_adapter.hpp>
@@ -787,14 +788,14 @@ double SineParameterize(int curFrame, int nFrames, int ramp)
 Camera
 GetCamera(int frame, int nframes, double radius, double* lookat)
 {
-  double t = SineParameterize(frame, nframes, nframes/10);
+//  double t = SineParameterize(frame, nframes, nframes/10);
   double points[3];
   fibonacci_sphere(frame, nframes, points);
   Camera c;
-  double zoom = 1.0;
-  c.near = zoom/20;
-  c.far = zoom*25;
-  c.angle = M_PI/6;
+  double zoom = 3.0;
+//  c.near = zoom/20;
+//  c.far = zoom*25;
+//  c.angle = M_PI/6;
 
 /*  if(abs(points[0]) < radius && abs(points[1]) < radius && abs(points[2]) < radius)
   {
@@ -804,18 +805,18 @@ GetCamera(int frame, int nframes, double radius, double* lookat)
       points[2] -= radius;
   }*/
 
-  c.position[0] = radius*points[0];
-  c.position[1] = radius*points[1];
-  c.position[2] = radius*points[2];
+  c.position[0] = zoom*radius*points[0];
+  c.position[1] = zoom*radius*points[1];
+  c.position[2] = zoom*radius*points[2];
 
 //cout << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
     
-  c.focus[0] = lookat[0];
-  c.focus[1] = lookat[1];
-  c.focus[2] = lookat[2];
-  c.up[0] = 0;
-  c.up[1] = 1;
-  c.up[2] = 0;
+//  c.focus[0] = lookat[0];
+//  c.focus[1] = lookat[1];
+//  c.focus[2] = lookat[2];
+//  c.up[0] = 0;
+//  c.up[1] = 1;
+//  c.up[2] = 0;
   return c;
 }
 
@@ -876,7 +877,6 @@ public:
   }
 };
 
-
 std::vector<Triangle>
 GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
 {
@@ -886,6 +886,7 @@ GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
   std::vector<Triangle> tris;
 
    
+     
   //if there is data: loop through domains and grab all triangles.
   if(!vtkhData.IsEmpty())
   {
@@ -893,7 +894,6 @@ GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
     {
       vtkm::cont::DataSet dataset = vtkhData.GetDomain(localDomainIds[i]);
       //Get Data points
-      //dataset.PrintSummary(std::cout);
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
       //Get triangles
       vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
@@ -902,7 +902,6 @@ GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
 
       int numTris = cellset.GetNumberOfCells();
       std::vector<Triangle> tmp_tris(numTris);
-     
      
       vtkm::cont::ArrayHandle<Triangle> triangles = vtkm::cont::make_ArrayHandle(tmp_tris);
       vtkm::cont::Invoker invoker;
@@ -916,6 +915,38 @@ GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
   return tris;
 }
 
+std::vector<float>
+GetScalarData(vtkh::DataSet &vtkhData, std::string field_name, int height, int width)
+{
+  //Get domain Ids on this rank
+  //will be nonzero even if there is no data
+  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
+  std::vector<float> data;
+
+   
+     
+  //if there is data: loop through domains and grab all triangles.
+  if(!vtkhData.IsEmpty())
+  {
+    for(int i = 0; i < localDomainIds.size(); i++)
+    {
+      vtkm::cont::DataSet dataset = vtkhData.GetDomain(localDomainIds[i]);
+      vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
+      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+      //Get variable
+      vtkm::cont::Field field = dataset.GetField(field_name);
+      
+      vtkm::cont::ArrayHandle<float> field_data;
+      field.GetData().CopyTo(field_data);
+      auto portal = field_data.GetPortalConstControl();
+
+      for(int i = 0; i < height*width; i++)
+        data.push_back(portal.Get(i));
+      
+    }
+  }
+  return data;
+}
 
 Triangle transformTriangle(Triangle t, Camera c)
 {
@@ -1017,6 +1048,8 @@ T calcentropy( const T* array, long len, int nBins )
     min = min < std::abs(array[i]) ? min : std::abs(array[i]);
   }
   T stepSize = (max-min) / (T)nBins;
+  if(stepSize == 0)
+    return 0.0;
 
   long* hist = new long[ nBins ];
   for(int i = 0; i < nBins; i++ )
@@ -1043,9 +1076,11 @@ T calcentropy( const T* array, long len, int nBins )
   return (entropy * -1.0);
 }
 
-double
-calculateMetric(Screen screen, std::string metric)
+float
+calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_name, int height, int width)
 {
+  float entropy = 0.0;
+
   if(metric == "data_entropy")
   {
     #if ASCENT_MPI_ENABLED //pass screens among all ranks
@@ -1057,42 +1092,66 @@ calculateMetric(Screen screen, std::string metric)
       int rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
       MPI_Status status;
-      if(rank != 0)
-      { 
-	//send values to rank 0
-        MPI_Send(screen.values, screen.width*screen.height, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
-	//send z-buffer to rank 0
-        MPI_Send(screen.zBuff, screen.width*screen.height, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
-        //Get final values back from rank 0
-	MPI_Recv(screen.values, screen.width*screen.height, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &status);
-      }
       if(rank == 0)
       {
-	double *zBuff  = (double *) malloc(sizeof(double)*screen.width*screen.height);
-	double *values = (double *)  malloc(sizeof(double)*screen.width*screen.height);
-        for(int i = 1; i < world_size; i++)
-        {
-          MPI_Recv(values, screen.width*screen.height, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &status);
-          MPI_Recv(zBuff, screen.width*screen.height, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &status);
-	  for(int pixel = 0; pixel < screen.height*screen.width; pixel++)
-          {
-            //new buffer wins, replace with new value
-            if(zBuff[pixel] > screen.zBuff[pixel])
-	      screen.values[pixel] = values[pixel]; 
-          }
-	}
-	free(zBuff);
-	free(values);
+	int size = height*width;
+        std::vector<float> field_data = GetScalarData(*dataset, field_name, height, width);
+	for(int i = 0; i < size; i++)
+          if(field_data[i] != field_data[i])
+	    field_data[i] = -FLT_MAX;
+	float field_array[size];
+	std::copy(field_data.begin(), field_data.end(), field_array);
+	entropy = calcentropy(field_array, field_data.size(), 100);
 
-	for(int i = 1; i < world_size; i++)
-        {
-	  //send values back
-          MPI_Send(screen.values, screen.width*screen.height, MPI_DOUBLE, i, 1, MPI_COMM_WORLD);
-        }
       }
+      MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    #else
+      int size = height*width;
+      std::vector<float> field_data = GetScalarData(*dataset, field_name, height, width);
+      for(int i = 0; i < size; i++)
+        if(field_data[i] != field_data[i])
+          field_data[i] = -FLT_MAX;
+      float field_array[size];
+      std::copy(field_data.begin(), field_data.end(), field_array);
+      entropy = calcentropy(field_array, field_data.size(), 100);
     #endif
-    return calcentropy(screen.values, screen.width*screen.height, 100);
   }
+  else if (metric == "depth_entropy")
+  {
+    #if ASCENT_MPI_ENABLED 
+      // Get the number of processes
+      int world_size;
+      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+      
+      // Get the rank of this process
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      MPI_Status status;
+      if(rank == 0)
+      { 
+        int size = height*width;
+        std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
+        for(int i = 0; i < size; i++)
+          if(depth_data[i] != depth_data[i])
+            depth_data[i] = -FLT_MAX;
+        float depth_array[size];
+        std::copy(depth_data.begin(), depth_data.end(), depth_array);
+        entropy = calcentropy(depth_array, depth_data.size(), 100);
+      
+      }
+      MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    #else
+      int size = height*width;
+      std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
+      for(int i = 0; i < size; i++)
+        if(depth_data[i] != depth_data[i])
+          depth_data[i] = -FLT_MAX;
+      float depth_array[size];
+      std::copy(depth_data.begin(), depth_data.end(), depth_array);
+      entropy = calcentropy(depth_array, depth_data.size(), 100);
+    #endif
+  }
+  return entropy;
 }
 
 //-----------------------------------------------------------------------------
@@ -1151,7 +1210,9 @@ AutoCamera::verify_params(const conduit::Node &params,
     if(!metric)
     {
         info["errors"].append() = "Missing required metric parameter."
-                        	  " Currently only supports data_entropy.\n";
+                        	  " Currently only supports data_entropy"
+				  " for some scalar field"
+				  " and depth_entropy.\n";
         res = false;
     }
 
@@ -1210,14 +1271,12 @@ AutoCamera::execute()
     
     double triangle_time = 0.;
     auto triangle_start = high_resolution_clock::now();
-    std::vector<Triangle> triangles = GetTriangles(dataset,field_name);
+    std::vector<Triangle> triangles;// = GetTriangles(dataset,field_name);
     auto triangle_stop = high_resolution_clock::now();
     triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
     #if ASCENT_MPI_ENABLED
-      cout << "rank: " << rank << " has " << triangles.size() << " triangles. " << endl;
-      cout << "rank: " << rank << " GetTri " << triangle_time << endl;
-    //cout << "dataset bounds: " << dataset.GetGlobalBounds() << endl;
-      
+      cout << "Global bounds: " << dataset.GetGlobalBounds() << endl;
+      cout << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
     #endif
 
     vtkm::Bounds b = dataset.GetGlobalBounds();
@@ -1225,7 +1284,7 @@ AutoCamera::execute()
     vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
     vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
     //double bounds[3] = {(double)xb, (double)yb, (double)zb};
-    //cout << "x y z bounds " << xb << " " << yb << " " << zb << endl;
+    cout << "x y z bounds " << xb << " " << yb << " " << zb << endl;
     vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
     //cout << "radius " << radius << endl;
     //if(radius<1)
@@ -1236,7 +1295,7 @@ AutoCamera::execute()
     vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
     double focus[3] = {(double)lookat[0],(double)lookat[1],(double)lookat[2]};
 
-
+/*
     Screen screen;
     screen.width = width;
     screen.height = height;
@@ -1244,7 +1303,7 @@ AutoCamera::execute()
     screen.triScreenInitialize();
     screen.triCameraInitialize();
     screen.valueInitialize();
-
+*/
     double winning_score = -DBL_MAX;
     int    winning_sample = -1;
     //loop through number of camera samples.
@@ -1267,26 +1326,15 @@ AutoCamera::execute()
       tracer.SetHeight(height);
       tracer.SetInput(&dataset); //vtkh dataset by toponame
       tracer.SetCamera(*camera);
-      //if(!dataset.IsEmpty()) //not sure if necessary? 
-      //all ranks get stuck whether they are empty or not.
       tracer.Update();
-      //Getting stuck
-      cout << "here " << endl;
 
       vtkh::DataSet *output = tracer.GetOutput();
-    #if ASCENT_MPI_ENABLED
-      if(output != NULL)
-	      cout << "output is not null on rank: " << rank << endl;
-      else
-	      cout << "output is NULL on rank: " << rank << endl;
-    #endif
-      //VTKHCollection *new_coll = new VTKHCollection();
-      //new_coll->add(*output, topo_name);
-      //DataObject *res = new DataObject(new_coll);
+      float score = calculateMetric(output, metric, field_name, height, width);
       delete output;
-      //set_output<DataObject>(res); //don't actually want this
 
     /*================ End Scalar Renderer  ======================*/
+
+/*
 
       screen.width = width;
       screen.height = height;
@@ -1320,13 +1368,13 @@ AutoCamera::execute()
       auto scanline_stop = high_resolution_clock::now();
 
       scanline_time += duration_cast<microseconds>(scanline_stop - scanline_start).count();
-
       //metric timings
       auto metric_start = high_resolution_clock::now();
       double score = calculateMetric(screen, metric);
       auto metric_stop = high_resolution_clock::now();
       metric_time += duration_cast<microseconds>(metric_stop - metric_start).count();
-      //cout << "sample " << sample << " score: " << score << endl;
+*/
+      cout << "sample " << sample << " score: " << score << endl;
       if(winning_score < score)
       {
         winning_score = score;
@@ -1334,14 +1382,9 @@ AutoCamera::execute()
       }
     } //end of sample loop
 
-    #if ASCENT_MPI_ENABLED
-      cout << "rank: " << rank << " scanline: " << scanline_time/(double)samples << endl;
-      cout << "rank: " << rank << " metric: " << metric_time/(double)samples << endl;
-    #endif
-
     if(winning_sample == -1)
       ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
-    //cout << "winning_sample " << winning_sample << " score: " << winning_score << endl;
+    cout << "winning_sample " << winning_sample << " score: " << winning_score << endl;
     Camera best_c = GetCamera(winning_sample, samples, radius, focus);
 
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
