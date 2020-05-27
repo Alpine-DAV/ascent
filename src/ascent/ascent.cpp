@@ -189,10 +189,16 @@ Ascent::open(const conduit::Node &options)
 
         Node processed_opts(options);
 
+        int comm_id = -1;
+        if(options.has_path("mpi_comm"))
+        {
+          comm_id = options["mpi_comm"].to_int32();
+        }
+
         CheckForSettingsFile(opts_file,
                              processed_opts,
                              true,
-                             options["mpi_comm"].to_int32());
+                             comm_id);
 
         m_options = processed_opts;
 
@@ -377,7 +383,8 @@ Ascent::execute(const conduit::Node &actions)
                     m_actions_file = "ascent_actions.yaml";
                 }
             }
-            else
+            else if(m_actions_file != "ascent_actions.json" &&
+                    m_actions_file != "ascent_actions.yaml")
             {
                 // an actions file has been set by the user
                 // so we better let them know if we don't find
