@@ -891,6 +891,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
     ascent_opts["actions_file"] = "cinema_actions.yaml";
     ascent_opts["is_probing"] = 0;
     ascent_opts["probing_factor"] = probing_factor;
+    ascent_opts["insitu_type"] = (vis_budget >= 1.0) ? "intransit" : "hybrid";
 
     log_time(start0, "- load distribution ", world_rank);
 
@@ -1296,6 +1297,11 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
 
                 // composite
                 vtkh::Image result = compositor.Composite();
+
+                // TODO: annotations
+                // Annotator annotator(*m_canvases[0], m_camera, m_scene_bounds);
+                // annotator.RenderWorldAnnotations();
+
                 log_time(t_start, "+ compositing image ", world_rank);
 
                 if (vis_rank == 0)
@@ -1380,7 +1386,7 @@ void splitAndRender(const MPI_Comm mpi_comm_world,
                 
                 ascent_opts["render_count"] = end - begin;
                 ascent_opts["render_offset"] = begin;
-                ascent_opts["inline"] = false;
+                ascent_opts["insitu_type"] = "hybrid";
 
                 ascent_render.open(ascent_opts);
                 ascent_render.publish(data);
@@ -1564,7 +1570,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_opt["probing_factor"] = probing_factor;
         ascent_opt["render_count"] = phi * theta;
         ascent_opt["image_offset"] = 0;
-        ascent_opt["inline"] = (probing_factor >= 1.0) ? true : false;  
+        ascent_opt["insitu_type"] = (probing_factor >= 1.0) ? "inline" : "hybrid";  
 
         // all sim nodes run probing in a new ascent instance
         Ascent ascent_probing;
@@ -1609,7 +1615,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     }
     else    // in line rendering only
     {
-        // TODO: regular compositing
+        // regular compositing is done in vtk-h
     }
 
     MPI_Group_free(&world_group);

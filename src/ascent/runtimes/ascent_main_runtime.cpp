@@ -130,7 +130,7 @@ AscentRuntime::AscentRuntime()
       m_probing_factor(0.0),
       m_render_count(0),
       m_render_offset(0),
-      m_is_inline(0),
+      m_insitu_type("hybrid"),
       m_is_cinema_increment(0)
 {
   flow::filters::register_builtin();
@@ -254,8 +254,8 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     m_render_count = options["render_count"].as_int32();
   if (options.has_path("render_offset"))
     m_render_offset = options["render_offset"].as_int32();    
-  if (options.has_path("inline"))
-    m_is_inline = options["inline"].as_int32();
+  if (options.has_path("insitu_type"))
+    m_insitu_type = options["insitu_type"].as_string();
   if (options.has_path("cinema_increment"))
     m_is_cinema_increment = options["cinema_increment"].as_int32();
 
@@ -919,7 +919,7 @@ void AscentRuntime::PopulateMetadata()
   (*meta)["probing_factor"] = m_probing_factor;
   (*meta)["render_count"] = m_render_count;
   (*meta)["render_offset"] = m_render_offset;
-  (*meta)["inline"] = m_is_inline;
+  (*meta)["insitu_type"] = m_insitu_type;
   (*meta)["cinema_increment"] = m_is_cinema_increment;
 }
 

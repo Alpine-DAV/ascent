@@ -519,16 +519,21 @@ public:
     } 
   }
 
-  void add_time_step()
+  void add_time_step(bool is_intransit = false)
   {
     m_times.push_back(m_time);
 
     int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
+    int size = 0;
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     MPI_Comm_rank(mpi_comm, &rank);
+    MPI_Comm_size(mpi_comm, &size);
+    // use last rank to generate dir for in transit only case
+    if (is_intransit && rank == size - 1)
+      rank = 0;
 #endif
-    if (rank == 0 && !conduit::utils::is_directory(m_base_path))
+    if (rank == 0 && !conduit::utils::is_directory(m_base_path))  
     {
       conduit::utils::create_directory(m_base_path);
     }
@@ -1641,6 +1646,9 @@ void DefaultRender::execute()
         bool is_cinema_increment = false;
         if (meta->has_path("cinema_increment"))
           is_cinema_increment = (*meta)["cinema_increment"].as_int32();
+        std::string insitu_type;
+        if (meta->has_path("insitu_type"))
+          insitu_type = (*meta)["insitu_type"].as_string();
 
         std::string output_path = "";
 
@@ -1673,7 +1681,9 @@ void DefaultRender::execute()
 
         manager.set_bounds(*bounds);
         if (is_probing || (!is_probing && is_cinema_increment)) // new timestep only for probing run otherwise we generate too many
-          manager.add_time_step();
+        {
+          manager.add_time_step(insitu_type == "intransit");
+        }
         manager.fill_renders(renders, v_domain_ids, render_node, 
                              current_render_count, render_offset, stride, is_probing);
         manager.write_metadata();
@@ -2678,8 +2688,8 @@ void ExecScene::execute()
 
   bool is_inline = false;
   Node *meta = graph().workspace().registry().fetch<Node>("metadata");
-  if (meta->has_path("inline"))
-    is_inline = (*meta)["inline"].as_int32();
+  if (meta->has_path("insitu_type"))
+    is_inline = (*meta)["insitu_type"].as_string() == "inline";
 
   scene->Execute(*renders, is_inline);
 
