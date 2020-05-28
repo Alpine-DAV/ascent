@@ -72,6 +72,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_clip_with_field
                 t_ascent_contour
                 t_ascent_iso_volume
+		t_ascent_opt_viewpoint
                 t_ascent_image_compare
                 t_ascent_pipelines_to_pipelines
                 t_ascent_threshold

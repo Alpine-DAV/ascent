@@ -1079,10 +1079,11 @@ T calcentropy( const T* array, long len, int nBins )
 float
 calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_name, int height, int width)
 {
-  float entropy = 0.0;
+  float score = 0.0;
 
   if(metric == "data_entropy")
   {
+    float entropy = 0.0;
     #if ASCENT_MPI_ENABLED //pass screens among all ranks
       // Get the number of processes
       int world_size;
@@ -1105,6 +1106,7 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
 
       }
       MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+      score = entropy;
     #else
       int size = height*width;
       std::vector<float> field_data = GetScalarData(*dataset, field_name, height, width);
@@ -1114,10 +1116,12 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
       float field_array[size];
       std::copy(field_data.begin(), field_data.end(), field_array);
       entropy = calcentropy(field_array, field_data.size(), 100);
+      score = entropy;
     #endif
   }
   else if (metric == "depth_entropy")
   {
+    float entropy = 0.0;
     #if ASCENT_MPI_ENABLED 
       // Get the number of processes
       int world_size;
@@ -1140,6 +1144,7 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
       
       }
       MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+      score = entropy;
     #else
       int size = height*width;
       std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
@@ -1149,9 +1154,46 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
       float depth_array[size];
       std::copy(depth_data.begin(), depth_data.end(), depth_array);
       entropy = calcentropy(depth_array, depth_data.size(), 100);
+      score = entropy;
     #endif
   }
-  return entropy;
+  else if (metric == "max_depth")
+  {
+    float depth = -FLT_MAX;
+    #if ASCENT_MPI_ENABLED
+      // Get the number of processes
+      int world_size;
+      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+      // Get the rank of this process
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      MPI_Status status;
+      if(rank == 0)
+      {
+        int size = height*width;
+        std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
+        for(int i = 0; i < size; i++)
+          if(depth_data[i] == depth_data[i])
+            if(depth < depth_data[i])
+	      depth = depth_data[i];
+        score = depth;
+      }
+      MPI_Bcast(&score, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    #else
+      int size = height*width;
+      std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
+      for(int i = 0; i < size; i++)
+        if(depth_data[i] == depth_data[i])
+	  if(depth < depth_data[i])
+            depth = depth_data[i];
+      score = depth;
+    #endif
+  }
+  else
+    ASCENT_ERROR("This metric is not supported. \n");
+
+  return score;
 }
 
 //-----------------------------------------------------------------------------
