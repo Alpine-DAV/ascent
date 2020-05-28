@@ -1316,17 +1316,17 @@ AutoCamera::execute()
     std::vector<Triangle> triangles;// = GetTriangles(dataset,field_name);
     auto triangle_stop = high_resolution_clock::now();
     triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
-    #if ASCENT_MPI_ENABLED
+    /*#if ASCENT_MPI_ENABLED
       cout << "Global bounds: " << dataset.GetGlobalBounds() << endl;
       cout << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
-    #endif
+    #endif*/
 
     vtkm::Bounds b = dataset.GetGlobalBounds();
     vtkm::Float32 xb = vtkm::Float32(b.X.Length());
     vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
     vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
     //double bounds[3] = {(double)xb, (double)yb, (double)zb};
-    cout << "x y z bounds " << xb << " " << yb << " " << zb << endl;
+//    cout << "x y z bounds " << xb << " " << yb << " " << zb << endl;
     vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
     //cout << "radius " << radius << endl;
     //if(radius<1)
@@ -1416,7 +1416,7 @@ AutoCamera::execute()
       auto metric_stop = high_resolution_clock::now();
       metric_time += duration_cast<microseconds>(metric_stop - metric_start).count();
 */
-      cout << "sample " << sample << " score: " << score << endl;
+      //cout << "sample " << sample << " score: " << score << endl;
       if(winning_score < score)
       {
         winning_score = score;
@@ -1426,7 +1426,7 @@ AutoCamera::execute()
 
     if(winning_sample == -1)
       ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
-    cout << "winning_sample " << winning_sample << " score: " << winning_score << endl;
+    //cout << "winning_sample " << winning_sample << " score: " << winning_score << endl;
     Camera best_c = GetCamera(winning_sample, samples, radius, focus);
 
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
@@ -1463,9 +1463,9 @@ AutoCamera::execute()
     auto time_stop = high_resolution_clock::now();
     time += duration_cast<seconds>(time_stop - time_start).count();
 
-    #if ASCENT_MPI_ENABLED
+    /*#if ASCENT_MPI_ENABLED
       cout << "rank: " << rank << " secs total: " << time << endl;
-    #endif
+    #endif*/
 }
 
 
