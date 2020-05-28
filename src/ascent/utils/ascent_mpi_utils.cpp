@@ -56,9 +56,6 @@
 //-----------------------------------------------------------------------------
 namespace ascent
 {
-//
-// returns true if all ranks say true
-//
 bool global_agreement(bool vote)
 {
   bool agreement = vote;
@@ -76,6 +73,34 @@ bool global_agreement(bool vote)
                 mpi_comm);
 
   if(global_boolean != mpi_size())
+  {
+    agreement = false;
+  }
+#endif
+  return agreement;
+}
+
+bool global_someone_agrees(bool vote)
+{
+  bool agreement = vote;
+#ifdef ASCENT_MPI_ENABLED
+  int local_boolean = vote ? 1 : 0;
+  int global_boolean;
+
+  int comm_id = flow::Workspace::default_mpi_comm();
+  MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+  MPI_Allreduce((void *)(&local_boolean),
+                (void *)(&global_boolean),
+                1,
+                MPI_INT,
+                MPI_SUM,
+                mpi_comm);
+
+  if(global_boolean > 0)
+  {
+    agreement = true;
+  }
+  else
   {
     agreement = false;
   }

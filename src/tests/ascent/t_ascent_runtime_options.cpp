@@ -195,6 +195,25 @@ TEST(ascent_runtime_options, test_errors)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_runtime_options, test_error_actions_file)
+{
+    // invoke error cases caused by not initializing ascent
+
+    Ascent ascent;
+    Node n;
+
+    Node open_opts;
+    open_opts["exceptions"] = "forward";
+    open_opts["actions_file"] = "bananas.yaml";
+    ascent.open(open_opts);
+    Node actions;
+
+    EXPECT_THROW(ascent.execute(actions),conduit::Error);
+    ascent.close();
+
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_runtime_options, test_timings)
 {
     // the ascent runtime is currently our only rendering runtime
