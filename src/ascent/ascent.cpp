@@ -384,7 +384,8 @@ Ascent::execute(const conduit::Node &actions)
                 }
             }
             else if(m_actions_file != "ascent_actions.json" &&
-                    m_actions_file != "ascent_actions.yaml")
+                    m_actions_file != "ascent_actions.yaml" &&
+                    m_actions_file != "")
             {
                 // an actions file has been set by the user
                 // so we better let them know if we don't find
