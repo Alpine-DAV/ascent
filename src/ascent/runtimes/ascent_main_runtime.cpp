@@ -268,8 +268,8 @@ void AscentRuntime::Initialize(const conduit::Node &options)
 //-----------------------------------------------------------------------------
 void AscentRuntime::Info(conduit::Node &out)
 {
-  out.set(m_info);
-  // out.set_external(m_info);
+  // out.set(m_info);
+  out.set_external(m_info);
 }
 
 //-----------------------------------------------------------------------------
