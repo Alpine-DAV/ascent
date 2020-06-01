@@ -44,44 +44,27 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_mpi_utils.hpp
+/// file: ascent_logging.cpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ASCENT_MPI_UTILS_HPP
-#define ASCENT_MPI_UTILS_HPP
 
+#include "ascent_logging.hpp"
 
-#ifdef ASCENT_MPI_ENABLED
-#include <mpi.h>
-#endif
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
 namespace ascent
 {
 
-//
-// returns true if all ranks say true
-//
-bool global_agreement(bool vote);
-
-//
-// returns true if any ranks says true
-//
-bool global_someone_agrees(bool vote);
-int mpi_rank();
-int mpi_size();
+void handle_error(const std::string &msg,
+                  const std::string &file,
+                  int line)
+{
+  throw conduit::Error( msg, file, line);
+}
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
-
-

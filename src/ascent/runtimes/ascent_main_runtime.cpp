@@ -343,7 +343,6 @@ AscentRuntime::Publish(const conduit::Node &data)
 {
     blueprint::mesh::to_multi_domain(data, m_source);
     EnsureDomainIds();
-    //EnsureDomainIds();
 }
 
 //-----------------------------------------------------------------------------
