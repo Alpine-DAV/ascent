@@ -298,7 +298,6 @@ public:
 
 vtkh::Render parse_render(const conduit::Node &render_node,
                           vtkm::Bounds &bounds,
-                          const std::vector<vtkm::Id> &domain_ids,
                           const std::string &image_name)
 {
   int image_width;
@@ -389,7 +388,6 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     color4f[3] = 1.f;
     render.SetForegroundColor(color4f);
   }
-
 
   return render;
 }
@@ -486,7 +484,6 @@ public:
   }
 
   void fill_renders(std::vector<vtkh::Render> *renders,
-                    const std::vector<vtkm::Id> &domain_ids,
                     const conduit::Node &render_node)
   {
     conduit::Node render_copy = render_node;
@@ -508,7 +505,6 @@ public:
     std::string tmp_name = "";
     vtkh::Render render = detail::parse_render(render_copy,
                                                m_bounds,
-                                               domain_ids,
                                                tmp_name);
     const int num_renders = m_image_names.size();
 
@@ -767,7 +763,6 @@ DefaultRender::declare_interface(Node &i)
 {
     i["type_name"] = "default_render";
     i["port_names"].append() = "a";
-    i["port_names"].append() = "b";
     i["output_port"] = "true";
 }
 
@@ -812,21 +807,12 @@ void
 DefaultRender::execute()
 {
 
-
     if(!input(0).check_type<vtkm::Bounds>())
     {
       ASCENT_ERROR("'a' input must be a vktm::Bounds * instance");
     }
 
-    if(!input(1).check_type<std::set<vtkm::Id> >())
-    {
-        ASCENT_ERROR("'b' must be a std::set<vtkm::Id> * instance");
-    }
-
     vtkm::Bounds *bounds = input<vtkm::Bounds>(0);
-    std::set<vtkm::Id> *domain_ids = input<std::set<vtkm::Id>>(1);
-    std::vector<vtkm::Id> v_domain_ids(domain_ids->size());
-    std::copy(domain_ids->begin(), domain_ids->end(), v_domain_ids.begin());
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
@@ -893,7 +879,7 @@ DefaultRender::execute()
 
           manager.set_bounds(*bounds);
           manager.add_time_step();
-          manager.fill_renders(renders, v_domain_ids, render_node);
+          manager.fill_renders(renders, render_node);
           manager.write_metadata();
         }
 
@@ -923,7 +909,6 @@ DefaultRender::execute()
 
           vtkh::Render render = detail::parse_render(render_node,
                                                      *bounds,
-                                                     v_domain_ids,
                                                      image_name);
           renders->push_back(render);
         }
@@ -1041,102 +1026,6 @@ VTKHUnionBounds::execute()
     result->Include(*bounds_a);
     result->Include(*bounds_b);
     set_output<vtkm::Bounds>(result);
-}
-
-
-
-//-----------------------------------------------------------------------------
-VTKHDomainIds::VTKHDomainIds()
-:Filter()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-VTKHDomainIds::~VTKHDomainIds()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-void
-VTKHDomainIds::declare_interface(Node &i)
-{
-    i["type_name"] = "vtkh_domain_ids";
-    i["port_names"].append() = "in";
-    i["output_port"] = "true";
-}
-
-
-//-----------------------------------------------------------------------------
-void
-VTKHDomainIds::execute()
-{
-    if(!input(0).check_type<DataObject>())
-    {
-        ASCENT_ERROR("VTKHDomainIds input must be a data object");
-    }
-
-    DataObject *data_object = input<DataObject>(0);
-    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
-
-    std::vector<vtkm::Id> domain_ids = collection->domain_ids();
-
-    std::set<vtkm::Id> *result = new std::set<vtkm::Id>;
-    result->insert(domain_ids.begin(), domain_ids.end());
-
-    set_output<std::set<vtkm::Id> >(result);
-}
-
-
-
-//-----------------------------------------------------------------------------
-VTKHUnionDomainIds::VTKHUnionDomainIds()
-:Filter()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-VTKHUnionDomainIds::~VTKHUnionDomainIds()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-void
-VTKHUnionDomainIds::declare_interface(Node &i)
-{
-    i["type_name"] = "vtkh_union_domain_ids";
-    i["port_names"].append() = "a";
-    i["port_names"].append() = "b";
-    i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-void
-VTKHUnionDomainIds::execute()
-{
-    if(!input(0).check_type<std::set<vtkm::Id> >())
-    {
-        ASCENT_ERROR("'a' must be a std::set<vtkm::Id> * instance");
-    }
-
-    if(!input(1).check_type<std::set<vtkm::Id> >())
-    {
-        ASCENT_ERROR("'b' must be a std::set<vtkm::Id> * instance");
-    }
-
-
-    std::set<vtkm::Id> *dids_a = input<std::set<vtkm::Id>>(0);
-    std::set<vtkm::Id> *dids_b = input<std::set<vtkm::Id>>(1);
-
-    std::set<vtkm::Id> *result = new std::set<vtkm::Id>;
-    *result = *dids_a;
-
-    result->insert(dids_b->begin(), dids_b->end());
-
-    set_output<std::set<vtkm::Id>>(result);
 }
 
 //-----------------------------------------------------------------------------

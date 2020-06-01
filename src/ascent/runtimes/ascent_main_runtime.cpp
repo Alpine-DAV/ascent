@@ -1188,8 +1188,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
 
     std::vector<std::string> bounds_names;
     std::vector<std::string> union_bounds_names;
-    std::vector<std::string> domain_ids_names;
-    std::vector<std::string> union_domain_ids_names;
 
     //
     // as we add plots we aggregate them into the scene.
@@ -1204,11 +1202,10 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     {
       //
       // To setup the rendering we need to setup a several filters.
-      // A render, needs two inputs:
-      //     1) a set of domain ids to create canvases
-      //     2) the coordinate bounds of all the input pipelines
+      // A render, needs one inputs
+      //     1) the coordinate bounds of all the input pipelines
       //        to be able to create a defailt camera
-      // Thus, we have to call bounds and domain id filters and
+      // Thus, we have to call bounds and
       // create unions of all inputs to feed to the render.
       //
       std::string bounds_name = plot_names[p] + "_bounds";
@@ -1222,16 +1219,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
                         0);           // default port
       bounds_names.push_back(bounds_name);
 
-      std::string domain_ids_name = plot_names[p] + "_domain_ids";
-      w.graph().add_filter("vtkh_domain_ids",
-                            domain_ids_name,
-                            empty);
-
-      w.graph().connect(pipelines[p],     // src
-                        domain_ids_name,  // dest
-                        0);               // default port
-      domain_ids_names.push_back(domain_ids_name);
-
       //
       // we have more than one. Create union filters.
       //
@@ -1243,12 +1230,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
                               empty);
         union_bounds_names.push_back(union_bounds_name);
 
-        std::string union_domain_ids_name = plot_names[p] + "_union_domain_ids";
-        w.graph().add_filter("vtkh_union_domain_ids",
-                              union_domain_ids_name,
-                              empty);
-        union_domain_ids_names.push_back(union_domain_ids_name);
-
         if(p == 1)
         {
           // first union just needs the output
@@ -1256,10 +1237,6 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
           w.graph().connect(bounds_names[p-1],  // src
                             union_bounds_name,  // dest
                             0);                 // default port
-
-          w.graph().connect(domain_ids_names[p-1],  // src
-                            union_domain_ids_name,  // dest
-                            0);                     // default port
         }
         else
         {
@@ -1271,18 +1248,12 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
                             union_bounds_name,        // dest
                             0);                       // default port
 
-          w.graph().connect(union_domain_ids_names[p-2],  // src
-                            union_domain_ids_name,        // dest
-                            0);                           // default port
         }
 
         w.graph().connect(bounds_name,        // src
                           union_bounds_name,  // dest
                           1);                 // default port
 
-        w.graph().connect(domain_ids_name,        // src
-                          union_domain_ids_name,  // dest
-                          1);                     // default port
       }
 
       // connect the plot with the scene
@@ -1315,27 +1286,20 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     // up to the render inputs
     //
     std::string bounds_output;
-    std::string domain_ids_output;
 
     if(bounds_names.size() == 1)
     {
       bounds_output = bounds_names[0];
-      domain_ids_output = domain_ids_names[0];
     }
     else
     {
       const size_t union_size = union_bounds_names.size();
       bounds_output = union_bounds_names[union_size-1];
-      domain_ids_output = union_domain_ids_names[union_size-1];
     }
 
     w.graph().connect(bounds_output, // src
                       renders_name,  // dest
                       0);            // default port
-
-    w.graph().connect(domain_ids_output, // src
-                      renders_name,      // dest
-                      1);                // default port
 
     // connect Exec Scene to the output of the last
     // add_plot and to the renders
