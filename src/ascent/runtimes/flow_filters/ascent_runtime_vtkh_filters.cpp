@@ -134,6 +134,24 @@ namespace runtime
 namespace filters
 {
 
+namespace detail
+{
+std::string possible_topologies(std::shared_ptr<VTKHCollection> collection)
+{
+   std::stringstream ss;
+   ss<<" possible topology names: ";
+   std::vector<std::string> names = collection->topology_names();
+   for(int i = 0; i < names.size(); ++i)
+   {
+     ss<<"'"<<names[i]<<"'";
+     if(i != names.size() -1)
+     {
+       ss<<", ";
+     }
+   }
+   return ss.str();
+}
+}// namespace detail
 //-----------------------------------------------------------------------------
 // -- begin ascent::runtime::filters::detail --
 //-----------------------------------------------------------------------------
@@ -423,26 +441,17 @@ VTKH3Slice::execute()
     {
       if(!params().has_path("topology"))
       {
+        std::string topo_names = detail::possible_topologies(collection);;
         ASCENT_ERROR("VTKH3Slice: data set has multiple topologies "
-                     <<"and no topology is specified.");
+                     <<"and no topology is specified. "<<topo_names);
       }
 
       topo_name = params()["topology"].as_string();
       if(!collection->has_topology(topo_name))
       {
-        std::stringstream ss;
-        ss<<" possible topology names: ";
-        std::vector<std::string> names = collection->topology_names();
-        for(int i = 0; i < names.size(); ++i)
-        {
-          ss<<"'"<<names[i]<<"'";
-          if(i != names.size() -1)
-          {
-            ss<<", ";
-          }
-        }
+        std::string topo_names = detail::possible_topologies(collection);;
         ASCENT_ERROR("no topology named '"<<topo_name<<"'."
-                     <<ss.str());
+                     <<topo_names);
 
       }
 
@@ -634,26 +643,17 @@ VTKHSlice::execute()
     {
       if(!params().has_path("topology"))
       {
+        std::string topo_names = detail::possible_topologies(collection);;
         ASCENT_ERROR("VTKHSlice: data set has multiple topologies "
-                     <<"and no topology is specified.");
+                     <<"and no topology is specified. "<<topo_names);
       }
 
       topo_name = params()["topology"].as_string();
       if(!collection->has_topology(topo_name))
       {
-        std::stringstream ss;
-        ss<<" possible topology names: ";
-        std::vector<std::string> names = collection->topology_names();
-        for(int i = 0; i < names.size(); ++i)
-        {
-          ss<<"'"<<names[i]<<"'";
-          if(i != names.size() -1)
-          {
-            ss<<", ";
-          }
-        }
+        std::string topo_names = detail::possible_topologies(collection);;
         ASCENT_ERROR("no topology named '"<<topo_name<<"'."
-                     <<ss.str());
+                     <<topo_names);
       }
     }
     else
@@ -977,10 +977,14 @@ VTKHClip::verify_params(const conduit::Node &params,
     {
       type_present = true;
     }
+    else if(params.has_child("multi_plane"))
+    {
+      type_present = true;
+    }
 
     if(!type_present)
     {
-        info["errors"].append() = "Missing required parameter. Clip must specify a 'sphere', 'box', or 'plane'";
+        info["errors"].append() = "Missing required parameter. Clip must specify a 'sphere', 'box', 'plane', or 'mulit_plane'";
         res = false;
     }
     else
@@ -1012,6 +1016,22 @@ VTKHClip::verify_params(const conduit::Node &params,
          res = check_numeric("plane/normal/y",params, info, true) && res;
          res = check_numeric("plane/normal/z",params, info, true) && res;
       }
+      else if(params.has_child("multi_plane"))
+      {
+         res = check_numeric("multi_plane/point1/x",params, info, true) && res;
+         res = check_numeric("multi_plane/point1/y",params, info, true) && res;
+         res = check_numeric("multi_plane/point1/z",params, info, true) && res;
+         res = check_numeric("multi_plane/normal1/x",params, info, true) && res;
+         res = check_numeric("multi_plane/normal1/y",params, info, true) && res;
+         res = check_numeric("multi_plane/normal1/z",params, info, true) && res;
+
+         res = check_numeric("multi_plane/point2/x",params, info, true) && res;
+         res = check_numeric("multi_plane/point2/y",params, info, true) && res;
+         res = check_numeric("multi_plane/point2/z",params, info, true) && res;
+         res = check_numeric("multi_plane/normal2/x",params, info, true) && res;
+         res = check_numeric("multi_plane/normal2/y",params, info, true) && res;
+         res = check_numeric("multi_plane/normal2/z",params, info, true) && res;
+      }
     }
 
     res = check_string("invert",params, info, false) && res;
@@ -1035,6 +1055,20 @@ VTKHClip::verify_params(const conduit::Node &params,
     valid_paths.push_back("plane/normal/x");
     valid_paths.push_back("plane/normal/y");
     valid_paths.push_back("plane/normal/z");
+
+    valid_paths.push_back("multi_plane/point1/x");
+    valid_paths.push_back("multi_plane/point1/y");
+    valid_paths.push_back("multi_plane/point1/z");
+    valid_paths.push_back("multi_plane/normal1/x");
+    valid_paths.push_back("multi_plane/normal1/y");
+    valid_paths.push_back("multi_plane/normal1/z");
+
+    valid_paths.push_back("multi_plane/point2/x");
+    valid_paths.push_back("multi_plane/point2/y");
+    valid_paths.push_back("multi_plane/point2/z");
+    valid_paths.push_back("multi_plane/normal2/x");
+    valid_paths.push_back("multi_plane/normal2/y");
+    valid_paths.push_back("multi_plane/normal2/z");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -1065,26 +1099,17 @@ VTKHClip::execute()
     {
       if(!params().has_path("topology"))
       {
+        std::string topo_names = detail::possible_topologies(collection);;
         ASCENT_ERROR("VTKHClip: data set has multiple topologies "
-                     <<"and no topology is specified.");
+                     <<"and no topology is specified. "<<topo_names);
       }
 
       topo_name = params()["topology"].as_string();
       if(!collection->has_topology(topo_name))
       {
-        std::stringstream ss;
-        ss<<" possible topology names: ";
-        std::vector<std::string> names = collection->topology_names();
-        for(int i = 0; i < names.size(); ++i)
-        {
-          ss<<"'"<<names[i]<<"'";
-          if(i != names.size() -1)
-          {
-            ss<<", ";
-          }
-        }
+        std::string topo_names = detail::possible_topologies(collection);;
         ASCENT_ERROR("no topology named '"<<topo_name<<"'."
-                     <<ss.str());
+                     <<topo_names);
       }
     }
     else
@@ -1133,6 +1158,25 @@ VTKHClip::execute()
       normal[1] = plane["normal/y"].to_float64();
       normal[2] = plane["normal/z"].to_float64();
       clipper.SetPlaneClip(point, normal);
+    }
+    else if(params().has_path("multi_plane"))
+    {
+      const Node &plane= params()["multi_plane"];
+      double point1[3], normal1[3], point2[3], normal2[3];
+
+      point1[0] = plane["point1/x"].to_float64();
+      point1[1] = plane["point1/y"].to_float64();
+      point1[2] = plane["point1/z"].to_float64();
+      normal1[0] = plane["normal1/x"].to_float64();
+      normal1[1] = plane["normal1/y"].to_float64();
+      normal1[2] = plane["normal1/z"].to_float64();
+      point2[0] = plane["point2/x"].to_float64();
+      point2[1] = plane["point2/y"].to_float64();
+      point2[2] = plane["point2/z"].to_float64();
+      normal2[0] = plane["normal2/x"].to_float64();
+      normal2[1] = plane["normal2/y"].to_float64();
+      normal2[2] = plane["normal2/z"].to_float64();
+      clipper.Set2PlaneClip(point1, normal1, point2, normal2);
     }
 
     if(params().has_child("invert"))
@@ -2605,26 +2649,17 @@ VTKHProject2d::execute()
     {
       if(!params().has_path("topology"))
       {
+        std::string topo_names = detail::possible_topologies(collection);;
         ASCENT_ERROR("VTKHProject2d: data set has multiple topologies "
-                     <<"and no topology is specified.");
+                     <<"and no topology is specified. "<<topo_names);
       }
 
       topo_name = params()["topology"].as_string();
       if(!collection->has_topology(topo_name))
       {
-        std::stringstream ss;
-        ss<<" possible topology names: ";
-        std::vector<std::string> names = collection->topology_names();
-        for(int i = 0; i < names.size(); ++i)
-        {
-          ss<<"'"<<names[i]<<"'";
-          if(i != names.size() -1)
-          {
-            ss<<", ";
-          }
-        }
+        std::string topo_names = detail::possible_topologies(collection);;
         ASCENT_ERROR("no topology named '"<<topo_name<<"'."
-                     <<ss.str());
+                     <<topo_names);
       }
     }
     else
