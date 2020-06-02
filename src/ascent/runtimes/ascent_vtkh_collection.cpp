@@ -175,18 +175,19 @@ std::string VTKHCollection::field_topology(const std::string field_name) {
 
 bool VTKHCollection::has_field(const std::string field_name) const
 {
-  std::string topo_name = "";
+  bool has = false;
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
     // Should we really have to ask an MPI questions? its safer
-    if(it->second.GlobalFieldExists(field_name))
+    if(it->second.FieldExists(field_name))
     {
-      topo_name = it->first;
+      has = true;
       break;
     }
   }
 
-  return topo_name != "";
+
+  return detail::global_has(has);
 }
 
 vtkm::Bounds VTKHCollection::global_bounds() const
@@ -212,7 +213,7 @@ vtkm::Bounds VTKHCollection::global_bounds() const
     loc_mins[0] = bounds.X.Min;
     loc_mins[1] = bounds.Y.Min;
     loc_mins[2] = bounds.Z.Min;
-    
+
     vtkm::Float64 loc_maxs[3];
     //x,y,z
     loc_maxs[0] = bounds.X.Max;
@@ -247,10 +248,10 @@ vtkm::Bounds VTKHCollection::global_bounds() const
 
     bounds.X.Min = global_mins[0];
     bounds.X.Max = global_maxs[0];
-    
+
     bounds.Y.Min = global_mins[1];
     bounds.Y.Max = global_maxs[1];
-    
+
     bounds.Z.Min = global_mins[2];
     bounds.Z.Max = global_maxs[2];
   #endif
