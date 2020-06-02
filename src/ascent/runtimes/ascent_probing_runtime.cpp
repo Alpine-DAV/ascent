@@ -249,6 +249,14 @@ struct RenderConfig
     int probing_count = 0;
     int non_probing_count = 0;
 
+    // TODO: make batch_size variable by config, 
+    // TODO: Adapt batch_size to align with probing size so that first render is always probing,
+    //       this would avoid batch size 1 issues.
+    const static int BATCH_SIZE = 20;
+    const static int WIDTH = 1024;
+    const static int HEIGHT = 1024;
+    const static int CHANNELS = 4 + 4; // RGBA + depth (float)
+
     RenderConfig(int max_render_count, double probing_factor = 0.0, double vis_budget = 0.1)
      : max_count(max_render_count)
      , probing_factor(probing_factor)
@@ -384,14 +392,38 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
     return render_counts_combined;
 }
 
+
+/**
+ * Sort ranks in descending order according to sim + vis times estimations.
+ * TODO: add transfer overhead
+ */
+std::vector<int> sort_ranks(const std::vector<float> &sim_estimates, 
+                            const std::vector<float> &vis_estimates)
+{
+    assert(sim_estimates.size() == vis_estimates.size());
+    std::vector<int> rank_order(sim_estimates.size());
+    std::iota(rank_order.begin(), rank_order.end(), 0);
+
+    std::stable_sort(rank_order.begin(), 
+                     rank_order.end(), 
+                     [&](int i, int j) 
+                     { 
+                         return sim_estimates[i] + vis_estimates[i] 
+                              > sim_estimates[j] + vis_estimates[j];
+                     } 
+                     );
+    return rank_order;
+}
+
 /**
  * Assign sim nodes to vis nodes based on their overall sim+vis times.
  */
-std::vector<int> node_assignment(const std::vector<int> &rank_order, 
-                                 const std::vector<float> &vis_estimates,
+std::vector<int> node_assignment(const std::vector<float> &g_sim_estimates, 
+                                 const std::vector<float> &g_vis_estimates,
                                  const int vis_node_count)
 {
-    int sim_node_count = rank_order.size() - vis_node_count;
+    const std::vector<int> rank_order = sort_ranks(g_sim_estimates, g_vis_estimates);
+    const int sim_node_count = rank_order.size() - vis_node_count;
     std::vector<float> vis_node_cost(vis_node_count, 0.f);
     std::vector<int> map(sim_node_count, -1);
 
@@ -403,7 +435,7 @@ std::vector<int> node_assignment(const std::vector<int> &rank_order,
         // asssign the sim to to the vis node
         map[rank_order[i]] = target_vis_node;
         // adapt the cost on the vis node
-        vis_node_cost[target_vis_node] += vis_estimates[rank_order[i]];
+        vis_node_cost[target_vis_node] += g_vis_estimates[rank_order[i]];
     }
     return map;
 }
@@ -441,27 +473,6 @@ std::vector<int> job_assignment(const std::vector<float> &sim_estimate,
     return map;
 }
 
-/**
- * Sort ranks in descending order according to sim + vis times estimations.
- * TODO: add transfer overhead
- */
-std::vector<int> sort_ranks(const std::vector<float> &sim_estimates, 
-                            const std::vector<float> &vis_estimates)
-{
-    assert(sim_estimates.size() == vis_estimates.size());
-    std::vector<int> rank_order(sim_estimates.size());
-    std::iota(rank_order.begin(), rank_order.end(), 0);
-
-    std::stable_sort(rank_order.begin(), 
-                     rank_order.end(), 
-                     [&](int i, int j) 
-                     { 
-                         return sim_estimates[i] + vis_estimates[i] 
-                              > sim_estimates[j] + vis_estimates[j];
-                     } 
-                     );
-    return rank_order;
-}
 
 /**
  * 
@@ -480,10 +491,14 @@ std::vector<int> sort_indices(const std::vector<T> &v)
 
 
 //-----------------------------------------------------------------------------
-std::string get_timing_file_name(const int value, const int precision)
+std::string get_timing_file_name(const int value, const int precision, const std::string &prefix,
+                                 const std::string &path = "timings")
 {
     std::ostringstream oss;
-    oss << "timings/vis_";
+    oss << path;
+    oss << "/";
+    oss << prefix;
+    oss << "_";
     oss << std::setw(precision) << std::setfill('0') << value;
     oss << ".txt";
     return oss.str();
@@ -498,8 +513,20 @@ void log_time(std::chrono::time_point<std::chrono::system_clock> start,
     std::chrono::duration<double> elapsed = end - start;
     // std::cout << "Elapsed time: " << elapsed.count()
     //           << "s rank " << rank << std::endl;
-    std::ofstream out(get_timing_file_name(rank, 5), std::ios_base::app);
+    std::ofstream out(get_timing_file_name(rank, 5, "vis"), std::ios_base::app);
     out << description << elapsed.count() << std::endl;
+    out.close();
+}
+
+void log_global_time(const std::string &description,
+                     const int rank)
+{
+    auto now = std::chrono::system_clock::now();
+    auto duration = now.time_since_epoch();
+    auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+
+    std::ofstream out(get_timing_file_name(rank, 5, "global"), std::ios_base::app);
+    out << description << " : " << millis << std::endl;
     out.close();
 }
 
@@ -754,41 +781,207 @@ int get_current_batch_size(const int batch_size, const RenderBatch batch, const 
     return current_batch_size;
 }
 
-typedef std::vector<std::shared_ptr<conduit::Node> > vec_node_ptr;
-typedef std::vector<vec_node_ptr> vec_vec_node_ptr;
+typedef std::vector<std::shared_ptr<conduit::Node> > vec_node_sptr;
+typedef std::vector<vec_node_sptr> vec_vec_node_sptr;
+
+typedef std::vector<std::unique_ptr<conduit::Node> > vec_node_uptr;
+typedef std::vector<vec_node_uptr> vec_vec_node_uptr;
+
+
+/**
+ *  Composite render chunks from probing, simulation nodes, and visualization nodes.
+ */
+void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_uptr &render_chunks_sim, 
+                        const vec_node_sptr &render_chunks_vis, 
+                        const std::vector<int> &g_render_counts, const std::vector<int> &src_ranks,
+                        const std::vector<int> &depth_id_order, const std::map<int, int> &recv_counts,
+                        const int my_vis_rank, 
+                        const int my_render_recv_cnt, const int my_recv_cnt,
+                        const RenderConfig &render_cfg, const MPI_Properties &mpi_props)
+{
+    auto t_start0 = std::chrono::system_clock::now();
+
+    // unpack sent renders
+    vec_node_sptr parts_probing;
+    for (auto const& p : render_chunks_probe)
+    {
+        parts_probing.emplace_back(make_shared<Node>());
+        unpack_node(*p, *parts_probing.back());
+    }
+    // sender / batches
+    vec_vec_node_sptr parts_sim(my_render_recv_cnt);
+    for (int i = 0; i < my_render_recv_cnt; ++i)
+    {
+        for (auto const& batch : render_chunks_sim[i])
+        {
+            parts_sim[i].emplace_back(make_shared<Node>());
+            unpack_node(*batch, *parts_sim[i].back());
+        }
+    }
+    
+    std::cout << "~~~~start compositing " << mpi_props.rank << std::endl;
+
+    // arrange render order   
+    vector<int> probing_enum_sim(my_render_recv_cnt, 0);
+    vector<int> probing_enum_vis(my_recv_cnt, 0);
+    // images / sender / values
+    vec_vec_node_sptr render_ptrs(render_cfg.max_count);
+    std::vector<std::vector<int> > render_arrangement(render_cfg.max_count);
+
+    for (int j = 0; j < render_cfg.max_count; ++j)
+    {
+        render_ptrs[j].reserve(my_recv_cnt);
+        render_arrangement[j].reserve(my_recv_cnt);
+
+        // std::cout << "\nimage " << j << std::endl;
+        for (int i = 0; i < my_recv_cnt; ++i)
+        {
+            // std::cout << "  " << i << " ";
+            if ((render_cfg.probing_stride > 0) && (j % render_cfg.probing_stride == 0))    // probing image
+            {
+                const index_t id = j / render_cfg.probing_stride;
+                // std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
+                render_ptrs[j].emplace_back(parts_probing[i]);
+                render_arrangement[j].emplace_back(id);
+
+                {   // keep track of probing images
+                    // reset counter if first in batch
+                    if (j % render_cfg.BATCH_SIZE == 0)   
+                        probing_enum_sim[i] = 0;
+                    ++probing_enum_sim[i];
+                    // reset probing counter if first render in vis chunks
+                    if (j - g_render_counts[src_ranks[i]] == 0)
+                        probing_enum_vis[i] = 0;
+                    ++probing_enum_vis[i];
+                }
+            }
+            else if (j < g_render_counts[src_ranks[i]]) // part comes from sim node (inline)
+            {
+                // Reset the probing counter if this is the first render in a batch 
+                // and this is not a probing render.
+                if (j % render_cfg.BATCH_SIZE == 0)
+                    probing_enum_sim[i] = 0;
+
+                const int batch_id = j / render_cfg.BATCH_SIZE;
+                const index_t id = (j % render_cfg.BATCH_SIZE) - probing_enum_sim[i];
+                // std::cout << " " << mpi_props.rank << " sim  " << id << std::endl;
+                render_ptrs[j].emplace_back(parts_sim[i][batch_id]);
+                render_arrangement[j].emplace_back(id);
+            }
+            else    // part rendered on this vis node
+            {
+                // Reset the probing counter if this is the first render in vis node chunks 
+                // and this is not a probing render.
+                if (j - g_render_counts[src_ranks[i]] == 0)
+                    probing_enum_vis[i] = 0;
+
+                const index_t id = (j - g_render_counts[src_ranks[i]]) - probing_enum_vis[i];
+                // std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
+                render_ptrs[j].emplace_back(render_chunks_vis[i]);
+                render_arrangement[j].emplace_back(id);
+            }
+        }
+    }
+
+    // Set the vis_comm to be the vtkh comm.
+    vtkh::SetMPICommHandle(int(MPI_Comm_c2f(mpi_props.comm_vis)));
+
+    // Set the number of receiving depth values per node 
+    // and the according displacements.
+    std::vector<int> counts_recv;
+    std::vector<int> displacements(1, 0); 
+    for (const auto &e : recv_counts)
+    {
+        counts_recv.push_back(e.second);
+        displacements.push_back(displacements.back() + e.second);
+    }
+    displacements.pop_back();
+
+    // loop over images (camera positions)
+    for (int j = 0; j < render_cfg.max_count; ++j)
+    {
+        auto t_start = std::chrono::system_clock::now();
+        // gather all dephts values from vis nodes
+        std::vector<float> v_depths(mpi_props.sim_node_count, 0.f);
+
+        std::vector<float> depths(my_recv_cnt);
+        for (int i = 0; i < my_recv_cnt; i++)
+            depths[i] = (*render_ptrs[j][i])["depths"].child(render_arrangement[j][i]).to_float();
+
+        MPI_Allgatherv(depths.data(), depths.size(), 
+                        MPI_FLOAT, v_depths.data(), counts_recv.data(), displacements.data(), 
+                        MPI_FLOAT, mpi_props.comm_vis);
+
+        std::vector<std::pair<float, int> > depth_id(v_depths.size());
+        for (int k = 0; k < v_depths.size(); k++)
+            depth_id[k] = std::make_pair(v_depths[k], depth_id_order[k]);
+        // sort based on depth values
+        std::sort(depth_id.begin(), depth_id.end());
+
+        // convert the depth order to an integer ranking
+        std::vector<int> depths_order;
+        for(auto it = depth_id.begin(); it != depth_id.end(); it++)
+            depths_order.push_back(it->second);
+        
+        // get a mapping from MPI src rank to depth rank
+        std::vector<int> depths_order_id = sort_indices(depths_order);
+
+        vtkh::Compositor compositor;
+        compositor.SetCompositeMode(vtkh::Compositor::VIS_ORDER_BLEND);
+        
+        // loop over render parts (= 1 per sim node) and add as images
+        for (int i = 0; i < my_recv_cnt; ++i)
+        {
+            const int id = depths_order_id[src_ranks[i]];
+            compositor.AddImage((*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr(),
+                                (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr(),
+                                render_cfg.WIDTH, render_cfg.HEIGHT, id);
+        }
+
+        // composite
+        vtkh::Image result = compositor.Composite();
+
+        // TODO: reintroduce annotations
+        // Annotator annotator(*m_canvases[0], m_camera, m_scene_bounds);
+        // annotator.RenderWorldAnnotations();
+
+        log_time(t_start, "+ compositing image ", mpi_props.rank);
+
+        if (my_vis_rank == 0)
+        {   // write to disk 
+            t_start = std::chrono::system_clock::now();
+            result.Save((*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string());
+            log_time(t_start, "+ save image ", mpi_props.rank);
+        }
+    }
+    log_time(t_start0, "+ compositing total ", mpi_props.rank);
+}
 
 //-----------------------------------------------------------------------------
-// TODO: refactor this method: split up into prep, sim and vis parts
-void splitAndRender(const MPI_Properties mpi_props,
-                    const RenderConfig render_cfg,
-                    const std::vector<double> &my_probing_times,
-                    conduit::Node &data,
-                    conduit::Node &render_chunks_probing)
+// TODO: refactor this method: split up into sim and vis parts?
+void hybrid_render(const MPI_Properties mpi_props,
+                   const RenderConfig render_cfg,
+                   const std::vector<double> &my_probing_times,
+                   conduit::Node &data,
+                   conduit::Node &render_chunks_probing)
 {
-    assert(render_cfg.vis_budget >= 0.0 && render_cfg.vis_budget <= 1.0);
+    auto start0 = std::chrono::system_clock::now(); // TODO: timer position
     // render_cfg.vis_budget of 1.0 => all in transit
-
+    assert(render_cfg.vis_budget >= 0.0 && render_cfg.vis_budget <= 1.0);
     assert(mpi_props.sim_node_count > 0 && mpi_props.sim_node_count <= mpi_props.size);
 
-    int is_intransit = 0;
-    int is_rendering = 0;
-    int is_sending = 0;
     bool is_vis_node = false;
+    int my_vis_rank = -1;
 
-    int my_src_rank = -1;
-    int my_dest_rank = -1;
-
-    float my_vis_estimate = 0.f;
     float my_avg_probing_time = 0.f;
     float my_sim_estimate = data["state/sim_time"].to_float();
+    int my_data_size = 0;
 
     // TODO: no copy (set external)
     Node data_packed = pack_node(data);
     // Node data_packed;
     // pack_node_external(data, data_packed);
 
-    int my_data_size = 0;
-    
     std::cout << "~~~ " << my_sim_estimate << " sec sim time estimate " 
               << mpi_props.rank << std::endl;
 
@@ -796,11 +989,10 @@ void splitAndRender(const MPI_Properties mpi_props,
     if (mpi_props.rank >= mpi_props.sim_node_count) 
     {
         is_vis_node = true;
-        my_dest_rank = mpi_props.rank - mpi_props.sim_node_count;
+        my_vis_rank = mpi_props.rank - mpi_props.sim_node_count;
         my_sim_estimate = 0.f;
     }
-    // otherwise we are a sim node
-    else if (mpi_props.size > 1)
+    else if (mpi_props.size > 1) // otherwise we are a sim node
     {
         assert(my_probing_times.size() > 0);
         // my_avg_probing_time is in milliseconds
@@ -815,7 +1007,6 @@ void splitAndRender(const MPI_Properties mpi_props,
 
         // convert from milliseconds to seconds 
         my_avg_probing_time /= 1000.f;
-        // my_vis_estimate = (my_avg_probing_time * render_cfg.max_count) / 1000.f;
         std::cout << "~~~ " << my_avg_probing_time 
                   << " sec vis time estimate " 
                   << mpi_props.rank << std::endl;
@@ -825,7 +1016,7 @@ void splitAndRender(const MPI_Properties mpi_props,
 
 #ifdef ASCENT_MPI_ENABLED
     MPI_Barrier(mpi_props.comm_world);
-    auto start0 = std::chrono::system_clock::now(); // TODO: timer position
+    auto start1 = std::chrono::system_clock::now();
 
     // gather all simulation time estimates
     std::vector<float> g_sim_estimates(mpi_props.size, 0.f);
@@ -835,14 +1026,10 @@ void splitAndRender(const MPI_Properties mpi_props,
     std::vector<float> g_vis_estimates(mpi_props.size, 0.f);
     MPI_Allgather(&my_avg_probing_time, 1, MPI_FLOAT, 
                   g_vis_estimates.data(), 1, MPI_FLOAT, mpi_props.comm_world);
-    // gather all data set sizes
-    std::vector<int> g_data_sizes(mpi_props.size, 0);
-    MPI_Allgather(&my_data_size, 1, MPI_INT, g_data_sizes.data(), 1, MPI_INT, mpi_props.comm_world);
 
-    // sort the ranks accroding to sim+vis time estimate
-    std::vector<int> rank_order = sort_ranks(g_sim_estimates, g_vis_estimates);
     // assign sim nodes to vis nodes
-    std::vector<int> node_map = node_assignment(rank_order, g_vis_estimates, mpi_props.vis_node_count);
+    std::vector<int> node_map = node_assignment(g_sim_estimates, g_vis_estimates, 
+                                                      mpi_props.vis_node_count);
 
     // DEBUG: OUT
     if (mpi_props.rank == 0)
@@ -854,37 +1041,12 @@ void splitAndRender(const MPI_Properties mpi_props,
     }
 
     // distribute rendering load across sim and vis loads
-    std::vector<int> g_render_counts = load_assignment(g_sim_estimates, g_vis_estimates,
-                                                       node_map,
-                                                       render_cfg,
-                                                       mpi_props);
+    const std::vector<int> g_render_counts = load_assignment(g_sim_estimates, g_vis_estimates,
+                                                             node_map, render_cfg, mpi_props);
 
-    // // split comm: one comm per vis node
-    // MPI_Group world_group;
-    // MPI_Comm_group(mpi_props.comm_world, &world_group);
-    // std::vector<MPI_Group> vis_groups(mpi_props.vis_node_count);
-    // std::vector<MPI_Comm> vis_comms(mpi_props.vis_node_count);
-    // std::vector< std::vector<int> > assigned_sim_nodes(mpi_props.vis_node_count);
-
-    // for (int i = 0; i < node_map.size(); i++)
-    //     assigned_sim_nodes[node_map[i]].push_back(i); 
-
-    // for (int i = 0; i < mpi_props.vis_node_count; i++)
-    // {
-    //     MPI_Group_incl(world_group, assigned_sim_nodes[i].size(), 
-    //                     assigned_sim_nodes[i].data(), &vis_groups[i]);
-    //     MPI_Comm_create_group(mpi_props.comm_world, vis_groups[i], 0, &vis_comms[i]);
-    // }
-
-    // TODO: make batch_size variable by config, 
-    // TODO: adapt batch_size to probing size so that first render is always probing,
-    //       this would avoid batch size 1 issues
-    const int BATCH_SIZE = 20;  
-
-    // renders setup
-    const int WIDTH = 1024;
-    const int HEIGHT = 1024;
-    const int CHANNELS = 4 + 4; // RGBA + depth (float)
+    // gather all data set sizes for async recv
+    std::vector<int> g_data_sizes(mpi_props.size, 0);
+    MPI_Allgather(&my_data_size, 1, MPI_INT, g_data_sizes.data(), 1, MPI_INT, mpi_props.comm_world);
     
     // mpi message tags
     const int tag_data = 0;
@@ -899,7 +1061,8 @@ void splitAndRender(const MPI_Properties mpi_props,
     ascent_opts["probing_factor"] = render_cfg.probing_factor;
     ascent_opts["insitu_type"] = (render_cfg.vis_budget >= 1.0) ? "intransit" : "hybrid";
 
-    log_time(start0, "- load distribution ", mpi_props.rank);
+    log_time(start1, "- load distribution ", mpi_props.rank);
+    log_global_time("end loadAssignment", mpi_props.rank);
 
     if (is_vis_node) // vis nodes 
     {
@@ -907,12 +1070,12 @@ void splitAndRender(const MPI_Properties mpi_props,
         std::vector<int> sending_node_ranks;
         for (int i = 0; i < mpi_props.sim_node_count; ++i)
         {
-            if (node_map[i] == my_dest_rank)
+            if (node_map[i] == my_vis_rank)
                 sending_node_ranks.push_back(i);
         }
         const int my_recv_cnt = int(sending_node_ranks.size());
         // count of nodes that do inline rendering (0 for in transit case)
-        int my_render_recv_cnt = render_cfg.vis_budget >= 1.0 ? 0 : my_recv_cnt; 
+        const int my_render_recv_cnt = render_cfg.vis_budget >= 1.0 ? 0 : my_recv_cnt; 
         std::map<int, int> recv_counts;
         for (const auto &n : node_map)
             ++recv_counts[n];
@@ -934,7 +1097,6 @@ void splitAndRender(const MPI_Properties mpi_props,
             std::cout << a << " ";
         std::cout << std::endl;
 
-
         std::stringstream node_string;
         std::copy(sending_node_ranks.begin(), sending_node_ranks.end(), 
                     std::ostream_iterator<int>(node_string, " "));
@@ -942,26 +1104,14 @@ void splitAndRender(const MPI_Properties mpi_props,
                   << node_string.str() << std::endl;
 
         const std::vector<int> src_ranks = sending_node_ranks;
-        vec_node_ptr render_chunks_vis(my_recv_cnt, nullptr);
+        vec_node_sptr render_chunks_vis(my_recv_cnt, nullptr);
         std::vector<std::unique_ptr<Node> > datasets(my_recv_cnt);
-
-        // receive all data sets (blocking)
-        // for (int i = 0; i < my_recv_cnt; ++i)
-        // {
-        //     auto start = std::chrono::system_clock::now();
-        //     conduit::Node dataset;
-        //     src_ranks[i] = recv_any_using_schema(dataset, MPI_ANY_SOURCE, tag_data, mpi_props.comm_world);
-        //     datasets[i] = make_unique<Node>(dataset);
-        //     std::cout << "~~~ vis node " << mpi_props.rank << " received data from "
-        //               << src_ranks[i] << std::endl;
-        //     log_time(start, "- receive data ", mpi_props.rank);
-        // }
 
         // post recv for datasets
         std::vector<MPI_Request> requests_data(my_recv_cnt, MPI_REQUEST_NULL);
         for (int i = 0; i < my_recv_cnt; ++i)
         {
-            datasets[i] = make_unique<Node>(DataType::uint8(g_data_sizes[src_ranks[i]])); // +4250
+            datasets[i] = make_unique<Node>(DataType::uint8(g_data_sizes[src_ranks[i]]));
 
             int mpi_error = MPI_Irecv(datasets[i]->data_ptr(),
                                       datasets[i]->total_bytes_compact(),
@@ -984,19 +1134,15 @@ void splitAndRender(const MPI_Properties mpi_props,
         {
             int render_count = g_render_counts[src_ranks[i]] 
                                 + int(g_render_counts[src_ranks[i]]*render_cfg.probing_factor);
-            batches[i] = get_batch(render_count, BATCH_SIZE);
+            batches[i] = get_batch(render_count, render_cfg.BATCH_SIZE);
         }
 
-        int sum_batches = 0;
-        for (const auto &b : batches)
-            sum_batches += b.runs;
-
         // probing chunks
-        std::vector< std::unique_ptr<Node> > render_chunks_probe(my_render_recv_cnt);
+        vec_node_uptr render_chunks_probe(my_render_recv_cnt);
         std::vector<MPI_Request> requests_probing(my_render_recv_cnt, MPI_REQUEST_NULL);
         // render chunks sim
         // senders / batches / renders
-        std::vector< std::vector< std::unique_ptr<Node> > > render_chunks_sim(my_render_recv_cnt);
+        vec_vec_node_uptr render_chunks_sim(my_render_recv_cnt);
         std::vector< std::vector<MPI_Request>> requests_inline_sim(my_render_recv_cnt);
 
         // pre-allocate the mpi receive buffers
@@ -1010,7 +1156,7 @@ void splitAndRender(const MPI_Properties mpi_props,
 
             for (int j = 0; j < batches[i].runs; ++j)
             {
-                const int current_batch_size = get_current_batch_size(BATCH_SIZE, batches[i], j);
+                const int current_batch_size = get_current_batch_size(render_cfg.BATCH_SIZE, batches[i], j);
                 buffer_size = calc_render_msg_size(current_batch_size, render_cfg.probing_factor);
                 render_chunks_sim[i][j] = make_unique<Node>(DataType::uint8(buffer_size));
                 if (current_batch_size == 1)    // TODO: single render that was already probed
@@ -1043,7 +1189,7 @@ void splitAndRender(const MPI_Properties mpi_props,
             for (int j = 0; j < batches[i].runs; ++j)
             {
                 // correct size for last iteration
-                const int current_batch_size = get_current_batch_size(BATCH_SIZE, batches[i], j);
+                const int current_batch_size = get_current_batch_size(render_cfg.BATCH_SIZE, batches[i], j);
                 if (current_batch_size <= 1) // TODO: single render that was already probed
                     break;
 
@@ -1068,6 +1214,7 @@ void splitAndRender(const MPI_Properties mpi_props,
             MPI_Waitany(requests_data.size(), requests_data.data(), &id, MPI_STATUS_IGNORE);
             log_time(start1, "- receive data ", mpi_props.rank);
         }
+        log_global_time("end receiveData", mpi_props.rank);
 
         // render all data sets
         std::vector<Ascent> ascent_renders(my_recv_cnt);
@@ -1111,6 +1258,7 @@ void splitAndRender(const MPI_Properties mpi_props,
                             << std::endl;
             }
         }   // for: render all datasets sent
+        log_global_time("end render", mpi_props.rank);
 
         {   // wait for receive of render chunks to complete
             auto t_start = std::chrono::system_clock::now();
@@ -1122,184 +1270,16 @@ void splitAndRender(const MPI_Properties mpi_props,
                 MPI_Waitall(batch_requests.size(), batch_requests.data(), MPI_STATUSES_IGNORE);
             log_time(t_start, "+ wait receive img ", mpi_props.rank);
         }
+        log_global_time("end receiveRenders", mpi_props.rank);
 
-        {   // multi node compositing
-            auto t_start = std::chrono::system_clock::now();
+        hybrid_compositing(render_chunks_probe, render_chunks_sim, render_chunks_vis, 
+                           g_render_counts, src_ranks, depth_id_order, recv_counts, my_vis_rank,
+                           my_render_recv_cnt, my_recv_cnt, render_cfg, mpi_props);
+        log_global_time("end compositing", mpi_props.rank);
 
-            // unpack sent renders -> NOTE: takes too long, can we avoid copies?
-            vec_node_ptr parts_probing;
-            for (auto const& p : render_chunks_probe)
-            {
-                parts_probing.emplace_back(make_shared<Node>());
-                unpack_node(*p, *parts_probing.back());
-            }
-            // sender / batches
-            vec_vec_node_ptr parts_sim(my_render_recv_cnt);
-            for (int i = 0; i < my_render_recv_cnt; ++i)
-            {
-                for (auto const& batch : render_chunks_sim[i])
-                {
-                    parts_sim[i].emplace_back(make_shared<Node>());
-                    unpack_node(*batch, *parts_sim[i].back());
-                }
-            }
-            log_time(t_start, "+ unpack images ", mpi_props.rank);
-            
-            std::cout << "~~~~finished unpacking images, compositing... " << mpi_props.rank << std::endl;
-
-            // arrange render order
-            t_start = std::chrono::system_clock::now();
-            
-            vector<int> probing_enum_sim(my_render_recv_cnt, 0);
-            vector<int> probing_enum_vis(my_recv_cnt, 0);
-            // images / sender / values
-            vec_vec_node_ptr render_ptrs(render_cfg.max_count);
-            std::vector<std::vector<int> > render_arrangement(render_cfg.max_count);
-
-            for (int j = 0; j < render_cfg.max_count; ++j)
-            {
-                render_ptrs[j].reserve(my_recv_cnt);
-                render_arrangement[j].reserve(my_recv_cnt);
-
-                // std::cout << "\nimage " << j << std::endl;
-                for (int i = 0; i < my_recv_cnt; ++i)
-                {
-                    // std::cout << "  " << i << " ";
-                    if ((render_cfg.probing_stride > 0) && (j % render_cfg.probing_stride == 0))    // probing image
-                    {
-                        const index_t id = j / render_cfg.probing_stride;
-                        // std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
-                        render_ptrs[j].emplace_back(parts_probing[i]);
-                        render_arrangement[j].emplace_back(id);
-
-                        {   // keep track of probing images
-                            // reset counter if first in batch
-                            if (j % BATCH_SIZE == 0)   
-                                probing_enum_sim[i] = 0;
-                            ++probing_enum_sim[i];
-                            // reset probing counter if first render in vis chunks
-                            if (j - g_render_counts[src_ranks[i]] == 0)
-                                probing_enum_vis[i] = 0;
-                            ++probing_enum_vis[i];
-                        }
-                    }
-                    else if (j < g_render_counts[src_ranks[i]]) // part comes from sim node (inline)
-                    {
-                        // Reset the probing counter if this is the first render in a batch 
-                        // and this is not a probing render.
-                        if (j % BATCH_SIZE == 0)
-                            probing_enum_sim[i] = 0;
-
-                        const int batch_id = j / BATCH_SIZE;
-                        const index_t id = (j % BATCH_SIZE) - probing_enum_sim[i];
-                        // std::cout << " " << mpi_props.rank << " sim  " << id << std::endl;
-                        render_ptrs[j].emplace_back(parts_sim[i][batch_id]);
-                        render_arrangement[j].emplace_back(id);
-                    }
-                    else    // part rendered on this vis node
-                    {
-                        // Reset the probing counter if this is the first render in vis node chunks 
-                        // and this is not a probing render.
-                        if (j - g_render_counts[src_ranks[i]] == 0)
-                            probing_enum_vis[i] = 0;
-
-                        const index_t id = (j - g_render_counts[src_ranks[i]]) - probing_enum_vis[i];
-                        // std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
-                        render_ptrs[j].emplace_back(render_chunks_vis[i]);
-                        render_arrangement[j].emplace_back(id);
-                    }
-                }
-            }
-            log_time(t_start, "+ arrange renders ", mpi_props.rank);
-
-            // actual compositing
-            auto t_start0 = std::chrono::system_clock::now();
-            
-            // Set the vis_comm to be the vtkh comm.
-            vtkh::SetMPICommHandle(int(MPI_Comm_c2f(mpi_props.comm_vis)));
-            int vis_rank = 0;
-            MPI_Comm_rank(mpi_props.comm_vis, &vis_rank);
-
-            // DEBUG: 
-            // debug_break();
-
-            // Set the number of receiving depth values per node 
-            // and the according displacements.
-            std::vector<int> counts_recv;
-            std::vector<int> displacements(1, 0); 
-            for (const auto &e : recv_counts)
-            {
-                counts_recv.push_back(e.second);
-                displacements.push_back(displacements.back() + e.second);
-            }
-            displacements.pop_back();
-
-            // loop over images (camera positions)
-            for (int j = 0; j < render_cfg.max_count; ++j)
-            {
-                t_start = std::chrono::system_clock::now();
-                // gather all dephts values from vis nodes
-                std::vector<float> v_depths(mpi_props.sim_node_count, 0.f);
-
-                std::vector<float> depths(my_recv_cnt);
-                for (int i = 0; i < my_recv_cnt; i++)
-                    depths[i] = (*render_ptrs[j][i])["depths"].child(render_arrangement[j][i]).to_float();
-
-                MPI_Allgatherv(
-                               depths.data(), depths.size(), 
-                               MPI_FLOAT, v_depths.data(), counts_recv.data(), displacements.data(), 
-                               MPI_FLOAT, mpi_props.comm_vis);
-
-                std::vector<std::pair<float, int> > depth_id(v_depths.size());
-                for (int k = 0; k < v_depths.size(); k++)
-                    depth_id[k] = std::make_pair(v_depths[k], depth_id_order[k]);
-                // sort based on depth values
-                std::sort(depth_id.begin(), depth_id.end());
-
-                // convert the depth order to an integer ranking
-                std::vector<int> depths_order;
-                for(auto it = depth_id.begin(); it != depth_id.end(); it++)
-                    depths_order.push_back(it->second);
-                
-                // get a mapping from MPI src rank to depth rank
-                std::vector<int> depths_order_id = sort_indices(depths_order);
-
-                vtkh::Compositor compositor;
-                compositor.SetCompositeMode(vtkh::Compositor::VIS_ORDER_BLEND);
-                
-                // loop over render parts (= 1 per sim node) and add as images
-                for (int i = 0; i < my_recv_cnt; ++i)
-                {
-                    const int id = depths_order_id[src_ranks[i]];
-                    compositor.AddImage((*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr(),
-                                        (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr(),
-                                        WIDTH, HEIGHT, id);
-                }
-
-                // composite
-                vtkh::Image result = compositor.Composite();
-
-                // TODO: annotations
-                // Annotator annotator(*m_canvases[0], m_camera, m_scene_bounds);
-                // annotator.RenderWorldAnnotations();
-
-                log_time(t_start, "+ compositing image ", mpi_props.rank);
-
-                if (vis_rank == 0)
-                {   // write to disk 
-                    t_start = std::chrono::system_clock::now();
-                    result.Save((*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string());
-                    log_time(t_start, "+ save image ", mpi_props.rank);
-                }
-            }
-            log_time(t_start0, "+ compositing total ", mpi_props.rank);
-
-            for (int i = 0; i < my_recv_cnt; i++)
-            {
-                ascent_renders[i].close();
-            }
-            
-        }
+        // Keep the vis node ascent instances open until render chunks have been processed.
+        for (int i = 0; i < my_recv_cnt; i++)
+            ascent_renders[i].close();  
 
     } // end vis node
     else // SIM nodes
@@ -1315,7 +1295,7 @@ void splitAndRender(const MPI_Properties mpi_props,
             // TODO: no copy (set external)
             Node compact_probing_renders = pack_node(render_chunks_probing);
             const int my_render_count = g_render_counts[mpi_props.rank] + int(g_render_counts[mpi_props.rank]*render_cfg.probing_factor);
-            RenderBatch batch = get_batch(my_render_count, BATCH_SIZE);
+            RenderBatch batch = get_batch(my_render_count, render_cfg.BATCH_SIZE);
 
             {   // init send buffer
                 detach_mpi_buffer();
@@ -1341,7 +1321,6 @@ void splitAndRender(const MPI_Properties mpi_props,
                     std::cout << "ERROR sending sim data to " << destination << std::endl;
                 log_time(t_start, "- send data ", mpi_props.rank);
             }
-
             
             MPI_Request request_probing = MPI_REQUEST_NULL;
             {   // send probing chunks to vis node
@@ -1356,6 +1335,7 @@ void splitAndRender(const MPI_Properties mpi_props,
                 if (mpi_error)
                     std::cout << "ERROR sending probing renders to " << destination << std::endl;
             }
+            log_global_time("end sendData", mpi_props.rank);
 
             // in line rendering using ascent
             std::vector<Ascent> ascent_renders(batch.runs);
@@ -1365,11 +1345,11 @@ void splitAndRender(const MPI_Properties mpi_props,
             auto t_start = std::chrono::system_clock::now();
             for (int i = 0; i < batch.runs; ++i)
             {
-                const int begin = i*BATCH_SIZE;
-                const int current_batch_size = get_current_batch_size(BATCH_SIZE, batch, i);
+                const int begin = i*render_cfg.BATCH_SIZE;
+                const int current_batch_size = get_current_batch_size(render_cfg.BATCH_SIZE, batch, i);
                 if (current_batch_size <= 1)
                     break;
-                const int end = i*BATCH_SIZE + current_batch_size;
+                const int end = i*render_cfg.BATCH_SIZE + current_batch_size;
 
                 std::cout   << "~~ SIM node " << mpi_props.rank << " rendering " 
                             << begin << " - " << end << std::endl;
@@ -1412,6 +1392,7 @@ void splitAndRender(const MPI_Properties mpi_props,
                 }
             }
             log_time(t_start, "+ render sim " + std::to_string(g_render_counts[mpi_props.rank]) + " ", mpi_props.rank);
+            log_global_time("end render", mpi_props.rank);
 
             {   // wait for all sent data to be received
                 t_start = std::chrono::system_clock::now();
@@ -1421,11 +1402,11 @@ void splitAndRender(const MPI_Properties mpi_props,
                 MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
                 log_time(t_start, "+ wait send img ", mpi_props.rank);
             }
+            log_global_time("end sendRenders", mpi_props.rank);
 
+            // Keep sim node ascent instances open until image chunks are sent.
             for (int i = 0; i < batch.runs; i++)
-            {
                 ascent_renders[i].close();
-            }
         }
         else
         {
@@ -1435,6 +1416,7 @@ void splitAndRender(const MPI_Properties mpi_props,
     } // end sim node
 
     log_time(start0, "___splitAndRun ", mpi_props.rank);
+    log_global_time("end hybridRender", mpi_props.rank);
 #endif // ASCENT_MPI_ENABLED
 }
 
@@ -1442,12 +1424,15 @@ void splitAndRender(const MPI_Properties mpi_props,
 //-----------------------------------------------------------------------------
 void ProbingRuntime::Execute(const conduit::Node &actions)
 {
+
     int world_rank = 0;
     int world_size = 1;
 #if ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm_world = MPI_Comm_f2c(m_runtime_options["mpi_comm"].to_int());
     MPI_Comm_rank(mpi_comm_world, &world_rank);
     MPI_Comm_size(mpi_comm_world, &world_size);
+
+    log_global_time("start probing", world_rank);
 #endif // ASCENT_MPI_ENABLED
 
     // copy options and actions for probing run
@@ -1518,7 +1503,6 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
             }
         }
     }
-
 
     int sim_count = 0;
 #if ASCENT_MPI_ENABLED
@@ -1593,9 +1577,10 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     }
     else
     {
-        render_times.push_back(100.f); // add dummy value for in transit test only
+        render_times.push_back(100.f); // dummy value for in transit test only
     }
 
+    log_global_time("end probing", world_rank);
 #if ASCENT_MPI_ENABLED
     if (probing_factor < 1.0) // probing_factor of 1 implies inline rendering only
     {
@@ -1603,7 +1588,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
                                  mpi_comm_world, vis_comm);
         RenderConfig render_cfg(phi*theta, probing_factor, vis_budget);
 
-        splitAndRender(mpi_props, render_cfg, render_times, m_data, render_chunks);
+        hybrid_render(mpi_props, render_cfg, render_times, m_data, render_chunks);
     }
     ascent_probing.close();
 
@@ -1611,6 +1596,8 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     MPI_Group_free(&sim_group);
     MPI_Group_free(&vis_group);
     // MPI_Comm_free(&sim_comm); // Fatal error in PMPI_Comm_free: Invalid communicator
+
+    log_global_time("end ascent", world_rank);
 #endif
 }
 
