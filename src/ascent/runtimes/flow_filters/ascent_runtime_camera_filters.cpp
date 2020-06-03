@@ -1013,6 +1013,75 @@ Triangle transformTriangle(Triangle t, Camera c)
 
 }
 
+void prewittX_kernel(const int rows, const int cols, double * const kernel) 
+{
+  if(rows != 3 || cols !=3) 
+  {
+    std::cerr << "Bad Prewitt kernel matrix\n";
+    return;
+  }
+  for(int i=0;i<3;i++) 
+  {
+    kernel[0 + (i*rows)] = -1.0;
+    kernel[1 + (i*rows)] = 0.0;
+    kernel[2 + (i*rows)] = 1.0;
+  }
+}
+
+void prewittY_kernel(const int rows, const int cols, double * const kernel) 
+{
+  if(rows != 3 || cols !=3) 
+  {
+    std::cerr << "Bad Prewitt kernel matrix\n";
+    return;
+  }
+  for(int i=0;i<3;i++) 
+  {
+    kernel[i + (0*rows)] = 1.0;
+    kernel[i + (1*rows)] = 0.0;
+    kernel[i + (2*rows)] = -1.0;
+  }
+}
+
+void apply_prewitt(const int rows, const int cols, 
+		   float * const in, float * const out) {
+  const int dim = 3;
+  double kernelY[dim*dim];
+  double kernelX[dim*dim];
+  prewittY_kernel(3,3,kernelY);
+  prewittX_kernel(3,3,kernelX);
+  double gY = 0;
+  double gX = 0;
+
+  for(int i = 0; i < rows; i++) 
+  {
+    for(int j = 0; j < cols; j++) 
+    {
+      const int out_offset = i + (j*rows);
+      // For each pixel, do the stencil
+      gY = 0;
+      gX = 0;
+      double intensity = 0;
+      for(int x = i - 1, kx = 0; x <= i + 1; x++, kx++) 
+      {
+        for(int y = j - 1, ky = 0; y <= j + 1; y++, ky++) 
+	{
+          if(x >= 0 && x < rows && y >= 0 && y < cols) 
+	  {
+            const int in_offset = x + (y*rows);
+            const int k_offset = kx + (ky*dim);
+	    gY += in[in_offset]*kernelY[k_offset];
+	    gX += in[in_offset]*kernelX[k_offset];
+	   }
+	 }
+      }
+      intensity = sqrt(gY*gY + gX*gX);
+      out[out_offset] = intensity;
+      out[out_offset] = intensity;
+      out[out_offset] = intensity;
+    }
+  }
+}
 
 
 void fibonacci_sphere(int i, int samples, double* points)
@@ -1189,6 +1258,58 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
             depth = depth_data[i];
       score = depth;
     #endif
+  }
+  else if (metric == "max_silhouette")
+  {
+    #if ASCENT_MPI_ENABLED
+      // Get the number of processes
+      int world_size;
+      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+      // Get the rank of this process
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      MPI_Status status;
+      if(rank == 0)
+      {
+        int size = height*width;
+        std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
+        for(int i = 0; i < size; i++)
+          if(depth_data[i] == depth_data[i])
+	    depth_data[i] = 255.0; //data = white
+          else
+	    depth_data[i] = 0.0; //background = black
+
+	float data_in[width*height];
+	float contour[width*height];
+	std::copy(depth_data.begin(), depth_data.end(), data_in);
+	apply_prewitt(width, height, data_in, contour); //edge detection
+	int length = 0;
+	for(int i = 0; i < size; i++)
+	  if(contour[i] != 0.0)
+            length++;
+	score = (float)length;
+        MPI_Bcast(&score, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+      }
+    #else
+      int size = height*width;
+      std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
+      for(int i = 0; i < size; i++)
+        if(depth_data[i] == depth_data[i])
+	  depth_data[i] = 255.0;
+        else
+	  depth_data[i] = 0.0;
+      float data_in[size];
+      float contour[size];
+      std::copy(depth_data.begin(), depth_data.end(), data_in);
+      apply_prewitt(width, height, data_in, contour);
+      int length = 0;
+      for(int i = 0; i < size; i++)
+        if(contour[i] != 0.0)
+          length++;
+      score = (float)length;
+    #endif
+    
   }
   else
     ASCENT_ERROR("This metric is not supported. \n");
