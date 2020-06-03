@@ -313,6 +313,7 @@ vtkh::Render parse_render(const conduit::Node &render_node,
   vtkh::Render render = vtkh::MakeRender(image_width,
                                          image_height,
                                          bounds,
+                                         domain_ids,
                                          image_name);
   //
   // render create a default camera. Now get it and check for
@@ -946,6 +947,7 @@ DefaultRender::execute()
       vtkh::Render render = vtkh::MakeRender(1024,
                                              1024,
                                              *bounds,
+                                             v_domain_ids,
                                              image_name);
 
       renders->push_back(render);
