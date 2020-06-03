@@ -990,6 +990,7 @@ VTKHClip::verify_params(const conduit::Node &params,
     else
     {
 
+      res &= check_string("topology",params, info, false);
       if(params.has_child("sphere"))
       {
          res = check_numeric("sphere/center/x",params, info, true) && res;
@@ -1038,6 +1039,7 @@ VTKHClip::verify_params(const conduit::Node &params,
     res = check_string("topology",params, info, false) && res;
 
     std::vector<std::string> valid_paths;
+    valid_paths.push_back("topology");
     valid_paths.push_back("invert");
     valid_paths.push_back("sphere/center/x");
     valid_paths.push_back("sphere/center/y");
