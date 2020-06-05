@@ -314,7 +314,13 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
     std::valarray<float> t_inline(0.f, mpi_props.sim_node_count);
     for (size_t i = 0; i < mpi_props.sim_node_count; i++)
         t_inline[i] = vis_estimates[i] * render_cfg.non_probing_count;
-    std::valarray<float> t_intransit(0.f, mpi_props.vis_node_count);
+
+    // TODO: add smart way to estimate compositing time
+    float t_compositing = 0.2f * render_cfg.max_count;  // flat compositing cost (single vis node only)
+    if (mpi_props.rank == 0)
+        std::cout << "~~compositing estimate: " << t_compositing << std::endl;
+
+    std::valarray<float> t_intransit(t_compositing, mpi_props.vis_node_count);
     std::valarray<float> t_sim(sim_estimate.data(), mpi_props.sim_node_count);
 
     std::vector<int> render_counts_sim(mpi_props.sim_node_count, 0);
@@ -335,7 +341,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
     {
         // push back load to sim nodes until 
         // intransit time is smaller than max(inline + sim)
-        // NOTE: this loop is potentially ineffective w/ higher node counts
+        // NOTE: this loop is ineffective w/ higher node counts
         int i = 0;
         std::valarray<float> t_inline_sim = t_inline + t_sim;
         while (t_inline_sim.max() < t_intransit.max()) 
@@ -351,6 +357,8 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
             if (render_counts_vis[target_vis_node] > 0)
             {
                 t_intransit[target_vis_node] -= vis_estimates[min_id];
+                // Add render receive cost to vis node. TODO: replace magic number w/ estimate
+                t_intransit[target_vis_node] += 0.09f;  
                 render_counts_vis[target_vis_node]--;
             
                 t_inline[min_id] += vis_estimates[min_id];
@@ -371,7 +379,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
             // recalculate inline + sim time
             t_inline_sim = t_inline + t_sim;
             ++i;
-            if (i > render_cfg.non_probing_count*mpi_props.sim_node_count)
+            if (i > render_cfg.non_probing_count * mpi_props.sim_node_count)
                 ASCENT_ERROR("Error during load distribution.")
         }
     }
@@ -523,10 +531,10 @@ void log_global_time(const std::string &description,
 {
     auto now = std::chrono::system_clock::now();
     auto duration = now.time_since_epoch();
-    auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+    auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
 
     std::ofstream out(get_timing_file_name(rank, 5, "global"), std::ios_base::app);
-    out << description << " : " << millis << std::endl;
+    out << description << " : " << seconds << std::endl;
     out.close();
 }
 
@@ -588,7 +596,6 @@ int recv_any_using_schema(Node &node, const int src, const int tag, const MPI_Co
     return status.MPI_SOURCE;
 }
 
-// TODO: this is not working for some reason
 void pack_node_external(Node &node, Node &packed)
 {
     conduit::Schema s_data_compact;
@@ -618,7 +625,13 @@ void pack_node_external(Node &node, Node &packed)
     // these sets won't realloc since schemas are compatible
     packed["schema_len"].set((int64)snd_schema_json.length());
     packed["schema"].set(snd_schema_json);
-    packed.update_external(node["data"]);
+     
+    // TODO: update_external is not working. 
+    // Probably because setting the data external leads to non aligned memory?
+    // -> Sending schema separate from data results in:
+    // Fatal error in MPI_Ssend: Invalid buffer pointer, error stack:
+    // MPI_Ssend(152): MPI_Ssend(buf=(nil)
+    packed["data"].update_external(node);
 }
 
 Node pack_node(Node &node)
@@ -682,7 +695,8 @@ void unpack_node(const Node &node, Node &unpacked)
     n_msg["data"].set_external(rcv_schema, n_buff_ptr);
     
     // set data to our result node (external, no copy)
-    unpacked.update_external(n_msg["data"]);
+    unpacked.update_external(n_msg["data"]); 
+    // unpacked.update(n_msg["data"]);
 }
 
 
@@ -787,6 +801,7 @@ typedef std::vector<vec_node_sptr> vec_vec_node_sptr;
 typedef std::vector<std::unique_ptr<conduit::Node> > vec_node_uptr;
 typedef std::vector<vec_node_uptr> vec_vec_node_uptr;
 
+static const int SLEEP = 0; // milliseconds
 
 /**
  *  Composite render chunks from probing, simulation nodes, and visualization nodes.
@@ -941,9 +956,9 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
         // composite
         vtkh::Image result = compositor.Composite();
 
-        // TODO: reintroduce annotations
-        // Annotator annotator(*m_canvases[0], m_camera, m_scene_bounds);
-        // annotator.RenderWorldAnnotations();
+        // TODO: add screen annotations for hybrid (see vtk-h Scene::Render)
+        // See vtk-h Renderer::ImageToCanvas() for how to get from result image to canvas.
+        // Problem: we still need camera, ranges and color table.
 
         log_time(t_start, "+ compositing image ", mpi_props.rank);
 
@@ -958,14 +973,13 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
 }
 
 //-----------------------------------------------------------------------------
-// TODO: refactor this method: split up into sim and vis parts?
 void hybrid_render(const MPI_Properties mpi_props,
                    const RenderConfig render_cfg,
                    const std::vector<double> &my_probing_times,
                    conduit::Node &data,
                    conduit::Node &render_chunks_probing)
 {
-    auto start0 = std::chrono::system_clock::now(); // TODO: timer position
+    auto start0 = std::chrono::system_clock::now();
     // render_cfg.vis_budget of 1.0 => all in transit
     assert(render_cfg.vis_budget >= 0.0 && render_cfg.vis_budget <= 1.0);
     assert(mpi_props.sim_node_count > 0 && mpi_props.sim_node_count <= mpi_props.size);
@@ -977,7 +991,7 @@ void hybrid_render(const MPI_Properties mpi_props,
     float my_sim_estimate = data["state/sim_time"].to_float();
     int my_data_size = 0;
 
-    // TODO: no copy (set external)
+    // TODO: no copy (set external) -> send schema separate from data?
     Node data_packed = pack_node(data);
     // Node data_packed;
     // pack_node_external(data, data_packed);
@@ -1015,7 +1029,7 @@ void hybrid_render(const MPI_Properties mpi_props,
     }
 
 #ifdef ASCENT_MPI_ENABLED
-    MPI_Barrier(mpi_props.comm_world);
+    // MPI_Barrier(mpi_props.comm_world);
     auto start1 = std::chrono::system_clock::now();
 
     // gather all simulation time estimates
@@ -1240,7 +1254,8 @@ void hybrid_render(const MPI_Properties mpi_props,
                                 << render_offset + current_render_count << std::endl;
                     ascent_opts["render_count"] = current_render_count;
                     ascent_opts["render_offset"] = render_offset;
-                    ascent_opts["cinema_increment"] = (i == 0) ? true : false;  
+                    ascent_opts["cinema_increment"] = (i == 0) ? true : false;
+                    ascent_opts["sleep"] = (src_ranks[i] == 0) ? SLEEP : 0;
 
                     ascent_renders[i].open(ascent_opts);
                     ascent_renders[i].publish(dataset);
@@ -1285,10 +1300,8 @@ void hybrid_render(const MPI_Properties mpi_props,
     else // SIM nodes
     {
         const int destination = node_map[mpi_props.rank] + mpi_props.sim_node_count;
-        std::cout << "~~~~rank " << mpi_props.rank << ": sends extract to " 
-                  <<  node_map[mpi_props.rank] + mpi_props.sim_node_count << std::endl;
-
-        // std::vector<Node> compact_img_batches;
+        // std::cout << "~~~~rank " << mpi_props.rank << ": sends extract to " 
+        //           <<  node_map[mpi_props.rank] + mpi_props.sim_node_count << std::endl;
         Node verify_info;
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
@@ -1310,7 +1323,7 @@ void hybrid_render(const MPI_Properties mpi_props,
 
             {   // send data to vis node
                 auto t_start = std::chrono::system_clock::now();
-                int mpi_error = MPI_Ssend(data_packed.data_ptr(),
+                int mpi_error = MPI_Ssend(const_cast<void*>(data_packed.data_ptr()),
                                           data_packed.total_bytes_compact(),
                                           MPI_BYTE,
                                           destination,
@@ -1357,6 +1370,7 @@ void hybrid_render(const MPI_Properties mpi_props,
                 ascent_opts["render_count"] = end - begin;
                 ascent_opts["render_offset"] = begin;
                 ascent_opts["insitu_type"] = "hybrid";
+                ascent_opts["sleep"] = (mpi_props.rank == 0) ? SLEEP : 0;
 
                 ascent_renders[i].open(ascent_opts);
                 ascent_renders[i].publish(data);
@@ -1373,6 +1387,8 @@ void hybrid_render(const MPI_Properties mpi_props,
                 // send render chunks to vis node for compositing
                 // TODO: no copy (set external)
                 Node compact_renders = pack_node(render_chunks_inline);
+                // Node compact_renders;
+                // pack_node_external(render_chunks_inline, compact_renders);
     // print_time(t_detail, "pack node ", mpi_props.rank);
                 {
                     int mpi_error = MPI_Ibsend(compact_renders.data_ptr(),
@@ -1546,8 +1562,9 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_opt["is_probing"] = 1;
         ascent_opt["probing_factor"] = probing_factor;
         ascent_opt["render_count"] = phi * theta;
-        ascent_opt["image_offset"] = 0;
-        ascent_opt["insitu_type"] = (probing_factor >= 1.0) ? "inline" : "hybrid";  
+        ascent_opt["render_offset"] = 0;
+        ascent_opt["insitu_type"] = (probing_factor >= 1.0) ? "inline" : "hybrid";
+        ascent_opt["sleep"] = world_rank == 0 ? SLEEP : 0;
 
         // all sim nodes run probing in a new ascent instance
         ascent_probing.open(ascent_opt);

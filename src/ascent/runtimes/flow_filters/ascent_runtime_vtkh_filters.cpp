@@ -112,7 +112,9 @@
 #endif
 
 #include <stdio.h>
-
+#include <thread>         // std::this_thread::sleep_for
+#include <chrono>         // std::chrono::seconds
+ 
 using namespace conduit;
 using namespace std;
 
@@ -324,7 +326,7 @@ public:
     m_renderer_count++;
   }
 
-  void Execute(std::vector<vtkh::Render> &renders, bool is_inline = false)
+  void Execute(std::vector<vtkh::Render> &renders, bool is_inline = false, int sleep = 0)
   {
     vtkh::Scene scene;
     for (int i = 0; i < m_renderer_count; i++)
@@ -341,11 +343,22 @@ public:
       scene.AddRender(renders[i]);
     }
 
-    // TODO: bool do_composite = true for vis nodes
     scene.Render(is_inline);
 
     for (int i = 0; i < m_renderer_count; i++)
     {
+      int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+      MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+      MPI_Comm_rank(mpi_comm, &rank);
+#endif
+      // TODO: artificial load imbalance
+      if (sleep)
+      {
+        // std::cout << "sleep " << sleep << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleep*renders.size()));
+      }
+
       ostringstream oss;
       oss << "key_" << i;
 
@@ -1680,7 +1693,8 @@ void DefaultRender::execute()
         parse_image_dims(render_node, image_width, image_height);
 
         manager.set_bounds(*bounds);
-        if (is_probing || (!is_probing && is_cinema_increment)) // new timestep only for probing run otherwise we generate too many
+        // Add new timestep only for probing run, otherwise we generate too many.
+        if (is_probing || (!is_probing && is_cinema_increment)) 
         {
           manager.add_time_step(insitu_type == "intransit");
         }
@@ -2690,8 +2704,11 @@ void ExecScene::execute()
   Node *meta = graph().workspace().registry().fetch<Node>("metadata");
   if (meta->has_path("insitu_type"))
     is_inline = (*meta)["insitu_type"].as_string() == "inline";
+  int sleep = 0;
+  if (meta->has_path("sleep"))
+    sleep = (*meta)["sleep"].as_int32();
 
-  scene->Execute(*renders, is_inline);
+  scene->Execute(*renders, is_inline, sleep);
 
   std::vector< std::vector<double>> *render_times = scene->GetRenderTimes();
   // NOTE: only domain 0 for now

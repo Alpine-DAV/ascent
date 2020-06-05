@@ -117,6 +117,7 @@ private:
     int               m_render_offset = 0;
     std::string       m_insitu_type = "hybrid";
     int               m_is_cinema_increment = 0;
+    int               m_sleep = 0;
 
     void              ResetInfo();
 

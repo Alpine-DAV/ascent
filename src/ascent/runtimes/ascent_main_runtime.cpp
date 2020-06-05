@@ -131,7 +131,8 @@ AscentRuntime::AscentRuntime()
       m_render_count(0),
       m_render_offset(0),
       m_insitu_type("hybrid"),
-      m_is_cinema_increment(0)
+      m_is_cinema_increment(0),
+      m_sleep(0)
 {
   flow::filters::register_builtin();
   ResetInfo();
@@ -258,6 +259,8 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     m_insitu_type = options["insitu_type"].as_string();
   if (options.has_path("cinema_increment"))
     m_is_cinema_increment = options["cinema_increment"].as_int32();
+  if (options.has_path("sleep"))
+    m_sleep = options["sleep"].as_int32();
 
   Node msg;
   this->Info(msg["info"]);
@@ -921,6 +924,7 @@ void AscentRuntime::PopulateMetadata()
   (*meta)["render_offset"] = m_render_offset;
   (*meta)["insitu_type"] = m_insitu_type;
   (*meta)["cinema_increment"] = m_is_cinema_increment;
+  (*meta)["sleep"] = m_sleep;
 }
 
 //-----------------------------------------------------------------------------
