@@ -1128,6 +1128,7 @@ CreatePlot::verify_params(const conduit::Node &params,
       valid_paths.push_back("points/radius_delta");
       valid_paths.push_back("min_value");
       valid_paths.push_back("max_value");
+      valid_paths.push_back("samples");
     }
     else
     {
@@ -1277,7 +1278,13 @@ CreatePlot::execute()
     }
     else if(type == "volume")
     {
-      renderer = new vtkh::VolumeRenderer();
+      vtkh::VolumeRenderer *vren = new vtkh::VolumeRenderer();
+      if(plot_params.has_path("samples"))
+      {
+        int samples = plot_params["samples"].to_int32();
+        vren->SetNumberOfSamples(samples);
+      }
+      renderer = vren;
     }
     else if(type == "mesh")
     {
