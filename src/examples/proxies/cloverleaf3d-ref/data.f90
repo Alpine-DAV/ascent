@@ -85,8 +85,9 @@ MODULE data_module
 
 
    INTEGER         ::            g_in           & ! File for input data.
-                                ,g_out          &
-                                ,g_out_times
+                                ,g_out          & 
+                                ,g_out_times    & ! File for sim and vis timings logging.
+                                ,g_out_stamps     ! File for time stamp logging.
 
 
    TYPE parallel_type

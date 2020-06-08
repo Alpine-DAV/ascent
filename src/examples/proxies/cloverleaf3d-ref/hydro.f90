@@ -33,9 +33,22 @@ SUBROUTINE hydro
   USE iso_c_binding
   USE conduit
   USE ascent
+
+  use, intrinsic :: iso_c_binding, only: c_long
+
   IMPLICIT NONE
 
+  interface
+    ! time_t time(time_t *tloc)
+    function c_time(tloc) bind(c, name='time')
+        import :: c_long
+        integer(kind=c_long), intent(in), value :: tloc
+        integer(kind=c_long)                    :: c_time
+    end function c_time
+  end interface
+
   INTEGER         :: loc(1),err,rank,size,color,rank_split,sim_vis_comm
+  INTEGER(kind=8) :: unix
   REAL(KIND=8)    :: timer,timerstart,wall_clock,step_clock
 
   REAL(KIND=8)    :: grind_time,cells,rstep
@@ -58,7 +71,9 @@ SUBROUTINE hydro
   CALL conduit_node_set_path_char8_str(ascent_opts,"actions_file", "probing_actions.yaml")
   CALL ascent_open(my_ascent,ascent_opts)
 
-  
+  unix = c_time(int(0, kind=8))
+  WRITE(g_out_stamps,*) 'start sim ', unix
+
   timerstart = timer()
   DO
     
@@ -107,11 +122,16 @@ SUBROUTINE hydro
     IF(visit_frequency.NE.0) THEN
       IF(MOD(step, visit_frequency).EQ.0) THEN
         vis_time=timer()
+
+        unix = c_time(int(0, kind=8))
+        WRITE(g_out_stamps,*) 'end sim ', unix
+
         ! TODO: accumulate last sim times
         CALL visit(my_ascent, timer()-step_time)
 
         wall_clock=timer() - timerstart
         WRITE(g_out_times,*) '       vis ', step, timer()-vis_time
+        WRITE(g_out_stamps,*) 'start sim ', unix
       ENDIF
     ENDIF
 

@@ -258,13 +258,13 @@ class AscentScene
 {
 protected:
   int m_renderer_count;
-  std::vector< std::vector<double>> m_render_times; // render times per renderer
+  std::vector<std::vector<double> > m_render_times; // render times per renderer
   // color buffer per render per renderer
-  std::vector< std::vector< std::vector<unsigned char>>> m_color_buffers;
+  std::vector<std::vector<std::vector<unsigned char> > > m_color_buffers;
   // depth buffer per render per renderer
-  std::vector< std::vector< std::vector<float>>> m_depth_buffers;
+  std::vector<std::vector<std::vector<float> > > m_depth_buffers;
   // distance camera position to data center per render per renderer
-  std::vector< std::vector<float>> m_depths;
+  std::vector<std::vector<float> > m_depths;
 
   flow::Registry *m_registry;
   AscentScene(){};
@@ -280,13 +280,13 @@ public:
   {
   }
 
-  std::vector< std::vector<double>> *GetRenderTimes()
+  std::vector<std::vector<double> > *GetRenderTimes()
   {
     return &m_render_times;
   }
 
   // return color buffers of all renders of selected renderer 
-  std::vector< std::vector<unsigned char>> *GetColorBuffers(int rendererId)
+  std::vector<std::vector<unsigned char>> *GetColorBuffers(int rendererId)
   {
     if(rendererId >= m_renderer_count)
       ASCENT_ERROR("Trying to access data of non-existend renderer.");
@@ -295,7 +295,7 @@ public:
   }
 
   // return depth buffers of all renders of selected renderer 
-  std::vector< std::vector<float>> *GetDepthBuffers(int rendererId)
+  std::vector<std::vector<float> > *GetDepthBuffers(int rendererId)
   {
     if(rendererId >= m_renderer_count)
       ASCENT_ERROR("Trying to access data of non-existend renderer.");
@@ -352,7 +352,7 @@ public:
       MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
       MPI_Comm_rank(mpi_comm, &rank);
 #endif
-      // TODO: artificial load imbalance
+      // artificial load imbalance
       if (sleep)
       {
         // std::cout << "sleep " << sleep << std::endl;
@@ -362,17 +362,18 @@ public:
       ostringstream oss;
       oss << "key_" << i;
 
+      if (!is_inline)
       {
         vtkh::Renderer *r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
-        auto times = r->GetRenderTimes();
-        m_render_times.push_back(times);
 
+        // NOTE: move costs about 0.02 seconds per node per batch (20 renders)
+        m_render_times.push_back(std::move(r->GetRenderTimes()));
         int size = renders.at(i).GetWidth() * renders.at(i).GetHeight();
         // NOTE: only getting canvas from domain 0 for now
-        m_color_buffers.push_back(r->GetColorBuffers());
-        m_depth_buffers.push_back(r->GetDepthBuffers());
+        m_color_buffers.push_back(std::move(r->GetColorBuffers()));
+        m_depth_buffers.push_back(std::move(r->GetDepthBuffers()));
 
-        m_depths.push_back(r->GetDepths());
+        m_depths.push_back(std::move(r->GetDepths()));
       }
       
       m_registry->consume(oss.str());
@@ -2608,8 +2609,8 @@ ExecScene::~ExecScene()
 void add_images(std::vector<vtkh::Render> *renders, 
                 flow::Graph *graph, 
                 const std::vector<std::vector<double> > *scene_render_times,
-                std::vector< std::vector<unsigned char>> *color_buffers,
-                std::vector< std::vector<float>> *depth_buffers,
+                std::vector<std::vector<unsigned char> > *color_buffers,
+                std::vector<std::vector<float> > *depth_buffers,
                 std::vector<float> *depths)
 {
   if (!graph->workspace().registry().has_entry("image_list"))
@@ -2647,7 +2648,7 @@ void add_images(std::vector<vtkh::Render> *renders,
     // loop over renderers
     for (size_t j = 0; j < scene_render_times->size(); ++j)
     {
-      // HACK: average over render times for now
+      // NOTE: average over render times for now
       if (scene_render_times->at(j).size() > i)
       {
         avg_render_time += scene_render_times->at(j).at(i);
@@ -2712,8 +2713,8 @@ void ExecScene::execute()
 
   std::vector< std::vector<double>> *render_times = scene->GetRenderTimes();
   // NOTE: only domain 0 for now
-  std::vector< std::vector<unsigned char>> *color_buffers = scene->GetColorBuffers(0);
-  std::vector< std::vector<float>> *depth_buffers = scene->GetDepthBuffers(0);
+  std::vector<std::vector<unsigned char> > *color_buffers = scene->GetColorBuffers(0);
+  std::vector<std::vector<float> > *depth_buffers = scene->GetDepthBuffers(0);
   std::vector<float> *depths = scene->GetDepths(0);
 
   // the images should exist now so add them to the image list

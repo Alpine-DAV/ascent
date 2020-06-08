@@ -912,6 +912,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
     }
     displacements.pop_back();
 
+    std::vector<vtkh::Image> results(render_cfg.max_count);
     // loop over images (camera positions)
     for (int j = 0; j < render_cfg.max_count; ++j)
     {
@@ -954,22 +955,26 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
         }
 
         // composite
-        vtkh::Image result = compositor.Composite();
+        results[j] = compositor.Composite();
 
         // TODO: add screen annotations for hybrid (see vtk-h Scene::Render)
         // See vtk-h Renderer::ImageToCanvas() for how to get from result image to canvas.
         // Problem: we still need camera, ranges and color table.
 
         log_time(t_start, "+ compositing image ", mpi_props.rank);
-
-        if (my_vis_rank == 0)
-        {   // write to disk 
-            t_start = std::chrono::system_clock::now();
-            result.Save((*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string());
-            log_time(t_start, "+ save image ", mpi_props.rank);
-        }
     }
     log_time(t_start0, "+ compositing total ", mpi_props.rank);
+
+    log_global_time("end compositing", mpi_props.rank);
+    if (my_vis_rank == 0)
+    {   // write to disk 
+        t_start0 = std::chrono::system_clock::now();
+        for (int j = 0; j < results.size(); ++j)
+            results[j].Save((*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string());
+
+        log_time(t_start0, "+ save image ", mpi_props.rank);
+        log_global_time("end writeToDisk", mpi_props.rank);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1290,7 +1295,6 @@ void hybrid_render(const MPI_Properties mpi_props,
         hybrid_compositing(render_chunks_probe, render_chunks_sim, render_chunks_vis, 
                            g_render_counts, src_ranks, depth_id_order, recv_counts, my_vis_rank,
                            my_render_recv_cnt, my_recv_cnt, render_cfg, mpi_props);
-        log_global_time("end compositing", mpi_props.rank);
 
         // Keep the vis node ascent instances open until render chunks have been processed.
         for (int i = 0; i < my_recv_cnt; i++)
@@ -1432,7 +1436,7 @@ void hybrid_render(const MPI_Properties mpi_props,
     } // end sim node
 
     log_time(start0, "___splitAndRun ", mpi_props.rank);
-    log_global_time("end hybridRender", mpi_props.rank);
+    // log_global_time("end hybridRender", mpi_props.rank);
 #endif // ASCENT_MPI_ENABLED
 }
 
@@ -1521,11 +1525,12 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     }
 
     int sim_count = 0;
+    bool is_inline = false;
+    if (probing_factor >= 1.0) // probing_factor of 1 implies inline rendering only
+        is_inline = true;
+
 #if ASCENT_MPI_ENABLED
     sim_count = int(std::round(world_size * node_split));
-    int color = 0;
-    if (world_rank >= sim_count)
-        color = 1;
     const int vis_count = world_size - sim_count;
 
     // construct simulation comm
@@ -1547,6 +1552,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     MPI_Comm vis_comm;
     MPI_Comm_create_group(mpi_comm_world, vis_group, 1, &vis_comm);
 
+    // only sim nodes have valid data
     ascent_opt["mpi_comm"] = MPI_Comm_c2f(sim_comm);
 #endif // ASCENT_MPI_ENABLED
 
@@ -1555,7 +1561,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     Ascent ascent_probing;
     Node render_chunks;
     // run probing only if this is a sim node
-    if (world_rank < sim_count && probing_factor > 0.0)
+    if ((world_rank < sim_count && probing_factor > 0.0) || (probing_factor >= 1.0))
     {
         auto start = std::chrono::system_clock::now();
         ascent_opt["runtime/type"] = "ascent"; // set to main runtime
@@ -1563,7 +1569,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_opt["probing_factor"] = probing_factor;
         ascent_opt["render_count"] = phi * theta;
         ascent_opt["render_offset"] = 0;
-        ascent_opt["insitu_type"] = (probing_factor >= 1.0) ? "inline" : "hybrid";
+        ascent_opt["insitu_type"] = is_inline ? "inline" : "hybrid";
         ascent_opt["sleep"] = world_rank == 0 ? SLEEP : 0;
 
         // all sim nodes run probing in a new ascent instance
@@ -1571,35 +1577,38 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_probing.publish(m_data);        // pass on data pointer
         ascent_probing.execute(probe_actions); // pass on actions
 
-        conduit::Node info;
-        ascent_probing.info(info);
-        NodeIterator itr = info["render_times"].children();
-        while (itr.has_next())
+        if (!is_inline)
         {
-            Node &t = itr.next();
-            render_times.push_back(t.to_double());
+            conduit::Node info;
+            ascent_probing.info(info);
+            NodeIterator itr = info["render_times"].children();
+            while (itr.has_next())
+            {
+                Node &t = itr.next();
+                render_times.push_back(t.to_double());
+            }
+
+            render_chunks["depths"].set_external(info["depths"]);
+            render_chunks["color_buffers"].set_external(info["color_buffers"]);
+            render_chunks["depth_buffers"].set_external(info["depth_buffers"]);
+            render_chunks["render_file_names"].set_external(info["render_file_names"]);
+
+            int probing_images = int(std::round(probing_factor * phi * theta));
+            log_time(start, "probing " + std::to_string(probing_images) + " ", world_rank);
+            // TODO: atm: use total time measurement instead of image times
+            render_times.clear();
+            std::chrono::duration<double> elapsed = std::chrono::system_clock::now() - start;
+            render_times.push_back(elapsed.count() * 1000.0);
         }
-
-        render_chunks["depths"].set_external(info["depths"]);
-        render_chunks["color_buffers"].set_external(info["color_buffers"]);
-        render_chunks["depth_buffers"].set_external(info["depth_buffers"]);
-        render_chunks["render_file_names"].set_external(info["render_file_names"]);
-
-        int probing_images = int(std::round(probing_factor * phi * theta));
-        log_time(start, "probing " + std::to_string(probing_images) + " ", world_rank);
-        // TODO: test: use total time measurement instead of image times
-        render_times.clear();
-        std::chrono::duration<double> elapsed = std::chrono::system_clock::now() - start;
-        render_times.push_back(elapsed.count() * 1000.0);
     }
     else
     {
-        render_times.push_back(100.f); // dummy value for in transit test only
+        render_times.push_back(100.f); // dummy value for in transit only test
     }
 
     log_global_time("end probing", world_rank);
 #if ASCENT_MPI_ENABLED
-    if (probing_factor < 1.0) // probing_factor of 1 implies inline rendering only
+    if (!is_inline) 
     {
         MPI_Properties mpi_props(world_size, world_rank,  sim_count, world_size - sim_count, 
                                  mpi_comm_world, vis_comm);

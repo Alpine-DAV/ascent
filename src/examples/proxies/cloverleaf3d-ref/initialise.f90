@@ -35,6 +35,7 @@ SUBROUTINE initialise
 !$ INTEGER :: OMP_GET_THREAD_NUM,OMP_GET_NUM_THREADS
   CHARACTER(LEN=g_len_max) :: ltmp
   CHARACTER(20) out_times_name
+  CHARACTER(21) out_stamps_name
 
   IF(parallel%boss)THEN
     g_out=get_unit(dummy)
@@ -49,6 +50,11 @@ SUBROUTINE initialise
   WRITE(out_times_name, '(A,I4.4)') 'clover_times.out', parallel%task
   OPEN(FILE=out_times_name,ACTION='WRITE',UNIT=g_out_times,IOSTAT=ios)
   IF(ios.NE.0) CALL report_error('initialise','Error opening clover_times.out file.')
+
+  g_out_stamps=get_unit(dummy)
+  WRITE(out_stamps_name, '(A,I4.4)') 'clover_stamps.out', parallel%task
+  OPEN(FILE=out_stamps_name,ACTION='WRITE',UNIT=g_out_stamps,IOSTAT=ios)
+  IF(ios.NE.0) CALL report_error('initialise','Error opening clover_stamps.out file.')
 
 !$OMP PARALLEL
   IF(parallel%boss)THEN
