@@ -42,9 +42,11 @@ class Ascent(Package, CudaPackage):
     version('develop',
             branch='develop',
             submodules=True,
-            prefered=True)
+            preferred=True)
 
     # these are commented out b/c if they are active they undermine using develop
+    # but this only undermined us because 'preferred' was mispelled 'prefered',
+    # which now has been fixed
     # develop uses the set of deps that we keep healthy
     # version('0.5.1', sha256='6ad426d92a37dc9466e55e8c0cc5fccf02d0107d1035f8ee1c43fb1539592174')
     # version('0.5.0', sha256='2837b7371db3ac1bcc31a479d7cf0eb62a503cacadfa4187061502b3c4a89fa0')
