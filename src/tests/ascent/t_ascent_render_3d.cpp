@@ -1499,7 +1499,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     std::string msg = "An example of creating a render, specifying all camera parameters.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file1));
+    EXPECT_TRUE(check_test_image(output_file1, 0.01f));
 }
 
 //-----------------------------------------------------------------------------
