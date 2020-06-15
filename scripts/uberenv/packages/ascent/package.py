@@ -42,9 +42,11 @@ class Ascent(Package, CudaPackage):
     version('develop',
             branch='develop',
             submodules=True,
-            prefered=True)
+            preferred=True)
 
     # these are commented out b/c if they are active they undermine using develop
+    # but this only undermined us because 'preferred' was mispelled 'prefered',
+    # which now has been fixed
     # develop uses the set of deps that we keep healthy
     # version('0.5.1', sha256='6ad426d92a37dc9466e55e8c0cc5fccf02d0107d1035f8ee1c43fb1539592174')
     # version('0.5.0', sha256='2837b7371db3ac1bcc31a479d7cf0eb62a503cacadfa4187061502b3c4a89fa0')
@@ -121,15 +123,15 @@ class Ascent(Package, CudaPackage):
     # TPLs for Runtime Features
     #############################
 
-    depends_on("vtk-h@0.5.7",             when="+vtkh")
-    depends_on("vtk-h@0.5.7~openmp",      when="+vtkh~openmp")
-    depends_on("vtk-h@0.5.7+cuda+openmp", when="+vtkh+cuda+openmp")
-    depends_on("vtk-h@0.5.7+cuda~openmp", when="+vtkh+cuda~openmp")
+    depends_on("vtk-h@0.6.0",             when="+vtkh")
+    depends_on("vtk-h@0.6.0~openmp",      when="+vtkh~openmp")
+    depends_on("vtk-h@0.6.0+cuda+openmp", when="+vtkh+cuda+openmp")
+    depends_on("vtk-h@0.6.0+cuda~openmp", when="+vtkh+cuda~openmp")
 
-    depends_on("vtk-h@0.5.7~shared",             when="~shared+vtkh")
-    depends_on("vtk-h@0.5.7~shared~openmp",      when="~shared+vtkh~openmp")
-    depends_on("vtk-h@0.5.7~shared+cuda",        when="~shared+vtkh+cuda")
-    depends_on("vtk-h@0.5.7~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
+    depends_on("vtk-h@0.6.0~shared",             when="~shared+vtkh")
+    depends_on("vtk-h@0.6.0~shared~openmp",      when="~shared+vtkh~openmp")
+    depends_on("vtk-h@0.6.0~shared+cuda",        when="~shared+vtkh+cuda")
+    depends_on("vtk-h@0.6.0~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
 
     # mfem
     depends_on("mfem@4.0.2~threadsafe~openmp+shared+mpi+conduit", when="+shared+mfem+mpi")

@@ -117,30 +117,6 @@ public:
     virtual void   execute();
 };
 
-
-
-//-----------------------------------------------------------------------------
-class ASCENT_API VTKHDomainIds: public ::flow::Filter
-{
-public:
-    VTKHDomainIds();
-    virtual ~VTKHDomainIds();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class ASCENT_API VTKHUnionDomainIds: public ::flow::Filter
-{
-public:
-    VTKHUnionDomainIds();
-    virtual ~VTKHUnionDomainIds();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
 //-----------------------------------------------------------------------------
 class ASCENT_API CreatePlot : public ::flow::Filter
 {
