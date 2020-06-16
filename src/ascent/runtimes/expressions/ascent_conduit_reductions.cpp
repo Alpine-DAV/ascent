@@ -56,7 +56,6 @@
 #include <cstring>
 #include <limits>
 
-
 #undef ASCENT_USE_OPENMP
 
 //-----------------------------------------------------------------------------
