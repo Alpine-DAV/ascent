@@ -57,7 +57,7 @@
 #include <ascent_probing_runtime.hpp>
 #include <ascent_flow_runtime.hpp>
 #include <runtimes/ascent_main_runtime.hpp>
-#include <runtimes/ascent_PROBING_runtime.hpp>
+#include <runtimes/ascent_probing_runtime.hpp>
 
 #if defined(ASCENT_VTKH_ENABLED)
     #include <vtkh/vtkh.hpp>

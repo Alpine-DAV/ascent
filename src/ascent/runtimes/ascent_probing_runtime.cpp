@@ -60,6 +60,9 @@
 #include <numeric>
 #include <cmath>
 #include <thread>
+#include <valarray>
+#include <algorithm>
+#include <ostream>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -200,16 +203,16 @@ void ProbingRuntime::Publish(const conduit::Node &data)
 }
 
 
-void debug_break()
-{
-    volatile int vi = 0;
-    char hostname[256];
-    gethostname(hostname, sizeof(hostname));
-    printf("PID %d on %s ready for attach\n", getpid(), hostname);
-    fflush(stdout);
-    while (0 == vi)
-        sleep(5);
-}
+// void debug_break()
+// {
+//     volatile int vi = 0;
+//     char hostname[256];
+//     gethostname(hostname, sizeof(hostname));
+//     printf("PID %d on %s ready for attach\n", getpid(), hostname);
+//     fflush(stdout);
+//     while (0 == vi)
+//         sleep(5);
+// }
 
 
 // structs
