@@ -322,7 +322,10 @@ if (ENABLE_SERIAL)
                           vtkm_rendering
                           vtkm_filter
                           vtkm_worklet
+                          vtkm_source
+                          vtkm_io
                           vtkm_cont
+                          vtkmdiympi_nompi
                           )
 
       source_objects(${binary_dir}
