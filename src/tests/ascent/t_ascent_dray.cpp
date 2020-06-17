@@ -467,7 +467,6 @@ TEST(ascent_devil_ray, test_scalar_rendering)
     //
     // Run Ascent
     //
-
     Ascent ascent;
 
     Node ascent_opts;
