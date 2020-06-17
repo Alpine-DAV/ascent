@@ -319,11 +319,11 @@ if (ENABLE_SERIAL)
                           vtkh_core
                           vtkh_lodepng
                           vtkh_utils
+                          vtkm_io
                           vtkm_rendering
                           vtkm_filter
                           vtkm_worklet
                           vtkm_source
-                          vtkm_io
                           vtkm_cont
                           vtkmdiympi_nompi
                           )
@@ -429,10 +429,13 @@ if(MPI_FOUND)
                           vtkh_core_mpi
                           vtkh_lodepng
                           vtkh_utils_mpi
+                          vtkm_io
                           vtkm_rendering
                           vtkm_filter
                           vtkm_worklet
+                          vtkm_source
                           vtkm_cont
+                          vtkmdiympi_nompi
                           )
 
       source_objects(${binary_dir}
@@ -442,6 +445,7 @@ if(MPI_FOUND)
                      locations_on_disk)
 
       separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
+      #message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
       add_custom_command(
         TARGET ascent_mpi PRE_LINK
         DEPENDS ascent_mpi rover_mpi
