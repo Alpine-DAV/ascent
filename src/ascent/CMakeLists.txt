@@ -62,7 +62,7 @@ if(FORTRAN_FOUND)
     set(ASCENT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
 endif()
 
-set(ASCENT_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_client)
+set(ASCENT_SOURCE_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
 
 set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
 set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
@@ -70,12 +70,13 @@ set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
 set(ASCENT_HDF5_ENABLED ${HDF5_FOUND})
 set(ASCENT_ADIOS_ENABLED ${ADIOS_FOUND})
 set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
+set(ASCENT_DRAY_ENABLED ${DRAY_FOUND})
+set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
 
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
     set(ASCENT_VTKM_USE_OPENMP ${OPENMP_FOUND})
 endif()
-
 
 set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
 
@@ -91,6 +92,7 @@ set(ascent_sources
     runtimes/ascent_main_runtime.cpp
     runtimes/ascent_empty_runtime.cpp
     runtimes/ascent_expression_eval.cpp
+    runtimes/ascent_transmogrifier.cpp
     runtimes/expressions/ascent_blueprint_architect.cpp
     runtimes/expressions/ascent_conduit_reductions.cpp
     runtimes/expressions/ascent_expression_filters.cpp
@@ -104,12 +106,16 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp
     runtimes/flow_filters/ascent_runtime_trigger_filters.cpp
     runtimes/flow_filters/ascent_runtime_query_filters.cpp
+    runtimes/flow_filters/ascent_runtime_utils.cpp
     # utils
+    utils/ascent_actions_utils.cpp
     utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
+    utils/ascent_logging.cpp
     utils/ascent_png_compare.cpp
     utils/ascent_png_decoder.cpp
     utils/ascent_png_encoder.cpp
+    utils/ascent_mpi_utils.cpp
     utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp
     # hola
@@ -125,6 +131,7 @@ set(ascent_headers
     ascent_runtime.hpp
     runtimes/ascent_empty_runtime.hpp
     runtimes/ascent_expression_eval.hpp
+    runtimes/ascent_transmogrifier.hpp
     runtimes/expressions/ascent_blueprint_architect.hpp
     runtimes/expressions/ascent_conduit_reductions.hpp
     runtimes/expressions/ascent_expression_filters.hpp
@@ -140,13 +147,16 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
     runtimes/flow_filters/ascent_runtime_trigger_filters.hpp
     runtimes/flow_filters/ascent_runtime_query_filters.hpp
+    runtimes/flow_filters/ascent_runtime_utils.hpp
     # utils
+    utils/ascent_actions_utils.hpp
     utils/ascent_logging.hpp
     utils/ascent_file_system.hpp
     utils/ascent_block_timer.hpp
     utils/ascent_png_compare.hpp
     utils/ascent_png_decoder.hpp
     utils/ascent_png_encoder.hpp
+    utils/ascent_mpi_utils.hpp
     utils/ascent_string_utils.hpp
     utils/ascent_web_interface.hpp
     # hola
@@ -155,16 +165,22 @@ set(ascent_headers
 if(VTKM_FOUND)
 
     set(ascent_vtkh_dep_headers
+        runtimes/ascent_data_object.hpp
         runtimes/ascent_vtkh_data_adapter.hpp
+        runtimes/ascent_vtkh_collection.hpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
+        runtimes/flow_filters/ascent_runtime_rendering_filters.hpp
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
 
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
         runtimes/ascent_main_runtime.hpp)
 
     set(ascent_vtkh_dep_sources
+        runtimes/ascent_data_object.cpp
         runtimes/ascent_vtkh_data_adapter.cpp
+        runtimes/ascent_vtkh_collection.cpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
+        runtimes/flow_filters/ascent_runtime_rendering_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
         runtimes/ascent_main_runtime.cpp)
@@ -176,7 +192,9 @@ if(VTKM_FOUND)
     foreach( _itm ${ascent_vtkh_dep_sources} )
         list(APPEND ascent_sources ${_itm})
     endforeach()
-
+else()
+    list(APPEND ascent_headers runtimes/ascent_data_object.hpp)
+    list(APPEND ascent_sources runtimes/ascent_data_object.cpp)
 endif()
 
 if(MFEM_FOUND)
@@ -185,6 +203,13 @@ if(MFEM_FOUND)
     list(APPEND ascent_sources runtimes/ascent_mfem_data_adapter.cpp)
 endif()
 
+#for now, we depend on compositing so we need vtkh
+if(DRAY_FOUND AND VTKM_FOUND)
+  list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
+  list(APPEND ascent_headers runtimes/ascent_dray_data_adapter.hpp)
+  list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
+  list(APPEND ascent_sources runtimes/ascent_dray_data_adapter.cpp)
+endif()
 
 ##############################
 # optional features
@@ -193,11 +218,11 @@ endif()
 if(FORTRAN_FOUND)
     add_library(ascent_fortran OBJECT fortran/ascent_fortran.f90)
     list(APPEND ascent_sources $<TARGET_OBJECTS:ascent_fortran>)
-    
+
     #####################################################
     # Setup install to copy the fortran modules
     #####################################################
-    install(FILES 
+    install(FILES
             ${CMAKE_Fortran_MODULE_DIRECTORY}/ascent.mod
             DESTINATION include/ascent)
 endif()
@@ -209,7 +234,13 @@ endif()
 # support was selected
 ################################
 if(PYTHON_FOUND)
-    add_subdirectory(python)
+   add_subdirectory(python)
+
+   list(APPEND ascent_sources
+        runtimes/flow_filters/ascent_python_script_filter.cpp)
+
+   list(APPEND ascent_headers
+        runtimes/flow_filters/ascent_python_script_filter.hpp)
 endif()
 
 ##################
@@ -244,6 +275,10 @@ if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs openmp)
 endif()
 
+if(DRAY_FOUND AND VTKM_FOUND)
+    list(APPEND ascent_thirdparty_libs dray)
+endif()
+
 ##########################################
 # Build a serial version of ascent
 ##########################################
@@ -253,11 +288,14 @@ if (ENABLE_SERIAL)
         SOURCES     ${ascent_sources}
         HEADERS     ${ascent_headers}
         DEPENDS_ON  ${ascent_thirdparty_libs})
-    
+
+    set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
+
     if(VTKM_FOUND)
         set(ascent_device_sources ${ascent_vtkh_dep_sources})
         list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
-    
+
         vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
     endif()
     # install target for serial ascent lib
@@ -267,6 +305,42 @@ if (ENABLE_SERIAL)
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib
     )
+
+
+    if(VTKM_FOUND AND CUDA_FOUND)
+      set(locations_on_disk "")
+
+      set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent.dir")
+
+      set(targets_to_link rover
+                          vtkh_rendering
+                          vtkh_compositing
+                          vtkh_filters
+                          vtkh_core
+                          vtkh_lodepng
+                          vtkh_utils
+                          vtkm_rendering
+                          vtkm_filter
+                          vtkm_worklet
+                          vtkm_cont
+                          )
+
+      source_objects(${binary_dir}
+                     "${ascent_device_sources}"
+                     "${CMAKE_BINARY_DIR}/lib/librover.a"
+                     "${targets_to_link}"
+                     locations_on_disk)
+
+      separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
+      add_custom_command(
+        TARGET ascent PRE_LINK
+        DEPENDS ascent rover
+        COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o
+        COMMENT "manual device link step for Ascent"
+        )
+      install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm.o DESTINATION lib)
+    endif()
+
 endif()
 
 ################################################
@@ -276,6 +350,22 @@ if(MPI_FOUND)
 
     # req'd libs
     set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi)
+
+    if (ENABLE_BABELFLOW)
+	    if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+		add_compile_definitions("BABELFLOW_DEBUG")
+	    endif()
+
+	   # TODO get everything into one cpp and one hpp files
+	    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_filters.cpp)
+	    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
+
+	    list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
+	    list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
+	    add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
+            include_directories(${BABELFLOW_INCLUDE_DIRS})
+            include_directories(${PMT_INCLUDE_DIRS})
+    endif ()
 
     # hola mpi support is only in par (mpi ver)
 
@@ -308,6 +398,8 @@ if(MPI_FOUND)
         HEADERS     ${ascent_headers} ${ascent_mpi_headers}
         DEPENDS_ON  ${ascent_mpi_thirdparty_libs})
 
+    set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
 
     if(VTKM_FOUND)
         vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_device_sources})
@@ -322,11 +414,51 @@ if(MPI_FOUND)
             RUNTIME DESTINATION lib
     )
 
+    if(VTKM_FOUND AND CUDA_FOUND)
+      set(locations_on_disk "")
+
+      set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
+
+      set(targets_to_link rover
+                          vtkh_rendering_mpi
+                          vtkh_compositing_mpi
+                          vtkh_filters_mpi
+                          vtkh_core_mpi
+                          vtkh_lodepng
+                          vtkh_utils_mpi
+                          vtkm_rendering
+                          vtkm_filter
+                          vtkm_worklet
+                          vtkm_cont
+                          )
+
+      source_objects(${binary_dir}
+                     "${ascent_device_sources}"
+                     "${CMAKE_BINARY_DIR}/lib/librover_mpi.a"
+                     "${targets_to_link}"
+                     locations_on_disk)
+
+      separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
+      add_custom_command(
+        TARGET ascent_mpi PRE_LINK
+        DEPENDS ascent_mpi rover_mpi
+        COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
+        COMMENT "manual device link step for Ascent parallel"
+        )
+      install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm_mpi.o DESTINATION lib)
+    endif()
+
 endif()
 
 ########################################
 # Extra Install Targets for ascent
 ########################################
 install(FILES ${ascent_headers} DESTINATION include/ascent)
+
+##############################################################
+# install files needed for cinema viewer and web client
+#############################################################
+install(DIRECTORY web_clients/
+        DESTINATION share/ascent/web_clients/)
 
 

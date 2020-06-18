@@ -31,4 +31,3 @@ or the following files in the Ascent source tree:
 Changelog
 =========
 - [Changelog](/CHANGELOG.md)
-

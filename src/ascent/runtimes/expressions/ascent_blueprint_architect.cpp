@@ -897,7 +897,7 @@ field_entropy(const conduit::Node &hist)
       entropy += -p * std::log(p);
     }
   }
-  
+
   conduit::Node res;
   res["value"] = entropy;
   return res;
@@ -982,7 +982,7 @@ conduit::Node quantile(const conduit::Node &cdf,
   // i and j are the bin boundaries
   double i = min_val + bin * (max_val - min_val) / num_bins;
   double j = min_val + (bin + 1) * (max_val - min_val) / num_bins;
-  
+
   if(interpolation == "linear") {
     if(cdf_bins[bin+1] - cdf_bins[bin] == 0)
     {
@@ -992,7 +992,7 @@ conduit::Node quantile(const conduit::Node &cdf,
     {
       res["value"] = i + (j - i) * (val - cdf_bins[bin]) / (cdf_bins[bin+1] - cdf_bins[bin]);
     }
-  } 
+  }
   else if(interpolation == "lower")
   {
     res["value"] = i;
@@ -1009,6 +1009,52 @@ conduit::Node quantile(const conduit::Node &cdf,
   {
     res["value"] = (val - i < j - val)? i : j;
   }
+
+  return res;
+}
+
+conduit::Node
+field_nan_count(const conduit::Node &dataset,
+                const std::string &field)
+{
+  double nan_count = 0;
+
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/"+field))
+    {
+      const std::string path = "fields/" + field + "/values";
+      conduit::Node res;
+      res = array_nan_count(dom[path]);
+      nan_count += res["value"].to_float64();
+    }
+  }
+  conduit::Node res;
+  res["value"] = nan_count;
+
+  return res;
+}
+
+conduit::Node
+field_inf_count(const conduit::Node &dataset,
+                const std::string &field)
+{
+  double inf_count = 0;
+
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/"+field))
+    {
+      const std::string path = "fields/" + field + "/values";
+      conduit::Node res;
+      res = array_inf_count(dom[path]);
+      inf_count += res["value"].to_float64();
+    }
+  }
+  conduit::Node res;
+  res["value"] = inf_count;
 
   return res;
 }
@@ -1074,7 +1120,7 @@ field_min(const conduit::Node &dataset,
   MinLoc minloc = {min_value, rank};
   MinLoc minloc_res;
   MPI_Allreduce( &minloc, &minloc_res, 1, MPI_DOUBLE_INT, MPI_MINLOC, mpi_comm);
-  min_value = minloc.value;
+  min_value = minloc_res.value;
 
   double * ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, minloc_res.rank, mpi_comm);
@@ -1096,7 +1142,7 @@ conduit::Node
 field_sum(const conduit::Node &dataset,
           const std::string &field)
 {
-  
+
   double sum = 0.;
   long long int count = 0;
 
@@ -1211,7 +1257,7 @@ field_max(const conduit::Node &dataset,
   MaxLoc maxloc = {max_value, rank};
   MaxLoc maxloc_res;
   MPI_Allreduce( &maxloc, &maxloc_res, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mpi_comm);
-  max_value = maxloc.value;
+  max_value = maxloc_res.value;
 
   double * ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, maxloc_res.rank, mpi_comm);

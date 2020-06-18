@@ -56,11 +56,16 @@
 #include <ascent_empty_runtime.hpp>
 #include <ascent_flow_runtime.hpp>
 #include <runtimes/ascent_main_runtime.hpp>
+#include <flow.hpp>
 
 #if defined(ASCENT_VTKH_ENABLED)
     #include <vtkh/vtkh.hpp>
 #endif
 
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#include <conduit_relay_mpi.hpp>
+#endif
 using namespace conduit;
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -83,6 +88,7 @@ Ascent::Ascent()
   m_forward_exceptions(false),
   m_actions_file("<<UNSET>>")
 {
+  m_options["mpi_comm"] = -1;
 }
 
 //-----------------------------------------------------------------------------
@@ -101,36 +107,66 @@ Ascent::open()
 
 //-----------------------------------------------------------------------------
 void
-CheckForSettingsFile(std::string file_name, conduit::Node &node, bool merge)
+CheckForSettingsFile(std::string file_name,
+                     conduit::Node &node,
+                     bool merge,
+                     int mpi_comm_id)
 {
-    if(!conduit::utils::is_file(file_name))
+    int comm_size = 1;
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    if(mpi_comm_id == -1)
     {
-        return;
+      // do nothing, an error will be thrown later
+      // so we can respect the exception handling
+      return;
+    }
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_size(mpi_comm, &comm_size);
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    int has_file = 0;
+    if(rank == 0 && conduit::utils::is_file(file_name))
+    {
+      has_file = 1;
+    }
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Bcast(&has_file, 1, MPI_INT, 0, mpi_comm);
+#endif
+    if(has_file == 0)
+    {
+      return;
     }
 
-    std::string curr,next;
+    if(rank == 0)
+    {
+      std::string curr,next;
 
-    std::string protocol = "json";
-    // if file ends with yaml, use yaml as proto
-    conduit::utils::rsplit_string(file_name,
-                                  ".",
-                                  curr,
-                                  next);
-    if(curr == "yaml")
-    {
-        protocol = "yaml";
-    }
+      std::string protocol = "json";
+      // if file ends with yaml, use yaml as proto
+      conduit::utils::rsplit_string(file_name,
+                                    ".",
+                                    curr,
+                                    next);
+      if(curr == "yaml")
+      {
+          protocol = "yaml";
+      }
 
-    conduit::Node file_node;
-    file_node.load(file_name, protocol);
-    if(merge)
-    {
-      node.update(file_node);
+      conduit::Node file_node;
+      file_node.load(file_name, protocol);
+      if(merge)
+      {
+        node.update(file_node);
+      }
+      else
+      {
+        node = file_node;
+      }
     }
-    else
-    {
-      node = file_node;
-    }
+#ifdef ASCENT_MPI_ENABLED
+    relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -144,8 +180,6 @@ Ascent::open(const conduit::Node &options)
             ASCENT_ERROR("Ascent Runtime already initialized!");
         }
 
-        Node processed_opts(options);
-
         std::string opts_file = "ascent_options.json";
 
         if(!conduit::utils::is_file(opts_file))
@@ -153,12 +187,32 @@ Ascent::open(const conduit::Node &options)
             opts_file = "ascent_options.yaml";
         }
 
-        CheckForSettingsFile(opts_file, processed_opts, true);
+        Node processed_opts(options);
 
-        if(options.has_path("messages") &&
-           options["messages"].dtype().is_string() )
+        int comm_id = -1;
+        if(options.has_path("mpi_comm"))
         {
-            std::string msgs_opt = options["messages"].as_string();
+          comm_id = options["mpi_comm"].to_int32();
+        }
+
+        CheckForSettingsFile(opts_file,
+                             processed_opts,
+                             true,
+                             comm_id);
+
+        m_options = processed_opts;
+
+        // gaurd against funky things happening in the
+        // user provided options
+        if(options.has_path("mpi_comm"))
+        {
+          m_options["mpi_comm"] = options["mpi_comm"];
+        }
+
+        if(m_options.has_path("messages") &&
+           m_options["messages"].dtype().is_string() )
+        {
+            std::string msgs_opt = m_options["messages"].as_string();
             if( msgs_opt == "verbose")
             {
                 m_verbose_msgs = true;
@@ -169,10 +223,10 @@ Ascent::open(const conduit::Node &options)
             }
         }
 
-        if(options.has_path("exceptions") &&
-           options["exceptions"].dtype().is_string() )
+        if(m_options.has_path("exceptions") &&
+           m_options["exceptions"].dtype().is_string() )
         {
-            std::string excp_opt = options["exceptions"].as_string();
+            std::string excp_opt = m_options["exceptions"].as_string();
             if( excp_opt == "catch")
             {
                 m_forward_exceptions = false;
@@ -183,10 +237,10 @@ Ascent::open(const conduit::Node &options)
             }
         }
 
-        if(options.has_path("actions_file") &&
-           options["actions_file"].dtype().is_string() )
+        if(m_options.has_path("actions_file") &&
+           m_options["actions_file"].dtype().is_string() )
         {
-            m_actions_file = options["actions_file"].as_string();
+            m_actions_file = m_options["actions_file"].as_string();
         }
 
 
@@ -195,11 +249,11 @@ Ascent::open(const conduit::Node &options)
 
         std::string runtime_type = cfg["default_runtime"].as_string();
 
-        if(processed_opts.has_path("runtime"))
+        if(m_options.has_path("runtime"))
         {
-            if(processed_opts.has_path("runtime/type"))
+            if(m_options.has_path("runtime/type"))
             {
-                runtime_type = processed_opts["runtime/type"].as_string();
+                runtime_type = m_options["runtime/type"].as_string();
             }
         }
 
@@ -210,10 +264,10 @@ Ascent::open(const conduit::Node &options)
         else if(runtime_type == "ascent")
         {
             m_runtime = new AscentRuntime();
-            if(processed_opts.has_path("runtime/vtkm/backend"))
+            if(m_options.has_path("runtime/vtkm/backend"))
             {
     #if defined(ASCENT_VTKH_ENABLED)
-              std::string backend = processed_opts["runtime/vtkm/backend"].as_string();
+              std::string backend = m_options["runtime/vtkm/backend"].as_string();
               if(backend == "serial")
               {
                 vtkh::ForceSerial();
@@ -247,7 +301,7 @@ Ascent::open(const conduit::Node &options)
                            << " passed via 'runtime' open option.");
         }
 
-        m_runtime->Initialize(processed_opts);
+        m_runtime->Initialize(m_options);
 
         // don't print info messages unless we are using verbose
         // Runtimes may set their own handlers in initialize, so
@@ -319,6 +373,7 @@ Ascent::execute(const conduit::Node &actions)
         if(m_runtime != NULL)
         {
             Node processed_actions(actions);
+
             if(m_actions_file == "<<UNSET>>")
             {
                 m_actions_file = "ascent_actions.json";
@@ -328,8 +383,28 @@ Ascent::execute(const conduit::Node &actions)
                     m_actions_file = "ascent_actions.yaml";
                 }
             }
+            else if(m_actions_file != "ascent_actions.json" &&
+                    m_actions_file != "ascent_actions.yaml" &&
+                    m_actions_file != "")
+            {
+                // an actions file has been set by the user
+                // so we better let them know if we don't find
+                // it
+                if(!conduit::utils::is_file(m_actions_file))
+                {
+                    ASCENT_ERROR("An actions file '"
+                                 <<m_actions_file<<"' was specified "
+                                 " but could not be found. Please "
+                                 "check if the file is in the current "
+                                 "directory or provide an absolute path.")
+                }
+            }
 
-            CheckForSettingsFile(m_actions_file, processed_actions, false);
+            CheckForSettingsFile(m_actions_file,
+                                 processed_actions,
+                                 false,
+                                 m_options["mpi_comm"].to_int32());
+
             m_runtime->Execute(processed_actions);
         }
         else
@@ -491,7 +566,7 @@ about(conduit::Node &n)
     n["version"] = ASCENT_VERSION;
 
 #ifdef ASCENT_GIT_SHA1
-    n["git_sha1"] = CONDUIT_GIT_SHA1;
+    n["git_sha1"] = ASCENT_GIT_SHA1;
 #endif
 
     n["compilers/cpp"] = ASCENT_CPP_COMPILER;
@@ -510,6 +585,12 @@ about(conduit::Node &n)
     n["system"] = ASCENT_SYSTEM_TYPE;
     n["install_prefix"] = ASCENT_INSTALL_PREFIX;
     n["license"] = ASCENT_LICENSE_TEXT;
+
+    std::string install_prefix = n["install_prefix"].as_string();
+    std::string web_root = utils::join_file_path(install_prefix,"share");
+    web_root = utils::join_file_path(web_root,"ascent");
+    web_root = utils::join_file_path(web_root,"web_clients");
+    n["web_client_root"] =  web_root;
 
 #if defined(ASCENT_MPI_ENABLED)
     n["mpi"] = "enabled";
@@ -552,9 +633,24 @@ about(conduit::Node &n)
      n["runtimes/ascent/vtkm/status"] = "disabled";
 #endif
 
+#if defined(ASCENT_MFEM_ENABLED)
+    n["runtimes/ascent/mfem"] = "enabled";
+#else
+    n["runtimes/ascent/mfem"] = "disabled";
+#endif
+
+#if defined(ASCENT_HDF5_ENABLED)
+    n["runtimes/ascent/hdf5"] = "enabled";
+#else
+    n["runtimes/ascent/hdf5"] = "disabled";
+#endif
+
+
     n["runtimes/flow/status"] = "enabled";
 
     n["default_runtime"] = "ascent";
+
+
 }
 
 

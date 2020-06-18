@@ -1,0 +1,21 @@
+#An example of using an relay extract to save the results of  a pipeline to the file system.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "contour"
+        params: 
+          field: "radial_vert"
+          iso_values: 250.0
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      type: "relay"
+      pipeline: "pl1"
+      params: 
+        path: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_hd5f_iso"
+- 
+  action: "execute"

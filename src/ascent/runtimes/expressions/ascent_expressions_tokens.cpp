@@ -1,6 +1,6 @@
-#line 2 "tokens.cpp"
+#line 1 "tokens.cpp"
 
-#line 4 "tokens.cpp"
+#line 3 "tokens.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -8,11 +8,17 @@
 
 #define yy_create_buffer ascent_create_buffer
 #define yy_delete_buffer ascent_delete_buffer
-#define yy_flex_debug ascent_flex_debug
+#define yy_scan_buffer ascent_scan_buffer
+#define yy_scan_string ascent_scan_string
+#define yy_scan_bytes ascent_scan_bytes
 #define yy_init_buffer ascent_init_buffer
 #define yy_flush_buffer ascent_flush_buffer
 #define yy_load_buffer_state ascent_load_buffer_state
 #define yy_switch_to_buffer ascent_switch_to_buffer
+#define yypush_buffer_state ascentpush_buffer_state
+#define yypop_buffer_state ascentpop_buffer_state
+#define yyensure_buffer_stack ascentensure_buffer_stack
+#define yy_flex_debug ascent_flex_debug
 #define yyin ascentin
 #define yyleng ascentleng
 #define yylex ascentlex
@@ -27,10 +33,244 @@
 
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
-#define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 37
+#define YY_FLEX_MINOR_VERSION 6
+#define YY_FLEX_SUBMINOR_VERSION 4
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
+#endif
+
+#ifdef yy_create_buffer
+#define ascent_create_buffer_ALREADY_DEFINED
+#else
+#define yy_create_buffer ascent_create_buffer
+#endif
+
+#ifdef yy_delete_buffer
+#define ascent_delete_buffer_ALREADY_DEFINED
+#else
+#define yy_delete_buffer ascent_delete_buffer
+#endif
+
+#ifdef yy_scan_buffer
+#define ascent_scan_buffer_ALREADY_DEFINED
+#else
+#define yy_scan_buffer ascent_scan_buffer
+#endif
+
+#ifdef yy_scan_string
+#define ascent_scan_string_ALREADY_DEFINED
+#else
+#define yy_scan_string ascent_scan_string
+#endif
+
+#ifdef yy_scan_bytes
+#define ascent_scan_bytes_ALREADY_DEFINED
+#else
+#define yy_scan_bytes ascent_scan_bytes
+#endif
+
+#ifdef yy_init_buffer
+#define ascent_init_buffer_ALREADY_DEFINED
+#else
+#define yy_init_buffer ascent_init_buffer
+#endif
+
+#ifdef yy_flush_buffer
+#define ascent_flush_buffer_ALREADY_DEFINED
+#else
+#define yy_flush_buffer ascent_flush_buffer
+#endif
+
+#ifdef yy_load_buffer_state
+#define ascent_load_buffer_state_ALREADY_DEFINED
+#else
+#define yy_load_buffer_state ascent_load_buffer_state
+#endif
+
+#ifdef yy_switch_to_buffer
+#define ascent_switch_to_buffer_ALREADY_DEFINED
+#else
+#define yy_switch_to_buffer ascent_switch_to_buffer
+#endif
+
+#ifdef yypush_buffer_state
+#define ascentpush_buffer_state_ALREADY_DEFINED
+#else
+#define yypush_buffer_state ascentpush_buffer_state
+#endif
+
+#ifdef yypop_buffer_state
+#define ascentpop_buffer_state_ALREADY_DEFINED
+#else
+#define yypop_buffer_state ascentpop_buffer_state
+#endif
+
+#ifdef yyensure_buffer_stack
+#define ascentensure_buffer_stack_ALREADY_DEFINED
+#else
+#define yyensure_buffer_stack ascentensure_buffer_stack
+#endif
+
+#ifdef yylex
+#define ascentlex_ALREADY_DEFINED
+#else
+#define yylex ascentlex
+#endif
+
+#ifdef yyrestart
+#define ascentrestart_ALREADY_DEFINED
+#else
+#define yyrestart ascentrestart
+#endif
+
+#ifdef yylex_init
+#define ascentlex_init_ALREADY_DEFINED
+#else
+#define yylex_init ascentlex_init
+#endif
+
+#ifdef yylex_init_extra
+#define ascentlex_init_extra_ALREADY_DEFINED
+#else
+#define yylex_init_extra ascentlex_init_extra
+#endif
+
+#ifdef yylex_destroy
+#define ascentlex_destroy_ALREADY_DEFINED
+#else
+#define yylex_destroy ascentlex_destroy
+#endif
+
+#ifdef yyget_debug
+#define ascentget_debug_ALREADY_DEFINED
+#else
+#define yyget_debug ascentget_debug
+#endif
+
+#ifdef yyset_debug
+#define ascentset_debug_ALREADY_DEFINED
+#else
+#define yyset_debug ascentset_debug
+#endif
+
+#ifdef yyget_extra
+#define ascentget_extra_ALREADY_DEFINED
+#else
+#define yyget_extra ascentget_extra
+#endif
+
+#ifdef yyset_extra
+#define ascentset_extra_ALREADY_DEFINED
+#else
+#define yyset_extra ascentset_extra
+#endif
+
+#ifdef yyget_in
+#define ascentget_in_ALREADY_DEFINED
+#else
+#define yyget_in ascentget_in
+#endif
+
+#ifdef yyset_in
+#define ascentset_in_ALREADY_DEFINED
+#else
+#define yyset_in ascentset_in
+#endif
+
+#ifdef yyget_out
+#define ascentget_out_ALREADY_DEFINED
+#else
+#define yyget_out ascentget_out
+#endif
+
+#ifdef yyset_out
+#define ascentset_out_ALREADY_DEFINED
+#else
+#define yyset_out ascentset_out
+#endif
+
+#ifdef yyget_leng
+#define ascentget_leng_ALREADY_DEFINED
+#else
+#define yyget_leng ascentget_leng
+#endif
+
+#ifdef yyget_text
+#define ascentget_text_ALREADY_DEFINED
+#else
+#define yyget_text ascentget_text
+#endif
+
+#ifdef yyget_lineno
+#define ascentget_lineno_ALREADY_DEFINED
+#else
+#define yyget_lineno ascentget_lineno
+#endif
+
+#ifdef yyset_lineno
+#define ascentset_lineno_ALREADY_DEFINED
+#else
+#define yyset_lineno ascentset_lineno
+#endif
+
+#ifdef yywrap
+#define ascentwrap_ALREADY_DEFINED
+#else
+#define yywrap ascentwrap
+#endif
+
+#ifdef yyalloc
+#define ascentalloc_ALREADY_DEFINED
+#else
+#define yyalloc ascentalloc
+#endif
+
+#ifdef yyrealloc
+#define ascentrealloc_ALREADY_DEFINED
+#else
+#define yyrealloc ascentrealloc
+#endif
+
+#ifdef yyfree
+#define ascentfree_ALREADY_DEFINED
+#else
+#define yyfree ascentfree
+#endif
+
+#ifdef yytext
+#define ascenttext_ALREADY_DEFINED
+#else
+#define yytext ascenttext
+#endif
+
+#ifdef yyleng
+#define ascentleng_ALREADY_DEFINED
+#else
+#define yyleng ascentleng
+#endif
+
+#ifdef yyin
+#define ascentin_ALREADY_DEFINED
+#else
+#define yyin ascentin
+#endif
+
+#ifdef yyout
+#define ascentout_ALREADY_DEFINED
+#else
+#define yyout ascentout
+#endif
+
+#ifdef yy_flex_debug
+#define ascent_flex_debug_ALREADY_DEFINED
+#else
+#define yy_flex_debug ascent_flex_debug
+#endif
+
+#ifdef yylineno
+#define ascentlineno_ALREADY_DEFINED
+#else
+#define yylineno ascentlineno
 #endif
 
 /* First, we deal with  platform-specific or compiler-specific issues. */
@@ -53,7 +293,7 @@
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 
 /* C99 says to define __STDC_LIMIT_MACROS before including stdint.h,
- * if you want the limit (max/min) macros for int types. 
+ * if you want the limit (max/min) macros for int types.
  */
 #ifndef __STDC_LIMIT_MACROS
 #define __STDC_LIMIT_MACROS 1
@@ -70,7 +310,7 @@ typedef uint32_t flex_uint32_t;
 typedef signed char flex_int8_t;
 typedef short int flex_int16_t;
 typedef int flex_int32_t;
-typedef unsigned char flex_uint8_t; 
+typedef unsigned char flex_uint8_t;
 typedef unsigned short int flex_uint16_t;
 typedef unsigned int flex_uint32_t;
 
@@ -103,65 +343,61 @@ typedef unsigned int flex_uint32_t;
 #define UINT32_MAX             (4294967295U)
 #endif
 
+#ifndef SIZE_MAX
+#define SIZE_MAX               (~(size_t)0)
+#endif
+
 #endif /* ! C99 */
 
 #endif /* ! FLEXINT_H */
 
-#ifdef __cplusplus
+/* begin standard C++ headers. */
 
-/* The "const" storage-class-modifier is valid. */
-#define YY_USE_CONST
-
-#else	/* ! __cplusplus */
-
-/* C99 requires __STDC__ to be defined as 1. */
-#if defined (__STDC__)
-
-#define YY_USE_CONST
-
-#endif	/* defined (__STDC__) */
-#endif	/* ! __cplusplus */
-
-#ifdef YY_USE_CONST
+/* TODO: this is always defined, so inline it */
 #define yyconst const
+
+#if defined(__GNUC__) && __GNUC__ >= 3
+#define yynoreturn __attribute__((__noreturn__))
 #else
-#define yyconst
+#define yynoreturn
 #endif
 
 /* Returned upon end-of-file. */
 #define YY_NULL 0
 
-/* Promotes a possibly negative, possibly signed char to an unsigned
- * integer for use as an array index.  If the signed char is negative,
- * we want to instead treat it as an 8-bit unsigned char, hence the
- * double cast.
+/* Promotes a possibly negative, possibly signed char to an
+ *   integer in range [0..255] for use as an array index.
  */
-#define YY_SC_TO_UI(c) ((unsigned int) (unsigned char) c)
+#define YY_SC_TO_UI(c) ((YY_CHAR) (c))
 
 /* Enter a start condition.  This macro really ought to take a parameter,
  * but we do it the disgusting crufty way forced on us by the ()-less
  * definition of BEGIN.
  */
 #define BEGIN (yy_start) = 1 + 2 *
-
 /* Translate the current start state into a value that can be later handed
  * to BEGIN to return to the state.  The YYSTATE alias is for lex
  * compatibility.
  */
 #define YY_START (((yy_start) - 1) / 2)
 #define YYSTATE YY_START
-
 /* Action number for EOF rule of a given start state. */
 #define YY_STATE_EOF(state) (YY_END_OF_BUFFER + state + 1)
-
 /* Special action meaning "start processing a new file". */
-#define YY_NEW_FILE ascentrestart(ascentin  )
-
+#define YY_NEW_FILE yyrestart( yyin  )
 #define YY_END_OF_BUFFER_CHAR 0
 
 /* Size of default input buffer. */
 #ifndef YY_BUF_SIZE
+#ifdef __ia64__
+/* On IA-64, the buffer size is 16k, not 8k.
+ * Moreover, YY_BUF_SIZE is 2*YY_READ_BUF_SIZE in the general case.
+ * Ditto for the __ia64__ case accordingly.
+ */
+#define YY_BUF_SIZE 32768
+#else
 #define YY_BUF_SIZE 16384
+#endif /* __ia64__ */
 #endif
 
 /* The state buf must be large enough to hold one state per character in the main buffer.
@@ -178,30 +414,30 @@ typedef struct yy_buffer_state *YY_BUFFER_STATE;
 typedef size_t yy_size_t;
 #endif
 
-extern yy_size_t ascentleng;
+extern int yyleng;
 
-extern FILE *ascentin, *ascentout;
+extern FILE *yyin, *yyout;
 
 #define EOB_ACT_CONTINUE_SCAN 0
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
 
     #define YY_LESS_LINENO(n)
-    
+    #define YY_LINENO_REWIND_TO(ptr)
+
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
 	do \
 		{ \
-		/* Undo effects of setting up ascenttext. */ \
+		/* Undo effects of setting up yytext. */ \
         int yyless_macro_arg = (n); \
         YY_LESS_LINENO(yyless_macro_arg);\
 		*yy_cp = (yy_hold_char); \
 		YY_RESTORE_YY_MORE_OFFSET \
 		(yy_c_buf_p) = yy_cp = yy_bp + yyless_macro_arg - YY_MORE_ADJ; \
-		YY_DO_BEFORE_ACTION; /* set up ascenttext again */ \
+		YY_DO_BEFORE_ACTION; /* set up yytext again */ \
 		} \
 	while ( 0 )
-
 #define unput(c) yyunput( c, (yytext_ptr)  )
 
 #ifndef YY_STRUCT_YY_BUFFER_STATE
@@ -216,12 +452,12 @@ struct yy_buffer_state
 	/* Size of input buffer in bytes, not including room for EOB
 	 * characters.
 	 */
-	yy_size_t yy_buf_size;
+	int yy_buf_size;
 
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	yy_size_t yy_n_chars;
+	int yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -244,7 +480,7 @@ struct yy_buffer_state
 
     int yy_bs_lineno; /**< The line count. */
     int yy_bs_column; /**< The column count. */
-    
+
 	/* Whether to try to fill the input buffer when we reach the
 	 * end of it.
 	 */
@@ -261,8 +497,8 @@ struct yy_buffer_state
 	 * possible backing-up.
 	 *
 	 * When we actually see the EOF, we change the status to "new"
-	 * (via ascentrestart()), so that the user can continue scanning by
-	 * just pointing ascentin at a new input file.
+	 * (via yyrestart()), so that the user can continue scanning by
+	 * just pointing yyin at a new input file.
 	 */
 #define YY_BUFFER_EOF_PENDING 2
 
@@ -272,7 +508,7 @@ struct yy_buffer_state
 /* Stack of input buffers. */
 static size_t yy_buffer_stack_top = 0; /**< index of top of stack. */
 static size_t yy_buffer_stack_max = 0; /**< capacity of stack. */
-static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
+static YY_BUFFER_STATE * yy_buffer_stack = NULL; /**< Stack as an array. */
 
 /* We provide macros for accessing buffer states in case in the
  * future we want to put the buffer states in a more general
@@ -283,106 +519,101 @@ static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
 #define YY_CURRENT_BUFFER ( (yy_buffer_stack) \
                           ? (yy_buffer_stack)[(yy_buffer_stack_top)] \
                           : NULL)
-
 /* Same as previous macro, but useful when we know that the buffer stack is not
  * NULL or when we need an lvalue. For internal use only.
  */
 #define YY_CURRENT_BUFFER_LVALUE (yy_buffer_stack)[(yy_buffer_stack_top)]
 
-/* yy_hold_char holds the character lost when ascenttext is formed. */
+/* yy_hold_char holds the character lost when yytext is formed. */
 static char yy_hold_char;
-static yy_size_t yy_n_chars;		/* number of characters read into yy_ch_buf */
-yy_size_t ascentleng;
+static int yy_n_chars;		/* number of characters read into yy_ch_buf */
+int yyleng;
 
 /* Points to current character in buffer. */
-static char *yy_c_buf_p = (char *) 0;
+static char *yy_c_buf_p = NULL;
 static int yy_init = 0;		/* whether we need to initialize */
 static int yy_start = 0;	/* start state number */
 
-/* Flag which is used to allow ascentwrap()'s to do buffer switches
- * instead of setting up a fresh ascentin.  A bit of a hack ...
+/* Flag which is used to allow yywrap()'s to do buffer switches
+ * instead of setting up a fresh yyin.  A bit of a hack ...
  */
 static int yy_did_buffer_switch_on_eof;
 
-void ascentrestart (FILE *input_file  );
-void ascent_switch_to_buffer (YY_BUFFER_STATE new_buffer  );
-YY_BUFFER_STATE ascent_create_buffer (FILE *file,int size  );
-void ascent_delete_buffer (YY_BUFFER_STATE b  );
-void ascent_flush_buffer (YY_BUFFER_STATE b  );
-void ascentpush_buffer_state (YY_BUFFER_STATE new_buffer  );
-void ascentpop_buffer_state (void );
+void yyrestart ( FILE *input_file  );
+void yy_switch_to_buffer ( YY_BUFFER_STATE new_buffer  );
+YY_BUFFER_STATE yy_create_buffer ( FILE *file, int size  );
+void yy_delete_buffer ( YY_BUFFER_STATE b  );
+void yy_flush_buffer ( YY_BUFFER_STATE b  );
+void yypush_buffer_state ( YY_BUFFER_STATE new_buffer  );
+void yypop_buffer_state ( void );
 
-static void ascentensure_buffer_stack (void );
-static void ascent_load_buffer_state (void );
-static void ascent_init_buffer (YY_BUFFER_STATE b,FILE *file  );
+static void yyensure_buffer_stack ( void );
+static void yy_load_buffer_state ( void );
+static void yy_init_buffer ( YY_BUFFER_STATE b, FILE *file  );
+#define YY_FLUSH_BUFFER yy_flush_buffer( YY_CURRENT_BUFFER )
 
-#define YY_FLUSH_BUFFER ascent_flush_buffer(YY_CURRENT_BUFFER )
+YY_BUFFER_STATE yy_scan_buffer ( char *base, yy_size_t size  );
+YY_BUFFER_STATE yy_scan_string ( const char *yy_str  );
+YY_BUFFER_STATE yy_scan_bytes ( const char *bytes, int len  );
 
-YY_BUFFER_STATE ascent_scan_buffer (char *base,yy_size_t size  );
-YY_BUFFER_STATE ascent_scan_string (yyconst char *yy_str  );
-YY_BUFFER_STATE ascent_scan_bytes (yyconst char *bytes,yy_size_t len  );
+void *yyalloc ( yy_size_t  );
+void *yyrealloc ( void *, yy_size_t  );
+void yyfree ( void *  );
 
-void *ascentalloc (yy_size_t  );
-void *ascentrealloc (void *,yy_size_t  );
-void ascentfree (void *  );
-
-#define yy_new_buffer ascent_create_buffer
-
+#define yy_new_buffer yy_create_buffer
 #define yy_set_interactive(is_interactive) \
 	{ \
 	if ( ! YY_CURRENT_BUFFER ){ \
-        ascentensure_buffer_stack (); \
+        yyensure_buffer_stack (); \
 		YY_CURRENT_BUFFER_LVALUE =    \
-            ascent_create_buffer(ascentin,YY_BUF_SIZE ); \
+            yy_create_buffer( yyin, YY_BUF_SIZE ); \
 	} \
 	YY_CURRENT_BUFFER_LVALUE->yy_is_interactive = is_interactive; \
 	}
-
 #define yy_set_bol(at_bol) \
 	{ \
 	if ( ! YY_CURRENT_BUFFER ){\
-        ascentensure_buffer_stack (); \
+        yyensure_buffer_stack (); \
 		YY_CURRENT_BUFFER_LVALUE =    \
-            ascent_create_buffer(ascentin,YY_BUF_SIZE ); \
+            yy_create_buffer( yyin, YY_BUF_SIZE ); \
 	} \
 	YY_CURRENT_BUFFER_LVALUE->yy_at_bol = at_bol; \
 	}
-
 #define YY_AT_BOL() (YY_CURRENT_BUFFER_LVALUE->yy_at_bol)
 
 /* Begin user sect3 */
 
-#define ascentwrap() 1
+#define ascentwrap() (/*CONSTCOND*/1)
 #define YY_SKIP_YYWRAP
+typedef flex_uint8_t YY_CHAR;
 
-typedef unsigned char YY_CHAR;
-
-FILE *ascentin = (FILE *) 0, *ascentout = (FILE *) 0;
+FILE *yyin = NULL, *yyout = NULL;
 
 typedef int yy_state_type;
 
-extern int ascentlineno;
+extern int yylineno;
+int yylineno = 1;
 
-int ascentlineno = 1;
+extern char *yytext;
+#ifdef yytext_ptr
+#undef yytext_ptr
+#endif
+#define yytext_ptr yytext
 
-extern char *ascenttext;
-#define yytext_ptr ascenttext
-
-static yy_state_type yy_get_previous_state (void );
-static yy_state_type yy_try_NUL_trans (yy_state_type current_state  );
-static int yy_get_next_buffer (void );
-static void yy_fatal_error (yyconst char msg[]  );
+static yy_state_type yy_get_previous_state ( void );
+static yy_state_type yy_try_NUL_trans ( yy_state_type current_state  );
+static int yy_get_next_buffer ( void );
+static void yynoreturn yy_fatal_error ( const char* msg  );
 
 /* Done after the current pattern has been matched and before the
- * corresponding action - sets up ascenttext.
+ * corresponding action - sets up yytext.
  */
 #define YY_DO_BEFORE_ACTION \
 	(yytext_ptr) = yy_bp; \
-	ascentleng = (size_t) (yy_cp - yy_bp); \
+	yyleng = (int) (yy_cp - yy_bp); \
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
-
 #define YY_NUM_RULES 31
 #define YY_END_OF_BUFFER 32
 /* This struct is not used in this scanner,
@@ -392,9 +623,9 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t yy_accept[64] =
+static const flex_int16_t yy_accept[64] =
     {   0,
-        0,    0,   32,   30,    7,    7,   30,   30,   29,   19,
+        0,    0,   32,   30,    7,    7,   30,   29,   30,   19,
        20,   27,   25,   23,   26,   24,   28,   11,   15,   12,
        17,    9,   21,   22,    9,    9,    9,    9,    9,    9,
        14,    0,    8,   10,    0,   10,   11,    0,   16,   13,
@@ -403,12 +634,12 @@ static yyconst flex_int16_t yy_accept[64] =
         6,    5,    0
     } ;
 
-static yyconst flex_int32_t yy_ec[256] =
+static const YY_CHAR yy_ec[256] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    2,    4,    5,    1,    1,    6,    1,    1,    7,
+        1,    2,    4,    1,    1,    1,    5,    1,    6,    7,
         8,    9,   10,   11,   12,   13,   14,   15,   15,   15,
        15,   15,   15,   15,   15,   15,   15,    1,    1,   16,
        17,   18,    1,    1,   19,   19,   19,   19,   20,   19,
@@ -435,7 +666,7 @@ static yyconst flex_int32_t yy_ec[256] =
         1,    1,    1,    1,    1
     } ;
 
-static yyconst flex_int32_t yy_meta[36] =
+static const YY_CHAR yy_meta[36] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    2,    1,    1,    1,    2,    2,
@@ -443,20 +674,20 @@ static yyconst flex_int32_t yy_meta[36] =
         2,    2,    2,    2,    2
     } ;
 
-static yyconst flex_int16_t yy_base[66] =
+static const flex_int16_t yy_base[66] =
     {   0,
-        0,    0,   92,   93,   93,   93,   74,   85,   93,   93,
+        0,    0,   92,   93,   93,   93,   74,   93,   84,   93,
        93,   93,   93,   93,   93,   21,   93,   24,   72,   71,
        70,    0,   93,   93,   55,   55,   57,   51,   49,   53,
-       93,   75,   93,   23,   30,   31,   39,   43,   93,   93,
+       93,   74,   93,   23,   30,   31,   39,   43,   93,   93,
        93,    0,   54,   44,    0,   42,    0,   50,   51,   57,
        56,   47,   55,   54,    0,   42,    0,   33,   45,   41,
         0,    0,   93,   73,   46
     } ;
 
-static yyconst flex_int16_t yy_def[66] =
+static const flex_int16_t yy_def[66] =
     {   0,
-       63,    1,   63,   63,   63,   63,   63,   64,   63,   63,
+       63,    1,   63,   63,   63,   63,   63,   63,   64,   63,
        63,   63,   63,   63,   63,   63,   63,   63,   63,   63,
        63,   65,   63,   63,   65,   65,   65,   65,   65,   65,
        63,   64,   63,   63,   63,   63,   63,   63,   63,   63,
@@ -465,7 +696,7 @@ static yyconst flex_int16_t yy_def[66] =
        65,   65,    0,   63,   63
     } ;
 
-static yyconst flex_int16_t yy_nxt[129] =
+static const flex_int16_t yy_nxt[129] =
     {   0,
         4,    5,    6,    7,    8,    9,   10,   11,   12,   13,
        14,   15,   16,   17,   18,   19,   20,   21,   22,   22,
@@ -483,7 +714,7 @@ static yyconst flex_int16_t yy_nxt[129] =
        63,   63,   63,   63,   63,   63,   63,   63
     } ;
 
-static yyconst flex_int16_t yy_chk[129] =
+static const flex_int16_t yy_chk[129] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -493,7 +724,7 @@ static yyconst flex_int16_t yy_chk[129] =
        36,   37,   38,   37,   38,   60,   36,   38,   37,   59,
        49,   52,   49,   58,   37,   49,   52,   56,   54,   53,
        51,   50,   52,   64,   64,   48,   46,   44,   43,   32,
-       30,   29,   28,   27,   26,   25,   21,   20,   19,    8,
+       30,   29,   28,   27,   26,   25,   21,   20,   19,    9,
         7,    3,   63,   63,   63,   63,   63,   63,   63,   63,
 
        63,   63,   63,   63,   63,   63,   63,   63,   63,   63,
@@ -504,8 +735,8 @@ static yyconst flex_int16_t yy_chk[129] =
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
 
-extern int ascent_flex_debug;
-int ascent_flex_debug = 0;
+extern int yy_flex_debug;
+int yy_flex_debug = 0;
 
 /* The intent behind this definition is that it'll catch
  * any uses of REJECT which flex missed.
@@ -514,7 +745,7 @@ int ascent_flex_debug = 0;
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-char *ascenttext;
+char *yytext;
 #line 1 "tokens.l"
 #line 2 "tokens.l"
 #include <string>
@@ -523,7 +754,8 @@ char *ascenttext;
 
 #define SAVE_TOKEN  ascentlval.string = new std::string(ascenttext, ascentleng)
 #define TOKEN(t)    (ascentlval.token = t)
-#line 527 "tokens.cpp"
+#line 757 "tokens.cpp"
+#line 758 "tokens.cpp"
 
 #define INITIAL 0
 
@@ -539,36 +771,36 @@ char *ascenttext;
 #define YY_EXTRA_TYPE void *
 #endif
 
-static int yy_init_globals (void );
+static int yy_init_globals ( void );
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
 
-int ascentlex_destroy (void );
+int yylex_destroy ( void );
 
-int ascentget_debug (void );
+int yyget_debug ( void );
 
-void ascentset_debug (int debug_flag  );
+void yyset_debug ( int debug_flag  );
 
-YY_EXTRA_TYPE ascentget_extra (void );
+YY_EXTRA_TYPE yyget_extra ( void );
 
-void ascentset_extra (YY_EXTRA_TYPE user_defined  );
+void yyset_extra ( YY_EXTRA_TYPE user_defined  );
 
-FILE *ascentget_in (void );
+FILE *yyget_in ( void );
 
-void ascentset_in  (FILE * in_str  );
+void yyset_in  ( FILE * _in_str  );
 
-FILE *ascentget_out (void );
+FILE *yyget_out ( void );
 
-void ascentset_out  (FILE * out_str  );
+void yyset_out  ( FILE * _out_str  );
 
-yy_size_t ascentget_leng (void );
+			int yyget_leng ( void );
 
-char *ascentget_text (void );
+char *yyget_text ( void );
 
-int ascentget_lineno (void );
+int yyget_lineno ( void );
 
-void ascentset_lineno (int line_number  );
+void yyset_lineno ( int _line_number  );
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -576,35 +808,43 @@ void ascentset_lineno (int line_number  );
 
 #ifndef YY_SKIP_YYWRAP
 #ifdef __cplusplus
-extern "C" int ascentwrap (void );
+extern "C" int yywrap ( void );
 #else
-extern int ascentwrap (void );
+extern int yywrap ( void );
 #endif
 #endif
 
-    static void yyunput (int c,char *buf_ptr  );
-    
+#ifndef YY_NO_UNPUT
+
+    static void yyunput ( int c, char *buf_ptr  );
+
+#endif
+
 #ifndef yytext_ptr
-static void yy_flex_strncpy (char *,yyconst char *,int );
+static void yy_flex_strncpy ( char *, const char *, int );
 #endif
 
 #ifdef YY_NEED_STRLEN
-static int yy_flex_strlen (yyconst char * );
+static int yy_flex_strlen ( const char * );
 #endif
 
 #ifndef YY_NO_INPUT
-
 #ifdef __cplusplus
-static int yyinput (void );
+static int yyinput ( void );
 #else
-static int input (void );
+static int input ( void );
 #endif
 
 #endif
 
 /* Amount of stuff to slurp up with each read. */
 #ifndef YY_READ_BUF_SIZE
+#ifdef __ia64__
+/* On IA-64, the buffer size is 16k, not 8k */
+#define YY_READ_BUF_SIZE 16384
+#else
 #define YY_READ_BUF_SIZE 8192
+#endif /* __ia64__ */
 #endif
 
 /* Copy whatever the last rule matched to the standard output. */
@@ -612,7 +852,7 @@ static int input (void );
 /* This used to be an fputs(), but since the string might contain NUL's,
  * we now use fwrite().
  */
-#define ECHO do { if (fwrite( ascenttext, ascentleng, 1, ascentout )) {} } while (0)
+#define ECHO do { if (fwrite( yytext, (size_t) yyleng, 1, yyout )) {} } while (0)
 #endif
 
 /* Gets input and stuffs it into "buf".  number of characters read, or YY_NULL,
@@ -623,20 +863,20 @@ static int input (void );
 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
 		{ \
 		int c = '*'; \
-		size_t n; \
+		int n; \
 		for ( n = 0; n < max_size && \
-			     (c = getc( ascentin )) != EOF && c != '\n'; ++n ) \
+			     (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
 			buf[n] = (char) c; \
 		if ( c == '\n' ) \
 			buf[n++] = (char) c; \
-		if ( c == EOF && ferror( ascentin ) ) \
+		if ( c == EOF && ferror( yyin ) ) \
 			YY_FATAL_ERROR( "input in flex scanner failed" ); \
 		result = n; \
 		} \
 	else \
 		{ \
 		errno=0; \
-		while ( (result = fread(buf, 1, max_size, ascentin))==0 && ferror(ascentin)) \
+		while ( (result = (int) fread(buf, 1, (yy_size_t) max_size, yyin)) == 0 && ferror(yyin)) \
 			{ \
 			if( errno != EINTR) \
 				{ \
@@ -644,7 +884,7 @@ static int input (void );
 				break; \
 				} \
 			errno=0; \
-			clearerr(ascentin); \
+			clearerr(yyin); \
 			} \
 		}\
 \
@@ -677,12 +917,12 @@ static int input (void );
 #ifndef YY_DECL
 #define YY_DECL_IS_OURS 1
 
-extern int ascentlex (void);
+extern int yylex (void);
 
-#define YY_DECL int ascentlex (void)
+#define YY_DECL int yylex (void)
 #endif /* !YY_DECL */
 
-/* Code executed at the beginning of each rule, after ascenttext and ascentleng
+/* Code executed at the beginning of each rule, after yytext and yyleng
  * have been set up.
  */
 #ifndef YY_USER_ACTION
@@ -691,7 +931,7 @@ extern int ascentlex (void);
 
 /* Code executed at the end of each rule. */
 #ifndef YY_BREAK
-#define YY_BREAK break;
+#define YY_BREAK /*LINTED*/break;
 #endif
 
 #define YY_RULE_SETUP \
@@ -701,13 +941,9 @@ extern int ascentlex (void);
  */
 YY_DECL
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp, *yy_bp;
-	register int yy_act;
-    
-#line 12 "tokens.l"
-
-#line 711 "tokens.cpp"
+	yy_state_type yy_current_state;
+	char *yy_cp, *yy_bp;
+	int yy_act;
 
 	if ( !(yy_init) )
 		{
@@ -720,26 +956,31 @@ YY_DECL
 		if ( ! (yy_start) )
 			(yy_start) = 1;	/* first start state */
 
-		if ( ! ascentin )
-			ascentin = stdin;
+		if ( ! yyin )
+			yyin = stdin;
 
-		if ( ! ascentout )
-			ascentout = stdout;
+		if ( ! yyout )
+			yyout = stdout;
 
 		if ( ! YY_CURRENT_BUFFER ) {
-			ascentensure_buffer_stack ();
+			yyensure_buffer_stack ();
 			YY_CURRENT_BUFFER_LVALUE =
-				ascent_create_buffer(ascentin,YY_BUF_SIZE );
+				yy_create_buffer( yyin, YY_BUF_SIZE );
 		}
 
-		ascent_load_buffer_state( );
+		yy_load_buffer_state(  );
 		}
 
-	while ( 1 )		/* loops until end-of-file is reached */
+	{
+#line 12 "tokens.l"
+
+#line 977 "tokens.cpp"
+
+	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
 		yy_cp = (yy_c_buf_p);
 
-		/* Support of ascenttext. */
+		/* Support of yytext. */
 		*yy_cp = (yy_hold_char);
 
 		/* yy_bp points to the position in yy_ch_buf of the start of
@@ -751,7 +992,7 @@ YY_DECL
 yy_match:
 		do
 			{
-			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+			YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)] ;
 			if ( yy_accept[yy_current_state] )
 				{
 				(yy_last_accepting_state) = yy_current_state;
@@ -761,9 +1002,9 @@ yy_match:
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
 				if ( yy_current_state >= 64 )
-					yy_c = yy_meta[(unsigned int) yy_c];
+					yy_c = yy_meta[yy_c];
 				}
-			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+			yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 			++yy_cp;
 			}
 		while ( yy_base[yy_current_state] != 93 );
@@ -940,14 +1181,14 @@ return TOKEN(TMOD);
 case 30:
 YY_RULE_SETUP
 #line 52 "tokens.l"
-printf("Unknown token '%s'\n", ascenttext); yyterminate();
+printf("Unknown token '%s'\n", yytext); yyterminate();
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
 #line 53 "tokens.l"
 ECHO;
 	YY_BREAK
-#line 951 "tokens.cpp"
+#line 1191 "tokens.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -964,15 +1205,15 @@ case YY_STATE_EOF(INITIAL):
 			{
 			/* We're scanning a new file or input source.  It's
 			 * possible that this happened because the user
-			 * just pointed ascentin at a new source and called
-			 * ascentlex().  If so, then we have to assure
+			 * just pointed yyin at a new source and called
+			 * yylex().  If so, then we have to assure
 			 * consistency between YY_CURRENT_BUFFER and our
 			 * globals.  Here is the right place to do so, because
 			 * this is the first action (other than possibly a
 			 * back-up) that will match for the new input source.
 			 */
 			(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
-			YY_CURRENT_BUFFER_LVALUE->yy_input_file = ascentin;
+			YY_CURRENT_BUFFER_LVALUE->yy_input_file = yyin;
 			YY_CURRENT_BUFFER_LVALUE->yy_buffer_status = YY_BUFFER_NORMAL;
 			}
 
@@ -1025,11 +1266,11 @@ case YY_STATE_EOF(INITIAL):
 				{
 				(yy_did_buffer_switch_on_eof) = 0;
 
-				if ( ascentwrap( ) )
+				if ( yywrap(  ) )
 					{
 					/* Note: because we've taken care in
 					 * yy_get_next_buffer() to have set up
-					 * ascenttext, we can now set up
+					 * yytext, we can now set up
 					 * yy_c_buf_p so that if some total
 					 * hoser (like flex itself) wants to
 					 * call the scanner after we return the
@@ -1078,7 +1319,8 @@ case YY_STATE_EOF(INITIAL):
 			"fatal flex scanner internal error--no action found" );
 	} /* end of action switch */
 		} /* end of scanning one token */
-} /* end of ascentlex */
+	} /* end of user's declarations */
+} /* end of yylex */
 
 /* yy_get_next_buffer - try to read in a new buffer
  *
@@ -1089,9 +1331,9 @@ case YY_STATE_EOF(INITIAL):
  */
 static int yy_get_next_buffer (void)
 {
-    	register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
-	register char *source = (yytext_ptr);
-	register int number_to_move, i;
+    	char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
+	char *source = (yytext_ptr);
+	int number_to_move, i;
 	int ret_val;
 
 	if ( (yy_c_buf_p) > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] )
@@ -1120,7 +1362,7 @@ static int yy_get_next_buffer (void)
 	/* Try to read more data. */
 
 	/* First move last chars to start of buffer. */
-	number_to_move = (int) ((yy_c_buf_p) - (yytext_ptr)) - 1;
+	number_to_move = (int) ((yy_c_buf_p) - (yytext_ptr) - 1);
 
 	for ( i = 0; i < number_to_move; ++i )
 		*(dest++) = *(source++);
@@ -1133,7 +1375,7 @@ static int yy_get_next_buffer (void)
 
 	else
 		{
-			yy_size_t num_to_read =
+			int num_to_read =
 			YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
 
 		while ( num_to_read <= 0 )
@@ -1147,7 +1389,7 @@ static int yy_get_next_buffer (void)
 
 			if ( b->yy_is_our_buffer )
 				{
-				yy_size_t new_size = b->yy_buf_size * 2;
+				int new_size = b->yy_buf_size * 2;
 
 				if ( new_size <= 0 )
 					b->yy_buf_size += b->yy_buf_size / 8;
@@ -1156,11 +1398,12 @@ static int yy_get_next_buffer (void)
 
 				b->yy_ch_buf = (char *)
 					/* Include room in for 2 EOB chars. */
-					ascentrealloc((void *) b->yy_ch_buf,b->yy_buf_size + 2  );
+					yyrealloc( (void *) b->yy_ch_buf,
+							 (yy_size_t) (b->yy_buf_size + 2)  );
 				}
 			else
 				/* Can't grow it, we don't own it. */
-				b->yy_ch_buf = 0;
+				b->yy_ch_buf = NULL;
 
 			if ( ! b->yy_ch_buf )
 				YY_FATAL_ERROR(
@@ -1188,7 +1431,7 @@ static int yy_get_next_buffer (void)
 		if ( number_to_move == YY_MORE_ADJ )
 			{
 			ret_val = EOB_ACT_END_OF_FILE;
-			ascentrestart(ascentin  );
+			yyrestart( yyin  );
 			}
 
 		else
@@ -1202,12 +1445,15 @@ static int yy_get_next_buffer (void)
 	else
 		ret_val = EOB_ACT_CONTINUE_SCAN;
 
-	if ((yy_size_t) ((yy_n_chars) + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
+	if (((yy_n_chars) + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
 		/* Extend the array by 50%, plus the number we really need. */
-		yy_size_t new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
-		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) ascentrealloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,new_size  );
+		int new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
+		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) yyrealloc(
+			(void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf, (yy_size_t) new_size  );
 		if ( ! YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
 			YY_FATAL_ERROR( "out of dynamic memory in yy_get_next_buffer()" );
+		/* "- 2" to take care of EOB's */
+		YY_CURRENT_BUFFER_LVALUE->yy_buf_size = (int) (new_size - 2);
 	}
 
 	(yy_n_chars) += number_to_move;
@@ -1223,14 +1469,14 @@ static int yy_get_next_buffer (void)
 
     static yy_state_type yy_get_previous_state (void)
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp;
-    
+	yy_state_type yy_current_state;
+	char *yy_cp;
+
 	yy_current_state = (yy_start);
 
 	for ( yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp )
 		{
-		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
 		if ( yy_accept[yy_current_state] )
 			{
 			(yy_last_accepting_state) = yy_current_state;
@@ -1240,9 +1486,9 @@ static int yy_get_next_buffer (void)
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
 			if ( yy_current_state >= 64 )
-				yy_c = yy_meta[(unsigned int) yy_c];
+				yy_c = yy_meta[yy_c];
 			}
-		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+		yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 		}
 
 	return yy_current_state;
@@ -1255,10 +1501,10 @@ static int yy_get_next_buffer (void)
  */
     static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state )
 {
-	register int yy_is_jam;
-    	register char *yy_cp = (yy_c_buf_p);
+	int yy_is_jam;
+    	char *yy_cp = (yy_c_buf_p);
 
-	register YY_CHAR yy_c = 1;
+	YY_CHAR yy_c = 1;
 	if ( yy_accept[yy_current_state] )
 		{
 		(yy_last_accepting_state) = yy_current_state;
@@ -1268,30 +1514,32 @@ static int yy_get_next_buffer (void)
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
 		if ( yy_current_state >= 64 )
-			yy_c = yy_meta[(unsigned int) yy_c];
+			yy_c = yy_meta[yy_c];
 		}
-	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+	yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 	yy_is_jam = (yy_current_state == 63);
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
 
-    static void yyunput (int c, register char * yy_bp )
+#ifndef YY_NO_UNPUT
+
+    static void yyunput (int c, char * yy_bp )
 {
-	register char *yy_cp;
-    
+	char *yy_cp;
+
     yy_cp = (yy_c_buf_p);
 
-	/* undo effects of setting up ascenttext */
+	/* undo effects of setting up yytext */
 	*yy_cp = (yy_hold_char);
 
 	if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
 		{ /* need to shift things up to make room */
 		/* +2 for EOB chars. */
-		register yy_size_t number_to_move = (yy_n_chars) + 2;
-		register char *dest = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[
+		int number_to_move = (yy_n_chars) + 2;
+		char *dest = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[
 					YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
-		register char *source =
+		char *source =
 				&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
 
 		while ( source > YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
@@ -1300,7 +1548,7 @@ static int yy_get_next_buffer (void)
 		yy_cp += (int) (dest - source);
 		yy_bp += (int) (dest - source);
 		YY_CURRENT_BUFFER_LVALUE->yy_n_chars =
-			(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_buf_size;
+			(yy_n_chars) = (int) YY_CURRENT_BUFFER_LVALUE->yy_buf_size;
 
 		if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
 			YY_FATAL_ERROR( "flex scanner push-back overflow" );
@@ -1313,6 +1561,8 @@ static int yy_get_next_buffer (void)
 	(yy_c_buf_p) = yy_cp;
 }
 
+#endif
+
 #ifndef YY_NO_INPUT
 #ifdef __cplusplus
     static int yyinput (void)
@@ -1322,7 +1572,7 @@ static int yy_get_next_buffer (void)
 
 {
 	int c;
-    
+
 	*(yy_c_buf_p) = (yy_hold_char);
 
 	if ( *(yy_c_buf_p) == YY_END_OF_BUFFER_CHAR )
@@ -1337,7 +1587,7 @@ static int yy_get_next_buffer (void)
 
 		else
 			{ /* need more input */
-			yy_size_t offset = (yy_c_buf_p) - (yytext_ptr);
+			int offset = (int) ((yy_c_buf_p) - (yytext_ptr));
 			++(yy_c_buf_p);
 
 			switch ( yy_get_next_buffer(  ) )
@@ -1354,14 +1604,14 @@ static int yy_get_next_buffer (void)
 					 */
 
 					/* Reset buffer status. */
-					ascentrestart(ascentin );
+					yyrestart( yyin );
 
 					/*FALLTHROUGH*/
 
 				case EOB_ACT_END_OF_FILE:
 					{
-					if ( ascentwrap( ) )
-						return EOF;
+					if ( yywrap(  ) )
+						return 0;
 
 					if ( ! (yy_did_buffer_switch_on_eof) )
 						YY_NEW_FILE;
@@ -1380,7 +1630,7 @@ static int yy_get_next_buffer (void)
 		}
 
 	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
-	*(yy_c_buf_p) = '\0';	/* preserve ascenttext */
+	*(yy_c_buf_p) = '\0';	/* preserve yytext */
 	(yy_hold_char) = *++(yy_c_buf_p);
 
 	return c;
@@ -1389,35 +1639,35 @@ static int yy_get_next_buffer (void)
 
 /** Immediately switch to a different input stream.
  * @param input_file A readable stream.
- * 
+ *
  * @note This function does not reset the start condition to @c INITIAL .
  */
-    void ascentrestart  (FILE * input_file )
+    void yyrestart  (FILE * input_file )
 {
-    
+
 	if ( ! YY_CURRENT_BUFFER ){
-        ascentensure_buffer_stack ();
+        yyensure_buffer_stack ();
 		YY_CURRENT_BUFFER_LVALUE =
-            ascent_create_buffer(ascentin,YY_BUF_SIZE );
+            yy_create_buffer( yyin, YY_BUF_SIZE );
 	}
 
-	ascent_init_buffer(YY_CURRENT_BUFFER,input_file );
-	ascent_load_buffer_state( );
+	yy_init_buffer( YY_CURRENT_BUFFER, input_file );
+	yy_load_buffer_state(  );
 }
 
 /** Switch to a different input buffer.
  * @param new_buffer The new input buffer.
- * 
+ *
  */
-    void ascent_switch_to_buffer  (YY_BUFFER_STATE  new_buffer )
+    void yy_switch_to_buffer  (YY_BUFFER_STATE  new_buffer )
 {
-    
+
 	/* TODO. We should be able to replace this entire function body
 	 * with
-	 *		ascentpop_buffer_state();
-	 *		ascentpush_buffer_state(new_buffer);
+	 *		yypop_buffer_state();
+	 *		yypush_buffer_state(new_buffer);
      */
-	ascentensure_buffer_stack ();
+	yyensure_buffer_stack ();
 	if ( YY_CURRENT_BUFFER == new_buffer )
 		return;
 
@@ -1430,61 +1680,61 @@ static int yy_get_next_buffer (void)
 		}
 
 	YY_CURRENT_BUFFER_LVALUE = new_buffer;
-	ascent_load_buffer_state( );
+	yy_load_buffer_state(  );
 
 	/* We don't actually know whether we did this switch during
-	 * EOF (ascentwrap()) processing, but the only time this flag
-	 * is looked at is after ascentwrap() is called, so it's safe
+	 * EOF (yywrap()) processing, but the only time this flag
+	 * is looked at is after yywrap() is called, so it's safe
 	 * to go ahead and always set it.
 	 */
 	(yy_did_buffer_switch_on_eof) = 1;
 }
 
-static void ascent_load_buffer_state  (void)
+static void yy_load_buffer_state  (void)
 {
     	(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
 	(yytext_ptr) = (yy_c_buf_p) = YY_CURRENT_BUFFER_LVALUE->yy_buf_pos;
-	ascentin = YY_CURRENT_BUFFER_LVALUE->yy_input_file;
+	yyin = YY_CURRENT_BUFFER_LVALUE->yy_input_file;
 	(yy_hold_char) = *(yy_c_buf_p);
 }
 
 /** Allocate and initialize an input buffer state.
  * @param file A readable stream.
  * @param size The character buffer size in bytes. When in doubt, use @c YY_BUF_SIZE.
- * 
+ *
  * @return the allocated buffer state.
  */
-    YY_BUFFER_STATE ascent_create_buffer  (FILE * file, int  size )
+    YY_BUFFER_STATE yy_create_buffer  (FILE * file, int  size )
 {
 	YY_BUFFER_STATE b;
-    
-	b = (YY_BUFFER_STATE) ascentalloc(sizeof( struct yy_buffer_state )  );
+
+	b = (YY_BUFFER_STATE) yyalloc( sizeof( struct yy_buffer_state )  );
 	if ( ! b )
-		YY_FATAL_ERROR( "out of dynamic memory in ascent_create_buffer()" );
+		YY_FATAL_ERROR( "out of dynamic memory in yy_create_buffer()" );
 
 	b->yy_buf_size = size;
 
 	/* yy_ch_buf has to be 2 characters longer than the size given because
 	 * we need to put in 2 end-of-buffer characters.
 	 */
-	b->yy_ch_buf = (char *) ascentalloc(b->yy_buf_size + 2  );
+	b->yy_ch_buf = (char *) yyalloc( (yy_size_t) (b->yy_buf_size + 2)  );
 	if ( ! b->yy_ch_buf )
-		YY_FATAL_ERROR( "out of dynamic memory in ascent_create_buffer()" );
+		YY_FATAL_ERROR( "out of dynamic memory in yy_create_buffer()" );
 
 	b->yy_is_our_buffer = 1;
 
-	ascent_init_buffer(b,file );
+	yy_init_buffer( b, file );
 
 	return b;
 }
 
 /** Destroy the buffer.
- * @param b a buffer created with ascent_create_buffer()
- * 
+ * @param b a buffer created with yy_create_buffer()
+ *
  */
-    void ascent_delete_buffer (YY_BUFFER_STATE  b )
+    void yy_delete_buffer (YY_BUFFER_STATE  b )
 {
-    
+
 	if ( ! b )
 		return;
 
@@ -1492,27 +1742,27 @@ static void ascent_load_buffer_state  (void)
 		YY_CURRENT_BUFFER_LVALUE = (YY_BUFFER_STATE) 0;
 
 	if ( b->yy_is_our_buffer )
-		ascentfree((void *) b->yy_ch_buf  );
+		yyfree( (void *) b->yy_ch_buf  );
 
-	ascentfree((void *) b  );
+	yyfree( (void *) b  );
 }
 
 /* Initializes or reinitializes a buffer.
  * This function is sometimes called more than once on the same buffer,
- * such as during a ascentrestart() or at EOF.
+ * such as during a yyrestart() or at EOF.
  */
-    static void ascent_init_buffer  (YY_BUFFER_STATE  b, FILE * file )
+    static void yy_init_buffer  (YY_BUFFER_STATE  b, FILE * file )
 
 {
 	int oerrno = errno;
-    
-	ascent_flush_buffer(b );
+
+	yy_flush_buffer( b );
 
 	b->yy_input_file = file;
 	b->yy_fill_buffer = 1;
 
-    /* If b is the current buffer, then ascent_init_buffer was _probably_
-     * called from ascentrestart() or through yy_get_next_buffer.
+    /* If b is the current buffer, then yy_init_buffer was _probably_
+     * called from yyrestart() or through yy_get_next_buffer.
      * In that case, we don't want to reset the lineno or column.
      */
     if (b != YY_CURRENT_BUFFER){
@@ -1521,15 +1771,15 @@ static void ascent_load_buffer_state  (void)
     }
 
         b->yy_is_interactive = file ? (isatty( fileno(file) ) > 0) : 0;
-    
+
 	errno = oerrno;
 }
 
 /** Discard all buffered characters. On the next scan, YY_INPUT will be called.
  * @param b the buffer state to be flushed, usually @c YY_CURRENT_BUFFER.
- * 
+ *
  */
-    void ascent_flush_buffer (YY_BUFFER_STATE  b )
+    void yy_flush_buffer (YY_BUFFER_STATE  b )
 {
     	if ( ! b )
 		return;
@@ -1549,23 +1799,23 @@ static void ascent_load_buffer_state  (void)
 	b->yy_buffer_status = YY_BUFFER_NEW;
 
 	if ( b == YY_CURRENT_BUFFER )
-		ascent_load_buffer_state( );
+		yy_load_buffer_state(  );
 }
 
 /** Pushes the new state onto the stack. The new state becomes
  *  the current state. This function will allocate the stack
  *  if necessary.
  *  @param new_buffer The new state.
- *  
+ *
  */
-void ascentpush_buffer_state (YY_BUFFER_STATE new_buffer )
+void yypush_buffer_state (YY_BUFFER_STATE new_buffer )
 {
     	if (new_buffer == NULL)
 		return;
 
-	ascentensure_buffer_stack();
+	yyensure_buffer_stack();
 
-	/* This block is copied from ascent_switch_to_buffer. */
+	/* This block is copied from yy_switch_to_buffer. */
 	if ( YY_CURRENT_BUFFER )
 		{
 		/* Flush out information for old buffer. */
@@ -1579,27 +1829,27 @@ void ascentpush_buffer_state (YY_BUFFER_STATE new_buffer )
 		(yy_buffer_stack_top)++;
 	YY_CURRENT_BUFFER_LVALUE = new_buffer;
 
-	/* copied from ascent_switch_to_buffer. */
-	ascent_load_buffer_state( );
+	/* copied from yy_switch_to_buffer. */
+	yy_load_buffer_state(  );
 	(yy_did_buffer_switch_on_eof) = 1;
 }
 
 /** Removes and deletes the top of the stack, if present.
  *  The next element becomes the new top.
- *  
+ *
  */
-void ascentpop_buffer_state (void)
+void yypop_buffer_state (void)
 {
     	if (!YY_CURRENT_BUFFER)
 		return;
 
-	ascent_delete_buffer(YY_CURRENT_BUFFER );
+	yy_delete_buffer(YY_CURRENT_BUFFER );
 	YY_CURRENT_BUFFER_LVALUE = NULL;
 	if ((yy_buffer_stack_top) > 0)
 		--(yy_buffer_stack_top);
 
 	if (YY_CURRENT_BUFFER) {
-		ascent_load_buffer_state( );
+		yy_load_buffer_state(  );
 		(yy_did_buffer_switch_on_eof) = 1;
 	}
 }
@@ -1607,25 +1857,25 @@ void ascentpop_buffer_state (void)
 /* Allocates the stack if it does not exist.
  *  Guarantees space for at least one push.
  */
-static void ascentensure_buffer_stack (void)
+static void yyensure_buffer_stack (void)
 {
 	yy_size_t num_to_alloc;
-    
+
 	if (!(yy_buffer_stack)) {
 
 		/* First allocation is just for 2 elements, since we don't know if this
 		 * scanner will even need a stack. We use 2 instead of 1 to avoid an
 		 * immediate realloc on the next call.
          */
-		num_to_alloc = 1;
-		(yy_buffer_stack) = (struct yy_buffer_state**)ascentalloc
+      num_to_alloc = 1; /* After all that talk, this was set to 1 anyways... */
+		(yy_buffer_stack) = (struct yy_buffer_state**)yyalloc
 								(num_to_alloc * sizeof(struct yy_buffer_state*)
 								);
 		if ( ! (yy_buffer_stack) )
-			YY_FATAL_ERROR( "out of dynamic memory in ascentensure_buffer_stack()" );
-								  
+			YY_FATAL_ERROR( "out of dynamic memory in yyensure_buffer_stack()" );
+
 		memset((yy_buffer_stack), 0, num_to_alloc * sizeof(struct yy_buffer_state*));
-				
+
 		(yy_buffer_stack_max) = num_to_alloc;
 		(yy_buffer_stack_top) = 0;
 		return;
@@ -1634,15 +1884,15 @@ static void ascentensure_buffer_stack (void)
 	if ((yy_buffer_stack_top) >= ((yy_buffer_stack_max)) - 1){
 
 		/* Increase the buffer to prepare for a possible push. */
-		int grow_size = 8 /* arbitrary grow size */;
+		yy_size_t grow_size = 8 /* arbitrary grow size */;
 
 		num_to_alloc = (yy_buffer_stack_max) + grow_size;
-		(yy_buffer_stack) = (struct yy_buffer_state**)ascentrealloc
+		(yy_buffer_stack) = (struct yy_buffer_state**)yyrealloc
 								((yy_buffer_stack),
 								num_to_alloc * sizeof(struct yy_buffer_state*)
 								);
 		if ( ! (yy_buffer_stack) )
-			YY_FATAL_ERROR( "out of dynamic memory in ascentensure_buffer_stack()" );
+			YY_FATAL_ERROR( "out of dynamic memory in yyensure_buffer_stack()" );
 
 		/* zero only the new slots.*/
 		memset((yy_buffer_stack) + (yy_buffer_stack_max), 0, grow_size * sizeof(struct yy_buffer_state*));
@@ -1653,80 +1903,80 @@ static void ascentensure_buffer_stack (void)
 /** Setup the input buffer state to scan directly from a user-specified character buffer.
  * @param base the character buffer
  * @param size the size in bytes of the character buffer
- * 
- * @return the newly allocated buffer state object. 
+ *
+ * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE ascent_scan_buffer  (char * base, yy_size_t  size )
+YY_BUFFER_STATE yy_scan_buffer  (char * base, yy_size_t  size )
 {
 	YY_BUFFER_STATE b;
-    
+
 	if ( size < 2 ||
 	     base[size-2] != YY_END_OF_BUFFER_CHAR ||
 	     base[size-1] != YY_END_OF_BUFFER_CHAR )
 		/* They forgot to leave room for the EOB's. */
-		return 0;
+		return NULL;
 
-	b = (YY_BUFFER_STATE) ascentalloc(sizeof( struct yy_buffer_state )  );
+	b = (YY_BUFFER_STATE) yyalloc( sizeof( struct yy_buffer_state )  );
 	if ( ! b )
-		YY_FATAL_ERROR( "out of dynamic memory in ascent_scan_buffer()" );
+		YY_FATAL_ERROR( "out of dynamic memory in yy_scan_buffer()" );
 
-	b->yy_buf_size = size - 2;	/* "- 2" to take care of EOB's */
+	b->yy_buf_size = (int) (size - 2);	/* "- 2" to take care of EOB's */
 	b->yy_buf_pos = b->yy_ch_buf = base;
 	b->yy_is_our_buffer = 0;
-	b->yy_input_file = 0;
+	b->yy_input_file = NULL;
 	b->yy_n_chars = b->yy_buf_size;
 	b->yy_is_interactive = 0;
 	b->yy_at_bol = 1;
 	b->yy_fill_buffer = 0;
 	b->yy_buffer_status = YY_BUFFER_NEW;
 
-	ascent_switch_to_buffer(b  );
+	yy_switch_to_buffer( b  );
 
 	return b;
 }
 
-/** Setup the input buffer state to scan a string. The next call to ascentlex() will
+/** Setup the input buffer state to scan a string. The next call to yylex() will
  * scan from a @e copy of @a str.
  * @param yystr a NUL-terminated string to scan
- * 
+ *
  * @return the newly allocated buffer state object.
  * @note If you want to scan bytes that may contain NUL values, then use
- *       ascent_scan_bytes() instead.
+ *       yy_scan_bytes() instead.
  */
-YY_BUFFER_STATE ascent_scan_string (yyconst char * yystr )
+YY_BUFFER_STATE yy_scan_string (const char * yystr )
 {
-    
-	return ascent_scan_bytes(yystr,strlen(yystr) );
+
+	return yy_scan_bytes( yystr, (int) strlen(yystr) );
 }
 
-/** Setup the input buffer state to scan the given bytes. The next call to ascentlex() will
+/** Setup the input buffer state to scan the given bytes. The next call to yylex() will
  * scan from a @e copy of @a bytes.
  * @param yybytes the byte buffer to scan
  * @param _yybytes_len the number of bytes in the buffer pointed to by @a bytes.
- * 
+ *
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE ascent_scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_len )
+YY_BUFFER_STATE yy_scan_bytes  (const char * yybytes, int  _yybytes_len )
 {
 	YY_BUFFER_STATE b;
 	char *buf;
 	yy_size_t n;
-	yy_size_t i;
-    
+	int i;
+
 	/* Get memory for full buffer, including space for trailing EOB's. */
-	n = _yybytes_len + 2;
-	buf = (char *) ascentalloc(n  );
+	n = (yy_size_t) (_yybytes_len + 2);
+	buf = (char *) yyalloc( n  );
 	if ( ! buf )
-		YY_FATAL_ERROR( "out of dynamic memory in ascent_scan_bytes()" );
+		YY_FATAL_ERROR( "out of dynamic memory in yy_scan_bytes()" );
 
 	for ( i = 0; i < _yybytes_len; ++i )
 		buf[i] = yybytes[i];
 
 	buf[_yybytes_len] = buf[_yybytes_len+1] = YY_END_OF_BUFFER_CHAR;
 
-	b = ascent_scan_buffer(buf,n );
+	b = yy_scan_buffer( buf, n );
 	if ( ! b )
-		YY_FATAL_ERROR( "bad buffer in ascent_scan_bytes()" );
+		YY_FATAL_ERROR( "bad buffer in yy_scan_bytes()" );
 
 	/* It's okay to grow etc. this buffer, and we should throw it
 	 * away when we're done.
@@ -1740,9 +1990,9 @@ YY_BUFFER_STATE ascent_scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_
 #define YY_EXIT_FAILURE 2
 #endif
 
-static void yy_fatal_error (yyconst char* msg )
+static void yynoreturn yy_fatal_error (const char* msg )
 {
-    	(void) fprintf( stderr, "%s\n", msg );
+			fprintf( stderr, "%s\n", msg );
 	exit( YY_EXIT_FAILURE );
 }
 
@@ -1752,142 +2002,142 @@ static void yy_fatal_error (yyconst char* msg )
 #define yyless(n) \
 	do \
 		{ \
-		/* Undo effects of setting up ascenttext. */ \
+		/* Undo effects of setting up yytext. */ \
         int yyless_macro_arg = (n); \
         YY_LESS_LINENO(yyless_macro_arg);\
-		ascenttext[ascentleng] = (yy_hold_char); \
-		(yy_c_buf_p) = ascenttext + yyless_macro_arg; \
+		yytext[yyleng] = (yy_hold_char); \
+		(yy_c_buf_p) = yytext + yyless_macro_arg; \
 		(yy_hold_char) = *(yy_c_buf_p); \
 		*(yy_c_buf_p) = '\0'; \
-		ascentleng = yyless_macro_arg; \
+		yyleng = yyless_macro_arg; \
 		} \
 	while ( 0 )
 
 /* Accessor  methods (get/set functions) to struct members. */
 
 /** Get the current line number.
- * 
+ *
  */
-int ascentget_lineno  (void)
+int yyget_lineno  (void)
 {
-        
-    return ascentlineno;
+
+    return yylineno;
 }
 
 /** Get the input stream.
- * 
+ *
  */
-FILE *ascentget_in  (void)
+FILE *yyget_in  (void)
 {
-        return ascentin;
+        return yyin;
 }
 
 /** Get the output stream.
- * 
+ *
  */
-FILE *ascentget_out  (void)
+FILE *yyget_out  (void)
 {
-        return ascentout;
+        return yyout;
 }
 
 /** Get the length of the current token.
- * 
+ *
  */
-yy_size_t ascentget_leng  (void)
+int yyget_leng  (void)
 {
-        return ascentleng;
+        return yyleng;
 }
 
 /** Get the current token.
- * 
+ *
  */
 
-char *ascentget_text  (void)
+char *yyget_text  (void)
 {
-        return ascenttext;
+        return yytext;
 }
 
 /** Set the current line number.
- * @param line_number
- * 
+ * @param _line_number line number
+ *
  */
-void ascentset_lineno (int  line_number )
+void yyset_lineno (int  _line_number )
 {
-    
-    ascentlineno = line_number;
+
+    yylineno = _line_number;
 }
 
 /** Set the input stream. This does not discard the current
  * input buffer.
- * @param in_str A readable stream.
- * 
- * @see ascent_switch_to_buffer
+ * @param _in_str A readable stream.
+ *
+ * @see yy_switch_to_buffer
  */
-void ascentset_in (FILE *  in_str )
+void yyset_in (FILE *  _in_str )
 {
-        ascentin = in_str ;
+        yyin = _in_str ;
 }
 
-void ascentset_out (FILE *  out_str )
+void yyset_out (FILE *  _out_str )
 {
-        ascentout = out_str ;
+        yyout = _out_str ;
 }
 
-int ascentget_debug  (void)
+int yyget_debug  (void)
 {
-        return ascent_flex_debug;
+        return yy_flex_debug;
 }
 
-void ascentset_debug (int  bdebug )
+void yyset_debug (int  _bdebug )
 {
-        ascent_flex_debug = bdebug ;
+        yy_flex_debug = _bdebug ;
 }
 
 static int yy_init_globals (void)
 {
         /* Initialization is the same as for the non-reentrant scanner.
-     * This function is called from ascentlex_destroy(), so don't allocate here.
+     * This function is called from yylex_destroy(), so don't allocate here.
      */
 
-    (yy_buffer_stack) = 0;
+    (yy_buffer_stack) = NULL;
     (yy_buffer_stack_top) = 0;
     (yy_buffer_stack_max) = 0;
-    (yy_c_buf_p) = (char *) 0;
+    (yy_c_buf_p) = NULL;
     (yy_init) = 0;
     (yy_start) = 0;
 
 /* Defined in main.c */
 #ifdef YY_STDINIT
-    ascentin = stdin;
-    ascentout = stdout;
+    yyin = stdin;
+    yyout = stdout;
 #else
-    ascentin = (FILE *) 0;
-    ascentout = (FILE *) 0;
+    yyin = NULL;
+    yyout = NULL;
 #endif
 
     /* For future reference: Set errno on error, since we are called by
-     * ascentlex_init()
+     * yylex_init()
      */
     return 0;
 }
 
-/* ascentlex_destroy is for both reentrant and non-reentrant scanners. */
-int ascentlex_destroy  (void)
+/* yylex_destroy is for both reentrant and non-reentrant scanners. */
+int yylex_destroy  (void)
 {
-    
+
     /* Pop the buffer stack, destroying each element. */
 	while(YY_CURRENT_BUFFER){
-		ascent_delete_buffer(YY_CURRENT_BUFFER  );
+		yy_delete_buffer( YY_CURRENT_BUFFER  );
 		YY_CURRENT_BUFFER_LVALUE = NULL;
-		ascentpop_buffer_state();
+		yypop_buffer_state();
 	}
 
 	/* Destroy the stack itself. */
-	ascentfree((yy_buffer_stack) );
+	yyfree((yy_buffer_stack) );
 	(yy_buffer_stack) = NULL;
 
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
-     * ascentlex() is called, initialization will occur. */
+     * yylex() is called, initialization will occur. */
     yy_init_globals( );
 
     return 0;
@@ -1898,18 +2148,19 @@ int ascentlex_destroy  (void)
  */
 
 #ifndef yytext_ptr
-static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
+static void yy_flex_strncpy (char* s1, const char * s2, int n )
 {
-	register int i;
+
+	int i;
 	for ( i = 0; i < n; ++i )
 		s1[i] = s2[i];
 }
 #endif
 
 #ifdef YY_NEED_STRLEN
-static int yy_flex_strlen (yyconst char * s )
+static int yy_flex_strlen (const char * s )
 {
-	register int n;
+	int n;
 	for ( n = 0; s[n]; ++n )
 		;
 
@@ -1917,13 +2168,14 @@ static int yy_flex_strlen (yyconst char * s )
 }
 #endif
 
-void *ascentalloc (yy_size_t  size )
+void *yyalloc (yy_size_t  size )
 {
-	return (void *) malloc( size );
+			return malloc(size);
 }
 
-void *ascentrealloc  (void * ptr, yy_size_t  size )
+void *yyrealloc  (void * ptr, yy_size_t  size )
 {
+
 	/* The cast to (char *) in the following accommodates both
 	 * implementations that use char* generic pointers, and those
 	 * that use void* generic pointers.  It works with the latter
@@ -1931,18 +2183,17 @@ void *ascentrealloc  (void * ptr, yy_size_t  size )
 	 * any pointer type to void*, and deal with argument conversions
 	 * as though doing an assignment.
 	 */
-	return (void *) realloc( (char *) ptr, size );
+	return realloc(ptr, size);
 }
 
-void ascentfree (void * ptr )
+void yyfree (void * ptr )
 {
-	free( (char *) ptr );	/* see ascentrealloc() for (char *) cast */
+			free( (char *) ptr );	/* see yyrealloc() for (char *) cast */
 }
 
 #define YYTABLES_NAME "yytables"
 
 #line 53 "tokens.l"
-
 
 
 void scan_string(const char* str)
@@ -1951,11 +2202,12 @@ void scan_string(const char* str)
   ascentparse();
   ascent_delete_buffer(buffer);
 }
-/* A Bison parser, made by GNU Bison 3.0.4.  */
+/* A Bison parser, made by GNU Bison 3.3.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2019 Free Software Foundation,
+   Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1982,6 +2234,9 @@ void scan_string(const char* str)
 
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
+
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
 
 #ifndef YY_ASCENT_PARSER_HPP_INCLUDED
 # define YY_ASCENT_PARSER_HPP_INCLUDED
@@ -2035,7 +2290,7 @@ extern int ascentdebug;
 
 union YYSTYPE
 {
-#line 22 "parser.y" /* yacc.c:1909  */
+#line 22 "parser.y" /* yacc.c:1921  */
 
  ASTNode                     *node;
  ASTExpression               *expr;
@@ -2048,7 +2303,7 @@ union YYSTYPE
  std::string                 *string;
  int token;
 
-#line 99 "parser.hpp" /* yacc.c:1909  */
+#line 103 "parser.hpp" /* yacc.c:1921  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -2061,11 +2316,11 @@ extern YYSTYPE ascentlval;
 
 int ascentparse (void);
 /* "%code provides" blocks.  */
-#line 17 "parser.y" /* yacc.c:1909  */
+#line 17 "parser.y" /* yacc.c:1921  */
 
   ASTExpression *get_result();
 
-#line 116 "parser.hpp" /* yacc.c:1909  */
+#line 120 "parser.hpp" /* yacc.c:1921  */
 
 #endif /* !YY_ASCENT_PARSER_HPP_INCLUDED  */
 

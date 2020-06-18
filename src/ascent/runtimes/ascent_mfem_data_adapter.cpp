@@ -78,6 +78,7 @@ namespace ascent
 {
 
 MFEMDataSet::MFEMDataSet()
+  : m_cycle(0)
 {
 
 }
@@ -93,9 +94,22 @@ MFEMDataSet::~MFEMDataSet()
 }
 
 MFEMDataSet::MFEMDataSet(mfem::Mesh *mesh)
- : m_mesh(mesh)
+ : m_mesh(mesh),
+   m_cycle(0)
 {
 
+}
+
+int
+MFEMDataSet::cycle()
+{
+  return m_cycle;
+}
+
+void
+MFEMDataSet::cycle(int cycle)
+{
+  m_cycle = cycle;
 }
 
 void
@@ -165,6 +179,7 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
     // get the number of domains and check for id consistency
     const int num_domains = node.number_of_children();
 
+
     for(int i = 0; i < num_domains; ++i)
     {
       MFEMDataSet *dset = new MFEMDataSet();
@@ -178,10 +193,12 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
       mesh = mfem::ConduitDataCollection::BlueprintMeshToMesh(dom, topo_name, zero_copy);
       dset->set_mesh(mesh);
 
-      if(node.has_path("state/cycle"))
+      int cycle = 0;
+      if(dom.has_path("state/cycle"))
       {
-        int cycle = node["state/cycle"].to_int32();
+        cycle = dom["state/cycle"].to_int32();
       }
+      dset->cycle(cycle);
 
       std::string t_name = topo_name;
       // no topology name provied, use the first
@@ -302,6 +319,7 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
 
     conduit::Node &n_dset = output.append();
     n_dset["state/domain_id"] = int(ho_domains->m_domain_ids[i]);
+    n_dset["state/cycle"] = int(ho_domains->m_data_sets[i]->cycle());
 
     // get the high order data
     mfem::Mesh *ho_mesh = ho_domains->m_data_sets[i]->get_mesh();
@@ -318,6 +336,7 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
 
     for(auto it = field_map.begin(); it != field_map.end(); ++it)
     {
+
       mfem::GridFunction *ho_gf = it->second;
       std::string basis(ho_gf->FESpace()->FEColl()->Name());
       // we only have L2 or H2 at this point
@@ -532,6 +551,7 @@ MFEMDataAdapter::MeshToBlueprintMesh(mfem::Mesh *mesh,
       GridFunctionToBlueprintField(gf_mesh_nodes,
                                    n_mesh["fields/mesh_nodes"],
                                    main_topology_name);
+      n_mesh["fields/mesh_nodes/association"] = "vertex";
    }
 
    ////////////////////////////////////////////
@@ -626,6 +646,7 @@ MFEMDataAdapter::ElementTypeToShapeName(mfem::Element::Type element_type)
      case mfem::Element::QUADRILATERAL:  return "quad";
      case mfem::Element::TETRAHEDRON:    return "tet";
      case mfem::Element::HEXAHEDRON:     return "hex";
+     case mfem::Element::WEDGE:          return "wedge";
    }
 
    return "unknown";

@@ -82,29 +82,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class EnsureVTKH : public ::flow::Filter
-{
-public:
-    EnsureVTKH();
-    virtual ~EnsureVTKH();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class EnsureVTKM : public ::flow::Filter
-{
-public:
-    EnsureVTKM();
-    virtual ~EnsureVTKM();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHMarchingCubes : public ::flow::Filter
+class ASCENT_API VTKHMarchingCubes : public ::flow::Filter
 {
 public:
     VTKHMarchingCubes();
@@ -117,7 +95,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHVectorMagnitude : public ::flow::Filter
+class ASCENT_API VTKHVectorMagnitude : public ::flow::Filter
 {
 public:
     VTKHVectorMagnitude();
@@ -130,7 +108,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHSlice : public ::flow::Filter
+class ASCENT_API VTKHSlice : public ::flow::Filter
 {
 public:
     VTKHSlice();
@@ -143,7 +121,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKH3Slice : public ::flow::Filter
+class ASCENT_API VTKH3Slice : public ::flow::Filter
 {
 public:
     VTKH3Slice();
@@ -156,7 +134,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHThreshold : public ::flow::Filter
+class ASCENT_API VTKHThreshold : public ::flow::Filter
 {
 public:
     VTKHThreshold();
@@ -169,7 +147,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHGhostStripper: public ::flow::Filter
+class ASCENT_API VTKHGhostStripper: public ::flow::Filter
 {
 public:
     VTKHGhostStripper();
@@ -182,7 +160,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHClip: public ::flow::Filter
+class ASCENT_API VTKHClip: public ::flow::Filter
 {
 public:
     VTKHClip();
@@ -195,7 +173,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHClipWithField : public ::flow::Filter
+class ASCENT_API VTKHClipWithField : public ::flow::Filter
 {
 public:
     VTKHClipWithField();
@@ -208,7 +186,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHIsoVolume : public ::flow::Filter
+class ASCENT_API VTKHIsoVolume : public ::flow::Filter
 {
 public:
     VTKHIsoVolume();
@@ -221,116 +199,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class DefaultRender : public ::flow::Filter
-{
-public:
-    DefaultRender();
-    virtual ~DefaultRender();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHBounds: public ::flow::Filter
-{
-public:
-    VTKHBounds();
-    virtual ~VTKHBounds();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHUnionBounds: public ::flow::Filter
-{
-public:
-    VTKHUnionBounds();
-    virtual ~VTKHUnionBounds();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-
-
-//-----------------------------------------------------------------------------
-class VTKHDomainIds: public ::flow::Filter
-{
-public:
-    VTKHDomainIds();
-    virtual ~VTKHDomainIds();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class VTKHUnionDomainIds: public ::flow::Filter
-{
-public:
-    VTKHUnionDomainIds();
-    virtual ~VTKHUnionDomainIds();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class CreatePlot : public ::flow::Filter
-{
-public:
-    CreatePlot();
-    virtual ~CreatePlot();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-
-};
-
-//-----------------------------------------------------------------------------
-class AddPlot : public ::flow::Filter
-{
-public:
-    AddPlot();
-    virtual ~AddPlot();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-
-};
-
-//-----------------------------------------------------------------------------
-class CreateScene : public ::flow::Filter
-{
-public:
-    CreateScene();
-    virtual ~CreateScene();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-
-};
-
-//-----------------------------------------------------------------------------
-class ExecScene : public ::flow::Filter
-{
-public:
-    ExecScene();
-
-   ~ExecScene();
-
-    virtual void declare_interface(conduit::Node &i);
-
-    virtual void execute();
-};
-//-----------------------------------------------------------------------------
-class VTKHLagrangian : public ::flow::Filter
+class ASCENT_API VTKHLagrangian : public ::flow::Filter
 {
 public:
     VTKHLagrangian();
@@ -343,7 +212,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHLog: public ::flow::Filter
+class ASCENT_API VTKHLog: public ::flow::Filter
 {
 public:
     VTKHLog();
@@ -356,7 +225,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHRecenter: public ::flow::Filter
+class ASCENT_API VTKHRecenter: public ::flow::Filter
 {
 public:
     VTKHRecenter();
@@ -369,7 +238,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHHistSampling : public ::flow::Filter
+class ASCENT_API VTKHHistSampling : public ::flow::Filter
 {
 public:
     VTKHHistSampling();
@@ -382,7 +251,59 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class VTKHNoOp : public ::flow::Filter
+class ASCENT_API VTKHQCriterion: public ::flow::Filter
+{
+public:
+    VTKHQCriterion();
+    virtual ~VTKHQCriterion();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHDivergence: public ::flow::Filter
+{
+public:
+    VTKHDivergence();
+    virtual ~VTKHDivergence();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHVorticity: public ::flow::Filter
+{
+public:
+    VTKHVorticity();
+    virtual ~VTKHVorticity();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHGradient : public ::flow::Filter
+{
+public:
+    VTKHGradient();
+    virtual ~VTKHGradient();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHNoOp : public ::flow::Filter
 {
 public:
     VTKHNoOp();
@@ -393,6 +314,85 @@ public:
                                  conduit::Node &info);
     virtual void   execute();
 };
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHVectorComponent : public ::flow::Filter
+{
+public:
+    VTKHVectorComponent();
+    virtual ~VTKHVectorComponent();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHCompositeVector : public ::flow::Filter
+{
+public:
+    VTKHCompositeVector();
+    virtual ~VTKHCompositeVector();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHStats : public ::flow::Filter
+{
+public:
+    VTKHStats();
+    virtual ~VTKHStats();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHHistogram : public ::flow::Filter
+{
+public:
+    VTKHHistogram();
+    virtual ~VTKHHistogram();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHParticleAdvection : public ::flow::Filter
+{
+public:
+    VTKHParticleAdvection();
+    virtual ~VTKHParticleAdvection();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHProject2d : public ::flow::Filter
+{
+public:
+    VTKHProject2d();
+    virtual ~VTKHProject2d();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 
 };
 //-----------------------------------------------------------------------------

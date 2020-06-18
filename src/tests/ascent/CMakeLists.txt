@@ -62,6 +62,13 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_web_flow
                 t_ascent_web_main
                 t_ascent_clip
+                t_ascent_scalar_renderer
+                t_ascent_multi_topo
+                t_ascent_gradient
+                t_ascent_qcriterion
+                t_ascent_divergence
+                t_ascent_vorticity
+                t_ascent_relay
                 t_ascent_clip_with_field
                 t_ascent_contour
                 t_ascent_iso_volume
@@ -69,7 +76,8 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_pipelines_to_pipelines
                 t_ascent_threshold
                 t_ascent_slice
-                t_ascent_vector_magnitude
+                t_ascent_patch_amr
+                t_ascent_vector_ops
                 t_ascent_flow_runtime
                 t_ascent_recenter
                 t_ascent_rover
@@ -84,10 +92,12 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_expressions
                t_ascent_mpi_render_2d
                t_ascent_mpi_render_3d
+               t_ascent_mpi_statistics
+               t_ascent_mpi_multi_topo
                t_ascent_mpi_slice)
 
 # t_ascent_hola_mpi uses 8 mpi tasks, so its added manually
-
+# same for t_ascent_babelflow_pmt_mpi
 
 # include the "ascent" pipeline
 if(VTKM_FOUND)
@@ -107,6 +117,10 @@ if(PYTHON_FOUND AND ENABLE_PYTHON)
     list(APPEND MPI_TESTS t_ascent_mpi_python_extract)
 endif()
 
+if(DRAY_FOUND)
+    list(APPEND BASIC_TESTS t_ascent_dray)
+endif()
+
 
 ################################
 # Add main tests
@@ -116,15 +130,16 @@ if (ENABLE_SERIAL)
     foreach(TEST ${BASIC_TESTS})
         add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
     endforeach()
-    
+
     foreach(TEST ${VTKH_DEP_TESTS})
         add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
     endforeach()
-    
+
     if(VTKM_FOUND)
       # special test case where we test vtkm conversions
        vtkm_add_target_information(t_ascent_vtkh_data_adapter
                                    DEVICE_SOURCES t_ascent_vtkh_data_adapter.cpp)
+       set_target_properties(t_ascent_vtkh_data_adapter PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
 endif()
 ################################
@@ -141,6 +156,10 @@ if(MPI_FOUND AND ENABLE_MPI)
     # add the hola mpi test which uses 8 ranks
     add_cpp_mpi_test(TEST t_ascent_hola_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
 
+  if(ENABLE_BABELFLOW)
+  # add the babelflow pmt mpi test
+    add_cpp_mpi_test(TEST t_ascent_babelflow_pmt_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
+  endif()
 else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()

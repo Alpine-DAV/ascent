@@ -94,6 +94,12 @@ conduit::Node field_sum(const conduit::Node &dataset,
 conduit::Node field_avg(const conduit::Node &dataset,
                         const std::string &field_name);
 
+conduit::Node field_nan_count(const conduit::Node &dataset,
+                              const std::string &field_name);
+
+conduit::Node field_inf_count(const conduit::Node &dataset,
+                              const std::string &field_name);
+
 conduit::Node field_histogram(const conduit::Node &dataset,
                               const std::string &field_name,
                               const double &min_val,

@@ -130,7 +130,6 @@ TEST(ascent_web, test_ascent_web_launch)
     conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     Node actions;
     actions.append();

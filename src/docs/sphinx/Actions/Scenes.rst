@@ -41,7 +41,8 @@
 .. # POSSIBILITY OF SUCH DAMAGE.
 .. #
 .. ############################################################################
-.. _add_plot-label:
+
+.. _scenes:
 
 Scenes
 ======
@@ -49,6 +50,43 @@ A scene encapsulates the information required to generate one or more images.
 To define a scene, the user specifies a collection of plots (e.g., volume or surface rendering) and associated parameters such as camera definitions, light positions, and annotations.
 The simplest plot description requires only a plot type and scalar field name.
 A scene defined in this way uses the default data source, which is all of the data published by the simulation, and default settings for camera position, image resolution, lighting, and annotations.
+
+Default Images
+--------------
+When creating a scene, Ascent will set up camera and color table defualts.
+The only requirement is that either a ``image_name`` or ``image_prefix``
+be provided. Minimally, a scene consists of one plot and a parameter
+to specify the output file name. Default images images have a resolution
+of ``1024x1024``.
+
+.. code-block:: c++
+
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"]  = "pseudocolor";
+  scenes["s1/plots/p1/field"] = "braid";
+  // scene default image prefix
+  scenes["s1/image_prefix"] = output_file_name;
+
+If anything other than the default camera, annotation, image resolution, or color table
+parameters are needed, then a `render` will need to be specified. Renders are covered
+later in this section.
+
+Image Prefix
+^^^^^^^^^^^^
+The ``image_prefix`` is a string denotes a prefix to be used when saving
+the image. For multiple cycles, the cycle number will be appended to the
+image filename. Numeric formatting, similar to ``printf`` is supported
+within the image prefix. Assuming the cycle is ``10``, here are some examples:
+
+   - ``image_``: ``image_10.png``
+   - ``image_%04d``: ``image_0010.png``
+
+Image Name
+^^^^^^^^^^
+The ``image_name`` parameter speficies the excact file name of the of the output
+image, and Ascent will append the ``.png`` to the image file name. If not changed,
+the image file will be overwritten.
+
 
 Plots
 -----
@@ -86,6 +124,7 @@ Below is an example of creating a scene with a single pseudocolor plot with the 
   conduit::Node scenes;
   scenes["s1/plots/p1/type"]         = "pseudocolor";
   scenes["s1/plots/p1/field"] = "braid";
+  // scene default image prefix
   scenes["s1/image_prefix"] = output_file_name;
 
   conduit::Node actions;
@@ -212,10 +251,14 @@ The code below creates a volume plot of the default pipeline.
 
     A mesh plot of simple grid.
 
+
+.. _scenes_color_tables:
+
 Color Tables
 ^^^^^^^^^^^^
 The color map translates normalized scalars to color values. Color maps
 can be applied to each each plot in a scene.
+Image of the color tables provided by VTK-m can be found in :ref:`vtkm_color_tables`.
 Minimally, a color table name needs to be specified, but the ``color_table`` node allows you to specify RGB and Alpha (opacity) control points for complete customization of color maps.
 Alpha control points are used when rendering volumes.
 The built-in Color map names are: ``Cool to Warm``, ``Black-Body Radiation``, ``Samsel Fire``, ``Inferno``, ``Linear YGB``, ``Cold and Hot``, ``Rainbow Desaturated``, ``Cool to Warm (Extended)``, ``X Ray``, ``Black, Blue and White``, ``Viridis``, ``Linear Green``, ``Jet``, and ``Rainbow``.
@@ -309,6 +352,7 @@ Here is an example of clamping the scalar values to the range [-0.5, 0.5].
   scenes["s1/plots/p1/min_value"] = -0.5;
   scenes["s1/plots/p1/max_value"] = 0.5;
 
+.. _scenes_renders:
 
 Renders (Optional)
 ------------------
@@ -351,7 +395,7 @@ Now we add a second render to the same example using every available parameter:
   scenes["s1/renders/r2/camera/far_plane"] = 33.1;
 
 .. code-block:: json
-  
+
   {
   "renders":
   {

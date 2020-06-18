@@ -58,6 +58,22 @@
 namespace ascent
 {
 
+namespace detail
+{
+void split_string(const std::string &s,
+                  char delim,
+                  std::vector<std::string> &elems)
+{
+  std::stringstream ss(s);
+  std::string item;
+  while(std::getline(ss, item, delim))
+  {
+    elems.push_back(item);
+  }
+}
+
+} // namespace detail
+
 std::string expand_family_name(const std::string name, int counter)
 {
   if(counter == 0)
@@ -92,6 +108,14 @@ std::string expand_family_name(const std::string name, int counter)
   }
   return result;
 }
+
+std::vector<std::string> split(const std::string &s, char delim)
+{
+  std::vector<std::string> elems;
+  detail::split_string(s, delim, elems);
+  return elems;
+}
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

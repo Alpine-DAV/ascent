@@ -1,0 +1,74 @@
+# Same Python interpreter for all time steps
+# We use count for one time initializations
+try:
+    count = count + 1
+except NameError:
+    count = 0
+
+if count == 0:
+    # ParaView API
+    # WARNING: this does not work inside the plugin
+    #          unless you have the same import in paraview-vis.py
+    import paraview
+    paraview.options.batch = True
+    paraview.options.symmetric = True
+    from paraview.simple import LoadPlugin, Show, ColorBy, \
+        GetColorTransferFunction, GetActiveView, GetScalarBar, ResetCamera,\
+        Render, SaveScreenshot, GetActiveCamera, ResampleToImage,\
+        GetProperty, CreateRenderView
+
+    LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())
+    ascentSource = AscentSource()
+    view = CreateRenderView()
+    view.ViewSize = [1024, 1024]
+
+    ResampleToImage()
+    rep = Show()
+
+    ColorBy(rep, ("POINTS", "phi"))
+    # rescale transfer function
+    phiLUT = GetColorTransferFunction('phi')
+    phiLUT.RescaleTransferFunction(-0.14, 2)
+    # show color bar
+    renderView1 = GetActiveView()
+    phiLUT = GetScalarBar(phiLUT, renderView1)
+    phiLUT.Title = 'phi'
+    phiLUT.ComponentTitle = ''
+    # set color bar visibility
+    phiLUT.Visibility = 1
+    # show color legend
+    rep.SetScalarBarVisibility(renderView1, True)
+    rep.SetRepresentationType('Volume')
+
+    cam = GetActiveCamera()
+    cam.Elevation(30)
+    cam.Azimuth(30)
+
+ascentSource.UpdateAscentData()
+ascentSource.UpdatePropertyInformation()
+cycle = GetProperty(ascentSource, "Cycle").GetElement(0)
+rank = GetProperty(ascentSource, "Rank").GetElement(0)
+imageName = "image_{0:04d}.png".format(int(cycle))
+ResetCamera()
+Render()
+SaveScreenshot(imageName, ImageResolution=(1024, 1024))
+
+# dataName = "paraviewdata_{0:04d}".format(int(cycle))
+# writer = CreateWriter(dataName + ".pvtr", ascentSource)
+# writer.UpdatePipeline()
+
+
+# # VTK API
+# from ascent_to_vtk import AscentSource, write_vtk
+# ascentSource = AscentSource()
+# ascentSource.Update()
+# write_vtk("vtkdata", ascentSource.GetNode(),
+#           ascentSource.GetOutputDataObject(0))
+
+
+# # Python API
+# from ascent_to_vtk import ascent_to_vtk, write_vtk, write_json
+# node = ascent_data().child(0)
+# write_json("blueprint", node)
+# data = ascent_to_vtk(node)
+# write_vtk("pythondata", node, data)

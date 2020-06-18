@@ -93,7 +93,6 @@ TEST(ascent_pipelines_to_pipelines, test_pipelines_to_pipelines)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
     ASCENT_INFO("Testing pipelines to pipelines");
 

@@ -65,11 +65,23 @@
 
 #if defined(ASCENT_VTKM_ENABLED)
     #include <ascent_runtime_vtkh_filters.hpp>
+    #include <ascent_runtime_rendering_filters.hpp>
     #include <ascent_runtime_rover_filters.hpp>
+#endif
+
+#if defined(ASCENT_DRAY_ENABLED)
+    #include <ascent_runtime_dray_filters.hpp>
+#endif
+
+#if defined(ASCENT_PYTHON_ENABLED)
+    #include <ascent_python_script_filter.hpp>
 #endif
 
 #ifdef ASCENT_MPI_ENABLED
     #include <ascent_runtime_hola_filters.hpp>
+    #ifdef ASCENT_BABELFLOW_ENABLED
+        #include <ascent_runtime_babelflow_filters.hpp>
+    #endif
 #if defined(ASCENT_ADIOS_ENABLED)
     #include <ascent_runtime_adios_filters.hpp>
 #endif
@@ -105,8 +117,6 @@ void
 register_builtin()
 {
     AscentRuntime::register_filter_type<BlueprintVerify>();
-    AscentRuntime::register_filter_type<EnsureLowOrder>();
-    AscentRuntime::register_filter_type<EnsureBlueprint>();
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
     AscentRuntime::register_filter_type<RelayIOLoad>();
 
@@ -115,14 +125,9 @@ register_builtin()
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
-    AscentRuntime::register_filter_type<EnsureVTKH>();
-    AscentRuntime::register_filter_type<EnsureVTKM>();
 
     AscentRuntime::register_filter_type<VTKHBounds>();
     AscentRuntime::register_filter_type<VTKHUnionBounds>();
-
-    AscentRuntime::register_filter_type<VTKHDomainIds>();
-    AscentRuntime::register_filter_type<VTKHUnionDomainIds>();
 
     // transforms, the current crop expect vtk-h input data
     AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
@@ -135,12 +140,29 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHThreshold>("transforms","threshold");
     AscentRuntime::register_filter_type<VTKHSlice>("transforms","slice");
     AscentRuntime::register_filter_type<VTKH3Slice>("transforms","3slice");
+    AscentRuntime::register_filter_type<VTKHCompositeVector>("transforms","composite_vector");
+    AscentRuntime::register_filter_type<VTKHVectorComponent>("transforms","vector_component");
     AscentRuntime::register_filter_type<VTKHNoOp>("transforms","noop");
     AscentRuntime::register_filter_type<VTKHRecenter>("transforms","recenter");
     AscentRuntime::register_filter_type<VTKHVectorMagnitude>("transforms","vector_magnitude");
     AscentRuntime::register_filter_type<VTKHHistSampling>("transforms","histsampling");
+    AscentRuntime::register_filter_type<VTKHQCriterion>("transforms","qcriterion");
+    AscentRuntime::register_filter_type<VTKHStats>("extracts","statistics");
+    AscentRuntime::register_filter_type<VTKHHistogram>("extracts","histogram");
+    AscentRuntime::register_filter_type<VTKHGradient>("transforms","gradient");
+    AscentRuntime::register_filter_type<VTKHDivergence>("transforms","divergence");
+    AscentRuntime::register_filter_type<VTKHVorticity>("transforms","vorticity");
+    AscentRuntime::register_filter_type<VTKHProject2d>("transforms","project_2d");
+    AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
+#if defined(ASCENT_DRAY_ENABLED)
+    AscentRuntime::register_filter_type<DRayPseudocolor>("extracts", "dray_pseudocolor");
+    AscentRuntime::register_filter_type<DRay3Slice>("extracts", "dray_3slice");
+    AscentRuntime::register_filter_type<DRayVolume>("extracts", "dray_volume");
+    AscentRuntime::register_filter_type<DRayProject2d>("transforms", "dray_project_2d");
+    AscentRuntime::register_filter_type<DRayReflect>("transforms", "dray_reflect");
+#endif
 
     AscentRuntime::register_filter_type<AddPlot>();
     AscentRuntime::register_filter_type<CreatePlot>();
@@ -148,13 +170,23 @@ register_builtin()
     AscentRuntime::register_filter_type<ExecScene>();
 #endif
 
+
+
 #if defined(ASCENT_MPI_ENABLED)
     AscentRuntime::register_filter_type<HolaMPIExtract>("extracts","hola_mpi");
+
+#if defined(ASCENT_BABELFLOW_ENABLED)
+    AscentRuntime::register_filter_type<BabelFlow>("transforms", "babelflow");
+#endif
 
 #if defined(ASCENT_ADIOS_ENABLED)
     AscentRuntime::register_filter_type<ADIOS>("extracts","adios");
 #endif
 
+#endif
+
+#if defined(ASCENT_PYTHON_ENABLED)
+    AscentRuntime::register_filter_type<AscentPythonScript>();
 #endif
 
 }
@@ -179,4 +211,3 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-

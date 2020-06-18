@@ -1,0 +1,99 @@
+
+- 
+  action: "add_queries"
+  queries: 
+    q1: 
+      params: 
+        expression: "cycle()"
+        name: "cycle"
+    q2: 
+      params: 
+        expression: "entropy(histogram(field('gyre'), num_bins=128))"
+        name: "entropy_of_gyre"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "gyre"
+      image_name: "out_gyre"
+
+time: 0.0 cycle: 100
+time: 0.5 cycle: 200
+time: 1.0 cycle: 300
+time: 1.5 cycle: 400
+time: 2.0 cycle: 500
+time: 2.5 cycle: 600
+time: 3.0 cycle: 700
+time: 3.5 cycle: 800
+time: 4.0 cycle: 900
+time: 4.5 cycle: 1000
+
+100: 
+  type: "int"
+  value: 100
+200: 
+  type: "int"
+  value: 200
+300: 
+  type: "int"
+  value: 300
+400: 
+  type: "int"
+  value: 400
+500: 
+  type: "int"
+  value: 500
+600: 
+  type: "int"
+  value: 600
+700: 
+  type: "int"
+  value: 700
+800: 
+  type: "int"
+  value: 800
+900: 
+  type: "int"
+  value: 900
+1000: 
+  type: "int"
+  value: 1000
+
+
+100: 
+  value: 3.81580590726479
+  type: "double"
+200: 
+  value: 4.43027379899862
+  type: "double"
+300: 
+  value: 4.42357515605932
+  type: "double"
+400: 
+  value: 4.4133821818731
+  type: "double"
+500: 
+  value: 4.40290017527564
+  type: "double"
+600: 
+  value: 4.3643209637501
+  type: "double"
+700: 
+  value: 4.40290017527564
+  type: "double"
+800: 
+  value: 4.4133821818731
+  type: "double"
+900: 
+  value: 4.42357515605932
+  type: "double"
+1000: 
+  value: 4.43027379899862
+  type: "double"
+
+Entropy Result
+[3.81580591 4.4302738  4.42357516 4.41338218 4.40290018 4.36432096
+ 4.40290018 4.41338218 4.42357516 4.4302738 ]

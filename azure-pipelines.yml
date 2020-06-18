@@ -28,12 +28,12 @@ stages:
           # run our sanity check script
           #######################################
           git fetch
-          python scripts/ci/check_blt_time_travel.py 
+          python scripts/ci/check_blt_time_travel.py
         displayName: 'BLT Time Travel Check'
 
 # main checks
 - stage: Main
-  jobs:  
+  jobs:
   ###############################################################################
   # Ubuntu build and test, using spack to build tpls
   ###############################################################################
@@ -60,6 +60,7 @@ stages:
           PYTHON_VERSION: 2.7.14
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: ON
         shared_py36:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -67,6 +68,15 @@ stages:
           PYTHON_VERSION: 3.6.3
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: ON
+        shared_py37:
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          PYTHON_VERSION: 3.7.6
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: ON
         static_py27:
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Debug
@@ -126,8 +136,10 @@ stages:
            # vtkh
            if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
            # mfem
-           if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem"; fi
-           if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem"; fi
+           if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem+dray"; fi
+           if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem~dray"; fi
+           # babelflow
+           if [ $ENABLE_BABELFLOW  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+babelflow"; fi
            # python
            if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
            if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
@@ -190,11 +202,33 @@ stages:
            ctest -T test --output-on-failure -V
         displayName: 'Run Unit Tests'
 
+      - script: |
+           #################################
+           # gen img diff report
+           #################################
+           # run cmake target to gen report
+           cd build
+           make gen_report
+        displayName: 'Run Gen Test Image Diff Report'
+        condition: eq(variables['ENABLE_PYTHON'], 'ON')
+
       - task: PublishTestResults@2
         inputs:
           testResultsFormat: 'cTest'
           testResultsFiles: '**/Test.xml'
         displayName: 'Unit Test Results'
+        condition: always()
+
+      - task: CopyFiles@2
+        inputs:
+          contents: 'build/tests/_output/**'
+          targetFolder: $(Build.ArtifactStagingDirectory)
+        condition: always()
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathToPublish: $(Build.ArtifactStagingDirectory)
+          artifactName: Ascent_Test_Outputs
         condition: always()
 
       - script: |
@@ -265,6 +299,7 @@ stages:
           PYTHON_VERSION: 3.6.3
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: ON
     steps:
       - checkout: self
         clean: boolean
@@ -316,8 +351,10 @@ stages:
            # vtkh
            if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
            # mfem
-           if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem"; fi
-           if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem"; fi
+           if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem+dray"; fi
+           if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem~dray"; fi
+           # babelflow
+           if [ $ENABLE_BABELFLOW  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+babelflow"; fi
            # python
            if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
            if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
@@ -380,11 +417,33 @@ stages:
            ctest -T test --output-on-failure -V
         displayName: 'Run Unit Tests'
 
+      - script: |
+           #################################
+           # gen img diff report
+           #################################
+           # run cmake target to gen report
+           cd build
+           make gen_report
+        displayName: 'Run Gen Test Image Diff Report'
+        condition: eq(variables['ENABLE_PYTHON'], 'ON')
+
       - task: PublishTestResults@2
         inputs:
           testResultsFormat: 'cTest'
           testResultsFiles: '**/Test.xml'
         displayName: 'Unit Test Results'
+        condition: always()
+
+      - task: CopyFiles@2
+        inputs:
+          contents: 'build/tests/_output/**'
+          targetFolder: $(Build.ArtifactStagingDirectory)
+        condition: always()
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathToPublish: $(Build.ArtifactStagingDirectory)
+          artifactName: Ascent_Test_Outputs
         condition: always()
 
       - script: |
@@ -443,7 +502,7 @@ stages:
       matrix:
         static_vtkh:
           BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Debug
+          CMAKE_BUILD_TYPE: Release
     steps:
       - checkout: self
         clean: boolean
@@ -479,11 +538,13 @@ stages:
            python --version
            # setup spack spec (must be static)
            export SPACK_SPEC="%gcc+mpi+cuda+vtkh~python~openmp~shared"
-           export SPACK_SPEC="${SPACK_SPEC}${SPACK_SHARED_VARIANT} ^vtkh+cuda${SPACK_SHARED_VARIANT} ^vtkm+cuda${SPACK_SHARED_VARIANT}"
-           export SPACK_SPEC="${SPACK_SPEC} ^cmake~openssl~ncurses"
+           export SPACK_SPEC="${SPACK_SPEC}${SPACK_SHARED_VARIANT} ^vtk-h+cuda${SPACK_SHARED_VARIANT} ^vtk-m+cuda${SPACK_SHARED_VARIANT}"
+           export SPACK_SPEC="${SPACK_SPEC} ^cmake@3.14.5~openssl~ncurses"
            echo $SPACK_SPEC
            # run uber to build tpls
            python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_cuda/
+           # lets cleanup the spack build stuff to free up space
+           uberenv_libs/spack/bin/spack clean --all
         displayName: 'Spack Build Tpls'
 
       - script: |
@@ -655,7 +716,7 @@ stages:
 
 
 ###############################################################################
-# disable b/c macos recipie needs more work 
+# disable b/c macos recipe needs more work
 ###############################################################################
 
 ###############################################################################

@@ -41,10 +41,9 @@ packages:
     providers: {}
     compiler: []
   openssl:
-      version: [1.0.1i]
       buildable: False
       paths:
-          openssl@1.0.1i: /usr
+          openssl: /usr
   intel-mkl:
       buildable: False
       paths:
@@ -58,7 +57,7 @@ packages:
   cmake:
       buildable: False
       paths:
-       cmake: /project/projectdirs/alpine/software/cmake/3.14.6/
+       cmake@3.14.6: /project/projectdirs/alpine/software/cmake/3.14.6/
   python:
       variants: ~dbm
   pkg-config:

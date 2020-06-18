@@ -62,7 +62,7 @@ namespace ascent
 
 // Pipeline Interface Class
 
-class Runtime
+class ASCENT_API Runtime
 {
 public:
     Runtime();

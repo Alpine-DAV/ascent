@@ -62,6 +62,7 @@
 
 #include <conduit.hpp>
 #include <ascent_config.h>
+#include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -70,7 +71,7 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
-class BlockTimer
+class ASCENT_API BlockTimer
 {
 public:
     // methods

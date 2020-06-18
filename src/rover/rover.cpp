@@ -145,6 +145,19 @@ public:
 #endif
     m_scheduler->save_result(file_name);
   }
+  void save_png(const std::string &file_name,
+                const float min_val,
+                const float max_val,
+                const bool log_scale)
+  {
+#ifdef ROVER_PARALLEL
+    if(m_rank != 0)
+    {
+      return;
+    }
+#endif
+    m_scheduler->save_result(file_name, min_val, max_val, log_scale);
+  }
 
   void save_bov(const std::string &file_name)
   {
@@ -375,6 +388,15 @@ void
 Rover::save_png(const std::string &file_name)
 {
   m_internals->save_png(file_name);
+}
+
+void
+Rover::save_png(const std::string &file_name,
+                const float min_val,
+                const float max_val,
+                const bool log_scale)
+{
+  m_internals->save_png(file_name, min_val, max_val, log_scale);
 }
 
 void

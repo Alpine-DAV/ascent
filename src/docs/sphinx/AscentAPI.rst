@@ -44,16 +44,17 @@
 
 Ascent API
 ============
-The top level API for ascent consists of four calls:
+The top level API for ascent consists of five calls:
 
-  - Open(condiut::Node)
-  - Publish(conduit::Node)
-  - Execute(conduit::Node)
-  - Close()
+  - open(condiut::Node)
+  - publish(conduit::Node)
+  - execute(conduit::Node)
+  - info(conduit::Node)
+  - close()
 
 .. _ascent_api_open:
 
-Open
+open
 ----
 Open provides the initial setup of Ascent from a Conduit Node.
 Options include runtime type (e.g., ascent, flow, or empty) and associated backend if available.
@@ -66,23 +67,11 @@ Here is a file that would set the runtime to the main ascent runtime using a Ope
 
   {
     "runtime/type"    : "ascent",
-    "runtine/backend" : "openmp"
+    "runtine/vtkm/backend" : "openmp"
   }
 
-If MFEM is enabled, one additional options argument, ``refinement`` can be specified.
-High-order meshes variable are continuous polynomial functions that cannot be captured
-by linear low-order meshes. In order to approximate the functions with less error,
-high-order elements are discretized into many linear elements. The minimum value for refinement
-is ``2``. There is a memory-accuracy trade-off when using refinement. The higher the value,
-the more accurate the low-order representation is, but more discretization means more memory
-usage and more time tp process the additional elements.
-
-.. code-block:: json
-
-  {
-    "refinement" : 4
-  }
-
+Example Options
+"""""""""""""""
 A typical integration will include the following code:
 
 .. code-block:: c++
@@ -98,6 +87,43 @@ A typical integration will include the following code:
 
   ascent.Open(ascent_options);
 
+
+Default Directory
+"""""""""""""""""
+By default, Ascent will output files in the current working directory.
+This can be overrided by specifying the ``default_dir``. This directory
+must be a valid directory, i.e., Ascent will not create this director for
+you. Many Ascent filters have parameters that specify output files, and Ascent
+will only place files that do not have an absolue path specified.
+For example, the ``my_image`` would be written to the default directory, but
+``/some/other/path/my_image`` would be written in the directory
+``/some/other/path/``.
+
+.. code-block:: json
+
+  {
+    "default_dir" : "/path/to/output/dir"
+  }
+
+High Order Mesh Refinement
+""""""""""""""""""""""""""
+If MFEM is enabled, one additional options argument, ``refinement_level`` can be specified.
+High-order meshes variable are continuous polynomial functions that cannot be captured
+by linear low-order meshes. In order to approximate the functions with less error,
+high-order elements are discretized into many linear elements. The minimum value for refinement
+is ``1``, i.e., no refinement. There is a memory-accuracy trade-off when using refinement.
+The higher the value,
+the more accurate the low-order representation is, but more discretization means more memory
+usage and more time tp process the additional elements.
+
+.. code-block:: json
+
+  {
+    "refinement_level" : 4
+  }
+
+Runtime Options
+"""""""""""""""
 Valid runtimes include:
 
   - ``ascent``
@@ -107,6 +133,8 @@ Valid runtimes include:
   - ``empty``
 
 
+Logging Options
+"""""""""""""""
 There are a few other options that control behaviors common to all runtimes:
 
  * ``messages``
@@ -119,6 +147,8 @@ There are a few other options that control behaviors common to all runtimes:
 
     - ``verbose``  Logged info messages are printed
 
+Exception Handling
+""""""""""""""""""
 If ascent is not behaving as expected, a good first step is to enable verbose messaging.
 There are often warnings and other information that can indicate potential issues.
 
@@ -136,7 +166,6 @@ There are often warnings and other information that can indicate potential issue
 By default, Ascent looks for a file called ``ascent_actions.json`` that can append additional actions at runtime.
 This default file name can be overridden in the Ascent options:
 
-
 .. code-block:: c++
 
     ascent_opts["actions_file"] = custom_ascent_actions_file;
@@ -151,7 +180,43 @@ launch one MPI task per GPU. This default behavior can be overridden with the fo
 
 By disabling CUDA GPU initialization, an application is free to set the active device.
 
-Publish
+Filter Timings
+""""""""""""""
+Ascent has internal timings for filters. The timings output is one csv file
+per MPI rank.
+
+.. code-block:: json
+
+  {
+    "timings" : "true"
+  }
+
+
+Field Filtering
+"""""""""""""""
+By default, Ascent passes all of the published data to. Some simulations
+have just a few variables that they publish, but other simulations an
+publish 100s of variables to Ascent. In this case, its undesirable to
+use all fields when the actions only need a single variable. This reduces
+the memory overhead Ascent uses.
+
+Field filtering scans the user's actions to identify what fields are required,
+only passing the required fields into Ascent. However, there are several
+actions where the required fields cannot be resolved. For example, saving simulation
+data to the file system saves all fields, and in this case, it is not possible to resolve
+the required fields. If field filtering encounters this case, then an error is generated.
+Alternatively, if the actions specify which fields to save, then this field filtering
+can resolve the fields.
+
+.. code-block:: json
+
+  {
+    "field_filtering" : "true"
+  }
+
+
+
+publish
 -------
 This call publishes data to Ascent through `Conduit Blueprint <http://llnl-conduit.readthedocs.io/en/latest/blueprint.html>`_ mesh descriptions.
 In the Lulesh proxy-app, data is already in a form that is compatible with the blueprint conventions and the code to create the Conduit Node is straight-forward:
@@ -206,7 +271,7 @@ Once the Conduit Node has been populated with data conforming to the mesh bluepr
 
 Publish is called each cycle where Ascent is used.
 
-Execute
+execute
 -------
 Execute applies some number of actions to published data.
 Each action is described inside of a Conduit Node and passed to the Execute call.
@@ -234,13 +299,33 @@ Here is a simple example of adding a plot using the C++ API:
       ascent.Publish(mesh_data);
       ascent.Execute(actions);
 
-Close
+info
+----
+Info populates a conduit Node with infomation about Ascent including runtime execution and outputted results.
+This information can be used to return data back to the simulation and for debugging purposes.
+
+.. code-block:: c++
+
+  conduit::Node info;
+  ascent.info(info);
+  info.print();
+
+The data populated inside the info node is as follows:
+
+  - ``runtime``: the default runtime that Ascent used. Unless a custom runtime was used, this value will be ``ascent``.
+  - ``registered_filter_types``: a list of filters that have been registered with the Ascent runtime.
+  - ``flow_graph``: description of the data flow network that was run with the last ``Execute`` call.
+  - ``actions``: the last set of input actions Ascent ran with the last ``Execute`` call.
+  - ``images``: a list of image file names and camera parameters that were create in the last call to ``Execute``.
+  - ``expressions``: a set of query results from all calls to ``Execute``.
+
+close
 -----
 Close informs Ascent that all actions are complete, and the call performs the appropriate clean-up.
 
 .. code-block:: c++
 
-  ascent.Close();
+  ascent.close();
 
 
 Error Handling

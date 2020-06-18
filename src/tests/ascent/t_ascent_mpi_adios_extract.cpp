@@ -92,7 +92,6 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
 
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     // make sure the _output dir exists
     string output_path = "";

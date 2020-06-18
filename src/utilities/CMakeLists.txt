@@ -48,3 +48,9 @@
 #
 ###############################################################################
 add_subdirectory(replay)
+add_subdirectory(actions_conversions)
+add_subdirectory(holo_compare)
+
+# install visit scripts
+install(DIRECTORY visit_session_converters
+        DESTINATION utilities/ascent/visit_session_converters)

@@ -141,6 +141,16 @@ SUBROUTINE visit(my_ascent)
             IF(j < 2 .OR. j > gnxc - 3) THEN
               ghost_flag = 1
             END IF
+
+            IF(l < 1 .OR. l > gnzc - 2) THEN
+              ghost_flag = 2
+            END IF
+            IF(k < 1 .OR. k > gnyc - 2) THEN
+              ghost_flag = 2
+            END IF
+            IF(j < 1 .OR. j > gnxc - 2) THEN
+              ghost_flag = 2
+            END IF
             ghost_flags(j,k,l)=ghost_flag
           ENDDO
         ENDDO

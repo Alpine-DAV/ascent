@@ -133,6 +133,37 @@ TEST(flow_python_script_filter, simple_execute)
     Workspace::clear_supported_filter_types();
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(flow_python_script_filter, simple_execute_echo)
+{
+    flow::filters::register_builtin();
+
+    Workspace::register_filter_type<SrcFilter>();
+
+    Workspace w;
+
+    Node src_params;
+    src_params["value"] = 21;
+
+    w.graph().add_filter("src","v",src_params);
+
+    Node py_params;
+    py_params["source"] = "val = flow_input().value() * 2\nprint(val)\nflow_set_output(val)";
+    py_params["echo"] = "true";
+
+    w.graph().add_filter("python_script","py", py_params);
+
+    // // src, dest, port
+    w.graph().connect("v","py","in");
+    //
+    w.print();
+    //
+    w.execute();
+
+    Workspace::clear_supported_filter_types();
+}
+
 //-----------------------------------------------------------------------------
 TEST(flow_python_script_filter, simple_execute_file)
 {

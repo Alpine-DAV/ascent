@@ -63,6 +63,13 @@
 namespace ascent
 {
 
+//-----------------------------------------------------------------------------
+/// -- Returns path to root directory for web client resources --
+/// Source path:     src/ascent/web_clients
+/// Installed path:  {install_prefix}/share/ascent/web_clients
+//-----------------------------------------------------------------------------
+std::string web_client_root_directory();
+
 class WebInterface
 {
 public:
@@ -75,7 +82,7 @@ public:
 
     // if set, Ascent's web resources (html, js files, etc) are
     // are copied to and server at the given path
-    // if not set, they are served out of ASCENT_WEB_CLIENT_ROOT
+    // if not set, they are served out of web_client_root_directory()
 
     void                            SetDocumentRoot(const std::string &path);
     void                            SetPoll(int ms_poll);

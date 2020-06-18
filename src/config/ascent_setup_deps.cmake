@@ -67,7 +67,7 @@ endif()
 # Import Conduit's CMake targets
 ###############################################################################
 find_dependency(Conduit REQUIRED
-                NO_DEFAULT_PATH 
+                NO_DEFAULT_PATH
                 PATHS ${CONDUIT_DIR}/lib/cmake)
 
 ###############################################################################
@@ -90,6 +90,26 @@ if(VTKH_DIR)
     find_dependency(VTKh REQUIRED
                    NO_DEFAULT_PATH
                    PATHS ${VTKH_DIR}/lib/)
+endif()
+
+###############################################################################
+# Setup Devil Ray
+###############################################################################
+if(NOT DRAY_DIR)
+  set(DRAY_DIR ${ASCENT_DRAY_DIR})
+endif()
+
+if(DRAY_DIR)
+  if(NOT EXISTS ${DRAY_DIR}/lib/cmake/DRayConfig.cmake)
+    MESSAGE(FATAL_ERROR "Could not find Devil Ray CMake include file (${DRAY_DIR}/lib/cmake/DRayConfig.cmake)")
+    endif()
+
+    ###############################################################################
+    # Import Devil Ray CMake targets
+    ###############################################################################
+    find_dependency(DRay REQUIRED
+                   NO_DEFAULT_PATH
+                   PATHS ${DRAY_DIR}/lib/cmake/)
 endif()
 
 

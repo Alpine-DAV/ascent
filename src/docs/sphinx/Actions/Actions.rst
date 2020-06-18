@@ -53,6 +53,8 @@ The currently supported actions are:
 - ``add_scenes``  : adds a list of scenes to create images
 - ``add_extracts``: adds a list of extracts to move data out of Ascent
 - ``add_pipelines`` : adds a list of pipelines to transform mesh data
+- ``add_queries`` : adds a list of queries that evaluate expressions
+- ``add_triggers`` : adds a list of triggers that executes a set of actions based on a condition
 
 Ascent actions can be specified within the integration using Conduit Nodes and can be read in through a file.
 Actions files can be defined in both ``json`` or ``yaml``, and if you are human, we recomend using ``yaml``.

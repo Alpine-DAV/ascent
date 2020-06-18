@@ -1,0 +1,65 @@
+# Same Python interpreter for all time steps
+# We use count for one time initializations
+try:
+    count = count + 1
+except NameError:
+    count = 0
+
+if count == 0:
+    # ParaView API
+    # WARNING: this does not work inside the plugin
+    #          unless you have the same import in paraview-vis.py
+    import paraview
+    paraview.options.batch = True
+    paraview.options.symmetric = True
+    from paraview.simple import LoadPlugin, Contour, \
+        Show, ColorBy, GetColorTransferFunction, GetActiveCamera, Render,\
+        SaveScreenshot, ResetCamera, GetProperty, CreateRenderView
+
+    LoadPlugin("@PARAVIEW_ASCENT_SOURCE@", remote=True, ns=globals())
+    # create the pipeline
+    ascentSource = AscentSource()
+    view = CreateRenderView()
+    view.ViewSize = [1024, 1024]
+
+    asDisplay = Show()
+    asDisplay.SetRepresentationType('Outline')
+
+    contour = Contour()
+    contour.ContourBy = ['POINTS', 'Ex']
+    contour.ComputeScalars = True
+    contour.Isosurfaces = [-129000000, 129000000]
+    cDisplay = Show()
+    cDisplay.Opacity = 0.3
+
+    ColorBy(cDisplay, ('POINTS', 'Ex'))
+    # rescale transfer function
+    ctf = GetColorTransferFunction('Ex')
+    ctf.RescaleTransferFunction(-258766162, 258766162)
+
+    # # show color bar
+    # renderView1  = GetActiveView()
+    # scalarBar = GetScalarBar(ctf, renderView1)
+    # scalarBar.Title = 'Ex'
+    # scalarBar.ComponentTitle = ''
+    # # set color bar visibility
+    # scalarBar.Visibility = 1
+    # # show color legend
+    # rDisplay.SetScalarBarVisibility(renderView1, True)
+
+    cam = GetActiveCamera()
+    cam.Elevation(30)
+    cam.Azimuth(-30)
+
+ascentSource.UpdateAscentData()
+ascentSource.UpdatePropertyInformation()
+cycle = GetProperty(ascentSource, "Cycle").GetElement(0)
+rank = GetProperty(ascentSource, "Rank").GetElement(0)
+imageName = 'warpx_{0:04d}.png'.format(int(cycle))
+ResetCamera()
+Render()
+SaveScreenshot(imageName, ImageResolution=(1024, 1024),
+               FontScaling='Do not scale fonts')
+# dataName = 'warpx_data_{0:04d}'.format(int(cycle))
+# writer = CreateWriter(dataName + '.pvtr', ascentSource)
+# writer.UpdatePipeline()

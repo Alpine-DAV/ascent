@@ -72,6 +72,40 @@ namespace runtime
 namespace filters
 {
 
+bool string_equal(const std::string& str1, const std::string& str2)
+{
+  if (str1.size() != str2.size())
+  {
+    return false;
+  }
+
+  auto itr1 = str1.begin();
+  auto itr2 = str2.begin();
+  while ((itr1 != str1.end()) && (itr2 != str2.end()))
+  {
+    if (std::tolower(*itr1) != std::tolower(*itr2))
+    {
+      return false;
+    }
+    ++itr1;
+    ++itr2;
+  }
+
+  return true;
+}
+
+double zoom_to_vtkm_zoom(double in_zoom)
+{
+  // vtkm is weird. increasing the value of zoom, zooms out.
+  // we dont want that, so we have to convert what normal
+  // people think of zoom into what vtkm wants.
+  // vtkm zoom factor = pow(4.0, zoom)
+  // log4 factor = vtkm_zoom
+  // Ascent't input expects a zoom factor, ie 1= nozoom
+  double vtkm_zoom = log(in_zoom) / log(4.0);
+  return vtkm_zoom;
+}
+
 void
 parse_image_dims(const conduit::Node &node, int &width, int &height)
 {
@@ -142,7 +176,8 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
 
   if(camera_node.has_child("zoom"))
   {
-      camera.Zoom(camera_node["zoom"].to_float64());
+      double zoom = camera_node["zoom"].to_float64();
+      camera.Zoom(zoom_to_vtkm_zoom(zoom));
   }
   //
   // With a new potential camera position. We need to reset the
@@ -172,39 +207,30 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   if(camera_node.has_child("elevation"))
   {
       vtkm::Float64 elevation = camera_node["elevation"].to_float64();
-      camera.Azimuth(elevation);
+      camera.Elevation(elevation);
   }
 }
 
 bool is_valid_name(const std::string &name)
 {
   std::string lower_name;
+
   for(std::string::size_type i = 0; i < name.length(); ++i)
   {
     lower_name += std::tolower(name[i]);
   }
+
+  std::set<std::string> presets = vtkm::cont::ColorTable::GetPresets();
   bool valid = false;
-  if(lower_name == "default" ||
-     lower_name == "cool to warm" ||
-     lower_name == "cool to warm extended" ||
-     lower_name == "viridis" ||
-     lower_name == "inferno" ||
-     lower_name == "plasma" ||
-     lower_name == "black-body radiation" ||
-     lower_name == "x ray" ||
-     lower_name == "green" ||
-     lower_name == "black - blue - white" ||
-     lower_name == "blue to orange" ||
-     lower_name == "gray to red" ||
-     lower_name == "cool and hot" ||
-     lower_name == "blue - green - orange" ||
-     lower_name == "yellow - gray - blue" ||
-     lower_name == "rainbow uniform" ||
-     lower_name == "jet" ||
-     lower_name == "rainbow desaturated")
+  for( auto s : presets)
   {
-    valid = true;
+    valid = string_equal(s, name);
+    if(valid)
+    {
+      break;
+    }
   }
+
   return valid;
 }
 //-----------------------------------------------------------------------------
@@ -220,9 +246,11 @@ parse_color_table(const conduit::Node &color_table_node)
                 <<color_map_name);
   }
 
+  bool name_provided = false;
   if(color_table_node.has_child("name"))
   {
     std::string name = color_table_node["name"].as_string();
+    name_provided = true;
     if(is_valid_name(name))
     {
       color_map_name = name;
@@ -238,8 +266,25 @@ parse_color_table(const conduit::Node &color_table_node)
 
   if(color_table_node.has_child("control_points"))
   {
-
+    bool clear = false;
+    // check to see if we have rgb points and clear the table
     NodeConstIterator itr = color_table_node.fetch("control_points").children();
+    while(itr.has_next())
+    {
+        const Node &peg = itr.next();
+        if (peg["type"].as_string() == "rgb")
+        {
+          clear = true;
+          break;
+        }
+    }
+
+    if(clear && !name_provided)
+    {
+      color_table.ClearColors();
+    }
+
+    itr = color_table_node.fetch("control_points").children();
     while(itr.has_next())
     {
         const Node &peg = itr.next();
@@ -280,7 +325,8 @@ parse_color_table(const conduit::Node &color_table_node)
         }
         else
         {
-            ASCENT_WARN("Unknown color table control point type " << peg["type"].as_string()<<
+            ASCENT_WARN("Unknown color table control point type "
+                        << peg["type"].as_string()<<
                         "\nValid types are 'alpha' and 'rgb'");
         }
     }

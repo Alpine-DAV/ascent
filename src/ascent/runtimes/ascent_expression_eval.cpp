@@ -94,6 +94,8 @@ void register_builtin()
   flow::Workspace::register_filter_type<expressions::FieldMax>();
   flow::Workspace::register_filter_type<expressions::FieldMin>();
   flow::Workspace::register_filter_type<expressions::FieldAvg>();
+  flow::Workspace::register_filter_type<expressions::FieldNanCount>();
+  flow::Workspace::register_filter_type<expressions::FieldInfCount>();
   flow::Workspace::register_filter_type<expressions::FieldSum>();
   flow::Workspace::register_filter_type<expressions::ArrayMax>();
   flow::Workspace::register_filter_type<expressions::ArrayMin>();
@@ -186,6 +188,22 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
+  conduit::Node &field_nan_sig = (*functions)["field_nan_count"].append();
+  field_nan_sig["return_type"] = "double";
+  field_nan_sig["filter_name"] = "field_nan_count";
+  field_nan_sig["args/arg1/type"] = "field"; // arg names match input port names
+  field_nan_sig["description"] = "Return the number  of NaNs in a mesh variable.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &field_inf_sig = (*functions)["field_inf_count"].append();
+  field_inf_sig["return_type"] = "double";
+  field_inf_sig["filter_name"] = "field_inf_count";
+  field_inf_sig["args/arg1/type"] = "field"; // arg names match input port names
+  field_inf_sig["description"] = "Return the number  of -inf and +inf in a mesh variable.";
+
+  // -------------------------------------------------------------
+
   conduit::Node &scalar_max_sig = (*functions)["max"].append();
   scalar_max_sig["return_type"] = "double";
   scalar_max_sig["filter_name"] = "scalar_max";
@@ -269,7 +287,7 @@ initialize_functions()
   vector["description"] = "Return the 3D position vector for the input value.";
 
   // -------------------------------------------------------------
-  
+
   conduit::Node &mag_sig = (*functions)["magnitude"].append();
   mag_sig["return_type"] = "double";
   mag_sig["filter_name"] = "magnitude";
@@ -277,7 +295,7 @@ initialize_functions()
   mag_sig["description"] = "Return the magnitude of the input vector.";
 
   // -------------------------------------------------------------
-  
+
   conduit::Node &hist_sig = (*functions)["histogram"].append();
   hist_sig["return_type"] = "histogram";
   hist_sig["filter_name"] = "histogram";
@@ -306,9 +324,9 @@ initialize_functions()
   - avg: average of values that fall in a bin";
 
   hist_sig["description"] = "Return a histogram of the mesh variable. Return a histogram of the mesh variable.";
-  
+
   // -------------------------------------------------------------
-  
+
   conduit::Node &history_sig = (*functions)["history"].append();
   history_sig["return_type"] = "anytype";
   history_sig["filter_name"] = "history";
@@ -343,7 +361,7 @@ initialize_functions()
   used.";
 
   // -------------------------------------------------------------
-  
+
   conduit::Node &entropy_sig = (*functions)["entropy"].append();
   entropy_sig["return_type"] = "double";
   entropy_sig["filter_name"] = "entropy";
@@ -351,7 +369,7 @@ initialize_functions()
   entropy_sig["description"] = "Return the Shannon entropy given a histogram of the field.";
 
   // -------------------------------------------------------------
-  
+
   conduit::Node &pdf_sig = (*functions)["pdf"].append();
   pdf_sig["return_type"] = "histogram";
   pdf_sig["filter_name"] = "pdf";
@@ -359,15 +377,15 @@ initialize_functions()
   pdf_sig["description"] = "Return the probability distribution function (pdf) from a histogram.";
 
   // -------------------------------------------------------------
-  
+
   conduit::Node &cdf_sig = (*functions)["cdf"].append();
   cdf_sig["return_type"] = "histogram";
   cdf_sig["filter_name"] = "cdf";
   cdf_sig["args/hist/type"] = "histogram";
   cdf_sig["description"] = "Return the cumulative distribution function (cdf) from a histogram.";
-  
+
   // -------------------------------------------------------------
-  
+
   // gets histogram bin by index
   conduit::Node &bin_by_index_sig = (*functions)["bin"].append();
   bin_by_index_sig["return_type"] = "double";
@@ -377,7 +395,7 @@ initialize_functions()
   bin_by_index_sig["description"] = "Return the value of the bin at index `bin` of a histogram.";
 
   // -------------------------------------------------------------
-  
+
   // gets histogram bin by value
   conduit::Node &bin_by_value_sig = (*functions)["bin"].append();
   bin_by_value_sig["return_type"] = "double";
@@ -438,7 +456,7 @@ initialize_functions()
   // -------------------------------------------------------------
 
   count_params();
-  // functions->save("functions.json", "json");
+  //functions->save("functions.json", "json");
   // TODO: validate that there are no ambiguities
 }
 
@@ -459,7 +477,7 @@ initialize_objects()
   value_position["value/type"] = "double";
   value_position["position/type"] = "vector";
 
-  // objects->save("objects.json", "json");
+  //objects->save("objects.json", "json");
 }
 
 conduit::Node
@@ -492,12 +510,12 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   conduit::Node root;
 
-  //std::cout<<w.graph().to_dot()<<"\n";
-
   try
   {
     //expression->access();
     root = expression->build_graph(w);
+    //std::cout<<w.graph().to_dot()<<"\n";
+    //w.graph().save_dot_html("ascent_expressions_graph.html");
     w.execute();
   }
   catch(std::exception &e)
@@ -506,14 +524,19 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     w.reset();
     ASCENT_ERROR("Error while executing expression '"<<expr<<"': "<<e.what());
   }
-  conduit::Node *n_res = w.registry().fetch<conduit::Node>(root["filter_name"].as_string());
+  std::string filter_name = root["filter_name"].as_string();
+
+  conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
   conduit::Node return_val = *n_res;
-  delete expression;
 
   std::stringstream cache_entry;
   cache_entry<<expr_name<<"/"<<cycle;
-  m_cache[cache_entry.str()] = *n_res;
 
+  // this causes an invalid read in conduit in the expression tests
+  //m_cache[cache_entry.str()] = *n_res;
+  m_cache[cache_entry.str()] = return_val;
+
+  delete expression;
   w.reset();
   return return_val;
 }

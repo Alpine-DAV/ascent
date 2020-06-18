@@ -1,0 +1,15 @@
+#An example of using the xray extract.
+
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      type: "xray"
+      params: 
+        absorption: "radial"
+        filename: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_rover_xray_params"
+        image_params: 
+          min_value: 0.00600000005215406
+          max_value: 1.0
+          log_scale: "true"
+        unit_scalar: 0.00100000004749745

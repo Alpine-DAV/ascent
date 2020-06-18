@@ -42,6 +42,7 @@
 .. #
 .. ############################################################################
 
+.. _extracts:
 
 Extracts
 ========
@@ -55,6 +56,7 @@ Currently supported extracts include:
     * Relay : leverages Conduit's Relay library to do parallel I/O
     * ADIOS : use ADIOS to send data to a separate resource
 
+.. _extracts_python:
 
 Python
 ------
@@ -141,7 +143,7 @@ In addition to performing custom python analysis, your can create new data sets 
 through a new instance of Ascent. We call this technique Inception.
 
 
-.. _relay:
+.. _extracts_relay:
 
 Relay
 -----
@@ -171,6 +173,16 @@ To save the files in HDF5 format:
 .. code-block:: c++
 
     extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+
+By default, the relay extract creates one file per mesh domain saved. You can control
+the number of files written (aggregating multiple domains per file) using the
+``num_files`` parameter:
+
+.. code-block:: c++
+
+    extracts["e1/params/num_files"] = 2;
+
 
 Additionally, Relay supports saving out only a subset of the data. The ``fields`` parameters is a list of
 strings that indicate which fields should be saved.

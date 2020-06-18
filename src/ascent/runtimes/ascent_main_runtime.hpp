@@ -53,7 +53,9 @@
 #define ASCENT_ASCENT_RUNTIME_HPP
 
 #include <ascent.hpp>
+#include <ascent_exports.h>
 #include <ascent_runtime.hpp>
+#include <ascent_data_object.hpp>
 #include <ascent_web_interface.hpp>
 #include <flow.hpp>
 
@@ -65,7 +67,7 @@
 namespace ascent
 {
 
-class AscentRuntime : public Runtime
+class ASCENT_API AscentRuntime : public Runtime
 {
 public:
 
@@ -97,8 +99,9 @@ public:
 private:
     // holds options passed to initialize
     conduit::Node     m_runtime_options;
-    // conduit node that (externally) holds the data from the simulation
-    conduit::Node     m_data;
+    // DataObject that (externally) holds the data from the simulation
+    conduit::Node     m_source;
+    DataObject        m_data_object;
     conduit::Node     m_connections;
     conduit::Node     m_scene_connections;
 
@@ -108,7 +111,11 @@ private:
     WebInterface      m_web_interface;
     int               m_refinement_level;
     int               m_rank;
-    std::string       m_ghost_field_name;
+    conduit::Node     m_ghost_fields; // a list of strings
+    std::string       m_default_output_dir;
+
+    bool              m_field_filtering;
+    std::set<std::string> m_field_list;
 
     void              ResetInfo();
 
@@ -134,6 +141,7 @@ private:
     void ConvertSceneToFlow(const conduit::Node &scenes);
     void ConnectSource();
     void ConnectGraphs();
+    void SourceFieldFilter();
 
     void BuildGraph(const conduit::Node &actions);
     void EnsureDomainIds();

@@ -82,7 +82,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class BlueprintVerify : public ::flow::Filter
+class ASCENT_API BlueprintVerify : public ::flow::Filter
 {
 public:
     BlueprintVerify();
@@ -91,33 +91,6 @@ public:
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,
                                  conduit::Node &info);
-    virtual void   execute();
-};
-
-
-//-----------------------------------------------------------------------------
-class EnsureLowOrder : public ::flow::Filter
-{
-public:
-    EnsureLowOrder();
-   ~EnsureLowOrder();
-
-    bool is_high_order(const conduit::Node &data_set);
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-class EnsureBlueprint : public ::flow::Filter
-{
-public:
-    EnsureBlueprint();
-    virtual ~EnsureBlueprint();
-
-    virtual void   declare_interface(conduit::Node &i);
     virtual void   execute();
 };
 

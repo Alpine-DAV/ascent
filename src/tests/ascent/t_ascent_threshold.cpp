@@ -96,7 +96,6 @@ TEST(ascent_threshold, test_threshold_3d)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 
