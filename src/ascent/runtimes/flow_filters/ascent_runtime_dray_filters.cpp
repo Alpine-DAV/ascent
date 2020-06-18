@@ -75,11 +75,11 @@
 #include <mpi.h>
 #endif
 
-#if defined(ASCENT_VTKM_ENABLED)
-#include <ascent_vtkh_data_adapter.hpp>
-#include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
-#include <ascent_runtime_blueprint_filters.hpp>
-#endif
+//#if defined(ASCENT_VTKM_ENABLED)
+//#include <ascent_vtkh_data_adapter.hpp>
+//#include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
+//#include <ascent_runtime_blueprint_filters.hpp>
+//#endif
 
 #if defined(ASCENT_MFEM_ENABLED)
 #include <ascent_mfem_data_adapter.hpp>
@@ -98,13 +98,7 @@
 #include <dray/rendering/surface.hpp>
 #include <dray/rendering/slice_plane.hpp>
 #include <dray/rendering/scalar_renderer.hpp>
-#include <dray/rendering/partial_renderer.hpp>
 #include <dray/io/blueprint_reader.hpp>
-
-#include <vtkh/vtkh.hpp>
-#include <vtkh/compositing/Compositor.hpp>
-#include <vtkh/compositing/PartialCompositor.hpp>
-#include <vtkh/compositing/PayloadCompositor.hpp>
 
 using namespace conduit;
 using namespace std;
