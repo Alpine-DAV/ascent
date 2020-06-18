@@ -358,7 +358,7 @@ Identifier::execute()
   conduit::Node *output = new conduit::Node();
   std::string i_name = params()["value"].as_string();
 
-  conduit::Node *cache = graph().workspace().registry().fetch<Node>("cache");
+  const conduit::Node *const cache = graph().workspace().registry().fetch<Node>("cache");
   if(!cache->has_path(i_name))
   {
     ASCENT_ERROR("Unknown expression identifier: '"<<i_name<<"'");
@@ -367,7 +367,7 @@ Identifier::execute()
   const int entries = (*cache)[i_name].number_of_children();
   if(entries < 1)
   {
-    ASCENT_ERROR("Expression identifier: needs a non-zero number of entires: "<<entries);
+    ASCENT_ERROR("Expression identifier: needs at least one entry");
   }
   // grab the last one calculated
   (*output) = (*cache)[i_name].child(entries - 1);
@@ -1056,7 +1056,7 @@ FieldMin::execute()
 
   conduit::Node *output = new conduit::Node();
 
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset = graph().workspace().registry().fetch<Node>("dataset");
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1160,7 +1160,7 @@ FieldMax::execute()
 
   conduit::Node *output = new conduit::Node();
 
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset = graph().workspace().registry().fetch<Node>("dataset");
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1265,7 +1265,7 @@ FieldAvg::execute()
 
   conduit::Node *output = new conduit::Node();
 
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset = graph().workspace().registry().fetch<Node>("dataset");
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1318,7 +1318,7 @@ Cycle::execute()
 {
   conduit::Node *output = new conduit::Node();
 
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset = graph().workspace().registry().fetch<Node>("dataset");
 
   conduit::Node state = get_state_var(*dataset, "cycle");
   if(!state.dtype().is_number())
@@ -1569,7 +1569,7 @@ Field::execute()
     ASCENT_ERROR("Field: Missing dataset");
   }
 
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset = graph().workspace().registry().fetch<Node>("dataset");
 
   if(!has_field(*dataset, field))
   {
@@ -1637,14 +1637,117 @@ Histogram::execute()
   const Node *n_max = input<Node>("max_val");
   const Node *n_min = input<Node>("min_val");
 
-  if((*arg1)["type"].as_string() != "field")
+  const std::string field = (*arg1)["value"].as_string();
+
+  const conduit::Node *const dataset = graph().workspace().registry().fetch<Node>("dataset");
+
+  // TODO add test for passing a non-scalar field
+  if((*arg1)["type"].as_string() != "field" && is_scalar_field(*dataset, field))
   {
-    ASCENT_ERROR("Histogram: arg1 must be a field");
+    ASCENT_ERROR("Histogram: arg1 must be a scalar field");
   }
+
+  int num_bins = 256;
+  if(!n_bins->dtype().is_empty())
+  {
+    num_bins = (*n_bins)["value"].as_int32();
+  }
+
+  double min_val;
+  double max_val;
+
+  // handle the optional inputs
+  if(!n_max->dtype().is_empty())
+  {
+    max_val = (*n_max)["value"].to_float64();
+  }
+  else
+  {
+    max_val = field_max(*dataset, field)["value"].to_float64();
+  }
+
+  if(!n_min->dtype().is_empty())
+  {
+    min_val = (*n_min)["value"].to_float64();
+  }
+  else
+  {
+    min_val = field_min(*dataset, field)["value"].to_float64();
+  }
+
+  if(min_val >= max_val)
+  {
+    ASCENT_ERROR("Histogram: min value ("<<min_val<<") must be smaller than max ("<<max_val<<")");
+  }
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "histogram";
+  (*output)["attrs/value/value"] = field_histogram(*dataset, field, min_val, max_val, num_bins)["value"];
+  (*output)["attrs/value/type"] = "array";
+  (*output)["attrs/min_val/value"] = min_val;
+  (*output)["attrs/min_val/type"] = "double";
+  (*output)["attrs/max_val/value"] = max_val;
+  (*output)["attrs/max_val/type"] = "double";
+  (*output)["attrs/num_bins/value"] = num_bins;
+  (*output)["attrs/num_bins/type"] = "int";
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Ecf::Ecf()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+Ecf::~Ecf()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Ecf::declare_interface(Node &i)
+{
+  i["type_name"]   = "ecf";
+  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "num_bins";
+  i["port_names"].append() = "min_val";
+  i["port_names"].append() = "max_val";
+  i["port_names"].append() = "reduction";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Ecf::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Ecf::execute()
+{
+  Node *arg1 = input<Node>("arg1");
+  // optional inputs
+  const Node *n_bins = input<Node>("num_bins");
+  const Node *n_max = input<Node>("max_val");
+  const Node *n_min = input<Node>("min_val");
 
   const std::string field = (*arg1)["value"].as_string();
 
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset = graph().workspace().registry().fetch<Node>("dataset");
+
+  // TODO add test for passing a non-scalar field
+  if((*arg1)["type"].as_string() != "field" && is_scalar_field(*dataset, field))
+  {
+    ASCENT_ERROR("Histogram: arg1 must be a scalar field");
+  }
 
   int num_bins = 256;
   if(!n_bins->dtype().is_empty())
@@ -2064,7 +2167,7 @@ void
 FieldSum::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset = graph().workspace().registry().fetch<Node>("dataset");
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_sum(*dataset, field)["value"];

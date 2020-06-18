@@ -118,9 +118,9 @@ public:
 
 class ASTBinaryOp : public ASTExpression {
 public:
-  int m_op;
   ASTExpression *m_lhs;
   ASTExpression *m_rhs;
+  int m_op;
   ASTBinaryOp(ASTExpression *lhs, int op, ASTExpression *rhs) :
     m_lhs(lhs), m_rhs(rhs), m_op(op) { }
   virtual void access();
@@ -157,7 +157,7 @@ public:
   ASTExpression *array;
   ASTExpression *index;
   ASTArrayAccess(ASTExpression *array, ASTExpression *index) :
-    array(array), index(index) { } 
+    array(array), index(index) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
 
@@ -173,7 +173,7 @@ public:
   ASTExpression *obj;
   std::string name;
   ASTDotAccess(ASTExpression *obj, const std::string& name) :
-    obj(obj), name(name) { } 
+    obj(obj), name(name) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
 

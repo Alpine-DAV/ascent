@@ -42,7 +42,6 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_blueprint_architect.cpp
@@ -54,9 +53,9 @@
 
 #include <ascent_logging.hpp>
 
+#include <cmath>
 #include <cstring>
 #include <limits>
-#include <cmath>
 
 #include <flow_workspace.hpp>
 
@@ -85,7 +84,8 @@ namespace expressions
 namespace detail
 {
 
-bool at_least_one(bool local)
+bool
+at_least_one(bool local)
 {
   bool agreement = local;
 #ifdef ASCENT_MPI_ENABLED
@@ -111,7 +111,7 @@ struct UniformCoords
 {
   conduit::float64 m_origin[3] = {0., 0., 0.};
   conduit::float64 m_spacing[3] = {1., 1., 1.};
-  int m_dims[3] = {0,0,0};
+  int m_dims[3] = {0, 0, 0};
   bool m_is_2d = true;
 
   UniformCoords(const conduit::Node &n_coords)
@@ -119,7 +119,8 @@ struct UniformCoords
     populate(n_coords);
   }
 
-  void populate(const conduit::Node &n_coords)
+  void
+  populate(const conduit::Node &n_coords)
   {
 
     const conduit::Node &n_dims = n_coords["dims"];
@@ -131,10 +132,9 @@ struct UniformCoords
     // check for 3d
     if(n_dims.has_path("k"))
     {
-        m_dims[2] = n_dims["k"].to_int();
-        m_is_2d = false;
+      m_dims[2] = n_dims["k"].to_int();
+      m_is_2d = false;
     }
-
 
     const conduit::Node &n_origin = n_coords["origin"];
 
@@ -164,47 +164,50 @@ get_num_indices(const std::string shape_type)
   int num = 0;
   if(shape_type == "tri")
   {
-      num = 3;
+    num = 3;
   }
   else if(shape_type == "quad")
   {
-      num = 4;
+    num = 4;
   }
   else if(shape_type == "tet")
   {
-      num = 4;
+    num = 4;
   }
   else if(shape_type == "hex")
   {
-      num = 8;
+    num = 8;
   }
   else if(shape_type == "point")
   {
-      num = 1;
+    num = 1;
   }
   else
   {
-    ASCENT_ERROR("Unsupported element type "<<shape_type);
+    ASCENT_ERROR("Unsupported element type " << shape_type);
   }
   return num;
 }
 
-void logical_index_2d(int *idx, const int vert_index, const int *dims)
+void
+logical_index_2d(int *idx, const int vert_index, const int *dims)
 {
   idx[0] = vert_index % dims[0];
   idx[1] = vert_index / dims[0];
 }
 
-void logical_index_3d(int *idx, const int vert_index, const int *dims)
+void
+logical_index_3d(int *idx, const int vert_index, const int *dims)
 {
   idx[0] = vert_index % dims[0];
   idx[1] = (vert_index / dims[0]) % dims[1];
   idx[2] = vert_index / (dims[0] * dims[1]);
 }
 
-void get_element_indices(const conduit::Node &n_topo,
-                         const int index,
-                         std::vector<int> &indices)
+void
+get_element_indices(const conduit::Node &n_topo,
+                    const int index,
+                    std::vector<int> &indices)
 {
 
   const std::string mesh_type = n_topo["type"].as_string();
@@ -240,9 +243,8 @@ void get_element_indices(const conduit::Node &n_topo,
       is_2d = false;
     }
 
-    const int element_dims[3] = {vert_dims[0] - 1,
-                              vert_dims[1] - 1,
-                              vert_dims[2] - 1};
+    const int element_dims[3] = {
+        vert_dims[0] - 1, vert_dims[1] - 1, vert_dims[2] - 1};
 
     int element_index[3] = {0, 0, 0};
     if(is_2d)
@@ -260,7 +262,9 @@ void get_element_indices(const conduit::Node &n_topo,
       indices.resize(8);
       logical_index_3d(element_index, index, element_dims);
 
-      indices[0] = (element_index[2] * vert_dims[1] + element_index[1]) * vert_dims[0] + element_index[0];
+      indices[0] =
+          (element_index[2] * vert_dims[1] + element_index[1]) * vert_dims[0] +
+          element_index[0];
       indices[1] = indices[0] + 1;
       indices[2] = indices[1] + vert_dims[1];
       indices[3] = indices[2] - 1;
@@ -269,11 +273,8 @@ void get_element_indices(const conduit::Node &n_topo,
       indices[6] = indices[5] + vert_dims[1];
       indices[7] = indices[6] - 1;
     }
-
-
   }
 }
-
 
 conduit::Node
 get_uniform_vert(const conduit::Node &n_coords, const int &index)
@@ -298,7 +299,7 @@ get_uniform_vert(const conduit::Node &n_coords, const int &index)
   vert[2] = coords.m_origin[2] + logical_index[2] * coords.m_spacing[2];
 
   conduit::Node res;
-  res.set(vert,3);
+  res.set(vert, 3);
   return res;
 }
 
@@ -328,11 +329,10 @@ get_explicit_vert(const conduit::Node &n_coords, const int &index)
     vert[0] = x_a[index];
     vert[1] = y_a[index];
     vert[2] = z_a[index];
-
   }
 
   conduit::Node res;
-  res.set(vert,3);
+  res.set(vert, 3);
   return res;
 }
 
@@ -341,7 +341,7 @@ get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
 {
   bool is_float64 = true;
 
-  int dims[3] = {0,0,0};
+  int dims[3] = {0, 0, 0};
   dims[0] = n_coords["values/x"].dtype().number_of_elements();
   dims[1] = n_coords["values/y"].dtype().number_of_elements();
 
@@ -355,7 +355,6 @@ get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
     is_float64 = false;
   }
   double vert[3] = {0., 0., 0.};
-
 
   int logical_index[3] = {0, 0, 0};
 
@@ -391,11 +390,10 @@ get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
       conduit::float32_array z_a = n_coords["values/z"].value();
       vert[2] = z_a[logical_index[2]];
     }
-
   }
 
   conduit::Node res;
-  res.set(vert,3);
+  res.set(vert, 3);
   return res;
 }
 // ----------------------  element locations ---------------------------------
@@ -406,9 +404,8 @@ get_uniform_element(const conduit::Node &n_coords, const int &index)
   UniformCoords coords(n_coords);
 
   int logical_index[3] = {0, 0, 0};
-  const int element_dims[3] = {coords.m_dims[0] - 1,
-                            coords.m_dims[1] - 1,
-                            coords.m_dims[2] - 1};
+  const int element_dims[3] = {
+      coords.m_dims[0] - 1, coords.m_dims[1] - 1, coords.m_dims[2] - 1};
 
   if(coords.m_is_2d)
   {
@@ -422,12 +419,15 @@ get_uniform_element(const conduit::Node &n_coords, const int &index)
   // element logical index will be the lower left point index
 
   double vert[3] = {0., 0., 0.};
-  vert[0] = coords.m_origin[0] + logical_index[0] * coords.m_spacing[0] + coords.m_spacing[0] * 0.5;
-  vert[1] = coords.m_origin[1] + logical_index[1] * coords.m_spacing[1] + coords.m_spacing[1] * 0.5;
-  vert[2] = coords.m_origin[2] + logical_index[2] * coords.m_spacing[2] + coords.m_spacing[2] * 0.5;
+  vert[0] = coords.m_origin[0] + logical_index[0] * coords.m_spacing[0] +
+            coords.m_spacing[0] * 0.5;
+  vert[1] = coords.m_origin[1] + logical_index[1] * coords.m_spacing[1] +
+            coords.m_spacing[1] * 0.5;
+  vert[2] = coords.m_origin[2] + logical_index[2] * coords.m_spacing[2] +
+            coords.m_spacing[2] * 0.5;
 
   conduit::Node res;
-  res.set(vert,3);
+  res.set(vert, 3);
   return res;
 }
 
@@ -436,10 +436,9 @@ get_rectilinear_element(const conduit::Node &n_coords, const int &index)
 {
   bool is_float64 = true;
 
-  int dims[3] = {0,0,0};
+  int dims[3] = {0, 0, 0};
   dims[0] = n_coords["values/x"].dtype().number_of_elements();
   dims[1] = n_coords["values/y"].dtype().number_of_elements();
-
 
   if(n_coords.has_path("values/z"))
   {
@@ -450,9 +449,7 @@ get_rectilinear_element(const conduit::Node &n_coords, const int &index)
   {
     is_float64 = false;
   }
-  const int element_dims[3] = {dims[0] - 1,
-                            dims[1] - 1,
-                            dims[2] - 1};
+  const int element_dims[3] = {dims[0] - 1, dims[1] - 1, dims[2] - 1};
 
   double vert[3] = {0., 0., 0.};
 
@@ -490,18 +487,17 @@ get_rectilinear_element(const conduit::Node &n_coords, const int &index)
       conduit::float32_array z_a = n_coords["values/z"].value();
       vert[2] = (z_a[logical_index[2]] + z_a[logical_index[2] + 1]) * 0.5;
     }
-
   }
 
   conduit::Node res;
-  res.set(vert,3);
+  res.set(vert, 3);
   return res;
 }
 
 conduit::Node
 get_explicit_element(const conduit::Node &n_coords,
-                  const conduit::Node &n_topo,
-                  const int &index)
+                     const conduit::Node &n_topo,
+                     const int &index)
 {
   std::vector<int> conn;
   get_element_indices(n_topo, index, conn);
@@ -511,7 +507,7 @@ get_explicit_element(const conduit::Node &n_coords,
   {
     int vert_index = conn[i];
     conduit::Node n_vert = get_explicit_vert(n_coords, vert_index);
-    double * ptr = n_vert.value();
+    double *ptr = n_vert.value();
     vert[0] += ptr[0];
     vert[1] += ptr[1];
     vert[2] += ptr[2];
@@ -522,11 +518,11 @@ get_explicit_element(const conduit::Node &n_coords,
   vert[2] /= double(num_indices);
 
   conduit::Node res;
-  res.set(vert,3);
+  res.set(vert, 3);
   return res;
 }
 //-----------------------------------------------------------------------------
-};
+}; // namespace detail
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions::detail--
 //-----------------------------------------------------------------------------
@@ -540,13 +536,13 @@ vert_location(const conduit::Node &domain,
   // if we don't specify a topology, find the first topology ...
   if(topo_name == "")
   {
-      conduit::NodeConstIterator itr = domain["topologies"].children();
-      itr.next();
-      topo = itr.name();
+    conduit::NodeConstIterator itr = domain["topologies"].children();
+    itr.next();
+    topo = itr.name();
   }
 
-  const conduit::Node &n_topo   = domain["topologies"][topo];
-  const std::string mesh_type   = n_topo["type"].as_string();
+  const conduit::Node &n_topo = domain["topologies"][topo];
+  const std::string mesh_type = n_topo["type"].as_string();
   const std::string coords_name = n_topo["coordset"].as_string();
 
   const conduit::Node &n_coords = domain["coordsets"][coords_name];
@@ -566,7 +562,7 @@ vert_location(const conduit::Node &domain,
   }
   else
   {
-    ASCENT_ERROR("The Architect: unknown mesh type: '"<<mesh_type<<"'");
+    ASCENT_ERROR("The Architect: unknown mesh type: '" << mesh_type << "'");
   }
 
   return res;
@@ -581,13 +577,13 @@ element_location(const conduit::Node &domain,
   // if we don't specify a topology, find the first topology ...
   if(topo_name == "")
   {
-      conduit::NodeConstIterator itr = domain["topologies"].children();
-      itr.next();
-      topo = itr.name();
+    conduit::NodeConstIterator itr = domain["topologies"].children();
+    itr.next();
+    topo = itr.name();
   }
 
-  const conduit::Node &n_topo   = domain["topologies"][topo];
-  const std::string mesh_type   = n_topo["type"].as_string();
+  const conduit::Node &n_topo = domain["topologies"][topo];
+  const std::string mesh_type = n_topo["type"].as_string();
   const std::string coords_name = n_topo["coordset"].as_string();
 
   const conduit::Node &n_coords = domain["coordsets"][coords_name];
@@ -607,23 +603,24 @@ element_location(const conduit::Node &domain,
   }
   else
   {
-    ASCENT_ERROR("The Architect: unknown mesh type: '"<<mesh_type<<"'");
+    ASCENT_ERROR("The Architect: unknown mesh type: '" << mesh_type << "'");
   }
 
   return res;
 }
 
-bool is_scalar_field(const conduit::Node &dataset, const std::string &field_name)
+bool
+is_scalar_field(const conduit::Node &dataset, const std::string &field_name)
 {
   bool is_scalar = false;
   bool has_field = false;
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
     const conduit::Node &dom = dataset.child(i);
-    if(!has_field && dom.has_path("fields/"+field_name))
+    if(!has_field && dom.has_path("fields/" + field_name))
     {
       has_field = true;
-      const conduit::Node &n_field = dom["fields/"+field_name];
+      const conduit::Node &n_field = dom["fields/" + field_name];
       const int num_children = n_field["values"].number_of_children();
       if(num_children == 0)
       {
@@ -634,13 +631,14 @@ bool is_scalar_field(const conduit::Node &dataset, const std::string &field_name
   return is_scalar;
 }
 
-bool has_field(const conduit::Node &dataset, const std::string &field_name)
+bool
+has_field(const conduit::Node &dataset, const std::string &field_name)
 {
   bool has_field = false;
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
     const conduit::Node &dom = dataset.child(i);
-    if(!has_field && dom.has_path("fields/"+field_name))
+    if(!has_field && dom.has_path("fields/" + field_name))
     {
       has_field = true;
     }
@@ -650,6 +648,7 @@ bool has_field(const conduit::Node &dataset, const std::string &field_name)
   return has_field;
 }
 
+// TODO support putting in x/y/z as the field?
 conduit::Node
 field_histogram(const conduit::Node &dataset,
                 const std::string &field,
@@ -658,13 +657,12 @@ field_histogram(const conduit::Node &dataset,
                 const int &num_bins)
 {
 
-  double *bins = new double[num_bins];
-  memset(bins, 0, sizeof(double) * num_bins);
+  double *bins = new double[num_bins]();
 
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
     const conduit::Node &dom = dataset.child(i);
-    if(dom.has_path("fields/"+field))
+    if(dom.has_path("fields/" + field))
     {
       const std::string path = "fields/" + field + "/values";
       conduit::Node res;
@@ -672,26 +670,24 @@ field_histogram(const conduit::Node &dataset,
 
       double *dom_hist = res["value"].value();
 #ifdef ASCENT_USE_OPENMP
-      #pragma omp parallel for
+#pragma omp parallel for
 #endif
-      for(int b = 0; b < num_bins; ++b)
+      for(int bin_index = 0; bin_index < num_bins; ++bin_index)
       {
-        bins[b] += dom_hist[b];
+        bins[bin_index] += dom_hist[bin_index];
       }
     }
   }
   conduit::Node res;
 
 #ifdef ASCENT_MPI_ENABLED
-
   double *global_bins = new double[num_bins];
 
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   MPI_Allreduce(bins, global_bins, num_bins, MPI_INT, MPI_SUM, mpi_comm);
 
-  double *tmp = bins;
+  delete[] bins;
   bins = global_bins;
-  delete[] tmp;
 #endif
   res["value"].set(bins, num_bins);
   res["min_val"] = min_val;
@@ -703,11 +699,29 @@ field_histogram(const conduit::Node &dataset,
 
 conduit::Node
 ecf(const conduit::Node &dataset,
-		const conduit::Node &bin_axes,
-		const std::string &reduction_field_name,
-		const std::string &reduction)
+    const conduit::Node &bin_axes,
+    const std::string &reduction_field_name,
+    const std::string &reduction)
 {
   int num_fields = bin_axes.number_of_children();
+
+  // make sure all axis fields are present
+  for(int field_index = 0; field_index < num_fields; ++field_index)
+  {
+    const std::string field_name =
+        bin_axes.child(field_index)["field_name"].as_string();
+    if(!has_field(dataset, field_name) && field_name != "x" &&
+       field_name != "y" && field_name != "z")
+    {
+      ASCENT_ERROR("Field " << field_name << "not found.");
+    }
+  }
+  // make sure the field being reduced is present
+  if(!has_field(dataset, reduction_field_name) && reduction_field_name != "x" &&
+     reduction_field_name != "y" && reduction_field_name != "z")
+  {
+    ASCENT_ERROR("Field " << reduction_field_name << "not found.");
+  }
 
   // create bins
   int num_bins = 1;
@@ -715,20 +729,19 @@ ecf(const conduit::Node &dataset,
   {
     num_bins *= bin_axes.child(field_index)["num_bins"].as_int32();
   }
-  int *bins = new double[num_bins];
-  memset(bins, 0, sizeof(int) * num_bins);
+  double *bins = new double[num_bins]();
 
-
-  // get association
+  // get association for the field being reduced
   std::string assoc_str = "";
   for(int field_index = 0; field_index < num_fields; ++field_index)
   {
-    const std::string field_name = bin_axes.child(field_index)["field_name"].as_string();
+    const std::string field_name =
+        bin_axes.child(field_index)["field_name"].as_string();
     // only check the first domain
-    if(dataset.child(0).has_path("fields/"+field_name))
+    if(dataset.child(0).has_path("fields/" + field_name))
     {
-      const std::string new_assoc_str = dataset.child(0)["fields/"
-        + field_name + "/association"].as_string();
+      const std::string new_assoc_str =
+          dataset.child(0)["fields/" + field_name + "/association"].as_string();
       if(assoc_str == "")
       {
         assoc_str = new_assoc_str;
@@ -740,10 +753,9 @@ ecf(const conduit::Node &dataset,
     }
     else if(field_name != "x" && field_name != "y" && field_name != "z")
     {
-      ASCENT_ERROR("Field "<< field_name << "not found.");
+      ASCENT_ERROR("Field " << field_name << "not found.");
     }
   }
-
 
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {
@@ -751,7 +763,8 @@ ecf(const conduit::Node &dataset,
     int num_cells = -1;
     const conduit::Node &dom = dataset.child(dom_index);
     // each domain has a homes array
-    int *homes;
+    // homes maps each datapoint (or cell) to an index in bins
+    int *homes = nullptr;
 
     // loop over axis fields to populate homes
     for(int field_index = 0; field_index < num_fields; ++field_index)
@@ -759,9 +772,10 @@ ecf(const conduit::Node &dataset,
       const conduit::Node field = bin_axes.child(field_index);
       const std::string field_name = field["field_name"].as_string();
 
-      const double inv_delta = field["num_bins"].to_float64()
-        / (field["min_val"].to_float64() - field["max_val"].to_float64());
-      if(dom.has_path("fields/"+field_name))
+      const double inv_delta =
+          field["num_bins"].to_float64() /
+          (field["min_val"].to_float64() - field["max_val"].to_float64());
+      if(dom.has_path("fields/" + field_name))
       {
         const std::string path = "fields/" + field_name + "/values";
 
@@ -769,82 +783,91 @@ ecf(const conduit::Node &dataset,
         if(num_cells != -1)
         {
           num_cells = new_num_cells;
-          homes = new int[num_cells];
-          memset(homes, 0, sizeof(int) * num_cells);
+          homes = new int[num_cells]();
         }
-        else if (num_cells != new_num_cells)
+        else if(num_cells != new_num_cells)
         {
-          ASCENT_ERROR("The number of data points within a domain must be the same across fields.");
+          ASCENT_ERROR("The number of data points within a domain must be the "
+                       "same across fields.");
         }
 
         for(int cell_index = 0; cell_index < num_cells; ++cell_index)
         {
-          int bin_index = static_cast<int>((dom[path][cell_index] - field["min_val"]) * inv_delta);
-          homes[cell_index] += bin_index*stride;
+          int bin_index = static_cast<int>((dom[path][cell_index].to_float64() -
+                                            field["min_val"].to_float64()) *
+                                           inv_delta);
+          homes[cell_index] += bin_index * stride;
         }
       }
       else if(field_name == "x" || field_name == "y" || field_name == "z")
       {
-        int coord = (field_name == "x")? 0 : (
-                    (field_name == "y")? 1 : (
-                    (field_name == "z")? 2 : -1)); 
+        int coord =
+            (field_name == "x")
+                ? 0
+                : ((field_name == "y") ? 1 : ((field_name == "z") ? 2 : -1));
 
         double *loc;
         if(assoc_str == "vertex")
         {
           for(int cell_index = 0; cell_index < num_cells; ++cell_index)
           {
-            loc = vert_location(dataset.child(dom_index),cell_index).value();
-            int bin_index = static_cast<int>((loc[coord] - field["min_val"]) * inv_delta);
-            homes[cell_index] += bin_index*stride;
+            loc = vert_location(dataset.child(dom_index), cell_index).value();
+            int bin_index = static_cast<int>(
+                (loc[coord] - field["min_val"].to_float64()) * inv_delta);
+            homes[cell_index] += bin_index * stride;
           }
         }
         else if(assoc_str == "element")
         {
           for(int cell_index = 0; cell_index < num_cells; ++cell_index)
           {
-            loc = element_location(dataset.child(dom_index),cell_index).value();
-            int bin_index = static_cast<int>((loc[coord] - field["min_val"]) * inv_delta);
-            homes[cell_index] += bin_index*stride;
+            loc =
+                element_location(dataset.child(dom_index), cell_index).value();
+            int bin_index = static_cast<int>(
+                (loc[coord] - field["min_val"].to_float64()) * inv_delta);
+            homes[cell_index] += bin_index * stride;
           }
         }
         else
         {
-          ASCENT_ERROR("Location for "<<assoc_str<<" not implemented");
+          ASCENT_ERROR("Location for " << assoc_str << " not implemented");
         }
       }
       else
       {
-        ASCENT_ERROR("Field "<< field_name<< "not found in all datasets");
+        ASCENT_ERROR("Field " << field_name << "not found in all datasets");
       }
 
       stride *= bin_axes.child(field_index)["num_bins"].as_int32();
     }
 
     // update bins
-    //TODO for now reduction can only happen on one field
-    if(dom.has_path("fields/"+reduction_field_name))
+    // TODO for now reduction can only happen on one field
+    if(dom.has_path("fields/" + reduction_field_name))
     {
       for(int cell_index = 0; cell_index < num_cells; ++cell_index)
       {
         const std::string path = "fields/" + reduction_field_name + "/values";
-        //TODO check reduction operation type
-        bins[homes[cell_index]] += dom[path][cell_index];
+        // TODO check reduction operation type (for now it's sum)
+        bins[homes[cell_index]] += dom[path][cell_index].to_float64();
       }
     }
-    else if(reduction_field_name == "x" || reduction_field_name == "y" || reduction_field_name == "z")
+    else if(reduction_field_name == "x" || reduction_field_name == "y" ||
+            reduction_field_name == "z")
     {
-      int coord = (field_name == "x")? 0 : (
-                  (field_name == "y")? 1 : (
-                  (field_name == "z")? 2 : -1)); 
+      int coord = (reduction_field_name == "x")
+                      ? 0
+                      : ((reduction_field_name == "y")
+                             ? 1
+                             : ((reduction_field_name == "z") ? 2 : -1));
 
       double *loc;
       if(assoc_str == "vertex")
       {
         for(int cell_index = 0; cell_index < num_cells; ++cell_index)
         {
-          loc = vert_location(dataset.child(dom_index),cell_index).value();
-          //TODO check reduction operation type
+          loc = vert_location(dataset.child(dom_index), cell_index).value();
+          // TODO check reduction operation type (for now it's sum)
           bins[homes[cell_index]] += loc[coord];
         }
       }
@@ -852,29 +875,39 @@ ecf(const conduit::Node &dataset,
       {
         for(int cell_index = 0; cell_index < num_cells; ++cell_index)
         {
-          loc = element_location(dataset.child(dom_index),cell_index);
-          //TODO check reduction operation type
+          loc = element_location(dataset.child(dom_index), cell_index).value();
+          // TODO check reduction operation type (for now it's sum)
           bins[homes[cell_index]] += loc[coord];
         }
       }
       else
       {
-        ASCENT_ERROR("Location for "<<assoc_str<<" not implemented");
+        ASCENT_ERROR("Location for " << assoc_str << " not implemented");
       }
-
     }
     else
     {
-      ASCENT_ERROR("Field "<< reduction_field_name << "not found in all datasets");
+      ASCENT_ERROR("Field " << reduction_field_name
+                            << "not found in all datasets");
     }
 
     delete homes;
-    // TODO use MPI to combine domains
   }
+
+#ifdef ASCENT_MPI_ENABLED
+  double *global_bins = new double[num_bins];
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  // TODO check reduction operation type (for now it's sum)
+  MPI_Allreduce(bins, global_bins, num_bins, MPI_DOUBLE, MPI_SUM, mpi_comm);
+
+  delete[] bins;
+  bins = global_bins;
+#endif
 
   conduit::Node res;
   res["value"].set(bins, num_bins);
   res["bin_axes"] = bin_axes;
+  delete[] bins;
   return res;
 }
 
@@ -887,7 +920,7 @@ field_entropy(const conduit::Node &hist)
   double entropy = 0;
 
 #ifdef ASCENT_USE_OPENMP
-  #pragma omp parallel for reduction(+ : entropy)
+#pragma omp parallel for reduction(+ : entropy)
 #endif
   for(int b = 0; b < num_bins; ++b)
   {
@@ -913,11 +946,10 @@ field_pdf(const conduit::Node &hist)
 
   double sum = array_sum(hist["attrs/value/value"])["value"].to_float64();
 
-  double *pdf = new double[num_bins];
-  memset(pdf, 0, sizeof(double) * num_bins);
+  double *pdf = new double[num_bins]();
 
 #ifdef ASCENT_USE_OPENMP
-  #pragma omp parallel for
+#pragma omp parallel for
 #endif
   for(int b = 0; b < num_bins; ++b)
   {
@@ -944,10 +976,9 @@ field_cdf(const conduit::Node &hist)
 
   double rolling_cdf = 0;
 
-  double *cdf = new double[num_bins];
-  memset(cdf, 0, sizeof(double) * num_bins);
+  double *cdf = new double[num_bins]();
 
-  //TODO can this be parallel?
+  // TODO can this be parallel?
   for(int b = 0; b < num_bins; ++b)
   {
     rolling_cdf += hist_bins[b] / sum;
@@ -963,9 +994,10 @@ field_cdf(const conduit::Node &hist)
 }
 
 // this only makes sense on a count histogram
-conduit::Node quantile(const conduit::Node &cdf,
-                       const double val,
-                       const std::string interpolation)
+conduit::Node
+quantile(const conduit::Node &cdf,
+         const double val,
+         const std::string interpolation)
 {
   const double *cdf_bins = cdf["attrs/value/value"].value();
   const int num_bins = cdf["attrs/num_bins/value"].to_int32();
@@ -976,21 +1008,25 @@ conduit::Node quantile(const conduit::Node &cdf,
 
   int bin = 0;
 
-  for(; cdf_bins[bin] < val; ++bin);
+  for(; cdf_bins[bin] < val; ++bin)
+    ;
   // we overshot
-  if(cdf_bins[bin] > val) --bin;
+  if(cdf_bins[bin] > val)
+    --bin;
   // i and j are the bin boundaries
   double i = min_val + bin * (max_val - min_val) / num_bins;
   double j = min_val + (bin + 1) * (max_val - min_val) / num_bins;
 
-  if(interpolation == "linear") {
-    if(cdf_bins[bin+1] - cdf_bins[bin] == 0)
+  if(interpolation == "linear")
+  {
+    if(cdf_bins[bin + 1] - cdf_bins[bin] == 0)
     {
       res["value"] = i;
     }
     else
     {
-      res["value"] = i + (j - i) * (val - cdf_bins[bin]) / (cdf_bins[bin+1] - cdf_bins[bin]);
+      res["value"] = i + (j - i) * (val - cdf_bins[bin]) /
+                             (cdf_bins[bin + 1] - cdf_bins[bin]);
     }
   }
   else if(interpolation == "lower")
@@ -1007,22 +1043,21 @@ conduit::Node quantile(const conduit::Node &cdf,
   }
   else if(interpolation == "nearest")
   {
-    res["value"] = (val - i < j - val)? i : j;
+    res["value"] = (val - i < j - val) ? i : j;
   }
 
   return res;
 }
 
 conduit::Node
-field_nan_count(const conduit::Node &dataset,
-                const std::string &field)
+field_nan_count(const conduit::Node &dataset, const std::string &field)
 {
   double nan_count = 0;
 
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
     const conduit::Node &dom = dataset.child(i);
-    if(dom.has_path("fields/"+field))
+    if(dom.has_path("fields/" + field))
     {
       const std::string path = "fields/" + field + "/values";
       conduit::Node res;
@@ -1037,15 +1072,14 @@ field_nan_count(const conduit::Node &dataset,
 }
 
 conduit::Node
-field_inf_count(const conduit::Node &dataset,
-                const std::string &field)
+field_inf_count(const conduit::Node &dataset, const std::string &field)
 {
   double inf_count = 0;
 
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
     const conduit::Node &dom = dataset.child(i);
-    if(dom.has_path("fields/"+field))
+    if(dom.has_path("fields/" + field))
     {
       const std::string path = "fields/" + field + "/values";
       conduit::Node res;
@@ -1060,8 +1094,7 @@ field_inf_count(const conduit::Node &dataset,
 }
 
 conduit::Node
-field_min(const conduit::Node &dataset,
-          const std::string &field)
+field_min(const conduit::Node &dataset, const std::string &field)
 {
   double min_value = std::numeric_limits<double>::max();
 
@@ -1072,7 +1105,7 @@ field_min(const conduit::Node &dataset,
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
     const conduit::Node &dom = dataset.child(i);
-    if(dom.has_path("fields/"+field))
+    if(dom.has_path("fields/" + field))
     {
       const std::string path = "fields/" + field + "/values";
       conduit::Node res;
@@ -1088,21 +1121,21 @@ field_min(const conduit::Node &dataset,
     }
   }
 
-  const std::string assoc_str = dataset.child(0)["fields/"
-                                + field + "/association"].as_string();
+  const std::string assoc_str =
+      dataset.child(0)["fields/" + field + "/association"].as_string();
 
-  double *loc;
+  conduit::Node loc;
   if(assoc_str == "vertex")
   {
-    loc = vert_location(dataset.child(domain),index);
+    loc = vert_location(dataset.child(domain), index);
   }
   else if(assoc_str == "element")
   {
-    loc = element_location(dataset.child(domain),index);
+    loc = element_location(dataset.child(domain), index);
   }
   else
   {
-    ASCENT_ERROR("Location for "<<assoc_str<<" not implemented");
+    ASCENT_ERROR("Location for " << assoc_str << " not implemented");
   }
 
   int rank = 0;
@@ -1119,10 +1152,10 @@ field_min(const conduit::Node &dataset,
 
   MinLoc minloc = {min_value, rank};
   MinLoc minloc_res;
-  MPI_Allreduce( &minloc, &minloc_res, 1, MPI_DOUBLE_INT, MPI_MINLOC, mpi_comm);
-  min_value = minloc_res.value;
+  MPI_Allreduce(&minloc, &minloc_res, 1, MPI_DOUBLE_INT, MPI_MINLOC, mpi_comm);
+  min_value = minloc.value;
 
-  double * ploc = loc.as_float64_ptr();
+  double *ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, minloc_res.rank, mpi_comm);
   MPI_Bcast(&domain_id, 1, MPI_INT, minloc_res.rank, mpi_comm);
 
@@ -1139,8 +1172,7 @@ field_min(const conduit::Node &dataset,
 }
 
 conduit::Node
-field_sum(const conduit::Node &dataset,
-          const std::string &field)
+field_sum(const conduit::Node &dataset, const std::string &field)
 {
 
   double sum = 0.;
@@ -1149,7 +1181,7 @@ field_sum(const conduit::Node &dataset,
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
     const conduit::Node &dom = dataset.child(i);
-    if(dom.has_path("fields/"+field))
+    if(dom.has_path("fields/" + field))
     {
       const std::string path = "fields/" + field + "/values";
       conduit::Node res;
@@ -1184,8 +1216,7 @@ field_sum(const conduit::Node &dataset,
 }
 
 conduit::Node
-field_avg(const conduit::Node &dataset,
-          const std::string &field)
+field_avg(const conduit::Node &dataset, const std::string &field)
 {
   conduit::Node sum = field_sum(dataset, field);
 
@@ -1197,8 +1228,7 @@ field_avg(const conduit::Node &dataset,
 }
 
 conduit::Node
-field_max(const conduit::Node &dataset,
-          const std::string &field)
+field_max(const conduit::Node &dataset, const std::string &field)
 {
   double max_value = std::numeric_limits<double>::lowest();
 
@@ -1209,7 +1239,7 @@ field_max(const conduit::Node &dataset,
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
     const conduit::Node &dom = dataset.child(i);
-    if(dom.has_path("fields/"+field))
+    if(dom.has_path("fields/" + field))
     {
       const std::string path = "fields/" + field + "/values";
       conduit::Node res;
@@ -1225,21 +1255,21 @@ field_max(const conduit::Node &dataset,
     }
   }
 
-  const std::string assoc_str = dataset.child(0)["fields/"
-                                + field + "/association"].as_string();
+  const std::string assoc_str =
+      dataset.child(0)["fields/" + field + "/association"].as_string();
 
   conduit::Node loc;
   if(assoc_str == "vertex")
   {
-    loc = vert_location(dataset.child(domain),index);
+    loc = vert_location(dataset.child(domain), index);
   }
   else if(assoc_str == "element")
   {
-    loc = element_location(dataset.child(domain),index);
+    loc = element_location(dataset.child(domain), index);
   }
   else
   {
-    ASCENT_ERROR("Location for "<<assoc_str<<" not implemented");
+    ASCENT_ERROR("Location for " << assoc_str << " not implemented");
   }
 
   int rank = 0;
@@ -1256,10 +1286,10 @@ field_max(const conduit::Node &dataset,
 
   MaxLoc maxloc = {max_value, rank};
   MaxLoc maxloc_res;
-  MPI_Allreduce( &maxloc, &maxloc_res, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mpi_comm);
-  max_value = maxloc_res.value;
+  MPI_Allreduce(&maxloc, &maxloc_res, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mpi_comm);
+  max_value = maxloc.value;
 
-  double * ploc = loc.as_float64_ptr();
+  double *ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, maxloc_res.rank, mpi_comm);
   MPI_Bcast(&domain_id, 1, MPI_INT, maxloc_res.rank, mpi_comm);
 
@@ -1275,25 +1305,24 @@ field_max(const conduit::Node &dataset,
 }
 
 conduit::Node
-get_state_var(const conduit::Node &dataset,
-              const std::string &var_name)
+get_state_var(const conduit::Node &dataset, const std::string &var_name)
 {
   bool has_state = false;
   conduit::Node state;
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
     const conduit::Node &dom = dataset.child(i);
-    if(!has_state && dom.has_path("state/"+var_name))
+    if(!has_state && dom.has_path("state/" + var_name))
     {
       has_state = true;
-      state = dom["state/"+var_name];
+      state = dom["state/" + var_name];
     }
   }
 
   // TODO: make sure everyone has this
   if(!has_state)
   {
-    ASCENT_ERROR("Unable to retrieve state variable '"<<var_name<<"'");
+    ASCENT_ERROR("Unable to retrieve state variable '" << var_name << "'");
   }
   return state;
 }
@@ -1304,21 +1333,14 @@ get_state_var(const conduit::Node &dataset,
 // -- end ascent::runtime::expressions--
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-
