@@ -206,9 +206,7 @@ endif()
 #for now, we depend on compositing so we need vtkh
 if(DRAY_FOUND AND VTKM_FOUND)
   list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
-  list(APPEND ascent_headers runtimes/ascent_dray_data_adapter.hpp)
   list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
-  list(APPEND ascent_sources runtimes/ascent_dray_data_adapter.cpp)
 endif()
 
 ##############################
@@ -393,6 +391,11 @@ if(MPI_FOUND)
         list(APPEND ascent_mpi_thirdparty_libs vtkh_mpi)
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs rover)
         list(APPEND ascent_mpi_thirdparty_libs rover_mpi)
+    endif()
+    if(DRAY_FOUND)
+        # swap dray_mpi for dray
+        list(REMOVE_ITEM ascent_mpi_thirdparty_libs dray)
+        list(APPEND ascent_mpi_thirdparty_libs dray_mpi)
     endif()
 
     blt_add_library(

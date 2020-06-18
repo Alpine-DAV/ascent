@@ -86,6 +86,10 @@
 #include <vtkm/cont/cuda/ChooseCudaDevice.h>
 #endif
 #endif
+
+#if defined(ASCENT_DRAY_ENABLED)
+#include <dray/dray.hpp>
+#endif
 using namespace conduit;
 using namespace std;
 
@@ -167,6 +171,9 @@ AscentRuntime::Initialize(const conduit::Node &options)
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
 #if defined(ASCENT_VTKM_ENABLED)
     vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
+#endif
+#if defined(ASCENT_DRAY_ENABLED)
+    dray::dray::mpi_comm(options["mpi_comm"].to_int());
 #endif
     MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
     MPI_Comm_rank(comm,&m_rank);
