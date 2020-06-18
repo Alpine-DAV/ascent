@@ -75,12 +75,6 @@
 #include <mpi.h>
 #endif
 
-//#if defined(ASCENT_VTKM_ENABLED)
-//#include <ascent_vtkh_data_adapter.hpp>
-//#include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
-//#include <ascent_runtime_blueprint_filters.hpp>
-//#endif
-
 #if defined(ASCENT_MFEM_ENABLED)
 #include <ascent_mfem_data_adapter.hpp>
 #endif
