@@ -191,7 +191,6 @@ private:
 
     Graph             m_graph;
     Registry          m_registry;
-    int               m_timing_exec_count;
     std::stringstream m_timing_info;
 
 };
