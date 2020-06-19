@@ -62,9 +62,10 @@
 #include <ascent_runtime_blueprint_filters.hpp>
 #include <ascent_runtime_trigger_filters.hpp>
 #include <ascent_runtime_query_filters.hpp>
-#include <ascent_runtime_camera_filters.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
+    #include <ascent_runtime_camera_filters.hpp>
+    #include <ascent_runtime_simplex_filters.hpp>
     #include <ascent_runtime_vtkh_filters.hpp>
     #include <ascent_runtime_rendering_filters.hpp>
     #include <ascent_runtime_rover_filters.hpp>
@@ -126,6 +127,7 @@ register_builtin()
 
     //Magic Camera
     AscentRuntime::register_filter_type<AutoCamera>("transforms","camera");
+    AscentRuntime::register_filter_type<CameraSimplex>("transforms","simplex");
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();

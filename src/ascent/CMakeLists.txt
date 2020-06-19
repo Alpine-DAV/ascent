@@ -101,6 +101,7 @@ set(ascent_sources
     runtimes/expressions/ascent_expressions_parser.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
+    runtimes/flow_filters/ascent_runtime_simplex_filters.cpp
     runtimes/flow_filters/ascent_runtime_camera_filters.cpp
     runtimes/flow_filters/ascent_runtime_param_check.cpp
     runtimes/flow_filters/ascent_runtime_relay_filters.cpp
@@ -143,6 +144,7 @@ set(ascent_headers
     runtimes/ascent_flow_runtime.hpp
     runtimes/flow_filters/ascent_runtime_filters.hpp
     runtimes/flow_filters/ascent_runtime_camera_filters.hpp
+    runtimes/flow_filters/ascent_runtime_simplex_filters.hpp
     runtimes/flow_filters/ascent_runtime_param_check.hpp
     runtimes/flow_filters/ascent_runtime_relay_filters.hpp
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
