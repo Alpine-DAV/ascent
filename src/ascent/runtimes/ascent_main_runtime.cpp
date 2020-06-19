@@ -338,7 +338,7 @@ AscentRuntime::Cleanup()
         std::ofstream ftimings;
         std::string file_name = fname.str();
         file_name = conduit::utils::join_file_path(m_default_output_dir,file_name);
-        ftimings.open(file_name);
+        ftimings.open(file_name, std::ofstream::out | std::ofstream::app);
         ftimings << w.timing_info();
         ftimings.close();
     }
