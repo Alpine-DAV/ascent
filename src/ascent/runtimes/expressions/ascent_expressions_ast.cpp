@@ -135,7 +135,8 @@ void ASTInteger::access()
 std::string ASTInteger::build_string(conduit::Node &n)
 {
   std::stringstream ss;
-  ss<<m_value;
+  // force everthing to a double
+  ss<<"double("<<m_value<<")";
   return ss.str();
 }
 
@@ -165,7 +166,8 @@ conduit::Node ASTInteger::build_graph(flow::Workspace &w)
 std::string ASTDouble::build_string(conduit::Node &n)
 {
   std::stringstream ss;
-  ss<<m_value;
+  // force everthing to a double
+  ss<<"double("<<m_value<<")";
   return ss.str();
 }
 

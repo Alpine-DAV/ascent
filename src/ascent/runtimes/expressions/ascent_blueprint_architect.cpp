@@ -1157,6 +1157,49 @@ std::string field_assoc(const conduit::Node &dataset,
   return vertex_vote ? "vertex" : "element";
 }
 
+std::string field_type(const conduit::Node &dataset,
+                       const std::string &field_name)
+{
+  bool is_double = true;
+  bool rank_has = false;
+  bool error = false;
+
+  const std::string field_path = "fields/" + field_name;
+  std::string type_name;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path(field_path))
+    {
+      rank_has = true;
+      std::string asc = dom[field_path+"/association"].as_string();
+      if(dom[field_path+"/values"].dtype().is_float32())
+      {
+        is_double = false;
+      }
+      else if(!dom[field_path+"/values"].dtype().is_float64())
+      {
+        type_name = dom[field_path+"/values"].dtype().name();
+        error = true;
+      }
+    }
+  }
+
+  error = global_agreement(error);
+  if(error)
+  {
+
+    ASCENT_ERROR("Field '"<<field_name<<"' is neither float or double."
+                 <<" type is '"<<type_name<<"'."
+                 <<" Contact someone.");
+  }
+
+  bool my_vote = rank_has && is_double;
+  bool double_vote = global_someone_agrees(my_vote);
+
+  return is_double? "double" : "float";
+}
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

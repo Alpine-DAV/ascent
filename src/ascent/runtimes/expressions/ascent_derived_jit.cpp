@@ -158,17 +158,15 @@ void check_fields(const conduit::Node &dataset, const conduit::Node &vars)
   }
 }
 
-std::string create_map_kernel(std::vector<std::string> &in_types,
-                              std::vector<std::string> &in_names,
+std::string create_map_kernel(std::map<std::string,std::string> &in_vars,
                               std::string out_type,
                               std::string expr)
 {
   std::stringstream ss;
-  const int params_size = in_types.size();
   ss << "@kernel void map(const int entries,\n";
-  for(int i = 0; i < params_size; ++i)
+  for(auto var : in_vars)
   {
-    ss<<"                 const " << in_types[i] << " *"<<in_names[i]<<"_ptr,\n";
+    ss<<"                 const " << var.second << " *"<< var.first <<"_ptr,\n";
   }
   ss << "                       " << out_type << " *output_ptr)\n"
      << "{\n"
@@ -179,10 +177,10 @@ std::string create_map_kernel(std::vector<std::string> &in_types,
      << "      const int n = item;\n\n"
      << "      if (n < entries)\n"
      << "      {\n";
-  for(int i = 0; i < params_size; ++i)
+  for(auto var : in_vars)
   {
-    ss<<"        const " << in_types[i] << " "<<in_names[i]
-      <<" = "<<in_names[i] <<"_ptr[n];\n";
+    ss<<"        const " << var.second << " "<< var.first
+      <<" = "<<var.first <<"_ptr[n];\n";
   }
   ss << "        " << out_type << " output;\n"
      << "        output = " << expr << ";\n"
@@ -209,28 +207,37 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
   }
 
   // build the kernel
-  std::vector<std::string> type_names;
-  std::vector<std::string> var_names;
-  std::vector<std::string> constants;
+  std::set<std::string> var_names;
+
+  // var_name : type
+  std::map<std::string, std::string> var_types;
 
   for(int i = 0; i < info["vars"].number_of_children(); ++i)
   {
-    type_names.push_back("double");
-    var_names.push_back(info.child(i).as_string());
+    var_names.insert(info["vars"].child(i).as_string());
   }
 
-  std::string kernel_str = detail::create_map_kernel(type_names,
-                                                     var_names,
-                                                     "double",
+  for(auto name : var_names)
+  {
+    std::string type = field_type(dataset, name);
+    var_types[name] = type;
+  }
+  // indentify constants per domain
+  std::set<std::string> constants;
+
+  std::string kernel_str = detail::create_map_kernel(var_types,
+                                                     "double", //output type
                                                      expr);
 
   detail::modes();
   occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 2");
   occa::device &device = occa::getDevice();
   occa::kernel kernel;
+
   try
   {
-    occa::kernel kernel = device.buildKernelFromString(kernel_str, "map");
+    kernel = device.buildKernelFromString(kernel_str, "map");
+    std::cout<<kernel_str<<"\n";
   }
   catch(const occa::exception &e)
   {
@@ -240,46 +247,79 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
   {
     ASCENT_ERROR("Expression compilation failed with an unknown error");
   }
-  return;
 
   for(int i = 0; i < num_domains; ++i)
   {
+    // TODO: we need to skip domains that don't have what we need
     conduit::Node &dom = dataset.child(i);
 
     std::string var = info["vars"].child(0).as_string();
     const conduit::Node &field = dom["fields/"+var];
     const int size = field["values"].dtype().number_of_elements();
-    const double *val1 = field["values"].as_float64_ptr();
-    const std::string assoc = field["association"].as_string();
-    const std::string topo = field["topology"].as_string();
 
+    kernel.clearArgs();
+    int invoke_size = -1;
+    std::string assoc;
+    std::string topo;
+
+    // these are reference counted
+    std::vector<occa::memory> field_memory;
+
+    for(auto vt : var_types)
+    {
+      const std::string &var_name = vt.first;
+      const std::string &type = vt.second;
+      const conduit::Node &field = dom["fields/"+var];
+      const int size = field["values"].dtype().number_of_elements();
+      if(invoke_size < 0)
+      {
+        // input / output size and field assocs
+        invoke_size = size;
+        assoc = field["association"].as_string();
+        topo = field["topology"].as_string();
+      }
+      else if(invoke_size != size)
+      {
+        ASCENT_ERROR("field sizes do not match "<<invoke_size<<" "<<size);
+      }
+      occa::memory o_vals;
+      // we only have two types currently
+      // zero copy occa::wrapMemory(???
+      if(type == "double")
+      {
+        const double *vals = field["values"].as_float64_ptr();
+        o_vals = device.malloc(size * sizeof(double), vals);
+      }
+      else
+      {
+        const float *vals = field["values"].as_float32_ptr();
+        o_vals = device.malloc(size * sizeof(float), vals);
+      }
+      std::cout<<"Mode "<<o_vals.mode()<<"\n";
+
+      field_memory.push_back(o_vals);
+    }
+
+    // pass agrs to the kernel
+    kernel.pushArg(invoke_size);
+    for(auto mem : field_memory)
+    {
+      kernel.pushArg(mem);
+    }
 
     conduit::Node &n_output = dom["fields/output"];
     n_output["association"] = assoc;
     n_output["topology"] = topo;
 
-    // zero copy occa::wrapMemory(???
     n_output["values"] = conduit::DataType::float64(size);
     double *output_ptr = n_output["values"].as_float64_ptr();
-    occa::array<double> o_output(size, val1);
+    occa::array<double> o_output(size);
 
-    std::cout<<kernel_str<<"\n";
-    std::cout<<"size "<<size<<"\n";
-    occa::array<double> o_val1(size, val1);
-    occa::device o_device = o_val1.getDevice();
-    std::cout<<"Mode "<<o_device.mode()<<"\n";
+    kernel.pushArg(o_output);
+    kernel.run();
 
-    kernel(size, o_val1, o_output);
     o_output.memory().copyTo(output_ptr);
-    //kernel.run();
 
-    //for(int v = 0; v < size; ++v)
-    //{
-    //  std::cout<<" "<<output_ptr[v];
-    //}
-    //std::cout<<"\n";
-
-    //field.print();
     dom["fields/output"].print();
   }
 }

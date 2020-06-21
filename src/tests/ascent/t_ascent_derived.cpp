@@ -96,8 +96,9 @@ TEST(ascent_expressions, basic_expressions)
 
 
     //expr = "max((2.0 + 1) / 0.5 + field('braid'),double(0.0))";
-    expr = "sin(field('braid')) + field('radial')";
-    //expr = "max(field('braid'),sin(0.0))";
+    // pass vec and see what happens
+    //expr = "sin(field('braid'))*field('braid') * field('vel')";
+    expr = "max(field('braid'),sin(0.0))";
     //expr = "sin(1.0)";
     eval.evaluate_derived(expr);
 }

@@ -128,6 +128,9 @@ conduit::Node quantile(const conduit::Node &cdf,
 std::string field_assoc(const conduit::Node &dataset,
                         const std::string &field_name);
 
+std::string field_type(const conduit::Node &dataset,
+                       const std::string &field_name);
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
