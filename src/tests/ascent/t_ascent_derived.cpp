@@ -42,75 +42,82 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_expression_eval.hpp
+/// file: t_ascent_render_3d.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_EXPRESSION_EVAL_HPP
-#define ASCENT_EXPRESSION_EVAL_HPP
-#include <conduit.hpp>
-#include <ascent_exports.h>
 
-#include "flow_workspace.hpp"
+#include "gtest/gtest.h"
+
+#include <ascent_expression_eval.hpp>
+
+#include <iostream>
+#include <cmath>
+
+#include <conduit_blueprint.hpp>
+
+#include "t_config.hpp"
+#include "t_utils.hpp"
+
+using namespace std;
+using namespace conduit;
+using namespace ascent;
+
+
+index_t EXAMPLE_MESH_SIDE_DIM = 5;
+
 //-----------------------------------------------------------------------------
-// -- begin ascent:: --
-//-----------------------------------------------------------------------------
-namespace ascent
+TEST(ascent_expressions, basic_expressions)
 {
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    // ascent normally adds this but we are doing an end around
+    data["state/domain_id"] = 0;
+    Node multi_dom;
+    blueprint::mesh::to_multi_domain(data, multi_dom);
+
+    runtime::expressions::register_builtin();
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+
+    conduit::Node res;
+    std::string expr;
+
+
+    //expr = "max((2.0 + 1) / 0.5 + field('braid'),double(0.0))";
+    expr = "sin(field('braid')) + field('radial')";
+    //expr = "max(field('braid'),sin(0.0))";
+    //expr = "sin(1.0)";
+    eval.evaluate_derived(expr);
+}
 
 //-----------------------------------------------------------------------------
-// -- begin ascent::runtime --
-//-----------------------------------------------------------------------------
-namespace runtime
+
+int main(int argc, char* argv[])
 {
+    int result = 0;
 
-namespace expressions
-{
+    ::testing::InitGoogleTest(&argc, argv);
 
-void ASCENT_API register_builtin();
-void ASCENT_API initialize_functions();
-void ASCENT_API initialize_objects();
-static conduit::Node m_function_table;
+    // allow override of the data size via the command line
+    if(argc == 2)
+    {
+        EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
+    }
 
-class ASCENT_API ExpressionEval
-{
-protected:
-  conduit::Node *m_data;
-  flow::Workspace w;
-  static conduit::Node m_cache;
-public:
-  ExpressionEval(conduit::Node *data);
+    result = RUN_ALL_TESTS();
+    return result;
+}
 
-  static const conduit::Node &get_cache();
-
-  conduit::Node evaluate(const std::string expr, std::string exp_name = "");
-  void evaluate_derived(const std::string expr, std::string exp_name = "");
-};
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end ascent::expressions--
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end ascent::runtime --
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end ascent:: --
-//-----------------------------------------------------------------------------
-
-
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
 

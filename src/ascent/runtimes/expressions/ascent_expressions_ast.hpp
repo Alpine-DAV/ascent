@@ -13,6 +13,10 @@ public:
   virtual ~ASTNode() {}
   virtual void access() = 0;
   virtual conduit::Node build_graph(flow::Workspace &w) = 0;
+  virtual std::string build_string(conduit::Node &n)
+  {
+    return "banana";
+  };
 };
 
 class ASTExpression : public ASTNode {
@@ -27,6 +31,7 @@ public:
   ASTIdentifier(const std::string& name) : m_name(name) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual std::string build_string(conduit::Node &n);
 };
 
 class NamedExpression : public ASTExpression {
@@ -36,6 +41,7 @@ public:
   NamedExpression(ASTIdentifier *key, ASTExpression *value) : key(key), value(value) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual std::string build_string(conduit::Node &n);
 
   virtual ~NamedExpression() {
     delete key;
@@ -49,6 +55,7 @@ public:
   ASTInteger(int value) : m_value(value) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual std::string build_string(conduit::Node &n);
 };
 
 class ASTDouble : public ASTExpression {
@@ -57,6 +64,7 @@ public:
   ASTDouble(double value) : m_value(value) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual std::string build_string(conduit::Node &n);
 };
 
 class ASTString: public ASTExpression {
@@ -65,6 +73,7 @@ public:
   ASTString(const std::string& name) : m_name(name) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual std::string build_string(conduit::Node &n);
 };
 
 typedef std::vector<ASTExpression*> ExpressionList;
@@ -108,6 +117,7 @@ public:
   ASTMethodCall(ASTIdentifier *id) : m_id(id) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual std::string build_string(conduit::Node &n);
 
   virtual ~ASTMethodCall()
   {
@@ -125,6 +135,7 @@ public:
     m_lhs(lhs), m_rhs(rhs), m_op(op) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual std::string build_string(conduit::Node &n);
 
   virtual ~ASTBinaryOp()
   {
@@ -157,7 +168,7 @@ public:
   ASTExpression *array;
   ASTExpression *index;
   ASTArrayAccess(ASTExpression *array, ASTExpression *index) :
-    array(array), index(index) { } 
+    array(array), index(index) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
 
@@ -173,7 +184,7 @@ public:
   ASTExpression *obj;
   std::string name;
   ASTDotAccess(ASTExpression *obj, const std::string& name) :
-    obj(obj), name(name) { } 
+    obj(obj), name(name) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
 

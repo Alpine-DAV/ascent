@@ -45,12 +45,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_blueprint_architect.hpp
+/// file: ascent_derived_jit.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_BLUEPRINT_ARCHITECT
-#define ASCENT_BLUEPRINT_ARCHITECT
+#ifndef ASCENT_DERVIVED_JIT_HPP
+#define ASCENT_DERVIVED_JIT_HPP
 
 #include <ascent.hpp>
 #include <conduit.hpp>
@@ -74,59 +74,7 @@ namespace runtime
 namespace expressions
 {
 
-conduit::Node vert_location(const conduit::Node &domain,
-                            const int &index,
-                            const std::string topo_name = "");
-
-conduit::Node element_location(const conduit::Node &domain,
-                               const int &index,
-                               const std::string topo_name = "");
-
-conduit::Node field_max(const conduit::Node &dataset,
-                        const std::string &field_name);
-
-conduit::Node field_min(const conduit::Node &dataset,
-                        const std::string &field_name);
-
-conduit::Node field_sum(const conduit::Node &dataset,
-                        const std::string &field_name);
-
-conduit::Node field_avg(const conduit::Node &dataset,
-                        const std::string &field_name);
-
-conduit::Node field_nan_count(const conduit::Node &dataset,
-                              const std::string &field_name);
-
-conduit::Node field_inf_count(const conduit::Node &dataset,
-                              const std::string &field_name);
-
-conduit::Node field_histogram(const conduit::Node &dataset,
-                              const std::string &field_name,
-                              const double &min_val,
-                              const double &max_val,
-                              const int &num_bins);
-
-conduit::Node field_entropy(const conduit::Node &hist);
-
-conduit::Node field_pdf(const conduit::Node &hist);
-conduit::Node field_cdf(const conduit::Node &hist);
-
-conduit::Node get_state_var(const conduit::Node &dataset,
-                            const std::string &var_name);
-
-bool is_scalar_field(const conduit::Node &dataset,
-                     const std::string &field_name);
-
-bool has_field(const conduit::Node &dataset,
-               const std::string &field_name);
-
-conduit::Node quantile(const conduit::Node &cdf,
-                       const double val,
-                       const std::string interpolation);
-
-// assumes that the field exists
-std::string field_assoc(const conduit::Node &dataset,
-                        const std::string &field_name);
+void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info);
 
 };
 //-----------------------------------------------------------------------------

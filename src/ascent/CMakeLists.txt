@@ -95,6 +95,7 @@ set(ascent_sources
     runtimes/ascent_transmogrifier.cpp
     runtimes/expressions/ascent_blueprint_architect.cpp
     runtimes/expressions/ascent_conduit_reductions.cpp
+    runtimes/expressions/ascent_derived_jit.cpp
     runtimes/expressions/ascent_expression_filters.cpp
     runtimes/expressions/ascent_expressions_ast.cpp
     runtimes/expressions/ascent_expressions_tokens.cpp
@@ -134,6 +135,7 @@ set(ascent_headers
     runtimes/ascent_transmogrifier.hpp
     runtimes/expressions/ascent_blueprint_architect.hpp
     runtimes/expressions/ascent_conduit_reductions.hpp
+    runtimes/expressions/ascent_derived_jit.hpp
     runtimes/expressions/ascent_expression_filters.hpp
     runtimes/expressions/ascent_expressions_ast.hpp
     runtimes/expressions/ascent_expressions_tokens.hpp
@@ -253,6 +255,10 @@ set(ascent_thirdparty_libs
 ##################
 # optional libs
 ##################
+if(OCCA_FOUND)
+    list(APPEND ascent_thirdparty_libs occa)
+endif()
+
 if(VTKM_FOUND)
     list(APPEND ascent_thirdparty_libs vtkm vtkh rover)
 endif()

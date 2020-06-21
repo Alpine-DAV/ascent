@@ -16,6 +16,19 @@ using namespace std;
 
 namespace detail
 {
+
+std::string strip_single_quotes(const std::string str)
+{
+  std::string stripped = str;
+  int pos = stripped.find("'");
+  while (pos != std::string::npos)
+  {
+    stripped.erase(pos,1);
+    pos = stripped.find("'");
+  }
+  return stripped;
+}
+
 std::string print_match_error(const std::string &fname,
                               const std::vector<conduit::Node> &pos_arg_nodes,
                               const std::vector<conduit::Node> &named_arg_nodes,
@@ -119,6 +132,13 @@ void ASTInteger::access()
   std::cout << "Creating integer: " << m_value << endl;
 }
 
+std::string ASTInteger::build_string(conduit::Node &n)
+{
+  std::stringstream ss;
+  ss<<m_value;
+  return ss.str();
+}
+
 conduit::Node ASTInteger::build_graph(flow::Workspace &w)
 {
   static int ast_int_counter = 0;
@@ -139,6 +159,14 @@ conduit::Node ASTInteger::build_graph(flow::Workspace &w)
   res["filter_name"] = name;
   res["type"] = "int";
   return res;
+}
+
+//-----------------------------------------------------------------------------
+std::string ASTDouble::build_string(conduit::Node &n)
+{
+  std::stringstream ss;
+  ss<<m_value;
+  return ss.str();
 }
 
 //-----------------------------------------------------------------------------
@@ -180,6 +208,11 @@ void ASTIdentifier::access()
   //  return NULL;
   //}
   //return new LoadInst(context.locals()[name], "", false, context.currentBlock());
+}
+
+std::string ASTIdentifier::build_string(conduit::Node &n)
+{
+  return m_name;
 }
 
 conduit::Node ASTIdentifier::build_graph(flow::Workspace &w)
@@ -227,6 +260,11 @@ void NamedExpression::access()
   value->access();
 }
 
+std::string NamedExpression::build_string(conduit::Node &n)
+{
+  return key->build_string(n) + value->build_string(n);
+}
+
 conduit::Node NamedExpression::build_graph(flow::Workspace &w)
 {
   return value->build_graph(w);
@@ -258,6 +296,44 @@ void ASTMethodCall::access()
 {
   arguments->access();
   std::cout << "Creating method call: " << m_id->m_name << std::endl;
+}
+
+std::string ASTMethodCall::build_string(conduit::Node &n)
+{
+  // placeholder for more complicated logic
+  if(m_id->m_name == "field")
+  {
+    int arg_size = arguments->pos_args->size();
+    // need to verify params, e.g., num and type
+    std::string var_name = detail::strip_single_quotes((*arguments->pos_args)[0]->build_string(n));
+    n["vars"].append() = var_name;
+    return var_name;
+  }
+
+  // per domain constants
+  if(m_id->m_name == "domain_id")
+  {
+    int arg_size = arguments->pos_args->size();
+    arg_size = arguments->pos_args->size();
+    n["constants"].append() = "domain_id";
+    return "domain_id";
+  }
+
+
+
+  std::string res = m_id->m_name + "(";
+  size_t pos_size = 0;
+  if(arguments->pos_args != nullptr)
+  {
+    pos_size = arguments->pos_args->size();
+    for(size_t i = 0; i < pos_size; ++i)
+    {
+      res += (*arguments->pos_args)[i]->build_string(n);
+      if(i != pos_size - 1) res +=",";
+    }
+  }
+  res += ")";
+  return res;
 }
 
 conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
@@ -331,9 +407,9 @@ conduit::Node ASTMethodCall::build_graph(flow::Workspace &w)
 
      // validation
 
-     func_arg_names = func["args"].child_names();
-     req_args.clear();
-     opt_args.clear();
+    func_arg_names = func["args"].child_names();
+    req_args.clear();
+    opt_args.clear();
     // populate opt_args and req_args
     for(int a = 0; a < total_args; ++a)
     {
@@ -625,6 +701,31 @@ void ASTBinaryOp::access()
 
 }
 
+std::string ASTBinaryOp::build_string(conduit::Node &n)
+{
+  std::string op_str;
+  switch (m_op)
+  {
+    case TPLUS:   op_str = "+"; break;
+    case TMINUS:  op_str = "-"; break;
+    case TMUL:    op_str = "*"; break;
+    case TDIV:    op_str = "/"; break;
+    case TMOD:    op_str = "%"; break;
+    case TCEQ:    op_str = "=="; break;
+    case TCNE:    op_str = "!="; break;
+    case TCLE:    op_str = "<="; break;
+    case TCGE:    op_str = ">="; break;
+    case TCGT:    op_str = ">"; break;
+    case TCLT:    op_str = "<"; break;
+    case TOR:     op_str = "or"; break;
+    case TAND:    op_str = "and"; break;
+    case TNOT:    op_str = "not"; break;
+    default: std::cout << "unknown binary op " << m_op << "\n";
+
+  }
+  return "(" + m_lhs->build_string(n) +" " + op_str + " " + m_rhs->build_string(n) + ")";
+}
+
 conduit::Node ASTBinaryOp::build_graph(flow::Workspace &w)
 {
   //std::cout << "Creating binary operation " << m_op << endl;
@@ -733,16 +834,15 @@ void ASTString::access()
   std::cout << "Creating string " << m_name << endl;
 }
 
+std::string ASTString::build_string(conduit::Node &n)
+{
+  return m_name;
+}
+
 conduit::Node ASTString::build_graph(flow::Workspace &w)
 {
   // strip the quotes from the variable name
-  std::string stripped = m_name;
-  int pos = stripped.find("'");
-  while (pos != std::string::npos)
-  {
-    stripped.erase(pos,1);
-    pos = stripped.find("'");
-  }
+  std::string stripped = detail::strip_single_quotes(m_name);
 
   // create a unique name for the filter
   static int ast_string_counter = 0;

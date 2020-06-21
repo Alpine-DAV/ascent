@@ -75,6 +75,7 @@ class Ascent(Package, CudaPackage):
     variant("mfem", default=False, description="Build MFEM filter support")
     variant("adios", default=False, description="Build Adios filter support")
     variant("dray", default=False, description="Build with Devil Ray support")
+    variant("occa", default=False, description="Build with OCCA support")
 
     # variants for dev-tools (docs, etc)
     variant("doc", default=False, description="Build Conduit's documentation")
@@ -162,6 +163,16 @@ class Ascent(Package, CudaPackage):
     depends_on("dray@develop~mpi~test~utils~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
 
 
+    # occa defaults to +cuda so we have to explicit tell it ~cuda
+    depends_on("occa@1.0.9~cuda",        when="+occa~cuda")
+    depends_on("occa@1.0.9~cuda~openmp", when="+occa~cuda~openmp")
+    depends_on("occa@1.0.9+cuda+openmp", when="+occa+cuda+openmp")
+    depends_on("occa@1.0.9+cuda~openmp", when="+occa+cuda~openmp")
+
+#    depends_on("vtk-h@0.6.0~shared",             when="~shared+vtkh")
+#    depends_on("vtk-h@0.6.0~shared~openmp",      when="~shared+vtkh~openmp")
+#    depends_on("vtk-h@0.6.0~shared+cuda",        when="~shared+vtkh+cuda")
+#    depends_on("vtk-h@0.6.0~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
     #######################
     # Documentation related
     #######################
@@ -503,6 +514,15 @@ class Ascent(Package, CudaPackage):
             cfg.write(cmake_cache_entry("DRAY_DIR", spec['dray'].prefix))
         else:
             cfg.write("# devil ray not built by spack \n")
+
+        #######################
+        # OCCA
+        #######################
+        if "+occa" in spec:
+            cfg.write("# occa from spack \n")
+            cfg.write(cmake_cache_entry("OCCA_DIR", spec['occa'].prefix))
+        else:
+            cfg.write("# occa not built by spack \n")
 
         #######################
         # Adios

@@ -115,6 +115,16 @@ if (DRAY_DIR)
   include(cmake/thirdparty/SetupDevilRay.cmake)
 endif()
 
+################################
+# Setup OCCA
+################################
+if (OCCA_DIR)
+message(STATUS "OCCA")
+  include(cmake/thirdparty/SetupOcca.cmake)
+else()
+message(STATUS "NOOOOOOOOOOOOOOOOOOOOOOOO OCCA")
+endif()
+
 
 ################################
 # Setup ADIOS

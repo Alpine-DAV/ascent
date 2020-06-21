@@ -55,6 +55,7 @@
 #include "expressions/ascent_expressions_ast.hpp"
 #include "expressions/ascent_expressions_parser.hpp"
 #include "expressions/ascent_expressions_tokens.hpp"
+#include "expressions/ascent_derived_jit.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -539,6 +540,72 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   delete expression;
   w.reset();
   return return_val;
+}
+
+void
+ExpressionEval::evaluate_derived(const std::string expr, std::string expr_name)
+{
+
+  if(expr_name == "")
+  {
+    expr_name = expr;
+  }
+
+  w.registry().add<conduit::Node>("dataset", m_data, -1);
+  w.registry().add<conduit::Node>("cache", &m_cache, -1);
+  w.registry().add<conduit::Node>("function_table", &g_function_table, -1);
+  w.registry().add<conduit::Node>("object_table", &g_object_table, -1);
+  int cycle = get_state_var(*m_data, "cycle").to_int32();
+  w.registry().add<int>("cycle", &cycle, -1);
+
+  try
+  {
+    scan_string(expr.c_str());
+  }
+  catch(const char* msg)
+  {
+    w.reset();
+    ASCENT_ERROR("Expression parsing error: "<<msg<<" in '"<<expr<<"'");
+  }
+
+  ASTExpression *expression = get_result();
+
+  conduit::Node root;
+
+  try
+  {
+    //expression->access();
+    //root = expression->build_graph(w);
+    conduit::Node info;
+    std::string res = expression->build_string(info);
+    std::cout<<"Expression = "<<expr<<"\n";
+    std::cout<<"Res: "<<res<<"\n";;
+    do_it(*m_data, res, info);
+    //std::cout<<w.graph().to_dot()<<"\n";
+    //w.graph().save_dot_html("ascent_expressions_graph.html");
+    //w.execute();
+  }
+  catch(std::exception &e)
+  {
+    delete expression;
+    w.reset();
+    ASCENT_ERROR("Error while executing expression '"<<expr<<"': "<<e.what());
+  }
+  //std::string filter_name = root["filter_name"].as_string();
+
+  //conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
+  //conduit::Node return_val = *n_res;
+
+  //std::stringstream cache_entry;
+  //cache_entry<<expr_name<<"/"<<cycle;
+
+  //// this causes an invalid read in conduit in the expression tests
+  ////m_cache[cache_entry.str()] = *n_res;
+  //m_cache[cache_entry.str()] = return_val;
+
+  //delete expression;
+  //w.reset();
+  //return return_val;
 }
 
 const conduit::Node&

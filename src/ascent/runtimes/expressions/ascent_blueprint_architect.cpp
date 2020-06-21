@@ -53,6 +53,7 @@
 #include "ascent_conduit_reductions.hpp"
 
 #include <ascent_logging.hpp>
+#include <ascent_mpi_utils.hpp>
 
 #include <cstring>
 #include <limits>
@@ -1119,6 +1120,41 @@ get_state_var(const conduit::Node &dataset,
     ASCENT_ERROR("Unable to retrieve state variable '"<<var_name<<"'");
   }
   return state;
+}
+
+std::string field_assoc(const conduit::Node &dataset,
+                        const std::string &field_name)
+{
+  bool vertex = true;
+  bool rank_has = false;
+
+  const std::string field_path = "fields/" + field_name;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path(field_path))
+    {
+      rank_has = true;
+      std::string asc = dom[field_path+"/association"].as_string();
+      if(asc == "element")
+      {
+        vertex = false;
+      }
+    }
+  }
+
+  bool my_vote = rank_has && vertex;
+  bool vertex_vote = global_someone_agrees(my_vote);
+  my_vote = rank_has && !vertex;
+  bool element_vote = global_someone_agrees(my_vote);
+
+  if(vertex_vote && element_vote)
+  {
+    ASCENT_ERROR("There is disagreement about the association "
+                 <<"of field "<<field_name);
+  }
+
+  return vertex_vote ? "vertex" : "element";
 }
 
 //-----------------------------------------------------------------------------
