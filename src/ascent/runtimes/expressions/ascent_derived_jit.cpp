@@ -158,6 +158,7 @@ void check_fields(const conduit::Node &dataset, const conduit::Node &vars)
   }
 }
 
+
 std::string create_map_kernel(std::map<std::string,std::string> &in_vars,
                               std::string out_type,
                               std::string expr)
@@ -194,6 +195,7 @@ std::string create_map_kernel(std::map<std::string,std::string> &in_vars,
 
 }; // namespace detail
 
+
 void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
 {
   std::cout<<"doint it\n";
@@ -222,6 +224,7 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
     std::string type = field_type(dataset, name);
     var_types[name] = type;
   }
+
   // indentify constants per domain
   std::set<std::string> constants;
 

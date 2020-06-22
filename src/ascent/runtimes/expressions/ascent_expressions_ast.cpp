@@ -136,7 +136,7 @@ std::string ASTInteger::build_string(conduit::Node &n)
 {
   std::stringstream ss;
   // force everthing to a double
-  ss<<"double("<<m_value<<")";
+  ss<<"(double)"<<m_value;
   return ss.str();
 }
 
@@ -167,7 +167,7 @@ std::string ASTDouble::build_string(conduit::Node &n)
 {
   std::stringstream ss;
   // force everthing to a double
-  ss<<"double("<<m_value<<")";
+  ss<<"(double)"<<m_value;
   return ss.str();
 }
 

@@ -94,11 +94,14 @@ TEST(ascent_expressions, basic_expressions)
     conduit::Node res;
     std::string expr;
 
+    //double braid = 1.;
+    //double d = max((((double(2) + double(1)) / double(5.0000000000000000e-01)) + braid), double(0));
+    //expr = "max((2.0 + 1) / 0.5 + field('braid'),0.0)";
+    expr = "test( foo = 1)";
 
-    //expr = "max((2.0 + 1) / 0.5 + field('braid'),double(0.0))";
     // pass vec and see what happens
     //expr = "sin(field('braid'))*field('braid') * field('vel')";
-    expr = "max(field('braid'),sin(0.0))";
+    //expr = "max(field('braid'),sin(0.0))";
     //expr = "sin(1.0)";
     eval.evaluate_derived(expr);
 }

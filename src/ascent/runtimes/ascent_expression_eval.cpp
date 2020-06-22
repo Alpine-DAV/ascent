@@ -184,6 +184,7 @@ initialize_functions()
   conduit::Node &field_avg_sig = (*functions)["avg"].append();
   field_avg_sig["return_type"] = "double";
   field_avg_sig["filter_name"] = "field_avg";
+  field_avg_sig["derived_support"] = "true"; // function is supported in derived jit
   field_avg_sig["args/arg1/type"] = "field"; // arg names match input port names
   field_avg_sig["description"] = "Return the field average of a mesh variable.";
 
@@ -192,6 +193,7 @@ initialize_functions()
   conduit::Node &field_nan_sig = (*functions)["field_nan_count"].append();
   field_nan_sig["return_type"] = "double";
   field_nan_sig["filter_name"] = "field_nan_count";
+  field_nan_sig["derived_support"] = "true";
   field_nan_sig["args/arg1/type"] = "field"; // arg names match input port names
   field_nan_sig["description"] = "Return the number  of NaNs in a mesh variable.";
 
@@ -258,6 +260,7 @@ initialize_functions()
   conduit::Node &field_sum_sig = (*functions)["sum"].append();
   field_sum_sig["return_type"] = "double";
   field_sum_sig["filter_name"] = "field_sum";
+  field_sum_sig["derived_support"] = "true";
   field_sum_sig["args/arg1/type"] = "field"; // arg names match input port names
   field_sum_sig["description"] = "Return the sum of a field.";
 
