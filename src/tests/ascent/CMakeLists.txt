@@ -78,7 +78,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_flow_runtime
                 t_ascent_recenter
                 t_ascent_rover
-                t_ascent_lagrangian
+                # t_ascent_lagrangian
                 t_ascent_log
                 t_ascent_queries
                 t_ascent_triggers

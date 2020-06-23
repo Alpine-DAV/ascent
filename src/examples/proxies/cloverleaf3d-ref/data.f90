@@ -73,13 +73,13 @@ MODULE data_module
 
 
    ! Time step control constants
-   INTEGER,        PARAMETER ::  SOUND = 1     &
+   INTEGER,         PARAMETER :: SOUND = 1     &
                                 ,X_VEL = 2     &
                                 ,Y_VEL = 3     &
                                 ,Z_VEL = 4     &
                                 ,DIVERG= 5
 
-   INTEGER,                      PARAMETER :: g_rect=1 &
+   INTEGER,         PARAMETER :: g_rect=1 &
                                 ,g_circ=2 &
                                 ,g_point=3
 
@@ -91,7 +91,7 @@ MODULE data_module
 
 
    TYPE parallel_type
-      LOGICAL           ::      parallel &
+      LOGICAL         ::        parallel &
                                ,boss
       INTEGER         ::        max_task  &
                                ,task      &
@@ -101,7 +101,7 @@ MODULE data_module
 
    TYPE(parallel_type) :: parallel
 
-   INTEGER,        PARAMETER ::g_len_max=500
+   INTEGER,        PARAMETER :: g_len_max=500
 
    INTEGER,        PARAMETER :: chunks_per_task = 1
 
