@@ -1446,6 +1446,7 @@ void AscentRuntime::Execute(const conduit::Node &actions)
 #if defined(ASCENT_VTKM_ENABLED)
     vtkh::DataLogger::GetInstance()->CloseLogEntry();
 #endif
+
     Node msg;
     this->Info(msg["info"]);
     ascent::about(msg["about"]);

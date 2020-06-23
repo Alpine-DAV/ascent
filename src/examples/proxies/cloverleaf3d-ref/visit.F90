@@ -116,18 +116,6 @@ SUBROUTINE visit(my_ascent, sim_time)
 
   ! vis nodes: send 'empty' data set
   IF(parallel%task.GE.parallel%max_task)THEN   
-    ! CALL conduit_node_set_path_float64(sim_data,"state/time", time)
-    ! CALL conduit_node_set_path_float64(sim_data,"state/sim_time", sim_time*visit_frequency)
-    ! CALL conduit_node_set_path_int32(sim_data,"state/domain_id", parallel%task)
-    ! CALL conduit_node_set_path_int32(sim_data,"state/cycle", step)
-    ! CALL conduit_node_set_path_char8_str(sim_data,"coordsets/coords/type", "rectilinear")
-    ! array(1) = 0.0
-    ! num_elements = 1
-    ! CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/x", array, num_elements)
-    ! CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/y", array, num_elements)
-    ! CALL conduit_node_set_path_float64_ptr(sim_data,"coordsets/coords/values/z", array, num_elements)
-    ! CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/type", "rectilinear")
-    ! CALL conduit_node_set_path_char8_str(sim_data,"topologies/mesh/coordset", "coords")
 
     sim_actions = conduit_node_create()
     add_scene_act = conduit_node_append(sim_actions)
@@ -137,7 +125,6 @@ SUBROUTINE visit(my_ascent, sim_time)
     CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/type", "volume")
     CALL conduit_node_set_path_char8_str(scenes,"s1/plots/p1/field", "energy")
 
-    ! CALL ascent_publish(my_ascent, sim_data)
     CALL ascent_execute(my_ascent, sim_actions)
 
     CALL conduit_node_destroy(sim_actions)

@@ -129,7 +129,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");
     AscentRuntime::register_filter_type<VTKHGhostStripper>("transforms","ghost_stripper");
     AscentRuntime::register_filter_type<VTKHIsoVolume>("transforms","isovolume");
-//    AscentRuntime::register_filter_type<VTKHLagrangian>("transforms","lagrangian");
+    // AscentRuntime::register_filter_type<VTKHLagrangian>("transforms","lagrangian");
     AscentRuntime::register_filter_type<VTKHLog>("transforms","log");
     AscentRuntime::register_filter_type<VTKHMarchingCubes>("transforms","contour");
     AscentRuntime::register_filter_type<VTKHThreshold>("transforms","threshold");
@@ -145,7 +145,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHGradient>("transforms","gradient");
     AscentRuntime::register_filter_type<VTKHDivergence>("transforms","divergence");
     AscentRuntime::register_filter_type<VTKHVorticity>("transforms","vorticity");
-//    AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
+    // AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
 

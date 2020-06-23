@@ -64,6 +64,7 @@
 #include <algorithm>
 #include <ostream>
 #include <iterator>
+#include <thread>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -319,8 +320,8 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
     for (size_t i = 0; i < mpi_props.sim_node_count; i++)
         t_inline[i] = vis_estimates[i] * render_cfg.non_probing_count;
 
-    // TODO: add smart way to estimate compositing time
-    float t_compositing = 0.2f * render_cfg.max_count;  // flat compositing cost (single vis node only)
+    // TODO: add smart way to estimate compositing + save time
+    float t_compositing = 0.3f * render_cfg.max_count;  // flat compositing cost (single vis node only)
     if (mpi_props.rank == 0)
         std::cout << "~~compositing estimate: " << t_compositing << std::endl;
 
@@ -351,9 +352,8 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         while (t_inline_sim.max() < t_intransit.max()) 
         {
             // always push back to the fastest sim node
-            const int min_id = std::min_element(begin(t_inline_sim), 
-                                                end(t_inline_sim))
-                                                - begin(t_inline_sim);
+            const int min_id = std::min_element(begin(t_inline_sim), end(t_inline_sim)) 
+                                - begin(t_inline_sim);
 
             // find the corresponding vis node 
             const int target_vis_node = node_map[min_id];
@@ -361,8 +361,8 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
             if (render_counts_vis[target_vis_node] > 0)
             {
                 t_intransit[target_vis_node] -= vis_estimates[min_id];
-                // Add render receive cost to vis node. TODO: replace magic number w/ estimate
-                t_intransit[target_vis_node] += 0.09f;  
+                // Add render receive cost to vis node.
+                // t_intransit[target_vis_node] += 0.09f;  
                 render_counts_vis[target_vis_node]--;
             
                 t_inline[min_id] += vis_estimates[min_id];
@@ -981,6 +981,23 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
     }
 }
 
+void pack_and_send(Node& data, const int destination, const int tag, const MPI_Comm comm, MPI_Request &req)
+{
+    Node compact_node = pack_node(data);
+
+    int mpi_error = MPI_Ibsend(compact_node.data_ptr(),
+                               compact_node.total_bytes_compact(),
+                               MPI_BYTE,
+                               destination,
+                               tag,
+                               comm,
+                               &req
+                               );
+    if (mpi_error)
+        std::cout << "ERROR sending node to " << destination << std::endl;
+}
+
+
 //-----------------------------------------------------------------------------
 void hybrid_render(const MPI_Properties mpi_props,
                    const RenderConfig render_cfg,
@@ -1314,7 +1331,7 @@ void hybrid_render(const MPI_Properties mpi_props,
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
             // TODO: no copy (set external)
-            Node compact_probing_renders = pack_node(render_chunks_probing);
+            // Node compact_probing_renders = pack_node(render_chunks_probing);
             const int my_render_count = g_render_counts[mpi_props.rank] + int(g_render_counts[mpi_props.rank]*render_cfg.probing_factor);
             RenderBatch batch = get_batch(my_render_count, render_cfg.BATCH_SIZE);
 
@@ -1322,7 +1339,8 @@ void hybrid_render(const MPI_Properties mpi_props,
                 detach_mpi_buffer();
 
                 const index_t msg_size_render = calc_render_msg_size(my_render_count, render_cfg.probing_factor);
-                const index_t msg_size_probing = compact_probing_renders.total_bytes_compact();
+                const index_t msg_size_probing = calc_render_msg_size(render_cfg.probing_count, 0.0);
+                // const index_t msg_size_probing = compact_probing_renders.total_bytes_compact();
                 const int overhead = MPI_BSEND_OVERHEAD * (batch.runs + 2); // 1 probing batch
                 MPI_Buffer_attach(malloc(msg_size_render + msg_size_probing + my_data_size + overhead), 
                                          msg_size_render + msg_size_probing + my_data_size + overhead);
@@ -1344,18 +1362,23 @@ void hybrid_render(const MPI_Properties mpi_props,
             }
             
             MPI_Request request_probing = MPI_REQUEST_NULL;
-            {   // send probing chunks to vis node
-                int mpi_error = MPI_Ibsend(compact_probing_renders.data_ptr(),
-                                           compact_probing_renders.total_bytes_compact(),
-                                           MPI_BYTE,
-                                           destination,
-                                           tag_probing,
-                                           mpi_props.comm_world,
-                                           &request_probing
-                                           );
-                if (mpi_error)
-                    std::cout << "ERROR sending probing renders to " << destination << std::endl;
-            }
+            // pack and send probing in own thread
+            std::thread pack_renders_thread(&pack_and_send, std::ref(render_chunks_probing), 
+                                            destination, tag_probing, mpi_props.comm_world, 
+                                            std::ref(request_probing));
+
+            // {   // send probing chunks to vis node
+            //     int mpi_error = MPI_Ibsend(compact_probing_renders.data_ptr(),
+            //                                compact_probing_renders.total_bytes_compact(),
+            //                                MPI_BYTE,
+            //                                destination,
+            //                                tag_probing,
+            //                                mpi_props.comm_world,
+            //                                &request_probing
+            //                                );
+            //     if (mpi_error)
+            //         std::cout << "ERROR sending probing renders to " << destination << std::endl;
+            // }
             log_global_time("end sendData", mpi_props.rank);
 
             // in line rendering using ascent
@@ -1363,6 +1386,9 @@ void hybrid_render(const MPI_Properties mpi_props,
             std::vector<MPI_Request> requests(batch.runs, MPI_REQUEST_NULL);
             std::vector<conduit::Node> info(batch.runs);
             Node render_chunks_inline;
+
+            std::vector<std::thread> threads;
+            // std::thread thread_pack(&test_function);
             auto t_start = std::chrono::system_clock::now();
             for (int i = 0; i < batch.runs; ++i)
             {
@@ -1384,6 +1410,12 @@ void hybrid_render(const MPI_Properties mpi_props,
                 ascent_renders[i].publish(data);
                 ascent_renders[i].execute(blank_actions);
 
+                if (threads.size() > 0)
+                {
+                    threads.back().join();
+                    threads.pop_back();
+                }
+
                 // send render chunks
                 ascent_renders[i].info(info[i]);
                 render_chunks_inline["depths"].set_external(info[i]["depths"]);
@@ -1391,34 +1423,44 @@ void hybrid_render(const MPI_Properties mpi_props,
                 render_chunks_inline["depth_buffers"].set_external(info[i]["depth_buffers"]);
                 render_chunks_inline["render_file_names"].set_external(info[i]["render_file_names"]);
 
+                threads.push_back(std::thread(&pack_and_send, std::ref(render_chunks_inline), 
+                                              destination, tag_inline + i, mpi_props.comm_world, 
+                                              std::ref(requests[i])));
+
     // auto t_detail = std::chrono::system_clock::now();
                 // send render chunks to vis node for compositing
                 // TODO: no copy (set external)
-                Node compact_renders = pack_node(render_chunks_inline);
+            // Node compact_renders = pack_node(render_chunks_inline);
                 // Node compact_renders;
                 // pack_node_external(render_chunks_inline, compact_renders);
     // print_time(t_detail, "pack node ", mpi_props.rank);
-                {
-                    int mpi_error = MPI_Ibsend(compact_renders.data_ptr(),
-                                               compact_renders.total_bytes_compact(),
-                                               MPI_BYTE,
-                                               destination,
-                                               tag_inline + i,
-                                               mpi_props.comm_world,
-                                               &requests[i]
-                                              );
-                    if (mpi_error)
-                        std::cout << "ERROR sending dataset to " << destination << std::endl;
+                // {
+                //     int mpi_error = MPI_Ibsend(compact_renders.data_ptr(),
+                //                                compact_renders.total_bytes_compact(),
+                //                                MPI_BYTE,
+                //                                destination,
+                //                                tag_inline + i,
+                //                                mpi_props.comm_world,
+                //                                &requests[i]
+                //                               );
+                //     if (mpi_error)
+                //         std::cout << "ERROR sending dataset to " << destination << std::endl;
 
                     // std::cout << mpi_props.rank << " end render sim " << current_batch_size
                     //             << " renders size " << compact_renders.total_bytes_compact() 
                     //             << std::endl;
-                }
+                // }
+            }
+            while (threads.size() > 0)
+            {
+                threads.back().join();
+                threads.pop_back();
             }
             log_time(t_start, "+ render sim " + std::to_string(g_render_counts[mpi_props.rank]) + " ", mpi_props.rank);
             log_global_time("end render", mpi_props.rank);
 
             {   // wait for all sent data to be received
+                pack_renders_thread.join();
                 t_start = std::chrono::system_clock::now();
                 // probing
                 MPI_Wait(&request_probing, MPI_STATUS_IGNORE);
