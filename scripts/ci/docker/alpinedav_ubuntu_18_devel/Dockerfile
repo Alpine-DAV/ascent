@@ -71,13 +71,3 @@ RUN apt-get -y install \
              libbz2-dev \
              mpich \
              libmpich-dev 
-
-# # add our 'user' with password 'docker'
-# RUN useradd -ms /bin/bash -G sudo user && echo "user:docker" | chpasswd
-# # allow sudo w/o password
-# RUN echo "user ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/user && \
-# chmod 0440 /etc/sudoers.d/user
-#
-# # set user
-# USER user
-# WORKDIR /home/user
