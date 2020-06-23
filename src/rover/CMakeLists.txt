@@ -122,7 +122,7 @@ if(ENABLE_LOGGING)
 endif()
 
 if(OPENMP_FOUND)
-  blt_add_target_compile_flags(TO rover FLAGS " -D ROVER_ENABLE_OPENMP=1")
+  #blt_add_target_compile_flags(TO rover FLAGS " -D ROVER_ENABLE_OPENMP=1")
 endif()
 
 # install target for mpi ver
@@ -177,7 +177,7 @@ if(MPI_FOUND)
     blt_add_target_compile_flags(TO rover_mpi FLAGS " -D ROVER_ENABLE_LOGGING=1")
   endif()
   if(OPENMP_FOUND)
-    blt_add_target_compile_flags(TO rover FLAGS " -D ROVER_ENABLE_OPENMP=1")
+    # blt_add_target_compile_flags(TO rover FLAGS" -D ROVER_ENABLE_OPENMP=1")
   endif()
 
 endif()

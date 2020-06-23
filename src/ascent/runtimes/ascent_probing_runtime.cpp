@@ -63,6 +63,7 @@
 #include <valarray>
 #include <algorithm>
 #include <ostream>
+#include <iterator>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes

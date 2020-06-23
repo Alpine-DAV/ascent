@@ -331,6 +331,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+/*
 class ASCENT_API VTKHLagrangian : public ::flow::Filter
 {
 public:
@@ -342,6 +343,7 @@ public:
                                  conduit::Node &info);
     virtual void   execute();
 };
+*/
 
 //-----------------------------------------------------------------------------
 class ASCENT_API VTKHLog: public ::flow::Filter
@@ -474,6 +476,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+/*
 class ASCENT_API VTKHParticleAdvection : public ::flow::Filter
 {
 public:
@@ -485,6 +488,7 @@ public:
                                  conduit::Node &info);
     virtual void   execute();
 };
+*/
 
 
 };

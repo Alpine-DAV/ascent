@@ -95,9 +95,9 @@
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/NoOp.hpp>
-#include <vtkh/filters/Lagrangian.hpp>
+// #include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/filters/Log.hpp>
-#include <vtkh/filters/ParticleAdvection.hpp>
+// #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Recenter.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
@@ -2723,7 +2723,7 @@ void ExecScene::execute()
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-
+/*
 VTKHLagrangian::VTKHLagrangian()
     : Filter()
 {
@@ -2819,7 +2819,7 @@ void VTKHLagrangian::execute()
 
   set_output<vtkh::DataSet>(lagrangian_output);
 }
-
+*/
 //-----------------------------------------------------------------------------
 
 VTKHLog::VTKHLog()
@@ -3584,6 +3584,7 @@ void VTKHHistogram::execute()
 }
 //-----------------------------------------------------------------------------
 
+/*
 VTKHParticleAdvection::VTKHParticleAdvection()
     : Filter()
 {
@@ -3664,6 +3665,7 @@ void VTKHParticleAdvection::execute()
   vtkh::DataSet *output = streamline.GetOutput();
   set_output<vtkh::DataSet>(output);
 }
+*/
 
 //-----------------------------------------------------------------------------
 
