@@ -115,6 +115,7 @@ stages:
            cd build
            make gen_report
         displayName: 'Run Gen Test Image Diff Report'
+        condition: always()
 
       - task: PublishTestResults@2
         inputs:
