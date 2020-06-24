@@ -38,6 +38,7 @@ stages:
   - job: Main_Ubuntu_18
     pool:
       vmImage: 'ubuntu-16.04'
+    timeoutInMinutes: 0
     container: alpinedav/ascent-ci:ubuntu-18-devel-tpls
     variables:
       COMPILER_CC: gcc
@@ -178,6 +179,7 @@ stages:
   - job: Main_Ubuntu_16_Cuda_9_2
     pool:
       vmImage: 'ubuntu-16.04'
+    timeoutInMinutes: 0
     container: alpinedav/ascent-ci:ubuntu-16-cuda-9.2-devel-tpls
     variables:
       COMPILER_CC: gcc
