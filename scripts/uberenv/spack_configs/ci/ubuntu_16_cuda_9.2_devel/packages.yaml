@@ -8,7 +8,7 @@ packages:
       lapack: [netlib-lapack]
   cuda:
     paths:
-      cuda@10.2: /usr/local/cuda/
+      cuda@9.2: /usr/local/cuda/
     buildable: False
   netlib-lapack:
     buildable: False
