@@ -568,7 +568,7 @@ ExpressionEval::evaluate_derived(const std::string expr, std::string expr_name)
   catch(const char* msg)
   {
     w.reset();
-    ASCENT_ERROR("Expression parsing error: "<<msg<<" in '"<<expr<<"'");
+    ASCENT_ERROR("JIT Expression parsing error: "<<msg<<" in '"<<expr<<"'");
   }
 
   ASTExpression *expression = get_result();
@@ -580,13 +580,28 @@ ExpressionEval::evaluate_derived(const std::string expr, std::string expr_name)
     //expression->access();
     //root = expression->build_graph(w);
     conduit::Node info;
-    std::string res = expression->build_string(info);
+    bool can = expression->can_jit();
     std::cout<<"Expression = "<<expr<<"\n";
+    std::cout<<"CAN string "<<can<<"\n";
+    std::string res = expression->build_jit(info,w);
+    if(info.has_path("pre-execute"))
+    {
+      //std::cout<<w.graph().to_dot()<<"\n";
+      //w.graph().save_dot_html("ascent_jit_pre_execute_graph.html");
+      w.execute();
+      int results = info["pre-execute"].number_of_children();
+      for(int i = 0; i < results; ++i)
+      {
+        const std::string name = info["pre-execute"].child(i)["filter_name"].as_string();
+        conduit::Node *n_res = w.registry().fetch<conduit::Node>(name);
+        std::cout<<"***************\n";
+        n_res->print();
+        info["constants/"+name+"/value"] = (*n_res)["attrs/value/value"];
+      }
+    }
+    expression->access();
     std::cout<<"Res: "<<res<<"\n";;
     do_it(*m_data, res, info);
-    //std::cout<<w.graph().to_dot()<<"\n";
-    //w.graph().save_dot_html("ascent_expressions_graph.html");
-    //w.execute();
   }
   catch(std::exception &e)
   {

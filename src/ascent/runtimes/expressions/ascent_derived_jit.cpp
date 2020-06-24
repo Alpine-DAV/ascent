@@ -158,16 +158,22 @@ void check_fields(const conduit::Node &dataset, const conduit::Node &vars)
   }
 }
 
-
 std::string create_map_kernel(std::map<std::string,std::string> &in_vars,
+                              std::map<std::string,double> &in_constants,
                               std::string out_type,
                               std::string expr)
 {
   std::stringstream ss;
   ss << "@kernel void map(const int entries,\n";
+  // add in all field arrays
   for(auto var : in_vars)
   {
     ss<<"                 const " << var.second << " *"<< var.first <<"_ptr,\n";
+  }
+  // add in all pre-executed constants
+  for(auto c : in_constants)
+  {
+    ss<<"                 const double " << c.first <<",\n";
   }
   ss << "                       " << out_type << " *output_ptr)\n"
      << "{\n"
@@ -207,6 +213,10 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
   {
     detail::check_fields(dataset,info["vars"]);
   }
+  else
+  {
+    ASCENT_ERROR("There has to be at least one mesh/variable in the expression");
+  }
 
   // build the kernel
   std::set<std::string> var_names;
@@ -225,10 +235,32 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
     var_types[name] = type;
   }
 
-  // indentify constants per domain
-  std::set<std::string> constants;
+  // indentify constants. we will treat them all as
+  // doubles
+  std::map<std::string, double> constants;
+
+  if(info.has_path("constants"))
+  {
+    for(int i = 0; i < info["constants"].number_of_children(); ++i)
+    {
+      const conduit::Node &constant = info["constants"].child(i);
+      std::string name = constant["name"].as_string();
+      double value = -1.;
+      if(constant.has_path("value"))
+      {
+        value = constant["value"].to_float64();
+      }
+      else if (name != "domain_id")
+      {
+        ASCENT_ERROR("only domain id can be missing a value "<<name);
+      }
+      constants[name] = value;
+    }
+  }
+
 
   std::string kernel_str = detail::create_map_kernel(var_types,
+                                                     constants,
                                                      "double", //output type
                                                      expr);
 
@@ -268,6 +300,7 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
     // these are reference counted
     std::vector<occa::memory> field_memory;
 
+    // extract the field args
     for(auto vt : var_types)
     {
       const std::string &var_name = vt.first;
@@ -303,11 +336,25 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
       field_memory.push_back(o_vals);
     }
 
-    // pass agrs to the kernel
+    // pass array agrs to the kernel
     kernel.pushArg(invoke_size);
     for(auto mem : field_memory)
     {
       kernel.pushArg(mem);
+    }
+
+    // pass in the constants
+    for(auto cnst : constants)
+    {
+      if(cnst.first == "domain_id")
+      {
+        double dom_id = dom["state/domain_id"].to_double();
+        kernel.pushArg(dom_id);
+      }
+      else
+      {
+        kernel.pushArg(cnst.second);
+      }
     }
 
     conduit::Node &n_output = dom["fields/output"];

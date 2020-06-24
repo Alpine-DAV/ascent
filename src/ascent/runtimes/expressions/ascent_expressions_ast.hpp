@@ -13,10 +13,19 @@ public:
   virtual ~ASTNode() {}
   virtual void access() = 0;
   virtual conduit::Node build_graph(flow::Workspace &w) = 0;
-  virtual std::string build_string(conduit::Node &n)
+  // build a string we can JIT compile
+  virtual std::string build_jit(conduit::Node &n, flow::Workspace &w)
   {
     return "banana";
   };
+  // can compile this string into something we can jit
+  // if false (e.g., function like max(field('pressure')))
+  // we will have to build a graph and execute it, and substitute
+  // the result into the JIT string
+  virtual bool can_jit()
+  {
+    return false;
+  }
 };
 
 class ASTExpression : public ASTNode {
@@ -31,7 +40,8 @@ public:
   ASTIdentifier(const std::string& name) : m_name(name) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
-  virtual std::string build_string(conduit::Node &n);
+  virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
+  virtual bool can_jit();
 };
 
 class NamedExpression : public ASTExpression {
@@ -41,7 +51,7 @@ public:
   NamedExpression(ASTIdentifier *key, ASTExpression *value) : key(key), value(value) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
-  virtual std::string build_string(conduit::Node &n);
+  virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
 
   virtual ~NamedExpression() {
     delete key;
@@ -55,7 +65,8 @@ public:
   ASTInteger(int value) : m_value(value) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
-  virtual std::string build_string(conduit::Node &n);
+  virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
+  virtual bool can_jit();
 };
 
 class ASTDouble : public ASTExpression {
@@ -64,7 +75,8 @@ public:
   ASTDouble(double value) : m_value(value) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
-  virtual std::string build_string(conduit::Node &n);
+  virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
+  virtual bool can_jit();
 };
 
 class ASTString: public ASTExpression {
@@ -73,7 +85,8 @@ public:
   ASTString(const std::string& name) : m_name(name) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
-  virtual std::string build_string(conduit::Node &n);
+  virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
+  virtual bool can_jit();
 };
 
 typedef std::vector<ASTExpression*> ExpressionList;
@@ -86,6 +99,7 @@ public:
   ASTArguments(ExpressionList *pos_args, NamedExpressionList *named_args) :
     pos_args(pos_args), named_args(named_args) { }
   virtual void access();
+  virtual bool can_jit();
 
   virtual ~ASTArguments() {
     if (pos_args != nullptr) {
@@ -117,7 +131,9 @@ public:
   ASTMethodCall(ASTIdentifier *id) : m_id(id) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
-  virtual std::string build_string(conduit::Node &n);
+  virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
+
+  virtual bool can_jit();
 
   virtual ~ASTMethodCall()
   {
@@ -135,7 +151,8 @@ public:
     m_lhs(lhs), m_rhs(rhs), m_op(op) { }
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
-  virtual std::string build_string(conduit::Node &n);
+  virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
+  virtual bool can_jit();
 
   virtual ~ASTBinaryOp()
   {
