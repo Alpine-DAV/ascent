@@ -105,6 +105,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::Magnitude>();
   flow::Workspace::register_filter_type<expressions::Field>();
   flow::Workspace::register_filter_type<expressions::Histogram>();
+  flow::Workspace::register_filter_type<expressions::Ecf>();
   flow::Workspace::register_filter_type<expressions::Entropy>();
   flow::Workspace::register_filter_type<expressions::Pdf>();
   flow::Workspace::register_filter_type<expressions::Cdf>();
@@ -319,9 +320,9 @@ initialize_functions()
   hist_sig["args/max_val/optional"];
   hist_sig["args/max_val/description"] = "defaults to ``max(arg1)``";
 
-  hist_sig["args/reduction/type"] = "string";
-  hist_sig["args/reduction/optional"];
-  hist_sig["args/reduction/description"] = "The reduction function to use when \
+  hist_sig["args/reduction_func/type"] = "string";
+  hist_sig["args/reduction_func/optional"];
+  hist_sig["args/reduction_func/description"] = "The reduction function to use when \
   putting values in bins. Available reductions are: \n\n \
   - count (default): number of elements in a bin \n \
   - min: minimum value in a bin \n \
@@ -456,16 +457,20 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
-  /*
   conduit::Node &ecf_sig = (*functions)["ecf"].append();
   ecf_sig["return_type"] = "ecf";
   ecf_sig["filter_name"] = "ecf";
-  ecf_sig["args/bin_fields/type"] = "string";
-  ecf_sig["args/bin_func/type"] = "string"; //if not uniform
+  // we can make a new axis object that accepts x,y,z and specifies min,max,num_bins optionally
+  ecf_sig["args/reduction_var/type"] = "string";
+  // TODO varargs of axis
+  // for now it's a single string
+  ecf_sig["args/bin_axes/type"] = "string";
+  // keyword-only arguments
+  ecf_sig["args/bin_func/type"] = "string"; // if not uniform
   ecf_sig["args/bin_func/optional"];
-  ecf_sig["args/reduction/type"] = "string";
+  ecf_sig["args/reduction_func/type"] = "string";
+  ecf_sig["args/reduction_func/optional"];
   ecf_sig["description"] = "Not yet implemented.";
-  */
 
   // -------------------------------------------------------------
 

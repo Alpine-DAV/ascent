@@ -42,7 +42,6 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_blueprint_architect.hpp
@@ -54,7 +53,6 @@
 
 #include <ascent.hpp>
 #include <conduit.hpp>
-
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -76,11 +74,11 @@ namespace expressions
 
 conduit::Node vert_location(const conduit::Node &domain,
                             const int &index,
-                            const std::string topo_name = "");
+                            const std::string &topo_name = "");
 
 conduit::Node element_location(const conduit::Node &domain,
                                const int &index,
-                               const std::string topo_name = "");
+                               const std::string &topo_name = "");
 
 conduit::Node field_max(const conduit::Node &dataset,
                         const std::string &field_name);
@@ -112,9 +110,9 @@ conduit::Node field_pdf(const conduit::Node &hist);
 conduit::Node field_cdf(const conduit::Node &hist);
 
 conduit::Node ecf(const conduit::Node &dataset,
-                  const conduit::Node &bin_axes,
-                  const std::string &reduction_field_name,
-                  const std::string &reduction);
+                  conduit::Node &bin_axes,
+                  const std::string &reduction_var,
+                  const std::string &reduction_func);
 
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);
@@ -122,12 +120,11 @@ conduit::Node get_state_var(const conduit::Node &dataset,
 bool is_scalar_field(const conduit::Node &dataset,
                      const std::string &field_name);
 
-bool has_field(const conduit::Node &dataset,
-               const std::string &field_name);
+bool has_field(const conduit::Node &dataset, const std::string &field_name);
 
 conduit::Node quantile(const conduit::Node &cdf,
                        const double val,
-                       const std::string interpolation);
+                       const std::string &interpolation);
 
 };
 //-----------------------------------------------------------------------------
@@ -145,7 +142,6 @@ conduit::Node quantile(const conduit::Node &cdf,
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
 
 #endif
 //-----------------------------------------------------------------------------
