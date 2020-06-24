@@ -91,7 +91,7 @@ stages:
            #################################
            # build
            cd build
-           make VERBOSE=1
+           make VERBOSE=1 -j
         displayName: 'Build'
 
       - script: |
@@ -232,7 +232,7 @@ stages:
            #################################
            # build
            cd build
-           make VERBOSE=1
+           make VERBOSE=1 -j
         displayName: 'Build'
 
 
