@@ -175,7 +175,7 @@ stages:
           make
           ./ascent_render_example
         displayName: 'Test vs Install (using-with-make)'
-  - job: Main_Ubuntu_16_Cuda_9.2
+  - job: Main_Ubuntu_16_Cuda_9_2
     pool:
       vmImage: 'ubuntu-16.04'
     container: alpinedav/ascent-ci:ubuntu-16-cuda-9.2-devel-tpls
