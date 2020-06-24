@@ -46,6 +46,19 @@
 # Setup VTK
 ###############################################################################
 
+
+######## FIX LATER ########
+
+set(TP_HOME "/g/g92/shudler1/projects/visit/third_party")
+set(ARCH "linux-x86_64_gcc-4.9")
+set(VTK_DIR "${TP_HOME}/vtk/8.1.0/${ARCH}/lib/cmake/vtk-8.1")
+
+link_directories("${TP_HOME}/llvm/5.0.0/${ARCH}/lib")
+link_directories("${TP_HOME}/mesagl/17.2.8/${ARCH}/lib")
+
+###########################
+
+
 if(NOT VTK_DIR)
     MESSAGE(FATAL_ERROR "VTK support needs explicit VTK_DIR")
 endif()
@@ -53,19 +66,22 @@ endif()
 MESSAGE(STATUS "Looking for VTK using VTK_DIR = ${VTK_DIR}")
 
 # use VTK_DIR to setup the options that cmake's find VTK needs
-file(GLOB VTK_DIR "${VTK_DIR}/lib/cmake/vtk-*")
-if(NOT VTK_DIR)
-    MESSAGE(FATAL_ERROR "Failed to find VTK at VTK_DIR=${VTK_DIR}/lib/cmake/vtk-*")
-endif()
+#file(GLOB VTK_DIR "${VTK_DIR}/lib/cmake/vtk-*")
+#if(NOT VTK_DIR)
+#    MESSAGE(FATAL_ERROR "Failed to find VTK at VTK_DIR=${VTK_DIR}/lib/cmake/vtk-*")
+#endif()
 
 find_package(VTK REQUIRED QUIET)
+include(${VTK_USE_FILE})
 
 set(VTK_FOUND TRUE)
 
 message(STATUS "FOUND VTK at ${VTK_DIR}")
 
+message(STATUS "VTK include dirs: ${VTK_INCLUDE_DIRS}")
+message(STATUS "VTK library dirs: ${VTK_LIBRARIES}")
 
 blt_register_library( NAME vtk
 					  INCLUDES ${VTK_INCLUDE_DIRS}
-                      LIBRARIES ${VTK_LIBRARY_DIRS}
+                      LIBRARIES ${VTK_LIBRARIES}
                       )

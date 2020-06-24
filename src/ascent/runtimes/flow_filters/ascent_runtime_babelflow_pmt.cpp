@@ -45,6 +45,9 @@
 #include <climits>
 
 
+//#define BFLOW_PMT_DEBUG
+
+
 class ParallelMergeTree {
 public:
   ParallelMergeTree(FunctionType *data_ptr, int32_t task_id, const int32_t *data_size, const int32_t *n_blocks,
@@ -418,10 +421,8 @@ void ascent::runtime::filters::BFlowPmt::execute()
   MPI_Comm_rank(world_comm, &world_rank);
 #endif
 
-  // DEBUG prints
-#if 0
+#ifdef BFLOW_PMT_DEBUG     // DEBUG printouts
   {
-    
     auto in = input<DataObject>(0)->as_node();
     auto itr_dnode = in->children();
     while(itr_dnode.has_next())
@@ -444,9 +445,7 @@ void ascent::runtime::filters::BFlowPmt::execute()
         data_node["coordsets/coords/spacing"].print();
       
     }
-
   }
-
   // MPI_Barrier(world_comm);
   // return;
 #endif
@@ -604,7 +603,7 @@ void ascent::runtime::filters::BFlowPmt::execute()
 #ifdef ASCENT_MPI_ENABLED
       MPI_Allreduce(&low[i], &global_low[i], 1, MPI_INT, MPI_MIN, comm);
       MPI_Allreduce(&high[i], &global_high[i], 1, MPI_INT, MPI_MAX, comm);
-#elif
+#else
       global_low[i] = low[i];
       global_high[i] = high[i];
 #endif
@@ -635,15 +634,16 @@ void ascent::runtime::filters::BFlowPmt::execute()
 
     //conduit::DataArray<float> array = data_node[p["data_path"].as_string()].as_float32_array();
 
-#if 0
-    std::stringstream ss;
-    ss << "block_" << dims[0] << "_" << dims[1] << "_" << dims[2] <<"_low_"<< low[0] << "_"<< low[1] << "_"<< low[2] << ".raw";
-    std::fstream fil;
-    fil.open(ss.str().c_str(), std::ios::out | std::ios::binary);
-    fil.write(reinterpret_cast<char *>(array), (dims[0]*dims[1]*dims[2])*sizeof(FunctionType));
-    fil.close();
-
-    MPI_Barrier(comm);
+#ifdef BFLOW_PMT_DEBUG
+    {
+      std::stringstream ss;
+      ss << "block_" << dims[0] << "_" << dims[1] << "_" << dims[2] <<"_low_"<< low[0] << "_"<< low[1] << "_"<< low[2] << ".raw";
+      std::fstream fil;
+      fil.open(ss.str().c_str(), std::ios::out | std::ios::binary);
+      fil.write(reinterpret_cast<char *>(array), (dims[0]*dims[1]*dims[2])*sizeof(FunctionType));
+      fil.close();
+      //MPI_Barrier(comm);
+    }
 #endif
 
     // int32_t *data_size = p["data_size"].as_int32_ptr();
@@ -672,7 +672,7 @@ void ascent::runtime::filters::BFlowPmt::execute()
     ParallelMergeTree::s_data_size[1] = data_size[1];
     ParallelMergeTree::s_data_size[2] = data_size[2];
 
-#if 0
+#ifdef BFLOW_PMT_DEBUG
     // Reduce all of the local sums into the global sum
     {
       std::stringstream ss;
@@ -724,7 +724,7 @@ void ascent::runtime::filters::BFlowPmt::execute()
       data_node["fields/segment/values"].set(seg_data);
 
       // DEBUG -- write raw segment data to disk
-#if 0
+#ifdef BFLOW_PMT_DEBUG
       {
         std::stringstream ss;
         ss << "segment_data_" << rank << "_" << dims[0] << "_" << dims[1] << "_" << dims[2] <<"_low_"<< low[0] << "_"<< low[1] << "_"<< low[2] << ".raw";
@@ -759,7 +759,10 @@ void ascent::runtime::filters::BFlowPmt::execute()
       d_input->reset_vtkh_collection();
     }
   }
+  
+#ifdef ASCENT_MPI_ENABLED
   MPI_Barrier(world_comm);
+#endif
   
   set_output<DataObject>(d_input);
 }

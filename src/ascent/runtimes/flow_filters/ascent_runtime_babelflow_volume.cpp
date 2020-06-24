@@ -1,4 +1,3 @@
-
 #include <vector>
 #include <sstream>
 #include <iomanip>
@@ -13,6 +12,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_runtime_param_check.hpp>
 #include <flow_workspace.hpp>
+#include <ascent_vtk_utils.hpp>
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -22,284 +22,13 @@
 #endif
 
 #include "BabelFlow/TypeDefinitions.h"
-#include "BabelFlow/mpi/Controller.h"
-#include "BabelFlow/vlr/KWayReduction.h"
-#include "BabelFlow/vlr/KWayReductionTaskMap.h"
-#include "BabelFlow/PreProcessInputTaskGraph.hpp"
-#include "BabelFlow/ModTaskMap.hpp"
-
-#include "ascent_vtk_utils.h"
 #include "ascent_runtime_babelflow_filters.hpp"
+#include "ascent_runtime_babelflow_vol_utils.hpp"
 
 
-//-----------------------------------------------------------------------------
-// -- begin bflow_volume:: --
-//-----------------------------------------------------------------------------
-namespace bflow_volume
-{
+#define DEF_IMAGE_SIZE 1024
 
-class BabelVolumeRendering
-{
-public:
-  BabelVolumeRendering(BabelFlow::FunctionType* data_ptr, int32_t task_id, 
-                       const int32_t* data_size, const int32_t* n_blocks,
-                       const int32_t* low, const int32_t* high, int32_t fanin, 
-                       BabelFlow::FunctionType isovalue, MPI_Comm mpi_comm);
-
-  void Initialize();
-
-  void Execute();
-
-
-private:
-  BabelFlow::FunctionType* m_dataPtr;
-  uint32_t m_taskId;
-  uint32_t m_dataSize[3];
-  uint32_t m_nBlocks[3];
-  BabelFlow::GlobalIndexType m_low[3];
-  BabelFlow::GlobalIndexType m_high[3];
-  uint32_t m_fanin;
-  BabelFlow::FunctionType m_isovalue;
-  MPI_Comm m_comm;
-
-  std::map<BabelFlow::TaskId, BabelFlow::Payload> m_inputs;
-
-  BabelFlow::mpi::Controller m_master;
-  BabelFlow::ControllerMap m_contMap;
-  BabelFlow::KWayReduction m_graph;
-  BabelFlow::KWayReductionTaskMap m_taskMap; 
-
-  BabelFlow::PreProcessInputTaskGraph<BabelFlow::KWayReduction> m_modGraph;
-  BabelFlow::ModTaskMap<BabelFlow::KWayReductionTaskMap> m_modMap;
-};
-
-//-----------------------------------------------------------------------------
-
-BabelFlow::Payload make_local_block(BabelFlow::FunctionType* data_ptr, BabelFlow::GlobalIndexType low[3], 
-                                    BabelFlow::GlobalIndexType high[3], BabelFlow::FunctionType isovalue)
-{
-  BabelFlow::GlobalIndexType block_size = 
-    (high[0]-low[0]+1)*(high[1]-low[1]+1)*(high[2]-low[2]+1)*sizeof(BabelFlow::FunctionType);
-  BabelFlow::GlobalIndexType input_size = 
-    6*sizeof(BabelFlow::GlobalIndexType) + sizeof(BabelFlow::FunctionType) + block_size;
-  char* buffer = new char[input_size];
-
-  // First - serialize data extents: low, high
-  memcpy(buffer, low, 3*sizeof(BabelFlow::GlobalIndexType));
-  memcpy(buffer + 3*sizeof(BabelFlow::GlobalIndexType), high, 3*sizeof(BabelFlow::GlobalIndexType));
-  
-  // Second - serialize the isovalue
-  memcpy(buffer + 6*sizeof(BabelFlow::GlobalIndexType), &isovalue, sizeof(BabelFlow::FunctionType));
-  
-  // Third - serialize the data buffer
-  memcpy(buffer + 6*sizeof(BabelFlow::GlobalIndexType) + sizeof(BabelFlow::FunctionType), data_ptr, block_size);
-
-  return BabelFlow::Payload(input_size, buffer);
-}
-
-//-----------------------------------------------------------------------------
-
-BabelFlow::Payload serialize_image(const VTKutils::SimpleImageData& image)
-{
-  uint32_t img_size = (image.bounds[1]-image.bounds[0]+1)*(image.bounds[3]-image.bounds[2]+1);
-  uint32_t zsize = img_size;
-  uint32_t psize = img_size*3;
-  uint32_t bounds_size = 4*sizeof(uint32_t);
-
-  char* out_buffer = new char[bounds_size + zsize + psize];
-  memcpy(out_buffer, (const char*)image.bounds, bounds_size);
-  memcpy(out_buffer + bounds_size, (const char*)image.zbuf, zsize);
-  memcpy(out_buffer + bounds_size + zsize, (const char*)image.image, psize);
-
-  return Payload(bounds_size + zsize + psize, out_buffer);
-}
-
-//-----------------------------------------------------------------------------
-
-VTKutils::SimpleImageData deserialize_image(const char* buffer)
-{
-  VTKutils::SimpleImageData image;
-
-  unsigned char* img_buff = (unsigned char*)buffer;
-  image.bounds = (uint32_t*)img_buff;
-
-  uint32_t img_size = (image.bounds[1]-image.bounds[0]+1)*(image.bounds[3]-image.bounds[2]+1);
-  uint32_t zsize = img_size;
-  uint32_t psize = 3*img_size;
-
-  image.zbuf = img_buff + bounds_size;
-  image.image = img_buff + bounds_size + zsize;
-
-  return image;
-}
-
-//-----------------------------------------------------------------------------
-
-int pre_proc(std::vector<BabelFlow::Payload>& inputs, 
-             std::vector<BabelFlow::Payload>& output, BabelFlow::TaskId task_id)
-{
-
-  return 1;
-}
-
-//-----------------------------------------------------------------------------
-
-int volume_render(std::vector<BabelFlow::Payload>& inputs, 
-                  std::vector<BabelFlow::Payload>& output, BabelFlow::TaskId task_id)
-{
-  assert(inputs.size() == 1);
-
-  BabelFlow::GlobalIndexType* low = (BabelFlow::GlobalIndexType*)inputs[0].buffer();
-  BabelFlow::GlobalIndexType* high = (BabelFlow::GlobalIndexType*)(inputs[0].buffer()) + 3;
-  BabelFlow::FunctionType isovalue = 
-    *(BabelFlow::FunctionType*)((BabelFlow::GlobalIndexType*)(inputs[0].buffer()) + 6);
-  char* data = 
-    inputs[0].buffer() + 6*sizeof(BabelFlow::GlobalIndexType) + sizeof(BabelFlow::FunctionType);
-
-  uint32_t box_bounds[6] = {low[0], high[0], low[1], high[1], low[2], high[2]};
-  VTKutils::SimpleImageData out_image;
-
-  VTKCompositeRender::volumeRender(box_bounds, data, isovalue, out_image, task_id);
-
-  outputs[0] = serialize_image(out_image);
-
-#ifdef 0    // DEBUG -- write local rendering result to a file
-  {
-    std::stringstream filename;
-    filename << "out_vol_render_" << task_id << ".png";
-    VTKutils utils;
-    utils.arraytoImage(out_image.image, out_image.bounds, filename.str());
-  }
-#endif
-
-  // Release output image memory - it was already copied into the output buffer
-  delete[] out_image.zbuf;
-  delete[] out_image.image;
-  delete[] out_image.bounds;
-
-  for(uint32_t i = 0; i < inputs.size(); ++i)
-    delete[] inputs[i].buffer();
-
-  return 1;
-}
-
-//-----------------------------------------------------------------------------
-
-int composite(std::vector<BabelFlow::Payload>& inputs, 
-              std::vector<BabelFlow::Payload>& output, BabelFlow::TaskId task_id)
-{
-  VTKutils utils;
-  std::vector<VTKutils::SimpleImageData> images(inputs.size());
-  uint32_t bounds_size = 4*sizeof(uint32_t);
-
-  // The inputs are image fragments from child nodes -- read all into one array
-  for(uint32_t i = 0; i < inputs.size(); ++i)
-    images[i] = deserialize_image(inputs[i].buffer());
-
-  // Composite all fragments
-  VTKutils::SimpleImageData out_image;
-  VTKCompositeRender::composite(images, out_image, task_id);
-
-  outputs[0] = serialize_image(out_image);
-
-  // Release output image memory - it was already copied into the output buffer
-  delete[] out_image.zbuf;
-  delete[] out_image.image;
-  delete[] out_image.bounds;
-
-  for(uint32_t i = 0; i < inputs.size(); ++i)
-    delete[] inputs[i].buffer();
-
-  return 1;
-}
-
-//-----------------------------------------------------------------------------
-
-int write_results(std::vector<BabelFlow::Payload>& inputs,
-                  std::vector<BabelFlow::Payload>& output, BabelFlow::TaskId task_id)
-{
-  // Writing results is the root of the composition reduce tree, so now we have to do
-  // one last composition step
-  outputs.resize(1);
-  composite(inputs, outputs, task_id);
-
-  VTKutils::SimpleImageData out_image = deserialize_image(outputs[0].buffer());
-  VTKCompositeRender::write_image(out_image, out_image.bounds, "final_composite.png");
-
-  for(uint32_t i = 0; i < inputs.size(); ++i)
-    delete[] inputs[i].buffer();
-
-  delete[] outputs[0].buffer();
-
-  return 1;
-}
-
-//-----------------------------------------------------------------------------
-
-BabelVolumeRendering::BabelVolumeRendering(BabelFlow::FunctionType* data_ptr, int32_t task_id, 
-                                           const int32_t* data_size, const int32_t* n_blocks,
-                                           const int32_t* low, const int32_t* high, int32_t fanin, 
-                                           BabelFlow::FunctionType isovalue, MPI_Comm mpi_comm)
- : m_dataPtr(data_ptr), m_isovalue(isovalue), m_comm(mpi_comm)
-{
-  m_taskId = static_cast<uint32_t>(task_id);
-  m_dataSize[0] = static_cast<uint32_t>(data_size[0]);
-  m_dataSize[1] = static_cast<uint32_t>(data_size[1]);
-  m_dataSize[2] = static_cast<uint32_t>(data_size[2]);
-  m_nBlocks[0] = static_cast<uint32_t>(n_blocks[0]);
-  m_nBlocks[1] = static_cast<uint32_t>(n_blocks[1]);
-  m_nBlocks[2] = static_cast<uint32_t>(n_blocks[2]);
-  m_low[0] = static_cast<BabelFlow::GlobalIndexType>(low[0]);
-  m_low[1] = static_cast<BabelFlow::GlobalIndexType>(low[1]);
-  m_low[2] = static_cast<BabelFlow::GlobalIndexType>(low[2]);
-  m_high[0] = static_cast<BabelFlow::GlobalIndexType>(high[0]);
-  m_high[1] = static_cast<BabelFlow::GlobalIndexType>(high[1]);
-  m_high[2] = static_cast<BabelFlow::GlobalIndexType>(high[2]);
-  m_fanin = static_cast<uint32_t>(fanin);
-}
-
-//-----------------------------------------------------------------------------
-
-void BabelVolumeRendering::Initialize()
-{
-  int my_rank = 0;
-  int mpi_size = 1;
-
-#ifdef ASCENT_MPI_ENABLED
-  MPI_Comm_rank(m_comm, &my_rank);
-  MPI_Comm_size(m_comm, &mpi_size);
-#endif
-
-  m_graph = BabelFlow::KWayReduction(m_nBlocks, m_fanin);
-  m_taskMap = BabelFlow::KWayReductionTaskMap(mpi_size, &m_graph);
-
-  m_modGraph = BabelFlow::PreProcessInputTaskGraph<BabelFlow::KWayReduction>(mpi_size, &m_graph, &m_taskMap);
-  m_modMap = BabelFlow::ModTaskMap<KWayTaskMap>(&m_taskMap);
-  m_modMap.update(m_modGraph);
-
-  m_master.initialize(m_modGraph, &m_modMap, m_comm, &m_contMap);
-  m_master.registerCallback(1, bflow_volume::volume_render);
-  m_master.registerCallback(2, bflow_volume::composite);
-  m_master.registerCallback(3, bflow_volume::write_results);
-  m_master.registerCallback(m_modGraph.newCallBackId, bflow_volume::pre_proc);
-
-  inputs[m_modGraph.new_tids[m_taskId]] = bflow_volume::make_local_block(m_dataPtr, m_low, m_high, m_isovalue);
-}
-
-//-----------------------------------------------------------------------------
-
-void BabelVolumeRendering::Execute()
-{
-  m_master.run(m_inputs);
-}
-
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end bflow_volume:: --
-//-----------------------------------------------------------------------------
-
+#define BFLOW_VOL_DEBUG
 
 
 //-----------------------------------------------------------------------------
@@ -326,6 +55,8 @@ bool ascent::runtime::filters::BFlowVolume::verify_params(const conduit::Node &p
   res &= check_string("field", params, info, true);
   res &= check_numeric("fanin", params, info, true);
   res &= check_numeric("isovalue", params, info, true);
+  res &= check_numeric("compositing", params, info, true);
+  res &= check_numeric("img_size", params, info, false);
   res &= check_numeric("ugrid_select", params, info, false);
   
   return res;
@@ -343,7 +74,7 @@ void ascent::runtime::filters::BFlowVolume::execute()
   // connect to the input port and get the parameters
   DataObject *d_input = input<DataObject>(0);  
   conduit::Node& data_node = d_input->as_node()->children().next();
-  conduit::Node p = params();
+  conduit::Node& p = params();
 
   int color = 0;
   int uniform_color = 0;
@@ -459,7 +190,7 @@ void ascent::runtime::filters::BFlowVolume::execute()
     if(ndims > 2)
       origin[2] = data_node["coordsets/coords/origin/z"].value();
 
-    // Inputs of PMT assume 3D dataset
+    // Inputs for BabelFlow filter/extract -- assume 3D dataset
     int32_t low[3] = {0,0,0};
     int32_t high[3] = {0,0,0};
 
@@ -473,7 +204,8 @@ void ascent::runtime::filters::BFlowVolume::execute()
     {
       int64_t* in_ghosts = p["in_ghosts"].as_int64_ptr();
       for(int i=0;i< 6;i++) {
-        ParallelMergeTree::o_ghosts[i] = (uint32_t)in_ghosts[i];
+		// TODO: fix ghost cells
+        //ParallelMergeTree::o_ghosts[i] = (uint32_t)in_ghosts[i];
       }
     }
 
@@ -485,7 +217,7 @@ void ascent::runtime::filters::BFlowVolume::execute()
 #ifdef ASCENT_MPI_ENABLED
       MPI_Allreduce(&low[i], &global_low[i], 1, MPI_INT, MPI_MIN, color_comm);
       MPI_Allreduce(&high[i], &global_high[i], 1, MPI_INT, MPI_MAX, color_comm);
-#elif
+#else
       global_low[i] = low[i];
       global_high[i] = high[i];
 #endif
@@ -501,16 +233,87 @@ void ascent::runtime::filters::BFlowVolume::execute()
     BabelFlow::FunctionType* array = reinterpret_cast<BabelFlow::FunctionType *>(array_mag.data_ptr());
 
     int64_t fanin = p["fanin"].as_int64();
-    FunctionType isovalue = p["isovalue"].as_float64();
-    int64_t gen_field = p["gen_segment"].as_int64();
+    BabelFlow::FunctionType isovalue = p["isovalue"].as_float64();
+    uint32_t img_size = DEF_IMAGE_SIZE;
+    if (p.has_path("img_size"))
+      img_size = static_cast<uint32_t>(p["img_size"].as_int64());
+    CompositingType compositing_flag = CompositingType(p["compositing"].as_int64());
 
-    VTKutils::set_dataset_dims(data_size);
+#ifdef BFLOW_VOL_DEBUG
+    {
+      std::stringstream ss;
+      ss << "data_params_" << world_rank << ".txt";
+      std::ofstream ofs(ss.str());
+      ofs << "origin " << origin[0] << " " << origin[1] << " " << origin[2] << std::endl;
+      ofs << "spacing " << spacing[0] << " " << spacing[1] << " " << spacing[2] << std::endl;
+      ofs << "dims " << dims[0] << " " << dims[1] << " " << dims[2] << std::endl;
+      ofs << "low " << low[0] << " " << low[1] << " " << low[2] << std::endl;
+      ofs << "high " << high[0] << " " << high[1] << " " << high[2] << std::endl;                                       
+      ofs << "data_size " << data_size[0] << " " << data_size[1] << " " << data_size[2] << std::endl;
+      ofs << "global_low " << global_low[0] << " " << global_low[1] << " " << global_low[2] << std::endl;
+      ofs << "global_high " << global_high[0] << " " << global_high[1] << " " << global_high[2] << std::endl;
+      ofs << "n_blocks " << n_blocks[0] << " " << n_blocks[1] << " " << n_blocks[2] << std::endl;
+      ofs << "img_size " << img_size << std::endl;
 
-    BabelVolumeRendering vlr(array, color_rank, data_size, n_blocks,
-                             low, high, fanin, isovalue, color_comm);
+      ofs.close();
+    }
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Barrier(color_comm);
+#endif
+#endif
 
-    vlr.Initialize();
-    vlr.Execute();
+#ifdef BFLOW_VOL_DEBUG
+    {
+      BabelFlow::GlobalIndexType block_size = 
+        (high[0]-low[0]+1)*(high[1]-low[1]+1)*(high[2]-low[2]+1)*sizeof(BabelFlow::FunctionType);
+      std::stringstream ss;
+      ss << "block_" << color_rank << ".raw";
+      std::fstream fil;
+      fil.open(ss.str().c_str(), std::ios::out | std::ios::binary);
+      fil.write((char*)array, block_size);
+      fil.close();
+    }
+#endif
+
+    ascent::VTKutils::setImageDims(img_size, img_size);
+    ascent::VTKutils::setDatasetDims(data_size);
+
+    switch (compositing_flag)
+    {
+      case CompositingType::REDUCE:
+        {
+          bflow_volume::BabelVolRenderingReduce red_graph(array, color_rank, data_size, n_blocks,
+                                                          low, high, fanin, isovalue, color_comm);
+
+          red_graph.Initialize();
+          red_graph.Execute();
+        }
+        break;
+      case CompositingType::BINSWAP:
+        {
+          bflow_volume::BabelVolRenderingBinswap binswap_graph(array, color_rank, data_size, n_blocks,
+                                                               low, high, fanin, isovalue, color_comm);
+          binswap_graph.Initialize();
+          binswap_graph.Execute();
+        }
+        break;
+      case CompositingType::RADIX_K:
+        {
+          std::vector<uint32_t> radix_v(1);
+          radix_v[0] = n_blocks[0] * n_blocks[1] * n_blocks[2];
+          if(p.has_path("radices"))
+          {
+            conduit::DataArray<int64_t> radices_arr = p["radices"].as_int64_array();
+            radix_v.resize(radices_arr.number_of_elements());
+            for (uint32_t i = 0; i < radix_v.size(); ++i) radix_v[i] = (uint32_t)radices_arr[i];
+          }
+          bflow_volume::BabelVolRenderingRadixK radixk_graph(array, color_rank, data_size, n_blocks,
+                                                             low, high, fanin, isovalue, radix_v, color_comm);
+          radixk_graph.Initialize();
+          radixk_graph.Execute();
+        }
+        break;
+    }
   }
 }
 

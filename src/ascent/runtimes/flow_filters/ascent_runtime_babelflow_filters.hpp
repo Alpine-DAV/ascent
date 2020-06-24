@@ -47,6 +47,8 @@ public:
 class BFlowVolume : public ::flow::Filter
 {
 public:
+    enum CompositingType { REDUCE = 0, BINSWAP = 1, RADIX_K = 2 };
+    
     BFlowVolume() = default;
     virtual ~BFlowVolume() {}
 

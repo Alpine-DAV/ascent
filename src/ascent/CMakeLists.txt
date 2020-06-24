@@ -276,6 +276,7 @@ if(DRAY_FOUND AND VTKM_FOUND)
     list(APPEND ascent_thirdparty_libs dray)
 endif()
 
+
 ##########################################
 # Build a serial version of ascent
 ##########################################
@@ -354,21 +355,23 @@ if(MPI_FOUND)
 	    endif()
 
       list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
-	    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
 
       if (ENABLE_VTK)
-        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_volume.cpp)
         list(APPEND ascent_sources utils/ascent_vtk_utils.cpp)
         list(APPEND ascent_headers utils/ascent_vtk_utils.hpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_vol_utils.hpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_vol_utils.cpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_volume.cpp) 
+        list(APPEND ascent_mpi_thirdparty_libs vtk)
         add_compile_definitions(ASCENT_VTK_ENABLED)
       endif()
 
-	    list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
-	    list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
-	    add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
+      list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
+      list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
+      add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
       include_directories(${BABELFLOW_INCLUDE_DIRS})
       include_directories(${PMT_INCLUDE_DIRS})
-
     endif ()
 
     # hola mpi support is only in par (mpi ver)

@@ -173,13 +173,11 @@ TEST(ascent_babelfow_pmt_mpi, test_babelfow_pmt_mpi)
 
   // build filter Node
   Node pipelines;
-  pipelines["pl1/f1/type"] = "babelflow";
-  pipelines["pl1/f1/params/task"] = "pmt";
+  pipelines["pl1/f1/type"] = "bflow_pmt";
   pipelines["pl1/f1/params/field"] = "braids";
   pipelines["pl1/f1/params/fanin"] = int64_t(fanin);
   pipelines["pl1/f1/params/threshold"] = threshold;
   pipelines["pl1/f1/params/gen_segment"] = int64_t(1);
-  pipelines["pl1/f1/params/field"] = "braids";
 
   Node action;
   Node &add_pipelines = action.append();
