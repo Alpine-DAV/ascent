@@ -12,24 +12,24 @@ def repeat_char(times, char):
 
 
 vtkm_files = [f for f in listdir("./vtkm") if isfile(join("./vtkm", f))]
-#print files
+#print(vtkm_files)
 vtkm_png_files = [s for s in vtkm_files if ".png" in s]
-print(vtkm_png_files)
+vtkm_png_files.sort()
 examples = ".. _vtkm_color_tables:\n\n"
 examples += "VTK-m Color Tables\n"
 examples +="===================\n"
 examples +="\n"
 
 for c in vtkm_png_files:
-
+    print(c)
     filename = c
     ctable_name = c.split(".")[0]
     # docutils can't handle names with spaces
     if c.count(' ') != 0:
       nospace = "".join(c.split())
-      copyfile("./vtkm/"+c, "./vtkm/"+nospace);
-      filename = nospace
-    print(ctable_name)
+      copyfile("./vtkm/"+c, "./vtkm/nospace/"+nospace);
+      filename = 'nospace/'+nospace
+#    print(ctable_name)
     examples += ctable_name
     examples +="\n"
     examples += repeat_char(len(ctable_name), "-") + "\n"
@@ -37,6 +37,7 @@ for c in vtkm_png_files:
     examples += ".. image:: color_tables/vtkm/" + filename + "\n"
     examples +="\n"
 
+#print(examples)
 examples_file = open("../VTKmColorTables.rst", "w")
 examples_file.write(examples)
 examples_file.close()
@@ -45,6 +46,7 @@ examples_file.close()
 dray_files = [f for f in listdir("./devil_ray") if isfile(join("./devil_ray", f))]
 #print files
 dray_png_files = [s for s in dray_files if ".png" in s]
+dray_png_files.sort()
 examples = ".. _dray_color_tables:\n\n"
 examples += "Devil Ray Color Tables\n"
 examples +="=======================\n"
@@ -59,7 +61,7 @@ for c in dray_png_files:
       nospace = "".join(c.split())
       copyfile("./devil_ray/"+c, "./devil_ray/"+nospace);
       filename = nospace
-    print(ctable_name)
+#    print(ctable_name)
     examples += ctable_name
     examples +="\n"
     examples += repeat_char(len(ctable_name), "-") + "\n"

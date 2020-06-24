@@ -26,17 +26,17 @@ def cmake_cache_entry(name, value, vtype=None):
             vtype = "PATH"
     return 'set({0} "{1}" CACHE {2} "")\n\n'.format(name, value, vtype)
 
-class Dray(Package):
+class Dray(Package,CudaPackage):
     """High-Order Mesh Ray Tracer."""
 
     homepage = "https://github.com/LLNL/devil_ray"
     git      = "https://github.com/LLNL/devil_ray.git"
     url      = "https://github.com/LLNL/devil_ray/releases/download/v0.1.2/dray-v0.1.2.tar.gz"
 
+    version('develop',  branch='develop', submodules='True', preferred=True)
     version('0.1.2',  sha256='46937f20124b28dc78a634e8e063a3e7a3bbfd9f424ce2680b08417010c376da')
     version('0.1.1',  sha256='e5daa49ee3367c087f5028dc5a08655298beb318014c6f3f65ef4a08fcbe346c')
     version('0.1.0',  sha256='8b341138e1069361351e0a94478608c5af479cca76e2f97d556229aed45c0169')
-    version('develop',  branch='develop',  submodules='True')
 
     variant('cuda', default=False, description='Build with CUDA backend')
     variant('openmp', default=True, description='Build OpenMP backend')
@@ -45,15 +45,25 @@ class Dray(Package):
     variant("utils", default=True, description='Build utilities')
     variant("logging", default=False, description='Enable logging')
     variant("stats", default=False, description='Enable stats')
-    variant("mpi", default=False, description='Enable MPI compiler')
+    variant("mpi", default=True, description='Enable MPI compiler')
 
     depends_on('cuda', when='+cuda')
+    depends_on('mpi', when='+mpi')
 
     depends_on('cmake@3.9:', type='build')
     depends_on('cmake@3.14:', when='+cuda', type='build')
 
     depends_on("conduit~shared", when="~shared")
     depends_on("conduit+shared", when="+shared")
+
+    depends_on("apcomp~shared+openmp+mpi", when="~shared+openmp+mpi")
+    depends_on("apcomp+shared+openmp+mpi", when="+shared+openmp+mpi")
+    depends_on("apcomp~shared~openmp+mpi", when="~shared~openmp+mpi")
+    depends_on("apcomp+shared~openmp+mpi", when="+shared~openmp+mpi")
+    depends_on("apcomp~shared+openmp~mpi", when="~shared+openmp~mpi")
+    depends_on("apcomp+shared+openmp~mpi", when="+shared+openmp~mpi")
+    depends_on("apcomp~shared~openmp~mpi", when="~shared~openmp~mpi")
+    depends_on("apcomp+shared~openmp~mpi", when="+shared~openmp~mpi")
 
     depends_on("raja@0.9.0+cuda~openmp+shared", when="+cuda~openmp+shared")
     depends_on("raja@0.9.0+cuda+openmp+shared", when="+cuda+openmp+shared")
@@ -187,6 +197,7 @@ class Dray(Package):
         cfg.write("#######\n\n")
 
         if "+mpi" in spec:
+            cfg.write(cmake_cache_entry("ENABLE_MPI", "ON"))
             mpicc_path = spec['mpi'].mpicc
             mpicxx_path = spec['mpi'].mpicxx
             mpifc_path = spec['mpi'].mpifc
@@ -202,6 +213,7 @@ class Dray(Package):
             cfg.write(cmake_cache_entry("CMAKE_C_COMPILER", mpicc_path))
             cfg.write(cmake_cache_entry("CMAKE_CXX_COMPILER", mpicxx_path))
         else:
+            cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
             cfg.write("# c compiler used by spack\n")
             cfg.write(cmake_cache_entry("CMAKE_C_COMPILER", c_compiler))
             cfg.write("# cpp compiler used by spack\n")
@@ -215,6 +227,10 @@ class Dray(Package):
 
         if "+cuda" in spec:
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "ON"))
+            if 'cuda_arch' in spec.variants:
+              cuda_value = spec.variants['cuda_arch'].value
+              cuda_arch = cuda_value[0]
+              cfg.write(cmake_cache_entry('CUDA_ARCH','sm_{0}'.format(cuda_arch)))
         else:
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "OFF"))
 
@@ -277,6 +293,9 @@ class Dray(Package):
         cfg.write("# umpire from spack \n")
         cfg.write(cmake_cache_entry("UMPIRE_DIR", spec['umpire'].prefix))
 
+        cfg.write("# apcompositor from spack \n")
+        cfg.write(cmake_cache_entry("APCOMP_DIR", spec['apcomp'].prefix))
+
         cfg.write("##################################\n")
         cfg.write("# end spack generated host-config\n")
         cfg.write("##################################\n")
@@ -299,6 +318,10 @@ class Dray(Package):
             options.extend([
                 '-DENABLE_CUDA=On',
                 '-DCUDA_TOOLKIT_ROOT_DIR=%s' % (spec['cuda'].prefix)])
+            if 'cuda_arch' in spec.variants:
+              cuda_value = spec.variants['cuda_arch'].value
+              cuda_arch = cuda_value[0]
+              options.append('-DCUDA_ARCH=sm_{0}'.format(cuda_arch))
         else:
             options.extend(['-DENABLE_CUDA=OFF'])
 

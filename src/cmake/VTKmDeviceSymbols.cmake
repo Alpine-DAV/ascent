@@ -1,5 +1,5 @@
 function(source_objects binary_dir sources rover targets locations)
-  message(STATUS "Simple arguments: ${binary_dir}, followed by ${SOURCES}")
+  #message(STATUS "Simple arguments: ${binary_dir}, followed by ${SOURCES}")
   #set(${REQUIRED_ARG} "From SIMPLE" PARENT_SCOPE)
   set(locations_on_disk "")
 

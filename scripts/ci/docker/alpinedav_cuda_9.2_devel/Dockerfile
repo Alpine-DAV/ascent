@@ -42,5 +42,12 @@
 #
 ###############################################################################
 
-module load cudatoolkit/8.0
-export PATH=/usr/local/tools/mvapich2-gnu-2.0/bin:$PATH
+FROM nvidia/9.2-devel-ubuntu16.04
+docker pull nvidia/cuda:9.2-devel-ubuntu16.04
+
+MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
+# add sudo to base cuda devel env
+# so we can install additional packages as
+# non-root, but admin default user on azure pipelines
+RUN apt-get update && apt-get -y install sudo
+

@@ -42,7 +42,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
-
-source /usr/local/tools/dotkit/init.sh
-source llnl-surface-load-env-intel-16.0.3.sh
-source run-proxy-examples-tests.sh
+export TAG_NAME=alpinedav/ascent-ci:ubuntu-18-devel
+# exec docker build to create image
+echo "docker build -t ${TAG_NAME} ."
+docker build -t ${TAG_NAME} .
