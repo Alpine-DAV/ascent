@@ -211,4 +211,8 @@ add_subdirectory(config)
 # Create CMake importable
 # exports for all of our targets
 ################################
-install(EXPORT ascent DESTINATION lib/cmake)
+if(WIN32)
+    install(EXPORT ascent DESTINATION cmake)
+else()
+    install(EXPORT ascent DESTINATION lib/cmake/${PROJECT_NAME})
+endif()
