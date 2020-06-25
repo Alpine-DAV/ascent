@@ -90,13 +90,12 @@ stages:
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
-           # configure
-           cmake ${CMAKE_OPTS} -C ${HOST_CONFIG}
            # extra settings
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON} "
            if [ $ENABLE_MFEM  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE" fi
            if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE" fi
            echo ${CMAKE_OPTS}
+           # configure
            cmake ${CMAKE_OPTS} ../src
         displayName: 'Configure with CMake'
 
