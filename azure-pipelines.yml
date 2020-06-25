@@ -96,6 +96,7 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON} "
            if [ $ENABLE_MFEM  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
            if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"; fi
+           if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
            echo ${CMAKE_OPTS}
            # configure
            cmake ${CMAKE_OPTS} ../src
