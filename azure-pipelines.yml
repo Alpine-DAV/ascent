@@ -38,6 +38,7 @@ stages:
   - job: Main_Ubuntu_18
     pool:
       vmImage: 'ubuntu-16.04'
+    timeoutInMinutes: 0
     container: alpinedav/ascent-ci:ubuntu-18-devel-tpls
     variables:
       COMPILER_CC: gcc
@@ -45,9 +46,18 @@ stages:
       COMPILER_FC: gfortran
     strategy:
       matrix:
+        minimal:
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: OFF
+          ENABLE_VTKH: OFF
+          ENABLE_MFEM: OFF
         shared_py36:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
     steps:
       - checkout: self
         clean: boolean
@@ -80,8 +90,17 @@ stages:
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           # include host config
+           export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG}"
+           # extra settings
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON} "
+           if [ $ENABLE_MFEM  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
+           if [ $ENABLE_MFEM  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"; fi
+           if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"; fi
+           if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
+           echo ${CMAKE_OPTS}
            # configure
-           cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+           cmake ${CMAKE_OPTS} ../src
         displayName: 'Configure with CMake'
 
       - script: |
@@ -115,7 +134,7 @@ stages:
            cd build
            make gen_report
         displayName: 'Run Gen Test Image Diff Report'
-        condition: always()
+        condition: eq(variables['ENABLE_VTKH'], 'ON')
 
       - task: PublishTestResults@2
         inputs:
@@ -163,6 +182,7 @@ stages:
           make VERBOSE=1
           ./ascent_render_example
         displayName: 'Test vs Install (using-with-cmake)'
+        condition: eq(variables['ENABLE_VTKH'], 'ON')
 
       - script: |
           ###########################
@@ -175,146 +195,105 @@ stages:
           make
           ./ascent_render_example
         displayName: 'Test vs Install (using-with-make)'
-  # - job: Main_Ubuntu_16_Cuda_9_2
-  #   pool:
-  #     vmImage: 'ubuntu-16.04'
-  #   container: alpinedav/ascent-ci:ubuntu-16-cuda-9.2-devel-tpls
-  #   variables:
-  #     COMPILER_CC: gcc
-  #     COMPILER_CXX: g++
-  #     COMPILER_FC: gfortran
-  #   strategy:
-  #     matrix:
-  #       static:
-  #         BUILD_SHARED_LIBS: OFF
-  #         CMAKE_BUILD_TYPE: Debug
-  #   steps:
-  #     - checkout: self
-  #       clean: boolean
-  #       submodules: recursive
-  #
-  #     - script: |
-  #          #################################
-  #          # configure
-  #          #################################
-  #          # setup compiler env vars
-  #          export CC=${COMPILER_CC}
-  #          export CXX=${COMPILER_CXX}
-  #          export FC=${COMPILER_FC}
-  #          ${CC} --version
-  #          # capture current path
-  #          export ROOT_DIR=`pwd`
-  #          # find spack generated host config file
-  #          export HOST_CONFIG=`ls /uberenv_libs/*.cmake`
-  #          echo $HOST_CONFIG
-  #          # find spack installed cmake
-  #          export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-  #          export PATH=${CMAKE_BIN_DIR}:$PATH
-  #          echo $PATH
-  #          which cmake
-  #          cmake --version
-  #          # prepare build dir
-  #          mkdir build
-  #          cd build
-  #          # setup cmake options
-  #          export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-  #          export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-  #          export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
-  #          # configure
-  #          cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
-  #       displayName: 'Configure with CMake'
-  #
-  #     - script: |
-  #          #################################
-  #          # build
-  #          #################################
-  #          # build
-  #          cd build
-  #          make VERBOSE=1
-  #       displayName: 'Build'
-  #
-  #     - script: |
-  #          #################################
-  #          # test
-  #          #################################
-  #          # find spack installed cmake
-  #          export ROOT_DIR=`pwd`
-  #          export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-  #          export PATH=${CMAKE_BIN_DIR}:$PATH
-  #          which ctest
-  #          cd build
-  #          # run ctest
-  #          ctest -T test --output-on-failure -V
-  #       displayName: 'Run Unit Tests'
-  #
-  #     - script: |
-  #          #################################
-  #          # gen img diff report
-  #          #################################
-  #          # run cmake target to gen report
-  #          cd build
-  #          make gen_report
-  #       displayName: 'Run Gen Test Image Diff Report'
-  #       condition: always()
-  #
-  #     - task: PublishTestResults@2
-  #       inputs:
-  #         testResultsFormat: 'cTest'
-  #         testResultsFiles: '**/Test.xml'
-  #       displayName: 'Unit Test Results'
-  #       condition: always()
-  #
-  #     - task: CopyFiles@2
-  #       inputs:
-  #         contents: 'build/tests/_output/**'
-  #         targetFolder: $(Build.ArtifactStagingDirectory)
-  #       condition: always()
-  #
-  #     - task: PublishBuildArtifacts@1
-  #       inputs:
-  #         pathToPublish: $(Build.ArtifactStagingDirectory)
-  #         artifactName: Ascent_Test_Outputs
-  #       condition: always()
-  #
-  #     - script: |
-  #          #################################
-  #          # install
-  #          #################################
-  #          cd build
-  #          make install
-  #       displayName: 'Install'
-  #
-  #     - script: |
-  #         ###########################
-  #         # using with cmake example
-  #         ###########################
-  #         pwd
-  #         ls -l
-  #         # find spack installed cmake
-  #         export ROOT_DIR=`pwd`
-  #         export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-  #         export PATH=${CMAKE_BIN_DIR}:$PATH
-  #         echo $PATH
-  #         which cmake
-  #         cd install/examples/ascent/using-with-cmake
-  #         mkdir _test_build
-  #         cd _test_build
-  #         cmake ../
-  #         make VERBOSE=1
-  #         ./ascent_render_example
-  #       displayName: 'Test vs Install (using-with-cmake)'
-  #
-  #     - script: |
-  #         ###########################
-  #         # using with make example
-  #         ###########################
-  #         cat install/share/ascent/ascent_config.mk
-  #         pwd
-  #         ls -l
-  #         cd install/examples/ascent/using-with-make
-  #         make
-  #         ./ascent_render_example
-  #       displayName: 'Test vs Install (using-with-make)'
+        condition: eq(variables['ENABLE_VTKH'], 'ON')
+
+  - job: Main_Ubuntu_16_Cuda_9_2
+    pool:
+      vmImage: 'ubuntu-16.04'
+    timeoutInMinutes: 0
+    container: alpinedav/ascent-ci:ubuntu-16-cuda-9.2-devel-tpls
+    variables:
+      COMPILER_CC: gcc
+      COMPILER_CXX: g++
+      COMPILER_FC: gfortran
+    strategy:
+      matrix:
+        static:
+          BUILD_SHARED_LIBS: OFF
+          CMAKE_BUILD_TYPE: Debug
+    steps:
+      - checkout: self
+        clean: boolean
+        submodules: recursive
+
+      - script: |
+           #################################
+           # configure
+           #################################
+           # setup compiler env vars
+           export CC=${COMPILER_CC}
+           export CXX=${COMPILER_CXX}
+           export FC=${COMPILER_FC}
+           ${CC} --version
+           # capture current path
+           export ROOT_DIR=`pwd`
+           # find spack generated host config file
+           export HOST_CONFIG=`ls /uberenv_libs/*.cmake`
+           echo $HOST_CONFIG
+           # find spack installed cmake
+           export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+           export PATH=${CMAKE_BIN_DIR}:$PATH
+           echo $PATH
+           which cmake
+           cmake --version
+           # prepare build dir
+           mkdir build
+           cd build
+           # setup cmake options
+           export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           # configure
+           cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+        displayName: 'Configure with CMake'
+
+      - script: |
+           #################################
+           # build
+           #################################
+           # build
+           cd build
+           make VERBOSE=1
+        displayName: 'Build'
+
+
+      - script: |
+           #################################
+           # install
+           #################################
+           cd build
+           make install
+        displayName: 'Install'
+
+      - script: |
+          ###########################
+          # using with cmake example
+          ###########################
+          pwd
+          ls -l
+          # find spack installed cmake
+          export ROOT_DIR=`pwd`
+          export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export PATH=${CMAKE_BIN_DIR}:$PATH
+          echo $PATH
+          which cmake
+          cd install/examples/ascent/using-with-cmake
+          mkdir _test_build
+          cd _test_build
+          cmake ../
+          make VERBOSE=1
+        displayName: 'Test vs Install (using-with-cmake) [build only]'
+
+      - script: |
+          ###########################
+          # using with make example
+          ###########################
+          cat install/share/ascent/ascent_config.mk
+          pwd
+          ls -l
+          cd install/examples/ascent/using-with-make
+          make
+        displayName: 'Test vs Install (using-with-make) [build only]'
 
 
 ######
