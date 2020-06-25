@@ -134,7 +134,7 @@ stages:
            cd build
            make gen_report
         displayName: 'Run Gen Test Image Diff Report'
-        condition: always()
+        condition: eq(variables['ENABLE_VTKH'], 'ON')
 
       - task: PublishTestResults@2
         inputs:
