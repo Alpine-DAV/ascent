@@ -46,9 +46,18 @@ stages:
       COMPILER_FC: gfortran
     strategy:
       matrix:
+        minimal:
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: OFF
+          ENABLE_VTKH: OFF
+          ENABLE_MFEM: OFF
         shared_py36:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
     steps:
       - checkout: self
         clean: boolean
@@ -82,7 +91,12 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
            # configure
-           cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+           cmake ${CMAKE_OPTS} -C ${HOST_CONFIG}
+           # extra settings
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON}"
+           if [ $ENABLE_MFEM  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE" fi
+           if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE" fi
+           cmake ${CMAKE_OPTS} ../src
         displayName: 'Configure with CMake'
 
       - script: |
