@@ -78,7 +78,8 @@ TEST(ascent_expressions, basic_expressions)
     // Create an example mesh.
     //
     Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
+    //conduit::blueprint::mesh::examples::braid("hexs",
+    conduit::blueprint::mesh::examples::braid("uniform",
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
@@ -102,8 +103,10 @@ TEST(ascent_expressions, basic_expressions)
     // pass vec and see what happens
     //expr = "sin(field('braid'))*field('braid') * field('vel')";
     //expr = "sin(field('braid'))";
-    expr = "(field('braid') - min(field('braid'))) / (max(field('braid')) - min(field('braid')))";
+    //expr = "sin(field('radial'))";
+    //expr = "(field('braid') - min(field('braid'))) / (max(field('braid')) - min(field('braid')))";
     //expr = "sin(1.0)";
+    expr = "volume(mesh('mesh'))";
     eval.evaluate_derived(expr);
 }
 

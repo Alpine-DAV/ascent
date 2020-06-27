@@ -63,6 +63,7 @@
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
+#include <conduit_relay_mpi.hpp>
 #endif
 
 //-----------------------------------------------------------------------------
@@ -651,6 +652,22 @@ bool has_field(const conduit::Node &dataset, const std::string &field_name)
   return has_field;
 }
 
+bool has_topology(const conduit::Node &dataset, const std::string &topo_name)
+{
+  bool has_topo = false;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(!has_topo && dom.has_path("topologies/"+topo_name))
+    {
+      has_topo = true;
+    }
+  }
+  // check to see if the field exists in any rank
+  has_topo = detail::at_least_one(has_topo);
+  return has_topo;
+}
+
 conduit::Node
 field_histogram(const conduit::Node &dataset,
                 const std::string &field,
@@ -1198,6 +1215,264 @@ std::string field_type(const conduit::Node &dataset,
   bool double_vote = global_someone_agrees(my_vote);
 
   return is_double? "double" : "float";
+}
+
+void topology_types(const conduit::Node &dataset,
+                    const std::string &topo_name,
+                    int topo_types[5])
+{
+
+  for(int i = 0; i < 5; ++i)
+  {
+    topo_types[i] = 0;
+  }
+
+  const int num_domains = dataset.number_of_children();
+  for(int i = 0; i < num_domains; ++i)
+  {
+    const conduit::Node &dom = dataset.child(0);
+    if(dom.has_path("topologies/"+topo_name))
+    {
+      const std::string topo_type = dom["topologies/"+topo_name+"/type"].as_string();
+      if(topo_type == "points")
+      {
+        topo_types[0] += 1;
+      }
+      else if(topo_type == "uniform")
+      {
+        topo_types[1] += 1;
+      }
+      else if(topo_type == "rectilinear")
+      {
+        topo_types[2] += 1;
+      }
+      else if(topo_type == "structured")
+      {
+        topo_types[3] += 1;
+      }
+      else if(topo_type == "unstructured")
+      {
+        topo_types[4] += 1;
+      }
+    }
+  }
+
+  int res[5];
+#ifdef ASCENT_MPI_ENABLED
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Allreduce(MPI_IN_PLACE,
+                topo_types,
+                5,
+                MPI_INT,
+                MPI_SUM,
+                mpi_comm);
+#endif
+}
+
+
+int num_cells(const conduit::Node &domain, const std::string &topo_name)
+{
+  const conduit::Node &n_topo = domain["topologies/"+topo_name];
+  const std::string topo_type = n_topo["type"].as_string();
+
+  int res = -1;
+
+  if(topo_type == "unstructured")
+  {
+    const std::string shape = n_topo["elements/shape"].as_string();
+    const int conn_size = n_topo["elements/connectiviy"].dtype().number_of_elements();
+    const int per_cell = detail::get_num_indices(shape);
+    res = conn_size / per_cell;
+  }
+
+  if(topo_type == "points")
+  {
+    return num_points(domain, topo_name);
+  }
+
+  const std::string c_name = n_topo["coordset"].as_string();
+  const conduit::Node n_coords = domain["coordsets/" + c_name];
+
+  if(topo_type == "uniform")
+  {
+    res = n_coords["dims/i"].to_int32() - 1;
+    if(n_coords.has_path("dims/j"))
+    {
+      res *= n_coords["dims/j"].to_int32() - 1;
+    }
+    if(n_coords.has_path("dims/k"))
+    {
+      res *= n_coords["dims/k"].to_int32() - 1;
+    }
+  }
+
+  if(topo_type == "rectilinear")
+  {
+    res = n_coords["values/x"].dtype().number_of_elements() - 1;
+
+    if(n_coords.has_path("values/y"))
+    {
+      res *= n_coords["values/y"].dtype().number_of_elements() - 1;
+    }
+
+    if(n_coords.has_path("values/z"))
+    {
+      res *= n_coords["values/z"].dtype().number_of_elements() - 1;
+    }
+  }
+
+  if(topo_type == "explicit")
+  {
+    res = n_coords["values/x"].dtype().number_of_elements() - 1;
+  }
+
+  return res;
+}
+
+int num_points(const conduit::Node &domain, const std::string &topo_name)
+{
+  int res = 0;
+
+  const conduit::Node &n_topo = domain["topologies/"+topo_name];
+
+  const std::string c_name = n_topo["coordset"].as_string();
+  const conduit::Node n_coords = domain["coordsets/" + c_name];
+  const std::string c_type = n_coords["type"].as_string();
+
+  if(c_type == "uniform")
+  {
+    res = n_coords["dims/i"].to_int32();
+    if(n_coords.has_path("dims/j"))
+    {
+      res *= n_coords["dims/j"].to_int32();
+    }
+    if(n_coords.has_path("dims/k"))
+    {
+      res *= n_coords["dims/k"].to_int32();
+    }
+  }
+
+  if(c_type == "rectilinear")
+  {
+    res = n_coords["values/x"].dtype().number_of_elements();
+
+    if(n_coords.has_path("values/y"))
+    {
+      res *= n_coords["values/y"].dtype().number_of_elements();
+    }
+
+    if(n_coords.has_path("values/z"))
+    {
+      res *= n_coords["values/z"].dtype().number_of_elements();
+    }
+  }
+
+  if(c_type == "explicit")
+  {
+    res = n_coords["values/x"].dtype().number_of_elements();
+  }
+
+  return res;
+}
+
+int spatial_dims(const conduit::Node &dataset, const std::string &topo_name)
+{
+  const int num_domains = dataset.number_of_children();
+
+  bool is_3d = false;
+  bool rank_has = false;
+
+  for(int i = 0; i < num_domains; ++i)
+  {
+    const conduit::Node &domain = dataset.child(i);
+    if(!domain.has_path("topologies/"+topo_name))
+    {
+      continue;
+    }
+
+    rank_has = true;
+    const conduit::Node &n_topo = domain["topologies/"+topo_name];
+
+    const std::string c_name = n_topo["coordset"].as_string();
+    const conduit::Node n_coords = domain["coordsets/" + c_name];
+    const std::string c_type = n_coords["type"].as_string();
+
+    if(c_type == "uniform")
+    {
+      if(n_coords.has_path("dims/k"))
+      {
+        is_3d = true;
+      }
+      break;
+    }
+
+    if(c_type == "rectilinear" || c_type == "explicit")
+    {
+      if(n_coords.has_path("values/z"))
+      {
+        is_3d = true;
+      }
+      break;
+    }
+  }
+
+  bool my_vote = rank_has && is_3d;
+  bool vote_3d = global_someone_agrees(my_vote);
+  my_vote = rank_has && !is_3d;
+  bool vote_2d = global_someone_agrees(my_vote);
+
+  if(vote_2d && vote_3d)
+  {
+    ASCENT_ERROR("There is disagreement about the spatial dims"
+                 <<"of the topoloy '"<<topo_name<<"'");
+  }
+
+  return vote_3d ? 3 : 2;
+
+}
+
+std::string
+field_topology(const conduit::Node &dataset, const std::string &field_name)
+{
+  std::string topo_name;
+  const int num_domains = dataset.number_of_children();
+  for(int i = 0; i < num_domains; ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/"+field_name))
+    {
+      topo_name = dom["fields/"+field_name+"/topology"].as_string();
+      break;
+    }
+  }
+
+#if defined(ASCENT_MPI_ENABLED)
+  int rank;
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Comm_rank(mpi_comm, &rank);
+
+  struct MaxLoc
+  {
+    double size;
+    int rank;
+  };
+
+  // there is no MPI_INT_INT so shove the "small" size into double
+  MaxLoc maxloc = {(double)topo_name.length(), rank};
+  MaxLoc maxloc_res;
+  MPI_Allreduce( &maxloc, &maxloc_res, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mpi_comm);
+
+  conduit::Node msg;
+  msg["topo"] = topo_name;
+  conduit::relay::mpi::broadcast_using_schema(msg,maxloc_res.rank,mpi_comm);
+
+  if(!msg["topo"].dtype().is_string())
+  {
+    ASCENT_ERROR("failed to broadcast topo name");
+  }
+  topo_name = msg["topo"].as_string();
+#endif
+  return topo_name;
 }
 
 //-----------------------------------------------------------------------------

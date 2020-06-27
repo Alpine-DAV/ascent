@@ -117,8 +117,14 @@ conduit::Node get_state_var(const conduit::Node &dataset,
 bool is_scalar_field(const conduit::Node &dataset,
                      const std::string &field_name);
 
+// field exists on at least one rank. Does not check that
+// all ranks with that topology have this field(maybe it should).
 bool has_field(const conduit::Node &dataset,
                const std::string &field_name);
+
+// topology exists on at least one rank
+bool has_topology(const conduit::Node &dataset,
+                  const std::string &topo_name);
 
 conduit::Node quantile(const conduit::Node &cdf,
                        const double val,
@@ -127,9 +133,27 @@ conduit::Node quantile(const conduit::Node &cdf,
 // assumes that the field exists
 std::string field_assoc(const conduit::Node &dataset,
                         const std::string &field_name);
-
+// double or float, checks for global consistency
 std::string field_type(const conduit::Node &dataset,
                        const std::string &field_name);
+
+// topo_types = [points, uniform, rectilinear, curvilinear, unstructured]
+// expects that a topology does exist or else it will return none
+void topology_types(const conduit::Node &dataset,
+                    const std::string &topo_name,
+                    int topo_types[5]);
+
+// assumes that the topology exists
+int num_cells(const conduit::Node &domain, const std::string &topo_name);
+// assumes that the topology exists
+int num_points(const conduit::Node &domain, const std::string &topo_name);
+
+// assumes that the topology exists, globally checks for constistency
+int spatial_dims(const conduit::Node &dataset, const std::string &topo_name);
+
+// finds then name of a topology using the field name. topology might not
+// exist on this rank.
+std::string field_topology(const conduit::Node &dataset, const std::string &field_name);
 
 };
 //-----------------------------------------------------------------------------

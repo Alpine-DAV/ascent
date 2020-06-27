@@ -76,6 +76,18 @@ namespace expressions
 
 void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info);
 
+// make sure we are in a good state and gather the
+// information we need to create some kernels
+void validate(const conduit::Node &dataset,
+              const conduit::Node &info,
+              conduit::Node &meta);
+
+void parameters(const conduit::Node &dataset,
+                const conduit::Node &info,
+                std::map<std::string, std::string> &var_types, // name:type
+                std::map<std::string, double> &constants);
+
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

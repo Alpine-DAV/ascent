@@ -401,8 +401,29 @@ std::string ASTMethodCall::build_jit(conduit::Node &n, flow::Workspace &w)
   {
     // need to verify params, e.g., num and type
     std::string var_name = detail::strip_single_quotes((*arguments->pos_args)[0]->build_jit(n,w));
-    n["vars"].append() = var_name;
+    n["field_vars"].append() = var_name;
     return var_name;
+  }
+
+  if(m_id->m_name == "mesh" && arg_size == 1)
+  {
+    // need to verify params, e.g., num and type
+    std::string var_name = detail::strip_single_quotes((*arguments->pos_args)[0]->build_jit(n,w));
+    n["mesh_vars"].append() = var_name;
+    return var_name;
+  }
+
+  // mesh jit functions
+  if(m_id->m_name == "volume" && arg_size == 1)
+  {
+    // no idea how to validate all of this,
+    // but the jist is that we will add a variable
+    // to the kernel of the name 'volume' so
+    // it can be evaluated in the expression
+    std::cout<<"BOOOOOOOOOOOOOOOOM\n";
+    std::string var_name = (*arguments->pos_args)[0]->build_jit(n,w);
+    n["mesh_functions"].append() = m_id->m_name;
+    return m_id->m_name;
   }
 
   // per domain constants
