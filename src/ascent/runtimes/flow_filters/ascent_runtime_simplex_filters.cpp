@@ -148,8 +148,76 @@ void fibonacciSphere(int i, int samples, double* points)
   points[2] = z;
 }
 
+#include <cmath> /* using fmod for modulo on doubles */
+
+/* This is a test of overloading it for doubles to use in place of linear interpolation */
+void fibonacciSphere(double i, int samples, double* points)
+{
+  /* This a bit odd but it didn't seem to do well when doing over samples */
+  /* It might be bcause of the i + rnd */
+  if (i > (samples-1)){
+      i = i - (samples - 1);
+  }
+  /* */
+
+  int rnd = 1;
+  //if randomize:
+  //    rnd = random.random() * samples
+
+  double offset = 2./samples;
+  double increment = M_PI * (3. - sqrt(5.));
+
+
+  double y = ((i * offset) - 1) + (offset / 2);
+  double r = sqrt(1 - pow(y,2));
+
+  double phi = ( fmod((i + rnd), (double)samples) * increment);
+
+  double x = cos(phi) * r;
+  double z = sin(phi) * r;
+  points[0] = x;
+  points[1] = y;
+  points[2] = z;
+}
+
 Camera
 GetCamera2(int frame, int nframes, double radius, double* lookat)
+{
+//  double t = SineParameterize(frame, nframes, nframes/10);
+  double points[3];
+  fibonacciSphere(frame, nframes, points);
+  Camera c;
+  double zoom = 3.0;
+//  c.near = zoom/20;
+//  c.far = zoom*25;
+//  c.angle = M_PI/6;
+
+/*  if(abs(points[0]) < radius && abs(points[1]) < radius && abs(points[2]) < radius)
+  {
+    if(points[2] >= 0)
+      points[2] += radius;
+    if(points[2] < 0)
+      points[2] -= radius;
+  }*/
+
+  c.position[0] = zoom*radius*points[0];
+  c.position[1] = zoom*radius*points[1];
+  c.position[2] = zoom*radius*points[2];
+
+//cout << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
+    
+//  c.focus[0] = lookat[0];
+//  c.focus[1] = lookat[1];
+//  c.focus[2] = lookat[2];
+//  c.up[0] = 0;
+//  c.up[1] = 1;
+//  c.up[2] = 0;
+  return c;
+}
+
+/* This is a test of overloading it for doubles to use in place of linear interpolation */
+Camera
+GetCamera2(double frame, int nframes, double radius, double* lookat)
 {
 //  double t = SineParameterize(frame, nframes, nframes/10);
   double points[3];
@@ -755,7 +823,7 @@ CameraSimplex::execute()
 {
     double time = 0.;
     auto time_start = high_resolution_clock::now();
-    cout << "USING SIMPLEX PIPELINE" << endl;
+    //cout << "USING SIMPLEX PIPELINE" << endl;
     #if ASCENT_MPI_ENABLED
       int rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -814,11 +882,13 @@ CameraSimplex::execute()
     screen.triCameraInitialize();
     screen.valueInitialize();
 */
-    double winning_score = -DBL_MAX;
-    int    winning_sample = -1;
+    /* Use these to take the top three scores */
+    double winning_scores[3] = {-DBL_MAX, -DBL_MAX, -DBL_MAX};
+    int    winning_samples[3] = {-1, -1, -1};
     //loop through number of camera samples.
     double scanline_time = 0.;
     double metric_time   = 0.;
+
     for(int sample = 0; sample < samples; sample++)
     {
     /*================ Scalar Renderer Code ======================*/
@@ -839,7 +909,12 @@ CameraSimplex::execute()
       tracer.Update();
 
       vtkh::DataSet *output = tracer.GetOutput();
+
       float score = calculateMetric2(output, metric, field_name, height, width);
+
+      cout << "Sample: " << sample << " Score: " << score << endl;
+      //cout << "Camera Positions: " << (float)cam.position[0] << " " << (float)cam.position[1] << " " << (float)cam.position[2] << endl << endl;
+     
       delete output;
 
     /*================ End Scalar Renderer  ======================*/
@@ -884,18 +959,152 @@ CameraSimplex::execute()
       auto metric_stop = high_resolution_clock::now();
       metric_time += duration_cast<microseconds>(metric_stop - metric_start).count();
 */
-      //cout << "sample " << sample << " score: " << score << endl;
-      if(winning_score < score)
-      {
-        winning_score = score;
-	winning_sample = sample;
+      if (score > winning_scores[0]) {
+        /* Found a better top score, replace all 3 */
+        winning_scores[2] = winning_scores[1];	      
+	winning_samples[2] = winning_samples[1];
+
+        winning_scores[1] = winning_scores[0];	      
+	winning_samples[1] = winning_samples[0];
+
+        winning_scores[0] = score;
+	winning_samples[0] = sample;
       }
+      else if (score > winning_scores[1]) {
+        /* Found a better second score, replace bottom 2 */
+        winning_scores[2] = winning_scores[1];	      
+	winning_samples[2] = winning_samples[1];
+
+        winning_scores[1] = score;
+	winning_samples[1] = sample;
+      }
+      else if (score > winning_scores[2]) {
+        /* Found a better third score, replace it */
+        winning_scores[2] = score;	      
+	winning_samples[2] = sample;
+      }
+
+
     } //end of sample loop
 
-    if(winning_sample == -1)
+    if(winning_samples[0] == -1)
       ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
-    //cout << "winning_sample " << winning_sample << " score: " << winning_score << endl;
-    Camera best_c = GetCamera2(winning_sample, samples, radius, focus);
+
+    cout << "Top 3 scores are: " << winning_scores[0] << ", " << winning_scores[1] << ", " << winning_scores[2] << endl;
+    cout << "With samples: " << winning_samples[0] << ", " << winning_samples[1] << ", " << winning_samples[2] << endl;
+
+    /* Now loop around the winning samples to see if we can improve them */
+    double winning_samplesNext[3] = {(double)winning_samples[0], (double)winning_samples[1], (double)winning_samples[2]};
+    for (int score_idx = 0 ; score_idx < 3 ; score_idx++) {
+
+      cout << "Looking around sample " << winning_samples[score_idx] << endl;
+      for (int neg = 1; neg > -1; neg--) {
+
+        for(int i = 1; i < 6; i++) {
+
+	  float sampleNext;
+	  if (neg) {
+            sampleNext = winning_samples[score_idx] - (.6 - (i * .1) );
+          }
+          else {
+            sampleNext = winning_samples[score_idx] + (i * .1);
+          }
+
+          Camera camNext = GetCamera2(sampleNext, samples, radius, focus);
+          vtkm::Vec<vtkm::Float32, 3> posNext{(float)camNext.position[0],
+                                              (float)camNext.position[1],
+                                              (float)camNext.position[2]};
+
+          camera->SetPosition(posNext);
+          vtkh::ScalarRenderer tracer;
+          tracer.SetWidth(width);
+          tracer.SetHeight(height);
+          tracer.SetInput(&dataset); //vtkh dataset by toponame
+          tracer.SetCamera(*camera);
+          tracer.Update();
+          vtkh::DataSet *outputNext = tracer.GetOutput();
+          float scoreNext = calculateMetric2(outputNext, metric, field_name, height, width);
+
+          cout << "  Sample: " << sampleNext << " Score: " << scoreNext << endl;
+          //cout << "Camera Positions: " << (float)camNext.position[0] << " " << (float)camNext.position[1] << " " << (float)camNext.position[2] << endl << endl;
+	
+          if(scoreNext > winning_scores[score_idx])
+          {
+            winning_scores[score_idx] = scoreNext;
+            winning_samplesNext[score_idx] = sampleNext;
+          }
+
+        }
+      }
+    }
+
+    cout << "Top 3 scores now are: " << winning_scores[0] << ", " << winning_scores[1] << ", " << winning_scores[2] << endl;
+    cout << "With samples: " << winning_samplesNext[0] << ", " << winning_samplesNext[1] << ", " << winning_samplesNext[2] << endl;
+
+    double winning_samplesFinal[3] = {winning_samplesNext[0], winning_samplesNext[1], winning_samplesNext[2]};
+    /* Loop again */
+    for (int score_idx = 0 ; score_idx < 3 ; score_idx++) {
+
+      cout << "Looking around sample " << winning_samplesNext[score_idx] << endl;
+      for (int neg = 1; neg > -1; neg--) {
+
+        for(int i = 1; i < 6; i++) {
+
+	  float sampleFinal;
+	  if (neg) {
+            sampleFinal = winning_samplesNext[score_idx] - (.06 - (i * .01) );
+          }
+          else {
+            sampleFinal = winning_samplesNext[score_idx] + (i * .01);
+          }
+
+          Camera camFinal = GetCamera2(sampleFinal, samples, radius, focus);
+          vtkm::Vec<vtkm::Float32, 3> posFinal{(float)camFinal.position[0],
+                                (float)camFinal.position[1],
+                                (float)camFinal.position[2]};
+
+          camera->SetPosition(posFinal);
+          vtkh::ScalarRenderer tracer;
+          tracer.SetWidth(width);
+          tracer.SetHeight(height);
+          tracer.SetInput(&dataset); //vtkh dataset by toponame
+          tracer.SetCamera(*camera);
+          tracer.Update();
+          vtkh::DataSet *outputFinal = tracer.GetOutput();
+          float scoreFinal = calculateMetric2(outputFinal, metric, field_name, height, width);
+
+          cout << "    Sample: " << sampleFinal << " Score: " << scoreFinal << endl;
+          //cout << "Camera Positions: " << (float)camFinal.position[0] << " " << (float)camFinal.position[1] << " " << (float)camFinal.position[2] << endl << endl;
+	
+          if(scoreFinal > winning_scores[score_idx])
+          {
+            winning_scores[score_idx] = scoreFinal;
+            winning_samplesFinal[score_idx] = sampleFinal;
+          }
+
+        } 
+      }
+    }
+
+    cout << "Top 3 scores now are: " << winning_scores[0] << ", " << winning_scores[1] << ", " << winning_scores[2] << endl;
+    cout << "With samples: " << winning_samplesFinal[0] << ", " << winning_samplesFinal[1] << ", " << winning_samplesFinal[2] << endl;
+   
+    /* Now take best of the top 3 scores that we have looked around */
+    double best_score = winning_scores[0];
+    double best_sample = winning_samplesFinal[0];
+    if (winning_scores[1] > best_score) {
+        best_score = winning_scores[1];
+        best_sample = winning_samplesFinal[1];
+    }
+    if (winning_scores[2] > best_score) {
+        best_score = winning_scores[2];
+        best_sample = winning_samplesFinal[2];
+    }
+
+    cout << "Best score is: " << best_score << endl;
+    cout << "Best sample is: " << best_sample << endl;
+
+    Camera best_c = GetCamera2(best_sample, samples, radius, focus);
 
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
