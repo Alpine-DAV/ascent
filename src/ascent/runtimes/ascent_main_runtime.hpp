@@ -150,6 +150,9 @@ private:
 
     std::string GetDefaultImagePrefix(const std::string scene);
 
+    // void FindRenders(conduit::Node &image_params, 
+    //                  conduit::Node &image_list,
+    //                  conduit::Node &render_times);
     void FindRenders(conduit::Node &image_params, 
                      conduit::Node &image_list,
                      conduit::Node &render_times,
@@ -161,6 +164,10 @@ private:
     static void RegisterFilterType(const std::string &role_path,
                                    const std::string &api_name,
                                    const std::string &filter_type_name);
+
+    static void print_time(std::chrono::time_point<std::chrono::system_clock> start, 
+                           const std::string &description,
+                           const int rank = -1);
 
     // internal reg filter tracking
     // use const method for access, to avoid adding to the tree

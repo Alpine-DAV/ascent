@@ -52,6 +52,8 @@
 
 // standard lib includes
 #include <string.h>
+#include <chrono>
+#include <ostream>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -72,14 +74,14 @@
 #include <ascent_expression_eval.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
-#include <vtkm/cont/Error.h>
-#include <vtkh/vtkh.hpp>
-#include <vtkh/Error.hpp>
-#include <vtkh/Logger.hpp>
+  #include <vtkm/cont/Error.h>
+  #include <vtkh/vtkh.hpp>
+  #include <vtkh/Error.hpp>
+  #include <vtkh/Logger.hpp>
 
-#ifdef VTKM_CUDA
-#include <vtkm/cont/cuda/ChooseCudaDevice.h>
-#endif
+  #ifdef VTKM_CUDA
+    #include <vtkm/cont/cuda/ChooseCudaDevice.h>
+  #endif
 #endif
 using namespace conduit;
 using namespace std;
@@ -151,6 +153,15 @@ AscentRuntime::~AscentRuntime()
 //
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
+void AscentRuntime::print_time(std::chrono::time_point<std::chrono::system_clock> start, 
+                               const std::string &description,
+                               const int rank)
+{
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << description << elapsed.count() << " rank " << rank << std::endl;
+}
 
 //-----------------------------------------------------------------------------
 void AscentRuntime::Initialize(const conduit::Node &options)
@@ -1271,17 +1282,23 @@ void AscentRuntime::FindRenders(conduit::Node &image_params,
 
   const int size = images->number_of_children();
   image_params = *images;
+
   for (int i = 0; i < size; i++)
   {
-    image_list.append()   = images->child(i)["image_name"].as_string();
-    render_times.append() = images->child(i)["render_time"].as_double();
+    Node &image_name = image_list.append();
+    image_name.set_external(images->child(i)["image_name"]);
+    Node &times = render_times.append();
+    times.set_external(images->child(i)["render_time"]);
 
-    color_buffers.append() = images->child(i)["color_buffer"];
-    depth_buffers.append() = images->child(i)["depth_buffer"];
-    depths.append() = images->child(i)["depth"];
+    Node &cb = color_buffers.append();
+    cb.set_external(images->child(i)["color_buffer"]);
+    Node &db = depth_buffers.append();
+    db.set_external(images->child(i)["depth_buffer"]);
+    Node &depths_tmp = depths.append();
+    depths_tmp.set_external(images->child(i)["depth"]);
   }
 
-  images->reset();
+  // images->reset();
 }
 
 //-----------------------------------------------------------------------------
@@ -1452,19 +1469,57 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     ascent::about(msg["about"]);
     m_web_interface.PushMessage(msg);
 
-    Node render_file_names;
-    Node renders;
-    Node render_times;
-    Node color_buffers;
-    Node depth_buffers;
-    Node depths;
-    FindRenders(renders, render_file_names, render_times, color_buffers, depth_buffers, depths);
-    m_info["images"] = renders;
-    m_info["render_times"] = render_times;
-    m_info["color_buffers"] = color_buffers;
-    m_info["depth_buffers"] = depth_buffers;
-    m_info["depths"] = depths;
-    m_info["render_file_names"] = render_file_names;
+
+    auto t_detail = std::chrono::system_clock::now();
+
+//=== TODO: this still costs some 1.5 seconds for the copies
+    Node *images = w.registry().fetch<Node>("image_list");
+
+    const int size = images->number_of_children();
+    Node image_params = *images;
+    m_info["images"].set_external(image_params);
+    for (int i = 0; i < size; i++)
+    {
+      Node &image_name = m_info["render_file_names"].append();
+      image_name.set_external(images->child(i)["image_name"]);
+      Node &times = m_info["render_times"].append();
+      times.set_external(images->child(i)["render_time"]);
+      Node &cb = m_info["color_buffers"].append();
+      cb.set_external(images->child(i)["color_buffer"]);
+      Node &db = m_info["depth_buffers"].append();
+      db.set_external(images->child(i)["depth_buffer"]);
+      Node &depths_tmp = m_info["depths"].append();
+      depths_tmp.set_external(images->child(i)["depth"]);
+    }
+//===
+
+    // Node renders;
+    // Node render_file_names;
+    // Node render_times;
+    // Node color_buffers;
+    // Node depth_buffers;
+    // Node depths;
+    // FindRenders(renders, render_file_names, render_times, color_buffers, depth_buffers, depths);
+    // print_time(t_detail, "''' find renders ", m_rank);
+
+    // t_detail = std::chrono::system_clock::now();
+    // m_info["images"] = renders;
+    // m_info["render_times"] = render_times;
+    // m_info["color_buffers"] = color_buffers;
+    // m_info["depth_buffers"] = depth_buffers;
+    // m_info["depths"] = depths;
+    // m_info["render_file_names"] = render_file_names;
+
+    // m_info["images"].set_external(renders);
+    // m_info["render_times"].set_external(render_times);
+    // m_info["color_buffers"].set_external(color_buffers);
+    // m_info["depth_buffers"].set_external(depth_buffers);
+    // m_info["depths"].set_external(depths);
+    // m_info["render_file_names"].set_external(render_file_names);
+
+    // Node *images = w.registry().fetch<Node>("image_list");
+    // images->reset();
+    // print_time(t_detail, "''' copy info ", m_rank);
 
     const conduit::Node &expression_cache =
         runtime::expressions::ExpressionEval::get_cache();
@@ -1477,9 +1532,10 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     m_info["flow_graph_dot"] = w.graph().to_dot();
     m_info["flow_graph_dot_html"] = w.graph().to_dot_html();
 
-    m_web_interface.PushRenders(render_file_names);
+    // m_web_interface.PushRenders(render_file_names);
+    m_web_interface.PushRenders(m_info["render_file_names"]);
 
-    w.registry().reset();
+    // w.registry().reset();
   }
   // --- close try --- //
 
