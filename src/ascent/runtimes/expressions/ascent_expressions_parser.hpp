@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.3.2.  */
+/* A Bison parser, made by GNU Bison 3.6.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2019 Free Software Foundation,
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -31,11 +31,12 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* Undocumented macros, especially those whose name start with YY_,
-   are private implementation details.  Do not rely on them.  */
+/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
+   especially those whose name start with YY_ or yy_.  They are
+   private implementation details that can be changed or removed.  */
 
-#ifndef YY_ASCENT_PARSER_HPP_INCLUDED
-# define YY_ASCENT_PARSER_HPP_INCLUDED
+#ifndef YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED
+# define YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 1
@@ -44,64 +45,68 @@
 extern int ascentdebug;
 #endif
 
-/* Token type.  */
+/* Token kinds.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    TIDENTIFIER = 258,
-    TINTEGER = 259,
-    TDOUBLE = 260,
-    TSTRING = 261,
-    TIF = 262,
-    TTHEN = 263,
-    TELSE = 264,
-    TOR = 265,
-    TAND = 266,
-    TNOT = 267,
-    TAEQ = 268,
-    TCEQ = 269,
-    TCNE = 270,
-    TCLT = 271,
-    TCLE = 272,
-    TCGT = 273,
-    TCGE = 274,
-    TLPAREN = 275,
-    TRPAREN = 276,
-    TLBRACKET = 277,
-    TRBRACKET = 278,
-    TCOMMA = 279,
-    TDOT = 280,
-    TPLUS = 281,
-    TMINUS = 282,
-    TMUL = 283,
-    TDIV = 284,
-    TMOD = 285,
-    TNEG = 286
+    YYEMPTY = -2,
+    YYEOF = 0,                     /* "end of file"  */
+    YYerror = 256,                 /* error  */
+    YYUNDEF = 257,                 /* "invalid token"  */
+    TIDENTIFIER = 258,             /* TIDENTIFIER  */
+    TINTEGER = 259,                /* TINTEGER  */
+    TDOUBLE = 260,                 /* TDOUBLE  */
+    TSTRING = 261,                 /* TSTRING  */
+    TIF = 262,                     /* TIF  */
+    TTHEN = 263,                   /* TTHEN  */
+    TELSE = 264,                   /* TELSE  */
+    TOR = 265,                     /* TOR  */
+    TAND = 266,                    /* TAND  */
+    TNOT = 267,                    /* TNOT  */
+    TAEQ = 268,                    /* TAEQ  */
+    TCEQ = 269,                    /* TCEQ  */
+    TCNE = 270,                    /* TCNE  */
+    TCLT = 271,                    /* TCLT  */
+    TCLE = 272,                    /* TCLE  */
+    TCGT = 273,                    /* TCGT  */
+    TCGE = 274,                    /* TCGE  */
+    TLPAREN = 275,                 /* TLPAREN  */
+    TRPAREN = 276,                 /* TRPAREN  */
+    TLBRACKET = 277,               /* TLBRACKET  */
+    TRBRACKET = 278,               /* TRBRACKET  */
+    TCOMMA = 279,                  /* TCOMMA  */
+    TDOT = 280,                    /* TDOT  */
+    TPLUS = 281,                   /* TPLUS  */
+    TMINUS = 282,                  /* TMINUS  */
+    TMUL = 283,                    /* TMUL  */
+    TDIV = 284,                    /* TDIV  */
+    TMOD = 285,                    /* TMOD  */
+    TNEG = 286                     /* TNEG  */
   };
+  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-
 union YYSTYPE
 {
-#line 22 "parser.y" /* yacc.c:1921  */
+#line 21 "parser.y"
 
  ASTNode                     *node;
  ASTExpression               *expr;
  ASTIdentifier               *ident;
  ASTString                   *string_literal;
- ExpressionList              *expr_list;
- NamedExpression             *named_expr;
- NamedExpressionList         *named_expr_list;
+ ASTExpressionList           *expr_list;
+ ASTNamedExpression          *named_expr;
+ ASTNamedExpressionList      *named_expr_list;
  ASTArguments                *args;
  std::string                 *string;
  int token;
 
-#line 103 "parser.hpp" /* yacc.c:1921  */
-};
+#line 108 "ascent_expressions_parser.hpp"
 
+};
 typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
@@ -112,10 +117,10 @@ extern YYSTYPE ascentlval;
 
 int ascentparse (void);
 /* "%code provides" blocks.  */
-#line 17 "parser.y" /* yacc.c:1921  */
+#line 16 "parser.y"
 
   ASTExpression *get_result();
 
-#line 120 "parser.hpp" /* yacc.c:1921  */
+#line 125 "ascent_expressions_parser.hpp"
 
-#endif /* !YY_ASCENT_PARSER_HPP_INCLUDED  */
+#endif /* !YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED  */

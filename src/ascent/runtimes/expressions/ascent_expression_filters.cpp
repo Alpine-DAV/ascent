@@ -823,6 +823,63 @@ DotAccess::execute()
 }
 
 //-----------------------------------------------------------------------------
+ExpressionList::ExpressionList() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExpressionList::~ExpressionList()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExpressionList::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_list";
+  // We can't have an arbitrary number of input ports so we choose 256
+  for(int item_num = 0; item_num < 256; ++item_num)
+  {
+    std::stringstream ss;
+    ss << "item" << item_num;
+    i["port_names"].append() = ss.str();
+  }
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExpressionList::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExpressionList::execute()
+{
+  conduit::Node *output = new conduit::Node();
+
+  for(int item_num = 0; item_num < 256; ++item_num)
+  {
+    std::stringstream ss;
+    ss << "item" << item_num;
+    const conduit::Node *n_item = input<Node>(ss.str());
+    if(n_item->dtype().is_empty())
+    {
+      break;
+    }
+    output->append() = *n_item;
+  }
+
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 ArrayMin::ArrayMin() : Filter()
 {
   // empty
@@ -1547,6 +1604,104 @@ Field::execute()
 }
 
 //-----------------------------------------------------------------------------
+Axis::Axis() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Axis::~Axis()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Axis::declare_interface(Node &i)
+{
+  i["type_name"] = "axis";
+  i["port_names"].append() = "name";
+  i["port_names"].append() = "min_val";
+  i["port_names"].append() = "max_val";
+  i["port_names"].append() = "num_bins";
+  i["port_names"].append() = "bins";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Axis::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Axis::execute()
+{
+  const std::string name = (*input<Node>("name"))["value"].as_string();
+  // uniform binning
+  const conduit::Node *n_min = input<Node>("min_val");
+  const conduit::Node *n_max = input<Node>("max_val");
+  const conduit::Node *n_num_bins = input<Node>("num_bins");
+  // rectilinear binning
+  const conduit::Node *n_bins_list = input<Node>("bins");
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value/" + name];
+  (*output)["type"] = "axis";
+
+  // verify rectilinear bins and create an array of double instead of conduit
+  // array
+  conduit::Node n_bins;
+  if(!n_bins_list->dtype().is_empty())
+  {
+    // ensure none of the uniform binning arguments are passed
+    if(!n_min->dtype().is_empty() || !n_max->dtype().is_empty() ||
+       !n_num_bins->dtype().is_empty())
+    {
+      ASCENT_ERROR("Axis: Only pass in arguments for uniform or rectilinear "
+                   "binning, not both.");
+    }
+
+    int bins_len = n_bins_list->number_of_children();
+
+    double *bins = new double[bins_len]();
+
+    for(int i = 0; i < bins_len; ++i)
+    {
+      const conduit::Node &bin = n_bins_list->child(i);
+      if(!detail::is_scalar(bin["type"].as_string()))
+      {
+        ASCENT_ERROR("Axis: bins must be a list of scalars");
+      }
+      bins[i] = bin["value"].to_double();
+    }
+    n_bins.set(bins, bins_len);
+    (*output)["value/" + name + "/bins"] = n_bins;
+    delete[] bins;
+  }
+  else
+  {
+    if(!n_min->dtype().is_empty())
+    {
+      (*output)["value/" + name + "/min_val"] = (*n_min)["value"].to_float64();
+    }
+    if(!n_max->dtype().is_empty())
+    {
+      (*output)["value/" + name + "/max_val"] = (*n_max)["value"].to_float64();
+    }
+    if(!n_num_bins->dtype().is_empty())
+    {
+      (*output)["value/" + name + "/num_bins"] = (*n_num_bins)["value"].to_float64();
+    }
+  }
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 Histogram::Histogram() : Filter()
 {
   // empty
@@ -1668,9 +1823,8 @@ Ecf::declare_interface(Node &i)
 {
   i["type_name"] = "ecf";
   i["port_names"].append() = "reduction_var";
-  i["port_names"].append() = "bin_axes";
-  i["port_names"].append() = "bin_func";
   i["port_names"].append() = "reduction_func";
+  i["port_names"].append() = "bin_axes";
   i["output_port"] = "true";
 }
 
@@ -1687,12 +1841,11 @@ Ecf::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 Ecf::execute()
 {
-  const std::string bin_axes = (*input<Node>("bin_axes"))["value"].as_string();
-  // TODO for now these are just strings containing one axis name
   const std::string reduction_var =
       (*input<Node>("reduction_var"))["value"].as_string();
-  // optional inputs
-  const conduit::Node *n_reduction_func = input<Node>("reduction_func");
+  const std::string reduction_func =
+      (*input<Node>("reduction_func"))["value"].as_string();
+  conduit::Node *n_axes_list = input<Node>("bin_axes");
 
   // TODO these this check is repeated from Field
   if(!graph().workspace().registry().has_entry("dataset"))
@@ -1702,18 +1855,40 @@ Ecf::execute()
   const conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
 
+  // verify n_axes_list and put the values in n_bin_axes
   conduit::Node n_bin_axes;
-  n_bin_axes[bin_axes];
-
-  // handle the optional inputs
-  std::string reduction_func = "sum";
-  if(!n_reduction_func->dtype().is_empty())
+  int num_axes = n_axes_list->number_of_children();
+  for(int i = 0; i < num_axes; ++i)
   {
-    reduction_func = (*n_reduction_func)["value"].as_string();
-    if(reduction_func != "sum")
+    const conduit::Node &axis = n_axes_list->child(i);
+    if(axis["type"].as_string() != "axis")
     {
-      ASCENT_ERROR("Known reduction functions are: sum");
+      ASCENT_ERROR("ECF: bin_axes must be a list of axis");
     }
+    n_bin_axes.update(axis["value"]);
+  }
+
+  // verify reduction_func
+  if(!has_field(*dataset, reduction_var) && reduction_var != "x" &&
+     reduction_var != "y" && reduction_var != "z")
+  {
+    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+    std::stringstream ss;
+    ss << "[";
+    for(size_t i = 0; i < names.size(); ++i)
+    {
+      ss << " " << names[i];
+    }
+    ss << "]";
+    ASCENT_ERROR("Field: dataset does not contain field '"
+                 << reduction_var << "'"
+                 << " known = " << ss.str());
+  }
+
+  // verify reduction field
+  if(reduction_func != "sum")
+  {
+    ASCENT_ERROR("Known reduction functions are: sum");
   }
 
   const conduit::Node &n_ecf =
@@ -1723,9 +1898,14 @@ Ecf::execute()
   (*output)["type"] = "ecf";
   (*output)["attrs/value/value"] = n_ecf["value"];
   (*output)["attrs/value/type"] = "array";
+  (*output)["attrs/reduction_var/value"] = reduction_var;
+  (*output)["attrs/reduction_var/type"] = "string";
+  (*output)["attrs/reduction_func/value"] = reduction_func;
+  (*output)["attrs/reduction_func/type"] = "string";
   (*output)["attrs/bin_axes/value"] = n_ecf["bin_axes"];
-  // TODO what type do the axis have
-  // (*output)["attrs/bin_axes/type"] = "array";
+  (*output)["attrs/bin_axes/type"] = "list";
+  (*output)["attrs/association/value"] = n_ecf["association"];
+  (*output)["attrs/association/type"] = "string";
   set_output<conduit::Node>(output);
 }
 

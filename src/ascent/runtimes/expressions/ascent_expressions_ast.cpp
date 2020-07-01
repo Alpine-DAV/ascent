@@ -220,14 +220,14 @@ ASTIdentifier::build_graph(flow::Workspace &w)
 
 //-----------------------------------------------------------------------------
 void
-NamedExpression::access()
+ASTNamedExpression::access()
 {
   key->access();
   value->access();
 }
 
 conduit::Node
-NamedExpression::build_graph(flow::Workspace &w)
+ASTNamedExpression::build_graph(flow::Workspace &w)
 {
   return value->build_graph(w);
 }
@@ -238,22 +238,22 @@ ASTArguments::access()
 {
   if(pos_args != nullptr)
   {
-    const size_t pos_size = pos_args->size();
+    std::cout << "Creating positional arguments" << std::endl;
+    const size_t pos_size = pos_args->exprs.size();
     for(size_t i = 0; i < pos_size; ++i)
     {
-      (*pos_args)[i]->access();
+      pos_args->exprs[i]->access();
     }
-    std::cout << "Creating positional arguments" << std::endl;
   }
 
   if(named_args != nullptr)
   {
+    std::cout << "Creating named arguments" << std::endl;
     const size_t named_size = named_args->size();
     for(size_t i = 0; i < named_size; ++i)
     {
       (*named_args)[i]->access();
     }
-    std::cout << "Creating named arguments" << std::endl;
   }
 }
 
@@ -261,8 +261,8 @@ ASTArguments::access()
 void
 ASTMethodCall::access()
 {
-  arguments->access();
   std::cout << "Creating method call: " << m_id->m_name << std::endl;
+  arguments->access();
 }
 
 conduit::Node
@@ -273,11 +273,11 @@ ASTMethodCall::build_graph(flow::Workspace &w)
   std::vector<conduit::Node> pos_arg_nodes;
   if(arguments->pos_args != nullptr)
   {
-    pos_size = arguments->pos_args->size();
+    pos_size = arguments->pos_args->exprs.size();
     pos_arg_nodes.resize(pos_size);
     for(size_t i = 0; i < pos_size; ++i)
     {
-      pos_arg_nodes[i] = (*arguments->pos_args)[i]->build_graph(w);
+      pos_arg_nodes[i] = arguments->pos_args->exprs[i]->build_graph(w);
       // std::cout << "flow arg :\n";
       // pos_arg_nodes[i].print();
       // std::cout << "\n";
@@ -613,50 +613,21 @@ ASTBinaryOp::access()
   std::string op_str;
   switch(m_op)
   {
-  case TPLUS:
-    op_str = "+";
-    break;
-  case TMINUS:
-    op_str = "-";
-    break;
-  case TMUL:
-    op_str = "*";
-    break;
-  case TDIV:
-    op_str = "/";
-    break;
-  case TMOD:
-    op_str = "%";
-    break;
-  case TCEQ:
-    op_str = "==";
-    break;
-  case TCNE:
-    op_str = "!=";
-    break;
-  case TCLE:
-    op_str = "<=";
-    break;
-  case TCGE:
-    op_str = ">=";
-    break;
-  case TCGT:
-    op_str = ">";
-    break;
-  case TCLT:
-    op_str = "<";
-    break;
-  case TOR:
-    op_str = "or";
-    break;
-  case TAND:
-    op_str = "and";
-    break;
-  case TNOT:
-    op_str = "not";
-    break;
-  default:
-    std::cout << "unknown binary op " << m_op << "\n";
+  case TPLUS: op_str = "+"; break;
+  case TMINUS: op_str = "-"; break;
+  case TMUL: op_str = "*"; break;
+  case TDIV: op_str = "/"; break;
+  case TMOD: op_str = "%"; break;
+  case TCEQ: op_str = "=="; break;
+  case TCNE: op_str = "!="; break;
+  case TCLE: op_str = "<="; break;
+  case TCGE: op_str = ">="; break;
+  case TCGT: op_str = ">"; break;
+  case TCLT: op_str = "<"; break;
+  case TOR: op_str = "or"; break;
+  case TAND: op_str = "and"; break;
+  case TNOT: op_str = "not"; break;
+  default: std::cout << "unknown binary op " << m_op << "\n";
   }
 
   m_lhs->access();
@@ -671,50 +642,21 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
   std::string op_str;
   switch(m_op)
   {
-  case TPLUS:
-    op_str = "+";
-    break;
-  case TMINUS:
-    op_str = "-";
-    break;
-  case TMUL:
-    op_str = "*";
-    break;
-  case TDIV:
-    op_str = "/";
-    break;
-  case TMOD:
-    op_str = "%";
-    break;
-  case TCEQ:
-    op_str = "==";
-    break;
-  case TCNE:
-    op_str = "!=";
-    break;
-  case TCLE:
-    op_str = "<=";
-    break;
-  case TCGE:
-    op_str = ">=";
-    break;
-  case TCGT:
-    op_str = ">";
-    break;
-  case TCLT:
-    op_str = "<";
-    break;
-  case TOR:
-    op_str = "or";
-    break;
-  case TAND:
-    op_str = "and";
-    break;
-  case TNOT:
-    op_str = "not";
-    break;
-  default:
-    std::cout << "unknown binary op " << m_op << "\n";
+  case TPLUS: op_str = "+"; break;
+  case TMINUS: op_str = "-"; break;
+  case TMUL: op_str = "*"; break;
+  case TDIV: op_str = "/"; break;
+  case TMOD: op_str = "%"; break;
+  case TCEQ: op_str = "=="; break;
+  case TCNE: op_str = "!="; break;
+  case TCLE: op_str = "<="; break;
+  case TCGE: op_str = ">="; break;
+  case TCGT: op_str = ">"; break;
+  case TCLT: op_str = "<"; break;
+  case TOR: op_str = "or"; break;
+  case TAND: op_str = "and"; break;
+  case TNOT: op_str = "not"; break;
+  default: std::cout << "unknown binary op " << m_op << "\n";
   }
 
   conduit::Node l_in = m_lhs->build_graph(w);
@@ -951,5 +893,72 @@ ASTDotAccess::build_graph(flow::Workspace &w)
   res["type"] = res_type;
   res["filter_name"] = f_name;
 
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ASTExpressionList::access()
+{
+  std::cout << "Creating list" << std::endl;
+  for(auto expr : exprs)
+  {
+    expr->access();
+  }
+}
+
+conduit::Node
+ASTExpressionList::build_graph(flow::Workspace &w)
+{
+  // create a unique name for the filter
+  static int ast_list_counter = 0;
+  std::stringstream ss;
+  ss << "list"
+     << "_" << ast_list_counter++;
+  std::string f_name = ss.str();
+
+  conduit::Node params;
+  w.graph().add_filter("expr_list", f_name, params);
+
+  const size_t list_size = exprs.size();
+
+  // Lists need to have a constant size because flow needs to know all the
+  // in/out ports ahead of time.
+  // We make 256 the max size.
+  if(list_size > 256)
+  {
+    ASCENT_ERROR("Lists can have at most 256 elements.");
+  }
+
+  // Connect all items to the list
+  for(size_t i = 0; i < list_size; ++i)
+  {
+    const conduit::Node item = exprs[i]->build_graph(w);
+
+    std::stringstream ss;
+    ss << "item" << i;
+
+    // src, dest, port
+    w.graph().connect(item["filter_name"].as_string(), f_name, ss.str());
+  }
+
+  // Fill unused items with nulls
+  if(!w.graph().has_filter("null_arg"))
+  {
+    conduit::Node null_params;
+    w.graph().add_filter("null_arg", "null_arg", null_params);
+  }
+  for(size_t i = list_size; i < 256; ++i)
+  {
+    std::stringstream ss;
+    ss << "item" << i;
+
+    // src, dest, port
+    w.graph().connect("null_arg", f_name, ss.str());
+  }
+
+  conduit::Node res;
+  res["type"] = "list";
+  res["filter_name"] = f_name;
   return res;
 }

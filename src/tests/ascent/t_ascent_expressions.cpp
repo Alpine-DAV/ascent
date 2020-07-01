@@ -51,6 +51,7 @@
 #include "gtest/gtest.h"
 
 #include <ascent_expression_eval.hpp>
+#include <expressions/ascent_blueprint_architect.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -643,57 +644,27 @@ TEST(ascent_expressions, if_expressions)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_expressions, custom_ecf)
+TEST(ascent_ecf, ecf_basic_meshes)
 {
+  // the vtkm runtime is currently our only rendering runtime
   Node n;
   ascent::about(n);
+  // only run this test if ascent was built with vtkm support
+  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  {
+    ASCENT_INFO("Ascent support disabled, skipping test");
+    return;
+  }
 
   //
   // Create an example mesh.
   //
-  Node data;
+  Node data, verify_info;
 
-  // create the coordinate set
-  data["coordsets/coords/type"] = "uniform";
-  data["coordsets/coords/dims/i"] = 5;
-  data["coordsets/coords/dims/j"] = 5;
-  // add origin and spacing to the coordset (optional)
-  data["coordsets/coords/origin/x"] = -10.0;
-  data["coordsets/coords/origin/y"] = -10.0;
-  data["coordsets/coords/spacing/dx"] = 10.0;
-  data["coordsets/coords/spacing/dy"] = 10.0;
-
-  // add the topology
-  // this case is simple b/c it's implicitly derived from the coordinate set
-  data["topologies/topo/type"] = "uniform";
-  // reference the coordinate set by name
-  data["topologies/topo/coordset"] = "coords";
-
-  // add a simple element-associated field
-  data["fields/ele_example/association"] = "element";
-  // reference the topology this field is defined on by name
-  data["fields/ele_example/topology"] = "topo";
-  // set the field values, for this case we have 16 elements
-  data["fields/ele_example/values"].set(DataType::float64(16));
-
-  float64 *ele_vals_ptr = data["fields/ele_example/values"].value();
-
-  for(int i = 0; i < 16; i++)
-  {
-    ele_vals_ptr[i] = float64(i);
-  }
-
-  data["state/cycle"] = 100;
-
-  // make sure we conform:
-  Node verify_info;
-  if(!blueprint::mesh::verify(data, verify_info))
-  {
-    std::cout << "Verify failed!" << std::endl;
-    verify_info.print();
-  }
+  conduit::blueprint::mesh::examples::basic("hexs", 3, 3, 3, data);
 
   // ascent normally adds this but we are doing an end around
+  data["state/cycle"] = 100;
   data["state/domain_id"] = 0;
   Node multi_dom;
   blueprint::mesh::to_multi_domain(data, multi_dom);
@@ -701,36 +672,66 @@ TEST(ascent_expressions, custom_ecf)
   runtime::expressions::register_builtin();
   runtime::expressions::ExpressionEval eval(&multi_dom);
 
-  // Node bin_axes;
-
-  // Node &x_axes = bin_axes.append();
-  // x_axes["field_name"] = "x";
-  // x_axes["num_bins"] = 4;
-  // x_axes["min_val"] = 0;
-  // x_axes["max_val"] = 3;
-
-  // Node &y_axes = bin_axes.append();
-  // y_axes["field_name"] = "y";
-  // y_axes["num_bins"] = 4;
-  // y_axes["min_val"] = 0;
-  // y_axes["max_val"] = 3;
-
-  // Node res = runtime::expressions::ecf(&multi_dom, bin_axes, "ele_example",
-  // "sum");
-
   conduit::Node res;
   std::string expr;
 
-  expr = "ecf('ele_example', 'x')";
+  expr = "ecf('field', 'sum', [axis('x')])";
   res = eval.evaluate(expr);
   res.print();
 
-  expr = "ecf('ele_example', 'y')";
+  expr = "ecf('field', 'sum', [axis('x', num_bins=2), axis('y', num_bins=2)])";
+  res = eval.evaluate(expr);
+  res.print();
+
+  expr = "ecf('field', 'sum', [axis('x', num_bins=2), axis('y', num_bins=2), "
+         "axis('z', num_bins=2)])";
+  res = eval.evaluate(expr);
+  res.print();
+
+  expr = "ecf('x', 'sum', [axis('field')])";
   res = eval.evaluate(expr);
   res.print();
 }
 
 //-----------------------------------------------------------------------------
+void
+output_mesh(const conduit::Node &mesh, const std::string &output)
+{
+  string output_path = prepare_output_dir();
+  string output_file = conduit::utils::join_file_path(output_path, output);
+
+  // remove old images before rendering
+  remove_test_image(output_file);
+
+  conduit::Node extracts;
+  extracts["e1/type"] = "relay";
+
+  extracts["e1/params/path"] = output_file;
+  extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+  conduit::Node actions;
+  // add the extracts
+  conduit::Node &add_extracts = actions.append();
+  add_extracts["action"] = "add_extracts";
+  add_extracts["extracts"] = extracts;
+
+  conduit::Node &execute = actions.append();
+  execute["action"] = "execute";
+
+  //
+  // Run Ascent
+  //
+
+  Ascent ascent;
+
+  Node ascent_opts;
+  ascent_opts["runtime"] = "ascent";
+  ascent.open(ascent_opts);
+  ascent.publish(mesh);
+  ascent.execute(actions);
+  ascent.close();
+}
+
 TEST(ascent_ecf, braid_ecf)
 {
   // the vtkm runtime is currently our only rendering runtime
@@ -747,15 +748,31 @@ TEST(ascent_ecf, braid_ecf)
   // Create an example mesh.
   //
   Node data, verify_info;
-  conduit::blueprint::mesh::examples::braid("hexs",
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            data);
+  conduit::blueprint::mesh::examples::braid("hexs", 20, 20, 20, data);
   // ascent normally adds this but we are doing an end around
   data["state/domain_id"] = 0;
   Node multi_dom;
   blueprint::mesh::to_multi_domain(data, multi_dom);
+
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval eval(&multi_dom);
+
+  conduit::Node res;
+  std::string expr;
+
+  expr = "ecf('braid', 'sum', [axis('x'), axis('y')])";
+  res = eval.evaluate(expr);
+  res.print();
+
+  conduit::Node ecf_mesh = ascent::runtime::expressions::ecf_mesh(res);
+  ecf_mesh["state/cycle"] = 100;
+  ecf_mesh["state/domain_id"] = 0;
+
+  output_mesh(ecf_mesh, "braid_xy_sum");
+
+  ascent::runtime::expressions::paint_ecf(res, multi_dom);
+
+  output_mesh(multi_dom, "braid_xy_sum_painted");
 }
 
 //-----------------------------------------------------------------------------

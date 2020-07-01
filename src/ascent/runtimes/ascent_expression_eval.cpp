@@ -87,8 +87,9 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::Identifier>();
   flow::Workspace::register_filter_type<expressions::History>();
   flow::Workspace::register_filter_type<expressions::BinaryOp>();
-  flow::Workspace::register_filter_type<expressions::IfExpr>();
   flow::Workspace::register_filter_type<expressions::String>();
+  flow::Workspace::register_filter_type<expressions::ExpressionList>();
+  flow::Workspace::register_filter_type<expressions::IfExpr>();
   flow::Workspace::register_filter_type<expressions::ScalarMax>();
   flow::Workspace::register_filter_type<expressions::ScalarMin>();
   flow::Workspace::register_filter_type<expressions::FieldMax>();
@@ -104,6 +105,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::Vector>();
   flow::Workspace::register_filter_type<expressions::Magnitude>();
   flow::Workspace::register_filter_type<expressions::Field>();
+  flow::Workspace::register_filter_type<expressions::Axis>();
   flow::Workspace::register_filter_type<expressions::Histogram>();
   flow::Workspace::register_filter_type<expressions::Ecf>();
   flow::Workspace::register_filter_type<expressions::Entropy>();
@@ -153,8 +155,8 @@ count_params()
           if(seen_opt)
           {
             function.print();
-            ASCENT_ERROR(
-                "Function: optional parameters must be after require params");
+            ASCENT_ERROR("Function: optional parameters must come after "
+                         "required params");
           }
         }
       }
@@ -322,7 +324,8 @@ initialize_functions()
 
   hist_sig["args/reduction_func/type"] = "string";
   hist_sig["args/reduction_func/optional"];
-  hist_sig["args/reduction_func/description"] = "The reduction function to use when \
+  hist_sig["args/reduction_func/description"] =
+      "The reduction function to use when \
   putting values in bins. Available reductions are: \n\n \
   - count (default): number of elements in a bin \n \
   - min: minimum value in a bin \n \
@@ -457,19 +460,30 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
+  conduit::Node &axis_sig = (*functions)["axis"].append();
+  axis_sig["return_type"] = "axis";
+  axis_sig["filter_name"] = "axis";
+  axis_sig["args/name/type"] = "string";
+  // rectilinear binning
+  axis_sig["args/bins/type"] = "list";
+  axis_sig["args/bins/optional"];
+  // uniform binning
+  axis_sig["args/min_val/type"] = "scalar";
+  axis_sig["args/min_val/optional"];
+  axis_sig["args/max_val/type"] = "scalar";
+  axis_sig["args/max_val/optional"];
+  axis_sig["args/num_bins/type"] = "int";
+  axis_sig["args/num_bins/optional"];
+  axis_sig["description"] = "Defines an axis.";
+
+  // -------------------------------------------------------------
+
   conduit::Node &ecf_sig = (*functions)["ecf"].append();
   ecf_sig["return_type"] = "ecf";
   ecf_sig["filter_name"] = "ecf";
-  // we can make a new axis object that accepts x,y,z and specifies min,max,num_bins optionally
   ecf_sig["args/reduction_var/type"] = "string";
-  // TODO varargs of axis
-  // for now it's a single string
-  ecf_sig["args/bin_axes/type"] = "string";
-  // keyword-only arguments
-  ecf_sig["args/bin_func/type"] = "string"; // if not uniform
-  ecf_sig["args/bin_func/optional"];
   ecf_sig["args/reduction_func/type"] = "string";
-  ecf_sig["args/reduction_func/optional"];
+  ecf_sig["args/bin_axes/type"] = "list";
   ecf_sig["description"] = "Not yet implemented.";
 
   // -------------------------------------------------------------
