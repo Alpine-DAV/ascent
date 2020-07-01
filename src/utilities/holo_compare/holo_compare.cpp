@@ -51,6 +51,8 @@
 #include <ascent.hpp>
 #include <ascent_hola.hpp>
 
+#include <conduit_relay.hpp>
+
 #include <fstream>
 #include <vector>
 #include <algorithm>
@@ -95,12 +97,14 @@ common_fields(const conduit::Node &i1,
   return res;
 }
 
-void compare(conduit::Node &info,
+void compare_diff(conduit::Node &info,
              const float *p1, //ho fiels
              const float *p2,
+             float *pdiff,
              const int size)
 {
-  int count = 0;
+  int count_both = 0;
+  int count_either = 0;
   double rms_sum = 0;
   double mae_sum = 0;
   double mre_sum = 0;
@@ -113,6 +117,12 @@ void compare(conduit::Node &info,
     bool lnan = std::isnan(lval);
     bool rnan = std::isnan(rval);
 
+    if (!lnan || !rnan)
+      count_either++;
+
+    pdiff[i] = rval-lval;
+    // Do this before nans test so we propagate nans.
+
     if(lnan || rnan)
     {
       // For now just skip these which
@@ -123,29 +133,84 @@ void compare(conduit::Node &info,
     rms_sum += pow((rval - lval),2.f);
     vmin = std::min(vmin, lval);
     vmax = std::max(vmax, lval);
-    mae_sum += abs(rval-lval);
-    mre_sum += abs(rval-lval) / lval;
-    count++;
+    mae_sum += fabs(rval-lval);
+    mre_sum += fabs(rval-lval) / double(fabs(lval));
+    count_both++;
   }
-  double rms = sqrt(rms_sum/double(count));
-  info["rms"] = rms;
+  double rms = sqrt(rms_sum/double(count_both));
+  info["rms"] = rms;  //L2
   info["nrms"] = rms / (vmax-vmin);
   info["ho_max"] = vmax;
   info["ho_min"] = vmin;
-  info["mae"] = mae_sum / (double(count));
-  info["mre"] = mre_sum / (double(count));
+  info["mae"] = mae_sum / (double(count_both));  //L1
+  info["mre"] = mre_sum / (double(count_both));
+  info["overlap"] = double(count_both)/double(count_either);
+}
+
+
+
+
+void compare(conduit::Node &info,
+             const float *p1, //ho fiels
+             const float *p2,
+             const int size)
+{
+  int count_both = 0;
+  int count_either = 0;
+  double rms_sum = 0;
+  double mae_sum = 0;
+  double mre_sum = 0;
+  float vmin = std::numeric_limits<float>::max();
+  float vmax = std::numeric_limits<float>::min();
+  for(int i = 0; i < size; ++i)
+  {
+    const float lval = p1[i];
+    const float rval = p2[i];
+    bool lnan = std::isnan(lval);
+    bool rnan = std::isnan(rval);
+
+    if (!lnan || !rnan)
+      count_either++;
+
+    if(lnan || rnan)
+    {
+      // For now just skip these which
+      // are misses on the edge of the data
+      // (maybe)
+      continue;
+    }
+    rms_sum += pow((rval - lval),2.f);
+    vmin = std::min(vmin, lval);
+    vmax = std::max(vmax, lval);
+    mae_sum += fabs(rval-lval);
+    mre_sum += fabs(rval-lval) / double(fabs(lval));
+    count_both++;
+  }
+  double rms = sqrt(rms_sum/double(count_both));
+  info["rms"] = rms;  //L2
+  info["nrms"] = rms / (vmax-vmin);
+  info["ho_max"] = vmax;
+  info["ho_min"] = vmin;
+  info["mae"] = mae_sum / (double(count_both));  //L1
+  info["mre"] = mre_sum / (double(count_both));
+  info["overlap"] = double(count_both)/double(count_either);
 }
 
 conduit::Node
 compare_fields(const std::vector<std::string> &names,
                const conduit::Node &i1,
-               const conduit::Node &i2)
+               const conduit::Node &i2,
+               conduit::Node &diff)
 {
   conduit::Node res;
   for(auto field : names)
   {
     const conduit::Node &vals1 = i1["fields/"+field+"/values"];
     const conduit::Node &vals2 = i2["fields/"+field+"/values"];
+
+    diff["fields/"+field+"/association"] = i1["fields/"+field+"/association"];
+    diff["fields/"+field+"/topology"]    = i1["fields/"+field+"/topology"];
+
     const int size1 = vals1.dtype().number_of_elements();
     const int size2 = vals2.dtype().number_of_elements();
     if(size1 != size2)
@@ -154,7 +219,11 @@ compare_fields(const std::vector<std::string> &names,
     }
     const float *p1 = vals1.value();
     const float *p2 = vals2.value();
-    compare(res[field], p1, p2, size1);
+
+    diff["fields/"+field+"/values"].set(conduit::DataType::float32(size1));
+    float *pdiff = diff["fields/"+field+"/values"].value();
+
+    compare_diff(res[field], p1, p2, pdiff, size1);
   }
   return res;
 }
@@ -172,6 +241,7 @@ int main (int argc, char *argv[])
   std::string file2(argv[2]);
 
   conduit::Node hola_opts, data1, data2;
+  conduit::Node data_diff;
 
   hola_opts["root_file"] = file1;
   ascent::hola("relay/blueprint/mesh", hola_opts, data1);
@@ -184,6 +254,7 @@ int main (int argc, char *argv[])
   // so just grab it
   conduit::Node &image1 = data1.child(0);
   conduit::Node &image2 = data2.child(0);
+  conduit::Node &image_diff = data_diff.append();
 
   int width, height;
   bool valid = validate_dims(image1, image2, width, height);
@@ -193,9 +264,19 @@ int main (int argc, char *argv[])
     return 1;
   }
 
+  int cycle = image1["state/cycle"].to_int32();
+
+  image_diff["state/cycle"] = cycle;
+  image_diff["coordsets"] = image1["coordsets"];
+  image_diff["topologies"] = image1["topologies"];
+
   std::vector<std::string> fields = common_fields(image1,image2);
-  conduit::Node info = compare_fields(fields, image1, image2);
+  conduit::Node info = compare_fields(fields, image1, image2, image_diff);
   info.print();
+
+  char cycle_suffix[30];
+  snprintf(cycle_suffix, 30, "%06d", cycle);
+  conduit::relay::io_blueprint::save(data_diff, "holo_diff.cycle_" + std::string(cycle_suffix) + ".blueprint_root_hdf5");
 
   return 0;
 }
