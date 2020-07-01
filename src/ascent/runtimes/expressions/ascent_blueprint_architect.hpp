@@ -133,9 +133,14 @@ conduit::Node quantile(const conduit::Node &cdf,
 // assumes that the field exists
 std::string field_assoc(const conduit::Node &dataset,
                         const std::string &field_name);
+
 // double or float, checks for global consistency
 std::string field_type(const conduit::Node &dataset,
                        const std::string &field_name);
+
+// double or float, checks for global consistency
+std::string coord_type(const conduit::Node &dataset,
+                       const std::string &topo_name);
 
 // topo_types = [points, uniform, rectilinear, curvilinear, unstructured]
 // expects that a topology does exist or else it will return none

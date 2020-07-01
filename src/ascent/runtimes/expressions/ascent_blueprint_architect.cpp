@@ -1475,6 +1475,64 @@ field_topology(const conduit::Node &dataset, const std::string &field_name)
   return topo_name;
 }
 
+// double or float, checks for global consistency
+std::string coord_type(const conduit::Node &dataset,
+                       const std::string &topo_name)
+{
+  // ok, so we  can have a mix of uniform and non-uniform
+  // coords, where non-uniform coords have arrays
+  // if we only have unirform, the double,
+  // if some have arrays, then go with whatever
+  // that is.
+  bool is_float = false;
+  bool has_array = false;
+  bool error = false;
+
+  const std::string topo_path = "topology/" + topo_name;
+  std::string type_name;
+
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path(topo_path))
+    {
+      std::string coord_name = dom[topo_path+"/coordset"].as_string();
+      const conduit::Node &n_coords = dom["coordsets/"+coord_name];
+      const std::string coords_type = n_coords["type"].as_string();
+      if(coords_type != "uniform")
+      {
+        has_array = true;
+
+        if(n_coords["values/x"].dtype().is_float32())
+        {
+          is_float = true;
+        }
+        else if(!n_coords["values/x"].dtype().is_float64())
+        {
+          is_float = false;
+          type_name = n_coords["/values/x"].dtype().name();
+          error = true;
+        }
+      }
+    }
+  }
+
+  error = global_agreement(error);
+
+  if(error)
+  {
+
+    ASCENT_ERROR("Coords array from topo '"<<topo_name
+                 <<"' is neither float or double."
+                 <<" type is '"<<type_name<<"'."
+                 <<" Contact someone.");
+  }
+
+  bool my_vote = has_array && is_float;
+  bool float_vote = global_someone_agrees(my_vote);
+
+  return float_vote ? "float" : "double";
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

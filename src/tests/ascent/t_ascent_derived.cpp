@@ -79,7 +79,8 @@ TEST(ascent_expressions, basic_expressions)
     //
     Node data, verify_info;
     //conduit::blueprint::mesh::examples::braid("hexs",
-    conduit::blueprint::mesh::examples::braid("uniform",
+    conduit::blueprint::mesh::examples::braid("rectilinear",
+    //conduit::blueprint::mesh::examples::braid("uniform",
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,

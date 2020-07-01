@@ -80,6 +80,140 @@ namespace expressions
 namespace detail
 {
 
+void pack_mesh(const conduit::Node &dom,
+               const int invoke_size,
+               const std::string &topo_name,
+               occa::device &device,
+               occa::kernel &kernel,
+               std::vector<occa::memory> &mem)
+{
+  const conduit::Node &n_topo = dom["topologies/"+topo_name];
+  const std::string coords_name = n_topo["coordset"].as_string();
+  const std::string topo_type = n_topo["type"].as_string();
+  const conduit::Node &n_coords = dom["coordsets/"+coords_name];
+
+  if(topo_type == "uniform")
+  {
+    int dim_x = n_coords["dims/i"].to_int32();
+    int dim_y = n_coords["dims/j"].to_int32();
+
+    kernel.pushArg(dim_x);
+    kernel.pushArg(dim_y);
+
+    if(n_coords.has_path("dims/k"))
+    {
+      int dim_z = n_coords["dims/k"].to_int32();
+      kernel.pushArg(dim_z);
+    }
+
+    const conduit::Node &n_spacing = n_coords["spacing"];
+    double spacing[3] = {1., 1., 1.};
+    double dx =  n_spacing["dx"].to_float64();
+    double dy =  n_spacing["dy"].to_float64();
+    kernel.pushArg(dx);
+    kernel.pushArg(dy);
+
+    if(n_spacing.has_path("dz"))
+    {
+      double dz = n_spacing["dz"].to_float64();
+      kernel.pushArg(dz);
+    }
+
+    const conduit::Node &n_origin = n_coords["origin"];
+
+    double ox = n_origin["x"].to_float64();
+    double oy = n_origin["y"].to_float64();
+    kernel.pushArg(ox);
+    kernel.pushArg(oy);
+
+    if(n_origin.has_child("z"))
+    {
+      double oz = n_origin["z"].to_float64();
+      kernel.pushArg(oz);
+    }
+  }
+  else if(topo_type == "rectilinear")
+  {
+    int dim_x = n_coords["values/x"].dtype().number_of_elements();
+    int dim_y = n_coords["values/y"].dtype().number_of_elements();
+    int dim_z = 0;
+    kernel.pushArg(dim_x);
+    kernel.pushArg(dim_y);
+
+    if(n_coords.has_path("values/z"))
+    {
+      dim_z = n_coords["values/z"].dtype().number_of_elements();
+      kernel.pushArg(dim_z);
+    }
+
+    bool is_double = n_coords["values/x"].dtype().is_float64();
+    if(is_double)
+    {
+      occa::memory ox_vals;
+      occa::memory oy_vals;
+      // zero copy occa::wrapMemory(???
+      const double *x_vals = n_coords["values/x"].as_float64_ptr();
+      ox_vals = device.malloc(dim_x * sizeof(double), x_vals);
+      const double *y_vals = n_coords["values/y"].as_float64_ptr();
+      oy_vals = device.malloc(dim_y * sizeof(double), y_vals);
+
+      kernel.pushArg(ox_vals);
+      kernel.pushArg(oy_vals);
+      mem.push_back(ox_vals);
+      mem.push_back(oy_vals);
+
+      if(n_coords.has_path("values/z"))
+      {
+        occa::memory oz_vals;
+        const double *z_vals = n_coords["values/z"].as_float64_ptr();
+        oz_vals = device.malloc(dim_z* sizeof(double), z_vals);
+        kernel.pushArg(oz_vals);
+        mem.push_back(oz_vals);
+      }
+    }
+
+    //conduit::Node n_tmp;
+    //n_tmp.set_external(DataType::float64(num_vals),ptr);
+    //n_vals.to_float64_array(n_tmp);
+
+  }
+}
+
+void pack_fields(const conduit::Node &dom,
+                 const std::map<std::string,std::string> &var_types,
+                 const int invoke_size,
+                 occa::device &device,
+                 std::vector<occa::memory> &field_memory)
+{
+  // extract the field args
+  for(auto vt : var_types)
+  {
+    const std::string &var_name = vt.first;
+    const std::string &type = vt.second;
+    const conduit::Node &field = dom["fields/"+var_name];
+    const int size = field["values"].dtype().number_of_elements();
+    if(invoke_size != size)
+    {
+      ASCENT_ERROR("field sizes do not match "<<invoke_size<<" "<<size);
+    }
+    occa::memory o_vals;
+    // we only have two types currently
+    // zero copy occa::wrapMemory(???
+    if(type == "double")
+    {
+      const double *vals = field["values"].as_float64_ptr();
+      o_vals = device.malloc(size * sizeof(double), vals);
+    }
+    else
+    {
+      const float *vals = field["values"].as_float32_ptr();
+      o_vals = device.malloc(size * sizeof(float), vals);
+    }
+    std::cout<<"Mode "<<o_vals.mode()<<"\n";
+
+    field_memory.push_back(o_vals);
+  }
+}
 //void override_print(const char *str)
 //{
 //  std::cout<<"HERE "<<str<<"\n";
@@ -102,6 +236,7 @@ void mesh_params(const conduit::Node &mesh_meta,
 {
   const std::string mesh_type = mesh_meta["type"].as_string();
   const int dims = mesh_meta["spatial_dims"].to_int32();
+  const std::string data_type = mesh_meta["data_type"].as_string();
 
   if(mesh_type == "uniform")
   {
@@ -135,52 +270,138 @@ void mesh_params(const conduit::Node &mesh_meta,
   }
   else if (mesh_type == "rectilinear" || mesh_type == "structured")
   {
-    constexpr char structured3d[] =
-      "                 const int point_dims_x,\n"
-      "                 const int point_dims_y,\n"
-      "                 const int point_dims_z,\n"
-      "                 const double * coords_x,\n"
-      "                 const double * coords_y,\n"
-      "                 const double * coords_z,\n";
-    constexpr char structured2d[] =
-      "                 const int point_dims_x,\n"
-      "                 const int point_dims_y,\n"
-      "                 const double * coords_x,\n"
-      "                 const double * coords_y,\n";
-    if(dims == 3)
+    if(data_type == "double")
     {
-      ss<<structured3d;
+      constexpr char structured3d[] =
+        "                 const int point_dims_x,\n"
+        "                 const int point_dims_y,\n"
+        "                 const int point_dims_z,\n"
+        "                 const double * coords_x,\n"
+        "                 const double * coords_y,\n"
+        "                 const double * coords_z,\n";
+      constexpr char structured2d[] =
+        "                 const int point_dims_x,\n"
+        "                 const int point_dims_y,\n"
+        "                 const double * coords_x,\n"
+        "                 const double * coords_y,\n";
+      if(dims == 3)
+      {
+        ss<<structured3d;
+      }
+      else
+      {
+        ss<<structured2d;
+      }
     }
     else
     {
-      ss<<structured2d;
+      constexpr char structured3d[] =
+        "                 const int point_dims_x,\n"
+        "                 const int point_dims_y,\n"
+        "                 const int point_dims_z,\n"
+        "                 const float * coords_x,\n"
+        "                 const float * coords_y,\n"
+        "                 const float * coords_z,\n";
+      constexpr char structured2d[] =
+        "                 const int point_dims_x,\n"
+        "                 const int point_dims_y,\n"
+        "                 const float * coords_x,\n"
+        "                 const float * coords_y,\n";
+      if(dims == 3)
+      {
+        ss<<structured3d;
+      }
+      else
+      {
+        ss<<structured2d;
+      }
     }
   }
   else if (mesh_type == "unstructured")
   {
-    constexpr char unstructured3d[] =
-      "                 const int size_x,\n"
-      "                 const int size_y,\n"
-      "                 const int size_z,\n"
-      "                 const double * coords_x,\n"
-      "                 const double * coords_y,\n"
-      "                 const double * coords_z,\n"
-      "                 const int * cell_conn,\n"
-      "                 const int cell_shape,\n";
-    constexpr char unstructured2d[] =
-      "                 const int size_x,\n"
-      "                 const int size_y,\n"
-      "                 const double * coords_x,\n"
-      "                 const double * coords_y,\n"
-      "                 const int * cell_conn,\n"
-      "                 const int cell_shape,\n";
-    if(dims == 3)
+    if(data_type == "double")
     {
-      ss<<unstructured3d;
+      constexpr char unstructured3d[] =
+        "                 const int size_x,\n"
+        "                 const int size_y,\n"
+        "                 const int size_z,\n"
+        "                 const double * coords_x,\n"
+        "                 const double * coords_y,\n"
+        "                 const double * coords_z,\n"
+        "                 const int * cell_conn,\n"
+        "                 const int cell_shape,\n";
+      constexpr char unstructured2d[] =
+        "                 const int size_x,\n"
+        "                 const int size_y,\n"
+        "                 const double * coords_x,\n"
+        "                 const double * coords_y,\n"
+        "                 const int * cell_conn,\n"
+        "                 const int cell_shape,\n";
+      if(dims == 3)
+      {
+        ss<<unstructured3d;
+      }
+      else
+      {
+        ss<<unstructured2d;
+      }
     }
     else
     {
-      ss<<unstructured2d;
+      if(data_type == "double")
+      {
+        constexpr char unstructured3d[] =
+          "                 const int size_x,\n"
+          "                 const int size_y,\n"
+          "                 const int size_z,\n"
+          "                 const double * coords_x,\n"
+          "                 const double * coords_y,\n"
+          "                 const double * coords_z,\n"
+          "                 const int * cell_conn,\n"
+          "                 const int cell_shape,\n";
+        constexpr char unstructured2d[] =
+          "                 const int size_x,\n"
+          "                 const int size_y,\n"
+          "                 const double * coords_x,\n"
+          "                 const double * coords_y,\n"
+          "                 const int * cell_conn,\n"
+          "                 const int cell_shape,\n";
+        if(dims == 3)
+        {
+          ss<<unstructured3d;
+        }
+        else
+        {
+          ss<<unstructured2d;
+        }
+      }
+      else
+      {
+        constexpr char unstructured3d[] =
+          "                 const int size_x,\n"
+          "                 const int size_y,\n"
+          "                 const int size_z,\n"
+          "                 const float * coords_x,\n"
+          "                 const float * coords_y,\n"
+          "                 const float * coords_z,\n"
+          "                 const int * cell_conn,\n"
+          "                 const int cell_shape,\n";
+        constexpr char unstructured2d[] =
+          "                 const int size_x,\n"
+          "                 const int size_y,\n"
+          "                 const float * coords_x,\n"
+          "                 const float * coords_y,\n"
+          "                 const int * cell_conn,\n"
+          "                 const int cell_shape,\n";
+        if(dims == 3)
+        {
+          ss<<unstructured3d;
+        }
+        else
+        {
+          ss<<unstructured2d;
+        }
+      }
     }
   }
 }
@@ -192,14 +413,48 @@ void mesh_function(const std::string &func,
   const std::string mesh_type = mesh_meta["type"].as_string();
   const int dims = mesh_meta["spatial_dims"].to_int32();
   // the id of the cell is the variable 'n'
-  if(mesh_type == "uniform")
+
+  if(func == "volume")
   {
-    ss << "        double volume;\n";
-    ss << "        volume = spacing_x * spacing_y * spacing_z;\n";
+    if(mesh_type == "uniform")
+    {
+      ss << "        double volume;\n";
+      ss << "        volume = spacing_x * spacing_y * spacing_z;\n";
+    }
+    else if(mesh_type == "rectilinear")
+    {
+      mesh_function("cell_idx", mesh_meta, ss);
+      ss << "        double volume;\n";
+      //ss <<"printf(\"idx %d %d %d\\n\", cell_idx[0], cell_idx[1], cell_idx[2]);\n";
+      ss << "        double dx = coords_x[cell_idx[0]+1] - coords_x[cell_idx[0]];\n";
+      ss << "        double dy = coords_y[cell_idx[1]+1] - coords_y[cell_idx[1]];\n";
+      ss << "        double dz = coords_z[cell_idx[2]+1] - coords_z[cell_idx[2]];\n";
+      ss << "        volume = dx * dy * dz;\n";
+    }
+    else
+    {
+      ASCENT_ERROR("not implemented");
+    }
+  }
+  else if(func == "cell_idx")
+  {
+    if(dims == 2)
+    {
+      ss << "        int cell_idx[2];\n";
+      ss << "        cell_idx[0] = n \% (point_dims_x - 1);\n";
+      ss << "        cell_idx[1] = n / (point_dims_x - 1);\n";
+    }
+    else
+    {
+      ss << "        int cell_idx[3];\n";
+      ss << "        cell_idx[0] = n % (point_dims_x - 1);\n";
+      ss << "        cell_idx[1] = (n / (point_dims_x - 1)) % (point_dims_y - 1);\n";
+      ss << "        cell_idx[2] = n / ((point_dims_x - 1) * (point_dims_y - 1));\n";
+    }
   }
   else
   {
-    ASCENT_ERROR("not implemented");
+    ASCENT_ERROR("Mesh function not implemented '"<<func<<"'");
   }
 }
 
@@ -452,7 +707,13 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
     ASCENT_ERROR("Expression compilation failed with an unknown error");
   }
 
-  std::string assoc = meta["assoc"].as_string();
+  const std::string assoc = meta["assoc"].as_string();
+  const std::string topology = meta["topology"].as_string();
+
+  if(topology == "")
+  {
+    ASCENT_ERROR("OMG");
+  }
 
   for(int i = 0; i < num_domains; ++i)
   {
@@ -461,38 +722,13 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
 
     // TODO: we need to skip domains that don't have what we need
 
-    // these are reference counted
-    std::vector<occa::memory> field_memory;
     conduit::Node &dom = dataset.child(i);
-
+    if(!dom.has_path("topologies/"+topology))
+    {
+      continue;
+    }
     kernel.clearArgs();
 
-    // we need the topo to get the invoke size
-    std::string topology;
-    if(info.has_path("field_vars"))
-    {
-      for(auto vt : var_types)
-      {
-        const std::string &var_name = vt.first;
-        const std::string &type = vt.second;
-        const conduit::Node &field = dom["fields/"+var_name];
-        topology = field["topology"].as_string();
-      }
-    }
-
-    if(topology == "")
-    {
-      // there were no field, so we don't know the topo
-      // there has to be at least one
-      if(info.has_path("mesh_vars"))
-      {
-        topology = info["mesh_vars"].child(0).as_string();
-      }
-    }
-    if(topology == "")
-    {
-      ASCENT_ERROR("OMG");
-    }
 
     int invoke_size;
     if(assoc == "element")
@@ -505,46 +741,16 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
     }
 
 
+    // these are reference counted
+    std::vector<occa::memory> field_memory;
     if(info.has_path("field_vars"))
     {
-      //std::string var = info["field_vars"].child(0).as_string();
-      //const conduit::Node &field = dom["fields/"+var];
-      //const int size = field["values"].dtype().number_of_elements();
+      detail::pack_fields(dom, var_types, invoke_size, device, field_memory);
+    }
 
-
-      // extract the field args
-      for(auto vt : var_types)
-      {
-        const std::string &var_name = vt.first;
-        const std::string &type = vt.second;
-        const conduit::Node &field = dom["fields/"+var_name];
-        const int size = field["values"].dtype().number_of_elements();
-        topology = field["topology"].as_string();
-        if(invoke_size != size)
-        {
-          ASCENT_ERROR("field sizes do not match "<<invoke_size<<" "<<size);
-        }
-        occa::memory o_vals;
-        // we only have two types currently
-        // zero copy occa::wrapMemory(???
-        if(type == "double")
-        {
-          const double *vals = field["values"].as_float64_ptr();
-          o_vals = device.malloc(size * sizeof(double), vals);
-        }
-        else
-        {
-          const float *vals = field["values"].as_float32_ptr();
-          o_vals = device.malloc(size * sizeof(float), vals);
-        }
-        std::cout<<"Mode "<<o_vals.mode()<<"\n";
-
-        field_memory.push_back(o_vals);
-      }
-    } // is field_vars
-
-    // pass array agrs to the kernel
+    // pass invocation size
     kernel.pushArg(invoke_size);
+    // pass the field arrays
     for(auto mem : field_memory)
     {
       kernel.pushArg(mem);
@@ -564,61 +770,10 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
       }
     }
 
+    std::vector<occa::memory> mesh_memory;
     if(info.has_path("mesh_vars"))
     {
-      // right now we only can have one
-      const std::string topo_name = info["mesh_vars"].child(0).as_string();
-      const conduit::Node &n_topo = dom["topologies/"+topo_name];
-      const std::string coords_name = n_topo["coordset"].as_string();
-      const std::string topo_type = n_topo["type"].as_string();
-      const conduit::Node &n_coords = dom["coordsets/"+coords_name];
-      if(topo_type == "uniform")
-      {
-        bool is_2d = true;
-        int dim_x = n_coords["dims/i"].to_int32();
-        int dim_y = n_coords["dims/j"].to_int32();
-        int dim_z = 1;
-
-
-        if(n_coords.has_path("dims/k"))
-        {
-          is_2d = false;
-          dim_z = n_coords["dims/k"].to_int32();
-        }
-
-        kernel.pushArg(dim_x);
-        kernel.pushArg(dim_y);
-        kernel.pushArg(dim_z);
-
-        const conduit::Node &n_spacing = n_coords["spacing"];
-        double spacing[3] = {1., 1., 1.};
-        spacing[0] = n_spacing["dx"].to_float64();
-        spacing[1] = n_spacing["dy"].to_float64();
-
-        if(n_spacing.has_path("dz"))
-        {
-          spacing[2] = n_spacing["dz"].to_float64();
-        }
-        std::cout<<"spacing "<<spacing[0] <<" "<<spacing[1]<<" "<<spacing[2]<<"\n";
-        kernel.pushArg(spacing[0]);
-        kernel.pushArg(spacing[1]);
-        kernel.pushArg(spacing[2]);
-
-        double origin[3] = {0., 0., 0.};
-        const conduit::Node &n_origin = n_coords["origin"];
-
-        origin[0] = n_origin["x"].to_float64();
-        origin[1] = n_origin["y"].to_float64();
-
-        if(n_origin.has_child("z"))
-        {
-          origin[2] = n_origin["z"].to_float64();
-        }
-
-        kernel.pushArg(origin[0]);
-        kernel.pushArg(origin[1]);
-        kernel.pushArg(origin[2]);
-      }
+      detail::pack_mesh(dom, invoke_size, topology, device, kernel, mesh_memory);
     }
 
     std::cout<<"INOKE SIZE "<<invoke_size<<"\n";
@@ -645,6 +800,8 @@ validate(const conduit::Node &dataset,
          conduit::Node &meta)
 {
   std::string assoc;
+  std::string topo_name;
+
   bool has_variable = false;
   if(info.has_path("field_vars"))
   {
@@ -668,10 +825,11 @@ validate(const conduit::Node &dataset,
 
     std::string mesh_type = detail::check_meshes(dataset,info["mesh_vars"]);
     // we only allow one topology
-    std::string topo_name = info["mesh_vars"].child(0).as_string();
+    topo_name = info["mesh_vars"].child(0).as_string();
     meta["mesh/topology"] = topo_name;
     meta["mesh/type"] = mesh_type;
     meta["mesh/spatial_dims"] = spatial_dims(dataset, topo_name);
+    meta["mesh/data_type"] = coord_type(dataset, topo_name);
 
 
     if(info.has_path("mesh_functions"))
@@ -688,7 +846,18 @@ validate(const conduit::Node &dataset,
   {
     ASCENT_ERROR("There has to be at least one mesh/variable in the expression");
   }
+
   meta["assoc"] = assoc;
+  // we need the topology so we can
+  //    1) check to see if we execute on a domain
+  //    2) to determine the kernel lauch size
+  if(topo_name == "")
+  {
+    // if topo name isn't set, then we have at least one field
+    const std::string field = info["field_vars"].child(0).as_string();
+    topo_name = field_topology(dataset, field);
+  }
+  meta["topology"] = topo_name;
 }
 
 void parameters(const conduit::Node &dataset,
