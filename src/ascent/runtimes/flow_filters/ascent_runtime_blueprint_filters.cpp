@@ -65,9 +65,12 @@
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
 #include <ascent_config.h>
+#include <ascent_mpi_utils.hpp>
 #include <runtimes/ascent_data_object.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
+
+#include <limits>
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
@@ -278,7 +281,7 @@ void f_cokurt_vecs_cublas_wrapper(int nRows, int nCols, const double *A, double 
     //              0 1 2 .. n-1
     // A = pressure
     //      temp
-    printf("Entered C wrapper from Fortran side\n");
+    //
 
     //Sanity checking
     //for(int i=0; i<nRows*nRows*nRows*nRows; i++) {
@@ -455,12 +458,21 @@ Learn::execute()
     {
         ASCENT_ERROR("blueprint_learn input must be a DataObject");
     }
-    std::cout<<"******************* LEARN *******************\n";
+    if(mpi_rank() == 0)
+    {
+      std::cout<<"******************* LEARN *******************\n";
+    }
     //std::string protocol = params()["protocol"].as_string();
 
     Node v_info;
     DataObject *d_input = input<DataObject>(0);
     std::shared_ptr<conduit::Node> n_input = d_input->as_low_order_bp();
+
+    double threshold = 0.7;
+    if(params().has_path("threshold"))
+    {
+      threshold = params()["threshold"].to_float64();
+    }
 
     std::vector<std::string> field_selection;
     if(params().has_path("fields"))
@@ -514,6 +526,7 @@ Learn::execute()
         }
       }
     }
+
 
 #ifdef ASCENT_VTKM_USE_CUDA
     const int num_domains = n_input->number_of_children();
@@ -590,13 +603,18 @@ Learn::execute()
     {
       for(int f = 0; f < num_fields; f++)
       {
-        std::cout<<field_selection[f]<<" ave "<<average_fmms[f] <<"\n";;
+        std::cout<<field_selection[f]<<" ave "<<average_fmms[f] <<"\n";
       }
     }
 
     //Compute the spatial anomaly metric for each domain. If metric is above threshold = 0.7
     //the domain is anomalous, so paint all its cells 'red'
     double *spatial_metric = new double[num_domains];
+
+    bool triggered = false;
+    double min_metric = std::numeric_limits<double>::max();
+    double max_metric = std::numeric_limits<double>::lowest();
+
     for(int i = 0; i < num_domains; ++i)
     {
       spatial_metric[i] = 0.0;
@@ -608,12 +626,40 @@ Learn::execute()
         spatial_metric[i] += ( std::sqrt(domain_fmms[f]) - std::sqrt(average_fmms[f]) ) *
                              ( std::sqrt(domain_fmms[f]) - std::sqrt(average_fmms[f]) );
       }
-      spatial_metric[i] = std::sqrt(spatial_metric[i] * 0.5);
 
-      if(spatial_metric[i] > 0.7) //This threshold is user specified, and a "hyper parameter" (fudge factor)
+      spatial_metric[i] = std::sqrt(spatial_metric[i] * 0.5);
+      min_metric = std::min(min_metric, spatial_metric[i]);
+      max_metric = std::max(max_metric, spatial_metric[i]);
+
+      //This threshold is user specified, and a "hyper parameter" (fudge factor)
+      if(spatial_metric[i] > threshold)
       {
         //TO DO: Take whatever actions, e.g. painting all cells of this domain
+        triggered = true;
       }
+    }
+
+
+    triggered = global_someone_agrees(triggered);
+
+    double global_min, global_max;
+    global_min = min_metric;
+    global_max = max_metric;
+
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Reduce(&min_metric, &global_min, 1, MPI_DOUBLE, MPI_MIN, 0,mpi_comm);
+    MPI_Reduce(&max_metric, &global_max, 1, MPI_DOUBLE, MPI_MAX, 0,mpi_comm);
+#endif
+    if(rank == 0)
+    {
+      std::cout<<"Spatial metric min "<<global_min<<"\n";
+      std::cout<<"Spatial metric max "<<global_max<<"\n";
+      std::cout<<"Spatial threshold "<<threshold<<"\n";
+    }
+
+    if(rank == 0 && triggered)
+    {
+      std::cout<<"FIRE\n";
     }
 
     delete[] kVecs;
