@@ -1649,15 +1649,27 @@ Axis::execute()
   // rectilinear binning
   const conduit::Node *n_bins_list = input<Node>("bins");
 
+  if(!graph().workspace().registry().has_entry("dataset"))
+  {
+    ASCENT_ERROR("Field: Missing dataset");
+  }
+  const conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
+
+  if(!is_scalar_field(*dataset, name) && !is_xyz(name))
+  {
+    ASCENT_ERROR("Axis: Axes must be scalar fields or x/y/z. Dataset does not "
+                 "contain scalar field '"
+                 << name << "'.");
+  }
   conduit::Node *output = new conduit::Node();
   (*output)["value/" + name];
   (*output)["type"] = "axis";
 
-  // verify rectilinear bins and create an array of double instead of conduit
-  // array
   conduit::Node n_bins;
   if(!n_bins_list->dtype().is_empty())
   {
+    // verify rectilinear bins and create a bins array
     // ensure none of the uniform binning arguments are passed
     if(!n_min->dtype().is_empty() || !n_max->dtype().is_empty() ||
        !n_num_bins->dtype().is_empty())
@@ -1677,7 +1689,7 @@ Axis::execute()
       {
         ASCENT_ERROR("Axis: bins must be a list of scalars");
       }
-      bins[i] = bin["value"].to_double();
+      bins[i] = bin["value"].to_float64();
     }
     n_bins.set(bins, bins_len);
     (*output)["value/" + name + "/bins"] = n_bins;
@@ -1695,7 +1707,8 @@ Axis::execute()
     }
     if(!n_num_bins->dtype().is_empty())
     {
-      (*output)["value/" + name + "/num_bins"] = (*n_num_bins)["value"].to_float64();
+      (*output)["value/" + name + "/num_bins"] =
+          (*n_num_bins)["value"].to_float64();
     }
   }
   set_output<conduit::Node>(output);
@@ -1722,7 +1735,6 @@ Histogram::declare_interface(Node &i)
   i["port_names"].append() = "num_bins";
   i["port_names"].append() = "min_val";
   i["port_names"].append() = "max_val";
-  i["port_names"].append() = "reduction_func";
   i["output_port"] = "true";
 }
 
@@ -1751,7 +1763,7 @@ Histogram::execute()
       graph().workspace().registry().fetch<Node>("dataset");
 
   // TODO add test for passing a non-scalar field
-  if((*arg1)["type"].as_string() != "field" && is_scalar_field(*dataset, field))
+  if(!is_scalar_field(*dataset, field))
   {
     ASCENT_ERROR("Histogram: arg1 must be a scalar field");
   }
@@ -1823,7 +1835,7 @@ Ecf::declare_interface(Node &i)
 {
   i["type_name"] = "ecf";
   i["port_names"].append() = "reduction_var";
-  i["port_names"].append() = "reduction_func";
+  i["port_names"].append() = "reduction_op";
   i["port_names"].append() = "bin_axes";
   i["output_port"] = "true";
 }
@@ -1843,15 +1855,11 @@ Ecf::execute()
 {
   const std::string reduction_var =
       (*input<Node>("reduction_var"))["value"].as_string();
-  const std::string reduction_func =
-      (*input<Node>("reduction_func"))["value"].as_string();
+  const std::string reduction_op =
+      (*input<Node>("reduction_op"))["value"].as_string();
   conduit::Node *n_axes_list = input<Node>("bin_axes");
 
-  // TODO these this check is repeated from Field
-  if(!graph().workspace().registry().has_entry("dataset"))
-  {
-    ASCENT_ERROR("Field: Missing dataset");
-  }
+  // dataset is available because we check in Axis
   const conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
 
@@ -1868,9 +1876,8 @@ Ecf::execute()
     n_bin_axes.update(axis["value"]);
   }
 
-  // verify reduction_func
-  if(!has_field(*dataset, reduction_var) && reduction_var != "x" &&
-     reduction_var != "y" && reduction_var != "z")
+  // verify reduction_var
+  if(!has_field(*dataset, reduction_var) && !is_xyz(reduction_var))
   {
     std::vector<std::string> names = dataset->child(0)["fields"].child_names();
     std::stringstream ss;
@@ -1885,14 +1892,17 @@ Ecf::execute()
                  << " known = " << ss.str());
   }
 
-  // verify reduction field
-  if(reduction_func != "sum")
+  // verify reduction_op
+  if(reduction_op != "cnt" && reduction_op != "sum" && reduction_op != "min" &&
+     reduction_op != "max" && reduction_op != "avg" && reduction_op != "pdf" &&
+     reduction_op != "std" && reduction_op != "var" && reduction_op != "rms")
   {
-    ASCENT_ERROR("Known reduction functions are: sum");
+    ASCENT_ERROR("Known reduction operators are: cnt, sum, min, max, avg, pdf, "
+                 "std, var, rms");
   }
 
   const conduit::Node &n_ecf =
-      ecf(*dataset, n_bin_axes, reduction_var, reduction_func);
+      ecf(*dataset, n_bin_axes, reduction_var, reduction_op);
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "ecf";
@@ -1900,8 +1910,8 @@ Ecf::execute()
   (*output)["attrs/value/type"] = "array";
   (*output)["attrs/reduction_var/value"] = reduction_var;
   (*output)["attrs/reduction_var/type"] = "string";
-  (*output)["attrs/reduction_func/value"] = reduction_func;
-  (*output)["attrs/reduction_func/type"] = "string";
+  (*output)["attrs/reduction_op/value"] = reduction_op;
+  (*output)["attrs/reduction_op/type"] = "string";
   (*output)["attrs/bin_axes/value"] = n_ecf["bin_axes"];
   (*output)["attrs/bin_axes/type"] = "list";
   (*output)["attrs/association/value"] = n_ecf["association"];

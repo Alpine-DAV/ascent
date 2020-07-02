@@ -634,6 +634,8 @@ is_scalar_field(const conduit::Node &dataset, const std::string &field_name)
       }
     }
   }
+  // check to see if the field exists in any rank
+  is_scalar = detail::at_least_one(is_scalar);
   return is_scalar;
 }
 
@@ -652,6 +654,13 @@ has_field(const conduit::Node &dataset, const std::string &field_name)
   // check to see if the field exists in any rank
   has_field = detail::at_least_one(has_field);
   return has_field;
+}
+
+// TODO If someone names their fields x,y,z things will go wrong
+bool
+is_xyz(const std::string &axis_name)
+{
+  return axis_name == "x" || axis_name == "y" || axis_name == "z";
 }
 
 conduit::Node
@@ -770,20 +779,11 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
   return res;
 }
 
-// TODO If someone names their fields x,y,z things will go wrong
-bool
-is_xyz(const std::string &axis_name)
-{
-  return axis_name == "x" || axis_name == "y" || axis_name == "z";
-}
-
 // get the association and topology and ensure they are the same
 conduit::Node
 global_topo_and_assoc(const conduit::Node &dataset,
                       const std::vector<std::string> var_names)
 {
-  // for now we assume fields are available in all domains on all processes
-
   std::string assoc_str;
   std::string topo_name;
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
@@ -791,7 +791,7 @@ global_topo_and_assoc(const conduit::Node &dataset,
     const conduit::Node &dom = dataset.child(dom_index);
     for(const std::string &var_name : var_names)
     {
-      if(dom.has_path("fields/" + var_name) && !is_xyz(var_name))
+      if(dom.has_path("fields/" + var_name))
       {
         const std::string cur_assoc_str =
             dom["fields/" + var_name + "/association"].as_string();
@@ -859,7 +859,38 @@ global_topo_and_assoc(const conduit::Node &dataset,
   return res;
 }
 
-// TODO handle rectilinear
+// returns -1 if value lies outside the range
+int
+get_bin_index(const conduit::float64 value, const conduit::Node &axis)
+{
+  if(axis.has_path("bins"))
+  {
+    // rectilinear
+    const conduit::float64 *bins_begin = axis["bins"].value();
+    const conduit::float64 *bins_end =
+        bins_begin + axis["bins"].dtype().number_of_elements();
+    // first element greater than value
+    const conduit::float64 *res = std::upper_bound(bins_begin, bins_end, value);
+    if(res <= bins_begin || res >= bins_end)
+    {
+      return -1;
+    }
+    return (res - 1) - bins_begin;
+  }
+  // uniform
+  const double inv_delta =
+      axis["num_bins"].to_float64() /
+      (axis["max_val"].to_float64() - axis["min_val"].to_float64());
+  const int bin_index =
+      static_cast<int>((value - axis["min_val"].to_float64()) * inv_delta);
+  if(bin_index < 0 && bin_index >= axis["num_bins"].as_int32())
+  {
+    return -1;
+  }
+  return bin_index;
+}
+
+// TODO for now we assume fields are available in all domains on all processes
 conduit::Node
 populate_homes(const conduit::Node &dom,
                const conduit::Node &bin_axes,
@@ -907,9 +938,11 @@ populate_homes(const conduit::Node &dom,
   }
   */
 
-  // calculate the size of homes
-  // tries to find some field on the topology with the right association and
+  // Calculate the size of homes
+  // Tries to find some field on the topology with the right association and
   // just gets the size of that
+  // TODO this won't work if the topo has no fields (e.g. when we're painting
+  // onto the mesh)
   conduit::index_t homes_size = 0;
   int num_fields = dom["fields"].number_of_children();
   for(int i = 0; i < num_fields; ++i)
@@ -952,66 +985,70 @@ populate_homes(const conduit::Node &dom,
   // homes maps each datapoint (or cell) to an index in bins
   int *homes = new int[homes_size]();
 
-  // TODO figure out if I should clamp bin_index or ignore data outside the
-  // range
-  // TODO figure out if the last bin should be inclusive or if i should keep
-  // adding 1 to max
   int stride = 1;
   for(int axis_index = 0; axis_index < num_axes; ++axis_index)
   {
     const conduit::Node &axis = bin_axes.child(axis_index);
     const std::string axis_name = axis.name();
-    const double inv_delta =
-        axis["num_bins"].to_float64() /
-        (axis["max_val"].to_float64() - axis["min_val"].to_float64());
     if(dom.has_path("fields/" + axis_name))
     {
       std::string values_path = "fields/" + axis_name + "/values";
       if(dom[values_path].dtype().is_float32())
       {
-        conduit::float32_array values = dom[values_path].value();
+        const conduit::float32_array values = dom[values_path].value();
         for(int i = 0; i < values.number_of_elements(); ++i)
         {
-          int bin_index = static_cast<int>(
-              (values[i] - axis["min_val"].to_float64()) * inv_delta);
-          homes[i] += bin_index * stride;
+          const int bin_index = get_bin_index(values[i], axis);
+          if(bin_index != -1)
+          {
+            homes[i] += bin_index * stride;
+          }
+          else
+          {
+            homes[i] = -1;
+          }
         }
       }
       else
       {
-        conduit::float64_array values = dom[values_path].value();
+        const conduit::float64_array values = dom[values_path].value();
         for(int i = 0; i < values.number_of_elements(); ++i)
         {
-          int bin_index = static_cast<int>(
-              (values[i] - axis["min_val"].to_float64()) * inv_delta);
-          homes[i] += bin_index * stride;
+          const int bin_index = get_bin_index(values[i], axis);
+          if(bin_index != -1)
+          {
+            homes[i] += bin_index * stride;
+          }
+          else
+          {
+            homes[i] = -1;
+          }
         }
       }
     }
     else if(is_xyz(axis_name))
     {
       int coord = axis_name[0] - 'x';
-      const double *loc;
-      if(assoc_str == "vertex")
+      for(int i = 0; i < homes_size; ++i)
       {
-        for(int i = 0; i < homes_size; ++i)
+        conduit::Node n_loc;
+        if(assoc_str == "vertex")
         {
-          const conduit::Node n_loc = vert_location(dom, i, topo_name);
-          loc = n_loc.value();
-          int bin_index = static_cast<int>(
-              (loc[coord] - axis["min_val"].to_float64()) * inv_delta);
+          n_loc = vert_location(dom, i, topo_name);
+        }
+        else if(assoc_str == "element")
+        {
+          n_loc = element_location(dom, i, topo_name);
+        }
+        const double *loc = n_loc.value();
+        const int bin_index = get_bin_index(loc[coord], axis);
+        if(bin_index != -1)
+        {
           homes[i] += bin_index * stride;
         }
-      }
-      else if(assoc_str == "element")
-      {
-        for(int i = 0; i < homes_size; ++i)
+        else
         {
-          const conduit::Node n_loc = element_location(dom, i, topo_name);
-          loc = n_loc.value();
-          int bin_index = static_cast<int>(
-              (loc[coord] - axis["min_val"].to_float64()) * inv_delta);
-          homes[i] += bin_index * stride;
+          homes[i] = -1;
         }
       }
     }
@@ -1020,7 +1057,17 @@ populate_homes(const conduit::Node &dom,
       ASCENT_ERROR("Field " << axis_name << "not found in all domains");
     }
 
-    stride *= bin_axes.child(axis_index)["num_bins"].to_uint32();
+    if(bin_axes.child(axis_index).has_path("num_bins"))
+    {
+      // uniform axis
+      stride *= bin_axes.child(axis_index)["num_bins"].to_int32();
+    }
+    else
+    {
+      // rectilinear axis
+      stride *=
+          bin_axes.child(axis_index)["bins"].dtype().number_of_elements() - 1;
+    }
   }
 
   conduit::Node res;
@@ -1028,20 +1075,62 @@ populate_homes(const conduit::Node &dom,
   return res;
 }
 
-// for now only support uniform binning
-// TODO any time we loop over homes we can use openmp
-// reduction_func: avg, min, max, std, var, sum, cnt, rms, pdf
+void
+update_bin(double *bins,
+           const int i,
+           const double value,
+           const std::string &reduction_op)
+{
+  if(reduction_op == "cnt" || reduction_op == "pdf")
+  {
+    bins[i] += 1;
+  }
+  else if(reduction_op == "sum")
+  {
+    bins[i] += value;
+  }
+  else if(reduction_op == "min")
+  {
+    bins[i] = std::min(bins[i], value);
+  }
+  else if(reduction_op == "max")
+  {
+    bins[i] = std::max(bins[i], value);
+  }
+  else if(reduction_op == "avg")
+  {
+    bins[2 * i] += value;
+    bins[2 * i + 1] += 1;
+  }
+  else if(reduction_op == "rms")
+  {
+    bins[2 * i] += value * value;
+    bins[2 * i + 1] += 1;
+  }
+  else if(reduction_op == "var" || reduction_op == "std")
+  {
+    bins[3 * i] += value * value;
+    bins[3 * i + 1] += value;
+    bins[3 * i + 2] += 1;
+  }
+}
+
+// reduction_op: cnt, sum, min, max, avg, pdf, std, var, rms
 conduit::Node
 ecf(const conduit::Node &dataset,
     conduit::Node &bin_axes,
     const std::string &reduction_var,
-    const std::string &reduction_func)
+    const std::string &reduction_op)
 {
-  int num_axes = bin_axes.number_of_children();
-
+  // for now only support reductions on scalars
+  if(!is_xyz(reduction_var) && !is_scalar_field(dataset, reduction_var))
+  {
+    ASCENT_ERROR("ECF: reduction variable '"
+                 << reduction_var
+                 << "' must be a scalar field in the dataset or x/y/z.");
+  }
   std::vector<std::string> var_names = bin_axes.child_names();
   var_names.push_back(reduction_var);
-
   const conduit::Node &topo_and_assoc =
       global_topo_and_assoc(dataset, var_names);
   const std::string topo_name = topo_and_assoc["topo_name"].as_string();
@@ -1059,6 +1148,13 @@ ecf(const conduit::Node &dataset,
     if(bin_axes.has_path(axes[axis_num][0]))
     {
       conduit::Node &axis = bin_axes[axes[axis_num][0]];
+
+      if(axis.has_path("bins"))
+      {
+        // rectilinear binning was specified
+        continue;
+      }
+
       // maybe it's better to assume the coord is 0 if it's not there
       if(min_coords[axis_num] == std::numeric_limits<double>::max())
       {
@@ -1086,7 +1182,7 @@ ecf(const conduit::Node &dataset,
         if(dim == 0)
         {
           axis["num_bins"] =
-              axis["max_val"].to_uint32() - axis["min_val"].to_uint32();
+              axis["max_val"].to_int32() - axis["min_val"].to_int32();
         }
         else if(assoc_str == "vertex")
         {
@@ -1100,12 +1196,14 @@ ecf(const conduit::Node &dataset,
     }
   }
 
+  int num_axes = bin_axes.number_of_children();
+
   // populate min_val, max_val, num_bins for other axis fields
   for(int axis_index = 0; axis_index < num_axes; ++axis_index)
   {
     conduit::Node &axis = bin_axes.child(axis_index);
     const std::string axis_name = axis.name();
-    if(!is_xyz(axis_name))
+    if(!is_xyz(axis_name) && !axis.has_path("bins"))
     {
       if(!axis.has_path("min_val"))
       {
@@ -1119,7 +1217,7 @@ ecf(const conduit::Node &dataset,
       if(!axis.has_path("num_bins"))
       {
         axis["num_bins"] =
-            axis["max_val"].to_uint32() - axis["min_val"].to_uint32();
+            axis["max_val"].to_int32() - axis["min_val"].to_int32();
       }
     }
   }
@@ -1128,9 +1226,30 @@ ecf(const conduit::Node &dataset,
   size_t num_bins = 1;
   for(int axis_index = 0; axis_index < num_axes; ++axis_index)
   {
-    num_bins *= bin_axes.child(axis_index)["num_bins"].to_uint32();
+    if(bin_axes.child(axis_index).has_path("num_bins"))
+    {
+      // uniform axis
+      num_bins *= bin_axes.child(axis_index)["num_bins"].to_int32();
+    }
+    else
+    {
+      // rectilinear axis
+      num_bins *=
+          bin_axes.child(axis_index)["bins"].dtype().number_of_elements() - 1;
+    }
   }
-  double *bins = new double[num_bins]();
+  // number of variables held per bin (e.g. sum and cnt for average)
+  int num_bin_vars = 1;
+  if(reduction_op == "avg" || reduction_op == "rms")
+  {
+    num_bin_vars = 2;
+  }
+  else if(reduction_op == "var" || reduction_op == "std")
+  {
+    num_bin_vars = 3;
+  }
+  const int bins_size = num_bins * num_bin_vars;
+  double *bins = new double[bins_size]();
 
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {
@@ -1142,51 +1261,59 @@ ecf(const conduit::Node &dataset,
     const int homes_size = n_homes.dtype().number_of_elements();
 
     // update bins
-    // TODO for now reduction can only happen on one field
     if(dom.has_path("fields/" + reduction_var))
     {
       const std::string values_path = "fields/" + reduction_var + "/values";
       if(dom[values_path].dtype().is_float32())
       {
-        conduit::float32_array values = dom[values_path].value();
-        for(int i = 0; i < values.number_of_elements(); ++i)
+        const conduit::float32_array values = dom[values_path].value();
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+        for(int i = 0; i < homes_size; ++i)
         {
-          // TODO check reduction operation type (for now it's sum)
-          bins[homes[i]] += values[i];
+          if(homes[i] != -1)
+          {
+            update_bin(bins, homes[i], values[i], reduction_op);
+          }
         }
       }
       else
       {
-        conduit::float64_array values = dom[values_path].value();
-        for(int i = 0; i < values.number_of_elements(); ++i)
+        const conduit::float64_array values = dom[values_path].value();
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+        for(int i = 0; i < homes_size; ++i)
         {
-          // TODO check reduction operation type (for now it's sum)
-          bins[homes[i]] += values[i];
+          if(homes[i] != -1)
+          {
+            update_bin(bins, homes[i], values[i], reduction_op);
+          }
         }
       }
     }
     else if(is_xyz(reduction_var))
     {
       int coord = reduction_var[0] - 'x';
-      const double *loc;
-      if(assoc_str == "vertex")
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+      for(int i = 0; i < homes_size; ++i)
       {
-        for(int i = 0; i < homes_size; ++i)
+        conduit::Node n_loc;
+        if(assoc_str == "vertex")
         {
-          const conduit::Node n_loc = vert_location(dom, i, topo_name);
-          loc = n_loc.value();
-          // TODO check reduction operation type (for now it's sum)
-          bins[homes[i]] += loc[coord];
+          n_loc = vert_location(dom, i, topo_name);
         }
-      }
-      else if(assoc_str == "element")
-      {
-        for(int i = 0; i < homes_size; ++i)
+        else if(assoc_str == "element")
         {
-          const conduit::Node n_loc = element_location(dom, i, topo_name);
-          loc = n_loc.value();
-          // TODO check reduction operation type (for now it's sum)
-          bins[homes[i]] += loc[coord];
+          n_loc = element_location(dom, i, topo_name);
+        }
+        const double *loc = n_loc.value();
+        if(homes[i] != -1)
+        {
+          update_bin(bins, homes[i], loc[coord], reduction_op);
         }
       }
     }
@@ -1200,15 +1327,74 @@ ecf(const conduit::Node &dataset,
 
 #ifdef ASCENT_MPI_ENABLED
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  double *global_bins = new double[num_bins];
-  // TODO check reduction operation type (for now it's sum)
-  MPI_Allreduce(bins, global_bins, num_bins, MPI_DOUBLE, MPI_SUM, mpi_comm);
+  double *global_bins = new double[bins_size];
+  if(reduction_op == "cnt" || reduction_op == "sum" || reduction_op == "pdf" ||
+     reduction_op == "avg" || reduction_op == "std" || reduction_op == "var" ||
+     reduction_op == "rms")
+  {
+    MPI_Allreduce(bins, global_bins, bins_size, MPI_DOUBLE, MPI_SUM, mpi_comm);
+  }
+  else if(reduction_op == "min")
+  {
+    MPI_Allreduce(bins, global_bins, bins_size, MPI_DOUBLE, MPI_MIN, mpi_comm);
+  }
+  else if(reduction_op == "max")
+  {
+    MPI_Allreduce(bins, global_bins, bins_size, MPI_DOUBLE, MPI_MAX, mpi_comm);
+  }
   delete[] bins;
   bins = global_bins;
 #endif
 
   conduit::Node res;
-  res["value"].set(bins, num_bins);
+  if(reduction_op == "cnt" || reduction_op == "sum" || reduction_op == "min" ||
+     reduction_op == "max")
+  {
+    res["value"].set(bins, num_bins);
+  }
+  else
+  {
+    res["value"].set(conduit::DataType::c_double(num_bins));
+    double *res_bins = res["value"].value();
+    if(reduction_op == "avg")
+    {
+      for(int i = 0; i < num_bins; ++i)
+      {
+        const double sumX = bins[2 * i];
+        const double n = bins[2 * i + 1];
+        res_bins[i] = sumX / n;
+      }
+    }
+    else if(reduction_op == "rms")
+    {
+      for(int i = 0; i < num_bins; ++i)
+      {
+        const double sumX = bins[2 * i];
+        const double n = bins[2 * i + 1];
+        res_bins[i] = std::sqrt(sumX / n);
+      }
+    }
+    else if(reduction_op == "var")
+    {
+      for(int i = 0; i < num_bins; ++i)
+      {
+        const double sumX2 = bins[3 * i];
+        const double sumX = bins[3 * i + 1];
+        const double n = bins[3 * i + 2];
+        res_bins[i] = (sumX2 / n) - std::pow(sumX / n, 2);
+      }
+    }
+    else if(reduction_op == "std")
+    {
+      for(int i = 0; i < num_bins; ++i)
+      {
+        const double sumX2 = bins[3 * i];
+        const double sumX = bins[3 * i + 1];
+        const double n = bins[3 * i + 2];
+        res_bins[i] = std::sqrt((sumX2 / n) - std::pow(sumX / n, 2));
+      }
+    }
+  }
   res["bin_axes"] = bin_axes;
   res["association"] = assoc_str;
   delete[] bins;
@@ -1257,22 +1443,31 @@ paint_ecf(const conduit::Node &ecf, conduit::Node &dataset)
 
     const std::string field_name =
         ecf["attrs/reduction_var/value"].as_string() + "_" +
-        ecf["attrs/reduction_func/value"].as_string();
+        ecf["attrs/reduction_op/value"].as_string();
     dom["fields/" + field_name + "/association"] = assoc_str;
     dom["fields/" + field_name + "/topology"] = topo_name;
     dom["fields/" + field_name + "/values"].set(
         conduit::DataType::float64(homes_size));
     conduit::float64_array values =
         dom["fields/" + field_name + "/values"].value();
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
     for(int i = 0; i < homes_size; ++i)
     {
       values[i] = bins[homes[i]];
     }
     delete[] homes;
   }
+
+  conduit::Node info;
+  if(!conduit::blueprint::verify("mesh", dataset, info))
+  {
+    info.print();
+    ASCENT_ERROR("Failed to paint ecf back on the mesh.");
+  }
 }
 
-// TODO may as well call verify on the mesh
 conduit::Node
 ecf_mesh(const conduit::Node &ecf)
 {
@@ -1341,10 +1536,17 @@ ecf_mesh(const conduit::Node &ecf)
   // create field
   const std::string field_name = ecf["attrs/reduction_var/value"].as_string() +
                                  "_" +
-                                 ecf["attrs/reduction_func/value"].as_string();
+                                 ecf["attrs/reduction_op/value"].as_string();
   mesh["fields/" + field_name + "/association"] = assoc_str;
   mesh["fields/" + field_name + "/topology"] = "topo";
   mesh["fields/" + field_name + "/values"].set(ecf["attrs/value/value"]);
+
+  conduit::Node info;
+  if(!conduit::blueprint::verify("mesh", mesh, info))
+  {
+    info.print();
+    ASCENT_ERROR("Failed to create valid ecf mesh.");
+  }
 
   return mesh;
 }

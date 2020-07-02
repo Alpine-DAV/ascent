@@ -675,7 +675,7 @@ TEST(ascent_ecf, ecf_basic_meshes)
   conduit::Node res;
   std::string expr;
 
-  expr = "ecf('field', 'sum', [axis('x')])";
+  expr = "ecf('field', 'sum', [axis('x', [0, 2.5, 5, 7.5, 10])])";
   res = eval.evaluate(expr);
   res.print();
 
@@ -762,17 +762,65 @@ TEST(ascent_ecf, braid_ecf)
 
   expr = "ecf('braid', 'sum', [axis('x'), axis('y')])";
   res = eval.evaluate(expr);
-  res.print();
-
   conduit::Node ecf_mesh = ascent::runtime::expressions::ecf_mesh(res);
   ecf_mesh["state/cycle"] = 100;
   ecf_mesh["state/domain_id"] = 0;
-
   output_mesh(ecf_mesh, "braid_xy_sum");
 
+  expr = "ecf('braid', 'avg', [axis('x'), axis('y')])";
+  res = eval.evaluate(expr);
   ascent::runtime::expressions::paint_ecf(res, multi_dom);
+  expr = "ecf('braid', 'std', [axis('x'), axis('y')])";
+  res = eval.evaluate(expr);
+  res.print();
+  ascent::runtime::expressions::paint_ecf(res, multi_dom);
+  output_mesh(multi_dom, "braid_xy_avg&std_painted");
+}
 
-  output_mesh(multi_dom, "braid_xy_sum_painted");
+TEST(ascent_ecf, ecf_errors)
+{
+  // the vtkm runtime is currently our only rendering runtime
+  Node n;
+  ascent::about(n);
+  // only run this test if ascent was built with vtkm support
+  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  {
+    ASCENT_INFO("Ascent support disabled, skipping test");
+    return;
+  }
+
+  //
+  // Create an example mesh.
+  //
+  Node data, verify_info;
+  conduit::blueprint::mesh::examples::braid("hexs",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            data);
+  // ascent normally adds this but we are doing an end around
+  data["state/domain_id"] = 0;
+  Node multi_dom;
+  blueprint::mesh::to_multi_domain(data, multi_dom);
+
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval eval(&multi_dom);
+
+  conduit::Node res;
+  std::string expr;
+
+  bool threw = false;
+  try
+  {
+    expr = "ecf('braid', 'sum', [axis('x'), axis('vel')])";
+    res = eval.evaluate(expr);
+  }
+  catch(...)
+  {
+    threw = true;
+  }
+  EXPECT_EQ(threw, true);
+
 }
 
 //-----------------------------------------------------------------------------

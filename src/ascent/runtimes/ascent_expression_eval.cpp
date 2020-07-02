@@ -322,17 +322,6 @@ initialize_functions()
   hist_sig["args/max_val/optional"];
   hist_sig["args/max_val/description"] = "defaults to ``max(arg1)``";
 
-  hist_sig["args/reduction_func/type"] = "string";
-  hist_sig["args/reduction_func/optional"];
-  hist_sig["args/reduction_func/description"] =
-      "The reduction function to use when \
-  putting values in bins. Available reductions are: \n\n \
-  - count (default): number of elements in a bin \n \
-  - min: minimum value in a bin \n \
-  - max: maximum value in a bin \n \
-  - sum: sum of values that fall in a bin \n \
-  - avg: average of values that fall in a bin";
-
   hist_sig["description"] = "Return a histogram of the mesh variable. Return a "
                             "histogram of the mesh variable.";
 
@@ -482,7 +471,15 @@ initialize_functions()
   ecf_sig["return_type"] = "ecf";
   ecf_sig["filter_name"] = "ecf";
   ecf_sig["args/reduction_var/type"] = "string";
-  ecf_sig["args/reduction_func/type"] = "string";
+  ecf_sig["args/reduction_op/description"] =
+      "The reduction operator to use when \
+  putting values in bins. Available reductions are: \n\n \
+  - count (default): number of elements in a bin \n \
+  - min: minimum value in a bin \n \
+  - max: maximum value in a bin \n \
+  - sum: sum of values that fall in a bin \n \
+  - avg: average of values that fall in a bin";
+  ecf_sig["args/reduction_op/type"] = "string";
   ecf_sig["args/bin_axes/type"] = "list";
   ecf_sig["description"] = "Not yet implemented.";
 

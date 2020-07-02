@@ -117,7 +117,7 @@ conduit::Node global_bounds(const conduit::Node &dataset,
 conduit::Node ecf(const conduit::Node &dataset,
                   conduit::Node &bin_axes,
                   const std::string &reduction_var,
-                  const std::string &reduction_func);
+                  const std::string &reduction_op);
 
 void ASCENT_API paint_ecf(const conduit::Node &ecf, conduit::Node &dataset);
 
@@ -130,6 +130,8 @@ bool is_scalar_field(const conduit::Node &dataset,
                      const std::string &field_name);
 
 bool has_field(const conduit::Node &dataset, const std::string &field_name);
+
+bool is_xyz(const std::string &axis_name);
 
 conduit::Node quantile(const conduit::Node &cdf,
                        const double val,
