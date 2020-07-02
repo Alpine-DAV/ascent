@@ -891,7 +891,9 @@ public:
   // an input variable, and an output variable.
   using ControlSignature = void(CellSetIn cellset,
                                 FieldInPoint points,
-                                FieldOutCell output);
+                                FieldOutCell x0, FieldOutCell y0, FieldOutCell z0,
+		                FieldOutCell x1, FieldOutCell y1, FieldOutCell z1,
+		                FieldOutCell x2, FieldOutCell y2, FieldOutCell z2);
 
   // After VTK-m does it's magic, you need to tell what information you need
   // from the provided inputs from the ControlSignature.
@@ -900,13 +902,21 @@ public:
   // 2. _2 is the 2nd input to ControlSignature : this should give you all points of the triangle.
   // 3. _3 is the 3rd input to ControlSignature : this should give you the variables at those points.
   // 4. _4 is the 4rd input to ControlSignature : this will help you store the output of your calculation.
-  using ExecutionSignature = void(PointCount, _2, _3);
+  using ExecutionSignature = void(PointCount, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11);
 
   template <typename PointVecType, typename FieldType>
   VTKM_EXEC
   void operator()(const vtkm::IdComponent& numPoints,
                   const PointVecType& points,
-                  FieldType& x0) const
+                  FieldType& x0,
+                  FieldType& y0,
+                  FieldType& z0,
+                  FieldType& x1,
+                  FieldType& y1,
+                  FieldType& z1,
+                  FieldType& x2,
+                  FieldType& y2,
+		  FieldType& z2) const
   {
     if(numPoints != 3)
       ASCENT_ERROR("We only play with triangles here");
@@ -918,7 +928,7 @@ public:
     //PointType vertex1 = points[1]; // {x1, y1, z1}
     //PointType vertex2 = points[2]; // {x2, y2, z2}
     x0 = points[0][0];
-    /*y0 = points[0][1];
+    y0 = points[0][1];
     z0 = points[0][2];
     x1 = points[1][0];
     y1 = points[1][1];
@@ -926,7 +936,6 @@ public:
     x2 = points[2][0];
     y2 = points[2][1];
     z2 = points[2][2]; 
-    */
   }
 };
 
@@ -952,19 +961,41 @@ AddTriangleFields(vtkh::DataSet &vtkhData)
       vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
 
       int numTris = cellset.GetNumberOfCells();
-      cout << "numTris " << numTris << endl;
-      std::vector<double> x0(numTris);
-      std::vector<double> X0;
+      //make vectors and array handles for x,y,z triangle points.
+      std::vector<double> x0(numTris), y0(numTris), z0(numTris), x1(numTris), y1(numTris), z1(numTris), x2(numTris), y2(numTris), z2(numTris);
+      std::vector<double> X0, Y0, Z0, X1, Y1, Z1, X2, Y2, Z2;
      
       vtkm::cont::ArrayHandle<vtkm::Float64> x_0 = vtkm::cont::make_ArrayHandle(x0);
+      vtkm::cont::ArrayHandle<vtkm::Float64> y_0 = vtkm::cont::make_ArrayHandle(y0);
+      vtkm::cont::ArrayHandle<vtkm::Float64> z_0 = vtkm::cont::make_ArrayHandle(z0);
+      vtkm::cont::ArrayHandle<vtkm::Float64> x_1 = vtkm::cont::make_ArrayHandle(x1);
+      vtkm::cont::ArrayHandle<vtkm::Float64> y_1 = vtkm::cont::make_ArrayHandle(y1);
+      vtkm::cont::ArrayHandle<vtkm::Float64> z_1 = vtkm::cont::make_ArrayHandle(z1);
+      vtkm::cont::ArrayHandle<vtkm::Float64> x_2 = vtkm::cont::make_ArrayHandle(x2);
+      vtkm::cont::ArrayHandle<vtkm::Float64> y_2 = vtkm::cont::make_ArrayHandle(y2);
+      vtkm::cont::ArrayHandle<vtkm::Float64> z_2 = vtkm::cont::make_ArrayHandle(z2);
       vtkm::cont::Invoker invoker;
-      invoker(GetTriangleFields{}, cellset, coords, x_0);
+      invoker(GetTriangleFields{}, cellset, coords, x_0, y_0, z_0, x_1, y_1, z_1, x_2, y_2, z_2);
 
       X0.insert(X0.end(), x0.begin(), x0.end());
+      Y0.insert(Y0.end(), y0.begin(), y0.end());
+      Z0.insert(Z0.end(), z0.begin(), z0.end());
+      X1.insert(X1.end(), x1.begin(), x1.end());
+      Y1.insert(Y1.end(), y1.begin(), y1.end());
+      Z1.insert(Z1.end(), z1.begin(), z1.end());
+      X2.insert(X2.end(), x2.begin(), x2.end());
+      Y2.insert(Y2.end(), y2.begin(), y2.end());
+      Z2.insert(Z2.end(), z2.begin(), z2.end());
       dataSetFieldAdd.AddCellField(dataset, "X0", X0);
+      dataSetFieldAdd.AddCellField(dataset, "Y0", Y0);
+      dataSetFieldAdd.AddCellField(dataset, "Z0", Z0);
+      dataSetFieldAdd.AddCellField(dataset, "X1", X1);
+      dataSetFieldAdd.AddCellField(dataset, "Y1", Y1);
+      dataSetFieldAdd.AddCellField(dataset, "Z1", Z1);
+      dataSetFieldAdd.AddCellField(dataset, "X2", X2);
+      dataSetFieldAdd.AddCellField(dataset, "Y2", Y2);
+      dataSetFieldAdd.AddCellField(dataset, "Z2", Z2);
       newDataSet->AddDomain(dataset,localDomainIds[i]);
-      cerr <<"HELLO" << X0[X0.size()-1] << " " << X0[X0.size()-2] << " " << X0[X0.size()-3] << endl;
-      cerr << "X0 size: " << X0.size() << endl;
     }
   }
   return newDataSet;
@@ -1027,9 +1058,7 @@ GetScalarData(vtkh::DataSet &vtkhData, std::string field_name, int height, int w
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
       vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
       //Get variable
-      cout << "*ascent::calling GetField on 'depth'\n*ascent:: produces vtkm::cont::Field" << endl;
-      vtkm::cont::Field field = dataset.GetField("X0");
-      //vtkm::cont::Field field = dataset.GetField(field_name);
+      vtkm::cont::Field field = dataset.GetField(field_name);
       
       vtkm::cont::ArrayHandle<float> field_data;
       field.GetData().CopyTo(field_data);
@@ -1611,10 +1640,7 @@ AutoCamera::execute()
     double triangle_time = 0.;
     auto triangle_start = high_resolution_clock::now();
     std::vector<Triangle> triangles = GetTriangles(dataset,field_name);
-    cerr << "triangles size: " << triangles.size() << endl;
-    cout << triangles[0].X[0] << " " << triangles[1].X[0] << endl;
     vtkh::DataSet* data = AddTriangleFields(dataset);
-    cerr << "HERE" << endl;
     data->PrintSummary(cerr);
     auto triangle_stop = high_resolution_clock::now();
     triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
