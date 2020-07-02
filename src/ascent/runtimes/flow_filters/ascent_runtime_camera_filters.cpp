@@ -112,6 +112,11 @@
 #include <chrono>
 #include <stdio.h>
 
+//openCV
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
+
 using namespace conduit;
 using namespace std;
 using namespace std::chrono;
@@ -824,6 +829,7 @@ GetCamera(int frame, int nframes, double radius, double* lookat)
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/Invoker.h>
 #include <vtkm/worklet/WorkletMapTopology.h>
+#include <vtkm/cont/DataSetFieldAdd.h>
 
 class ProcessTriangle : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
@@ -876,6 +882,93 @@ public:
     output.value[2] = variable[2];
   }
 };
+
+class GetTriangleFields : public vtkm::worklet::WorkletVisitCellsWithPoints
+{
+public:
+  // This is to tell the compiler what inputs to expect.
+  // For now we'll be providing the CellSet, CooridnateSystem,
+  // an input variable, and an output variable.
+  using ControlSignature = void(CellSetIn cellset,
+                                FieldInPoint points,
+                                FieldOutCell output);
+
+  // After VTK-m does it's magic, you need to tell what information you need
+  // from the provided inputs from the ControlSignature.
+  // For now :
+  // 1. number of points making an individual cell
+  // 2. _2 is the 2nd input to ControlSignature : this should give you all points of the triangle.
+  // 3. _3 is the 3rd input to ControlSignature : this should give you the variables at those points.
+  // 4. _4 is the 4rd input to ControlSignature : this will help you store the output of your calculation.
+  using ExecutionSignature = void(PointCount, _2, _3);
+
+  template <typename PointVecType, typename FieldType>
+  VTKM_EXEC
+  void operator()(const vtkm::IdComponent& numPoints,
+                  const PointVecType& points,
+                  FieldType& x0) const
+  {
+    if(numPoints != 3)
+      ASCENT_ERROR("We only play with triangles here");
+    // Since you only have triangles, numPoints should always be 3
+    // PointType is an abstraction of vtkm::Vec3f, which is {x, y, z} of a point
+    using PointType = typename PointVecType::ComponentType;
+    // Following lines will help you extract points for a single triangle
+    //PointType vertex0 = points[0]; // {x0, y0, z0}
+    //PointType vertex1 = points[1]; // {x1, y1, z1}
+    //PointType vertex2 = points[2]; // {x2, y2, z2}
+    x0 = points[0][0];
+    /*y0 = points[0][1];
+    z0 = points[0][2];
+    x1 = points[1][0];
+    y1 = points[1][1];
+    z1 = points[1][2];
+    x2 = points[2][0];
+    y2 = points[2][1];
+    z2 = points[2][2]; 
+    */
+  }
+};
+
+vtkh::DataSet*
+AddTriangleFields(vtkh::DataSet &vtkhData)
+{
+  //Get domain Ids on this rank
+  //will be nonzero even if there is no data
+  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
+  vtkh::DataSet* newDataSet = new vtkh::DataSet;
+
+  //if there is data: loop through domains and grab all triangles.
+  if(!vtkhData.IsEmpty())
+  {
+    vtkm::cont::DataSetFieldAdd dataSetFieldAdd;
+
+    for(int i = 0; i < localDomainIds.size(); i++)
+    {
+      vtkm::cont::DataSet dataset = vtkhData.GetDomain(localDomainIds[i]);
+      //Get Data points
+      vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
+      //Get triangles
+      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+
+      int numTris = cellset.GetNumberOfCells();
+      cout << "numTris " << numTris << endl;
+      std::vector<double> x0(numTris);
+      std::vector<double> X0;
+     
+      vtkm::cont::ArrayHandle<vtkm::Float64> x_0 = vtkm::cont::make_ArrayHandle(x0);
+      vtkm::cont::Invoker invoker;
+      invoker(GetTriangleFields{}, cellset, coords, x_0);
+
+      X0.insert(X0.end(), x0.begin(), x0.end());
+      dataSetFieldAdd.AddCellField(dataset, "X0", X0);
+      newDataSet->AddDomain(dataset,localDomainIds[i]);
+      cerr <<"HELLO" << X0[X0.size()-1] << " " << X0[X0.size()-2] << " " << X0[X0.size()-3] << endl;
+      cerr << "X0 size: " << X0.size() << endl;
+    }
+  }
+  return newDataSet;
+}
 
 std::vector<Triangle>
 GetTriangles(vtkh::DataSet &vtkhData, std::string field_name)
@@ -934,7 +1027,9 @@ GetScalarData(vtkh::DataSet &vtkhData, std::string field_name, int height, int w
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
       vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
       //Get variable
-      vtkm::cont::Field field = dataset.GetField(field_name);
+      cout << "*ascent::calling GetField on 'depth'\n*ascent:: produces vtkm::cont::Field" << endl;
+      vtkm::cont::Field field = dataset.GetField("X0");
+      //vtkm::cont::Field field = dataset.GetField(field_name);
       
       vtkm::cont::ArrayHandle<float> field_data;
       field.GetData().CopyTo(field_data);
@@ -1011,6 +1106,93 @@ Triangle transformTriangle(Triangle t, Camera c)
 
   return triangle;
 
+}
+
+double magnitude3d(double* vec)
+{
+  return sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+}
+
+void CalcSilhouette(float * data_in, int width, int height, double &length, double &curvature, double &curvatureExtrema, double &entropy)
+{
+	/*
+  std::vector<std::vector<cv::Point> > contours;
+  std::vector<cv::Vec4i> hierarchy;
+  std::vector<unsigned int> curvatureHistogram(9,0);
+  double silhouetteLength = 0; 
+  std::vector<double> silhouetteCurvature;
+
+  cv::Mat image_gray;
+  cv::Mat image(width, height, CV_32F, data_in); 
+  cv::cvtColor(image, image_gray, cv::COLOR_BGR2GRAY );
+  cv::blur(image_gray, image_gray, cv::Size(3,3) );
+  cv::findContours(image_gray, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
+
+  unsigned int numberOfAngles = 0;
+  cout << "CONTOURS SIZE " << contours.size() << endl;
+  for( int j = 0; j < contours.size(); j++ )
+  {
+    silhouetteLength += cv::arcLength( contours.at(j), true );
+    unsigned int contourSize = (unsigned int)contours.at(j).size();
+    silhouetteCurvature.resize(numberOfAngles + contourSize);
+    for( unsigned int k = 0; k < contourSize; k++ )
+    {
+      cv::Point diff1 = contours.at(j).at(k) - contours.at(j).at((k + 1) % contourSize);
+      cv::Point diff2 = contours.at(j).at((k + 1) % contourSize) - contours.at(j).at((k + 2) % contourSize);
+      double angle = 0.0;
+      if(diff1.x != diff2.x || diff1.y != diff2.y)
+      {
+        double v1[3];
+        double v2[3];
+        v1[0] = diff1.x;
+        v1[1] = diff1.y;
+        v1[2] = 0;
+        v2[0] = diff2.x;
+        v2[1] = diff2.y;
+        v2[2] = 0;
+        normalize(v1);
+        normalize(v2);
+        double dotprod = dotProduct(v1,v2,2);
+        double mag1 = magnitude3d(v1);
+        double mag2 = magnitude3d(v2);
+        double rad = acos(dotprod/(mag1*mag2));
+        angle = rad*(double)180/M_PI;
+      }
+      silhouetteCurvature[numberOfAngles + k] = angle;
+    }
+    numberOfAngles += contourSize;
+  }
+
+  //Calculate Curvature and Entropy Metrics
+  entropy = 0;
+  curvature = 0;
+  curvatureExtrema = 0;
+  int num_curves = silhouetteCurvature.size();
+  for(int i = 0; i < num_curves; i++)
+  {
+    double angle = silhouetteCurvature[i];
+    curvature += abs(angle)/90.0;
+    curvatureExtrema += pow((abs(angle)/90), 2.0);
+    int bin = (int) ((angle + 180.0)/45.0);
+    curvatureHistogram[bin]++;
+  }
+
+  for(int i = 0; i < curvatureHistogram.size(); i++)
+  {
+    unsigned int value = curvatureHistogram[i];
+    if(value != 0)
+    {
+      double aux = value/(double)num_curves;
+      entropy += aux*log2(aux);
+    }
+  }
+
+  //Final Values
+  length           = silhouetteLength;
+  curvature        = curvature/(double)num_curves;
+  curvatureExtrema = curvatureExtrema/(double)num_curves;
+  entropy          = (-1)*entropy;
+  */
 }
 
 void prewittX_kernel(const int rows, const int cols, double * const kernel) 
@@ -1283,11 +1465,8 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
 	float data_in[width*height];
 	float contour[width*height];
 	std::copy(depth_data.begin(), depth_data.end(), data_in);
-	apply_prewitt(width, height, data_in, contour); //edge detection
-	int length = 0;
-	for(int i = 0; i < size; i++)
-	  if(contour[i] != 0.0)
-            length++;
+	double length, curvature, curvatureExtrema, entropy;
+	CalcSilhouette(data_in, width, height, length, curvature, curvatureExtrema, entropy);
 	score = (float)length;
         MPI_Bcast(&score, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
       }
@@ -1302,11 +1481,8 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
       float data_in[size];
       float contour[size];
       std::copy(depth_data.begin(), depth_data.end(), data_in);
-      apply_prewitt(width, height, data_in, contour);
-      int length = 0;
-      for(int i = 0; i < size; i++)
-        if(contour[i] != 0.0)
-          length++;
+      double length, curvature, curvatureExtrema, entropy;
+      CalcSilhouette(data_in, width, height, length, curvature, curvatureExtrema, entropy);
       score = (float)length;
     #endif
     
@@ -1434,7 +1610,12 @@ AutoCamera::execute()
     
     double triangle_time = 0.;
     auto triangle_start = high_resolution_clock::now();
-    std::vector<Triangle> triangles;// = GetTriangles(dataset,field_name);
+    std::vector<Triangle> triangles = GetTriangles(dataset,field_name);
+    cerr << "triangles size: " << triangles.size() << endl;
+    cout << triangles[0].X[0] << " " << triangles[1].X[0] << endl;
+    vtkh::DataSet* data = AddTriangleFields(dataset);
+    cerr << "HERE" << endl;
+    data->PrintSummary(cerr);
     auto triangle_stop = high_resolution_clock::now();
     triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
     /*#if ASCENT_MPI_ENABLED
@@ -1442,7 +1623,7 @@ AutoCamera::execute()
       cout << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
     #endif*/
 
-    vtkm::Bounds b = dataset.GetGlobalBounds();
+    vtkm::Bounds b = data->GetGlobalBounds();
     vtkm::Float32 xb = vtkm::Float32(b.X.Length());
     vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
     vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
@@ -1454,7 +1635,7 @@ AutoCamera::execute()
       //radius = radius + 1;
     //vtkm::Float32 x_pos = 0., y_pos = 0., z_pos = 0.;
     vtkmCamera *camera = new vtkmCamera;
-    camera->ResetToBounds(dataset.GetGlobalBounds());
+    camera->ResetToBounds(data->GetGlobalBounds());
     vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
     double focus[3] = {(double)lookat[0],(double)lookat[1],(double)lookat[2]};
 
@@ -1487,7 +1668,7 @@ AutoCamera::execute()
       vtkh::ScalarRenderer tracer;
       tracer.SetWidth(width);
       tracer.SetHeight(height);
-      tracer.SetInput(&dataset); //vtkh dataset by toponame
+      tracer.SetInput(data); //vtkh dataset by toponame
       tracer.SetCamera(*camera);
       tracer.Update();
 
@@ -1544,6 +1725,7 @@ AutoCamera::execute()
 	winning_sample = sample;
       }
     } //end of sample loop
+    delete data;
 
     if(winning_sample == -1)
       ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
@@ -1572,6 +1754,7 @@ AutoCamera::execute()
       //cout << "making camera in registry" << endl;
       graph().workspace().registry().add<vtkm::rendering::Camera>("camera",camera,1);
     }
+    delete camera;
 
 /*
 #if ASCENT_MPI_ENABLED

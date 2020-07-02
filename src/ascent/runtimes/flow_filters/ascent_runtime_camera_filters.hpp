@@ -157,9 +157,9 @@ class Edge{
 class Triangle
 {
   public:
-      double         X[3];
-      double         Y[3];
-      double         Z[3];
+      float          X[3];
+      float          Y[3];
+      float          Z[3];
       double         value[3];
       Screen         screen;
       double         view[3];
