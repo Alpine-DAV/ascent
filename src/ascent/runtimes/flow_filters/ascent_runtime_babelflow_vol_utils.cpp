@@ -626,8 +626,8 @@ void BabelVolRenderingReduce::Initialize()
   m_taskMap = BabelFlow::KWayReductionTaskMap(mpi_size, &m_graph);
 
   m_modGraph = 
-    BabelFlow::PreProcessInputTaskGraph<BabelFlow::KWayReduction>(mpi_size, &m_graph, &m_taskMap);
-  m_modMap = BabelFlow::ModTaskMap<BabelFlow::KWayReductionTaskMap>(&m_taskMap);
+    BabelFlow::PreProcessInputTaskGraph(mpi_size, &m_graph, &m_taskMap);
+  m_modMap = BabelFlow::ModTaskMap(&m_taskMap);
   m_modMap.update(m_modGraph);
 
   m_master.initialize(m_modGraph, &m_modMap, m_comm, &m_contMap);
@@ -676,9 +676,8 @@ void BabelVolRenderingBinswap::Initialize()
   m_graph = BabelFlow::BinarySwap(m_nBlocks);
   m_taskMap = BabelFlow::BinarySwapTaskMap(mpi_size, &m_graph);
 
-  m_modGraph = 
-    BabelFlow::PreProcessInputTaskGraph<BabelFlow::BinarySwap>(mpi_size, &m_graph, &m_taskMap);
-  m_modMap = BabelFlow::ModTaskMap<BabelFlow::BinarySwapTaskMap>(&m_taskMap);
+  m_modGraph = BabelFlow::PreProcessInputTaskGraph(mpi_size, &m_graph, &m_taskMap);
+  m_modMap = BabelFlow::ModTaskMap(&m_taskMap);
   m_modMap.update(m_modGraph);
 
   m_master.initialize(m_modGraph, &m_modMap, m_comm, &m_contMap);
@@ -742,9 +741,8 @@ void BabelVolRenderingRadixK::Initialize()
   }
   /////
 
-  m_modGraph = 
-    BabelFlow::PreProcessInputTaskGraph<BabelFlow::RadixKExchange>(mpi_size, &m_graph, &m_taskMap);
-  m_modMap = BabelFlow::ModTaskMap<BabelFlow::RadixKExchangeTaskMap>(&m_taskMap);
+  m_modGraph = BabelFlow::PreProcessInputTaskGraph(mpi_size, &m_graph, &m_taskMap);
+  m_modMap = BabelFlow::ModTaskMap(&m_taskMap);
   m_modMap.update(m_modGraph);
   
   /////

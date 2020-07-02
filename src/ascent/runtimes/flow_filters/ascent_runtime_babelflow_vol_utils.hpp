@@ -81,8 +81,8 @@ public:
 private:
   BabelFlow::KWayReduction m_graph;
   BabelFlow::KWayReductionTaskMap m_taskMap; 
-  BabelFlow::PreProcessInputTaskGraph<BabelFlow::KWayReduction> m_modGraph;
-  BabelFlow::ModTaskMap<BabelFlow::KWayReductionTaskMap> m_modMap;
+  BabelFlow::PreProcessInputTaskGraph m_modGraph;
+  BabelFlow::ModTaskMap m_modMap;
 };
 
 //-----------------------------------------------------------------------------
@@ -102,8 +102,8 @@ public:
 private:
   BabelFlow::BinarySwap m_graph;
   BabelFlow::BinarySwapTaskMap m_taskMap; 
-  BabelFlow::PreProcessInputTaskGraph<BabelFlow::BinarySwap> m_modGraph;
-  BabelFlow::ModTaskMap<BabelFlow::BinarySwapTaskMap> m_modMap;
+  BabelFlow::PreProcessInputTaskGraph m_modGraph;
+  BabelFlow::ModTaskMap m_modMap;
 };
 
 //-----------------------------------------------------------------------------
@@ -127,8 +127,8 @@ private:
   
   BabelFlow::RadixKExchange m_graph;
   BabelFlow::RadixKExchangeTaskMap m_taskMap; 
-  BabelFlow::PreProcessInputTaskGraph<BabelFlow::RadixKExchange> m_modGraph;
-  BabelFlow::ModTaskMap<BabelFlow::RadixKExchangeTaskMap> m_modMap;
+  BabelFlow::PreProcessInputTaskGraph m_modGraph;
+  BabelFlow::ModTaskMap m_modMap;
 };
 
 //-----------------------------------------------------------------------------

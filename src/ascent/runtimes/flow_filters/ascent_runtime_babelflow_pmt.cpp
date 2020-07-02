@@ -87,16 +87,13 @@ private:
   KWayTaskMap task_map;
   KWayMerge graph;
 
-  BabelFlow::PreProcessInputTaskGraph<KWayMerge> modGraph;
-  BabelFlow::ModTaskMap<KWayTaskMap> modMap;
+  BabelFlow::PreProcessInputTaskGraph modGraph;
+  BabelFlow::ModTaskMap modMap;
 
 };
 
 
 // CallBack Functions
-static const uint8_t sPrefixSize = 4;
-static const uint8_t sPostfixSize = sizeof(BabelFlow::TaskId) * 8 - sPrefixSize;
-static const BabelFlow::TaskId sPrefixMask = ((1 << sPrefixSize) - 1) << sPostfixSize;
 uint32_t ParallelMergeTree::o_ghosts[6] = {1, 1, 1, 1, 1, 1};
 uint32_t ParallelMergeTree::n_ghosts[6] = {1, 1, 1, 1, 1, 1};
 uint32_t ParallelMergeTree::s_data_size[3];
@@ -170,12 +167,12 @@ int write_results(std::vector<BabelFlow::Payload> &inputs,
 
   AugmentedMergeTree t;
   t.decode(inputs[0]);
-  t.id(task & ~sPrefixMask);
+  t.id(task & ~KWayMerge::sPrefixMask);
   //t.writeToFile(task & ~sPrefixMask);
   t.persistenceSimplification(1.f);
   t.computeSegmentation(sLocalData);
-  t.writeToFileBinary(task & ~sPrefixMask);
-  t.writeToFile(task & ~sPrefixMask);
+  t.writeToFileBinary(task & ~KWayMerge::sPrefixMask);
+  t.writeToFile(task & ~KWayMerge::sPrefixMask);
   //t.writeToHtmlFile(task & ~sPrefixMask);
 
   // Set the final tree as an output so that it could be extracted later
@@ -286,8 +283,8 @@ void ParallelMergeTree::Initialize() {
   //   fclose(fp);
   // }
 
-  modGraph = BabelFlow::PreProcessInputTaskGraph<KWayMerge>(mpi_size, &graph, &task_map);
-  modMap = BabelFlow::ModTaskMap<KWayTaskMap>(&task_map);
+  modGraph = BabelFlow::PreProcessInputTaskGraph(mpi_size, &graph, &task_map);
+  modMap = BabelFlow::ModTaskMap(&task_map);
   modMap.update(modGraph);
 
   MergeTree::setDimension(data_size);
