@@ -58,6 +58,10 @@
 #include <algorithm>
 #include <cmath>
 
+#ifdef DRAY_ENABLED
+#include "colors.hpp"
+#endif
+
 void usage()
 {
   std::cout<<"holo usage: holo high_order.root low_order.root\n";
@@ -200,6 +204,8 @@ conduit::Node
 compare_fields(const std::vector<std::string> &names,
                const conduit::Node &i1,
                const conduit::Node &i2,
+               const int width,
+               const int height,
                conduit::Node &diff)
 {
   conduit::Node res;
@@ -224,6 +230,19 @@ compare_fields(const std::vector<std::string> &names,
     float *pdiff = diff["fields/"+field+"/values"].value();
 
     compare_diff(res[field], p1, p2, pdiff, size1);
+#ifdef DRAY_ENABLED
+    conduit::Node color_table;
+    conduit::Node color_info;
+    color_table["name"] = "cool2warm";
+    compare_colors(color_info,
+                   color_table,
+                   p1,
+                   p2,
+                   size1,
+                   width,
+                   height,
+                   field);
+#endif
   }
   return res;
 }
@@ -271,7 +290,12 @@ int main (int argc, char *argv[])
   image_diff["topologies"] = image1["topologies"];
 
   std::vector<std::string> fields = common_fields(image1,image2);
-  conduit::Node info = compare_fields(fields, image1, image2, image_diff);
+  conduit::Node info = compare_fields(fields,
+                                      image1,
+                                      image2,
+                                      width,
+                                      height,
+                                      image_diff);
   info.print();
 
   char cycle_suffix[30];

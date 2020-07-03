@@ -57,12 +57,18 @@ if(OPENMP_FOUND)
    list(APPEND deps openmp)
 endif()
 
+
+
 if (ENABLE_SERIAL)
     blt_add_executable(
         NAME        holo
         SOURCES     ${HOLO_SOURCES}
         DEPENDS_ON  ${holo_deps}
         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+    if(DRAY_FOUND)
+      target_compile_definitions(holo PRIVATE DRAY_ENABLED)
+    endif()
 
     # install target for replay serial
     install(TARGETS holo
