@@ -321,7 +321,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         t_inline[i] = vis_estimates[i] * render_cfg.non_probing_count;
 
     // TODO: add smart way to estimate compositing + save time
-    float t_compositing = 0.3f * render_cfg.max_count;  // flat compositing cost (single vis node only)
+    float t_compositing = 0.7f * render_cfg.max_count;  // flat compositing cost (single vis node only)
     if (mpi_props.rank == 0)
         std::cout << "~~compositing estimate: " << t_compositing << std::endl;
 
@@ -407,7 +407,6 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
 
 /**
  * Sort ranks in descending order according to sim + vis times estimations.
- * TODO: add transfer overhead
  */
 std::vector<int> sort_ranks(const std::vector<float> &sim_estimates, 
                             const std::vector<float> &vis_estimates)
@@ -535,10 +534,10 @@ void log_global_time(const std::string &description,
 {
     auto now = std::chrono::system_clock::now();
     auto duration = now.time_since_epoch();
-    auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
+    auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
 
     std::ofstream out(get_timing_file_name(rank, 5, "global"), std::ios_base::app);
-    out << description << " : " << seconds << std::endl;
+    out << description << " : " << millis << std::endl;
     out.close();
 }
 
@@ -1330,7 +1329,7 @@ void hybrid_render(const MPI_Properties mpi_props,
         Node verify_info;
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
-            // TODO: no copy (set external)
+            // compact_probing_renders are now packed and send in separate thread
             // Node compact_probing_renders = pack_node(render_chunks_probing);
             const int my_render_count = g_render_counts[mpi_props.rank] + int(g_render_counts[mpi_props.rank]*render_cfg.probing_factor);
             RenderBatch batch = get_batch(my_render_count, render_cfg.BATCH_SIZE);

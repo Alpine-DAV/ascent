@@ -2660,8 +2660,8 @@ void add_images(std::vector<vtkh::Render> *renders,
 
     int size = renders->at(i).GetWidth() * renders->at(i).GetHeight();
     // NOTE: only getting canvas from domain 0 for now
-    image_data["color_buffer"].set(color_buffers->at(i).data(), size * 4);
-    image_data["depth_buffer"].set(depth_buffers->at(i).data(), size);
+    image_data["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
+    image_data["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
     image_data["depth"] = depths->at(i);
 
     image_list->append() = image_data;
