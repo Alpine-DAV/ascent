@@ -8,12 +8,12 @@
 
 #include "BabelFlow/TypeDefinitions.h"
 #include "BabelFlow/mpi/Controller.h"
-#include "BabelFlow/vlr/BinarySwap.h"
-#include "BabelFlow/vlr/BinarySwapTaskMap.h"
-#include "BabelFlow/vlr/KWayReduction.h"
-#include "BabelFlow/vlr/KWayReductionTaskMap.h"
-#include "BabelFlow/vlr/RadixKExchange.h"
-#include "BabelFlow/vlr/RadixKExchangeTaskMap.h"
+#include "BabelFlow/reduce/BinarySwap.h"
+#include "BabelFlow/reduce/BinarySwapTaskMap.h"
+#include "BabelFlow/reduce/KWayReduction.h"
+#include "BabelFlow/reduce/KWayReductionTaskMap.h"
+#include "BabelFlow/reduce/RadixKExchange.h"
+#include "BabelFlow/reduce/RadixKExchangeTaskMap.h"
 #include "BabelFlow/PreProcessInputTaskGraph.hpp"
 #include "BabelFlow/ModTaskMap.hpp"
 
