@@ -2674,6 +2674,30 @@ VTKHProject2d::execute()
     vtkm::rendering::Camera camera;
     camera.ResetToBounds(bounds);
 
+
+    //DEBUG for verifying the number of elements in the dataset.
+    //assumes there is a single domain, single topology.
+    unsigned long local_num_elems = data.GetNumberOfCells();
+    unsigned long global_num_elems = 0;
+    bool is_root = true;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    int mpi_rank;
+    MPI_Comm_rank(mpi_comm, &mpi_rank);
+
+    MPI_Reduce(
+        (void*) &local_num_elems, (void*) &global_num_elems, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, mpi_comm);
+
+    is_root = (mpi_rank == 0);
+#else
+    global_num_elems = local_num_elems;
+#endif
+    if (is_root)
+      std::cout << "VTKHProject2d() #elems==" << global_num_elems << "\n";
+
+
+
+
     if(params().has_path("camera"))
     {
       parse_camera(params()["camera"], camera);

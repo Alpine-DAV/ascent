@@ -1229,6 +1229,33 @@ DRayProject2d::execute()
 
     std::vector<dray::ScalarBuffer> buffers;
 
+    if (dray::dray::mpi_rank() == 0)
+      std::cout << camera.print() << "\n";
+
+    //DEBUG for verifying the number of elements in the dataset.
+    //assumes there is a single domain, single topology, and shape==quad.
+    conduit::Node *md_dataset_node = d_input ->as_node().get();
+    const conduit::Node &mesh_node = md_dataset_node->child(0);
+    unsigned long local_num_elems = mesh_node["topologies"].child(0)["elements/connectivity"]
+      .dtype().number_of_elements() / 4;
+    unsigned long global_num_elems = 0;
+    bool is_root = true;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(dray::dray::mpi_comm());
+    int mpi_rank;
+    MPI_Comm_rank(mpi_comm, &mpi_rank);
+
+    MPI_Reduce(
+        (void*) &local_num_elems, (void*) &global_num_elems, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, mpi_comm);
+
+    is_root = (mpi_rank == 0);
+#else
+    global_num_elems = local_num_elems;
+#endif
+    if (is_root)
+      std::cout << "DRayProject2d() #elems==" << global_num_elems << "\n";
+
+
 
     std::vector<std::string> field_names;
 
