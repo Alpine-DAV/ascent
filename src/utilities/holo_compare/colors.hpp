@@ -121,6 +121,23 @@ dray::Range scalar_range(const float *p1,
   return range;
 }
 
+dray::Range scalar_range(const float *p1,
+                         const int size)
+{
+  // find the total range of both images
+  // so we apply the same transform
+  dray::Range range;
+  for(int i = 0; i < size; ++i)
+  {
+    float val1 = p1[i];
+    if(!std::isnan(val1))
+    {
+      range.include(val1);
+    }
+  }
+  return range;
+}
+
 dray::Array<dray::Vec<float,4>>
 to_colors(const float *image,
           const int size,
@@ -164,12 +181,54 @@ image_diff(dray::Array<dray::Vec<float,4>> p1,
 
   for(int i = 0; i < size; ++i)
   {
-    dray::Vec<float,4> color = p1_ptr[i];
-    color -= p2_ptr[i];
-    color[0] = std::abs(color[0]);
-    color[1] = std::abs(color[1]);
-    color[2] = std::abs(color[2]);
-    color[3] = 1.f;
+    dray::Vec<float,4> color1 = p1_ptr[i];
+    dray::Vec<float,4> color2 = p2_ptr[i];
+
+    dray::Vec<float,3> lab1 = rgb2lab(color1);
+    dray::Vec<float,3> lab2 = rgb2lab(color2);
+    lab1 -= lab2;
+    lab1[0] = std::abs(lab1[0]);
+    lab1[1] = std::abs(lab1[1]);
+    lab1[2] = std::abs(lab1[2]);
+    dif_ptr[i] = lab2rgb(lab1);
+
+    //color1 -= color2;
+    //color[0] = std::abs(color[0]);
+    //color[1] = std::abs(color[1]);
+    //color[2] = std::abs(color[2]);
+    //color[3] = 1.f;
+    //dif_ptr[i] = color;
+  }
+
+  return res;
+}
+
+dray::Array<dray::Vec<float,4>>
+image_delta_e(dray::Array<dray::Vec<float,4>> p1,
+              dray::Array<dray::Vec<float,4>> p2)
+{
+  dray::Array<dray::Vec<float,4>> res;
+  const int size = p1.size();
+  res.resize(size);
+
+  dray::Vec<float,4> *p1_ptr = p1.get_host_ptr();
+  dray::Vec<float,4> *p2_ptr = p2.get_host_ptr();
+  dray::Vec<float,4> *dif_ptr = res.get_host_ptr();
+
+  for(int i = 0; i < size; ++i)
+  {
+    dray::Vec<float,4> color1 = p1_ptr[i];
+    dray::Vec<float,4> color2 = p2_ptr[i];
+
+    dray::Vec<float,3> lab1 = rgb2lab(color1);
+    dray::Vec<float,3> lab2 = rgb2lab(color2);
+    float delta = delta_e(lab1,lab2);
+
+    dray::Vec<float,4> color;
+    color[0] = delta / 100.f;
+    color[1] = delta / 100.f;
+    color[2] = delta / 100.f;
+    color[3] = 1;
     dif_ptr[i] = color;
   }
 
@@ -183,7 +242,8 @@ void compare_colors(conduit::Node &info,
                     const int size,
                     const int width,
                     const int height,
-                    const std::string field_name)
+                    const std::string field_name,
+                    const std::string output_name)
 {
   const std::string name = settings["name"].as_string();
   dray::ColorTable color_table(name);
@@ -196,17 +256,24 @@ void compare_colors(conduit::Node &info,
 
   dray::PNGEncoder encoder;
   encoder.encode((float*)p1_colors.get_host_ptr(), width, height);
-  encoder.save("p1_baseline_"+field_name + ".png");
+  encoder.save(output_name+"_high_baseline_"+field_name + ".png");
 
   encoder.encode((float*)p2_colors.get_host_ptr(), width, height);
-  encoder.save("p2_baseline_"+field_name + ".png");
+  encoder.save(output_name+"_low_baseline_"+field_name + ".png");
 
   // do a basic image diff
   dray::Array<dray::Vec<float,4>> diff_colors;
   diff_colors = image_diff(p1_colors,p2_colors);
 
   encoder.encode((float*)diff_colors.get_host_ptr(), width, height);
-  encoder.save("diff_"+field_name + ".png");
+  encoder.save(output_name + "diff_"+field_name + ".png");
+
+  // do a delta image diff
+  dray::Array<dray::Vec<float,4>> delta_colors;
+  delta_colors = image_delta_e(p1_colors,p2_colors);
+
+  encoder.encode((float*)delta_colors.get_host_ptr(), width, height);
+  encoder.save(output_name + "_diff_delta_"+field_name + ".png");
 
 }
 

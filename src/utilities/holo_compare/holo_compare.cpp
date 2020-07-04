@@ -62,9 +62,10 @@
 #include "colors.hpp"
 #endif
 
+std::string output_name;
 void usage()
 {
-  std::cout<<"holo usage: holo high_order.root low_order.root\n";
+  std::cout<<"holo usage: holo high_order.root low_order.root output_name\n";
 }
 
 bool validate_dims(const conduit::Node &i1,
@@ -233,7 +234,7 @@ compare_fields(const std::vector<std::string> &names,
 #ifdef DRAY_ENABLED
     conduit::Node color_table;
     conduit::Node color_info;
-    color_table["name"] = "cool2warm";
+    color_table["name"] = "4w_bgTR";
     compare_colors(color_info,
                    color_table,
                    p1,
@@ -241,7 +242,8 @@ compare_fields(const std::vector<std::string> &names,
                    size1,
                    width,
                    height,
-                   field);
+                   field,
+                   output_name);
 #endif
   }
   return res;
@@ -250,7 +252,7 @@ compare_fields(const std::vector<std::string> &names,
 int main (int argc, char *argv[])
 {
 
-  if(argc != 3)
+  if(argc != 4)
   {
     usage();
     return 1;
@@ -258,6 +260,7 @@ int main (int argc, char *argv[])
 
   std::string file1(argv[1]);
   std::string file2(argv[2]);
+  output_name = std::string(argv[3]);
 
   conduit::Node hola_opts, data1, data2;
   conduit::Node data_diff;
@@ -300,7 +303,10 @@ int main (int argc, char *argv[])
 
   char cycle_suffix[30];
   snprintf(cycle_suffix, 30, "%06d", cycle);
-  conduit::relay::io_blueprint::save(data_diff, "holo_diff.cycle_" + std::string(cycle_suffix) + ".blueprint_root_hdf5");
+  std::string diff_name = output_name + "_holo_diff.cycle_"
+                        + std::string(cycle_suffix)
+                        + ".blueprint_root_hdf5";
+  conduit::relay::io_blueprint::save(data_diff, diff_name);
 
   return 0;
 }
