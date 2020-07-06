@@ -434,6 +434,7 @@ std::string ASTMethodCall::build_jit(conduit::Node &n, flow::Workspace &w)
     return "domain_id";
   }
 
+  // math functions supported inside the kernel
   if( (m_id->m_name == "max" || m_id->m_name == "min") && arg_size == 1)
   {
     std::cout<<"MATCH\n";
@@ -445,6 +446,7 @@ std::string ASTMethodCall::build_jit(conduit::Node &n, flow::Workspace &w)
     return var_name;
   }
 
+  // pre-execute calls min(field('braid'))
   std::string res = m_id->m_name + "(";
   size_t pos_size = 0;
   if(arguments->pos_args != nullptr)

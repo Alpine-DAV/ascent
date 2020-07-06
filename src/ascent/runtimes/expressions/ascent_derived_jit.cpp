@@ -742,6 +742,7 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
 
 
     // these are reference counted
+    // need to keep the mem in scope or bad things happen
     std::vector<occa::memory> field_memory;
     if(info.has_path("field_vars"))
     {
@@ -769,7 +770,7 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
         kernel.pushArg(cnst.second);
       }
     }
-
+    // need to keep the mem in scope or bad things happen
     std::vector<occa::memory> mesh_memory;
     if(info.has_path("mesh_vars"))
     {
