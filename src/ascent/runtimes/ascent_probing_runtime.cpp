@@ -271,7 +271,7 @@ struct RenderConfig
         if (probing_factor <= 0.0)
             probing_stride = 0;
         else
-            probing_stride = max_count / (probing_factor*max_count);
+            probing_stride = std::round(max_count / (probing_factor*max_count));
 
         // infer probing count
         probing_count = get_probing_count_part(max_count);
@@ -837,7 +837,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
         }
     }
     
-    std::cout << "~~~~start compositing " << mpi_props.rank << std::endl;
+    std::cout << "~~~~arrange render order " << mpi_props.rank << std::endl;
 
     // arrange render order   
     vector<int> probing_enum_sim(my_render_recv_cnt, 0);
@@ -900,6 +900,8 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
             }
         }
     }
+
+    std::cout << "~~~~start compositing " << mpi_props.rank << std::endl;
 
     // Set the vis_comm to be the vtkh comm.
     vtkh::SetMPICommHandle(int(MPI_Comm_c2f(mpi_props.comm_vis)));
@@ -1655,9 +1657,14 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 #if ASCENT_MPI_ENABLED
     if (!is_inline) 
     {
-        MPI_Properties mpi_props(world_size, world_rank,  sim_count, world_size - sim_count, 
+        MPI_Properties mpi_props(world_size, world_rank, sim_count, world_size - sim_count, 
                                  mpi_comm_world, vis_comm);
         RenderConfig render_cfg(phi*theta, probing_factor, vis_budget);
+        if (world_rank == 0)
+        {
+            std::cout << "Probing " << render_cfg.probing_count << "/" << render_cfg.max_count
+                    << " renders with stride " << render_cfg.probing_stride << std::endl; 
+        }
 
         hybrid_render(mpi_props, render_cfg, render_times, m_data, render_chunks);
     }
