@@ -131,21 +131,21 @@ Matrix
 Camera::CameraTransform(void)
 {
   bool print = false;
-  double* v3 = new double[3]; //camera position - focus
+  double v3[3]; //camera position - focus
   v3[0] = (position[0] - focus[0]);
   v3[1] = (position[1] - focus[1]);
   v3[2] = (position[2] - focus[2]);
   normalize(v3);
 
-  double* v1 = new double[3]; //UP x (camera position - focus)
-  v1 = crossProduct(up, v3);
+  double v1[3]; //UP x (camera position - focus)
+  crossProduct(up, v3, v1);
   normalize(v1);
 
-  double* v2 = new double[3]; // (camera position - focus) x v1
-  v2 = crossProduct(v3, v1);
+  double v2[3]; // (camera position - focus) x v1
+  crossProduct(v3, v1, v2);
   normalize(v2);
 
-  double* t = new double[3]; // (0,0,0) - camera position
+  double t[3]; // (0,0,0) - camera position
   t[0] = (0 - position[0]);
   t[1] = (0 - position[1]);
   t[2] = (0 - position[2]);
@@ -192,10 +192,6 @@ Camera::CameraTransform(void)
     cerr << "Camera:" << endl;
     camera.Print(cerr);
   }
-  delete[] v1;
-  delete[] v2;
-  delete[] v3;
-  delete[] t;
   return camera;
 
 };
@@ -637,14 +633,11 @@ double dotProduct(double* v1, double* v2, int length)
   return dotproduct;
 }
 
-double* crossProduct(double * a, double * b)
+void crossProduct(double a[3], double b[3], double output[3])
 {
-  double* cross = new double[3]; 
-  cross[0] = ((a[1]*b[2]) - (a[2]*b[1])); //ay*bz-az*by
-  cross[1] = ((a[2]*b[0]) - (a[0]*b[2])); //az*bx-ax*bz
-  cross[2] = ((a[0]*b[1]) - (a[1]*b[0])); //ax*by-ay*bx
-
-  return cross;
+  output[0] = ((a[1]*b[2]) - (a[2]*b[1])); //ay*bz-az*by
+  output[1] = ((a[2]*b[0]) - (a[0]*b[2])); //az*bx-ax*bz
+  output[2] = ((a[0]*b[1]) - (a[1]*b[0])); //ax*by-ay*bx
 }
 
 
@@ -963,8 +956,8 @@ Triangle transformTriangle(Triangle t, Camera c, int width, int height)
 
   Triangle triangle;
   // Zero XYZ
-  double * pointOut = new double[4];
-  double * pointIn  = new double[4];
+  double pointOut[4];
+  double pointIn[4];
   pointIn[0] = t.X[0];
   pointIn[1] = t.Y[0];
   pointIn[2] = t.Z[0];
@@ -1001,9 +994,6 @@ Triangle transformTriangle(Triangle t, Camera c, int width, int height)
                          " (" << triangle.X[1] << " , " << triangle.Y[1] << " , " << triangle.Z[1] << ") " << endl <<
                          " (" << triangle.X[2] << " , " << triangle.Y[2] << " , " << triangle.Z[2] << ") " << endl;
   }
-
-  delete[] pointOut;
-  delete[] pointIn;
 
   return triangle;
 

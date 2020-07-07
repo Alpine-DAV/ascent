@@ -67,7 +67,7 @@ double nabs(double x);
 double calculateArea(double x0, double y0, double z0, double x1, double y1, double z1, double x2, double y2, double z2);
 void normalize(double * normal);
 double dotProduct(double* v1, double* v2, int length);
-double* crossProduct(double * a, double * b);
+void crossProduct(double a[3], double b[3], double c[3]);
 double SineParameterize(int curFrame, int nFrames, int ramp);
 void fibonacci_sphere(int i, int samples, double* points);
 
