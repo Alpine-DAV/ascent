@@ -238,8 +238,42 @@ Camera::ViewTransform(void)
 };
 
 
+//This is just to keep simplex from breaking
 Matrix
-Camera::DeviceTransform() 
+Camera::DeviceTransform()
+{ //(double x, double y, double z){
+
+/*
+| x' 0  0  0 |
+| 0  y' 0  0 |
+| 0  0  z' 0 |
+| 0  0  0  1 |
+*/
+  Matrix device;
+  int width = 1000;
+  int height = 1000;
+  device.A[0][0] = (width/2);
+  device.A[0][1] = 0;
+  device.A[0][2] = 0;
+  device.A[0][3] = 0;
+  device.A[1][0] = 0;
+  device.A[1][1] = (height/2);
+  device.A[1][2] = 0;
+  device.A[1][3] = 0;
+  device.A[2][0] = 0;
+  device.A[2][1] = 0;
+  device.A[2][2] = 1;
+  device.A[2][3] = 0;
+  device.A[3][0] = (width/2);
+  device.A[3][1] = (height/2);
+  device.A[3][2] = 0;
+  device.A[3][3] = 1;
+
+  return device;
+}
+
+Matrix
+Camera::DeviceTransform(int width, int height) 
 { //(double x, double y, double z){
 
 /*
@@ -250,20 +284,20 @@ Camera::DeviceTransform()
 */
   Matrix device;
 
-  device.A[0][0] = (screen.width/2);
+  device.A[0][0] = (width/2);
   device.A[0][1] = 0;
   device.A[0][2] = 0;
   device.A[0][3] = 0;
   device.A[1][0] = 0;
-  device.A[1][1] = (screen.height/2);
+  device.A[1][1] = (height/2);
   device.A[1][2] = 0;
   device.A[1][3] = 0;
   device.A[2][0] = 0;
   device.A[2][1] = 0;
   device.A[2][2] = 1;
   device.A[2][3] = 0;
-  device.A[3][0] = (screen.width/2);
-  device.A[3][1] = (screen.height/2);
+  device.A[3][0] = (width/2);
+  device.A[3][1] = (height/2);
   device.A[3][2] = 0;
   device.A[3][3] = 1;
 
@@ -908,14 +942,24 @@ GetScalarData(vtkh::DataSet &vtkhData, std::string field_name, int height, int w
   return data;
 }
 
-Triangle transformTriangle(Triangle t, Camera c)
+Triangle transformTriangle(Triangle t, Camera c, int width, int height)
 {
   bool print = false;
   Matrix camToView, m0, cam, view;
   cam = c.CameraTransform();
   view = c.ViewTransform();
   camToView = Matrix::ComposeMatrices(cam, view);
-  m0 = Matrix::ComposeMatrices(camToView, c.DeviceTransform());
+  m0 = Matrix::ComposeMatrices(camToView, c.DeviceTransform(width, height));
+  cerr<< "cam" << endl;
+  cam.Print(cerr);
+  cerr<< "view" << endl;
+  view.Print(cerr);
+  cerr<< "m0" << endl;
+  m0.Print(cerr);
+  cerr<< "camToView" << endl;
+  camToView.Print(cerr);
+  cerr<< "device t" << endl;
+  c.DeviceTransform(width, height).Print(cerr);
 
   Triangle triangle;
   // Zero XYZ
@@ -1198,13 +1242,13 @@ calcArea(std::vector<float> triangle)
 
 //calculate image space area
 float
-calcArea(std::vector<float> triangle, Camera c)
+calcArea(std::vector<float> triangle, Camera c, int width, int height)
 {
   //need to transform triangle to camera viewpoint
   Triangle w_tri(triangle[0], triangle[1], triangle[2], 
 	       triangle[3], triangle[4], triangle[5], 
 	       triangle[6], triangle[7], triangle[8]);
-  Triangle i_tri = transformTriangle(w_tri, c);
+  Triangle i_tri = transformTriangle(w_tri, c, width, height);
   
   cerr << "w_tri area: " << w_tri.calculateTriArea() << " i_tri area: " << i_tri.calculateTriArea() << endl;
   cerr << endl;
@@ -1369,7 +1413,7 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
         int num_triangles = triangles.size();
 	for(int i = 0; i < num_triangles; i++)
         {
-          float area = calcArea(triangles[i], camera);
+          float area = calcArea(triangles[i], camera, width, height);
           visible_area += area;
         }
       }
@@ -1402,7 +1446,7 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
       int num_triangles = triangles.size();
       for(int i = 0; i < num_triangles; i++)
       {
-        float area = calcArea(triangles[i], camera);
+        float area = calcArea(triangles[i], camera, width, height);
         visible_area += area;
       }
       score = visible_area;

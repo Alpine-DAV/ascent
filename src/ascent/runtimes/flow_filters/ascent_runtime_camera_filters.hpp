@@ -124,7 +124,8 @@ class Camera
 
     Matrix          CameraTransform(void);
     Matrix          ViewTransform(void);
-    Matrix          DeviceTransform(void);
+    Matrix          DeviceTransform(int width, int height);
+    Matrix          DeviceTransform();
 };
 
 Camera GetCamera(int frame, int nframes);
