@@ -201,7 +201,7 @@ int main (int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  conduit::Node replay_data, replay_opts;
+  conduit::Node replay_opts;
 #ifdef REPLAY_MPI
   replay_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
@@ -223,7 +223,12 @@ int main (int argc, char *argv[])
 
   for(int i = 0; i < time_steps.size(); ++i)
   {
+    conduit::Node replay_data;
     replay_opts["root_file"] = time_steps[i];
+    if(rank == 0)
+    {
+      std::cout<<"loading file "<<time_steps[i]<<"\n";
+    }
     ascent::hola("relay/blueprint/mesh", replay_opts, replay_data);
 
     ascent.publish(replay_data);
