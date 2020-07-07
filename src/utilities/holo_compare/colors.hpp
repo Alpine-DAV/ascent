@@ -266,7 +266,7 @@ void compare_colors(conduit::Node &info,
   diff_colors = image_diff(p1_colors,p2_colors);
 
   encoder.encode((float*)diff_colors.get_host_ptr(), width, height);
-  encoder.save(output_name + "diff_"+field_name + ".png");
+  encoder.save(output_name + "_diff_"+field_name + ".png");
 
   // do a delta image diff
   dray::Array<dray::Vec<float,4>> delta_colors;
