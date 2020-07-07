@@ -160,27 +160,18 @@ class Triangle
       float          X[3];
       float          Y[3];
       float          Z[3];
-      double         value[3];
-      Screen         screen;
-      double         view[3];
-      double         shading[3];
-      double         centroid[3];
-      double         radius;
-      bool           vis_counted = false;
-      int            compID;
-      bool           occ_counted = false;
-      double         area = 0.0;
-      double         minDepth = DBL_MAX;
-      double         maxDepth = -DBL_MAX;
 
-
+      Triangle(){};
+      Triangle(float x0, float y0, float z0,
+	       float x1, float y1, float z1,
+	       float x2, float y2, float z2)
+      {
+        X[0] = x0; Y[0] = y0; Z[0] = z0;
+        X[1] = x1; Y[1] = y1; Z[1] = z1;
+        X[2] = x2; Y[2] = y2; Z[2] = z2;
+      }	      
       void printTri();
-      void findDepth();
-      void calculateTriArea();
-
-      void calculateCentroid();
-      void calculatePhongShading(Camera c);
-      void scanline(int i, Camera c);
+      float calculateTriArea();
       double findMin(double a, double b, double c);
       double findMax(double a, double b, double c);
 };
