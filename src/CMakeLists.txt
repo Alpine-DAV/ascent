@@ -74,8 +74,6 @@ option(ENABLE_UTILS       "Build Utilities"           ON)
 
 option(ENABLE_BABELFLOW   "Enable BabelFlow runtime"  OFF)
 
-option(ENABLE_VTK         "Enable VTK support"        OFF)
-
 if(NOT ENABLE_SERIAL AND NOT ENABLE_MPI)
   message(FATAL_ERROR "No libraries are built. "
     "Please set ENABLE_SERIAL, ENABLE_MPI or both to ON")

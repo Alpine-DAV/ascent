@@ -2,9 +2,11 @@
 // Created by Sergei Shudler on 2020-06-09.
 //
 
-#ifndef ASCENT_ASCENT_RUNTIME_BABELFLOW_VOL_UTILS_H
-#define ASCENT_ASCENT_RUNTIME_BABELFLOW_VOL_UTILS_H
+#ifndef ASCENT_ASCENT_RUNTIME_BABELFLOW_COMP_UTILS_H
+#define ASCENT_ASCENT_RUNTIME_BABELFLOW_COMP_UTILS_H
 
+#include <string>
+#include <vector>
 
 #include "BabelFlow/TypeDefinitions.h"
 #include "BabelFlow/mpi/Controller.h"
@@ -32,33 +34,62 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
-// -- begin bflow_volume:: --
+// -- begin bflow_comp:: --
 //-----------------------------------------------------------------------------
-namespace bflow_volume
+namespace bflow_comp
 {
+
+struct ImageData
+{
+  static const uint32_t sNUM_CHANNELS = 4;
+  
+  unsigned char* image; 
+  unsigned char* zbuf;
+  uint32_t* bounds;
+  uint32_t* rend_bounds;     // Used only for binswap and k-radix
+  
+  ImageData() : image( nullptr ), zbuf( nullptr ), bounds( nullptr ), rend_bounds( nullptr ) {}
+  
+  void writeImage(const char* filename, uint32_t* extent);
+  BabelFlow::Payload serialize() const;
+  void deserialize(BabelFlow::Payload buffer);
+  void delBuffers();
+};
+  
+void compose_images(const std::vector<ImageData>& input_images, 
+                    std::vector<ImageData>& out_images, 
+                    int id,
+                    bool flip_split_side,
+                    bool skip_z_check);
+                        
+void split_and_blend(const std::vector<ImageData>& input_images,
+                     std::vector<ImageData>& out_images,
+                     uint32_t* union_box,
+                     bool flip_split_side,
+                     bool skip_z_check);
 
 //-----------------------------------------------------------------------------
 
 class BabelGraphWrapper
 {
 public:
-  BabelGraphWrapper(BabelFlow::FunctionType* data_ptr, int32_t task_id, 
-                    const int32_t* data_size, const int32_t* n_blocks,
-                    const int32_t* low, const int32_t* high, int32_t fanin, 
-                    BabelFlow::FunctionType extra_val, MPI_Comm mpi_comm);
+  static std::string sIMAGE_NAME;
+   
+  BabelGraphWrapper(const ImageData& input_img,
+                    const std::string& img_name,
+                    int32_t task_id,
+                    int32_t n_blocks,
+                    int32_t fanin,
+                    MPI_Comm mpi_comm);
   virtual ~BabelGraphWrapper() {}
   virtual void Initialize() = 0;
   virtual void Execute();
   
 protected:
-  BabelFlow::FunctionType* m_dataPtr;
+  ImageData m_inputImg;
   uint32_t m_taskId;
-  uint32_t m_dataSize[3];
-  uint32_t m_nBlocks[3];
-  BabelFlow::GlobalIndexType m_low[3];
-  BabelFlow::GlobalIndexType m_high[3];
+  uint32_t m_numBlocks;
   uint32_t m_fanin;
-  BabelFlow::FunctionType m_extraVal;
   MPI_Comm m_comm;
 
   std::map<BabelFlow::TaskId, BabelFlow::Payload> m_inputs;
@@ -68,17 +99,22 @@ protected:
 
 //-----------------------------------------------------------------------------
 
-class BabelVolRenderingReduce : public BabelGraphWrapper
+class BabelCompReduce : public BabelGraphWrapper
 {
 public:
-  BabelVolRenderingReduce(BabelFlow::FunctionType* data_ptr, int32_t task_id, 
-                          const int32_t* data_size, const int32_t* n_blocks,
-                          const int32_t* low, const int32_t* high, int32_t fanin, 
-                          BabelFlow::FunctionType isoval, MPI_Comm mpi_comm);
-  virtual ~BabelVolRenderingReduce() {}
+  BabelCompReduce(const ImageData& input_img,
+                  const std::string& img_name,
+                  int32_t task_id,
+                  int32_t n_blocks,
+                  int32_t fanin,
+                  MPI_Comm mpi_comm,
+                  const int32_t* blk_arr);
+  virtual ~BabelCompReduce() {}
   virtual void Initialize() override;
 
 private:
+  uint32_t m_nBlocks[3];
+
   BabelFlow::KWayReduction m_graph;
   BabelFlow::KWayReductionTaskMap m_taskMap; 
   BabelFlow::PreProcessInputTaskGraph m_modGraph;
@@ -87,16 +123,16 @@ private:
 
 //-----------------------------------------------------------------------------
 
-class BabelVolRenderingBinswap : public BabelGraphWrapper
+class BabelCompBinswap : public BabelGraphWrapper
 {
 public:
-  static uint32_t TOTAL_NUM_BLOCKS;
-  
-  BabelVolRenderingBinswap(BabelFlow::FunctionType* data_ptr, int32_t task_id, 
-                           const int32_t* data_size, const int32_t* n_blocks,
-                           const int32_t* low, const int32_t* high, int32_t fanin, 
-                           BabelFlow::FunctionType isoval, MPI_Comm mpi_comm);
-  virtual ~BabelVolRenderingBinswap() {}
+  BabelCompBinswap(const ImageData& input_img,
+                   const std::string& img_name,
+                   int32_t task_id,
+                   int32_t n_blocks,
+                   int32_t fanin,
+                   MPI_Comm mpi_comm);
+  virtual ~BabelCompBinswap() {}
   virtual void Initialize() override;
 
 private:
@@ -108,18 +144,17 @@ private:
 
 //-----------------------------------------------------------------------------
 
-class BabelVolRenderingRadixK : public BabelGraphWrapper
+class BabelCompRadixK : public BabelGraphWrapper
 {
 public:
-  static uint32_t TOTAL_NUM_BLOCKS;
-  static std::vector<uint32_t> RADICES_VEC;
-  
-  BabelVolRenderingRadixK(BabelFlow::FunctionType* data_ptr, int32_t task_id, 
-                          const int32_t* data_size, const int32_t* n_blocks,
-                          const int32_t* low, const int32_t* high, int32_t fanin, 
-                          BabelFlow::FunctionType isoval, const std::vector<uint32_t>& radix_v,
-                          MPI_Comm mpi_comm);
-  virtual ~BabelVolRenderingRadixK() {}
+  BabelCompRadixK(const ImageData& input_img,
+                  const std::string& img_name,
+                  int32_t task_id,
+                  int32_t n_blocks,
+                  int32_t fanin,
+                  MPI_Comm mpi_comm,
+                  const std::vector<uint32_t>& radix_v);
+  virtual ~BabelCompRadixK() {}
   virtual void Initialize() override;
 
 private:
@@ -138,7 +173,7 @@ private:
 //-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end bflow_volume --
+// -- end bflow_comp --
 //-----------------------------------------------------------------------------
 
 
@@ -154,4 +189,4 @@ private:
 
 
 
-#endif    // ASCENT_ASCENT_RUNTIME_BABELFLOW_VOL_UTILS_H
+#endif    // ASCENT_ASCENT_RUNTIME_BABELFLOW_COMP_UTILS_H

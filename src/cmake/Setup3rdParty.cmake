@@ -130,11 +130,3 @@ if (ENABLE_BABELFLOW)
     include(cmake/thirdparty/SetupBabelFlow.cmake)
 endif ()
 
-################################
-# Setup VTK
-################################
-if (ENABLE_VTK)
-    include(cmake/thirdparty/SetupVTK.cmake)
-endif ()
-
-

@@ -179,10 +179,7 @@ register_builtin()
 
 #if defined(ASCENT_BABELFLOW_ENABLED)
     AscentRuntime::register_filter_type<BFlowPmt>("transforms", "bflow_pmt");
-#endif
-
-#if defined(ASCENT_VTK_ENABLED)
-    AscentRuntime::register_filter_type<BFlowVolume>("extracts", "bflow_volume");
+    AscentRuntime::register_filter_type<BFlowCompose>("extracts", "bflow_comp");
 #endif
 
 #if defined(ASCENT_ADIOS_ENABLED)

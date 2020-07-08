@@ -43,45 +43,28 @@
 ###############################################################################
 
 ###############################################################################
-# Setup VTK
-###############################################################################
+#
+# BabelFlow PMT example that reads an output file
+# Usage: mpirun -n N ./ascent_bflow_comp_example -f <input_img> -d <width> <height> <channels> -m <fanin>
+#
+##############################################################################
 
 
-######## FIX LATER ########
+set(ascent_bflow_comp_example_sources
+    ascent_bflow_comp_example.cpp)
 
-set(TP_HOME "/g/g92/shudler1/projects/visit/third_party")
-set(ARCH "linux-x86_64_gcc-4.9")
-set(VTK_DIR "${TP_HOME}/vtk/8.1.0/${ARCH}/lib/cmake/vtk-8.1")
+if(MPI_FOUND)
+  set(ascent_bflow_comp_example_deps ascent_mpi BabelFlow::babelflow ${MPI_CXX_LIBRARIES})
 
-link_directories("${TP_HOME}/llvm/5.0.0/${ARCH}/lib")
-link_directories("${TP_HOME}/mesagl/17.2.8/${ARCH}/lib")
+    blt_add_executable(
+        NAME        ascent_bflow_comp_example
+        SOURCES     ${ascent_bflow_comp_example_sources}
+        DEPENDS_ON  ${ascent_bflow_comp_example_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-###########################
-
-
-if(NOT VTK_DIR)
-    MESSAGE(FATAL_ERROR "VTK support needs explicit VTK_DIR")
+  install(TARGETS ascent_bflow_comp_example
+      EXPORT  ascent
+      LIBRARY DESTINATION examples/ascent/babelflow/comp
+      ARCHIVE DESTINATION examples/ascent/babelflow/comp
+      RUNTIME DESTINATION examples/ascent/babelflow/comp)
 endif()
-
-MESSAGE(STATUS "Looking for VTK using VTK_DIR = ${VTK_DIR}")
-
-# use VTK_DIR to setup the options that cmake's find VTK needs
-#file(GLOB VTK_DIR "${VTK_DIR}/lib/cmake/vtk-*")
-#if(NOT VTK_DIR)
-#    MESSAGE(FATAL_ERROR "Failed to find VTK at VTK_DIR=${VTK_DIR}/lib/cmake/vtk-*")
-#endif()
-
-find_package(VTK REQUIRED QUIET)
-include(${VTK_USE_FILE})
-
-set(VTK_FOUND TRUE)
-
-message(STATUS "FOUND VTK at ${VTK_DIR}")
-
-message(STATUS "VTK include dirs: ${VTK_INCLUDE_DIRS}")
-message(STATUS "VTK library dirs: ${VTK_LIBRARIES}")
-
-blt_register_library( NAME vtk
-					  INCLUDES ${VTK_INCLUDE_DIRS}
-                      LIBRARIES ${VTK_LIBRARIES}
-                      )

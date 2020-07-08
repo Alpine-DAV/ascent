@@ -71,8 +71,6 @@ int main(int argc, char **argv)
   }
   dim =  block_decomp[0]*block_decomp[1]*block_decomp[2];
 
-  std::cout << "sizeof(FunctionType) = " << sizeof(FunctionType) << std::endl;
-
   auto err = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
   assert(err == MPI_SUCCESS);
 
@@ -201,16 +199,15 @@ int main(int argc, char **argv)
   a.publish(mesh);
   
   vector<int64_t> in_ghosts({1, 1, 1, 1, 1, 1});
-  vector<int64_t> radices({2, 4});
   
   // build pipeline Node for the filter
-  //Node pipelines;
-  //pipelines["pl1/f1/type"] = "bflow_pmt";
-  //pipelines["pl1/f1/params/field"] = "braids";
-  //pipelines["pl1/f1/params/fanin"] = int64_t(valence);
-  //pipelines["pl1/f1/params/threshold"] = threshold_;
-  //pipelines["pl1/f1/params/in_ghosts"].set_int64_vector(in_ghosts);
-  //pipelines["pl1/f1/params/gen_segment"] = int64_t(1);    // 1 -- means create a field with segmentation
+  Node pipelines;
+  pipelines["pl1/f1/type"] = "bflow_pmt";
+  pipelines["pl1/f1/params/field"] = "braids";
+  pipelines["pl1/f1/params/fanin"] = int64_t(valence);
+  pipelines["pl1/f1/params/threshold"] = threshold_;
+  pipelines["pl1/f1/params/in_ghosts"].set_int64_vector(in_ghosts);
+  pipelines["pl1/f1/params/gen_segment"] = int64_t(1);    // 1 -- means create a field with segmentation
 
   // Old parameters that we were using, now automatically computed by the filter
   //pipelines["pl1/f1/params/mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
@@ -232,19 +229,11 @@ int main(int argc, char **argv)
 
   // extract to save to file the output
   Node extract;
-  //extract["e1/type"] = "relay";
-  //extract["e1/pipeline"] = "pl1";
-  //extract["e1/params/path"] = "seg";
-  //extract["e1/params/protocol"] = "blueprint/mesh/hdf5";
-  //extract["e1/params/fields"].append() = "segment";
-  
-  extract["e1/type"] = "bflow_volume";
-  extract["e1/params/field"] = "braids";
-  extract["e1/params/fanin"] = int64_t(valence);
-  extract["e1/params/isovalue"] = threshold_;
-  extract["e1/params/compositing"] = int64_t(2);   // 0 -- reduction, 1 -- bin-swap, 2 -- radix-k
-  extract["e1/params/img_size"] = int64_t(512);
-  extract["e1/params/radices"].set_int64_vector(radices);
+  extract["e1/type"] = "relay";
+  extract["e1/pipeline"] = "pl1";
+  extract["e1/params/path"] = "seg";
+  extract["e1/params/protocol"] = "blueprint/mesh/hdf5";
+  extract["e1/params/fields"].append() = "segment";
 
   // pipelines
 
@@ -255,9 +244,9 @@ int main(int argc, char **argv)
 
   action.append()["action"] = "execute";
 
-  //Node &add_pipelines = action.append();
-  //add_pipelines["action"] = "add_pipelines";
-  //add_pipelines["pipelines"] = pipelines;
+  Node &add_pipelines = action.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
   
   double color[3] = {0.0, 0.0, 1.0};
   conduit::Node control_points;
@@ -286,29 +275,30 @@ int main(int argc, char **argv)
   conduit::Node &point4 = control_points.append();
   point4["type"] = "alpha";
   point4["position"] = 0.0;
-  point4["alpha"] = 0.;
+  point4["alpha"] = 1.;
 
   conduit::Node &point5 = control_points.append();
   point5["type"] = "alpha";
-  point5["position"] = 0.4;
+  point5["position"] = 0.2;
   point5["alpha"] = 0.;
   
   conduit::Node &point6 = control_points.append();
   point6["type"] = "alpha";
   point6["position"] = 1.0;
-  point6["alpha"] = 1.;
+  point6["alpha"] = 0.;
   
   Node& add_act2 = action.append();
   add_act2["action"] = "add_scenes";
   Node& scenes = add_act2["scenes"];
 
+  // Do a volume rendering of the segmentation field
   scenes["s1/plots/p1/type"]  = "volume";
-  scenes["s1/plots/p1/field"] = "braids";
+  scenes["s1/plots/p1/field"] = "segment";
   scenes["s1/plots/p1/color_table/control_points"] = control_points;
   
   scenes["s1/renders/r1/image_width"]  = 512;
   scenes["s1/renders/r1/image_height"] = 512;
-  scenes["s1/renders/r1/image_name"]   = "ascent_vol_render";
+  scenes["s1/renders/r1/image_name"]   = "segmentation";
   scenes["s1/renders/r1/camera/azimuth"] = 30.0;
   scenes["s1/renders/r1/camera/elevation"] = 20.0;
   

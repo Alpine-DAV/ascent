@@ -1,5 +1,5 @@
 //
-// Created by Li, Jixian on 2019-06-04.
+// Created by Sergei Shudler on 2020-06-09.
 //
 
 #ifndef ASCENT_ASCENT_RUNTIME_BABELFLOW_FILTERS_H
@@ -44,13 +44,13 @@ public:
 
 
 //-----------------------------------------------------------------------------
-class BFlowVolume : public ::flow::Filter
+class BFlowCompose : public ::flow::Filter
 {
 public:
     enum CompositingType { REDUCE = 0, BINSWAP = 1, RADIX_K = 2 };
     
-    BFlowVolume() = default;
-    virtual ~BFlowVolume() {}
+    BFlowCompose() = default;
+    virtual ~BFlowCompose() {}
 
     virtual void   declare_interface(conduit::Node &i) override;
     virtual bool   verify_params(const conduit::Node &params,
