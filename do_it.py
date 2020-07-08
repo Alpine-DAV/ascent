@@ -105,7 +105,7 @@ def gen_ho_actions(output_name, camera):
   return actions
 
 def gen_options(refinement):
-  options = 'refinement : ' + str(refinement) + '\n'
+  options = 'refinement_level : ' + str(refinement) + '\n'
   return options
 
 def write(contents,name):
