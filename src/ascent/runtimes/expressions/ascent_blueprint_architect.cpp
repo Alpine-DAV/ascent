@@ -56,6 +56,7 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <algorithm>
 
 #include <flow_workspace.hpp>
 
