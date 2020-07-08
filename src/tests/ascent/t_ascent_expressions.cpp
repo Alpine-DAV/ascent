@@ -819,7 +819,7 @@ TEST(ascent_binning, braid_binning)
 
   expr = "binning('braid', 'sum', [axis('x'), axis('y')], output='bins')";
   eval.evaluate(expr);
-  expr = "binning('braid', 'std', [axis('x'), axis('y')], output='mesh')";
+  expr = "binning('braid', 'std', [axis('x', num_bins=10), axis('y', num_bins=10)], output='mesh')";
   eval.evaluate(expr);
 
   std::string output_file =
