@@ -314,6 +314,9 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
                                  const RenderConfig render_cfg,
                                  const MPI_Properties mpi_props)
 {
+    // empirically determined render factor for sim nodes
+    const float sim_factor = 1.3;      // TODO: render overhead on sim nodes -> investigate
+
     assert(sim_estimate.size() == vis_estimates.size());
     
     std::valarray<float> t_inline(0.f, mpi_props.sim_node_count);
@@ -321,7 +324,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         t_inline[i] = vis_estimates[i] * render_cfg.non_probing_count;
 
     // TODO: add smart way to estimate compositing + save time
-    float t_compositing = 0.7f * render_cfg.max_count;  // flat compositing cost (single vis node only)
+    float t_compositing = 0.3f * render_cfg.max_count;  // flat compositing cost (single vis node only)
     if (mpi_props.rank == 0)
         std::cout << "~~compositing estimate: " << t_compositing << std::endl;
 
@@ -365,7 +368,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
                 // t_intransit[target_vis_node] += 0.09f;  
                 render_counts_vis[target_vis_node]--;
             
-                t_inline[min_id] += vis_estimates[min_id];
+                t_inline[min_id] += vis_estimates[min_id] * sim_factor;
                 render_counts_sim[min_id]++;
             }
             else    // we ran out of renderings on this vis node
@@ -409,7 +412,8 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
  * Sort ranks in descending order according to sim + vis times estimations.
  */
 std::vector<int> sort_ranks(const std::vector<float> &sim_estimates, 
-                            const std::vector<float> &vis_estimates)
+                            const std::vector<float> &vis_estimates,
+                            const int render_count)
 {
     assert(sim_estimates.size() == vis_estimates.size());
     std::vector<int> rank_order(sim_estimates.size());
@@ -419,8 +423,8 @@ std::vector<int> sort_ranks(const std::vector<float> &sim_estimates,
                      rank_order.end(), 
                      [&](int i, int j) 
                      { 
-                         return sim_estimates[i] + vis_estimates[i] 
-                              > sim_estimates[j] + vis_estimates[j];
+                         return sim_estimates[i] + vis_estimates[i]*render_count 
+                              > sim_estimates[j] + vis_estimates[j]*render_count;
                      } 
                      );
     return rank_order;
@@ -431,9 +435,9 @@ std::vector<int> sort_ranks(const std::vector<float> &sim_estimates,
  */
 std::vector<int> node_assignment(const std::vector<float> &g_sim_estimates, 
                                  const std::vector<float> &g_vis_estimates,
-                                 const int vis_node_count)
+                                 const int vis_node_count, const int render_count)
 {
-    const std::vector<int> rank_order = sort_ranks(g_sim_estimates, g_vis_estimates);
+    const std::vector<int> rank_order = sort_ranks(g_sim_estimates, g_vis_estimates, render_count);
     const int sim_node_count = rank_order.size() - vis_node_count;
     std::vector<float> vis_node_cost(vis_node_count, 0.f);
     std::vector<int> map(sim_node_count, -1);
@@ -975,7 +979,10 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
     {   // write to disk 
         t_start0 = std::chrono::system_clock::now();
         for (int j = 0; j < results.size(); ++j)
-            results[j].Save((*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string());
+        {
+            std::string name = (*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string();
+            results[j].Save(name, true);
+        }
 
         log_time(t_start0, "+ save image ", mpi_props.rank);
         log_global_time("end writeToDisk", mpi_props.rank);
@@ -1000,9 +1007,10 @@ void pack_and_send(Node& data, const int destination, const int tag, const MPI_C
 
 
 //-----------------------------------------------------------------------------
-void hybrid_render(const MPI_Properties mpi_props,
-                   const RenderConfig render_cfg,
+void hybrid_render(const MPI_Properties &mpi_props,
+                   const RenderConfig &render_cfg,
                    const std::vector<double> &my_probing_times,
+                   const double total_probing_time,
                    conduit::Node &data,
                    conduit::Node &render_chunks_probing)
 {
@@ -1036,20 +1044,29 @@ void hybrid_render(const MPI_Properties mpi_props,
     else if (mpi_props.size > 1) // otherwise we are a sim node
     {
         assert(my_probing_times.size() > 0);
-        // my_avg_probing_time is in milliseconds
-        my_avg_probing_time = float(std::accumulate(my_probing_times.begin(), 
-                                                    my_probing_times.end(), 0.0) 
-                                          / my_probing_times.size());
+        
+        bool use_time_per_render = false;
+        if (use_time_per_render) // render time per probing image (w/o overhead)
+        {
+            double sum_render_times = std::accumulate(my_probing_times.begin(), 
+                                                      my_probing_times.end(), 0.0);
 
-        std::cout << "+++ probing times ";
-        for (auto &a : my_probing_times)
-            std::cout << a << " ";
-        std::cout << mpi_props.rank << std::endl;
+            my_avg_probing_time = float(sum_render_times / my_probing_times.size());
 
-        // convert from milliseconds to seconds 
-        my_avg_probing_time /= 1000.f;
+            std::cout << "+++ probing times ";
+            for (auto &a : my_probing_times)
+                std::cout << a << " ";
+            std::cout << mpi_props.rank << std::endl;
+            std::cout << "probing w/o overhead " << sum_render_times/1000.0 << std::endl;
+            std::cout << "probing w/  overhead " << total_probing_time << std::endl;
+        }
+        else // use whole probing time with overhead
+        {
+            my_avg_probing_time = total_probing_time / render_cfg.probing_count;
+        }
+
         std::cout << "~~~ " << my_avg_probing_time 
-                  << " sec vis time estimate " 
+                  << " sec vis time estimate per render " 
                   << mpi_props.rank << std::endl;
 
         my_data_size = data_packed.total_bytes_compact();
@@ -1070,7 +1087,8 @@ void hybrid_render(const MPI_Properties mpi_props,
 
     // assign sim nodes to vis nodes
     std::vector<int> node_map = node_assignment(g_sim_estimates, g_vis_estimates, 
-                                                      mpi_props.vis_node_count);
+                                                mpi_props.vis_node_count, 
+                                                render_cfg.non_probing_count);
 
     // DEBUG: OUT
     if (mpi_props.rank == 0)
@@ -1368,18 +1386,6 @@ void hybrid_render(const MPI_Properties mpi_props,
                                             destination, tag_probing, mpi_props.comm_world, 
                                             std::ref(request_probing));
 
-            // {   // send probing chunks to vis node
-            //     int mpi_error = MPI_Ibsend(compact_probing_renders.data_ptr(),
-            //                                compact_probing_renders.total_bytes_compact(),
-            //                                MPI_BYTE,
-            //                                destination,
-            //                                tag_probing,
-            //                                mpi_props.comm_world,
-            //                                &request_probing
-            //                                );
-            //     if (mpi_error)
-            //         std::cout << "ERROR sending probing renders to " << destination << std::endl;
-            // }
             log_global_time("end sendData", mpi_props.rank);
 
             // in line rendering using ascent
@@ -1427,30 +1433,6 @@ void hybrid_render(const MPI_Properties mpi_props,
                 threads.push_back(std::thread(&pack_and_send, std::ref(render_chunks_inline), 
                                               destination, tag_inline + i, mpi_props.comm_world, 
                                               std::ref(requests[i])));
-
-    // auto t_detail = std::chrono::system_clock::now();
-                // send render chunks to vis node for compositing
-                // TODO: no copy (set external)
-            // Node compact_renders = pack_node(render_chunks_inline);
-                // Node compact_renders;
-                // pack_node_external(render_chunks_inline, compact_renders);
-    // print_time(t_detail, "pack node ", mpi_props.rank);
-                // {
-                //     int mpi_error = MPI_Ibsend(compact_renders.data_ptr(),
-                //                                compact_renders.total_bytes_compact(),
-                //                                MPI_BYTE,
-                //                                destination,
-                //                                tag_inline + i,
-                //                                mpi_props.comm_world,
-                //                                &requests[i]
-                //                               );
-                //     if (mpi_error)
-                //         std::cout << "ERROR sending dataset to " << destination << std::endl;
-
-                    // std::cout << mpi_props.rank << " end render sim " << current_batch_size
-                    //             << " renders size " << compact_renders.total_bytes_compact() 
-                    //             << std::endl;
-                // }
             }
             while (threads.size() > 0)
             {
@@ -1604,6 +1586,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 #endif // ASCENT_MPI_ENABLED
 
     std::vector<double> render_times;
+    double total_probing_time = 0.0;
     // TODO: handle corner case where there is no probing (and no probing chunks)
     Ascent ascent_probing;
     Node render_chunks;
@@ -1642,10 +1625,9 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 
             int probing_images = int(std::round(probing_factor * phi * theta));
             log_time(start, "probing " + std::to_string(probing_images) + " ", world_rank);
-            // TODO: atm: use total time measurement instead of image times
-            render_times.clear();
+
             std::chrono::duration<double> elapsed = std::chrono::system_clock::now() - start;
-            render_times.push_back(elapsed.count() * 1000.0);
+            total_probing_time = elapsed.count();
         }
     }
     else
@@ -1666,7 +1648,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
                     << " renders with stride " << render_cfg.probing_stride << std::endl; 
         }
 
-        hybrid_render(mpi_props, render_cfg, render_times, m_data, render_chunks);
+        hybrid_render(mpi_props, render_cfg, render_times, total_probing_time, m_data, render_chunks);
     }
     ascent_probing.close();
 

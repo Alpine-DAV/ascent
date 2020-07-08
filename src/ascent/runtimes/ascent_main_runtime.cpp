@@ -1500,7 +1500,7 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     // Node depth_buffers;
     // Node depths;
     // FindRenders(renders, render_file_names, render_times, color_buffers, depth_buffers, depths);
-    print_time(t_detail, "''' find renders ", m_rank);
+    // print_time(t_detail, "''' copy image info ", m_rank);
 
     // t_detail = std::chrono::system_clock::now();
     // m_info["images"] = renders;
