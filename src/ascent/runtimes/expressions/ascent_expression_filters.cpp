@@ -1401,8 +1401,8 @@ History::execute()
     int relative_index = (*n_relative_index)["value"].to_int32();
     if(relative_index >= entries)
     {
-      // clamp to last if its gone too far
-      relative_index = entries - 1;
+      // clamp to first if its gone too far
+      relative_index = 0;
     }
     if(relative_index < 0)
     {
@@ -1625,6 +1625,7 @@ Axis::declare_interface(Node &i)
   i["port_names"].append() = "max_val";
   i["port_names"].append() = "num_bins";
   i["port_names"].append() = "bins";
+  i["port_names"].append() = "clamp";
   i["output_port"] = "true";
 }
 
@@ -1648,6 +1649,8 @@ Axis::execute()
   const conduit::Node *n_num_bins = input<Node>("num_bins");
   // rectilinear binning
   const conduit::Node *n_bins_list = input<Node>("bins");
+  // clamp
+  const conduit::Node *n_clamp = input<conduit::Node>("clamp");
 
   if(!graph().workspace().registry().has_entry("dataset"))
   {
@@ -1680,6 +1683,11 @@ Axis::execute()
 
     int bins_len = n_bins_list->number_of_children();
 
+    if(bins_len < 2)
+    {
+      ASCENT_ERROR("Axis: bins must have at least 2 items.");
+    }
+
     double *bins = new double[bins_len]();
 
     for(int i = 0; i < bins_len; ++i)
@@ -1687,9 +1695,13 @@ Axis::execute()
       const conduit::Node &bin = n_bins_list->child(i);
       if(!detail::is_scalar(bin["type"].as_string()))
       {
-        ASCENT_ERROR("Axis: bins must be a list of scalars");
+        ASCENT_ERROR("Axis: bins must be a list of scalars.");
       }
       bins[i] = bin["value"].to_float64();
+      if(i != 0 && bins[i - 1] >= bins[i])
+      {
+        ASCENT_ERROR("Axis: bins of strictly increasing scalars.");
+      }
     }
     n_bins.set(bins, bins_len);
     (*output)["value/" + name + "/bins"] = n_bins;
@@ -1708,8 +1720,14 @@ Axis::execute()
     if(!n_num_bins->dtype().is_empty())
     {
       (*output)["value/" + name + "/num_bins"] =
-          (*n_num_bins)["value"].to_float64();
+          (*n_num_bins)["value"].to_int32();
     }
+  }
+
+  (*output)["value/" + name + "/clamp"] = false;
+  if(!n_clamp->dtype().is_empty())
+  {
+    (*output)["value/" + name + "/clamp"] = (*n_clamp)["value"].to_uint8();
   }
   set_output<conduit::Node>(output);
 }
@@ -1818,31 +1836,33 @@ Histogram::execute()
 }
 
 //-----------------------------------------------------------------------------
-Ecf::Ecf() : Filter()
+Binning::Binning() : Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-Ecf::~Ecf()
+Binning::~Binning()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-Ecf::declare_interface(Node &i)
+Binning::declare_interface(Node &i)
 {
-  i["type_name"] = "ecf";
+  i["type_name"] = "binning";
   i["port_names"].append() = "reduction_var";
   i["port_names"].append() = "reduction_op";
   i["port_names"].append() = "bin_axes";
+  i["port_names"].append() = "empty_bin_val";
+  i["port_names"].append() = "output";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Ecf::verify_params(const conduit::Node &params, conduit::Node &info)
+Binning::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1851,16 +1871,18 @@ Ecf::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-Ecf::execute()
+Binning::execute()
 {
   const std::string reduction_var =
       (*input<Node>("reduction_var"))["value"].as_string();
   const std::string reduction_op =
       (*input<Node>("reduction_op"))["value"].as_string();
   conduit::Node *n_axes_list = input<Node>("bin_axes");
+  // optional arguments
+  const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
+  const conduit::Node *n_output_opt = input<conduit::Node>("output");
 
-  // dataset is available because we check in Axis
-  const conduit::Node *const dataset =
+  conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
 
   // verify n_axes_list and put the values in n_bin_axes
@@ -1871,7 +1893,7 @@ Ecf::execute()
     const conduit::Node &axis = n_axes_list->child(i);
     if(axis["type"].as_string() != "axis")
     {
-      ASCENT_ERROR("ECF: bin_axes must be a list of axis");
+      ASCENT_ERROR("Binning: bin_axes must be a list of axis");
     }
     n_bin_axes.update(axis["value"]);
   }
@@ -1897,26 +1919,57 @@ Ecf::execute()
      reduction_op != "max" && reduction_op != "avg" && reduction_op != "pdf" &&
      reduction_op != "std" && reduction_op != "var" && reduction_op != "rms")
   {
-    ASCENT_ERROR("Known reduction operators are: cnt, sum, min, max, avg, pdf, "
-                 "std, var, rms");
+    ASCENT_ERROR(
+        "Unknown reduction_op: '"
+        << reduction_op
+        << "'. Known reduction operators are: cnt, sum, min, max, avg, pdf, "
+           "std, var, rms");
   }
 
-  const conduit::Node &n_ecf =
-      ecf(*dataset, n_bin_axes, reduction_var, reduction_op);
+  double empty_bin_val = 0;
+  if(!n_empty_bin_val->dtype().is_empty())
+  {
+    empty_bin_val = (*n_empty_bin_val)["value"].to_float64();
+  }
+
+  const conduit::Node &n_binning =
+      binning(*dataset, n_bin_axes, reduction_var, reduction_op, empty_bin_val);
 
   conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "ecf";
-  (*output)["attrs/value/value"] = n_ecf["value"];
+  (*output)["type"] = "binning";
+  (*output)["attrs/value/value"] = n_binning["value"];
   (*output)["attrs/value/type"] = "array";
   (*output)["attrs/reduction_var/value"] = reduction_var;
   (*output)["attrs/reduction_var/type"] = "string";
   (*output)["attrs/reduction_op/value"] = reduction_op;
   (*output)["attrs/reduction_op/type"] = "string";
-  (*output)["attrs/bin_axes/value"] = n_ecf["bin_axes"];
+  (*output)["attrs/bin_axes/value"] = n_binning["bin_axes"];
   (*output)["attrs/bin_axes/type"] = "list";
-  (*output)["attrs/association/value"] = n_ecf["association"];
+  (*output)["attrs/association/value"] = n_binning["association"];
   (*output)["attrs/association/type"] = "string";
   set_output<conduit::Node>(output);
+
+  if(!n_output_opt->dtype().is_empty())
+  {
+    const std::string &output_opt = (*n_output_opt)["value"].as_string();
+    if(output_opt != "none" && output_opt != "bins" && output_opt != "mesh")
+    {
+      ASCENT_ERROR("Unknown ouput_opt: '"
+                   << output_opt
+                   << "'. Known output options are: 'none', 'bins', 'mesh'.");
+    }
+    if(output_opt == "bins")
+    {
+      conduit::Node n_binning_mesh = binning_mesh(*output);
+      n_binning_mesh["state/cycle"] = 100;
+      n_binning_mesh["state/domain_id"] = 0;
+      dataset->child(0).update(n_binning_mesh);
+    }
+    else if(output_opt == "mesh")
+    {
+      paint_binning(*output, *dataset);
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------

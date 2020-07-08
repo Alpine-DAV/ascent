@@ -114,14 +114,15 @@ conduit::Node field_cdf(const conduit::Node &hist);
 conduit::Node global_bounds(const conduit::Node &dataset,
                             const conduit::Node &field_names);
 
-conduit::Node ecf(const conduit::Node &dataset,
+conduit::Node binning(const conduit::Node &dataset,
                   conduit::Node &bin_axes,
                   const std::string &reduction_var,
-                  const std::string &reduction_op);
+                  const std::string &reduction_op,
+                  const double empty_bin_val);
 
-void ASCENT_API paint_ecf(const conduit::Node &ecf, conduit::Node &dataset);
+void ASCENT_API paint_binning(const conduit::Node &binning, conduit::Node &dataset);
 
-conduit::Node ASCENT_API ecf_mesh(const conduit::Node &ecf);
+conduit::Node ASCENT_API binning_mesh(const conduit::Node &binning);
 
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);

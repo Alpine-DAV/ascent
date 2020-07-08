@@ -86,6 +86,17 @@ public:
   virtual conduit::Node build_graph(flow::Workspace &w);
 };
 
+class ASTBoolean : public ASTExpression
+{
+public:
+  int tok;
+  ASTBoolean(const int tok) : tok(tok)
+  {
+  }
+  virtual void access();
+  virtual conduit::Node build_graph(flow::Workspace &w);
+};
+
 class ASTExpressionList : public ASTExpression
 {
 public:

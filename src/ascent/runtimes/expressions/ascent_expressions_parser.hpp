@@ -58,31 +58,33 @@ extern int ascentdebug;
     TINTEGER = 259,                /* TINTEGER  */
     TDOUBLE = 260,                 /* TDOUBLE  */
     TSTRING = 261,                 /* TSTRING  */
-    TIF = 262,                     /* TIF  */
-    TTHEN = 263,                   /* TTHEN  */
-    TELSE = 264,                   /* TELSE  */
-    TOR = 265,                     /* TOR  */
-    TAND = 266,                    /* TAND  */
-    TNOT = 267,                    /* TNOT  */
-    TAEQ = 268,                    /* TAEQ  */
-    TCEQ = 269,                    /* TCEQ  */
-    TCNE = 270,                    /* TCNE  */
-    TCLT = 271,                    /* TCLT  */
-    TCLE = 272,                    /* TCLE  */
-    TCGT = 273,                    /* TCGT  */
-    TCGE = 274,                    /* TCGE  */
-    TLPAREN = 275,                 /* TLPAREN  */
-    TRPAREN = 276,                 /* TRPAREN  */
-    TLBRACKET = 277,               /* TLBRACKET  */
-    TRBRACKET = 278,               /* TRBRACKET  */
-    TCOMMA = 279,                  /* TCOMMA  */
-    TDOT = 280,                    /* TDOT  */
-    TPLUS = 281,                   /* TPLUS  */
-    TMINUS = 282,                  /* TMINUS  */
-    TMUL = 283,                    /* TMUL  */
-    TDIV = 284,                    /* TDIV  */
-    TMOD = 285,                    /* TMOD  */
-    TNEG = 286                     /* TNEG  */
+    TOR = 262,                     /* TOR  */
+    TAND = 263,                    /* TAND  */
+    TNOT = 264,                    /* TNOT  */
+    TTRUE = 265,                   /* TTRUE  */
+    TFALSE = 266,                  /* TFALSE  */
+    TIF = 267,                     /* TIF  */
+    TTHEN = 268,                   /* TTHEN  */
+    TELSE = 269,                   /* TELSE  */
+    TAEQ = 270,                    /* TAEQ  */
+    TCEQ = 271,                    /* TCEQ  */
+    TCNE = 272,                    /* TCNE  */
+    TCLT = 273,                    /* TCLT  */
+    TCLE = 274,                    /* TCLE  */
+    TCGT = 275,                    /* TCGT  */
+    TCGE = 276,                    /* TCGE  */
+    TLPAREN = 277,                 /* TLPAREN  */
+    TRPAREN = 278,                 /* TRPAREN  */
+    TLBRACKET = 279,               /* TLBRACKET  */
+    TRBRACKET = 280,               /* TRBRACKET  */
+    TCOMMA = 281,                  /* TCOMMA  */
+    TDOT = 282,                    /* TDOT  */
+    TPLUS = 283,                   /* TPLUS  */
+    TMINUS = 284,                  /* TMINUS  */
+    TMUL = 285,                    /* TMUL  */
+    TDIV = 286,                    /* TDIV  */
+    TMOD = 287,                    /* TMOD  */
+    TNEG = 288                     /* TNEG  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -97,6 +99,7 @@ union YYSTYPE
  ASTExpression               *expr;
  ASTIdentifier               *ident;
  ASTString                   *string_literal;
+ ASTBoolean                  *bool_literal;
  ASTExpressionList           *expr_list;
  ASTNamedExpression          *named_expr;
  ASTNamedExpressionList      *named_expr_list;
@@ -104,7 +107,7 @@ union YYSTYPE
  std::string                 *string;
  int token;
 
-#line 108 "ascent_expressions_parser.hpp"
+#line 111 "ascent_expressions_parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -121,6 +124,6 @@ int ascentparse (void);
 
   ASTExpression *get_result();
 
-#line 125 "ascent_expressions_parser.hpp"
+#line 128 "ascent_expressions_parser.hpp"
 
 #endif /* !YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED  */

@@ -355,11 +355,11 @@ public:
   virtual void execute();
 };
 
-class Ecf : public ::flow::Filter
+class Binning : public ::flow::Filter
 {
 public:
-  Ecf();
-  ~Ecf();
+  Binning();
+  ~Binning();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);

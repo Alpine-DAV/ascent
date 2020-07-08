@@ -44,12 +44,12 @@ print_match_error(const std::string &fname,
     const int req_args = sig["req_count"].to_int32();
     for(int a = 0; a < n_args.number_of_children(); ++a)
     {
-      ss << n_args.child(a).name() << "="
-         << n_args.child(a)["type"].as_string();
-      if(a > req_args)
+      if(a >= req_args)
       {
         ss << "[optional]";
       }
+      ss << n_args.child(a).name() << "="
+         << n_args.child(a)["type"].as_string();
       if(a == n_args.number_of_children() - 1)
       {
         ss << ")\n";
@@ -627,7 +627,7 @@ ASTBinaryOp::access()
   case TOR: op_str = "or"; break;
   case TAND: op_str = "and"; break;
   case TNOT: op_str = "not"; break;
-  default: std::cout << "unknown binary op " << m_op << "\n";
+  default: ASCENT_ERROR("unknown binary op " << m_op);
   }
 
   m_lhs->access();
@@ -656,7 +656,7 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
   case TOR: op_str = "or"; break;
   case TAND: op_str = "and"; break;
   case TNOT: op_str = "not"; break;
-  default: std::cout << "unknown binary op " << m_op << "\n";
+  default: ASCENT_ERROR("unknown binary op " << m_op);
   }
 
   conduit::Node l_in = m_lhs->build_graph(w);
@@ -772,8 +772,50 @@ ASTString::build_graph(flow::Workspace &w)
   w.graph().add_filter("expr_string", name, params);
 
   conduit::Node res;
-  res["value"] = stripped;
   res["type"] = "string";
+  res["filter_name"] = name;
+
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ASTBoolean::access()
+{
+  std::string bool_str = "";
+  switch(tok)
+  {
+  case TTRUE: bool_str = "True"; break;
+  case TFALSE: bool_str = "False"; break;
+  default: std::cout << "unknown bool literal " << tok << "\n";
+  }
+  std::cout << "Creating bool literal " << bool_str << std::endl;
+}
+
+conduit::Node
+ASTBoolean::build_graph(flow::Workspace &w)
+{
+  // create a unique name for the filter
+  static int ast_bool_counter = 0;
+  std::stringstream ss;
+  ss << "bool"
+     << "_" << ast_bool_counter++;
+  std::string name = ss.str();
+
+  bool value = false;
+  switch(tok)
+  {
+  case TTRUE: value = true; break;
+  case TFALSE: value = false; break;
+  default: std::cout << "unknown bool literal " << tok << "\n";
+  }
+
+  conduit::Node params;
+  params["value"] = value;
+  w.graph().add_filter("expr_bool", name, params);
+
+  conduit::Node res;
+  res["type"] = "bool";
   res["filter_name"] = name;
 
   return res;
