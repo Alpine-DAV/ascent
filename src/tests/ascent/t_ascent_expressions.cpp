@@ -825,12 +825,12 @@ TEST(ascent_binning, braid_binning)
   std::string output_file =
       conduit::utils::join_file_path(output_path, "tout_binning_braid_xysum");
   output_pseudocolor(multi_dom, "braid_sum", output_file);
-  EXPECT_TRUE(check_test_image(output_file));
+  EXPECT_TRUE(check_test_image(output_file, 0.01));
 
   output_file = conduit::utils::join_file_path(
       output_path, "tout_binning_painted_braid_xystd");
   output_pseudocolor(multi_dom, "painted_braid_std", output_file);
-  EXPECT_TRUE(check_test_image(output_file));
+  EXPECT_TRUE(check_test_image(output_file, 0.01));
 }
 
 TEST(ascent_binning, multi_dom_binning)
@@ -873,12 +873,12 @@ TEST(ascent_binning, multi_dom_binning)
   std::string output_file =
       conduit::utils::join_file_path(output_path, "tout_binning_dist_xystd");
   output_pseudocolor(multi_dom, "dist_std", output_file);
-  EXPECT_TRUE(check_test_image(output_file));
+  EXPECT_TRUE(check_test_image(output_file, 0.01));
 
   output_file = conduit::utils::join_file_path(
       output_path, "tout_binning_painted_dist_xystd");
   output_pseudocolor(multi_dom, "painted_dist_std", output_file);
-  EXPECT_TRUE(check_test_image(output_file));
+  EXPECT_TRUE(check_test_image(output_file, 0.01));
 }
 
 TEST(ascent_binning, binning_errors)
