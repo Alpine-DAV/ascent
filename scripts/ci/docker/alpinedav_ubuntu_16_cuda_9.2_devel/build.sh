@@ -42,7 +42,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
-
+export TAG_NAME=alpinedav/ascent-ci:ubuntu-16-cuda-9.2-devel
 # exec docker build to create image
-echo "docker build -t alpinedav/ascent-ci:ubuntu-18.04-dev ."
-docker build -t alpinedav/ascent-ci:ubuntu-18.04-dev .
+echo "docker build -t ${TAG_NAME} ."
+docker build -t ${TAG_NAME} .

@@ -1,0 +1,14 @@
+{
+"mpiexec_cmd": "@_PERF_MPIEXEC_CMD@",
+"clover_cmd":  "@_PERF_CLOVER_CMD@",
+"tests" : {
+             "contour": {
+                        "actions_yaml_file": "ascent_actions_contour_and_render.yaml",
+                        "ntasks" : 2
+                        },
+             "sampling": {
+                        "actions_yaml_file": "ascent_actions_sampling_and_render.yaml",
+                        "ntasks" : 2
+                        }
+        }
+}

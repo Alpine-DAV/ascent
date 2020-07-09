@@ -60,7 +60,15 @@
 namespace ascent
 {
 
+//
+// returns true if all ranks say true
+//
 bool global_agreement(bool vote);
+
+//
+// returns true if any ranks says true
+//
+bool global_someone_agrees(bool vote);
 int mpi_rank();
 int mpi_size();
 

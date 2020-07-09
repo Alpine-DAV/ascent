@@ -49,28 +49,37 @@ Publications and Presentations
 Publications
 ------------
 
-- `A Flexible System For In Situ Triggers <https://sc18.supercomputing.org/proceedings/workshops/workshop_files/ws_isav110s3-file1.pdf>`_  Presented at the `ISAV 2018 Workshop <http://vis.lbl.gov/events/ISAV2018/>`_, held in conjunction with SC 18, on November 12th 2018 in Dallas, TX, USA.
+- `Interactive In Situ Visualization and Analysis using Ascent and Jupyter <https://dl.acm.org/doi/pdf/10.1145/3364228.3364232>`_  Presented at the `ISAV 2019 Workshop <https://dav.lbl.gov/events/ISAV2019/>`_, held in conjunction with SC 19, on November 18h 2019 in Denver, CO.
 
-- `The ALPINE In Situ Infrastructure: Ascending from the Ashes of Strawman <https://dl.acm.org/citation.cfm?doid=3144769.3144778>`_  Presented at the `ISAV 2017 Workshop <http://vis.lbl.gov/Events/ISAV-2017/>`_, held in conjunction with SC 17, on November 12th 2017 in Denver, CO, USA.
+- `A Flexible System For In Situ Triggers <https://sc18.supercomputing.org/proceedings/workshops/workshop_files/ws_isav110s3-file1.pdf>`_  Presented at the `ISAV 2018 Workshop <http://vis.lbl.gov/events/ISAV2018/>`_, held in conjunction with SC 18, on November 12th 2018 in Dallas, TX.
 
-- `Performance Impacts of In Situ Wavelet Compression on Scientific Simulations <https://dl.acm.org/citation.cfm?doid=3144769.3144773>`_  Presented at the `ISAV 2017 Workshop <http://vis.lbl.gov/Events/ISAV-2017/>`_, held in conjunction with SC 17, on November 12th 2017 in Denver, CO, USA.
+- `The ALPINE In Situ Infrastructure: Ascending from the Ashes of Strawman <https://dl.acm.org/citation.cfm?doid=3144769.3144778>`_  Presented at the `ISAV 2017 Workshop <http://vis.lbl.gov/Events/ISAV-2017/>`_, held in conjunction with SC 17, on November 12th 2017 in Denver, CO.
 
-- `Projecting Performance Data Over Simulation Geometry Using SOSflow and Alpine <https://vpa17.github.io/pdfs/VPA_2017_wood.pdf>`_ Presented at the `VPA 17 Workshop <https://vpa17.github.io/>`_, held in conjunction with SC 17, on November 17th 2017 in Denver, CO, USA.
+- `Performance Impacts of In Situ Wavelet Compression on Scientific Simulations <https://dl.acm.org/citation.cfm?doid=3144769.3144773>`_  Presented at the `ISAV 2017 Workshop <http://vis.lbl.gov/Events/ISAV-2017/>`_, held in conjunction with SC 17, on November 12th 2017 in Denver, CO.
+
+- `Projecting Performance Data Over Simulation Geometry Using SOSflow and Alpine <https://vpa17.github.io/pdfs/VPA_2017_wood.pdf>`_ Presented at the `VPA 17 Workshop <https://vpa17.github.io/>`_, held in conjunction with SC 17, on November 17th 2017 in Denver, CO.
 
 - `PaViz: A Power-Adaptive Framework for Optimal Power and Performance of Scientific Visualization Algorithms <https://www.osti.gov/scitech/biblio/1366964>`_ Presented at the `EGPGV 2017 Symposium <http://www.vis.uni-stuttgart.de/egpgv/egpgv2017/>`_, held in conjunction with EuroVis 2017, on 12 June,  Barcelona, Spain
 
 - `Performance Modeling of In Situ Rendering <http://dl.acm.org/citation.cfm?id=3014936>`_ Presented at `SC16 <http://sc16.supercomputing.org/>`_.
 
-- `Optimizing Multi-Image Sort-Last Parallel Rendering <http://ieeexplore.ieee.org/document/7874308/>`_ Presented at the `IEEE Symposium on Large Data and Analysis (LDAV) 2016 <http://www.ldav.org/>`_, held in conjunction with IEEE Vis, on October 23rd 2016 in Baltimore, MD, USA.
+- `Optimizing Multi-Image Sort-Last Parallel Rendering <http://ieeexplore.ieee.org/document/7874308/>`_ Presented at the `IEEE Symposium on Large Data and Analysis (LDAV) 2016 <http://www.ldav.org/>`_, held in conjunction with IEEE Vis, on October 23rd 2016 in Baltimore, MD.
 
-- `Strawman: A Batch In Situ Visualization and Analysis Infrastructure for Multi-Physics Simulation Codes <http://dl.acm.org/citation.cfm?id=2828625>`_ Presented at the `ISAV 2015 Workshop <http://vis.lbl.gov/Events/ISAV-2015/>`_, held in conjunction with SC 15, on November 16th 2015 in Austin, TX, USA.
+- `Strawman: A Batch In Situ Visualization and Analysis Infrastructure for Multi-Physics Simulation Codes <http://dl.acm.org/citation.cfm?id=2828625>`_ Presented at the `ISAV 2015 Workshop <http://vis.lbl.gov/Events/ISAV-2015/>`_, held in conjunction with SC 15, on November 16th 2015 in Austin, TX.
 
 
+Tutorials
+-------------
+
+- In Situ Visualization and Analysis with Ascent, ECP Annual Meeting, February 2020, Houston, TX.
+- `In Situ Analysis and Visualization with SENSEI and Ascent <https://sc19.supercomputing.org/presentation/?id=tut141&sess=sess199>`_, SC19, Nov 17th, 2020, Denver, CO.
+- In Situ Visualization and Analysis with Ascent, ECP Annual Meeting, February 2019, Houston, TX.
 
 
 Presentations
 -------------
 
+- DOE Computer Graphics Forum, April 28-30 2020, (Event Held Online)
 - `IXPUG Software-Defined Visualization Workshop 2018 <https://www.ixpug.org/events/swdvis-2018>`_ July 10, 2018, ANL.
 - DOE Computer Graphics Forum, April 24-26 2018, Savannah, GA.
 - `IXPUG Software-Defined Visualization Workshop 2017 <https://www.ixpug.org/events/swdvis-2017>`_ May 23, 2017, Austin, TX.

@@ -59,6 +59,14 @@
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
+// forward declare
+#if defined(ASCENT_DRAY_ENABLED)
+namespace dray
+{
+  class Collection;
+} // namespace dray
+#endif
+
 namespace ascent
 {
 
@@ -68,10 +76,6 @@ namespace ascent
 class VTKHCollection;
 #endif
 
-#if defined(ASCENT_DRAY_ENABLED)
-// forward declare
-class DRayCollection;
-#endif
 
 class DataObject
 {
@@ -94,8 +98,8 @@ public:
 
 #endif
 #if defined(ASCENT_DRAY_ENABLED)
-  DataObject(DRayCollection *dataset);
-  std::shared_ptr<DRayCollection> as_dray_collection();
+  DataObject(dray::Collection *dataset);
+  std::shared_ptr<dray::Collection> as_dray_collection();
 #endif
   std::shared_ptr<conduit::Node>  as_low_order_bp();
   std::shared_ptr<conduit::Node>  as_high_order_bp();
@@ -109,7 +113,7 @@ protected:
   std::shared_ptr<VTKHCollection> m_vtkh;
 #endif
 #if defined(ASCENT_DRAY_ENABLED)
-  std::shared_ptr<DRayCollection> m_dray;
+  std::shared_ptr<dray::Collection> m_dray;
 #endif
 
   Source m_source;

@@ -57,7 +57,8 @@
 #endif
 
 #if defined(ASCENT_DRAY_ENABLED)
-#include "ascent_dray_data_adapter.hpp"
+#include <dray/collection.hpp>
+#include <dray/io/blueprint_reader.hpp>
 #endif
 
 #include "ascent_transmogrifier.hpp"
@@ -99,7 +100,7 @@ DataObject::DataObject(VTKHCollection *dataset)
 #endif
 
 #if defined(ASCENT_DRAY_ENABLED)
-DataObject::DataObject(DRayCollection *dataset)
+DataObject::DataObject(dray::Collection *dataset)
   : m_low_bp(nullptr),
     m_high_bp(nullptr),
 #if defined(ASCENT_VTKM_ENABLED)
@@ -141,7 +142,7 @@ void DataObject::reset(conduit::Node *dataset)
 #endif
 
 #if defined(ASCENT_DRAY_ENABLED)
-  std::shared_ptr<DRayCollection> null_dray(nullptr);
+  std::shared_ptr<dray::Collection> null_dray(nullptr);
   m_dray = null_dray;
 #endif
 
@@ -158,7 +159,7 @@ void DataObject::reset(conduit::Node *dataset)
 }
 
 #if defined(ASCENT_DRAY_ENABLED)
-std::shared_ptr<DRayCollection> DataObject::as_dray_collection()
+std::shared_ptr<dray::Collection> DataObject::as_dray_collection()
 {
   if(m_source == Source::INVALID)
   {
@@ -173,8 +174,17 @@ std::shared_ptr<DRayCollection> DataObject::as_dray_collection()
   {
     if(m_source == Source::HIGH_BP)
     {
-      std::shared_ptr<DRayCollection> dray(DRayCollection::blueprint_to_dray(*m_high_bp));
-      m_dray = dray;
+
+      //std::shared_ptr<dray::Collection> dray(DRayCollection::blueprint_to_dray(*m_high_bp));
+      std::shared_ptr<dray::Collection> collection(new dray::Collection());
+      const int num_domains = m_high_bp->number_of_children();
+      for(int i = 0; i < num_domains; ++i)
+      {
+        dray::DataSet dset = dray::BlueprintReader::blueprint_to_dray(m_high_bp->child(i));
+        collection->add_domain(dset);
+      }
+
+      m_dray = collection;
       return m_dray;
     }
     else

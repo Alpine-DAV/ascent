@@ -42,7 +42,32 @@
 #
 ###############################################################################
 
-module load gnu/4.9.2
-module load cudatoolkit/7.0
-use mvapich2-intel-2.0
-
+FROM ubuntu:18.04
+MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
+# add sudo to base ubuntu container
+# so we can install additional packages as
+# non-root, but admin default user on azure pipelines
+RUN apt-get update && apt-get -y install sudo
+# install std packages
+RUN apt-get -y install \
+             binutils \
+             gcc \
+             g++ \
+             gfortran \
+             python \
+             git \
+             curl \
+             unzip \
+             wget \
+             build-essential \
+             libncurses-dev \
+             libssl-dev \
+             libblas-dev \
+             liblapack-dev \
+             zlib1g-dev \
+             libgdbm-dev \
+             libreadline-dev \
+             libsqlite3-dev \
+             libbz2-dev \
+             mpich \
+             libmpich-dev 

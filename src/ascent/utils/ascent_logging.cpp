@@ -42,24 +42,13 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_dray_data_adapter.hpp
+/// file: ascent_logging.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_DRAY_DATA_ADAPTER_HPP
-#define ASCENT_DRAY_DATA_ADAPTER_HPP
-
-
-// conduit includes
-#include <conduit.hpp>
-
-#include <dray/dray.hpp>
-#include <dray/data_set.hpp>
-
-#include <ascent_exports.h>
+#include "ascent_logging.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -67,39 +56,15 @@
 namespace ascent
 {
 
-class ASCENT_API DRayCollection
+void handle_error(const std::string &msg,
+                  const std::string &file,
+                  int line)
 {
-protected:
-  int m_mpi_comm_id;
-public:
-
-  DRayCollection();
-
-  void mpi_comm(int comm);
-
-  std::vector<dray::DataSet> m_domains;
-
-  dray::Range get_global_range(const std::string field_name);
-
-  dray::AABB<3> get_global_bounds();
-
-  int topo_dims();
-
-  DRayCollection boundary();
-
-  static DRayCollection* blueprint_to_dray(const conduit::Node &node);
-};
-
+  throw conduit::Error( msg, file, line);
+}
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
-
-
