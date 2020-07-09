@@ -65,6 +65,7 @@
 
 #if defined(ASCENT_VTKM_ENABLED)
     #include <ascent_runtime_vtkh_filters.hpp>
+    #include <ascent_runtime_newtrigger_filters.hpp>
     #include <ascent_runtime_rendering_filters.hpp>
     #include <ascent_runtime_rover_filters.hpp>
 #endif
@@ -128,7 +129,8 @@ register_builtin()
 
     AscentRuntime::register_filter_type<VTKHBounds>();
     AscentRuntime::register_filter_type<VTKHUnionBounds>();
-
+    //NewTrigger
+    AscentRuntime::register_filter_type<NewTrigger>("transforms","trigger");
     // transforms, the current crop expect vtk-h input data
     AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
     AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");
