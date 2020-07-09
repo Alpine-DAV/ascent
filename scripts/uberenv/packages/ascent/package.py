@@ -77,7 +77,7 @@ class Ascent(Package, CudaPackage):
     variant("dray", default=False, description="Build with Devil Ray support")
 
     # variants for dev-tools (docs, etc)
-    variant("doc", default=False, description="Build Conduit's documentation")
+    variant("doc", default=False, description="Build Ascent's documentation")
 
     # variant for BabelFlow runtime
     variant("babelflow", default=False, description="Build with BabelFlow")
