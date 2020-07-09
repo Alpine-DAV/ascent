@@ -99,7 +99,7 @@ SUBROUTINE clover_init_comms
 
   IMPLICIT NONE
 
-  INTEGER :: err,rank,size,color,rank_split,i,provided
+  INTEGER :: err,rank,size,next_cbrt,color,rank_split,i,provided
   INTEGER :: mpi_group_world,mpi_sim_group,sim_comm
   INTEGER, DIMENSION(:),ALLOCATABLE :: sim_ranks
 
@@ -121,7 +121,10 @@ SUBROUTINE clover_init_comms
   ! color==0 is sim node; color==1 is a vis node
   !
   ! TODO: remove/replace hard coded factor here (use clover.in ?)
-  rank_split = ANINT(size*0.8) ! number of sim nodes: 3/4 * # nodes
+  next_cbrt = FLOOR(size**(1.0/3.0))
+  rank_split = next_cbrt*next_cbrt*next_cbrt
+  ! rank_split = ANINT(size*0.8) ! number of sim nodes: 3/4 * # nodes
+
   ! vis node
   IF(rank.GE.rank_split) THEN
       color = 1
