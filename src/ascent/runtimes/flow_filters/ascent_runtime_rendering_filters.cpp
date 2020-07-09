@@ -930,7 +930,6 @@ DefaultRender::execute()
         image_name = expand_family_name(image_name, cycle);
       }
 
-<<<<<<< HEAD
       //check for camera in registery
       //
       vtkh::Render render;
@@ -947,7 +946,6 @@ DefaultRender::execute()
 	render = vtkh::MakeRender(1024,
                                   1024,
                                   *bounds,
-                                  v_domain_ids,
 				  *camera,
                                   image_name);
       }
