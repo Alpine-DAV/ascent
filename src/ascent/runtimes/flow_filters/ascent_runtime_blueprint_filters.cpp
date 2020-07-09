@@ -67,6 +67,7 @@
 #include <ascent_config.h>
 #include <ascent_mpi_utils.hpp>
 #include <runtimes/ascent_data_object.hpp>
+#include <expressions/ascent_blueprint_architect.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -272,7 +273,7 @@ inline void cuda_error_check(const char *file, const int line )
 #define CHECK_ERROR() cuda_error_check(__FILE__,__LINE__);
 
 __global__ void ColumnwiseKronecker( int R,
-                                     int C,
+                                     int C, // field size
                                      const double *A,
                                      double *B)
 {
@@ -299,6 +300,8 @@ void f_cokurt_vecs_cublas_wrapper(int nRows,
                                   double *kVecs,
                                   double *kVals)
 {
+    // nRows = num_fields,
+    // nCols = field_size
     //              0 1 2 .. n-1
     // A = pressure
     //      temp
@@ -343,8 +346,8 @@ void f_cokurt_vecs_cublas_wrapper(int nRows,
     cublasStatus_t stat;
 
     //Set Matrices A on device
-    stat = cublasSetMatrix(nRows,
-                           nCols,
+    stat = cublasSetMatrix(nRows, //num fields
+                           nCols, // field size
                            sizeof(double),
                            A,
                            nRows,
@@ -446,7 +449,9 @@ void f_cokurt_vecs_cublas_wrapper(int nRows,
 
     //Eigenvalue step 3: compute actualy eigen decomposition
 
-    cusolver_status = cusolverDnDsyevd(cusolverH, jobz, uplo,
+    cusolver_status = cusolverDnDsyevd(cusolverH,
+                                       jobz,
+                                       uplo,
                                        nRows,  // M of input matrix
                                        d_kV,   // input matrix
                                        nRows,  // leading dimension of input matrix
@@ -616,7 +621,6 @@ Learn::execute()
         }
       }
     }
-
     int rank = 0;
     int comm_size = 1;
 #ifdef ASCENT_MPI_ENABLED
@@ -627,13 +631,37 @@ Learn::execute()
 
     MPI_Comm_size(mpi_comm, &comm_size);
 #endif
+
+    std::vector<double> field_mins;
+    std::vector<double> field_lengths;
+
+    field_mins.resize(num_fields);
+    field_lengths.resize(num_fields);
+    for(int f = 0; f < num_fields; ++f)
+    {
+      conduit::Node n_min, n_max;
+      n_min = expressions::field_min(*n_input,field_selection[f]);
+      n_max = expressions::field_max(*n_input,field_selection[f]);
+      double minv = n_min["value"].to_float64();
+      double maxv = n_max["value"].to_float64();
+      // we are going to normalize, so
+      // protect against 1/length being 1/0
+      double length = maxv == minv ? 1.0 : maxv - minv;
+      field_mins[f] = minv;
+      field_lengths[f] = length;
+      if(rank == 0)
+      {
+        std::cout<<field_selection[f]
+                 <<" min "<<field_mins[f]
+                 <<" len "<<field_lengths[f]<<"\n";
+      }
+    }
+
     std::stringstream d_name;
     d_name<<"rank_"<<rank;
     std::ofstream debug;
     debug.open(d_name.str());
 
-    double min_value = std::numeric_limits<double>::max();
-    double max_value = std::numeric_limits<double>::lowest();
 
 #ifdef ASCENT_VTKM_USE_CUDA
     const int num_domains = n_input->number_of_children();
@@ -645,6 +673,9 @@ Learn::execute()
     for(int i = 0; i < num_domains; ++i)
     {
       const conduit::Node &dom = n_input->child(i);
+
+      double min_value = std::numeric_limits<double>::max();
+      double max_value = std::numeric_limits<double>::lowest();
 
       std::vector<const double*> fields;
       for(int f = 0; f < num_fields; ++f)
@@ -659,14 +690,16 @@ Learn::execute()
         int offset = a * num_fields;
         for(int f = 0; f < num_fields; ++f)
         {
-          A[offset + f] = fields[f][a];
+          double val = fields[f][a];
+          val = (val - field_mins[f]) / field_lengths[f];
+          A[offset + f] = val;
           min_value = std::min(min_value, fields[f][a]);
           max_value = std::max(max_value, fields[f][a]);
         }
       }
-
-      f_cokurt_vecs_cublas_wrapper(num_fields,
-                                   field_size,
+      // in column major order
+      f_cokurt_vecs_cublas_wrapper(num_fields, // nrow
+                                   field_size, // nCol
                                    A,
                                    kVecs,
                                    eigvals);
@@ -676,15 +709,16 @@ Learn::execute()
       debug<<"domain "<<i<<" kVecs "<<kVecs[0]<<" "<<kVecs[1]<<" "<<kVecs[2]<<" "<<kVecs[3]<<"\n";
       debug<<"domain "<<i<<" eigvals "<<eigvals[0]<<" "<<eigvals[1]<<"\n";
 
+      debug<<"domain "<<i<<" min value "<<min_value<<"\n";
+      debug<<"domain "<<i<<" max value "<<max_value<<"\n";
+      double diff = max_value - min_value;
+      if(diff > 10) debug<<"domain "<<i<<" diff "<<diff<<"\n";
       //Code to compute 'feature moment metrics (fmms)' from kVecs
       // offset for current domain
       double * domain_fmms = fmms + num_fields * i;
       compute_fmms(num_fields, kVecs, eigvals, domain_fmms);
-
     }
 
-    debug<<"min value "<<min_value<<"\n";
-    debug<<"max value "<<max_value<<"\n";
 
     double *average_fmms = new double[num_fields];
     double *local_sum = new double[num_fields];
