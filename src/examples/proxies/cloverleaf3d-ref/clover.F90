@@ -122,7 +122,11 @@ SUBROUTINE clover_init_comms
   !
   ! TODO: remove/replace hard coded factor here (use clover.in ?)
   next_cbrt = FLOOR(size**(1.0/3.0))
-  rank_split = next_cbrt*next_cbrt*next_cbrt
+  IF(next_cbrt.LE.1) THEN
+    rank_split = size - 1
+  ELSE
+    rank_split = next_cbrt*next_cbrt*next_cbrt
+  END IF
   ! rank_split = ANINT(size*0.8) ! number of sim nodes: 3/4 * # nodes
 
   ! vis node
