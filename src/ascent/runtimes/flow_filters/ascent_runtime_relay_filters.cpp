@@ -301,7 +301,7 @@ void filter_fields(const conduit::Node &input,
     }
   }
 
-  has_data = global_agreement(has_data);
+  has_data = global_someone_agrees(has_data);
   if(!has_data)
   {
     ASCENT_ERROR("Relay: field selection resulted in no data."
@@ -375,7 +375,7 @@ verify_io_params(const conduit::Node &params,
             info["info"].append() = "includes 'num_files'";
         }
     }
-    
+
     std::vector<std::string> valid_paths;
     std::vector<std::string> ignore_paths;
     valid_paths.push_back("path");
@@ -406,11 +406,11 @@ void gen_domain_to_file_map(int num_domains,
     out["global_domains_per_file"].set(DataType::int32(num_files));
     out["global_domain_offsets"].set(DataType::int32(num_files));
     out["global_domain_to_file"].set(DataType::int32(num_domains));
-    
+
     int32_array v_domains_per_file = out["global_domains_per_file"].value();
     int32_array v_domains_offsets  = out["global_domain_offsets"].value();
     int32_array v_domain_to_file   = out["global_domain_to_file"].value();
-    
+
     // setup domains per file
     for(int f=0; f < num_files; f++)
     {
@@ -426,7 +426,7 @@ void gen_domain_to_file_map(int num_domains,
         if(f > 0)
             v_domains_offsets[f] += v_domains_offsets[f-1];
     }
-    
+
     // do assignment, create simple map
     int f_idx = 0;
     for(int d=0; d < num_domains; d++)
@@ -648,12 +648,12 @@ void mesh_blueprint_save(const Node &data,
         // Round and round we go, will we deadlock I believe no :-)
         //
         // Here is how this works:
-        //  At each round, if a rank has domains pending to write to a file, 
+        //  At each round, if a rank has domains pending to write to a file,
         //  we put the rank id in the local file_batons vec.
         //  This vec is then mpi max'ed, and the highest rank
         //  that needs access to each file will write this round.
-        // 
-        //  When a rank does not need to write to a file, we 
+        //
+        //  When a rank does not need to write to a file, we
         //  put -1 for this rank.
         //
         //  During each round, max of # files writers are participating

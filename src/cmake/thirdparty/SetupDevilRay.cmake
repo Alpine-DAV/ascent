@@ -16,3 +16,7 @@ blt_register_library(NAME dray
                      INCLUDES ${DRAY_INCLUDE_DIRS}
                      LIBRARIES dray dray_lodepng)
 
+blt_register_library(NAME dray_mpi
+                     INCLUDES ${DRAY_INCLUDE_DIRS}
+                     LIBRARIES dray_mpi dray_lodepng)
+

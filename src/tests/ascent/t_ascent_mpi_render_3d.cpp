@@ -422,7 +422,7 @@ TEST(ascent_mpi_render_3d, mpi_render_3d_diy_compositor_volume)
     ascent.close();
     MPI_Barrier(comm);
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
 }
 
 //-----------------------------------------------------------------------------

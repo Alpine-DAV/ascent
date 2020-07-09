@@ -47,18 +47,6 @@ import subprocess
 
 from os.path import join as pjoin
 
-# if you have bad luck with spack load, this
-# script is for you!
-#
-# Looks for subdir: spack or uberenv_libs/spack
-# queries spack for given package names and
-# creates a bash script that adds those to your path
-#
-#
-# usage:
-# python gen_spack_env_script.py [spack_pkg_1 spack_pkg_2 ...]
-#
-
 def sexe(cmd,ret_output=False,echo = True):
     """ Helper for executing shell commands. """
     if echo:

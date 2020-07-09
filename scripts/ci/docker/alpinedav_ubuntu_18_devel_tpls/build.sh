@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
@@ -41,11 +42,22 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
+export TAG_NAME=alpinedav/ascent-ci:ubuntu-18-devel-tpls
 
-FROM ubuntu:18.04
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
-# add sudo to base ubuntu container
-# so we can install additional packages as
-# non-root, but admin default user on azure pipelines
-RUN apt-get update && apt-get -y install sudo
+# remove old source tarball if it exists
+echo "rm -f ascent.docker.src.tar.gz"
+rm -f ascent.docker.src.tar.gz
 
+WORKING_DIR=`pwd`
+
+# get current copy of the ascent source
+echo "cd ../../../../ && python package.py ${WORKING_DIR}/ascent.docker.src.tar.gz"
+cd ../../../../ && python package.py ${WORKING_DIR}/ascent.docker.src.tar.gz
+
+# change back to the dir with our Dockerfile
+echo "cd ${WORKING_DIR}"
+cd ${WORKING_DIR}
+
+# exec docker build to create image
+echo "docker build -t ${TAG_NAME} ."
+docker build -t ${TAG_NAME} .

@@ -129,9 +129,6 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHBounds>();
     AscentRuntime::register_filter_type<VTKHUnionBounds>();
 
-    AscentRuntime::register_filter_type<VTKHDomainIds>();
-    AscentRuntime::register_filter_type<VTKHUnionDomainIds>();
-
     // transforms, the current crop expect vtk-h input data
     AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
     AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");
@@ -164,6 +161,7 @@ register_builtin()
     AscentRuntime::register_filter_type<DRay3Slice>("extracts", "dray_3slice");
     AscentRuntime::register_filter_type<DRayVolume>("extracts", "dray_volume");
     AscentRuntime::register_filter_type<DRayProject2d>("transforms", "dray_project_2d");
+    AscentRuntime::register_filter_type<DRayReflect>("transforms", "dray_reflect");
 #endif
 
     AscentRuntime::register_filter_type<AddPlot>();

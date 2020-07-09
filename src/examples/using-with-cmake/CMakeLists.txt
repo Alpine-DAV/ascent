@@ -51,19 +51,19 @@
 #  mkdir build
 #  cd build
 #  cmake \
-#   -DASCENT_DIR={ascent install path}   \
-#   -DCONDUIT_DIR={conduit install path} \
+#   -DAscent_DIR={ascent install path}   \
+#   -DConduit_DIR={conduit install path} \
 #   -DVTKH_DIR={vtkh install path}          
 #   ../
 # make
 # ./ascent_render_example
 #
-# If run in sub directory below using-with-cmake in an ascent install, 
-# ASCENT_DIR will be defaulted to ../../..
+# In order to run directly in a sub directory below using-with-cmake in an ascent install, 
+# set Ascent_DIR to ../../..
 # 
 #  mkdir build
 #  cd build
-#  cmake ..
+#  cmake .. -DAscent_DIR=../../..
 #  make
 #  ./ascent_render_example
 #
@@ -74,26 +74,12 @@ cmake_minimum_required(VERSION 3.9)
 project(using_with_cmake)
 
 #
-# Provide default for ASCENT_DIR that works for an ascent install
-#
-if(NOT ASCENT_DIR)
-    set(ASCENT_DIR "../../..")
-endif()
-
-#
-# Check for valid Ascent install
-#
-get_filename_component(ASCENT_DIR ${ASCENT_DIR} ABSOLUTE)
-if(NOT EXISTS ${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)
-    MESSAGE(FATAL_ERROR "Could not find Ascent CMake include file (${ASCENT_DIR}/lib/cmake/AscentConfig.cmake)")
-endif()
-
-#
 # Use CMake's find_package to import ascent's targets
 #
+# PATHS is just a hint if someone runs this example from the Ascent install
+# tree without setting up an environment hint to find Ascent
 find_package(Ascent REQUIRED
-             NO_DEFAULT_PATH 
-             PATHS ${ASCENT_DIR}/lib/cmake)
+             PATHS ${CMAKE_SOURCE_DIR}/../../../)
 
 # create our example
 add_executable(ascent_render_example ascent_render_example.cpp)

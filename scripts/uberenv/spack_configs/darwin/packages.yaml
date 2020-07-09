@@ -16,6 +16,7 @@
 packages:
   all:
     compiler: [clang, gcc, intel, pgi, xl, nag, fj]
+    variants: ~openmp
     providers:
       D: [ldc]
       awk: [gawk]
@@ -34,7 +35,7 @@ packages:
       mariadb-client: [mariadb-c-client, mariadb]
       mkl: [intel-mkl]
       mpe: [mpe2]
-      mpi: [openmpi, mpich]
+      mpi: [mpich, openmpi]
       mysql-client: [mysql, mariadb-c-client]
       opencl: [pocl]
       pil: [py-pillow]
@@ -46,7 +47,6 @@ packages:
     permissions:
       read: world
       write: user
-    variants: ~openmp
 # custom variants
   conduit:
     version: [master]
@@ -58,7 +58,6 @@ packages:
   py-numpy:
     version: [1.16.5]
   cmake:
-    version: [3.9.6]
     variants: ~openssl~ncurses
   hwloc:
     variants: ~libxml2

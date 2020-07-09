@@ -137,6 +137,7 @@ check_test_image(const std::string &path, const float tolerance = 0.001f, std::s
     else
     {
       info["test_file/exists"] = "false";
+      res = false;
     }
 
     std::string file_name;
@@ -573,7 +574,7 @@ create_example_multi_domain_multi_topo_dataset(Node &data,
     // reference the coordinate set by name
     mesh["topologies/utopo/coordset"] = "ucoords";
 
-    // add a simple element-associated field 
+    // add a simple element-associated field
     mesh["fields/ele_example/association"] =  "element";
     // reference the topology this field is defined on by name
     mesh["fields/ele_example/topology"] =  "utopo";

@@ -108,8 +108,10 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_query_filters.cpp
     runtimes/flow_filters/ascent_runtime_utils.cpp
     # utils
+    utils/ascent_actions_utils.cpp
     utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
+    utils/ascent_logging.cpp
     utils/ascent_png_compare.cpp
     utils/ascent_png_decoder.cpp
     utils/ascent_png_encoder.cpp
@@ -147,6 +149,7 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_query_filters.hpp
     runtimes/flow_filters/ascent_runtime_utils.hpp
     # utils
+    utils/ascent_actions_utils.hpp
     utils/ascent_logging.hpp
     utils/ascent_file_system.hpp
     utils/ascent_block_timer.hpp
@@ -203,9 +206,7 @@ endif()
 #for now, we depend on compositing so we need vtkh
 if(DRAY_FOUND AND VTKM_FOUND)
   list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
-  list(APPEND ascent_headers runtimes/ascent_dray_data_adapter.hpp)
   list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
-  list(APPEND ascent_sources runtimes/ascent_dray_data_adapter.cpp)
 endif()
 
 ##############################
@@ -317,10 +318,13 @@ if (ENABLE_SERIAL)
                           vtkh_core
                           vtkh_lodepng
                           vtkh_utils
+                          vtkm_io
                           vtkm_rendering
                           vtkm_filter
                           vtkm_worklet
+                          vtkm_source
                           vtkm_cont
+                          vtkmdiympi_nompi
                           )
 
       source_objects(${binary_dir}
@@ -391,6 +395,11 @@ if(MPI_FOUND)
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs rover)
         list(APPEND ascent_mpi_thirdparty_libs rover_mpi)
     endif()
+    if(DRAY_FOUND)
+        # swap dray_mpi for dray
+        list(REMOVE_ITEM ascent_mpi_thirdparty_libs dray)
+        list(APPEND ascent_mpi_thirdparty_libs dray_mpi)
+    endif()
 
     blt_add_library(
         NAME        ascent_mpi
@@ -426,10 +435,13 @@ if(MPI_FOUND)
                           vtkh_core_mpi
                           vtkh_lodepng
                           vtkh_utils_mpi
+                          vtkm_io
                           vtkm_rendering
                           vtkm_filter
                           vtkm_worklet
+                          vtkm_source
                           vtkm_cont
+                          vtkmdiympi_nompi
                           )
 
       source_objects(${binary_dir}
@@ -439,6 +451,7 @@ if(MPI_FOUND)
                      locations_on_disk)
 
       separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
+      #message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
       add_custom_command(
         TARGET ascent_mpi PRE_LINK
         DEPENDS ascent_mpi rover_mpi

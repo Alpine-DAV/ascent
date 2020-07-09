@@ -70,6 +70,7 @@ namespace ascent
 
 //-----------------------------------------------------------------------------
 PNGCompare::PNGCompare()
+  : m_color_tolerance(4)
 {}
 
 //-----------------------------------------------------------------------------
@@ -77,6 +78,14 @@ PNGCompare::~PNGCompare()
 {
 }
 
+void PNGCompare::ColorTolerance(int color_tolerance)
+{
+  if(color_tolerance < 0 || color_tolerance > 255)
+  {
+    ASCENT_ERROR("Color tolerance must be between 0-255: "<<color_tolerance);
+  }
+  m_color_tolerance = color_tolerance;
+}
 
 void
 PNGCompare::DiffImage(const unsigned char *buff_1,
@@ -92,10 +101,15 @@ PNGCompare::DiffImage(const unsigned char *buff_1,
   for(int i = 0; i < size; ++i)
   {
       const int offset = i * 4;
-      if( buff_1[offset + 0] != buff_2[offset + 0] ||
-          buff_1[offset + 1] != buff_2[offset + 1] ||
-          buff_1[offset + 2] != buff_2[offset + 2] ||
-          buff_1[offset + 3] != buff_2[offset + 3])
+      int r_diff = abs(int(buff_1[offset + 0]) - int(buff_2[offset + 0]));
+      int g_diff = abs(int(buff_1[offset + 1]) - int(buff_2[offset + 1]));
+      int b_diff = abs(int(buff_1[offset + 2]) - int(buff_2[offset + 2]));
+      int a_diff = abs(int(buff_1[offset + 3]) - int(buff_2[offset + 3]));
+
+      if( r_diff > m_color_tolerance ||
+          g_diff > m_color_tolerance ||
+          b_diff > m_color_tolerance ||
+          a_diff > m_color_tolerance)
       {
         out_buff[offset+0] = 255;
         out_buff[offset+1] = 255;
@@ -154,10 +168,15 @@ PNGCompare::Compare(const std::string &img1,
     for(int i = 0; i < image_size; ++i)
     {
       const int offset = i * 4;
-      if( buff_1[offset + 0] != buff_2[offset + 0] ||
-          buff_1[offset + 1] != buff_2[offset + 1] ||
-          buff_1[offset + 2] != buff_2[offset + 2] ||
-          buff_1[offset + 3] != buff_2[offset + 3])
+      int r_diff = abs(int(buff_1[offset + 0]) - int(buff_2[offset + 0]));
+      int g_diff = abs(int(buff_1[offset + 1]) - int(buff_2[offset + 1]));
+      int b_diff = abs(int(buff_1[offset + 2]) - int(buff_2[offset + 2]));
+      int a_diff = abs(int(buff_1[offset + 3]) - int(buff_2[offset + 3]));
+
+      if( r_diff > m_color_tolerance ||
+          g_diff > m_color_tolerance ||
+          b_diff > m_color_tolerance ||
+          a_diff > m_color_tolerance)
       {
         diff++;
       }

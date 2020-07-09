@@ -72,6 +72,7 @@ namespace flow
 // pick a safe non-inited value w/o the mpi headers, but
 // we will try this strategy.
 int Workspace::m_default_mpi_comm = -1;
+static int g_timing_exec_count = 0;
 
 //-----------------------------------------------------------------------------
 class Workspace::ExecutionPlan
@@ -251,7 +252,6 @@ Workspace::ExecutionPlan::bf_topo_sort_visit(Graph &graph,
 Workspace::Workspace()
 :m_graph(this),
  m_registry(),
- m_timing_exec_count(0),
  m_timing_info()
 {
 
@@ -339,7 +339,7 @@ Workspace::execute()
             // execute
             f->execute();
 
-            m_timing_info << m_timing_exec_count
+            m_timing_info << g_timing_exec_count
                           << " " << f->name()
                           << " " << std::fixed << t_flt_exec.elapsed()
                           <<"\n";
@@ -370,13 +370,13 @@ Workspace::execute()
         }
     }
 
-    m_timing_info << m_timing_exec_count
+    m_timing_info << g_timing_exec_count
                   << " [total] "
                   << std::fixed << t_total_exec.elapsed()
                   <<"\n";
 
 
-    m_timing_exec_count++;
+    g_timing_exec_count++;
 
 }
 
@@ -424,7 +424,7 @@ Workspace::print() const
 void
 Workspace::reset_timing_info()
 {
-    m_timing_exec_count = 0;
+    g_timing_exec_count = 0;
     m_timing_info.str("");
 }
 //-----------------------------------------------------------------------------
