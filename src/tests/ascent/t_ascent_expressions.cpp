@@ -817,9 +817,11 @@ TEST(ascent_binning, braid_binning)
 
   string output_path = prepare_output_dir();
 
-  expr = "binning('braid', 'sum', [axis('x'), axis('y')], output='bins')";
+  expr = "binning('braid', 'sum', [axis('x', num_bins=21), axis('y', "
+         "num_bins=21)], output='bins')";
   eval.evaluate(expr);
-  expr = "binning('braid', 'std', [axis('x', num_bins=10), axis('y', num_bins=10)], output='mesh')";
+  expr = "binning('braid', 'std', [axis('x', num_bins=10), axis('y', "
+         "num_bins=10)], output='mesh')";
   eval.evaluate(expr);
 
   std::string output_file =
@@ -863,9 +865,11 @@ TEST(ascent_binning, multi_dom_binning)
   runtime::expressions::ExpressionEval eval(&multi_dom);
 
   std::string expr;
-  expr = "binning('dist', 'std', [axis('x'), axis('y')], output='bins')";
+  expr = "binning('dist', 'std', [axis('x', num_bins=6), axis('y', "
+         "num_bins=9)], output='bins')";
   eval.evaluate(expr);
-  expr = "binning('dist', 'std', [axis('x'), axis('y')], output='mesh')";
+  expr = "binning('dist', 'std', [axis('x', num_bins=6), axis('y', "
+         "num_bins=9)], output='mesh')";
   eval.evaluate(expr);
 
   string output_path = prepare_output_dir();

@@ -53,10 +53,10 @@
 
 #include <ascent_logging.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <limits>
-#include <algorithm>
 
 #include <flow_workspace.hpp>
 
@@ -839,7 +839,6 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
   double max_coords[3] = {std::numeric_limits<double>::lowest(),
                           std::numeric_limits<double>::lowest(),
                           std::numeric_limits<double>::lowest()};
-  int dims[3] = {-1, -1, -1};
   const std::string axes[3][3] = {
       {"x", "i", "dx"}, {"y", "j", "dy"}, {"z", "k", "dz"}};
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
@@ -861,8 +860,6 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
 
         min_coords[i] = std::min(min_coords[i], origin);
         max_coords[i] = std::max(min_coords[i], origin + (dim - 1) * spacing);
-        // it only makes sense to update dims for uniform topologies
-        dims[i] = std::max(dims[i], dim);
       }
     }
     else if(topo_type == "rectilinear" || topo_type == "structured" ||
@@ -888,12 +885,10 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   MPI_Allreduce(MPI_IN_PLACE, min_coords, 3, MPI_DOUBLE, MPI_MIN, mpi_comm);
   MPI_Allreduce(MPI_IN_PLACE, max_coords, 3, MPI_DOUBLE, MPI_MAX, mpi_comm);
-  MPI_Allreduce(MPI_IN_PLACE, dims, 3, MPI_INT, MPI_MAX, mpi_comm);
 #endif
   conduit::Node res;
   res["max_coords"].set(max_coords, 3);
   res["min_coords"].set(min_coords, 3);
-  res["dims"].set(dims, 3);
   return res;
 }
 
@@ -1032,13 +1027,28 @@ get_bin_index(const conduit::float64 value, const conduit::Node &axis)
   return bin_index;
 }
 
-conduit::Node
+void
 populate_homes(const conduit::Node &dom,
                const conduit::Node &bin_axes,
                const std::string &topo_name,
-               const std::string &assoc_str)
+               const std::string &assoc_str,
+               conduit::Node &res)
 {
   int num_axes = bin_axes.number_of_children();
+
+  // ensure this domain has the necessary fields
+  for(int axis_index = 0; axis_index < num_axes; ++axis_index)
+  {
+    const conduit::Node &axis = bin_axes.child(axis_index);
+    const std::string axis_name = axis.name();
+    if(!dom.has_path("fields/" + axis_name) && !is_xyz(axis_name))
+    {
+      // return an error and skip the domain in binning
+      conduit::Node res;
+      res["error/field_name"] = axis_name;
+      return;
+    }
+  }
 
   // Calculate the size of homes
   conduit::index_t homes_size = 0;
@@ -1053,7 +1063,12 @@ populate_homes(const conduit::Node &dom,
 
   // each domain has a homes array
   // homes maps each datapoint (or cell) to an index in bins
-  int *homes = new int[homes_size]();
+  res.set(conduit::DataType::c_int(homes_size));
+  int *homes = res.value();
+  for(int i = 0; i < homes_size; ++i)
+  {
+    homes[i] = 0;
+  }
 
   int stride = 1;
   for(int axis_index = 0; axis_index < num_axes; ++axis_index)
@@ -1122,14 +1137,6 @@ populate_homes(const conduit::Node &dom,
         }
       }
     }
-    else
-    {
-      // TODO for now we assume fields are available in all domains on all
-      // processes
-      // Alternatively we can have this function return an error and skip that
-      // domain in binning if it does
-      ASCENT_ERROR("Field " << axis_name << "not found in all domains");
-    }
 
     if(bin_axes.child(axis_index).has_path("num_bins"))
     {
@@ -1143,10 +1150,6 @@ populate_homes(const conduit::Node &dom,
           bin_axes.child(axis_index)["bins"].dtype().number_of_elements() - 1;
     }
   }
-
-  conduit::Node res;
-  res.set_external(homes, homes_size);
-  return res;
 }
 
 void
@@ -1214,7 +1217,6 @@ binning(const conduit::Node &dataset,
   const conduit::Node &bounds = global_bounds(dataset, topo_name);
   const double *min_coords = bounds["min_coords"].value();
   const double *max_coords = bounds["max_coords"].value();
-  const int *dims = bounds["dims"].value();
   const std::string axes[3][3] = {
       {"x", "i", "dx"}, {"y", "j", "dy"}, {"z", "k", "dz"}};
   // populate min_val, max_val, num_bins for x,y,z
@@ -1249,22 +1251,9 @@ binning(const conduit::Node &dataset,
         axis["max_val"] = max_coords[axis_num] + 1.0;
       }
 
-      int dim = dims[axis_num];
       if(!axis.has_path("num_bins"))
       {
-        if(dim == -1)
-        {
-          axis["num_bins"] =
-              axis["max_val"].to_int32() - axis["min_val"].to_int32();
-        }
-        else if(assoc_str == "vertex")
-        {
-          axis["num_bins"] = dim;
-        }
-        else if(assoc_str == "element")
-        {
-          axis["num_bins"] = dim - 1;
-        }
+        axis["num_bins"] = 256;
       }
     }
   }
@@ -1328,8 +1317,16 @@ binning(const conduit::Node &dataset,
   {
     const conduit::Node &dom = dataset.child(dom_index);
 
-    const conduit::Node &n_homes =
-        populate_homes(dom, bin_axes, topo_name, assoc_str);
+    conduit::Node n_homes;
+    populate_homes(dom, bin_axes, topo_name, assoc_str, n_homes);
+    if(n_homes.has_path("error"))
+    {
+      ASCENT_INFO("Binning: not binning domain "
+                  << dom_index << " because field: '"
+                  << n_homes["error/field_name"].to_string()
+                  << "' was not found.");
+      continue;
+    }
     const int *homes = n_homes.as_int_ptr();
     const int homes_size = n_homes.dtype().number_of_elements();
 
@@ -1394,8 +1391,6 @@ binning(const conduit::Node &dataset,
     {
       ASCENT_ERROR("Field " << reduction_var << "not found in all domains");
     }
-
-    delete[] homes;
   }
 
 #ifdef ASCENT_MPI_ENABLED
@@ -1587,8 +1582,16 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
   {
     conduit::Node &dom = dataset.child(dom_index);
 
-    const conduit::Node &n_homes =
-        populate_homes(dom, bin_axes, topo_name, assoc_str);
+    conduit::Node n_homes;
+    populate_homes(dom, bin_axes, topo_name, assoc_str, n_homes);
+    if(n_homes.has_path("error"))
+    {
+      ASCENT_INFO("Binning: not painting domain "
+                  << dom_index << " because field: '"
+                  << n_homes["error/field_name"].to_string()
+                  << "' was not found.");
+      continue;
+    }
     const int *homes = n_homes.as_int_ptr();
     const int homes_size = n_homes.dtype().number_of_elements();
 
@@ -1608,18 +1611,19 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
     {
       values[i] = bins[homes[i]];
     }
-    delete[] homes;
   }
 
   conduit::Node info;
   if(!conduit::blueprint::verify("mesh", dataset, info))
   {
     info.print();
-    ASCENT_ERROR("Failed to paint binning back on the mesh.");
+    ASCENT_ERROR(
+        "Failed to verify mesh after painting binning back on the mesh.");
   }
 }
 
-void binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
+void
+binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
 {
   int num_axes = binning["attrs/bin_axes/value"].number_of_children();
 

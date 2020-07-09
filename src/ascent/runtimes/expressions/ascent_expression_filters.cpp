@@ -1665,14 +1665,11 @@ Axis::execute()
                  "contain scalar field '"
                  << name << "'.");
   }
-  conduit::Node *output = new conduit::Node();
-  (*output)["value/" + name];
-  (*output)["type"] = "axis";
 
-  conduit::Node n_bins;
+  conduit::Node *output;
+
   if(!n_bins_list->dtype().is_empty())
   {
-    // verify rectilinear bins and create a bins array
     // ensure none of the uniform binning arguments are passed
     if(!n_min->dtype().is_empty() || !n_max->dtype().is_empty() ||
        !n_num_bins->dtype().is_empty())
@@ -1688,27 +1685,30 @@ Axis::execute()
       ASCENT_ERROR("Axis: bins must have at least 2 items.");
     }
 
-    double *bins = new double[bins_len]();
+    output = new conduit::Node();
+    (*output)["value/" + name + "/bins"].set(
+        conduit::DataType::c_double(bins_len));
+    double *bins = (*output)["value/" + name + "/bins"].value();
 
     for(int i = 0; i < bins_len; ++i)
     {
       const conduit::Node &bin = n_bins_list->child(i);
       if(!detail::is_scalar(bin["type"].as_string()))
       {
+        delete output;
         ASCENT_ERROR("Axis: bins must be a list of scalars.");
       }
       bins[i] = bin["value"].to_float64();
       if(i != 0 && bins[i - 1] >= bins[i])
       {
+        delete output;
         ASCENT_ERROR("Axis: bins of strictly increasing scalars.");
       }
     }
-    n_bins.set(bins, bins_len);
-    (*output)["value/" + name + "/bins"] = n_bins;
-    delete[] bins;
   }
   else
   {
+    output = new conduit::Node();
     if(!n_min->dtype().is_empty())
     {
       (*output)["value/" + name + "/min_val"] = (*n_min)["value"].to_float64();
@@ -1729,6 +1729,9 @@ Axis::execute()
   {
     (*output)["value/" + name + "/clamp"] = (*n_clamp)["value"].to_uint8();
   }
+
+  (*output)["value/" + name];
+  (*output)["type"] = "axis";
   set_output<conduit::Node>(output);
 }
 
