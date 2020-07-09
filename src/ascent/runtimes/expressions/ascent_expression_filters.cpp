@@ -1877,7 +1877,7 @@ Binning::execute()
       (*input<Node>("reduction_var"))["value"].as_string();
   const std::string reduction_op =
       (*input<Node>("reduction_op"))["value"].as_string();
-  conduit::Node *n_axes_list = input<Node>("bin_axes");
+  const conduit::Node *n_axes_list = input<Node>("bin_axes");
   // optional arguments
   const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
   const conduit::Node *n_output_opt = input<conduit::Node>("output");
@@ -1960,7 +1960,8 @@ Binning::execute()
     }
     if(output_opt == "bins")
     {
-      conduit::Node n_binning_mesh = binning_mesh(*output);
+      conduit::Node n_binning_mesh;
+      binning_mesh(*output, n_binning_mesh);
       n_binning_mesh["state/cycle"] = 100;
       n_binning_mesh["state/domain_id"] = 0;
       dataset->child(0).update(n_binning_mesh);

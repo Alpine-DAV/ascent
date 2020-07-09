@@ -115,14 +115,15 @@ conduit::Node global_bounds(const conduit::Node &dataset,
                             const conduit::Node &field_names);
 
 conduit::Node binning(const conduit::Node &dataset,
-                  conduit::Node &bin_axes,
-                  const std::string &reduction_var,
-                  const std::string &reduction_op,
-                  const double empty_bin_val);
+                      conduit::Node &bin_axes,
+                      const std::string &reduction_var,
+                      const std::string &reduction_op,
+                      const double empty_bin_val);
 
-void ASCENT_API paint_binning(const conduit::Node &binning, conduit::Node &dataset);
+void ASCENT_API paint_binning(const conduit::Node &binning,
+                              conduit::Node &dataset);
 
-conduit::Node ASCENT_API binning_mesh(const conduit::Node &binning);
+void ASCENT_API binning_mesh(const conduit::Node &binning, conduit::Node &mesh);
 
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);

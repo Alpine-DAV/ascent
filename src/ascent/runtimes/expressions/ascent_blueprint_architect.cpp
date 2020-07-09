@@ -1619,8 +1619,7 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
   }
 }
 
-conduit::Node
-binning_mesh(const conduit::Node &binning)
+void binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
 {
   int num_axes = binning["attrs/bin_axes/value"].number_of_children();
 
@@ -1629,8 +1628,6 @@ binning_mesh(const conduit::Node &binning)
     ASCENT_ERROR(
         "Binning mesh: can only construct meshes with 3 or fewer axes.");
   }
-
-  conduit::Node mesh;
 
   const std::string axes[3][3] = {
       {"x", "i", "dx"}, {"y", "j", "dy"}, {"z", "k", "dz"}};
@@ -1680,8 +1677,6 @@ binning_mesh(const conduit::Node &binning)
     info.print();
     ASCENT_ERROR("Failed to create valid binning mesh.");
   }
-
-  return mesh;
 }
 
 conduit::Node
