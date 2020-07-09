@@ -493,6 +493,10 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     expr_name = expr;
   }
 
+  // used to eliminate common subexpressions
+  // ex: (x - min) / (max - min) then min should only be evaluated once
+  conduit::Node subexpr_cache;
+  w.registry().add<conduit::Node>("subexpr_cache", &subexpr_cache, -1);
   w.registry().add<conduit::Node>("dataset", m_data, -1);
   w.registry().add<conduit::Node>("cache", &m_cache, -1);
   w.registry().add<conduit::Node>("function_table", &g_function_table, -1);
@@ -554,6 +558,8 @@ ExpressionEval::evaluate_derived(const std::string expr, std::string expr_name)
     expr_name = expr;
   }
 
+  conduit::Node subexpr_cache;
+  w.registry().add<conduit::Node>("subexpr_cache", &subexpr_cache, -1);
   w.registry().add<conduit::Node>("dataset", m_data, -1);
   w.registry().add<conduit::Node>("cache", &m_cache, -1);
   w.registry().add<conduit::Node>("function_table", &g_function_table, -1);
