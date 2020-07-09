@@ -61,16 +61,21 @@ struct Options
   double m_time_delta;
   Options()
     : m_dims{32,32,32},
-      m_time_steps(10),
+      m_time_steps(1),
+      //Nicole:Remove after
+      //m_time_steps(10),
       m_time_delta(0.5)
   {
     SetSpacing();
   }
   void SetSpacing()
   {
-    m_spacing[0] = 10. / double(m_dims[0]);
-    m_spacing[1] = 10. / double(m_dims[1]);
-    m_spacing[2] = 10. / double(m_dims[2]);
+    //m_spacing[0] = 10. / double(m_dims[0]);
+    //m_spacing[1] = 10. / double(m_dims[1]);
+    //m_spacing[2] = 10. / double(m_dims[2]);
+    m_spacing[0] = 4. / double(m_dims[0]);
+    m_spacing[1] = 4. / double(m_dims[1]);
+    m_spacing[2] = 4. / double(m_dims[2]);
   }
   void Parse(int argc, char** argv)
   {

@@ -302,9 +302,6 @@ public:
     output.X[2] = points[2][0];
     output.Y[2] = points[2][1];
     output.Z[2] = points[2][2]; 
-    output.value[0] = variable[0];
-    output.value[1] = variable[1];
-    output.value[2] = variable[2];
   }
 };
 
@@ -429,13 +426,6 @@ Triangle transformTriangle2(Triangle t, Camera c)
                          " (" << triangle.X[2] << " , " << triangle.Y[2] << " , " << triangle.Z[2] << ") " << endl;
   }
   //transfor values
-  int i;
-  for (i = 0; i < 3; i++)
-  {
-    triangle.value[i] = t.value[i];
-  }
-  //component ID -- currently unused
-  triangle.compID = t.compID;
 
   delete[] pointOut;
   delete[] pointIn;

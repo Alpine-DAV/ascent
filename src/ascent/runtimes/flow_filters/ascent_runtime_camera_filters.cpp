@@ -943,6 +943,7 @@ Triangle transformTriangle(Triangle t, Camera c, int width, int height)
   view = c.ViewTransform();
   camToView = Matrix::ComposeMatrices(cam, view);
   m0 = Matrix::ComposeMatrices(camToView, c.DeviceTransform(width, height));
+  /*
   cerr<< "cam" << endl;
   cam.Print(cerr);
   cerr<< "view" << endl;
@@ -953,6 +954,7 @@ Triangle transformTriangle(Triangle t, Camera c, int width, int height)
   camToView.Print(cerr);
   cerr<< "device t" << endl;
   c.DeviceTransform(width, height).Print(cerr);
+  */
 
   Triangle triangle;
   // Zero XYZ
@@ -1234,22 +1236,12 @@ calcArea(std::vector<float> triangle)
 float
 calcArea(std::vector<float> triangle, Camera c, int width, int height)
 {
-  //need to transform triangle to camera viewpoint
+  //need to transform triangle to device space with given camera
   Triangle w_tri(triangle[0], triangle[1], triangle[2], 
 	       triangle[3], triangle[4], triangle[5], 
 	       triangle[6], triangle[7], triangle[8]);
-  Triangle i_tri = transformTriangle(w_tri, c, width, height);
-  
-  cerr << "w_tri area: " << w_tri.calculateTriArea() << " i_tri area: " << i_tri.calculateTriArea() << endl;
-  cerr << endl;
-  cerr << "w_tri : " << endl;
-  w_tri.printTri();
-  cerr << endl;
-  cerr << "i_tri : " << endl;
-  i_tri.printTri();
-  cerr << endl;
-  
-  return i_tri.calculateTriArea();
+  Triangle d_tri = transformTriangle(w_tri, c, width, height);
+  return d_tri.calculateTriArea();
 
 }
 
@@ -1687,7 +1679,7 @@ AutoCamera::execute()
     vtkh::DataSet* data = AddTriangleFields(dataset);
     auto triangle_stop = high_resolution_clock::now();
     triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
-    cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
+    //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
     /*#if ASCENT_MPI_ENABLED
       cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
       cerr << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
@@ -1799,7 +1791,7 @@ AutoCamera::execute()
 
     if(winning_sample == -1)
       ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
-    //cerr << "winning_sample " << winning_sample << " score: " << winning_score << endl;
+    cerr << "winning_sample " << winning_sample << " score: " << winning_score << endl;
     Camera best_c = GetCamera(winning_sample, samples, radius, focus);
 
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
@@ -1817,7 +1809,7 @@ AutoCamera::execute()
 #endif
 */
     camera->SetPosition(pos);
-    camera->Print();
+    //camera->Print();
 
 
     if(!graph().workspace().registry().has_entry("camera"))
@@ -1825,7 +1817,9 @@ AutoCamera::execute()
       //cerr << "making camera in registry" << endl;
       graph().workspace().registry().add<vtkm::rendering::Camera>("camera",camera,1);
     }
-    delete camera;
+    //This breaks everything
+    //TODO:Figure out where to delete it, probably after where it's grabbed. 
+    //delete camera;
 
 /*
 #if ASCENT_MPI_ENABLED
