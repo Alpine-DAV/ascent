@@ -981,7 +981,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
         for (int j = 0; j < results.size(); ++j)
         {
             std::string name = (*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string();
-            results[j].Save(name, true);
+            results[j].Save(name);
         }
 
         log_time(t_start0, "+ save image ", mpi_props.rank);
