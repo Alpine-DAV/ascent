@@ -960,11 +960,16 @@ global_topo_and_assoc(const conduit::Node &dataset,
     ASCENT_ERROR("All Binning fields must have the same topology.");
   }
 #endif
-  if(assoc_str != "vertex" && assoc_str != "element")
+  if(assoc_str.empty())
+  {
+    ASCENT_ERROR("Could not determine the associate from the given "
+                 "reduction_var and axes. Try supplying a field.");
+  }
+  else if(assoc_str != "vertex" && assoc_str != "element")
   {
     ASCENT_ERROR("Unknown association: '"
                  << assoc_str
-                 << "'. Binning only supports vertex and element association");
+                 << "'. Binning only supports vertex and element association.");
   }
 
   conduit::Node res;
@@ -1158,11 +1163,7 @@ update_bin(double *bins,
            const double value,
            const std::string &reduction_op)
 {
-  if(reduction_op == "cnt" || reduction_op == "pdf")
-  {
-    bins[i] += 1;
-  }
-  else if(reduction_op == "min")
+  if(reduction_op == "min")
   {
     // have to keep track of count anyways in order to detect which bins are
     // empty
@@ -1174,7 +1175,8 @@ update_bin(double *bins,
     bins[2 * i] = std::max(bins[i], value);
     bins[2 * i + 1] += 1;
   }
-  else if(reduction_op == "avg" || reduction_op == "sum")
+  else if(reduction_op == "avg" || reduction_op == "sum" ||
+          reduction_op == "pdf")
   {
     bins[2 * i] += value;
     bins[2 * i + 1] += 1;
@@ -1192,7 +1194,7 @@ update_bin(double *bins,
   }
 }
 
-// reduction_op: cnt, sum, min, max, avg, pdf, std, var, rms
+// reduction_op: sum, min, max, avg, pdf, std, var, rms
 conduit::Node
 binning(const conduit::Node &dataset,
         conduit::Node &bin_axes,
@@ -1200,15 +1202,11 @@ binning(const conduit::Node &dataset,
         const std::string &reduction_op,
         const double empty_bin_val)
 {
-  // for now only support reductions on scalars
-  if(!is_xyz(reduction_var) && !is_scalar_field(dataset, reduction_var))
-  {
-    ASCENT_ERROR("Binning: reduction variable '"
-                 << reduction_var
-                 << "' must be a scalar field in the dataset or x/y/z.");
-  }
   std::vector<std::string> var_names = bin_axes.child_names();
-  var_names.push_back(reduction_var);
+  if(!reduction_var.empty())
+  {
+    var_names.push_back(reduction_var);
+  }
   const conduit::Node &topo_and_assoc =
       global_topo_and_assoc(dataset, var_names);
   const std::string topo_name = topo_and_assoc["topo_name"].as_string();
@@ -1219,7 +1217,7 @@ binning(const conduit::Node &dataset,
   const double *max_coords = bounds["max_coords"].value();
   const std::string axes[3][3] = {
       {"x", "i", "dx"}, {"y", "j", "dy"}, {"z", "k", "dz"}};
-  // populate min_val, max_val, num_bins for x,y,z
+  // populate min_val, max_val, for x,y,z
   for(int axis_num = 0; axis_num < 3; ++axis_num)
   {
     if(bin_axes.has_path(axes[axis_num][0]))
@@ -1250,39 +1248,10 @@ binning(const conduit::Node &dataset,
         // We add 1 because the last bin isn't inclusive
         axis["max_val"] = max_coords[axis_num] + 1.0;
       }
-
-      if(!axis.has_path("num_bins"))
-      {
-        axis["num_bins"] = 256;
-      }
     }
   }
 
   int num_axes = bin_axes.number_of_children();
-
-  // populate min_val, max_val, num_bins for other axis fields
-  for(int axis_index = 0; axis_index < num_axes; ++axis_index)
-  {
-    conduit::Node &axis = bin_axes.child(axis_index);
-    const std::string axis_name = axis.name();
-    if(!is_xyz(axis_name) && !axis.has_path("bins"))
-    {
-      if(!axis.has_path("min_val"))
-      {
-        axis["min_val"] = field_min(dataset, axis_name)["value"];
-      }
-      if(!axis.has_path("max_val"))
-      {
-        axis["max_val"] =
-            field_max(dataset, axis_name)["value"].to_float64() + 1.0;
-      }
-      if(!axis.has_path("num_bins"))
-      {
-        axis["num_bins"] =
-            axis["max_val"].to_int32() - axis["min_val"].to_int32();
-      }
-    }
-  }
 
   // create bins
   size_t num_bins = 1;
@@ -1302,11 +1271,7 @@ binning(const conduit::Node &dataset,
   }
   // number of variables held per bin (e.g. sum and cnt for average)
   int num_bin_vars = 2;
-  if(reduction_op == "cnt" || reduction_op == "pdf")
-  {
-    num_bin_vars = 1;
-  }
-  else if(reduction_op == "var" || reduction_op == "std")
+  if(reduction_op == "var" || reduction_op == "std")
   {
     num_bin_vars = 3;
   }
@@ -1331,7 +1296,20 @@ binning(const conduit::Node &dataset,
     const int homes_size = n_homes.dtype().number_of_elements();
 
     // update bins
-    if(dom.has_path("fields/" + reduction_var))
+    if(reduction_var.empty())
+    {
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+      for(int i = 0; i < homes_size; ++i)
+      {
+        if(homes[i] != -1)
+        {
+          update_bin(bins, homes[i], 1, reduction_op);
+        }
+      }
+    }
+    else if(dom.has_path("fields/" + reduction_var))
     {
       const std::string values_path = "fields/" + reduction_var + "/values";
       if(dom[values_path].dtype().is_float32())
@@ -1389,16 +1367,17 @@ binning(const conduit::Node &dataset,
     }
     else
     {
-      ASCENT_ERROR("Field " << reduction_var << "not found in all domains");
+      ASCENT_INFO("Binning: not binning domain "
+                  << dom_index << " because field: '" << reduction_var
+                  << "' was not found.");
     }
   }
 
 #ifdef ASCENT_MPI_ENABLED
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   double *global_bins = new double[bins_size];
-  if(reduction_op == "cnt" || reduction_op == "sum" || reduction_op == "pdf" ||
-     reduction_op == "avg" || reduction_op == "std" || reduction_op == "var" ||
-     reduction_op == "rms")
+  if(reduction_op == "sum" || reduction_op == "pdf" || reduction_op == "avg" ||
+     reduction_op == "std" || reduction_op == "var" || reduction_op == "rms")
   {
     MPI_Allreduce(bins, global_bins, bins_size, MPI_DOUBLE, MPI_SUM, mpi_comm);
   }
@@ -1417,32 +1396,29 @@ binning(const conduit::Node &dataset,
   conduit::Node res;
   res["value"].set(conduit::DataType::c_double(num_bins));
   double *res_bins = res["value"].value();
-  if(reduction_op == "cnt")
+  if(reduction_op == "pdf")
   {
-#ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for
-#endif
-    for(int i = 0; i < num_bins; ++i)
-    {
-      res_bins[i] = bins[i];
-    }
-  }
-  else if(reduction_op == "pdf")
-  {
-    int n = 0;
+    double total = 0;
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for reduction(+ : n)
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
-      n += bins[i];
+      total += bins[2 * i];
     }
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
-      res_bins[i] = bins[i] / n;
+      if(bins[2 * i + 1] == 0)
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = bins[2 * i] / total;
+      }
     }
   }
   else if(reduction_op == "sum" || reduction_op == "min" ||
@@ -1541,7 +1517,6 @@ binning(const conduit::Node &dataset,
       }
     }
   }
-  res["bin_axes"] = bin_axes;
   res["association"] = assoc_str;
   delete[] bins;
   return res;
@@ -1595,8 +1570,14 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
     const int *homes = n_homes.as_int_ptr();
     const int homes_size = n_homes.dtype().number_of_elements();
 
+    std::string reduction_var =
+        binning["attrs/reduction_var/value"].as_string();
+    if(reduction_var.empty())
+    {
+      reduction_var = "cnt";
+    }
     const std::string field_name =
-        "painted_" + binning["attrs/reduction_var/value"].as_string() + "_" +
+        "painted_" + reduction_var + "_" +
         binning["attrs/reduction_op/value"].as_string();
     dom["fields/" + field_name + "/association"] = assoc_str;
     dom["fields/" + field_name + "/topology"] = topo_name;
@@ -1668,9 +1649,13 @@ binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
   mesh["topologies/binning_topo/coordset"] = "binning_coords";
 
   // create field
+  std::string reduction_var = binning["attrs/reduction_var/value"].as_string();
+  if(reduction_var.empty())
+  {
+    reduction_var = "cnt";
+  }
   const std::string field_name =
-      binning["attrs/reduction_var/value"].as_string() + "_" +
-      binning["attrs/reduction_op/value"].as_string();
+      reduction_var + "_" + binning["attrs/reduction_op/value"].as_string();
   mesh["fields/" + field_name + "/association"] = "element";
   mesh["fields/" + field_name + "/topology"] = "binning_topo";
   mesh["fields/" + field_name + "/values"].set(binning["attrs/value/value"]);
