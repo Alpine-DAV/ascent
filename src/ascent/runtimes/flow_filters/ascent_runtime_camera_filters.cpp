@@ -1241,6 +1241,12 @@ calcArea(std::vector<float> triangle, Camera c, int width, int height)
 	       triangle[3], triangle[4], triangle[5], 
 	       triangle[6], triangle[7], triangle[8]);
   Triangle d_tri = transformTriangle(w_tri, c, width, height);
+  /*
+  cerr << "w_tri: " << endl;
+  w_tri.printTri();
+  cerr << "d_tri: " << endl;
+  d_tri.printTri();
+  */
   return d_tri.calculateTriArea();
 
 }
