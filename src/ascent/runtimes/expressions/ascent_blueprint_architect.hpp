@@ -101,7 +101,7 @@ conduit::Node field_inf_count(const conduit::Node &dataset,
                               const std::string &field_name);
 
 conduit::Node field_histogram(const conduit::Node &dataset,
-                              const std::string &field_name,
+                              const std::string &field,
                               const double &min_val,
                               const double &max_val,
                               const int &num_bins);
