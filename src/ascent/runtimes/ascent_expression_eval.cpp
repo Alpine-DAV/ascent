@@ -505,12 +505,11 @@ initialize_functions()
   binning_sig["args/reduction_op/description"] =
       "The reduction operator to use when \
   putting values in bins. Available reductions are: \n\n \
-  - cnt: number of elements in a bin \n \
   - min: minimum value in a bin \n \
   - max: maximum value in a bin \n \
   - sum: sum of values in a bin \n \
   - avg: average of values in a bin \n \
-  - pdf: probability distribution function over all bins \n \
+  - pdf: probability distribution function \n \
   - std: standard deviation of values in a bin \n \
   - var: variance of values in a bin \n \
   - rms: root mean square of values in a bin";
