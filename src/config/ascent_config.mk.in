@@ -152,7 +152,11 @@ else
                             -lvtkm_rendering-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_filter-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_cont-$(ASCENT_VTKM_VERSION)
+                            -lvtkm_source-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_io-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_lodepng-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_cont-$(ASCENT_VTKM_VERSION) \
+                            -lvtkmdiympi_nompi
 
 ifeq ($(ASCENT_CUDA_LIBS),)
    # not set, do not include config.mk

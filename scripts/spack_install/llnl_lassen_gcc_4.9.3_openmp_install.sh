@@ -18,7 +18,7 @@ python scripts/uberenv/uberenv.py --spec="%gcc +openmp" \
 # gen symlinks to important deps
 python scripts/spack_install/gen_extra_install_symlinks.py ${DEST_DIR} cmake python conduit
 # gen env helper script
-rm public_env.sh
+rm -f public_env.sh
 python scripts/spack_install/gen_public_install_env_script.py ${DEST_DIR} gcc/4.9.3
 chmod a+x public_env.sh
 cp public_env.sh ${BASE_DIR}/${ASCENT_VERSION}/lassen/ascent_lassen_setup_env_gcc_openmp.sh
