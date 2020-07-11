@@ -1618,12 +1618,12 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     output["coordsets/"+coords_name+"/dims/i"] = (int) dims[0];
     output["coordsets/"+coords_name+"/dims/j"] = (int) dims[1];
     output["coordsets/"+coords_name+"/dims/k"] = (int) dims[2];
-    output["coordsets/"+coords_name+"/origin/x"] = (int) origin[0];
-    output["coordsets/"+coords_name+"/origin/y"] = (int) origin[1];
-    output["coordsets/"+coords_name+"/origin/z"] = (int) origin[2];
-    output["coordsets/"+coords_name+"/spacing/dx"] = (int) spacing[0];
-    output["coordsets/"+coords_name+"/spacing/dy"] = (int) spacing[1];
-    output["coordsets/"+coords_name+"/spacing/dz"] = (int) spacing[2];
+    output["coordsets/"+coords_name+"/origin/x"] = (double) origin[0];
+    output["coordsets/"+coords_name+"/origin/y"] = (double) origin[1];
+    output["coordsets/"+coords_name+"/origin/z"] = (double) origin[2];
+    output["coordsets/"+coords_name+"/spacing/dx"] = (double) spacing[0];
+    output["coordsets/"+coords_name+"/spacing/dy"] = (double) spacing[1];
+    output["coordsets/"+coords_name+"/spacing/dz"] = (double) spacing[2];
   }
   else if(is_rectilinear)
   {
