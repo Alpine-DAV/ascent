@@ -42,7 +42,6 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_expression_filters.cpp
@@ -61,9 +60,9 @@
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
-#include <ascent_logging.hpp>
-#include "ascent_conduit_reductions.hpp"
 #include "ascent_blueprint_architect.hpp"
+#include "ascent_conduit_reductions.hpp"
+#include <ascent_logging.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -100,27 +99,22 @@ namespace expressions
 namespace detail
 {
 
-bool is_math(const std::string &op)
+bool
+is_math(const std::string &op)
 {
-  return op == "*"
-         || op == "+"
-         || op == "/"
-         || op == "-"
-         || op == "%";
+  return op == "*" || op == "+" || op == "/" || op == "-" || op == "%";
 }
 
-bool is_logic(const std::string &op)
+bool
+is_logic(const std::string &op)
 {
-  return op == "or"
-         || op == "and"
-         || op == "not";
+  return op == "or" || op == "and" || op == "not";
 }
 
-bool is_scalar(const std::string &type)
+bool
+is_scalar(const std::string &type)
 {
-  return type == "int"
-         || type == "double"
-         || type == "scalar";
+  return type == "int" || type == "double" || type == "scalar";
 }
 
 void
@@ -144,19 +138,20 @@ vector_op(const double lhs[3],
   }
   else
   {
-    ASCENT_ERROR("Unsupported vector op "<<op);
+    ASCENT_ERROR("Unsupported vector op " << op);
   }
 }
 
-
-template<typename T>
-T math_op(const T lhs, const T rhs, const std::string &op)
+template <typename T>
+T
+math_op(const T lhs, const T rhs, const std::string &op)
 {
-  ASCENT_ERROR("unknown type: "<<typeid(T).name());
+  ASCENT_ERROR("unknown type: " << typeid(T).name());
 }
 
-template<>
-double math_op(const double lhs, const double rhs, const std::string &op)
+template <>
+double
+math_op(const double lhs, const double rhs, const std::string &op)
 {
   double res;
   if(op == "+")
@@ -177,13 +172,14 @@ double math_op(const double lhs, const double rhs, const std::string &op)
   }
   else
   {
-    ASCENT_ERROR("unknown math op "<<op<<" for type double");
+    ASCENT_ERROR("unknown math op " << op << " for type double");
   }
   return res;
 }
 
-template<>
-int math_op(const int lhs, const int rhs, const std::string &op)
+template <>
+int
+math_op(const int lhs, const int rhs, const std::string &op)
 {
   int res;
   if(op == "+")
@@ -208,12 +204,13 @@ int math_op(const int lhs, const int rhs, const std::string &op)
   }
   else
   {
-    ASCENT_ERROR("unknown math op "<<op<<" for type int");
+    ASCENT_ERROR("unknown math op " << op << " for type int");
   }
   return res;
 }
 
-bool comp_op(const double lhs, const double rhs, const std::string &op)
+bool
+comp_op(const double lhs, const double rhs, const std::string &op)
 {
   int res;
   if(op == "<")
@@ -242,12 +239,13 @@ bool comp_op(const double lhs, const double rhs, const std::string &op)
   }
   else
   {
-    ASCENT_ERROR("unknown comparison op "<<op);
+    ASCENT_ERROR("unknown comparison op " << op);
   }
   return res;
 }
 
-bool logic_op(const bool lhs, const bool rhs, const std::string &op)
+bool
+logic_op(const bool lhs, const bool rhs, const std::string &op)
 {
   bool res;
   if(op == "or")
@@ -260,13 +258,12 @@ bool logic_op(const bool lhs, const bool rhs, const std::string &op)
   }
   else if(op == "not")
   {
-    // TODO: this does not make total sense to me (matt)
-    // it seems like a dummy rhs is being passed
-    res = !lhs;
+    // a dummy lhs is being passed
+    res = !rhs;
   }
   else
   {
-    ASCENT_ERROR("unknown boolean op "<<op);
+    ASCENT_ERROR("unknown boolean op " << op);
   }
   return res;
 }
@@ -274,31 +271,29 @@ bool logic_op(const bool lhs, const bool rhs, const std::string &op)
 } // namespace detail
 
 //-----------------------------------------------------------------------------
-NullArg::NullArg()
-:Filter()
+NullArg::NullArg() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 NullArg::~NullArg()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 NullArg::declare_interface(Node &i)
 {
-  i["type_name"]   = "null_arg";
+  i["type_name"] = "null_arg";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-NullArg::verify_params(const conduit::Node &params,
-                       conduit::Node &info)
+NullArg::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -314,42 +309,39 @@ NullArg::execute()
 }
 
 //-----------------------------------------------------------------------------
-Identifier::Identifier()
-:Filter()
+Identifier::Identifier() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Identifier::~Identifier()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 Identifier::declare_interface(Node &i)
 {
-  i["type_name"]   = "expr_identifier";
+  i["type_name"] = "expr_identifier";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Identifier::verify_params(const conduit::Node &params,
-                          conduit::Node &info)
+Identifier::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
   if(!params.has_path("value"))
   {
-     info["errors"].append() = "Missing required string parameter 'value'";
-     res = false;
+    info["errors"].append() = "Missing required string parameter 'value'";
+    res = false;
   }
   return res;
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -358,16 +350,17 @@ Identifier::execute()
   conduit::Node *output = new conduit::Node();
   std::string i_name = params()["value"].as_string();
 
-  conduit::Node *cache = graph().workspace().registry().fetch<Node>("cache");
+  const conduit::Node *const cache =
+      graph().workspace().registry().fetch<Node>("cache");
   if(!cache->has_path(i_name))
   {
-    ASCENT_ERROR("Unknown expression identifier: '"<<i_name<<"'");
+    ASCENT_ERROR("Unknown expression identifier: '" << i_name << "'");
   }
 
   const int entries = (*cache)[i_name].number_of_children();
   if(entries < 1)
   {
-    ASCENT_ERROR("Expression identifier: needs a non-zero number of entires: "<<entries);
+    ASCENT_ERROR("Expression identifier: needs at least one entry");
   }
   // grab the last one calculated
   (*output) = (*cache)[i_name].child(entries - 1);
@@ -376,42 +369,39 @@ Identifier::execute()
 }
 
 //-----------------------------------------------------------------------------
-Boolean::Boolean()
-:Filter()
+Boolean::Boolean() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Boolean::~Boolean()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 Boolean::declare_interface(Node &i)
 {
-  i["type_name"]   = "expr_bool";
+  i["type_name"] = "expr_bool";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Boolean::verify_params(const conduit::Node &params,
-                       conduit::Node &info)
+Boolean::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
   if(!params.has_path("value"))
   {
-     info["errors"].append() = "Missing required numeric parameter 'value'";
-     res = false;
+    info["errors"].append() = "Missing required numeric parameter 'value'";
+    res = false;
   }
   return res;
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -425,16 +415,15 @@ Boolean::execute()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-Integer::Integer()
-:Filter()
+Integer::Integer() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Integer::~Integer()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
@@ -442,26 +431,24 @@ Integer::~Integer()
 void
 Integer::declare_interface(Node &i)
 {
-  i["type_name"]   = "expr_integer";
+  i["type_name"] = "expr_integer";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Integer::verify_params(const conduit::Node &params,
-                       conduit::Node &info)
+Integer::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
   if(!params.has_path("value"))
   {
-     info["errors"].append() = "Missing required numeric parameter 'value'";
-     res = false;
+    info["errors"].append() = "Missing required numeric parameter 'value'";
+    res = false;
   }
   return res;
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -474,42 +461,39 @@ Integer::execute()
 }
 
 //-----------------------------------------------------------------------------
-Double::Double()
-:Filter()
+Double::Double() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Double::~Double()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 Double::declare_interface(Node &i)
 {
-  i["type_name"]   = "expr_double";
+  i["type_name"] = "expr_double";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Double::verify_params(const conduit::Node &params,
-                      conduit::Node &info)
+Double::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
   if(!params.has_path("value"))
   {
-     info["errors"].append() = "Missing required numeric parameter 'value'";
-     res = false;
+    info["errors"].append() = "Missing required numeric parameter 'value'";
+    res = false;
   }
   return res;
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -522,38 +506,36 @@ Double::execute()
 }
 
 //-----------------------------------------------------------------------------
-String::String()
-:Filter()
+String::String() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 String::~String()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 String::declare_interface(Node &i)
 {
-  i["type_name"]   = "expr_string";
+  i["type_name"] = "expr_string";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-String::verify_params(const conduit::Node &params,
-                       conduit::Node &info)
+String::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
   if(!params.has_path("value"))
   {
-     info["errors"].append() = "Missing required string parameter 'value'";
-     res = false;
+    info["errors"].append() = "Missing required string parameter 'value'";
+    res = false;
   }
   return res;
 }
@@ -570,23 +552,22 @@ String::execute()
 }
 
 //-----------------------------------------------------------------------------
-BinaryOp::BinaryOp()
-:Filter()
+BinaryOp::BinaryOp() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 BinaryOp::~BinaryOp()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 BinaryOp::declare_interface(Node &i)
 {
-  i["type_name"]   = "expr_binary_op";
+  i["type_name"] = "expr_binary_op";
   i["port_names"].append() = "lhs";
   i["port_names"].append() = "rhs";
   i["output_port"] = "true";
@@ -594,29 +575,27 @@ BinaryOp::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-BinaryOp::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+BinaryOp::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
   if(!params.has_path("op_string"))
   {
-     info["errors"].append() = "Missing required string parameter 'op_string'";
-     res = false;
+    info["errors"].append() = "Missing required string parameter 'op_string'";
+    res = false;
   }
   return res;
 }
-
 
 //-----------------------------------------------------------------------------
 void
 BinaryOp::execute()
 {
-  Node *n_lhs = input<Node>("lhs");
-  Node *n_rhs = input<Node>("rhs");
+  const conduit::Node *n_lhs = input<Node>("lhs");
+  const conduit::Node *n_rhs = input<Node>("rhs");
 
-  const Node &lhs = (*n_lhs)["value"];
-  const Node &rhs = (*n_rhs)["value"];
+  const conduit::Node &lhs = (*n_lhs)["value"];
+  const conduit::Node &rhs = (*n_rhs)["value"];
 
   std::string op_str = params()["op_string"].as_string();
   const std::string l_type = (*n_lhs)["type"].as_string();
@@ -650,25 +629,23 @@ BinaryOp::execute()
       if(detail::is_scalar(l_type) != detail::is_scalar(r_type))
       {
         msg << "' " << l_type << " " << op_str << " " << r_type << "'";
-        ASCENT_ERROR("Mixed vector and scalar quantities not implemented / supported: " << msg.str());
+        ASCENT_ERROR(
+            "Mixed vector and scalar quantities not implemented / supported: "
+            << msg.str());
       }
 
       double res[3];
-      detail::vector_op(lhs.value(),
-                        rhs.value(),
-                        op_str,
-                        res);
-
+      detail::vector_op(lhs.value(), rhs.value(), op_str, res);
 
       (*output)["value"].set(res, 3);
       (*output)["type"] = "vector";
     }
   }
-  else if (detail::is_logic(op_str))
+  else if(detail::is_logic(op_str))
   {
-    bool b_rhs = rhs.to_uint8();
     bool b_lhs = lhs.to_uint8();
-    (*output)["value"] = detail::logic_op(b_rhs, b_lhs, op_str);
+    bool b_rhs = rhs.to_uint8();
+    (*output)["value"] = detail::logic_op(b_lhs, b_rhs, op_str);
     (*output)["type"] = "bool";
   }
   else
@@ -679,29 +656,28 @@ BinaryOp::execute()
     (*output)["type"] = "bool";
   }
 
-  //std::cout<<" operation "<<op_str<<"\n";
+  // std::cout<<" operation "<<op_str<<"\n";
 
   set_output<conduit::Node>(output);
 }
 
 //-----------------------------------------------------------------------------
-IfExpr::IfExpr()
-:Filter()
+IfExpr::IfExpr() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 IfExpr::~IfExpr()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 IfExpr::declare_interface(Node &i)
 {
-  i["type_name"]   = "expr_if";
+  i["type_name"] = "expr_if";
   i["port_names"].append() = "condition";
   i["port_names"].append() = "if";
   i["port_names"].append() = "else";
@@ -710,8 +686,7 @@ IfExpr::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-IfExpr::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+IfExpr::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -722,11 +697,11 @@ IfExpr::verify_params(const conduit::Node &params,
 void
 IfExpr::execute()
 {
-  Node *n_condition = input<Node>("condition");
-  Node *n_if = input<Node>("if");
-  Node *n_else = input<Node>("else");
+  conduit::Node *n_condition = input<Node>("condition");
+  conduit::Node *n_if = input<Node>("if");
+  conduit::Node *n_else = input<Node>("else");
 
-  Node *output;
+  conduit::Node *output;
   if((*n_condition)["value"].to_uint8() == 1)
   {
     output = n_if;
@@ -740,23 +715,22 @@ IfExpr::execute()
 }
 
 //-----------------------------------------------------------------------------
-ArrayAccess::ArrayAccess()
-:Filter()
+ArrayAccess::ArrayAccess() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 ArrayAccess::~ArrayAccess()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 ArrayAccess::declare_interface(Node &i)
 {
-  i["type_name"]   = "expr_array";
+  i["type_name"] = "expr_array";
   i["port_names"].append() = "array";
   i["port_names"].append() = "index";
   i["output_port"] = "true";
@@ -764,21 +738,19 @@ ArrayAccess::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-ArrayAccess::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+ArrayAccess::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
   return res;
 }
 
-
 //-----------------------------------------------------------------------------
 void
 ArrayAccess::execute()
 {
-  Node *n_array = input<Node>("array");
-  Node *n_index = input<Node>("index");
+  const conduit::Node *n_array = input<Node>("array");
+  const conduit::Node *n_index = input<Node>("index");
 
   conduit::Node *output = new conduit::Node();
 
@@ -786,7 +758,8 @@ ArrayAccess::execute()
   int length = (*n_array)["value"].dtype().number_of_elements();
   if(index > length - 1)
   {
-    ASCENT_ERROR("ArrayAccess: array index out of bounds: [0,"<<length-1<<"]");
+    ASCENT_ERROR("ArrayAccess: array index out of bounds: [0," << length - 1
+                                                               << "]");
   }
   const double *arr = (*n_array)["value"].value();
   (*output)["value"] = arr[index];
@@ -796,83 +769,140 @@ ArrayAccess::execute()
 }
 
 //-----------------------------------------------------------------------------
-DotAccess::DotAccess()
-:Filter()
+DotAccess::DotAccess() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 DotAccess::~DotAccess()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 DotAccess::declare_interface(Node &i)
 {
-  i["type_name"]   = "expr_dot";
+  i["type_name"] = "expr_dot";
   i["port_names"].append() = "obj";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-DotAccess::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+DotAccess::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
   if(!params.has_path("name"))
   {
-     info["errors"].append() = "DotAccess: Missing required parameter 'name'";
-     res = false;
+    info["errors"].append() = "DotAccess: Missing required parameter 'name'";
+    res = false;
   }
   return res;
 }
-
 
 //-----------------------------------------------------------------------------
 void
 DotAccess::execute()
 {
-  Node *n_obj = input<Node>("obj");
+  const conduit::Node *n_obj = input<Node>("obj");
   std::string name = params()["name"].as_string();
 
   conduit::Node *output = new conduit::Node();
 
-  (*output) = (*n_obj)["attrs"][name];
+  // TODO test accessing non-existant attribute
+  if(!n_obj->has_path("attrs/" + name))
+  {
+    ASCENT_ERROR(name << " is not a valid object attribute.");
+  }
+  (*output) = (*n_obj)["attrs/" + name];
 
   set_output<conduit::Node>(output);
 }
 
 //-----------------------------------------------------------------------------
-ArrayMin::ArrayMin()
-:Filter()
+ExpressionList::ExpressionList() : Filter()
 {
-// empty
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExpressionList::~ExpressionList()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExpressionList::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_list";
+  // We can't have an arbitrary number of input ports so we choose 256
+  for(int item_num = 0; item_num < 256; ++item_num)
+  {
+    std::stringstream ss;
+    ss << "item" << item_num;
+    i["port_names"].append() = ss.str();
+  }
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExpressionList::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExpressionList::execute()
+{
+  conduit::Node *output = new conduit::Node();
+
+  for(int item_num = 0; item_num < 256; ++item_num)
+  {
+    std::stringstream ss;
+    ss << "item" << item_num;
+    const conduit::Node *n_item = input<Node>(ss.str());
+    if(n_item->dtype().is_empty())
+    {
+      break;
+    }
+    output->append() = *n_item;
+  }
+
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+ArrayMin::ArrayMin() : Filter()
+{
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 ArrayMin::~ArrayMin()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 ArrayMin::declare_interface(Node &i)
 {
-  i["type_name"]   = "array_min";
+  i["type_name"] = "array_min";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-ArrayMin::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+ArrayMin::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -891,24 +921,22 @@ ArrayMin::execute()
 }
 
 //-----------------------------------------------------------------------------
-ScalarMin::ScalarMin()
-:Filter()
+ScalarMin::ScalarMin() : Filter()
 {
-// empty
+  // empty
 }
-
 
 //-----------------------------------------------------------------------------
 ScalarMin::~ScalarMin()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 ScalarMin::declare_interface(Node &i)
 {
-  i["type_name"]   = "scalar_min";
+  i["type_name"] = "scalar_min";
   i["port_names"].append() = "arg1";
   i["port_names"].append() = "arg2";
   i["output_port"] = "true";
@@ -916,8 +944,7 @@ ScalarMin::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-ScalarMin::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+ScalarMin::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -928,13 +955,13 @@ ScalarMin::verify_params(const conduit::Node &params,
 void
 ScalarMin::execute()
 {
-  Node *arg1 = input<Node>("arg1");
-  Node *arg2 = input<Node>("arg2");
+  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg2 = input<Node>("arg2");
 
   conduit::Node *output = new conduit::Node();
 
-  if((*arg1)["type"].as_string() == "double"
-    || (*arg2)["type"].as_string() == "double")
+  if((*arg1)["type"].as_string() == "double" ||
+     (*arg2)["type"].as_string() == "double")
   {
     double d_rhs = (*arg1)["value"].to_float64();
     double d_lhs = (*arg2)["value"].to_float64();
@@ -953,23 +980,22 @@ ScalarMin::execute()
 }
 
 //-----------------------------------------------------------------------------
-ScalarMax::ScalarMax()
-:Filter()
+ScalarMax::ScalarMax() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 ScalarMax::~ScalarMax()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 ScalarMax::declare_interface(Node &i)
 {
-  i["type_name"]   = "scalar_max";
+  i["type_name"] = "scalar_max";
   i["port_names"].append() = "arg1";
   i["port_names"].append() = "arg2";
   i["output_port"] = "true";
@@ -977,8 +1003,7 @@ ScalarMax::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-ScalarMax::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+ScalarMax::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -990,13 +1015,13 @@ void
 ScalarMax::execute()
 {
 
-  Node *arg1 = input<Node>("arg1");
-  Node *arg2 = input<Node>("arg2");
+  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg2 = input<Node>("arg2");
 
   conduit::Node *output = new conduit::Node();
 
-  if((*arg1)["type"].as_string() == "double"
-    || (*arg2)["type"].as_string() == "double")
+  if((*arg1)["type"].as_string() == "double" ||
+     (*arg2)["type"].as_string() == "double")
   {
     double d_rhs = (*arg1)["value"].to_float64();
     double d_lhs = (*arg2)["value"].to_float64();
@@ -1015,31 +1040,29 @@ ScalarMax::execute()
 }
 
 //-----------------------------------------------------------------------------
-FieldMin::FieldMin()
-:Filter()
+FieldMin::FieldMin() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 FieldMin::~FieldMin()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 FieldMin::declare_interface(Node &i)
 {
-  i["type_name"]   = "field_min";
+  i["type_name"] = "field_min";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-FieldMin::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+FieldMin::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1050,17 +1073,18 @@ FieldMin::verify_params(const conduit::Node &params,
 void
 FieldMin::execute()
 {
-  Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg1 = input<Node>("arg1");
 
   const std::string field = (*arg1)["value"].as_string();
 
   conduit::Node *output = new conduit::Node();
 
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
 
   if(!is_scalar_field(*dataset, field))
   {
-    ASCENT_ERROR("FieldMin: field '"<<field<<"' is not a scalar field");
+    ASCENT_ERROR("FieldMin: field '" << field << "' is not a scalar field");
   }
 
   conduit::Node n_min = field_min(*dataset, field);
@@ -1075,31 +1099,29 @@ FieldMin::execute()
 }
 
 //-----------------------------------------------------------------------------
-ArrayMax::ArrayMax()
-:Filter()
+ArrayMax::ArrayMax() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 ArrayMax::~ArrayMax()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 ArrayMax::declare_interface(Node &i)
 {
-  i["type_name"]   = "array_max";
+  i["type_name"] = "array_max";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-ArrayMax::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+ArrayMax::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1118,31 +1140,29 @@ ArrayMax::execute()
 }
 
 //-----------------------------------------------------------------------------
-FieldMax::FieldMax()
-:Filter()
+FieldMax::FieldMax() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 FieldMax::~FieldMax()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 FieldMax::declare_interface(Node &i)
 {
-  i["type_name"]   = "field_max";
+  i["type_name"] = "field_max";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-FieldMax::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+FieldMax::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1154,17 +1174,18 @@ void
 FieldMax::execute()
 {
 
-  Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg1 = input<Node>("arg1");
 
   const std::string field = (*arg1)["value"].as_string();
 
   conduit::Node *output = new conduit::Node();
 
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
 
   if(!is_scalar_field(*dataset, field))
   {
-    ASCENT_ERROR("FieldMax: field '"<<field<<"' is not a scalar field");
+    ASCENT_ERROR("FieldMax: field '" << field << "' is not a scalar field");
   }
 
   conduit::Node n_max = field_max(*dataset, field);
@@ -1179,31 +1200,29 @@ FieldMax::execute()
 }
 
 //-----------------------------------------------------------------------------
-ArrayAvg::ArrayAvg()
-:Filter()
+ArrayAvg::ArrayAvg() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 ArrayAvg::~ArrayAvg()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 ArrayAvg::declare_interface(Node &i)
 {
-  i["type_name"]   = "array_avg";
+  i["type_name"] = "array_avg";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-ArrayAvg::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+ArrayAvg::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1223,53 +1242,51 @@ ArrayAvg::execute()
 }
 
 //-----------------------------------------------------------------------------
-FieldAvg::FieldAvg()
-:Filter()
+FieldAvg::FieldAvg() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 FieldAvg::~FieldAvg()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 FieldAvg::declare_interface(Node &i)
 {
-  i["type_name"]   = "field_avg";
+  i["type_name"] = "field_avg";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-FieldAvg::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+FieldAvg::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
   return res;
 }
 
-
 //-----------------------------------------------------------------------------
 void
 FieldAvg::execute()
 {
-  Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg1 = input<Node>("arg1");
 
   const std::string field = (*arg1)["value"].as_string();
 
   conduit::Node *output = new conduit::Node();
 
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
 
   if(!is_scalar_field(*dataset, field))
   {
-    ASCENT_ERROR("FieldAvg: field '"<<field<<"' is not a scalar field");
+    ASCENT_ERROR("FieldAvg: field '" << field << "' is not a scalar field");
   }
 
   conduit::Node n_avg = field_avg(*dataset, field);
@@ -1281,31 +1298,29 @@ FieldAvg::execute()
 }
 
 //-----------------------------------------------------------------------------
-Cycle::Cycle()
-:Filter()
+Cycle::Cycle() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Cycle::~Cycle()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 Cycle::declare_interface(Node &i)
 {
-  i["type_name"]   = "cycle";
+  i["type_name"] = "cycle";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Cycle::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+Cycle::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1318,7 +1333,8 @@ Cycle::execute()
 {
   conduit::Node *output = new conduit::Node();
 
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
 
   conduit::Node state = get_state_var(*dataset, "cycle");
   if(!state.dtype().is_number())
@@ -1332,23 +1348,22 @@ Cycle::execute()
 }
 
 //-----------------------------------------------------------------------------
-History::History()
-:Filter()
+History::History() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 History::~History()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 History::declare_interface(Node &i)
 {
-  i["type_name"]   = "history";
+  i["type_name"] = "history";
   i["port_names"].append() = "expr_name";
   i["port_names"].append() = "absolute_index";
   i["port_names"].append() = "relative_index";
@@ -1357,8 +1372,7 @@ History::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-History::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+History::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1374,9 +1388,11 @@ History::execute()
   const conduit::Node *n_absolute_index = input<Node>("absolute_index");
   const conduit::Node *n_relative_index = input<Node>("relative_index");
 
-  if(!n_absolute_index->dtype().is_empty() && !n_relative_index->dtype().is_empty())
+  if(!n_absolute_index->dtype().is_empty() &&
+     !n_relative_index->dtype().is_empty())
   {
-    ASCENT_ERROR("History: Specify only one of relative_index or absolute_index.");
+    ASCENT_ERROR(
+        "History: Specify only one of relative_index or absolute_index.");
   }
 
   const int entries = history.number_of_children();
@@ -1385,8 +1401,8 @@ History::execute()
     int relative_index = (*n_relative_index)["value"].to_int32();
     if(relative_index >= entries)
     {
-      // clamp to last if its gone too far
-      relative_index = entries - 1;
+      // clamp to first if its gone too far
+      relative_index = 0;
     }
     if(relative_index < 0)
     {
@@ -1399,18 +1415,18 @@ History::execute()
   {
     int absolute_index = 0;
 
-    if(n_absolute_index->has_path("value"))
+    if(!n_absolute_index->has_path("value"))
     {
-      absolute_index = (*n_absolute_index)["value"].to_int32();
+      ASCENT_ERROR(
+          "History: internal error. absolute index does not have child value");
     }
-    else
-    {
-      ASCENT_ERROR("History: internal error. absolute index does not have child value");
-    }
+    absolute_index = (*n_absolute_index)["value"].to_int32();
 
     if(absolute_index >= entries)
     {
-      ASCENT_ERROR("History: found only "<<entries<<" entries, cannot get entry at "<<absolute_index);
+      ASCENT_ERROR("History: found only " << entries
+                                          << " entries, cannot get entry at "
+                                          << absolute_index);
     }
     if(absolute_index < 0)
     {
@@ -1424,23 +1440,22 @@ History::execute()
 }
 
 //-----------------------------------------------------------------------------
-Vector::Vector()
-:Filter()
+Vector::Vector() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Vector::~Vector()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 Vector::declare_interface(Node &i)
 {
-  i["type_name"]   = "vector";
+  i["type_name"] = "vector";
   i["port_names"].append() = "arg1";
   i["port_names"].append() = "arg2";
   i["port_names"].append() = "arg3";
@@ -1449,22 +1464,20 @@ Vector::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-Vector::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+Vector::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
   return res;
 }
 
-
 //-----------------------------------------------------------------------------
 void
 Vector::execute()
 {
-  Node *arg1 = input<Node>("arg1");
-  Node *arg2 = input<Node>("arg2");
-  Node *arg3 = input<Node>("arg3");
+  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg2 = input<Node>("arg2");
+  const conduit::Node *arg3 = input<Node>("arg3");
 
   double vec[3] = {0., 0., 0.};
   vec[0] = (*arg1)["value"].to_float64();
@@ -1473,36 +1486,35 @@ Vector::execute()
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "vector";
-  (*output)["value"].set(vec,3);;
+  (*output)["value"].set(vec, 3);
+  ;
   set_output<conduit::Node>(output);
 }
 
 //-----------------------------------------------------------------------------
-Magnitude::Magnitude()
-:Filter()
+Magnitude::Magnitude() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Magnitude::~Magnitude()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 Magnitude::declare_interface(Node &i)
 {
-  i["type_name"]   = "magnitude";
+  i["type_name"] = "magnitude";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Magnitude::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
+Magnitude::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1513,7 +1525,7 @@ Magnitude::verify_params(const conduit::Node &params,
 void
 Magnitude::execute()
 {
-  Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg1 = input<Node>("arg1");
 
   double res = 0.;
   const double *vec = (*arg1)["value"].value();
@@ -1525,31 +1537,29 @@ Magnitude::execute()
 }
 
 //-----------------------------------------------------------------------------
-Field::Field()
-:Filter()
+Field::Field() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Field::~Field()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 Field::declare_interface(Node &i)
 {
-  i["type_name"]   = "field";
+  i["type_name"] = "field";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Field::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
+Field::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1560,7 +1570,7 @@ Field::verify_params(const conduit::Node &params,
 void
 Field::execute()
 {
-  Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg1 = input<Node>("arg1");
 
   const std::string field = (*arg1)["value"].as_string();
 
@@ -1569,20 +1579,22 @@ Field::execute()
     ASCENT_ERROR("Field: Missing dataset");
   }
 
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
 
   if(!has_field(*dataset, field))
   {
     std::vector<std::string> names = dataset->child(0)["fields"].child_names();
     std::stringstream ss;
-    ss<<"[";
+    ss << "[";
     for(int i = 0; i < names.size(); ++i)
     {
-      ss<<" "<<names[i];
+      ss << " " << names[i];
     }
-    ss<<"]";
-    ASCENT_ERROR("Field: dataset does not contain field '"<<field<<"'"
-                 <<" known = "<<ss.str());
+    ss << "]";
+    ASCENT_ERROR("Field: dataset does not contain field '"
+                 << field << "'"
+                 << " known = " << ss.str());
   }
 
   conduit::Node *output = new conduit::Node();
@@ -1592,35 +1604,164 @@ Field::execute()
 }
 
 //-----------------------------------------------------------------------------
-Histogram::Histogram()
-:Filter()
+Axis::Axis() : Filter()
 {
-// empty
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Axis::~Axis()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Axis::declare_interface(Node &i)
+{
+  i["type_name"] = "axis";
+  i["port_names"].append() = "name";
+  i["port_names"].append() = "min_val";
+  i["port_names"].append() = "max_val";
+  i["port_names"].append() = "num_bins";
+  i["port_names"].append() = "bins";
+  i["port_names"].append() = "clamp";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Axis::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Axis::execute()
+{
+  const std::string name = (*input<Node>("name"))["value"].as_string();
+  // uniform binning
+  const conduit::Node *n_min = input<Node>("min_val");
+  const conduit::Node *n_max = input<Node>("max_val");
+  const conduit::Node *n_num_bins = input<Node>("num_bins");
+  // rectilinear binning
+  const conduit::Node *n_bins_list = input<Node>("bins");
+  // clamp
+  const conduit::Node *n_clamp = input<conduit::Node>("clamp");
+
+  if(!graph().workspace().registry().has_entry("dataset"))
+  {
+    ASCENT_ERROR("Field: Missing dataset");
+  }
+  const conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
+
+  if(!is_scalar_field(*dataset, name) && !is_xyz(name))
+  {
+    ASCENT_ERROR("Axis: Axes must be scalar fields or x/y/z. Dataset does not "
+                 "contain scalar field '"
+                 << name << "'.");
+  }
+
+  conduit::Node *output;
+
+  if(!n_bins_list->dtype().is_empty())
+  {
+    // ensure none of the uniform binning arguments are passed
+    if(!n_min->dtype().is_empty() || !n_max->dtype().is_empty() ||
+       !n_num_bins->dtype().is_empty())
+    {
+      ASCENT_ERROR("Axis: Only pass in arguments for uniform or rectilinear "
+                   "binning, not both.");
+    }
+
+    int bins_len = n_bins_list->number_of_children();
+
+    if(bins_len < 2)
+    {
+      ASCENT_ERROR("Axis: bins must have at least 2 items.");
+    }
+
+    output = new conduit::Node();
+    (*output)["value/" + name + "/bins"].set(
+        conduit::DataType::c_double(bins_len));
+    double *bins = (*output)["value/" + name + "/bins"].value();
+
+    for(int i = 0; i < bins_len; ++i)
+    {
+      const conduit::Node &bin = n_bins_list->child(i);
+      if(!detail::is_scalar(bin["type"].as_string()))
+      {
+        delete output;
+        ASCENT_ERROR("Axis: bins must be a list of scalars.");
+      }
+      bins[i] = bin["value"].to_float64();
+      if(i != 0 && bins[i - 1] >= bins[i])
+      {
+        delete output;
+        ASCENT_ERROR("Axis: bins of strictly increasing scalars.");
+      }
+    }
+  }
+  else
+  {
+    output = new conduit::Node();
+    if(!n_min->dtype().is_empty())
+    {
+      (*output)["value/" + name + "/min_val"] = (*n_min)["value"].to_float64();
+    }
+    if(!n_max->dtype().is_empty())
+    {
+      (*output)["value/" + name + "/max_val"] = (*n_max)["value"].to_float64();
+    }
+    if(!n_num_bins->dtype().is_empty())
+    {
+      (*output)["value/" + name + "/num_bins"] =
+          (*n_num_bins)["value"].to_int32();
+    }
+  }
+
+  (*output)["value/" + name + "/clamp"] = false;
+  if(!n_clamp->dtype().is_empty())
+  {
+    (*output)["value/" + name + "/clamp"] = (*n_clamp)["value"].to_uint8();
+  }
+
+  (*output)["value/" + name];
+  (*output)["type"] = "axis";
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Histogram::Histogram() : Filter()
+{
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Histogram::~Histogram()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 Histogram::declare_interface(Node &i)
 {
-  i["type_name"]   = "histogram";
+  i["type_name"] = "histogram";
   i["port_names"].append() = "arg1";
   i["port_names"].append() = "num_bins";
   i["port_names"].append() = "min_val";
   i["port_names"].append() = "max_val";
-  i["port_names"].append() = "reduction";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Histogram::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
+Histogram::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1631,21 +1772,24 @@ Histogram::verify_params(const conduit::Node &params,
 void
 Histogram::execute()
 {
-  Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg1 = input<Node>("arg1");
   // optional inputs
-  const Node *n_bins = input<Node>("num_bins");
-  const Node *n_max = input<Node>("max_val");
-  const Node *n_min = input<Node>("min_val");
-
-  if((*arg1)["type"].as_string() != "field")
-  {
-    ASCENT_ERROR("Histogram: arg1 must be a field");
-  }
+  const conduit::Node *n_bins = input<Node>("num_bins");
+  const conduit::Node *n_max = input<Node>("max_val");
+  const conduit::Node *n_min = input<Node>("min_val");
 
   const std::string field = (*arg1)["value"].as_string();
 
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
 
+  // TODO add test for passing a non-scalar field
+  if(!is_scalar_field(*dataset, field))
+  {
+    ASCENT_ERROR("Histogram: arg1 must be a scalar field");
+  }
+
+  // handle the optional inputs
   int num_bins = 256;
   if(!n_bins->dtype().is_empty())
   {
@@ -1655,7 +1799,6 @@ Histogram::execute()
   double min_val;
   double max_val;
 
-  // handle the optional inputs
   if(!n_max->dtype().is_empty())
   {
     max_val = (*n_max)["value"].to_float64();
@@ -1676,12 +1819,15 @@ Histogram::execute()
 
   if(min_val >= max_val)
   {
-    ASCENT_ERROR("Histogram: min value ("<<min_val<<") must be smaller than max ("<<max_val<<")");
+    ASCENT_ERROR("Histogram: min value ("
+                 << min_val << ") must be smaller than max (" << max_val
+                 << ")");
   }
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "histogram";
-  (*output)["attrs/value/value"] = field_histogram(*dataset, field, min_val, max_val, num_bins)["value"];
+  (*output)["attrs/value/value"] =
+      field_histogram(*dataset, field, min_val, max_val, num_bins)["value"];
   (*output)["attrs/value/type"] = "array";
   (*output)["attrs/min_val/value"] = min_val;
   (*output)["attrs/min_val/type"] = "double";
@@ -1693,31 +1839,167 @@ Histogram::execute()
 }
 
 //-----------------------------------------------------------------------------
-Entropy::Entropy()
-:Filter()
+Binning::Binning() : Filter()
 {
-// empty
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Binning::~Binning()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Binning::declare_interface(Node &i)
+{
+  i["type_name"] = "binning";
+  i["port_names"].append() = "reduction_var";
+  i["port_names"].append() = "reduction_op";
+  i["port_names"].append() = "bin_axes";
+  i["port_names"].append() = "empty_bin_val";
+  i["port_names"].append() = "output";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Binning::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Binning::execute()
+{
+  const std::string reduction_var =
+      (*input<Node>("reduction_var"))["value"].as_string();
+  const std::string reduction_op =
+      (*input<Node>("reduction_op"))["value"].as_string();
+  const conduit::Node *n_axes_list = input<Node>("bin_axes");
+  // optional arguments
+  const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
+  const conduit::Node *n_output_opt = input<conduit::Node>("output");
+
+  conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
+
+  // verify n_axes_list and put the values in n_bin_axes
+  conduit::Node n_bin_axes;
+  int num_axes = n_axes_list->number_of_children();
+  for(int i = 0; i < num_axes; ++i)
+  {
+    const conduit::Node &axis = n_axes_list->child(i);
+    if(axis["type"].as_string() != "axis")
+    {
+      ASCENT_ERROR("Binning: bin_axes must be a list of axis");
+    }
+    n_bin_axes.update(axis["value"]);
+  }
+
+  // verify reduction_var
+  if(!has_field(*dataset, reduction_var) && !is_xyz(reduction_var))
+  {
+    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+    std::stringstream ss;
+    ss << "[";
+    for(size_t i = 0; i < names.size(); ++i)
+    {
+      ss << " " << names[i];
+    }
+    ss << "]";
+    ASCENT_ERROR("Field: dataset does not contain field '"
+                 << reduction_var << "'"
+                 << " known = " << ss.str());
+  }
+
+  // verify reduction_op
+  if(reduction_op != "cnt" && reduction_op != "sum" && reduction_op != "min" &&
+     reduction_op != "max" && reduction_op != "avg" && reduction_op != "pdf" &&
+     reduction_op != "std" && reduction_op != "var" && reduction_op != "rms")
+  {
+    ASCENT_ERROR(
+        "Unknown reduction_op: '"
+        << reduction_op
+        << "'. Known reduction operators are: cnt, sum, min, max, avg, pdf, "
+           "std, var, rms");
+  }
+
+  double empty_bin_val = 0;
+  if(!n_empty_bin_val->dtype().is_empty())
+  {
+    empty_bin_val = (*n_empty_bin_val)["value"].to_float64();
+  }
+
+  const conduit::Node &n_binning =
+      binning(*dataset, n_bin_axes, reduction_var, reduction_op, empty_bin_val);
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "binning";
+  (*output)["attrs/value/value"] = n_binning["value"];
+  (*output)["attrs/value/type"] = "array";
+  (*output)["attrs/reduction_var/value"] = reduction_var;
+  (*output)["attrs/reduction_var/type"] = "string";
+  (*output)["attrs/reduction_op/value"] = reduction_op;
+  (*output)["attrs/reduction_op/type"] = "string";
+  (*output)["attrs/bin_axes/value"] = n_binning["bin_axes"];
+  (*output)["attrs/bin_axes/type"] = "list";
+  (*output)["attrs/association/value"] = n_binning["association"];
+  (*output)["attrs/association/type"] = "string";
+  set_output<conduit::Node>(output);
+
+  if(!n_output_opt->dtype().is_empty())
+  {
+    const std::string &output_opt = (*n_output_opt)["value"].as_string();
+    if(output_opt != "none" && output_opt != "bins" && output_opt != "mesh")
+    {
+      ASCENT_ERROR("Unknown ouput_opt: '"
+                   << output_opt
+                   << "'. Known output options are: 'none', 'bins', 'mesh'.");
+    }
+    if(output_opt == "bins")
+    {
+      conduit::Node n_binning_mesh;
+      binning_mesh(*output, n_binning_mesh);
+      n_binning_mesh["state/cycle"] = 100;
+      n_binning_mesh["state/domain_id"] = 0;
+      dataset->child(0).update(n_binning_mesh);
+    }
+    else if(output_opt == "mesh")
+    {
+      paint_binning(*output, *dataset);
+    }
+  }
+}
+
+//-----------------------------------------------------------------------------
+Entropy::Entropy() : Filter()
+{
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Entropy::~Entropy()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 Entropy::declare_interface(Node &i)
 {
-  i["type_name"]   = "entropy";
+  i["type_name"] = "entropy";
   i["port_names"].append() = "hist";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Entropy::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
+Entropy::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1742,31 +2024,29 @@ Entropy::execute()
 }
 
 //-----------------------------------------------------------------------------
-Pdf::Pdf()
-:Filter()
+Pdf::Pdf() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Pdf::~Pdf()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 Pdf::declare_interface(Node &i)
 {
-  i["type_name"]   = "pdf";
+  i["type_name"] = "pdf";
   i["port_names"].append() = "hist";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Pdf::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
+Pdf::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1790,31 +2070,29 @@ Pdf::execute()
 }
 
 //-----------------------------------------------------------------------------
-Cdf::Cdf()
-:Filter()
+Cdf::Cdf() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Cdf::~Cdf()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 Cdf::declare_interface(Node &i)
 {
-  i["type_name"]   = "cdf";
+  i["type_name"] = "cdf";
   i["port_names"].append() = "hist";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Cdf::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
+Cdf::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1838,23 +2116,22 @@ Cdf::execute()
 }
 
 //-----------------------------------------------------------------------------
-Quantile::Quantile()
-:Filter()
+Quantile::Quantile() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 Quantile::~Quantile()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 Quantile::declare_interface(Node &i)
 {
-  i["type_name"]   = "quantile";
+  i["type_name"] = "quantile";
   i["port_names"].append() = "cdf";
   i["port_names"].append() = "q";
   i["port_names"].append() = "interpolation";
@@ -1863,8 +2140,7 @@ Quantile::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-Quantile::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
+Quantile::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1888,22 +2164,17 @@ Quantile::execute()
   }
 
   // handle the optional inputs
-  std::string interpolation;
+  std::string interpolation = "linear";
   if(!n_interpolation->dtype().is_empty())
   {
     interpolation = (*n_interpolation)["value"].as_string();
-    if(interpolation != "linear"
-       && interpolation != "lower"
-       && interpolation != "higher"
-       && interpolation != "midpoint"
-       && interpolation != "nearest")
+    if(interpolation != "linear" && interpolation != "lower" &&
+       interpolation != "higher" && interpolation != "midpoint" &&
+       interpolation != "nearest")
     {
-      ASCENT_ERROR("Known interpolation types are: linear, lower, higher, midpoint, nearest");
+      ASCENT_ERROR("Known interpolation types are: linear, lower, higher, "
+                   "midpoint, nearest");
     }
-  }
-  else
-  {
-    interpolation = "linear";
   }
 
   conduit::Node *output = new conduit::Node();
@@ -1913,23 +2184,22 @@ Quantile::execute()
 }
 
 //-----------------------------------------------------------------------------
-BinByIndex::BinByIndex()
-:Filter()
+BinByIndex::BinByIndex() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 BinByIndex::~BinByIndex()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 BinByIndex::declare_interface(Node &i)
 {
-  i["type_name"]   = "bin_by_index";
+  i["type_name"] = "bin_by_index";
   i["port_names"].append() = "hist";
   i["port_names"].append() = "bin";
   i["output_port"] = "true";
@@ -1937,8 +2207,7 @@ BinByIndex::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-BinByIndex::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
+BinByIndex::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1957,7 +2226,8 @@ BinByIndex::execute()
 
   if(bin < 0 || bin > num_bins - 1)
   {
-    ASCENT_ERROR("BinByIndex: bin index must be within the bounds of hist [0, "<<num_bins - 1<<"]");
+    ASCENT_ERROR("BinByIndex: bin index must be within the bounds of hist [0, "
+                 << num_bins - 1 << "]");
   }
 
   conduit::Node *output = new conduit::Node();
@@ -1968,23 +2238,22 @@ BinByIndex::execute()
 }
 
 //-----------------------------------------------------------------------------
-BinByValue::BinByValue()
-:Filter()
+BinByValue::BinByValue() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 BinByValue::~BinByValue()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 BinByValue::declare_interface(Node &i)
 {
-  i["type_name"]   = "bin_by_value";
+  i["type_name"] = "bin_by_value";
   i["port_names"].append() = "hist";
   i["port_names"].append() = "val";
   i["output_port"] = "true";
@@ -1992,8 +2261,7 @@ BinByValue::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-BinByValue::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
+BinByValue::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2014,7 +2282,8 @@ BinByValue::execute()
 
   if(val < min_val || val > max_val)
   {
-    ASCENT_ERROR("BinByValue: val must within the bounds of hist ["<<min_val<<", "<<max_val<<"]");
+    ASCENT_ERROR("BinByValue: val must within the bounds of hist ["
+                 << min_val << ", " << max_val << "]");
   }
 
   const double inv_delta = num_bins / (max_val - min_val);
@@ -2028,31 +2297,29 @@ BinByValue::execute()
 }
 
 //-----------------------------------------------------------------------------
-FieldSum::FieldSum()
-:Filter()
+FieldSum::FieldSum() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 FieldSum::~FieldSum()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 FieldSum::declare_interface(Node &i)
 {
-  i["type_name"]   = "field_sum";
+  i["type_name"] = "field_sum";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-FieldSum::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+FieldSum::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2064,7 +2331,8 @@ void
 FieldSum::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  const conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_sum(*dataset, field)["value"];
@@ -2074,31 +2342,29 @@ FieldSum::execute()
 }
 
 //-----------------------------------------------------------------------------
-FieldNanCount::FieldNanCount()
-:Filter()
+FieldNanCount::FieldNanCount() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 FieldNanCount::~FieldNanCount()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 FieldNanCount::declare_interface(Node &i)
 {
-  i["type_name"]   = "field_nan_count";
+  i["type_name"] = "field_nan_count";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-FieldNanCount::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+FieldNanCount::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2110,7 +2376,8 @@ void
 FieldNanCount::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  conduit::Node *dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_nan_count(*dataset, field)["value"];
@@ -2120,31 +2387,29 @@ FieldNanCount::execute()
 }
 
 //-----------------------------------------------------------------------------
-FieldInfCount::FieldInfCount()
-:Filter()
+FieldInfCount::FieldInfCount() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 FieldInfCount::~FieldInfCount()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 FieldInfCount::declare_interface(Node &i)
 {
-  i["type_name"]   = "field_inf_count";
+  i["type_name"] = "field_inf_count";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-FieldInfCount::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
+FieldInfCount::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2156,7 +2421,8 @@ void
 FieldInfCount::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  conduit::Node *dataset = graph().workspace().registry().fetch<Node>("dataset");
+  conduit::Node *dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_inf_count(*dataset, field)["value"];
@@ -2166,31 +2432,29 @@ FieldInfCount::execute()
 }
 
 //-----------------------------------------------------------------------------
-ArraySum::ArraySum()
-:Filter()
+ArraySum::ArraySum() : Filter()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 ArraySum::~ArraySum()
 {
-// empty
+  // empty
 }
 
 //-----------------------------------------------------------------------------
 void
 ArraySum::declare_interface(Node &i)
 {
-  i["type_name"]   = "array_sum";
+  i["type_name"] = "array_sum";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-ArraySum::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+ArraySum::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2212,20 +2476,14 @@ ArraySum::execute()
 // -- end ascent::runtime::expressions --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
