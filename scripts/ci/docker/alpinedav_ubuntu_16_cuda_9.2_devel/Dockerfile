@@ -42,49 +42,20 @@
 #
 ###############################################################################
 
-###############################################################################
-#
-# Example that shows how to use an installed instance of Ascent in another
-# CMake-based build system.
-#
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DAscent_DIR={ascent install path}   \
-#   -DConduit_DIR={conduit install path} \
-#   -DVTKH_DIR={vtkh install path}          
-#   ../
-# make
-# ./ascent_render_example
-#
-# In order to run directly in a sub directory below using-with-cmake in an ascent install, 
-# set Ascent_DIR to ../../..
-# 
-#  mkdir build
-#  cd build
-#  cmake .. -DAscent_DIR=../../..
-#  make
-#  ./ascent_render_example
-#
-###############################################################################
-
-cmake_minimum_required(VERSION 3.9)
-
-project(using_with_cmake)
-
-#
-# Use CMake's find_package to import ascent's targets
-#
-# PATHS is just a hint if someone runs this example from the Ascent install
-# tree without setting up an environment hint to find Ascent
-find_package(Ascent REQUIRED
-             PATHS ${CMAKE_SOURCE_DIR}/../../../)
-
-# create our example
-add_executable(ascent_render_example ascent_render_example.cpp)
-
-# link to ascent
-target_link_libraries(ascent_render_example ascent::ascent)
+FROM nvidia/cuda:9.2-devel-ubuntu16.04
+MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
+# add sudo to base cuda devel env
+# so we can install additional packages as
+# non-root, but admin default user on azure pipelines
+RUN apt-get update && apt-get -y install sudo
+# install std packages we need for cuda dev env and test
+RUN apt-get -y install \
+               git \
+               python \
+               gfortran \
+               zlib1g-dev \
+               curl\
+               mpich \
+               libmpich-dev 
 
 

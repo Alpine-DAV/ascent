@@ -177,17 +177,17 @@ endif()
 add_subdirectory(ascent)
 
 ################################
-# Add our tests
-################################
-if(ENABLE_TESTS)
-    add_subdirectory(tests)
-endif()
-
-################################
 # Add mini-app examples
 ################################
 if(ENABLE_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+################################
+# Add our tests
+################################
+if(ENABLE_TESTS)
+    add_subdirectory(tests)
 endif()
 
 ################################
@@ -211,4 +211,8 @@ add_subdirectory(config)
 # Create CMake importable
 # exports for all of our targets
 ################################
-install(EXPORT ascent DESTINATION lib/cmake)
+if(WIN32)
+    install(EXPORT ascent DESTINATION cmake)
+else()
+    install(EXPORT ascent DESTINATION lib/cmake/${PROJECT_NAME})
+endif()

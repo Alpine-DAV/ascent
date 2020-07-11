@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
@@ -41,50 +42,23 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
+export TAG_NAME=alpinedav/ascent-ci:ubuntu-16-cuda-9.2-devel-tpls
 
-###############################################################################
-#
-# Example that shows how to use an installed instance of Ascent in another
-# CMake-based build system.
-#
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DAscent_DIR={ascent install path}   \
-#   -DConduit_DIR={conduit install path} \
-#   -DVTKH_DIR={vtkh install path}          
-#   ../
-# make
-# ./ascent_render_example
-#
-# In order to run directly in a sub directory below using-with-cmake in an ascent install, 
-# set Ascent_DIR to ../../..
-# 
-#  mkdir build
-#  cd build
-#  cmake .. -DAscent_DIR=../../..
-#  make
-#  ./ascent_render_example
-#
-###############################################################################
+# remove old source tarball if it exists
+echo "rm -f ascent.docker.src.tar.gz"
+rm -f ascent.docker.src.tar.gz
 
-cmake_minimum_required(VERSION 3.9)
+WORKING_DIR=`pwd`
 
-project(using_with_cmake)
+# get current copy of the ascent source
+echo "cd ../../../../ && python package.py ${WORKING_DIR}/ascent.docker.src.tar.gz"
+cd ../../../../ && python package.py ${WORKING_DIR}/ascent.docker.src.tar.gz
 
-#
-# Use CMake's find_package to import ascent's targets
-#
-# PATHS is just a hint if someone runs this example from the Ascent install
-# tree without setting up an environment hint to find Ascent
-find_package(Ascent REQUIRED
-             PATHS ${CMAKE_SOURCE_DIR}/../../../)
+# change back to the dir with our Dockerfile
+echo "cd ${WORKING_DIR}"
+cd ${WORKING_DIR}
 
-# create our example
-add_executable(ascent_render_example ascent_render_example.cpp)
-
-# link to ascent
-target_link_libraries(ascent_render_example ascent::ascent)
-
+# exec docker build to create image
+echo "docker build -t ${TAG_NAME} ."
+docker build -t ${TAG_NAME} .
 

@@ -67,6 +67,7 @@
 #include <ascent_config.h>
 #include <ascent_mpi_utils.hpp>
 #include <runtimes/ascent_data_object.hpp>
+#include <runtimes/flow_filters/ascent_runtime_relay_filters.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -595,6 +596,7 @@ Learn::execute()
     const int num_fields = field_selection.size();
 
     std::string assoc =  "";
+    std::string topo =  "";
     int field_size = 0;
     for(int i = 0; i < n_input->number_of_children(); ++i)
     {
@@ -607,16 +609,18 @@ Learn::execute()
           ASCENT_ERROR("Learn: no field named '"<<field_selection[f]<<"'");
         }
         std::string f_assoc = dom[fpath + "/association"].as_string();
+        std::string f_topo = dom[fpath + "/topology"].as_string();
         if(f == 0)
         {
           assoc = f_assoc;
+          topo = f_topo;
           field_size = dom[fpath + "/values"].dtype().number_of_elements();
         }
         else
         {
-          if(f_assoc != assoc)
+          if(f_assoc != assoc || f_topo != topo)
           {
-            ASCENT_ERROR("Learn: field association mismatch");
+            ASCENT_ERROR("Learn: field topology mismatch");
           }
         }
       }
@@ -661,6 +665,7 @@ Learn::execute()
     d_name<<"rank_"<<rank;
     std::ofstream debug;
     debug.open(d_name.str());
+    debug<<"Field size "<<field_size<<"\n";
 
 
 #ifdef ASCENT_VTKM_USE_CUDA
@@ -717,6 +722,11 @@ Learn::execute()
       // offset for current domain
       double * domain_fmms = fmms + num_fields * i;
       compute_fmms(num_fields, kVecs, eigvals, domain_fmms);
+      for(int f = 0; f < num_fields; ++f)
+      {
+        if(domain_fmms[f]  != domain_fmms[f]) domain_fmms[f] = 0;
+        debug<<"domain "<<i<<" fmms "<<f<<" "<<domain_fmms[f]<<"\n";
+      }
     }
 
 
@@ -732,8 +742,13 @@ Learn::execute()
       int offset = i * num_fields;
       for(int f = 0; f < num_fields; f++)
       {
-        local_sum[f] += fmms[offset + f];
+        double val = fmms[offset + f];
+        local_sum[f] = val;
       }
+    }
+    for(int f = 0; f < num_fields; f++)
+    {
+      debug<<"local sum field "<<f<<" sum "<<local_sum[f]<<"\n";
     }
 #ifdef ASCENT_MPI_ENABLED
     //int *domains_per_rank = new int[comm_size];
@@ -807,6 +822,33 @@ Learn::execute()
     {
       std::cout<<"FIRE\n";
     }
+
+    for(int i = 0; i < n_input->number_of_children(); ++i)
+    {
+      conduit::Node &dom = n_input->child(i);
+      conduit::Node &field = dom["fields/spatial_metric"];
+      field["association"] = assoc;
+      field["topology"] = topo;
+      field["values"].set(conduit::DataType::float64(field_size));
+      conduit::float64_array array = field["values"].value();
+
+      for(int v = 0; v < field_size; ++v)
+      {
+        array[v] = spatial_metric[i];
+      }
+    }
+
+    conduit::Node info;
+    bool is_valid = blueprint::mesh::verify(*n_input, info);
+    if(!is_valid && rank == 0)
+    {
+      info.print();
+    }
+
+    mesh_blueprint_save(*n_input,
+                        "spatial_metric",
+                        "hdf5",
+                        -1);
 
     delete[] kVecs;
     delete[] eigvals;

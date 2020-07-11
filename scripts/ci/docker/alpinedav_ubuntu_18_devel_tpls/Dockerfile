@@ -42,49 +42,35 @@
 #
 ###############################################################################
 
-###############################################################################
-#
-# Example that shows how to use an installed instance of Ascent in another
-# CMake-based build system.
-#
-# To build:
-#  mkdir build
-#  cd build
-#  cmake \
-#   -DAscent_DIR={ascent install path}   \
-#   -DConduit_DIR={conduit install path} \
-#   -DVTKH_DIR={vtkh install path}          
-#   ../
-# make
-# ./ascent_render_example
-#
-# In order to run directly in a sub directory below using-with-cmake in an ascent install, 
-# set Ascent_DIR to ../../..
-# 
-#  mkdir build
-#  cd build
-#  cmake .. -DAscent_DIR=../../..
-#  make
-#  ./ascent_render_example
-#
-###############################################################################
+FROM alpinedav/ascent-ci:ubuntu-18-devel
+MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 
-cmake_minimum_required(VERSION 3.9)
+# obtain a copy of ascent source from host env,
+# which we use to call uberenv
+COPY ascent.docker.src.tar.gz /
+# extract ou
+RUN tar -xzf ascent.docker.src.tar.gz
 
-project(using_with_cmake)
+# at some sites ssl certs are intercepted, which cases issues fetching
+# tpl sources via https
 
-#
-# Use CMake's find_package to import ascent's targets
-#
-# PATHS is just a hint if someone runs this example from the Ascent install
-# tree without setting up an environment hint to find Ascent
-find_package(Ascent REQUIRED
-             PATHS ${CMAKE_SOURCE_DIR}/../../../)
+# to resolve this, either:
+# 1) pass the "-k" option to uberenv (recommended),
+# 2) install the proper certs into the image, or
+# 3) use  the following commands to disable ssl for git and
+#    curl (both are used by spack):
+#RUN git config --global http.sslVerify false
+#RUN echo insecure >> ~/.curlrc
 
-# create our example
-add_executable(ascent_render_example ascent_render_example.cpp)
+# bootstrap third party libs using spack and uberenv
+RUN cd ascent && python scripts/uberenv/uberenv.py \
+       -k \
+       --spec "%gcc+mpi+mfem+dray+python ^python@3.6.3" \
+       --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_18_devel/ \
+       --prefix=/uberenv_libs
 
-# link to ascent
-target_link_libraries(ascent_render_example ascent::ascent)
+# cleanup the spack build stuff to free up space
+RUN uberenv_libs/spack/bin/spack clean --all
 
-
+# delete copy of source from host (ci will fetch new from repo)
+RUN rm -rf ascent

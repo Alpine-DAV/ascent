@@ -1,4 +1,3 @@
-
 # -------------------------------------------------------------------------
 # This file controls default concretization preferences for Spack.
 #
@@ -16,8 +15,8 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    variants: ~shared~python+cuda+openmp cuda_arch=70
-    compiler: [gcc, intel, pgi, clang, xl, nag]
+    variants: +mpi
+    compiler: [clang, gcc, intel, pgi, xl, nag]
     providers:
       awk: [gawk]
       blas: [openblas]
@@ -29,7 +28,7 @@ packages:
       lapack: [openblas]
       mkl: [intel-mkl]
       mpe: [mpe2]
-      mpi: [mvapich2]
+      mpi: [openmpi]
       opencl: [pocl]
       openfoam: [openfoam-com, openfoam-org, foam-extend]
       pil: [py-pillow]
@@ -37,29 +36,30 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
+# custom variants
   conduit:
     version: [master]
   python:
-    variants: ~dbm
+    variants: +shared~dbm
   cmake:
     paths:
-      cmake@3.14.5: /usr/tce/packages/cmake/cmake-3.14.5/
+      cmake@3.16.3: /usr/
+      cmake@3.14.7: /home/mclarsen/software/cmake-3.14.7/
     buildable: False
   perl:
-    buildable: False
     paths:
-      perl: /usr
-  pkg-config:
-      buildable: False
-      paths:
-          pkg-config: /usr
-# LLNL toss3 CUDA
+      perl: /usr/
+    buildable: False
+  openblas:
+    paths:
+      openblas: /usr/
+    buildable: False
   cuda:
-    modules:
-       cuda@10.1.168: cuda/10.1.168
-    buildable: False
-# LLNL toss3 mvapich2
-  mvapich2:
     paths:
-        mvapich2@2.2%gcc@7.3.1: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1/
+      cuda@10.1: /usr/
     buildable: False
+  mpich:
+    paths:
+      mpich@3.3.2%gcc: /usr/
+    buildable: False
+

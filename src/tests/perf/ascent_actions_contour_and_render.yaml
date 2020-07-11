@@ -1,0 +1,19 @@
+
+-
+  action: "add_pipelines"
+  pipelines:
+    pl1:
+      f1:
+        type: "contour"
+        params:
+          field: "energy"
+          levels: 10
+-
+  action: "add_scenes"
+  scenes:
+    scene1:
+      plots:
+        plt1:
+          type: "pseudocolor"
+          pipeline: "pl1"
+          field: "pressure"

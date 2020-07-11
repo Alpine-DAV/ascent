@@ -22,6 +22,24 @@ Functions
     :rtype: double
     
     
+.. function:: field_nan_count(arg1)
+
+    Return the number  of NaNs in a mesh variable.
+    
+    :type arg1: field
+    :param arg1:
+    :rtype: double
+    
+    
+.. function:: field_inf_count(arg1)
+
+    Return the number  of -inf and +inf in a mesh variable.
+    
+    :type arg1: field
+    :param arg1:
+    :rtype: double
+    
+    
 .. function:: max(arg1, arg2)
 
     Return the maximum of two scalars.
@@ -53,7 +71,7 @@ Functions
     
 .. function:: min(arg1)
 
-    Return the minimum of two scalars.
+    Return the minimum value from the meshvar. Its position is also stored and is accessible via the `position` function.
     
     :type arg1: field
     :param arg1:
@@ -62,7 +80,7 @@ Functions
     
 .. function:: min(arg1, arg2)
 
-    Return the minimum value from the meshvar. Its position is also stored and is accessible via the `position` function.
+    Return the minimum of two scalars.
     
     :type arg1: scalar
     :param arg1:
@@ -127,7 +145,7 @@ Functions
     :rtype: double
     
     
-.. function:: histogram(arg1, [num_bins], [min_val], [max_val], [reduction])
+.. function:: histogram(arg1, [num_bins], [min_val], [max_val])
 
     Return a histogram of the mesh variable. Return a histogram of the mesh variable.
     
@@ -139,14 +157,6 @@ Functions
     :param min_val: defaults to ``min(arg1)``
     :type max_val: scalar
     :param max_val: defaults to ``max(arg1)``
-    :type reduction: string
-    :param reduction: The reduction function to use when   putting values in bins. Available reductions are: 
-    
-       - count (default): number of elements in a bin 
-       - min: minimum value in a bin 
-       - max: maximum value in a bin 
-       - sum: sum of values that fall in a bin 
-       - avg: average of values that fall in a bin
     :rtype: histogram
     
     
@@ -240,6 +250,52 @@ Functions
        - nearest: ``i`` or ``j``, whichever is nearest. 
        - midpoint: ``(i + j) / 2``
     :rtype: double
+    
+    
+.. function:: axis(name, [bins], [min_val], [max_val], [num_bins], [clamp])
+
+    Defines a uniform or rectilinear axis. When used for binning the bins are inclusive on the lower boundary and exclusive on the higher boundary of each bin. Either specify only ``bins`` or a subset of the ``min_val``, ``max_val``, ``num_bins`` options.
+    
+    :type name: string
+    :param name: The name of a scalar field on the mesh or one of ``'x'``, ``'y'``, or ``'z'``.
+    :type bins: list
+    :param bins: A strictly increasing list of scalars containing the values for each tick. Used to specify a rectilinear axis.
+    :type min_val: scalar
+    :param min_val: Minimum value of the axis (i.e. the value of the first tick).
+    :type max_val: scalar
+    :param max_val: Maximum value of the axis (i.e. the value of the last tick).
+    :type num_bins: int
+    :param num_bins: Number of bins on the axis (i.e. the number of ticks minus 1).
+    :type clamp: bool
+    :param clamp: Defaults to ``False``. If ``True``, values outside the axis should be put into the bins on the boundaries.
+    :rtype: axis
+    
+    
+.. function:: binning(reduction_var, reduction_op, bin_axes, [empty_bin_val], [output])
+
+    Returns a multidimensional data binning.
+    
+    :type reduction_var: string
+    :param reduction_var: The variable being reduced. Either the name of a scalar field on the mesh or one of ``'x'``, ``'y'``, or ``'z'``.
+    :type reduction_op: string
+    :param reduction_op: The reduction operator to use when   putting values in bins. Available reductions are: 
+    
+       - cnt: number of elements in a bin 
+       - min: minimum value in a bin 
+       - max: maximum value in a bin 
+       - sum: sum of values in a bin 
+       - avg: average of values in a bin 
+       - pdf: probability distribution function over all bins 
+       - std: standard deviation of values in a bin 
+       - var: variance of values in a bin 
+       - rms: root mean square of values in a bin
+    :type bin_axes: list
+    :param bin_axes: List of Axis objects which define the bin axes.
+    :type empty_bin_val: scalar
+    :param empty_bin_val: The value that empty bins should have. Defaults to 0.
+    :type output: string
+    :param output: Defaults to ``'none'``. If set to ``'bins'`` a binning with 3 or fewer dimensions will be output as a new topology on the dataset. This is useful for directly visualizing the binning. If set to ``'mesh'`` the bins will be "painted" back onto the original mesh as a new field.
+    :rtype: binning
     
     
 Objects
