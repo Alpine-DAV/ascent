@@ -1400,7 +1400,7 @@ binning(const conduit::Node &dataset,
   {
     double total = 0;
 #ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for reduction(+ : n)
+#pragma omp parallel for reduction(+ : total)
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
