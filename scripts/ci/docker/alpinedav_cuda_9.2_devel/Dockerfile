@@ -42,9 +42,7 @@
 #
 ###############################################################################
 
-FROM nvidia/9.2-devel-ubuntu16.04
-docker pull nvidia/cuda:9.2-devel-ubuntu16.04
-
+FROM nvidia/cuda:9.2-devel
 MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 # add sudo to base cuda devel env
 # so we can install additional packages as
