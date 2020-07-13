@@ -42,7 +42,6 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_derived_jit.cpp
@@ -54,10 +53,10 @@
 
 #include <ascent_logging.hpp>
 
-#include <occa.hpp>
-#include <cstring>
 #include <cmath>
+#include <cstring>
 #include <limits>
+#include <occa.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -80,17 +79,18 @@ namespace expressions
 namespace detail
 {
 
-void pack_mesh(const conduit::Node &dom,
-               const int invoke_size,
-               const std::string &topo_name,
-               occa::device &device,
-               occa::kernel &kernel,
-               std::vector<occa::memory> &mem)
+void
+pack_mesh(const conduit::Node &dom,
+          const int invoke_size,
+          const std::string &topo_name,
+          occa::device &device,
+          occa::kernel &kernel,
+          std::vector<occa::memory> &mem)
 {
-  const conduit::Node &n_topo = dom["topologies/"+topo_name];
+  const conduit::Node &n_topo = dom["topologies/" + topo_name];
   const std::string coords_name = n_topo["coordset"].as_string();
   const std::string topo_type = n_topo["type"].as_string();
-  const conduit::Node &n_coords = dom["coordsets/"+coords_name];
+  const conduit::Node &n_coords = dom["coordsets/" + coords_name];
 
   if(topo_type == "uniform")
   {
@@ -107,9 +107,8 @@ void pack_mesh(const conduit::Node &dom,
     }
 
     const conduit::Node &n_spacing = n_coords["spacing"];
-    double spacing[3] = {1., 1., 1.};
-    double dx =  n_spacing["dx"].to_float64();
-    double dy =  n_spacing["dy"].to_float64();
+    double dx = n_spacing["dx"].to_float64();
+    double dy = n_spacing["dy"].to_float64();
     kernel.pushArg(dx);
     kernel.pushArg(dy);
 
@@ -166,35 +165,35 @@ void pack_mesh(const conduit::Node &dom,
       {
         occa::memory oz_vals;
         const double *z_vals = n_coords["values/z"].as_float64_ptr();
-        oz_vals = device.malloc(dim_z* sizeof(double), z_vals);
+        oz_vals = device.malloc(dim_z * sizeof(double), z_vals);
         kernel.pushArg(oz_vals);
         mem.push_back(oz_vals);
       }
     }
 
-    //conduit::Node n_tmp;
-    //n_tmp.set_external(DataType::float64(num_vals),ptr);
-    //n_vals.to_float64_array(n_tmp);
-
+    // conduit::Node n_tmp;
+    // n_tmp.set_external(DataType::float64(num_vals),ptr);
+    // n_vals.to_float64_array(n_tmp);
   }
 }
 
-void pack_fields(const conduit::Node &dom,
-                 const std::map<std::string,std::string> &var_types,
-                 const int invoke_size,
-                 occa::device &device,
-                 std::vector<occa::memory> &field_memory)
+void
+pack_fields(const conduit::Node &dom,
+            const std::map<std::string, std::string> &var_types,
+            const int invoke_size,
+            occa::device &device,
+            std::vector<occa::memory> &field_memory)
 {
   // extract the field args
   for(auto vt : var_types)
   {
     const std::string &var_name = vt.first;
     const std::string &type = vt.second;
-    const conduit::Node &field = dom["fields/"+var_name];
+    const conduit::Node &field = dom["fields/" + var_name];
     const int size = field["values"].dtype().number_of_elements();
     if(invoke_size != size)
     {
-      ASCENT_ERROR("field sizes do not match "<<invoke_size<<" "<<size);
+      ASCENT_ERROR("field sizes do not match " << invoke_size << " " << size);
     }
     occa::memory o_vals;
     // we only have two types currently
@@ -209,29 +208,30 @@ void pack_fields(const conduit::Node &dom,
       const float *vals = field["values"].as_float32_ptr();
       o_vals = device.malloc(size * sizeof(float), vals);
     }
-    std::cout<<"Mode "<<o_vals.mode()<<"\n";
+    std::cout << "Mode " << o_vals.mode() << "\n";
 
     field_memory.push_back(o_vals);
   }
 }
-//void override_print(const char *str)
+// void override_print(const char *str)
 //{
 //  std::cout<<"HERE "<<str<<"\n";
 //  ASCENT_ERROR("OCCA error" <<str);
 //}
 
-void modes()
+void
+modes()
 {
   auto modes = occa::modeMap();
   for(auto mode : modes)
   {
-    std::cout<<"mode "<<mode.first<<"\n";
+    std::cout << "mode " << mode.first << "\n";
   }
-  //occa::io::stderr.setOverride(&override_print);
+  // occa::io::stderr.setOverride(&override_print);
 }
 
-void mesh_params(const conduit::Node &mesh_meta,
-                 std::stringstream &ss)
+void
+mesh_params(const conduit::Node &mesh_meta, std::stringstream &ss)
 
 {
   const std::string mesh_type = mesh_meta["type"].as_string();
@@ -240,117 +240,85 @@ void mesh_params(const conduit::Node &mesh_meta,
 
   if(mesh_type == "uniform")
   {
-    constexpr char uni3d[] =
-      "                 const int point_dims_x,\n"
-      "                 const int point_dims_y,\n"
-      "                 const int point_dims_z,\n"
-      "                 const double spacing_x,\n"
-      "                 const double spacing_y,\n"
-      "                 const double spacing_z,\n"
-      "                 const double origin_x,\n"
-      "                 const double origin_y,\n"
-      "                 const double origin_z,\n";
+    constexpr char uni3d[] = "                 const int point_dims_x,\n"
+                             "                 const int point_dims_y,\n"
+                             "                 const int point_dims_z,\n"
+                             "                 const double spacing_x,\n"
+                             "                 const double spacing_y,\n"
+                             "                 const double spacing_z,\n"
+                             "                 const double origin_x,\n"
+                             "                 const double origin_y,\n"
+                             "                 const double origin_z,\n";
 
-    constexpr char uni2d[] =
-      "                 const int point_dims_x,\n"
-      "                 const int point_dims_y,\n"
-      "                 const double spacing_x,\n"
-      "                 const double spacing_y,\n"
-      "                 const double origin_x,\n"
-      "                 const double origin_y,\n";
+    constexpr char uni2d[] = "                 const int point_dims_x,\n"
+                             "                 const int point_dims_y,\n"
+                             "                 const double spacing_x,\n"
+                             "                 const double spacing_y,\n"
+                             "                 const double origin_x,\n"
+                             "                 const double origin_y,\n";
     if(dims == 3)
     {
-      ss<<uni3d;
+      ss << uni3d;
     }
     else
     {
-      ss<<uni2d;
+      ss << uni2d;
     }
-
   }
-  else if (mesh_type == "rectilinear" || mesh_type == "structured")
+  else if(mesh_type == "rectilinear" || mesh_type == "structured")
   {
     if(data_type == "double")
     {
       constexpr char structured3d[] =
-        "                 const int point_dims_x,\n"
-        "                 const int point_dims_y,\n"
-        "                 const int point_dims_z,\n"
-        "                 const double * coords_x,\n"
-        "                 const double * coords_y,\n"
-        "                 const double * coords_z,\n";
+          "                 const int point_dims_x,\n"
+          "                 const int point_dims_y,\n"
+          "                 const int point_dims_z,\n"
+          "                 const double * coords_x,\n"
+          "                 const double * coords_y,\n"
+          "                 const double * coords_z,\n";
       constexpr char structured2d[] =
-        "                 const int point_dims_x,\n"
-        "                 const int point_dims_y,\n"
-        "                 const double * coords_x,\n"
-        "                 const double * coords_y,\n";
+          "                 const int point_dims_x,\n"
+          "                 const int point_dims_y,\n"
+          "                 const double * coords_x,\n"
+          "                 const double * coords_y,\n";
       if(dims == 3)
       {
-        ss<<structured3d;
+        ss << structured3d;
       }
       else
       {
-        ss<<structured2d;
+        ss << structured2d;
       }
     }
     else
     {
       constexpr char structured3d[] =
-        "                 const int point_dims_x,\n"
-        "                 const int point_dims_y,\n"
-        "                 const int point_dims_z,\n"
-        "                 const float * coords_x,\n"
-        "                 const float * coords_y,\n"
-        "                 const float * coords_z,\n";
+          "                 const int point_dims_x,\n"
+          "                 const int point_dims_y,\n"
+          "                 const int point_dims_z,\n"
+          "                 const float * coords_x,\n"
+          "                 const float * coords_y,\n"
+          "                 const float * coords_z,\n";
       constexpr char structured2d[] =
-        "                 const int point_dims_x,\n"
-        "                 const int point_dims_y,\n"
-        "                 const float * coords_x,\n"
-        "                 const float * coords_y,\n";
+          "                 const int point_dims_x,\n"
+          "                 const int point_dims_y,\n"
+          "                 const float * coords_x,\n"
+          "                 const float * coords_y,\n";
       if(dims == 3)
       {
-        ss<<structured3d;
+        ss << structured3d;
       }
       else
       {
-        ss<<structured2d;
+        ss << structured2d;
       }
     }
   }
-  else if (mesh_type == "unstructured")
+  else if(mesh_type == "unstructured")
   {
     if(data_type == "double")
     {
       constexpr char unstructured3d[] =
-        "                 const int size_x,\n"
-        "                 const int size_y,\n"
-        "                 const int size_z,\n"
-        "                 const double * coords_x,\n"
-        "                 const double * coords_y,\n"
-        "                 const double * coords_z,\n"
-        "                 const int * cell_conn,\n"
-        "                 const int cell_shape,\n";
-      constexpr char unstructured2d[] =
-        "                 const int size_x,\n"
-        "                 const int size_y,\n"
-        "                 const double * coords_x,\n"
-        "                 const double * coords_y,\n"
-        "                 const int * cell_conn,\n"
-        "                 const int cell_shape,\n";
-      if(dims == 3)
-      {
-        ss<<unstructured3d;
-      }
-      else
-      {
-        ss<<unstructured2d;
-      }
-    }
-    else
-    {
-      if(data_type == "double")
-      {
-        constexpr char unstructured3d[] =
           "                 const int size_x,\n"
           "                 const int size_y,\n"
           "                 const int size_z,\n"
@@ -359,56 +327,86 @@ void mesh_params(const conduit::Node &mesh_meta,
           "                 const double * coords_z,\n"
           "                 const int * cell_conn,\n"
           "                 const int cell_shape,\n";
-        constexpr char unstructured2d[] =
+      constexpr char unstructured2d[] =
           "                 const int size_x,\n"
           "                 const int size_y,\n"
           "                 const double * coords_x,\n"
           "                 const double * coords_y,\n"
           "                 const int * cell_conn,\n"
           "                 const int cell_shape,\n";
+      if(dims == 3)
+      {
+        ss << unstructured3d;
+      }
+      else
+      {
+        ss << unstructured2d;
+      }
+    }
+    else
+    {
+      if(data_type == "double")
+      {
+        constexpr char unstructured3d[] =
+            "                 const int size_x,\n"
+            "                 const int size_y,\n"
+            "                 const int size_z,\n"
+            "                 const double * coords_x,\n"
+            "                 const double * coords_y,\n"
+            "                 const double * coords_z,\n"
+            "                 const int * cell_conn,\n"
+            "                 const int cell_shape,\n";
+        constexpr char unstructured2d[] =
+            "                 const int size_x,\n"
+            "                 const int size_y,\n"
+            "                 const double * coords_x,\n"
+            "                 const double * coords_y,\n"
+            "                 const int * cell_conn,\n"
+            "                 const int cell_shape,\n";
         if(dims == 3)
         {
-          ss<<unstructured3d;
+          ss << unstructured3d;
         }
         else
         {
-          ss<<unstructured2d;
+          ss << unstructured2d;
         }
       }
       else
       {
         constexpr char unstructured3d[] =
-          "                 const int size_x,\n"
-          "                 const int size_y,\n"
-          "                 const int size_z,\n"
-          "                 const float * coords_x,\n"
-          "                 const float * coords_y,\n"
-          "                 const float * coords_z,\n"
-          "                 const int * cell_conn,\n"
-          "                 const int cell_shape,\n";
+            "                 const int size_x,\n"
+            "                 const int size_y,\n"
+            "                 const int size_z,\n"
+            "                 const float * coords_x,\n"
+            "                 const float * coords_y,\n"
+            "                 const float * coords_z,\n"
+            "                 const int * cell_conn,\n"
+            "                 const int cell_shape,\n";
         constexpr char unstructured2d[] =
-          "                 const int size_x,\n"
-          "                 const int size_y,\n"
-          "                 const float * coords_x,\n"
-          "                 const float * coords_y,\n"
-          "                 const int * cell_conn,\n"
-          "                 const int cell_shape,\n";
+            "                 const int size_x,\n"
+            "                 const int size_y,\n"
+            "                 const float * coords_x,\n"
+            "                 const float * coords_y,\n"
+            "                 const int * cell_conn,\n"
+            "                 const int cell_shape,\n";
         if(dims == 3)
         {
-          ss<<unstructured3d;
+          ss << unstructured3d;
         }
         else
         {
-          ss<<unstructured2d;
+          ss << unstructured2d;
         }
       }
     }
   }
 }
 
-void mesh_function(const std::string &func,
-                   const conduit::Node &mesh_meta,
-                   std::stringstream &ss)
+void
+mesh_function(const std::string &func,
+              const conduit::Node &mesh_meta,
+              std::stringstream &ss)
 {
   const std::string mesh_type = mesh_meta["type"].as_string();
   const int dims = mesh_meta["spatial_dims"].to_int32();
@@ -425,10 +423,14 @@ void mesh_function(const std::string &func,
     {
       mesh_function("cell_idx", mesh_meta, ss);
       ss << "        double volume;\n";
-      //ss <<"printf(\"idx %d %d %d\\n\", cell_idx[0], cell_idx[1], cell_idx[2]);\n";
-      ss << "        double dx = coords_x[cell_idx[0]+1] - coords_x[cell_idx[0]];\n";
-      ss << "        double dy = coords_y[cell_idx[1]+1] - coords_y[cell_idx[1]];\n";
-      ss << "        double dz = coords_z[cell_idx[2]+1] - coords_z[cell_idx[2]];\n";
+      // ss <<"printf(\"idx %d %d %d\\n\", cell_idx[0], cell_idx[1],
+      // cell_idx[2]);\n";
+      ss << "        double dx = coords_x[cell_idx[0]+1] - "
+            "coords_x[cell_idx[0]];\n";
+      ss << "        double dy = coords_y[cell_idx[1]+1] - "
+            "coords_y[cell_idx[1]];\n";
+      ss << "        double dz = coords_z[cell_idx[2]+1] - "
+            "coords_z[cell_idx[2]];\n";
       ss << "        volume = dx * dy * dz;\n";
     }
     else
@@ -448,29 +450,37 @@ void mesh_function(const std::string &func,
     {
       ss << "        int cell_idx[3];\n";
       ss << "        cell_idx[0] = n % (point_dims_x - 1);\n";
-      ss << "        cell_idx[1] = (n / (point_dims_x - 1)) % (point_dims_y - 1);\n";
-      ss << "        cell_idx[2] = n / ((point_dims_x - 1) * (point_dims_y - 1));\n";
+      ss << "        cell_idx[1] = (n / (point_dims_x - 1)) % (point_dims_y - "
+            "1);\n";
+      ss << "        cell_idx[2] = n / ((point_dims_x - 1) * (point_dims_y - "
+            "1));\n";
     }
   }
   else
   {
-    ASCENT_ERROR("Mesh function not implemented '"<<func<<"'");
+    ASCENT_ERROR("Mesh function not implemented '" << func << "'");
   }
 }
 
-std::string mesh_string(int type)
+std::string
+mesh_string(int type)
 {
   std::string res;
-  if(type == 0) res = "points";
-  if(type == 1) res = "uniform";
-  if(type == 2) res = "rectilinear";
-  if(type == 3) res = "structured";
-  if(type == 4) res = "unstructured";
+  if(type == 0)
+    res = "points";
+  if(type == 1)
+    res = "uniform";
+  if(type == 2)
+    res = "rectilinear";
+  if(type == 3)
+    res = "structured";
+  if(type == 4)
+    res = "unstructured";
   return res;
 }
 
-std::string check_meshes(const conduit::Node &dataset,
-                         const conduit::Node &vars)
+std::string
+check_meshes(const conduit::Node &dataset, const conduit::Node &vars)
 {
   bool valid = true;
   std::vector<std::string> bad_names;
@@ -491,41 +501,42 @@ std::string check_meshes(const conduit::Node &dataset,
   if(!valid)
   {
     std::stringstream bad_list;
-    bad_list<<"[";
+    bad_list << "[";
     for(auto bad : bad_names)
     {
-      bad_list<<bad<<" ";
+      bad_list << bad << " ";
     }
-    bad_list<<"]";
+    bad_list << "]";
 
-    std::vector<std::string> names = dataset.child(0)["topologies"].child_names();
+    std::vector<std::string> names =
+        dataset.child(0)["topologies"].child_names();
     std::stringstream ss;
-    ss<<"[";
+    ss << "[";
     for(int i = 0; i < names.size(); ++i)
     {
-      ss<<" "<<names[i];
+      ss << " " << names[i];
     }
-    ss<<"]";
-    ASCENT_ERROR("Field: dataset does not contain topologies '"<<bad_list.str()<<"'"
-                 <<" known = "<<ss.str());
+    ss << "]";
+    ASCENT_ERROR("Field: dataset does not contain topologies '"
+                 << bad_list.str() << "'"
+                 << " known = " << ss.str());
   }
 
-
   // points, uniform, rectilinear, curvilinear, unstructured
-  int mesh_types[5] = {0,0,0,0,0};
+  int mesh_types[5] = {0, 0, 0, 0, 0};
   topology_types(dataset, topo, mesh_types);
 
-  // to make things less complicated we need to enforce that everyone has the same
-  // mesh type
+  // to make things less complicated we need to enforce that everyone has the
+  // same mesh type
   int type_count = 0;
   int type_index = -1;
   for(int i = 0; i < 5; ++i)
   {
-    if(mesh_types[i] > 0 )
+    if(mesh_types[i] > 0)
     {
       type_count += 1;
       type_index = i;
-      std::cout<<"meshes "<<i<<" count "<<mesh_types[i]<<"\n";
+      std::cout << "meshes " << i << " count " << mesh_types[i] << "\n";
     }
   }
   if(type_count > 1)
@@ -535,7 +546,8 @@ std::string check_meshes(const conduit::Node &dataset,
   return mesh_string(type_index);
 }
 
-std::string check_fields(const conduit::Node &dataset, const conduit::Node &vars)
+std::string
+check_fields(const conduit::Node &dataset, const conduit::Node &vars)
 {
   bool valid = true;
   std::vector<std::string> bad_names;
@@ -552,28 +564,29 @@ std::string check_fields(const conduit::Node &dataset, const conduit::Node &vars
   if(!valid)
   {
     std::stringstream bad_list;
-    bad_list<<"[";
+    bad_list << "[";
     for(auto bad : bad_names)
     {
-      bad_list<<bad<<" ";
+      bad_list << bad << " ";
     }
-    bad_list<<"]";
+    bad_list << "]";
 
     std::vector<std::string> names = dataset.child(0)["fields"].child_names();
     std::stringstream ss;
-    ss<<"[";
+    ss << "[";
     for(int i = 0; i < names.size(); ++i)
     {
-      ss<<" "<<names[i];
+      ss << " " << names[i];
     }
-    ss<<"]";
-    ASCENT_ERROR("Field: dataset does not contain fields '"<<bad_list.str()<<"'"
-                 <<" known = "<<ss.str());
+    ss << "]";
+    ASCENT_ERROR("Field: dataset does not contain fields '"
+                 << bad_list.str() << "'"
+                 << " known = " << ss.str());
   }
 
   // we have valid fields. Now check for valid assocs
   std::set<std::string> assocs_set;
-  std::map<std::string,std::string> assocs_map;
+  std::map<std::string, std::string> assocs_map;
   // we have the same number of vars on each rank so
   // mpi comm is safe (ie. same expression everywhere)
   for(int i = 0; i < vars.number_of_children(); ++i)
@@ -589,20 +602,21 @@ std::string check_fields(const conduit::Node &dataset, const conduit::Node &vars
     std::stringstream ss;
     for(auto assoc : assocs_map)
     {
-      ss<<assoc.first<<" : "<<assoc.second<<"\n";
+      ss << assoc.first << " : " << assoc.second << "\n";
     }
     ASCENT_ERROR("Error: expression has fields of mixed assocation."
-                 <<" They all must be either 'element' or 'vertex'\n"
+                 << " They all must be either 'element' or 'vertex'\n"
                  << ss.str());
   }
   return *assocs_set.begin();
 }
 
-std::string create_map_kernel(std::map<std::string,std::string> &in_vars,
-                              std::map<std::string,double> &in_constants,
-                              const conduit::Node &mesh_meta,
-                              std::string out_type,
-                              std::string expr)
+std::string
+create_map_kernel(std::map<std::string, std::string> &in_vars,
+                  std::map<std::string, double> &in_constants,
+                  const conduit::Node &mesh_meta,
+                  std::string out_type,
+                  std::string expr)
 {
   std::set<std::string> mesh_functions;
   if(mesh_meta.has_path("mesh_functions"))
@@ -618,12 +632,13 @@ std::string create_map_kernel(std::map<std::string,std::string> &in_vars,
   // add in all field arrays
   for(auto var : in_vars)
   {
-    ss<<"                 const " << var.second << " *"<< var.first <<"_ptr,\n";
+    ss << "                 const " << var.second << " *" << var.first
+       << "_ptr,\n";
   }
   // add in all pre-executed constants
   for(auto c : in_constants)
   {
-    ss<<"                 const double " << c.first <<",\n";
+    ss << "                 const double " << c.first << ",\n";
   }
 
   if(mesh_meta.number_of_children() != 0)
@@ -642,8 +657,8 @@ std::string create_map_kernel(std::map<std::string,std::string> &in_vars,
      << "      {\n";
   for(auto var : in_vars)
   {
-    ss<<"        const " << var.second << " "<< var.first
-      <<" = "<<var.first <<"_ptr[n];\n";
+    ss << "        const " << var.second << " " << var.first << " = "
+       << var.first << "_ptr[n];\n";
   }
 
   for(auto func : mesh_functions)
@@ -651,8 +666,9 @@ std::string create_map_kernel(std::map<std::string,std::string> &in_vars,
     mesh_function(func, mesh_meta, ss);
   }
   ss << "        " << out_type << " output;\n"
-     << "        output = " << expr << ";\n"
-    // << "        printf(\" spacing %f \",spacing_x);\n"
+     << "        output = " << expr
+     << ";\n"
+     // << "        printf(\" spacing %f \",spacing_x);\n"
      << "        output_ptr[n] = output;\n"
      << "      }\n"
      << "    }\n"
@@ -663,13 +679,13 @@ std::string create_map_kernel(std::map<std::string,std::string> &in_vars,
 
 }; // namespace detail
 
-
-void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
+void
+do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
 {
-  std::cout<<"doint it\n";
+  std::cout << "doint it\n";
   info.print();
   const int num_domains = dataset.number_of_children();
-  std::cout<<"Domains "<<num_domains<<"\n";
+  std::cout << "Domains " << num_domains << "\n";
 
   // Validation: make sure fields/topo are there
   // and have compatible associations
@@ -684,10 +700,10 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
   std::string kernel_str = detail::create_map_kernel(var_types,
                                                      constants,
                                                      meta["mesh"],
-                                                     "double", //output type
+                                                     "double", // output type
                                                      expr);
 
-  std::cout<<kernel_str<<"\n";
+  std::cout << kernel_str << "\n";
 
   detail::modes();
   occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 1");
@@ -700,7 +716,7 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
   }
   catch(const occa::exception &e)
   {
-    ASCENT_ERROR("Expression compilation failed:\n"<<e.what());
+    ASCENT_ERROR("Expression compilation failed:\n" << e.what());
   }
   catch(...)
   {
@@ -723,23 +739,21 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
     // TODO: we need to skip domains that don't have what we need
 
     conduit::Node &dom = dataset.child(i);
-    if(!dom.has_path("topologies/"+topology))
+    if(!dom.has_path("topologies/" + topology))
     {
       continue;
     }
     kernel.clearArgs();
 
-
     int invoke_size;
     if(assoc == "element")
     {
-      invoke_size = num_cells(dom,topology);
+      invoke_size = num_cells(dom, topology);
     }
     else
     {
-      invoke_size = num_points(dom,topology);
+      invoke_size = num_points(dom, topology);
     }
-
 
     // these are reference counted
     // need to keep the mem in scope or bad things happen
@@ -774,10 +788,11 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
     std::vector<occa::memory> mesh_memory;
     if(info.has_path("mesh_vars"))
     {
-      detail::pack_mesh(dom, invoke_size, topology, device, kernel, mesh_memory);
+      detail::pack_mesh(
+          dom, invoke_size, topology, device, kernel, mesh_memory);
     }
 
-    std::cout<<"INOKE SIZE "<<invoke_size<<"\n";
+    std::cout << "INOKE SIZE " << invoke_size << "\n";
     conduit::Node &n_output = dom["fields/output"];
     n_output["association"] = assoc;
     n_output["topology"] = topology;
@@ -807,7 +822,7 @@ validate(const conduit::Node &dataset,
   if(info.has_path("field_vars"))
   {
     has_variable = true;
-    assoc = detail::check_fields(dataset,info["field_vars"]);
+    assoc = detail::check_fields(dataset, info["field_vars"]);
   }
 
   std::set<std::string> mesh_functions;
@@ -817,21 +832,20 @@ validate(const conduit::Node &dataset,
     if(assoc == "vertex")
     {
       ASCENT_ERROR("Mixed vertex field with mesh variable. All "
-                    <<"variables must be element centered");
+                   << "variables must be element centered");
     }
     else
     {
       assoc = "element";
     }
 
-    std::string mesh_type = detail::check_meshes(dataset,info["mesh_vars"]);
+    std::string mesh_type = detail::check_meshes(dataset, info["mesh_vars"]);
     // we only allow one topology
     topo_name = info["mesh_vars"].child(0).as_string();
     meta["mesh/topology"] = topo_name;
     meta["mesh/type"] = mesh_type;
     meta["mesh/spatial_dims"] = spatial_dims(dataset, topo_name);
     meta["mesh/data_type"] = coord_type(dataset, topo_name);
-
 
     if(info.has_path("mesh_functions"))
     {
@@ -845,7 +859,8 @@ validate(const conduit::Node &dataset,
 
   if(!has_variable)
   {
-    ASCENT_ERROR("There has to be at least one mesh/variable in the expression");
+    ASCENT_ERROR(
+        "There has to be at least one mesh/variable in the expression");
   }
 
   meta["assoc"] = assoc;
@@ -861,10 +876,11 @@ validate(const conduit::Node &dataset,
   meta["topology"] = topo_name;
 }
 
-void parameters(const conduit::Node &dataset,
-                const conduit::Node &info,
-                std::map<std::string, std::string> &var_types, // name:type
-                std::map<std::string, double> &constants)
+void
+parameters(const conduit::Node &dataset,
+           const conduit::Node &info,
+           std::map<std::string, std::string> &var_types, // name:type
+           std::map<std::string, double> &constants)
 {
 
   std::set<std::string> var_names;
@@ -896,14 +912,13 @@ void parameters(const conduit::Node &dataset,
       {
         value = constant["value"].to_float64();
       }
-      else if (name != "domain_id")
+      else if(name != "domain_id")
       {
-        ASCENT_ERROR("only domain id can be missing a value "<<name);
+        ASCENT_ERROR("only domain id can be missing a value " << name);
       }
       constants[name] = value;
     }
   }
-
 }
 
 //-----------------------------------------------------------------------------
@@ -912,21 +927,14 @@ void parameters(const conduit::Node &dataset,
 // -- end ascent::runtime::expressions--
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-

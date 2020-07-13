@@ -806,7 +806,6 @@ ASTMethodCall::build_graph(flow::Workspace &w)
     }
     ess << ")";
     const std::string expr_name = ess.str();
-    std::cout << expr_name << std::endl;
     if((*subexpr_cache).has_path(expr_name))
     {
       return (*subexpr_cache)[expr_name];
