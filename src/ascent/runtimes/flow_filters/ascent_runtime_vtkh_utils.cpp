@@ -45,17 +45,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_utils.hpp
+/// file: ascent_runtime_vtkh_utils.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_RUNTIME_VTKH_UTILS_HPP
-#define ASCENT_RUNTIME_VTKH_UTILS_HPP
-
-#include <ascent_data_object.hpp>
-#include <ascent_vtkh_collection.hpp>
-#include <string>
-#include <vector>
+#include "ascent_runtime_vtkh_utils.hpp"
+#include <ascent_runtime_utils.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -79,20 +74,80 @@ namespace detail
 {
 
 
-// call an error due to an known field and build
-// up a list of altenative field names
 void field_error(const std::string field_name,
                  const std::string filter_name,
-                 std::shared_ptr<VTKHCollection> collection);
+                 std::shared_ptr<VTKHCollection> collection)
+{
+  std::string fpath = filter_to_path(filter_name);
+  std::vector<std::string> possible_names = collection->field_names();
+  std::stringstream ss;
+  ss<<" possible field names: ";
+  for(int i = 0; i < possible_names.size(); ++i)
+  {
+    ss<<"'"<<possible_names[i]<<"'";
+    if(i != possible_names.size() - 1)
+    {
+      ss<<", ";
+    }
+  }
+  ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'"
+               <<ss.str());
+}
 
-// build a list of possible topologies in this collection
-std::string possible_topologies(std::shared_ptr<VTKHCollection> collection);
+std::string possible_topologies(std::shared_ptr<VTKHCollection> collection)
+{
+   std::stringstream ss;
+   ss<<" possible topology names: ";
+   std::vector<std::string> names = collection->topology_names();
+   for(int i = 0; i < names.size(); ++i)
+   {
+     ss<<"'"<<names[i]<<"'";
+     if(i != names.size() -1)
+     {
+       ss<<", ";
+     }
+   }
+   return ss.str();
+}
 
-// resolve the name of the topology and throw errors if the
-// name cannot be deduced or found
 std::string resolve_topology(const conduit::Node &params,
                              const std::string filter_name,
-                             std::shared_ptr<VTKHCollection> collection);
+                             std::shared_ptr<VTKHCollection> collection)
+{
+  int num_topologies = collection->number_of_topologies();
+  std::string topo_name;
+  std::string fpath = filter_to_path(filter_name);
+  if(num_topologies > 1)
+  {
+    if(!params.has_path("topology"))
+    {
+      std::string topo_names = detail::possible_topologies(collection);;
+      ASCENT_ERROR(fpath<<": data set has multiple topologies "
+                   <<"and no topology is specified. "<<topo_names);
+    }
+
+    topo_name = params["topology"].as_string();
+    if(!collection->has_topology(topo_name))
+    {
+      std::string topo_names = detail::possible_topologies(collection);;
+      ASCENT_ERROR(fpath<<": no topology named '"<<topo_name<<"'."
+                   <<topo_names);
+
+    }
+
+    if(!collection->has_topology(topo_name))
+    {
+      ASCENT_ERROR(fpath<<": no topology named '"<<topo_name<<"'");
+
+    }
+  }
+  else
+  {
+    topo_name = collection->topology_names()[0];
+  }
+
+  return topo_name;
+}
 
 } // namespace detail
 //-----------------------------------------------------------------------------
@@ -113,12 +168,4 @@ std::string resolve_topology(const conduit::Node &params,
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
-//-----------------------------------------------------------------------------
-
-
-
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
 //-----------------------------------------------------------------------------

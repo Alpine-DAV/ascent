@@ -412,36 +412,9 @@ VTKH3Slice::execute()
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    int num_topologies = collection->number_of_topologies();
-    std::string topo_name = detail::resolve_topology(params, collection);
-    if(num_topologies > 1)
-    {
-      if(!params().has_path("topology"))
-      {
-        std::string topo_names = detail::possible_topologies(collection);;
-        ASCENT_ERROR("VTKH3Slice: data set has multiple topologies "
-                     <<"and no topology is specified. "<<topo_names);
-      }
-
-      topo_name = params()["topology"].as_string();
-      if(!collection->has_topology(topo_name))
-      {
-        std::string topo_names = detail::possible_topologies(collection);;
-        ASCENT_ERROR("no topology named '"<<topo_name<<"'."
-                     <<topo_names);
-
-      }
-
-      if(!collection->has_topology(topo_name))
-      {
-        ASCENT_ERROR("no topology named '"<<topo_name<<"'");
-
-      }
-    }
-    else
-    {
-      topo_name = collection->topology_names()[0];
-    }
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection);
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
@@ -614,29 +587,9 @@ VTKHSlice::execute()
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    int num_topologies = collection->number_of_topologies();
-    std::string topo_name;
-    if(num_topologies > 1)
-    {
-      if(!params().has_path("topology"))
-      {
-        std::string topo_names = detail::possible_topologies(collection);;
-        ASCENT_ERROR("VTKHSlice: data set has multiple topologies "
-                     <<"and no topology is specified. "<<topo_names);
-      }
-
-      topo_name = params()["topology"].as_string();
-      if(!collection->has_topology(topo_name))
-      {
-        std::string topo_names = detail::possible_topologies(collection);;
-        ASCENT_ERROR("no topology named '"<<topo_name<<"'."
-                     <<topo_names);
-      }
-    }
-    else
-    {
-      topo_name = collection->topology_names()[0];
-    }
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection);
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkh::Slice slicer;
@@ -1071,29 +1024,9 @@ VTKHClip::execute()
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    int num_topologies = collection->number_of_topologies();
-    std::string topo_name;
-    if(num_topologies > 1)
-    {
-      if(!params().has_path("topology"))
-      {
-        std::string topo_names = detail::possible_topologies(collection);;
-        ASCENT_ERROR("VTKHClip: data set has multiple topologies "
-                     <<"and no topology is specified. "<<topo_names);
-      }
-
-      topo_name = params()["topology"].as_string();
-      if(!collection->has_topology(topo_name))
-      {
-        std::string topo_names = detail::possible_topologies(collection);;
-        ASCENT_ERROR("no topology named '"<<topo_name<<"'."
-                     <<topo_names);
-      }
-    }
-    else
-    {
-      topo_name = collection->topology_names()[0];
-    }
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection);
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
@@ -2607,30 +2540,9 @@ VTKHProject2d::execute()
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    int num_topologies = collection->number_of_topologies();
-    std::string topo_name;
-
-    if(num_topologies > 1)
-    {
-      if(!params().has_path("topology"))
-      {
-        std::string topo_names = detail::possible_topologies(collection);;
-        ASCENT_ERROR("VTKHProject2d: data set has multiple topologies "
-                     <<"and no topology is specified. "<<topo_names);
-      }
-
-      topo_name = params()["topology"].as_string();
-      if(!collection->has_topology(topo_name))
-      {
-        std::string topo_names = detail::possible_topologies(collection);;
-        ASCENT_ERROR("no topology named '"<<topo_name<<"'."
-                     <<topo_names);
-      }
-    }
-    else
-    {
-      topo_name = collection->topology_names()[0];
-    }
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection);
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkm::Bounds bounds = data.GetGlobalBounds();
