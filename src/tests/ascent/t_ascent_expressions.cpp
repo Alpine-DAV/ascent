@@ -765,7 +765,6 @@ output_pseudocolor(const conduit::Node &mesh,
   scenes["s1/plots/p1/type"] = "pseudocolor";
   scenes["s1/plots/p1/field"] = field;
   scenes["s1/renders/r1/image_prefix"] = output_file;
-  scenes["s1/renders/r1/render_bg"] = "false";
 
   conduit::Node actions;
   conduit::Node &add_plots = actions.append();
@@ -827,12 +826,12 @@ TEST(ascent_binning, braid_binning)
   std::string output_file =
       conduit::utils::join_file_path(output_path, "tout_binning_braid_xysum");
   output_pseudocolor(multi_dom, "braid_sum", output_file);
-  EXPECT_TRUE(check_test_image(output_file, 0.01));
+  EXPECT_TRUE(check_test_image(output_file, 0.1));
 
   output_file = conduit::utils::join_file_path(
       output_path, "tout_binning_painted_braid_xystd");
   output_pseudocolor(multi_dom, "painted_braid_std", output_file);
-  EXPECT_TRUE(check_test_image(output_file, 0.01));
+  EXPECT_TRUE(check_test_image(output_file, 0.1));
 }
 
 TEST(ascent_binning, multi_dom_binning)

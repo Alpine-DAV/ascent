@@ -89,6 +89,7 @@
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
+#include <ascent_runtime_vtkh_utils.hpp>
 #endif
 
 #include <stdio.h>
@@ -1177,62 +1178,17 @@ CreatePlot::execute()
     std::string topo_name;
     if(field_name == "")
     {
-      const int num_topologies = collection->number_of_topologies();
-      if(num_topologies > 1)
-      {
-        if(!params().has_path("topology"))
-        {
-          std::stringstream ss;
-          ss<<" possible topology names: ";
-          std::vector<std::string> names = collection->topology_names();
-          for(int i = 0; i < names.size(); ++i)
-          {
-            ss<<"'"<<names[i]<<"'";
-            if(i != names.size() -1)
-            {
-              ss<<", ";
-            }
-          }
-          // issue is that there might be empty data so this path
-          // might not be taken by all ranks !!!!!
-          std::string fpath = filter_to_path(this->name());
-          ASCENT_ERROR("create_plot("<<fpath<<"): data set has multiple topologies "
-                       <<"and no topology is specified."<<ss.str());
-        }
-
-        topo_name = params()["topology"].as_string();
-      }
-      else
-      {
-        topo_name = collection->topology_names()[0];
-      }
+      topo_name = detail::resolve_topology(params(),
+                                           this->name(),
+                                           collection);
     }
     else
     {
       topo_name = collection->field_topology(field_name);
       if(topo_name == "")
       {
-        std::string fpath = filter_to_path(this->name());
-        ASCENT_ERROR("create plot("<<fpath<<"): unknown field '"<<field_name<<"'");
+        detail::field_error(field_name, this->name(), collection);
       }
-    }
-
-    if(!collection->has_topology(topo_name))
-    {
-      std::stringstream ss;
-      ss<<" possible topology names: ";
-      std::vector<std::string> names = collection->topology_names();
-      for(int i = 0; i < names.size(); ++i)
-      {
-        ss<<"'"<<names[i]<<"'";
-        if(i != names.size() -1)
-        {
-          ss<<", ";
-        }
-      }
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("create_plot("<<fpath<<") no topology named '"<<topo_name<<"'."
-                   <<ss.str());
     }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);

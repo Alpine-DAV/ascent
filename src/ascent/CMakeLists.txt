@@ -147,6 +147,7 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
     runtimes/flow_filters/ascent_runtime_trigger_filters.hpp
     runtimes/flow_filters/ascent_runtime_query_filters.hpp
+    runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
     runtimes/flow_filters/ascent_runtime_utils.hpp
     # utils
     utils/ascent_actions_utils.hpp
@@ -169,9 +170,9 @@ if(VTKM_FOUND)
         runtimes/ascent_vtkh_data_adapter.hpp
         runtimes/ascent_vtkh_collection.hpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
+        runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
         runtimes/flow_filters/ascent_runtime_rendering_filters.hpp
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
-
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
         runtimes/ascent_main_runtime.hpp)
 
@@ -180,6 +181,7 @@ if(VTKM_FOUND)
         runtimes/ascent_vtkh_data_adapter.cpp
         runtimes/ascent_vtkh_collection.cpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
+        runtimes/flow_filters/ascent_runtime_vtkh_utils.cpp
         runtimes/flow_filters/ascent_runtime_rendering_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
