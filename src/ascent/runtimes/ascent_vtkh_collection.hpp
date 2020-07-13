@@ -100,6 +100,9 @@ public:
   // returns the local topology names
   std::vector<std::string> topology_names() const;
 
+  // returns the local field names
+  std::vector<std::string> field_names() const;
+
   // returns the local domain ids
   std::vector<vtkm::Id> domain_ids() const;
 

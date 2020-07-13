@@ -107,6 +107,7 @@
 
 #include <ascent_vtkh_data_adapter.hpp>
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
+#include <ascent_runtime_vtkh_utils.hpp>
 #endif
 
 #include <stdio.h>
@@ -133,28 +134,6 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace filters
 {
-
-namespace detail
-{
-std::string possible_topologies(std::shared_ptr<VTKHCollection> collection)
-{
-   std::stringstream ss;
-   ss<<" possible topology names: ";
-   std::vector<std::string> names = collection->topology_names();
-   for(int i = 0; i < names.size(); ++i)
-   {
-     ss<<"'"<<names[i]<<"'";
-     if(i != names.size() -1)
-     {
-       ss<<", ";
-     }
-   }
-   return ss.str();
-}
-}// namespace detail
-//-----------------------------------------------------------------------------
-// -- begin ascent::runtime::filters::detail --
-//-----------------------------------------------------------------------------
 
 VTKHMarchingCubes::VTKHMarchingCubes()
 :Filter()
@@ -227,8 +206,7 @@ VTKHMarchingCubes::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -338,8 +316,7 @@ VTKHVectorMagnitude::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -436,7 +413,7 @@ VTKH3Slice::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     int num_topologies = collection->number_of_topologies();
-    std::string topo_name;
+    std::string topo_name = detail::resolve_topology(params, collection);
     if(num_topologies > 1)
     {
       if(!params().has_path("topology"))
@@ -897,8 +874,7 @@ VTKHThreshold::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1268,8 +1244,7 @@ VTKHClipWithField::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1373,8 +1348,7 @@ VTKHIsoVolume::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1479,8 +1453,7 @@ VTKHLagrangian::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1585,8 +1558,7 @@ VTKHLog::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1684,8 +1656,7 @@ VTKHRecenter::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1793,8 +1764,7 @@ VTKHHistSampling::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1937,8 +1907,7 @@ VTKHQCriterion::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2042,8 +2011,7 @@ VTKHDivergence::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2148,8 +2116,7 @@ VTKHVorticity::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2255,8 +2222,7 @@ VTKHGradient::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2358,8 +2324,7 @@ VTKHStats::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2443,8 +2408,7 @@ VTKHHistogram::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2537,8 +2501,7 @@ VTKHParticleAdvection::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2772,8 +2735,7 @@ VTKHNoOp::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2866,8 +2828,7 @@ VTKHVectorComponent::execute()
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'");
+      detail::field_error(field_name, this->name(), collection);
     }
     int component = params()["component"].to_int32();
     std::string res_name = params()["output_name"].as_string();
@@ -2966,15 +2927,13 @@ VTKHCompositeVector::execute()
     std::string field_name1 = params()["field1"].as_string();
     if(!collection->has_field(field_name1))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name1<<"'");
+      detail::field_error(field_name1, this->name(), collection);
     }
 
     std::string field_name2 = params()["field2"].as_string();
     if(!collection->has_field(field_name2))
     {
-      std::string fpath = filter_to_path(this->name());
-      ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name2<<"'");
+      detail::field_error(field_name2, this->name(), collection);
     }
 
     std::string field_name3;
@@ -2984,8 +2943,7 @@ VTKHCompositeVector::execute()
       field_name3 = params()["field3"].as_string();
       if(!collection->has_field(field_name3))
       {
-        std::string fpath = filter_to_path(this->name());
-        ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name3<<"'");
+        detail::field_error(field_name3, this->name(), collection);
       }
     }
 
