@@ -1,4 +1,3 @@
-#!/bin/bash
 ###############################################################################
 # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
@@ -43,6 +42,20 @@
 #
 ###############################################################################
 
-source /usr/local/tools/dotkit/init.sh
-source llnl-surface-load-env-intel-16.0.3.sh
-source run-proxy-examples-tests.sh
+FROM nvidia/cuda:9.2-devel-ubuntu16.04
+MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
+# add sudo to base cuda devel env
+# so we can install additional packages as
+# non-root, but admin default user on azure pipelines
+RUN apt-get update && apt-get -y install sudo
+# install std packages we need for cuda dev env and test
+RUN apt-get -y install \
+               git \
+               python \
+               gfortran \
+               zlib1g-dev \
+               curl\
+               mpich \
+               libmpich-dev 
+
+

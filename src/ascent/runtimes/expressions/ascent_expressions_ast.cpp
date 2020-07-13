@@ -1,5 +1,5 @@
 #include "ascent_expressions_ast.hpp"
-//#include "codegen.h"
+#include "ascent_derived_jit.hpp"
 #include "ascent_expressions_parser.hpp"
 #include <typeinfo>
 #include <unordered_map>
@@ -15,7 +15,6 @@ using namespace std;
 
 namespace detail
 {
-
 std::string
 strip_single_quotes(const std::string str)
 {
@@ -59,12 +58,12 @@ print_match_error(const std::string &fname,
     const int req_args = sig["req_count"].to_int32();
     for(int a = 0; a < n_args.number_of_children(); ++a)
     {
-      ss << n_args.child(a).name() << "="
-         << n_args.child(a)["type"].as_string();
-      if(a > req_args)
+      if(a >= req_args)
       {
         ss << "[optional]";
       }
+      ss << n_args.child(a).name() << "="
+         << n_args.child(a)["type"].as_string();
       if(a == n_args.number_of_children() - 1)
       {
         ss << ")\n";
@@ -79,6 +78,7 @@ print_match_error(const std::string &fname,
   return ss.str();
 }
 
+// TODO these functions are duplicated from ascent_expression_filters.cpp
 bool
 is_math(const std::string &op)
 {
@@ -137,6 +137,41 @@ ASTInteger::build_jit(conduit::Node &n, flow::Workspace &w)
   return ss.str();
 }
 
+conduit::Node
+ASTInteger::build_jit2(flow::Workspace &w)
+{
+  conduit::Node *subexpr_cache =
+      w.registry().fetch<conduit::Node>("subexpr_cache");
+  // create a unique name for each expression so we can reuse subexpressions
+  std::stringstream ess;
+  ess << "jit_integer"
+      << "_" << m_value;
+  const std::string expr_name = ess.str();
+  if((*subexpr_cache).has_path(expr_name))
+  {
+    return (*subexpr_cache)[expr_name];
+  }
+
+  // create a unique name for the filter
+  static int name_counter = 0;
+  std::stringstream ss;
+  ss << "jit_integer"
+     << "_" << name_counter++;
+  const std::string name = ss.str();
+
+  conduit::Node params;
+  std::stringstream ss2;
+  // force everthing to a double
+  ss2 << "(double)" << m_value;
+  params["value"] = ss.str();
+  w.graph().add_filter("jit_filter", name, params);
+  conduit::Node res;
+  res["filter_name"] = name;
+  res["type"] = "int";
+  (*subexpr_cache)[expr_name] = res;
+  return res;
+}
+
 bool
 ASTInteger::can_jit()
 {
@@ -187,11 +222,48 @@ ASTDouble::build_jit(conduit::Node &n, flow::Workspace &w)
 }
 
 //-----------------------------------------------------------------------------
+conduit::Node
+ASTDouble::build_jit2(flow::Workspace &w)
+{
+  conduit::Node *subexpr_cache =
+      w.registry().fetch<conduit::Node>("subexpr_cache");
+  // create a unique name for each expression so we can reuse subexpressions
+  std::stringstream ess;
+  ess << "jit_double"
+      << "_" << m_value;
+  const std::string expr_name = ess.str();
+  if((*subexpr_cache).has_path(expr_name))
+  {
+    return (*subexpr_cache)[expr_name];
+  }
+
+  // create a unique name for the filter
+  static int name_counter = 0;
+  std::stringstream ss;
+  ss << "jit_double"
+     << "_" << name_counter++;
+  const std::string name = ss.str();
+
+  conduit::Node params;
+  std::stringstream ss2;
+  // force everthing to a double
+  ss2 << "(double)" << m_value;
+  params["value"] = ss.str();
+  w.graph().add_filter("jit_filter", name, params);
+  conduit::Node res;
+  res["filter_name"] = name;
+  res["type"] = "double";
+  (*subexpr_cache)[expr_name] = res;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
 bool
 ASTDouble::can_jit()
 {
   return true;
 }
+
 //-----------------------------------------------------------------------------
 void
 ASTDouble::access()
@@ -268,7 +340,14 @@ ASTIdentifier::build_graph(flow::Workspace &w)
     return (*subexpr_cache)[expr_name];
   }
 
-  // std::cout << "Flow indent : " << m_name << endl;
+  // if (context.locals().find(name) == context.locals().end())
+  //{
+  //  std::cerr << "undeclared variable " << name << endl;
+  //  return NULL;
+  //}
+  // return new LoadInst(context.locals()[name], "", false,
+  // context.currentBlock());
+
   static int ast_ident_counter = 0;
 
   // create a unique name for the filter
@@ -306,20 +385,20 @@ ASTIdentifier::build_graph(flow::Workspace &w)
 
 //-----------------------------------------------------------------------------
 void
-NamedExpression::access()
+ASTNamedExpression::access()
 {
   key->access();
   value->access();
 }
 
 std::string
-NamedExpression::build_jit(conduit::Node &n, flow::Workspace &w)
+ASTNamedExpression::build_jit(conduit::Node &n, flow::Workspace &w)
 {
   return key->build_jit(n, w) + value->build_jit(n, w);
 }
 
 conduit::Node
-NamedExpression::build_graph(flow::Workspace &w)
+ASTNamedExpression::build_graph(flow::Workspace &w)
 {
   return value->build_graph(w);
 }
@@ -331,10 +410,10 @@ ASTArguments::can_jit()
   bool res = true;
   if(pos_args != nullptr)
   {
-    const size_t pos_size = pos_args->size();
+    const size_t pos_size = pos_args->exprs.size();
     for(size_t i = 0; i < pos_size; ++i)
     {
-      res &= (*pos_args)[i]->can_jit();
+      res &= pos_args->exprs[i]->can_jit();
     }
   }
 
@@ -350,27 +429,28 @@ ASTArguments::can_jit()
   return res;
 }
 //-----------------------------------------------------------------------------
+
 void
 ASTArguments::access()
 {
   if(pos_args != nullptr)
   {
-    const size_t pos_size = pos_args->size();
+    std::cout << "Creating positional arguments" << std::endl;
+    const size_t pos_size = pos_args->exprs.size();
     for(size_t i = 0; i < pos_size; ++i)
     {
-      (*pos_args)[i]->access();
+      pos_args->exprs[i]->access();
     }
-    std::cout << "Creating positional arguments" << std::endl;
   }
 
   if(named_args != nullptr)
   {
+    std::cout << "Creating named arguments" << std::endl;
     const size_t named_size = named_args->size();
     for(size_t i = 0; i < named_size; ++i)
     {
       (*named_args)[i]->access();
     }
-    std::cout << "Creating named arguments" << std::endl;
   }
 }
 
@@ -378,8 +458,8 @@ ASTArguments::access()
 void
 ASTMethodCall::access()
 {
-  arguments->access();
   std::cout << "Creating method call: " << m_id->m_name << std::endl;
+  arguments->access();
 }
 
 bool
@@ -402,13 +482,18 @@ ASTMethodCall::can_jit()
   //    we can just pass these into jit
 
   // special functions
+  size_t arg_size = 0;
+  if(arguments->pos_args != nullptr)
+  {
+    arg_size = arguments->pos_args->exprs.size();
+  }
   bool res = false;
-  if(m_id->m_name == "field" && arguments->pos_args->size() == 1)
+  if(m_id->m_name == "field" && arg_size == 1)
   {
     res = true;
   }
 
-  if(m_id->m_name == "domain_id" && arguments->pos_args->size() == 0)
+  if(m_id->m_name == "domain_id" && arg_size == 0)
   {
     res = true;
   }
@@ -418,17 +503,17 @@ ASTMethodCall::can_jit()
   {
     res = false;
   }
-  if(m_id->m_name == "max" && arguments->pos_args->size() == 1)
+  if(m_id->m_name == "max" && arg_size == 1)
   {
     res = true;
   }
 
   // math functions
-  if(m_id->m_name == "max" && arguments->pos_args->size() == 2)
+  if(m_id->m_name == "max" && arg_size == 2)
   {
     res = true;
   }
-  if(m_id->m_name == "min" && arguments->pos_args->size() == 2)
+  if(m_id->m_name == "min" && arg_size == 2)
   {
     res = true;
   }
@@ -439,13 +524,17 @@ ASTMethodCall::can_jit()
 std::string
 ASTMethodCall::build_jit(conduit::Node &n, flow::Workspace &w)
 {
-  int arg_size = arguments->pos_args->size();
+  size_t arg_size = 0;
+  if(arguments->pos_args != nullptr)
+  {
+    arg_size = arguments->pos_args->exprs.size();
+  }
   // placeholder for more complicated logic
   if(m_id->m_name == "field" && arg_size == 1)
   {
     // need to verify params, e.g., num and type
-    std::string var_name =
-        detail::strip_single_quotes((*arguments->pos_args)[0]->build_jit(n, w));
+    std::string var_name = detail::strip_single_quotes(
+        arguments->pos_args->exprs[0]->build_jit(n, w));
     n["field_vars"].append() = var_name;
     return var_name;
   }
@@ -453,8 +542,8 @@ ASTMethodCall::build_jit(conduit::Node &n, flow::Workspace &w)
   if(m_id->m_name == "mesh" && arg_size == 1)
   {
     // need to verify params, e.g., num and type
-    std::string var_name =
-        detail::strip_single_quotes((*arguments->pos_args)[0]->build_jit(n, w));
+    std::string var_name = detail::strip_single_quotes(
+        arguments->pos_args->exprs[0]->build_jit(n, w));
     n["mesh_vars"].append() = var_name;
     return var_name;
   }
@@ -467,7 +556,7 @@ ASTMethodCall::build_jit(conduit::Node &n, flow::Workspace &w)
     // to the kernel of the name 'volume' so
     // it can be evaluated in the expression
     std::cout << "BOOOOOOOOOOOOOOOOM\n";
-    std::string var_name = (*arguments->pos_args)[0]->build_jit(n, w);
+    std::string var_name = arguments->pos_args->exprs[0]->build_jit(n, w);
     n["mesh_functions"].append() = m_id->m_name;
     return m_id->m_name;
   }
@@ -475,12 +564,11 @@ ASTMethodCall::build_jit(conduit::Node &n, flow::Workspace &w)
   // per domain constants
   if(m_id->m_name == "domain_id" && arg_size == 0)
   {
-    arg_size = arguments->pos_args->size();
     n["constants/domain_id/name"] = "domain_id";
     return "domain_id";
   }
 
-  // math functions supported inside the kernel
+  // pre-execute calls min(field('braid'))
   if((m_id->m_name == "max" || m_id->m_name == "min") && arg_size == 1)
   {
     std::cout << "MATCH\n";
@@ -492,18 +580,13 @@ ASTMethodCall::build_jit(conduit::Node &n, flow::Workspace &w)
     return var_name;
   }
 
-  // pre-execute calls min(field('braid'))
+  // math functions supported inside the kernel
   std::string res = m_id->m_name + "(";
-  size_t pos_size = 0;
-  if(arguments->pos_args != nullptr)
+  for(size_t i = 0; i < arg_size; ++i)
   {
-    pos_size = arguments->pos_args->size();
-    for(size_t i = 0; i < pos_size; ++i)
-    {
-      res += (*arguments->pos_args)[i]->build_jit(n, w);
-      if(i != pos_size - 1)
-        res += ",";
-    }
+    res += arguments->pos_args->exprs[i]->build_jit(n, w);
+    if(i != arg_size - 1)
+      res += ",";
   }
   res += ")";
 
@@ -518,11 +601,11 @@ ASTMethodCall::build_graph(flow::Workspace &w)
   std::vector<conduit::Node> pos_arg_nodes;
   if(arguments->pos_args != nullptr)
   {
-    pos_size = arguments->pos_args->size();
+    pos_size = arguments->pos_args->exprs.size();
     pos_arg_nodes.resize(pos_size);
     for(size_t i = 0; i < pos_size; ++i)
     {
-      pos_arg_nodes[i] = (*arguments->pos_args)[i]->build_graph(w);
+      pos_arg_nodes[i] = arguments->pos_args->exprs[i]->build_graph(w);
       // std::cout << "flow arg :\n";
       // pos_arg_nodes[i].print();
       // std::cout << "\n";
@@ -698,7 +781,6 @@ ASTMethodCall::build_graph(flow::Workspace &w)
   if(matched_index != -1)
   {
     const conduit::Node &func = overload_list.child(matched_index);
-
     // keeps track of how things are connected
     std::map<std::string, const conduit::Node *> args_map;
     for(int a = 0; a < pos_size; ++a)
@@ -719,7 +801,8 @@ ASTMethodCall::build_graph(flow::Workspace &w)
         << "_" << func["filter_name"].as_string() << "(";
     for(auto const &arg : args_map)
     {
-      ess << arg.first << "=" << (*arg.second)["filter_name"].as_string() << ", ";
+      ess << arg.first << "=" << (*arg.second)["filter_name"].as_string()
+          << ", ";
     }
     ess << ")";
     const std::string expr_name = ess.str();
@@ -948,9 +1031,8 @@ ASTBinaryOp::build_jit(conduit::Node &n, flow::Workspace &w)
 }
 
 conduit::Node
-ASTBinaryOp::build_graph(flow::Workspace &w)
+ASTBinaryOp::build_jit2(flow::Workspace &w)
 {
-  // std::cout << "Creating binary operation " << m_op << endl;
   std::string op_str;
   switch(m_op)
   {
@@ -971,9 +1053,94 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
   default: std::cout << "unknown binary op " << m_op << "\n";
   }
 
-  conduit::Node r_in = m_rhs->build_graph(w);
-  // std::cout << " flow op " << op_str << "\n";
   conduit::Node l_in = m_lhs->build_graph(w);
+  conduit::Node r_in = m_rhs->build_graph(w);
+
+  // Validate types and evaluate what the return type will be
+  const std::string l_type = l_in["type"].as_string();
+  const std::string r_type = r_in["type"].as_string();
+
+  std::string res_type;
+  if(detail::is_math(op_str))
+  {
+    if(detail::is_scalar(l_type) && r_type == "field" ||
+       detail::is_scalar(r_type) && l_type == "field")
+    {
+      res_type = "field";
+    }
+    else
+    {
+      ASCENT_ERROR("Math ops are only supported on scalar and field.");
+    }
+  }
+  else
+  {
+    ASCENT_ERROR("Only math ops are supported in JIT BinaryOp.");
+  }
+
+  conduit::Node *subexpr_cache =
+      w.registry().fetch<conduit::Node>("subexpr_cache");
+  std::stringstream ess;
+  ess << "jit_binary_op"
+      << "_" << l_in["filter_name"].as_string() << op_str
+      << r_in["filter_name"].as_string();
+  const std::string expr_name = ess.str();
+  if((*subexpr_cache).has_path(expr_name))
+  {
+    return (*subexpr_cache)[expr_name];
+  }
+
+  static int ast_op_counter = 0;
+  // create a unique name for the filter
+  std::stringstream ss;
+  // ss << "binary_op" << "_" << ast_op_counter << "_" << op_str;
+  ss << "jit_binary_op"
+     << "_" << ast_op_counter++ << "_" << m_op;
+  std::string name = ss.str();
+
+  conduit::Node params;
+  params["binary_op/op_string"] = op_str;
+
+  w.graph().add_filter("jit_filter", name, params);
+
+  // src, dest, port
+  w.graph().connect(r_in["filter_name"].as_string(), name, "arg1");
+  w.graph().connect(l_in["filter_name"].as_string(), name, "arg2");
+
+  conduit::Node res;
+  res["filter_name"] = name;
+  res["type"] = res_type;
+  (*subexpr_cache)[expr_name] = res;
+  return res;
+}
+
+conduit::Node
+ASTBinaryOp::build_graph(flow::Workspace &w)
+{
+  // std::cout << "Creating binary operation " << m_op << endl;
+  std::string op_str;
+  switch(m_op)
+  {
+  case TPLUS: op_str = "+"; break;
+  case TMINUS: op_str = "-"; break;
+  case TMUL: op_str = "*"; break;
+  case TDIV: op_str = "/"; break;
+  case TMOD: op_str = "%"; break;
+  case TCEQ: op_str = "=="; break;
+  case TCNE: op_str = "!="; break;
+  case TCLE: op_str = "<="; break;
+  case TCGE: op_str = ">="; break;
+  case TCGT: op_str = ">"; break;
+  case TCLT: op_str = "<"; break;
+  case TOR: op_str = "or"; break;
+  case TAND: op_str = "and"; break;
+  case TNOT: op_str = "not"; break;
+  default: ASCENT_ERROR("unknown binary op " << m_op);
+  }
+
+  conduit::Node l_in = m_lhs->build_graph(w);
+  // std::cout << " flow op " << op_str << "\n";
+  conduit::Node r_in = m_rhs->build_graph(w);
 
   // Validate types and evaluate what the return type will be
   const std::string l_type = l_in["type"].as_string();
@@ -1122,6 +1289,49 @@ ASTString::build_graph(flow::Workspace &w)
 
 //-----------------------------------------------------------------------------
 void
+ASTBoolean::access()
+{
+  std::string bool_str = "";
+  switch(tok)
+  {
+  case TTRUE: bool_str = "True"; break;
+  case TFALSE: bool_str = "False"; break;
+  default: std::cout << "unknown bool literal " << tok << "\n";
+  }
+  std::cout << "Creating bool literal " << bool_str << std::endl;
+}
+
+conduit::Node
+ASTBoolean::build_graph(flow::Workspace &w)
+{
+  // create a unique name for the filter
+  static int ast_bool_counter = 0;
+  std::stringstream ss;
+  ss << "bool"
+     << "_" << ast_bool_counter++;
+  std::string name = ss.str();
+
+  bool value = false;
+  switch(tok)
+  {
+  case TTRUE: value = true; break;
+  case TFALSE: value = false; break;
+  default: std::cout << "unknown bool literal " << tok << "\n";
+  }
+
+  conduit::Node params;
+  params["value"] = value;
+  w.graph().add_filter("expr_bool", name, params);
+
+  conduit::Node res;
+  res["type"] = "bool";
+  res["filter_name"] = name;
+
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
 ASTArrayAccess::access()
 {
   array->access();
@@ -1227,9 +1437,11 @@ ASTDotAccess::build_graph(flow::Workspace &w)
   }
   std::string res_type = obj[path].as_string();
 
-  conduit::Node *subexpr_cache = w.registry().fetch<conduit::Node>("subexpr_cache");
+  conduit::Node *subexpr_cache =
+      w.registry().fetch<conduit::Node>("subexpr_cache");
   std::stringstream ess;
-  ess << "dot" << "_" << n_obj["filter_name"].as_string() << "." << name;
+  ess << "dot"
+      << "_" << n_obj["filter_name"].as_string() << "." << name;
   const std::string expr_name = ess.str();
   if((*subexpr_cache).has_path(expr_name))
   {
@@ -1255,5 +1467,78 @@ ASTDotAccess::build_graph(flow::Workspace &w)
   res["type"] = res_type;
   res["filter_name"] = f_name;
   (*subexpr_cache)[expr_name] = res;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ASTExpressionList::access()
+{
+  std::cout << "Creating list" << std::endl;
+  for(auto expr : exprs)
+  {
+    expr->access();
+  }
+}
+
+bool
+ASTExpressionList::can_jit()
+{
+  return false;
+}
+
+conduit::Node
+ASTExpressionList::build_graph(flow::Workspace &w)
+{
+  // create a unique name for the filter
+  static int ast_list_counter = 0;
+  std::stringstream ss;
+  ss << "list"
+     << "_" << ast_list_counter++;
+  std::string f_name = ss.str();
+
+  conduit::Node params;
+  w.graph().add_filter("expr_list", f_name, params);
+
+  const size_t list_size = exprs.size();
+
+  // Lists need to have a constant size because flow needs to know all the
+  // in/out ports ahead of time.
+  // We make 256 the max size.
+  if(list_size > 256)
+  {
+    ASCENT_ERROR("Lists can have at most 256 elements.");
+  }
+
+  // Connect all items to the list
+  for(size_t i = 0; i < list_size; ++i)
+  {
+    const conduit::Node item = exprs[i]->build_graph(w);
+
+    std::stringstream ss;
+    ss << "item" << i;
+
+    // src, dest, port
+    w.graph().connect(item["filter_name"].as_string(), f_name, ss.str());
+  }
+
+  // Fill unused items with nulls
+  if(!w.graph().has_filter("null_arg"))
+  {
+    conduit::Node null_params;
+    w.graph().add_filter("null_arg", "null_arg", null_params);
+  }
+  for(size_t i = list_size; i < 256; ++i)
+  {
+    std::stringstream ss;
+    ss << "item" << i;
+
+    // src, dest, port
+    w.graph().connect("null_arg", f_name, ss.str());
+  }
+
+  conduit::Node res;
+  res["type"] = "list";
+  res["filter_name"] = f_name;
   return res;
 }

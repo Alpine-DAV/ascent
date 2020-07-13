@@ -42,7 +42,6 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_blueprint_architect.hpp
@@ -54,7 +53,8 @@
 
 #include <ascent.hpp>
 #include <conduit.hpp>
-
+// TODO this is temporary
+#include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -76,11 +76,11 @@ namespace expressions
 
 conduit::Node vert_location(const conduit::Node &domain,
                             const int &index,
-                            const std::string topo_name = "");
+                            const std::string &topo_name = "");
 
 conduit::Node element_location(const conduit::Node &domain,
                                const int &index,
-                               const std::string topo_name = "");
+                               const std::string &topo_name = "");
 
 conduit::Node field_max(const conduit::Node &dataset,
                         const std::string &field_name);
@@ -111,6 +111,20 @@ conduit::Node field_entropy(const conduit::Node &hist);
 conduit::Node field_pdf(const conduit::Node &hist);
 conduit::Node field_cdf(const conduit::Node &hist);
 
+conduit::Node global_bounds(const conduit::Node &dataset,
+                            const conduit::Node &field_names);
+
+conduit::Node binning(const conduit::Node &dataset,
+                      conduit::Node &bin_axes,
+                      const std::string &reduction_var,
+                      const std::string &reduction_op,
+                      const double empty_bin_val);
+
+void ASCENT_API paint_binning(const conduit::Node &binning,
+                              conduit::Node &dataset);
+
+void ASCENT_API binning_mesh(const conduit::Node &binning, conduit::Node &mesh);
+
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);
 
@@ -121,6 +135,7 @@ bool is_scalar_field(const conduit::Node &dataset,
 // all ranks with that topology have this field(maybe it should).
 bool has_field(const conduit::Node &dataset,
                const std::string &field_name);
+bool is_xyz(const std::string &axis_name);
 
 // topology exists on at least one rank
 bool has_topology(const conduit::Node &dataset,
@@ -128,7 +143,7 @@ bool has_topology(const conduit::Node &dataset,
 
 conduit::Node quantile(const conduit::Node &cdf,
                        const double val,
-                       const std::string interpolation);
+                       const std::string &interpolation);
 
 // assumes that the field exists
 std::string field_assoc(const conduit::Node &dataset,
@@ -176,7 +191,6 @@ std::string field_topology(const conduit::Node &dataset, const std::string &fiel
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
 
 #endif
 //-----------------------------------------------------------------------------

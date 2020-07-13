@@ -105,9 +105,9 @@ TEST(ascent_expressions, basic_expressions)
     //expr = "sin(field('braid'))*field('braid') * field('vel')";
     //expr = "sin(field('braid'))";
     //expr = "sin(field('radial'))";
-    //expr = "(field('braid') - min(field('braid'))) / (max(field('braid')) - min(field('braid')))";
+    expr = "(field('braid') - min(field('braid'))) / (max(field('braid')) - min(field('braid')))";
     //expr = "sin(1.0)";
-    expr = "volume(mesh('mesh'))";
+    //expr = "volume(mesh('mesh'))";
     eval.evaluate_derived(expr);
 }
 

@@ -690,7 +690,7 @@ void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
   std::cout<<kernel_str<<"\n";
 
   detail::modes();
-  occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 2");
+  occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 1");
   occa::device &device = occa::getDevice();
   occa::kernel kernel;
 

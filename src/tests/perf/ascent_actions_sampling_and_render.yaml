@@ -1,0 +1,29 @@
+-
+  action: "add_pipelines"
+  pipelines:
+    pl1:
+      f1:
+        type: histsampling
+        params:
+          field: energy
+          bins: 64
+          sample_rate: 0.02
+-
+  action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "energy"
+          pipeline: pl1
+          min_value: 0.7
+          max_value: 5.7
+      renders:
+        r1:
+          image_prefix: hist_sampling_%04d
+          camera:
+            azimuth: 20
+            elevation: 10
+          bg_color: [1.0, 1.0, 1.0]
+          fg_color: [0.0, 0.0, 0.0]

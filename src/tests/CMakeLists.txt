@@ -65,6 +65,8 @@ add_subdirectory("flow")
 # add ascent tests
 add_subdirectory("ascent")
 
+# add ascent performance tests
+add_subdirectory("perf")
 
 if(PYTHON_FOUND)
 # if we have python:

@@ -48,11 +48,10 @@
 ///
 //-----------------------------------------------------------------------------
 
+#include <ascent/ascent.hpp>
+#include <conduit/conduit_blueprint.hpp>
+
 #include <iostream>
-
-#include "ascent.hpp"
-
-#include "conduit_blueprint.hpp"
 
 using namespace ascent;
 using namespace conduit;

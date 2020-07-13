@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
@@ -41,8 +42,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
-
-module load gnu/4.9.2
-module load cudatoolkit/7.0
-use mvapich2-intel-2.0
-
+export TAG_NAME=alpinedav/ascent-ci:ubuntu-18-devel
+# exec docker build to create image
+echo "docker build -t ${TAG_NAME} ."
+docker build -t ${TAG_NAME} .

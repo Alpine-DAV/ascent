@@ -42,7 +42,6 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_derived_jit.hpp
@@ -54,7 +53,6 @@
 
 #include <ascent.hpp>
 #include <conduit.hpp>
-
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -73,7 +71,6 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace expressions
 {
-
 void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info);
 
 // make sure we are in a good state and gather the
@@ -86,7 +83,6 @@ void parameters(const conduit::Node &dataset,
                 const conduit::Node &info,
                 std::map<std::string, std::string> &var_types, // name:type
                 std::map<std::string, double> &constants);
-
 
 };
 //-----------------------------------------------------------------------------
@@ -104,7 +100,6 @@ void parameters(const conduit::Node &dataset,
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
 
 #endif
 //-----------------------------------------------------------------------------

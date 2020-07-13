@@ -51,19 +51,19 @@ set(ASCENT_INCLUDE_DIRS "${ASCENT_INSTALL_PREFIX}/include/ascent")
 if(ASCENT_SERIAL_ENABLED)
     # create convenience target that bundles all reg ascent deps (ascent::ascent)
     add_library(ascent::ascent INTERFACE IMPORTED)
-    
+
     set_property(TARGET ascent::ascent
                  APPEND PROPERTY
                  INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/")
-    
+
     set_property(TARGET ascent::ascent
                  APPEND PROPERTY
                  INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/ascent/")
-    
+
     set_property(TARGET ascent::ascent
                  PROPERTY INTERFACE_LINK_LIBRARIES
                  ascent)
-    
+
     # try to include conduit with new exports
     if(TARGET conduit::conduit)
         set_property(TARGET ascent::ascent
@@ -74,12 +74,12 @@ if(ASCENT_SERIAL_ENABLED)
         set_property(TARGET ascent::ascent
                      APPEND PROPERTY
                      INTERFACE_INCLUDE_DIRECTORIES ${CONDUIT_INCLUDE_DIRS})
-    
+
         set_property(TARGET ascent::ascent
                      APPEND PROPERTY INTERFACE_LINK_LIBRARIES
                      conduit conduit_relay conduit_blueprint)
     endif()
-    
+
     if(ASCENT_VTKH_ENABLED)
         set_property(TARGET ascent::ascent
                      APPEND PROPERTY INTERFACE_LINK_LIBRARIES
@@ -90,6 +90,15 @@ endif()
 # and if mpi enabled, a convenience target mpi case (ascent::cascent_mpi)
 if(ASCENT_MPI_ENABLED)
     add_library(ascent::ascent_mpi INTERFACE IMPORTED)
+
+    set_property(TARGET ascent::ascent_mpi
+                 APPEND PROPERTY
+                 INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/")
+
+    set_property(TARGET ascent::ascent_mpi
+                 APPEND PROPERTY
+                 INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/ascent/")
+
     set_property(TARGET ascent::ascent_mpi
                  PROPERTY INTERFACE_LINK_LIBRARIES
                  ascent_mpi)
@@ -108,14 +117,14 @@ if(ASCENT_MPI_ENABLED)
                      APPEND PROPERTY INTERFACE_LINK_LIBRARIES
                      conduit conduit_relay conduit_relay_mpi conduit_blueprint)
     endif()
-    
+
     if(ASCENT_VTKH_ENABLED)
         set_property(TARGET ascent::ascent_mpi
                      APPEND PROPERTY INTERFACE_LINK_LIBRARIES
                      vtkh_mpi)
     endif()
-    
-    
+
+
 endif()
 
 if(NOT Ascent_FIND_QUIETLY)
