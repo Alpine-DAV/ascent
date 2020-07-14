@@ -896,11 +896,11 @@ void image_consumer(std::mutex &mu, std::condition_variable &cond,
         buffer.pop_back();
         if (image.second == "KILL") // poison indicator to kill the consumer
         {
-            // std::cout << "kill consumer " << std::this_thread::get_id() << "\n";
+            std::cout << "kill consumer " << std::this_thread::get_id() << "\n";
             break;
         }
 
-        // std::cout << "consumed " << image.second << "\n";
+        std::cout << "consumed " << image.second << "\n";
         image.first->Save(image.second, true);
     }
     mlock.unlock();
@@ -1038,12 +1038,12 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
     displacements.pop_back();
 
     unsigned int thread_count = std::thread::hardware_concurrency();
-    thread_count = std::min(thread_count, 32u);  // avoid overhead for too many cores
+    thread_count = std::min(thread_count, 16u);  // avoid overhead for too many cores
     std::mutex mu;
-    const int max_buffer_size = std::thread::hardware_concurrency() * 2;
+    const int max_buffer_size = thread_count * 2;
     std::condition_variable cond;
     std::deque<std::pair<vtkh::Image *, std::string> > buffer;
-    std::vector<std::thread> consumers(std::thread::hardware_concurrency());
+    std::vector<std::thread> consumers(thread_count);
 
     if (my_vis_rank == 0)
     {
@@ -1115,7 +1115,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
             std::unique_lock<std::mutex> locker(mu);
             cond.wait(locker, [&buffer, &max_buffer_size](){ return buffer.size() < max_buffer_size; });
             buffer.push_back(std::make_pair(results[j], name));
-            // std::cout << "produced " << name << "\n";
+            std::cout << "produced " << name << "\n";
             locker.unlock();
             cond.notify_all();
 
