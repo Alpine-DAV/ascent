@@ -384,16 +384,19 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
                                  const MPI_Properties mpi_props)
 {
     // empirically determined render factor for sim nodes
-    const float sim_factor = 1.3;      // TODO: render overhead on sim nodes -> investigate
+    // TODO: investigate where this discrepancy comes from
+    const float sim_factor = 1.3;      // 1.26 for d8
+    // render factor for vis nodes
+    const float vis_factor = 0.8;
 
     assert(sim_estimate.size() == vis_estimates.size());
     
     std::valarray<float> t_inline(0.f, mpi_props.sim_node_count);
     for (size_t i = 0; i < mpi_props.sim_node_count; i++)
-        t_inline[i] = vis_estimates[i] * render_cfg.non_probing_count;
+        t_inline[i] = vis_estimates[i] * sim_factor * render_cfg.non_probing_count;
 
     // TODO: add smart way to estimate compositing + save time
-    float t_compositing = 0.3f * render_cfg.max_count;  // flat compositing cost (single vis node only)
+    float t_compositing = 0.15f * render_cfg.max_count;  // flat compositing cost (single vis node only)
     if (mpi_props.rank == 0)
         std::cout << "~~compositing estimate: " << t_compositing << std::endl;
 
@@ -408,7 +411,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
     {
         const int target_vis_node = node_map[i];
 
-        t_intransit[target_vis_node] += t_inline[i];
+        t_intransit[target_vis_node] += t_inline[i] * (vis_factor/sim_factor);
         t_inline[i] = 0.f;
         render_counts_vis[target_vis_node] += render_cfg.non_probing_count;
     }
@@ -432,7 +435,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
 
             if (render_counts_vis[target_vis_node] > 0)
             {
-                t_intransit[target_vis_node] -= vis_estimates[min_id];
+                t_intransit[target_vis_node] -= vis_estimates[min_id] * vis_factor;
                 // Add render receive cost to vis node.
                 // t_intransit[target_vis_node] += 0.09f;  
                 render_counts_vis[target_vis_node]--;
@@ -896,7 +899,7 @@ void image_consumer(std::mutex &mu, std::condition_variable &cond,
         buffer.pop_back();
         if (image.second == "KILL") // poison indicator to kill the consumer
         {
-            std::cout << "kill consumer " << std::this_thread::get_id() << "\n";
+            std::cout << "consumer killed " << std::this_thread::get_id() << "\n";
             break;
         }
 
@@ -1038,7 +1041,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
     displacements.pop_back();
 
     unsigned int thread_count = std::thread::hardware_concurrency();
-    thread_count = std::min(thread_count, 16u);  // avoid overhead for too many cores
+    thread_count = std::min(thread_count, 1u);  // limit to 1 consumer for now
     std::mutex mu;
     const int max_buffer_size = thread_count * 2;
     std::condition_variable cond;
@@ -1109,7 +1112,6 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
         // save render using separate thread -> hide latency
         if (my_vis_rank == 0)
         {
-            // t_start0 = std::chrono::system_clock::now();
             std::string name = (*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string();
 
             std::unique_lock<std::mutex> locker(mu);
@@ -1118,9 +1120,6 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
             std::cout << "produced " << name << "\n";
             locker.unlock();
             cond.notify_all();
-
-            // results[j]->Save(name, true);
-            // log_time(t_start0, "+ save image ", mpi_props.rank);
         }
     }
     log_time(t_start0, "+ compositing total ", mpi_props.rank);
@@ -1128,10 +1127,15 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
 
     if (my_vis_rank == 0)
     {   // write to disk
+        t_start0 = std::chrono::system_clock::now();
+
         std::unique_lock<std::mutex> locker(mu);
-        cond.wait(locker, [&buffer, &max_buffer_size](){ return buffer.size() < max_buffer_size; });
+        cond.wait(locker, [&buffer, &max_buffer_size](){ return buffer.size() == 0; });
         for (int i = 0; i < consumers.size(); ++i)
+        {
+            std::cout << "invoke kill consumer\n";
             buffer.push_back(std::make_pair(nullptr, std::string("KILL")));
+        }
         locker.unlock();
         cond.notify_all();
         for (auto& t : consumers)
@@ -1143,6 +1147,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
 //             results[j].Save(name, true);
 //         }
         log_global_time("end writeToDisk", mpi_props.rank);
+        log_time(t_start0, "+ wait writeToDisk", mpi_props.rank);
     }
 }
 
