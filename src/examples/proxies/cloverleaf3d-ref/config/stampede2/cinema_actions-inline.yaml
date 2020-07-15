@@ -1,9 +1,5 @@
 -
   action: "add_scenes"
-  probing:
-    factor: 0.2
-    vis_budget: 0.1
-    node_split: 0.8
   scenes:
     s1:
       plots:
@@ -11,7 +7,7 @@
           type: "volume"
           field: "energy"
           min_value: 0.0
-          max_value: 0.5
+          max_value: 1.0
           color_table: 
             name: "rainbow desaturated"
             control_points: 
@@ -21,11 +17,11 @@
                 alpha: 0.0
               - 
                 type: "alpha"
-                position: 0.5
+                position: 0.4
                 alpha: 0.0
               - 
                 type: "alpha"
-                position: 0.51
+                position: 0.75
                 alpha: 1.0
               - 
                 type: "alpha"
@@ -34,8 +30,8 @@
       renders:
         r1:
           type: "cinema"
-          phi: 5
-          theta: 5
+          phi: 13
+          theta: 13
           camera:
             zoom: 0.3
           db_name: "clover_db"
