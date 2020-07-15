@@ -221,70 +221,6 @@ void ProbingRuntime::Publish(const conduit::Node &data)
 //         sleep(5);
 // }
 
-// from https://codereview.stackexchange.com/questions/164479/notifying-consumers-when-a-producer-is-done
-template <class T>
-class SafeQueue
-{
-    std::queue<T> _queue;
-    std::mutex _mutex;
-    std::condition_variable _cv;
-    bool _isAlive;
-    std::promise<void> _pAllDone;
-    std::future<void> _fAllDone;
-
-public:
-    struct IsDead {}; 
-
-    SafeQueue() : _isAlive(true) {}
-    // block copy & move ctors and assignments
-    SafeQueue(const SafeQueue& other) = delete;
-    SafeQueue& operator=(const SafeQueue& other) = delete;
-    SafeQueue(SafeQueue&& other) noexcept = delete;
-    SafeQueue& operator=(SafeQueue&& other) noexcept = delete;
-
-    T pop() 
-    {
-        std::unique_lock<std::mutex> mlock(_mutex);
-        while (_queue.empty() && _isAlive) {
-            _cv.wait(mlock);
-        }
-        if (!_queue.empty()) {
-            T item = std::move(_queue.front());
-            _queue.pop();
-            return item;
-        }
-        // in this case the queue is empty
-        mlock.unlock();
-        try { _pAllDone.set_value(); } catch (...) {}
-        _cv.notify_all();
-        throw IsDead();
-    }
-
-    void push(const T& item)
-    {
-        unique_lock<mutex> mlock(_mutex);
-        _queue.push(item);
-        mlock.unlock();
-        _cv.notify_one();
-    }
-    void push(T&& item)
-    {
-        unique_lock<mutex> mlock(_mutex);
-        _queue.push(std::move(item));
-        mlock.unlock();
-        _cv.notify_one();
-    }
-
-    void kill() 
-    {
-        std::unique_lock<std::mutex> mlock(_mutex);
-        _isAlive = false;
-        mlock.unlock();
-        _cv.notify_all();
-        _fAllDone.wait(); 
-    }
-};
-
 
 // structs
 //
@@ -890,44 +826,29 @@ void save_image(vtkh::Image *image, const std::string &name)
 void image_consumer(std::mutex &mu, std::condition_variable &cond,
                     std::deque<std::pair<vtkh::Image *, std::string> > &buffer)
 {
-    std::cout << "Start consumer\n";
-    std::unique_lock<std::mutex> mlock(mu);
+    std::cout << "Created consumer " << std::this_thread::get_id() << std::endl;
     while (true)
     {
+        std::unique_lock<std::mutex> mlock(mu);
         cond.wait(mlock, [&buffer](){ return buffer.size() > 0; });
-        std::pair<vtkh::Image *, std::string> image = buffer.back();
-        buffer.pop_back();
-        if (image.second == "KILL") // poison indicator to kill the consumer
-        {
-            std::cout << "consumer killed " << std::this_thread::get_id() << "\n";
-            break;
-        }
+        std::pair<vtkh::Image *, std::string> image = buffer.front();
+        // std::cout << "consumed " << image.second << std::endl;
+        buffer.pop_front();
+        mlock.unlock();
+        cond.notify_all();
 
-        std::cout << "consumed " << image.second << "\n";
-        image.first->Save(image.second, true);
+        if (image.first == nullptr && image.second == "KILL") // poison indicator 
+        {
+            std::cout << "Killed consumer " << std::this_thread::get_id() << std::endl;
+            return;
+        }
+        else
+        {
+            image.first->Save(image.second, true);
+        }
     }
-    mlock.unlock();
-    cond.notify_all();
 }
 
-// void image_consumer(std::mutex &mu, SafeQueue<std::pair<vtkh::Image *, std::string> > &q)
-// {
-//     while (true)
-//     {
-//         try
-//         {
-//             auto a = q.pop();
-//             std::lock_guard<std::mutex> mlock(mu);
-//             std::cout << "Consumed " << a.second << std::endl;
-//         }
-//         catch (SafeQueue<std::pair<vtkh::Image *, std::string> >::IsDead&)
-//         {
-//             std::lock_guard<std::mutex> mlock(mu);
-//             std::cout << "consumer is dead" << std::endl;
-//             return;
-//         }
-//     }
-// }
 
 /**
  *  Composite render chunks from probing, simulation nodes, and visualization nodes.
@@ -1041,13 +962,12 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
     displacements.pop_back();
 
     unsigned int thread_count = std::thread::hardware_concurrency();
-    thread_count = std::min(thread_count, 1u);  // limit to 1 consumer for now
+    thread_count = std::min(thread_count, 16u);     // limit to 16 consumers to avoid overhead
     std::mutex mu;
-    const int max_buffer_size = thread_count * 2;
+    const int max_buffer_size = thread_count * 4;   // buffer a max of 4 images per thread
     std::condition_variable cond;
     std::deque<std::pair<vtkh::Image *, std::string> > buffer;
     std::vector<std::thread> consumers(thread_count);
-
     if (my_vis_rank == 0)
     {
         for (int i = 0; i < consumers.size(); ++i)
@@ -1109,7 +1029,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
         log_time(t_start, "+ compositing image ", mpi_props.rank);
         log_global_time("end composit image", mpi_props.rank);
 
-        // save render using separate thread -> hide latency
+        // save render using separate thread to hide latency
         if (my_vis_rank == 0)
         {
             std::string name = (*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string();
@@ -1117,38 +1037,28 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
             std::unique_lock<std::mutex> locker(mu);
             cond.wait(locker, [&buffer, &max_buffer_size](){ return buffer.size() < max_buffer_size; });
             buffer.push_back(std::make_pair(results[j], name));
-            std::cout << "produced " << name << "\n";
+            // std::cout << "produced " << name << std::endl;
             locker.unlock();
             cond.notify_all();
+
+            if (j == render_cfg.max_count - 1)  // last image -> kill consumers
+            {  
+                // poison consumers for cleanup
+                for (int i = 0; i < consumers.size(); ++i)
+                {
+                    std::unique_lock<std::mutex> locker(mu);
+                    cond.wait(locker, [&buffer, &max_buffer_size](){ return buffer.size() < max_buffer_size; });
+                    buffer.push_back(std::make_pair(nullptr, std::string("KILL")));
+                    locker.unlock();
+                    cond.notify_all();
+                }
+                for (auto& t : consumers)
+                    t.join();
+            }
         }
     }
     log_time(t_start0, "+ compositing total ", mpi_props.rank);
     log_global_time("end compositing", mpi_props.rank);
-
-    if (my_vis_rank == 0)
-    {   // write to disk
-        t_start0 = std::chrono::system_clock::now();
-
-        std::unique_lock<std::mutex> locker(mu);
-        cond.wait(locker, [&buffer, &max_buffer_size](){ return buffer.size() == 0; });
-        for (int i = 0; i < consumers.size(); ++i)
-        {
-            std::cout << "invoke kill consumer\n";
-            buffer.push_back(std::make_pair(nullptr, std::string("KILL")));
-        }
-        locker.unlock();
-        cond.notify_all();
-        for (auto& t : consumers)
-            t.join();
-
-//         for (int j = 0; j < results.size(); ++j)
-//         {
-//             std::string name = (*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string();
-//             results[j].Save(name, true);
-//         }
-        log_global_time("end writeToDisk", mpi_props.rank);
-        log_time(t_start0, "+ wait writeToDisk", mpi_props.rank);
-    }
 }
 
 void pack_and_send(Node& data, const int destination, const int tag, const MPI_Comm comm, MPI_Request &req)
