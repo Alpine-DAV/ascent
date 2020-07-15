@@ -2175,12 +2175,12 @@ void VTKHBounds::execute()
   // local -> extrapolate based on number of nodes? (clover split pattern)
   // bounds->Include(data->GetBounds());
 
-  bounds->X.Min = 0.0;
-  bounds->X.Max = 6.0;
-  bounds->Y.Min = 0.0;
-  bounds->Y.Max = 6.0;
-  bounds->Z.Min = 0.0;
-  bounds->Z.Max = 6.0;
+  bounds->X.Min =  0.0;
+  bounds->X.Max = 10.0;
+  bounds->Y.Min =  0.0;
+  bounds->Y.Max = 10.0;
+  bounds->Z.Min =  0.0;
+  bounds->Z.Max = 10.0;
 
   set_output<vtkm::Bounds>(bounds);
 }
