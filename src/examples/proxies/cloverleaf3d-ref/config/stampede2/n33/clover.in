@@ -14,10 +14,10 @@
  initial_timestep=0.04
  max_timestep=0.04
  
- end_step=750
- end_time=750.1
+ end_step=500
+ end_time=500.1
  test_problem 1
  
- visit_frequency=150
+ visit_frequency=100
  1
 *endclover
