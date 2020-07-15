@@ -96,6 +96,32 @@ is_scalar(const std::string &type)
 {
   return type == "int" || type == "double" || type == "scalar";
 }
+
+bool
+is_field_type(const std::string &type)
+{
+  return type == "field" || type == "derived_field";
+}
+
+// connect null filter to unused ports
+void
+null_ports(flow::Workspace &w,
+           const std::string filter_name,
+           const int start_port,
+           const int num_ports)
+{
+  // Fill unused items with nulls
+  if(!w.graph().has_filter("null_arg"))
+  {
+    conduit::Node null_params;
+    w.graph().add_filter("null_arg", "null_arg", null_params);
+  }
+  for(int i = start_port; i < num_ports; ++i)
+  {
+    // src, dest, port
+    w.graph().connect("null_arg", filter_name, i);
+  }
+}
 } // namespace detail
 
 //-----------------------------------------------------------------------------
@@ -135,41 +161,6 @@ ASTInteger::build_jit(conduit::Node &n, flow::Workspace &w)
   // force everthing to a double
   ss << "(double)" << m_value;
   return ss.str();
-}
-
-conduit::Node
-ASTInteger::build_jit2(flow::Workspace &w)
-{
-  conduit::Node *subexpr_cache =
-      w.registry().fetch<conduit::Node>("subexpr_cache");
-  // create a unique name for each expression so we can reuse subexpressions
-  std::stringstream ess;
-  ess << "jit_integer"
-      << "_" << m_value;
-  const std::string expr_name = ess.str();
-  if((*subexpr_cache).has_path(expr_name))
-  {
-    return (*subexpr_cache)[expr_name];
-  }
-
-  // create a unique name for the filter
-  static int name_counter = 0;
-  std::stringstream ss;
-  ss << "jit_integer"
-     << "_" << name_counter++;
-  const std::string name = ss.str();
-
-  conduit::Node params;
-  std::stringstream ss2;
-  // force everthing to a double
-  ss2 << "(double)" << m_value;
-  params["value"] = ss.str();
-  w.graph().add_filter("jit_filter", name, params);
-  conduit::Node res;
-  res["filter_name"] = name;
-  res["type"] = "int";
-  (*subexpr_cache)[expr_name] = res;
-  return res;
 }
 
 bool
@@ -219,42 +210,6 @@ ASTDouble::build_jit(conduit::Node &n, flow::Workspace &w)
   // force everthing to a double
   ss << "(double)" << m_value;
   return ss.str();
-}
-
-//-----------------------------------------------------------------------------
-conduit::Node
-ASTDouble::build_jit2(flow::Workspace &w)
-{
-  conduit::Node *subexpr_cache =
-      w.registry().fetch<conduit::Node>("subexpr_cache");
-  // create a unique name for each expression so we can reuse subexpressions
-  std::stringstream ess;
-  ess << "jit_double"
-      << "_" << m_value;
-  const std::string expr_name = ess.str();
-  if((*subexpr_cache).has_path(expr_name))
-  {
-    return (*subexpr_cache)[expr_name];
-  }
-
-  // create a unique name for the filter
-  static int name_counter = 0;
-  std::stringstream ss;
-  ss << "jit_double"
-     << "_" << name_counter++;
-  const std::string name = ss.str();
-
-  conduit::Node params;
-  std::stringstream ss2;
-  // force everthing to a double
-  ss2 << "(double)" << m_value;
-  params["value"] = ss.str();
-  w.graph().add_filter("jit_filter", name, params);
-  conduit::Node res;
-  res["filter_name"] = name;
-  res["type"] = "double";
-  (*subexpr_cache)[expr_name] = res;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -606,9 +561,6 @@ ASTMethodCall::build_graph(flow::Workspace &w)
     for(size_t i = 0; i < pos_size; ++i)
     {
       pos_arg_nodes[i] = arguments->pos_args->exprs[i]->build_graph(w);
-      // std::cout << "flow arg :\n";
-      // pos_arg_nodes[i].print();
-      // std::cout << "\n";
     }
   }
 
@@ -629,8 +581,6 @@ ASTMethodCall::build_graph(flow::Workspace &w)
     }
   }
 
-  // std::cout << "Flow method call: " << m_id->m_name << endl;
-
   if(!w.registry().has_entry("function_table"))
   {
     ASCENT_ERROR("Missing function table");
@@ -648,9 +598,10 @@ ASTMethodCall::build_graph(flow::Workspace &w)
 
   int matched_index = -1;
 
-  std::vector<std::string> func_arg_names;
   std::unordered_set<std::string> req_args;
   std::unordered_set<std::string> opt_args;
+  // keeps track of how things are connected
+  std::map<std::string, const conduit::Node *> args_map;
   for(int i = 0; i < overload_list.number_of_children(); ++i)
   {
     const conduit::Node &func = overload_list.child(i);
@@ -663,11 +614,41 @@ ASTMethodCall::build_graph(flow::Workspace &w)
     }
 
     // validation
+    if(named_size + pos_size > total_args)
+    {
+      continue;
+    }
 
-    func_arg_names = func["args"].child_names();
+    const std::vector<std::string> func_arg_names = func["args"].child_names();
+
+    // populate args_map
+    args_map.clear();
+    for(int a = 0; a < pos_size; ++a)
+    {
+      const conduit::Node &arg = pos_arg_nodes[a];
+      args_map[func_arg_names[a]] = &arg;
+    }
+    for(int a = 0; a < named_size; ++a)
+    {
+      const conduit::Node &arg = named_arg_nodes[a];
+      // ensure an argument wasn't passed twice
+      if(args_map.find(named_arg_names[a]) == args_map.end())
+      {
+        args_map[named_arg_names[a]] = &arg;
+      }
+      else
+      {
+        valid = false;
+      }
+    }
+    if(!valid)
+    {
+      continue;
+    }
+
+    // populate opt_args and req_args
     req_args.clear();
     opt_args.clear();
-    // populate opt_args and req_args
     for(int a = 0; a < total_args; ++a)
     {
       conduit::Node func_arg = func["args"].child(a);
@@ -681,99 +662,57 @@ ASTMethodCall::build_graph(flow::Workspace &w)
       }
     }
 
-    // validate positionals
-    if(pos_size <= total_args)
-    {
-      for(int a = 0; a < pos_size; ++a)
-      {
-        conduit::Node func_arg = func["args"].child(a);
-        // validate types
-        if(func_arg["type"].as_string() != "anytype" &&
-           pos_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
-        {
-          valid = false;
-        }
-        // special case for the "scalar" pseudo-type
-        if(func_arg["type"].as_string() == "scalar" &&
-           detail::is_scalar(pos_arg_nodes[a]["type"].as_string()))
-        {
-          valid = true;
-        }
-
-        // keep track of which arguments have been specified
-        if(func_arg.has_path("optional"))
-        {
-          valid &= opt_args.erase(func_arg_names[a]);
-        }
-        else
-        {
-          valid &= req_args.erase(func_arg_names[a]);
-        }
-        if(!valid)
-        {
-          goto next_overload;
-        }
-      }
-    }
-    else
-    {
-      valid = false;
-    }
-
-    // validate named arguments
-    for(int a = 0; a < named_size; ++a)
+    // validate arg types
+    for(auto const &arg : args_map)
     {
       // check if argument name exists
-      if(!func["args"].has_path(named_arg_names[a]))
+      if(!func["args"].has_path(arg.first))
       {
         valid = false;
-        goto next_overload;
+        break;
       }
-      // get the an argument given its name
-      conduit::Node func_arg = func["args"][named_arg_names[a]];
+      const conduit::Node &sig_arg = func["args/" + arg.first];
+      const std::string expected_type = sig_arg["type"].as_string();
+      const std::string passed_type = (*arg.second)["type"].as_string();
 
       // validate types
-      if(func_arg["type"].as_string() != "anytype" &&
-         named_arg_nodes[a]["type"].as_string() != func_arg["type"].as_string())
+      if(!(detail::is_field_type(expected_type) &&
+           detail::is_field_type(passed_type)) &&
+         !(expected_type == "scalar" && detail::is_scalar(passed_type)) &&
+         expected_type != "anytype" && passed_type != expected_type)
       {
         valid = false;
-      }
-      // special case for the "scalar" pseudo-type
-      if(func_arg["type"].as_string() == "scalar" &&
-         detail::is_scalar(named_arg_nodes[a]["type"].as_string()))
-      {
-        valid = true;
+        break;
       }
 
       // keep track of which arguments have been specified
-      if(func_arg.has_path("optional"))
+      if(sig_arg.has_path("optional"))
       {
-        valid &= opt_args.erase(named_arg_names[a]);
+        valid &= opt_args.erase(arg.first);
       }
       else
       {
-        valid &= req_args.erase(named_arg_names[a]);
+        valid &= req_args.erase(arg.first);
       }
-
       if(!valid)
       {
-        goto next_overload;
+        break;
       }
+    }
+    if(!valid)
+    {
+      continue;
     }
 
     // ensure all required arguments are passed
     if(!req_args.empty())
     {
-      valid = false;
+      continue;
     }
 
+    // we made it to the end!
     // finds the last valid function
-    if(valid)
-    {
-      matched_index = i;
-    }
-
-  next_overload:;
+    matched_index = i;
   }
 
   conduit::Node res;
@@ -781,84 +720,130 @@ ASTMethodCall::build_graph(flow::Workspace &w)
   if(matched_index != -1)
   {
     const conduit::Node &func = overload_list.child(matched_index);
-    // keeps track of how things are connected
-    std::map<std::string, const conduit::Node *> args_map;
-    for(int a = 0; a < pos_size; ++a)
-    {
-      const conduit::Node &arg = pos_arg_nodes[a];
-      args_map[func_arg_names[a]] = &arg;
-    }
-    for(int a = 0; a < named_size; ++a)
-    {
-      const conduit::Node &arg = named_arg_nodes[a];
-      args_map[named_arg_names[a]] = &arg;
-    }
 
     conduit::Node *subexpr_cache =
         w.registry().fetch<conduit::Node>("subexpr_cache");
     std::stringstream ess;
-    ess << "method"
-        << "_" << func["filter_name"].as_string() << "(";
-    for(auto const &arg : args_map)
+    std::string name;
+    std::string expr_name;
+    if(func.has_path("jitable"))
     {
-      ess << arg.first << "=" << (*arg.second)["filter_name"].as_string()
-          << ", ";
-    }
-    ess << ")";
-    const std::string expr_name = ess.str();
-    if((*subexpr_cache).has_path(expr_name))
-    {
-      return (*subexpr_cache)[expr_name];
-    }
-
-    static int ast_method_counter = 0;
-    // create a unique name for the filter
-    std::stringstream ss;
-    ss << "method_" << ast_method_counter++ << "_"
-       << func["filter_name"].as_string();
-    std::string name = ss.str();
-
-    // we will have some optional parameters, prep the null_args filter
-    if(!opt_args.empty())
-    {
-      if(!w.graph().has_filter("null_arg"))
+      // jit case
+      ess << "method_jit_" << func["filter_name"].as_string() << "(";
+      for(auto const &arg : args_map)
       {
-        conduit::Node null_params;
-        w.graph().add_filter("null_arg", "null_arg", null_params);
+        ess << arg.first << "=" << (*arg.second)["filter_name"].as_string()
+            << ", ";
+      }
+      ess << ")";
+      expr_name = ess.str();
+      if((*subexpr_cache).has_path(expr_name))
+      {
+        return (*subexpr_cache)[expr_name];
+      }
+
+      static int ast_jit_method_counter = 0;
+      std::stringstream ss;
+      ss << "method_jit_" << ast_jit_method_counter++ << "_"
+         << func["filter_name"].as_string();
+      name = ss.str();
+
+      // generate params
+      conduit::Node params;
+      params["func"] = func["filter_name"].as_string();
+      params["execute"] = false;
+      int port = 0;
+      for(auto const &arg : args_map)
+      {
+        conduit::Node &inp = params["inputs/" + arg.first];
+        inp["type"] = (*arg.second)["type"].as_string();
+        inp["port"] = port;
+        ++port;
+      }
+
+      w.graph().add_filter("jit_filter", name, params);
+
+      // connect up all the arguments
+      port = 0;
+      for(auto const &arg : args_map)
+      {
+        // src, dest, port
+        w.graph().connect((*arg.second)["filter_name"].as_string(), name, port);
+        ++port;
+      }
+      detail::null_ports(w, name, port, 256);
+    }
+    else
+    {
+      // non-jit case
+      ess << "method_" << func["filter_name"].as_string() << "(";
+      for(auto const &arg : args_map)
+      {
+        ess << arg.first << "=" << (*arg.second)["filter_name"].as_string()
+            << ", ";
+      }
+      ess << ")";
+      expr_name = ess.str();
+      if((*subexpr_cache).has_path(expr_name))
+      {
+        return (*subexpr_cache)[expr_name];
+      }
+
+      static int ast_method_counter = 0;
+      std::stringstream ss;
+      ss << "method_" << ast_method_counter++ << "_"
+         << func["filter_name"].as_string();
+      name = ss.str();
+
+      // we will have some optional parameters, prep the null_args filter
+      if(!opt_args.empty())
+      {
+        if(!w.graph().has_filter("null_arg"))
+        {
+          conduit::Node null_params;
+          w.graph().add_filter("null_arg", "null_arg", null_params);
+        }
+      }
+
+      conduit::Node params;
+      w.graph().add_filter(func["filter_name"].as_string(), name, params);
+
+      // connect up all the arguments
+      for(auto const &arg : args_map)
+      {
+        std::string inp_filter_name = (*arg.second)["filter_name"].as_string();
+        // we must to execute inputs that are derived fields if the function is
+        // not jitable
+        if((*arg.second)["type"].as_string() == "derived_field")
+        {
+          static int method_jit_execute_counter = 0;
+          // create a unique name for the filter
+          std::stringstream ss;
+          ss << "method_jit_execute" << method_jit_execute_counter++;
+          const std::string jit_execute_name = ss.str();
+          conduit::Node params;
+          params["func"] = "execute";
+          params["execute"] = true;
+          params["inputs"]["derived_field/type"] = "derived_field";
+          params["inputs"]["derived_field/port"] = 0;
+          w.graph().add_filter("jit_filter", jit_execute_name, params);
+          // src, dest, port
+          w.graph().connect(inp_filter_name, jit_execute_name, 0);
+          detail::null_ports(w, jit_execute_name, 1, 256);
+          inp_filter_name = jit_execute_name;
+        }
+        // src, dest, port
+        w.graph().connect(inp_filter_name, name, arg.first);
+      }
+
+      // connect null filter to optional args that weren't passed in
+      for(std::unordered_set<std::string>::iterator it = opt_args.begin();
+          it != opt_args.end();
+          ++it)
+      {
+        w.graph().connect("null_arg", name, *it);
       }
     }
-
-    conduit::Node params;
-    w.graph().add_filter(func["filter_name"].as_string(), name, params);
-
-    // connect up all the arguments
-    // src, dest, port
-
-    // pass positional arguments
-    for(int a = 0; a < pos_size; ++a)
-    {
-      const conduit::Node &arg = pos_arg_nodes[a];
-      w.graph().connect(
-          arg["filter_name"].as_string(), name, func_arg_names[a]);
-    }
-
-    // pass named arguments
-    for(int a = 0; a < named_size; ++a)
-    {
-      const conduit::Node &arg = named_arg_nodes[a];
-      w.graph().connect(
-          arg["filter_name"].as_string(), name, named_arg_names[a]);
-    }
-
-    // connect null filter to optional args that weren't passed in
-    for(std::unordered_set<std::string>::iterator it = opt_args.begin();
-        it != opt_args.end();
-        ++it)
-    {
-      w.graph().connect("null_arg", name, *it);
-    }
-
-    res["filter_name"] = name;
 
     // evaluate what the return type will be
     std::string res_type = func["return_type"].as_string();
@@ -866,8 +851,7 @@ ASTMethodCall::build_graph(flow::Workspace &w)
     // type
     if(res_type == "anytype")
     {
-      // the history function's return type is the same as the type of its first
-      // argument
+      // the history function's return type is the type of its first argument
       if(func["filter_name"].as_string() == "history")
       {
         res_type = (*args_map.at("expr_name"))["type"].as_string();
@@ -879,6 +863,7 @@ ASTMethodCall::build_graph(flow::Workspace &w)
       }
     }
 
+    res["filter_name"] = name;
     res["type"] = res_type;
     (*subexpr_cache)[expr_name] = res;
   }
@@ -1030,90 +1015,6 @@ ASTBinaryOp::build_jit(conduit::Node &n, flow::Workspace &w)
 }
 
 conduit::Node
-ASTBinaryOp::build_jit2(flow::Workspace &w)
-{
-  std::string op_str;
-  switch(m_op)
-  {
-  case TPLUS: op_str = "+"; break;
-  case TMINUS: op_str = "-"; break;
-  case TMUL: op_str = "*"; break;
-  case TDIV: op_str = "/"; break;
-  case TMOD: op_str = "%"; break;
-  case TCEQ: op_str = "=="; break;
-  case TCNE: op_str = "!="; break;
-  case TCLE: op_str = "<="; break;
-  case TCGE: op_str = ">="; break;
-  case TCGT: op_str = ">"; break;
-  case TCLT: op_str = "<"; break;
-  case TOR: op_str = "or"; break;
-  case TAND: op_str = "and"; break;
-  case TNOT: op_str = "not"; break;
-  default: std::cout << "unknown binary op " << m_op << "\n";
-  }
-
-  conduit::Node l_in = m_lhs->build_graph(w);
-  conduit::Node r_in = m_rhs->build_graph(w);
-
-  // Validate types and evaluate what the return type will be
-  const std::string l_type = l_in["type"].as_string();
-  const std::string r_type = r_in["type"].as_string();
-
-  std::string res_type;
-  if(detail::is_math(op_str))
-  {
-    if(detail::is_scalar(l_type) && r_type == "field" ||
-       detail::is_scalar(r_type) && l_type == "field")
-    {
-      res_type = "field";
-    }
-    else
-    {
-      ASCENT_ERROR("Math ops are only supported on scalar and field.");
-    }
-  }
-  else
-  {
-    ASCENT_ERROR("Only math ops are supported in JIT BinaryOp.");
-  }
-
-  conduit::Node *subexpr_cache =
-      w.registry().fetch<conduit::Node>("subexpr_cache");
-  std::stringstream ess;
-  ess << "jit_binary_op"
-      << "_" << l_in["filter_name"].as_string() << op_str
-      << r_in["filter_name"].as_string();
-  const std::string expr_name = ess.str();
-  if((*subexpr_cache).has_path(expr_name))
-  {
-    return (*subexpr_cache)[expr_name];
-  }
-
-  static int ast_op_counter = 0;
-  // create a unique name for the filter
-  std::stringstream ss;
-  // ss << "binary_op" << "_" << ast_op_counter << "_" << op_str;
-  ss << "jit_binary_op"
-     << "_" << ast_op_counter++ << "_" << m_op;
-  std::string name = ss.str();
-
-  conduit::Node params;
-  params["binary_op/op_string"] = op_str;
-
-  w.graph().add_filter("jit_filter", name, params);
-
-  // src, dest, port
-  w.graph().connect(r_in["filter_name"].as_string(), name, "arg1");
-  w.graph().connect(l_in["filter_name"].as_string(), name, "arg2");
-
-  conduit::Node res;
-  res["filter_name"] = name;
-  res["type"] = res_type;
-  (*subexpr_cache)[expr_name] = res;
-  return res;
-}
-
-conduit::Node
 ASTBinaryOp::build_graph(flow::Workspace &w)
 {
   // std::cout << "Creating binary operation " << m_op << endl;
@@ -1145,19 +1046,17 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
   const std::string l_type = l_in["type"].as_string();
   const std::string r_type = r_in["type"].as_string();
 
+  bool jitable = false;
   std::string res_type;
-  std::stringstream msg;
   if(detail::is_math(op_str))
   {
-    if((!detail::is_scalar(l_type) && l_type != "vector") ||
-       (!detail::is_scalar(r_type) && r_type != "vector"))
+    if((detail::is_scalar(l_type) && detail::is_field_type(r_type)) ||
+       (detail::is_scalar(r_type) && detail::is_field_type(l_type)))
     {
-      msg << "' " << l_type << " " << op_str << " " << r_type << "'";
-      ASCENT_ERROR("math operations are only supported on vectors and scalars: "
-                   << msg.str());
+      res_type = "derived_field";
+      jitable = true;
     }
-
-    if(detail::is_scalar(l_type) && detail::is_scalar(r_type))
+    else if(detail::is_scalar(l_type) && detail::is_scalar(r_type))
     {
       // promote to double if at least one is a double
       if(l_type == "double" || r_type == "double")
@@ -1169,18 +1068,22 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
         res_type = "int";
       }
     }
-    else
+    else if(l_type == "vector" && r_type == "vector")
     {
       res_type = "vector";
+    }
+    else
+    {
+      ASCENT_ERROR("Unsupported math operation: "
+                   << "'" << l_type << " " << op_str << " " << r_type << "'");
     }
   }
   else if(detail::is_logic(op_str))
   {
     if(l_type != "bool" || r_type != "bool")
     {
-      msg << "' " << l_type << " " << op_str << " " << r_type << "'";
-      ASCENT_ERROR(
-          "logical operators are only supported on booleans: " << msg.str());
+      ASCENT_ERROR("logical operators are only supported on booleans: "
+                   << "'" << l_type << " " << op_str << " " << r_type << "'");
     }
     res_type = "bool";
   }
@@ -1188,9 +1091,8 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
   {
     if(!detail::is_scalar(l_type) || !detail::is_scalar(r_type))
     {
-      msg << "' " << l_type << " " << op_str << " " << r_type << "'";
-      ASCENT_ERROR(
-          "comparison operators are only supported on scalars: " << msg.str());
+      ASCENT_ERROR("comparison operators are only supported on scalars: "
+                   << "'" << l_type << " " << op_str << " " << r_type << "'");
     }
     res_type = "bool";
   }
@@ -1198,32 +1100,69 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
   std::stringstream ess;
-  ess << "binary_op"
-      << "_" << l_in["filter_name"].as_string() << op_str
-      << r_in["filter_name"].as_string();
-  const std::string expr_name = ess.str();
-  if((*subexpr_cache).has_path(expr_name))
+  std::string name;
+  std::string expr_name;
+  if(jitable)
   {
-    return (*subexpr_cache)[expr_name];
+    ess << "jit_binary_op"
+        << "_" << l_in["filter_name"].as_string() << op_str
+        << r_in["filter_name"].as_string();
+    expr_name = ess.str();
+    if((*subexpr_cache).has_path(expr_name))
+    {
+      return (*subexpr_cache)[expr_name];
+    }
+
+    static int ast_jit_op_counter = 0;
+    // create a unique name for the filter
+    std::stringstream ss;
+    ss << "jit_binary_op"
+       << "_" << ast_jit_op_counter++ << "_" << m_op;
+    name = ss.str();
+
+    conduit::Node params;
+    params["func"] = "binary_op";
+    params["execute"] = false;
+    params["op_string"] = op_str;
+    params["inputs/lhs/type"] = l_in["type"];
+    params["inputs/lhs/port"] = 0;
+    params["inputs/rhs/type"] = r_in["type"];
+    params["inputs/rhs/port"] = 1;
+
+    w.graph().add_filter("jit_filter", name, params);
+
+    // src, dest, port
+    w.graph().connect(l_in["filter_name"].as_string(), name, 0);
+    w.graph().connect(r_in["filter_name"].as_string(), name, 1);
+    detail::null_ports(w, name, 2, 256);
   }
+  else
+  {
+    ess << "binary_op"
+        << "_" << l_in["filter_name"].as_string() << op_str
+        << r_in["filter_name"].as_string();
+    expr_name = ess.str();
+    if((*subexpr_cache).has_path(expr_name))
+    {
+      return (*subexpr_cache)[expr_name];
+    }
 
-  static int ast_op_counter = 0;
-  // create a unique name for the filter
-  std::stringstream ss;
-  // ss << "binary_op" << "_" << ast_op_counter << "_" << op_str;
-  ss << "binary_op"
-     << "_" << ast_op_counter++ << "_" << m_op;
-  std::string name = ss.str();
+    static int ast_op_counter = 0;
+    // create a unique name for the filter
+    std::stringstream ss;
+    ss << "binary_op"
+       << "_" << ast_op_counter++ << "_" << m_op;
+    name = ss.str();
 
-  conduit::Node params;
-  params["op_string"] = op_str;
+    conduit::Node params;
+    params["op_string"] = op_str;
 
-  w.graph().add_filter("expr_binary_op", name, params);
+    w.graph().add_filter("expr_binary_op", name, params);
 
-  // src, dest, port
-  w.graph().connect(r_in["filter_name"].as_string(), name, "rhs");
-  w.graph().connect(l_in["filter_name"].as_string(), name, "lhs");
-
+    // src, dest, port
+    w.graph().connect(l_in["filter_name"].as_string(), name, "lhs");
+    w.graph().connect(r_in["filter_name"].as_string(), name, "rhs");
+  }
   conduit::Node res;
   res["filter_name"] = name;
   res["type"] = res_type;
@@ -1521,20 +1460,7 @@ ASTExpressionList::build_graph(flow::Workspace &w)
     w.graph().connect(item["filter_name"].as_string(), f_name, ss.str());
   }
 
-  // Fill unused items with nulls
-  if(!w.graph().has_filter("null_arg"))
-  {
-    conduit::Node null_params;
-    w.graph().add_filter("null_arg", "null_arg", null_params);
-  }
-  for(size_t i = list_size; i < 256; ++i)
-  {
-    std::stringstream ss;
-    ss << "item" << i;
-
-    // src, dest, port
-    w.graph().connect("null_arg", f_name, ss.str());
-  }
+  detail::null_ports(w, f_name, list_size, 256);
 
   conduit::Node res;
   res["type"] = "list";

@@ -62,7 +62,9 @@
 //-----------------------------------------------------------------------------
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_conduit_reductions.hpp"
+#include "ascent_derived_jit.hpp"
 #include <ascent_logging.hpp>
+#include <ascent_runtime_param_check.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -334,12 +336,7 @@ bool
 Identifier::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required string parameter 'value'";
-    res = false;
-  }
+  bool res = filters::check_string("value", params, info, true);
   return res;
 }
 
@@ -394,12 +391,7 @@ bool
 Boolean::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required numeric parameter 'value'";
-    res = false;
-  }
+  bool res = filters::check_numeric("value", params, info, true);
   return res;
 }
 
@@ -441,12 +433,7 @@ bool
 Integer::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required numeric parameter 'value'";
-    res = false;
-  }
+  bool res = filters::check_numeric("value", params, info, true);
   return res;
 }
 
@@ -486,12 +473,7 @@ bool
 Double::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required numeric parameter 'value'";
-    res = false;
-  }
+  bool res = filters::check_numeric("value", params, info, true);
   return res;
 }
 
@@ -531,12 +513,7 @@ bool
 String::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required string parameter 'value'";
-    res = false;
-  }
+  bool res = filters::check_string("value", params, info, true);
   return res;
 }
 
@@ -794,12 +771,7 @@ bool
 DotAccess::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = true;
-  if(!params.has_path("name"))
-  {
-    info["errors"].append() = "DotAccess: Missing required parameter 'name'";
-    res = false;
-  }
+  bool res = filters::check_string("name", params, info, true);
   return res;
 }
 
@@ -2448,13 +2420,7 @@ void
 ArraySum::declare_interface(Node &i)
 {
   i["type_name"] = "array_sum";
-  // We can't have an arbitrary number of input ports so we choose 256
-  for(int item_num = 0; item_num < 256; ++item_num)
-  {
-    std::stringstream ss;
-    ss << "arg" << item_num;
-    i["port_names"].append() = ss.str();
-  }
+  i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
@@ -2495,7 +2461,12 @@ void
 JitFilter::declare_interface(Node &i)
 {
   i["type_name"] = "jit_filter";
-  i["port_names"].append() = "arg1";
+  for(int item_num = 0; item_num < 256; ++item_num)
+  {
+    std::stringstream ss;
+    ss << "arg" << item_num;
+    i["port_names"].append() = ss.str();
+  }
   i["output_port"] = "true";
 }
 
@@ -2504,7 +2475,13 @@ bool
 JitFilter::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = true;
+  bool res = filters::check_string("func", params, info, true);
+  res &= filters::check_numeric("execute", params, info, true);
+  if(!params.has_path("inputs"))
+  {
+    info["errors"].append() = "Missing required list parameter 'inputs'";
+    res = false;
+  }
   return res;
 }
 
@@ -2512,9 +2489,98 @@ JitFilter::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 JitFilter::execute()
 {
-  Jitable *output;
+  const std::string func = params()["func"].as_string();
+  const bool execute = params()["execute"].to_uint8();
+  const conduit::Node &inputs = params()["inputs"];
+  const int num_inputs = inputs.number_of_children();
+  // create a vector of input_jitables ot be fused
+  std::vector<Jitable> input_jitables;
+  for(int i = 0; i < num_inputs; ++i)
+  {
+    const std::string type = inputs.child(i)["type"].as_string();
+    const conduit::Node *inp = input<conduit::Node>(i);
+    if(type != "derived_field")
+    {
+      // make a new jitable object
+      if(type == "int" || type == "double")
+      {
+        std::stringstream ss;
+        // force everthing to a double
+        ss << "((double)(" << (*inp)["value"].to_float64() << "))";
+        input_jitables.emplace_back(std::initializer_list<std::string>{},
+                                    std::initializer_list<std::string>{},
+                                    ss.str());
+      }
+      else if(type == "field")
+      {
+        const std::string &field_name = (*inp)["value"].as_string();
+        input_jitables.emplace_back(
+            std::initializer_list<std::string>{field_name},
+            std::initializer_list<std::string>{},
+            field_name);
+      }
+    }
+    else
+    {
+      // push back an existing jitable
+      const Jitable *inp = input<Jitable>(i);
+      input_jitables.push_back(*inp);
+    }
+  }
 
-  set_output<Jitable>(output);
+  // fuse
+  Jitable *out_jitable;
+  if(func == "binary_op")
+  {
+    out_jitable = new Jitable();
+    const int lhs_port = inputs["lhs/port"].as_int32();
+    const int rhs_port = inputs["rhs/port"].as_int32();
+    // union the field/mesh vars
+    out_jitable->add_vars(input_jitables[lhs_port]);
+    out_jitable->add_vars(input_jitables[rhs_port]);
+    // generate the new expression string (main line of code)
+    out_jitable->value = "(" + input_jitables[lhs_port].value +
+                         params()["op_string"].as_string() +
+                         input_jitables[rhs_port].value + ")";
+  }
+  // max of two fields or a field and a scalar
+  else if(func == "field_field_max")
+  {
+    out_jitable = new Jitable();
+    const int arg1_port = inputs["arg1/port"].as_int32();
+    const int arg2_port = inputs["arg2/port"].as_int32();
+    out_jitable->add_vars(input_jitables[arg1_port]);
+    out_jitable->add_vars(input_jitables[arg2_port]);
+    out_jitable->value = "max(" + input_jitables[arg1_port].value + ", " +
+                         input_jitables[arg2_port].value + ")";
+  }
+  else if(func == "execute")
+  {
+    out_jitable = new Jitable(input_jitables[0]);
+  }
+  else
+  {
+    ASCENT_ERROR("JitFilter: Unknown func: '" << func << "'");
+  }
+
+  if(execute)
+  {
+    // execute
+    conduit::Node *const dataset =
+        graph().workspace().registry().fetch<Node>("dataset");
+    out_jitable->execute(*dataset);
+    // TODO output a field_array?
+    Node *output = new conduit::Node();
+    // TODO come up with unique name
+    (*output)["value"] = "output";
+    (*output)["type"] = "field";
+    set_output<conduit::Node>(output);
+    delete out_jitable;
+  }
+  else
+  {
+    set_output<Jitable>(out_jitable);
+  }
 }
 };
 //-----------------------------------------------------------------------------

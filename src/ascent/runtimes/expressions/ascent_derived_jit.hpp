@@ -53,6 +53,7 @@
 
 #include <ascent.hpp>
 #include <conduit.hpp>
+#include <unordered_set>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -83,6 +84,42 @@ void parameters(const conduit::Node &dataset,
                 const conduit::Node &info,
                 std::map<std::string, std::string> &var_types, // name:type
                 std::map<std::string, double> &constants);
+
+class Jitable
+{
+public:
+  Jitable()
+  {
+  }
+  Jitable(const std::vector<std::string> field_vars,
+          const std::vector<std::string> mesh_vars,
+          const std::string value)
+  {
+    for(const std::string &field_var : field_vars)
+    {
+      this->field_vars.insert(field_var);
+    }
+    for(const std::string &mesh_var : mesh_vars)
+    {
+      this->mesh_vars.insert(mesh_var);
+    }
+    this->value = value;
+  }
+
+  void add_vars(const Jitable &from);
+  void execute(conduit::Node &dataset);
+
+  // the main line of code
+  std::string value;
+
+private:
+  std::string generate_kernel(const conduit::Node &dataset);
+  // topology and association for the fields and mesh vars in the jitable
+  void mesh_info(const conduit::Node &dataset, conduit::Node &info);
+  // field and mesh vars we have to pack
+  std::unordered_set<std::string> field_vars;
+  std::unordered_set<std::string> mesh_vars;
+};
 
 };
 //-----------------------------------------------------------------------------

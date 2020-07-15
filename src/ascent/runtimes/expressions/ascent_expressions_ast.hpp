@@ -3,7 +3,13 @@
 #include "flow_workspace.hpp"
 #include <iostream>
 #include <vector>
-
+namespace detail
+{
+void null_ports(flow::Workspace &w,
+                const std::string filter_name,
+                const int start_port,
+                const int num_ports);
+} // namespace detail
 class ASTNode
 {
 public:
@@ -18,7 +24,6 @@ public:
   {
     return "banana";
   };
-  virtual conduit::Node build_jit2(flow::Workspace &w) = 0;
   // can compile this string into something we can jit
   // if false (e.g., function like max(field('pressure')))
   // we will have to build a graph and execute it, and substitute
@@ -47,7 +52,6 @@ public:
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
   virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
-  virtual conduit::Node build_jit2(flow::Workspace &w);
   virtual bool can_jit();
 };
 
@@ -83,7 +87,6 @@ public:
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
   virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
-  virtual conduit::Node build_jit2(flow::Workspace &w);
   virtual bool can_jit();
 };
 
@@ -97,7 +100,6 @@ public:
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
   virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
-  virtual conduit::Node build_jit2(flow::Workspace &w);
   virtual bool can_jit();
 };
 
@@ -208,7 +210,6 @@ public:
   virtual void access();
   virtual conduit::Node build_graph(flow::Workspace &w);
   virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
-  virtual conduit::Node build_jit2(flow::Workspace &w);
   virtual bool can_jit();
 
   virtual ~ASTBinaryOp()

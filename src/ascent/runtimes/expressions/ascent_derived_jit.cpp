@@ -792,7 +792,7 @@ do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info)
           dom, invoke_size, topology, device, kernel, mesh_memory);
     }
 
-    std::cout << "INOKE SIZE " << invoke_size << "\n";
+    std::cout << "INVOKE SIZE " << invoke_size << "\n";
     conduit::Node &n_output = dom["fields/output"];
     n_output["association"] = assoc;
     n_output["topology"] = topology;
@@ -921,6 +921,216 @@ parameters(const conduit::Node &dataset,
   }
 }
 
+//-----------------------------------------------------------------------------
+void
+Jitable::add_vars(const Jitable &from)
+{
+  field_vars.insert(from.field_vars.cbegin(), from.field_vars.cend());
+  field_vars.insert(from.mesh_vars.cbegin(), from.mesh_vars.cend());
+}
+
+//-----------------------------------------------------------------------------
+std::string
+Jitable::generate_kernel(const conduit::Node &dataset)
+{
+  /*
+  std::set<std::string> mesh_functions;
+  if(mesh_meta.has_path("mesh_functions"))
+  {
+    for(int i = 0; i < mesh_meta["mesh_functions"].number_of_children(); ++i)
+    {
+      mesh_functions.insert(mesh_meta["mesh_functions"].child(i).as_string());
+    }
+  }
+  */
+
+  std::stringstream ss;
+  ss << "@kernel void map(const int entries,\n";
+  // add in all field arrays
+  std::map<std::string, std::string> field_types;
+  for(const auto &var : field_vars)
+  {
+    const std::string &type = field_type(dataset, var);
+    ss << "                 const " << type << " *" << var << "_ptr,\n";
+    field_types[var] = type;
+  }
+
+  /*
+  if(mesh_meta.number_of_children() != 0)
+  {
+    detail::mesh_params(mesh_meta, ss);
+  }
+  */
+
+  ss << "                 double *output_ptr)\n"
+     << "{\n"
+     << "  for (int group = 0; group < entries; group += 128; @outer)\n"
+     << "  {\n"
+     << "    for (int item = group; item < (group + 128); ++item; @inner)\n"
+     << "    {\n"
+     << "      const int n = item;\n\n"
+     << "      if (n < entries)\n"
+     << "      {\n";
+  for(const auto &var : field_vars)
+  {
+    ss << "        const " << field_types[var] << " " << var << " = " << var
+       << "_ptr[n];\n";
+  }
+
+  /*
+  for(auto func : mesh_functions)
+  {
+    mesh_function(func, mesh_meta, ss);
+  }
+  */
+  ss << "        double output = " << value << ";\n"
+     << "        output_ptr[n] = output;\n"
+     << "      }\n"
+     << "    }\n"
+     << "  }\n"
+     << '}';
+  return ss.str();
+}
+
+//-----------------------------------------------------------------------------
+void
+Jitable::mesh_info(const conduit::Node &dataset, conduit::Node &info)
+{
+  if(field_vars.empty() && mesh_vars.empty())
+  {
+    ASCENT_ERROR(
+        "There has to be at least one mesh/variable in the expression.");
+  }
+
+  std::vector<std::string> fields_vec(field_vars.cbegin(), field_vars.cend());
+  const conduit::Node &topo_and_assoc =
+      global_topo_and_assoc(dataset, fields_vec, false);
+  std::string topo_name = topo_and_assoc["topo_name"].as_string();
+  std::string assoc_str = topo_and_assoc["assoc_str"].as_string();
+  /*
+  if(!mesh_vars.empty())
+  {
+    if(assoc_str == "vertex")
+    {
+      ASCENT_ERROR("Mixed vertex field with mesh variable. All "
+                   << "variables must be element centered");
+    }
+    else
+    {
+      assoc_str = "element";
+    }
+  }
+  */
+  if(topo_name.empty())
+  {
+    ASCENT_ERROR(
+        "Jitable: could not determine the topology for the derived field.");
+  }
+  info["topo_name"] = topo_name;
+  info["assoc_str"] = assoc_str;
+}
+
+//-----------------------------------------------------------------------------
+// TODO for now we just put the field on the mesh when calling execute
+// need to figure out efficient ways to pass the field around
+void
+Jitable::execute(conduit::Node &dataset)
+{
+  conduit::Node info;
+  mesh_info(dataset, info);
+  const std::string topo_name = info["topo_name"].as_string();
+  const std::string assoc_str = info["assoc_str"].as_string();
+
+  const std::string kernel_str = generate_kernel(dataset);
+  std::cout << kernel_str << std::endl;
+  // TODO set this automatically?
+  occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 1");
+  occa::device &device = occa::getDevice();
+  occa::kernel kernel;
+
+  try
+  {
+    kernel = device.buildKernelFromString(kernel_str, "map");
+  }
+  catch(const occa::exception &e)
+  {
+    ASCENT_ERROR("Jitable: Expression compilation failed:\n" << e.what());
+  }
+  catch(...)
+  {
+    ASCENT_ERROR(
+        "Jitable: Expression compilation failed with an unknown error");
+  }
+
+  const int num_domains = dataset.number_of_children();
+  for(int i = 0; i < num_domains; ++i)
+  {
+    // we need to skip domains that don't have what we need
+    conduit::Node &dom = dataset.child(i);
+
+    if(!dom.has_path("topologies/" + topo_name))
+    {
+      continue;
+    }
+
+    kernel.clearArgs();
+
+    int invoke_size;
+    if(assoc_str == "element")
+    {
+      invoke_size = num_cells(dom, topo_name);
+    }
+    else
+    {
+      invoke_size = num_points(dom, topo_name);
+    }
+
+    // these are reference counted
+    // need to keep the mem in scope or bad things happen
+    std::vector<occa::memory> field_memory;
+    if(!field_vars.empty())
+    {
+      std::map<std::string, std::string> field_types;
+      for(const auto &var : field_vars)
+      {
+        field_types[var] = field_type(dataset, var);
+      }
+      detail::pack_fields(dom, field_types, invoke_size, device, field_memory);
+    }
+
+    // pass invocation size
+    kernel.pushArg(invoke_size);
+    // pass the field arrays
+    for(auto mem : field_memory)
+    {
+      kernel.pushArg(mem);
+    }
+
+    // need to keep the mem in scope or bad things happen
+    std::vector<occa::memory> mesh_memory;
+    if(info.has_path("mesh_vars"))
+    {
+      detail::pack_mesh(
+          dom, invoke_size, topo_name, device, kernel, mesh_memory);
+    }
+
+    std::cout << "INVOKE SIZE " << invoke_size << "\n";
+    conduit::Node &n_output = dom["fields/output"];
+    n_output["association"] = assoc_str;
+    n_output["topology"] = topo_name;
+
+    n_output["values"] = conduit::DataType::float64(invoke_size);
+    double *output_ptr = n_output["values"].as_float64_ptr();
+    occa::array<double> o_output(invoke_size);
+
+    kernel.pushArg(o_output);
+    kernel.run();
+
+    o_output.memory().copyTo(output_ptr);
+
+    dom["fields/output"].print();
+  }
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

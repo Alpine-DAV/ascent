@@ -53,7 +53,6 @@
 
 #include <ascent.hpp>
 #include <flow_filter.hpp>
-#include <unordered_set>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -485,31 +484,6 @@ public:
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
-};
-
-
-class Jitable
-{
-public:
-  Jitable(const std::vector<std::string> params,
-          const std::vector<std::string> code,
-          const std::string value)
-  {
-    for(const std::string &param : params)
-    {
-      this->params.insert(param);
-    }
-    for(const std::string &line : code)
-    {
-      this->code.push_back(line);
-    }
-    this->value = value;
-  }
-
-private:
-  std::unordered_set<std::string> params;
-  std::vector<std::string> code;
-  std::string value;
 };
 
 class JitFilter : public ::flow::Filter

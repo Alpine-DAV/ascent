@@ -48,13 +48,12 @@
 ///
 //-----------------------------------------------------------------------------
 
-
 #include "gtest/gtest.h"
 
 #include <ascent_expression_eval.hpp>
 
-#include <iostream>
 #include <cmath>
+#include <iostream>
 
 #include <conduit_blueprint.hpp>
 
@@ -65,68 +64,74 @@ using namespace std;
 using namespace conduit;
 using namespace ascent;
 
-
 index_t EXAMPLE_MESH_SIDE_DIM = 5;
 
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, basic_expressions)
 {
-    Node n;
-    ascent::about(n);
+  Node n;
+  ascent::about(n);
 
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    //conduit::blueprint::mesh::examples::braid("hexs",
-    //conduit::blueprint::mesh::examples::braid("rectilinear",
-    conduit::blueprint::mesh::examples::braid("uniform",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    // ascent normally adds this but we are doing an end around
-    data["state/domain_id"] = 0;
-    Node multi_dom;
-    blueprint::mesh::to_multi_domain(data, multi_dom);
+  //
+  // Create an example mesh.
+  //
+  Node data, verify_info;
+  // conduit::blueprint::mesh::examples::braid("hexs",
+  // conduit::blueprint::mesh::examples::braid("rectilinear",
+  conduit::blueprint::mesh::examples::braid("uniform",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            data);
+  // ascent normally adds this but we are doing an end around
+  data["state/domain_id"] = 0;
+  Node multi_dom;
+  blueprint::mesh::to_multi_domain(data, multi_dom);
 
-    runtime::expressions::register_builtin();
-    runtime::expressions::ExpressionEval eval(&multi_dom);
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval eval(&multi_dom);
 
-    conduit::Node res;
-    std::string expr;
+  conduit::Node res;
+  std::string expr;
 
-    //double braid = 1.;
-    //double d = max((((double(2) + double(1)) / double(5.0000000000000000e-01)) + braid), double(0));
-    //expr = "max((2.0 + 1) / 0.5 + field('braid'),0.0)";
-    //expr = "test( foo = 1)";
+  // double braid = 1.;
+  // double d = max((((double(2) + double(1)) / double(5.0000000000000000e-01))
+  // + braid), double(0));
+  expr = "max((2.0 + 1) / 0.5 + field('braid'),0.0)";
+  // expr = "test( foo = 1)";
 
-    // pass vec and see what happens
-    //expr = "sin(field('braid'))*field('braid') * field('vel')";
-    //expr = "sin(field('braid'))";
-    //expr = "sin(field('radial'))";
-    expr = "(field('braid') - min(field('braid'))) / (max(field('braid')) - min(field('braid')))";
-    //expr = "sin(1.0)";
-    //expr = "volume(mesh('mesh'))";
-    eval.evaluate_derived(expr);
+  // pass vec and see what happens
+  // expr = "sin(field('braid'))*field('braid') * field('vel')";
+  // expr = "sin(field('braid'))";
+  // expr = "sin(field('radial'))";
+  // expr = "(field('braid') - min(field('braid')).value) / "
+  //       "(max(field('braid')).value - min(field('braid')).value)";
+  // expr = "sin(1.0)";
+  // expr = "volume(mesh('mesh'))";
+  // expr = "1 + field('braid') + 1";
+  //    +
+  //  /   \
+  //  1   + return_type: derived_field
+  //     / \
+  // field  1
+  eval.evaluate(expr);
 }
 
 //-----------------------------------------------------------------------------
 
-int main(int argc, char* argv[])
+int
+main(int argc, char *argv[])
 {
-    int result = 0;
+  int result = 0;
 
-    ::testing::InitGoogleTest(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
 
-    // allow override of the data size via the command line
-    if(argc == 2)
-    {
-        EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
-    }
+  // allow override of the data size via the command line
+  if(argc == 2)
+  {
+    EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
+  }
 
-    result = RUN_ALL_TESTS();
-    return result;
+  result = RUN_ALL_TESTS();
+  return result;
 }
-
-

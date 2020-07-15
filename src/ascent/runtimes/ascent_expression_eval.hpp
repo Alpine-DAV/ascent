@@ -42,7 +42,6 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_expression_eval.hpp
@@ -51,8 +50,8 @@
 
 #ifndef ASCENT_EXPRESSION_EVAL_HPP
 #define ASCENT_EXPRESSION_EVAL_HPP
-#include <conduit.hpp>
 #include <ascent_exports.h>
+#include <conduit.hpp>
 
 #include "flow_workspace.hpp"
 //-----------------------------------------------------------------------------
@@ -81,6 +80,7 @@ protected:
   conduit::Node *m_data;
   flow::Workspace w;
   static conduit::Node m_cache;
+
 public:
   ExpressionEval(conduit::Node *data);
 
@@ -107,10 +107,7 @@ public:
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
-
-
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-

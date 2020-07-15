@@ -133,13 +133,11 @@ bool is_scalar_field(const conduit::Node &dataset,
 
 // field exists on at least one rank. Does not check that
 // all ranks with that topology have this field(maybe it should).
-bool has_field(const conduit::Node &dataset,
-               const std::string &field_name);
+bool has_field(const conduit::Node &dataset, const std::string &field_name);
 bool is_xyz(const std::string &axis_name);
 
 // topology exists on at least one rank
-bool has_topology(const conduit::Node &dataset,
-                  const std::string &topo_name);
+bool has_topology(const conduit::Node &dataset, const std::string &topo_name);
 
 conduit::Node quantile(const conduit::Node &cdf,
                        const double val,
@@ -173,8 +171,14 @@ int spatial_dims(const conduit::Node &dataset, const std::string &topo_name);
 
 // finds then name of a topology using the field name. topology might not
 // exist on this rank.
-std::string field_topology(const conduit::Node &dataset, const std::string &field_name);
+std::string field_topology(const conduit::Node &dataset,
+                           const std::string &field_name);
 
+// finds the associate and topology of a vector of fields and ensures they are
+// the same.
+conduit::Node global_topo_and_assoc(const conduit::Node &dataset,
+                                    const std::vector<std::string> field_names,
+                                    bool required = true);
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

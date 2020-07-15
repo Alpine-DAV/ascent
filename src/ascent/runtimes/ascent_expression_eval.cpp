@@ -118,6 +118,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::Cycle>();
   flow::Workspace::register_filter_type<expressions::ArrayAccess>();
   flow::Workspace::register_filter_type<expressions::DotAccess>();
+  flow::Workspace::register_filter_type<expressions::JitFilter>();
 
   initialize_functions();
   initialize_objects();
@@ -237,6 +238,42 @@ initialize_functions()
   array_max_sig["filter_name"] = "array_max";
   array_max_sig["args/arg1/type"] = "array";
   array_max_sig["description"] = "Return the maximum of an array.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &field_scalar_max_sig = (*functions)["max"].append();
+  field_scalar_max_sig["return_type"] = "derived_field";
+  field_scalar_max_sig["filter_name"] = "field_field_max";
+  field_scalar_max_sig["args/arg1/type"] = "field";
+  field_scalar_max_sig["args/arg2/type"] = "scalar";
+  field_scalar_max_sig["jitable"];
+  field_scalar_max_sig["description"] =
+      "Return a derived field that is the max of a field and a scalar.";
+
+  // -------------------------------------------------------------
+
+  // same as above but scalar goes first, field goes second
+  conduit::Node &scalar_field_max_sig = (*functions)["max"].append();
+  scalar_field_max_sig["return_type"] = "derived_field";
+  scalar_field_max_sig["filter_name"] = "field_field_max";
+  scalar_field_max_sig["args/arg1/type"] = "scalar";
+  scalar_field_max_sig["args/arg2/type"] = "field";
+  scalar_field_max_sig["jitable"];
+  scalar_field_max_sig["description"] =
+      "Return a derived field that is the max of a scalar and a field. Same "
+      "functionality as above but the order of the arguments is switched.";
+
+  // -------------------------------------------------------------
+
+  // same as above but scalar goes first, field goes second
+  conduit::Node &field_field_max_sig = (*functions)["max"].append();
+  field_field_max_sig["return_type"] = "derived_field";
+  field_field_max_sig["filter_name"] = "field_field_max";
+  field_field_max_sig["args/arg1/type"] = "field";
+  field_field_max_sig["args/arg2/type"] = "field";
+  field_field_max_sig["jitable"];
+  field_field_max_sig["description"] =
+      "Return a derived field that is the max of two fields.";
 
   // -------------------------------------------------------------
 
@@ -590,10 +627,22 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   try
   {
-    // expression->access();
     root = expression->build_graph(w);
-    // std::cout<<w.graph().to_dot()<<"\n";
-    // w.graph().save_dot_html("ascent_expressions_graph.html");
+    // if root is a derived field add a JitFilter to execute it
+    if(root["type"].as_string() == "derived_field")
+    {
+      conduit::Node params;
+      params["func"] = "execute";
+      params["execute"] = true;
+      params["inputs/derived_field/type"] = "derived_field";
+      params["inputs/derived_field/port"] = 0;
+      w.graph().add_filter("jit_filter", "jit_execute", params);
+      // src, dest, port
+      w.graph().connect(root["filter_name"].as_string(), "jit_execute", 0);
+      detail::null_ports(w, "jit_execute", 1, 256);
+      root["filter_name"] = "jit_execute";
+      root["type"] = "field";
+    }
     w.execute();
   }
   catch(std::exception &e)
@@ -707,6 +756,7 @@ ExpressionEval::evaluate_derived(const std::string expr, std::string expr_name)
   // return return_val;
 }
 
+//-----------------------------------------------------------------------------
 const conduit::Node &
 ExpressionEval::get_cache()
 {

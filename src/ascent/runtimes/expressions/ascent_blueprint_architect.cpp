@@ -87,29 +87,6 @@ namespace expressions
 namespace detail
 {
 
-bool
-at_least_one(bool local)
-{
-  bool agreement = local;
-#ifdef ASCENT_MPI_ENABLED
-  int local_boolean = local ? 1 : 0;
-  int global_count = 0;
-  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  MPI_Allreduce((void *)(&local_boolean),
-                (void *)(&global_count),
-                1,
-                MPI_INT,
-                MPI_SUM,
-                mpi_comm);
-
-  if(global_count > 0)
-  {
-    agreement = true;
-  }
-#endif
-  return agreement;
-}
-
 struct UniformCoords
 {
   conduit::float64 m_origin[3] = {0., 0., 0.};
@@ -637,8 +614,8 @@ is_scalar_field(const conduit::Node &dataset, const std::string &field_name)
       }
     }
   }
-  // check to see if the field exists in any rank
-  is_scalar = detail::at_least_one(is_scalar);
+  // check to see if the scalar field exists in any rank
+  is_scalar = global_someone_agrees(is_scalar);
   return is_scalar;
 }
 
@@ -655,7 +632,7 @@ has_field(const conduit::Node &dataset, const std::string &field_name)
     }
   }
   // check to see if the field exists in any rank
-  has_field = detail::at_least_one(has_field);
+  has_field = global_someone_agrees(has_field);
   return has_field;
 }
 
@@ -672,7 +649,7 @@ has_topology(const conduit::Node &dataset, const std::string &topo_name)
     }
   }
   // check to see if the field exists in any rank
-  has_topo = detail::at_least_one(has_topo);
+  has_topo = global_someone_agrees(has_topo);
   return has_topo;
 }
 
@@ -913,37 +890,38 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
 // get the association and topology and ensure they are the same
 conduit::Node
 global_topo_and_assoc(const conduit::Node &dataset,
-                      const std::vector<std::string> var_names)
+                      const std::vector<std::string> field_names,
+                      bool required)
 {
   std::string assoc_str;
   std::string topo_name;
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {
     const conduit::Node &dom = dataset.child(dom_index);
-    for(const std::string &var_name : var_names)
+    for(const std::string &field_name : field_names)
     {
-      if(dom.has_path("fields/" + var_name))
+      if(dom.has_path("fields/" + field_name))
       {
         const std::string cur_assoc_str =
-            dom["fields/" + var_name + "/association"].as_string();
+            dom["fields/" + field_name + "/association"].as_string();
         if(assoc_str.empty())
         {
           assoc_str = cur_assoc_str;
         }
         else if(assoc_str != cur_assoc_str)
         {
-          ASCENT_ERROR("All Binning fields must have the same association.");
+          ASCENT_ERROR("All fields must have the same association.");
         }
 
         const std::string cur_topo_name =
-            dom["fields/" + var_name + "/topology"].as_string();
+            dom["fields/" + field_name + "/topology"].as_string();
         if(topo_name.empty())
         {
           topo_name = cur_topo_name;
         }
         else if(topo_name != cur_topo_name)
         {
-          ASCENT_ERROR("All Binning fields must have the same topology.");
+          ASCENT_ERROR("All fields must have the same topology.");
         }
       }
     }
@@ -971,18 +949,23 @@ global_topo_and_assoc(const conduit::Node &dataset,
 
   if(assoc_str != msg["assoc_str"].as_string())
   {
-    ASCENT_ERROR("All Binning fields must have the same association.");
+    ASCENT_ERROR("All fields must have the same association.");
   }
   if(topo_name != msg["topo_name"].as_string())
   {
-    ASCENT_ERROR("All Binning fields must have the same topology.");
+    ASCENT_ERROR("All fields must have the same topology.");
   }
 #endif
-  if(assoc_str != "vertex" && assoc_str != "element")
+  if(required && assoc_str.empty())
+  {
+    ASCENT_ERROR("Could not find required association and topology for the "
+                 "given fields.");
+  }
+  else if(!assoc_str.empty() && assoc_str != "vertex" && assoc_str != "element")
   {
     ASCENT_ERROR("Unknown association: '"
                  << assoc_str
-                 << "'. Binning only supports vertex and element association");
+                 << "'. Only supports vertex and element association");
   }
 
   conduit::Node res;
@@ -2194,7 +2177,7 @@ field_type(const conduit::Node &dataset, const std::string &field_name)
   bool my_vote = rank_has && is_double;
   bool double_vote = global_someone_agrees(my_vote);
 
-  return is_double ? "double" : "float";
+  return double_vote ? "double" : "float";
 }
 
 void
@@ -2239,7 +2222,6 @@ topology_types(const conduit::Node &dataset,
     }
   }
 
-  int res[5];
 #ifdef ASCENT_MPI_ENABLED
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   MPI_Allreduce(MPI_IN_PLACE, topo_types, 5, MPI_INT, MPI_SUM, mpi_comm);
