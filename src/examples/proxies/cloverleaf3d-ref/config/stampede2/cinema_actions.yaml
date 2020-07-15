@@ -1,0 +1,37 @@
+-
+  action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "volume"
+          field: "energy"
+          min_value: 0.0
+          max_value: 1.0
+          color_table: 
+            name: "rainbow desaturated"
+            control_points: 
+              - 
+                type: "alpha"
+                position: 0.0
+                alpha: 0.0
+              - 
+                type: "alpha"
+                position: 0.4
+                alpha: 0.0
+              - 
+                type: "alpha"
+                position: 0.75
+                alpha: 1.0
+              - 
+                type: "alpha"
+                position: 1.0
+                alpha: 1.0
+      renders:
+        r1:
+          type: "cinema"
+          phi: 13
+          theta: 13
+          camera:
+            zoom: 0.3
+          db_name: "clover_db"
