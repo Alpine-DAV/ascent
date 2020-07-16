@@ -288,7 +288,7 @@ struct RenderConfig
     /**
      * Get the number of probings for a specific part of the rendering sequence.
      */
-    int get_probing_count_part(const int render_count, const int render_offset = 0)
+    int get_probing_count_part(const int render_count, const int render_offset = 0) const
     {
         int probing_count_part = 0;
         if (probing_stride <= 0)
@@ -323,7 +323,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
     // TODO: investigate where this discrepancy comes from
     const float sim_factor = 1.3;      // 1.26 for d8
     // render factor for vis nodes
-    const float vis_factor = 0.8;
+    const float vis_factor = 1.0;
 
     assert(sim_estimate.size() == vis_estimates.size());
     
@@ -1362,6 +1362,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 // vis node needs to render what is left
                 const int current_render_count = render_cfg.max_count - g_render_counts[src_ranks[i]];
                 const int render_offset = render_cfg.max_count - current_render_count;
+                const int probing_count_part = render_cfg.get_probing_count_part(current_render_count, render_offset);
 
                 auto start = std::chrono::system_clock::now();
                 if (current_render_count > 0)
@@ -1382,7 +1383,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     // ascent_main_runtime : out.set_external(m_info);
                     ascent_renders[i].info(*render_chunks_vis[i]);
                 }
-                log_time(start, "+ render vis " + std::to_string(current_render_count) + " ", mpi_props.rank);
+                log_time(start, "+ render vis " + std::to_string(current_render_count - probing_count_part) + " ", mpi_props.rank);
             }
             else
             {
