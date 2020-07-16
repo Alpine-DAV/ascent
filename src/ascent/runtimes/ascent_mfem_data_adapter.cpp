@@ -406,11 +406,12 @@ MFEMDataAdapter::GridFunctionToBlueprintField(mfem::GridFunction *gf,
    int vdim  = gf->FESpace()->GetVDim();
    int ndofs = gf->FESpace()->GetNDofs();
 
+   const double * values = gf->HostRead();
    if (vdim == 1) // scalar case
    {
       //n_field["values"].set_external(gf->GetData(),
       //                               ndofs);
-      n_field["values"].set(gf->GetData(),
+      n_field["values"].set(values,
                             ndofs);
    }
    else // vector case
@@ -434,7 +435,7 @@ MFEMDataAdapter::GridFunctionToBlueprintField(mfem::GridFunction *gf,
          //                                          ndofs,
          //                                          offset,
          //                                          stride);
-         n_field["values"][comp_name].set(gf->GetData(),
+         n_field["values"][comp_name].set(values,
                                           ndofs,
                                           offset,
                                           stride);
