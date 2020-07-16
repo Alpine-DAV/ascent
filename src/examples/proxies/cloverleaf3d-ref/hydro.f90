@@ -145,6 +145,9 @@ SUBROUTINE hydro
     ! finalizing actions after sim completion
     IF(time+g_small.GT.end_time.OR.step.GE.end_step) THEN
 
+      unix = c_time(int(0, kind=8))
+      WRITE(g_out_stamps,*) 'end sim ', unix
+
       complete=.TRUE.
       IF(MPI_COMM_NULL.NE.parallel%sim_comm)THEN
         CALL field_summary()
