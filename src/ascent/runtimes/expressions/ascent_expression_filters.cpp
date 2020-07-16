@@ -2487,6 +2487,13 @@ JitFilter::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
+fuse_vars(conduit::Node &to, const conduit::Node &from)
+{
+  to["scalars"].update(from["scalars"]);
+  to["fields"].update(from["fields"]);
+  to["topos"].update(from["topos"]);
+}
+void
 JitFilter::execute()
 {
   const std::string func = params()["func"].as_string();
@@ -2494,69 +2501,77 @@ JitFilter::execute()
   const conduit::Node &inputs = params()["inputs"];
   const int num_inputs = inputs.number_of_children();
   // create a vector of input_jitables ot be fused
-  std::vector<Jitable> input_jitables;
+  std::vector<conduit::Node> input_jitables;
   for(int i = 0; i < num_inputs; ++i)
   {
     const std::string type = inputs.child(i)["type"].as_string();
     const conduit::Node *inp = input<conduit::Node>(i);
-    if(type != "derived_field")
+    if(type != "jitable")
     {
-      // make a new jitable object
+      // make a new jitable
+      input_jitables.emplace_back();
+      conduit::Node &jitable = input_jitables.back();
       if(type == "int" || type == "double")
       {
+        static int scalar_counter = 0;
         std::stringstream ss;
+        ss << "scalar" << scalar_counter++;
         // force everthing to a double
-        ss << "((double)(" << (*inp)["value"].to_float64() << "))";
-        input_jitables.emplace_back(std::initializer_list<std::string>{},
-                                    std::initializer_list<std::string>{},
-                                    ss.str());
+        jitable["expr"] = "((double)(" + ss.str() + "))";
+        jitable["scalars/" + ss.str()] = *inp;
+        jitable["fields"];
+        jitable["topos"];
       }
       else if(type == "field")
       {
         const std::string &field_name = (*inp)["value"].as_string();
-        input_jitables.emplace_back(
-            std::initializer_list<std::string>{field_name},
-            std::initializer_list<std::string>{},
-            field_name);
+        jitable["expr"] = field_name;
+        jitable["scalars"];
+        jitable["fields/" + field_name];
+        jitable["topos"];
+      }
+      else
+      {
+        ASCENT_ERROR("Cannot convert: '" << type << "' to jitable.");
       }
     }
     else
     {
       // push back an existing jitable
-      const Jitable *inp = input<Jitable>(i);
       input_jitables.push_back(*inp);
     }
   }
 
   // fuse
-  Jitable *out_jitable;
+  conduit::Node *out_jitable = new conduit::Node();
+  (*out_jitable)["type"] = "jitable";
   if(func == "binary_op")
   {
-    out_jitable = new Jitable();
     const int lhs_port = inputs["lhs/port"].as_int32();
     const int rhs_port = inputs["rhs/port"].as_int32();
     // union the field/mesh vars
-    out_jitable->add_vars(input_jitables[lhs_port]);
-    out_jitable->add_vars(input_jitables[rhs_port]);
+    fuse_vars(*out_jitable, input_jitables[lhs_port]);
+    fuse_vars(*out_jitable, input_jitables[rhs_port]);
     // generate the new expression string (main line of code)
-    out_jitable->value = "(" + input_jitables[lhs_port].value +
-                         params()["op_string"].as_string() +
-                         input_jitables[rhs_port].value + ")";
+    const std::string lhs_expr = input_jitables[lhs_port]["expr"].as_string();
+    const std::string rhs_expr = input_jitables[rhs_port]["expr"].as_string();
+    (*out_jitable)["expr"] =
+        "(" + lhs_expr + params()["op_string"].as_string() + rhs_expr + ")";
   }
   // max of two fields or a field and a scalar
   else if(func == "field_field_max")
   {
-    out_jitable = new Jitable();
     const int arg1_port = inputs["arg1/port"].as_int32();
     const int arg2_port = inputs["arg2/port"].as_int32();
-    out_jitable->add_vars(input_jitables[arg1_port]);
-    out_jitable->add_vars(input_jitables[arg2_port]);
-    out_jitable->value = "max(" + input_jitables[arg1_port].value + ", " +
-                         input_jitables[arg2_port].value + ")";
+    fuse_vars(*out_jitable, input_jitables[arg1_port]);
+    fuse_vars(*out_jitable, input_jitables[arg1_port]);
+    const std::string arg1_expr = input_jitables[arg1_port]["expr"].as_string();
+    const std::string arg2_expr = input_jitables[arg2_port]["expr"].as_string();
+    (*out_jitable)["expr"] = "max(" + arg1_expr + ", " + arg2_expr + ")";
   }
   else if(func == "execute")
   {
-    out_jitable = new Jitable(input_jitables[0]);
+    out_jitable->set(input_jitables[0]);
   }
   else
   {
@@ -2568,10 +2583,9 @@ JitFilter::execute()
     // execute
     conduit::Node *const dataset =
         graph().workspace().registry().fetch<Node>("dataset");
-    out_jitable->execute(*dataset);
-    // TODO output a field_array?
+    execute_jitable(*out_jitable, *dataset);
     Node *output = new conduit::Node();
-    // TODO come up with unique name
+    // TODO come up with unique field name
     (*output)["value"] = "output";
     (*output)["type"] = "field";
     set_output<conduit::Node>(output);
@@ -2579,7 +2593,7 @@ JitFilter::execute()
   }
   else
   {
-    set_output<Jitable>(out_jitable);
+    set_output<conduit::Node>(out_jitable);
   }
 }
 };

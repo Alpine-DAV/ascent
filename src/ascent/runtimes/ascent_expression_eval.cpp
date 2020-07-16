@@ -242,7 +242,7 @@ initialize_functions()
   // -------------------------------------------------------------
 
   conduit::Node &field_scalar_max_sig = (*functions)["max"].append();
-  field_scalar_max_sig["return_type"] = "derived_field";
+  field_scalar_max_sig["return_type"] = "jitable";
   field_scalar_max_sig["filter_name"] = "field_field_max";
   field_scalar_max_sig["args/arg1/type"] = "field";
   field_scalar_max_sig["args/arg2/type"] = "scalar";
@@ -254,7 +254,7 @@ initialize_functions()
 
   // same as above but scalar goes first, field goes second
   conduit::Node &scalar_field_max_sig = (*functions)["max"].append();
-  scalar_field_max_sig["return_type"] = "derived_field";
+  scalar_field_max_sig["return_type"] = "jitable";
   scalar_field_max_sig["filter_name"] = "field_field_max";
   scalar_field_max_sig["args/arg1/type"] = "scalar";
   scalar_field_max_sig["args/arg2/type"] = "field";
@@ -267,7 +267,7 @@ initialize_functions()
 
   // same as above but scalar goes first, field goes second
   conduit::Node &field_field_max_sig = (*functions)["max"].append();
-  field_field_max_sig["return_type"] = "derived_field";
+  field_field_max_sig["return_type"] = "jitable";
   field_field_max_sig["filter_name"] = "field_field_max";
   field_field_max_sig["args/arg1/type"] = "field";
   field_field_max_sig["args/arg2/type"] = "field";
@@ -629,13 +629,13 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   {
     root = expression->build_graph(w);
     // if root is a derived field add a JitFilter to execute it
-    if(root["type"].as_string() == "derived_field")
+    if(root["type"].as_string() == "jitable")
     {
       conduit::Node params;
       params["func"] = "execute";
       params["execute"] = true;
-      params["inputs/derived_field/type"] = "derived_field";
-      params["inputs/derived_field/port"] = 0;
+      params["inputs/jitable/type"] = "jitable";
+      params["inputs/jitable/port"] = 0;
       w.graph().add_filter("jit_filter", "jit_execute", params);
       // src, dest, port
       w.graph().connect(root["filter_name"].as_string(), "jit_execute", 0);

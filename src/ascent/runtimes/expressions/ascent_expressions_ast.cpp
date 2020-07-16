@@ -100,7 +100,7 @@ is_scalar(const std::string &type)
 bool
 is_field_type(const std::string &type)
 {
-  return type == "field" || type == "derived_field";
+  return type == "field" || type == "jitable";
 }
 
 // connect null filter to unused ports
@@ -812,9 +812,9 @@ ASTMethodCall::build_graph(flow::Workspace &w)
       for(auto const &arg : args_map)
       {
         std::string inp_filter_name = (*arg.second)["filter_name"].as_string();
-        // we must to execute inputs that are derived fields if the function is
+        // we must to execute inputs that are jitables if the function is
         // not jitable
-        if((*arg.second)["type"].as_string() == "derived_field")
+        if((*arg.second)["type"].as_string() == "jitable")
         {
           static int method_jit_execute_counter = 0;
           // create a unique name for the filter
@@ -824,8 +824,8 @@ ASTMethodCall::build_graph(flow::Workspace &w)
           conduit::Node params;
           params["func"] = "execute";
           params["execute"] = true;
-          params["inputs"]["derived_field/type"] = "derived_field";
-          params["inputs"]["derived_field/port"] = 0;
+          params["inputs"]["jitable/type"] = "jitable";
+          params["inputs"]["jitable/port"] = 0;
           w.graph().add_filter("jit_filter", jit_execute_name, params);
           // src, dest, port
           w.graph().connect(inp_filter_name, jit_execute_name, 0);
@@ -1053,7 +1053,7 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
     if((detail::is_scalar(l_type) && detail::is_field_type(r_type)) ||
        (detail::is_scalar(r_type) && detail::is_field_type(l_type)))
     {
-      res_type = "derived_field";
+      res_type = "jitable";
       jitable = true;
     }
     else if(detail::is_scalar(l_type) && detail::is_scalar(r_type))

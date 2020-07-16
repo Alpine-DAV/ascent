@@ -97,15 +97,15 @@ TEST(ascent_expressions, basic_expressions)
   // double braid = 1.;
   // double d = max((((double(2) + double(1)) / double(5.0000000000000000e-01))
   // + braid), double(0));
-  expr = "max((2.0 + 1) / 0.5 + field('braid'),0.0)";
+  // expr = "max((2.0 + 1) / 0.5 + field('braid'),0.0)";
   // expr = "test( foo = 1)";
 
   // pass vec and see what happens
   // expr = "sin(field('braid'))*field('braid') * field('vel')";
   // expr = "sin(field('braid'))";
   // expr = "sin(field('radial'))";
-  // expr = "(field('braid') - min(field('braid')).value) / "
-  //       "(max(field('braid')).value - min(field('braid')).value)";
+  expr = "(field('braid') - min(field('braid')).value) / "
+         "(max(field('braid')).value - min(field('braid')).value)";
   // expr = "sin(1.0)";
   // expr = "volume(mesh('mesh'))";
   // expr = "1 + field('braid') + 1";

@@ -922,16 +922,8 @@ parameters(const conduit::Node &dataset,
 }
 
 //-----------------------------------------------------------------------------
-void
-Jitable::add_vars(const Jitable &from)
-{
-  field_vars.insert(from.field_vars.cbegin(), from.field_vars.cend());
-  field_vars.insert(from.mesh_vars.cbegin(), from.mesh_vars.cend());
-}
-
-//-----------------------------------------------------------------------------
 std::string
-Jitable::generate_kernel(const conduit::Node &dataset)
+generate_kernel(const conduit::Node &jitable, const conduit::Node &dataset)
 {
   /*
   std::set<std::string> mesh_functions;
@@ -948,13 +940,20 @@ Jitable::generate_kernel(const conduit::Node &dataset)
   ss << "@kernel void map(const int entries,\n";
   // add in all field arrays
   std::map<std::string, std::string> field_types;
-  for(const auto &var : field_vars)
+  for(const auto &field : jitable["fields"].child_names())
   {
-    const std::string &type = field_type(dataset, var);
-    ss << "                 const " << type << " *" << var << "_ptr,\n";
-    field_types[var] = type;
+    const std::string &type = field_type(dataset, field);
+    ss << "                 const " << type << " *" << field << "_ptr,\n";
+    field_types[field] = type;
   }
-
+  // add in all pre-executed constants
+  const int num_scalars = jitable["scalars"].number_of_children();
+  for(int i = 0; i < num_scalars; ++i)
+  {
+    const conduit::Node &scalar = jitable["scalars"].child(i);
+    ss << "                 const " << scalar["type"].as_string() << " "
+       << scalar.name() << ",\n";
+  }
   /*
   if(mesh_meta.number_of_children() != 0)
   {
@@ -971,10 +970,10 @@ Jitable::generate_kernel(const conduit::Node &dataset)
      << "      const int n = item;\n\n"
      << "      if (n < entries)\n"
      << "      {\n";
-  for(const auto &var : field_vars)
+  for(const auto &field : jitable["fields"].child_names())
   {
-    ss << "        const " << field_types[var] << " " << var << " = " << var
-       << "_ptr[n];\n";
+    ss << "        const " << field_types[field] << " " << field << " = "
+       << field << "_ptr[n];\n";
   }
 
   /*
@@ -983,7 +982,7 @@ Jitable::generate_kernel(const conduit::Node &dataset)
     mesh_function(func, mesh_meta, ss);
   }
   */
-  ss << "        double output = " << value << ";\n"
+  ss << "        double output = " << jitable["expr"].as_string() << ";\n"
      << "        output_ptr[n] = output;\n"
      << "      }\n"
      << "    }\n"
@@ -994,22 +993,28 @@ Jitable::generate_kernel(const conduit::Node &dataset)
 
 //-----------------------------------------------------------------------------
 void
-Jitable::mesh_info(const conduit::Node &dataset, conduit::Node &info)
+mesh_info(const conduit::Node &jitable,
+          const conduit::Node &dataset,
+          conduit::Node &info)
 {
-  if(field_vars.empty() && mesh_vars.empty())
+  if(jitable["fields"].number_of_children() == 0 &&
+     jitable["topos"].number_of_children() == 0)
   {
-    ASCENT_ERROR(
-        "There has to be at least one mesh/variable in the expression.");
+    ASCENT_ERROR("There has to be at least one field or topo variable in the "
+                 "expression.");
+  }
+  if(jitable["topos"].number_of_children() > 1)
+  {
+    ASCENT_ERROR("There can be at most one topo variable in the expression.");
   }
 
-  std::vector<std::string> fields_vec(field_vars.cbegin(), field_vars.cend());
   const conduit::Node &topo_and_assoc =
-      global_topo_and_assoc(dataset, fields_vec, false);
+      global_topo_and_assoc(dataset, jitable["fields"].child_names(), false);
   std::string topo_name = topo_and_assoc["topo_name"].as_string();
   std::string assoc_str = topo_and_assoc["assoc_str"].as_string();
-  /*
-  if(!mesh_vars.empty())
+  if(jitable["topos"].number_of_children() > 0)
   {
+    // TODO why should topos all be element centered
     if(assoc_str == "vertex")
     {
       ASCENT_ERROR("Mixed vertex field with mesh variable. All "
@@ -1018,9 +1023,15 @@ Jitable::mesh_info(const conduit::Node &dataset, conduit::Node &info)
     else
     {
       assoc_str = "element";
+      const std::string new_topo_name = jitable["topos"].child(0).name();
+      if(!topo_name.empty() && topo_name != new_topo_name)
+      {
+        ASCENT_ERROR("If a topo is specified, all expression fields must be on "
+                     "that topo");
+      }
+      topo_name = new_topo_name;
     }
   }
-  */
   if(topo_name.empty())
   {
     ASCENT_ERROR(
@@ -1034,14 +1045,14 @@ Jitable::mesh_info(const conduit::Node &dataset, conduit::Node &info)
 // TODO for now we just put the field on the mesh when calling execute
 // need to figure out efficient ways to pass the field around
 void
-Jitable::execute(conduit::Node &dataset)
+execute_jitable(const conduit::Node &jitable, conduit::Node &dataset)
 {
   conduit::Node info;
-  mesh_info(dataset, info);
+  mesh_info(jitable, dataset, info);
   const std::string topo_name = info["topo_name"].as_string();
   const std::string assoc_str = info["assoc_str"].as_string();
 
-  const std::string kernel_str = generate_kernel(dataset);
+  const std::string kernel_str = generate_kernel(jitable, dataset);
   std::cout << kernel_str << std::endl;
   // TODO set this automatically?
   occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 1");
@@ -1088,15 +1099,12 @@ Jitable::execute(conduit::Node &dataset)
     // these are reference counted
     // need to keep the mem in scope or bad things happen
     std::vector<occa::memory> field_memory;
-    if(!field_vars.empty())
+    std::map<std::string, std::string> field_types;
+    for(const auto &field : jitable["fields"].child_names())
     {
-      std::map<std::string, std::string> field_types;
-      for(const auto &var : field_vars)
-      {
-        field_types[var] = field_type(dataset, var);
-      }
-      detail::pack_fields(dom, field_types, invoke_size, device, field_memory);
+      field_types[field] = field_type(dataset, field);
     }
+    detail::pack_fields(dom, field_types, invoke_size, device, field_memory);
 
     // pass invocation size
     kernel.pushArg(invoke_size);
@@ -1105,7 +1113,22 @@ Jitable::execute(conduit::Node &dataset)
     {
       kernel.pushArg(mem);
     }
+    // pass the constant scalar values
+    const int num_scalars = jitable["scalars"].number_of_children();
+    for(int i = 0; i < num_scalars; ++i)
+    {
+      const conduit::Node &scalar = jitable["scalars"].child(i);
+      if(scalar["type"].as_string() == "int")
+      {
+        kernel.pushArg(scalar["value"].to_int32());
+      }
+      else if(scalar["type"].as_string() == "double")
+      {
+        kernel.pushArg(scalar["value"].to_float64());
+      }
+    }
 
+    /*
     // need to keep the mem in scope or bad things happen
     std::vector<occa::memory> mesh_memory;
     if(info.has_path("mesh_vars"))
@@ -1113,6 +1136,7 @@ Jitable::execute(conduit::Node &dataset)
       detail::pack_mesh(
           dom, invoke_size, topo_name, device, kernel, mesh_memory);
     }
+    */
 
     std::cout << "INVOKE SIZE " << invoke_size << "\n";
     conduit::Node &n_output = dom["fields/output"];
