@@ -69,6 +69,7 @@
 #include <flow_workspace.hpp>
 
 #include <limits>
+#include <list>
 #include <math.h>
 #include <typeinfo>
 
@@ -2501,7 +2502,9 @@ JitFilter::execute()
   const conduit::Node &inputs = params()["inputs"];
   const int num_inputs = inputs.number_of_children();
   // create a vector of input_jitables ot be fused
-  std::vector<conduit::Node> input_jitables;
+  std::vector<const conduit::Node *> input_jitables;
+  // keep around the new jitables we create
+  std::list<conduit::Node> new_jitables;
   for(int i = 0; i < num_inputs; ++i)
   {
     const std::string type = inputs.child(i)["type"].as_string();
@@ -2509,8 +2512,11 @@ JitFilter::execute()
     if(type != "jitable")
     {
       // make a new jitable
-      input_jitables.emplace_back();
-      conduit::Node &jitable = input_jitables.back();
+      new_jitables.emplace_back();
+      conduit::Node &jitable = new_jitables.back();
+      input_jitables.push_back(&jitable);
+
+      jitable["type"] = "jitable";
       if(type == "int" || type == "double")
       {
         static int scalar_counter = 0;
@@ -2538,7 +2544,7 @@ JitFilter::execute()
     else
     {
       // push back an existing jitable
-      input_jitables.push_back(*inp);
+      input_jitables.push_back(inp);
     }
   }
 
@@ -2550,11 +2556,11 @@ JitFilter::execute()
     const int lhs_port = inputs["lhs/port"].as_int32();
     const int rhs_port = inputs["rhs/port"].as_int32();
     // union the field/mesh vars
-    fuse_vars(*out_jitable, input_jitables[lhs_port]);
-    fuse_vars(*out_jitable, input_jitables[rhs_port]);
+    fuse_vars(*out_jitable, *input_jitables[lhs_port]);
+    fuse_vars(*out_jitable, *input_jitables[rhs_port]);
     // generate the new expression string (main line of code)
-    const std::string lhs_expr = input_jitables[lhs_port]["expr"].as_string();
-    const std::string rhs_expr = input_jitables[rhs_port]["expr"].as_string();
+    const std::string lhs_expr = (*input_jitables[lhs_port])["expr"].as_string();
+    const std::string rhs_expr = (*input_jitables[rhs_port])["expr"].as_string();
     (*out_jitable)["expr"] =
         "(" + lhs_expr + params()["op_string"].as_string() + rhs_expr + ")";
   }
@@ -2563,15 +2569,15 @@ JitFilter::execute()
   {
     const int arg1_port = inputs["arg1/port"].as_int32();
     const int arg2_port = inputs["arg2/port"].as_int32();
-    fuse_vars(*out_jitable, input_jitables[arg1_port]);
-    fuse_vars(*out_jitable, input_jitables[arg1_port]);
-    const std::string arg1_expr = input_jitables[arg1_port]["expr"].as_string();
-    const std::string arg2_expr = input_jitables[arg2_port]["expr"].as_string();
+    fuse_vars(*out_jitable, *input_jitables[arg1_port]);
+    fuse_vars(*out_jitable, *input_jitables[arg1_port]);
+    const std::string arg1_expr = (*input_jitables[arg1_port])["expr"].as_string();
+    const std::string arg2_expr = (*input_jitables[arg2_port])["expr"].as_string();
     (*out_jitable)["expr"] = "max(" + arg1_expr + ", " + arg2_expr + ")";
   }
   else if(func == "execute")
   {
-    out_jitable->set(input_jitables[0]);
+    out_jitable->set(*input_jitables[0]);
   }
   else
   {
