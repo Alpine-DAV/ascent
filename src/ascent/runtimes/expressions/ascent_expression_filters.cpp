@@ -815,7 +815,9 @@ DotAccess::execute()
   // TODO test accessing non-existant attribute
   if(!n_obj->has_path("attrs/" + name))
   {
-    ASCENT_ERROR(name << " is not a valid object attribute.");
+    ASCENT_ERROR(
+        name << " is not a valid object attribute. Available attributes:\n"
+             << n_obj->to_json());
   }
   (*output) = (*n_obj)["attrs/" + name];
 
@@ -1709,18 +1711,51 @@ Axis::execute()
   else
   {
     output = new conduit::Node();
+
+    double min_val;
+    bool min_found = false;
     if(!n_min->dtype().is_empty())
     {
-      (*output)["value/" + name + "/min_val"] = (*n_min)["value"].to_float64();
+      min_val = (*n_min)["value"].to_float64();
+      (*output)["value/" + name + "/min_val"] = min_val;
+      min_found = true;
     }
+    else if(!is_xyz(name))
+    {
+      min_val = field_min(*dataset, name)["value"].to_float64();
+      (*output)["value/" + name + "/min_val"] = min_val;
+      min_found = true;
+    }
+
+    double max_val;
+    bool max_found = false;
     if(!n_max->dtype().is_empty())
     {
-      (*output)["value/" + name + "/max_val"] = (*n_max)["value"].to_float64();
+      max_val = (*n_max)["value"].to_float64();
+      max_found = true;
+      (*output)["value/" + name + "/max_val"] = max_val;
     }
+    else if(!is_xyz(name))
+    {
+      // add 1 because the last bin isn't inclusive
+      max_val = field_max(*dataset, name)["value"].to_float64() + 1.0;
+      (*output)["value/" + name + "/max_val"] = max_val;
+      max_found = true;
+    }
+
+    (*output)["value/" + name + "/num_bins"] = 256;
     if(!n_num_bins->dtype().is_empty())
     {
       (*output)["value/" + name + "/num_bins"] =
           (*n_num_bins)["value"].to_int32();
+    }
+
+    if(min_found && max_found && min_val >= max_val)
+    {
+      delete output;
+      ASCENT_ERROR("Axis: axis with name '"
+                   << name << "': min_val (" << min_val
+                   << ") must be smaller than max_val (" << max_val << ")");
     }
   }
 
@@ -1783,10 +1818,11 @@ Histogram::execute()
   const conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
 
-  // TODO add test for passing a non-scalar field
   if(!is_scalar_field(*dataset, field))
   {
-    ASCENT_ERROR("Histogram: arg1 must be a scalar field");
+    ASCENT_ERROR("Histogram: axis for histogram must be a scalar field. "
+                 "Invalid axis field: '"
+                 << field << "'.");
   }
 
   // handle the optional inputs
@@ -1835,6 +1871,8 @@ Histogram::execute()
   (*output)["attrs/max_val/type"] = "double";
   (*output)["attrs/num_bins/value"] = num_bins;
   (*output)["attrs/num_bins/type"] = "int";
+  (*output)["attrs/clamp/value"] = true;
+  (*output)["attrs/clamp/type"] = "bool";
   set_output<conduit::Node>(output);
 }
 
@@ -1902,7 +1940,16 @@ Binning::execute()
   }
 
   // verify reduction_var
-  if(!has_field(*dataset, reduction_var) && !is_xyz(reduction_var))
+  if(reduction_var.empty())
+  {
+    if(reduction_op != "sum" && reduction_op != "pdf")
+    {
+      ASCENT_ERROR("Binning: reduction_var can only be left empty if "
+                   "reduction_op is 'sum' or 'pdf'.");
+    }
+  }
+  // for now only support reductions on scalars
+  else if(!is_scalar_field(*dataset, reduction_var) && !is_xyz(reduction_var))
   {
     std::vector<std::string> names = dataset->child(0)["fields"].child_names();
     std::stringstream ss;
@@ -1912,15 +1959,16 @@ Binning::execute()
       ss << " " << names[i];
     }
     ss << "]";
-    ASCENT_ERROR("Field: dataset does not contain field '"
-                 << reduction_var << "'"
+    ASCENT_ERROR("Binning: reduction variable '"
+                 << reduction_var
+                 << "' must be a scalar field in the dataset or x/y/z or empty."
                  << " known = " << ss.str());
   }
 
   // verify reduction_op
-  if(reduction_op != "cnt" && reduction_op != "sum" && reduction_op != "min" &&
-     reduction_op != "max" && reduction_op != "avg" && reduction_op != "pdf" &&
-     reduction_op != "std" && reduction_op != "var" && reduction_op != "rms")
+  if(reduction_op != "sum" && reduction_op != "min" && reduction_op != "max" &&
+     reduction_op != "avg" && reduction_op != "pdf" && reduction_op != "std" &&
+     reduction_op != "var" && reduction_op != "rms")
   {
     ASCENT_ERROR(
         "Unknown reduction_op: '"
@@ -1946,8 +1994,8 @@ Binning::execute()
   (*output)["attrs/reduction_var/type"] = "string";
   (*output)["attrs/reduction_op/value"] = reduction_op;
   (*output)["attrs/reduction_op/type"] = "string";
-  (*output)["attrs/bin_axes/value"] = n_binning["bin_axes"];
-  (*output)["attrs/bin_axes/type"] = "list";
+  (*output)["attrs/bin_axes/value"] = n_bin_axes;
+  //(*output)["attrs/bin_axes/type"] = "list";
   (*output)["attrs/association/value"] = n_binning["association"];
   (*output)["attrs/association/type"] = "string";
   set_output<conduit::Node>(output);
