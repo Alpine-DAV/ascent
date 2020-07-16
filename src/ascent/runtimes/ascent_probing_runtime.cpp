@@ -321,9 +321,9 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
 {
     // empirically determined render factor for sim nodes
     // TODO: investigate where this discrepancy comes from
-    const float sim_factor = 1.3;      // 1.26 for d8
+    const float sim_factor = 1.2;       // 1.26 for d8, 1.1657 for n10, 1.2077 for n33
     // render factor for vis nodes
-    const float vis_factor = 1.0;
+    const float vis_factor = 1.0;       // 0.9317 for n33, 1.0069 for n10
 
     assert(sim_estimate.size() == vis_estimates.size());
     
@@ -1156,6 +1156,10 @@ void hybrid_render(const MPI_Properties &mpi_props,
     std::vector<float> g_vis_estimates(mpi_props.size, 0.f);
     MPI_Allgather(&my_avg_probing_time, 1, MPI_FLOAT, 
                   g_vis_estimates.data(), 1, MPI_FLOAT, mpi_props.comm_world);
+
+    // NOTE: use maximum sim time for all nodes
+    const float max_sim_time = *std::max_element(g_sim_estimates.begin(), g_sim_estimates.end());
+    g_sim_estimates = std::vector<float>(mpi_props.size, max_sim_time);
 
     // assign sim nodes to vis nodes
     std::vector<int> node_map = node_assignment(g_sim_estimates, g_vis_estimates, 
