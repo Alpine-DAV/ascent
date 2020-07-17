@@ -1,6 +1,8 @@
 #include "ascent_expressions_ast.hpp"
 #include "ascent_derived_jit.hpp"
+#include "ascent_expression_filters.hpp"
 #include "ascent_expressions_parser.hpp"
+#include <array>
 #include <typeinfo>
 #include <unordered_map>
 #include <unordered_set>
@@ -101,26 +103,6 @@ bool
 is_field_type(const std::string &type)
 {
   return type == "field" || type == "jitable";
-}
-
-// connect null filter to unused ports
-void
-null_ports(flow::Workspace &w,
-           const std::string filter_name,
-           const int start_port,
-           const int num_ports)
-{
-  // Fill unused items with nulls
-  if(!w.graph().has_filter("null_arg"))
-  {
-    conduit::Node null_params;
-    w.graph().add_filter("null_arg", "null_arg", null_params);
-  }
-  for(int i = start_port; i < num_ports; ++i)
-  {
-    // src, dest, port
-    w.graph().connect("null_arg", filter_name, i);
-  }
 }
 } // namespace detail
 
@@ -590,7 +572,7 @@ ASTMethodCall::build_graph(flow::Workspace &w)
   // resolve the function
   if(!f_table->has_path(m_id->m_name))
   {
-    ASCENT_ERROR("unknown function " << m_id->m_name);
+    ASCENT_ERROR("Expressions: Unknown function '" << m_id->m_name << "'.");
   }
 
   // resolve overloaded function names
@@ -761,7 +743,10 @@ ASTMethodCall::build_graph(flow::Workspace &w)
         ++port;
       }
 
-      w.graph().add_filter("jit_filter", name, params);
+      w.graph().add_filter(
+          ascent::runtime::expressions::register_jit_filter(w, args_map.size()),
+          name,
+          params);
 
       // connect up all the arguments
       port = 0;
@@ -771,7 +756,6 @@ ASTMethodCall::build_graph(flow::Workspace &w)
         w.graph().connect((*arg.second)["filter_name"].as_string(), name, port);
         ++port;
       }
-      detail::null_ports(w, name, port, 256);
     }
     else
     {
@@ -819,17 +803,19 @@ ASTMethodCall::build_graph(flow::Workspace &w)
           static int method_jit_execute_counter = 0;
           // create a unique name for the filter
           std::stringstream ss;
-          ss << "method_jit_execute" << method_jit_execute_counter++;
+          ss << "method_jit_execute_" << method_jit_execute_counter++;
           const std::string jit_execute_name = ss.str();
           conduit::Node params;
           params["func"] = "execute";
           params["execute"] = true;
           params["inputs"]["jitable/type"] = "jitable";
           params["inputs"]["jitable/port"] = 0;
-          w.graph().add_filter("jit_filter", jit_execute_name, params);
+          w.graph().add_filter(
+              ascent::runtime::expressions::register_jit_filter(w, 1),
+              jit_execute_name,
+              params);
           // src, dest, port
           w.graph().connect(inp_filter_name, jit_execute_name, 0);
-          detail::null_ports(w, jit_execute_name, 1, 256);
           inp_filter_name = jit_execute_name;
         }
         // src, dest, port
@@ -1051,7 +1037,8 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
   if(detail::is_math(op_str))
   {
     if((detail::is_scalar(l_type) && detail::is_field_type(r_type)) ||
-       (detail::is_scalar(r_type) && detail::is_field_type(l_type)))
+       (detail::is_scalar(r_type) && detail::is_field_type(l_type)) ||
+       (detail::is_field_type(l_type) && detail::is_field_type(r_type)))
     {
       res_type = "jitable";
       jitable = true;
@@ -1129,12 +1116,12 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
     params["inputs/rhs/type"] = r_in["type"];
     params["inputs/rhs/port"] = 1;
 
-    w.graph().add_filter("jit_filter", name, params);
+    w.graph().add_filter(
+        ascent::runtime::expressions::register_jit_filter(w, 2), name, params);
 
     // src, dest, port
     w.graph().connect(l_in["filter_name"].as_string(), name, 0);
     w.graph().connect(r_in["filter_name"].as_string(), name, 1);
-    detail::null_ports(w, name, 2, 256);
   }
   else
   {
@@ -1435,18 +1422,14 @@ ASTExpressionList::build_graph(flow::Workspace &w)
      << "_" << ast_list_counter++;
   std::string f_name = ss.str();
 
-  conduit::Node params;
-  w.graph().add_filter("expr_list", f_name, params);
-
   const size_t list_size = exprs.size();
 
-  // Lists need to have a constant size because flow needs to know all the
-  // in/out ports ahead of time.
-  // We make 256 the max size.
-  if(list_size > 256)
-  {
-    ASCENT_ERROR("Lists can have at most 256 elements.");
-  }
+  conduit::Node params;
+  w.graph().add_filter(
+      ascent::runtime::expressions::register_expression_list_filter(w,
+                                                                    list_size),
+      f_name,
+      params);
 
   // Connect all items to the list
   for(size_t i = 0; i < list_size; ++i)
@@ -1459,8 +1442,6 @@ ASTExpressionList::build_graph(flow::Workspace &w)
     // src, dest, port
     w.graph().connect(item["filter_name"].as_string(), f_name, ss.str());
   }
-
-  detail::null_ports(w, f_name, list_size, 256);
 
   conduit::Node res;
   res["type"] = "list";

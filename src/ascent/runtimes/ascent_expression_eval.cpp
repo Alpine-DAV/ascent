@@ -89,7 +89,6 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::History>();
   flow::Workspace::register_filter_type<expressions::BinaryOp>();
   flow::Workspace::register_filter_type<expressions::String>();
-  flow::Workspace::register_filter_type<expressions::ExpressionList>();
   flow::Workspace::register_filter_type<expressions::IfExpr>();
   flow::Workspace::register_filter_type<expressions::ScalarMax>();
   flow::Workspace::register_filter_type<expressions::ScalarMin>();
@@ -106,6 +105,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::Vector>();
   flow::Workspace::register_filter_type<expressions::Magnitude>();
   flow::Workspace::register_filter_type<expressions::Field>();
+  flow::Workspace::register_filter_type<expressions::Topo>();
   flow::Workspace::register_filter_type<expressions::Axis>();
   flow::Workspace::register_filter_type<expressions::Histogram>();
   flow::Workspace::register_filter_type<expressions::Binning>();
@@ -118,7 +118,6 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::Cycle>();
   flow::Workspace::register_filter_type<expressions::ArrayAccess>();
   flow::Workspace::register_filter_type<expressions::DotAccess>();
-  flow::Workspace::register_filter_type<expressions::JitFilter>();
 
   initialize_functions();
   initialize_objects();
@@ -175,7 +174,7 @@ initialize_functions()
   g_function_table.reset();
   conduit::Node *functions = &g_function_table;
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &array_avg_sig = (*functions)["avg"].append();
   array_avg_sig["return_type"] = "double";
@@ -183,7 +182,7 @@ initialize_functions()
   array_avg_sig["args/arg1/type"] = "array"; // arg names match input port names
   array_avg_sig["description"] = "Return the average of an array.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &field_avg_sig = (*functions)["avg"].append();
   field_avg_sig["return_type"] = "double";
@@ -193,7 +192,7 @@ initialize_functions()
   field_avg_sig["args/arg1/type"] = "field"; // arg names match input port names
   field_avg_sig["description"] = "Return the field average of a mesh variable.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &field_nan_sig = (*functions)["field_nan_count"].append();
   field_nan_sig["return_type"] = "double";
@@ -203,7 +202,7 @@ initialize_functions()
   field_nan_sig["description"] =
       "Return the number  of NaNs in a mesh variable.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &field_inf_sig = (*functions)["field_inf_count"].append();
   field_inf_sig["return_type"] = "double";
@@ -212,7 +211,7 @@ initialize_functions()
   field_inf_sig["description"] =
       "Return the number  of -inf and +inf in a mesh variable.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &scalar_max_sig = (*functions)["max"].append();
   scalar_max_sig["return_type"] = "double";
@@ -221,7 +220,7 @@ initialize_functions()
   scalar_max_sig["args/arg2/type"] = "scalar";
   scalar_max_sig["description"] = "Return the maximum of two scalars.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &field_max_sig = (*functions)["max"].append();
   field_max_sig["return_type"] = "value_position";
@@ -231,7 +230,7 @@ initialize_functions()
       "Return the maximum value from the meshvar. Its position is also stored "
       "and is accessible via the `position` function.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &array_max_sig = (*functions)["max"].append();
   array_max_sig["return_type"] = "double";
@@ -239,43 +238,7 @@ initialize_functions()
   array_max_sig["args/arg1/type"] = "array";
   array_max_sig["description"] = "Return the maximum of an array.";
 
-  // -------------------------------------------------------------
-
-  conduit::Node &field_scalar_max_sig = (*functions)["max"].append();
-  field_scalar_max_sig["return_type"] = "jitable";
-  field_scalar_max_sig["filter_name"] = "field_field_max";
-  field_scalar_max_sig["args/arg1/type"] = "field";
-  field_scalar_max_sig["args/arg2/type"] = "scalar";
-  field_scalar_max_sig["jitable"];
-  field_scalar_max_sig["description"] =
-      "Return a derived field that is the max of a field and a scalar.";
-
-  // -------------------------------------------------------------
-
-  // same as above but scalar goes first, field goes second
-  conduit::Node &scalar_field_max_sig = (*functions)["max"].append();
-  scalar_field_max_sig["return_type"] = "jitable";
-  scalar_field_max_sig["filter_name"] = "field_field_max";
-  scalar_field_max_sig["args/arg1/type"] = "scalar";
-  scalar_field_max_sig["args/arg2/type"] = "field";
-  scalar_field_max_sig["jitable"];
-  scalar_field_max_sig["description"] =
-      "Return a derived field that is the max of a scalar and a field. Same "
-      "functionality as above but the order of the arguments is switched.";
-
-  // -------------------------------------------------------------
-
-  // same as above but scalar goes first, field goes second
-  conduit::Node &field_field_max_sig = (*functions)["max"].append();
-  field_field_max_sig["return_type"] = "jitable";
-  field_field_max_sig["filter_name"] = "field_field_max";
-  field_field_max_sig["args/arg1/type"] = "field";
-  field_field_max_sig["args/arg2/type"] = "field";
-  field_field_max_sig["jitable"];
-  field_field_max_sig["description"] =
-      "Return a derived field that is the max of two fields.";
-
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &field_min_sig = (*functions)["min"].append();
   field_min_sig["return_type"] = "value_position";
@@ -285,7 +248,7 @@ initialize_functions()
       "Return the minimum value from the meshvar. Its position is also stored "
       "and is accessible via the `position` function.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &scalar_min_sig = (*functions)["min"].append();
   scalar_min_sig["return_type"] = "double";
@@ -294,7 +257,7 @@ initialize_functions()
   scalar_min_sig["args/arg2/type"] = "scalar";
   scalar_min_sig["description"] = "Return the minimum of two scalars.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &array_min_sig = (*functions)["min"].append();
   array_min_sig["return_type"] = "double";
@@ -302,7 +265,7 @@ initialize_functions()
   array_min_sig["args/arg1/type"] = "array";
   array_min_sig["description"] = "Return the minimum of an array.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &field_sum_sig = (*functions)["sum"].append();
   field_sum_sig["return_type"] = "double";
@@ -311,7 +274,7 @@ initialize_functions()
   field_sum_sig["args/arg1/type"] = "field"; // arg names match input port names
   field_sum_sig["description"] = "Return the sum of a field.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &array_sum_sig = (*functions)["sum"].append();
   array_sum_sig["return_type"] = "double";
@@ -319,7 +282,7 @@ initialize_functions()
   array_sum_sig["args/arg1/type"] = "array";
   array_sum_sig["description"] = "Return the sum of an array.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &cycle_sig = (*functions)["cycle"].append();
   cycle_sig["return_type"] = "int";
@@ -327,7 +290,7 @@ initialize_functions()
   cycle_sig["args"] = conduit::DataType::empty();
   cycle_sig["description"] = "Return the current simulation cycle.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &vector = (*functions)["vector"].append();
   vector["return_type"] = "vector";
@@ -337,7 +300,7 @@ initialize_functions()
   vector["args/arg3/type"] = "scalar";
   vector["description"] = "Return the 3D position vector for the input value.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &mag_sig = (*functions)["magnitude"].append();
   mag_sig["return_type"] = "double";
@@ -345,7 +308,7 @@ initialize_functions()
   mag_sig["args/arg1/type"] = "vector";
   mag_sig["description"] = "Return the magnitude of the input vector.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &hist_sig = (*functions)["histogram"].append();
   hist_sig["return_type"] = "histogram";
@@ -367,7 +330,7 @@ initialize_functions()
   hist_sig["description"] = "Return a histogram of the mesh variable. Return a "
                             "histogram of the mesh variable.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &history_sig = (*functions)["history"].append();
   history_sig["return_type"] = "anytype";
@@ -405,7 +368,7 @@ initialize_functions()
   passed. If the argument name is not specified ``relative_index`` will be \
   used.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &entropy_sig = (*functions)["entropy"].append();
   entropy_sig["return_type"] = "double";
@@ -414,7 +377,7 @@ initialize_functions()
   entropy_sig["description"] =
       "Return the Shannon entropy given a histogram of the field.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &pdf_sig = (*functions)["pdf"].append();
   pdf_sig["return_type"] = "histogram";
@@ -423,7 +386,7 @@ initialize_functions()
   pdf_sig["description"] =
       "Return the probability distribution function (pdf) from a histogram.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &cdf_sig = (*functions)["cdf"].append();
   cdf_sig["return_type"] = "histogram";
@@ -432,7 +395,7 @@ initialize_functions()
   cdf_sig["description"] =
       "Return the cumulative distribution function (cdf) from a histogram.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   // gets histogram bin by index
   conduit::Node &bin_by_index_sig = (*functions)["bin"].append();
@@ -443,7 +406,7 @@ initialize_functions()
   bin_by_index_sig["description"] =
       "Return the value of the bin at index `bin` of a histogram.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   // gets histogram bin by value
   conduit::Node &bin_by_value_sig = (*functions)["bin"].append();
@@ -454,7 +417,7 @@ initialize_functions()
   bin_by_value_sig["description"] =
       "Return the value of the bin with axis-value `val` on the histogram.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &field_sig = (*functions)["field"].append();
   field_sig["return_type"] = "field";
@@ -462,7 +425,15 @@ initialize_functions()
   field_sig["args/arg1/type"] = "string";
   field_sig["description"] = "Return a mesh field given a its name.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
+
+  conduit::Node &topo_sig = (*functions)["topo"].append();
+  topo_sig["return_type"] = "topo";
+  topo_sig["filter_name"] = "topo";
+  topo_sig["args/arg1/type"] = "string";
+  topo_sig["description"] = "Return a mesh topology given a its name.";
+
+  //---------------------------------------------------------------------------
 
   conduit::Node &quantile_sig = (*functions)["quantile"].append();
   quantile_sig["return_type"] = "double";
@@ -489,7 +460,7 @@ initialize_functions()
   the axis of `cdf`. For example, if `q` is 0.5 the result is the value on the \
   x-axis which 50\% of the data lies below.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   conduit::Node &axis_sig = (*functions)["axis"].append();
   axis_sig["return_type"] = "axis";
@@ -526,7 +497,8 @@ initialize_functions()
   axis_sig["args/clamp/description"] =
       "Defaults to ``False``. If ``True``, values outside the axis should be "
       "put into the bins on the boundaries.";
-  // -------------------------------------------------------------
+
+  //---------------------------------------------------------------------------
 
   conduit::Node &binning_sig = (*functions)["binning"].append();
   binning_sig["return_type"] = "binning";
@@ -564,11 +536,105 @@ initialize_functions()
       "bins will be \"painted\" back onto the original mesh as a new field.";
   binning_sig["description"] = "Returns a multidimensional data binning.";
 
-  // -------------------------------------------------------------
+  //---------------------------------------------------------------------------
+  // Jitable Functions
+  //---------------------------------------------------------------------------
+
+  conduit::Node &field_scalar_max_sig = (*functions)["max"].append();
+  field_scalar_max_sig["return_type"] = "jitable";
+  field_scalar_max_sig["filter_name"] = "field_field_max";
+  field_scalar_max_sig["args/arg1/type"] = "field";
+  field_scalar_max_sig["args/arg2/type"] = "scalar";
+  field_scalar_max_sig["jitable"];
+  field_scalar_max_sig["description"] =
+      "Return a derived field that is the max of a field and a scalar.";
+
+  //---------------------------------------------------------------------------
+
+  // same as above but scalar goes first, field goes second
+  conduit::Node &scalar_field_max_sig = (*functions)["max"].append();
+  scalar_field_max_sig["return_type"] = "jitable";
+  scalar_field_max_sig["filter_name"] = "field_field_max";
+  scalar_field_max_sig["args/arg1/type"] = "scalar";
+  scalar_field_max_sig["args/arg2/type"] = "field";
+  scalar_field_max_sig["jitable"];
+  scalar_field_max_sig["description"] =
+      "Return a derived field that is the max of a scalar and a field. Same "
+      "functionality as above but the order of the arguments is switched.";
+
+  //---------------------------------------------------------------------------
+
+  // same as above but scalar goes first, field goes second
+  conduit::Node &field_field_max_sig = (*functions)["max"].append();
+  field_field_max_sig["return_type"] = "jitable";
+  field_field_max_sig["filter_name"] = "field_field_max";
+  field_field_max_sig["args/arg1/type"] = "field";
+  field_field_max_sig["args/arg2/type"] = "field";
+  field_field_max_sig["jitable"];
+  field_field_max_sig["description"] =
+      "Return a derived field that is the max of two fields.";
+
+  //---------------------------------------------------------------------------
+
+  conduit::Node &field_scalar_min_sig = (*functions)["min"].append();
+  field_scalar_min_sig["return_type"] = "jitable";
+  field_scalar_min_sig["filter_name"] = "field_field_min";
+  field_scalar_min_sig["args/arg1/type"] = "field";
+  field_scalar_min_sig["args/arg2/type"] = "scalar";
+  field_scalar_min_sig["jitable"];
+  field_scalar_min_sig["description"] =
+      "Return a derived field that is the min of a field and a scalar.";
+
+  //---------------------------------------------------------------------------
+
+  // same as above but scalar goes first, field goes second
+  conduit::Node &scalar_field_min_sig = (*functions)["min"].append();
+  scalar_field_min_sig["return_type"] = "jitable";
+  scalar_field_min_sig["filter_name"] = "field_field_min";
+  scalar_field_min_sig["args/arg1/type"] = "scalar";
+  scalar_field_min_sig["args/arg2/type"] = "field";
+  scalar_field_min_sig["jitable"];
+  scalar_field_min_sig["description"] =
+      "Return a derived field that is the min of a scalar and a field. Same "
+      "functionality as above but the order of the arguments is switched.";
+
+  //---------------------------------------------------------------------------
+
+  // same as above but scalar goes first, field goes second
+  conduit::Node &field_field_min_sig = (*functions)["min"].append();
+  field_field_min_sig["return_type"] = "jitable";
+  field_field_min_sig["filter_name"] = "field_field_min";
+  field_field_min_sig["args/arg1/type"] = "field";
+  field_field_min_sig["args/arg2/type"] = "field";
+  field_field_min_sig["jitable"];
+  field_field_min_sig["description"] =
+      "Return a derived field that is the min of two fields.";
+
+  //---------------------------------------------------------------------------
+
+  // same as above but scalar goes first, field goes second
+  conduit::Node &field_sin_sig = (*functions)["sin"].append();
+  field_sin_sig["return_type"] = "jitable";
+  field_sin_sig["filter_name"] = "field_sin";
+  field_sin_sig["args/arg1/type"] = "field";
+  field_sin_sig["jitable"];
+  field_sin_sig["description"] =
+      "Return a derived field that is the sin of a field.";
+
+  //---------------------------------------------------------------------------
+
+  conduit::Node &volume_sig = (*functions)["volume"].append();
+  field_sin_sig["return_type"] = "jitable";
+  field_sin_sig["filter_name"] = "volume";
+  field_sin_sig["args/arg1/type"] = "topo";
+  field_sin_sig["jitable"];
+  field_sin_sig["description"] = "Return a derived field of the volume/area "
+                                 "for each element in a topology.";
+
+  //---------------------------------------------------------------------------
 
   count_params();
   // functions->save("functions.json", "json");
-  // TODO: validate that there are no ambiguities
 }
 
 void
@@ -636,13 +702,13 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
       params["execute"] = true;
       params["inputs/jitable/type"] = "jitable";
       params["inputs/jitable/port"] = 0;
-      w.graph().add_filter("jit_filter", "jit_execute", params);
+      w.graph().add_filter(register_jit_filter(w, 1), "jit_execute", params);
       // src, dest, port
       w.graph().connect(root["filter_name"].as_string(), "jit_execute", 0);
-      detail::null_ports(w, "jit_execute", 1, 256);
       root["filter_name"] = "jit_execute";
       root["type"] = "field";
     }
+    w.graph().save_dot_html("ascent_expressions_graph.html");
     w.execute();
   }
   catch(std::exception &e)

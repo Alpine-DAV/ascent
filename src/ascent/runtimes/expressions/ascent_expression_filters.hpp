@@ -420,6 +420,17 @@ public:
   virtual void execute();
 };
 
+class Topo : public ::flow::Filter
+{
+public:
+  Topo();
+  ~Topo();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 class BinByIndex : public ::flow::Filter
 {
 public:
@@ -467,13 +478,18 @@ public:
 class ExpressionList : public ::flow::Filter
 {
 public:
-  ExpressionList();
+  ExpressionList(int num_inputs);
   ~ExpressionList();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
+
+private:
+  int num_inputs;
 };
+std::string register_expression_list_filter(flow::Workspace &w,
+                                            const int num_inputs);
 
 class Quantile : public ::flow::Filter
 {
@@ -489,13 +505,17 @@ public:
 class JitFilter : public ::flow::Filter
 {
 public:
-  JitFilter();
+  JitFilter(const int num_inputs);
   ~JitFilter();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
+
+private:
+  int num_inputs;
 };
+std::string register_jit_filter(flow::Workspace &w, const int num_inputs);
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

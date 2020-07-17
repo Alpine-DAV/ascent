@@ -67,7 +67,7 @@ using namespace ascent;
 index_t EXAMPLE_MESH_SIDE_DIM = 5;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_expressions, basic_expressions)
+TEST(ascent_expressions, derived_expressions)
 {
   Node n;
   ascent::about(n);
@@ -87,6 +87,7 @@ TEST(ascent_expressions, basic_expressions)
   data["state/domain_id"] = 0;
   Node multi_dom;
   blueprint::mesh::to_multi_domain(data, multi_dom);
+  multi_dom.print();
 
   runtime::expressions::register_builtin();
   runtime::expressions::ExpressionEval eval(&multi_dom);
@@ -94,6 +95,24 @@ TEST(ascent_expressions, basic_expressions)
   conduit::Node res;
   std::string expr;
 
+  //    +
+  //  /   \
+  //  1   + return_type: jitable
+  //     / \
+  // field  1
+  //
+  //       +
+  //     /   \
+  // field   + return_type: jitable
+  //        / \
+  //    field  1
+  //
+  //     max
+  //      |
+  //      +
+  //     / \
+  // field  1
+  //
   // double braid = 1.;
   // double d = max((((double(2) + double(1)) / double(5.0000000000000000e-01))
   // + braid), double(0));
@@ -101,19 +120,17 @@ TEST(ascent_expressions, basic_expressions)
   // expr = "test( foo = 1)";
 
   // pass vec and see what happens
-  // expr = "sin(field('braid'))*field('braid') * field('vel')";
+  // expr = "sin(field('braid')) * field('braid') * field('vel')";
   // expr = "sin(field('braid'))";
   // expr = "sin(field('radial'))";
-  expr = "(field('braid') - min(field('braid')).value) / "
-         "(max(field('braid')).value - min(field('braid')).value)";
+  // expr = "(field('braid') - min(field('braid')).value) / "
+  //       "(max(field('braid')).value - min(field('braid')).value)";
+  // expr = "(field('braid') - min(field('braid'))) / "
+  //       "(max(field('braid')) - min(field('braid')))";
   // expr = "sin(1.0)";
-  // expr = "volume(mesh('mesh'))";
+  // expr = "volume(topo('lskdfj'))";
   // expr = "1 + field('braid') + 1";
-  //    +
-  //  /   \
-  //  1   + return_type: derived_field
-  //     / \
-  // field  1
+  expr = "max(field('braid') + 1)";
   eval.evaluate(expr);
 }
 

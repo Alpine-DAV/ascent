@@ -796,9 +796,9 @@ DotAccess::execute()
 }
 
 //-----------------------------------------------------------------------------
-ExpressionList::ExpressionList() : Filter()
+ExpressionList::ExpressionList(const int num_inputs) : Filter()
 {
-  // empty
+  this->num_inputs = num_inputs;
 }
 
 //-----------------------------------------------------------------------------
@@ -811,9 +811,11 @@ ExpressionList::~ExpressionList()
 void
 ExpressionList::declare_interface(Node &i)
 {
-  i["type_name"] = "expr_list";
+  stringstream ss;
+  ss << "expr_list_" << num_inputs;
+  i["type_name"] = ss.str();
   // We can't have an arbitrary number of input ports so we choose 256
-  for(int item_num = 0; item_num < 256; ++item_num)
+  for(int item_num = 0; item_num < num_inputs; ++item_num)
   {
     std::stringstream ss;
     ss << "item" << item_num;
@@ -837,19 +839,40 @@ ExpressionList::execute()
 {
   conduit::Node *output = new conduit::Node();
 
-  for(int item_num = 0; item_num < 256; ++item_num)
+  for(int item_num = 0; item_num < num_inputs; ++item_num)
   {
     std::stringstream ss;
     ss << "item" << item_num;
     const conduit::Node *n_item = input<Node>(ss.str());
-    if(n_item->dtype().is_empty())
-    {
-      break;
-    }
     output->append() = *n_item;
   }
 
   set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Filter *
+ExpressionListFilterFactoryMethod(const std::string &filter_type_name)
+{
+  // "expr_list_" is 10 characters long
+  const std::string num_inputs_str =
+      filter_type_name.substr(10, filter_type_name.size() - 10);
+  const int num_inputs = std::stoi(num_inputs_str);
+  return new ExpressionList(num_inputs);
+}
+
+//-----------------------------------------------------------------------------
+std::string
+register_expression_list_filter(flow::Workspace &w, const int num_inputs)
+{
+  std::stringstream ss;
+  ss << "expr_list_" << num_inputs;
+  if(!w.supports_filter_type(ss.str()))
+  {
+    flow::Workspace::register_filter_type(ss.str(),
+                                          ExpressionListFilterFactoryMethod);
+  }
+  return ss.str();
 }
 
 //-----------------------------------------------------------------------------
@@ -1562,7 +1585,10 @@ Field::execute()
     ss << "[";
     for(int i = 0; i < names.size(); ++i)
     {
-      ss << " " << names[i];
+      if(i < names.size() - 1)
+      {
+        ss << ", ";
+      }
     }
     ss << "]";
     ASCENT_ERROR("Field: dataset does not contain field '"
@@ -1573,6 +1599,78 @@ Field::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field;
   (*output)["type"] = "field";
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Topo::Topo() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Topo::~Topo()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Topo::declare_interface(Node &i)
+{
+  i["type_name"] = "topo";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Topo::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Topo::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  const std::string topo = (*arg1)["value"].as_string();
+
+  if(!graph().workspace().registry().has_entry("dataset"))
+  {
+    ASCENT_ERROR("Topo: Missing dataset");
+  }
+
+  const conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
+
+  if(!has_topology(*dataset, topo))
+  {
+    std::vector<std::string> names =
+        dataset->child(0)["topologies"].child_names();
+    std::stringstream ss;
+    ss << "[";
+    for(int i = 0; i < names.size(); ++i)
+    {
+      ss << names[i];
+      if(i < names.size() - 1)
+      {
+        ss << ", ";
+      }
+    }
+    ss << "]";
+    ASCENT_ERROR("Topo: dataset does not contain topology '"
+                 << topo << "'"
+                 << " known = " << ss.str());
+  }
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = topo;
+  (*output)["type"] = "topo";
   set_output<conduit::Node>(output);
 }
 
@@ -2446,9 +2544,9 @@ ArraySum::execute()
 }
 
 //-----------------------------------------------------------------------------
-JitFilter::JitFilter() : Filter()
+JitFilter::JitFilter(const int num_inputs) : Filter()
 {
-  // empty
+  this->num_inputs = num_inputs;
 }
 
 //-----------------------------------------------------------------------------
@@ -2461,11 +2559,13 @@ JitFilter::~JitFilter()
 void
 JitFilter::declare_interface(Node &i)
 {
-  i["type_name"] = "jit_filter";
-  for(int item_num = 0; item_num < 256; ++item_num)
+  stringstream ss;
+  ss << "jit_filter_" << num_inputs;
+  i["type_name"] = ss.str();
+  for(int inp_num = 0; inp_num < num_inputs; ++inp_num)
   {
     std::stringstream ss;
-    ss << "arg" << item_num;
+    ss << "arg" << inp_num;
     i["port_names"].append() = ss.str();
   }
   i["output_port"] = "true";
@@ -2481,6 +2581,15 @@ JitFilter::verify_params(const conduit::Node &params, conduit::Node &info)
   if(!params.has_path("inputs"))
   {
     info["errors"].append() = "Missing required list parameter 'inputs'";
+    res = false;
+  }
+  if(params["inputs"].number_of_children() != num_inputs)
+  {
+    stringstream ss;
+    ss << "Expected parameter 'inputs' to have " << num_inputs
+       << " inputs but it has " << params["inputs"].number_of_children()
+       << " inputs.";
+    info["errors"].append() = ss.str();
     res = false;
   }
   return res;
@@ -2500,7 +2609,6 @@ JitFilter::execute()
   const std::string func = params()["func"].as_string();
   const bool execute = params()["execute"].to_uint8();
   const conduit::Node &inputs = params()["inputs"];
-  const int num_inputs = inputs.number_of_children();
   // create a vector of input_jitables ot be fused
   std::vector<const conduit::Node *> input_jitables;
   // keep around the new jitables we create
@@ -2536,6 +2644,14 @@ JitFilter::execute()
         jitable["fields/" + field_name];
         jitable["topos"];
       }
+      else if(type == "topo")
+      {
+        const std::string &topo_name = (*inp)["value"].as_string();
+        jitable["expr"];
+        jitable["scalars"];
+        jitable["fields"];
+        jitable["topos/" + topo_name];
+      }
       else
       {
         ASCENT_ERROR("Cannot convert: '" << type << "' to jitable.");
@@ -2559,8 +2675,10 @@ JitFilter::execute()
     fuse_vars(*out_jitable, *input_jitables[lhs_port]);
     fuse_vars(*out_jitable, *input_jitables[rhs_port]);
     // generate the new expression string (main line of code)
-    const std::string lhs_expr = (*input_jitables[lhs_port])["expr"].as_string();
-    const std::string rhs_expr = (*input_jitables[rhs_port])["expr"].as_string();
+    const std::string lhs_expr =
+        (*input_jitables[lhs_port])["expr"].as_string();
+    const std::string rhs_expr =
+        (*input_jitables[rhs_port])["expr"].as_string();
     (*out_jitable)["expr"] =
         "(" + lhs_expr + params()["op_string"].as_string() + rhs_expr + ")";
   }
@@ -2571,9 +2689,28 @@ JitFilter::execute()
     const int arg2_port = inputs["arg2/port"].as_int32();
     fuse_vars(*out_jitable, *input_jitables[arg1_port]);
     fuse_vars(*out_jitable, *input_jitables[arg1_port]);
-    const std::string arg1_expr = (*input_jitables[arg1_port])["expr"].as_string();
-    const std::string arg2_expr = (*input_jitables[arg2_port])["expr"].as_string();
+    const std::string arg1_expr =
+        (*input_jitables[arg1_port])["expr"].as_string();
+    const std::string arg2_expr =
+        (*input_jitables[arg2_port])["expr"].as_string();
     (*out_jitable)["expr"] = "max(" + arg1_expr + ", " + arg2_expr + ")";
+  }
+  else if(func == "field_sin")
+  {
+    const int arg1_port = inputs["arg1/port"].as_int32();
+    fuse_vars(*out_jitable, *input_jitables[arg1_port]);
+    const std::string arg1_expr =
+        (*input_jitables[arg1_port])["expr"].as_string();
+    (*out_jitable)["expr"] = "sin(" + arg1_expr + ")";
+  }
+  else if(func == "volume")
+  {
+    const int arg1_port = inputs["arg1/port"].as_int32();
+    fuse_vars(*out_jitable, *input_jitables[arg1_port]);
+    const std::string topo_name =
+        (*input<conduit::Node>(arg1_port))["value"].as_string();
+    (*out_jitable)["expr"] = topo_name + "_volume";
+    (*out_jitable)["depends/" + topo_name + "_volume"];
   }
   else if(func == "execute")
   {
@@ -2602,6 +2739,33 @@ JitFilter::execute()
     set_output<conduit::Node>(out_jitable);
   }
 }
+
+//-----------------------------------------------------------------------------
+Filter *
+JitFilterFactoryMethod(const std::string &filter_type_name)
+{
+  // "jit_filter_" is 11 characters long
+  const std::string num_inputs_str =
+      filter_type_name.substr(11, filter_type_name.size() - 11);
+  const int num_inputs = std::stoi(num_inputs_str);
+  return new JitFilter(num_inputs);
+}
+
+//-----------------------------------------------------------------------------
+// register a JitFilter with the correct number of inputs or return its
+// type_name if it exists
+std::string
+register_jit_filter(flow::Workspace &w, const int num_inputs)
+{
+  std::stringstream ss;
+  ss << "jit_filter_" << num_inputs;
+  if(!w.supports_filter_type(ss.str()))
+  {
+    flow::Workspace::register_filter_type(ss.str(), JitFilterFactoryMethod);
+  }
+  return ss.str();
+}
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions --
