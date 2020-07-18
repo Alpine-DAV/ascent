@@ -554,6 +554,11 @@ initialize_objects()
   value_position["value/type"] = "double";
   value_position["position/type"] = "vector";
 
+  conduit::Node &vector_atts = (*objects)["vector/attrs"];
+  vector_atts["x/type"] = "double";
+  vector_atts["y/type"] = "double";
+  vector_atts["z/type"] = "double";
+
   // objects->save("objects.json", "json");
 }
 
