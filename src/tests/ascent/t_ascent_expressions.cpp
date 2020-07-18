@@ -707,10 +707,17 @@ TEST(ascent_binning, binning_basic_meshes)
   EXPECT_EQ(res["attrs/value/value"].to_json(),
             "[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]");
 
-  expr = "binning('x', 'pdf', [axis('field')])";
+  expr = "binning('', 'pdf', [axis('field', num_bins=8)])";
   res = eval.evaluate(expr);
   EXPECT_EQ(res["attrs/value/value"].to_json(),
             "[0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125]");
+
+  expr = "binning('field', 'pdf', [axis('x', num_bins=2), axis('y', "
+         "num_bins=2), axis('z', num_bins=2)])";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["attrs/value/value"].to_json(),
+            "[0.0, 0.0357142857142857, 0.0714285714285714, 0.107142857142857, "
+            "0.142857142857143, 0.178571428571429, 0.214285714285714, 0.25]");
 }
 
 //-----------------------------------------------------------------------------
@@ -917,6 +924,18 @@ TEST(ascent_binning, binning_errors)
   std::string expr;
 
   bool threw = false;
+  try
+  {
+    expr = "binning('', 'avg', [axis('x'), axis('y')])";
+    res = eval.evaluate(expr);
+  }
+  catch(...)
+  {
+    threw = true;
+  }
+  EXPECT_EQ(threw, true);
+
+  threw = false;
   try
   {
     expr = "binning('braid', 'sum', [axis('x'), axis('vel')])";

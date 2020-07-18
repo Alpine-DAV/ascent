@@ -453,53 +453,80 @@ initialize_functions()
   axis_sig["return_type"] = "axis";
   axis_sig["filter_name"] = "axis";
   axis_sig["args/name/type"] = "string";
-  axis_sig["args/name/description"] = "The name of a scalar field on the mesh or one of ``'x'``, ``'y'``, or ``'z'``.";
+  axis_sig["args/name/description"] =
+      "The name of a scalar field on the mesh "
+      "or one of ``'x'``, ``'y'``, or ``'z'``. `name` can also be the empty "
+      "string `''` if `reduction_op` is either `sum` or `pdf` to mean we want "
+      "to count the number of elements in the bin as our reduction variable.";
   // rectilinear binning
   axis_sig["args/bins/type"] = "list";
   axis_sig["args/bins/optional"];
-  axis_sig["args/bins/description"] = "A strictly increasing list of scalars containing the values for each tick. Used to specify a rectilinear axis.";
+  axis_sig["args/bins/description"] =
+      "A strictly increasing list of scalars containing the values for each "
+      "tick. Used to specify a rectilinear axis.";
   // uniform binning
   axis_sig["args/min_val/type"] = "scalar";
   axis_sig["args/min_val/optional"];
-  axis_sig["args/min_val/description"] = "Minimum value of the axis (i.e. the value of the first tick).";
+  axis_sig["args/min_val/description"] =
+      "Minimum value of the axis (i.e. the value of the first tick). Defaults "
+      "to ``min(name)`` for fields and for ``'x'``, ``'y'``, or ``'z'`` the "
+      "minimum value on the topology.";
   axis_sig["args/max_val/type"] = "scalar";
   axis_sig["args/max_val/optional"];
-  axis_sig["args/max_val/description"] = "Maximum value of the axis (i.e. the value of the last tick).";
+  axis_sig["args/max_val/description"] =
+      "Maximum value of the axis (i.e. the value of the last tick).Defaults to "
+      "``max(name)`` for fields and for ``'x'``, ``'y'``, or ``'z'`` the "
+      "maximum value on the topology.";
   axis_sig["args/num_bins/type"] = "int";
   axis_sig["args/num_bins/optional"];
-  axis_sig["args/num_bins/description"] = "Number of bins on the axis (i.e. the number of ticks minus 1).";
-  axis_sig["description"] = "Defines a uniform or rectilinear axis. When used for binning the bins are inclusive on the lower boundary and exclusive on the higher boundary of each bin. Either specify only ``bins`` or a subset of the ``min_val``, ``max_val``, ``num_bins`` options.";
+  axis_sig["args/num_bins/description"] =
+      "Number of bins on the axis (i.e. the number of ticks minus 1). Defaults "
+      "to ``256``.";
+  axis_sig["description"] =
+      "Defines a uniform or rectilinear axis. When used for binning the bins "
+      "are inclusive on the lower boundary and exclusive on the higher "
+      "boundary of each bin. Either specify only ``bins`` or a subset of the "
+      "``min_val``, ``max_val``, ``num_bins`` options.";
   axis_sig["args/clamp/type"] = "bool";
   axis_sig["args/clamp/optional"];
-  axis_sig["args/clamp/description"] = "Defaults to ``False``. If ``True``, values outside the axis should be put into the bins on the boundaries.";
+  axis_sig["args/clamp/description"] =
+      "Defaults to ``False``. If ``True``, values outside the axis should be "
+      "put into the bins on the boundaries.";
   // -------------------------------------------------------------
 
   conduit::Node &binning_sig = (*functions)["binning"].append();
   binning_sig["return_type"] = "binning";
   binning_sig["filter_name"] = "binning";
   binning_sig["args/reduction_var/type"] = "string";
-  binning_sig["args/reduction_var/description"] = "The variable being reduced. Either the name of a scalar field on the mesh or one of ``'x'``, ``'y'``, or ``'z'``.";
+  binning_sig["args/reduction_var/description"] =
+      "The variable being reduced. Either the name of a scalar field on the "
+      "mesh or one of ``'x'``, ``'y'``, or ``'z'``.";
   binning_sig["args/reduction_op/type"] = "string";
   binning_sig["args/reduction_op/description"] =
       "The reduction operator to use when \
   putting values in bins. Available reductions are: \n\n \
-  - cnt: number of elements in a bin \n \
   - min: minimum value in a bin \n \
   - max: maximum value in a bin \n \
   - sum: sum of values in a bin \n \
   - avg: average of values in a bin \n \
-  - pdf: probability distribution function over all bins \n \
+  - pdf: probability distribution function \n \
   - std: standard deviation of values in a bin \n \
   - var: variance of values in a bin \n \
   - rms: root mean square of values in a bin";
   binning_sig["args/bin_axes/type"] = "list";
-  binning_sig["args/bin_axes/description"] = "List of Axis objects which define the bin axes.";
+  binning_sig["args/bin_axes/description"] =
+      "List of Axis objects which define the bin axes.";
   binning_sig["args/empty_bin_val/type"] = "scalar";
   binning_sig["args/empty_bin_val/optional"];
-  binning_sig["args/empty_bin_val/description"] = "The value that empty bins should have. Defaults to 0.";
+  binning_sig["args/empty_bin_val/description"] =
+      "The value that empty bins should have. Defaults to ``0``.";
   binning_sig["args/output/type"] = "string";
   binning_sig["args/output/optional"];
-  binning_sig["args/output/description"] = "Defaults to ``'none'``. If set to ``'bins'`` a binning with 3 or fewer dimensions will be output as a new topology on the dataset. This is useful for directly visualizing the binning. If set to ``'mesh'`` the bins will be \"painted\" back onto the original mesh as a new field.";
+  binning_sig["args/output/description"] =
+      "Defaults to ``'none'``. If set to ``'bins'`` a binning with 3 or fewer "
+      "dimensions will be output as a new topology on the dataset. This is "
+      "useful for directly visualizing the binning. If set to ``'mesh'`` the "
+      "bins will be \"painted\" back onto the original mesh as a new field.";
   binning_sig["description"] = "Returns a multidimensional data binning.";
 
   // -------------------------------------------------------------
@@ -521,6 +548,7 @@ initialize_objects()
   histogram["min_val/type"] = "double";
   histogram["max_val/type"] = "double";
   histogram["num_bins/type"] = "int";
+  histogram["clamp/type"] = "bool";
 
   conduit::Node &value_position = (*objects)["value_position/attrs"];
   value_position["value/type"] = "double";
