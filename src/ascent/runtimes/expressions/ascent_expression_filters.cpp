@@ -827,6 +827,7 @@ DotAccess::execute()
 
   conduit::Node *output = new conduit::Node();
 
+  // fills attrs for basic types like vectors
   detail::fill_attrs(*n_obj);
 
   // TODO test accessing non-existant attribute
