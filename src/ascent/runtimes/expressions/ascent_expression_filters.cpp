@@ -98,6 +98,21 @@ namespace expressions
 
 namespace detail
 {
+// We want to allow some objects to have basic
+// attributes like vectors, but since its a base
+// type, its overly burdensome to always set these
+// as the return types in every filter. Thus, do this.
+void fill_attrs(conduit::Node &obj)
+{
+  const std::string type = obj["type"].as_string();
+  if(type == "vector")
+  {
+    double *vals = obj["value"].value();
+    obj["attrs/x"] = vals[0];
+    obj["attrs/y"] = vals[1];
+    obj["attrs/z"] = vals[2];
+  }
+}
 
 bool
 is_math(const std::string &op)
@@ -807,15 +822,38 @@ DotAccess::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 DotAccess::execute()
 {
-  const conduit::Node *n_obj = input<Node>("obj");
+  conduit::Node *n_obj = input<Node>("obj");
   std::string name = params()["name"].as_string();
 
   conduit::Node *output = new conduit::Node();
 
+  detail::fill_attrs(*n_obj);
+
   // TODO test accessing non-existant attribute
   if(!n_obj->has_path("attrs/" + name))
   {
-    ASCENT_ERROR(name << " is not a valid object attribute.");
+    n_obj->print();
+    std::stringstream ss;
+    if(n_obj->has_path("attrs"))
+    {
+      std::string attr_yaml = (*n_obj)["attrs"].to_yaml();
+      if(attr_yaml == "")
+      {
+        ss<<" No know attribtues.";
+      }
+      else
+      {
+        ss<<" Known attributes: "<<attr_yaml;
+      }
+    }
+    else
+    {
+      ss<<" No known attributes.";
+    }
+
+    ASCENT_ERROR("'"<<name << "' is not a valid object attribute for"
+                      <<" type '"<<(*n_obj)["type"].as_string()<<"'."
+                      <<ss.str());
   }
   (*output) = (*n_obj)["attrs/" + name];
 
