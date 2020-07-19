@@ -142,6 +142,8 @@ private:
     void ConnectSource();
     void ConnectGraphs();
     void SourceFieldFilter();
+    void PaintNestsets();
+    void VerifyGhosts();
 
     void BuildGraph(const conduit::Node &actions);
     void EnsureDomainIds();

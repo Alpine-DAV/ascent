@@ -73,6 +73,7 @@
 #include <ascent_actions_utils.hpp>
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
+#include <expressions/ascent_blueprint_architect.hpp>
 #include <ascent_transmogrifier.hpp>
 #include <ascent_data_object.hpp>
 
@@ -350,6 +351,13 @@ AscentRuntime::Publish(const conduit::Node &data)
 {
     blueprint::mesh::to_multi_domain(data, m_source);
     EnsureDomainIds();
+    // filter out default ghost name and
+    // check if user provided ghost names are actually there
+    VerifyGhosts();
+    // if nestsets are present, agument current ghost fields
+    // for zones masked by finer levels. If no ghosts are present
+    // we create them
+    PaintNestsets();
 }
 
 //-----------------------------------------------------------------------------
@@ -443,11 +451,13 @@ AscentRuntime::EnsureDomainIds()
 std::string
 AscentRuntime::CreateDefaultFilters()
 {
-    static std::string end_filter = "strip_garbage_ghosts";
-    if(w.graph().has_filter(end_filter))
+    static std::string endpoint = "default_filters_endpoint";
+
+    if(w.graph().has_filter(endpoint))
     {
-      return end_filter;
+      return endpoint;
     }
+
     //
     // Here we are creating the default set of filters that all
     // pipelines will connect to. It verifies the mesh and
@@ -477,15 +487,7 @@ AscentRuntime::CreateDefaultFilters()
     const int num_ghosts = ghost_fields.size();
     for(int i = 0; i < num_ghosts; ++i)
     {
-      std::string filter_name;
-      if(i == num_ghosts - 1)
-      {
-        filter_name = end_filter;
-      }
-      else
-      {
-        filter_name = end_filter + "_" + ghost_fields[i];
-      }
+      std::string filter_name = "strip_garbage_" + ghost_fields[i];
 
       if(i == 0)
       {
@@ -508,8 +510,15 @@ AscentRuntime::CreateDefaultFilters()
       prev_filter = filter_name;
     }
 
+    // create an alias passthrough
+    w.graph().add_filter("alias",
+                         endpoint);
 
-    return end_filter;
+    w.graph().connect(prev_filter, // src
+                      endpoint,    // dest
+                      0);          // default port
+
+    return endpoint;
 }
 //-----------------------------------------------------------------------------
 void
@@ -850,7 +859,7 @@ void
 AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
                                  const std::string plot_name)
 {
-  std::string filter_name = "create_plot";;
+  std::string filter_name = "create_plot";
 
   if(w.graph().has_filter(plot_name))
   {
@@ -870,7 +879,7 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
   std::string plot_source;
   if(plot.has_path("pipeline"))
   {
-    plot_source = plot["pipeline"].as_string();;
+    plot_source = plot["pipeline"].as_string();
   }
   else
   {
@@ -878,62 +887,73 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
     plot_source = CreateDefaultFilters();
   }
 
+  std::string pipeline_filter_name = plot_source;
 
-  // we need to make sure that ghost zones don't make it into rendering
-  // so we will create new filters that attach to the pipeline outputs
-  std::string strip_name = plot_source + "_strip_real_ghosts";
-  if(!w.graph().has_filter(strip_name))
+  std::string prev_filter = plot_source;
+
+  const int num_ghosts = m_ghost_fields.number_of_children();
+  if(num_ghosts != 0)
   {
-    // we can have multiple ghost fields
-    std::vector<std::string> ghost_fields;
-    const int num_children = m_ghost_fields.number_of_children();
-    for(int i = 0; i < num_children; ++i)
+    // we need to make sure that ghost zones don't make it into rendering
+    // so we will create new filters that attach to the pipeline outputs
+    std::string strip_name = plot_source + "_strip_real_ghosts";
+    if(!w.graph().has_filter(strip_name))
     {
-      ghost_fields.push_back(m_ghost_fields.child(i).as_string());
+      // we can have multiple ghost fields
+      std::vector<std::string> ghost_fields;
+      const int num_children = m_ghost_fields.number_of_children();
+      for(int i = 0; i < num_children; ++i)
+      {
+        ghost_fields.push_back(m_ghost_fields.child(i).as_string());
+      }
+
+      std::string first_stripper;
+      const int num_ghosts = ghost_fields.size();
+      for(int i = 0; i < num_ghosts; ++i)
+      {
+        std::string filter_name = strip_name + "_" + ghost_fields[i];
+
+        if(i == 0)
+        {
+          first_stripper = filter_name;
+        }
+
+        conduit::Node threshold_params;
+        threshold_params["field"] = ghost_fields[i];
+        threshold_params["min_value"] = 0;
+        threshold_params["max_value"] = 0;
+
+        w.graph().add_filter("vtkh_ghost_stripper",
+                             filter_name,
+                             threshold_params);
+
+        w.graph().connect(prev_filter,
+                          filter_name,
+                          0);        // default port
+
+        prev_filter = filter_name;
+      }
     }
+  } // if stripping ghosts
 
-    std::string prev_filter = plot_source;
-    std::string first_stripper;
-    const int num_ghosts = ghost_fields.size();
-    for(int i = 0; i < num_ghosts; ++i)
-    {
-      std::string filter_name;
-      if(i == num_ghosts - 1)
-      {
-        filter_name = strip_name;
-      }
-      else
-      {
-        filter_name = strip_name + "_" + ghost_fields[i];
-      }
+  // create an a consistent name
+  std::string endpoint_name = pipeline_filter_name + "_plot_source";
 
-      if(i == 0)
-      {
-        first_stripper = filter_name;
-      }
+  if(!w.graph().has_filter(endpoint_name))
+  {
+    w.graph().add_filter("alias",
+                         endpoint_name);
 
-      conduit::Node threshold_params;
-      threshold_params["field"] = ghost_fields[i];
-      threshold_params["min_value"] = 0;
-      threshold_params["max_value"] = 0;
+    w.graph().connect(prev_filter,   // src
+                      endpoint_name, // dest
+                      0);            // default port
 
-      w.graph().add_filter("vtkh_ghost_stripper",
-                           filter_name,
-                           threshold_params);
-
-      w.graph().connect(prev_filter,
-                        filter_name,
-                        0);        // default port
-
-      prev_filter = filter_name;
-    }
   }
 
-  plot_source = strip_name;
-
-  m_connections[plot_name] = plot_source;
+  m_connections[plot_name] = endpoint_name;
 
 }
+
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::CreatePlots(const conduit::Node &plots)
@@ -945,6 +965,7 @@ AscentRuntime::CreatePlots(const conduit::Node &plots)
     ConvertPlotToFlow(plot, names[i]);
   }
 }
+
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::CreateExtracts(const conduit::Node &extracts)
@@ -1091,10 +1112,8 @@ AscentRuntime::GetPipelines(const conduit::Node &plots)
     {
       pipeline = CreateDefaultFilters();
     }
-
-    // we are always adding a ghost filter so append the name
-    // so bounds and domain ids get the right input
-    pipeline = pipeline + "_strip_real_ghosts";
+    // use the consistent name from PlotToFlow
+    pipeline = pipeline + "_plot_source";
     pipelines.push_back(pipeline);
   }
 
@@ -1667,6 +1686,184 @@ void AscentRuntime::SourceFieldFilter()
 
 }
 
+
+//-----------------------------------------------------------------------------
+void AscentRuntime::PaintNestsets()
+{
+  std::vector<std::string> ghosts;
+  std::map<std::string,std::string> topo_ghosts;
+  std::map<std::string,std::string> topo_nestsets;
+
+  bool bad_bp = false;
+
+  const int num_ghosts = m_ghost_fields.number_of_children();
+
+  for(int i = 0; i < num_ghosts; ++i)
+  {
+    ghosts.push_back(m_ghost_fields.child(i).as_string());
+  }
+  // we have to be careful since we have not called verify
+  // but we need to do this now, since we might be creating
+  // new ghost fields
+
+  const int num_domains = m_source.number_of_children();
+  for(int i = 0; i < num_domains; ++i)
+  {
+    const conduit::Node &dom = m_source.child(i);
+
+    if(dom.has_path("nestsets"))
+    {
+      const conduit::Node &nestsets = dom["nestsets"];
+      const int num_nests = nestsets.number_of_children();
+      std::vector<std::string> nest_names = nestsets.child_names();
+      for(int n = 0; n < num_nests; ++n)
+      {
+        const conduit::Node &nestset = nestsets.child(n);
+        if(nestset.has_path("topology"))
+        {
+          topo_nestsets[nestset["topology"].as_string()] = nest_names[n];
+        }
+        else
+        {
+          // maybe we just do nothing and let verify tell people
+          // about the sins of the mesh
+          bad_bp = true;
+          break;
+        }
+
+      }
+    }
+
+    for(int f = 0; f < num_ghosts; ++f)
+    {
+      const string fpath = "fields/"+ghosts[f];
+      if(dom.has_path(fpath))
+      {
+        if(dom.has_path(fpath+"/topology"))
+        {
+          topo_ghosts[dom[fpath+"/topology"].as_string()] = ghosts[f];
+        }
+        else
+        {
+          bad_bp = true;
+          break;
+        }
+      }
+    }
+  }
+  if(bad_bp)
+  {
+    // its bad, punt reporting to verify;
+    return;
+  }
+
+  // ok, we have built up a map of topologies, nestsets, and ghosts;
+  // if we have a ghost that is associated with a topology with a nestset,
+  // then we will augment the ghost field with 1s(real ghosts) in zones
+  // that are covered by a finer resolution mesh, that are not already
+  // marked as ghosts.
+  // If there arent't ghosts associated with a nestset topology,
+  // we will create them.
+  std::set<std::string> new_ghosts;
+
+  for(int i = 0; i < num_domains; ++i)
+  {
+    conduit::Node &dom = m_source.child(i);
+    const int num_topos = dom["topologies"].number_of_children();
+    const std::vector<std::string> topo_names = dom["topologies"].child_names();
+    for(auto topo_name : topo_names)
+    {
+      bool has_ghost = topo_ghosts.find(topo_name) != topo_ghosts.end();
+      bool has_nest = topo_nestsets.find(topo_name) != topo_nestsets.end();
+
+      if(!has_nest)
+      {
+        continue;
+      }
+
+      std::string nest_name =  topo_nestsets[topo_name];
+
+      if(!dom.has_path("nestsets/"+nest_name))
+      {
+        continue;
+      }
+
+      if(has_ghost)
+      {
+        std::string ghost_name = topo_ghosts["topo_name"];
+        if(dom.has_path("fields/" + ghost_name))
+        {
+          conduit::Node &field = dom["fields/" + ghost_name];
+          runtime::expressions::paint_nestsets(nest_name, dom, field);
+        }
+        else
+        {
+          // this is weird and shouldn't happen in the real world.
+          // Some domain had a ghost but others didn't
+          ASCENT_ERROR("missing ghost field "<<ghost_name);
+        }
+      }
+      else
+      {
+        // there are no ghosts, so we have to build a new field
+        std::string ghost_name = topo_name + "_ghosts";
+        conduit::Node &field = dom["fields/" + ghost_name];
+        runtime::expressions::paint_nestsets(nest_name, dom, field);
+        new_ghosts.insert(ghost_name);
+      }
+    }
+  }
+
+  for(auto name : new_ghosts)
+  {
+    ASCENT_INFO("added new ghost field because of nestset: "<<name);
+    m_ghost_fields.append() = name;
+  }
+
+}
+
+void AscentRuntime::VerifyGhosts()
+{
+  conduit::Node verified;
+  const int num_ghosts = m_ghost_fields.number_of_children();
+  for(int i = 0; i < num_ghosts; ++i)
+  {
+    std::string ghost_name = m_ghost_fields.child(i).as_string();
+    if(runtime::expressions::has_field(m_source, ghost_name))
+    {
+      verified.append() = ghost_name;
+    }
+    else
+    {
+      // only report errors for user defined ghosts
+      if(ghost_name != "ascent_ghosts")
+      {
+        std::stringstream ss;
+        if(m_source.number_of_children() > 0)
+        {
+          if(m_source.child(0).has_path("fields"))
+          {
+            std::vector<string> names = m_source.child(0)["fields"].child_names();
+            for(auto name : names)
+            {
+              ss<<" '"<<name<<"'";
+            }
+          }
+          else
+          {
+            ss<<"can't deduce possible fields. "
+              <<"Published data does not contain fields in dom 0";
+          }
+        }
+        ASCENT_ERROR("User specified Ghost field '"<<ghost_name
+                     <<"' does not exist. Possible fields: "
+                     <<ss.str());
+      }
+    }
+  }
+  m_ghost_fields = verified;
+
+}
 
 
 //-----------------------------------------------------------------------------

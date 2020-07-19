@@ -232,7 +232,8 @@ void check_for_attributes(const conduit::Node &input,
 
 void filter_fields(const conduit::Node &input,
                    conduit::Node &output,
-                   std::vector<std::string> fields)
+                   std::vector<std::string> fields,
+                   flow::Graph &graph)
 {
   // assume this is multi-domain
   //
@@ -243,6 +244,8 @@ void filter_fields(const conduit::Node &input,
   {
     const conduit::Node &dom = input.child(d);
     conduit::Node &out_dom = output.append();
+    std::set<std::string> topos;
+
     for(int f = 0; f < fields.size(); ++f)
     {
       const std::string fname = fields[f];
@@ -253,6 +256,8 @@ void filter_fields(const conduit::Node &input,
         // check for topologies
         const std::string topo = dom[fpath + "/topology"].as_string();
         const std::string tpath = "topologies/" + topo;
+        topos.insert(topo);
+
         if(!out_dom.has_path(tpath))
         {
           out_dom[tpath].set_external(dom[tpath]);
@@ -277,7 +282,49 @@ void filter_fields(const conduit::Node &input,
           out_dom[cpath].set_external(dom[cpath]);
         }
       }
+
     }
+
+    // add nestsets associated with referenced topologies
+    if(dom.has_path("nestsets"))
+    {
+      const int num_nestsets = dom["nestsets"].number_of_children();
+      const std::vector<std::string> nest_names = dom["nestsets"].child_names();
+      for(int i = 0; i < num_nestsets; ++i)
+      {
+        const conduit::Node &nestset = dom["nestsets"].child(i);
+        const std::string nest_topo = nestset["topology"].as_string();
+        if(topos.find(nest_topo) != topos.end())
+        {
+          out_dom["nestsets/"+nest_names[i]].set_external(nestset);
+        }
+      }
+    }
+
+    // auto save out ghost fields from subset of topologies
+    Node * meta = graph.workspace().registry().fetch<Node>("metadata");
+    if(meta->has_path("ghost_field"))
+    {
+      const conduit::Node ghost_list = (*meta)["ghost_field"];
+      const int num_ghosts = ghost_list.number_of_children();
+
+      for(int i = 0; i < num_ghosts; ++i)
+      {
+        std::string ghost = ghost_list.child(i).as_string();
+
+        if(dom.has_path("fields/"+ghost) &&
+           !out_dom.has_path("fields/"+ghost))
+        {
+          const conduit::Node &ghost_field = dom["fields/"+ghost];
+          const std::string ghost_topo = ghost_field["topology"].as_string();
+          if(topos.find(ghost_topo) != topos.end())
+          {
+            out_dom["fields/"+ghost].set_external(ghost_field);
+          }
+        }
+      }
+    }
+
     if(dom.has_path("state"))
     {
       out_dom["state"].set_external(dom["state"]);
@@ -935,7 +982,7 @@ RelayIOSave::execute()
         }
         field_selection.push_back(f.as_string());
       }
-      detail::filter_fields(*in, selected, field_selection);
+      detail::filter_fields(*in, selected, field_selection, graph());
     }
     else
     {
