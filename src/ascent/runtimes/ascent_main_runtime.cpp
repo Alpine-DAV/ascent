@@ -897,27 +897,23 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
     // we need to make sure that ghost zones don't make it into rendering
     // so we will create new filters that attach to the pipeline outputs
     std::string strip_name = plot_source + "_strip_real_ghosts";
-    if(!w.graph().has_filter(strip_name))
+
+    // we can have multiple ghost fields
+    std::vector<std::string> ghost_fields;
+    const int num_children = m_ghost_fields.number_of_children();
+    for(int i = 0; i < num_children; ++i)
     {
-      // we can have multiple ghost fields
-      std::vector<std::string> ghost_fields;
-      const int num_children = m_ghost_fields.number_of_children();
-      for(int i = 0; i < num_children; ++i)
+      ghost_fields.push_back(m_ghost_fields.child(i).as_string());
+    }
+
+    const int num_ghosts = ghost_fields.size();
+    for(int i = 0; i < num_ghosts; ++i)
+    {
+      std::string filter_name = strip_name + "_" + ghost_fields[i];
+
+      // if this alread exists then it was created by another plot
+      if(!w.graph().has_filter(filter_name))
       {
-        ghost_fields.push_back(m_ghost_fields.child(i).as_string());
-      }
-
-      std::string first_stripper;
-      const int num_ghosts = ghost_fields.size();
-      for(int i = 0; i < num_ghosts; ++i)
-      {
-        std::string filter_name = strip_name + "_" + ghost_fields[i];
-
-        if(i == 0)
-        {
-          first_stripper = filter_name;
-        }
-
         conduit::Node threshold_params;
         threshold_params["field"] = ghost_fields[i];
         threshold_params["min_value"] = 0;
