@@ -17,7 +17,8 @@ public:
   {
   }
   virtual void access() = 0;
-  virtual conduit::Node build_graph(flow::Workspace &w) = 0;
+  virtual conduit::Node build_graph(flow::Workspace &w,
+                                    bool verbose = false) = 0;
   // build a string we can JIT compile
   virtual std::string
   build_jit(conduit::Node &n, flow::Workspace &w)
@@ -39,7 +40,7 @@ class ASTExpression : public ASTNode
 {
 public:
   virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
 };
 
 class ASTIdentifier : public ASTExpression
@@ -50,7 +51,7 @@ public:
   {
   }
   virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
   virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
   virtual bool can_jit();
 };
@@ -65,7 +66,7 @@ public:
   {
   }
   virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
   virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
 
   virtual ~ASTNamedExpression()
@@ -85,7 +86,7 @@ public:
   {
   }
   virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
   virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
   virtual bool can_jit();
 };
@@ -98,7 +99,7 @@ public:
   {
   }
   virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
   virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
   virtual bool can_jit();
 };
@@ -111,7 +112,7 @@ public:
   {
   }
   virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
   virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
   virtual bool can_jit();
 };
@@ -124,7 +125,7 @@ public:
   {
   }
   virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
 };
 
 class ASTExpressionList : public ASTExpression
@@ -133,7 +134,7 @@ public:
   std::vector<ASTExpression *> exprs;
   virtual void access();
   virtual bool can_jit();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
 
   virtual ~ASTExpressionList()
   {
@@ -185,7 +186,7 @@ public:
   {
   }
   virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
   virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
 
   virtual bool can_jit();
@@ -208,7 +209,7 @@ public:
   {
   }
   virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
   virtual std::string build_jit(conduit::Node &n, flow::Workspace &w);
   virtual bool can_jit();
 
@@ -232,7 +233,7 @@ public:
   {
   }
   virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
 
   virtual ~ASTIfExpr()
   {
@@ -252,7 +253,7 @@ public:
   {
   }
   virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
 
   virtual ~ASTArrayAccess()
   {
@@ -271,7 +272,7 @@ public:
   {
   }
   virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w);
+  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
 
   virtual ~ASTDotAccess()
   {

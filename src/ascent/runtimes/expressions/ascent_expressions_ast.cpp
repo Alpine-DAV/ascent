@@ -42,7 +42,11 @@ print_match_error(const std::string &fname,
   ss << fname << "(";
   for(int i = 0; i < pos_arg_nodes.size(); ++i)
   {
-    ss << ((i == 0) ? "" : ", ") << pos_arg_nodes[i]["type"].as_string();
+    if(i > 0)
+    {
+      ss << ", ";
+    }
+    ss << pos_arg_nodes[i]["type"].as_string();
   }
   for(int i = 0; i < named_arg_nodes.size(); ++i)
   {
@@ -114,7 +118,7 @@ ASTExpression::access()
 }
 
 conduit::Node
-ASTExpression::build_graph(flow::Workspace &w)
+ASTExpression::build_graph(flow::Workspace &w, bool verbose)
 {
   // placeholder to make binary op work with "not"
   if(!w.graph().has_filter("bop_placeholder"))
@@ -152,26 +156,19 @@ ASTInteger::can_jit()
 }
 
 conduit::Node
-ASTInteger::build_graph(flow::Workspace &w)
+ASTInteger::build_graph(flow::Workspace &w, bool verbose)
 {
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
   // create a unique name for each expression so we can reuse subexpressions
-  std::stringstream ess;
-  ess << "integer"
-      << "_" << m_value;
-  const std::string expr_name = ess.str();
-  if((*subexpr_cache).has_path(expr_name))
-  {
-    return (*subexpr_cache)[expr_name];
-  }
-
-  // create a unique name for the filter
-  static int ast_int_counter = 0;
   std::stringstream ss;
   ss << "integer"
-     << "_" << ast_int_counter++;
+     << "_" << m_value;
   const std::string name = ss.str();
+  if((*subexpr_cache).has_path(name))
+  {
+    return (*subexpr_cache)[name];
+  }
 
   conduit::Node params;
   params["value"] = m_value;
@@ -180,7 +177,7 @@ ASTInteger::build_graph(flow::Workspace &w)
   conduit::Node res;
   res["filter_name"] = name;
   res["type"] = "int";
-  (*subexpr_cache)[expr_name] = res;
+  (*subexpr_cache)[name] = res;
   return res;
 }
 
@@ -209,27 +206,18 @@ ASTDouble::access()
 }
 
 conduit::Node
-ASTDouble::build_graph(flow::Workspace &w)
+ASTDouble::build_graph(flow::Workspace &w, bool verbose)
 {
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
-  std::stringstream ess;
-  ess << "double"
-      << "_" << m_value;
-  const std::string expr_name = ess.str();
-  if((*subexpr_cache).has_path(expr_name))
-  {
-    return (*subexpr_cache)[expr_name];
-  }
-
-  // std::cout << "Flow double: " << m_value << endl;
-  static int ast_double_counter = 0;
-
-  // create a unique name for the filter
   std::stringstream ss;
   ss << "double"
-     << "_" << ast_double_counter++;
-  std::string name = ss.str();
+     << "_" << m_value;
+  const std::string name = ss.str();
+  if((*subexpr_cache).has_path(name))
+  {
+    return (*subexpr_cache)[name];
+  }
 
   conduit::Node params;
   params["value"] = m_value;
@@ -239,7 +227,7 @@ ASTDouble::build_graph(flow::Workspace &w)
   conduit::Node res;
   res["filter_name"] = name;
   res["type"] = "double";
-  (*subexpr_cache)[expr_name] = res;
+  (*subexpr_cache)[name] = res;
   return res;
 }
 
@@ -264,17 +252,17 @@ ASTIdentifier::can_jit()
 }
 
 conduit::Node
-ASTIdentifier::build_graph(flow::Workspace &w)
+ASTIdentifier::build_graph(flow::Workspace &w, bool verbose)
 {
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
-  std::stringstream ess;
-  ess << "ident"
-      << "_" << m_name;
-  const std::string expr_name = ess.str();
-  if((*subexpr_cache).has_path(expr_name))
+  std::stringstream ss;
+  ss << "ident"
+     << "_" << m_name;
+  const std::string name = ss.str();
+  if((*subexpr_cache).has_path(name))
   {
-    return (*subexpr_cache)[expr_name];
+    return (*subexpr_cache)[name];
   }
 
   // if (context.locals().find(name) == context.locals().end())
@@ -284,14 +272,6 @@ ASTIdentifier::build_graph(flow::Workspace &w)
   //}
   // return new LoadInst(context.locals()[name], "", false,
   // context.currentBlock());
-
-  static int ast_ident_counter = 0;
-
-  // create a unique name for the filter
-  std::stringstream ss;
-  ss << "ident"
-     << "_" << ast_ident_counter++;
-  std::string name = ss.str();
 
   conduit::Node params;
   params["value"] = m_name;
@@ -316,7 +296,7 @@ ASTIdentifier::build_graph(flow::Workspace &w)
   }
   // grab the last one calculated
   res["type"] = (*cache)[m_name].child(entries - 1)["type"];
-  (*subexpr_cache)[expr_name] = res;
+  (*subexpr_cache)[name] = res;
   return res;
 }
 
@@ -335,9 +315,9 @@ ASTNamedExpression::build_jit(conduit::Node &n, flow::Workspace &w)
 }
 
 conduit::Node
-ASTNamedExpression::build_graph(flow::Workspace &w)
+ASTNamedExpression::build_graph(flow::Workspace &w, bool verbose)
 {
-  return value->build_graph(w);
+  return value->build_graph(w, verbose);
 }
 
 //-----------------------------------------------------------------------------
@@ -531,7 +511,7 @@ ASTMethodCall::build_jit(conduit::Node &n, flow::Workspace &w)
 }
 
 conduit::Node
-ASTMethodCall::build_graph(flow::Workspace &w)
+ASTMethodCall::build_graph(flow::Workspace &w, bool verbose)
 {
   // build the positional arguments
   size_t pos_size = 0;
@@ -542,7 +522,7 @@ ASTMethodCall::build_graph(flow::Workspace &w)
     pos_arg_nodes.resize(pos_size);
     for(size_t i = 0; i < pos_size; ++i)
     {
-      pos_arg_nodes[i] = arguments->pos_args->exprs[i]->build_graph(w);
+      pos_arg_nodes[i] = arguments->pos_args->exprs[i]->build_graph(w, verbose);
     }
   }
 
@@ -558,7 +538,7 @@ ASTMethodCall::build_graph(flow::Workspace &w)
     named_arg_names.resize(named_size);
     for(size_t i = 0; i < named_size; ++i)
     {
-      named_arg_nodes[i] = (*arguments->named_args)[i]->build_graph(w);
+      named_arg_nodes[i] = (*arguments->named_args)[i]->build_graph(w, verbose);
       named_arg_names[i] = (*arguments->named_args)[i]->key->m_name;
     }
   }
@@ -693,8 +673,8 @@ ASTMethodCall::build_graph(flow::Workspace &w)
     }
 
     // we made it to the end!
-    // finds the last valid function
     matched_index = i;
+    break;
   }
 
   conduit::Node res;
@@ -705,30 +685,41 @@ ASTMethodCall::build_graph(flow::Workspace &w)
 
     conduit::Node *subexpr_cache =
         w.registry().fetch<conduit::Node>("subexpr_cache");
-    std::stringstream ess;
+    std::stringstream ss;
     std::string name;
-    std::string expr_name;
+    std::string verbose_name;
     if(func.has_path("jitable"))
     {
       // jit case
-      ess << "method_jit_" << func["filter_name"].as_string() << "(";
+      ss << "jit_method_" << func["filter_name"].as_string() << "(";
+      bool first = true;
       for(auto const &arg : args_map)
       {
-        ess << arg.first << "=" << (*arg.second)["filter_name"].as_string()
-            << ", ";
+        if(!first)
+        {
+          ss << ", ";
+        }
+        ss << arg.first << "=" << (*arg.second)["filter_name"].as_string();
+        first = false;
       }
-      ess << ")";
-      expr_name = ess.str();
-      if((*subexpr_cache).has_path(expr_name))
+      ss << ")";
+      verbose_name = ss.str();
+      if((*subexpr_cache).has_path(verbose_name))
       {
-        return (*subexpr_cache)[expr_name];
+        return (*subexpr_cache)[verbose_name];
       }
-
-      static int ast_jit_method_counter = 0;
-      std::stringstream ss;
-      ss << "method_jit_" << ast_jit_method_counter++ << "_"
-         << func["filter_name"].as_string();
-      name = ss.str();
+      if(verbose)
+      {
+        name = verbose_name;
+      }
+      else
+      {
+        std::stringstream ss;
+        static int jit_method_counter = 0;
+        ss << "jit_method_" << func["filter_name"].as_string() << "_"
+           << jit_method_counter++;
+        name = ss.str();
+      }
 
       // generate params
       conduit::Node params;
@@ -760,24 +751,35 @@ ASTMethodCall::build_graph(flow::Workspace &w)
     else
     {
       // non-jit case
-      ess << "method_" << func["filter_name"].as_string() << "(";
+      ss << "method_" << func["filter_name"].as_string() << "(";
+      bool first = true;
       for(auto const &arg : args_map)
       {
-        ess << arg.first << "=" << (*arg.second)["filter_name"].as_string()
-            << ", ";
+        if(!first)
+        {
+          ss << ", ";
+        }
+        ss << arg.first << "=" << (*arg.second)["filter_name"].as_string();
+        first = false;
       }
-      ess << ")";
-      expr_name = ess.str();
-      if((*subexpr_cache).has_path(expr_name))
+      ss << ")";
+      verbose_name = ss.str();
+      if((*subexpr_cache).has_path(verbose_name))
       {
-        return (*subexpr_cache)[expr_name];
+        return (*subexpr_cache)[verbose_name];
       }
-
-      static int ast_method_counter = 0;
-      std::stringstream ss;
-      ss << "method_" << ast_method_counter++ << "_"
-         << func["filter_name"].as_string();
-      name = ss.str();
+      if(verbose)
+      {
+        name = verbose_name;
+      }
+      else
+      {
+        std::stringstream ss;
+        static int method_counter = 0;
+        ss << "method_" << func["filter_name"].as_string() << "_"
+           << method_counter++;
+        name = ss.str();
+      }
 
       // we will have some optional parameters, prep the null_args filter
       if(!opt_args.empty())
@@ -800,22 +802,24 @@ ASTMethodCall::build_graph(flow::Workspace &w)
         // not jitable
         if((*arg.second)["type"].as_string() == "jitable")
         {
-          static int method_jit_execute_counter = 0;
           // create a unique name for the filter
           std::stringstream ss;
-          ss << "method_jit_execute_" << method_jit_execute_counter++;
+          ss << "jit_method_execute_" << inp_filter_name;
           const std::string jit_execute_name = ss.str();
-          conduit::Node params;
-          params["func"] = "execute";
-          params["execute"] = true;
-          params["inputs"]["jitable/type"] = "jitable";
-          params["inputs"]["jitable/port"] = 0;
-          w.graph().add_filter(
-              ascent::runtime::expressions::register_jit_filter(w, 1),
-              jit_execute_name,
-              params);
-          // src, dest, port
-          w.graph().connect(inp_filter_name, jit_execute_name, 0);
+          if(!(*subexpr_cache).has_path(jit_execute_name))
+          {
+            conduit::Node params;
+            params["func"] = "execute";
+            params["execute"] = true;
+            params["inputs"]["jitable/type"] = "jitable";
+            params["inputs"]["jitable/port"] = 0;
+            w.graph().add_filter(
+                ascent::runtime::expressions::register_jit_filter(w, 1),
+                jit_execute_name,
+                params);
+            // src, dest, port
+            w.graph().connect(inp_filter_name, jit_execute_name, 0);
+          }
           inp_filter_name = jit_execute_name;
         }
         // src, dest, port
@@ -840,7 +844,7 @@ ASTMethodCall::build_graph(flow::Workspace &w)
       // the history function's return type is the type of its first argument
       if(func["filter_name"].as_string() == "history")
       {
-        res_type = (*args_map.at("expr_name"))["type"].as_string();
+        res_type = (*args_map["expr_name"])["type"].as_string();
       }
       else
       {
@@ -851,7 +855,7 @@ ASTMethodCall::build_graph(flow::Workspace &w)
 
     res["filter_name"] = name;
     res["type"] = res_type;
-    (*subexpr_cache)[expr_name] = res;
+    (*subexpr_cache)[verbose_name] = res;
   }
   else
   {
@@ -882,11 +886,11 @@ ASTIfExpr::access()
 }
 
 conduit::Node
-ASTIfExpr::build_graph(flow::Workspace &w)
+ASTIfExpr::build_graph(flow::Workspace &w, bool verbose)
 {
-  conduit::Node n_condition = m_condition->build_graph(w);
-  conduit::Node n_if = m_if->build_graph(w);
-  conduit::Node n_else = m_else->build_graph(w);
+  conduit::Node n_condition = m_condition->build_graph(w, verbose);
+  conduit::Node n_if = m_if->build_graph(w, verbose);
+  conduit::Node n_else = m_else->build_graph(w, verbose);
 
   // Validate types
   const std::string condition_type = n_condition["type"].as_string();
@@ -906,22 +910,17 @@ ASTIfExpr::build_graph(flow::Workspace &w)
 
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
-  std::stringstream ess;
-  ess << "if"
-      << "_" << n_condition["filter_name"].as_string() << "_then_"
-      << n_if["filter_name"].as_string() << "_else_"
-      << n_else["filter_name"].as_string();
-  const std::string expr_name = ess.str();
-  if((*subexpr_cache).has_path(expr_name))
+  std::stringstream ss;
+  ss << "if"
+     << "_" << n_condition["filter_name"].as_string() << "_then_"
+     << n_if["filter_name"].as_string() << "_else_"
+     << n_else["filter_name"].as_string();
+  const std::string name = ss.str();
+  if((*subexpr_cache).has_path(name))
   {
-    return (*subexpr_cache)[expr_name];
+    return (*subexpr_cache)[name];
   }
 
-  static int ast_if_counter = 0;
-  std::stringstream ss;
-  ss << "expr_if"
-     << "_" << ast_if_counter++;
-  std::string name = ss.str();
   conduit::Node params;
   w.graph().add_filter("expr_if", name, params);
 
@@ -933,7 +932,7 @@ ASTIfExpr::build_graph(flow::Workspace &w)
   conduit::Node res;
   res["type"] = if_type;
   res["filter_name"] = name;
-  (*subexpr_cache)[expr_name] = res;
+  (*subexpr_cache)[name] = res;
   return res;
 }
 
@@ -1001,7 +1000,7 @@ ASTBinaryOp::build_jit(conduit::Node &n, flow::Workspace &w)
 }
 
 conduit::Node
-ASTBinaryOp::build_graph(flow::Workspace &w)
+ASTBinaryOp::build_graph(flow::Workspace &w, bool verbose)
 {
   // std::cout << "Creating binary operation " << m_op << endl;
   std::string op_str;
@@ -1024,15 +1023,28 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
   default: ASCENT_ERROR("unknown binary op " << m_op);
   }
 
-  conduit::Node l_in = m_lhs->build_graph(w);
+  conduit::Node l_in = m_lhs->build_graph(w, verbose);
   // std::cout << " flow op " << op_str << "\n";
-  conduit::Node r_in = m_rhs->build_graph(w);
+  conduit::Node r_in = m_rhs->build_graph(w, verbose);
+
+  conduit::Node *subexpr_cache =
+      w.registry().fetch<conduit::Node>("subexpr_cache");
+  std::stringstream ss;
+  // flow doesn't like it when we have a / in the filter name
+  ss << "binary_op"
+     << "_(" << l_in["filter_name"].as_string()
+     << (op_str == "/" ? "div" : op_str) << r_in["filter_name"].as_string()
+     << ")";
+  const std::string name = ss.str();
+  if((*subexpr_cache).has_path(name))
+  {
+    return (*subexpr_cache)[name];
+  }
 
   // Validate types and evaluate what the return type will be
   const std::string l_type = l_in["type"].as_string();
   const std::string r_type = r_in["type"].as_string();
 
-  bool jitable = false;
   std::string res_type;
   if(detail::is_math(op_str))
   {
@@ -1041,7 +1053,6 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
        (detail::is_field_type(l_type) && detail::is_field_type(r_type)))
     {
       res_type = "jitable";
-      jitable = true;
     }
     else if(detail::is_scalar(l_type) && detail::is_scalar(r_type))
     {
@@ -1084,28 +1095,8 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
     res_type = "bool";
   }
 
-  conduit::Node *subexpr_cache =
-      w.registry().fetch<conduit::Node>("subexpr_cache");
-  std::stringstream ess;
-  std::string name;
-  std::string expr_name;
-  if(jitable)
+  if(res_type == "jitable")
   {
-    ess << "jit_binary_op"
-        << "_" << l_in["filter_name"].as_string() << op_str
-        << r_in["filter_name"].as_string();
-    expr_name = ess.str();
-    if((*subexpr_cache).has_path(expr_name))
-    {
-      return (*subexpr_cache)[expr_name];
-    }
-
-    static int ast_jit_op_counter = 0;
-    // create a unique name for the filter
-    std::stringstream ss;
-    ss << "jit_binary_op"
-       << "_" << ast_jit_op_counter++ << "_" << m_op;
-    name = ss.str();
 
     conduit::Node params;
     params["func"] = "binary_op";
@@ -1125,22 +1116,6 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
   }
   else
   {
-    ess << "binary_op"
-        << "_" << l_in["filter_name"].as_string() << op_str
-        << r_in["filter_name"].as_string();
-    expr_name = ess.str();
-    if((*subexpr_cache).has_path(expr_name))
-    {
-      return (*subexpr_cache)[expr_name];
-    }
-
-    static int ast_op_counter = 0;
-    // create a unique name for the filter
-    std::stringstream ss;
-    ss << "binary_op"
-       << "_" << ast_op_counter++ << "_" << m_op;
-    name = ss.str();
-
     conduit::Node params;
     params["op_string"] = op_str;
 
@@ -1153,7 +1128,7 @@ ASTBinaryOp::build_graph(flow::Workspace &w)
   conduit::Node res;
   res["filter_name"] = name;
   res["type"] = res_type;
-  (*subexpr_cache)[expr_name] = res;
+  (*subexpr_cache)[name] = res;
   return res;
 }
 
@@ -1177,28 +1152,21 @@ ASTString::can_jit()
 }
 
 conduit::Node
-ASTString::build_graph(flow::Workspace &w)
+ASTString::build_graph(flow::Workspace &w, bool verbose)
 {
   // strip the quotes from the variable name
   std::string stripped = detail::strip_single_quotes(m_name);
 
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
-  std::stringstream ess;
-  ess << "string"
-      << "_" << stripped;
-  const std::string expr_name = ess.str();
-  if((*subexpr_cache).has_path(expr_name))
-  {
-    return (*subexpr_cache)[expr_name];
-  }
-
-  // create a unique name for the filter
-  static int ast_string_counter = 0;
   std::stringstream ss;
   ss << "string"
-     << "_" << ast_string_counter++;
-  std::string name = ss.str();
+     << "_" << stripped;
+  const std::string name = ss.str();
+  if((*subexpr_cache).has_path(name))
+  {
+    return (*subexpr_cache)[name];
+  }
 
   conduit::Node params;
   params["value"] = stripped;
@@ -1208,7 +1176,7 @@ ASTString::build_graph(flow::Workspace &w)
   conduit::Node res;
   res["type"] = "string";
   res["filter_name"] = name;
-  (*subexpr_cache)[expr_name] = res;
+  (*subexpr_cache)[name] = res;
   return res;
 }
 
@@ -1227,21 +1195,25 @@ ASTBoolean::access()
 }
 
 conduit::Node
-ASTBoolean::build_graph(flow::Workspace &w)
+ASTBoolean::build_graph(flow::Workspace &w, bool verbose)
 {
-  // create a unique name for the filter
-  static int ast_bool_counter = 0;
-  std::stringstream ss;
-  ss << "bool"
-     << "_" << ast_bool_counter++;
-  std::string name = ss.str();
-
   bool value = false;
   switch(tok)
   {
   case TTRUE: value = true; break;
   case TFALSE: value = false; break;
   default: std::cout << "unknown bool literal " << tok << "\n";
+  }
+
+  conduit::Node *subexpr_cache =
+      w.registry().fetch<conduit::Node>("subexpr_cache");
+  std::stringstream ss;
+  ss << "bool"
+     << "_" << value;
+  const std::string name = ss.str();
+  if((*subexpr_cache).has_path(name))
+  {
+    return (*subexpr_cache)[name];
   }
 
   conduit::Node params;
@@ -1251,7 +1223,7 @@ ASTBoolean::build_graph(flow::Workspace &w)
   conduit::Node res;
   res["type"] = "bool";
   res["filter_name"] = name;
-
+  (*subexpr_cache)[name] = res;
   return res;
 }
 
@@ -1269,10 +1241,22 @@ ASTArrayAccess::access()
 }
 
 conduit::Node
-ASTArrayAccess::build_graph(flow::Workspace &w)
+ASTArrayAccess::build_graph(flow::Workspace &w, bool verbose)
 {
-  conduit::Node n_array = array->build_graph(w);
-  conduit::Node n_index = index->build_graph(w);
+  conduit::Node n_array = array->build_graph(w, verbose);
+  conduit::Node n_index = index->build_graph(w, verbose);
+
+  conduit::Node *subexpr_cache =
+      w.registry().fetch<conduit::Node>("subexpr_cache");
+  std::stringstream ss;
+  ss << "array_access"
+     << "_" << n_array["filter_name"].as_string() << "["
+     << n_index["filter_name"].as_string() << "]";
+  const std::string name = ss.str();
+  if((*subexpr_cache).has_path(name))
+  {
+    return (*subexpr_cache)[name];
+  }
 
   conduit::Node params;
 
@@ -1287,25 +1271,6 @@ ASTArrayAccess::build_graph(flow::Workspace &w)
     ASCENT_ERROR("Cannot get index of non-array type: " << obj_type);
   }
 
-  conduit::Node *subexpr_cache =
-      w.registry().fetch<conduit::Node>("subexpr_cache");
-  std::stringstream ess;
-  ess << "array_access"
-      << "_" << n_array["filter_name"].as_string() << "["
-      << n_index["filter_name"].as_string() << "]";
-  const std::string expr_name = ess.str();
-  if((*subexpr_cache).has_path(expr_name))
-  {
-    return (*subexpr_cache)[expr_name];
-  }
-
-  // create a unique name for the filter
-  static int ast_array_counter = 0;
-  std::stringstream ss;
-  ss << "array_access"
-     << "_" << ast_array_counter++;
-  std::string name = ss.str();
-
   w.graph().add_filter("expr_array", name, params);
 
   // src, dest, port
@@ -1316,7 +1281,7 @@ ASTArrayAccess::build_graph(flow::Workspace &w)
   // only arrays of double are supported
   res["type"] = "double";
   res["filter_name"] = name;
-  (*subexpr_cache)[expr_name] = res;
+  (*subexpr_cache)[name] = res;
   return res;
 }
 
@@ -1333,9 +1298,20 @@ ASTDotAccess::access()
 }
 
 conduit::Node
-ASTDotAccess::build_graph(flow::Workspace &w)
+ASTDotAccess::build_graph(flow::Workspace &w, bool verbose)
 {
-  conduit::Node n_obj = obj->build_graph(w);
+  conduit::Node n_obj = obj->build_graph(w, verbose);
+
+  conduit::Node *subexpr_cache =
+      w.registry().fetch<conduit::Node>("subexpr_cache");
+  std::stringstream ss;
+  ss << "dot"
+     << "_" << n_obj["filter_name"].as_string() << "." << name;
+  const std::string f_name = ss.str();
+  if((*subexpr_cache).has_path(f_name))
+  {
+    return (*subexpr_cache)[f_name];
+  }
 
   std::string obj_type = n_obj["type"].as_string();
 
@@ -1362,24 +1338,6 @@ ASTDotAccess::build_graph(flow::Workspace &w)
   }
   std::string res_type = obj[path].as_string();
 
-  conduit::Node *subexpr_cache =
-      w.registry().fetch<conduit::Node>("subexpr_cache");
-  std::stringstream ess;
-  ess << "dot"
-      << "_" << n_obj["filter_name"].as_string() << "." << name;
-  const std::string expr_name = ess.str();
-  if((*subexpr_cache).has_path(expr_name))
-  {
-    return (*subexpr_cache)[expr_name];
-  }
-
-  // create a unique name for the filter
-  static int ast_dot_counter = 0;
-  std::stringstream ss;
-  ss << "dot"
-     << "_" << ast_dot_counter++;
-  std::string f_name = ss.str();
-
   conduit::Node params;
   params["name"] = name;
 
@@ -1391,7 +1349,7 @@ ASTDotAccess::build_graph(flow::Workspace &w)
   conduit::Node res;
   res["type"] = res_type;
   res["filter_name"] = f_name;
-  (*subexpr_cache)[expr_name] = res;
+  (*subexpr_cache)[f_name] = res;
   return res;
 }
 
@@ -1413,38 +1371,60 @@ ASTExpressionList::can_jit()
 }
 
 conduit::Node
-ASTExpressionList::build_graph(flow::Workspace &w)
+ASTExpressionList::build_graph(flow::Workspace &w, bool verbose)
 {
-  // create a unique name for the filter
-  static int ast_list_counter = 0;
-  std::stringstream ss;
-  ss << "list"
-     << "_" << ast_list_counter++;
-  std::string f_name = ss.str();
-
   const size_t list_size = exprs.size();
+
+  conduit::Node *subexpr_cache =
+      w.registry().fetch<conduit::Node>("subexpr_cache");
+  std::stringstream ss;
+  ss << "list_[";
+  std::vector<conduit::Node> items;
+  for(size_t i = 0; i < list_size; ++i)
+  {
+    items.push_back(exprs[i]->build_graph(w, verbose));
+    ss << items.back()["filter_name"].as_string();
+    if(i < list_size - 1)
+    {
+      ss << ", ";
+    }
+  }
+  ss << "]";
+  const std::string verbose_name = ss.str();
+  if((*subexpr_cache).has_path(verbose_name))
+  {
+    return (*subexpr_cache)[verbose_name];
+  }
+  std::string name;
+  if(verbose)
+  {
+    name = verbose_name;
+  }
+  else
+  {
+    static int list_counter = 0;
+    std::stringstream ss;
+    ss << "list_" << list_counter++;
+    name = ss.str();
+  }
 
   conduit::Node params;
   w.graph().add_filter(
       ascent::runtime::expressions::register_expression_list_filter(w,
                                                                     list_size),
-      f_name,
+      name,
       params);
 
   // Connect all items to the list
   for(size_t i = 0; i < list_size; ++i)
   {
-    const conduit::Node item = exprs[i]->build_graph(w);
-
-    std::stringstream ss;
-    ss << "item" << i;
-
     // src, dest, port
-    w.graph().connect(item["filter_name"].as_string(), f_name, ss.str());
+    w.graph().connect(items[i]["filter_name"].as_string(), name, i);
   }
 
   conduit::Node res;
   res["type"] = "list";
-  res["filter_name"] = f_name;
+  res["filter_name"] = name;
+  (*subexpr_cache)[verbose_name] = res;
   return res;
 }

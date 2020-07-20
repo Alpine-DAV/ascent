@@ -818,7 +818,7 @@ ExpressionList::declare_interface(Node &i)
   for(int item_num = 0; item_num < num_inputs; ++item_num)
   {
     std::stringstream ss;
-    ss << "item" << item_num;
+    ss << "item_" << item_num;
     i["port_names"].append() = ss.str();
   }
   i["output_port"] = "true";
@@ -839,12 +839,9 @@ ExpressionList::execute()
 {
   conduit::Node *output = new conduit::Node();
 
-  for(int item_num = 0; item_num < num_inputs; ++item_num)
+  for(int i = 0; i < num_inputs; ++i)
   {
-    std::stringstream ss;
-    ss << "item" << item_num;
-    const conduit::Node *n_item = input<Node>(ss.str());
-    output->append() = *n_item;
+    output->append() = *input<Node>(i);
   }
 
   set_output<conduit::Node>(output);
