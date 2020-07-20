@@ -3,7 +3,7 @@
   probing:
     factor: 1.0
     vis_budget: 0.0
-    node_split: 0.875
+    node_split: 0.8
   scenes:
     s1:
       plots:
