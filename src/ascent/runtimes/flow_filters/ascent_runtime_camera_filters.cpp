@@ -2075,7 +2075,7 @@ AutoCamera::execute()
 {
     double time = 0.;
     auto time_start = high_resolution_clock::now();
-    //cerr << "USING CAMERA PIPELINE" << endl;
+    cout << "USING CAMERA PIPELINE" << endl;
     #if ASCENT_MPI_ENABLED
       int rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);

@@ -251,6 +251,30 @@ GetCamera2(double frame, int nframes, double radius, double* lookat)
   return c;
 }
 
+#include <cmath>
+//Use this file stuff later but figured I'd put it next to mine
+#include <iostream>
+#include <fstream>
+
+Camera
+GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, double radius,
+	       	int thetaPos, int numTheta, int phiPos, int numPhi)
+{
+  Camera c;
+  double zoom = 3.0;
+  
+  double theta = (thetaPos / (numTheta - 1.0)) * M_PI ;
+  double phi = (phiPos / (numPhi - 1.0)) * M_PI * 2.0; 
+  double xm = (x0 + x1) / 2.0;
+  double ym = (y0 + y1) / 2.0;
+  double zm = (z0 + z1) / 2.0;
+
+  c.position[0] = ( ( radius * sin(theta) * cos(phi) ) + xm ) * zoom;
+  c.position[1] = ( ( radius * sin(theta) * sin(phi) ) + ym ) * zoom;
+  c.position[2] = ( ( radius * cos(theta) ) + zm ) * zoom;
+
+  return c;
+}
 
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/Invoker.h>
@@ -848,11 +872,19 @@ CameraSimplex::execute()
     #endif*/
 
     vtkm::Bounds b = dataset.GetGlobalBounds();
+
+    vtkm::Float32 xMin = vtkm::Float32(b.X.Min);
+    vtkm::Float32 xMax = vtkm::Float32(b.X.Max);
+    vtkm::Float32 yMin = vtkm::Float32(b.Y.Min);
+    vtkm::Float32 yMax = vtkm::Float32(b.Y.Max);
+    vtkm::Float32 zMin = vtkm::Float32(b.Z.Min);
+    vtkm::Float32 zMax = vtkm::Float32(b.Z.Max);
+
     vtkm::Float32 xb = vtkm::Float32(b.X.Length());
     vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
     vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
     //double bounds[3] = {(double)xb, (double)yb, (double)zb};
-//    cout << "x y z bounds " << xb << " " << yb << " " << zb << endl;
+    //cout << "x y z bounds " << xb << " " << yb << " " << zb << endl;
     vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
     //cout << "radius " << radius << endl;
     //if(radius<1)
@@ -872,16 +904,74 @@ CameraSimplex::execute()
     screen.triCameraInitialize();
     screen.valueInitialize();
 */
-    /* Use these to take the top three scores */
-    double winning_scores[3] = {-DBL_MAX, -DBL_MAX, -DBL_MAX};
-    int    winning_samples[3] = {-1, -1, -1};
+    //double winning_scores[3] = {-DBL_MAX, -DBL_MAX, -DBL_MAX};
+    //int    winning_samples[3] = {-1, -1, -1};
     //loop through number of camera samples.
     double scanline_time = 0.;
     double metric_time   = 0.;
 
+
+    // Basic winning score while making new camera
+    double winning_score = -DBL_MAX;
+    int winning_i = -1;
+    int winning_j = -1;
+
+    // New theta and phi camera code
+    int numTheta = 100;
+    int numPhi = 100;
+
+    // File stuff
+    ofstream datafile;
+    // Open in binary mode and delete if it already existed
+    datafile.open("scores.bin", ios::binary | ios::trunc);
+
+    for (int i = 0 ; i < numTheta ; i++) {
+      cout << "Step: " << i << endl;
+      cout << "  Current Winning Score: " << winning_score << endl;
+      for (int j = 0 ; j < numPhi ; j++) {
+
+        Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+		       	        radius, i, numTheta, j, numPhi); 
+
+        vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
+                                  (float)cam.position[1],
+                                  (float)cam.position[2]};
+
+        camera->SetPosition(pos);
+        vtkh::ScalarRenderer tracer;
+        tracer.SetWidth(width);
+        tracer.SetHeight(height);
+        tracer.SetInput(&dataset); //vtkh dataset by toponame
+        tracer.SetCamera(*camera);
+        tracer.Update();
+
+        vtkh::DataSet *output = tracer.GetOutput();
+
+        float score = calculateMetric2(output, metric, field_name, height, width);
+
+	//cout << "Camera at: " << cam.position[0] << ", " << cam.position[1] << ", " << cam.position[2] << endl;
+        //cout << "Score is: " << score << endl << endl;
+
+        //datafile << score << " ";	
+        datafile.write( (char *) &score, sizeof(score));
+
+	if (score > winning_score) {
+            winning_score = score;
+            winning_i = i;
+            winning_j = j;
+        }
+
+      }
+    }
+
+    cout << "Winning score: " << winning_score << " at (" << winning_i << ", " << winning_j << ")" << endl;
+
+    datafile.close();
+
+    /*
     for(int sample = 0; sample < samples; sample++)
     {
-    /*================ Scalar Renderer Code ======================*/
+    //================ Scalar Renderer Code ======================//
     //What it does: Quick ray tracing of data (replaces get triangles and scanline).
     //What we need: z buffer, any other important buffers (tri ids, scalar values, etc.)
       
@@ -906,6 +996,7 @@ CameraSimplex::execute()
       //cout << "Camera Positions: " << (float)cam.position[0] << " " << (float)cam.position[1] << " " << (float)cam.position[2] << endl << endl;
      
       delete output;
+*/
 
     /*================ End Scalar Renderer  ======================*/
 
@@ -949,8 +1040,10 @@ CameraSimplex::execute()
       auto metric_stop = high_resolution_clock::now();
       metric_time += duration_cast<microseconds>(metric_stop - metric_start).count();
 */
+
+      /* Commented out original top 3 scores code
       if (score > winning_scores[0]) {
-        /* Found a better top score, replace all 3 */
+        // Found a better top score, replace all 3 
         winning_scores[2] = winning_scores[1];	      
 	winning_samples[2] = winning_samples[1];
 
@@ -961,7 +1054,7 @@ CameraSimplex::execute()
 	winning_samples[0] = sample;
       }
       else if (score > winning_scores[1]) {
-        /* Found a better second score, replace bottom 2 */
+        // Found a better second score, replace bottom 2
         winning_scores[2] = winning_scores[1];	      
 	winning_samples[2] = winning_samples[1];
 
@@ -969,7 +1062,7 @@ CameraSimplex::execute()
 	winning_samples[1] = sample;
       }
       else if (score > winning_scores[2]) {
-        /* Found a better third score, replace it */
+        // Found a better third score, replace it
         winning_scores[2] = score;	      
 	winning_samples[2] = sample;
       }
@@ -983,7 +1076,7 @@ CameraSimplex::execute()
     cout << "Top 3 scores are: " << winning_scores[0] << ", " << winning_scores[1] << ", " << winning_scores[2] << endl;
     cout << "With samples: " << winning_samples[0] << ", " << winning_samples[1] << ", " << winning_samples[2] << endl;
 
-    /* Now loop around the winning samples to see if we can improve them */
+    // Now loop around the winning samples to see if we can improve them 
     double winning_samplesNext[3] = {(double)winning_samples[0], (double)winning_samples[1], (double)winning_samples[2]};
     for (int score_idx = 0 ; score_idx < 3 ; score_idx++) {
 
@@ -1032,7 +1125,6 @@ CameraSimplex::execute()
     cout << "With samples: " << winning_samplesNext[0] << ", " << winning_samplesNext[1] << ", " << winning_samplesNext[2] << endl;
 
     double winning_samplesFinal[3] = {winning_samplesNext[0], winning_samplesNext[1], winning_samplesNext[2]};
-    /* Loop again */
     for (int score_idx = 0 ; score_idx < 3 ; score_idx++) {
 
       cout << "Looking around sample " << winning_samplesNext[score_idx] << endl;
@@ -1079,7 +1171,6 @@ CameraSimplex::execute()
     cout << "Top 3 scores now are: " << winning_scores[0] << ", " << winning_scores[1] << ", " << winning_scores[2] << endl;
     cout << "With samples: " << winning_samplesFinal[0] << ", " << winning_samplesFinal[1] << ", " << winning_samplesFinal[2] << endl;
    
-    /* Now take best of the top 3 scores that we have looked around */
     double best_score = winning_scores[0];
     double best_sample = winning_samplesFinal[0];
     if (winning_scores[1] > best_score) {
@@ -1093,8 +1184,11 @@ CameraSimplex::execute()
 
     cout << "Best score is: " << best_score << endl;
     cout << "Best sample is: " << best_sample << endl;
+*/
 
-    Camera best_c = GetCamera2(best_sample, samples, radius, focus);
+    //Camera best_c = GetCamera2(best_sample, samples, radius, focus);
+    Camera best_c = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+		       	        radius, winning_i, numTheta, winning_j, numPhi);
 
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
