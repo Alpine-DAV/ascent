@@ -1736,7 +1736,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     if (sim_comm != MPI_COMM_NULL)
     {
         MPI_Barrier(sim_comm);
-        MPI_Comm_free(&sim_comm); // Fatal error in PMPI_Comm_free: Invalid communicator
+        MPI_Comm_free(&sim_comm);
     }
     else if (vis_comm != MPI_COMM_NULL)
     {
