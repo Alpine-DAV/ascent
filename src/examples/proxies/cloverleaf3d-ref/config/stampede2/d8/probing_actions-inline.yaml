@@ -3,14 +3,14 @@
   probing:
     factor: 1.0
     vis_budget: 0.0
-    node_split: 0.8
+    node_split: 0.875
   scenes:
     s1:
       plots:
         p1:
           type: "volume"
           field: "energy"
-          min_value: 0.0
+          min_value: 0.2
           max_value: 1.0
           color_table: 
             name: "rainbow desaturated"
@@ -21,11 +21,11 @@
                 alpha: 0.0
               - 
                 type: "alpha"
-                position: 0.4
+                position: 0.3
                 alpha: 0.0
               - 
                 type: "alpha"
-                position: 0.75
+                position: 0.8
                 alpha: 1.0
               - 
                 type: "alpha"
