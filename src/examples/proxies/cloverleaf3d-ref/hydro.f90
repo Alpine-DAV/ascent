@@ -49,7 +49,7 @@ SUBROUTINE hydro
 
   INTEGER         :: loc(1),err,rank,size,color,rank_split,sim_vis_comm
   INTEGER(kind=8) :: unix
-  REAL(KIND=8)    :: timer,timerstart,wall_clock,step_clock
+  REAL(KIND=8)    :: timer,timerstart,wall_clock,step_clock,sim_timer
 
   REAL(KIND=8)    :: grind_time,cells,rstep
   REAL(KIND=8)    :: step_time,step_grind,vis_time
@@ -75,6 +75,7 @@ SUBROUTINE hydro
   WRITE(g_out_stamps,*) 'start sim ', unix
 
   timerstart = timer()
+  sim_timer = timerstart
   DO
     
     ! CALL ascent_timer_start(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
@@ -107,7 +108,7 @@ SUBROUTINE hydro
     wall_clock=timer() - timerstart
 
     ! write node sim time to file
-    WRITE(g_out_times,*) 'step time ', step, timer()-step_time
+    WRITE(g_out_times,*) 'step time ', step, timer() - step_time
 
     ! CALL ascent_timer_stop(C_CHAR_"CLOVER_MAIN_LOOP"//C_NULL_CHAR)
 
@@ -127,11 +128,13 @@ SUBROUTINE hydro
         WRITE(g_out_stamps,*) 'end sim ', unix
 
         ! TODO: accumulate last sim times
-        CALL visit(my_ascent, timer()-step_time)
+        WRITE(g_out_times,*) '       sim ', step, timer()-sim_timer
+        CALL visit(my_ascent, timer() - sim_timer)
 
         wall_clock=timer() - timerstart
         WRITE(g_out_times,*) '       vis ', step, timer()-vis_time
         WRITE(g_out_stamps,*) 'start sim ', unix
+        sim_timer = timer()
       ENDIF
     ENDIF
 

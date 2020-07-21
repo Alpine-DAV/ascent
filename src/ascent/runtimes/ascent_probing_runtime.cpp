@@ -1019,7 +1019,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
                                 render_cfg.WIDTH, render_cfg.HEIGHT, id);
         }
 
-        // composite
+        // composited
         results[j] = compositor.CompositeNoCopy();
 
         // TODO: add screen annotations for hybrid (see vtk-h Scene::Render)
