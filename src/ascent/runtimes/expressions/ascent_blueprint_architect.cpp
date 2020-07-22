@@ -1167,12 +1167,12 @@ update_bin(double *bins,
   {
     // have to keep track of count anyways in order to detect which bins are
     // empty
-    bins[2 * i] = std::min(bins[i], value);
+    bins[2 * i] = std::min(bins[i * 2], value);
     bins[2 * i + 1] += 1;
   }
   else if(reduction_op == "max")
   {
-    bins[2 * i] = std::max(bins[i], value);
+    bins[2 * i] = std::max(bins[i * 2], value);
     bins[2 * i + 1] += 1;
   }
   else if(reduction_op == "avg" || reduction_op == "sum" ||
