@@ -278,9 +278,10 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
 
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/Invoker.h>
+#include <vtkm/cont/DataSetFieldAdd.h>
 #include <vtkm/worklet/WorkletMapTopology.h>
 
-class ProcessTriangle : public vtkm::worklet::WorkletVisitCellsWithPoints
+class ProcessTriangle2 : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
   // This is to tell the compiler what inputs to expect.
@@ -288,7 +289,6 @@ public:
   // an input variable, and an output variable.
   using ControlSignature = void(CellSetIn cellset,
                                 FieldInPoint points,
-                                FieldInPoint variable,
                                 FieldOutCell output);
 
   // After VTK-m does it's magic, you need to tell what information you need
@@ -298,13 +298,12 @@ public:
   // 2. _2 is the 2nd input to ControlSignature : this should give you all points of the triangle.
   // 3. _3 is the 3rd input to ControlSignature : this should give you the variables at those points.
   // 4. _4 is the 4rd input to ControlSignature : this will help you store the output of your calculation.
-  using ExecutionSignature = void(PointCount, _2, _3, _4);
+  using ExecutionSignature = void(PointCount, _2, _3);
 
-  template <typename PointVecType, typename FieldVecType>
+  template <typename PointVecType>
   VTKM_EXEC
   void operator()(const vtkm::IdComponent& numPoints,
                   const PointVecType& points,
-                  const FieldVecType& variable,
                   Triangle& output) const
   {
     if(numPoints != 3)
@@ -312,7 +311,6 @@ public:
     // Since you only have triangles, numPoints should always be 3
     // PointType is an abstraction of vtkm::Vec3f, which is {x, y, z} of a point
     using PointType = typename PointVecType::ComponentType;
-    using FieldType = typename FieldVecType::ComponentType;
     // Following lines will help you extract points for a single triangle
     //PointType vertex0 = points[0]; // {x0, y0, z0}
     //PointType vertex1 = points[1]; // {x1, y1, z1}
@@ -330,41 +328,154 @@ public:
 };
 
 std::vector<Triangle>
-GetTriangles2(vtkh::DataSet &vtkhData, std::string field_name)
+GetTriangles2(vtkh::DataSet &vtkhData)
 {
   //Get domain Ids on this rank
   //will be nonzero even if there is no data
   std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
   std::vector<Triangle> tris;
-
-   
      
   //if there is data: loop through domains and grab all triangles.
   if(!vtkhData.IsEmpty())
   {
     for(int i = 0; i < localDomainIds.size(); i++)
     {
-      vtkm::cont::DataSet dataset = vtkhData.GetDomain(localDomainIds[i]);
+      vtkm::cont::DataSet dataset = vtkhData.GetDomain(i);
       //Get Data points
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
       //Get triangles
       vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
       //Get variable
-      vtkm::cont::Field field = dataset.GetField(field_name);
 
       int numTris = cellset.GetNumberOfCells();
       std::vector<Triangle> tmp_tris(numTris);
      
       vtkm::cont::ArrayHandle<Triangle> triangles = vtkm::cont::make_ArrayHandle(tmp_tris);
       vtkm::cont::Invoker invoker;
-      invoker(ProcessTriangle{}, cellset, coords, field.GetData().ResetTypes(vtkm::TypeListFieldScalar{}), triangles);
+      invoker(ProcessTriangle2{}, cellset, coords, triangles);
 
       //combine all domain triangles
       tris.insert(tris.end(), tmp_tris.begin(), tmp_tris.end());
-
     }
   }
   return tris;
+}
+
+class GetTriangleFields2 : public vtkm::worklet::WorkletVisitCellsWithPoints
+{
+public:
+  // This is to tell the compiler what inputs to expect.
+  // For now we'll be providing the CellSet, CooridnateSystem,
+  // an input variable, and an output variable.
+  using ControlSignature = void(CellSetIn cellset,
+                                FieldInPoint points,
+                                FieldOutCell x0, FieldOutCell y0, FieldOutCell z0,
+		                FieldOutCell x1, FieldOutCell y1, FieldOutCell z1,
+		                FieldOutCell x2, FieldOutCell y2, FieldOutCell z2);
+
+  // After VTK-m does it's magic, you need to tell what information you need
+  // from the provided inputs from the ControlSignature.
+  // For now :
+  // 1. number of points making an individual cell
+  // 2. _2 is the 2nd input to ControlSignature : this should give you all points of the triangle.
+  // 3. _3 is the 3rd input to ControlSignature : this should give you the variables at those points.
+  // 4. _4 is the 4rd input to ControlSignature : this will help you store the output of your calculation.
+  using ExecutionSignature = void(PointCount, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11);
+
+  template <typename PointVecType, typename FieldType>
+  VTKM_EXEC
+  void operator()(const vtkm::IdComponent& numPoints,
+                  const PointVecType& points,
+                  FieldType& x0,
+                  FieldType& y0,
+                  FieldType& z0,
+                  FieldType& x1,
+                  FieldType& y1,
+                  FieldType& z1,
+                  FieldType& x2,
+                  FieldType& y2,
+		  FieldType& z2) const
+  {
+    if(numPoints != 3)
+      ASCENT_ERROR("We only play with triangles here");
+    // Since you only have triangles, numPoints should always be 3
+    // PointType is an abstraction of vtkm::Vec3f, which is {x, y, z} of a point
+    using PointType = typename PointVecType::ComponentType;
+    // Following lines will help you extract points for a single triangle
+    //PointType vertex0 = points[0]; // {x0, y0, z0}
+    //PointType vertex1 = points[1]; // {x1, y1, z1}
+    //PointType vertex2 = points[2]; // {x2, y2, z2}
+    x0 = points[0][0];
+    y0 = points[0][1];
+    z0 = points[0][2];
+    x1 = points[1][0];
+    y1 = points[1][1];
+    z1 = points[1][2];
+    x2 = points[2][0];
+    y2 = points[2][1];
+    z2 = points[2][2]; 
+  }
+};
+
+vtkh::DataSet*
+AddTriangleFields2(vtkh::DataSet &vtkhData)
+{
+  //Get domain Ids on this rank
+  //will be nonzero even if there is no data
+  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
+  vtkh::DataSet* newDataSet = new vtkh::DataSet;
+
+  //if there is data: loop through domains and grab all triangles.
+  if(!vtkhData.IsEmpty())
+  {
+    vtkm::cont::DataSetFieldAdd dataSetFieldAdd;
+    for(int i = 0; i < localDomainIds.size(); i++)
+    {
+      vtkm::cont::DataSet dataset = vtkhData.GetDomain(i);
+      //Get Data points
+      vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
+      //Get triangles
+      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+
+      int numTris = cellset.GetNumberOfCells();
+      //make vectors and array handles for x,y,z triangle points.
+      std::vector<double> x0(numTris), y0(numTris), z0(numTris), x1(numTris), y1(numTris), z1(numTris), x2(numTris), y2(numTris), z2(numTris);
+      std::vector<double> X0, Y0, Z0, X1, Y1, Z1, X2, Y2, Z2;
+     
+      vtkm::cont::ArrayHandle<vtkm::Float64> x_0 = vtkm::cont::make_ArrayHandle(x0);
+      vtkm::cont::ArrayHandle<vtkm::Float64> y_0 = vtkm::cont::make_ArrayHandle(y0);
+      vtkm::cont::ArrayHandle<vtkm::Float64> z_0 = vtkm::cont::make_ArrayHandle(z0);
+      vtkm::cont::ArrayHandle<vtkm::Float64> x_1 = vtkm::cont::make_ArrayHandle(x1);
+      vtkm::cont::ArrayHandle<vtkm::Float64> y_1 = vtkm::cont::make_ArrayHandle(y1);
+      vtkm::cont::ArrayHandle<vtkm::Float64> z_1 = vtkm::cont::make_ArrayHandle(z1);
+      vtkm::cont::ArrayHandle<vtkm::Float64> x_2 = vtkm::cont::make_ArrayHandle(x2);
+      vtkm::cont::ArrayHandle<vtkm::Float64> y_2 = vtkm::cont::make_ArrayHandle(y2);
+      vtkm::cont::ArrayHandle<vtkm::Float64> z_2 = vtkm::cont::make_ArrayHandle(z2);
+      vtkm::cont::Invoker invoker;
+      invoker(GetTriangleFields2{}, cellset, coords, x_0, y_0, z_0, x_1, y_1, z_1, x_2, y_2, z_2);
+
+      X0.insert(X0.end(), x0.begin(), x0.end());
+      Y0.insert(Y0.end(), y0.begin(), y0.end());
+      Z0.insert(Z0.end(), z0.begin(), z0.end());
+      X1.insert(X1.end(), x1.begin(), x1.end());
+      Y1.insert(Y1.end(), y1.begin(), y1.end());
+      Z1.insert(Z1.end(), z1.begin(), z1.end());
+      X2.insert(X2.end(), x2.begin(), x2.end());
+      Y2.insert(Y2.end(), y2.begin(), y2.end());
+      Z2.insert(Z2.end(), z2.begin(), z2.end());
+      dataSetFieldAdd.AddCellField(dataset, "X0", X0);
+      dataSetFieldAdd.AddCellField(dataset, "Y0", Y0);
+      dataSetFieldAdd.AddCellField(dataset, "Z0", Z0);
+      dataSetFieldAdd.AddCellField(dataset, "X1", X1);
+      dataSetFieldAdd.AddCellField(dataset, "Y1", Y1);
+      dataSetFieldAdd.AddCellField(dataset, "Z1", Z1);
+      dataSetFieldAdd.AddCellField(dataset, "X2", X2);
+      dataSetFieldAdd.AddCellField(dataset, "Y2", Y2);
+      dataSetFieldAdd.AddCellField(dataset, "Z2", Z2);
+      newDataSet->AddDomain(dataset,localDomainIds[i]);
+    }
+  }
+  return newDataSet;
 }
 
 std::vector<float>
@@ -458,6 +569,74 @@ Triangle transformTriangle2(Triangle t, Camera c)
 
 }
 
+Triangle transformTriangle2(Triangle t, Camera c, int width, int height)
+{
+  bool print = false;
+  Matrix camToView, m0, cam, view;
+  cam = c.CameraTransform();
+  view = c.ViewTransform();
+  camToView = Matrix::ComposeMatrices(cam, view);
+  m0 = Matrix::ComposeMatrices(camToView, c.DeviceTransform(width, height));
+  /*
+  cerr<< "cam" << endl;
+  cam.Print(cerr);
+  cerr<< "view" << endl;
+  view.Print(cerr);
+  cerr<< "m0" << endl;
+  m0.Print(cerr);
+  cerr<< "camToView" << endl;
+  camToView.Print(cerr);
+  cerr<< "device t" << endl;
+  c.DeviceTransform(width, height).Print(cerr);
+  */
+
+  Triangle triangle;
+  // Zero XYZ
+  double pointOut[4];
+  double pointIn[4];
+  pointIn[0] = t.X[0];
+  pointIn[1] = t.Y[0];
+  pointIn[2] = t.Z[0];
+  pointIn[3] = 1; //w
+  m0.TransformPoint(pointIn, pointOut);
+  triangle.X[0] = (pointOut[0]/pointOut[3]); //DIVIDE BY W!!	
+  triangle.Y[0] = (pointOut[1]/pointOut[3]);
+  triangle.Z[0] = (pointOut[2]/pointOut[3]);
+
+  //One XYZ
+  pointIn[0] = t.X[1];
+  pointIn[1] = t.Y[1];
+  pointIn[2] = t.Z[1];
+  pointIn[3] = 1; //w
+  m0.TransformPoint(pointIn, pointOut);
+  triangle.X[1] = (pointOut[0]/pointOut[3]); //DIVIDE BY W!!	
+  triangle.Y[1] = (pointOut[1]/pointOut[3]);
+  triangle.Z[1] = (pointOut[2]/pointOut[3]);
+
+  //Two XYZ
+  pointIn[0] = t.X[2];
+  pointIn[1] = t.Y[2];
+  pointIn[2] = t.Z[2];
+  pointIn[3] = 1; //w
+  m0.TransformPoint(pointIn, pointOut);
+  triangle.X[2] = (pointOut[0]/pointOut[3]); //DIVIDE BY W!!	
+  triangle.Y[2] = (pointOut[1]/pointOut[3]);
+  triangle.Z[2] = (pointOut[2]/pointOut[3]);
+
+
+  if(print)
+  {
+    cerr << "triangle out: (" << triangle.X[0] << " , " << triangle.Y[0] << " , " << triangle.Z[0] << ") " << endl <<
+                         " (" << triangle.X[1] << " , " << triangle.Y[1] << " , " << triangle.Z[1] << ") " << endl <<
+                         " (" << triangle.X[2] << " , " << triangle.Y[2] << " , " << triangle.Z[2] << ") " << endl;
+  }
+
+  return triangle;
+
+}
+
+
+
 void CalcSilhouette2(float * data_in, int width, int height, double &length, double &curvature, double &curvatureExtrema, double &entropy)
 {
 	/*
@@ -540,7 +719,6 @@ void CalcSilhouette2(float * data_in, int width, int height, double &length, dou
   */
 }
 
-
 template< typename T >
 T calcentropy2( const T* array, long len, int nBins )
 {
@@ -580,6 +758,802 @@ T calcentropy2( const T* array, long len, int nBins )
   return (entropy * -1.0);
 }
 
+float
+calcArea2(std::vector<float> triangle)
+{
+  //need to transform triangle to camera viewpoint
+  Triangle tri(triangle[0], triangle[1], triangle[2],
+               triangle[3], triangle[4], triangle[5],
+               triangle[6], triangle[7], triangle[8]);
+  return tri.calculateTriArea();
+
+}
+
+//calculate image space area
+float
+calcArea2(std::vector<float> triangle, Camera c, int width, int height)
+{
+  //need to transform triangle to device space with given camera
+  Triangle w_tri(triangle[0], triangle[1], triangle[2],
+               triangle[3], triangle[4], triangle[5],
+               triangle[6], triangle[7], triangle[8]);
+  Triangle d_tri = transformTriangle2(w_tri, c, width, height);
+  /*
+  cerr << "w_tri: " << endl;
+  w_tri.printTri();
+  cerr << "d_tri: " << endl;
+  d_tri.printTri();
+  */
+  return d_tri.calculateTriArea();
+}
+
+float
+calculateVisibilityRatio2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int height, int width)
+{
+  float visibility_ratio = 0.0;
+  #if ASCENT_MPI_ENABLED //pass screens among all ranks
+      // Get the number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+      // Get the rank of this process
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Status status;
+    if(rank == 0)
+    {
+      int size = height*width;
+      std::vector<float> x0 = GetScalarData2(*dataset, "X0", height, width);
+      std::vector<float> y0 = GetScalarData2(*dataset, "Y0", height, width);
+      std::vector<float> z0 = GetScalarData2(*dataset, "Z0", height, width);
+      std::vector<float> x1 = GetScalarData2(*dataset, "X1", height, width);
+      std::vector<float> y1 = GetScalarData2(*dataset, "Y1", height, width);
+      std::vector<float> z1 = GetScalarData2(*dataset, "Z1", height, width);
+      std::vector<float> x2 = GetScalarData2(*dataset, "X2", height, width);
+      std::vector<float> y2 = GetScalarData2(*dataset, "Y2", height, width);
+      std::vector<float> z2 = GetScalarData2(*dataset, "Z2", height, width);
+
+      std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+      for(int i = 0; i < size; i++)
+      {
+        if(x0[i] == x0[i]) //!nan
+        {
+          std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+          triangles.push_back(tri);
+        }
+      }
+      std::sort(triangles.begin(), triangles.end());
+      triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+      int num_triangles = triangles.size();
+      int num_all_triangles = all_triangles.size();
+      float projected_area = 0.0;
+      float total_area     = 0.0;
+
+      for(int i = 0; i < num_all_triangles; i++)
+      {
+        float area = all_triangles[i].calculateTriArea();
+        total_area += area;
+      }
+      for(int i = 0; i < num_triangles; i++)
+      {
+        float area = calcArea2(triangles[i]);
+        projected_area += area;
+      }
+      visibility_ratio = projected_area/total_area;
+    }
+    MPI_Bcast(&visibility_ratio, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    cerr << "visibility_ratio " << visibility_ratio << endl;
+    return visibility_ratio;
+  #else
+    int size = height*width;
+    std::vector<float> x0 = GetScalarData2(*dataset, "X0", height, width);
+    std::vector<float> y0 = GetScalarData2(*dataset, "Y0", height, width);
+    std::vector<float> z0 = GetScalarData2(*dataset, "Z0", height, width);
+    std::vector<float> x1 = GetScalarData2(*dataset, "X1", height, width);
+    std::vector<float> y1 = GetScalarData2(*dataset, "Y1", height, width);
+    std::vector<float> z1 = GetScalarData2(*dataset, "Z1", height, width);
+    std::vector<float> x2 = GetScalarData2(*dataset, "X2", height, width);
+    std::vector<float> y2 = GetScalarData2(*dataset, "Y2", height, width);
+    std::vector<float> z2 = GetScalarData2(*dataset, "Z2", height, width);
+
+    std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+    for(int i = 0; i < size; i++)
+    {
+      if(x0[i] == x0[i]) //!nan
+      {
+        std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+        triangles.push_back(tri);
+       }
+    }
+    std::sort(triangles.begin(), triangles.end());
+    triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+    int num_triangles = triangles.size();
+    int num_all_triangles = all_triangles.size();
+    float projected_area = 0.0;
+    float total_area     = 0.0;
+
+    for(int i = 0; i < num_all_triangles; i++)
+    {
+      float area = all_triangles[i].calculateTriArea();
+      total_area += area;
+    }
+    for(int i = 0; i < num_triangles; i++)
+    {
+      float area = calcArea2(triangles[i]);
+      projected_area += area;
+    }
+    visibility_ratio = projected_area/total_area;
+    return visibility_ratio;
+  #endif
+}
+
+
+
+float
+calculateViewpointEntropy2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int height, int width, Camera camera)
+{
+  float viewpoint_entropy = 0.0;
+  #if ASCENT_MPI_ENABLED //pass screens among all ranks
+      // Get the number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+      // Get the rank of this process
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Status status;
+    if(rank == 0)
+    {
+      int size = height*width;
+      std::vector<float> x0 = GetScalarData2(*dataset, "X0", height, width);
+      std::vector<float> y0 = GetScalarData2(*dataset, "Y0", height, width);
+      std::vector<float> z0 = GetScalarData2(*dataset, "Z0", height, width);
+      std::vector<float> x1 = GetScalarData2(*dataset, "X1", height, width);
+      std::vector<float> y1 = GetScalarData2(*dataset, "Y1", height, width);
+      std::vector<float> z1 = GetScalarData2(*dataset, "Z1", height, width);
+      std::vector<float> x2 = GetScalarData2(*dataset, "X2", height, width);
+      std::vector<float> y2 = GetScalarData2(*dataset, "Y2", height, width);
+      std::vector<float> z2 = GetScalarData2(*dataset, "Z2", height, width);
+
+      std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+      for(int i = 0; i < size; i++)
+      {
+        if(x0[i] == x0[i]) //!nan
+        {
+          std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+          triangles.push_back(tri);
+        }
+      }
+      std::sort(triangles.begin(), triangles.end());
+      triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+      int num_triangles     = triangles.size();
+      int num_all_triangles = all_triangles.size();
+      float total_area      = 0.0;
+      float viewpoint_ratio = 0.0;
+      for(int i = 0; i < num_all_triangles; i++)
+      {
+        Triangle t = transformTriangle2(all_triangles[i], camera, width, height);
+        float area = t.calculateTriArea();
+        total_area += area;
+      }
+      for(int i = 0; i < num_triangles; i++)
+      {
+        float area = calcArea2(triangles[i]);
+        viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
+      }
+      viewpoint_entropy = (-1.0)*viewpoint_ratio;
+    }
+    MPI_Bcast(&viewpoint_entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    cerr << "viewpoint_entropy " << viewpoint_entropy << endl;
+    return viewpoint_entropy;
+  #else
+    int size = height*width;
+    std::vector<float> x0 = GetScalarData2(*dataset, "X0", height, width);
+    std::vector<float> y0 = GetScalarData2(*dataset, "Y0", height, width);
+    std::vector<float> z0 = GetScalarData2(*dataset, "Z0", height, width);
+    std::vector<float> x1 = GetScalarData2(*dataset, "X1", height, width);
+    std::vector<float> y1 = GetScalarData2(*dataset, "Y1", height, width);
+    std::vector<float> z1 = GetScalarData2(*dataset, "Z1", height, width);
+    std::vector<float> x2 = GetScalarData2(*dataset, "X2", height, width);
+    std::vector<float> y2 = GetScalarData2(*dataset, "Y2", height, width);
+    std::vector<float> z2 = GetScalarData2(*dataset, "Z2", height, width);
+
+    std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+    for(int i = 0; i < size; i++)
+    {
+      if(x0[i] == x0[i]) //!nan
+      {
+        std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+        triangles.push_back(tri);
+       }
+    }
+    std::sort(triangles.begin(), triangles.end());
+    triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+    int num_triangles = triangles.size();
+    int num_all_triangles = all_triangles.size();
+    float total_area      = 0.0;
+    float viewpoint_ratio = 0.0;
+    for(int i = 0; i < num_all_triangles; i++)
+    {
+      Triangle t = transformTriangle2(all_triangles[i], camera, width, height);
+      float area = t.calculateTriArea();
+      total_area += area;
+    }
+    for(int i = 0; i < num_triangles; i++)
+    {
+      float area = calcArea2(triangles[i]);
+      viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
+    }
+    viewpoint_entropy = (-1.0)*viewpoint_ratio;
+    return viewpoint_entropy;
+  #endif
+}
+
+float
+calculateVKL2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int height, int width, Camera camera)
+{
+  float vkl = 0.0;
+  #if ASCENT_MPI_ENABLED //pass screens among all ranks
+      // Get the number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+      // Get the rank of this process
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Status status;
+    if(rank == 0)
+    {
+      int size = height*width;
+      std::vector<float> x0 = GetScalarData2(*dataset, "X0", height, width);
+      std::vector<float> y0 = GetScalarData2(*dataset, "Y0", height, width);
+      std::vector<float> z0 = GetScalarData2(*dataset, "Z0", height, width);
+      std::vector<float> x1 = GetScalarData2(*dataset, "X1", height, width);
+      std::vector<float> y1 = GetScalarData2(*dataset, "Y1", height, width);
+      std::vector<float> z1 = GetScalarData2(*dataset, "Z1", height, width);
+      std::vector<float> x2 = GetScalarData2(*dataset, "X2", height, width);
+      std::vector<float> y2 = GetScalarData2(*dataset, "Y2", height, width);
+      std::vector<float> z2 = GetScalarData2(*dataset, "Z2", height, width);
+
+      std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+      for(int i = 0; i < size; i++)
+      {
+        if(x0[i] == x0[i]) //!nan
+        {
+          std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+          triangles.push_back(tri);
+        }
+      }
+      std::sort(triangles.begin(), triangles.end());
+      triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+      int num_triangles = triangles.size();
+      int num_all_triangles = all_triangles.size();
+      float total_area     = 0.0;
+      float w_total_area   = 0.0;
+      float projected_area = 0.0;
+      for(int i = 0; i < num_all_triangles; i++)
+      {
+        float w_area = all_triangles[i].calculateTriArea();
+        Triangle t = transformTriangle2(all_triangles[i], camera, width, height);
+        float area = t.calculateTriArea();
+        total_area += area;
+        w_total_area += w_area;
+      }
+      for(int i = 0; i < num_triangles; i++)
+      {
+        float area = calcArea2(triangles[i], camera, width, height);
+        projected_area += area;
+      }
+      for(int i = 0; i < num_triangles; i++)
+      {
+        float area   = calcArea2(triangles[i], camera, width, height);
+        float w_area = calcArea2(triangles[i]);
+        vkl += (area/projected_area)*std::log((area/projected_area)/(w_area/w_total_area));
+      }
+    }
+    MPI_Bcast(&vkl, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    cerr << "vkl " << vkl << endl;
+    return (-1.0)*vkl;
+  #else
+    int size = height*width;
+    std::vector<float> x0 = GetScalarData2(*dataset, "X0", height, width);
+    std::vector<float> y0 = GetScalarData2(*dataset, "Y0", height, width);
+    std::vector<float> z0 = GetScalarData2(*dataset, "Z0", height, width);
+    std::vector<float> x1 = GetScalarData2(*dataset, "X1", height, width);
+    std::vector<float> y1 = GetScalarData2(*dataset, "Y1", height, width);
+    std::vector<float> z1 = GetScalarData2(*dataset, "Z1", height, width);
+    std::vector<float> x2 = GetScalarData2(*dataset, "X2", height, width);
+    std::vector<float> y2 = GetScalarData2(*dataset, "Y2", height, width);
+    std::vector<float> z2 = GetScalarData2(*dataset, "Z2", height, width);
+
+    std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+    for(int i = 0; i < size; i++)
+    {
+      if(x0[i] == x0[i]) //!nan
+      {
+        std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+        triangles.push_back(tri);
+       }
+    }
+    std::sort(triangles.begin(), triangles.end());
+    triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+    int num_triangles     = triangles.size();
+    int num_all_triangles = all_triangles.size();
+    float total_area     = 0.0;
+    float w_total_area   = 0.0;
+    float projected_area = 0.0;
+    for(int i = 0; i < num_all_triangles; i++)
+    {
+      float w_area = all_triangles[i].calculateTriArea();
+      Triangle t = transformTriangle2(all_triangles[i], camera, width, height);
+      float area = t.calculateTriArea();
+      total_area += area;
+      w_total_area += w_area;
+    }
+    for(int i = 0; i < num_triangles; i++)
+    {
+      float area = calcArea2(triangles[i], camera, width, height);
+      projected_area += area;
+    }
+    for(int i = 0; i < num_triangles; i++)
+    {
+      float area   = calcArea2(triangles[i], camera, width, height);
+      float w_area = calcArea2(triangles[i]);
+      vkl += (area/projected_area)*std::log((area/projected_area)/(w_area/w_total_area));
+    }
+    return (-1.0)*vkl;
+  #endif
+}
+
+float
+calculateDataEntropy2(vtkh::DataSet* dataset, int height, int width,std::string field_name)
+{
+  float entropy = 0.0;
+  #if ASCENT_MPI_ENABLED //pass screens among all ranks
+    // Get the number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    // Get the rank of this process
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Status status;
+    if(rank == 0)
+    {
+      int size = height*width;
+      std::vector<float> field_data = GetScalarData2(*dataset, field_name, height, width);
+      for(int i = 0; i < size; i++)
+        if(field_data[i] != field_data[i])
+          field_data[i] = -FLT_MAX;
+      float field_array[size];
+      std::copy(field_data.begin(), field_data.end(), field_array);
+      entropy = calcentropy2(field_array, field_data.size(), 100);
+
+    }
+    MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  #else
+    int size = height*width;
+    std::vector<float> field_data = GetScalarData2(*dataset, field_name, height, width);
+    for(int i = 0; i < size; i++)
+      if(field_data[i] != field_data[i])
+        field_data[i] = -FLT_MAX;
+    float field_array[size];
+    std::copy(field_data.begin(), field_data.end(), field_array);
+    entropy = calcentropy2(field_array, field_data.size(), 100);
+  #endif
+  return entropy;
+}
+
+
+float
+calculateDepthEntropy2(vtkh::DataSet* dataset, int height, int width)
+{
+
+  float entropy = 0.0;
+  #if ASCENT_MPI_ENABLED 
+    // Get the number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    // Get the rank of this process
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Status status;
+    if(rank == 0)
+    {
+      int size = height*width;
+      std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+      for(int i = 0; i < size; i++)
+        if(depth_data[i] != depth_data[i])
+          depth_data[i] = -FLT_MAX;
+      float depth_array[size];
+      std::copy(depth_data.begin(), depth_data.end(), depth_array);
+      entropy = calcentropy2(depth_array, depth_data.size(), 100);
+
+    }
+    MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  #else
+    int size = height*width;
+    std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+    for(int i = 0; i < size; i++)
+      if(depth_data[i] != depth_data[i])
+        depth_data[i] = -FLT_MAX;
+    float depth_array[size];
+    std::copy(depth_data.begin(), depth_data.end(), depth_array);
+    entropy = calcentropy2(depth_array, depth_data.size(), 100);
+  #endif
+  return entropy;
+}
+
+
+
+float
+calculateVisibleTriangles2(vtkh::DataSet *dataset, int height, int width)
+{
+  float num_triangles = 0.0;
+  #if ASCENT_MPI_ENABLED //pass screens among all ranks
+    // Get the number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    // Get the rank of this process
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Status status;
+    if(rank == 0)
+    {
+      int size = height*width;
+      std::vector<float> x0 = GetScalarData2(*dataset, "X0", height, width);
+      std::vector<float> y0 = GetScalarData2(*dataset, "Y0", height, width);
+      std::vector<float> z0 = GetScalarData2(*dataset, "Z0", height, width);
+      std::vector<float> x1 = GetScalarData2(*dataset, "X1", height, width);
+      std::vector<float> y1 = GetScalarData2(*dataset, "Y1", height, width);
+      std::vector<float> z1 = GetScalarData2(*dataset, "Z1", height, width);
+      std::vector<float> x2 = GetScalarData2(*dataset, "X2", height, width);
+      std::vector<float> y2 = GetScalarData2(*dataset, "Y2", height, width);
+      std::vector<float> z2 = GetScalarData2(*dataset, "Z2", height, width);
+
+      std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+      for(int i = 0; i < size; i++)
+      {
+        if(x0[i] == x0[i]) //!nan
+        {
+          std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+          triangles.push_back(tri);
+        }
+      }
+      std::sort(triangles.begin(), triangles.end());
+      triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+      num_triangles = triangles.size();
+    }
+    MPI_Bcast(&num_triangles, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  #else
+    int size = height*width;
+    std::vector<float> x0 = GetScalarData2(*dataset, "X0", height, width);
+    std::vector<float> y0 = GetScalarData2(*dataset, "Y0", height, width);
+    std::vector<float> z0 = GetScalarData2(*dataset, "Z0", height, width);
+    std::vector<float> x1 = GetScalarData2(*dataset, "X1", height, width);
+    std::vector<float> y1 = GetScalarData2(*dataset, "Y1", height, width);
+    std::vector<float> z1 = GetScalarData2(*dataset, "Z1", height, width);
+    std::vector<float> x2 = GetScalarData2(*dataset, "X2", height, width);
+    std::vector<float> y2 = GetScalarData2(*dataset, "Y2", height, width);
+    std::vector<float> z2 = GetScalarData2(*dataset, "Z2", height, width);
+
+    std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+    for(int i = 0; i < size; i++)
+    {
+      if(x0[i] == x0[i]) //!nan
+      {
+        std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+        triangles.push_back(tri);
+       }
+    }
+    std::sort(triangles.begin(), triangles.end());
+    triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+    num_triangles = triangles.size();
+  #endif
+  return num_triangles;
+}
+
+float
+calculateProjectedArea2(vtkh::DataSet* dataset, int height, int width, Camera camera)
+{
+  float projected_area = 0.0;
+  #if ASCENT_MPI_ENABLED //pass screens among all ranks
+    // Get the number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    // Get the rank of this process
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Status status;
+    if(rank == 0)
+    {
+      int size = height*width;
+      std::vector<float> x0 = GetScalarData2(*dataset, "X0", height, width);
+      std::vector<float> y0 = GetScalarData2(*dataset, "Y0", height, width);
+      std::vector<float> z0 = GetScalarData2(*dataset, "Z0", height, width);
+      std::vector<float> x1 = GetScalarData2(*dataset, "X1", height, width);
+      std::vector<float> y1 = GetScalarData2(*dataset, "Y1", height, width);
+      std::vector<float> z1 = GetScalarData2(*dataset, "Z1", height, width);
+      std::vector<float> x2 = GetScalarData2(*dataset, "X2", height, width);
+      std::vector<float> y2 = GetScalarData2(*dataset, "Y2", height, width);
+      std::vector<float> z2 = GetScalarData2(*dataset, "Z2", height, width);
+
+      std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+      for(int i = 0; i < size; i++)
+      {
+        if(x0[i] == x0[i]) //!nan
+        {
+          std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+          triangles.push_back(tri);
+        }
+      }
+      std::sort(triangles.begin(), triangles.end());
+      triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+      int num_triangles = triangles.size();
+      for(int i = 0; i < num_triangles; i++)
+      {
+        float area = calcArea2(triangles[i], camera, width, height);
+        projected_area += area;
+      }
+    }
+    MPI_Bcast(&projected_area, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  #else
+    int size = height*width;
+    std::vector<float> x0 = GetScalarData2(*dataset, "X0", height, width);
+    std::vector<float> y0 = GetScalarData2(*dataset, "Y0", height, width);
+    std::vector<float> z0 = GetScalarData2(*dataset, "Z0", height, width);
+    std::vector<float> x1 = GetScalarData2(*dataset, "X1", height, width);
+    std::vector<float> y1 = GetScalarData2(*dataset, "Y1", height, width);
+    std::vector<float> z1 = GetScalarData2(*dataset, "Z1", height, width);
+    std::vector<float> x2 = GetScalarData2(*dataset, "X2", height, width);
+    std::vector<float> y2 = GetScalarData2(*dataset, "Y2", height, width);
+    std::vector<float> z2 = GetScalarData2(*dataset, "Z2", height, width);
+
+    std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+    for(int i = 0; i < size; i++)
+    {
+      if(x0[i] == x0[i]) //!nan
+      {
+        std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+        triangles.push_back(tri);
+       }
+    }
+    std::sort(triangles.begin(), triangles.end());
+    triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+    int num_triangles = triangles.size();
+    for(int i = 0; i < num_triangles; i++)
+    {
+      float area = calcArea2(triangles[i], camera, width, height);
+      projected_area += area;
+    }
+  #endif
+  return projected_area;
+}
+
+float
+calculatePlemenosAndBenayada2(vtkh::DataSet *dataset, float total_triangles, int height, int width, Camera camera)
+{ 
+  float pb_score = 0.0;
+  #if ASCENT_MPI_ENABLED //pass screens among all ranks
+    // Get the number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    
+    // Get the rank of this process
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Status status;
+    if(rank == 0)
+    { 
+      int size = height*width;
+      std::vector<float> x0 = GetScalarData2(*dataset, "X0", height, width);
+      std::vector<float> y0 = GetScalarData2(*dataset, "Y0", height, width);
+      std::vector<float> z0 = GetScalarData2(*dataset, "Z0", height, width);
+      std::vector<float> x1 = GetScalarData2(*dataset, "X1", height, width);
+      std::vector<float> y1 = GetScalarData2(*dataset, "Y1", height, width);
+      std::vector<float> z1 = GetScalarData2(*dataset, "Z1", height, width);
+      std::vector<float> x2 = GetScalarData2(*dataset, "X2", height, width);
+      std::vector<float> y2 = GetScalarData2(*dataset, "Y2", height, width);
+      std::vector<float> z2 = GetScalarData2(*dataset, "Z2", height, width);
+      
+      std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+      for(int i = 0; i < size; i++)
+      { 
+        if(x0[i] == x0[i]) //!nan
+        { 
+          std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+          triangles.push_back(tri);
+        }
+      }
+      std::sort(triangles.begin(), triangles.end()); 
+      triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+      int num_triangles = triangles.size();
+      float projected_area = 0.0;
+      for(int i = 0; i < num_triangles; i++)
+      { 
+        float area = calcArea2(triangles[i], camera, width, height);
+        projected_area += area;
+      }
+      
+      float pixel_ratio = projected_area/size;
+      float triangle_ratio = num_triangles/total_triangles;
+      pb_score = pixel_ratio + triangle_ratio;
+    }
+    MPI_Bcast(&pb_score, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  #else 
+    int size = height*width;
+    std::vector<float> x0 = GetScalarData2(*dataset, "X0", height, width);
+    std::vector<float> y0 = GetScalarData2(*dataset, "Y0", height, width);
+    std::vector<float> z0 = GetScalarData2(*dataset, "Z0", height, width);
+    std::vector<float> x1 = GetScalarData2(*dataset, "X1", height, width);
+    std::vector<float> y1 = GetScalarData2(*dataset, "Y1", height, width);
+    std::vector<float> z1 = GetScalarData2(*dataset, "Z1", height, width);
+    std::vector<float> x2 = GetScalarData2(*dataset, "X2", height, width);
+    std::vector<float> y2 = GetScalarData2(*dataset, "Y2", height, width);
+    std::vector<float> z2 = GetScalarData2(*dataset, "Z2", height, width);
+    
+    std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+    for(int i = 0; i < size; i++)
+    { 
+      if(x0[i] == x0[i]) //!nan
+      { 
+        std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+        triangles.push_back(tri);
+       }
+    }
+    std::sort(triangles.begin(), triangles.end()); 
+    triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+    int num_triangles = triangles.size();
+    float projected_area = 0.0;
+    for(int i = 0; i < num_triangles; i++)
+    { 
+      float area = calcArea2(triangles[i], camera, width, height);
+      projected_area += area;
+    }
+    
+    float pixel_ratio = projected_area/size;
+    float triangle_ratio = num_triangles/total_triangles;
+    pb_score = pixel_ratio + triangle_ratio;
+  #endif 
+  return pb_score;
+}
+
+
+float
+calculateMaxDepth2(vtkh::DataSet *dataset, int height, int width)
+{
+  float depth = -FLT_MAX;
+  #if ASCENT_MPI_ENABLED
+    // Get the number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    // Get the rank of this process
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Status status;
+    if(rank == 0)
+    {
+      int size = height*width;
+      std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+      for(int i = 0; i < size; i++)
+        if(depth_data[i] == depth_data[i])
+          if(depth < depth_data[i])
+            depth = depth_data[i];
+    }
+    MPI_Bcast(&depth, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  #else
+    int size = height*width;
+    std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+    for(int i = 0; i < size; i++)
+      if(depth_data[i] == depth_data[i])
+        if(depth < depth_data[i])
+          depth = depth_data[i];
+  #endif
+  return depth;
+}
+
+/*
+float
+calculateMaxSilhouette2(vtkh::DataSet *dataset, int height, int width)
+{
+    #if ASCENT_MPI_ENABLED
+      // Get the number of processes
+      int world_size;
+      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+      // Get the rank of this process
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      MPI_Status status;
+      if(rank == 0)
+      {
+        int size = height*width;
+        std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+        for(int i = 0; i < size; i++)
+          if(depth_data[i] == depth_data[i])
+            depth_data[i] = 255.0; //data = white
+          else
+            depth_data[i] = 0.0; //background = black
+
+        float data_in[width*height];
+        float contour[width*height];
+        std::copy(depth_data.begin(), depth_data.end(), data_in);
+        double length, curvature, curvatureExtrema, entropy;
+        CalcSilhouette2(data_in, width, height, length, curvature, curvatureExtrema, entropy);
+        MPI_Bcast(&length, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+      }
+    #else
+      int size = height*width;
+      std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+      for(int i = 0; i < size; i++)
+        if(depth_data[i] == depth_data[i])
+          depth_data[i] = 255.0;
+        else
+          depth_data[i] = 0.0;
+      float data_in[size];
+      float contour[size];
+      std::copy(depth_data.begin(), depth_data.end(), data_in);
+      double length, curvature, curvatureExtrema, entropy;
+      CalcSilhouette2(data_in, width, height, length, curvature, curvatureExtrema, entropy);
+    #endif
+    return (float)length;
+} 
+*/
+
+float
+calculateMetric2(vtkh::DataSet* dataset, std::string metric, std::string field_name,
+	       	std::vector<Triangle> &all_triangles, int height, int width, Camera camera)
+{
+  float score = 0.0;
+
+  if(metric == "data_entropy")
+  {
+    score = calculateDataEntropy2(dataset, height, width, field_name);
+  }
+  else if (metric == "visibility_ratio")
+  {
+    score = calculateVisibilityRatio2(dataset, all_triangles,  height, width);
+  }
+  else if (metric == "viewpoint_entropy")
+  {
+    score = calculateViewpointEntropy2(dataset, all_triangles, height, width, camera);
+  }
+  else if (metric == "vkl")
+  {
+    score = calculateVKL2(dataset, all_triangles, height, width, camera);
+  }
+  else if (metric == "visible_triangles")
+  {
+    score = calculateVisibleTriangles2(dataset, height, width);
+  }
+  else if (metric == "projected_area")
+  {
+    score = calculateProjectedArea2(dataset, height, width, camera);
+  }
+  else if (metric == "pb")
+  {
+    float total_triangles = (float) all_triangles.size();
+    score = calculatePlemenosAndBenayada2(dataset, total_triangles, height, width, camera);
+  }
+  else if (metric == "depth_entropy")
+  {
+    score = calculateDepthEntropy2(dataset, height, width);
+  }
+  else if (metric == "max_depth")
+  {
+    score = calculateMaxDepth2(dataset, height, width);
+  }
+  else
+    ASCENT_ERROR("This metric is not supported. \n");
+
+  return score;
+}
+
+/*
 float
 calculateMetric2(vtkh::DataSet* dataset, std::string metric, std::string field_name, int height, int width)
 {
@@ -745,6 +1719,7 @@ calculateMetric2(vtkh::DataSet* dataset, std::string metric, std::string field_n
 
   return score;
 }
+*/
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -863,7 +1838,10 @@ CameraSimplex::execute()
     
     double triangle_time = 0.;
     auto triangle_start = high_resolution_clock::now();
-    std::vector<Triangle> triangles;// = GetTriangles2(dataset,field_name);
+    //std::vector<Triangle> triangles;// = GetTriangles2(dataset,field_name);
+    std::vector<Triangle> triangles = GetTriangles2(dataset);
+    float total_triangles = (float) triangles.size();
+    vtkh::DataSet* data = AddTriangleFields2(dataset);
     auto triangle_stop = high_resolution_clock::now();
     triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
     /*#if ASCENT_MPI_ENABLED
@@ -921,9 +1899,17 @@ CameraSimplex::execute()
     int numPhi = 100;
 
     // File stuff
-    ofstream datafile;
-    // Open in binary mode and delete if it already existed
-    datafile.open("scores.bin", ios::binary | ios::trunc);
+    FILE *datafile;
+    float buffer[numTheta][numPhi];
+    char filename[metric.length() + 5];
+    strcpy(filename, metric.c_str());
+    filename[metric.length()] = '.';
+    filename[metric.length() + 1] = 'b';
+    filename[metric.length() + 2] = 'i';
+    filename[metric.length() + 3] = 'n';
+    filename[metric.length() + 4] = '\0';
+
+    datafile = fopen(filename, "wb");
 
     for (int i = 0 ; i < numTheta ; i++) {
       cout << "Step: " << i << endl;
@@ -941,19 +1927,21 @@ CameraSimplex::execute()
         vtkh::ScalarRenderer tracer;
         tracer.SetWidth(width);
         tracer.SetHeight(height);
-        tracer.SetInput(&dataset); //vtkh dataset by toponame
+        tracer.SetInput(data); //vtkh dataset by toponame
         tracer.SetCamera(*camera);
         tracer.Update();
 
         vtkh::DataSet *output = tracer.GetOutput();
 
-        float score = calculateMetric2(output, metric, field_name, height, width);
+        float score = calculateMetric2(output, metric, field_name,
+		       triangles, height, width, cam);
+
+        buffer[i][j] = score;
 
 	//cout << "Camera at: " << cam.position[0] << ", " << cam.position[1] << ", " << cam.position[2] << endl;
         //cout << "Score is: " << score << endl << endl;
 
-        //datafile << score << " ";	
-        datafile.write( (char *) &score, sizeof(score));
+        //datafile.write( (char *) &score, sizeof(score));
 
 	if (score > winning_score) {
             winning_score = score;
@@ -966,7 +1954,10 @@ CameraSimplex::execute()
 
     cout << "Winning score: " << winning_score << " at (" << winning_i << ", " << winning_j << ")" << endl;
 
-    datafile.close();
+    for (int k = 0 ; k < numTheta ; k++) {
+        fwrite(buffer[k], sizeof(float), numPhi, datafile);
+    }
+    fclose(datafile);
 
     /*
     for(int sample = 0; sample < samples; sample++)
