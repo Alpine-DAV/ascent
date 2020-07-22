@@ -16,6 +16,11 @@
 #include "BabelFlow/reduce/KWayReductionTaskMap.h"
 #include "BabelFlow/reduce/RadixKExchange.h"
 #include "BabelFlow/reduce/RadixKExchangeTaskMap.h"
+#include "BabelFlow/reduce/SingleTaskGraph.h"
+#include "BabelFlow/reduce/SingleTaskMap.h"
+#include "BabelFlow/ComposableTaskGraph.h"
+#include "BabelFlow/ComposableTaskMap.h"
+#include "BabelFlow/DefGraphConnector.h"
 #include "BabelFlow/PreProcessInputTaskGraph.hpp"
 #include "BabelFlow/ModTaskMap.hpp"
 
@@ -77,7 +82,7 @@ public:
    
   BabelGraphWrapper(const ImageData& input_img,
                     const std::string& img_name,
-                    int32_t task_id,
+                    int32_t rank_id,
                     int32_t n_blocks,
                     int32_t fanin,
                     MPI_Comm mpi_comm);
@@ -87,7 +92,7 @@ public:
   
 protected:
   ImageData m_inputImg;
-  uint32_t m_taskId;
+  uint32_t m_rankId;
   uint32_t m_numBlocks;
   uint32_t m_fanin;
   MPI_Comm m_comm;
@@ -104,7 +109,7 @@ class BabelCompReduce : public BabelGraphWrapper
 public:
   BabelCompReduce(const ImageData& input_img,
                   const std::string& img_name,
-                  int32_t task_id,
+                  int32_t rank_id,
                   int32_t n_blocks,
                   int32_t fanin,
                   MPI_Comm mpi_comm,
@@ -128,7 +133,7 @@ class BabelCompBinswap : public BabelGraphWrapper
 public:
   BabelCompBinswap(const ImageData& input_img,
                    const std::string& img_name,
-                   int32_t task_id,
+                   int32_t rank_id,
                    int32_t n_blocks,
                    int32_t fanin,
                    MPI_Comm mpi_comm);
@@ -149,21 +154,30 @@ class BabelCompRadixK : public BabelGraphWrapper
 public:
   BabelCompRadixK(const ImageData& input_img,
                   const std::string& img_name,
-                  int32_t task_id,
+                  int32_t rank_id,
                   int32_t n_blocks,
                   int32_t fanin,
                   MPI_Comm mpi_comm,
                   const std::vector<uint32_t>& radix_v);
-  virtual ~BabelCompRadixK() {}
+  virtual ~BabelCompRadixK();
   virtual void Initialize() override;
 
 private:
   std::vector<uint32_t> m_Radices;
   
-  BabelFlow::RadixKExchange m_graph;
-  BabelFlow::RadixKExchangeTaskMap m_taskMap; 
-  BabelFlow::PreProcessInputTaskGraph m_modGraph;
-  BabelFlow::ModTaskMap m_modMap;
+  BabelFlow::RadixKExchange m_radixkGr;
+  BabelFlow::RadixKExchangeTaskMap m_radixkMp; 
+
+  BabelFlow::SingleTaskGraph m_gatherTaskGr;
+  BabelFlow::SingleTaskMap m_gatherTaskMp;
+
+  BabelFlow::ComposableTaskGraph* m_ptrGraph;
+  BabelFlow::ComposableTaskMap* m_ptrTaskMap;
+
+  BabelFlow::DefGraphConnector* m_ptrDefGraphConnector;
+
+  //BabelFlow::PreProcessInputTaskGraph m_modGraph;
+  //BabelFlow::ModTaskMap m_modMap;
 };
 
 //-----------------------------------------------------------------------------
