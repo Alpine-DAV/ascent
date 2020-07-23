@@ -117,6 +117,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::Cycle>();
   flow::Workspace::register_filter_type<expressions::ArrayAccess>();
   flow::Workspace::register_filter_type<expressions::DotAccess>();
+  flow::Workspace::register_filter_type<expressions::PointAndAxis>();
 
   initialize_functions();
   initialize_objects();
@@ -422,6 +423,18 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
+  conduit::Node &point_and_axis_sig = (*functions)["point_and_axis"].append();
+  point_and_axis_sig["return_type"] = "double";
+  point_and_axis_sig["filter_name"] = "point_and_axis";
+  point_and_axis_sig["args/binning/type"] = "binning";
+  point_and_axis_sig["args/axis/type"] = "string";
+  point_and_axis_sig["args/threshold/type"] = "double";
+  point_and_axis_sig["args/point/type"] = "double";
+  point_and_axis_sig["description"] = "returns the first values in"
+    " a binning that exceeds a threshold from the given point.";
+
+  // -------------------------------------------------------------
+
   conduit::Node &quantile_sig = (*functions)["quantile"].append();
   quantile_sig["return_type"] = "double";
   quantile_sig["filter_name"] = "quantile";
@@ -611,6 +624,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
   conduit::Node return_val = *n_res;
+  return_val.print();
 
   std::stringstream cache_entry;
   cache_entry << expr_name << "/" << cycle;

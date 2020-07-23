@@ -1133,6 +1133,11 @@ FieldMin::execute()
   (*output)["attrs/value/type"] = "double";
   (*output)["attrs/position/value"] = n_min["position"];
   (*output)["attrs/position/type"] = "vector";
+  // information about the element/field
+  (*output)["attrs/element/rank"] = n_min["rank"];
+  (*output)["attrs/element/domain_index"] = n_min["domain_id"];
+  (*output)["attrs/element/index"] = n_min["index"];
+  (*output)["attrs/element/assoc"] = n_min["assoc"];
 
   set_output<conduit::Node>(output);
 }
@@ -1234,6 +1239,11 @@ FieldMax::execute()
   (*output)["attrs/value/type"] = "double";
   (*output)["attrs/position/value"] = n_max["position"];
   (*output)["attrs/position/type"] = "vector";
+  // information about the element/field
+  (*output)["attrs/element/rank"] = n_max["rank"];
+  (*output)["attrs/element/domain_index"] = n_max["domain_id"];
+  (*output)["attrs/element/index"] = n_max["index"];
+  (*output)["attrs/element/assoc"] = n_max["assoc"];
 
   set_output<conduit::Node>(output);
 }
@@ -2552,6 +2562,85 @@ ArraySum::execute()
 {
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = array_sum((*input<Node>("arg1"))["value"])["value"];
+  (*output)["type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+//-----------------------------------------------------------------------------
+PointAndAxis::PointAndAxis() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+PointAndAxis::~PointAndAxis()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+PointAndAxis::declare_interface(Node &i)
+{
+  i["type_name"] = "point_and_axis";
+  i["port_names"].append() = "binning";
+  i["port_names"].append() = "axis";
+  i["port_names"].append() = "threshold";
+  i["port_names"].append() = "point";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+PointAndAxis::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+PointAndAxis::execute()
+{
+  conduit::Node &in_binning = *input<Node>("binning");
+  conduit::Node &in_axis =  *input<Node>("axis");
+  conduit::Node &in_threshold =  *input<Node>("threshold");
+  conduit::Node &in_point =  *input<Node>("point");
+  in_binning.print();
+  conduit::Node *output = new conduit::Node();
+
+  const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
+  if(num_axes > 1)
+  {
+    ASCENT_ERROR("point_and_axis: only one axis is implemented");
+  }
+
+  const double point = in_point["value"].to_float64();
+  const double threshold = in_threshold["value"].to_float64();
+
+  const conduit::Node &axis = in_binning["attrs/bin_axes/value"].child(0);
+  const int num_bins = axis["num_bins"].to_int32();
+  const double min_val = axis["min_val"].to_float64();
+  const double max_val = axis["max_val"].to_float64();
+  const double inv_length = 1.0 / (max_val - min_val);
+
+  double *bins = in_binning["attrs/value/value"].value();
+  double min_dist = std::numeric_limits<double>::max();
+  for(int i = 0; i < num_bins; ++i)
+  {
+    double val = bins[i];
+    if(val > threshold)
+    {
+      double left = min_val + double(i) * inv_length;
+      double right = min_val + double(i+1) * inv_length;
+      double center = (left - right) / 2.0;
+      double dist = center - point;
+      min_dist = std::min(dist,min_dist);
+    }
+  }
+
+  (*output)["value"] = min_dist;
   (*output)["type"] = "double";
 
   set_output<conduit::Node>(output);

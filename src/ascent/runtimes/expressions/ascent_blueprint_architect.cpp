@@ -529,6 +529,7 @@ get_explicit_element(const conduit::Node &n_coords,
   res.set(vert, 3);
   return res;
 }
+
 //-----------------------------------------------------------------------------
 }; // namespace detail
 //-----------------------------------------------------------------------------
@@ -1167,12 +1168,12 @@ update_bin(double *bins,
   {
     // have to keep track of count anyways in order to detect which bins are
     // empty
-    bins[2 * i] = std::min(bins[i], value);
+    bins[2 * i] = std::min(bins[2 * i], value);
     bins[2 * i + 1] += 1;
   }
   else if(reduction_op == "max")
   {
-    bins[2 * i] = std::max(bins[i], value);
+    bins[2 * i] = std::max(bins[2 * i], value);
     bins[2 * i + 1] += 1;
   }
   else if(reduction_op == "avg" || reduction_op == "sum" ||
@@ -1284,6 +1285,7 @@ binning(const conduit::Node &dataset,
 
     conduit::Node n_homes;
     populate_homes(dom, bin_axes, topo_name, assoc_str, n_homes);
+
     if(n_homes.has_path("error"))
     {
       ASCENT_INFO("Binning: not binning domain "
@@ -1917,6 +1919,7 @@ field_min(const conduit::Node &dataset, const std::string &field)
   double *ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, minloc_res.rank, mpi_comm);
   MPI_Bcast(&domain_id, 1, MPI_INT, minloc_res.rank, mpi_comm);
+  MPI_Bcast(&index, 1, MPI_INT, minloc_res.rank, mpi_comm);
 
   loc.set(ploc, 3);
 
@@ -1924,6 +1927,8 @@ field_min(const conduit::Node &dataset, const std::string &field)
 #endif
   res["rank"] = rank;
   res["domain_id"] = domain_id;
+  res["index"] = index;
+  res["assoc"] = assoc_str;
   res["position"] = loc;
   res["value"] = min_value;
 
@@ -2051,12 +2056,15 @@ field_max(const conduit::Node &dataset, const std::string &field)
   double *ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, maxloc_res.rank, mpi_comm);
   MPI_Bcast(&domain_id, 1, MPI_INT, maxloc_res.rank, mpi_comm);
+  MPI_Bcast(&index, 1, MPI_INT, maxloc_res.rank, mpi_comm);
 
   loc.set(ploc, 3);
   rank = maxloc_res.rank;
 #endif
   res["rank"] = rank;
   res["domain_id"] = domain_id;
+  res["index"] = index;
+  res["assoc"] = assoc_str;
   res["position"] = loc;
   res["value"] = max_value;
 
@@ -2084,6 +2092,63 @@ get_state_var(const conduit::Node &dataset, const std::string &var_name)
     ASCENT_ERROR("Unable to retrieve state variable '" << var_name << "'");
   }
   return state;
+}
+
+double field_value(const std::string &field_name,
+                   const conduit::Node &dataset,
+                   const int el_rank,
+                   const int el_domain_index,
+                   const int el_index,
+                   const std::string el_assoc)
+{
+  int rank = 0;
+  int comm_size = 1;
+#ifdef ASCENT_MPI_ENABLED
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Comm_rank(mpi_comm, &rank);
+  MPI_Comm_size(mpi_comm, &comm_size);
+#endif
+
+  if(el_rank < 0 || el_rank >= comm_size)
+  {
+    ASCENT_ERROR("Invalid rank");
+  }
+
+  double res;
+  bool domain_error = false;
+  bool field_error = false;
+  const int num_domains = dataset.number_of_children();
+  if(rank == el_rank)
+  {
+    if(el_domain_index < 0 || el_domain_index >= num_domains)
+    {
+      domain_error = true;
+    }
+    if(!dataset.child(el_domain_index).has_path("fields/"+field_name))
+    {
+      field_error = true;
+    }
+  }
+
+
+  domain_error = detail::at_least_one(domain_error);
+  field_error = detail::at_least_one(field_error);
+  if(domain_error)
+  {
+    ASCENT_ERROR("Invalid domain "<<el_domain_index);
+  }
+
+  if(field_error)
+  {
+    ASCENT_ERROR("Invalid field "<<field_name
+                 <<" in domain id "<<el_domain_index);
+  }
+
+  if(rank == el_rank)
+  {
+    const conduit::Node &domain = dataset.child(el_domain_index);
+  }
+
 }
 
 //-----------------------------------------------------------------------------
