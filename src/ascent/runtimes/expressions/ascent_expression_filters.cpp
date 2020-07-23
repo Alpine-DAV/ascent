@@ -2607,7 +2607,6 @@ PointAndAxis::execute()
   conduit::Node &in_axis =  *input<Node>("axis");
   conduit::Node &in_threshold =  *input<Node>("threshold");
   conduit::Node &in_point =  *input<Node>("point");
-  in_binning.print();
   conduit::Node *output = new conduit::Node();
 
   const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
