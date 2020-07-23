@@ -2624,7 +2624,7 @@ PointAndAxis::execute()
   const int num_bins = axis["num_bins"].to_int32();
   const double min_val = axis["min_val"].to_float64();
   const double max_val = axis["max_val"].to_float64();
-  const double inv_length = 1.0 / (max_val - min_val);
+  const double bin_size = (max_val - min_val) / double(num_bins);
 
   double *bins = in_binning["attrs/value/value"].value();
   double min_dist = std::numeric_limits<double>::max();
@@ -2634,8 +2634,8 @@ PointAndAxis::execute()
     double val = bins[i];
     if(val > threshold)
     {
-      double left = min_val + double(i) * inv_length;
-      double right = min_val + double(i+1) * inv_length;
+      double left = min_val + double(i) * bin_size;
+      double right = min_val + double(i+1) * bin_size;
       double center = left + (right-left) / 2.0;
       double dist = center - point;
       if(dist < min_dist)
@@ -2739,7 +2739,7 @@ MaxFromPoint::execute()
   const int num_bins = axis["num_bins"].to_int32();
   const double min_val = axis["min_val"].to_float64();
   const double max_val = axis["max_val"].to_float64();
-  const double inv_length = 1.0 / (max_val - min_val);
+  const double bin_size = (max_val - min_val) / double(num_bins);
 
   double *bins = in_binning["attrs/value/value"].value();
   double max_bin_val = std::numeric_limits<double>::lowest();
@@ -2751,8 +2751,8 @@ MaxFromPoint::execute()
     double val = bins[i];
     if(val >= max_bin_val)
     {
-      double left = min_val + double(i) * inv_length;
-      double right = min_val + double(i+1) * inv_length;
+      double left = min_val + double(i) * bin_size;
+      double right = min_val + double(i+1) * bin_size;
       double center = left + (right-left) / 2.0;
       double dist = fabs(center - point);
       if(val > max_bin_val || 

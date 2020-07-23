@@ -229,6 +229,13 @@ int main (int argc, char *argv[])
     ascent.publish(replay_data);
     ascent.execute(actions);
   }
+
+  conduit::Node info;
+  ascent.info(info);
+  if(info.has_path("expressions"))
+  {
+    info["expressions"].save("expressions.yaml","yaml");
+  }
   ascent.close();
 
 #ifdef REPLAY_MPI

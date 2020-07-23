@@ -1246,8 +1246,11 @@ binning(const conduit::Node &dataset,
 
       if(!axis.has_path("max_val"))
       {
-        // We add 1 because the last bin isn't inclusive
-        axis["max_val"] = max_coords[axis_num] + 1.0;
+        // We add eps because the last bin isn't inclusive
+        double min_val = axis["min_val"].to_float64();
+        double length = max_coords[axis_num] - min_val;
+        double eps = length * 1e-8;
+        axis["max_val"] = max_coords[axis_num] + eps;
       }
     }
   }
