@@ -2627,6 +2627,7 @@ PointAndAxis::execute()
 
   double *bins = in_binning["attrs/value/value"].value();
   double min_dist = std::numeric_limits<double>::max();
+  int index = -1;
   for(int i = 0; i < num_bins; ++i)
   {
     double val = bins[i];
@@ -2636,9 +2637,41 @@ PointAndAxis::execute()
       double right = min_val + double(i+1) * inv_length;
       double center = (left - right) / 2.0;
       double dist = center - point;
-      min_dist = std::min(dist,min_dist);
+      if(dist < min_dist)
+      {
+        min_dist = dist;
+        index = i;
+      }
     }
   }
+  double bin_value = std::numeric_limits<double>::quiet_NaN();
+
+  if(index != -1)
+  {
+    bin_value = bins[index];
+  }
+
+  double loc[3] = {0.0, 0.0, 0.0};
+  std::string axis_str = in_axis["value"].as_string();
+
+  if(axis_str == "z")
+  {
+    loc[2] = min_dist;
+  }
+  else if (axis_str == "y")
+  {
+    loc[1] = min_dist;
+  }
+  else
+  {
+    loc[0] = min_dist;
+  }
+
+  (*output)["type"] = "value_position";
+  (*output)["attrs/value/value"] = bin_value;
+  (*output)["attrs/value/type"] = "double";
+  (*output)["attrs/position/value"].set(loc,3);
+  (*output)["attrs/position/type"] = "vector";
 
   (*output)["value"] = min_dist;
   (*output)["type"] = "double";

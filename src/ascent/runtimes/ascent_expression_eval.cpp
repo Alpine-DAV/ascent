@@ -424,7 +424,7 @@ initialize_functions()
   // -------------------------------------------------------------
 
   conduit::Node &point_and_axis_sig = (*functions)["point_and_axis"].append();
-  point_and_axis_sig["return_type"] = "double";
+  point_and_axis_sig["return_type"] = "value_position";
   point_and_axis_sig["filter_name"] = "point_and_axis";
   point_and_axis_sig["args/binning/type"] = "binning";
   point_and_axis_sig["args/axis/type"] = "string";
