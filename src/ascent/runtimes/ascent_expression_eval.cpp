@@ -645,6 +645,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   // this causes an invalid read in conduit in the expression tests
   // m_cache[cache_entry.str()] = *n_res;
   m_cache[cache_entry.str()] = return_val;
+  return_val.print();
 
   delete expression;
   w.reset();

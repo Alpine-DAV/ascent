@@ -2636,7 +2636,7 @@ PointAndAxis::execute()
     {
       double left = min_val + double(i) * inv_length;
       double right = min_val + double(i+1) * inv_length;
-      double center = (left - right) / 2.0;
+      double center = left + (right-left) / 2.0;
       double dist = center - point;
       if(dist < min_dist)
       {
@@ -2674,6 +2674,7 @@ PointAndAxis::execute()
   }
 
   (*output)["type"] = "value_position";
+  (*output)["index"] = index;
   (*output)["attrs/value/value"] = bin_value;
   (*output)["attrs/value/type"] = "double";
   (*output)["attrs/position/value"].set(loc,3);
@@ -2751,7 +2752,7 @@ MaxFromPoint::execute()
     {
       double left = min_val + double(i) * inv_length;
       double right = min_val + double(i+1) * inv_length;
-      double center = (left - right) / 2.0;
+      double center = left + (right-left) / 2.0;
       double dist = center - point;
       if(dist < min_dist)
       {
