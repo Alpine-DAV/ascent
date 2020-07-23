@@ -2743,6 +2743,7 @@ MaxFromPoint::execute()
 
   double *bins = in_binning["attrs/value/value"].value();
   double max_bin_val = std::numeric_limits<double>::lowest();
+  double dist_value = 0;
   double min_dist = std::numeric_limits<double>::max();
   int index = -1;
   for(int i = 0; i < num_bins; ++i)
@@ -2759,6 +2760,7 @@ MaxFromPoint::execute()
       {
         min_dist = dist;
         max_bin_val = val;
+        dist_value = center - point;
         index = i;
       }
     }
@@ -2769,15 +2771,15 @@ MaxFromPoint::execute()
 
   if(axis_str == "z")
   {
-    loc[2] = min_dist;
+    loc[2] = dist_value;
   }
   else if (axis_str == "y")
   {
-    loc[1] = min_dist;
+    loc[1] = dist_value;
   }
   else
   {
-    loc[0] = min_dist;
+    loc[0] = dist_value;
   }
 
   (*output)["type"] = "value_position";
