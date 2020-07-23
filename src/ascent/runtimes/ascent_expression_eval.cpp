@@ -624,7 +624,6 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
   conduit::Node return_val = *n_res;
-  return_val.print();
 
   std::stringstream cache_entry;
   cache_entry << expr_name << "/" << cycle;
