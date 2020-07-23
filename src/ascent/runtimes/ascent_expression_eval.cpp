@@ -639,6 +639,10 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
   conduit::Node return_val = *n_res;
 
+  // add the sim time
+  double time = get_state_var(*m_data, "time").to_float64();
+  return_val["time"] = time;
+
   std::stringstream cache_entry;
   cache_entry << expr_name << "/" << cycle;
 

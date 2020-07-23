@@ -2082,6 +2082,7 @@ get_state_var(const conduit::Node &dataset, const std::string &var_name)
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
     const conduit::Node &dom = dataset.child(i);
+    dom["state"].print();
     if(!has_state && dom.has_path("state/" + var_name))
     {
       has_state = true;
