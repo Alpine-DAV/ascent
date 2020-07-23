@@ -541,6 +541,15 @@ void log_time(std::chrono::time_point<std::chrono::system_clock> start,
     out.close();
 }
 
+void log_duration(const std::chrono::duration<double> elapsed, 
+                  const std::string &description,
+                  const int rank)
+{
+    std::ofstream out(get_timing_file_name(rank, 5, "vis"), std::ios_base::app);
+    out << description << elapsed.count() << std::endl;
+    out.close();
+}
+
 void log_global_time(const std::string &description,
                      const int rank)
 {
@@ -555,11 +564,12 @@ void log_global_time(const std::string &description,
 
 void print_time(std::chrono::time_point<std::chrono::system_clock> start, 
                 const std::string &description,
-                const int rank = -1)
+                const int rank = -1,
+                const double factor = 1.0)
 {
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
-    std::cout << description << elapsed.count() << " rank " << rank << std::endl;
+    std::cout << description << elapsed.count() * factor << " rank " << rank << std::endl;
 }
 
 
@@ -977,7 +987,6 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
     std::vector<vtkh::Image *> results(render_cfg.max_count);
     std::vector<std::thread> threads;
     // loop over images (camera positions)
-// #pragma omp parallel for
     for (int j = 0; j < render_cfg.max_count; ++j)
     {
         // std::cout << "Compositing with thread count " << omp_get_num_threads() << std::endl;
@@ -986,6 +995,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
         std::vector<float> v_depths(mpi_props.sim_node_count, 0.f);
 
         std::vector<float> depths(my_recv_cnt);
+    #pragma omp parallel for
         for (int i = 0; i < my_recv_cnt; i++)
             depths[i] = (*render_ptrs[j][i])["depths"].child(render_arrangement[j][i]).to_float();
 
@@ -994,6 +1004,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
                         MPI_FLOAT, mpi_props.comm_vis);
 
         std::vector<std::pair<float, int> > depth_id(v_depths.size());
+    #pragma omp parallel for
         for (int k = 0; k < v_depths.size(); k++)
             depth_id[k] = std::make_pair(v_depths[k], depth_id_order[k]);
         // sort based on depth values
@@ -1379,9 +1390,11 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     ascent_opts["cinema_increment"] = (i == 0) ? true : false;
                     ascent_opts["sleep"] = (src_ranks[i] == 0) ? SLEEP : 0;
 
+                    auto t_render = std::chrono::system_clock::now();
                     ascent_renders[i].open(ascent_opts);
                     ascent_renders[i].publish(dataset);
                     ascent_renders[i].execute(blank_actions);
+                    // print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
 
                     render_chunks_vis[i] = std::make_shared<Node>();
                     // ascent_main_runtime : out.set_external(m_info);
@@ -1473,6 +1486,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
             std::vector<std::thread> threads;
             // std::thread thread_pack(&test_function);
+            std::chrono::duration<double> sum_render(0);
+            std::chrono::duration<double> sum_copy(0);
             auto t_start = std::chrono::system_clock::now();
             for (int i = 0; i < batch.runs; ++i)
             {
@@ -1489,17 +1504,22 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 ascent_opts["render_offset"] = begin;
                 ascent_opts["insitu_type"] = "hybrid";
                 ascent_opts["sleep"] = (mpi_props.rank == 0) ? SLEEP : 0;
-
+                
+                auto t_render = std::chrono::system_clock::now();
                 ascent_renders[i].open(ascent_opts);
                 ascent_renders[i].publish(data);
                 ascent_renders[i].execute(blank_actions);
+                auto t_end = std::chrono::system_clock::now();
+                sum_render += t_end - t_render;
+                // print_time(t_render, "ascent render sim ", mpi_props.rank, 1.0 / (end - begin));
 
+                t_render = std::chrono::system_clock::now();
                 if (threads.size() > 0)
                 {
                     threads.back().join();
                     threads.pop_back();
                 }
-
+                
                 // send render chunks
                 ascent_renders[i].info(info[i]);
                 render_chunks_inline["depths"].set_external(info[i]["depths"]);
@@ -1510,13 +1530,19 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 threads.push_back(std::thread(&pack_and_send, std::ref(render_chunks_inline), 
                                               destination, tag_inline + i, mpi_props.comm_world, 
                                               std::ref(requests[i])));
+
+                t_end = std::chrono::system_clock::now();
+                sum_copy += t_end - t_render;
+                // print_time(t_render, "ascent info sim ", mpi_props.rank, 1.0 / (end - begin));
             }
             while (threads.size() > 0)
             {
                 threads.back().join();
                 threads.pop_back();
             }
-            log_time(t_start, "+ render sim " + std::to_string(g_render_counts[mpi_props.rank]) + " ", mpi_props.rank);
+            log_duration(sum_render, "+ render sim " + std::to_string(g_render_counts[mpi_props.rank]) + " ", mpi_props.rank);
+            log_duration(sum_copy, "+ copy sim " + std::to_string(g_render_counts[mpi_props.rank]) + " ", mpi_props.rank);
+ 
             log_global_time("end render", mpi_props.rank);
 
             {   // wait for all sent data to be received
@@ -1679,10 +1705,12 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_opt["insitu_type"] = is_inline ? "inline" : "hybrid";
         ascent_opt["sleep"] = world_rank == 0 ? SLEEP : 0;
 
+        auto t_render = std::chrono::system_clock::now();
         // all sim nodes run probing in a new ascent instance
         ascent_probing.open(ascent_opt);
         ascent_probing.publish(m_data);        // pass on data pointer
         ascent_probing.execute(probe_actions); // pass on actions
+        // print_time(t_render, "ascent render probing ", world_rank, 1.0 / std::round(probing_factor * phi * theta));
 
         if (!is_inline)
         {

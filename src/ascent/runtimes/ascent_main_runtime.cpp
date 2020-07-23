@@ -1472,26 +1472,31 @@ void AscentRuntime::Execute(const conduit::Node &actions)
 
     auto t_detail = std::chrono::system_clock::now();
 
-//=== TODO: this still costs some 1.5 seconds for the copies
     Node *images = w.registry().fetch<Node>("image_list");
 
     const int size = images->number_of_children();
-    Node image_params = *images;
-    m_info["images"].set_external(image_params);
+    // Note: this copy costs ~1.5 seconds -> avoid it (only needed for interactive web interface?)
+    // Node image_params = *images;
+    // m_info["images"].set_external(image_params);
+
     for (int i = 0; i < size; i++)
     {
-      Node &image_name = m_info["render_file_names"].append();
-      image_name.set_external(images->child(i)["image_name"]);
-      Node &times = m_info["render_times"].append();
-      times.set_external(images->child(i)["render_time"]);
-      Node &cb = m_info["color_buffers"].append();
-      cb.set_external(images->child(i)["color_buffer"]);
-      Node &db = m_info["depth_buffers"].append();
-      db.set_external(images->child(i)["depth_buffer"]);
-      Node &depths_tmp = m_info["depths"].append();
-      depths_tmp.set_external(images->child(i)["depth"]);
+      m_info["render_file_names"].append();
+      m_info["render_times"].append();
+      m_info["color_buffers"].append();
+      m_info["depth_buffers"].append();
+      m_info["depths"].append();
     }
-//===
+
+  #pragma omp parallel for
+    for (int i = 0; i < size; i++)
+    {
+      m_info["render_file_names"][i].set_external(images->child(i)["image_name"]);
+      m_info["render_times"][i].set_external(images->child(i)["render_time"]);
+      m_info["color_buffers"][i].set_external(images->child(i)["color_buffer"]);
+      m_info["depth_buffers"][i].set_external(images->child(i)["depth_buffer"]);
+      m_info["depths"][i].set_external(images->child(i)["depth"]);
+    }
 
     // Node renders;
     // Node render_file_names;
