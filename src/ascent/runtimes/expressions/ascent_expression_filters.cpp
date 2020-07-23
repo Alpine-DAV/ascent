@@ -2587,6 +2587,7 @@ PointAndAxis::declare_interface(Node &i)
   i["port_names"].append() = "axis";
   i["port_names"].append() = "threshold";
   i["port_names"].append() = "point";
+  i["port_names"].append() = "miss_value";
   i["output_port"] = "true";
 }
 
@@ -2607,6 +2608,7 @@ PointAndAxis::execute()
   conduit::Node &in_axis =  *input<Node>("axis");
   conduit::Node &in_threshold =  *input<Node>("threshold");
   conduit::Node &in_point =  *input<Node>("point");
+  conduit::Node &n_miss_val =  *input<Node>("miss_value");
   conduit::Node *output = new conduit::Node();
 
   const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
@@ -2645,6 +2647,11 @@ PointAndAxis::execute()
   }
   double bin_value = std::numeric_limits<double>::quiet_NaN();
 
+  if(!n_miss_val.dtype().is_empty())
+  {
+    bin_value = n_miss_val["value"].to_float64();
+  }
+
   if(index != -1)
   {
     bin_value = bins[index];
@@ -2668,6 +2675,111 @@ PointAndAxis::execute()
 
   (*output)["type"] = "value_position";
   (*output)["attrs/value/value"] = bin_value;
+  (*output)["attrs/value/type"] = "double";
+  (*output)["attrs/position/value"].set(loc,3);
+  (*output)["attrs/position/type"] = "vector";
+
+  (*output)["value"] = min_dist;
+  (*output)["type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+MaxFromPoint::MaxFromPoint() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+MaxFromPoint::~MaxFromPoint()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+MaxFromPoint::declare_interface(Node &i)
+{
+  i["type_name"] = "max_from_point";
+  i["port_names"].append() = "binning";
+  i["port_names"].append() = "axis";
+  i["port_names"].append() = "point";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+MaxFromPoint::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+MaxFromPoint::execute()
+{
+  conduit::Node &in_binning = *input<Node>("binning");
+  conduit::Node &in_axis =  *input<Node>("axis");
+  conduit::Node &in_point =  *input<Node>("point");
+  conduit::Node *output = new conduit::Node();
+
+  const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
+  if(num_axes > 1)
+  {
+    ASCENT_ERROR("max_from_point: only one axis is implemented");
+  }
+
+  const double point = in_point["value"].to_float64();
+
+  const conduit::Node &axis = in_binning["attrs/bin_axes/value"].child(0);
+  const int num_bins = axis["num_bins"].to_int32();
+  const double min_val = axis["min_val"].to_float64();
+  const double max_val = axis["max_val"].to_float64();
+  const double inv_length = 1.0 / (max_val - min_val);
+
+  double *bins = in_binning["attrs/value/value"].value();
+  double max_bin_val = std::numeric_limits<double>::lowest();
+  double min_dist = std::numeric_limits<double>::max();
+  int index = -1;
+  for(int i = 0; i < num_bins; ++i)
+  {
+    double val = bins[i];
+    if(val >= max_bin_val)
+    {
+      double left = min_val + double(i) * inv_length;
+      double right = min_val + double(i+1) * inv_length;
+      double center = (left - right) / 2.0;
+      double dist = center - point;
+      if(dist < min_dist)
+      {
+        min_dist = dist;
+        max_bin_val = val;
+        index = i;
+      }
+    }
+  }
+
+  double loc[3] = {0.0, 0.0, 0.0};
+  std::string axis_str = in_axis["value"].as_string();
+
+  if(axis_str == "z")
+  {
+    loc[2] = min_dist;
+  }
+  else if (axis_str == "y")
+  {
+    loc[1] = min_dist;
+  }
+  else
+  {
+    loc[0] = min_dist;
+  }
+
+  (*output)["type"] = "value_position";
+  (*output)["attrs/value/value"] = max_bin_val;
   (*output)["attrs/value/type"] = "double";
   (*output)["attrs/position/value"].set(loc,3);
   (*output)["attrs/position/type"] = "vector";

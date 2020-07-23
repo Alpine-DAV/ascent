@@ -118,6 +118,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::ArrayAccess>();
   flow::Workspace::register_filter_type<expressions::DotAccess>();
   flow::Workspace::register_filter_type<expressions::PointAndAxis>();
+  flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
 
   initialize_functions();
   initialize_objects();
@@ -430,8 +431,21 @@ initialize_functions()
   point_and_axis_sig["args/axis/type"] = "string";
   point_and_axis_sig["args/threshold/type"] = "double";
   point_and_axis_sig["args/point/type"] = "double";
+  point_and_axis_sig["args/miss_value/type"] = "scalar";
+  point_and_axis_sig["args/miss_value/optional"];
   point_and_axis_sig["description"] = "returns the first values in"
     " a binning that exceeds a threshold from the given point.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &max_from_point_sig = (*functions)["max_from_point"].append();
+  max_from_point_sig["return_type"] = "value_position";
+  max_from_point_sig["filter_name"] = "max_from_point";
+  max_from_point_sig["args/binning/type"] = "binning";
+  max_from_point_sig["args/axis/type"] = "string";
+  max_from_point_sig["args/point/type"] = "double";
+  max_from_point_sig["description"] = "returns the closest max"
+    " value from a reference point on an axis";
 
   // -------------------------------------------------------------
 
