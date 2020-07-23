@@ -2753,8 +2753,9 @@ MaxFromPoint::execute()
       double left = min_val + double(i) * inv_length;
       double right = min_val + double(i+1) * inv_length;
       double center = left + (right-left) / 2.0;
-      double dist = center - point;
-      if(dist < min_dist)
+      double dist = fabs(center - point);
+      if(val > max_bin_val || 
+         ((dist < min_dist) && val == max_bin_val))
       {
         min_dist = dist;
         max_bin_val = val;
