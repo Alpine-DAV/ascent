@@ -624,11 +624,11 @@ initialize_functions()
   //---------------------------------------------------------------------------
 
   conduit::Node &volume_sig = (*functions)["volume"].append();
-  field_sin_sig["return_type"] = "jitable";
-  field_sin_sig["filter_name"] = "volume";
-  field_sin_sig["args/arg1/type"] = "topo";
-  field_sin_sig["jitable"];
-  field_sin_sig["description"] = "Return a derived field of the volume/area "
+  volume_sig["return_type"] = "jitable";
+  volume_sig["filter_name"] = "volume";
+  volume_sig["args/arg1/type"] = "topo";
+  volume_sig["jitable"];
+  volume_sig["description"] = "Return a derived field of the volume/area "
                                  "for each element in a topology.";
 
   //---------------------------------------------------------------------------
@@ -699,9 +699,11 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     {
       conduit::Node params;
       params["func"] = "execute";
+      params["filter_name"] = "jit_execute";
       params["execute"] = true;
-      params["inputs/jitable/type"] = "jitable";
-      params["inputs/jitable/port"] = 0;
+      conduit::Node &inp = params["inputs/jitable"];
+      inp = root;
+      inp["port"] = 0;
       w.graph().add_filter(register_jit_filter(w, 1), "jit_execute", params);
       // src, dest, port
       w.graph().connect(root["filter_name"].as_string(), "jit_execute", 0);

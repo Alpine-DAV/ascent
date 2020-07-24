@@ -1390,7 +1390,7 @@ binning(const conduit::Node &dataset,
     }
     else
     {
-      ASCENT_ERROR("Field " << reduction_var << "not found in all domains");
+      ASCENT_ERROR("Field '" << reduction_var << "' not found in all domains");
     }
   }
 
@@ -2226,6 +2226,34 @@ topology_types(const conduit::Node &dataset,
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   MPI_Allreduce(MPI_IN_PLACE, topo_types, 5, MPI_INT, MPI_SUM, mpi_comm);
 #endif
+}
+
+int
+topo_dim(const std::string &topo_name, const conduit::Node &dom)
+{
+  if(!dom.has_path("topologies/" + topo_name))
+  {
+    ASCENT_ERROR("Topology '" << topo_name << "' not found in domain.");
+  }
+
+  const conduit::Node &n_topo = dom["topologies/" + topo_name];
+
+  const std::string c_name = n_topo["coordset"].as_string();
+  const conduit::Node n_coords = dom["coordsets/" + c_name];
+  const std::string c_type = n_coords["type"].as_string();
+
+  if(c_type == "uniform")
+  {
+    return n_coords["dims"].number_of_children();
+  }
+
+  if(c_type == "rectilinear" || c_type == "explicit")
+  {
+    return n_coords["values"].number_of_children();
+  }
+
+  ASCENT_ERROR("Unknown coordinate set type: '" << c_type << "'.");
+  return -1;
 }
 
 int

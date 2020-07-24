@@ -87,7 +87,6 @@ TEST(ascent_expressions, derived_expressions)
   data["state/domain_id"] = 0;
   Node multi_dom;
   blueprint::mesh::to_multi_domain(data, multi_dom);
-  multi_dom.print();
 
   runtime::expressions::register_builtin();
   runtime::expressions::ExpressionEval eval(&multi_dom);
@@ -121,15 +120,22 @@ TEST(ascent_expressions, derived_expressions)
 
   // pass vec and see what happens
   // expr = "sin(field('braid')) * field('braid') * field('vel')";
-  // expr = "sin(field('braid'))";
+
+  expr = "sin(field('braid'))";
+  eval.evaluate(expr);
+
   // expr = "sin(field('radial'))";
-  // expr = "(field('braid') - min(field('braid')).value) / "
-  //       "(max(field('braid')).value - min(field('braid')).value)";
+  expr = "(field('braid') - min(field('braid')).value) / "
+         "(max(field('braid')).value - min(field('braid')).value)";
+  eval.evaluate(expr);
   // expr = "(field('braid') - min(field('braid'))) / "
   //       "(max(field('braid')) - min(field('braid')))";
   // expr = "sin(1.0)";
   // expr = "volume(topo('lskdfj'))";
-  // expr = "1 + field('braid') + 1";
+
+  expr = "1 + field('braid') + 1";
+  eval.evaluate(expr);
+
   expr = "max(field('braid') + 1)";
   eval.evaluate(expr);
 }

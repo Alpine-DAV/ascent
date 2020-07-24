@@ -169,6 +169,9 @@ int num_points(const conduit::Node &domain, const std::string &topo_name);
 // assumes that the topology exists, globally checks for constistency
 int spatial_dims(const conduit::Node &dataset, const std::string &topo_name);
 
+// get the dimensionality for a topology in a domain
+int topo_dim(const std::string &topo_name, const conduit::Node &dom);
+
 // finds then name of a topology using the field name. topology might not
 // exist on this rank.
 std::string field_topology(const conduit::Node &dataset,

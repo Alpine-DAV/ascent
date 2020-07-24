@@ -86,7 +86,8 @@ void parameters(const conduit::Node &dataset,
                 std::map<std::string, std::string> &var_types, // name:type
                 std::map<std::string, double> &constants);
 
-void execute_jitable(const conduit::Node &jitable, conduit::Node &dataset);
+void execute_jitable(conduit::Node &jitable, conduit::Node &dataset);
+std::string topo_params(const std::string &topo_name, const conduit::Node &dom);
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
