@@ -121,7 +121,7 @@ SUBROUTINE hydro
     ENDIF
     ! visualization
     IF(visit_frequency.NE.0) THEN
-      IF(MOD(step, visit_frequency).EQ.1) THEN
+      IF(MOD(step, visit_frequency).EQ.5) THEN
         vis_time=timer()
 
         unix = c_time(int(0, kind=8))

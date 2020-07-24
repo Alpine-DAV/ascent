@@ -254,23 +254,25 @@ struct RenderConfig
 {
     int max_count = 0;
     double probing_factor = 0.0;
-    double vis_budget = 0.1;
+    std::string insitu_type = "hybrid";
     int probing_stride = 0;
     int probing_count = 0;
     int non_probing_count = 0;
+    int batch_size = 10;
 
     // TODO: make batch_size variable by config, 
     // TODO: Adapt batch_size to align with probing size so that first render is always probing,
     //       this would avoid batch size 1 issues.
-    const static int BATCH_SIZE = 20;
     const static int WIDTH = 1024;
     const static int HEIGHT = 1024;
     const static int CHANNELS = 4 + 4; // RGBA + depth (float)
 
-    RenderConfig(int max_render_count, double probing_factor = 0.0, double vis_budget = 0.1)
+    RenderConfig(const int max_render_count, const double probing_factor = 0.0, 
+                 const std::string &insitu_type = "hybrid", const int batch_size = 10)
      : max_count(max_render_count)
      , probing_factor(probing_factor)
-     , vis_budget(vis_budget)
+     , insitu_type(insitu_type)
+     , batch_size(batch_size)
     {
         // infer probing stride
         if (probing_factor <= 0.0)
@@ -353,7 +355,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
     }
 
     // vis budget of 1 implies intransit only (i.e., only vis nodes render)
-    if (render_cfg.vis_budget < 1.0)
+    if (render_cfg.insitu_type != "intransit")
     {
         // push back load to sim nodes until 
         // intransit time is smaller than max(inline + sim)
@@ -470,13 +472,12 @@ std::vector<int> job_assignment(const std::vector<float> &sim_estimate,
                                 const std::vector<float> &vis_estimates,
                                 const std::vector<int> &rank_order, 
                                 const int vis_node_count, 
-                                const double vis_budget)
+                                const std::string &insitu_type)
 {
     assert(sim_estimate.size() == vis_estimates.size() == rank_order.size());
     std::vector<int> map(rank_order.size(), -1);
 
-    // vis_budget of 0 implies in line rendering only
-    if (vis_budget <= 0.0 + std::numeric_limits<double>::epsilon())
+    if (insitu_type == "inline")
         return map;
     std::vector<float> sum(vis_node_count, 0.f);
     
@@ -484,9 +485,8 @@ std::vector<int> job_assignment(const std::vector<float> &sim_estimate,
     for (int i,j = 0; i < rank_order.size() - vis_node_count; ++i, ++j)
     {
         int vis_node = j % vis_node_count;
-        // vis budget of 1 implies in transit only
         if (vis_estimates[rank_order[i]] + sim_estimate[rank_order[i]] > sum[vis_node] 
-            || vis_budget >= 1.0 - std::numeric_limits<double>::epsilon()) 
+            || insitu_type == "intransit")
         {
             // assign to vis node
             map[rank_order[i]] = vis_node;
@@ -836,7 +836,7 @@ void save_image(vtkh::Image *image, const std::string &name)
 void image_consumer(std::mutex &mu, std::condition_variable &cond,
                     std::deque<std::pair<vtkh::Image *, std::string> > &buffer)
 {
-    std::cout << "Created consumer " << std::this_thread::get_id() << std::endl;
+    // std::cout << "Created consumer " << std::this_thread::get_id() << std::endl;
     while (true)
     {
         std::unique_lock<std::mutex> mlock(mu);
@@ -849,7 +849,7 @@ void image_consumer(std::mutex &mu, std::condition_variable &cond,
 
         if (image.first == nullptr && image.second == "KILL") // poison indicator 
         {
-            std::cout << "Killed consumer " << std::this_thread::get_id() << std::endl;
+            // std::cout << "Killed consumer " << std::this_thread::get_id() << std::endl;
             return;
         }
         else
@@ -918,7 +918,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
 
                 {   // keep track of probing images
                     // reset counter if first in batch
-                    if (j % render_cfg.BATCH_SIZE == 0)   
+                    if (j % render_cfg.batch_size == 0)   
                         probing_enum_sim[i] = 0;
                     ++probing_enum_sim[i];
                     // reset probing counter if first render in vis chunks
@@ -931,11 +931,11 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
             {
                 // Reset the probing counter if this is the first render in a batch 
                 // and this is not a probing render.
-                if (j % render_cfg.BATCH_SIZE == 0)
+                if (j % render_cfg.batch_size == 0)
                     probing_enum_sim[i] = 0;
 
-                const int batch_id = j / render_cfg.BATCH_SIZE;
-                const index_t id = (j % render_cfg.BATCH_SIZE) - probing_enum_sim[i];
+                const int batch_id = j / render_cfg.batch_size;
+                const index_t id = (j % render_cfg.batch_size) - probing_enum_sim[i];
                 // std::cout << " " << mpi_props.rank << " sim  " << id << std::endl;
                 render_ptrs[j].emplace_back(parts_sim[i][batch_id]);
                 render_arrangement[j].emplace_back(id);
@@ -1054,6 +1054,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
 
             if (j == render_cfg.max_count - 1)  // last image -> kill consumers
             {  
+                std::cout << "Clean up consumers." << std::endl;
                 // poison consumers for cleanup
                 for (int i = 0; i < consumers.size(); ++i)
                 {
@@ -1098,8 +1099,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                    conduit::Node &render_chunks_probing)
 {
     auto start0 = std::chrono::system_clock::now();
-    // render_cfg.vis_budget of 1.0 => all in transit
-    assert(render_cfg.vis_budget >= 0.0 && render_cfg.vis_budget <= 1.0);
+    assert(render_cfg.insitu_type != "inline");
     assert(mpi_props.sim_node_count > 0 && mpi_props.sim_node_count <= mpi_props.size);
 
     bool is_vis_node = false;
@@ -1205,7 +1205,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
     ascent_opts["actions_file"] = "cinema_actions.yaml";
     ascent_opts["is_probing"] = 0;
     ascent_opts["probing_factor"] = render_cfg.probing_factor;
-    ascent_opts["insitu_type"] = (render_cfg.vis_budget >= 1.0) ? "intransit" : "hybrid";
+    ascent_opts["insitu_type"] = render_cfg.insitu_type;
 
     log_time(start1, "- load distribution ", mpi_props.rank);
     log_global_time("end loadAssignment", mpi_props.rank);
@@ -1221,7 +1221,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
         }
         const int my_recv_cnt = int(sending_node_ranks.size());
         // count of nodes that do inline rendering (0 for in transit case)
-        const int my_render_recv_cnt = render_cfg.vis_budget >= 1.0 ? 0 : my_recv_cnt; 
+        const int my_render_recv_cnt = render_cfg.insitu_type == "intransit" ? 0 : my_recv_cnt;
         std::map<int, int> recv_counts;
         for (const auto &n : node_map)
             ++recv_counts[n];
@@ -1280,7 +1280,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
         {
             int render_count = g_render_counts[src_ranks[i]] 
                                 + int(g_render_counts[src_ranks[i]]*render_cfg.probing_factor);
-            batches[i] = get_batch(render_count, render_cfg.BATCH_SIZE);
+            batches[i] = get_batch(render_count, render_cfg.batch_size);
         }
 
         // probing chunks
@@ -1302,7 +1302,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
             for (int j = 0; j < batches[i].runs; ++j)
             {
-                const int current_batch_size = get_current_batch_size(render_cfg.BATCH_SIZE, batches[i], j);
+                const int current_batch_size = get_current_batch_size(render_cfg.batch_size, batches[i], j);
                 buffer_size = calc_render_msg_size(current_batch_size, render_cfg.probing_factor);
                 render_chunks_sim[i][j] = make_unique<Node>(DataType::uint8(buffer_size));
                 if (current_batch_size == 1)    // TODO: single render that was already probed
@@ -1318,7 +1318,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             // std::cout << " ~~~ vis node " << mpi_props.rank << " receiving " << batches[i].runs
             //           << " render chunks from " << src_ranks[i] << std::endl;
             // receive probing render chunks
-            if (render_cfg.vis_budget < 1.0)   // 1 implies in transit only, i.e. we don't use probing
+            if (render_cfg.insitu_type != "intransit")
             {
                 int mpi_error = MPI_Irecv(render_chunks_probe[i]->data_ptr(),
                                           render_chunks_probe[i]->total_bytes_compact(),
@@ -1335,7 +1335,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             for (int j = 0; j < batches[i].runs; ++j)
             {
                 // correct size for last iteration
-                const int current_batch_size = get_current_batch_size(render_cfg.BATCH_SIZE, batches[i], j);
+                const int current_batch_size = get_current_batch_size(render_cfg.batch_size, batches[i], j);
                 if (current_batch_size <= 1) // TODO: single render that was already probed
                     break;
 
@@ -1442,7 +1442,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             // compact_probing_renders are now packed and send in separate thread
             // Node compact_probing_renders = pack_node(render_chunks_probing);
             const int my_render_count = g_render_counts[mpi_props.rank] + int(g_render_counts[mpi_props.rank]*render_cfg.probing_factor);
-            RenderBatch batch = get_batch(my_render_count, render_cfg.BATCH_SIZE);
+            RenderBatch batch = get_batch(my_render_count, render_cfg.batch_size);
 
             {   // init send buffer
                 detach_mpi_buffer();
@@ -1491,11 +1491,11 @@ void hybrid_render(const MPI_Properties &mpi_props,
             auto t_start = std::chrono::system_clock::now();
             for (int i = 0; i < batch.runs; ++i)
             {
-                const int begin = i*render_cfg.BATCH_SIZE;
-                const int current_batch_size = get_current_batch_size(render_cfg.BATCH_SIZE, batch, i);
+                const int begin = i*render_cfg.batch_size;
+                const int current_batch_size = get_current_batch_size(render_cfg.batch_size, batch, i);
                 if (current_batch_size <= 1)
                     break;
-                const int end = i*render_cfg.BATCH_SIZE + current_batch_size;
+                const int end = i*render_cfg.batch_size + current_batch_size;
 
                 std::cout   << "~~ SIM node " << mpi_props.rank << " rendering " 
                             << begin << " - " << end << std::endl;
@@ -1508,10 +1508,12 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 auto t_render = std::chrono::system_clock::now();
                 ascent_renders[i].open(ascent_opts);
                 ascent_renders[i].publish(data);
+                print_time(t_render, "ascent publish sim ", mpi_props.rank);
+                
+                t_render = std::chrono::system_clock::now();
                 ascent_renders[i].execute(blank_actions);
                 auto t_end = std::chrono::system_clock::now();
                 sum_render += t_end - t_render;
-                // print_time(t_render, "ascent render sim ", mpi_props.rank, 1.0 / (end - begin));
 
                 t_render = std::chrono::system_clock::now();
                 if (threads.size() > 0)
@@ -1592,8 +1594,9 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     conduit::Node probe_actions = actions;
     // probing setup
     double probing_factor = 0.0;
-    double vis_budget = 0.0;
     double node_split = 0.0;
+    int batch_size = 1;
+    std::string insitu_type = "hybrid";
     // cinema angle counts
     int phi = 1;
     int theta = 1;
@@ -1619,10 +1622,15 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
                     ASCENT_ERROR("action 'probing' missing child 'factor'");
                 }
 
-                if (action["probing"].has_path("vis_budget"))
-                    vis_budget = action["probing/vis_budget"].to_double();
+                if (action["probing"].has_path("insitu_type"))
+                    insitu_type = action["probing/insitu_type"].as_string();
                 else
-                    ASCENT_ERROR("action 'probing' missing child 'vis_budget'");
+                    ASCENT_ERROR("action 'probing' missing child 'insitu_type'");
+
+                if (action["probing"].has_path("batch_size"))
+                    batch_size = action["probing/batch_size"].to_int();
+                else
+                    ASCENT_ERROR("action 'probing' missing child 'batch_size'");
 
                 if (action["probing"].has_path("node_split"))
                 {
@@ -1694,7 +1702,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     Ascent ascent_probing;
     Node render_chunks;
     // run probing only if this is a sim node
-    if ((world_rank < sim_count && probing_factor > 0.0) || (probing_factor >= 1.0))
+    if ((world_rank < sim_count && probing_factor > 0.0) || insitu_type == "inline")
     {
         auto start = std::chrono::system_clock::now();
         ascent_opt["runtime/type"] = "ascent"; // set to main runtime
@@ -1702,7 +1710,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_opt["probing_factor"] = probing_factor;
         ascent_opt["render_count"] = phi * theta;
         ascent_opt["render_offset"] = 0;
-        ascent_opt["insitu_type"] = is_inline ? "inline" : "hybrid";
+        ascent_opt["insitu_type"] = insitu_type;
         ascent_opt["sleep"] = world_rank == 0 ? SLEEP : 0;
 
         auto t_render = std::chrono::system_clock::now();
@@ -1710,9 +1718,9 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_probing.open(ascent_opt);
         ascent_probing.publish(m_data);        // pass on data pointer
         ascent_probing.execute(probe_actions); // pass on actions
-        // print_time(t_render, "ascent render probing ", world_rank, 1.0 / std::round(probing_factor * phi * theta));
+        print_time(t_render, "ascent render probing ", world_rank, 1.0 / std::round(probing_factor * phi * theta));
 
-        if (!is_inline)
+        if (insitu_type != "inline")
         {
             conduit::Node info;
             ascent_probing.info(info);
@@ -1746,7 +1754,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     {
         MPI_Properties mpi_props(world_size, world_rank, sim_count, world_size - sim_count, 
                                  mpi_comm_world, vis_comm);
-        RenderConfig render_cfg(phi*theta, probing_factor, vis_budget);
+        RenderConfig render_cfg(phi*theta, probing_factor, insitu_type, batch_size);
         if (world_rank == 0)
         {
             std::cout << "Probing " << render_cfg.probing_count << "/" << render_cfg.max_count
