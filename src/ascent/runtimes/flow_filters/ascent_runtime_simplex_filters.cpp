@@ -1937,6 +1937,8 @@ CameraSimplex::execute()
         float score = calculateMetric2(output, metric, field_name,
 		       triangles, height, width, cam);
 
+	delete output;
+
 	//cout << "Camera at: " << cam.position[0] << ", " << cam.position[1] << ", " << cam.position[2] << endl;
         //cout << "Score is: " << score << endl << endl;
 
