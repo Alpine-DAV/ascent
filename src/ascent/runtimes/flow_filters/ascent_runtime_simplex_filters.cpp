@@ -1899,8 +1899,9 @@ CameraSimplex::execute()
     int numPhi = 100;
 
     // File stuff
-    FILE *datafile;
-    float buffer[numTheta][numPhi];
+    ofstream datafile;
+
+    // Get nice filename
     char filename[metric.length() + 5];
     strcpy(filename, metric.c_str());
     filename[metric.length()] = '.';
@@ -1909,7 +1910,7 @@ CameraSimplex::execute()
     filename[metric.length() + 3] = 'n';
     filename[metric.length() + 4] = '\0';
 
-    datafile = fopen(filename, "wb");
+    datafile.open(filename, ios::binary | ios::trunc);
 
     for (int i = 0 ; i < numTheta ; i++) {
       cout << "Step: " << i << endl;
@@ -1936,12 +1937,10 @@ CameraSimplex::execute()
         float score = calculateMetric2(output, metric, field_name,
 		       triangles, height, width, cam);
 
-        buffer[i][j] = score;
-
 	//cout << "Camera at: " << cam.position[0] << ", " << cam.position[1] << ", " << cam.position[2] << endl;
         //cout << "Score is: " << score << endl << endl;
 
-        //datafile.write( (char *) &score, sizeof(score));
+        datafile.write( (char *) &score, sizeof(score));
 
 	if (score > winning_score) {
             winning_score = score;
@@ -1954,10 +1953,7 @@ CameraSimplex::execute()
 
     cout << "Winning score: " << winning_score << " at (" << winning_i << ", " << winning_j << ")" << endl;
 
-    for (int k = 0 ; k < numTheta ; k++) {
-        fwrite(buffer[k], sizeof(float), numPhi, datafile);
-    }
-    fclose(datafile);
+    datafile.close();
 
     /*
     for(int sample = 0; sample < samples; sample++)
