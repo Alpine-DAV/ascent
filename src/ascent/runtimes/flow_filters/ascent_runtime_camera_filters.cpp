@@ -1916,7 +1916,7 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
   #endif
   return depth;
 }
-
+/*
 float 
 calculateMaxSilhouette(vtkh::DataSet *dataset, int height, int width)
 {
@@ -1962,7 +1962,7 @@ calculateMaxSilhouette(vtkh::DataSet *dataset, int height, int width)
     #endif
     return (float)length;
 }
-
+*/
 
 float
 calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_name, std::vector<Triangle> &all_triangles, int height, int width, Camera camera)
