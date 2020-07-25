@@ -17,7 +17,7 @@
 #include "BabelFlow/ComposableTaskMap.h"
 
 
-//#define BFLOW_COMP_UTIL_DEBUG
+#define BFLOW_COMP_UTIL_DEBUG
 
 
 //-----------------------------------------------------------------------------
@@ -527,10 +527,11 @@ BabelCompReduce::BabelCompReduce(const ImageData& input_image,
 
 void BabelCompReduce::Initialize()
 {
-  int mpi_size = 1;
+  int mpi_size = 1, myrank = 0;
 
 #ifdef ASCENT_MPI_ENABLED
   MPI_Comm_size(m_comm, &mpi_size);
+  MPI_Comm_rank(m_comm, &myrank);
 #endif
 
   m_graph = BabelFlow::KWayReduction(m_nBlocks, m_fanin);
@@ -541,13 +542,20 @@ void BabelCompReduce::Initialize()
   m_modMap = BabelFlow::ModTaskMap(&m_taskMap);
   m_modMap.update(m_modGraph);
 
+#ifdef BFLOW_COMP_UTIL_DEBUG
+  if( myrank == 0 )
+  {
+    m_graph.output_graph_html( mpi_size, &m_taskMap, "reduce.html" );
+  }
+#endif
+
   m_master.initialize(m_modGraph, &m_modMap, m_comm, &m_contMap);
   m_master.registerCallback(1, bflow_comp::volume_render_red);
   m_master.registerCallback(2, bflow_comp::composite_red);
   m_master.registerCallback(3, bflow_comp::write_results_red);
   m_master.registerCallback(m_modGraph.newCallBackId, bflow_comp::pre_proc);
 
-  m_inputs[m_modGraph.new_tids[m_taskId]] = m_inputImg.serialize();
+  m_inputs[m_modGraph.new_tids[m_rankId]] = m_inputImg.serialize();
 }
 
 //-----------------------------------------------------------------------------
@@ -571,14 +579,22 @@ BabelCompBinswap::BabelCompBinswap(const ImageData& input_image,
 
 void BabelCompBinswap::Initialize()
 {
-  int mpi_size = 1;
+  int mpi_size = 1, myrank = 0;
 
 #ifdef ASCENT_MPI_ENABLED
   MPI_Comm_size(m_comm, &mpi_size);
+  MPI_Comm_rank(m_comm, &myrank);
 #endif
 
   m_graph = BabelFlow::BinarySwap(m_numBlocks);
   m_taskMap = BabelFlow::BinarySwapTaskMap(mpi_size, &m_graph);
+
+#ifdef BFLOW_COMP_UTIL_DEBUG
+  if( myrank == 0 )
+  {
+    m_graph.output_graph_html( mpi_size, &m_taskMap, "bin-swap.html" );
+  }
+#endif
 
   m_modGraph = BabelFlow::PreProcessInputTaskGraph(mpi_size, &m_graph, &m_taskMap);
   m_modMap = BabelFlow::ModTaskMap(&m_taskMap);
@@ -590,7 +606,7 @@ void BabelCompBinswap::Initialize()
   m_master.registerCallback(3, bflow_comp::write_results_binswap);
   m_master.registerCallback(m_modGraph.newCallBackId, bflow_comp::pre_proc);
 
-  m_inputs[m_modGraph.new_tids[m_taskId]] = m_inputImg.serialize();
+  m_inputs[m_modGraph.new_tids[m_rankId]] = m_inputImg.serialize();
 }
 
 //-----------------------------------------------------------------------------
@@ -617,7 +633,7 @@ BabelCompRadixK::~BabelCompRadixK()
 {
   delete m_ptrDefGraphConnector;
   delete m_ptrGraph;
-  delete m_taskMap;
+  delete m_ptrTaskMap;
 }
 
 //-----------------------------------------------------------------------------
@@ -633,17 +649,17 @@ void BabelCompRadixK::Initialize()
 
   // RadixK exchange graph
   m_radixkGr = BabelFlow::RadixKExchange(m_numBlocks, m_Radices);
-  m_radixkMp = BabelFlow::RadixKExchangeTaskMap(mpi_size, &m_graph);
+  m_radixkMp = BabelFlow::RadixKExchangeTaskMap(mpi_size, &m_radixkGr);
 
   // Gather graph
   m_gatherTaskGr = BabelFlow::SingleTaskGraph();
   m_gatherTaskMp = BabelFlow::SingleTaskMap();
 
-  m_ptrDefGraphConnector = new BabelFlow::DefGraphConnector( m_rankId, &m_radixkGr, &m_gatherTaskGr, &m_radixkMp, &m_gatherTaskMp );
+  m_ptrDefGraphConnector = new BabelFlow::DefGraphConnector( mpi_size, &m_radixkGr, &m_gatherTaskGr, &m_radixkMp, &m_gatherTaskMp );
 
-  std::vector<TaskGraphConnector*> gr_connectors{ m_ptrDefGraphConnector };
-  std::vector<TaskGraph*> gr_vec{ &m_radixkGr, &m_gatherTaskGr };
-  std::vector<TaskMap*> task_maps{ &m_radixkMp, &m_gatherTaskMp }; 
+  std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ m_ptrDefGraphConnector };
+  std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_radixkGr, &m_gatherTaskGr };
+  std::vector<BabelFlow::TaskMap*> task_maps{ &m_radixkMp, &m_gatherTaskMp }; 
 
   m_ptrGraph = new BabelFlow::ComposableTaskGraph( gr_vec, gr_connectors );
   m_ptrTaskMap = new BabelFlow::ComposableTaskMap( task_maps );
@@ -655,9 +671,11 @@ void BabelCompRadixK::Initialize()
 #ifdef BFLOW_COMP_UTIL_DEBUG
   if( myrank == 0 )
   {
-    FILE* fp = fopen( "radixk-gather.html", "w" );
-    m_ptrGraph->output_graph_html( mpi_size, &m_taskMap, fp );
-    fclose(fp);
+    m_radixkGr.output_graph_html( mpi_size, &m_radixkMp, "radixk.html" );
+
+    m_gatherTaskGr.output_graph_html( mpi_size, &m_gatherTaskMp, "gather-task.html" );
+
+    m_ptrGraph->output_graph_html( mpi_size, m_ptrTaskMap, "radixk-gather.html" );
     
     // FILE* fp_mod = fopen( "mod_radixk.html", "w" );
     // m_modGraph.output_graph_html( mpi_size, &m_modMap, fp_mod );
@@ -671,7 +689,7 @@ void BabelCompRadixK::Initialize()
   // m_master.registerCallback(3, bflow_comp::write_results_radixk);
   // m_master.registerCallback(m_modGraph.newCallBackId, bflow_comp::pre_proc);
 
-  // m_inputs[m_modGraph.new_tids[m_taskId]] = m_inputImg.serialize();
+  // m_inputs[m_modGraph.new_tids[m_rankId]] = m_inputImg.serialize();
 
   m_master.initialize( *m_ptrGraph, m_ptrTaskMap, m_comm, &m_contMap );
   m_master.registerCallback(1, bflow_comp::volume_render_radixk);
