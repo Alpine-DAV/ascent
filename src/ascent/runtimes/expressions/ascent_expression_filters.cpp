@@ -2652,36 +2652,27 @@ PointAndAxis::execute()
     bin_value = n_miss_val["value"].to_float64();
   }
 
+  // init with miss
+  double bin_min = bin_value;
+  double bin_max = bin_value;
+
   if(index != -1)
   {
     bin_value = bins[index];
+    bin_min = min_val + double(index) * bin_size;
+    bin_max = min_val + double(index+1) * bin_size;
   }
 
-  double loc[3] = {0.0, 0.0, 0.0};
-  std::string axis_str = in_axis["value"].as_string();
+  (*output)["type"] = "bin";
 
-  if(axis_str == "z")
-  {
-    loc[2] = min_dist;
-  }
-  else if (axis_str == "y")
-  {
-    loc[1] = min_dist;
-  }
-  else
-  {
-    loc[0] = min_dist;
-  }
-
-  (*output)["type"] = "value_position";
-  (*output)["index"] = index;
   (*output)["attrs/value/value"] = bin_value;
   (*output)["attrs/value/type"] = "double";
-  (*output)["attrs/position/value"].set(loc,3);
-  (*output)["attrs/position/type"] = "vector";
 
-  (*output)["value"] = min_dist;
-  (*output)["type"] = "double";
+  (*output)["attrs/min/value"] = bin_min;
+  (*output)["attrs/min/type"] = "double";
+
+  (*output)["attrs/max/value"] = bin_max;
+  (*output)["attrs/max/type"] = "double";
 
   set_output<conduit::Node>(output);
 }
@@ -2755,7 +2746,7 @@ MaxFromPoint::execute()
       double right = min_val + double(i+1) * bin_size;
       double center = left + (right-left) / 2.0;
       double dist = fabs(center - point);
-      if(val > max_bin_val || 
+      if(val > max_bin_val ||
          ((dist < min_dist) && val == max_bin_val))
       {
         min_dist = dist;

@@ -425,7 +425,7 @@ initialize_functions()
   // -------------------------------------------------------------
 
   conduit::Node &point_and_axis_sig = (*functions)["point_and_axis"].append();
-  point_and_axis_sig["return_type"] = "value_position";
+  point_and_axis_sig["return_type"] = "bin";
   point_and_axis_sig["filter_name"] = "point_and_axis";
   point_and_axis_sig["args/binning/type"] = "binning";
   point_and_axis_sig["args/axis/type"] = "string";
@@ -585,6 +585,11 @@ initialize_objects()
   vector_atts["x/type"] = "double";
   vector_atts["y/type"] = "double";
   vector_atts["z/type"] = "double";
+
+  conduit::Node &bin_atts = (*objects)["bin/attrs"];
+  bin_atts["min/type"] = "double";
+  bin_atts["max/type"] = "double";
+  bin_atts["value/type"] = "double";
 
   // objects->save("objects.json", "json");
 }
