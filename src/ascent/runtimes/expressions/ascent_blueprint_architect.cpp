@@ -618,6 +618,34 @@ element_location(const conduit::Node &domain,
   return res;
 }
 
+std::string
+possible_components(const conduit::Node &dataset,
+                   const std::string &field_name)
+{
+  std::string res;
+  if(dataset.number_of_children() > 0)
+  {
+    const conduit::Node &dom = dataset.child(0);
+    if(dom.has_path("fields/" + field_name))
+    {
+      if(dom["fields/"+field_name+"/values"].number_of_children() > 0)
+      {
+        std::vector<std::string> names
+          = dom["fields/"+field_name+"/values"].child_names();
+        std::stringstream ss;
+        ss<<"[";
+        for(auto name : names)
+        {
+          ss<<" '"<<name<<"'";
+        }
+        ss<<"]";
+        res = ss.str();
+      }
+    }
+  }
+  return res;
+}
+
 bool
 is_scalar_field(const conduit::Node &dataset, const std::string &field_name)
 {
@@ -657,6 +685,26 @@ has_field(const conduit::Node &dataset, const std::string &field_name)
   // check to see if the field exists in any rank
   has_field = detail::at_least_one(has_field);
   return has_field;
+}
+
+bool
+has_component(const conduit::Node &dataset,
+              const std::string &field_name,
+              const std::string &component)
+{
+
+  bool has_comp= false;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(!has_comp && dom.has_path("fields/" + field_name + "/values/"+component))
+    {
+      has_comp = true;
+    }
+  }
+  // check to see if the field exists in any rank
+  has_comp= detail::at_least_one(has_comp);
+  return has_comp;
 }
 
 // TODO If someone names their fields x,y,z things will go wrong
@@ -1201,7 +1249,8 @@ binning(const conduit::Node &dataset,
         conduit::Node &bin_axes,
         const std::string &reduction_var,
         const std::string &reduction_op,
-        const double empty_bin_val)
+        const double empty_bin_val,
+        const std::string &component)
 {
   std::vector<std::string> var_names = bin_axes.child_names();
   if(!reduction_var.empty())
@@ -1316,7 +1365,10 @@ binning(const conduit::Node &dataset,
     }
     else if(dom.has_path("fields/" + reduction_var))
     {
-      const std::string values_path = "fields/" + reduction_var + "/values";
+      const std::string comp_path = component == "" ? "" : "/" + component;
+      const std::string values_path
+        = "fields/" + reduction_var + "/values" + comp_path;
+
       if(dom[values_path].dtype().is_float32())
       {
         const conduit::float32_array values = dom[values_path].value();

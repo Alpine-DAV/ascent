@@ -547,6 +547,11 @@ initialize_functions()
   binning_sig["args/empty_bin_val/optional"];
   binning_sig["args/empty_bin_val/description"] =
       "The value that empty bins should have. Defaults to ``0``.";
+  binning_sig["args/component/type"] = "string";
+  binning_sig["args/component/optional"];
+  binning_sig["args/component/description"] =
+      "the component of a vector field to use for the reduction."
+      " Example 'x' for a field defined as 'velocity/x'";
   binning_sig["args/output/type"] = "string";
   binning_sig["args/output/optional"];
   binning_sig["args/output/description"] =

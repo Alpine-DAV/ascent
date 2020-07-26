@@ -1944,6 +1944,7 @@ Binning::declare_interface(Node &i)
   i["port_names"].append() = "reduction_op";
   i["port_names"].append() = "bin_axes";
   i["port_names"].append() = "empty_bin_val";
+  i["port_names"].append() = "component";
   i["port_names"].append() = "output";
   i["output_port"] = "true";
 }
@@ -1968,7 +1969,14 @@ Binning::execute()
   const conduit::Node *n_axes_list = input<Node>("bin_axes");
   // optional arguments
   const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
+  const conduit::Node *n_component = input<conduit::Node>("component");
   const conduit::Node *n_output_opt = input<conduit::Node>("output");
+
+  std::string component = "";
+  if(!n_component->dtype().is_empty())
+  {
+    component = (*n_component)["value"].as_string();
+  }
 
   conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
@@ -1995,21 +2003,48 @@ Binning::execute()
                    "reduction_op is 'sum' or 'pdf'.");
     }
   }
-  // for now only support reductions on scalars
-  else if(!is_scalar_field(*dataset, reduction_var) && !is_xyz(reduction_var))
+  else if(!is_xyz(reduction_var))
   {
-    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
-    std::stringstream ss;
-    ss << "[";
-    for(size_t i = 0; i < names.size(); ++i)
+    if(!has_field(*dataset, reduction_var))
     {
-      ss << " " << names[i];
+      std::string known;
+      if(dataset->number_of_children() > 0 )
+      {
+        std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+        std::stringstream ss;
+        ss << "[";
+        for(size_t i = 0; i < names.size(); ++i)
+        {
+          ss << " '" << names[i]<<"'";
+        }
+        ss << "]";
+        known = ss.str();
+      }
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var
+                   << "' must be a scalar field in the dataset or x/y/z or empty."
+                   << " known = " << known);
     }
-    ss << "]";
-    ASCENT_ERROR("Binning: reduction variable '"
-                 << reduction_var
-                 << "' must be a scalar field in the dataset or x/y/z or empty."
-                 << " known = " << ss.str());
+
+    bool scalar = is_scalar_field(*dataset, reduction_var);
+    if(!scalar && component == "")
+    {
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var <<"'"
+                   << " is a has multiple components and no 'component' is"
+                   << " specified."
+                   << " known components = "
+                   << possible_components(*dataset, reduction_var));
+    }
+    if(!has_component(*dataset, reduction_var, component))
+    {
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var << "'"
+                   << " does not have component '"<<component<<"'."
+                   << " known components = "
+                   << possible_components(*dataset, reduction_var));
+
+    }
   }
 
   // verify reduction_op
@@ -2030,8 +2065,12 @@ Binning::execute()
     empty_bin_val = (*n_empty_bin_val)["value"].to_float64();
   }
 
-  const conduit::Node &n_binning =
-      binning(*dataset, n_bin_axes, reduction_var, reduction_op, empty_bin_val);
+  const conduit::Node &n_binning = binning(*dataset,
+                                           n_bin_axes,
+                                           reduction_var,
+                                           reduction_op,
+                                           empty_bin_val,
+                                           component);
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "binning";
