@@ -2031,10 +2031,19 @@ Binning::execute()
     {
       ASCENT_ERROR("Binning: reduction variable '"
                    << reduction_var <<"'"
-                   << " is a has multiple components and no 'component' is"
+                   << " has multiple components and no 'component' is"
                    << " specified."
                    << " known components = "
                    << possible_components(*dataset, reduction_var));
+    }
+    if(scalar && component != "")
+    {
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var <<"'"
+                   << " is a scalar(i.e., has not components "
+                   << " but 'component' " << " '"<<component<<"' was"
+                   << " specified. Remove the 'component' argument"
+                   << " or choose a vector variable.");
     }
     if(!has_component(*dataset, reduction_var, component))
     {
@@ -2694,12 +2703,14 @@ PointAndAxis::execute()
   // init with miss
   double bin_min = bin_value;
   double bin_max = bin_value;
+  double bin_center = bin_value;
 
   if(index != -1)
   {
     bin_value = bins[index];
     bin_min = min_val + double(index) * bin_size;
     bin_max = min_val + double(index+1) * bin_size;
+    bin_center = bin_min + (bin_max-bin_min) / 2.0;
   }
 
   (*output)["type"] = "bin";
@@ -2712,6 +2723,9 @@ PointAndAxis::execute()
 
   (*output)["attrs/max/value"] = bin_max;
   (*output)["attrs/max/type"] = "double";
+
+  (*output)["attrs/center/value"] = bin_center;
+  (*output)["attrs/center/type"] = "double";
 
   set_output<conduit::Node>(output);
 }
@@ -2820,6 +2834,89 @@ MaxFromPoint::execute()
 
   (*output)["value"] = min_dist;
   (*output)["type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Bin::Bin() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Bin::~Bin()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Bin::declare_interface(Node &i)
+{
+  i["type_name"] = "bin";
+  i["port_names"].append() = "binning";
+  i["port_names"].append() = "index";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Bin::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Bin::execute()
+{
+  conduit::Node &in_binning = *input<Node>("binning");
+  conduit::Node &in_index =  *input<Node>("index");
+  conduit::Node *output = new conduit::Node();
+
+  const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
+  if(num_axes > 1)
+  {
+    ASCENT_ERROR("bin: only one axis is implemented");
+  }
+
+  int bindex = in_index["value"].to_int32();
+
+  const conduit::Node &axis = in_binning["attrs/bin_axes/value"].child(0);
+  const int num_bins = axis["num_bins"].to_int32();
+
+  if(bindex < 0 || bindex >= num_bins)
+  {
+    ASCENT_ERROR("bin: invalid bin "<<bindex<<"."
+                <<" Number of bins "<<num_bins);
+  }
+
+  const double min_val = axis["min_val"].to_float64();
+  const double max_val = axis["max_val"].to_float64();
+  const double bin_size = (max_val - min_val) / double(num_bins);
+  double *bins = in_binning["attrs/value/value"].value();
+
+  double left = min_val + double(bindex) * bin_size;
+  double right = min_val + double(bindex+1) * bin_size;
+  double center = left + (right-left) / 2.0;
+  double val = bins[bindex];
+
+  (*output)["type"] = "bin";
+
+  (*output)["attrs/value/value"] = val;
+  (*output)["attrs/value/type"] = "double";
+
+  (*output)["attrs/min/value"] = left;
+  (*output)["attrs/min/type"] = "double";
+
+  (*output)["attrs/max/value"] = right;
+  (*output)["attrs/max/type"] = "double";
+
+  (*output)["attrs/center/value"] = center;
+  (*output)["attrs/center/type"] = "double";
 
   set_output<conduit::Node>(output);
 }

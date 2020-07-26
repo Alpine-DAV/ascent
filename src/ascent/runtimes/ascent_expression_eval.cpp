@@ -119,6 +119,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::DotAccess>();
   flow::Workspace::register_filter_type<expressions::PointAndAxis>();
   flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
+  flow::Workspace::register_filter_type<expressions::Bin>();
 
   initialize_functions();
   initialize_objects();
@@ -436,6 +437,13 @@ initialize_functions()
   point_and_axis_sig["description"] = "returns the first values in"
     " a binning that exceeds a threshold from the given point.";
 
+  conduit::Node &bin_sig = (*functions)["bin"].append();
+  bin_sig["return_type"] = "bin";
+  bin_sig["filter_name"] = "bin";
+  bin_sig["args/binning/type"] = "binning";
+  bin_sig["args/index/type"] = "int";
+  bin_sig["description"] = "returns a bin from a binning by index";
+
   // -------------------------------------------------------------
 
   conduit::Node &max_from_point_sig = (*functions)["max_from_point"].append();
@@ -594,6 +602,7 @@ initialize_objects()
   conduit::Node &bin_atts = (*objects)["bin/attrs"];
   bin_atts["min/type"] = "double";
   bin_atts["max/type"] = "double";
+  bin_atts["center/type"] = "double";
   bin_atts["value/type"] = "double";
 
   // objects->save("objects.json", "json");
