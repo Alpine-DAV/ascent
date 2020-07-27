@@ -1537,11 +1537,16 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 sum_copy += t_end - t_render;
                 // print_time(t_render, "ascent info sim ", mpi_props.rank, 1.0 / (end - begin));
             }
+            
+            auto t_render = std::chrono::system_clock::now();
             while (threads.size() > 0)
             {
                 threads.back().join();
                 threads.pop_back();
             }
+            auto t_end = std::chrono::system_clock::now();
+            sum_copy += t_end - t_render;
+
             log_duration(sum_render, "+ render sim " + std::to_string(g_render_counts[mpi_props.rank]) + " ", mpi_props.rank);
             log_duration(sum_copy, "+ copy sim " + std::to_string(g_render_counts[mpi_props.rank]) + " ", mpi_props.rank);
  
