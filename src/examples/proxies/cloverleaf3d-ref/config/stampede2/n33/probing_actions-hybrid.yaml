@@ -2,8 +2,9 @@
   action: "add_scenes"
   probing:
     factor: 0.2
-    vis_budget: 0.5
     node_split: 0.818
+    batch_size: 10
+    insitu_type: "hybrid"
   scenes:
     s1:
       plots:

@@ -2,7 +2,8 @@
   action: "add_scenes"
   probing:
     factor: 1.0
-    vis_budget: 0.0
+    batch_size: 10
+    insitu_type: "inline"
     node_split: 0.8
   scenes:
     s1:
