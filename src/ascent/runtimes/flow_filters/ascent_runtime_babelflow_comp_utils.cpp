@@ -655,7 +655,11 @@ void BabelCompRadixK::Initialize()
   m_gatherTaskGr = BabelFlow::SingleTaskGraph();
   m_gatherTaskMp = BabelFlow::SingleTaskMap();
 
-  m_ptrDefGraphConnector = new BabelFlow::DefGraphConnector( mpi_size, &m_radixkGr, &m_gatherTaskGr, &m_radixkMp, &m_gatherTaskMp );
+  m_ptrDefGraphConnector = new BabelFlow::DefGraphConnector( mpi_size,
+                                                             &m_radixkGr, 0,
+                                                             &m_gatherTaskGr, 1,
+                                                             &m_radixkMp,
+                                                             &m_gatherTaskMp );
 
   std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ m_ptrDefGraphConnector };
   std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_radixkGr, &m_gatherTaskGr };
@@ -663,10 +667,6 @@ void BabelCompRadixK::Initialize()
 
   m_ptrGraph = new BabelFlow::ComposableTaskGraph( gr_vec, gr_connectors );
   m_ptrTaskMap = new BabelFlow::ComposableTaskMap( task_maps );
-
-  // m_modGraph = BabelFlow::PreProcessInputTaskGraph(mpi_size, &m_graph, &m_taskMap);
-  // m_modMap = BabelFlow::ModTaskMap(&m_taskMap);
-  // m_modMap.update(m_modGraph);
   
 #ifdef BFLOW_COMP_UTIL_DEBUG
   if( myrank == 0 )
@@ -676,20 +676,8 @@ void BabelCompRadixK::Initialize()
     m_gatherTaskGr.output_graph_html( mpi_size, &m_gatherTaskMp, "gather-task.html" );
 
     m_ptrGraph->output_graph_html( mpi_size, m_ptrTaskMap, "radixk-gather.html" );
-    
-    // FILE* fp_mod = fopen( "mod_radixk.html", "w" );
-    // m_modGraph.output_graph_html( mpi_size, &m_modMap, fp_mod );
-    // fclose(fp_mod);
   }
 #endif
-
-  // m_master.initialize(m_modGraph, &m_modMap, m_comm, &m_contMap);
-  // m_master.registerCallback(1, bflow_comp::volume_render_radixk);
-  // m_master.registerCallback(2, bflow_comp::composite_radixk);
-  // m_master.registerCallback(3, bflow_comp::write_results_radixk);
-  // m_master.registerCallback(m_modGraph.newCallBackId, bflow_comp::pre_proc);
-
-  // m_inputs[m_modGraph.new_tids[m_rankId]] = m_inputImg.serialize();
 
   m_master.initialize( *m_ptrGraph, m_ptrTaskMap, m_comm, &m_contMap );
   m_master.registerCallback(1, bflow_comp::volume_render_radixk);
