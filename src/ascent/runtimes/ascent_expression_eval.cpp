@@ -434,6 +434,8 @@ initialize_functions()
   point_and_axis_sig["args/point/type"] = "double";
   point_and_axis_sig["args/miss_value/type"] = "scalar";
   point_and_axis_sig["args/miss_value/optional"];
+  point_and_axis_sig["args/direction/type"] = "int";
+  point_and_axis_sig["args/direction/optional"];
   point_and_axis_sig["description"] = "returns the first values in"
     " a binning that exceeds a threshold from the given point.";
 

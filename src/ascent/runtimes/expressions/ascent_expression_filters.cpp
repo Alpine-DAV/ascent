@@ -840,7 +840,7 @@ DotAccess::execute()
       std::string attr_yaml = (*n_obj)["attrs"].to_yaml();
       if(attr_yaml == "")
       {
-        ss<<" No know attribtues.";
+        ss<<" No known attribtues.";
       }
       else
       {
@@ -2636,6 +2636,7 @@ PointAndAxis::declare_interface(Node &i)
   i["port_names"].append() = "threshold";
   i["port_names"].append() = "point";
   i["port_names"].append() = "miss_value";
+  i["port_names"].append() = "direction";
   i["output_port"] = "true";
 }
 
@@ -2657,12 +2658,24 @@ PointAndAxis::execute()
   conduit::Node &in_threshold =  *input<Node>("threshold");
   conduit::Node &in_point =  *input<Node>("point");
   conduit::Node &n_miss_val =  *input<Node>("miss_value");
+  conduit::Node &n_dir =  *input<Node>("direction");
   conduit::Node *output = new conduit::Node();
 
   const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
   if(num_axes > 1)
   {
     ASCENT_ERROR("point_and_axis: only one axis is implemented");
+  }
+
+  int direction = 1;
+  if(!n_dir.dtype().is_empty())
+  {
+    direction = n_dir["value"].to_int32();
+    if(direction != 1 && direction != -1)
+    {
+      ASCENT_ERROR("point_and_axis: invalid direction `"<<direction<<"'."
+                  <<" Valid directions are 1 or -1.");
+    }
   }
 
   const double point = in_point["value"].to_float64();
@@ -2686,13 +2699,17 @@ PointAndAxis::execute()
       double right = min_val + double(i+1) * bin_size;
       double center = left + (right-left) / 2.0;
       double dist = center - point;
-      if(dist < min_dist)
+      // skip if distance is behind
+      bool behind = dist * double(direction) < 0;
+
+      if(!behind && dist < min_dist)
       {
         min_dist = dist;
         index = i;
       }
     }
   }
+
   double bin_value = std::numeric_limits<double>::quiet_NaN();
 
   if(!n_miss_val.dtype().is_empty())
