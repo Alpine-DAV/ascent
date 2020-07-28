@@ -230,11 +230,15 @@ int main (int argc, char *argv[])
     ascent.execute(actions);
   }
 
-  conduit::Node info;
-  ascent.info(info);
-  if(info.has_path("expressions"))
+  // save out the expressions
+  if(rank == 0)
   {
-    info["expressions"].save("expressions.yaml","yaml");
+    conduit::Node info;
+    ascent.info(info);
+    if(info.has_path("expressions"))
+    {
+      info["expressions"].save("expressions.yaml","yaml");
+    }
   }
   ascent.close();
 
