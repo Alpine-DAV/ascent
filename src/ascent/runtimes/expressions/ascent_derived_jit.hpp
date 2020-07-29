@@ -86,8 +86,59 @@ void parameters(const conduit::Node &dataset,
                 std::map<std::string, std::string> &var_types, // name:type
                 std::map<std::string, double> &constants);
 
-void execute_jitable(conduit::Node &jitable, conduit::Node &dataset);
-std::string topo_params(const std::string &topo_name, const conduit::Node &dom);
+void pack_topo(const std::string &topo_name,
+               const conduit::Node &dom,
+               conduit::Node &args);
+
+class TopologyCode
+{
+public:
+  TopologyCode(const std::string &topo_name, const conduit::Node &dom);
+  void vertex_idx(std::set<std::string> &code);
+  void vertex_xyz(std::set<std::string> &code);
+  void cell_idx(std::set<std::string> &code);
+  void cell_xyz(std::set<std::string> &code);
+  void dxdydz(std::set<std::string> &code);
+  void volume(std::set<std::string> &code);
+
+private:
+  int num_dims;
+  std::string topo_type;
+  std::string topo_name;
+};
+
+class Kernel
+{
+public:
+  void fuse_kernel(const Kernel &from);
+  std::string generate_loop(const std::string &output);
+
+  std::string kernel_body;
+  std::set<std::string> for_body;
+  std::string expr;
+  conduit::Node obj;
+};
+
+class Jitable
+{
+public:
+  Jitable(const int num_domains)
+  {
+    for(int i = 0; i < num_domains; ++i)
+    {
+      dom_info.append();
+    }
+  }
+
+  void fuse_vars(const Jitable &from);
+  void execute(conduit::Node &dataset);
+  std::string generate_kernel(const int dom_idx);
+
+  std::unordered_map<std::string, Kernel> kernels;
+  conduit::Node dom_info;
+  std::string topology;
+  std::string association;
+};
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

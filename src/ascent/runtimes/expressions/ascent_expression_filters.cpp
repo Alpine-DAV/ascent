@@ -2578,10 +2578,10 @@ JitFilter::verify_params(const conduit::Node &params, conduit::Node &info)
   res &= filters::check_numeric("execute", params, info, true);
   if(!params.has_path("inputs"))
   {
-    info["errors"].append() = "Missing required list parameter 'inputs'";
+    info["errors"].append() = "Missing required JitFilter parameter 'inputs'";
     res = false;
   }
-  if(params["inputs"].number_of_children() != num_inputs)
+  else if(params["inputs"].number_of_children() != num_inputs)
   {
     stringstream ss;
     ss << "Expected parameter 'inputs' to have " << num_inputs
@@ -2594,78 +2594,21 @@ JitFilter::verify_params(const conduit::Node &params, conduit::Node &info)
 }
 
 //-----------------------------------------------------------------------------
-void
-fuse_jitable_vars(conduit::Node &to, const conduit::Node &from)
+bool
+available_axis(const std::string &axis,
+               const int num_axes,
+               const std::string &topo_name)
 {
-  if(from.has_path("topology"))
+  if(((axis == "x" || axis == "dx") && num_axes >= 1) ||
+     ((axis == "y" || axis == "dy") && num_axes >= 2) ||
+     ((axis == "z" || axis == "dz") && num_axes >= 3))
   {
-    if(!to.has_path("topology"))
-    {
-      to["topology"] = from["topology"].as_string();
-    }
-    else if(to["topology"].as_string() != from["topology"].as_string())
-    {
-      to["topology"] = "";
-    }
+    return true;
   }
-
-  if(from.has_path("association"))
-  {
-    if(!to.has_path("association"))
-    {
-      to["association"] = from["association"].as_string();
-    }
-    else if(to["association"].as_string() != from["association"].as_string())
-    {
-      to["association"] = "";
-    }
-  }
-}
-void
-fuse_kernel_vars(conduit::Node &to, const conduit::Node &from)
-{
-  conduit::NodeConstIterator arg_itr = from["args"].children();
-  while(arg_itr.has_next())
-  {
-    const conduit::Node &arg = arg_itr.next();
-    to["args"].append() = arg;
-  }
-
-  std::string from_params;
-  if(from.has_path("params"))
-  {
-    from_params = from["params"].as_string();
-  }
-  std::string to_params;
-  if(to.has_path("params"))
-  {
-    to_params = to["params"].as_string();
-  }
-  to["params"] = to_params + from_params;
-
-  std::string from_kernel_body;
-  if(from.has_path("kernel_body"))
-  {
-    from_kernel_body = from["kernel_body"].as_string();
-  }
-  std::string to_kernel_body;
-  if(to.has_path("kernel_body"))
-  {
-    to_kernel_body = to["kernel_body"].as_string();
-  }
-  to["kernel_body"] = to_kernel_body + from_kernel_body;
-
-  std::string from_for_body;
-  if(from.has_path("for_body"))
-  {
-    from_for_body = from["for_body"].as_string();
-  }
-  std::string to_for_body;
-  if(to.has_path("for_body"))
-  {
-    to_for_body = to["for_body"].as_string();
-  }
-  to["for_body"] = to_for_body + from_for_body;
+  ASCENT_ERROR("Topology '" << topo_name << "' does with " << num_axes
+                            << " dimensions does not have axis '" << axis
+                            << "'.");
+  return false;
 }
 
 std::string
@@ -2704,40 +2647,8 @@ fused_kernel_type(const std::vector<std::string> kernel_types)
   return ss.str();
 }
 
-int
-verify_entries(const std::vector<const conduit::Node *> jitables,
-               const int dom_idx,
-               const std::string &filter_name)
-{
-  int entries = -1;
-  for(const auto jitable : jitables)
-  {
-    const conduit::Node &dom_info = (*jitable)["dom_info"].child(dom_idx);
-    if(dom_info.has_path("entries"))
-    {
-      if(entries == -1)
-      {
-        entries = dom_info["entries"].as_int32();
-      }
-      else if(entries != dom_info["entries"].as_int32())
-      {
-        ASCENT_ERROR("Mismatch in the number of JIT entries: "
-                     << entries << " vs " << dom_info["entries"].as_int32()
-                     << ". Filter name: " << filter_name);
-      }
-    }
-  }
-  if(entries == -1)
-  {
-    ASCENT_ERROR("Could not determine the number of entries from the given "
-                 "jitables. Filter name: "
-                 << filter_name);
-  }
-  return entries;
-}
-
 // each jitable has kernels and dom_info
-// dom_info holds number_of entries and kernel_type for the dom
+// dom_info holds number_of entries, kernel_type, and args for the dom
 // kernel_type maps to a kernel in kernels
 // each kernel has 3 bodies of code:
 // expr: the main line of code at the end of the for loop
@@ -2752,9 +2663,9 @@ JitFilter::execute()
   const bool execute = params()["execute"].to_uint8();
   const conduit::Node &inputs = params()["inputs"];
   // create a vector of input_jitables ot be fused
-  std::vector<const conduit::Node *> input_jitables;
+  std::vector<const Jitable *> input_jitables;
   // keep around the new jitables we create
-  std::list<conduit::Node> new_jitables;
+  std::list<Jitable> new_jitables;
 
   conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
@@ -2764,39 +2675,40 @@ JitFilter::execute()
   {
     const std::string input_fname = inputs.child(i)["filter_name"].as_string();
     const std::string type = inputs.child(i)["type"].as_string();
-    const conduit::Node *inp = input<conduit::Node>(i);
     if(type != "jitable")
     {
+      const conduit::Node *inp = input<conduit::Node>(i);
       // make a new jitable
-      new_jitables.emplace_back();
-      conduit::Node &jitable = new_jitables.back();
+      new_jitables.emplace_back(num_domains);
+      Jitable &jitable = new_jitables.back();
       input_jitables.push_back(&jitable);
-
-      // list of kernels in the jitable
-      jitable["kernels"];
-      // maps each domain to a kernel in kernels
-      jitable["dom_info"];
-      jitable["type"] = "jitable";
 
       if(type == "topo")
       {
         // topo is special because it can build different kernels for each
         // domain (kernel types)
+        const std::string topo_name = (*inp)["value"].as_string();
+        jitable.topology = topo_name;
         std::unordered_set<std::string> built_kernel_types;
         for(int i = 0; i < num_domains; ++i)
         {
           const conduit::Node &dom = dataset->child(i);
-          const std::string topo_name = (*inp)["filter_name"].as_string();
-          const std::string topo_type =
-              dom["topologies/" + topo_name + "/type"].as_string();
+          const conduit::Node &n_topo = dom["topologies/" + topo_name];
+          const std::string coords_name = n_topo["coordset"].as_string();
+          const std::string topo_type = n_topo["type"].as_string();
+
           const std::string kernel_type = topo_name + "=" + topo_type;
-          jitable["dom_info"].append()["kernel_type"] = kernel_type;
+          jitable.dom_info.child(i)["kernel_type"] = kernel_type;
+
+          pack_topo(topo_name, dom, jitable.dom_info.child(i)["args"]);
+
           if(built_kernel_types.find(kernel_type) == built_kernel_types.end())
           {
-            conduit::Node &kernel = jitable["kernels/" + kernel_type];
-            // TODO we will probably need to append the individual args instead
-            kernel["args"].append() = *inp;
-            // kernel["params"] = topo_params(topo_name, dom);
+            Kernel &kernel = jitable.kernels[kernel_type];
+            kernel.obj["type"] = "topo";
+            kernel.obj["topo_name"] = topo_name;
+            kernel.obj["topo_type"] = topo_type;
+            kernel.obj["topo_dim"] = topo_dim(topo_name, dom);
             built_kernel_types.insert(kernel_type);
           }
         }
@@ -2804,30 +2716,39 @@ JitFilter::execute()
       else
       {
         // these only build the default kernel type
-        conduit::Node &default_kernel = jitable["kernels/default"];
+        Kernel &default_kernel = jitable.kernels["default"];
         for(int i = 0; i < num_domains; ++i)
         {
-          jitable["dom_info"].append()["kernel_type"] = "default";
+          jitable.dom_info.child(i)["kernel_type"] = "default";
         }
+
         if(type == "int" || type == "double")
         {
           // force everthing to a double
-          default_kernel["args"].append() = *inp;
-          default_kernel["params"] =
+          const std::string param_str =
               "                 const double " + input_fname + ",\n";
-          default_kernel["expr"] = "((double)" + input_fname + ")";
+          for(int i = 0; i < num_domains; ++i)
+          {
+            jitable.dom_info.child(i)["args/" + param_str] = (*inp)["value"];
+          }
+          default_kernel.expr = "((double)" + input_fname + ")";
         }
         else if(type == "field")
         {
           const std::string &field_name = (*inp)["value"].as_string();
-          // error checking and populating information
+          const std::string param_str =
+              "                 const double *" + field_name + "_ptr,\n";
+          // error checking and dom args information
           for(int i = 0; i < num_domains; ++i)
           {
             const conduit::Node &dom = dataset->child(i);
-            const std::string &topo_name =
-                dom["fields/" + field_name + "/topology"].as_string();
-            const std::string &assoc_str =
-                dom["fields/" + field_name + "/association"].as_string();
+            const conduit::Node &field = dom["fields/" + field_name];
+            const std::string &topo_name = field["topology"].as_string();
+            const std::string &assoc_str = field["association"].as_string();
+
+            conduit::Node &cur_dom_info = jitable.dom_info.child(i);
+
+            cur_dom_info["args/" + param_str].set_external(field["values"]);
 
             // update number of entries
             int entries;
@@ -2839,12 +2760,12 @@ JitFilter::execute()
             {
               entries = num_points(dom, topo_name);
             }
-            jitable["dom_info"].child(i)["entries"] = entries;
+            cur_dom_info["entries"] = entries;
 
             // update topology
-            if(jitable.has_path("topology"))
+            if(!jitable.topology.empty())
             {
-              if(jitable["topology"].as_string() != topo_name)
+              if(jitable.topology != topo_name)
               {
                 ASCENT_ERROR("Field '" << field_name
                                        << "' is associated with different "
@@ -2853,13 +2774,13 @@ JitFilter::execute()
             }
             else
             {
-              jitable["topology"] = topo_name;
+              jitable.topology = topo_name;
             }
 
             // update association
-            if(jitable.has_path("association"))
+            if(!jitable.association.empty())
             {
-              if(jitable["association"].as_string() != topo_name)
+              if(jitable.association != assoc_str)
               {
                 ASCENT_ERROR(
                     "Field '"
@@ -2869,16 +2790,12 @@ JitFilter::execute()
             }
             else
             {
-              jitable["association"] = assoc_str;
+              jitable.association = assoc_str;
             }
           }
-          // create field
-          default_kernel["args"].append() = *inp;
-          default_kernel["params"] =
-              "                 const double *" + field_name + "_ptr,\n";
-          default_kernel["for_body"] = "        const double " + field_name +
-                                       " = " + field_name + "_ptr[item];\n";
-          default_kernel["expr"] = field_name;
+          default_kernel.for_body.insert("        const double " + field_name +
+                                         " = " + field_name + "_ptr[item];\n");
+          default_kernel.expr = field_name;
         }
         else
         {
@@ -2889,113 +2806,158 @@ JitFilter::execute()
     else
     {
       // push back an existing jitable
-      input_jitables.push_back(inp);
+      input_jitables.push_back(input<Jitable>(i));
     }
   }
 
-  conduit::Node *out_jitable = new conduit::Node();
+  // fuse
+  Jitable *out_jitable = new Jitable(num_domains);
+  // fuse jitable variables and args
+  for(const auto jitable : input_jitables)
+  {
+    out_jitable->fuse_vars(*jitable);
+  }
   if(func == "execute")
   {
-    out_jitable->set(*input_jitables[0]);
+    out_jitable->kernels = input_jitables[0]->kernels;
   }
   else
   {
-    // fuse
-    (*out_jitable)["kernels"];
-    (*out_jitable)["dom_info"];
-    (*out_jitable)["type"] = "jitable";
-    // fuse jitable variables
-    for(const auto jitable : input_jitables)
-    {
-      fuse_jitable_vars(*out_jitable, *jitable);
-    }
     // fuse kernels
     std::unordered_set<std::string> fused_kernel_types;
     for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
     {
+      const conduit::Node &dom = dataset->child(dom_idx);
       // get the input kernels with the right kernel_type for this domain and
       // determine the type of the fused kernel
-      std::vector<const conduit::Node *> input_kernels;
+      std::vector<const Kernel *> input_kernels;
       std::vector<std::string> input_kernel_types;
       for(int i = 0; i < num_inputs; ++i)
       {
-        const conduit::Node &input_jitable = *input_jitables[i];
+        const Jitable &input_jitable = *input_jitables[i];
         const std::string kernel_type =
-            input_jitable["dom_info"].child(dom_idx)["kernel_type"].as_string();
+            input_jitable.dom_info.child(dom_idx)["kernel_type"].as_string();
         input_kernel_types.push_back(kernel_type);
-        input_kernels.push_back(&input_jitable["kernels/" + kernel_type]);
+        input_kernels.push_back(&(input_jitable.kernels.at(kernel_type)));
       }
       const std::string out_kernel_type = fused_kernel_type(input_kernel_types);
-      (*out_jitable)["dom_info"].append()["kernel_type"] = out_kernel_type;
-      conduit::Node &out_kernel = (*out_jitable)["kernels/" + out_kernel_type];
+      (*out_jitable).dom_info.child(dom_idx)["kernel_type"] = out_kernel_type;
+      Kernel &out_kernel = (*out_jitable).kernels[out_kernel_type];
 
       if(func == "binary_op")
       {
-        const int lhs_port = inputs["lhs/port"].as_int32();
-        const int rhs_port = inputs["rhs/port"].as_int32();
-        (*out_jitable)["dom_info"].child(dom_idx)["entries"] =
-            verify_entries({input_jitables[lhs_port], input_jitables[rhs_port]},
-                           dom_idx,
-                           filter_name);
         if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
         {
-          const conduit::Node &lhs_kernel = *input_kernels[lhs_port];
-          const conduit::Node &rhs_kernel = *input_kernels[rhs_port];
+          const int lhs_port = inputs["lhs/port"].as_int32();
+          const int rhs_port = inputs["rhs/port"].as_int32();
+          const Kernel &lhs_kernel = *input_kernels[lhs_port];
+          const Kernel &rhs_kernel = *input_kernels[rhs_port];
           // union the field/mesh vars
-          fuse_kernel_vars(out_kernel, lhs_kernel);
-          fuse_kernel_vars(out_kernel, rhs_kernel);
+          out_kernel.fuse_kernel(lhs_kernel);
+          out_kernel.fuse_kernel(rhs_kernel);
           // generate the new expression string (main line of code)
-          const std::string lhs_expr = lhs_kernel["expr"].as_string();
-          const std::string rhs_expr = rhs_kernel["expr"].as_string();
+          const std::string lhs_expr = lhs_kernel.expr;
+          const std::string rhs_expr = rhs_kernel.expr;
           const std::string &op_str = params()["op_string"].as_string();
-          out_kernel["expr"] = "(" + lhs_expr + op_str + rhs_expr + ")";
+          out_kernel.expr = "(" + lhs_expr + op_str + rhs_expr + ")";
         }
       }
       else if(func == "field_field_max")
       {
         // max of two fields or a field and a scalar
-        const int arg1_port = inputs["arg1/port"].as_int32();
-        const int arg2_port = inputs["arg2/port"].as_int32();
-        (*out_jitable)["dom_info"].child(dom_idx)["entries"] = verify_entries(
-            {input_jitables[arg1_port], input_jitables[arg2_port]},
-            dom_idx,
-            filter_name);
         if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
         {
-          fuse_kernel_vars(out_kernel, *input_kernels[arg1_port]);
-          fuse_kernel_vars(out_kernel, *input_kernels[arg1_port]);
-          const std::string arg1_expr =
-              (*input_kernels[arg1_port])["expr"].as_string();
-          const std::string arg2_expr =
-              (*input_kernels[arg2_port])["expr"].as_string();
-          out_kernel["expr"] = "max(" + arg1_expr + ", " + arg2_expr + ")";
+          const int arg1_port = inputs["arg1/port"].as_int32();
+          const int arg2_port = inputs["arg2/port"].as_int32();
+          out_kernel.fuse_kernel(*input_kernels[arg1_port]);
+          out_kernel.fuse_kernel(*input_kernels[arg2_port]);
+          const std::string arg1_expr = input_kernels[arg1_port]->expr;
+          const std::string arg2_expr = input_kernels[arg2_port]->expr;
+          out_kernel.expr = "max(" + arg1_expr + ", " + arg2_expr + ")";
         }
       }
       else if(func == "field_sin")
       {
-        const int arg1_port = inputs["arg1/port"].as_int32();
-        (*out_jitable)["dom_info"].child(dom_idx)["entries"] =
-            verify_entries({input_jitables[arg1_port]}, dom_idx, filter_name);
         if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
         {
           const int arg1_port = inputs["arg1/port"].as_int32();
-          fuse_kernel_vars(out_kernel, *input_kernels[arg1_port]);
-          const std::string arg1_expr =
-              (*input_kernels[arg1_port])["expr"].as_string();
-          out_kernel["expr"] = "sin(" + arg1_expr + ")";
+          out_kernel.fuse_kernel(*input_kernels[arg1_port]);
+          const std::string arg1_expr = input_kernels[arg1_port]->expr;
+          out_kernel.expr = "sin(" + arg1_expr + ")";
         }
       }
-      else if(func == "volume")
+      else if(func == "expr_dot")
       {
-        const int arg1_port = inputs["arg1/port"].as_int32();
-        // TODO call num_cells to get entries
-        if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
+        const int obj_port = inputs["obj/port"].as_int32();
+        const conduit::Node &obj = input_kernels[obj_port]->obj;
+        const std::string &name = params()["name"].as_string();
+        std::unordered_set<std::string> valid_attrs;
+        if(obj["type"].as_string() == "topo")
         {
-          fuse_kernel_vars(out_kernel, *input_kernels[arg1_port]);
-          const std::string topo_name =
-              (*input<conduit::Node>(arg1_port))["value"].as_string();
-          out_kernel["expr"] = topo_name + "_volume";
-          out_kernel["depends/" + topo_name + "_volume"];
+          const std::string &topo_name = obj["topo_name"].as_string();
+          const int topo_dim = obj["topo_dim"].to_int32();
+          if(obj.has_path("attr"))
+          {
+            if(fused_kernel_types.find(out_kernel_type) ==
+               fused_kernel_types.end())
+            {
+              const conduit::Node &assoc = obj["attr"].child(0);
+              TopologyCode topo_code = TopologyCode(topo_name, dom);
+              if(assoc.name() == "cell")
+              {
+                if(is_xyz(name) && available_axis(name, topo_dim, topo_name))
+                {
+                  topo_code.cell_xyz(out_kernel.for_body);
+                  out_kernel.expr = topo_name + "_cell_" + name;
+                }
+                else if(name == "volume")
+                {
+                  topo_code.volume(out_kernel.for_body);
+                  out_kernel.expr = topo_name + "_volume";
+                }
+              }
+              else
+              {
+                if(is_xyz(name) && available_axis(name, topo_dim, topo_name))
+                {
+                  topo_code.vertex_xyz(out_kernel.for_body);
+                  out_kernel.expr = topo_name + "_vertex_" + name;
+                }
+              }
+            }
+          }
+          else
+          {
+            if(name == "cell")
+            {
+              if(obj["topo_type"].as_string() == "points")
+              {
+                ASCENT_ERROR("Point topology '" << obj["topo_name"].as_string()
+                                                << "' has no cell attributes.");
+              }
+              out_jitable->dom_info.child(dom_idx)["entries"] =
+                  num_cells(dom, topo_name);
+              if(out_jitable->association.empty())
+              {
+                out_jitable->association = "element";
+              }
+            }
+            else
+            {
+              out_jitable->dom_info.child(dom_idx)["entries"] =
+                  num_points(dom, topo_name);
+              if(out_jitable->association.empty())
+              {
+                out_jitable->association = "vertex";
+              }
+            }
+            out_kernel.obj = obj;
+            out_kernel.obj["attr/" + name];
+          }
+        }
+        else
+        {
+          ASCENT_ERROR("JitFilter: Unknown obj:\n" << obj.to_yaml());
         }
       }
       else
@@ -3008,7 +2970,7 @@ JitFilter::execute()
 
   if(execute)
   {
-    execute_jitable(*out_jitable, *dataset);
+    out_jitable->execute(*dataset);
     Node *output = new conduit::Node();
     // TODO come up with unique field name
     (*output)["value"] = "output";
@@ -3018,7 +2980,7 @@ JitFilter::execute()
   }
   else
   {
-    set_output<conduit::Node>(out_jitable);
+    set_output<Jitable>(out_jitable);
   }
 }
 

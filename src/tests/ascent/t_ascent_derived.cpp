@@ -120,6 +120,8 @@ TEST(ascent_expressions, derived_expressions)
 
   // pass vec and see what happens
   // expr = "sin(field('braid')) * field('braid') * field('vel')";
+  expr = "topo('mesh').cell.volume";
+  eval.evaluate(expr);
 
   expr = "sin(field('braid'))";
   eval.evaluate(expr);
@@ -131,7 +133,6 @@ TEST(ascent_expressions, derived_expressions)
   // expr = "(field('braid') - min(field('braid'))) / "
   //       "(max(field('braid')) - min(field('braid')))";
   // expr = "sin(1.0)";
-  // expr = "volume(topo('lskdfj'))";
 
   expr = "1 + field('braid') + 1";
   eval.evaluate(expr);

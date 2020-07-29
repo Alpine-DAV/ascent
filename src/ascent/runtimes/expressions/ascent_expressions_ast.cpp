@@ -1319,18 +1319,14 @@ ASTDotAccess::access()
 conduit::Node
 ASTDotAccess::build_graph(flow::Workspace &w, bool verbose)
 {
-  conduit::Node n_obj = obj->build_graph(w, verbose);
+  const conduit::Node input_obj = obj->build_graph(w, verbose);
 
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
   std::stringstream ss;
   ss << "dot"
-     << "_(" << n_obj["filter_name"].as_string() << ")__" << name;
-  const std::string verbose_name = ss.str();
-  if((*subexpr_cache).has_path(verbose_name))
-  {
-    return (*subexpr_cache)[verbose_name];
-  }
+     << "_(" << input_obj["filter_name"].as_string() << ")__" << name;
+  std::string verbose_name = ss.str();
   std::string f_name;
   if(verbose)
   {
@@ -1344,7 +1340,7 @@ ASTDotAccess::build_graph(flow::Workspace &w, bool verbose)
     f_name = ss.str();
   }
 
-  std::string obj_type = n_obj["type"].as_string();
+  std::string obj_type = input_obj["type"].as_string();
 
   // load the object table
   if(!w.registry().has_entry("object_table"))
@@ -1358,24 +1354,56 @@ ASTDotAccess::build_graph(flow::Workspace &w, bool verbose)
   {
     ASCENT_ERROR("Cannot get attribute of non-object type: " << obj_type);
   }
-  const conduit::Node &obj = (*o_table)[obj_type];
+  const conduit::Node &o_table_obj = (*o_table)[obj_type];
 
   // resolve attribute type
   std::string path = "attrs/" + name + "/type";
-  if(!obj.has_path(path))
+  if(!o_table_obj.has_path(path))
   {
-    obj.print();
+    o_table_obj.print();
     ASCENT_ERROR("Attribute " << name << " of " << obj_type << " not found");
   }
-  std::string res_type = obj[path].as_string();
+  std::string res_type = o_table_obj[path].as_string();
 
-  conduit::Node params;
-  params["name"] = name;
+  if(o_table->has_path(name + "/jitable") ||
+     res_type == "jitable")
+  {
+    f_name = "jit_" + f_name;
+    verbose_name = "jit_" + verbose_name;
+    if((*subexpr_cache).has_path(verbose_name))
+    {
+      return (*subexpr_cache)[verbose_name];
+    }
+    conduit::Node jit_filter_obj = input_obj;
+    if(o_table_obj.has_path("jitable"))
+    {
+      jit_filter_obj["type"] = "jitable";
+    }
+    conduit::Node params;
+    params["func"] = "expr_dot";
+    params["filter_name"] = f_name;
+    params["execute"] = false;
+    params["inputs/obj"] = jit_filter_obj;
+    params["inputs/obj/port"] = 0;
+    params["name"] = name;
+    w.graph().add_filter(
+        ascent::runtime::expressions::register_jit_filter(w, 1),
+        f_name,
+        params);
+  }
+  else
+  {
+    if((*subexpr_cache).has_path(verbose_name))
+    {
+      return (*subexpr_cache)[verbose_name];
+    }
+    conduit::Node params;
+    params["name"] = name;
 
-  w.graph().add_filter("expr_dot", f_name, params);
-
+    w.graph().add_filter("expr_dot", f_name, params);
+  }
   // src, dest, port
-  w.graph().connect(n_obj["filter_name"].as_string(), f_name, "obj");
+  w.graph().connect(input_obj["filter_name"].as_string(), f_name, 0);
 
   conduit::Node res;
   res["type"] = res_type;

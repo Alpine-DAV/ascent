@@ -654,6 +654,27 @@ initialize_objects()
   value_position["value/type"] = "double";
   value_position["position/type"] = "vector";
 
+  conduit::Node &topo = (*objects)["topo/attrs"];
+  topo["cell/type"] = "cell";
+  topo["vertex/type"] = "vertex";
+
+  conduit::Node &cell = (*objects)["cell/attrs"];
+  (*objects)["cell/jitable"];
+  cell["x/type"] = "jitable";
+  cell["y/type"] = "jitable";
+  cell["z/type"] = "jitable";
+  cell["dx/type"] = "jitable";
+  cell["dy/type"] = "jitable";
+  cell["dz/type"] = "jitable";
+  cell["id/type"] = "jitable";
+  cell["volume/type"] = "jitable";
+
+  conduit::Node &vertex = (*objects)["vertex/attrs"];
+  vertex["x/type"] = "jitable";
+  vertex["y/type"] = "jitable";
+  vertex["z/type"] = "jitable";
+  vertex["id/type"] = "jitable";
+
   // objects->save("objects.json", "json");
 }
 
