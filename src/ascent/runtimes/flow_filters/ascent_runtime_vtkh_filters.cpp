@@ -105,6 +105,8 @@
 #include <vtkh/filters/VectorMagnitude.hpp>
 #include <vtkh/filters/Histogram.hpp>
 #include <vtkh/filters/HistSampling.hpp>
+#include <vtkh/utils/vtkm_array_utils.hpp>
+
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
@@ -372,7 +374,6 @@ public:
         // NOTE: only getting canvas from domain 0 for now
         m_color_buffers.push_back(std::move(r->GetColorBuffers()));
         m_depth_buffers.push_back(std::move(r->GetDepthBuffers()));
-
         m_depths.push_back(std::move(r->GetDepths()));
       }
       
@@ -2658,12 +2659,15 @@ void add_images(std::vector<vtkh::Render> *renders,
     avg_render_time /= double(count);
     image_data["render_time"] = avg_render_time;
 
+    image_data["depth"] = depths->at(i);
     int size = renders->at(i).GetWidth() * renders->at(i).GetHeight();
     // NOTE: only getting canvas from domain 0 for now
     image_data["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
     image_data["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
-    image_data["depth"] = depths->at(i);
 
+    // get depth buffer directly from vtk-m -> memory error
+    // image_data["depth_buffer"].set_external(vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer()), size);
+  
     image_list->append() = image_data;
 
     // append name and frame time to ascent info
@@ -2714,12 +2718,13 @@ void ExecScene::execute()
   std::vector< std::vector<double>> *render_times = scene->GetRenderTimes();
   // NOTE: only domain 0 for now
   std::vector<std::vector<unsigned char> > *color_buffers = scene->GetColorBuffers(0);
-  std::vector<std::vector<float> > *depth_buffers = scene->GetDepthBuffers(0);
+  std::vector<std::vector<float> > *depth_buffers = scene->GetDepthBuffers(0); 
   std::vector<float> *depths = scene->GetDepths(0);
 
   // the images should exist now so add them to the image list
   // this can be used for the web server or jupyter
   add_images(renders, &graph(), render_times, color_buffers, depth_buffers, depths);
+  // add_images(renders, &graph(), render_times, color_buffers, depths);  // memory error
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

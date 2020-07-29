@@ -1049,6 +1049,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
             cond.wait(locker, [&buffer, &max_buffer_size](){ return buffer.size() < max_buffer_size; });
             buffer.push_back(std::make_pair(results[j], name));
             // std::cout << "produced " << name << std::endl;
+
             locker.unlock();
             cond.notify_all();
 
@@ -1098,33 +1099,32 @@ void hybrid_render(const MPI_Properties &mpi_props,
                    conduit::Node &data,
                    conduit::Node &render_chunks_probing)
 {
-    auto start0 = std::chrono::system_clock::now();
     assert(render_cfg.insitu_type != "inline");
     assert(mpi_props.sim_node_count > 0 && mpi_props.sim_node_count <= mpi_props.size);
+    
+    auto start0 = std::chrono::system_clock::now();
 
     bool is_vis_node = false;
     int my_vis_rank = -1;
 
     float my_avg_probing_time = 0.f;
     float my_sim_estimate = data["state/sim_time"].to_float();
-    int my_data_size = 0;
+    std::cout << mpi_props.rank << " ~ sim time estimate: " << my_sim_estimate << std::endl;
 
     // TODO: no copy (set external) -> send schema separate from data?
     Node data_packed = pack_node(data);
     // Node data_packed;
     // pack_node_external(data, data_packed);
+    int my_data_size = data_packed.total_bytes_compact();
 
-    std::cout << "~~~ " << my_sim_estimate << " sec sim time estimate " 
-              << mpi_props.rank << std::endl;
-
-    // nodes with the highest rank are vis nodes
-    if (mpi_props.rank >= mpi_props.sim_node_count) 
+    if (mpi_props.rank >= mpi_props.sim_node_count) // nodes with the highest ranks are vis nodes
     {
         is_vis_node = true;
         my_vis_rank = mpi_props.rank - mpi_props.sim_node_count;
         my_sim_estimate = 0.f;
+        my_data_size = 0;
     }
-    else if (mpi_props.size > 1) // otherwise we are a sim node
+    else if (mpi_props.size > 1) // otherwise this is a sim node
     {
         assert(my_probing_times.size() > 0);
         
@@ -1136,24 +1136,21 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
             my_avg_probing_time = float(sum_render_times / my_probing_times.size());
 
-            std::cout << "+++ probing times ";
-            for (auto &a : my_probing_times)
-                std::cout << a << " ";
+            // std::cout << "+++ probing times ";
+            // for (auto &a : my_probing_times)
+            //     std::cout << a << " ";
             std::cout << mpi_props.rank << std::endl;
             std::cout << "probing w/o overhead " << sum_render_times/1000.0 << std::endl;
             std::cout << "probing w/  overhead " << total_probing_time << std::endl;
         }
-        else // use whole probing time with overhead
+        else // use whole probing time including overhead
         {
             my_avg_probing_time = total_probing_time / render_cfg.probing_count;
         }
-
-        std::cout << "~~~ " << my_avg_probing_time 
-                  << " sec vis time estimate per render " 
-                  << mpi_props.rank << std::endl;
-
-        my_data_size = data_packed.total_bytes_compact();
+        std::cout << mpi_props.rank << " ~ vis time estimate (per render): " << my_avg_probing_time 
+                  << std::endl;
     }
+    log_global_time("end packData", mpi_props.rank);
 
 #ifdef ASCENT_MPI_ENABLED
     // MPI_Barrier(mpi_props.comm_world);
@@ -1488,6 +1485,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             // std::thread thread_pack(&test_function);
             std::chrono::duration<double> sum_render(0);
             std::chrono::duration<double> sum_copy(0);
+            
             auto t_start = std::chrono::system_clock::now();
             for (int i = 0; i < batch.runs; ++i)
             {
@@ -1508,9 +1506,9 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 auto t_render = std::chrono::system_clock::now();
                 ascent_renders[i].open(ascent_opts);
                 ascent_renders[i].publish(data);
-                print_time(t_render, "ascent publish sim ", mpi_props.rank);
-                
+                // print_time(t_render, "publish data sim ", mpi_props.rank);
                 t_render = std::chrono::system_clock::now();
+                
                 ascent_renders[i].execute(blank_actions);
                 auto t_end = std::chrono::system_clock::now();
                 sum_render += t_end - t_render;
@@ -1718,12 +1716,14 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         ascent_opt["insitu_type"] = insitu_type;
         ascent_opt["sleep"] = world_rank == 0 ? SLEEP : 0;
 
-        auto t_render = std::chrono::system_clock::now();
         // all sim nodes run probing in a new ascent instance
         ascent_probing.open(ascent_opt);
         ascent_probing.publish(m_data);        // pass on data pointer
+        // print_time(start, "* probing publish ");
+
+        auto t_render = std::chrono::system_clock::now();
         ascent_probing.execute(probe_actions); // pass on actions
-        print_time(t_render, "ascent render probing ", world_rank, 1.0 / std::round(probing_factor * phi * theta));
+        // print_time(t_render, "* probing render ", world_rank, 1.0 / std::round(probing_factor * phi * theta));
 
         if (insitu_type != "inline")
         {
