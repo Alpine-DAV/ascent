@@ -120,7 +120,7 @@ TEST(ascent_expressions, derived_expressions)
 
   // pass vec and see what happens
   // expr = "sin(field('braid')) * field('braid') * field('vel')";
-  expr = "topo('mesh').cell.volume";
+  expr = "topo('mesh').cell.x";
   eval.evaluate(expr);
 
   expr = "sin(field('braid'))";
@@ -139,6 +139,14 @@ TEST(ascent_expressions, derived_expressions)
 
   expr = "max(field('braid') + 1)";
   eval.evaluate(expr);
+  if(0.0)
+  {
+    std::cout<<"hi"<<std::endl;
+  }
+  else
+  {
+    std::cout<<"hello"<<std::endl;
+  }
 }
 
 //-----------------------------------------------------------------------------

@@ -140,21 +140,6 @@ ASTInteger::access()
   std::cout << "Creating integer: " << m_value << endl;
 }
 
-std::string
-ASTInteger::build_jit(conduit::Node &n, flow::Workspace &w)
-{
-  std::stringstream ss;
-  // force everthing to a double
-  ss << "(double)" << m_value;
-  return ss.str();
-}
-
-bool
-ASTInteger::can_jit()
-{
-  return true;
-}
-
 conduit::Node
 ASTInteger::build_graph(flow::Workspace &w, bool verbose)
 {
@@ -179,23 +164,6 @@ ASTInteger::build_graph(flow::Workspace &w, bool verbose)
   res["type"] = "int";
   (*subexpr_cache)[name] = res;
   return res;
-}
-
-//-----------------------------------------------------------------------------
-std::string
-ASTDouble::build_jit(conduit::Node &n, flow::Workspace &w)
-{
-  std::stringstream ss;
-  // force everthing to a double
-  ss << "(double)" << m_value;
-  return ss.str();
-}
-
-//-----------------------------------------------------------------------------
-bool
-ASTDouble::can_jit()
-{
-  return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -236,19 +204,6 @@ void
 ASTIdentifier::access()
 {
   std::cout << "Creating identifier reference: " << m_name << endl;
-}
-
-std::string
-ASTIdentifier::build_jit(conduit::Node &n, flow::Workspace &w)
-{
-  return m_name;
-}
-
-bool
-ASTIdentifier::can_jit()
-{
-  // Maybe?
-  return true;
 }
 
 conduit::Node
@@ -308,12 +263,6 @@ ASTNamedExpression::access()
   value->access();
 }
 
-std::string
-ASTNamedExpression::build_jit(conduit::Node &n, flow::Workspace &w)
-{
-  return key->build_jit(n, w) + value->build_jit(n, w);
-}
-
 conduit::Node
 ASTNamedExpression::build_graph(flow::Workspace &w, bool verbose)
 {
@@ -321,32 +270,6 @@ ASTNamedExpression::build_graph(flow::Workspace &w, bool verbose)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ASTArguments::can_jit()
-{
-  bool res = true;
-  if(pos_args != nullptr)
-  {
-    const size_t pos_size = pos_args->exprs.size();
-    for(size_t i = 0; i < pos_size; ++i)
-    {
-      res &= pos_args->exprs[i]->can_jit();
-    }
-  }
-
-  if(named_args != nullptr)
-  {
-    const size_t named_size = named_args->size();
-    // we can't jit named
-    if(named_size > 0)
-    {
-      res = false;
-    }
-  }
-  return res;
-}
-//-----------------------------------------------------------------------------
-
 void
 ASTArguments::access()
 {
@@ -377,137 +300,6 @@ ASTMethodCall::access()
 {
   std::cout << "Creating method call: " << m_id->m_name << std::endl;
   arguments->access();
-}
-
-bool
-ASTMethodCall::can_jit()
-{
-  // TODO: validate special functions
-  // and supported math funtions (max, sin, etc)
-
-  // There are three types of functions.
-  // 1) special functions: field variables that become
-  //    pointers inside kernels and constants like
-  //    domain_id
-  // 2) pre-execute functions: max(field('braid')),
-  //    and objects like histogram(field('braid),stuff
-  //    can also be executed breofre hand and subbed in
-  //    Note: allowing runtime expressions as paramters
-  //    into 'bins' of a histogram would need to break
-  //    up the kernel into different invocations.
-  // 3) math functions: ceil, sin, max,...
-  //    we can just pass these into jit
-
-  // special functions
-  size_t arg_size = 0;
-  if(arguments->pos_args != nullptr)
-  {
-    arg_size = arguments->pos_args->exprs.size();
-  }
-  bool res = false;
-  if(m_id->m_name == "field" && arg_size == 1)
-  {
-    res = true;
-  }
-
-  if(m_id->m_name == "domain_id" && arg_size == 0)
-  {
-    res = true;
-  }
-
-  // pre-execute functions
-  if(m_id->m_name == "histogram")
-  {
-    res = false;
-  }
-  if(m_id->m_name == "max" && arg_size == 1)
-  {
-    res = true;
-  }
-
-  // math functions
-  if(m_id->m_name == "max" && arg_size == 2)
-  {
-    res = true;
-  }
-  if(m_id->m_name == "min" && arg_size == 2)
-  {
-    res = true;
-  }
-
-  return res;
-}
-
-std::string
-ASTMethodCall::build_jit(conduit::Node &n, flow::Workspace &w)
-{
-  size_t arg_size = 0;
-  if(arguments->pos_args != nullptr)
-  {
-    arg_size = arguments->pos_args->exprs.size();
-  }
-  // placeholder for more complicated logic
-  if(m_id->m_name == "field" && arg_size == 1)
-  {
-    // need to verify params, e.g., num and type
-    std::string var_name = detail::strip_single_quotes(
-        arguments->pos_args->exprs[0]->build_jit(n, w));
-    n["field_vars"].append() = var_name;
-    return var_name;
-  }
-
-  if(m_id->m_name == "mesh" && arg_size == 1)
-  {
-    // need to verify params, e.g., num and type
-    std::string var_name = detail::strip_single_quotes(
-        arguments->pos_args->exprs[0]->build_jit(n, w));
-    n["mesh_vars"].append() = var_name;
-    return var_name;
-  }
-
-  // mesh jit functions
-  if(m_id->m_name == "volume" && arg_size == 1)
-  {
-    // no idea how to validate all of this,
-    // but the jist is that we will add a variable
-    // to the kernel of the name 'volume' so
-    // it can be evaluated in the expression
-    std::cout << "BOOOOOOOOOOOOOOOOM\n";
-    std::string var_name = arguments->pos_args->exprs[0]->build_jit(n, w);
-    n["mesh_functions"].append() = m_id->m_name;
-    return m_id->m_name;
-  }
-
-  // per domain constants
-  if(m_id->m_name == "domain_id" && arg_size == 0)
-  {
-    n["constants/domain_id/name"] = "domain_id";
-    return "domain_id";
-  }
-
-  // pre-execute calls min(field('braid'))
-  if((m_id->m_name == "max" || m_id->m_name == "min") && arg_size == 1)
-  {
-    std::cout << "MATCH\n";
-    conduit::Node sub = this->build_graph(w);
-    sub.print();
-    std::string var_name = sub["filter_name"].as_string();
-    n["pre-execute"].append() = sub;
-    n["constants/" + var_name + "/name"] = var_name;
-    return var_name;
-  }
-
-  // math functions supported inside the kernel
-  std::string res = m_id->m_name + "(";
-  for(size_t i = 0; i < arg_size; ++i)
-  {
-    res += arguments->pos_args->exprs[i]->build_jit(n, w);
-    if(i != arg_size - 1)
-      res += ",";
-  }
-  res += ")";
-
-  return res;
 }
 
 conduit::Node
@@ -900,7 +692,7 @@ ASTIfExpr::build_graph(flow::Workspace &w, bool verbose)
   const std::string condition_type = n_condition["type"].as_string();
   const std::string if_type = n_if["type"].as_string();
   const std::string else_type = n_else["type"].as_string();
-  if(condition_type != "bool")
+  if(condition_type != "bool" & condition_type != "jitable")
   {
     ASCENT_ERROR("if-expression condition must be of type boolean");
   }
@@ -969,38 +761,6 @@ ASTBinaryOp::access()
   m_rhs->access();
   // std::cout << " op " << op_str << "\n";
   m_lhs->access();
-}
-
-bool
-ASTBinaryOp::can_jit()
-{
-  return true;
-}
-
-std::string
-ASTBinaryOp::build_jit(conduit::Node &n, flow::Workspace &w)
-{
-  std::string op_str;
-  switch(m_op)
-  {
-  case TPLUS: op_str = "+"; break;
-  case TMINUS: op_str = "-"; break;
-  case TMUL: op_str = "*"; break;
-  case TDIV: op_str = "/"; break;
-  case TMOD: op_str = "%"; break;
-  case TCEQ: op_str = "=="; break;
-  case TCNE: op_str = "!="; break;
-  case TCLE: op_str = "<="; break;
-  case TCGE: op_str = ">="; break;
-  case TCGT: op_str = ">"; break;
-  case TCLT: op_str = "<"; break;
-  case TOR: op_str = "or"; break;
-  case TAND: op_str = "and"; break;
-  case TNOT: op_str = "not"; break;
-  default: std::cout << "unknown binary op " << m_op << "\n";
-  }
-  return "(" + m_lhs->build_jit(n, w) + " " + op_str + " " +
-         m_rhs->build_jit(n, w) + ")";
 }
 
 conduit::Node
@@ -1156,18 +916,6 @@ void
 ASTString::access()
 {
   std::cout << "Creating string " << m_name << endl;
-}
-
-std::string
-ASTString::build_jit(conduit::Node &n, flow::Workspace &w)
-{
-  return m_name;
-}
-
-bool
-ASTString::can_jit()
-{
-  return true;
 }
 
 conduit::Node
@@ -1421,12 +1169,6 @@ ASTExpressionList::access()
   {
     expr->access();
   }
-}
-
-bool
-ASTExpressionList::can_jit()
-{
-  return false;
 }
 
 conduit::Node

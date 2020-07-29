@@ -73,33 +73,62 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace expressions
 {
-void do_it(conduit::Node &dataset, std::string expr, const conduit::Node &info);
-
-// make sure we are in a good state and gather the
-// information we need to create some kernels
-void validate(const conduit::Node &dataset,
-              const conduit::Node &info,
-              conduit::Node &meta);
-
-void parameters(const conduit::Node &dataset,
-                const conduit::Node &info,
-                std::map<std::string, std::string> &var_types, // name:type
-                std::map<std::string, double> &constants);
-
 void pack_topo(const std::string &topo_name,
                const conduit::Node &dom,
                conduit::Node &args);
+
+template <typename T>
+class InsertionOrderedSet
+{
+public:
+  void
+  insert(const T &item)
+  {
+    if(data_set.find(item) == data_set.end())
+    {
+      data_set.insert(item);
+      insertion_ordered_data.push_back(item);
+    }
+  }
+
+  void
+  insert(std::initializer_list<T> ilist)
+  {
+    for(const auto &item : ilist)
+    {
+      insert(item);
+    }
+  }
+  void
+  insert(const InsertionOrderedSet<T> &ios)
+  {
+    for(const auto &item : ios.data())
+    {
+      insert(item);
+    }
+  }
+
+  const std::vector<T> &
+  data() const
+  {
+    return insertion_ordered_data;
+  }
+
+private:
+  std::unordered_set<T> data_set;
+  std::vector<T> insertion_ordered_data;
+};
 
 class TopologyCode
 {
 public:
   TopologyCode(const std::string &topo_name, const conduit::Node &dom);
-  void vertex_idx(std::set<std::string> &code);
-  void vertex_xyz(std::set<std::string> &code);
-  void cell_idx(std::set<std::string> &code);
-  void cell_xyz(std::set<std::string> &code);
-  void dxdydz(std::set<std::string> &code);
-  void volume(std::set<std::string> &code);
+  void vertex_idx(InsertionOrderedSet<std::string> &code);
+  void vertex_xyz(InsertionOrderedSet<std::string> &code);
+  void cell_idx(InsertionOrderedSet<std::string> &code);
+  void cell_xyz(InsertionOrderedSet<std::string> &code);
+  void dxdydz(InsertionOrderedSet<std::string> &code);
+  void volume(InsertionOrderedSet<std::string> &code);
 
 private:
   int num_dims;
@@ -114,7 +143,7 @@ public:
   std::string generate_loop(const std::string &output);
 
   std::string kernel_body;
-  std::set<std::string> for_body;
+  InsertionOrderedSet<std::string> for_body;
   std::string expr;
   conduit::Node obj;
 };
