@@ -96,6 +96,11 @@ double Cache::last_known_time()
   return res;
 }
 
+bool Cache::filtered()
+{
+  return m_filtered;
+}
+
 void Cache::last_known_time(double time)
 {
   m_data["last_known_time"] = time;
@@ -124,9 +129,9 @@ void Cache::filter_time(double time)
         // if there is no time, we can reason about
         // anything
         entry.remove(last);
+        removal_count++;
       }
-
-      else if(entry.child(last)["time"].to_float64() > time)
+      else if(entry.child(last)["time"].to_float64() >= time)
       {
         entry.remove(last);
         removal_count++;
@@ -138,6 +143,24 @@ void Cache::filter_time(double time)
     }
   }
 
+  // clean up entries with no children
+  bool clean = false;
+  while(!clean)
+  {
+    const int size = m_data.number_of_children();
+    bool removed = false;
+    for(int i = 0; i < size; ++i)
+    {
+      if(m_data.child(i).number_of_children() == 0)
+      {
+        m_data.remove(i);
+        removed = true;
+        break;
+      }
+    }
+    clean = !removed;
+  }
+
   using std::chrono::system_clock;
   std::time_t tt = system_clock::to_time_t (system_clock::now());
   struct std::tm * ptm = std::localtime(&tt);
@@ -146,15 +169,21 @@ void Cache::filter_time(double time)
   msg<<"Removed all expression cache entries ("<<removal_count<<")"
      <<" after simulation time "<<time<<".";
   m_data["ascent_cache_info"].append() = msg.str();
+  m_filtered = true;
+}
+
+bool Cache::loaded()
+{
+  return m_loaded;
 }
 
 void Cache::load(const std::string &dir,
                  const std::string &session)
 {
-  int rank = 0;
+  m_rank = 0;
 #ifdef ASCENT_MPI_ENABLED
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  MPI_Comm_rank(mpi_comm, &rank);
+  MPI_Comm_rank(mpi_comm, &m_rank);
 #endif
 
   std::string file_name = session + ".yaml";
@@ -163,7 +192,7 @@ void Cache::load(const std::string &dir,
 
   bool exists = conduit::utils::is_file(session_file);
 
-  if(rank == 0 && exists)
+  if(m_rank == 0 && exists)
   {
     m_data.load(session_file, "yaml");
   }
@@ -174,13 +203,16 @@ void Cache::load(const std::string &dir,
     conduit::relay::mpi::broadcast_using_schema(m_data, 0, mpi_comm);
   }
 #endif
-
   m_loaded = true;
 }
 
 Cache::~Cache()
 {
-  if(!m_data.dtype().is_empty())
+  // the session file can be blank during testing,
+  // since its not actually opening ascent
+  if(m_rank == 0 &&
+     !m_data.dtype().is_empty()
+     && m_session_file != "")
   {
     m_data.save(m_session_file,"yaml");
   }
@@ -242,7 +274,11 @@ void
 ExpressionEval::load_cache(const std::string &dir,
                            const std::string &session)
 {
-  m_cache.load(dir,session);
+  // the cache is static so don't load if we already have
+  if(!m_cache.loaded())
+  {
+    m_cache.load(dir,session);
+  }
 }
 
 void
@@ -790,7 +826,13 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   // check the cache for signs of time travel
   // i.e., someone could have restarted the simulation from the beginning
   // or from some earlier checkpoint
-  if(time < m_cache.last_known_time() && valid_time)
+  // There are a couple conditions:
+  // 1) only filter if we haven't done so before
+  // 2) only filter if we detect time travel
+  // 3) only filter if we have state/time
+  if(!m_cache.filtered() &&
+     time <= m_cache.last_known_time()
+     && valid_time)
   {
     // remove all cache entries that occur in the future
     m_cache.filter_time(time);

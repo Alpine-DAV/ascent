@@ -78,6 +78,7 @@ struct Cache
 {
   conduit::Node m_data;
   int m_rank;
+  bool m_filtered = false;
   bool m_loaded = false;
   std::string m_session_file;
 
@@ -87,6 +88,8 @@ struct Cache
   double last_known_time();
   void last_known_time(double time);
   void filter_time(double time);
+  bool filtered();
+  bool loaded();
 
   ~Cache();
 };
