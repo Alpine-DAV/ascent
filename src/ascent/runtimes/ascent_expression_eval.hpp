@@ -73,6 +73,27 @@ namespace expressions
 void ASCENT_API register_builtin();
 void ASCENT_API initialize_functions();
 void ASCENT_API initialize_objects();
+
+struct Cache
+{
+  conduit::Node m_data;
+  int m_rank;
+  bool m_filtered = false;
+  bool m_loaded = false;
+  std::string m_session_file;
+
+  void load(const std::string &dir,
+            const std::string &session);
+
+  double last_known_time();
+  void last_known_time(double time);
+  void filter_time(double time);
+  bool filtered();
+  bool loaded();
+
+  ~Cache();
+};
+
 static conduit::Node m_function_table;
 
 class ASCENT_API ExpressionEval
@@ -80,11 +101,13 @@ class ASCENT_API ExpressionEval
 protected:
   conduit::Node *m_data;
   flow::Workspace w;
-  static conduit::Node m_cache;
+  static Cache m_cache;
 public:
   ExpressionEval(conduit::Node *data);
 
   static const conduit::Node &get_cache();
+  static void load_cache(const std::string &dir,
+                         const std::string &session);
 
   conduit::Node evaluate(const std::string expr, std::string exp_name = "");
 };

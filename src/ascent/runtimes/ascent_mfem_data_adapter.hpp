@@ -84,10 +84,14 @@ public:
   FieldMap get_field_map();
   int cycle();
   void cycle(int cycle);
+
+  double time();
+  void time(double time);
 protected:
   FieldMap    m_fields;
   mfem::Mesh *m_mesh;
   int m_cycle;
+  double m_time;
 
 };
 

@@ -529,6 +529,7 @@ get_explicit_element(const conduit::Node &n_coords,
   res.set(vert, 3);
   return res;
 }
+
 //-----------------------------------------------------------------------------
 }; // namespace detail
 //-----------------------------------------------------------------------------
@@ -617,6 +618,34 @@ element_location(const conduit::Node &domain,
   return res;
 }
 
+std::string
+possible_components(const conduit::Node &dataset,
+                   const std::string &field_name)
+{
+  std::string res;
+  if(dataset.number_of_children() > 0)
+  {
+    const conduit::Node &dom = dataset.child(0);
+    if(dom.has_path("fields/" + field_name))
+    {
+      if(dom["fields/"+field_name+"/values"].number_of_children() > 0)
+      {
+        std::vector<std::string> names
+          = dom["fields/"+field_name+"/values"].child_names();
+        std::stringstream ss;
+        ss<<"[";
+        for(auto name : names)
+        {
+          ss<<" '"<<name<<"'";
+        }
+        ss<<"]";
+        res = ss.str();
+      }
+    }
+  }
+  return res;
+}
+
 bool
 is_scalar_field(const conduit::Node &dataset, const std::string &field_name)
 {
@@ -656,6 +685,26 @@ has_field(const conduit::Node &dataset, const std::string &field_name)
   // check to see if the field exists in any rank
   has_field = detail::at_least_one(has_field);
   return has_field;
+}
+
+bool
+has_component(const conduit::Node &dataset,
+              const std::string &field_name,
+              const std::string &component)
+{
+
+  bool has_comp= false;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(!has_comp && dom.has_path("fields/" + field_name + "/values/"+component))
+    {
+      has_comp = true;
+    }
+  }
+  // check to see if the field exists in any rank
+  has_comp= detail::at_least_one(has_comp);
+  return has_comp;
 }
 
 // TODO If someone names their fields x,y,z things will go wrong
@@ -1200,7 +1249,8 @@ binning(const conduit::Node &dataset,
         conduit::Node &bin_axes,
         const std::string &reduction_var,
         const std::string &reduction_op,
-        const double empty_bin_val)
+        const double empty_bin_val,
+        const std::string &component)
 {
   std::vector<std::string> var_names = bin_axes.child_names();
   if(!reduction_var.empty())
@@ -1245,8 +1295,11 @@ binning(const conduit::Node &dataset,
 
       if(!axis.has_path("max_val"))
       {
-        // We add 1 because the last bin isn't inclusive
-        axis["max_val"] = max_coords[axis_num] + 1.0;
+        // We add eps because the last bin isn't inclusive
+        double min_val = axis["min_val"].to_float64();
+        double length = max_coords[axis_num] - min_val;
+        double eps = length * 1e-8;
+        axis["max_val"] = max_coords[axis_num] + eps;
       }
     }
   }
@@ -1284,6 +1337,7 @@ binning(const conduit::Node &dataset,
 
     conduit::Node n_homes;
     populate_homes(dom, bin_axes, topo_name, assoc_str, n_homes);
+
     if(n_homes.has_path("error"))
     {
       ASCENT_INFO("Binning: not binning domain "
@@ -1311,7 +1365,10 @@ binning(const conduit::Node &dataset,
     }
     else if(dom.has_path("fields/" + reduction_var))
     {
-      const std::string values_path = "fields/" + reduction_var + "/values";
+      const std::string comp_path = component == "" ? "" : "/" + component;
+      const std::string values_path
+        = "fields/" + reduction_var + "/values" + comp_path;
+
       if(dom[values_path].dtype().is_float32())
       {
         const conduit::float32_array values = dom[values_path].value();
@@ -1917,6 +1974,7 @@ field_min(const conduit::Node &dataset, const std::string &field)
   double *ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, minloc_res.rank, mpi_comm);
   MPI_Bcast(&domain_id, 1, MPI_INT, minloc_res.rank, mpi_comm);
+  MPI_Bcast(&index, 1, MPI_INT, minloc_res.rank, mpi_comm);
 
   loc.set(ploc, 3);
 
@@ -1924,6 +1982,8 @@ field_min(const conduit::Node &dataset, const std::string &field)
 #endif
   res["rank"] = rank;
   res["domain_id"] = domain_id;
+  res["index"] = index;
+  res["assoc"] = assoc_str;
   res["position"] = loc;
   res["value"] = min_value;
 
@@ -2051,12 +2111,15 @@ field_max(const conduit::Node &dataset, const std::string &field)
   double *ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, maxloc_res.rank, mpi_comm);
   MPI_Bcast(&domain_id, 1, MPI_INT, maxloc_res.rank, mpi_comm);
+  MPI_Bcast(&index, 1, MPI_INT, maxloc_res.rank, mpi_comm);
 
   loc.set(ploc, 3);
   rank = maxloc_res.rank;
 #endif
   res["rank"] = rank;
   res["domain_id"] = domain_id;
+  res["index"] = index;
+  res["assoc"] = assoc_str;
   res["position"] = loc;
   res["value"] = max_value;
 
@@ -2076,12 +2139,6 @@ get_state_var(const conduit::Node &dataset, const std::string &var_name)
       has_state = true;
       state = dom["state/" + var_name];
     }
-  }
-
-  // TODO: make sure everyone has this
-  if(!has_state)
-  {
-    ASCENT_ERROR("Unable to retrieve state variable '" << var_name << "'");
   }
   return state;
 }

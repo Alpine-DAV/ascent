@@ -75,7 +75,10 @@ class ASCENT_API VTKHCollection
 {
 protected:
   std::map<std::string, vtkh::DataSet> m_datasets;
+  int m_cycle;
+  double m_time;
 public:
+  VTKHCollection();
   void add(vtkh::DataSet &dataset, const std::string topology_name);
 
   // returns true if the topology exists on any rank
@@ -109,7 +112,12 @@ public:
   // returns the local number of topologies
   int number_of_topologies() const;
 
+  void cycle(int cycle);
+  void time(double time);
+
   int cycle() const;
+
+  double time() const;
 
   // returns a new collection without the specified topology
   // this is a shallow copy operation

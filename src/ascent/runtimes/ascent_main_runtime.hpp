@@ -113,6 +113,7 @@ private:
     int               m_rank;
     conduit::Node     m_ghost_fields; // a list of strings
     std::string       m_default_output_dir;
+    std::string       m_session_name;
 
     bool              m_field_filtering;
     std::set<std::string> m_field_list;

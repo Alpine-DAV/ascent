@@ -248,6 +248,7 @@ TEST(ascent_expressions, functional_correctness)
   //
   Node data;
 
+  data["state/time"] = 1.0;
   // create the coordinate set
   data["coordsets/coords/type"] = "uniform";
   data["coordsets/coords/dims/i"] = 5;
@@ -304,6 +305,7 @@ TEST(ascent_expressions, functional_correctness)
   }
 
   data["state/cycle"] = 100;
+  data["state/time"] = 2.1;
 
   // make sure we conform:
   Node verify_info;
@@ -670,6 +672,7 @@ TEST(ascent_binning, binning_basic_meshes)
 
   // ascent normally adds this but we are doing an end around
   data["state/cycle"] = 100;
+  data["state/time"] = 1.3;
   data["state/domain_id"] = 0;
   Node multi_dom;
   blueprint::mesh::to_multi_domain(data, multi_dom);
@@ -864,6 +867,7 @@ TEST(ascent_binning, multi_dom_binning)
   for(int i = 0; i < multi_dom.number_of_children(); ++i)
   {
     multi_dom.child(i)["state/cycle"] = 100;
+    multi_dom.child(i)["state/time"] = 1.2;
     multi_dom.child(i)["state/domain_id"] = 0;
   }
 

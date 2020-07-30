@@ -276,13 +276,25 @@ std::vector<vtkm::Id> VTKHCollection::domain_ids() const
 int
 VTKHCollection::cycle() const
 {
-  int cycle = 0;
-  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
-  {
-    cycle = it->second.GetCycle();
-    break;
-  }
-  return cycle;
+  return m_cycle;
+}
+
+void
+VTKHCollection::cycle(int cycle)
+{
+  m_cycle = cycle;
+}
+
+double
+VTKHCollection::time() const
+{
+  return m_time;
+}
+
+void
+VTKHCollection::time(double time)
+{
+  m_time = time;
 }
 
 vtkh::DataSet&
@@ -383,6 +395,12 @@ std::string VTKHCollection::summary() const
   return msg.str();
 }
 
+VTKHCollection::VTKHCollection()
+  : m_cycle(0),
+    m_time(0)
+{
+
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

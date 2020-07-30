@@ -118,7 +118,8 @@ conduit::Node binning(const conduit::Node &dataset,
                       conduit::Node &bin_axes,
                       const std::string &reduction_var,
                       const std::string &reduction_op,
-                      const double empty_bin_val);
+                      const double empty_bin_val,
+                      const std::string &component);
 
 void ASCENT_API paint_binning(const conduit::Node &binning,
                               conduit::Node &dataset);
@@ -132,6 +133,14 @@ bool is_scalar_field(const conduit::Node &dataset,
                      const std::string &field_name);
 
 bool has_field(const conduit::Node &dataset, const std::string &field_name);
+
+bool has_component(const conduit::Node &dataset,
+                   const std::string &field_name,
+                   const std::string &component);
+
+std::string
+possible_components(const conduit::Node &dataset,
+                    const std::string &field_name);
 
 bool is_xyz(const std::string &axis_name);
 

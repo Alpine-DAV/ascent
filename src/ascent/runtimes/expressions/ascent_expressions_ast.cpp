@@ -443,6 +443,7 @@ ASTMethodCall::build_graph(flow::Workspace &w)
     if(valid)
     {
       matched_index = i;
+      break;
     }
 
   next_overload:;
