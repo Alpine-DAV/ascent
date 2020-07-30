@@ -248,6 +248,7 @@ TEST(ascent_expressions, functional_correctness)
   //
   Node data;
 
+  data["state/time"] = 1.0;
   // create the coordinate set
   data["coordsets/coords/type"] = "uniform";
   data["coordsets/coords/dims/i"] = 5;
@@ -692,7 +693,7 @@ TEST(ascent_binning, binning_basic_meshes)
 
   expr = "binning('field', 'max', [axis('z', [-5, 0, 5], clamp=True)])";
   res = eval.evaluate(expr);
-  EXPECT_EQ(res["attrs/value/value"].to_json(), "[3.0, 6.0]");
+  EXPECT_EQ(res["attrs/value/value"].to_json(), "[3.0, 7.0]");
 
   expr =
       "binning('field', 'max', [axis('x', num_bins=4), axis('y', num_bins=4)], "

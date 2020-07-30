@@ -2140,12 +2140,6 @@ get_state_var(const conduit::Node &dataset, const std::string &var_name)
       state = dom["state/" + var_name];
     }
   }
-
-  // TODO: make sure everyone has this
-  if(!has_state)
-  {
-    ASCENT_ERROR("Unable to retrieve state variable '" << var_name << "'");
-  }
   return state;
 }
 

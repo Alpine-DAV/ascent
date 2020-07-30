@@ -121,10 +121,12 @@ void Cache::filter_time(double time)
 
       if(!entry.child(last).has_path("time"))
       {
-        ASCENT_ERROR("expressions internal error: node missing time");
+        // if there is no time, we can reason about
+        // anything
+        entry.remove(last);
       }
 
-      if(entry.child(last)["time"].to_float64() > time)
+      else if(entry.child(last)["time"].to_float64() > time)
       {
         entry.remove(last);
         removal_count++;
@@ -775,15 +777,21 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node return_val = *n_res;
 
   // add the sim time
-  double time = get_state_var(*m_data, "time").to_float64();
+  conduit::Node n_time = get_state_var(*m_data, "time");
+  double time = 0;
+  bool valid_time = false;
+  if(!n_time.dtype().is_empty())
+  {
+    valid_time = true;
+    time = n_time.to_float64();
+  }
   return_val["time"] = time;
 
   // check the cache for signs of time travel
   // i.e., someone could have restarted the simulation from the beginning
   // or from some earlier checkpoint
-  if(time < m_cache.last_known_time())
+  if(time < m_cache.last_known_time() && valid_time)
   {
-    std::cout<<"Invalid time\n;";
     // remove all cache entries that occur in the future
     m_cache.filter_time(time);
   }
