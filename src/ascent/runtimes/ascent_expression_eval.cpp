@@ -55,6 +55,14 @@
 #include "expressions/ascent_expressions_parser.hpp"
 #include "expressions/ascent_expressions_tokens.hpp"
 
+#include <iomanip>
+#include <ctime>
+#include <chrono>
+
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#include <conduit_relay_mpi.hpp>
+#endif
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -73,9 +81,108 @@ namespace runtime
 namespace expressions
 {
 
-conduit::Node ExpressionEval::m_cache;
 conduit::Node g_function_table;
 conduit::Node g_object_table;
+
+Cache ExpressionEval::m_cache;
+
+double Cache::last_known_time()
+{
+  double res = 0;
+  if(m_data.has_path("last_known_time"))
+  {
+    res = m_data["last_known_time"].as_float64();
+  }
+  return res;
+}
+
+void Cache::last_known_time(double time)
+{
+  m_data["last_known_time"] = time;
+}
+
+void Cache::filter_time(double time)
+{
+  const int num_entries = m_data.number_of_children();
+  int removal_count = 0;
+  for(int i = 0; i < num_entries; ++i)
+  {
+    conduit::Node &entry = m_data.child(i);
+    if(entry.name() == "last_known_time" ||
+       entry.name() == "session_cache_info")
+    {
+      continue;
+    }
+
+    bool invalid_time = true;
+    while(invalid_time && entry.number_of_children() > 0)
+    {
+      int last = entry.number_of_children() - 1;
+
+      if(!entry.child(last).has_path("time"))
+      {
+        ASCENT_ERROR("expressions internal error: node missing time");
+      }
+
+      if(entry.child(last)["time"].to_float64() > time)
+      {
+        entry.remove(last);
+        removal_count++;
+      }
+      else
+      {
+        invalid_time = false;
+      }
+    }
+  }
+
+  using std::chrono::system_clock;
+  std::time_t tt = system_clock::to_time_t (system_clock::now());
+  struct std::tm * ptm = std::localtime(&tt);
+  std::stringstream msg;
+  msg<<"Time travel detected at "<<std::put_time(ptm,"%c") << '\n';
+  msg<<"Removed all expression cache entries ("<<removal_count<<")"
+     <<" after simulation time "<<time<<".";
+  m_data["ascent_cache_info"].append() = msg.str();
+}
+
+void Cache::load(const std::string &dir,
+                 const std::string &session)
+{
+  int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
+  std::string file_name = session + ".yaml";
+  std::string session_file = conduit::utils::join_path(dir, file_name);
+  m_session_file = session_file;
+
+  bool exists = conduit::utils::is_file(session_file);
+
+  if(rank == 0 && exists)
+  {
+    m_data.load(session_file, "yaml");
+  }
+
+#ifdef ASCENT_MPI_ENABLED
+  if(exists)
+  {
+    conduit::relay::mpi::broadcast_using_schema(m_data, 0, mpi_comm);
+  }
+#endif
+
+  m_loaded = true;
+}
+
+Cache::~Cache()
+{
+  if(!m_data.dtype().is_empty())
+  {
+    m_data.save(m_session_file,"yaml");
+  }
+}
 
 void
 register_builtin()
@@ -127,6 +234,13 @@ register_builtin()
 
 ExpressionEval::ExpressionEval(conduit::Node *data) : m_data(data)
 {
+}
+
+void
+ExpressionEval::load_cache(const std::string &dir,
+                           const std::string &session)
+{
+  m_cache.load(dir,session);
 }
 
 void
@@ -620,7 +734,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   }
 
   w.registry().add<conduit::Node>("dataset", m_data, -1);
-  w.registry().add<conduit::Node>("cache", &m_cache, -1);
+  w.registry().add<conduit::Node>("cache", &m_cache.m_data, -1);
   w.registry().add<conduit::Node>("function_table", &g_function_table, -1);
   w.registry().add<conduit::Node>("object_table", &g_object_table, -1);
   int cycle = get_state_var(*m_data, "cycle").to_int32();
@@ -664,12 +778,22 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   double time = get_state_var(*m_data, "time").to_float64();
   return_val["time"] = time;
 
+  // check the cache for signs of time travel
+  // i.e., someone could have restarted the simulation from the beginning
+  // or from some earlier checkpoint
+  if(time < m_cache.last_known_time())
+  {
+    std::cout<<"Invalid time\n;";
+    // remove all cache entries that occur in the future
+    m_cache.filter_time(time);
+  }
+  m_cache.last_known_time(time);
+
   std::stringstream cache_entry;
   cache_entry << expr_name << "/" << cycle;
 
-  // this causes an invalid read in conduit in the expression tests
-  // m_cache[cache_entry.str()] = *n_res;
-  m_cache[cache_entry.str()] = return_val;
+  m_cache.m_data[cache_entry.str()] = return_val;
+
   //return_val.print();
 
   delete expression;
@@ -680,7 +804,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 const conduit::Node &
 ExpressionEval::get_cache()
 {
-  return m_cache;
+  return m_cache.m_data;
 }
 //-----------------------------------------------------------------------------
 };
