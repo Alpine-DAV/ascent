@@ -2143,63 +2143,6 @@ get_state_var(const conduit::Node &dataset, const std::string &var_name)
   return state;
 }
 
-double field_value(const std::string &field_name,
-                   const conduit::Node &dataset,
-                   const int el_rank,
-                   const int el_domain_index,
-                   const int el_index,
-                   const std::string el_assoc)
-{
-  int rank = 0;
-  int comm_size = 1;
-#ifdef ASCENT_MPI_ENABLED
-  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  MPI_Comm_rank(mpi_comm, &rank);
-  MPI_Comm_size(mpi_comm, &comm_size);
-#endif
-
-  if(el_rank < 0 || el_rank >= comm_size)
-  {
-    ASCENT_ERROR("Invalid rank");
-  }
-
-  double res;
-  bool domain_error = false;
-  bool field_error = false;
-  const int num_domains = dataset.number_of_children();
-  if(rank == el_rank)
-  {
-    if(el_domain_index < 0 || el_domain_index >= num_domains)
-    {
-      domain_error = true;
-    }
-    if(!dataset.child(el_domain_index).has_path("fields/"+field_name))
-    {
-      field_error = true;
-    }
-  }
-
-
-  domain_error = detail::at_least_one(domain_error);
-  field_error = detail::at_least_one(field_error);
-  if(domain_error)
-  {
-    ASCENT_ERROR("Invalid domain "<<el_domain_index);
-  }
-
-  if(field_error)
-  {
-    ASCENT_ERROR("Invalid field "<<field_name
-                 <<" in domain id "<<el_domain_index);
-  }
-
-  if(rank == el_rank)
-  {
-    const conduit::Node &domain = dataset.child(el_domain_index);
-  }
-
-}
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

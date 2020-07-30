@@ -148,15 +148,6 @@ conduit::Node quantile(const conduit::Node &cdf,
                        const double val,
                        const std::string &interpolation);
 
-// returns a value of a field from information returned by
-// a min/max query. If the requested field does not match
-// the association of the original element, we average
-double field_value(const std::string &field_name,
-                   const conduit::Node &dataset,
-                   const int el_rank,           // rank of domain
-                   const int el_domain_index,   // local rank index
-                   const int el_index,          // index of element
-                   const std::string el_assoc); // assoc of orig index
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
