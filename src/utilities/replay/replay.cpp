@@ -230,16 +230,6 @@ int main (int argc, char *argv[])
     ascent.execute(actions);
   }
 
-  // save out the expressions
-  if(rank == 0)
-  {
-    conduit::Node info;
-    ascent.info(info);
-    if(info.has_path("expressions"))
-    {
-      info["expressions"].save("expressions.yaml","yaml");
-    }
-  }
   ascent.close();
 
 #ifdef REPLAY_MPI
