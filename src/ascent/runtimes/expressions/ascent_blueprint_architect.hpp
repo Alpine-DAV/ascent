@@ -120,10 +120,15 @@ conduit::Node binning(const conduit::Node &dataset,
                       const std::string &reduction_op,
                       const double empty_bin_val);
 
-void ASCENT_API paint_binning(const conduit::Node &binning,
-                              conduit::Node &dataset);
+void paint_binning(const conduit::Node &binning,
+                   conduit::Node &dataset,
+                   const std::string &field_name,
+                   const std::string &topo_name,
+                   const std::string &assoc_str);
 
-void ASCENT_API binning_mesh(const conduit::Node &binning, conduit::Node &mesh);
+void binning_mesh(const conduit::Node &binning,
+                  conduit::Node &mesh,
+                  const std::string &field_name);
 
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);
@@ -138,6 +143,8 @@ bool is_xyz(const std::string &axis_name);
 
 // topology exists on at least one rank
 bool has_topology(const conduit::Node &dataset, const std::string &topo_name);
+
+std::string known_topos(const conduit::Node &dataset);
 
 conduit::Node quantile(const conduit::Node &cdf,
                        const double val,

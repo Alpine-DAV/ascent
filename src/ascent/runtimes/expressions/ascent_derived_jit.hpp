@@ -140,12 +140,18 @@ class Kernel
 {
 public:
   void fuse_kernel(const Kernel &from);
-  std::string generate_loop(const std::string &output);
+  std::string generate_for_body(const std::string &output,
+                                bool output_exists) const;
+  std::string generate_loop(const std::string &output) const;
 
   std::string kernel_body;
-  InsertionOrderedSet<std::string> for_body;
+  std::string for_body;
+  InsertionOrderedSet<std::string> inner_scope;
   std::string expr;
   conduit::Node obj;
+
+private:
+  std::string generate_inner_scope() const;
 };
 
 class Jitable
@@ -160,8 +166,8 @@ public:
   }
 
   void fuse_vars(const Jitable &from);
-  void execute(conduit::Node &dataset);
-  std::string generate_kernel(const int dom_idx);
+  void execute(conduit::Node &dataset, const std::string &field_name);
+  std::string generate_kernel(const int dom_idx) const;
 
   std::unordered_map<std::string, Kernel> kernels;
   conduit::Node dom_info;

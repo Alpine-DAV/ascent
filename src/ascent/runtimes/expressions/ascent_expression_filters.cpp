@@ -1647,22 +1647,9 @@ Topo::execute()
 
   if(!has_topology(*dataset, topo))
   {
-    std::vector<std::string> names =
-        dataset->child(0)["topologies"].child_names();
-    std::stringstream ss;
-    ss << "[";
-    for(int i = 0; i < names.size(); ++i)
-    {
-      ss << names[i];
-      if(i < names.size() - 1)
-      {
-        ss << ", ";
-      }
-    }
-    ss << "]";
     ASCENT_ERROR("Topo: dataset does not contain topology '"
                  << topo << "'"
-                 << " known = " << ss.str());
+                 << " known = " << known_topos(*dataset));
   }
 
   conduit::Node *output = new conduit::Node();
@@ -1927,7 +1914,6 @@ Binning::declare_interface(Node &i)
   i["port_names"].append() = "reduction_op";
   i["port_names"].append() = "bin_axes";
   i["port_names"].append() = "empty_bin_val";
-  i["port_names"].append() = "output";
   i["output_port"] = "true";
 }
 
@@ -1951,7 +1937,6 @@ Binning::execute()
   const conduit::Node *n_axes_list = input<Node>("bin_axes");
   // optional arguments
   const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
-  const conduit::Node *n_output_opt = input<conduit::Node>("output");
 
   conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
@@ -2019,29 +2004,169 @@ Binning::execute()
   (*output)["attrs/association/value"] = n_binning["association"];
   (*output)["attrs/association/type"] = "string";
   set_output<conduit::Node>(output);
+}
 
-  if(!n_output_opt->dtype().is_empty())
+//-----------------------------------------------------------------------------
+PaintBinning::PaintBinning() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+PaintBinning::~PaintBinning()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+PaintBinning::declare_interface(Node &i)
+{
+  i["type_name"] = "paint_binning";
+  i["port_names"].append() = "binning";
+  i["port_names"].append() = "name";
+  i["port_names"].append() = "topo";
+  i["port_names"].append() = "assoc";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+PaintBinning::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+PaintBinning::execute()
+{
+  const conduit::Node *binning = input<conduit::Node>("binning");
+  // optional arguments
+  const conduit::Node *n_name = input<conduit::Node>("name");
+  const conduit::Node *n_topo = input<conduit::Node>("topo");
+  const conduit::Node *n_assoc = input<conduit::Node>("assoc");
+
+  conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
+
+  conduit::Node *const remove =
+      graph().workspace().registry().fetch<Node>("remove");
+
+  std::string name;
+  if(!n_name->dtype().is_empty())
   {
-    const std::string &output_opt = (*n_output_opt)["value"].as_string();
-    if(output_opt != "none" && output_opt != "bins" && output_opt != "mesh")
-    {
-      ASCENT_ERROR("Unknown ouput_opt: '"
-                   << output_opt
-                   << "'. Known output options are: 'none', 'bins', 'mesh'.");
-    }
-    if(output_opt == "bins")
-    {
-      conduit::Node n_binning_mesh;
-      binning_mesh(*output, n_binning_mesh);
-      n_binning_mesh["state/cycle"] = 100;
-      n_binning_mesh["state/domain_id"] = 0;
-      dataset->child(0).update(n_binning_mesh);
-    }
-    else if(output_opt == "mesh")
-    {
-      paint_binning(*output, *dataset);
-    }
+    name = (*n_name)["value"].as_string();
   }
+  else
+  {
+    name = "painted_" + (*binning)["attrs/reduction_var/value"].as_string() +
+           "_" + (*binning)["attrs/reduction_op/value"].as_string();
+    static int painted_field_counter = 0;
+    while(dataset->child(0)["fields"].has_path(
+        name + "_" + std::to_string(painted_field_counter)))
+    {
+      painted_field_counter++;
+    }
+    name += "_" + std::to_string(painted_field_counter);
+    (*remove)["fields"].append() = name;
+  }
+  std::string topo;
+  if(!n_topo->dtype().is_empty())
+  {
+    topo = (*n_topo)["value"].as_string();
+  }
+  std::string assoc;
+  if(!n_assoc->dtype().is_empty())
+  {
+    assoc = (*n_assoc)["value"].as_string();
+  }
+  paint_binning(*binning, *dataset, name, topo, assoc);
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = name;
+  (*output)["type"] = "field";
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+BinningMesh::BinningMesh() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+BinningMesh::~BinningMesh()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+BinningMesh::declare_interface(Node &i)
+{
+  i["type_name"] = "binning_mesh";
+  i["port_names"].append() = "binning";
+  i["port_names"].append() = "name";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+BinningMesh::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+BinningMesh::execute()
+{
+  const conduit::Node *binning = input<conduit::Node>("binning");
+  // optional arguments
+  const conduit::Node *n_name = input<conduit::Node>("name");
+
+  conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
+
+  conduit::Node *const remove =
+      graph().workspace().registry().fetch<Node>("remove");
+
+  std::string name;
+  if(!n_name->dtype().is_empty())
+  {
+    name = (*n_name)["value"].as_string();
+  }
+  else
+  {
+    name = "binning_mesh_" +
+           (*binning)["attrs/reduction_var/value"].as_string() + "_" +
+           (*binning)["attrs/reduction_op/value"].as_string();
+    static int binning_mesh_counter = 0;
+    while(dataset->child(0)["fields"].has_path(
+        name + "_" + std::to_string(binning_mesh_counter)))
+    {
+      binning_mesh_counter++;
+    }
+    name += "_" + std::to_string(binning_mesh_counter);
+    (*remove)["fields"].append() = name;
+    (*remove)["topologies"].append() = name + "_topo";
+    (*remove)["coordsets"].append() = name + "_coords";
+  }
+
+  conduit::Node &dom0 = dataset->child(0);
+  binning_mesh(*binning, dom0, name);
+  // dom0["state/cycle"] = 100;
+  // dom0["state/domain_id"] = 0;
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = name;
+  (*output)["type"] = "field";
+  set_output<conduit::Node>(output);
 }
 
 //-----------------------------------------------------------------------------
@@ -2725,8 +2850,7 @@ JitFilter::execute()
         if(type == "int" || type == "double")
         {
           // force everthing to a double
-          const std::string param_str =
-              "                 const double " + input_fname + ",\n";
+          const std::string param_str = "const double " + input_fname + ",\n";
           for(int i = 0; i < num_domains; ++i)
           {
             jitable.dom_info.child(i)["args/" + param_str] = (*inp)["value"];
@@ -2737,7 +2861,7 @@ JitFilter::execute()
         {
           const std::string &field_name = (*inp)["value"].as_string();
           const std::string param_str =
-              "                 const double *" + field_name + "_ptr,\n";
+              "const double *" + field_name + "_ptr,\n";
           // error checking and dom args information
           for(int i = 0; i < num_domains; ++i)
           {
@@ -2793,8 +2917,9 @@ JitFilter::execute()
               jitable.association = assoc_str;
             }
           }
-          default_kernel.for_body.insert("        const double " + field_name +
-                                         " = " + field_name + "_ptr[item];\n");
+          default_kernel.inner_scope.insert("        const double " +
+                                            field_name + " = " + field_name +
+                                            "_ptr[item];\n");
           default_kernel.expr = field_name;
         }
         else
@@ -2907,12 +3032,12 @@ JitFilter::execute()
               {
                 if(is_xyz(name) && available_axis(name, topo_dim, topo_name))
                 {
-                  topo_code.cell_xyz(out_kernel.for_body);
+                  topo_code.cell_xyz(out_kernel.inner_scope);
                   out_kernel.expr = topo_name + "_cell_" + name;
                 }
                 else if(name == "volume")
                 {
-                  topo_code.volume(out_kernel.for_body);
+                  topo_code.volume(out_kernel.inner_scope);
                   out_kernel.expr = topo_name + "_volume";
                 }
               }
@@ -2920,7 +3045,7 @@ JitFilter::execute()
               {
                 if(is_xyz(name) && available_axis(name, topo_dim, topo_name))
                 {
-                  topo_code.vertex_xyz(out_kernel.for_body);
+                  topo_code.vertex_xyz(out_kernel.inner_scope);
                   out_kernel.expr = topo_name + "_vertex_" + name;
                 }
               }
@@ -2960,6 +3085,32 @@ JitFilter::execute()
           ASCENT_ERROR("JitFilter: Unknown obj:\n" << obj.to_yaml());
         }
       }
+      else if(func == "expr_if")
+      {
+        if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
+        {
+          const int condition_port = inputs["condition/port"].as_int32();
+          const int if_port = inputs["if/port"].as_int32();
+          const int else_port = inputs["else/port"].as_int32();
+          out_kernel.kernel_body += input_kernels[condition_port]->kernel_body;
+          out_kernel.kernel_body += input_kernels[if_port]->kernel_body;
+          out_kernel.kernel_body += input_kernels[else_port]->kernel_body;
+          const std::string cond_name = filter_name + "_cond";
+          const std::string res_name = filter_name + "_res";
+          out_kernel.for_body +=
+              input_kernels[condition_port]->generate_for_body(cond_name,
+                                                               false);
+          out_kernel.for_body += "double " + res_name + ";\n";
+          out_kernel.for_body += "if(" + cond_name + ")\n{\n";
+          out_kernel.for_body +=
+              input_kernels[if_port]->generate_for_body(res_name, true);
+          out_kernel.for_body += "}\nelse\n{\n";
+          out_kernel.for_body +=
+              input_kernels[else_port]->generate_for_body(res_name, true);
+          out_kernel.for_body += "}\n";
+          out_kernel.expr = res_name;
+        }
+      }
       else
       {
         ASCENT_ERROR("JitFilter: Unknown func: '" << func << "'");
@@ -2970,10 +3121,11 @@ JitFilter::execute()
 
   if(execute)
   {
-    out_jitable->execute(*dataset);
+    const std::string &field_name = params()["field_name"].as_string();
+    out_jitable->execute(*dataset, field_name);
     Node *output = new conduit::Node();
     // TODO come up with unique field name
-    (*output)["value"] = "output";
+    (*output)["value"] = field_name;
     (*output)["type"] = "field";
     set_output<conduit::Node>(output);
     delete out_jitable;

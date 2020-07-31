@@ -51,7 +51,6 @@
 #include "gtest/gtest.h"
 
 #include <ascent_expression_eval.hpp>
-#include <expressions/ascent_blueprint_architect.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -817,11 +816,12 @@ TEST(ascent_binning, braid_binning)
 
   string output_path = prepare_output_dir();
 
-  expr = "binning('braid', 'sum', [axis('x', num_bins=21), axis('y', "
-         "num_bins=21)], output='bins')";
+  expr = "paint_binning(binning('braid', 'std', [axis('x', num_bins=10), axis('y', "
+         "num_bins=10)]), name='painted_braid_std')";
   eval.evaluate(expr);
-  expr = "binning('braid', 'std', [axis('x', num_bins=10), axis('y', "
-         "num_bins=10)], output='mesh')";
+  expr =
+      "binning_mesh(binning('braid', 'sum', [axis('x', num_bins=21), axis('y', "
+      "num_bins=21)]), name='braid_sum')";
   eval.evaluate(expr);
 
   std::string output_file =
@@ -865,11 +865,11 @@ TEST(ascent_binning, multi_dom_binning)
   runtime::expressions::ExpressionEval eval(&multi_dom);
 
   std::string expr;
-  expr = "binning('dist', 'std', [axis('x', num_bins=6), axis('y', "
-         "num_bins=9)], output='bins')";
+  expr = "paint_binning(binning('dist', 'std', [axis('x', num_bins=6), axis('y', "
+         "num_bins=9)]), name='painted_dist_std')";
   eval.evaluate(expr);
-  expr = "binning('dist', 'std', [axis('x', num_bins=6), axis('y', "
-         "num_bins=9)], output='mesh')";
+  expr = "binning_mesh(binning('dist', 'std', [axis('x', num_bins=6), axis('y', "
+         "num_bins=9)]), name='dist_std')";
   eval.evaluate(expr);
 
   string output_path = prepare_output_dir();

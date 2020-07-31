@@ -692,43 +692,122 @@ ASTIfExpr::build_graph(flow::Workspace &w, bool verbose)
   const std::string condition_type = n_condition["type"].as_string();
   const std::string if_type = n_if["type"].as_string();
   const std::string else_type = n_else["type"].as_string();
-  if(condition_type != "bool" & condition_type != "jitable")
+  std::string res_type;
+  if(detail::is_field_type(condition_type))
   {
-    ASCENT_ERROR("if-expression condition must be of type boolean");
+    if((!detail::is_scalar(if_type) && !detail::is_field_type(if_type)) ||
+       (!detail::is_scalar(else_type) && !detail::is_field_type(else_type)))
+    {
+      ASCENT_ERROR(
+          "If the if-condition is a field type then the if and else branches "
+          "must return scalars or field types. condition_type: '"
+          << condition_type << "', if_type: '" << if_type << "', else_type: '"
+          << else_type << "'.");
+    }
+    res_type = "jitable";
+  }
+  else if(condition_type == "bool")
+  {
+    if(if_type != else_type)
+    {
+      ASCENT_ERROR("The return types of the if (" << if_type << ") and else ("
+                                                  << else_type
+                                                  << ") branches must match");
+    }
+    res_type = if_type;
+  }
+  else
+  {
+    ASCENT_ERROR("if-expression condition is of type: '"
+                 << condition_type
+                 << "' but must be of type 'bool' or a field type.");
   }
 
-  if(if_type != else_type)
-  {
-    ASCENT_ERROR("The return types of the if (" << if_type << ") and else ("
-                                                << else_type
-                                                << ") branches must match");
-  }
-
+  std::string name;
+  std::string verbose_name;
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
-  std::stringstream ss;
-  ss << "if"
-     << "_" << n_condition["filter_name"].as_string() << "_then_"
-     << n_if["filter_name"].as_string() << "_else_"
-     << n_else["filter_name"].as_string();
-  const std::string name = ss.str();
-  if((*subexpr_cache).has_path(name))
+  if(res_type == "jitable")
   {
-    return (*subexpr_cache)[name];
+    std::stringstream ss;
+    ss << "jit_if"
+       << "_" << n_condition["filter_name"].as_string() << "_then_"
+       << n_if["filter_name"].as_string() << "_else_"
+       << n_else["filter_name"].as_string();
+    verbose_name = ss.str();
+    if((*subexpr_cache).has_path(verbose_name))
+    {
+      return (*subexpr_cache)[verbose_name];
+    }
+    if(verbose)
+    {
+      name = verbose_name;
+    }
+    else
+    {
+      static int jit_if_counter = 0;
+      std::stringstream ss;
+      ss << "jit_if_" << jit_if_counter++;
+      name = ss.str();
+    }
+    conduit::Node params;
+    params["func"] = "expr_if";
+    params["filter_name"] = name;
+    params["execute"] = false;
+    conduit::Node &condition = params["inputs/condition"];
+    condition = n_condition;
+    condition["port"] = 0;
+    conduit::Node &p_if = params["inputs/if"];
+    p_if = n_if;
+    p_if["port"] = 1;
+    conduit::Node &p_else = params["inputs/else"];
+    p_else = n_else;
+    p_else["port"] = 2;
+
+    w.graph().add_filter(
+        ascent::runtime::expressions::register_jit_filter(w, 3), name, params);
+    // src, dest, port
+    w.graph().connect(n_condition["filter_name"].as_string(), name, 0);
+    w.graph().connect(n_if["filter_name"].as_string(), name, 1);
+    w.graph().connect(n_else["filter_name"].as_string(), name, 2);
   }
+  else
+  {
+    std::stringstream ss;
+    ss << "if"
+       << "_" << n_condition["filter_name"].as_string() << "_then_"
+       << n_if["filter_name"].as_string() << "_else_"
+       << n_else["filter_name"].as_string();
+    verbose_name = ss.str();
+    if((*subexpr_cache).has_path(verbose_name))
+    {
+      return (*subexpr_cache)[verbose_name];
+    }
+    if(verbose)
+    {
+      name = verbose_name;
+    }
+    else
+    {
+      static int if_counter = 0;
+      std::stringstream ss;
+      ss << "if_" << if_counter++;
+      name = ss.str();
+    }
 
-  conduit::Node params;
-  w.graph().add_filter("expr_if", name, params);
+    conduit::Node params;
+    w.graph().add_filter("expr_if", name, params);
 
-  // src, dest, port
-  w.graph().connect(n_condition["filter_name"].as_string(), name, "condition");
-  w.graph().connect(n_if["filter_name"].as_string(), name, "if");
-  w.graph().connect(n_else["filter_name"].as_string(), name, "else");
-
+    // src, dest, port
+    w.graph().connect(
+        n_condition["filter_name"].as_string(), name, "condition");
+    w.graph().connect(n_if["filter_name"].as_string(), name, "if");
+    w.graph().connect(n_else["filter_name"].as_string(), name, "else");
+  }
   conduit::Node res;
-  res["type"] = if_type;
+  res["type"] = res_type;
   res["filter_name"] = name;
-  (*subexpr_cache)[name] = res;
+  (*subexpr_cache)[verbose_name] = res;
   return res;
 }
 
@@ -854,21 +933,42 @@ ASTBinaryOp::build_graph(flow::Workspace &w, bool verbose)
   }
   else if(detail::is_logic(op_str))
   {
-    if(l_type != "bool" || r_type != "bool")
+    if((l_type == "bool" && detail::is_field_type(r_type)) ||
+       (r_type == "bool" && detail::is_field_type(l_type)) ||
+       (detail::is_field_type(l_type) && detail::is_field_type(r_type)))
     {
-      ASCENT_ERROR("logical operators are only supported on booleans: "
-                   << "'" << l_type << " " << op_str << " " << r_type << "'");
+      res_type = "jitable";
     }
-    res_type = "bool";
+    else if(l_type != "bool" || r_type != "bool")
+    {
+      ASCENT_ERROR(
+          "logical operators are only supported on bools and field types: "
+          << "'" << l_type << " " << op_str << " " << r_type << "'");
+    }
+    else
+    {
+      res_type = "bool";
+    }
   }
   else
   {
-    if(!detail::is_scalar(l_type) || !detail::is_scalar(r_type))
+    // comparison ops
+    if((detail::is_scalar(l_type) && detail::is_field_type(r_type)) ||
+       (detail::is_scalar(r_type) && detail::is_field_type(l_type)) ||
+       (detail::is_field_type(l_type) && detail::is_field_type(r_type)))
     {
-      ASCENT_ERROR("comparison operators are only supported on scalars: "
-                   << "'" << l_type << " " << op_str << " " << r_type << "'");
+      res_type = "jitable";
     }
-    res_type = "bool";
+    else if(!detail::is_scalar(l_type) || !detail::is_scalar(r_type))
+    {
+      ASCENT_ERROR(
+          "comparison operators are only supported on scalars and field types: "
+          << "'" << l_type << " " << op_str << " " << r_type << "'");
+    }
+    else
+    {
+      res_type = "bool";
+    }
   }
 
   if(res_type == "jitable")
@@ -1069,25 +1169,6 @@ ASTDotAccess::build_graph(flow::Workspace &w, bool verbose)
 {
   const conduit::Node input_obj = obj->build_graph(w, verbose);
 
-  conduit::Node *subexpr_cache =
-      w.registry().fetch<conduit::Node>("subexpr_cache");
-  std::stringstream ss;
-  ss << "dot"
-     << "_(" << input_obj["filter_name"].as_string() << ")__" << name;
-  std::string verbose_name = ss.str();
-  std::string f_name;
-  if(verbose)
-  {
-    f_name = verbose_name;
-  }
-  else
-  {
-    static int dot_counter = 0;
-    std::stringstream ss;
-    ss << "dot_" << dot_counter++ << "__" << name;
-    f_name = ss.str();
-  }
-
   std::string obj_type = input_obj["type"].as_string();
 
   // load the object table
@@ -1113,15 +1194,32 @@ ASTDotAccess::build_graph(flow::Workspace &w, bool verbose)
   }
   std::string res_type = o_table_obj[path].as_string();
 
-  if(o_table->has_path(name + "/jitable") ||
-     res_type == "jitable")
+  conduit::Node *subexpr_cache =
+      w.registry().fetch<conduit::Node>("subexpr_cache");
+  std::string f_name;
+  std::string verbose_name;
+  if(o_table->has_path(name + "/jitable") || res_type == "jitable")
   {
-    f_name = "jit_" + f_name;
-    verbose_name = "jit_" + verbose_name;
+    std::stringstream ss;
+    ss << "jit_dot"
+       << "_(" << input_obj["filter_name"].as_string() << ")__" << name;
+    verbose_name = ss.str();
     if((*subexpr_cache).has_path(verbose_name))
     {
       return (*subexpr_cache)[verbose_name];
     }
+    if(verbose)
+    {
+      f_name = verbose_name;
+    }
+    else
+    {
+      static int jit_dot_counter = 0;
+      std::stringstream ss;
+      ss << "jit_dot_" << jit_dot_counter++ << "__" << name;
+      f_name = ss.str();
+    }
+
     conduit::Node jit_filter_obj = input_obj;
     if(o_table_obj.has_path("jitable"))
     {
@@ -1138,20 +1236,38 @@ ASTDotAccess::build_graph(flow::Workspace &w, bool verbose)
         ascent::runtime::expressions::register_jit_filter(w, 1),
         f_name,
         params);
+    // src, dest, port
+    w.graph().connect(input_obj["filter_name"].as_string(), f_name, 0);
   }
   else
   {
+    std::stringstream ss;
+    ss << "dot"
+       << "_(" << input_obj["filter_name"].as_string() << ")__" << name;
+    verbose_name = ss.str();
     if((*subexpr_cache).has_path(verbose_name))
     {
       return (*subexpr_cache)[verbose_name];
     }
+    if(verbose)
+    {
+      f_name = verbose_name;
+    }
+    else
+    {
+      static int dot_counter = 0;
+      std::stringstream ss;
+      ss << "dot_" << dot_counter++ << "__" << name;
+      f_name = ss.str();
+    }
+
     conduit::Node params;
     params["name"] = name;
 
     w.graph().add_filter("expr_dot", f_name, params);
+    // src, dest, port
+    w.graph().connect(input_obj["filter_name"].as_string(), f_name, "obj");
   }
-  // src, dest, port
-  w.graph().connect(input_obj["filter_name"].as_string(), f_name, 0);
 
   conduit::Node res;
   res["type"] = res_type;

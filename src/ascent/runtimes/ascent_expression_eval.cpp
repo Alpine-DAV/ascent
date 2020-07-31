@@ -109,6 +109,8 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::Axis>();
   flow::Workspace::register_filter_type<expressions::Histogram>();
   flow::Workspace::register_filter_type<expressions::Binning>();
+  flow::Workspace::register_filter_type<expressions::PaintBinning>();
+  flow::Workspace::register_filter_type<expressions::BinningMesh>();
   flow::Workspace::register_filter_type<expressions::Entropy>();
   flow::Workspace::register_filter_type<expressions::Pdf>();
   flow::Workspace::register_filter_type<expressions::Cdf>();
@@ -527,15 +529,62 @@ initialize_functions()
   binning_sig["args/empty_bin_val/optional"];
   binning_sig["args/empty_bin_val/description"] =
       "The value that empty bins should have. Defaults to 0.";
-  binning_sig["args/output/type"] = "string";
-  binning_sig["args/output/optional"];
-  binning_sig["args/output/description"] =
-      "Defaults to ``'none'``. If set to ``'bins'`` a binning with 3 or fewer "
-      "dimensions will be output as a new topology on the dataset. This is "
-      "useful for directly visualizing the binning. If set to ``'mesh'`` the "
-      "bins will be \"painted\" back onto the original mesh as a new field.";
   binning_sig["description"] = "Returns a multidimensional data binning.";
 
+  // TODO for now this does not jit
+  conduit::Node &paint_binning_sig = (*functions)["paint_binning"].append();
+  paint_binning_sig["return_type"] = "field";
+  paint_binning_sig["filter_name"] = "paint_binning";
+  paint_binning_sig["args/binning/type"] = "binning";
+  paint_binning_sig["args/binning/description"] =
+      "The values in ``binning`` are used to generate the new field.";
+  paint_binning_sig["args/name/type"] = "string";
+  paint_binning_sig["args/name/optional"];
+  paint_binning_sig["args/name/description"] =
+      "The name of the new field to be generated. If not specified, a name is "
+      "automatically generated and the field is treated as a temporary and "
+      "removed from the dataset when the expression is done executing.";
+  paint_binning_sig["args/topo/type"] = "topo";
+  paint_binning_sig["args/topo/optional"];
+  paint_binning_sig["args/topo/description"] =
+      " The topology to paint the bin values back onto. Defaults to the "
+      "topology associated with the bin axes. This topology must have "
+      "all the fields used for the axes of ``binning``. It only makes sense to "
+      "specify this when the only bin axes are a subset of ``x``, ``y``, "
+      "``z``. Additionally, it must be specified in this case since there is "
+      "not enough info to infer the topology assuming there are multiple "
+      "topologies in the dataset.";
+  paint_binning_sig["args/assoc/type"] = "topo";
+  paint_binning_sig["args/assoc/optional"];
+  paint_binning_sig["args/assoc/description"] =
+      "Defaults to the association infered from the bin axes and and reduction "
+      "variable. The topology to paint the bin values back onto. This topology "
+      "must have all the fields used for the axes of ``binning``. It only "
+      "makes sense to specify this when the only bin axes are a subset of "
+      "``x``, ``y``, ``z``.";
+  paint_binning_sig["description"] =
+      "Paints back the bin values onto an existing mesh by binning the "
+      "elements of the mesh and creating a new field there the value at each "
+      "element is the value in the bin it falls into.";
+
+  conduit::Node &binning_mesh_sig = (*functions)["binning_mesh"].append();
+  binning_mesh_sig["return_type"] = "field";
+  binning_mesh_sig["filter_name"] = "binning_mesh";
+  binning_mesh_sig["args/binning/type"] = "binning";
+  binning_mesh_sig["args/binning/description"] =
+      "The values in ``binning`` are used to generate the new field.";
+  binning_mesh_sig["args/name/type"] = "string";
+  binning_mesh_sig["args/name/optional"];
+  binning_mesh_sig["args/name/description"] =
+      "The name of the new field to be generated, the corresponding topology "
+      "topology and coordinate sets will be named '``name``_topo' and "
+      "``name``_coords' respectively. If not specified, a name is "
+      "automatically generated and the field is treated as a temporary and "
+      "removed from the dataset when the expression is done executing.";
+  binning_mesh_sig["description"] =
+      "A binning with 3 or fewer dimensions will be output as a new element "
+      "associated field on a new topology on the dataset. This is useful for "
+      "directly visualizing the binning.";
   //---------------------------------------------------------------------------
   // Jitable Functions
   //---------------------------------------------------------------------------
@@ -629,7 +678,7 @@ initialize_functions()
   volume_sig["args/arg1/type"] = "topo";
   volume_sig["jitable"];
   volume_sig["description"] = "Return a derived field of the volume/area "
-                                 "for each element in a topology.";
+                              "for each element in a topology.";
 
   //---------------------------------------------------------------------------
 
@@ -691,6 +740,12 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   // ex: (x - min) / (max - min) then min should only be evaluated once
   conduit::Node subexpr_cache;
   w.registry().add<conduit::Node>("subexpr_cache", &subexpr_cache, -1);
+
+  // stores temporary fields, topos, and coords that need to be removed after
+  // the expression runs
+  conduit::Node remove;
+  w.registry().add<conduit::Node>("remove", &remove, -1);
+
   w.registry().add<conduit::Node>("dataset", m_data, -1);
   w.registry().add<conduit::Node>("cache", &m_cache, -1);
   w.registry().add<conduit::Node>("function_table", &g_function_table, -1);
@@ -722,6 +777,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
       params["func"] = "execute";
       params["filter_name"] = "jit_execute";
       params["execute"] = true;
+      params["field_name"] = expr_name;
       conduit::Node &inp = params["inputs/jitable"];
       inp = root;
       inp["port"] = 0;

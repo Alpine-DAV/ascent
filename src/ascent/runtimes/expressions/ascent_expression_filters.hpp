@@ -365,6 +365,28 @@ public:
   virtual void execute();
 };
 
+class PaintBinning : public ::flow::Filter
+{
+public:
+  PaintBinning();
+  ~PaintBinning();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class BinningMesh : public ::flow::Filter
+{
+public:
+  BinningMesh();
+  ~BinningMesh();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 class Entropy : public ::flow::Filter
 {
 public:

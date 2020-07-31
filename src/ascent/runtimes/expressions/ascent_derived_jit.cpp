@@ -92,35 +92,32 @@ pack_topo(const std::string &topo_name,
   if(topo_type == "uniform")
   {
     const conduit::Node &dims = n_coords["dims"];
-    args["                 const int " + topo_name + "_dims_i,\n"] =
-        dims["i"].to_int32();
-    args["                 const int " + topo_name + "_dims_j,\n"] =
-        dims["j"].to_int32();
+    args["const int " + topo_name + "_dims_i,\n"] = dims["i"].to_int32();
+    args["const int " + topo_name + "_dims_j,\n"] = dims["j"].to_int32();
     if(n_coords.has_path("dims/k"))
     {
-      args["                 const int " + topo_name + "_dims_k,\n"] =
-          dims["k"].to_int32();
+      args["const int " + topo_name + "_dims_k,\n"] = dims["k"].to_int32();
     }
 
     const conduit::Node &spacing = n_coords["spacing"];
-    args["                 const double " + topo_name + "_spacing_dx,\n"] =
+    args["const double " + topo_name + "_spacing_dx,\n"] =
         spacing["dx"].to_float64();
-    args["                 const double " + topo_name + "_spacing_dy,\n"] =
+    args["const double " + topo_name + "_spacing_dy,\n"] =
         spacing["dy"].to_float64();
     if(spacing.has_path("dz"))
     {
-      args["                 const double " + topo_name + "_spacing_dz,\n"] =
+      args["const double " + topo_name + "_spacing_dz,\n"] =
           spacing["dz"].to_float64();
     }
 
     const conduit::Node &origin = n_coords["origin"];
-    args["                 const double " + topo_name + "_origin_x,\n"] =
+    args["const double " + topo_name + "_origin_x,\n"] =
         origin["x"].to_float64();
-    args["                 const double " + topo_name + "_origin_y,\n"] =
+    args["const double " + topo_name + "_origin_y,\n"] =
         origin["y"].to_float64();
     if(origin.has_path("z"))
     {
-      args["                 const double " + topo_name + "_origin_z,\n"] =
+      args["const double " + topo_name + "_origin_z,\n"] =
           origin["z"].to_float64();
     }
   }
@@ -128,83 +125,98 @@ pack_topo(const std::string &topo_name,
   {
     const conduit::Node &x_vals = n_coords["values/x"];
     const conduit::Node &y_vals = n_coords["values/y"];
-    args["                 const int " + topo_name + "_dims_i,\n"] =
+    args["const int " + topo_name + "_dims_i,\n"] =
         x_vals.dtype().number_of_elements();
-    args["                 const int " + topo_name + "_dims_j,\n"] =
+    args["const int " + topo_name + "_dims_j,\n"] =
         y_vals.dtype().number_of_elements();
     if(n_coords.has_path("values/z"))
     {
       const conduit::Node &z_vals = n_coords["values/z"];
-      args["                 const int " + topo_name + "_dims_k,\n"] =
+      args["const int " + topo_name + "_dims_k,\n"] =
           z_vals.dtype().number_of_elements();
     }
 
-    args["                 const double *" + topo_name + "_coords_x,\n"]
-        .set_external(x_vals);
-    args["                 const double *" + topo_name + "_coords_y,\n"]
-        .set_external(y_vals);
+    args["const double *" + topo_name + "_coords_x,\n"].set_external(x_vals);
+    args["const double *" + topo_name + "_coords_y,\n"].set_external(y_vals);
     if(n_coords.has_path("values/z"))
     {
       const conduit::Node &z_vals = n_coords["values/z"];
-      args["                 const double *" + topo_name + "_coords_z,\n"]
-          .set_external(z_vals);
+      args["const double *" + topo_name + "_coords_z,\n"].set_external(z_vals);
     }
   }
   else if(topo_type == "unstructured")
   {
-    constexpr char unstructured3d[] =
-        "                 const int dims_x,\n"
-        "                 const int dims_y,\n"
-        "                 const int dims_z,\n"
-        "                 const double * coords_x,\n"
-        "                 const double * coords_y,\n"
-        "                 const double * coords_z,\n"
-        "                 const int * cell_conn,\n"
-        "                 const int cell_shape,\n";
+    // TODO pack unstructured mesh
+    // "const int dims_x,\n"
+    // "const int dims_y,\n"
+    // "const int dims_z,\n"
+    // "const double * coords_x,\n"
+    // "const double * coords_y,\n"
+    // "const double * coords_z,\n"
+    // "const int * cell_conn,\n"
+    // "const int cell_shape,\n";
   }
 }
 
 //-----------------------------------------------------------------------------
 // clang-format off
 std::string
-Kernel::generate_loop(const std::string& output)
+Kernel::generate_inner_scope() const
 {
-  std::stringstream ss;
-
-  ss << "  for (int group = 0; group < entries; group += 128; @outer)\n"
-     << "  {\n"
-     << "    for (int item = group; item < (group + 128); ++item; @inner)\n"
-     << "    {\n"
-     << "      if (item < entries)\n"
-     << "      {\n";
-                 for(const auto &line : for_body.data())
-                 {
-                   ss << line;
-                 }
-  ss << "        double output = " << expr << ";\n"
-     << "        " << output << "_ptr[item] = output;\n"
-     << "      }\n"
-     << "    }\n"
-     << "  }\n";
-  return ss.str();
+  std::string inner_scope_string;
+  for(const auto &line : inner_scope.data())
+  {
+    inner_scope_string += line;
+  }
+  return inner_scope_string;
 }
 
 std::string
-Jitable::generate_kernel(const int dom_idx)
+Kernel::generate_for_body(const std::string& output, bool output_exists) const
+{
+  std::string new_for_body = for_body + generate_inner_scope();
+  if(output_exists)
+  {
+    new_for_body += output + " = " + expr + ";\n";
+  }
+  else
+  {
+    new_for_body += "const double "+output+" = " + expr + ";\n";
+  }
+  return new_for_body;
+}
+
+std::string
+Kernel::generate_loop(const std::string& output) const
+{
+  return "for (int group = 0; group < entries; group += 128; @outer)\n"
+         "{\n"
+           "for (int item = group; item < (group + 128); ++item; @inner)\n"
+           "{\n"
+             "if (item < entries)\n"
+             "{\n" +
+                generate_for_body(output, false) +
+                output+"_ptr[item] = "+output+";\n"
+             "}\n"
+           "}\n"
+         "}\n";
+}
+
+std::string
+Jitable::generate_kernel(const int dom_idx) const
 {
   const conduit::Node &cur_dom_info = dom_info.child(dom_idx);
-  const Kernel &kernel = kernels[cur_dom_info["kernel_type"].as_string()];
-  std::stringstream ss;
-  ss << "@kernel void map(const int entries,\n";
+  const Kernel &kernel = kernels.at(cur_dom_info["kernel_type"].as_string());
+  std::string kernel_string = "@kernel void map(const int entries,\n";
   for(const auto &param : cur_dom_info["args"].child_names())
   {
-    ss << param;
+    kernel_string += param;
   }
-  ss << "                 double *output_ptr)\n"
-     << "{\n"
-     << kernel.kernel_body
-     << "}";
-  return ss.str();
+  kernel_string += "double *output_ptr)\n{\n";
+  kernel_string += kernel.kernel_body;
+  kernel_string += kernel.generate_loop("output");
+  kernel_string += "}";
+  return kernel_string;
 }
 
 //-----------------------------------------------------------------------------
@@ -219,12 +231,12 @@ TopologyCode::TopologyCode(const std::string &topo_name, const conduit::Node &do
 void TopologyCode::cell_idx(InsertionOrderedSet<std::string> &code)
 {
   code.insert({
-      "        int "+topo_name+"_cell_idx["+std::to_string(num_dims)+"];\n",
-      "        "+topo_name+"_cell_idx[0] = item % ("+topo_name+"_dims_i - 1);\n",
-      "        "+topo_name+"_cell_idx[1] = (item / ("+topo_name+"_dims_i - 1)) % ("+topo_name+"_dims_j - 1);\n"});
+      "int "+topo_name+"_cell_idx["+std::to_string(num_dims)+"];\n",
+      topo_name+"_cell_idx[0] = item % ("+topo_name+"_dims_i - 1);\n",
+      topo_name+"_cell_idx[1] = (item / ("+topo_name+"_dims_i - 1)) % ("+topo_name+"_dims_j - 1);\n"});
   if(num_dims == 3)
   {
-    code.insert("        "+topo_name+"_cell_idx[2] = item / (("+topo_name+"_dims_i - 1) * ("+topo_name+"_dims_j - 1));\n");
+    code.insert(topo_name+"_cell_idx[2] = item / (("+topo_name+"_dims_i - 1) * ("+topo_name+"_dims_j - 1));\n");
   }
 }
 
@@ -234,17 +246,17 @@ void TopologyCode::cell_xyz(InsertionOrderedSet<std::string> &code)
   if(topo_type == "uniform")
   {
     code.insert({
-        "        double "+topo_name+"_cell_x = "
+        "double "+topo_name+"_cell_x = "
         +topo_name+"_origin_x + "+topo_name+"_cell_idx[0] * "+topo_name+"_spacing_dx;\n"
     });
     code.insert({
-        "        double "+topo_name+"_cell_y = "
+        "double "+topo_name+"_cell_y = "
         +topo_name+"_origin_y + "+topo_name+"_cell_idx[1] * "+topo_name+"_spacing_dy;\n"
     });
     if(num_dims == 3)
     {
     code.insert({
-        "        double "+topo_name+"_cell_z = "
+        "double "+topo_name+"_cell_z = "
         +topo_name+"_origin_z + "+topo_name+"_cell_idx[2] * "+topo_name+"_spacing_dz;\n"
     });
     }
@@ -252,18 +264,18 @@ void TopologyCode::cell_xyz(InsertionOrderedSet<std::string> &code)
   else if (topo_type == "rectilinear")
   {
     code.insert({
-        "        double "+topo_name+"_cell_x = "
+        "double "+topo_name+"_cell_x = "
         "("+topo_name+"_coords_x["+topo_name+"_cell_idx[0]] "
         "+ "+topo_name+"_coords_x["+topo_name+"_cell_idx[0] + 1]) / 2;\n",
 
-        "        double "+topo_name+"_cell_y = "
+        "double "+topo_name+"_cell_y = "
         "("+topo_name+"_coords_y["+topo_name+"_cell_idx[1]] "
         "+ "+topo_name+"_coords_y["+topo_name+"_cell_idx[1] + 1]) / 2;\n"
         });
     if(num_dims == 3)
     {
       code.insert(
-          "        double "+topo_name+"_cell_z = "
+          "double "+topo_name+"_cell_z = "
           "("+topo_name+"_coords_z["+topo_name+"_cell_idx[2]] "
           "+ "+topo_name+"_coords_z["+topo_name+"_cell_idx[2] + 1]) / 2;\n"
           );
@@ -274,12 +286,12 @@ void TopologyCode::cell_xyz(InsertionOrderedSet<std::string> &code)
 void TopologyCode::vertex_idx(InsertionOrderedSet<std::string> &code)
 {
   code.insert({
-      "        int "+topo_name+"_vertex_idx["+std::to_string(num_dims)+"];\n",
-      "        "+topo_name+"_vertex_idx[0] = item % ("+topo_name+"_dims_i);\n",
-      "        "+topo_name+"_vertex_idx[1] = (item / ("+topo_name+"_dims_i)) % ("+topo_name+"_dims_j);\n"});
+      "dx["+std::to_string(num_dims)+"];\n",
+      "dx[0] = item % ("+topo_name+"_dims_i);\n",
+      "dx[1] = (item / ("+topo_name+"_dims_i)) % ("+topo_name+"_dims_j);\n"});
   if(num_dims == 3)
   {
-    code.insert("        "+topo_name+"_vertex_idx[2] = item / (("+topo_name+"_dims_i) * ("+topo_name+"_dims_j));\n");
+    code.insert(topo_name+"_vertex_idx[2] = item / (("+topo_name+"_dims_i) * ("+topo_name+"_dims_j));\n");
   }
 }
 
@@ -287,11 +299,11 @@ void TopologyCode::vertex_xyz(InsertionOrderedSet<std::string> &code)
 {
   vertex_idx(code);
   code.insert({
-      "        double "+topo_name+"_vertex_x = "+topo_name+"_coords_x["+topo_name+"_vertex_idx[0]];\n",
-      "        double "+topo_name+"_vertex_y = "+topo_name+"_coords_y["+topo_name+"_vertex_idx[1]];\n"});
+      "double "+topo_name+"_vertex_x = "+topo_name+"_coords_x["+topo_name+"_vertex_idx[0]];\n",
+      "double "+topo_name+"_vertex_y = "+topo_name+"_coords_y["+topo_name+"_vertex_idx[1]];\n"});
   if(num_dims == 3)
   {
-    code.insert("        double "+topo_name+"_vertex_z = "+topo_name+"_coords_z["+topo_name+"_vertex_idx[2]];\n");
+    code.insert("double "+topo_name+"_vertex_z = "+topo_name+"_coords_z["+topo_name+"_vertex_idx[2]];\n");
   }
 }
 
@@ -299,11 +311,11 @@ void TopologyCode::dxdydz(InsertionOrderedSet<std::string> &code)
 {
   cell_idx(code);
   code.insert({
-      "        double "+topo_name+"_dx = "+topo_name+"_coords_x["+topo_name+"_cell_idx[0]+1] - "+topo_name+"_coords_x["+topo_name+"_cell_idx[0]];\n",
-      "        double "+topo_name+"_dy = "+topo_name+"_coords_y["+topo_name+"_cell_idx[1]+1] - "+topo_name+"_coords_y["+topo_name+"_cell_idx[1]];\n"});
+      "double "+topo_name+"_dx = "+topo_name+"_coords_x["+topo_name+"_cell_idx[0]+1] - "+topo_name+"_coords_x["+topo_name+"_cell_idx[0]];\n",
+      "double "+topo_name+"_dy = "+topo_name+"_coords_y["+topo_name+"_cell_idx[1]+1] - "+topo_name+"_coords_y["+topo_name+"_cell_idx[1]];\n"});
   if(num_dims == 3)
   {
-    code.insert({"        double "+topo_name+"_dz = "+topo_name+"_coords_z["+topo_name+"_cell_idx[2]+1] - "+topo_name+"_coords_z["+topo_name+"_cell_idx[2]];\n"});
+    code.insert({"double "+topo_name+"_dz = "+topo_name+"_coords_z["+topo_name+"_cell_idx[2]+1] - "+topo_name+"_coords_z["+topo_name+"_cell_idx[2]];\n"});
   }
 }
 
@@ -313,11 +325,11 @@ void TopologyCode::volume(InsertionOrderedSet<std::string> &code)
   {
     if(num_dims == 3)
     {
-      code.insert("        double "+topo_name+"_volume = "+topo_name+"_spacing_dx * "+topo_name+"_spacing_dy * "+topo_name+"_spacing_dz;\n");
+      code.insert("double "+topo_name+"_volume = "+topo_name+"_spacing_dx * "+topo_name+"_spacing_dy * "+topo_name+"_spacing_dz;\n");
     }
     else
     {
-      code.insert("        double "+topo_name+"_volume = "+topo_name+"_spacing_dx * "+topo_name+"_spacing_dy;\n");
+      code.insert("double "+topo_name+"_volume = "+topo_name+"_spacing_dx * "+topo_name+"_spacing_dy;\n");
     }
   }
   else if(topo_type == "rectilinear")
@@ -325,11 +337,11 @@ void TopologyCode::volume(InsertionOrderedSet<std::string> &code)
     dxdydz(code);
     if(num_dims == 3)
     {
-      code.insert("        double "+topo_name+"_volume = "+topo_name+"_dx * "+topo_name+"_dy * "+topo_name+"_dz;\n");
+      code.insert("double "+topo_name+"_volume = "+topo_name+"_dx * "+topo_name+"_dy * "+topo_name+"_dz;\n");
     }
     else
     {
-      code.insert("        double "+topo_name+"_volume = "+topo_name+"_dx * "+topo_name+"_dy;\n");
+      code.insert("double "+topo_name+"_volume = "+topo_name+"_dx * "+topo_name+"_dy;\n");
     }
   }
 }
@@ -344,7 +356,8 @@ void
 Kernel::fuse_kernel(const Kernel &from)
 {
   kernel_body = kernel_body + from.kernel_body;
-  for_body.insert(from.for_body);
+  for_body = for_body + from.for_body;
+  inner_scope.insert(from.inner_scope);
 }
 
 //-----------------------------------------------------------------------------
@@ -388,7 +401,7 @@ Jitable::fuse_vars(const Jitable &from)
     {
       if(to_dom_info.has_path("entries"))
       {
-        if(to_dom_info["entriess"].as_int32() !=
+        if(to_dom_info["entries"].as_int32() !=
            from_dom_info["entries"].as_int32())
         {
           ASCENT_ERROR("JIT: Failed to fuse kernels due to an incompatible "
@@ -449,7 +462,7 @@ Jitable::fuse_vars(const Jitable &from)
 // TODO for now we just put the field on the mesh when calling execute
 // should probably delete it later if it's an intermediate field
 void
-Jitable::execute(conduit::Node &dataset)
+Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 {
   // TODO set this automatically?
   // occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 1");
@@ -470,16 +483,6 @@ Jitable::execute(conduit::Node &dataset)
                  "association.");
   }
 
-  // make sure all the code is moved to kernel_body
-  for(auto &kv : kernels)
-  {
-    Kernel &kernel = kv.second;
-    if(!kernel.expr.empty())
-    {
-      kernel.kernel_body = kernel.kernel_body + kernel.generate_loop("output");
-    }
-  }
-
   const int num_domains = dataset.number_of_children();
   for(int i = 0; i < num_domains; ++i)
   {
@@ -491,7 +494,6 @@ Jitable::execute(conduit::Node &dataset)
 
     const int entries = cur_dom_info["entries"].as_int32();
 
-    cur_dom_info.print();
     std::cout << kernel_string << std::endl;
 
     try
@@ -502,12 +504,13 @@ Jitable::execute(conduit::Node &dataset)
     {
       ASCENT_ERROR("Jitable: Expression compilation failed:\n"
                    << e.what() << "\n\n"
-                   << kernel_string);
+                   << cur_dom_info.to_yaml() << kernel_string);
     }
     catch(...)
     {
       ASCENT_ERROR(
-          "Jitable: Expression compilation failed with an unknown error");
+          "Jitable: Expression compilation failed with an unknown error.\n"
+          << cur_dom_info.to_yaml() << kernel_string);
     }
 
     occa_kernel.clearArgs();
@@ -563,7 +566,7 @@ Jitable::execute(conduit::Node &dataset)
     }
 
     std::cout << "INVOKE SIZE " << entries << "\n";
-    conduit::Node &n_output = dom["fields/output"];
+    conduit::Node &n_output = dom["fields/" + field_name];
     n_output["association"] = association;
     n_output["topology"] = topology;
 
@@ -576,7 +579,7 @@ Jitable::execute(conduit::Node &dataset)
 
     o_output.memory().copyTo(output_ptr);
 
-    dom["fields/output"].print();
+    dom["fields/" + field_name].print();
   }
 }
 //-----------------------------------------------------------------------------
