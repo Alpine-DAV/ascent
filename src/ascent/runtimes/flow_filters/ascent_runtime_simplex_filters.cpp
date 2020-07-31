@@ -126,6 +126,260 @@ using namespace flow;
 
 typedef vtkm::rendering::Camera vtkmCamera;
 
+
+//Camera Class Functions
+
+Matrix
+Camera::CameraTransform(void)
+{
+  bool print = false;
+  double v3[3]; //camera position - focus
+  v3[0] = (position[0] - focus[0]);
+  v3[1] = (position[1] - focus[1]);
+  v3[2] = (position[2] - focus[2]);
+  normalize(v3);
+
+  double v1[3]; //UP x (camera position - focus)
+  crossProduct(up, v3, v1);
+  normalize(v1);
+
+  double v2[3]; // (camera position - focus) x v1
+  crossProduct(v3, v1, v2);
+  normalize(v2);
+
+  double t[3]; // (0,0,0) - camera position
+  t[0] = (0 - position[0]);
+  t[1] = (0 - position[1]);
+  t[2] = (0 - position[2]);
+
+
+  if (print)
+  {
+    cerr << "position " << position[0] << " " << position[1] << " " << position[2] << endl;
+    cerr << "focus " << focus[0] << " " << focus[1] << " " << focus[2] << endl;
+    cerr << "up " << up[0] << " " << up[1] << " " << up[2] << endl;
+    cerr << "v1 " << v1[0] << " " << v1[1] << " " << v1[2] << endl;
+    cerr << "v2 " << v2[0] << " " << v2[1] << " " << v2[2] << endl;
+    cerr << "v3 " << v3[0] << " " << v3[1] << " " << v3[2] << endl;
+    cerr << "t " << t[0] << " " << t[1] << " " << t[2] << endl;
+  }
+
+/*
+| v1.x v2.x v3.x 0 |
+| v1.y v2.y v3.y 0 |
+| v1.z v2.z v3.z 0 |
+| v1*t v2*t v3*t 1 |
+*/
+  Matrix camera;
+
+  camera.A[0][0] = v1[0]; //v1.x
+  camera.A[0][1] = v2[0]; //v2.x
+  camera.A[0][2] = v3[0]; //v3.x
+  camera.A[0][3] = 0; //0
+  camera.A[1][0] = v1[1]; //v1.y
+  camera.A[1][1] = v2[1]; //v2.y
+  camera.A[1][2] = v3[1]; //v3.y
+  camera.A[1][3] = 0; //0
+  camera.A[2][0] = v1[2]; //v1.z
+  camera.A[2][1] = v2[2]; //v2.z
+  camera.A[2][2] = v3[2]; //v3.z
+  camera.A[2][3] = 0; //0
+  camera.A[3][0] = dotProduct(v1, t, 3); //v1 dot t
+  camera.A[3][1] = dotProduct(v2, t, 3); //v2 dot t
+  camera.A[3][2] = dotProduct(v3, t, 3); //v3 dot t
+  camera.A[3][3] = 1.0; //1
+
+  if(print)
+  {
+    cerr << "Camera:" << endl;
+    camera.Print(cerr);
+  }
+  return camera;
+
+};
+
+Matrix
+Camera::ViewTransform(void)
+{
+
+/*
+| cot(a/2)    0         0            0     |
+|    0     cot(a/2)     0            0     |
+|    0        0    (f+n)/(f-n)      -1     |
+|    0        0         0      (2fn)/(f-n) |
+*/
+  Matrix view;
+  double c = (1.0/(tan(angle/2.0))); //cot(a/2) =    1
+                                     //            -----
+                                     //           tan(a/2)
+  double f = ((far + near)/(far - near));
+  double f2 = ((2*far*near)/(far - near));
+
+  view.A[0][0] = c;
+  view.A[0][1] = 0;
+  view.A[0][2] = 0;
+  view.A[0][3] = 0;
+  view.A[1][0] = 0;
+  view.A[1][1] = c;
+  view.A[1][2] = 0;
+  view.A[1][3] = 0;
+  view.A[2][0] = 0;
+  view.A[2][1] = 0;
+  view.A[2][2] = f;
+  view.A[2][3] = -1.0;
+  view.A[3][0] = 0;
+  view.A[3][1] = 0;
+  view.A[3][2] = f2;
+  view.A[3][3] = 0;
+  return view;
+
+};
+
+
+Matrix
+Camera::DeviceTransform()
+{ //(double x, double y, double z){
+
+/*
+| x' 0  0  0 |
+| 0  y' 0  0 |
+| 0  0  z' 0 |
+| 0  0  0  1 |
+*/
+  Matrix device;
+  int width = 1000;
+  int height = 1000;
+  device.A[0][0] = (width/2);
+  device.A[0][1] = 0;
+  device.A[0][2] = 0;
+  device.A[0][3] = 0;
+  device.A[1][0] = 0;
+  device.A[1][1] = (height/2);
+  device.A[1][2] = 0;
+  device.A[1][3] = 0;
+  device.A[2][0] = 0;
+  device.A[2][1] = 0;
+  device.A[2][2] = 1;
+  device.A[2][3] = 0;
+  device.A[3][0] = (width/2);
+  device.A[3][1] = (height/2);
+  device.A[3][2] = 0;
+  device.A[3][3] = 1;
+
+  return device;
+}
+
+Matrix
+Camera::DeviceTransform(int width, int height)
+{ //(double x, double y, double z){
+
+/*
+| x' 0  0  0 |
+| 0  y' 0  0 |
+| 0  0  z' 0 |
+| 0  0  0  1 |
+*/
+  Matrix device;
+
+  device.A[0][0] = (width/2);
+  device.A[0][1] = 0;
+  device.A[0][2] = 0;
+  device.A[0][3] = 0;
+  device.A[1][0] = 0;
+  device.A[1][1] = (height/2);
+  device.A[1][2] = 0;
+  device.A[1][3] = 0;
+  device.A[2][0] = 0;
+  device.A[2][1] = 0;
+  device.A[2][2] = 1;
+  device.A[2][3] = 0;
+  device.A[3][0] = (width/2);
+  device.A[3][1] = (height/2);
+  device.A[3][2] = 0;
+  device.A[3][3] = 1;
+
+  return device;
+}
+
+
+//Matrix Class Functions
+void
+Matrix::Print(ostream &o)
+{
+  for (int i = 0 ; i < 4 ; i++)
+  {
+      char str[256];
+      sprintf(str, "(%.7f %.7f %.7f %.7f)\n", A[i][0], A[i][1], A[i][2], A[i][3]);
+      o << str;
+  }
+}
+
+//multiply two matrices
+Matrix
+Matrix::ComposeMatrices(const Matrix &M1, const Matrix &M2)
+{
+  Matrix rv;
+  for (int i = 0 ; i < 4 ; i++)
+      for (int j = 0 ; j < 4 ; j++)
+      {
+          rv.A[i][j] = 0;
+          for (int k = 0 ; k < 4 ; k++)
+              rv.A[i][j] += M1.A[i][k]*M2.A[k][j];
+      }
+
+  return rv;
+}
+
+
+//multiply vector by matrix
+void
+Matrix::TransformPoint(const double *ptIn, double *ptOut)
+{
+  ptOut[0] = ptIn[0]*A[0][0]
+           + ptIn[1]*A[1][0]
+           + ptIn[2]*A[2][0]
+           + ptIn[3]*A[3][0];
+  ptOut[1] = ptIn[0]*A[0][1]
+           + ptIn[1]*A[1][1]
+           + ptIn[2]*A[2][1]
+           + ptIn[3]*A[3][1];
+  ptOut[2] = ptIn[0]*A[0][2]
+           + ptIn[1]*A[1][2]
+           + ptIn[2]*A[2][2]
+           + ptIn[3]*A[3][2];
+  ptOut[3] = ptIn[0]*A[0][3]
+           + ptIn[1]*A[1][3]
+           + ptIn[2]*A[2][3]
+           + ptIn[3]*A[3][3];
+}
+
+void normalize(double * normal)
+{
+  double total = pow(normal[0], 2.0) + pow(normal[1], 2.0) + pow(normal[2], 2.0);
+  total = pow(total, 0.5);
+  normal[0] = normal[0] / total;
+  normal[1] = normal[1] / total;
+  normal[2] = normal[2] / total;
+}
+
+double dotProduct(double* v1, double* v2, int length)
+{
+  double dotproduct = 0;
+  for (int i = 0; i < length; i++)
+  {
+    dotproduct += (v1[i]*v2[i]);
+  }
+  return dotproduct;
+}
+
+void crossProduct(double a[3], double b[3], double output[3])
+{
+  output[0] = ((a[1]*b[2]) - (a[2]*b[1])); //ay*bz-az*by
+  output[1] = ((a[2]*b[0]) - (a[0]*b[2])); //az*bx-ax*bz
+  output[2] = ((a[0]*b[1]) - (a[1]*b[0])); //ax*by-ay*bx
+}
+
+
 void fibonacciSphere(int i, int samples, double* points)
 {
   int rnd = 1;
@@ -262,6 +516,9 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
 {
   Camera c;
   double zoom = 3.0;
+  c.near = zoom/20;
+  c.far = zoom*25;
+  c.angle = M_PI/6;
   
   double theta = (thetaPos / (numTheta - 1.0)) * M_PI ;
   double phi = (phiPos / (numPhi - 1.0)) * M_PI * 2.0; 
