@@ -347,6 +347,8 @@ public:
 
     scene.Render(is_inline);
 
+    std::chrono::duration<double> t_img_data;
+
     for (int i = 0; i < m_renderer_count; i++)
     {
       int rank = 0;
@@ -366,6 +368,8 @@ public:
 
       if (!is_inline)
       {
+        auto start = std::chrono::system_clock::now();
+
         vtkh::Renderer *r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
 
         // NOTE: move costs about 0.02 seconds per node per batch (20 renders)
@@ -375,12 +379,28 @@ public:
         m_color_buffers.push_back(std::move(r->GetColorBuffers()));
         m_depth_buffers.push_back(std::move(r->GetDepthBuffers()));
         m_depths.push_back(std::move(r->GetDepths()));
+
+        t_img_data += std::chrono::system_clock::now() - start;
       }
-      
+
+      // m_registry->consume(oss.str());
+    }
+    
+    std::cout << "** move data " << t_img_data.count() << std::endl;
+
+  }
+
+  void ConsumeRenderers()
+  {
+    for (int i = 0; i < m_renderer_count; i++)
+    {
+      ostringstream oss;
+      oss << "key_" << i;
       m_registry->consume(oss.str());
     }
   }
 }; // Ascent Scene
+
 
 //-----------------------------------------------------------------------------
 
@@ -2619,22 +2639,29 @@ void add_images(std::vector<vtkh::Render> *renders,
     conduit::Node *image_list = new conduit::Node();
     graph->workspace().registry().add<Node>("image_list", image_list, 1);
   }
-
   conduit::Node *image_list = graph->workspace().registry().fetch<Node>("image_list");
+
+  auto start = std::chrono::system_clock::now();
+
+  std::vector<conduit::Node> image_data(renders->size());
+
+  for (int i = 0; i < renders->size(); ++i)
+    image_list->append();
+
+#pragma omp parallel for
   for (int i = 0; i < renders->size(); ++i)
   {
     const std::string image_name = renders->at(i).GetImageName() + ".png";
-    conduit::Node image_data;
-    image_data["image_name"] = image_name;
 
-    image_data["image_width"] = renders->at(i).GetWidth();
-    image_data["image_height"] = renders->at(i).GetHeight();
+    image_data.at(i)["image_name"] = image_name;
+    image_data[i]["image_width"] = renders->at(i).GetWidth();
+    image_data[i]["image_height"] = renders->at(i).GetHeight();
 
-    image_data["camera/position"].set(&renders->at(i).GetCamera().GetPosition()[0], 3);
-    image_data["camera/look_at"].set(&renders->at(i).GetCamera().GetLookAt()[0], 3);
-    image_data["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0], 3);
-    image_data["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
-    image_data["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
+    image_data[i]["camera/position"].set(&renders->at(i).GetCamera().GetPosition()[0], 3);
+    image_data[i]["camera/look_at"].set(&renders->at(i).GetCamera().GetLookAt()[0], 3);
+    image_data[i]["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0], 3);
+    image_data[i]["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
+    image_data[i]["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
     vtkm::Bounds bounds = renders->at(i).GetSceneBounds();
     double coord_bounds[6] = {bounds.X.Min,
                               bounds.Y.Min,
@@ -2642,7 +2669,7 @@ void add_images(std::vector<vtkh::Render> *renders,
                               bounds.X.Max,
                               bounds.Y.Max,
                               bounds.Z.Max};
-    image_data["scene_bounds"].set(coord_bounds, 6);
+    image_data[i]["scene_bounds"].set(coord_bounds, 6);
 
     double avg_render_time = 0.0;
     int count = 0;
@@ -2656,19 +2683,24 @@ void add_images(std::vector<vtkh::Render> *renders,
         ++count;
       }
     }
-    avg_render_time /= double(count);
-    image_data["render_time"] = avg_render_time;
 
-    image_data["depth"] = depths->at(i);
+    avg_render_time /= double(count);
+    image_data[i]["render_time"] = avg_render_time;
+
+    image_data[i]["depth"] = depths->at(i);
     int size = renders->at(i).GetWidth() * renders->at(i).GetHeight();
     // NOTE: only getting canvas from domain 0 for now
-    image_data["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
-    image_data["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
+    image_data[i]["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
+    image_data[i]["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
+    // get depth buffer directly from vtk-m -> memory error bc renderer is consumed ?
+    // image_data[i]["depth_buffer"].set_external(vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer()), size);
 
-    // get depth buffer directly from vtk-m -> memory error
-    // image_data["depth_buffer"].set_external(vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer()), size);
-  
-    image_list->append() = image_data;
+    // TODO: copy: big performance hit
+    // set_external is way faster (no copy) but results in memory error on pack_and_send 
+    // Node &image = image_list->append();
+    // image.set(std::move(image_data[i]));
+    image_list->child(i).set(std::move(image_data[i]));
+    // image_list->append() = image_data;
 
     // append name and frame time to ascent info
     // conduit::Node image_info;
@@ -2677,6 +2709,8 @@ void add_images(std::vector<vtkh::Render> *renders,
     // info["renders"].append() = image_info;
   } // for renders
 
+  std::chrono::duration<double> t_buffers = std::chrono::system_clock::now() - start;
+  std::cout << "** buffer copies " << t_buffers.count() << std::endl; 
 }
 
 //-----------------------------------------------------------------------------
@@ -2725,6 +2759,8 @@ void ExecScene::execute()
   // this can be used for the web server or jupyter
   add_images(renders, &graph(), render_times, color_buffers, depth_buffers, depths);
   // add_images(renders, &graph(), render_times, color_buffers, depths);  // memory error
+
+  scene->ConsumeRenderers();
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

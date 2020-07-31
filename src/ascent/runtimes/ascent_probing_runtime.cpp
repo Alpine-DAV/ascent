@@ -210,16 +210,16 @@ void ProbingRuntime::Publish(const conduit::Node &data)
 }
 
 
-// void debug_break()
-// {
-//     volatile int vi = 0;
-//     char hostname[256];
-//     gethostname(hostname, sizeof(hostname));
-//     printf("PID %d on %s ready for attach\n", getpid(), hostname);
-//     fflush(stdout);
-//     while (0 == vi)
-//         sleep(5);
-// }
+void debug_break()
+{
+    volatile int vi = 0;
+    char hostname[256];
+    gethostname(hostname, sizeof(hostname));
+    printf("PID %d on %s ready for attach\n", getpid(), hostname);
+    fflush(stdout);
+    while (0 == vi)
+        sleep(5);
+}
 
 
 // structs
@@ -1076,6 +1076,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
 
 void pack_and_send(Node& data, const int destination, const int tag, const MPI_Comm comm, MPI_Request &req)
 {
+    // debug_break();
     Node compact_node = pack_node(data);
 
     int mpi_error = MPI_Ibsend(compact_node.data_ptr(),
@@ -1379,6 +1380,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 auto start = std::chrono::system_clock::now();
                 if (current_render_count > 0)
                 {
+                    // debug_break();
                     std::cout   << "~~~~ VIS node " << mpi_props.rank << " rendering " 
                                 << render_offset << " - " 
                                 << render_offset + current_render_count << std::endl;
@@ -1391,7 +1393,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     ascent_renders[i].open(ascent_opts);
                     ascent_renders[i].publish(dataset);
                     ascent_renders[i].execute(blank_actions);
-                    // print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
+                    print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
 
                     render_chunks_vis[i] = std::make_shared<Node>();
                     // ascent_main_runtime : out.set_external(m_info);
@@ -1466,12 +1468,15 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     std::cout << "ERROR sending sim data to " << destination << std::endl;
                 log_time(t_start, "- send data ", mpi_props.rank);
             }
-            
+                       
+            // debug_break();
             MPI_Request request_probing = MPI_REQUEST_NULL;
             // pack and send probing in own thread
             std::thread pack_renders_thread(&pack_and_send, std::ref(render_chunks_probing), 
                                             destination, tag_probing, mpi_props.comm_world, 
                                             std::ref(request_probing));
+            // pack_and_send(render_chunks_probing, destination, tag_probing, mpi_props.comm_world, 
+            //               request_probing);
 
             log_global_time("end sendData", mpi_props.rank);
 
@@ -1489,6 +1494,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             auto t_start = std::chrono::system_clock::now();
             for (int i = 0; i < batch.runs; ++i)
             {
+
                 const int begin = i*render_cfg.batch_size;
                 const int current_batch_size = get_current_batch_size(render_cfg.batch_size, batch, i);
                 if (current_batch_size <= 1)
@@ -1533,7 +1539,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
                 t_end = std::chrono::system_clock::now();
                 sum_copy += t_end - t_render;
-                // print_time(t_render, "ascent info sim ", mpi_props.rank, 1.0 / (end - begin));
+                print_time(t_render, "ascent info sim ", mpi_props.rank, 1.0 / (end - begin));
             }
             
             auto t_render = std::chrono::system_clock::now();
