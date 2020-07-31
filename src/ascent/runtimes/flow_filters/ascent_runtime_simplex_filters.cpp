@@ -258,7 +258,7 @@ GetCamera2(double frame, int nframes, double radius, double* lookat)
 
 Camera
 GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, double radius,
-	       	int thetaPos, int numTheta, int phiPos, int numPhi)
+	       	int thetaPos, int numTheta, int phiPos, int numPhi, double *lookat)
 {
   Camera c;
   double zoom = 3.0;
@@ -273,6 +273,12 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   c.position[1] = ( ( radius * sin(theta) * sin(phi) ) + ym ) * zoom;
   c.position[2] = ( ( radius * cos(theta) ) + zm ) * zoom;
 
+  c.focus[0] = lookat[0];
+  c.focus[1] = lookat[1];
+  c.focus[2] = lookat[2];
+  c.up[0] = 0;
+  c.up[1] = 1;
+  c.up[2] = 0;
   return c;
 }
 
@@ -1898,19 +1904,22 @@ CameraSimplex::execute()
     int numTheta = 100;
     int numPhi = 100;
 
+    cout << "Gathering data for metric: " << metric.c_str() << endl;
+
     // File stuff
-    ofstream datafile;
+    FILE *datafile;
+    float buffer[numTheta][numPhi];
 
     // Get nice filename
-    char filename[metric.length() + 5];
-    strcpy(filename, metric.c_str());
-    filename[metric.length()] = '.';
-    filename[metric.length() + 1] = 'b';
-    filename[metric.length() + 2] = 'i';
-    filename[metric.length() + 3] = 'n';
-    filename[metric.length() + 4] = '\0';
+    char dataFileName[metric.length() + 5];
+    strcpy(dataFileName, metric.c_str());
+    dataFileName[metric.length()] = '.';
+    dataFileName[metric.length() + 1] = 'b';
+    dataFileName[metric.length() + 2] = 'i';
+    dataFileName[metric.length() + 3] = 'n';
+    dataFileName[metric.length() + 4] = '\0';
 
-    datafile.open(filename, ios::binary | ios::trunc);
+    datafile = fopen(dataFileName, "wb");
 
     for (int i = 0 ; i < numTheta ; i++) {
       cout << "Step: " << i << endl;
@@ -1918,7 +1927,7 @@ CameraSimplex::execute()
       for (int j = 0 ; j < numPhi ; j++) {
 
         Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
-		       	        radius, i, numTheta, j, numPhi); 
+		       	        radius, i, numTheta, j, numPhi, focus); 
 
         vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
                                   (float)cam.position[1],
@@ -1937,12 +1946,12 @@ CameraSimplex::execute()
         float score = calculateMetric2(output, metric, field_name,
 		       triangles, height, width, cam);
 
+        buffer[i][j] = score;
+
 	delete output;
 
 	//cout << "Camera at: " << cam.position[0] << ", " << cam.position[1] << ", " << cam.position[2] << endl;
         //cout << "Score is: " << score << endl << endl;
-
-        datafile.write( (char *) &score, sizeof(score));
 
 	if (score > winning_score) {
             winning_score = score;
@@ -1955,7 +1964,11 @@ CameraSimplex::execute()
 
     cout << "Winning score: " << winning_score << " at (" << winning_i << ", " << winning_j << ")" << endl;
 
-    datafile.close();
+    for (int k = 0 ; k < numTheta ; k++) {
+      fwrite(buffer[k], sizeof(float), numPhi, datafile);
+    }
+
+    fclose(datafile);
 
     /*
     for(int sample = 0; sample < samples; sample++)
@@ -2177,7 +2190,7 @@ CameraSimplex::execute()
 
     //Camera best_c = GetCamera2(best_sample, samples, radius, focus);
     Camera best_c = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
-		       	        radius, winning_i, numTheta, winning_j, numPhi);
+		       	        radius, winning_i, numTheta, winning_j, numPhi, focus);
 
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
