@@ -126,6 +126,34 @@ using namespace flow;
 
 typedef vtkm::rendering::Camera vtkmCamera;
 
+/*
+ 
+void normalize(double * normal)
+{
+  double total = pow(normal[0], 2.0) + pow(normal[1], 2.0) + pow(normal[2], 2.0);
+  total = pow(total, 0.5);
+  normal[0] = normal[0] / total;
+  normal[1] = normal[1] / total;
+  normal[2] = normal[2] / total;
+}
+
+double dotProduct(double* v1, double* v2, int length)
+{
+  double dotproduct = 0;
+  for (int i = 0; i < length; i++)
+  {
+    dotproduct += (v1[i]*v2[i]);
+  }
+  return dotproduct;
+}
+
+void crossProduct(double a[3], double b[3], double output[3])
+{
+  output[0] = ((a[1]*b[2]) - (a[2]*b[1])); //ay*bz-az*by
+  output[1] = ((a[2]*b[0]) - (a[0]*b[2])); //az*bx-ax*bz
+  output[2] = ((a[0]*b[1]) - (a[1]*b[0])); //ax*by-ay*bx
+}
+
 
 //Camera Class Functions
 
@@ -164,12 +192,12 @@ Camera::CameraTransform(void)
     cerr << "t " << t[0] << " " << t[1] << " " << t[2] << endl;
   }
 
-/*
-| v1.x v2.x v3.x 0 |
-| v1.y v2.y v3.y 0 |
-| v1.z v2.z v3.z 0 |
-| v1*t v2*t v3*t 1 |
-*/
+//
+//| v1.x v2.x v3.x 0 |
+//| v1.y v2.y v3.y 0 |
+//| v1.z v2.z v3.z 0 |
+//| v1*t v2*t v3*t 1 |
+
   Matrix camera;
 
   camera.A[0][0] = v1[0]; //v1.x
@@ -202,12 +230,13 @@ Matrix
 Camera::ViewTransform(void)
 {
 
-/*
-| cot(a/2)    0         0            0     |
-|    0     cot(a/2)     0            0     |
-|    0        0    (f+n)/(f-n)      -1     |
-|    0        0         0      (2fn)/(f-n) |
-*/
+//
+//| cot(a/2)    0         0            0     |
+//|    0     cot(a/2)     0            0     |
+//|    0        0    (f+n)/(f-n)      -1     |
+//|    0        0         0      (2fn)/(f-n) |
+//
+
   Matrix view;
   double c = (1.0/(tan(angle/2.0))); //cot(a/2) =    1
                                      //            -----
@@ -240,12 +269,12 @@ Matrix
 Camera::DeviceTransform()
 { //(double x, double y, double z){
 
-/*
-| x' 0  0  0 |
-| 0  y' 0  0 |
-| 0  0  z' 0 |
-| 0  0  0  1 |
-*/
+//
+//| x' 0  0  0 |
+//| 0  y' 0  0 |
+//| 0  0  z' 0 |
+//| 0  0  0  1 |
+//
   Matrix device;
   int width = 1000;
   int height = 1000;
@@ -272,13 +301,12 @@ Camera::DeviceTransform()
 Matrix
 Camera::DeviceTransform(int width, int height)
 { //(double x, double y, double z){
-
-/*
-| x' 0  0  0 |
-| 0  y' 0  0 |
-| 0  0  z' 0 |
-| 0  0  0  1 |
-*/
+//
+//| x' 0  0  0 |
+//| 0  y' 0  0 |
+//| 0  0  z' 0 |
+//| 0  0  0  1 |
+//
   Matrix device;
 
   device.A[0][0] = (width/2);
@@ -352,33 +380,7 @@ Matrix::TransformPoint(const double *ptIn, double *ptOut)
            + ptIn[2]*A[2][3]
            + ptIn[3]*A[3][3];
 }
-
-void normalize(double * normal)
-{
-  double total = pow(normal[0], 2.0) + pow(normal[1], 2.0) + pow(normal[2], 2.0);
-  total = pow(total, 0.5);
-  normal[0] = normal[0] / total;
-  normal[1] = normal[1] / total;
-  normal[2] = normal[2] / total;
-}
-
-double dotProduct(double* v1, double* v2, int length)
-{
-  double dotproduct = 0;
-  for (int i = 0; i < length; i++)
-  {
-    dotproduct += (v1[i]*v2[i]);
-  }
-  return dotproduct;
-}
-
-void crossProduct(double a[3], double b[3], double output[3])
-{
-  output[0] = ((a[1]*b[2]) - (a[2]*b[1])); //ay*bz-az*by
-  output[1] = ((a[2]*b[0]) - (a[0]*b[2])); //az*bx-ax*bz
-  output[2] = ((a[0]*b[1]) - (a[1]*b[0])); //ax*by-ay*bx
-}
-
+*/
 
 void fibonacciSphere(int i, int samples, double* points)
 {
