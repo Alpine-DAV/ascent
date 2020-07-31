@@ -1483,9 +1483,10 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     {
       m_info["render_file_names"].append();
       m_info["render_times"].append();
+      m_info["depths"].append();
+
       m_info["color_buffers"].append();
       m_info["depth_buffers"].append();
-      m_info["depths"].append();
     }
 
   #pragma omp parallel for
@@ -1493,9 +1494,13 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     {
       m_info["render_file_names"][i].set_external(images->child(i)["image_name"]);
       m_info["render_times"][i].set_external(images->child(i)["render_time"]);
-      m_info["color_buffers"][i].set_external(images->child(i)["color_buffer"]);
-      m_info["depth_buffers"][i].set_external(images->child(i)["depth_buffer"]);
       m_info["depths"][i].set_external(images->child(i)["depth"]);
+      
+      if (images->child(i)["depth"].as_float() > -1.f)
+      {
+        m_info["color_buffers"][i].set_external(images->child(i)["color_buffer"]);
+        m_info["depth_buffers"][i].set_external(images->child(i)["depth_buffer"]);
+      }
     }
 
     // Node renders;

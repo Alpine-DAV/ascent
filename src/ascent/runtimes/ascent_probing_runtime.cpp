@@ -1024,10 +1024,13 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_u
         // loop over render parts (= 1 per sim node) and add as images
         for (int i = 0; i < my_recv_cnt; ++i)
         {
-            const int id = depths_order_id[src_ranks[i]];
-            compositor.AddImage((*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr(),
-                                (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr(),
-                                render_cfg.WIDTH, render_cfg.HEIGHT, id);
+            if (depths[i] > -1.f)
+            {
+                const int id = depths_order_id[src_ranks[i]];
+                compositor.AddImage((*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr(),
+                                    (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr(),
+                                    render_cfg.WIDTH, render_cfg.HEIGHT, id);
+            }
         }
 
         // composited

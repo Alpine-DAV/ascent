@@ -292,6 +292,8 @@ public:
   {
     if(rendererId >= m_renderer_count)
       ASCENT_ERROR("Trying to access data of non-existend renderer.");
+    if (m_color_buffers.size() <= rendererId)
+      return nullptr;
 
     return &m_color_buffers.at(rendererId);
   }
@@ -301,6 +303,8 @@ public:
   {
     if(rendererId >= m_renderer_count)
       ASCENT_ERROR("Trying to access data of non-existend renderer.");
+    if (m_depth_buffers.size() <= rendererId)
+      return nullptr;
 
     return &m_depth_buffers.at(rendererId);
   }
@@ -376,8 +380,12 @@ public:
         m_render_times.push_back(std::move(r->GetRenderTimes()));
         int size = renders.at(i).GetWidth() * renders.at(i).GetHeight();
         // NOTE: only getting canvas from domain 0 for now
-        m_color_buffers.push_back(std::move(r->GetColorBuffers()));
-        m_depth_buffers.push_back(std::move(r->GetDepthBuffers()));
+        
+        if (r->GetDepthBuffers().at(0).size() > 0)  // skipped image
+        {
+          m_color_buffers.push_back(std::move(r->GetColorBuffers()));
+          m_depth_buffers.push_back(std::move(r->GetDepthBuffers()));
+        }
         m_depths.push_back(std::move(r->GetDepths()));
 
         t_img_data += std::chrono::system_clock::now() - start;
@@ -2687,11 +2695,19 @@ void add_images(std::vector<vtkh::Render> *renders,
     avg_render_time /= double(count);
     image_data[i]["render_time"] = avg_render_time;
 
-    image_data[i]["depth"] = depths->at(i);
     int size = renders->at(i).GetWidth() * renders->at(i).GetHeight();
     // NOTE: only getting canvas from domain 0 for now
-    image_data[i]["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
-    image_data[i]["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
+    if (color_buffers != nullptr && depth_buffers != nullptr)
+    {
+      image_data[i]["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
+      image_data[i]["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
+      image_data[i]["depth"] = depths->at(i);
+    }
+    else
+    {
+      // hijack depth as a skipped image indicator
+      image_data[i]["depth"] = -1.f;
+    }
     // get depth buffer directly from vtk-m -> memory error bc renderer is consumed ?
     // image_data[i]["depth_buffer"].set_external(vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer()), size);
 
