@@ -33,6 +33,7 @@
 #include "AugmentedMergeTree.h"
 #include "BabelFlow/PreProcessInputTaskGraph.hpp"
 #include "BabelFlow/ModTaskMap.hpp"
+#include "BabelFlow/RelayTask.h"
 //#include "SimplificationGraph.h"
 #include "SimpTaskMap.h"
 
@@ -272,6 +273,12 @@ void ParallelMergeTree::Initialize() {
 #endif
 
   graph = KWayMerge(n_blocks, fanin);
+  graph.registerCallback( KWayMerge::LOCAL_COMP_CB, local_compute );
+  graph.registerCallback( KWayMerge::JOIN_COMP_CB, join );
+  graph.registerCallback( KWayMerge::LOCAL_CORR_CB, local_correction );
+  graph.registerCallback( KWayMerge::WRITE_RES_CB, write_results );
+  graph.registerCallback( KWayMerge::RELAY_CB, relay_message );
+
   task_map = KWayTaskMap(mpi_size, &graph);
 
   // SimplificationGraph g(&graph, &task_map, mpi_size);
@@ -284,6 +291,8 @@ void ParallelMergeTree::Initialize() {
   // }
 
   modGraph = BabelFlow::PreProcessInputTaskGraph(mpi_size, &graph, &task_map);
+  modGraph.registerCallback( BabelFlow::PreProcessInputTaskGraph::PRE_PROC_TASK_CB, pre_proc );
+
   modMap = BabelFlow::ModTaskMap(&task_map);
   modMap.update(modGraph);
 
@@ -298,15 +307,8 @@ void ParallelMergeTree::Initialize() {
   // }
 
   master.initialize(modGraph, &modMap, this->comm, &c_map);
-  master.registerCallback(1, local_compute);
-  master.registerCallback(2, join);
-  master.registerCallback(3, local_correction);
-  master.registerCallback(4, write_results);
-  master.registerCallback(modGraph.newCallBackId, pre_proc);
 
-  BabelFlow::Payload payload = make_local_block(this->data_ptr, this->low, this->high, this->threshold);
-
-  inputs[modGraph.new_tids[this->task_id]] = payload;
+  inputs[modGraph.new_tids[this->task_id]] = make_local_block(this->data_ptr, this->low, this->high, this->threshold);
 }
 
 void ParallelMergeTree::Execute() {
@@ -335,7 +337,7 @@ void ParallelMergeTree::ExtractSegmentation(FunctionType* output_data_ptr) {
   
   auto iter = outputs.begin();
   // Output task should be only 'write_results' task
-  assert(graph.task(graph.gId(iter->first)).callback() == 4);
+  assert( graph.task(graph.gId(iter->first)).callbackId() == KWayMerge::WRITE_RES_CB );
   
   AugmentedMergeTree t;
   t.decode((iter->second)[0]);    // only one output per task

@@ -17,12 +17,12 @@
 #include "BabelFlow/reduce/RadixKExchange.h"
 #include "BabelFlow/reduce/RadixKExchangeTaskMap.h"
 #include "BabelFlow/reduce/SingleTaskGraph.h"
-#include "BabelFlow/reduce/SingleTaskMap.h"
 #include "BabelFlow/ComposableTaskGraph.h"
 #include "BabelFlow/ComposableTaskMap.h"
 #include "BabelFlow/DefGraphConnector.h"
 #include "BabelFlow/PreProcessInputTaskGraph.hpp"
 #include "BabelFlow/ModTaskMap.hpp"
+#include "BabelFlow/ModuloMap.h"
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -165,19 +165,20 @@ public:
 private:
   std::vector<uint32_t> m_Radices;
   
+  BabelFlow::SingleTaskGraph m_preProcTaskGr;
+  BabelFlow::ModuloMap m_preProcTaskMp;
+
   BabelFlow::RadixKExchange m_radixkGr;
   BabelFlow::RadixKExchangeTaskMap m_radixkMp; 
 
   BabelFlow::SingleTaskGraph m_gatherTaskGr;
-  BabelFlow::SingleTaskMap m_gatherTaskMp;
+  BabelFlow::ModuloMap m_gatherTaskMp;
 
-  BabelFlow::ComposableTaskGraph* m_ptrGraph;
-  BabelFlow::ComposableTaskMap* m_ptrTaskMap;
+  BabelFlow::ComposableTaskGraph m_radGatherGraph;
+  BabelFlow::ComposableTaskMap m_radGatherTaskMap;
 
-  BabelFlow::DefGraphConnector* m_ptrDefGraphConnector;
-
-  //BabelFlow::PreProcessInputTaskGraph m_modGraph;
-  //BabelFlow::ModTaskMap m_modMap;
+  BabelFlow::DefGraphConnector m_defGraphConnector;
+  BabelFlow::DefGraphConnector m_defGraphConnectorPreProc;
 };
 
 //-----------------------------------------------------------------------------
