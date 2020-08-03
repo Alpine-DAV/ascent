@@ -234,7 +234,6 @@ Camera::ViewTransform(void)
 };
 
 
-//This is just to keep simplex from breaking
 Matrix
 Camera::DeviceTransform()
 { //(double x, double y, double z){
