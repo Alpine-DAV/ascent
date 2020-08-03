@@ -134,7 +134,7 @@ entropy that could represent a simulation event that the user wants act on:
        queries:
          q1:
            params:
-             expression: "entropy(histogram(field('pressure'))"
+             expression: "entropy(histogram(field('pressure')))"
              name: "entropy"
      -
        action: "add_triggers"
