@@ -314,6 +314,8 @@ public:
   {
     if(rendererId >= m_renderer_count)
       ASCENT_ERROR("Trying to access data of non-existend renderer.");
+    if (m_depths.size() <= rendererId)
+      return nullptr;
 
     return &m_depths.at(rendererId);
   }
@@ -2695,9 +2697,10 @@ void add_images(std::vector<vtkh::Render> *renders,
     avg_render_time /= double(count);
     image_data[i]["render_time"] = avg_render_time;
 
+
     int size = renders->at(i).GetWidth() * renders->at(i).GetHeight();
     // NOTE: only getting canvas from domain 0 for now
-    if (color_buffers != nullptr && depth_buffers != nullptr)
+    if (color_buffers != nullptr && depth_buffers != nullptr && depths != nullptr)
     {
       image_data[i]["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
       image_data[i]["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
@@ -2726,7 +2729,6 @@ void add_images(std::vector<vtkh::Render> *renders,
   } // for renders
 
   std::chrono::duration<double> t_buffers = std::chrono::system_clock::now() - start;
-  std::cout << "** buffer copies " << t_buffers.count() << std::endl; 
 }
 
 //-----------------------------------------------------------------------------
@@ -2774,7 +2776,6 @@ void ExecScene::execute()
   // the images should exist now so add them to the image list
   // this can be used for the web server or jupyter
   add_images(renders, &graph(), render_times, color_buffers, depth_buffers, depths);
-  // add_images(renders, &graph(), render_times, color_buffers, depths);  // memory error
 
   scene->ConsumeRenderers();
 }

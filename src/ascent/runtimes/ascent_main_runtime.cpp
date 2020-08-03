@@ -179,8 +179,11 @@ void AscentRuntime::Initialize(const conduit::Node &options)
   // vtkh::SetMPICommHandle(sim_vis_comm);
   // std::cout << ">>>>MPI size:" << vtkh::GetMPISize() << std::endl;
 #endif
-  MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
-  MPI_Comm_rank(comm, &m_rank);
+  if (options["mpi_comm"].to_int() != MPI_COMM_NULL)
+  {
+    MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
+    MPI_Comm_rank(comm, &m_rank);
+  }
   InfoHandler::m_rank = m_rank;
 #else // non mpi version
   if (options.has_child("mpi_comm"))
@@ -1469,7 +1472,6 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     ascent::about(msg["about"]);
     m_web_interface.PushMessage(msg);
 
-
     auto t_detail = std::chrono::system_clock::now();
 
     Node *images = w.registry().fetch<Node>("image_list");
@@ -1510,7 +1512,7 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     // Node depth_buffers;
     // Node depths;
     // FindRenders(renders, render_file_names, render_times, color_buffers, depth_buffers, depths);
-    print_time(t_detail, "''' copy image info ", m_rank);
+    // print_time(t_detail, "''' copy image info ", m_rank);
 
     // t_detail = std::chrono::system_clock::now();
     // m_info["images"] = renders;
