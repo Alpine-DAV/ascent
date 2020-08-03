@@ -680,7 +680,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
             // more logic to AddField
             const int num_children = n_field["values"].number_of_children();
 
-            if(num_children == 0 )
+            if(num_children == 0 || num_children == 1)
             {
 
                 AddField(field_name,
@@ -1265,7 +1265,12 @@ VTKHDataAdapter::AddField(const std::string &field_name,
       return;
     }
 
-    const Node &n_vals = n_field["values"];
+    const int num_components = n_field["values"].number_of_children();
+    if(num_components != 0 && num_components != 1)
+    {
+      ASCENT_ERROR("Cannot create a scalar field from a vector field with "<<num_components<<" components.");
+    }
+    const Node &n_vals = num_components == 0 ? n_field["values"] : n_field["values"].child(0);
     int num_vals = n_vals.dtype().number_of_elements();
 
     if(assoc_str == "vertex" && nverts != num_vals)

@@ -661,7 +661,6 @@ initialize_functions()
 
   //---------------------------------------------------------------------------
 
-  // same as above but scalar goes first, field goes second
   conduit::Node &field_sin_sig = (*functions)["sin"].append();
   field_sin_sig["return_type"] = "jitable";
   field_sin_sig["filter_name"] = "field_sin";
@@ -672,13 +671,13 @@ initialize_functions()
 
   //---------------------------------------------------------------------------
 
-  conduit::Node &volume_sig = (*functions)["volume"].append();
-  volume_sig["return_type"] = "jitable";
-  volume_sig["filter_name"] = "volume";
-  volume_sig["args/arg1/type"] = "topo";
-  volume_sig["jitable"];
-  volume_sig["description"] = "Return a derived field of the volume/area "
-                              "for each element in a topology.";
+  conduit::Node &field_abs_sig = (*functions)["abs"].append();
+  field_abs_sig["return_type"] = "jitable";
+  field_abs_sig["filter_name"] = "field_abs";
+  field_abs_sig["args/arg1/type"] = "field";
+  field_abs_sig["jitable"];
+  field_abs_sig["description"] =
+      "Return a derived field that is the absolute value of a field.";
 
   //---------------------------------------------------------------------------
 
@@ -806,8 +805,27 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   cache_entry << expr_name << "/" << cycle;
 
   // this causes an invalid read in conduit in the expression tests
-  // m_cache[cache_entry.str()] = *n_res;
-  m_cache[cache_entry.str()] = return_val;
+  m_cache[cache_entry.str()] = *n_res;
+  // m_cache[cache_entry.str()] = return_val;
+
+  // remove temporary fields, topologies, and coordsets from the dataset
+  const int num_domains = m_data->number_of_children();
+  for(int i = 0; i < num_domains; ++i)
+  {
+    conduit::Node &dom = m_data->child(i);
+    for(const auto &field_name : remove["fields"].child_names())
+    {
+      dom["fields"].remove(field_name);
+    }
+    for(const auto &topo_name : remove["topologies"].child_names())
+    {
+      dom["topologies"].remove(topo_name);
+    }
+    for(const auto &coords_name : remove["coordsets"].child_names())
+    {
+      dom["coordsets"].remove(coords_name);
+    }
+  }
 
   delete expression;
   w.reset();

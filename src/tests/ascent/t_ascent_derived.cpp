@@ -51,6 +51,7 @@
 #include "gtest/gtest.h"
 
 #include <ascent_expression_eval.hpp>
+#include <ascent_hola.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -117,31 +118,97 @@ TEST(ascent_expressions, derived_expressions)
   // + braid), double(0));
   // expr = "max((2.0 + 1) / 0.5 + field('braid'),0.0)";
   // expr = "test( foo = 1)";
+  // expr = "sin(field('radial'))";
 
   // pass vec and see what happens
   // expr = "sin(field('braid')) * field('braid') * field('vel')";
-  expr = "if field('braid') > 0 then field('braid') else 0";
-  eval.evaluate(expr);
+  // expr = "field('braid') + 1 + field('braid') + 1";
+  // eval.evaluate(expr);
+  // expr = "binning_mesh(binning('braid','max', [axis('x', num_bins=10)]), "
+  //        "name='binning')";
+  // eval.evaluate(expr);
+  // expr = "min(if field('binning') > .2 then abs(5 - "
+  //        "topo('binning_topo').cell.x) else 1e18)";
+  // res = eval.evaluate(expr);
+  // res.print();
 
-  expr = "topo('mesh').cell.x";
-  eval.evaluate(expr);
+  // expr = "if field('braid') > 0 then field('braid') else 0";
+  // eval.evaluate(expr);
 
-  expr = "sin(field('braid'))";
-  eval.evaluate(expr);
+  // expr = "topo('mesh').cell.x";
+  // eval.evaluate(expr);
 
-  // expr = "sin(field('radial'))";
-  expr = "(field('braid') - min(field('braid')).value) / "
-         "(max(field('braid')).value - min(field('braid')).value)";
-  eval.evaluate(expr);
-  // expr = "(field('braid') - min(field('braid'))) / "
-  //       "(max(field('braid')) - min(field('braid')))";
-  // expr = "sin(1.0)";
+  // expr = "sin(field('braid'))";
+  // eval.evaluate(expr);
 
-  expr = "1 + field('braid') + 1";
-  eval.evaluate(expr);
+  // expr = "(field('braid') - min(field('braid')).value) / "
+  //        "(max(field('braid')).value - min(field('braid')).value)";
+  // eval.evaluate(expr);
 
-  expr = "max(field('braid') + 1)";
-  eval.evaluate(expr);
+  // expr = "1 + field('braid') + 1";
+  // eval.evaluate(expr);
+
+  // expr = "max(field('braid') + 1)";
+  // eval.evaluate(expr);
+
+  const std::string output_path = prepare_output_dir();
+
+  std::string output_file =
+      conduit::utils::join_file_path(output_path, "fishtank_temp");
+
+  conduit::Node actions;
+
+  conduit::Node queries;
+  expr =
+      "binning_mesh(binning('temperature', 'sum', [axis('x', num_bins=50), "
+      "axis('y', num_bins=50), axis('z', num_bins=50)]), name='temp_binning')";
+  queries["q1/params/expression"] = expr;
+  queries["q1/params/name"] = "temp_binning";
+
+  conduit::Node &add_queries = actions.append();
+  add_queries["action"] = "add_queries";
+  add_queries["queries"] = queries;
+
+  conduit::Node extracts;
+  extracts["e1/type"] = "relay";
+  extracts["e1/params/path"] = output_file;
+  extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+  conduit::Node &add_extracts = actions.append();
+  add_extracts["action"] = "add_extracts";
+  add_extracts["extracts"] = extracts;
+
+  // conduit::Node scenes;
+  // scenes["s1/plots/p1/type"] = "pseudocolor";
+  // scenes["s1/plots/p1/field"] = "temp_binning";
+  // scenes["s1/renders/r1/image_prefix"] = output_file;
+  // scenes["s1/renders/r1/render_bg"] = "false";
+  //
+  // conduit::Node &add_plots = actions.append();
+  // add_plots["action"] = "add_scenes";
+  // add_plots["scenes"] = scenes;
+
+  //
+  // Run Ascent
+  //
+
+  Ascent ascent;
+
+  Node ascent_opts;
+  ascent_opts["ascent_info"] = "verbose";
+  ascent_opts["timings"] = "enabled";
+  ascent_opts["runtime/type"] = "ascent";
+
+  conduit::Node replay_data, replay_opts;
+  replay_opts["root_file"] =
+      "/Users/ibrahim5/datasets/fishtank/fishtank.cycle_000000.root";
+  ascent::hola("relay/blueprint/mesh", replay_opts, replay_data);
+
+  cout << actions.to_json();
+  ascent.open(ascent_opts);
+  ascent.publish(replay_data);
+  ascent.execute(actions);
+  ascent.close();
 }
 
 //-----------------------------------------------------------------------------

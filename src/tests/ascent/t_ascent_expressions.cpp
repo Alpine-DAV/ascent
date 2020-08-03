@@ -814,7 +814,7 @@ TEST(ascent_binning, braid_binning)
 
   std::string expr;
 
-  string output_path = prepare_output_dir();
+  const std::string output_path = prepare_output_dir();
 
   expr = "paint_binning(binning('braid', 'std', [axis('x', num_bins=10), axis('y', "
          "num_bins=10)]), name='painted_braid_std')";
@@ -872,7 +872,7 @@ TEST(ascent_binning, multi_dom_binning)
          "num_bins=9)]), name='dist_std')";
   eval.evaluate(expr);
 
-  string output_path = prepare_output_dir();
+  const std::string output_path = prepare_output_dir();
 
   std::string output_file =
       conduit::utils::join_file_path(output_path, "tout_binning_dist_xystd");

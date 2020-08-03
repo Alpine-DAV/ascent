@@ -146,6 +146,8 @@ bool has_topology(const conduit::Node &dataset, const std::string &topo_name);
 
 std::string known_topos(const conduit::Node &dataset);
 
+std::string known_fields(const conduit::Node &dataset);
+
 conduit::Node quantile(const conduit::Node &cdf,
                        const double val,
                        const std::string &interpolation);

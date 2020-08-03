@@ -671,6 +671,24 @@ known_topos(const conduit::Node &dataset)
   return ss.str();
 }
 
+std::string
+known_fields(const conduit::Node &dataset)
+{
+  std::vector<std::string> names = dataset.child(0)["fields"].child_names();
+  std::stringstream ss;
+  ss << "[";
+  for(int i = 0; i < names.size(); ++i)
+  {
+    ss << names[i];
+    if(i < names.size() - 1)
+    {
+      ss << ", ";
+    }
+  }
+  ss << "]";
+  return ss.str();
+}
+
 // TODO If someone names their fields x,y,z things will go wrong
 bool
 is_xyz(const std::string &axis_name)

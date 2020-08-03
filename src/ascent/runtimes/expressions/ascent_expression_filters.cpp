@@ -1577,20 +1577,9 @@ Field::execute()
 
   if(!has_field(*dataset, field))
   {
-    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
-    std::stringstream ss;
-    ss << "[";
-    for(int i = 0; i < names.size(); ++i)
-    {
-      if(i < names.size() - 1)
-      {
-        ss << ", ";
-      }
-    }
-    ss << "]";
     ASCENT_ERROR("Field: dataset does not contain field '"
                  << field << "'"
-                 << " known = " << ss.str());
+                 << " known = " << known_fields(*dataset));
   }
 
   conduit::Node *output = new conduit::Node();
@@ -1957,17 +1946,9 @@ Binning::execute()
   // verify reduction_var
   if(!has_field(*dataset, reduction_var) && !is_xyz(reduction_var))
   {
-    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
-    std::stringstream ss;
-    ss << "[";
-    for(size_t i = 0; i < names.size(); ++i)
-    {
-      ss << " " << names[i];
-    }
-    ss << "]";
     ASCENT_ERROR("Field: dataset does not contain field '"
                  << reduction_var << "'"
-                 << " known = " << ss.str());
+                 << " known = " << known_fields(*dataset));
   }
 
   // verify reduction_op
@@ -2052,9 +2033,6 @@ PaintBinning::execute()
   conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
 
-  conduit::Node *const remove =
-      graph().workspace().registry().fetch<Node>("remove");
-
   std::string name;
   if(!n_name->dtype().is_empty())
   {
@@ -2071,7 +2049,10 @@ PaintBinning::execute()
       painted_field_counter++;
     }
     name += "_" + std::to_string(painted_field_counter);
-    (*remove)["fields"].append() = name;
+
+    conduit::Node *const remove =
+        graph().workspace().registry().fetch<Node>("remove");
+    (*remove)["fields/" + name];
   }
   std::string topo;
   if(!n_topo->dtype().is_empty())
@@ -2133,9 +2114,6 @@ BinningMesh::execute()
   conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
 
-  conduit::Node *const remove =
-      graph().workspace().registry().fetch<Node>("remove");
-
   std::string name;
   if(!n_name->dtype().is_empty())
   {
@@ -2153,9 +2131,12 @@ BinningMesh::execute()
       binning_mesh_counter++;
     }
     name += "_" + std::to_string(binning_mesh_counter);
-    (*remove)["fields"].append() = name;
-    (*remove)["topologies"].append() = name + "_topo";
-    (*remove)["coordsets"].append() = name + "_coords";
+
+    conduit::Node *const remove =
+        graph().workspace().registry().fetch<Node>("remove");
+    (*remove)["fields/" + name];
+    (*remove)["topologies/" + name];
+    (*remove)["coordsets/" + name];
   }
 
   conduit::Node &dom0 = dataset->child(0);
@@ -2822,11 +2803,10 @@ JitFilter::execute()
           const std::string coords_name = n_topo["coordset"].as_string();
           const std::string topo_type = n_topo["type"].as_string();
 
-          const std::string kernel_type = topo_name + "=" + topo_type;
-          jitable.dom_info.child(i)["kernel_type"] = kernel_type;
-
           pack_topo(topo_name, dom, jitable.dom_info.child(i)["args"]);
 
+          const std::string kernel_type = topo_name + "=" + topo_type;
+          jitable.dom_info.child(i)["kernel_type"] = kernel_type;
           if(built_kernel_types.find(kernel_type) == built_kernel_types.end())
           {
             Kernel &kernel = jitable.kernels[kernel_type];
@@ -2850,7 +2830,8 @@ JitFilter::execute()
         if(type == "int" || type == "double")
         {
           // force everthing to a double
-          const std::string param_str = "const double " + input_fname + ",\n";
+          const std::string param_str =
+              "const " + type + " " + input_fname + ",\n";
           for(int i = 0; i < num_domains; ++i)
           {
             jitable.dom_info.child(i)["args/" + param_str] = (*inp)["value"];
@@ -2917,8 +2898,8 @@ JitFilter::execute()
               jitable.association = assoc_str;
             }
           }
-          default_kernel.inner_scope.insert("        const double " +
-                                            field_name + " = " + field_name +
+          default_kernel.inner_scope.insert("const double " + field_name +
+                                            " = " + field_name +
                                             "_ptr[item];\n");
           default_kernel.expr = field_name;
         }
@@ -2984,9 +2965,11 @@ JitFilter::execute()
           const std::string lhs_expr = lhs_kernel.expr;
           const std::string rhs_expr = rhs_kernel.expr;
           const std::string &op_str = params()["op_string"].as_string();
-          out_kernel.expr = "(" + lhs_expr + op_str + rhs_expr + ")";
+          out_kernel.expr =
+              "(" + lhs_expr + " " + op_str + " " + rhs_expr + ")";
         }
       }
+      // TODO combine these
       else if(func == "field_field_max")
       {
         // max of two fields or a field and a scalar
@@ -3009,6 +2992,20 @@ JitFilter::execute()
           out_kernel.fuse_kernel(*input_kernels[arg1_port]);
           const std::string arg1_expr = input_kernels[arg1_port]->expr;
           out_kernel.expr = "sin(" + arg1_expr + ")";
+        }
+      }
+      else if(func == "field_abs")
+      {
+        if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
+        {
+          const int arg1_port = inputs["arg1/port"].as_int32();
+          out_kernel.fuse_kernel(*input_kernels[arg1_port]);
+          const std::string arg1_expr = input_kernels[arg1_port]->expr;
+          out_kernel.expr = "abs(" + arg1_expr + ")";
+        }
+        else
+        {
+          // kernel type has already been generated
         }
       }
       else if(func == "expr_dot")
@@ -3041,13 +3038,17 @@ JitFilter::execute()
                   out_kernel.expr = topo_name + "_volume";
                 }
               }
-              else
+              else if(assoc.name() == "vertex")
               {
                 if(is_xyz(name) && available_axis(name, topo_dim, topo_name))
                 {
                   topo_code.vertex_xyz(out_kernel.inner_scope);
                   out_kernel.expr = topo_name + "_vertex_" + name;
                 }
+              }
+              else
+              {
+                ASCENT_ERROR("Topo has no attribute " << assoc.name());
               }
             }
           }
@@ -3121,10 +3122,20 @@ JitFilter::execute()
 
   if(execute)
   {
-    const std::string &field_name = params()["field_name"].as_string();
+    std::string field_name;
+    if(params().has_path("field_name"))
+    {
+      field_name = params()["field_name"].as_string();
+    }
+    else
+    {
+      field_name = filter_name;
+      conduit::Node *const remove =
+          graph().workspace().registry().fetch<Node>("remove");
+      (*remove)["fields/" + filter_name];
+    }
     out_jitable->execute(*dataset, field_name);
     Node *output = new conduit::Node();
-    // TODO come up with unique field name
     (*output)["value"] = field_name;
     (*output)["type"] = "field";
     set_output<conduit::Node>(output);

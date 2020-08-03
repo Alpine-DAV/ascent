@@ -147,12 +147,24 @@ ASTInteger::build_graph(flow::Workspace &w, bool verbose)
       w.registry().fetch<conduit::Node>("subexpr_cache");
   // create a unique name for each expression so we can reuse subexpressions
   std::stringstream ss;
-  ss << "integer"
-     << "_" << m_value;
-  const std::string name = ss.str();
-  if((*subexpr_cache).has_path(name))
+  ss << "integer_" << m_value;
+  const std::string verbose_name = ss.str();
+  if((*subexpr_cache).has_path(verbose_name))
   {
-    return (*subexpr_cache)[name];
+    return (*subexpr_cache)[verbose_name];
+  }
+
+  std::string name;
+  if(verbose)
+  {
+    name = verbose_name;
+  }
+  else
+  {
+    static int integer_counter = 0;
+    std::stringstream ss;
+    ss << "integer_" << integer_counter++;
+    name = ss.str();
   }
 
   conduit::Node params;
@@ -162,7 +174,7 @@ ASTInteger::build_graph(flow::Workspace &w, bool verbose)
   conduit::Node res;
   res["filter_name"] = name;
   res["type"] = "int";
-  (*subexpr_cache)[name] = res;
+  (*subexpr_cache)[verbose_name] = res;
   return res;
 }
 
@@ -179,12 +191,24 @@ ASTDouble::build_graph(flow::Workspace &w, bool verbose)
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
   std::stringstream ss;
-  ss << "double"
-     << "_" << m_value;
-  const std::string name = ss.str();
-  if((*subexpr_cache).has_path(name))
+  ss << "double_" << m_value;
+  const std::string verbose_name = ss.str();
+  if((*subexpr_cache).has_path(verbose_name))
   {
-    return (*subexpr_cache)[name];
+    return (*subexpr_cache)[verbose_name];
+  }
+
+  std::string name;
+  if(verbose)
+  {
+    name = verbose_name;
+  }
+  else
+  {
+    static int double_counter = 0;
+    std::stringstream ss;
+    ss << "double_" << double_counter++;
+    name = ss.str();
   }
 
   conduit::Node params;
@@ -195,7 +219,7 @@ ASTDouble::build_graph(flow::Workspace &w, bool verbose)
   conduit::Node res;
   res["filter_name"] = name;
   res["type"] = "double";
-  (*subexpr_cache)[name] = res;
+  (*subexpr_cache)[verbose_name] = res;
   return res;
 }
 
@@ -212,8 +236,7 @@ ASTIdentifier::build_graph(flow::Workspace &w, bool verbose)
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
   std::stringstream ss;
-  ss << "ident"
-     << "_" << m_name;
+  ss << "ident_" << m_name;
   const std::string name = ss.str();
   if((*subexpr_cache).has_path(name))
   {
@@ -730,8 +753,7 @@ ASTIfExpr::build_graph(flow::Workspace &w, bool verbose)
   if(res_type == "jitable")
   {
     std::stringstream ss;
-    ss << "jit_if"
-       << "_" << n_condition["filter_name"].as_string() << "_then_"
+    ss << "jit_if_" << n_condition["filter_name"].as_string() << "_then_"
        << n_if["filter_name"].as_string() << "_else_"
        << n_else["filter_name"].as_string();
     verbose_name = ss.str();
@@ -774,8 +796,7 @@ ASTIfExpr::build_graph(flow::Workspace &w, bool verbose)
   else
   {
     std::stringstream ss;
-    ss << "if"
-       << "_" << n_condition["filter_name"].as_string() << "_then_"
+    ss << "if_" << n_condition["filter_name"].as_string() << "_then_"
        << n_if["filter_name"].as_string() << "_else_"
        << n_else["filter_name"].as_string();
     verbose_name = ss.str();
@@ -1027,8 +1048,7 @@ ASTString::build_graph(flow::Workspace &w, bool verbose)
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
   std::stringstream ss;
-  ss << "string"
-     << "_" << stripped;
+  ss << "string_" << stripped;
   const std::string name = ss.str();
   if((*subexpr_cache).has_path(name))
   {
@@ -1075,8 +1095,7 @@ ASTBoolean::build_graph(flow::Workspace &w, bool verbose)
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
   std::stringstream ss;
-  ss << "bool"
-     << "_" << value;
+  ss << "bool_" << value;
   const std::string name = ss.str();
   if((*subexpr_cache).has_path(name))
   {
@@ -1116,8 +1135,7 @@ ASTArrayAccess::build_graph(flow::Workspace &w, bool verbose)
   conduit::Node *subexpr_cache =
       w.registry().fetch<conduit::Node>("subexpr_cache");
   std::stringstream ss;
-  ss << "array_access"
-     << "_" << n_array["filter_name"].as_string() << "["
+  ss << "array_access_" << n_array["filter_name"].as_string() << "["
      << n_index["filter_name"].as_string() << "]";
   const std::string name = ss.str();
   if((*subexpr_cache).has_path(name))
@@ -1201,8 +1219,7 @@ ASTDotAccess::build_graph(flow::Workspace &w, bool verbose)
   if(o_table->has_path(name + "/jitable") || res_type == "jitable")
   {
     std::stringstream ss;
-    ss << "jit_dot"
-       << "_(" << input_obj["filter_name"].as_string() << ")__" << name;
+    ss << "jit_dot_(" << input_obj["filter_name"].as_string() << ")__" << name;
     verbose_name = ss.str();
     if((*subexpr_cache).has_path(verbose_name))
     {
@@ -1242,8 +1259,7 @@ ASTDotAccess::build_graph(flow::Workspace &w, bool verbose)
   else
   {
     std::stringstream ss;
-    ss << "dot"
-       << "_(" << input_obj["filter_name"].as_string() << ")__" << name;
+    ss << "dot_(" << input_obj["filter_name"].as_string() << ")__" << name;
     verbose_name = ss.str();
     if((*subexpr_cache).has_path(verbose_name))
     {
