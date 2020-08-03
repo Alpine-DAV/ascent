@@ -830,7 +830,8 @@ AscentRuntime::ConvertTriggerToFlow(const conduit::Node &trigger,
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
-                                  const std::string query_name)
+                                  const std::string query_name,
+                                  const std::string prev_name)
 {
   std::string filter_name;
 
@@ -846,13 +847,29 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
     pipeline = query["pipeline"].as_string();
   }
 
+
   w.graph().add_filter("basic_query",
                        query_name,
                        params);
 
+
+  // connection port to enforce order of execution
+  std::string conn_port;
+  if(prev_name == "")
+  {
+    conn_port = "source";
+  }
+  else
+  {
+    conn_port = prev_name;
+  }
+
+  w.graph().connect(conn_port,
+                    query_name,
+                    "dummy");
+
   // this is the blueprint mesh
   m_connections[query_name] = pipeline;
-
 }
 //-----------------------------------------------------------------------------
 void
@@ -983,10 +1000,12 @@ void
 AscentRuntime::CreateQueries(const conduit::Node &queries)
 {
   std::vector<std::string> names = queries.child_names();
+  std::string prev_name = "";
   for(int i = 0; i < queries.number_of_children(); ++i)
   {
     conduit::Node query = queries.child(i);
-    ConvertQueryToFlow(query, names[i]);
+    ConvertQueryToFlow(query, names[i], prev_name);
+    prev_name = names[i];
   }
 }
 
