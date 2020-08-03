@@ -55,9 +55,9 @@
 #include "expressions/ascent_expressions_parser.hpp"
 #include "expressions/ascent_expressions_tokens.hpp"
 
-#include <iomanip>
-#include <ctime>
-#include <chrono>
+#include <stdlib.h> 
+#include <stdio.h> 
+#include <time.h>  
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -106,7 +106,7 @@ void Cache::last_known_time(double time)
   m_data["last_known_time"] = time;
 }
 
-void Cache::filter_time(double time)
+void Cache::filter_time(double ftime)
 {
   const int num_entries = m_data.number_of_children();
   int removal_count = 0;
@@ -131,7 +131,7 @@ void Cache::filter_time(double time)
         entry.remove(last);
         removal_count++;
       }
-      else if(entry.child(last)["time"].to_float64() >= time)
+      else if(entry.child(last)["time"].to_float64() >= ftime)
       {
         entry.remove(last);
         removal_count++;
@@ -161,11 +161,14 @@ void Cache::filter_time(double time)
     clean = !removed;
   }
 
-  using std::chrono::system_clock;
-  std::time_t tt = system_clock::to_time_t (system_clock::now());
-  struct std::tm * ptm = std::localtime(&tt);
+  time_t t ; 
+  struct tm *tmp ; 
+  char curr_time[100]; 
+  time( &t ); 
+
+  strftime(curr_time, sizeof(curr_time), "%x - %I:%M%p", tmp);
   std::stringstream msg;
-  msg<<"Time travel detected at "<<std::put_time(ptm,"%c") << '\n';
+  msg<<"Time travel detected at "<< curr_time << '\n';
   msg<<"Removed all expression cache entries ("<<removal_count<<")"
      <<" after simulation time "<<time<<".";
   m_data["ascent_cache_info"].append() = msg.str();
