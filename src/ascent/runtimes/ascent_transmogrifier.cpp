@@ -99,8 +99,7 @@ conduit::Node* Transmogrifier::low_order(conduit::Node &dataset)
   MFEMDataAdapter::Linearize(domains, *lo_dset, m_refinement_level);
   delete domains;
 
-      // add a second registry entry for the output so it can be zero copied.
-  lo_dset->child(0)["state"].print();
+  // add a second registry entry for the output so it can be zero copied.
   return lo_dset;
 #else
   ASCENT_ERROR("Unable to convert high order mesh when MFEM is not enabled");
