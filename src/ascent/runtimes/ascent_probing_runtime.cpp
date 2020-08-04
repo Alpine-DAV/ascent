@@ -1453,8 +1453,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 const index_t msg_size_probing = calc_render_msg_size(render_cfg.probing_count, 0.0);
                 // const index_t msg_size_probing = compact_probing_renders.total_bytes_compact();
                 const int overhead = MPI_BSEND_OVERHEAD * (batch.runs + 2); // 1 probing batch
-                MPI_Buffer_attach(malloc(msg_size_render + msg_size_probing + my_data_size + overhead), 
-                                         msg_size_render + msg_size_probing + my_data_size + overhead);
+                MPI_Buffer_attach(malloc(msg_size_render + msg_size_probing + overhead), //my_data_size + overhead), 
+                                         msg_size_render + msg_size_probing + overhead); //my_data_size + overhead);
                 // std::cout << "-- buffer size: " << (msg_size + msg_size_probing + overhead) << std::endl;
             }
 
