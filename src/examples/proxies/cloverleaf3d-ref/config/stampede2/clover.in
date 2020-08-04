@@ -1,10 +1,10 @@
 *clover
  state 1 density=0.1 energy=0.0
- state 2 density=2.0 energy=15.0 geometry=cuboid xmin=0.1 xmax=0.5 ymin=0.3 ymax=0.7 zmin=0.4 zmax=0.9
- state 3 density=1.7 energy=12.0 geometry=cuboid xmin=9.5 xmax=9.9 ymin=9.3 ymax=9.7 zmin=9.6 zmax=9.9
- x_cells=192
- y_cells=192
- z_cells=192
+ state 2 density=5.0 energy=30.0 geometry=cuboid xmin=0.1 xmax=0.5 ymin=0.3 ymax=0.7 zmin=0.4 zmax=0.9
+ state 3 density=7.7 energy=50.0 geometry=cuboid xmin=8.5 xmax=9.9 ymin=9.0 ymax=9.9 zmin=9.0 zmax=9.9
+ x_cells=200
+ y_cells=200
+ z_cells=200
  xmin=0.0
  ymin=0.0
  zmin=0.0

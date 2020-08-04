@@ -374,7 +374,7 @@ public:
 
       if (!is_inline)
       {
-        auto start = std::chrono::system_clock::now();
+        // auto start = std::chrono::system_clock::now();
 
         vtkh::Renderer *r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
 
@@ -390,13 +390,13 @@ public:
         }
         m_depths.push_back(std::move(r->GetDepths()));
 
-        t_img_data += std::chrono::system_clock::now() - start;
+        // t_img_data += std::chrono::system_clock::now() - start;
       }
 
       // m_registry->consume(oss.str());
     }
     
-    std::cout << "** move data " << t_img_data.count() << std::endl;
+    // std::cout << "** move data " << t_img_data.count() << std::endl;
 
   }
 

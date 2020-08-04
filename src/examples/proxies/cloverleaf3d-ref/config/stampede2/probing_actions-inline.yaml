@@ -3,7 +3,7 @@
   probing:
     factor: 1.0
     node_split: 0.8
-    batch_size: 10
+    batch_size: 40
     insitu_type: "inline"
   scenes:
     s1:
@@ -11,8 +11,8 @@
         p1:
           type: "volume"
           field: "energy"
-          min_value: 0.2
-          max_value: 1.0
+          min_value: 0.1
+          max_value: 15.0
           color_table: 
             name: "rainbow desaturated"
             control_points: 
@@ -20,14 +20,6 @@
                 type: "alpha"
                 position: 0.0
                 alpha: 0.0
-              - 
-                type: "alpha"
-                position: 0.3
-                alpha: 0.0
-              - 
-                type: "alpha"
-                position: 0.8
-                alpha: 1.0
               - 
                 type: "alpha"
                 position: 1.0

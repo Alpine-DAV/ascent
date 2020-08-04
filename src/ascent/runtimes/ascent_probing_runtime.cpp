@@ -323,7 +323,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
 {
     // empirically determined render factor for sim nodes
     // TODO: investigate where this discrepancy comes from
-    const float sim_factor = 1.2;       // 1.26 for d8, 1.1657 for n10, 1.2077 for n33
+    const float sim_factor = 1.0;
     // render factor for vis nodes
     const float vis_factor = 1.0;       // 0.9317 for n33, 1.0069 for n10
 
@@ -1396,7 +1396,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     ascent_renders[i].open(ascent_opts);
                     ascent_renders[i].publish(dataset);
                     ascent_renders[i].execute(blank_actions);
-                    print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
+                    // print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
 
                     render_chunks_vis[i] = std::make_shared<Node>();
                     // ascent_main_runtime : out.set_external(m_info);
@@ -1542,7 +1542,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
                 t_end = std::chrono::system_clock::now();
                 sum_copy += t_end - t_render;
-                print_time(t_render, "ascent info sim ", mpi_props.rank, 1.0 / (end - begin));
+                // print_time(t_render, "ascent info sim ", mpi_props.rank, 1.0 / (end - begin));
             }
             
             auto t_render = std::chrono::system_clock::now();
