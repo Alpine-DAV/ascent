@@ -319,13 +319,12 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
                                  const std::vector<float> &vis_estimates,
                                  const std::vector<int> &node_map,
                                  const RenderConfig render_cfg,
-                                 const MPI_Properties mpi_props)
+                                 const MPI_Properties mpi_props,
+                                 const float skipped_renders)
 {
-    // empirically determined render factor for sim nodes
-    // TODO: investigate where this discrepancy comes from
-    const float sim_factor = 1.0;
-    // render factor for vis nodes
-    const float vis_factor = 1.0;       // 0.9317 for n33, 1.0069 for n10
+    // optional render factors for sim and/or vis nodes (empirically determined)
+    const float sim_factor = 1.24;
+    const float vis_factor = 0.97;       // 0.9317 for n33, 1.0069 for n10
 
     assert(sim_estimate.size() == vis_estimates.size());
     
@@ -334,7 +333,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         t_inline[i] = vis_estimates[i] * sim_factor * render_cfg.non_probing_count;
 
     // TODO: add smart way to estimate compositing cost
-    const float t_compositing = 0.32f * render_cfg.max_count;  // assume flat cost per image
+    const float t_compositing = (skipped_renders*0.01f + (1.f-skipped_renders)*0.3f) * render_cfg.max_count;  // assume flat cost per image
     if (mpi_props.rank == 0)
         std::cout << "~~compositing estimate: " << t_compositing << std::endl;
 
@@ -863,7 +862,8 @@ void image_consumer(std::mutex &mu, std::condition_variable &cond,
 /**
  *  Composite render chunks from probing, simulation nodes, and visualization nodes.
  */
-void hybrid_compositing(const vec_node_uptr &render_chunks_probe, vec_vec_node_uptr &render_chunks_sim, 
+void hybrid_compositing(const vec_node_uptr &render_chunks_probe, 
+                        vec_vec_node_uptr &render_chunks_sim, 
                         const vec_node_sptr &render_chunks_vis, 
                         const std::vector<int> &g_render_counts, const std::vector<int> &src_ranks,
                         const std::vector<int> &depth_id_order, const std::map<int, int> &recv_counts,
@@ -1112,6 +1112,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
     int my_vis_rank = -1;
 
     float my_avg_probing_time = 0.f;
+    int skipped_render = 0;
     float my_sim_estimate = data["state/sim_time"].to_float();
     std::cout << mpi_props.rank << " ~ sim time estimate: " << my_sim_estimate << std::endl;
 
@@ -1153,6 +1154,10 @@ void hybrid_render(const MPI_Properties &mpi_props,
         }
         std::cout << mpi_props.rank << " ~ vis time estimate (per render): " << my_avg_probing_time 
                   << std::endl;
+
+        float my_depth = render_chunks_probing["depths"].child(0).to_float();
+        if (my_depth <= -1.f)
+            skipped_render = 1;
     }
     log_global_time("end packData", mpi_props.rank);
 
@@ -1168,6 +1173,11 @@ void hybrid_render(const MPI_Properties &mpi_props,
     std::vector<float> g_vis_estimates(mpi_props.size, 0.f);
     MPI_Allgather(&my_avg_probing_time, 1, MPI_FLOAT, 
                   g_vis_estimates.data(), 1, MPI_FLOAT, mpi_props.comm_world);
+    // determine how many nodes skipped rendering due to empty block
+    std::vector<int> g_skipped(mpi_props.size, 0);
+    MPI_Allgather(&skipped_render, 1, MPI_INT, g_skipped.data(), 1, MPI_INT, mpi_props.comm_world);
+    const float skipped_renders = std::accumulate(g_skipped.begin(), g_skipped.end(), 0)
+                                    / float(mpi_props.sim_node_count);
 
     // NOTE: use maximum sim time for all nodes
     const float max_sim_time = *std::max_element(g_sim_estimates.begin(), g_sim_estimates.end());
@@ -1189,7 +1199,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
     // distribute rendering load across sim and vis loads
     const std::vector<int> g_render_counts = load_assignment(g_sim_estimates, g_vis_estimates,
-                                                             node_map, render_cfg, mpi_props);
+                                                             node_map, render_cfg, mpi_props,
+                                                             skipped_renders);
 
     // gather all data set sizes for async recv
     std::vector<int> g_data_sizes(mpi_props.size, 0);
