@@ -276,13 +276,25 @@ std::vector<vtkm::Id> VTKHCollection::domain_ids() const
 int
 VTKHCollection::cycle() const
 {
-  int cycle = 0;
-  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
-  {
-    cycle = it->second.GetCycle();
-    break;
-  }
-  return cycle;
+  return m_cycle;
+}
+
+void
+VTKHCollection::cycle(int cycle)
+{
+  m_cycle = cycle;
+}
+
+double
+VTKHCollection::time() const
+{
+  return m_time;
+}
+
+void
+VTKHCollection::time(double time)
+{
+  m_time = time;
 }
 
 vtkh::DataSet&
@@ -299,7 +311,27 @@ std::vector<std::string> VTKHCollection::topology_names() const
   std::vector<std::string> names;
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
-   names.push_back(it->first);
+    names.push_back(it->first);
+  }
+  return names;
+}
+
+std::vector<std::string> VTKHCollection::field_names() const
+{
+  // just grab the first domain of every topo and repo
+  // the known fields
+  std::vector<std::string> names;
+  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  {
+    vtkh::DataSet domains = it->second;
+    if(domains.GetNumberOfDomains() > 0)
+    {
+      vtkm::cont::DataSet dom = domains.GetDomain(0);
+      for(int i = 0; i < dom.GetNumberOfFields(); ++i)
+      {
+        names.push_back(dom.GetField(i).GetName());
+      }
+    }
   }
   return names;
 }
@@ -363,6 +395,12 @@ std::string VTKHCollection::summary() const
   return msg.str();
 }
 
+VTKHCollection::VTKHCollection()
+  : m_cycle(0),
+    m_time(0)
+{
+
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

@@ -101,7 +101,7 @@ conduit::Node field_inf_count(const conduit::Node &dataset,
                               const std::string &field_name);
 
 conduit::Node field_histogram(const conduit::Node &dataset,
-                              const std::string &field_name,
+                              const std::string &field,
                               const double &min_val,
                               const double &max_val,
                               const int &num_bins);
@@ -118,7 +118,8 @@ conduit::Node binning(const conduit::Node &dataset,
                       conduit::Node &bin_axes,
                       const std::string &reduction_var,
                       const std::string &reduction_op,
-                      const double empty_bin_val);
+                      const double empty_bin_val,
+                      const std::string &component);
 
 void paint_binning(const conduit::Node &binning,
                    conduit::Node &dataset,
@@ -139,7 +140,6 @@ bool is_scalar_field(const conduit::Node &dataset,
 // field exists on at least one rank. Does not check that
 // all ranks with that topology have this field(maybe it should).
 bool has_field(const conduit::Node &dataset, const std::string &field_name);
-bool is_xyz(const std::string &axis_name);
 
 // topology exists on at least one rank
 bool has_topology(const conduit::Node &dataset, const std::string &topo_name);
@@ -147,6 +147,15 @@ bool has_topology(const conduit::Node &dataset, const std::string &topo_name);
 std::string known_topos(const conduit::Node &dataset);
 
 std::string known_fields(const conduit::Node &dataset);
+
+bool has_component(const conduit::Node &dataset,
+                   const std::string &field_name,
+                   const std::string &component);
+
+std::string possible_components(const conduit::Node &dataset,
+                                const std::string &field_name);
+
+bool is_xyz(const std::string &axis_name);
 
 conduit::Node quantile(const conduit::Node &cdf,
                        const double val,
@@ -189,8 +198,7 @@ std::string field_topology(const conduit::Node &dataset,
 // finds the associate and topology of a vector of fields and ensures they are
 // the same.
 conduit::Node global_topo_and_assoc(const conduit::Node &dataset,
-                                    const std::vector<std::string> field_names,
-                                    bool required = true);
+                                    const std::vector<std::string> field_names);
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

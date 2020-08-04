@@ -3,13 +3,7 @@
 #include "flow_workspace.hpp"
 #include <iostream>
 #include <vector>
-namespace detail
-{
-void null_ports(flow::Workspace &w,
-                const std::string filter_name,
-                const int start_port,
-                const int num_ports);
-} // namespace detail
+
 class ASTNode
 {
 public:

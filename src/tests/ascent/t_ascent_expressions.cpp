@@ -51,6 +51,7 @@
 #include "gtest/gtest.h"
 
 #include <ascent_expression_eval.hpp>
+#include <expressions/ascent_blueprint_architect.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -247,6 +248,11 @@ TEST(ascent_expressions, functional_correctness)
   //
   Node data;
 
+  data["state/time"] = 1.0;
+  // create the coordinate set
+  data["coordsets/coords/type"] = "uniform";
+  data["coordsets/coords/dims/i"] = 5;
+  data["coordsets/coords/dims/j"] = 5;
   // create the coordinate set
   data["coordsets/coords/type"] = "uniform";
   data["coordsets/coords/dims/i"] = 5;
@@ -303,6 +309,7 @@ TEST(ascent_expressions, functional_correctness)
   }
 
   data["state/cycle"] = 100;
+  data["state/time"] = 2.1;
 
   // make sure we conform:
   Node verify_info;
@@ -669,6 +676,7 @@ TEST(ascent_binning, binning_basic_meshes)
 
   // ascent normally adds this but we are doing an end around
   data["state/cycle"] = 100;
+  data["state/time"] = 1.3;
   data["state/domain_id"] = 0;
   Node multi_dom;
   blueprint::mesh::to_multi_domain(data, multi_dom);
@@ -706,10 +714,17 @@ TEST(ascent_binning, binning_basic_meshes)
   EXPECT_EQ(res["attrs/value/value"].to_json(),
             "[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]");
 
-  expr = "binning('x', 'pdf', [axis('field')])";
+  expr = "binning('', 'pdf', [axis('field', bins=[0,1,2,3,4,5,6,7,8.1])])";
   res = eval.evaluate(expr);
   EXPECT_EQ(res["attrs/value/value"].to_json(),
             "[0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125]");
+
+  expr = "binning('field', 'pdf', [axis('x', num_bins=2), axis('y', "
+         "num_bins=2), axis('z', num_bins=2)])";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["attrs/value/value"].to_json(),
+            "[0.0, 0.0357142857142857, 0.0714285714285714, 0.107142857142857, "
+            "0.142857142857143, 0.178571428571429, 0.214285714285714, 0.25]");
 }
 
 //-----------------------------------------------------------------------------
@@ -764,7 +779,6 @@ output_pseudocolor(const conduit::Node &mesh,
   scenes["s1/plots/p1/type"] = "pseudocolor";
   scenes["s1/plots/p1/field"] = field;
   scenes["s1/renders/r1/image_prefix"] = output_file;
-  scenes["s1/renders/r1/render_bg"] = "false";
 
   conduit::Node actions;
   conduit::Node &add_plots = actions.append();
@@ -827,12 +841,12 @@ TEST(ascent_binning, braid_binning)
   std::string output_file =
       conduit::utils::join_file_path(output_path, "tout_binning_braid_xysum");
   output_pseudocolor(multi_dom, "braid_sum", output_file);
-  EXPECT_TRUE(check_test_image(output_file, 0.01));
+  EXPECT_TRUE(check_test_image(output_file, 0.1));
 
   output_file = conduit::utils::join_file_path(
       output_path, "tout_binning_painted_braid_xystd");
   output_pseudocolor(multi_dom, "painted_braid_std", output_file);
-  EXPECT_TRUE(check_test_image(output_file, 0.01));
+  EXPECT_TRUE(check_test_image(output_file, 0.1));
 }
 
 TEST(ascent_binning, multi_dom_binning)
@@ -858,6 +872,7 @@ TEST(ascent_binning, multi_dom_binning)
   for(int i = 0; i < multi_dom.number_of_children(); ++i)
   {
     multi_dom.child(i)["state/cycle"] = 100;
+    multi_dom.child(i)["state/time"] = 1.2;
     multi_dom.child(i)["state/domain_id"] = 0;
   }
 
@@ -918,6 +933,18 @@ TEST(ascent_binning, binning_errors)
   std::string expr;
 
   bool threw = false;
+  try
+  {
+    expr = "binning('', 'avg', [axis('x'), axis('y')])";
+    res = eval.evaluate(expr);
+  }
+  catch(...)
+  {
+    threw = true;
+  }
+  EXPECT_EQ(threw, true);
+
+  threw = false;
   try
   {
     expr = "binning('braid', 'sum', [axis('x'), axis('vel')])";

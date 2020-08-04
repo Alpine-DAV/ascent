@@ -149,6 +149,7 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
     runtimes/flow_filters/ascent_runtime_trigger_filters.hpp
     runtimes/flow_filters/ascent_runtime_query_filters.hpp
+    runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
     runtimes/flow_filters/ascent_runtime_utils.hpp
     # utils
     utils/ascent_actions_utils.hpp
@@ -171,9 +172,9 @@ if(VTKM_FOUND)
         runtimes/ascent_vtkh_data_adapter.hpp
         runtimes/ascent_vtkh_collection.hpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
+        runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
         runtimes/flow_filters/ascent_runtime_rendering_filters.hpp
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
-
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
         runtimes/ascent_main_runtime.hpp)
 
@@ -182,6 +183,7 @@ if(VTKM_FOUND)
         runtimes/ascent_vtkh_data_adapter.cpp
         runtimes/ascent_vtkh_collection.cpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
+        runtimes/flow_filters/ascent_runtime_vtkh_utils.cpp
         runtimes/flow_filters/ascent_runtime_rendering_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
@@ -283,6 +285,7 @@ if(DRAY_FOUND AND VTKM_FOUND)
     list(APPEND ascent_thirdparty_libs dray)
 endif()
 
+
 ##########################################
 # Build a serial version of ascent
 ##########################################
@@ -360,18 +363,20 @@ if(MPI_FOUND)
 
     if (ENABLE_BABELFLOW)
 	    if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-		add_compile_definitions("BABELFLOW_DEBUG")
+		    add_compile_definitions("BABELFLOW_DEBUG")
 	    endif()
 
-	   # TODO get everything into one cpp and one hpp files
-	    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_filters.cpp)
-	    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
+      list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp) 
 
-	    list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
-	    list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
-	    add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
-            include_directories(${BABELFLOW_INCLUDE_DIRS})
-            include_directories(${PMT_INCLUDE_DIRS})
+      list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
+      list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
+      add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
+      include_directories(${BABELFLOW_INCLUDE_DIRS})
+      include_directories(${PMT_INCLUDE_DIRS})
     endif ()
 
     # hola mpi support is only in par (mpi ver)

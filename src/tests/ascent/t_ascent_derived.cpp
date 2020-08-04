@@ -159,9 +159,9 @@ TEST(ascent_expressions, derived_expressions)
   conduit::Node actions;
 
   conduit::Node queries;
-  expr =
-      "binning_mesh(binning('temperature', 'sum', [axis('x', num_bins=50), "
-      "axis('y', num_bins=50), axis('z', num_bins=50)]), name='temp_binning')";
+  expr = "binning_mesh(binning('temperature', 'sum', [axis('x', num_bins=50), "
+         "axis('y', num_bins=50), axis('z', num_bins=50)], component='c0'), "
+         "name='temp_binning')";
   queries["q1/params/expression"] = expr;
   queries["q1/params/name"] = "temp_binning";
 

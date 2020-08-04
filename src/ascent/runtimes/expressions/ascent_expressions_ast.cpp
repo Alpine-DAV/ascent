@@ -855,7 +855,7 @@ ASTBinaryOp::access()
   case TOR: op_str = "or"; break;
   case TAND: op_str = "and"; break;
   case TNOT: op_str = "not"; break;
-  default: std::cout << "unknown binary op " << m_op << "\n";
+  default: ASCENT_ERROR("unknown binary op " << m_op);
   }
 
   m_rhs->access();
@@ -864,7 +864,7 @@ ASTBinaryOp::access()
 }
 
 conduit::Node
-ASTBinaryOp::build_graph(flow::Workspace &w, bool verbose)
+ASTBinaryOp::build_graph(flow::Workspace &w, const bool verbose)
 {
   // std::cout << "Creating binary operation " << m_op << endl;
   std::string op_str;
@@ -1207,8 +1207,25 @@ ASTDotAccess::build_graph(flow::Workspace &w, bool verbose)
   std::string path = "attrs/" + name + "/type";
   if(!o_table_obj.has_path(path))
   {
-    o_table_obj.print();
-    ASCENT_ERROR("Attribute " << name << " of " << obj_type << " not found");
+    std::stringstream ss;
+    if(o_table_obj.has_path("attrs"))
+    {
+      std::string attr_yaml = o_table_obj["attrs"].to_yaml();
+      if(attr_yaml == "")
+      {
+        ss << " No know attribtues.";
+      }
+      else
+      {
+        ss << " Known attributes: " << attr_yaml;
+      }
+    }
+    else
+    {
+      ss << " No known attributes.";
+    }
+    ASCENT_ERROR("Attribute " << name << " of " << obj_type << " not found."
+                              << ss.str());
   }
   std::string res_type = o_table_obj[path].as_string();
 

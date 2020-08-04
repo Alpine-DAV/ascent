@@ -229,6 +229,7 @@ int main (int argc, char *argv[])
     ascent.publish(replay_data);
     ascent.execute(actions);
   }
+
   ascent.close();
 
 #ifdef REPLAY_MPI

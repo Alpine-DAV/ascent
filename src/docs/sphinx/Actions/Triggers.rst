@@ -73,7 +73,6 @@ A trigger requires a trigger condition and a actions file:
 
 .. code-block:: yaml
 
-   actions:
      -
        action: "add_triggers"
        triggers:
@@ -97,7 +96,6 @@ The following code example shows how queries and triggers can be used for debugg
 
 .. code-block:: yaml
 
-   actions:
      -
        action: "add_queries"
        queries:
@@ -128,13 +126,12 @@ entropy that could represent a simulation event that the user wants act on:
 
 .. code-block:: yaml
 
-   actions:
      -
        action: "add_queries"
        queries:
          q1:
            params:
-             expression: "entropy(histogram(field('pressure'))"
+             expression: "entropy(histogram(field('pressure')))"
              name: "entropy"
      -
        action: "add_triggers"

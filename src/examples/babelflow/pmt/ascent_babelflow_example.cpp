@@ -71,7 +71,6 @@ int main(int argc, char **argv)
   }
   dim =  block_decomp[0]*block_decomp[1]*block_decomp[2];
 
-
   auto err = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
   assert(err == MPI_SUCCESS);
 
@@ -114,11 +113,11 @@ int main(int argc, char **argv)
   // set the gloabl data
   vector<FunctionType> global_data(data_size[0]*data_size[1]*data_size[2], 0);
   {
-  ifstream rf(dataset, ios::out | ios::binary);
+    ifstream rf(dataset, ios::out | ios::binary);
     if(!rf) {
       cout << "Cannot open file!" << endl;
-    return 1;
-  }
+      return 1;
+    }
 
     for(int i = 0; i < data_size[0]*data_size[1]*data_size[2] ; i++)
       rf.read( (char *)&global_data[i], sizeof(FunctionType));
@@ -203,8 +202,7 @@ int main(int argc, char **argv)
   
   // build pipeline Node for the filter
   Node pipelines;
-  pipelines["pl1/f1/type"] = "babelflow";
-  pipelines["pl1/f1/params/task"] = "pmt";
+  pipelines["pl1/f1/type"] = "bflow_pmt";
   pipelines["pl1/f1/params/field"] = "braids";
   pipelines["pl1/f1/params/fanin"] = int64_t(valence);
   pipelines["pl1/f1/params/threshold"] = threshold_;
@@ -249,24 +247,74 @@ int main(int argc, char **argv)
   Node &add_pipelines = action.append();
   add_pipelines["action"] = "add_pipelines";
   add_pipelines["pipelines"] = pipelines;
+  
+  double color[3] = {0.0, 0.0, 1.0};
+  conduit::Node control_points;
+  
+  conduit::Node &point1 = control_points.append();
+  point1["type"] = "rgb";
+  point1["position"] = 0.;
+  point1["color"].set_float64_ptr(color, 3);
 
+  conduit::Node &point2 = control_points.append();
+  point2["type"] = "rgb";
+  point2["position"] = 0.5;
+  color[0] = 1.0;
+  color[1] = 0.5;
+  color[2] = 0.25;
+  point2["color"].set_float64_ptr(color, 3);
+
+  conduit::Node &point3 = control_points.append();
+  point3["type"] = "rgb";
+  point3["position"] = 1.0;
+  color[0] = 1.0;
+  color[1] = 0.0;
+  color[2] = 1.0;
+  point3["color"].set_float64_ptr(color, 3);
+
+  conduit::Node &point4 = control_points.append();
+  point4["type"] = "alpha";
+  point4["position"] = 0.0;
+  point4["alpha"] = 1.;
+
+  conduit::Node &point5 = control_points.append();
+  point5["type"] = "alpha";
+  point5["position"] = 0.2;
+  point5["alpha"] = 0.;
+  
+  conduit::Node &point6 = control_points.append();
+  point6["type"] = "alpha";
+  point6["position"] = 1.0;
+  point6["alpha"] = 0.;
+  
   Node& add_act2 = action.append();
   add_act2["action"] = "add_scenes";
   Node& scenes = add_act2["scenes"];
 
+  // Do a volume rendering of the segmentation field
+  scenes["s1/plots/p1/type"]  = "volume";
+  scenes["s1/plots/p1/field"] = "segment";
+  scenes["s1/plots/p1/color_table/control_points"] = control_points;
+  
+  scenes["s1/renders/r1/image_width"]  = 512;
+  scenes["s1/renders/r1/image_height"] = 512;
+  scenes["s1/renders/r1/image_name"]   = "segmentation";
+  scenes["s1/renders/r1/camera/azimuth"] = 30.0;
+  scenes["s1/renders/r1/camera/elevation"] = 20.0;
+  
   // add a scene (s1) with one pseudocolor plot (p1) that
   // will render the result of our pipeline (pl1)
-  scenes["s1/plots/p1/type"] = "pseudocolor";
-  scenes["s1/plots/p1/pipeline"] = "pl1";
-  scenes["s1/plots/p1/field"] = "braids";
-  scenes["s1/image_name"] = "dataset";
+  //scenes["s1/plots/p1/type"] = "pseudocolor";
+  //scenes["s1/plots/p1/pipeline"] = "pl1";
+  //scenes["s1/plots/p1/field"] = "braids";
+  //scenes["s1/image_name"] = "dataset";
 
   // render segmentation
-  scenes["s2/plots/p1/type"] = "pseudocolor";
-  scenes["s1/plots/p1/pipeline"] = "pl1";
-  scenes["s2/plots/p1/field"] = "segment";
-  scenes["s2/plots/p1/color_table/name"] = "Jet";
-  scenes["s2/image_name"] = "segmentation";
+  //scenes["s2/plots/p1/type"] = "pseudocolor";
+  //scenes["s1/plots/p1/pipeline"] = "pl1";
+  //scenes["s2/plots/p1/field"] = "segment";
+  //scenes["s2/plots/p1/color_table/name"] = "Jet";
+  //scenes["s2/image_name"] = "segmentation";
 
   // print our full actions tree
   std::cout << action.to_yaml() << std::endl;
