@@ -1150,14 +1150,20 @@ void hybrid_render(const MPI_Properties &mpi_props,
         }
         else // use whole probing time including overhead
         {
-            my_avg_probing_time = total_probing_time / render_cfg.probing_count;
+            my_avg_probing_time = total_probing_time;
+            if (render_cfg.probing_count)
+                my_avg_probing_time /= render_cfg.probing_count;
         }
         std::cout << mpi_props.rank << " ~ vis time estimate (per render): " << my_avg_probing_time 
                   << std::endl;
 
-        float my_depth = render_chunks_probing["depths"].child(0).to_float();
-        if (my_depth <= -1.f)
-            skipped_render = 1;
+        if (render_cfg.insitu_type != "intransit")
+        {
+            // TODO: this is ugly 
+            float my_depth = render_chunks_probing["depths"].child(0).to_float();
+            if (my_depth <= -1.f)
+                skipped_render = 1;
+        }
     }
     log_global_time("end packData", mpi_props.rank);
 
@@ -1330,19 +1336,16 @@ void hybrid_render(const MPI_Properties &mpi_props,
             // std::cout << " ~~~ vis node " << mpi_props.rank << " receiving " << batches[i].runs
             //           << " render chunks from " << src_ranks[i] << std::endl;
             // receive probing render chunks
-            if (render_cfg.insitu_type != "intransit")
-            {
-                int mpi_error = MPI_Irecv(render_chunks_probe[i]->data_ptr(),
-                                          render_chunks_probe[i]->total_bytes_compact(),
-                                          MPI_BYTE,
-                                          src_ranks[i],
-                                          tag_probing,
-                                          mpi_props.comm_world,
-                                          &requests_probing[i]
-                                          );
-                if (mpi_error)
-                    std::cout << "ERROR receiving probing parts from " << src_ranks[i] << std::endl;
-            }
+            int mpi_error = MPI_Irecv(render_chunks_probe[i]->data_ptr(),
+                                        render_chunks_probe[i]->total_bytes_compact(),
+                                        MPI_BYTE,
+                                        src_ranks[i],
+                                        tag_probing,
+                                        mpi_props.comm_world,
+                                        &requests_probing[i]
+                                        );
+            if (mpi_error)
+                std::cout << "ERROR receiving probing parts from " << src_ranks[i] << std::endl;
 
             for (int j = 0; j < batches[i].runs; ++j)
             {
@@ -1352,13 +1355,13 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     break;
 
                 int mpi_error = MPI_Irecv(render_chunks_sim[i][j]->data_ptr(),
-                                          render_chunks_sim[i][j]->total_bytes_compact(),
-                                          MPI_BYTE,
-                                          src_ranks[i],
-                                          tag_inline + j,
-                                          mpi_props.comm_world,
-                                          &requests_inline_sim[i][j]
-                                          );
+                                            render_chunks_sim[i][j]->total_bytes_compact(),
+                                            MPI_BYTE,
+                                            src_ranks[i],
+                                            tag_inline + j,
+                                            mpi_props.comm_world,
+                                            &requests_inline_sim[i][j]
+                                            );
                 if (mpi_error)
                     std::cout << "ERROR receiving render parts from " << src_ranks[i] << std::endl;
             }
@@ -1771,6 +1774,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     else
     {
         render_times.push_back(100.f); // dummy value for in transit only test
+        total_probing_time = 100.f;
     }
 
     log_global_time("end probing", world_rank);

@@ -14,8 +14,8 @@
  initial_timestep=0.04
  max_timestep=0.04
  
- end_step=748
- end_time=748.1
+ end_step=698
+ end_time=698.1
  test_problem 1
  
  visit_frequency=100
