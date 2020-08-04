@@ -87,7 +87,7 @@ struct Cache
 
   double last_known_time();
   void last_known_time(double time);
-  void filter_time(double time);
+  void filter_time(double ftime);
   bool filtered();
   bool loaded();
 
