@@ -49,12 +49,14 @@ SUBROUTINE hydro
 
   INTEGER         :: loc(1),err,rank,size,color,rank_split,sim_vis_comm
   INTEGER(kind=8) :: unix
-  REAL(KIND=8)    :: timer,timerstart,wall_clock,step_clock,sim_timer
+  REAL(KIND=8)    :: timer,timerstart,wall_clock,step_clock,sim_timer,cycle_time
 
   REAL(KIND=8)    :: grind_time,cells,rstep
   REAL(KIND=8)    :: step_time,step_grind,vis_time
   REAL(KIND=8)    :: first_step,second_step
   REAL(KIND=8)    :: kernel_total,totals(parallel%max_task)
+
+  INTEGER(kind=8), parameter :: initial_steps = 5
 
   TYPE(C_PTR) my_ascent
   TYPE(C_PTR) ascent_opts
@@ -121,7 +123,7 @@ SUBROUTINE hydro
     ENDIF
     ! visualization
     IF(visit_frequency.NE.0) THEN
-      IF(MOD(step, visit_frequency).EQ.5) THEN
+      IF(MOD(step, visit_frequency).EQ.initial_steps) THEN
         vis_time=timer()
 
         unix = c_time(int(0, kind=8))
@@ -129,7 +131,13 @@ SUBROUTINE hydro
 
         ! TODO: accumulate last sim times
         WRITE(g_out_times,*) '       sim ', step, timer()-sim_timer
-        CALL visit(my_ascent, timer() - sim_timer)
+
+        cycle_time = timer() - sim_timer
+        IF(step.LE.visit_frequency) THEN  ! extrapolate time of initial cycle
+          cycle_time = cycle_time / initial_steps * visit_frequency
+        ENDIF
+
+        CALL visit(my_ascent, cycle_time)
 
         wall_clock=timer() - timerstart
         WRITE(g_out_times,*) '       vis ', step, timer()-vis_time

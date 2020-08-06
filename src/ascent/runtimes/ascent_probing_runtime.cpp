@@ -349,7 +349,11 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         const int target_vis_node = node_map[i];
 
         t_intransit[target_vis_node] += t_inline[i] * (vis_factor/sim_factor);
-        t_inline[i] = 0.f;
+        if (t_inline[i] < 0.f + std::numeric_limits<float>::min())
+            // avoid pushing back skipped renders to sim nodes
+            t_inline[i] = std::numeric_limits<float>::max(); 
+        else
+            t_inline[i] = 0.f;
         render_counts_vis[target_vis_node] += render_cfg.non_probing_count;
     }
 
@@ -1043,6 +1047,8 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         log_time(t_start, "+ compositing image ", mpi_props.rank);
         log_global_time("end composit image", mpi_props.rank);
 
+        // print_time(t_start, "end composite ", mpi_props.rank);
+
         // save render using separate thread to hide latency
         if (my_vis_rank == 0)
         {
@@ -1072,6 +1078,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                     t.join();
             }
         }
+        // print_time(t_start, "end save ", mpi_props.rank);
     }
     log_time(t_start0, "+ compositing total ", mpi_props.rank);
     log_global_time("end compositing", mpi_props.rank);
@@ -1133,18 +1140,23 @@ void hybrid_render(const MPI_Properties &mpi_props,
     {
         assert(my_probing_times.size() > 0);
         
-        bool use_time_per_render = false;
+        bool use_time_per_render = true;
         if (use_time_per_render) // render time per probing image (w/o overhead)
         {
             double sum_render_times = std::accumulate(my_probing_times.begin(), 
                                                       my_probing_times.end(), 0.0);
 
+            sum_render_times = std::isnan(sum_render_times) ? 0.0 : sum_render_times;
             my_avg_probing_time = float(sum_render_times / my_probing_times.size());
+            my_avg_probing_time /= 1000.0; // convert to seconds
+
+            // if probing time is close to zero, add overhead costs
+            // if (my_avg_probing_time < 0.f + std::numeric_limits<float>::min())
+            //     my_avg_probing_time = total_probing_time / render_cfg.probing_count / 1.f;
 
             // std::cout << "+++ probing times ";
             // for (auto &a : my_probing_times)
             //     std::cout << a << " ";
-            std::cout << mpi_props.rank << std::endl;
             std::cout << "probing w/o overhead " << sum_render_times/1000.0 << std::endl;
             std::cout << "probing w/  overhead " << total_probing_time << std::endl;
         }
@@ -1154,8 +1166,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
             if (render_cfg.probing_count)
                 my_avg_probing_time /= render_cfg.probing_count;
         }
-        std::cout << mpi_props.rank << " ~ vis time estimate (per render): " << my_avg_probing_time 
-                  << std::endl;
+        std::cout << mpi_props.rank << " ~ vis time estimate (per render): " 
+                  << my_avg_probing_time << std::endl;
 
         if (render_cfg.insitu_type != "intransit")
         {
