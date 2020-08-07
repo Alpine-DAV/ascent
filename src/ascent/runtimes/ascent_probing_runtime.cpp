@@ -316,6 +316,7 @@ struct RenderBatch
  */
 std::vector<int> load_assignment(const std::vector<float> &sim_estimate, 
                                  const std::vector<float> &vis_estimates,
+                                 const std::vector<float> &vis_overheads,
                                  const std::vector<int> &node_map,
                                  const RenderConfig render_cfg,
                                  const MPI_Properties mpi_props,
@@ -331,7 +332,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
     for (size_t i = 0; i < mpi_props.sim_node_count; i++)
         t_inline[i] = vis_estimates[i] * sim_factor * render_cfg.non_probing_count;
 
-    // TODO: add smart way to estimate compositing cost
+    // TODO: add smarter way to estimate compositing cost
     const float t_compositing = (skipped_renders*0.01f + (1.f-skipped_renders)*0.3f) * render_cfg.max_count;  // assume flat cost per image
     if (mpi_props.rank == 0)
         std::cout << "~~compositing estimate: " << t_compositing << std::endl;
@@ -349,10 +350,10 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
 
         t_intransit[target_vis_node] += t_inline[i] * (vis_factor/sim_factor);
         if (t_inline[i] < 0.f + std::numeric_limits<float>::min())
-            // avoid pushing back skipped renders to sim nodes
+            // avoid skipped renders to sim nodes
             t_inline[i] = std::numeric_limits<float>::max(); 
         else
-            t_inline[i] = 0.f;
+            t_inline[i] = vis_overheads[i];
         render_counts_vis[target_vis_node] += render_cfg.non_probing_count;
     }
 
@@ -1118,6 +1119,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
     int my_vis_rank = -1;
 
     float my_avg_probing_time = 0.f;
+    float my_render_overhead = 0.f;
     int skipped_render = 0;
     float my_sim_estimate = data["state/sim_time"].to_float();
     std::cout << mpi_props.rank << " ~ sim time estimate: " << my_sim_estimate << std::endl;
@@ -1158,6 +1160,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             //     std::cout << a << " ";
             std::cout << "probing w/o overhead " << sum_render_times/1000.0 << std::endl;
             std::cout << "probing w/  overhead " << total_probing_time << std::endl;
+            my_render_overhead = total_probing_time - sum_render_times/1000.0;
         }
         else // use whole probing time including overhead
         {
@@ -1190,6 +1193,10 @@ void hybrid_render(const MPI_Properties &mpi_props,
     std::vector<float> g_vis_estimates(mpi_props.size, 0.f);
     MPI_Allgather(&my_avg_probing_time, 1, MPI_FLOAT, 
                   g_vis_estimates.data(), 1, MPI_FLOAT, mpi_props.comm_world);
+    // and render overhead
+    std::vector<float> g_vis_overhead(mpi_props.size, 0.f);
+    MPI_Allgather(&my_render_overhead, 1, MPI_FLOAT, 
+                  g_vis_overhead.data(), 1, MPI_FLOAT, mpi_props.comm_world);
     // determine how many nodes skipped rendering due to empty block
     std::vector<int> g_skipped(mpi_props.size, 0);
     MPI_Allgather(&skipped_render, 1, MPI_INT, g_skipped.data(), 1, MPI_INT, mpi_props.comm_world);
@@ -1216,6 +1223,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
     // distribute rendering load across sim and vis loads
     const std::vector<int> g_render_counts = load_assignment(g_sim_estimates, g_vis_estimates,
+                                                             g_vis_overhead,
                                                              node_map, render_cfg, mpi_props,
                                                              skipped_renders);
 
