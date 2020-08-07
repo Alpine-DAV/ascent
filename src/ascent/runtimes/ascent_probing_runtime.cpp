@@ -260,11 +260,10 @@ struct RenderConfig
     int non_probing_count = 0;
     int batch_size = 10;
 
-    // TODO: make batch_size variable by config, 
     // TODO: Adapt batch_size to align with probing size so that first render is always probing,
     //       this would avoid batch size 1 issues.
-    const static int WIDTH = 1024;
-    const static int HEIGHT = 1024;
+    const static int WIDTH = 800;
+    const static int HEIGHT = 800;
     const static int CHANNELS = 4 + 4; // RGBA + depth (float)
 
     RenderConfig(const int max_render_count, const double probing_factor = 0.0, 
@@ -746,7 +745,7 @@ void detach_mpi_buffer()
  * Calculate the message size for sending the render chunks.  
  */
 int calc_render_msg_size(const int render_count, const double probing_factor,
-                         const int width = 1024, const int height = 1024, 
+                         const int width = 800, const int height = 800, 
                          const int channels = 4+4)
 {
     const int total_renders = render_count - int(probing_factor * render_count);
@@ -1523,7 +1522,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
             auto t_start = std::chrono::system_clock::now();
             for (int i = 0; i < batch.runs; ++i)
             {
-
                 const int begin = i*render_cfg.batch_size;
                 const int current_batch_size = get_current_batch_size(render_cfg.batch_size, batch, i);
                 if (current_batch_size <= 1)

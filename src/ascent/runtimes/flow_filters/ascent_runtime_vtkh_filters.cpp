@@ -1774,8 +1774,8 @@ void DefaultRender::execute()
       image_name = expand_family_name(image_name, cycle);
     }
 
-    vtkh::Render render = vtkh::MakeRender(1024,
-                                           1024,
+    vtkh::Render render = vtkh::MakeRender(800,
+                                           800,
                                            *bounds,
                                            v_domain_ids,
                                            image_name);

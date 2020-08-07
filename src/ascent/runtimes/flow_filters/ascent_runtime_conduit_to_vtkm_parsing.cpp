@@ -75,8 +75,8 @@ namespace filters
 void
 parse_image_dims(const conduit::Node &node, int &width, int &height)
 {
-  width = 1024;
-  height = 1024;
+  width = 800;
+  height = 800;
 
   if(node.has_path("image_width"))
   {
