@@ -333,7 +333,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         t_inline[i] = vis_estimates[i] * sim_factor * render_cfg.non_probing_count;
 
     // TODO: add smarter way to estimate compositing cost
-    const float t_compositing = (skipped_renders*0.01f + (1.f-skipped_renders)*0.3f) * render_cfg.max_count;  // assume flat cost per image
+    const float t_compositing = (skipped_renders*0.02f + (1.f-skipped_renders)*0.14f) * render_cfg.max_count;  // assume flat cost per image
     if (mpi_props.rank == 0)
         std::cout << "~~compositing estimate: " << t_compositing << std::endl;
 
