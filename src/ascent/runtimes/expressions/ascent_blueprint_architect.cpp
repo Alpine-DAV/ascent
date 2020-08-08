@@ -1214,15 +1214,11 @@ update_bin(double *bins,
 {
   if(reduction_op == "min")
   {
-    // have to keep track of count anyways in order to detect which bins are
-    // empty
-    bins[2 * i] = std::min(bins[i * 2], value);
-    bins[2 * i + 1] += 1;
+    bins[i] = std::min(bins[i], value);
   }
   else if(reduction_op == "max")
   {
-    bins[2 * i] = std::max(bins[i * 2], value);
-    bins[2 * i + 1] += 1;
+    bins[i] = std::max(bins[i], value);
   }
   else if(reduction_op == "avg" || reduction_op == "sum" ||
           reduction_op == "pdf")
@@ -1241,6 +1237,36 @@ update_bin(double *bins,
     bins[3 * i + 1] += value;
     bins[3 * i + 2] += 1;
   }
+}
+
+void init_bins(double *bins, 
+               const int size, 
+               const std::string reduction_op)
+{
+  if(reduction_op != "max" && reduction_op != "min")
+  {
+    // already init to 0, so do nothing
+    return;
+  }
+
+  double init_val;
+  if(reduction_op == "max")
+  {
+    init_val = std::numeric_limits<double>::lowest();
+  }
+  else
+  {
+    init_val = std::numeric_limits<double>::max();
+  }
+  
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+  for(int i = 0; i < size; ++i)
+  {
+    bins[i] = init_val;
+  }
+
 }
 
 // reduction_op: sum, min, max, avg, pdf, std, var, rms
@@ -1328,8 +1354,13 @@ binning(const conduit::Node &dataset,
   {
     num_bin_vars = 3;
   }
+  else if(reduction_op == "min" || reduction_op == "max")
+  {
+    num_bin_vars = 1;
+  }
   const int bins_size = num_bins * num_bin_vars;
   double *bins = new double[bins_size]();
+  init_bins(bins, bins_size, reduction_op);
 
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {
@@ -1478,8 +1509,42 @@ binning(const conduit::Node &dataset,
       }
     }
   }
-  else if(reduction_op == "sum" || reduction_op == "min" ||
-          reduction_op == "max")
+  else if(reduction_op == "min")
+  {
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      if(bins[i] == std::numeric_limits<double>::max())
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = bins[i];
+      }
+    }
+  }
+  else if(reduction_op == "max")
+  {
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      if(bins[i] == std::numeric_limits<double>::lowest())
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = bins[i];
+      }
+    }
+
+  }
+  else if(reduction_op == "sum")
   {
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
