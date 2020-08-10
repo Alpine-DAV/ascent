@@ -258,20 +258,20 @@ struct RenderConfig
     int probing_stride = 0;
     int probing_count = 0;
     int non_probing_count = 0;
-    int batch_size = 10;
+    int batch_count = 1;
 
-    // TODO: Adapt batch_size to align with probing size so that first render is always probing,
+    // TODO: Adapt batch_count to align with probing size so that first render is always probing,
     //       this would avoid batch size 1 issues.
     const static int WIDTH = 800;
     const static int HEIGHT = 800;
     const static int CHANNELS = 4 + 4; // RGBA + depth (float)
 
     RenderConfig(const int max_render_count, const double probing_factor = 0.0, 
-                 const std::string &insitu_type = "hybrid", const int batch_size = 10)
+                 const std::string &insitu_type = "hybrid", const int batch_count = 1)
      : max_count(max_render_count)
      , probing_factor(probing_factor)
      , insitu_type(insitu_type)
-     , batch_size(batch_size)
+     , batch_count(batch_count)
     {
         // infer probing stride
         if (probing_factor <= 0.0)
@@ -307,7 +307,8 @@ struct RenderConfig
 struct RenderBatch
 {
     int runs = 0;
-    int rest = 0;
+    int size = 0;   // size of regular batch
+    int rest = 0;   // size of last batch
 };
 
 
@@ -756,13 +757,26 @@ int calc_render_msg_size(const int render_count, const double probing_factor,
             total_renders * overhead_render + overhead_global;
 }
 
-RenderBatch get_batch(const int render_count, const int batch_size)
+RenderBatch get_batch(const int render_count, const int batch_count)
 {
     RenderBatch b;
-    b.runs = int(std::ceil(render_count / double(batch_size)));
+    if (render_count == 0 || batch_count == 0)
+        return b;
+
+    b.runs = std::max(1, batch_count); //int(std::ceil(render_count / double(batch_size)));
+    b.size = int(std::round(float(render_count)/float(b.runs)));
     // last run may have less renders than the other batches
-    b.rest = render_count % batch_size;
+    b.rest = render_count % b.size;
+
     return b;
+}
+
+int get_current_batch_size(const RenderBatch batch, const int iteration)
+{
+    int current_batch_size = batch.size;
+    if ((iteration == batch.runs - 1) && (batch.rest != 0))
+        current_batch_size = batch.rest;
+    return current_batch_size;
 }
 
 void post_irecv_renders(std::vector< std::vector< std::vector<int>>> &renders,
@@ -770,7 +784,6 @@ void post_irecv_renders(std::vector< std::vector< std::vector<int>>> &renders,
                         std::vector<RenderBatch> &batches,
                         const vector<int> &src_ranks,
                         const int sending_count,
-                        const int batch_size,
                         MPI_Comm comm,
                         int probing_count,
                         double probing_factor
@@ -781,7 +794,8 @@ void post_irecv_renders(std::vector< std::vector< std::vector<int>>> &renders,
         for (int j = 0; j < batches[i].runs; ++j)
         {
             // correct size for last iteration
-            const int current_batch_size = (j == batches[i].runs - 1) ? batches[i].rest : batch_size;
+            const int current_batch_size = get_current_batch_size(batches[i], j);
+            // (j == batches[i].runs - 1) ? batches[i].rest : batch_size;
             // std::cout << " ~~~ current_batch_size " << world_rank  << " batch size " << current_batch_size
             //         << std::endl;
             if (current_batch_size == 0)
@@ -813,14 +827,6 @@ template<typename T, typename... Args>
 unique_ptr<T> make_unique(Args&&... args) 
 {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
-
-int get_current_batch_size(const int batch_size, const RenderBatch batch, const int iteration)
-{
-    int current_batch_size = batch_size;
-    if ((iteration == batch.runs - 1) && (batch.rest != 0))
-        current_batch_size = batch.rest;
-    return current_batch_size;
 }
 
 typedef std::vector<std::shared_ptr<conduit::Node> > vec_node_sptr;
@@ -872,7 +878,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                         const std::vector<int> &g_render_counts, const std::vector<int> &src_ranks,
                         const std::vector<int> &depth_id_order, const std::map<int, int> &recv_counts,
                         const int my_vis_rank, 
-                        const int my_render_recv_cnt, const int my_recv_cnt,
+                        const int my_render_recv_cnt, const int my_data_recv_cnt,
                         const RenderConfig &render_cfg, const MPI_Properties &mpi_props)
 {
     auto t_start0 = std::chrono::system_clock::now();
@@ -895,34 +901,38 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         }
     }
     
+    std::vector<RenderBatch> batches(my_render_recv_cnt);
+    for (int i = 0; i < batches.size(); ++i)
+        batches[i] = get_batch(g_render_counts[src_ranks[i]], render_cfg.batch_count); 
+
     std::cout << "~~~~arrange render order " << mpi_props.rank << std::endl;
 
     // arrange render order   
     vector<int> probing_enum_sim(my_render_recv_cnt, 0);
-    vector<int> probing_enum_vis(my_recv_cnt, 0);
+    vector<int> probing_enum_vis(my_data_recv_cnt, 0);
     // images / sender / values
     vec_vec_node_sptr render_ptrs(render_cfg.max_count);
     std::vector<std::vector<int> > render_arrangement(render_cfg.max_count);
 
     for (int j = 0; j < render_cfg.max_count; ++j)
     {
-        render_ptrs[j].reserve(my_recv_cnt);
-        render_arrangement[j].reserve(my_recv_cnt);
+        render_ptrs[j].reserve(my_data_recv_cnt);
+        render_arrangement[j].reserve(my_data_recv_cnt);
 
         // std::cout << "\nimage " << j << std::endl;
-        for (int i = 0; i < my_recv_cnt; ++i)
+        for (int i = 0; i < my_data_recv_cnt; ++i)
         {
             // std::cout << "  " << i << " ";
-            if ((render_cfg.probing_stride > 0) && (j % render_cfg.probing_stride == 0))    // probing image
+            if (render_cfg.probing_stride && (j % render_cfg.probing_stride == 0)) // probing image
             {
                 const index_t id = j / render_cfg.probing_stride;
-                // std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
                 render_ptrs[j].emplace_back(parts_probing[i]);
                 render_arrangement[j].emplace_back(id);
+                // std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
 
                 {   // keep track of probing images
                     // reset counter if first in batch
-                    if (j % render_cfg.batch_size == 0)   
+                    if (batches[i].size && j % batches[i].size == 0)   
                         probing_enum_sim[i] = 0;
                     ++probing_enum_sim[i];
                     // reset probing counter if first render in vis chunks
@@ -935,11 +945,11 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             {
                 // Reset the probing counter if this is the first render in a batch 
                 // and this is not a probing render.
-                if (j % render_cfg.batch_size == 0)
+                if (j % batches[i].size == 0)
                     probing_enum_sim[i] = 0;
 
-                const int batch_id = j / render_cfg.batch_size;
-                const index_t id = (j % render_cfg.batch_size) - probing_enum_sim[i];
+                const int batch_id = j / batches[i].size;
+                const index_t id = (j % batches[i].size) - probing_enum_sim[i];
                 // std::cout << " " << mpi_props.rank << " sim  " << id << std::endl;
                 render_ptrs[j].emplace_back(parts_sim[i][batch_id]);
                 render_arrangement[j].emplace_back(id);
@@ -998,9 +1008,9 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         // gather all dephts values from vis nodes
         std::vector<float> v_depths(mpi_props.sim_node_count, 0.f);
 
-        std::vector<float> depths(my_recv_cnt);
+        std::vector<float> depths(my_data_recv_cnt);
     #pragma omp parallel for
-        for (int i = 0; i < my_recv_cnt; i++)
+        for (int i = 0; i < my_data_recv_cnt; i++)
             depths[i] = (*render_ptrs[j][i])["depths"].child(render_arrangement[j][i]).to_float();
 
         MPI_Allgatherv(depths.data(), depths.size(), 
@@ -1025,20 +1035,23 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         vtkh::Compositor compositor;
         compositor.SetCompositeMode(vtkh::Compositor::VIS_ORDER_BLEND);
         
+        int image_cnt = 0;
         // loop over render parts (= 1 per sim node) and add as images
-        for (int i = 0; i < my_recv_cnt; ++i)
+        for (int i = 0; i < my_data_recv_cnt; ++i)
         {
-            if (depths[i] > -1.f)
+            if (depths[i] > std::numeric_limits<float>::lowest())
             {
                 const int id = depths_order_id[src_ranks[i]];
                 compositor.AddImage((*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr(),
                                     (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr(),
                                     render_cfg.WIDTH, render_cfg.HEIGHT, id);
+                ++image_cnt;
             }
         }
 
         // composited
-        results[j] = compositor.CompositeNoCopy();
+        if (image_cnt)
+            results[j] = compositor.CompositeNoCopy();
 
         // TODO: add screen annotations for hybrid (see vtk-h Scene::Render)
         // See vtk-h Renderer::ImageToCanvas() for how to get from result image to canvas.
@@ -1050,9 +1063,11 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         // print_time(t_start, "end composite ", mpi_props.rank);
 
         // save render using separate thread to hide latency
-        if (my_vis_rank == 0)
+        if (my_vis_rank == 0 && image_cnt)
         {
+            assert(render_arrangement[j].size() > 0);
             std::string name = (*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string();
+            // std::cout << name << std::endl;
 
             std::unique_lock<std::mutex> locker(mu);
             cond.wait(locker, [&buffer, &max_buffer_size](){ return buffer.size() < max_buffer_size; });
@@ -1171,11 +1186,11 @@ void hybrid_render(const MPI_Properties &mpi_props,
         std::cout << mpi_props.rank << " ~ vis time estimate (per render): " 
                   << my_avg_probing_time << std::endl;
 
-        if (render_cfg.insitu_type != "intransit")
+        if (render_cfg.insitu_type == "hybrid")
         {
             // TODO: this is ugly 
             float my_depth = render_chunks_probing["depths"].child(0).to_float();
-            if (my_depth <= -1.f)
+            if (my_depth == std::numeric_limits<float>::lowest())
                 skipped_render = 1;
         }
     }
@@ -1215,6 +1230,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
     // DEBUG: OUT
     if (mpi_props.rank == 0)
     {
+        std::cout << "=== skipped_renders (%) " << skipped_renders << std::endl;
+
         std::cout << "=== node_map ";
         for (auto &a : node_map)
             std::cout << a << " ";
@@ -1256,9 +1273,9 @@ void hybrid_render(const MPI_Properties &mpi_props,
             if (node_map[i] == my_vis_rank)
                 sending_node_ranks.push_back(i);
         }
-        const int my_recv_cnt = int(sending_node_ranks.size());
-        // count of nodes that do inline rendering (0 for in transit case)
-        const int my_render_recv_cnt = render_cfg.insitu_type == "intransit" ? 0 : my_recv_cnt;
+        const int my_data_recv_cnt = int(sending_node_ranks.size());
+        // count of nodes that do inline rendering (0 for intransit case)
+        const int my_render_recv_cnt = render_cfg.insitu_type == "intransit" ? 0 : my_data_recv_cnt;
         std::map<int, int> recv_counts;
         for (const auto &n : node_map)
             ++recv_counts[n];
@@ -1275,10 +1292,10 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 it++;
             }
         }
-        std::cout << "== depth_id_order ";
-        for(auto a : depth_id_order)
-            std::cout << a << " ";
-        std::cout << std::endl;
+        // std::cout << "== depth_id_order ";
+        // for(auto a : depth_id_order)
+        //     std::cout << a << " ";
+        // std::cout << std::endl;
 
         std::stringstream node_string;
         std::copy(sending_node_ranks.begin(), sending_node_ranks.end(), 
@@ -1287,12 +1304,12 @@ void hybrid_render(const MPI_Properties &mpi_props,
                   << node_string.str() << std::endl;
 
         const std::vector<int> src_ranks = sending_node_ranks;
-        vec_node_sptr render_chunks_vis(my_recv_cnt, nullptr);
-        std::vector<std::unique_ptr<Node> > datasets(my_recv_cnt);
+        vec_node_sptr render_chunks_vis(my_data_recv_cnt, nullptr);
+        std::vector<std::unique_ptr<Node> > datasets(my_data_recv_cnt);
 
         // post recv for datasets
-        std::vector<MPI_Request> requests_data(my_recv_cnt, MPI_REQUEST_NULL);
-        for (int i = 0; i < my_recv_cnt; ++i)
+        std::vector<MPI_Request> requests_data(my_data_recv_cnt, MPI_REQUEST_NULL);
+        for (int i = 0; i < my_data_recv_cnt; ++i)
         {
             datasets[i] = make_unique<Node>(DataType::uint8(g_data_sizes[src_ranks[i]]));
 
@@ -1306,7 +1323,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
                                       );
             if (mpi_error)
                 std::cout << "ERROR receiving dataset from " << src_ranks[i] << std::endl;
-
             // std::cout << "~~~ vis node " << mpi_props.rank << " receiving " << g_data_sizes[src_ranks[i]]
             //           << " bytes from " << src_ranks[i] << std::endl;
         }
@@ -1317,7 +1333,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
         {
             int render_count = g_render_counts[src_ranks[i]] 
                                 + int(g_render_counts[src_ranks[i]]*render_cfg.probing_factor);
-            batches[i] = get_batch(render_count, render_cfg.batch_size);
+            batches[i] = get_batch(render_count, render_cfg.batch_count);
         }
 
         // probing chunks
@@ -1339,7 +1355,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
             for (int j = 0; j < batches[i].runs; ++j)
             {
-                const int current_batch_size = get_current_batch_size(render_cfg.batch_size, batches[i], j);
+                const int current_batch_size = get_current_batch_size(batches[i], j);
                 buffer_size = calc_render_msg_size(current_batch_size, render_cfg.probing_factor);
                 render_chunks_sim[i][j] = make_unique<Node>(DataType::uint8(buffer_size));
                 if (current_batch_size == 1)    // TODO: single render that was already probed
@@ -1369,7 +1385,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             for (int j = 0; j < batches[i].runs; ++j)
             {
                 // correct size for last iteration
-                const int current_batch_size = get_current_batch_size(render_cfg.batch_size, batches[i], j);
+                const int current_batch_size = get_current_batch_size(batches[i], j);
                 if (current_batch_size <= 1) // TODO: single render that was already probed
                     break;
 
@@ -1387,7 +1403,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
         }
 
         // wait for all data sets to arrive
-        for (int i = 0; i < my_recv_cnt; ++i)
+        for (int i = 0; i < my_data_recv_cnt; ++i)
         {
             int id = -1;
             auto start1 = std::chrono::system_clock::now();
@@ -1397,8 +1413,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
         log_global_time("end receiveData", mpi_props.rank);
 
         // render all data sets
-        std::vector<Ascent> ascent_renders(my_recv_cnt);
-        for (int i = 0; i < my_recv_cnt; ++i)
+        std::vector<Ascent> ascent_renders(my_data_recv_cnt);
+        for (int i = 0; i < my_data_recv_cnt; ++i)
         {
             // std::cout << "=== dataset size " << mpi_props.rank << " "
             //           << datasets[i]->total_bytes_compact() << std::endl;
@@ -1459,10 +1475,10 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
         hybrid_compositing(render_chunks_probe, render_chunks_sim, render_chunks_vis, 
                            g_render_counts, src_ranks, depth_id_order, recv_counts, my_vis_rank,
-                           my_render_recv_cnt, my_recv_cnt, render_cfg, mpi_props);
+                           my_render_recv_cnt, my_data_recv_cnt, render_cfg, mpi_props);
 
         // Keep the vis node ascent instances open until render chunks have been processed.
-        for (int i = 0; i < my_recv_cnt; i++)
+        for (int i = 0; i < my_data_recv_cnt; i++)
             ascent_renders[i].close();  
 
     } // end vis node
@@ -1477,7 +1493,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             // compact_probing_renders are now packed and send in separate thread
             // Node compact_probing_renders = pack_node(render_chunks_probing);
             const int my_render_count = g_render_counts[mpi_props.rank] + int(g_render_counts[mpi_props.rank]*render_cfg.probing_factor);
-            RenderBatch batch = get_batch(my_render_count, render_cfg.batch_size);
+            RenderBatch batch = get_batch(my_render_count, render_cfg.batch_count);
 
             {   // init send buffer
                 detach_mpi_buffer();
@@ -1488,7 +1504,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 const int overhead = MPI_BSEND_OVERHEAD * (batch.runs + 2); // 1 probing batch
                 MPI_Buffer_attach(malloc(msg_size_render + msg_size_probing + overhead), //my_data_size + overhead), 
                                          msg_size_render + msg_size_probing + overhead); //my_data_size + overhead);
-                // std::cout << "-- buffer size: " << (msg_size + msg_size_probing + overhead) << std::endl;
+                // std::cout << "-- buffer size: " << (msg_size_render + msg_size_probing + overhead) << std::endl;
             }
 
             {   // send data to vis node
@@ -1530,11 +1546,11 @@ void hybrid_render(const MPI_Properties &mpi_props,
             auto t_start = std::chrono::system_clock::now();
             for (int i = 0; i < batch.runs; ++i)
             {
-                const int begin = i*render_cfg.batch_size;
-                const int current_batch_size = get_current_batch_size(render_cfg.batch_size, batch, i);
+                const int begin = i*batch.size;
+                const int current_batch_size = get_current_batch_size(batch, i);
                 if (current_batch_size <= 1)
                     break;
-                const int end = i*render_cfg.batch_size + current_batch_size;
+                const int end = i*batch.size + current_batch_size;
 
                 std::cout   << "~~ SIM node " << mpi_props.rank << " rendering " 
                             << begin << " - " << end << std::endl;
@@ -1639,7 +1655,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     // probing setup
     double probing_factor = 0.0;
     double node_split = 0.0;
-    int batch_size = 1;
+    int batch_count = 1;
     std::string insitu_type = "hybrid";
     // cinema angle counts
     int phi = 1;
@@ -1671,10 +1687,10 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
                 else
                     ASCENT_ERROR("action 'probing' missing child 'insitu_type'");
 
-                if (action["probing"].has_path("batch_size"))
-                    batch_size = action["probing/batch_size"].to_int();
+                if (action["probing"].has_path("batch_count"))
+                    batch_count = action["probing/batch_count"].to_int();
                 else
-                    ASCENT_ERROR("action 'probing' missing child 'batch_size'");
+                    ASCENT_ERROR("action 'probing' missing child 'batch_count'");
 
                 if (action["probing"].has_path("node_split"))
                 {
@@ -1801,11 +1817,12 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     {
         MPI_Properties mpi_props(world_size, world_rank, sim_count, world_size - sim_count, 
                                  mpi_comm_world, vis_comm);
-        RenderConfig render_cfg(phi*theta, probing_factor, insitu_type, batch_size);
+        RenderConfig render_cfg(phi*theta, probing_factor, insitu_type, batch_count);
         if (world_rank == 0)
         {
-            std::cout << "Probing " << render_cfg.probing_count << "/" << render_cfg.max_count
-                    << " renders with stride " << render_cfg.probing_stride << std::endl; 
+            std::cout << "* Probing " << render_cfg.probing_count << "/" << render_cfg.max_count
+                    << " renders with stride " << render_cfg.probing_stride << std::endl;
+            std::cout << "* Rendering in " << render_cfg.batch_count << " batches." << std::endl;
         }
 
         hybrid_render(mpi_props, render_cfg, render_times, total_probing_time, m_data, render_chunks);

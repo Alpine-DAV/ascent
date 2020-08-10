@@ -1498,7 +1498,7 @@ void AscentRuntime::Execute(const conduit::Node &actions)
       m_info["render_times"][i].set_external(images->child(i)["render_time"]);
       m_info["depths"][i].set_external(images->child(i)["depth"]);
       
-      if (images->child(i)["depth"].as_float() > -1.f)
+      if (images->child(i)["depth"].as_float() > std::numeric_limits<float>::lowest())
       {
         m_info["color_buffers"][i].set_external(images->child(i)["color_buffer"]);
         m_info["depth_buffers"][i].set_external(images->child(i)["depth_buffer"]);

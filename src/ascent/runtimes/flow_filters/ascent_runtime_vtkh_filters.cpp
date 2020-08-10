@@ -2709,7 +2709,7 @@ void add_images(std::vector<vtkh::Render> *renders,
     else
     {
       // hijack depth as a skipped image indicator
-      image_data[i]["depth"] = -1.f;
+      image_data[i]["depth"] = std::numeric_limits<float>::lowest();
     }
     // get depth buffer directly from vtk-m -> memory error bc renderer is consumed ?
     // image_data[i]["depth_buffer"].set_external(vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer()), size);
@@ -2718,7 +2718,9 @@ void add_images(std::vector<vtkh::Render> *renders,
     // set_external is way faster (no copy) but results in memory error on pack_and_send 
     // Node &image = image_list->append();
     // image.set(std::move(image_data[i]));
+
     image_list->child(i).set(std::move(image_data[i]));
+    
     // image_list->append() = image_data;
 
     // append name and frame time to ascent info
