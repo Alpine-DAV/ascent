@@ -65,7 +65,7 @@ using namespace std;
 using namespace conduit;
 using namespace ascent;
 
-index_t EXAMPLE_MESH_SIDE_DIM = 5;
+index_t EXAMPLE_MESH_SIDE_DIM = 3;
 
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, derived_expressions)
@@ -79,11 +79,12 @@ TEST(ascent_expressions, derived_expressions)
   Node data, verify_info;
   // conduit::blueprint::mesh::examples::braid("hexs",
   // conduit::blueprint::mesh::examples::braid("rectilinear",
-  conduit::blueprint::mesh::examples::braid("uniform",
+  conduit::blueprint::mesh::examples::braid("structured",
                                             EXAMPLE_MESH_SIDE_DIM,
                                             EXAMPLE_MESH_SIDE_DIM,
                                             EXAMPLE_MESH_SIDE_DIM,
                                             data);
+  // conduit::blueprint::mesh::examples::basic("uniform", 20, 20, 20, data);
   // ascent normally adds this but we are doing an end around
   data["state/domain_id"] = 0;
   Node multi_dom;
@@ -95,6 +96,7 @@ TEST(ascent_expressions, derived_expressions)
   conduit::Node res;
   std::string expr;
 
+  // expr = "1 + field('braid') + 1";
   //    +
   //  /   \
   //  1   + return_type: jitable
@@ -109,7 +111,7 @@ TEST(ascent_expressions, derived_expressions)
   //
   //     max
   //      |
-  //      +
+  //      + jitable -> field
   //     / \
   // field  1
   //
@@ -138,6 +140,9 @@ TEST(ascent_expressions, derived_expressions)
   // expr = "topo('mesh').cell.x";
   // eval.evaluate(expr);
 
+  expr = "topo('mesh').cell.volume";
+  eval.evaluate(expr);
+
   // expr = "sin(field('braid'))";
   // eval.evaluate(expr);
 
@@ -148,8 +153,39 @@ TEST(ascent_expressions, derived_expressions)
   // expr = "1 + field('braid') + 1";
   // eval.evaluate(expr);
 
-  // expr = "max(field('braid') + 1)";
-  // eval.evaluate(expr);
+  // expr = "field('field') * topo('mesh').cell.volume";
+  // eval.evaluate(expr, "mass");
+}
+
+/*
+TEST(ascent_expressions, derived_temperature)
+{
+  conduit::Node replay_data, replay_opts;
+  replay_opts["root_file"] =
+      "/Users/ibrahim5/datasets/fishtank/fishtank.cycle_000000.root";
+  ascent::hola("relay/blueprint/mesh", replay_opts, replay_data);
+
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval eval(&replay_data);
+
+  conduit::Node res;
+  std::string expr;
+
+  expr = "paint_binning(binning('temperature', 'std', [axis('z', num_bins=15), "
+         "axis('x', bins=[6, 22]), axis('y', bins=[-8, 8])], component='c0'), "
+         "name='temp_std', default_value=1)";
+  eval.evaluate(expr);
+  expr = "paint_binning(binning('temperature', 'avg', [axis('z', num_bins=15), "
+         "axis('x', bins=[6, 22]), axis('y', bins=[-8, 8])], component='c0'), "
+         "name='temp_avg')";
+  eval.evaluate(expr);
+  expr = "(field('temperature', 'c0') - field('temp_avg'))/field('temp_std')";
+  eval.evaluate(expr, "std_from_avg");
+
+  //  expr = "field('temperature', 'c0') / sqrt((topo('topo').vertex.x - "
+  //         "14.5) * (topo('topo').vertex.x - 14.5) + "
+  //         "(topo('topo').vertex.y) * (topo('topo').vertex.y))";
+  // eval.evaluate(expr, "temp1");
 
   const std::string output_path = prepare_output_dir();
 
@@ -157,17 +193,6 @@ TEST(ascent_expressions, derived_expressions)
       conduit::utils::join_file_path(output_path, "fishtank_temp");
 
   conduit::Node actions;
-
-  conduit::Node queries;
-  expr = "binning_mesh(binning('temperature', 'sum', [axis('x', num_bins=50), "
-         "axis('y', num_bins=50), axis('z', num_bins=50)], component='c0'), "
-         "name='temp_binning')";
-  queries["q1/params/expression"] = expr;
-  queries["q1/params/name"] = "temp_binning";
-
-  conduit::Node &add_queries = actions.append();
-  add_queries["action"] = "add_queries";
-  add_queries["queries"] = queries;
 
   conduit::Node extracts;
   extracts["e1/type"] = "relay";
@@ -178,15 +203,15 @@ TEST(ascent_expressions, derived_expressions)
   add_extracts["action"] = "add_extracts";
   add_extracts["extracts"] = extracts;
 
-  // conduit::Node scenes;
-  // scenes["s1/plots/p1/type"] = "pseudocolor";
-  // scenes["s1/plots/p1/field"] = "temp_binning";
-  // scenes["s1/renders/r1/image_prefix"] = output_file;
-  // scenes["s1/renders/r1/render_bg"] = "false";
-  //
-  // conduit::Node &add_plots = actions.append();
-  // add_plots["action"] = "add_scenes";
-  // add_plots["scenes"] = scenes;
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/field"] = "mass";
+  scenes["s1/renders/r1/image_prefix"] = output_file;
+  scenes["s1/renders/r1/camera/azimuth"] = 30.0;
+
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
 
   //
   // Run Ascent
@@ -199,17 +224,12 @@ TEST(ascent_expressions, derived_expressions)
   ascent_opts["timings"] = "enabled";
   ascent_opts["runtime/type"] = "ascent";
 
-  conduit::Node replay_data, replay_opts;
-  replay_opts["root_file"] =
-      "/Users/ibrahim5/datasets/fishtank/fishtank.cycle_000000.root";
-  ascent::hola("relay/blueprint/mesh", replay_opts, replay_data);
-
-  cout << actions.to_json();
   ascent.open(ascent_opts);
   ascent.publish(replay_data);
   ascent.execute(actions);
   ascent.close();
 }
+*/
 
 //-----------------------------------------------------------------------------
 

@@ -55,9 +55,11 @@
 #include <ascent_mpi_utils.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <unordered_set>
 
 #include <flow_workspace.hpp>
 
@@ -86,60 +88,8 @@ namespace expressions
 
 namespace detail
 {
-
-struct UniformCoords
-{
-  conduit::float64 m_origin[3] = {0., 0., 0.};
-  conduit::float64 m_spacing[3] = {1., 1., 1.};
-  int m_dims[3] = {0, 0, 0};
-  bool m_is_2d = true;
-
-  UniformCoords(const conduit::Node &n_coords)
-  {
-    populate(n_coords);
-  }
-
-  void
-  populate(const conduit::Node &n_coords)
-  {
-
-    const conduit::Node &n_dims = n_coords["dims"];
-
-    m_dims[0] = n_dims["i"].to_int();
-    m_dims[1] = n_dims["j"].to_int();
-    m_dims[2] = 1;
-
-    // check for 3d
-    if(n_dims.has_path("k"))
-    {
-      m_dims[2] = n_dims["k"].to_int();
-      m_is_2d = false;
-    }
-
-    const conduit::Node &n_origin = n_coords["origin"];
-
-    m_origin[0] = n_origin["x"].to_float64();
-    m_origin[1] = n_origin["y"].to_float64();
-
-    if(n_origin.has_child("z"))
-    {
-      m_origin[2] = n_origin["z"].to_float64();
-    }
-
-    const conduit::Node &n_spacing = n_coords["spacing"];
-
-    m_spacing[0] = n_spacing["dx"].to_float64();
-    m_spacing[1] = n_spacing["dy"].to_float64();
-
-    if(n_spacing.has_path("dz"))
-    {
-      m_spacing[2] = n_spacing["dz"].to_float64();
-    }
-  }
-};
-
 int
-get_num_indices(const std::string &shape_type)
+get_num_vertices(const std::string &shape_type)
 {
   int num = 0;
   if(shape_type == "tri")
@@ -169,435 +119,753 @@ get_num_indices(const std::string &shape_type)
   return num;
 }
 
-void
-logical_index_2d(int *idx, const int vert_index, const int *dims)
+template <size_t num_dims>
+std::array<size_t, num_dims>
+logical_index(const size_t index, const std::array<size_t, num_dims> &dims)
 {
-  idx[0] = vert_index % dims[0];
-  idx[1] = vert_index / dims[0];
+  ASCENT_ERROR("Unsupported number of dimensions: " << num_dims);
 }
 
-void
-logical_index_3d(int *idx, const int vert_index, const int *dims)
+template <>
+std::array<size_t, 1>
+logical_index(const size_t index, const std::array<size_t, 1> &dims)
 {
-  idx[0] = vert_index % dims[0];
-  idx[1] = (vert_index / dims[0]) % dims[1];
-  idx[2] = vert_index / (dims[0] * dims[1]);
+  return {index};
 }
 
-void
-get_element_indices(const conduit::Node &n_topo,
-                    const int index,
-                    std::vector<int> &indices)
+template <>
+std::array<size_t, 2>
+logical_index(const size_t index, const std::array<size_t, 2> &dims)
 {
-
-  const std::string mesh_type = n_topo["type"].as_string();
-  if(mesh_type == "unstructured")
-  {
-    // supports only single element type
-    const conduit::Node &n_topo_eles = n_topo["elements"];
-
-    // get the shape
-    const std::string ele_shape = n_topo_eles["shape"].as_string();
-    const int num_indices = get_num_indices(ele_shape);
-
-    indices.resize(num_indices);
-    // look up the connectivity
-    const conduit::Node &n_topo_conn = n_topo_eles["connectivity"];
-    const conduit::int32_array conn_a = n_topo_conn.value();
-    const int offset = index * num_indices;
-    for(int i = 0; i < num_indices; ++i)
-    {
-      indices[i] = conn_a[offset + i];
-    }
-  }
-  else
-  {
-    bool is_2d = true;
-    int vert_dims[3] = {0, 0, 0};
-    vert_dims[0] = n_topo["elements/dims/i"].to_int32() + 1;
-    vert_dims[1] = n_topo["elements/dims/j"].to_int32() + 1;
-
-    if(n_topo.has_path("elements/dims/k"))
-    {
-      vert_dims[2] = n_topo["elements/dims/k"].to_int32() + 1;
-      is_2d = false;
-    }
-
-    const int element_dims[3] = {
-        vert_dims[0] - 1, vert_dims[1] - 1, vert_dims[2] - 1};
-
-    int element_index[3] = {0, 0, 0};
-    if(is_2d)
-    {
-      indices.resize(4);
-      logical_index_2d(element_index, index, element_dims);
-
-      indices[0] = element_index[1] * vert_dims[0] + element_index[0];
-      indices[1] = indices[0] + 1;
-      indices[2] = indices[1] + vert_dims[0];
-      indices[3] = indices[2] - 1;
-    }
-    else
-    {
-      indices.resize(8);
-      logical_index_3d(element_index, index, element_dims);
-
-      indices[0] =
-          (element_index[2] * vert_dims[1] + element_index[1]) * vert_dims[0] +
-          element_index[0];
-      indices[1] = indices[0] + 1;
-      indices[2] = indices[1] + vert_dims[1];
-      indices[3] = indices[2] - 1;
-      indices[4] = indices[0] + vert_dims[0] * vert_dims[2];
-      indices[5] = indices[4] + 1;
-      indices[6] = indices[5] + vert_dims[1];
-      indices[7] = indices[6] - 1;
-    }
-  }
+  return {index % dims[0], index / dims[0]};
 }
 
-conduit::Node
-get_uniform_vert(const conduit::Node &n_coords, const int &index)
+template <>
+std::array<size_t, 3>
+logical_index(const size_t index, const std::array<size_t, 3> &dims)
 {
-
-  UniformCoords coords(n_coords);
-
-  int logical_index[3] = {0, 0, 0};
-
-  if(coords.m_is_2d)
-  {
-    logical_index_2d(logical_index, index, coords.m_dims);
-  }
-  else
-  {
-    logical_index_3d(logical_index, index, coords.m_dims);
-  }
-
-  double vert[3];
-  vert[0] = coords.m_origin[0] + logical_index[0] * coords.m_spacing[0];
-  vert[1] = coords.m_origin[1] + logical_index[1] * coords.m_spacing[1];
-  vert[2] = coords.m_origin[2] + logical_index[2] * coords.m_spacing[2];
-
-  conduit::Node res;
-  res.set(vert, 3);
-  return res;
+  return {index % dims[0],
+          (index / dims[0]) % dims[0],
+          index / (dims[0] * dims[1])};
 }
-
-conduit::Node
-get_explicit_vert(const conduit::Node &n_coords, const int &index)
-{
-  bool is_float64 = true;
-  if(n_coords["values/x"].dtype().is_float32())
-  {
-    is_float64 = false;
-  }
-  double vert[3] = {0., 0., 0.};
-  if(is_float64)
-  {
-    conduit::float64_array x_a = n_coords["values/x"].value();
-    conduit::float64_array y_a = n_coords["values/y"].value();
-    vert[0] = x_a[index];
-    vert[1] = y_a[index];
-    if(n_coords.has_path("values/z"))
-    {
-      conduit::float64_array z_a = n_coords["values/z"].value();
-      vert[2] = z_a[index];
-    }
-  }
-  else
-  {
-    conduit::float32_array x_a = n_coords["values/x"].value();
-    conduit::float32_array y_a = n_coords["values/y"].value();
-    vert[0] = x_a[index];
-    vert[1] = y_a[index];
-    if(n_coords.has_path("values/z"))
-    {
-      conduit::float32_array z_a = n_coords["values/z"].value();
-      vert[2] = z_a[index];
-    }
-  }
-
-  conduit::Node res;
-  res.set(vert, 3);
-  return res;
-}
-
-conduit::Node
-get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
-{
-  bool is_float64 = true;
-
-  int dims[3] = {0, 0, 0};
-  const conduit::Node &values = n_coords["values"];
-  const conduit::Node &x_values = values["x"];
-  const conduit::Node &y_values = values["y"];
-  dims[0] = x_values.dtype().number_of_elements();
-  dims[1] = y_values.dtype().number_of_elements();
-
-  if(values.has_path("z"))
-  {
-    dims[2] = values["z"].dtype().number_of_elements();
-  }
-
-  if(x_values.dtype().is_float32())
-  {
-    is_float64 = false;
-  }
-  double vert[3] = {0., 0., 0.};
-
-  int logical_index[3] = {0, 0, 0};
-
-  if(dims[2] == 0)
-  {
-    logical_index_2d(logical_index, index, dims);
-  }
-  else
-  {
-    logical_index_3d(logical_index, index, dims);
-  }
-
-  if(is_float64)
-  {
-    conduit::float64_array x_a = x_values.value();
-    conduit::float64_array y_a = y_values.value();
-    vert[0] = x_a[logical_index[0]];
-    vert[1] = y_a[logical_index[1]];
-    if(dims[2] != 0)
-    {
-      conduit::float64_array z_a = values["z"].value();
-      vert[2] = z_a[logical_index[2]];
-    }
-  }
-  else
-  {
-    conduit::float32_array x_a = x_values.value();
-    conduit::float32_array y_a = y_values.value();
-    vert[0] = x_a[logical_index[0]];
-    vert[1] = y_a[logical_index[1]];
-    if(dims[2] != 0)
-    {
-      conduit::float32_array z_a = values["z"].value();
-      vert[2] = z_a[logical_index[2]];
-    }
-  }
-
-  conduit::Node res;
-  res.set(vert, 3);
-  return res;
-}
-// ----------------------  element locations ---------------------------------
-conduit::Node
-get_uniform_element(const conduit::Node &n_coords, const int &index)
-{
-
-  UniformCoords coords(n_coords);
-
-  int logical_index[3] = {0, 0, 0};
-  const int element_dims[3] = {
-      coords.m_dims[0] - 1, coords.m_dims[1] - 1, coords.m_dims[2] - 1};
-
-  if(coords.m_is_2d)
-  {
-    logical_index_2d(logical_index, index, element_dims);
-  }
-  else
-  {
-    logical_index_3d(logical_index, index, element_dims);
-  }
-
-  // element logical index will be the lower left point index
-
-  double vert[3] = {0., 0., 0.};
-  vert[0] = coords.m_origin[0] + logical_index[0] * coords.m_spacing[0] +
-            coords.m_spacing[0] * 0.5;
-  vert[1] = coords.m_origin[1] + logical_index[1] * coords.m_spacing[1] +
-            coords.m_spacing[1] * 0.5;
-  vert[2] = coords.m_origin[2] + logical_index[2] * coords.m_spacing[2] +
-            coords.m_spacing[2] * 0.5;
-
-  conduit::Node res;
-  res.set(vert, 3);
-  return res;
-}
-
-conduit::Node
-get_rectilinear_element(const conduit::Node &n_coords, const int &index)
-{
-  bool is_float64 = true;
-
-  int dims[3] = {0, 0, 0};
-  dims[0] = n_coords["values/x"].dtype().number_of_elements();
-  dims[1] = n_coords["values/y"].dtype().number_of_elements();
-
-  if(n_coords.has_path("values/z"))
-  {
-    dims[2] = n_coords["values/z"].dtype().number_of_elements();
-  }
-
-  if(n_coords["values/x"].dtype().is_float32())
-  {
-    is_float64 = false;
-  }
-  const int element_dims[3] = {dims[0] - 1, dims[1] - 1, dims[2] - 1};
-
-  double vert[3] = {0., 0., 0.};
-
-  int logical_index[3] = {0, 0, 0};
-
-  if(dims[2] == 0)
-  {
-    logical_index_2d(logical_index, index, element_dims);
-  }
-  else
-  {
-    logical_index_3d(logical_index, index, element_dims);
-  }
-
-  if(is_float64)
-  {
-    conduit::float64_array x_a = n_coords["values/x"].value();
-    conduit::float64_array y_a = n_coords["values/y"].value();
-    vert[0] = (x_a[logical_index[0]] + x_a[logical_index[0] + 1]) * 0.5;
-    vert[1] = (y_a[logical_index[1]] + y_a[logical_index[1] + 1]) * 0.5;
-    if(dims[2] != 0)
-    {
-      conduit::float64_array z_a = n_coords["values/z"].value();
-      vert[2] = (z_a[logical_index[2]] + z_a[logical_index[2] + 1]) * 0.5;
-    }
-  }
-  else
-  {
-    conduit::float32_array x_a = n_coords["values/x"].value();
-    conduit::float32_array y_a = n_coords["values/y"].value();
-    vert[0] = (x_a[logical_index[0]] + x_a[logical_index[0] + 1]) * 0.5;
-    vert[1] = (y_a[logical_index[1]] + y_a[logical_index[1] + 1]) * 0.5;
-    if(dims[2] != 0)
-    {
-      conduit::float32_array z_a = n_coords["values/z"].value();
-      vert[2] = (z_a[logical_index[2]] + z_a[logical_index[2] + 1]) * 0.5;
-    }
-  }
-
-  conduit::Node res;
-  res.set(vert, 3);
-  return res;
-}
-
-conduit::Node
-get_explicit_element(const conduit::Node &n_coords,
-                     const conduit::Node &n_topo,
-                     const int &index)
-{
-  std::vector<int> conn;
-  get_element_indices(n_topo, index, conn);
-  const int num_indices = conn.size();
-  double vert[3] = {0., 0., 0.};
-  for(int i = 0; i < num_indices; ++i)
-  {
-    int vert_index = conn[i];
-    conduit::Node n_vert = get_explicit_vert(n_coords, vert_index);
-    double *ptr = n_vert.value();
-    vert[0] += ptr[0];
-    vert[1] += ptr[1];
-    vert[2] += ptr[2];
-  }
-
-  vert[0] /= double(num_indices);
-  vert[1] /= double(num_indices);
-  vert[2] /= double(num_indices);
-
-  conduit::Node res;
-  res.set(vert, 3);
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-}; // namespace detail
+};
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions::detail--
 //-----------------------------------------------------------------------------
 
-conduit::Node
-vert_location(const conduit::Node &domain,
-              const int &index,
-              const std::string &topo_name)
+//-----------------------------------------------------------------------------
+// -- Topology
+//-----------------------------------------------------------------------------
+Topology::Topology(const std::string &topo_name,
+                   const conduit::Node &domain,
+                   const size_t num_dims)
+    : domain(domain), topo_name(topo_name),
+      topo_type(domain["topologies/" + topo_name + "/type"].as_string()),
+      coords_name(domain["topologies/" + topo_name + "/coordset"].as_string()),
+      coords_type(domain["coordsets/" + coords_name + "/type"].as_string()),
+      num_dims(num_dims)
 {
-  std::string topo = topo_name;
-  // if we don't specify a topology, find the first topology ...
-  if(topo_name == "")
+}
+
+size_t
+Topology::get_num_points() const
+{
+  return num_points;
+}
+
+size_t
+Topology::get_num_cells() const
+{
+  return num_cells;
+}
+//-----------------------------------------------------------------------------
+// -- PointTopology
+//-----------------------------------------------------------------------------
+template <typename T, size_t N>
+PointTopology<T, N>::PointTopology(const std::string &topo_name,
+                                   const conduit::Node &domain)
+    : Topology(topo_name, domain, N)
+{
+  if(this->topo_type != "point")
   {
-    conduit::NodeConstIterator itr = domain["topologies"].children();
-    itr.next();
-    topo = itr.name();
+    ASCENT_ERROR("Cannot initialize a PointTopology class from topology '"
+                 << topo_name << "' in domain " << domain.name()
+                 << " which has type '" << this->topo_type << "'.");
   }
 
-  const conduit::Node &n_topo = domain["topologies/" + topo];
-  const std::string mesh_type = n_topo["type"].as_string();
-  const std::string coords_name = n_topo["coordset"].as_string();
-
-  const conduit::Node &n_coords = domain["coordsets"][coords_name];
-
-  conduit::Node res;
-  if(mesh_type == "uniform")
+  if(this->coord_type == "uniform")
   {
-    res = detail::get_uniform_vert(n_coords, index);
+    const conduit::Node &n_coords = domain["coordsets/" + this->coords_name];
+    const conduit::Node &n_dims = n_coords["dims"];
+    const conduit::Node &n_origin = n_coords["origin"];
+    const conduit::Node &n_spacing = n_coords["spacing"];
+    for(size_t i = 0; i < N; ++i)
+    {
+      const std::string dim = std::string(1, 'i' + i);
+      const std::string coord = std::string(1, 'x' + i);
+      dims[i] = n_dims[dim].to_int();
+      origin[i] = n_origin[dim].to_float64();
+      spacing[i] = n_spacing["d" + coord].to_float64();
+      num_points = dims[i];
+      num_cells = dims[i] - 1;
+    }
   }
-  else if(mesh_type == "rectilinear")
+  else if(this->coord_type == "rectilinear")
   {
-    res = detail::get_rectilinear_vert(n_coords, index);
+    const conduit::Node &values =
+        domain["coordsets/" + this->coords_name + "/values"];
+    num_points = 1;
+    for(size_t i = 0; i < N; ++i)
+    {
+      const conduit::Node &coord_values = values.fetch(std::string(1, 'x' + i));
+      coords[i] = coord_values.value();
+      num_points *= coords[i].dtype().number_of_elements();
+    }
   }
-  else if(mesh_type == "unstructured" || mesh_type == "structured")
+  else if(this->coord_type == "explicit")
   {
-    res = detail::get_explicit_vert(n_coords, index);
+    const conduit::Node &values =
+        domain["coordsets/" + this->coords_name + "/values"];
+    for(size_t i = 0; i < N; ++i)
+    {
+      const conduit::Node &coord_values = values.fetch(std::string(1, 'x' + i));
+      coords[i] = coord_values.value();
+    }
+    num_points = coords[0].dtype().number_of_elements();
   }
   else
   {
-    ASCENT_ERROR("The Architect: unknown mesh type: '" << mesh_type << "'");
+    ASCENT_ERROR("Unknown coordinate type '"
+                 << this->coord_type << "' for point topology '" << topo_name
+                 << "' in domain " << domain.name() << ".");
   }
-
-  return res;
 }
 
-conduit::Node
-element_location(const conduit::Node &domain,
-                 const int &index,
-                 const std::string &topo_name)
+template <typename T, size_t N>
+std::array<conduit::float64, 3>
+PointTopology<T, N>::vertex_location(const size_t index) const
 {
-  std::string topo = topo_name;
-  // if we don't specify a topology, find the first topology ...
-  if(topo_name == "")
+  std::array<conduit::float64, 3> loc{};
+  if(this->coord_type == "uniform")
   {
-    conduit::NodeConstIterator itr = domain["topologies"].children();
-    itr.next();
-    topo = itr.name();
+    auto l_index = detail::logical_index(index, dims);
+    for(size_t i = 0; i < N; ++i)
+    {
+      loc[i] = origin[i] + l_index[i] * spacing[i];
+    }
   }
-
-  const conduit::Node &n_topo = domain["topologies"][topo];
-  const std::string mesh_type = n_topo["type"].as_string();
-  const std::string coords_name = n_topo["coordset"].as_string();
-
-  const conduit::Node &n_coords = domain["coordsets"][coords_name];
-
-  conduit::Node res;
-  if(mesh_type == "uniform")
+  else if(this->coord_type == "rectilinear")
   {
-    res = detail::get_uniform_element(n_coords, index);
+    std::array<size_t, N> dims;
+    for(size_t i = 0; i < N; ++i)
+    {
+      dims[i] = coords[i].number_of_elements();
+    }
+    const auto l_index = detail::logical_index(index, dims);
+    for(size_t i = 0; i < N; ++i)
+    {
+      loc[i] = coords[i][l_index[i]];
+    }
   }
-  else if(mesh_type == "rectilinear")
+  else if(this->coord_type == "explicit")
   {
-    res = detail::get_rectilinear_element(n_coords, index);
-  }
-  else if(mesh_type == "unstructured" || mesh_type == "structured")
-  {
-    res = detail::get_explicit_element(n_coords, n_topo, index);
+    for(size_t i = 0; i < N; ++i)
+    {
+      loc[i] = coords[i][index];
+    }
   }
   else
   {
-    ASCENT_ERROR("The Architect: unknown mesh type: '" << mesh_type << "'");
+    ASCENT_ERROR("Unknown coordinate type '"
+                 << this->coord_type << "' for point topology '" << topo_name
+                 << "' in domain " << domain.name() << ".");
+  }
+  return loc;
+}
+
+template <typename T, size_t N>
+std::array<conduit::float64, 3>
+PointTopology<T, N>::element_location(const size_t index) const
+{
+  ASCENT_ERROR("Cannot get the element location of a point topology '"
+               << topo_name << "'.");
+}
+
+template <typename T, size_t N>
+size_t
+PointTopology<T, N>::get_num_cells() const
+{
+  ASCENT_ERROR("Cannot get the number of cells in a point topology '"
+               << topo_name << "'.");
+}
+
+//-----------------------------------------------------------------------------
+// -- UniformTopology
+//-----------------------------------------------------------------------------
+template <typename T, size_t N>
+UniformTopology<T, N>::UniformTopology(const std::string &topo_name,
+                                       const conduit::Node &domain)
+    : Topology(topo_name, domain, N)
+{
+  if(this->topo_type != "uniform")
+  {
+    ASCENT_ERROR("Cannot initialize a UniformTopology class from topology '"
+                 << topo_name << "' in domain " << domain.name()
+                 << " which has type '" << this->topo_type << "'.");
   }
 
-  return res;
+  const conduit::Node &n_coords = domain["coordsets/" + this->coords_name];
+  const conduit::Node &n_dims = n_coords["dims"];
+  const conduit::Node &n_origin = n_coords["origin"];
+  const conduit::Node &n_spacing = n_coords["spacing"];
+  for(size_t i = 0; i < N; ++i)
+  {
+    const std::string dim = std::string(1, 'i' + i);
+    const std::string coord = std::string(1, 'x' + i);
+    dims[i] = n_dims[dim].to_int32();
+    origin[i] = n_origin[coord].to_float64();
+    spacing[i] = n_spacing["d" + coord].to_float64();
+    num_points = dims[i];
+    num_cells = dims[i] - 1;
+  }
 }
+
+template <typename T, size_t N>
+std::array<conduit::float64, 3>
+UniformTopology<T, N>::vertex_location(const size_t index) const
+{
+  auto l_index = detail::logical_index(index, dims);
+  std::array<conduit::float64, 3> loc{};
+  for(size_t i = 0; i < N; ++i)
+  {
+    loc[i] = origin[i] + l_index[i] * spacing[i];
+  }
+  return loc;
+}
+
+template <typename T, size_t N>
+std::array<conduit::float64, 3>
+UniformTopology<T, N>::element_location(const size_t index) const
+{
+  std::array<size_t, N> element_dims;
+  for(size_t i = 0; i < N; ++i)
+  {
+    element_dims[i] = dims[i] - 1;
+  }
+  const auto l_index = detail::logical_index(index, element_dims);
+  std::array<conduit::float64, 3> loc{};
+  for(size_t i = 0; i < N; ++i)
+  {
+    loc[i] = origin[i] + l_index[i] * spacing[i] + spacing[i] * 0.5;
+  }
+  return loc;
+}
+
+template <typename T, size_t N>
+void
+UniformTopology<T, N>::pack(conduit::Node &args) const
+{
+  for(size_t i = 0; i < N; ++i)
+  {
+    const std::string dim = std::string(1, 'i' + i);
+    const std::string coord = std::string(1, 'x' + i);
+    args["const int " + topo_name + "_dims_" + dim + ",\n"] = dims[i];
+    args["const double " + topo_name + "_spacing_d" + coord + ",\n"] =
+        spacing[i];
+    args["const double " + topo_name + "_origin_" + coord + ",\n"] = origin[i];
+  }
+}
+
+//-----------------------------------------------------------------------------
+// -- RectilinearTopology
+//-----------------------------------------------------------------------------
+template <typename T, size_t N>
+RectilinearTopology<T, N>::RectilinearTopology(const std::string &topo_name,
+                                               const conduit::Node &domain)
+    : Topology(topo_name, domain, N)
+{
+  if(this->topo_type != "rectilinear")
+  {
+    ASCENT_ERROR("Cannot initialize a RectilinearTopology class from topology '"
+                 << topo_name << "' in domain " << domain.name()
+                 << " which has type '" << this->topo_type << "'.");
+  }
+
+  const conduit::Node &values =
+      domain["coordsets/" + this->coords_name + "/values"];
+  num_points = 1;
+  num_cells = 1;
+  for(size_t i = 0; i < N; ++i)
+  {
+    const conduit::Node &coord_values = values.fetch(std::string(1, 'x' + i));
+    coords[i] = coord_values.value();
+    num_points *= coords[i].dtype().number_of_elements();
+    num_cells *= coords[i].dtype().number_of_elements() - 1;
+  }
+}
+
+template <typename T, size_t N>
+std::array<conduit::float64, 3>
+RectilinearTopology<T, N>::vertex_location(const size_t index) const
+{
+  std::array<size_t, N> dims;
+  for(size_t i = 0; i < N; ++i)
+  {
+    dims[i] = coords[i].number_of_elements();
+  }
+  const auto l_index = detail::logical_index(index, dims);
+  std::array<conduit::float64, 3> loc{};
+  for(size_t i = 0; i < N; ++i)
+  {
+    loc[i] = coords[i][l_index[i]];
+  }
+  return loc;
+}
+
+template <typename T, size_t N>
+std::array<conduit::float64, 3>
+RectilinearTopology<T, N>::element_location(const size_t index) const
+{
+  std::array<size_t, N> dims;
+  for(size_t i = 0; i < N; ++i)
+  {
+    dims[i] = coords[i].number_of_elements() - 1;
+  }
+  const auto l_index = detail::logical_index(index, dims);
+  std::array<conduit::float64, 3> loc{};
+  for(size_t i = 0; i < N; ++i)
+  {
+    loc[i] = (coords[i][l_index[i]] + coords[i][l_index[i] + 1]) / 2;
+  }
+  return loc;
+}
+
+template <typename T, size_t N>
+void
+RectilinearTopology<T, N>::pack(conduit::Node &args) const
+{
+
+  for(size_t i = 0; i < N; ++i)
+  {
+    const std::string dim = std::string(1, 'i' + i);
+    const std::string coord = std::string(1, 'x' + i);
+    args["const double *" + topo_name + "_coords_" + coord + ",\n"]
+        .set_external(coords[i]);
+    args["const int " + topo_name + "_dims_" + dim + ",\n"] =
+        coords[i].dtype().number_of_elements();
+  }
+}
+
+//-----------------------------------------------------------------------------
+// -- StructuredTopology
+//-----------------------------------------------------------------------------
+template <typename T, size_t N>
+StructuredTopology<T, N>::StructuredTopology(const std::string &topo_name,
+                                             const conduit::Node &domain)
+    : Topology(topo_name, domain, N)
+{
+  if(this->topo_type != "structured")
+  {
+    ASCENT_ERROR("Cannot initialize a StructuredTopology class from topology '"
+                 << topo_name << "' in domain " << domain.name()
+                 << " which has type '" << this->topo_type << "'.");
+  }
+  const conduit::Node &values =
+      domain["coordsets/" + this->coords_name + "/values"];
+  const conduit::Node &n_dims =
+      domain["topologies/" + topo_name + "/elements/dims"];
+  num_points = 1;
+  num_cells = 1;
+  for(size_t i = 0; i < N; ++i)
+  {
+    const conduit::Node &coord_values = values.fetch(std::string(1, 'x' + i));
+    const std::string &dim = std::string(1, 'i' + i);
+    coords[i] = coord_values.value();
+    // the blueprint gives structured dims in terms of elements not vertices so
+    // we change it to vertices so that it's consistent with uniform
+    dims[i] = n_dims[dim].to_int32() + 1;
+    num_points *= dims[i];
+    num_cells *= dims[i] - 1;
+  }
+  // check that number of vertices in coordset matches dims
+  // TODO maybe this is fine and should just be a warning?
+  if(coords[0].dtype().number_of_elements() != num_points)
+  {
+    ASCENT_ERROR(
+        "UnstructuredTopology ("
+        << topo_name << "): The number of points calculated (" << num_points
+        << ") differs from the number of vertices in corresponding coordset ("
+        << coords[0].dtype().number_of_elements() << ").");
+  }
+}
+
+template <typename T, size_t N>
+std::array<conduit::float64, 3>
+StructuredTopology<T, N>::vertex_location(const size_t index) const
+{
+  std::array<conduit::float64, 3> loc{};
+  for(size_t i = 0; i < N; ++i)
+  {
+    loc[i] = coords[i][index];
+  }
+  return loc;
+}
+
+constexpr size_t
+constexpr_pow(size_t x, size_t y)
+{
+  return y == 0 ? 1 : x * constexpr_pow(x, y - 1);
+}
+
+// vertices are ordered in the VTK format
+// https://vtk.org/wp-content/uploads/2015/04/file-formats.pdf
+template <typename T, size_t N>
+std::array<conduit::float64, 3>
+StructuredTopology<T, N>::element_location(const size_t index) const
+{
+
+  std::array<size_t, N> element_dims;
+  for(size_t i = 0; i < N; ++i)
+  {
+    element_dims[i] = dims[i] - 1;
+  }
+  const auto element_index = detail::logical_index(index, element_dims);
+
+  constexpr size_t num_vertices = constexpr_pow(2, N);
+  std::array<size_t, num_vertices> vertices;
+  if(num_vertices == 2)
+  {
+    vertices[0] = element_index[0];
+    vertices[1] = vertices[0] + 1;
+  }
+  else if(num_vertices == 4)
+  {
+    vertices[0] = element_index[1] * dims[0] + element_index[0];
+    vertices[1] = vertices[0] + 1;
+    vertices[2] = vertices[1] + dims[0];
+    vertices[3] = vertices[2] - 1;
+  }
+  else if(num_vertices == 8)
+  {
+    vertices[0] = (element_index[2] * dims[1] + element_index[1]) * dims[0] +
+                  element_index[0];
+    vertices[1] = vertices[0] + 1;
+    vertices[2] = vertices[1] + dims[0];
+    vertices[3] = vertices[2] - 1;
+    vertices[4] = vertices[0] + dims[0] * dims[1];
+    vertices[5] = vertices[4] + 1;
+    vertices[6] = vertices[5] + dims[0];
+    vertices[7] = vertices[6] - 1;
+  }
+
+  std::array<conduit::float64, 3> loc{};
+  for(size_t i = 0; i < num_vertices; ++i)
+  {
+    const auto vert_loc = vertex_location(vertices[i]);
+    for(size_t i = 0; i < N; ++i)
+    {
+      loc[i] += vert_loc[i];
+    }
+  }
+  for(size_t i = 0; i < N; ++i)
+  {
+    loc[i] /= num_vertices;
+  }
+  return loc;
+}
+
+template <typename T, size_t N>
+void
+StructuredTopology<T, N>::pack(conduit::Node &args) const
+{
+  for(size_t i = 0; i < N; ++i)
+  {
+    const std::string dim = std::string(1, 'i' + i);
+    const std::string coord = std::string(1, 'x' + i);
+    args["const int " + topo_name + "_dims_" + dim + ",\n"] = dims[i];
+    args["const double *" + topo_name + "_coords_" + coord + ",\n"]
+        .set_external(coords[i]);
+  }
+}
+
+//-----------------------------------------------------------------------------
+// -- UnstructuredTopology
+//-----------------------------------------------------------------------------
+template <typename T, size_t N>
+UnstructuredTopology<T, N>::UnstructuredTopology(const std::string &topo_name,
+                                                 const conduit::Node &domain)
+    : Topology(topo_name, domain, N)
+{
+  if(this->topo_type != "unstructured")
+  {
+    ASCENT_ERROR(
+        "Cannot initialize a UnstructuredTopology class from topology '"
+        << topo_name << "' in domain " << domain.name() << " which has type '"
+        << this->topo_type << "'.");
+  }
+  const conduit::Node &values =
+      domain["coordsets/" + this->coords_name + "/values"];
+  for(size_t i = 0; i < N; ++i)
+  {
+    const conduit::Node &coord_values = values.fetch(std::string(1, 'x' + i));
+    coords[i] = coord_values.value();
+  }
+  const conduit::Node &elements =
+      domain["topologies/" + topo_name + "/elements"];
+  connectivity = elements["connectivity"].value();
+  num_vertices = detail::get_num_vertices(elements["shape"].as_string());
+  num_cells = connectivity.dtype().number_of_elements() / num_vertices;
+}
+
+template <typename T, size_t N>
+size_t
+UnstructuredTopology<T, N>::get_num_points() const
+{
+  // number of unique elements in connectivity
+  const conduit::int32 *conn_begin = (conduit::int32 *)connectivity.data_ptr();
+  const conduit::int32 *conn_end =
+      conn_begin + connectivity.dtype().number_of_elements();
+  return std::unordered_set<T>(conn_begin, conn_end).size();
+}
+
+template <typename T, size_t N>
+std::array<conduit::float64, 3>
+UnstructuredTopology<T, N>::vertex_location(const size_t index) const
+{
+  std::array<conduit::float64, 3> loc{};
+  for(size_t i = 0; i < N; ++i)
+  {
+    loc[i] = coords[i][index];
+  }
+  return loc;
+}
+
+template <typename T, size_t N>
+std::array<conduit::float64, 3>
+UnstructuredTopology<T, N>::element_location(const size_t index) const
+{
+  std::array<conduit::float64, 3> loc{};
+  const auto offset = index * num_vertices;
+  for(size_t i = 0; i < num_vertices; ++i)
+  {
+    const auto vert_loc = vertex_location(connectivity[offset + i]);
+    for(size_t i = 0; i < N; ++i)
+    {
+      loc[i] += vert_loc[i];
+    }
+  }
+  for(size_t i = 0; i < N; ++i)
+  {
+    loc[i] /= num_vertices;
+  }
+  return loc;
+}
+
+template <typename T, size_t N>
+void
+UnstructuredTopology<T, N>::pack(conduit::Node &args) const
+{
+  // "const int num_points,\n"
+  // "const double * coords_x,\n"
+  // "const double * coords_y,\n"
+  // "const double * coords_z,\n"
+  // "const int * connectivity,\n"
+  // "const int shape,\n";
+  args["const int num_points,\n"] = get_num_points();
+  for(size_t i = 0; i < N; ++i)
+  {
+    const std::string coord = std::string(1, 'x' + i);
+    args["const double *coords_" + coord + ",\n"].set_external(coords[i]);
+  }
+  args["const double *connectivity,\n"].set_external(connectivity);
+  args["const int shape,\n"] = num_vertices;
+}
+
+//-----------------------------------------------------------------------------
+// -- topologyFactory
+//-----------------------------------------------------------------------------
+
+// make_unique is a c++14 feature
+// this is not as general
+template <typename T, typename... Args>
+std::unique_ptr<T>
+my_make_unique(Args &&... args)
+{
+  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+std::unique_ptr<Topology>
+topologyFactory(const std::string &topo_name, const conduit::Node &domain)
+{
+  const conduit::Node &n_topo = domain["topologies/" + topo_name];
+  const std::string &topo_type = n_topo["type"].as_string();
+  const size_t num_dims = topo_dim(topo_name, domain);
+  const std::string type = coord_dtype(topo_name, domain);
+  if(topo_type == "uniform")
+  {
+    if(type == "double")
+    {
+      switch(num_dims)
+      {
+      case 1:
+        return my_make_unique<UniformTopology<conduit::float64, 1>>(topo_name,
+                                                                    domain);
+        break;
+      case 2:
+        return my_make_unique<UniformTopology<conduit::float64, 2>>(topo_name,
+                                                                    domain);
+        break;
+      case 3:
+        return my_make_unique<UniformTopology<conduit::float64, 3>>(topo_name,
+                                                                    domain);
+        break;
+      }
+    }
+    else
+    {
+      switch(num_dims)
+      {
+      case 1:
+        return my_make_unique<UniformTopology<conduit::float32, 1>>(topo_name,
+                                                                    domain);
+        break;
+      case 2:
+        return my_make_unique<UniformTopology<conduit::float32, 2>>(topo_name,
+                                                                    domain);
+        break;
+      case 3:
+        return my_make_unique<UniformTopology<conduit::float32, 3>>(topo_name,
+                                                                    domain);
+        break;
+      }
+    }
+  }
+  else if(topo_type == "rectilinear")
+  {
+    if(type == "double")
+    {
+      switch(num_dims)
+      {
+      case 1:
+        return my_make_unique<RectilinearTopology<conduit::float64, 1>>(
+            topo_name, domain);
+        break;
+      case 2:
+        return my_make_unique<RectilinearTopology<conduit::float64, 2>>(
+            topo_name, domain);
+        break;
+      case 3:
+        return my_make_unique<RectilinearTopology<conduit::float64, 3>>(
+            topo_name, domain);
+        break;
+      }
+    }
+    else
+    {
+      switch(num_dims)
+      {
+      case 1:
+        return my_make_unique<RectilinearTopology<conduit::float32, 1>>(
+            topo_name, domain);
+        break;
+      case 2:
+        return my_make_unique<RectilinearTopology<conduit::float32, 2>>(
+            topo_name, domain);
+        break;
+      case 3:
+        return my_make_unique<RectilinearTopology<conduit::float32, 3>>(
+            topo_name, domain);
+        break;
+      }
+    }
+  }
+  else if(topo_type == "structured")
+  {
+    if(type == "double")
+    {
+      switch(num_dims)
+      {
+      case 1:
+        return my_make_unique<StructuredTopology<conduit::float64, 1>>(
+            topo_name, domain);
+        break;
+      case 2:
+        return my_make_unique<StructuredTopology<conduit::float64, 2>>(
+            topo_name, domain);
+        break;
+      case 3:
+        return my_make_unique<StructuredTopology<conduit::float64, 3>>(
+            topo_name, domain);
+        break;
+      }
+    }
+    else
+    {
+      switch(num_dims)
+      {
+      case 1:
+        return my_make_unique<StructuredTopology<conduit::float32, 1>>(
+            topo_name, domain);
+        break;
+      case 2:
+        return my_make_unique<StructuredTopology<conduit::float32, 2>>(
+            topo_name, domain);
+        break;
+      case 3:
+        return my_make_unique<StructuredTopology<conduit::float32, 3>>(
+            topo_name, domain);
+        break;
+      }
+    }
+  }
+  else if(topo_type == "unstructured")
+  {
+    if(type == "double")
+    {
+      switch(num_dims)
+      {
+      case 1:
+        return my_make_unique<UnstructuredTopology<conduit::float64, 1>>(
+            topo_name, domain);
+        break;
+      case 2:
+        return my_make_unique<UnstructuredTopology<conduit::float64, 2>>(
+            topo_name, domain);
+        break;
+      case 3:
+        return my_make_unique<UnstructuredTopology<conduit::float64, 3>>(
+            topo_name, domain);
+        break;
+      }
+    }
+    else
+    {
+      switch(num_dims)
+      {
+      case 1:
+        return my_make_unique<UnstructuredTopology<conduit::float32, 1>>(
+            topo_name, domain);
+        break;
+      case 2:
+        return my_make_unique<UnstructuredTopology<conduit::float32, 2>>(
+            topo_name, domain);
+        break;
+      case 3:
+        return my_make_unique<UnstructuredTopology<conduit::float32, 3>>(
+            topo_name, domain);
+        break;
+      }
+    }
+  }
+  else
+  {
+    ASCENT_ERROR("The Architect: Unsupported topology type '" << topo_type
+                                                              << "'.");
+  }
+  ASCENT_ERROR("topologyFactory returning nullptr, this should never happen.");
+  return nullptr;
+}
+//-----------------------------------------------------------------------------
 
 std::string
 possible_components(const conduit::Node &dataset, const std::string &field_name)
@@ -764,7 +1032,7 @@ get_bin_index(const conduit::float64 value, const conduit::Node &axis)
     // rectilinear
     const conduit::float64 *bins_begin = axis["bins"].value();
     const conduit::float64 *bins_end =
-        bins_begin + axis["bins"].dtype().number_of_elements();
+        bins_begin + axis["bins"].dtype().number_of_elements() - 1;
     // first element greater than value
     const conduit::float64 *res = std::upper_bound(bins_begin, bins_end, value);
     if(clamp)
@@ -775,7 +1043,7 @@ get_bin_index(const conduit::float64 value, const conduit::Node &axis)
       }
       else if(res >= bins_end)
       {
-        return bins_end - bins_begin - 2;
+        return bins_end - bins_begin - 1;
       }
     }
     else if(res <= bins_begin || res >= bins_end)
@@ -785,9 +1053,38 @@ get_bin_index(const conduit::float64 value, const conduit::Node &axis)
     return (res - 1) - bins_begin;
   }
   // uniform
-  const double num_bins = axis["num_bins"].to_float64();
-  const double max_val = axis["max_val"].to_float64();
-  const double min_val = axis["min_val"].to_float64();
+  const double inv_delta =
+      axis["num_bins"].to_float64() /
+      (axis["max_val"].to_float64() - axis["min_val"].to_float64());
+  const int bin_index =
+      static_cast<int>((value - axis["min_val"].to_float64()) * inv_delta);
+  if(clamp)
+  {
+    if(bin_index < 0)
+    {
+      return 0;
+    }
+    else if(bin_index >= axis["num_bins"].as_int32())
+    {
+      return axis["num_bins"].as_int32() - 1;
+    }
+  }
+  else if(bin_index < 0 || bin_index >= axis["num_bins"].as_int32())
+  {
+    return -1;
+  }
+  return bin_index;
+}
+
+// returns -1 if value lies outside the range
+template <typename T>
+int
+uniform_bin(const T value,
+            const T min_val,
+            const T max_val,
+            const size_t num_bins,
+            const bool clamp)
+{
   const double inv_delta = num_bins / (max_val - min_val);
   const int bin_index = static_cast<int>((value - min_val) * inv_delta);
   if(clamp)
@@ -806,6 +1103,87 @@ get_bin_index(const conduit::float64 value, const conduit::Node &axis)
     return -1;
   }
   return bin_index;
+}
+
+template <typename T>
+int
+rectilinear_bin(const T value,
+                const T *const bins_begin,
+                const T *const bins_end,
+                const bool clamp)
+{
+  const T *const res = std::upper_bound(bins_begin, bins_end, value);
+  if(clamp)
+  {
+    if(res <= bins_begin)
+    {
+      return 0;
+    }
+    else if(res >= bins_end)
+    {
+      return bins_end - bins_begin - 2;
+    }
+  }
+  else if(res <= bins_begin || res >= bins_end)
+  {
+    return -1;
+  }
+  return (res - 1) - bins_begin;
+}
+
+template <typename T>
+void
+field_homes(const T *const field,
+            int *const homes,
+            const size_t num_homes,
+            const size_t stride,
+            const conduit::Node &axis)
+{
+  const bool clamp = axis["clamp"].to_uint8();
+  if(axis.has_path("bins"))
+  {
+    // rectilinear
+    const T *bins_begin = axis["bins"].value();
+    const T *bins_end = bins_begin + axis["bins"].dtype().number_of_elements();
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+    for(size_t i = 0; i < num_homes; ++i)
+    {
+      const int bin_index =
+          rectilinear_bin(field[i], bins_begin, bins_end, clamp);
+      if(bin_index != -1)
+      {
+        homes[i] += bin_index * stride;
+      }
+      else
+      {
+        homes[i] = -1;
+      }
+    }
+  }
+  else
+  {
+    const T min_val = axis["min_val"].to_float64();
+    const T max_val = axis["max_val"].to_float64();
+    const T num_bins = axis["num_bins"].to_float64();
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+    for(size_t i = 0; i < num_homes; ++i)
+    {
+      const int bin_index =
+          uniform_bin(field[i], min_val, max_val, num_bins, clamp);
+      if(bin_index != -1)
+      {
+        homes[i] += bin_index * stride;
+      }
+      else
+      {
+        homes[i] = -1;
+      }
+    }
+  }
 }
 
 void
@@ -831,15 +1209,65 @@ populate_homes(const conduit::Node &dom,
     }
   }
 
+  std::unique_ptr<Topology> topo = topologyFactory(topo_name, dom);
+
   // Calculate the size of homes
-  conduit::index_t homes_size = 0;
+  size_t homes_size = 0;
   if(assoc_str == "vertex")
   {
-    homes_size = num_points(dom, topo_name);
+    homes_size = topo->get_num_points();
   }
   else if(assoc_str == "element")
   {
-    homes_size = num_cells(dom, topo_name);
+    homes_size = topo->get_num_cells();
+  }
+
+  // if we need to bin a spacial axis get coordinates for each element
+  bool has_spacial = false;
+  for(int axis_index = 0; axis_index < num_axes; ++axis_index)
+  {
+    const conduit::Node &axis = bin_axes.child(axis_index);
+    const std::string axis_name = axis.name();
+    if(is_xyz(axis_name))
+    {
+      has_spacial = true;
+      break;
+    }
+  }
+
+  std::array<conduit::float64 *, 3> coords;
+  if(has_spacial)
+  {
+    coords[0] = new conduit::float64[homes_size];
+    coords[1] = new conduit::float64[homes_size];
+    coords[2] = new conduit::float64[homes_size];
+    std::array<conduit::float64, 3> loc;
+    if(assoc_str == "vertex")
+    {
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+      for(int i = 0; i < homes_size; ++i)
+      {
+        loc = topo->vertex_location(i);
+        coords[0][i] = loc[0];
+        coords[1][i] = loc[1];
+        coords[2][i] = loc[2];
+      }
+    }
+    else if(assoc_str == "element")
+    {
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+      for(int i = 0; i < homes_size; ++i)
+      {
+        loc = topo->element_location(i);
+        coords[0][i] = loc[0];
+        coords[1][i] = loc[1];
+        coords[2][i] = loc[2];
+      }
+    }
   }
 
   // each domain has a homes array
@@ -857,71 +1285,19 @@ populate_homes(const conduit::Node &dom,
       std::string values_path = "fields/" + axis_name + "/values";
       if(dom[values_path].dtype().is_float32())
       {
-        const conduit::float32_array values = dom[values_path].value();
-#ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for
-#endif
-        for(int i = 0; i < values.number_of_elements(); ++i)
-        {
-          const int bin_index = get_bin_index(values[i], axis);
-          if(bin_index != -1)
-          {
-            homes[i] += bin_index * stride;
-          }
-          else
-          {
-            homes[i] = -1;
-          }
-        }
+        const conduit::float32 *values = dom[values_path].value();
+        field_homes(values, homes, homes_size, stride, axis);
       }
       else
       {
-        const conduit::float64_array values = dom[values_path].value();
-#ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for
-#endif
-        for(int i = 0; i < values.number_of_elements(); ++i)
-        {
-          const int bin_index = get_bin_index(values[i], axis);
-          if(bin_index != -1)
-          {
-            homes[i] += bin_index * stride;
-          }
-          else
-          {
-            homes[i] = -1;
-          }
-        }
+        const conduit::float64 *values = dom[values_path].value();
+        field_homes(values, homes, homes_size, stride, axis);
       }
     }
     else if(is_xyz(axis_name))
     {
       int coord = axis_name[0] - 'x';
-#ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for
-#endif
-      for(int i = 0; i < homes_size; ++i)
-      {
-        conduit::Node n_loc;
-        if(assoc_str == "vertex")
-        {
-          n_loc = vert_location(dom, i, topo_name);
-        }
-        else if(assoc_str == "element")
-        {
-          n_loc = element_location(dom, i, topo_name);
-        }
-        const double *loc = n_loc.value();
-        const int bin_index = get_bin_index(loc[coord], axis);
-        if(bin_index != -1)
-        {
-          homes[i] += bin_index * stride;
-        }
-        else
-        {
-          homes[i] = -1;
-        }
-      }
+      field_homes(coords[coord], homes, homes_size, stride, axis);
     }
 
     if(bin_axes.child(axis_index).has_path("num_bins"))
@@ -936,11 +1312,18 @@ populate_homes(const conduit::Node &dom,
           bin_axes.child(axis_index)["bins"].dtype().number_of_elements() - 1;
     }
   }
+  if(has_spacial)
+  {
+    delete[] coords[0];
+    delete[] coords[1];
+    delete[] coords[2];
+  }
 }
 
 void
 update_bin(double *bins,
            const int i,
+           const int num_bins,
            const double value,
            const std::string &reduction_op)
 {
@@ -948,30 +1331,30 @@ update_bin(double *bins,
   {
     // have to keep track of count anyways in order to detect which bins are
     // empty
-    bins[2 * i] = std::min(bins[i * 2], value);
-    bins[2 * i + 1] += 1;
+    bins[i] = std::min(bins[i], value);
+    bins[num_bins + i] += 1;
   }
   else if(reduction_op == "max")
   {
-    bins[2 * i] = std::max(bins[i * 2], value);
-    bins[2 * i + 1] += 1;
+    bins[i] = std::max(bins[i], value);
+    bins[num_bins + i] += 1;
   }
   else if(reduction_op == "avg" || reduction_op == "sum" ||
           reduction_op == "pdf")
   {
-    bins[2 * i] += value;
-    bins[2 * i + 1] += 1;
+    bins[i] += value;
+    bins[num_bins + i] += 1;
   }
   else if(reduction_op == "rms")
   {
-    bins[2 * i] += value * value;
-    bins[2 * i + 1] += 1;
+    bins[i] += value * value;
+    bins[num_bins + i] += 1;
   }
   else if(reduction_op == "var" || reduction_op == "std")
   {
-    bins[3 * i] += value * value;
-    bins[3 * i + 1] += value;
-    bins[3 * i + 2] += 1;
+    bins[i] += value * value;
+    bins[num_bins + i] += value;
+    bins[2 * num_bins + i] += 1;
   }
 }
 
@@ -1211,6 +1594,20 @@ binning(const conduit::Node &dataset,
   }
   const int bins_size = num_bins * num_bin_vars;
   double *bins = new double[bins_size]();
+  if(reduction_op == "min")
+  {
+    for(size_t i = 0; i < num_bins; ++i)
+    {
+      bins[i] = std::numeric_limits<double>::max();
+    }
+  }
+  else if(reduction_op == "max")
+  {
+    for(size_t i = 0; i < num_bins; ++i)
+    {
+      bins[i] = std::numeric_limits<double>::lowest();
+    }
+  }
 
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {
@@ -1240,7 +1637,7 @@ binning(const conduit::Node &dataset,
       {
         if(homes[i] != -1)
         {
-          update_bin(bins, homes[i], 1, reduction_op);
+          update_bin(bins, homes[i], num_bins, 1, reduction_op);
         }
       }
     }
@@ -1260,7 +1657,7 @@ binning(const conduit::Node &dataset,
         {
           if(homes[i] != -1)
           {
-            update_bin(bins, homes[i], values[i], reduction_op);
+            update_bin(bins, homes[i], num_bins, values[i], reduction_op);
           }
         }
       }
@@ -1274,7 +1671,7 @@ binning(const conduit::Node &dataset,
         {
           if(homes[i] != -1)
           {
-            update_bin(bins, homes[i], values[i], reduction_op);
+            update_bin(bins, homes[i], num_bins, values[i], reduction_op);
           }
         }
       }
@@ -1285,21 +1682,21 @@ binning(const conduit::Node &dataset,
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
+      std::unique_ptr<Topology> t = topologyFactory(topo_name, dom);
+      std::array<conduit::float64, 3> loc;
       for(int i = 0; i < homes_size; ++i)
       {
-        conduit::Node n_loc;
         if(assoc_str == "vertex")
         {
-          n_loc = vert_location(dom, i, topo_name);
+          loc = t->vertex_location(i);
         }
         else if(assoc_str == "element")
         {
-          n_loc = element_location(dom, i, topo_name);
+          loc = t->element_location(i);
         }
-        const double *loc = n_loc.value();
         if(homes[i] != -1)
         {
-          update_bin(bins, homes[i], loc[coord], reduction_op);
+          update_bin(bins, homes[i], num_bins, loc[coord], reduction_op);
         }
       }
     }
@@ -1321,11 +1718,23 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "min")
   {
-    MPI_Allreduce(bins, global_bins, bins_size, MPI_DOUBLE, MPI_MIN, mpi_comm);
+    MPI_Allreduce(bins, global_bins, num_bins, MPI_DOUBLE, MPI_MIN, mpi_comm);
+    MPI_Allreduce(bins + num_bins,
+                  global_bins + num_bins,
+                  num_bins,
+                  MPI_DOUBLE,
+                  MPI_SUM,
+                  mpi_comm);
   }
   else if(reduction_op == "max")
   {
-    MPI_Allreduce(bins, global_bins, bins_size, MPI_DOUBLE, MPI_MAX, mpi_comm);
+    MPI_Allreduce(bins, global_bins, num_bins, MPI_DOUBLE, MPI_MAX, mpi_comm);
+    MPI_Allreduce(bins + num_bins,
+                  global_bins + num_bins,
+                  num_bins,
+                  MPI_DOUBLE,
+                  MPI_SUM,
+                  mpi_comm);
   }
   delete[] bins;
   bins = global_bins;
@@ -1342,20 +1751,20 @@ binning(const conduit::Node &dataset,
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
-      total += bins[2 * i];
+      total += bins[i];
     }
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
-      if(bins[2 * i + 1] == 0)
+      if(bins[num_bins + i] == 0)
       {
         res_bins[i] = empty_bin_val;
       }
       else
       {
-        res_bins[i] = bins[2 * i] / total;
+        res_bins[i] = bins[i] / total;
       }
     }
   }
@@ -1367,13 +1776,13 @@ binning(const conduit::Node &dataset,
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
-      if(bins[2 * i + 1] == 0)
+      if(bins[num_bins + i] == 0)
       {
         res_bins[i] = empty_bin_val;
       }
       else
       {
-        res_bins[i] = bins[2 * i];
+        res_bins[i] = bins[i];
       }
     }
   }
@@ -1384,8 +1793,8 @@ binning(const conduit::Node &dataset,
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
-      const double sumX = bins[2 * i];
-      const double n = bins[2 * i + 1];
+      const double sumX = bins[i];
+      const double n = bins[num_bins + i];
       if(n == 0)
       {
         res_bins[i] = empty_bin_val;
@@ -1403,8 +1812,8 @@ binning(const conduit::Node &dataset,
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
-      const double sumX = bins[2 * i];
-      const double n = bins[2 * i + 1];
+      const double sumX = bins[i];
+      const double n = bins[num_bins + i];
       if(n == 0)
       {
         res_bins[i] = empty_bin_val;
@@ -1422,9 +1831,9 @@ binning(const conduit::Node &dataset,
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
-      const double sumX2 = bins[3 * i];
-      const double sumX = bins[3 * i + 1];
-      const double n = bins[3 * i + 2];
+      const double sumX2 = bins[i];
+      const double sumX = bins[num_bins + i];
+      const double n = bins[2 * num_bins + i];
       if(n == 0)
       {
         res_bins[i] = empty_bin_val;
@@ -1442,9 +1851,9 @@ binning(const conduit::Node &dataset,
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
-      const double sumX2 = bins[3 * i];
-      const double sumX = bins[3 * i + 1];
-      const double n = bins[3 * i + 2];
+      const double sumX2 = bins[i];
+      const double sumX = bins[num_bins + i];
+      const double n = bins[2 * num_bins + i];
       if(n == 0)
       {
         res_bins[i] = empty_bin_val;
@@ -1457,122 +1866,6 @@ binning(const conduit::Node &dataset,
   }
   res["association"] = assoc_str;
   delete[] bins;
-  return res;
-}
-
-int
-num_points(const conduit::Node &domain, const std::string &topo_name)
-{
-  int res = 0;
-
-  const conduit::Node &n_topo = domain["topologies/" + topo_name];
-
-  const std::string c_name = n_topo["coordset"].as_string();
-  const conduit::Node n_coords = domain["coordsets/" + c_name];
-  const std::string c_type = n_coords["type"].as_string();
-
-  if(c_type == "uniform")
-  {
-    res = n_coords["dims/i"].to_int32();
-    if(n_coords.has_path("dims/j"))
-    {
-      res *= n_coords["dims/j"].to_int32();
-    }
-    if(n_coords.has_path("dims/k"))
-    {
-      res *= n_coords["dims/k"].to_int32();
-    }
-  }
-
-  if(c_type == "rectilinear")
-  {
-    res = n_coords["values/x"].dtype().number_of_elements();
-
-    if(n_coords.has_path("values/y"))
-    {
-      res *= n_coords["values/y"].dtype().number_of_elements();
-    }
-
-    if(n_coords.has_path("values/z"))
-    {
-      res *= n_coords["values/z"].dtype().number_of_elements();
-    }
-  }
-
-  if(c_type == "explicit")
-  {
-    res = n_coords["values/x"].dtype().number_of_elements();
-  }
-
-  return res;
-}
-
-int
-num_cells(const conduit::Node &domain, const std::string &topo_name)
-{
-  const conduit::Node &n_topo = domain["topologies/" + topo_name];
-  const std::string topo_type = n_topo["type"].as_string();
-
-  int res = -1;
-
-  if(topo_type == "unstructured")
-  {
-    const std::string shape = n_topo["elements/shape"].as_string();
-    const int conn_size =
-        n_topo["elements/connectivity"].dtype().number_of_elements();
-    const int per_cell = detail::get_num_indices(shape);
-    res = conn_size / per_cell;
-  }
-
-  if(topo_type == "points")
-  {
-    return num_points(domain, topo_name);
-  }
-
-  const std::string c_name = n_topo["coordset"].as_string();
-  const conduit::Node n_coords = domain["coordsets/" + c_name];
-
-  if(topo_type == "uniform")
-  {
-    res = n_coords["dims/i"].to_int32() - 1;
-    if(n_coords.has_path("dims/j"))
-    {
-      res *= n_coords["dims/j"].to_int32() - 1;
-    }
-    if(n_coords.has_path("dims/k"))
-    {
-      res *= n_coords["dims/k"].to_int32() - 1;
-    }
-  }
-
-  if(topo_type == "rectilinear")
-  {
-    res = n_coords["values/x"].dtype().number_of_elements() - 1;
-
-    if(n_coords.has_path("values/y"))
-    {
-      res *= n_coords["values/y"].dtype().number_of_elements() - 1;
-    }
-
-    if(n_coords.has_path("values/z"))
-    {
-      res *= n_coords["values/z"].dtype().number_of_elements() - 1;
-    }
-  }
-
-  if(topo_type == "structured")
-  {
-    res = n_topo["elements/dims/i"].to_int32() - 1;
-    if(n_topo.has_path("elements/dims/j"))
-    {
-      res *= n_topo["elements/dims/j"].to_int32() - 1;
-    }
-    if(n_topo.has_path("elements/dims/k"))
-    {
-      res *= n_topo["elements/dims/k"].to_int32() - 1;
-    }
-  }
-
   return res;
 }
 
@@ -1629,7 +1922,8 @@ paint_binning(const conduit::Node &binning,
               conduit::Node &dataset,
               const std::string &field_name,
               const std::string &topo_name,
-              const std::string &assoc_str)
+              const std::string &assoc_str,
+              const double default_value)
 {
   const conduit::Node &bin_axes = binning["attrs/bin_axes/value"];
 
@@ -1678,16 +1972,16 @@ paint_binning(const conduit::Node &binning,
         global_topo_and_assoc(dataset, axis_names);
     new_topo_name = topo_and_assoc["topo_name"].as_string();
     new_assoc_str = topo_and_assoc["assoc_str"].as_string();
-    if(new_topo_name != topo_name)
+    if(!topo_name.empty() && topo_name != new_topo_name)
     {
       ASCENT_ERROR(
           "The specified topology '"
           << topo_name
           << "' does not have the required fields specified in the bin axes: "
-          << bin_axes.to_yaml() << ". Did you mean to use '" << new_topo_name
+          << bin_axes.to_yaml() << "\n Did you mean to use '" << new_topo_name
           << "'?");
     }
-    if(new_assoc_str != assoc_str)
+    if(!assoc_str.empty() && assoc_str != new_assoc_str)
     {
       ASCENT_ERROR(
           "The specified association '"
@@ -1728,7 +2022,14 @@ paint_binning(const conduit::Node &binning,
 #endif
     for(int i = 0; i < homes_size; ++i)
     {
-      values[i] = bins[homes[i]];
+      if(homes[i] != -1)
+      {
+        values[i] = bins[homes[i]];
+      }
+      else
+      {
+        values[i] = default_value;
+      }
     }
   }
 
@@ -1994,6 +2295,7 @@ field_min(const conduit::Node &dataset, const std::string &field)
 {
   double min_value = std::numeric_limits<double>::max();
 
+  std::string topo_name;
   int domain = -1;
   int domain_id = -1;
   int index = -1;
@@ -2013,6 +2315,7 @@ field_min(const conduit::Node &dataset, const std::string &field)
         index = res["index"].as_int32();
         domain = i;
         domain_id = dom["state/domain_id"].to_int32();
+        topo_name = dom["fields/" + field + "/topology"].as_string();
       }
     }
   }
@@ -2020,19 +2323,23 @@ field_min(const conduit::Node &dataset, const std::string &field)
   const std::string assoc_str =
       dataset.child(0)["fields/" + field + "/association"].as_string();
 
-  conduit::Node loc;
+  std::unique_ptr<Topology> t =
+      topologyFactory(topo_name, dataset.child(domain));
+  std::array<conduit::float64, 3> aloc;
   if(assoc_str == "vertex")
   {
-    loc = vert_location(dataset.child(domain), index);
+    aloc = t->vertex_location(index);
   }
   else if(assoc_str == "element")
   {
-    loc = element_location(dataset.child(domain), index);
+    aloc = t->element_location(index);
   }
   else
   {
     ASCENT_ERROR("Location for " << assoc_str << " not implemented");
   }
+  conduit::Node loc;
+  loc.set(aloc.data(), 3);
 
   int rank = 0;
   conduit::Node res;
@@ -2131,6 +2438,7 @@ field_max(const conduit::Node &dataset, const std::string &field)
 {
   double max_value = std::numeric_limits<double>::lowest();
 
+  std::string topo_name;
   int domain = -1;
   int domain_id = -1;
   int index = -1;
@@ -2150,6 +2458,7 @@ field_max(const conduit::Node &dataset, const std::string &field)
         index = res["index"].as_int32();
         domain = i;
         domain_id = dom["state/domain_id"].to_int32();
+        topo_name = dom["fields/" + field + "/topology"].as_string();
       }
     }
   }
@@ -2157,19 +2466,23 @@ field_max(const conduit::Node &dataset, const std::string &field)
   const std::string assoc_str =
       dataset.child(0)["fields/" + field + "/association"].as_string();
 
-  conduit::Node loc;
+  std::unique_ptr<Topology> t =
+      topologyFactory(topo_name, dataset.child(domain));
+  std::array<conduit::float64, 3> aloc;
   if(assoc_str == "vertex")
   {
-    loc = vert_location(dataset.child(domain), index);
+    aloc = t->vertex_location(index);
   }
   else if(assoc_str == "element")
   {
-    loc = element_location(dataset.child(domain), index);
+    aloc = t->element_location(index);
   }
   else
   {
     ASCENT_ERROR("Location for " << assoc_str << " not implemented");
   }
+  conduit::Node loc;
+  loc.set(aloc.data(), 3);
 
   int rank = 0;
   conduit::Node res;
@@ -2363,18 +2676,27 @@ topo_dim(const std::string &topo_name, const conduit::Node &dom)
   const conduit::Node n_coords = dom["coordsets/" + c_name];
   const std::string c_type = n_coords["type"].as_string();
 
+  int num_dims;
   if(c_type == "uniform")
   {
-    return n_coords["dims"].number_of_children();
+    num_dims = n_coords["dims"].number_of_children();
   }
-
-  if(c_type == "rectilinear" || c_type == "explicit")
+  else if(c_type == "rectilinear" || c_type == "explicit")
   {
-    return n_coords["values"].number_of_children();
+    num_dims = n_coords["values"].number_of_children();
   }
-
-  ASCENT_ERROR("Unknown coordinate set type: '" << c_type << "'.");
-  return -1;
+  else
+  {
+    num_dims = -1;
+    ASCENT_ERROR("Unknown coordinate set type: '" << c_type << "'.");
+  }
+  if(num_dims <= 0 || num_dims > 3)
+  {
+    ASCENT_ERROR("The Architect: topology '"
+                 << topo_name << "' with " << num_dims
+                 << " dimensions is not supported.");
+  }
+  return num_dims;
 }
 
 int
@@ -2477,9 +2799,9 @@ field_topology(const conduit::Node &dataset, const std::string &field_name)
   return topo_name;
 }
 
-// double or float, checks for global consistency
+// double or float for a topology in a given domain
 std::string
-coord_type(const conduit::Node &dataset, const std::string &topo_name)
+coord_dtype(const std::string &topo_name, const conduit::Node &domain)
 {
   // ok, so we  can have a mix of uniform and non-uniform
   // coords, where non-uniform coords have arrays
@@ -2490,36 +2812,36 @@ coord_type(const conduit::Node &dataset, const std::string &topo_name)
   bool has_array = false;
   bool error = false;
 
-  const std::string topo_path = "topology/" + topo_name;
+  const std::string topo_path = "topologies/" + topo_name;
   std::string type_name;
 
-  for(int i = 0; i < dataset.number_of_children(); ++i)
+  if(domain.has_path(topo_path))
   {
-    const conduit::Node &dom = dataset.child(i);
-    if(dom.has_path(topo_path))
+    std::string coord_name = domain[topo_path + "/coordset"].as_string();
+    const conduit::Node &n_coords = domain["coordsets/" + coord_name];
+    const std::string coords_type = n_coords["type"].as_string();
+    if(coords_type != "uniform")
     {
-      std::string coord_name = dom[topo_path + "/coordset"].as_string();
-      const conduit::Node &n_coords = dom["coordsets/" + coord_name];
-      const std::string coords_type = n_coords["type"].as_string();
-      if(coords_type != "uniform")
-      {
-        has_array = true;
+      has_array = true;
 
-        if(n_coords["values/x"].dtype().is_float32())
-        {
-          is_float = true;
-        }
-        else if(!n_coords["values/x"].dtype().is_float64())
-        {
-          is_float = false;
-          type_name = n_coords["/values/x"].dtype().name();
-          error = true;
-        }
+      if(n_coords["values/x"].dtype().is_float32())
+      {
+        is_float = true;
+      }
+      else if(!n_coords["values/x"].dtype().is_float64())
+      {
+        is_float = false;
+        type_name = n_coords["/values/x"].dtype().name();
+        error = true;
       }
     }
   }
-
-  error = global_agreement(error);
+  else
+  {
+    ASCENT_ERROR("Could not determine the data type of topology '"
+                 << topo_name << "' in domain '" << domain.name()
+                 << "' because it was not found there.");
+  }
 
   if(error)
   {
@@ -2531,10 +2853,10 @@ coord_type(const conduit::Node &dataset, const std::string &topo_name)
   }
 
   bool my_vote = has_array && is_float;
-  bool float_vote = global_someone_agrees(my_vote);
 
-  return float_vote ? "float" : "double";
+  return my_vote ? "float" : "double";
 }
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

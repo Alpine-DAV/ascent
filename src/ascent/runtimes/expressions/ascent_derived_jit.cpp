@@ -79,26 +79,6 @@ namespace expressions
 
 namespace detail
 {
-/*
-std::string
-remove_duplicate_lines(const std::string &input_str)
-{
-  std::stringstream ss(input_str);
-  std::string line;
-  std::unordered_set<std::string> lines;
-  std::string output_str;
-  while(std::getline(ss, line))
-  {
-    if(lines.find(line) == lines.end())
-    {
-      output_str += line + "\n";
-      lines.insert(line);
-    }
-  }
-  return output_str;
-}
-*/
-
 std::string
 indent_code(const std::string &input_code, const int num_spaces)
 {
@@ -127,107 +107,8 @@ indent_code(const std::string &input_code, const int num_spaces)
   }
   return output_code;
 }
-}
+};
 
-void
-pack_topo(const std::string &topo_name,
-          const conduit::Node &dom,
-          conduit::Node &args)
-
-{
-  const conduit::Node &n_topo = dom["topologies/" + topo_name];
-  const std::string coords_name = n_topo["coordset"].as_string();
-  const std::string topo_type = n_topo["type"].as_string();
-  const conduit::Node &n_coords = dom["coordsets/" + coords_name];
-  std::stringstream ss;
-
-  if(topo_type == "uniform")
-  {
-    const conduit::Node &dims = n_coords["dims"];
-    args["const int " + topo_name + "_dims_i,\n"] = dims["i"].to_int32();
-    if(n_coords.has_path("dims/j"))
-    {
-      args["const int " + topo_name + "_dims_j,\n"] = dims["j"].to_int32();
-    }
-    if(n_coords.has_path("dims/k"))
-    {
-      args["const int " + topo_name + "_dims_k,\n"] = dims["k"].to_int32();
-    }
-
-    const conduit::Node &spacing = n_coords["spacing"];
-    args["const double " + topo_name + "_spacing_dx,\n"] =
-        spacing["dx"].to_float64();
-    if(spacing.has_path("dy"))
-    {
-      args["const double " + topo_name + "_spacing_dy,\n"] =
-          spacing["dy"].to_float64();
-    }
-    if(spacing.has_path("dz"))
-    {
-      args["const double " + topo_name + "_spacing_dz,\n"] =
-          spacing["dz"].to_float64();
-    }
-
-    const conduit::Node &origin = n_coords["origin"];
-    args["const double " + topo_name + "_origin_x,\n"] =
-        origin["x"].to_float64();
-    if(origin.has_path("y"))
-    {
-      args["const double " + topo_name + "_origin_y,\n"] =
-          origin["y"].to_float64();
-    }
-    if(origin.has_path("z"))
-    {
-      args["const double " + topo_name + "_origin_z,\n"] =
-          origin["z"].to_float64();
-    }
-  }
-  else if(topo_type == "rectilinear" || topo_type == "structured")
-  {
-    const conduit::Node &x_vals = n_coords["values/x"];
-    args["const int " + topo_name + "_dims_i,\n"] =
-        x_vals.dtype().number_of_elements();
-    if(n_coords.has_path("values/y"))
-    {
-      const conduit::Node &y_vals = n_coords["values/y"];
-      args["const int " + topo_name + "_dims_j,\n"] =
-          y_vals.dtype().number_of_elements();
-    }
-    if(n_coords.has_path("values/z"))
-    {
-      const conduit::Node &z_vals = n_coords["values/z"];
-      args["const int " + topo_name + "_dims_k,\n"] =
-          z_vals.dtype().number_of_elements();
-    }
-
-    args["const double *" + topo_name + "_coords_x,\n"].set_external(x_vals);
-    if(n_coords.has_path("values/y"))
-    {
-      const conduit::Node &y_vals = n_coords["values/y"];
-      args["const double *" + topo_name + "_coords_y,\n"].set_external(y_vals);
-    }
-    if(n_coords.has_path("values/z"))
-    {
-      const conduit::Node &z_vals = n_coords["values/z"];
-      args["const double *" + topo_name + "_coords_z,\n"].set_external(z_vals);
-    }
-  }
-  else if(topo_type == "unstructured")
-  {
-    // TODO pack unstructured mesh
-    // "const int dims_x,\n"
-    // "const int dims_y,\n"
-    // "const int dims_z,\n"
-    // "const double * coords_x,\n"
-    // "const double * coords_y,\n"
-    // "const double * coords_z,\n"
-    // "const int * cell_conn,\n"
-    // "const int cell_shape,\n";
-  }
-}
-
-//-----------------------------------------------------------------------------
-// clang-format off
 std::string
 Kernel::generate_inner_scope() const
 {
@@ -240,7 +121,7 @@ Kernel::generate_inner_scope() const
 }
 
 std::string
-Kernel::generate_for_body(const std::string& output, bool output_exists) const
+Kernel::generate_for_body(const std::string &output, bool output_exists) const
 {
   std::string new_for_body = for_body + generate_inner_scope();
   if(output_exists)
@@ -249,11 +130,12 @@ Kernel::generate_for_body(const std::string& output, bool output_exists) const
   }
   else
   {
-    new_for_body += "const double "+output+" = " + expr + ";\n";
+    new_for_body += "const double " + output + " = " + expr + ";\n";
   }
   return new_for_body;
 }
 
+// clang-format off
 std::string
 Kernel::generate_loop(const std::string& output) const
 {
@@ -269,6 +151,7 @@ Kernel::generate_loop(const std::string& output) const
            "}\n"
          "}\n";
 }
+// clang-format on
 
 std::string
 Jitable::generate_kernel(const int dom_idx) const
@@ -287,7 +170,8 @@ Jitable::generate_kernel(const int dom_idx) const
   return detail::indent_code(kernel_string, 0);
 }
 
-// clang-format on
+//-----------------------------------------------------------------------------
+// -- TopologyCode
 //-----------------------------------------------------------------------------
 TopologyCode::TopologyCode(const std::string &topo_name,
                            const conduit::Node &dom)
@@ -298,123 +182,356 @@ TopologyCode::TopologyCode(const std::string &topo_name,
   this->topo_name = topo_name;
   this->num_dims = topo_dim(topo_name, dom);
 }
+
 void
 TopologyCode::cell_idx(InsertionOrderedSet<std::string> &code)
 {
-  code.insert(
-      {"int " + topo_name + "_cell_idx[" + std::to_string(num_dims) + "];\n",
-       topo_name + "_cell_idx[0] = item % (" + topo_name + "_dims_i - 1);\n"});
+  if(topo_type == "uniform" || topo_type == "rectilinear" ||
+     topo_type == "structured")
+  {
+    code.insert(
+        {"int " + topo_name + "_cell_idx[" + std::to_string(num_dims) + "];\n",
+         topo_name + "_cell_idx[0] = item % (" + topo_name +
+             "_dims_i - 1);\n"});
 
+    if(num_dims >= 2)
+    {
+      code.insert(topo_name + "_cell_idx[1] = (item / (" + topo_name +
+                  "_dims_i - 1)) % (" + topo_name + "_dims_j - 1);\n");
+    }
+    if(num_dims == 3)
+    {
+      code.insert(topo_name + "_cell_idx[2] = item / ((" + topo_name +
+                  "_dims_i - 1) * (" + topo_name + "_dims_j - 1));\n");
+    }
+  }
+  else
+  {
+    ASCENT_ERROR("cell_idx for unstructured is not implemented.");
+  }
+}
+
+// vertices are ordered in the VTK format
+// https://vtk.org/wp-content/uploads/2015/04/file-formats.pdf
+void
+TopologyCode::structured_vertices(InsertionOrderedSet<std::string> &code)
+{
+  if(topo_type != "structured")
+  {
+    ASCENT_ERROR("The function structured_vertices only supports structured "
+                 "topologies.");
+  }
+  cell_idx(code);
+
+  // vertex indices
+  code.insert("int " + topo_name + "_vertices[" +
+              std::to_string(static_cast<int>(std::pow(2, num_dims))) + "];\n");
+  if(num_dims == 1)
+  {
+    code.insert(
+        {topo_name + "_vertices[0] = " + topo_name + "_cell_idx[0];\n",
+         topo_name + "_vertices[1] = " + topo_name + "_vertices[0] + 1;\n"});
+  }
+  else if(num_dims == 2)
+  {
+    code.insert(
+        {topo_name + "_vertices[0] = " + topo_name + "_cell_idx[1] * " +
+             topo_name + "_dims_i + " + topo_name + "_cell_idx[0];\n",
+         topo_name + "_vertices[1] = " + topo_name + "_vertices[0] + 1;\n",
+         topo_name + "_vertices[2] = " + topo_name + "_vertices[1] + " +
+             topo_name + "_dims_i;\n",
+         topo_name + "_vertices[3] = " + topo_name + "_vertices[2] - 1;\n"});
+  }
+  else if(num_dims == 3)
+  {
+    code.insert({
+        topo_name + "_vertices[0] = (" + topo_name + "_cell_idx[2] * " +
+            topo_name + "_dims_j + " + topo_name + "_cell_idx[1]) * " +
+            topo_name + "_dims_i + " + topo_name + "_cell_idx[0];\n",
+        topo_name + "_vertices[1] = " + topo_name + "_vertices[0] + 1;\n",
+        topo_name + "_vertices[2] = " + topo_name + "_vertices[1] + " +
+            topo_name + "_dims_i;\n",
+        topo_name + "_vertices[3] = " + topo_name + "_vertices[2] - 1;\n",
+        topo_name + "_vertices[4] = " + topo_name + "_vertices[0] + " +
+            topo_name + "_dims_i * " + topo_name + "_dims_j;\n",
+        topo_name + "_vertices[5] = " + topo_name + "_vertices[4] + 1;\n",
+        topo_name + "_vertices[6] = " + topo_name + "_vertices[5] + " +
+            topo_name + "_dims_i;\n",
+        topo_name + "_vertices[7] = " + topo_name + "_vertices[6] - 1;\n",
+    });
+  }
+
+  // locations
+  vertex_xyz(
+      code, topo_name + "_vertices[0]", false, topo_name + "_vertices_0");
+  vertex_xyz(
+      code, topo_name + "_vertices[1]", false, topo_name + "_vertices_1");
   if(num_dims >= 2)
   {
-    code.insert(topo_name + "_cell_idx[1] = (item / (" + topo_name +
-                "_dims_i - 1)) % (" + topo_name + "_dims_j - 1);\n");
+    vertex_xyz(
+        code, topo_name + "_vertices[2]", false, topo_name + "_vertices_2");
+    vertex_xyz(
+        code, topo_name + "_vertices[3]", false, topo_name + "_vertices_3");
   }
   if(num_dims == 3)
   {
-    code.insert(topo_name + "_cell_idx[2] = item / ((" + topo_name +
-                "_dims_i - 1) * (" + topo_name + "_dims_j - 1));\n");
+    vertex_xyz(
+        code, topo_name + "_vertices[4]", false, topo_name + "_vertices_4");
+    vertex_xyz(
+        code, topo_name + "_vertices[5]", false, topo_name + "_vertices_5");
+    vertex_xyz(
+        code, topo_name + "_vertices[6]", false, topo_name + "_vertices_6");
+    vertex_xyz(
+        code, topo_name + "_vertices[7]", false, topo_name + "_vertices_7");
   }
+}
+
+void
+TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code)
+{
+  if(topo_type != "unstructured")
+  {
+    ASCENT_ERROR(
+        "The function unstructured_vertices only supports unstructured "
+        "topologies.");
+  }
+  cell_idx(code);
 }
 
 void
 TopologyCode::cell_xyz(InsertionOrderedSet<std::string> &code)
 {
-  cell_idx(code);
+  code.insert("double " + topo_name + "_cell_loc[" + std::to_string(num_dims) +
+              "];\n");
   if(topo_type == "uniform")
   {
-    code.insert({"double " + topo_name + "_cell_x = " + topo_name +
-                 "_origin_x + " + topo_name + "_cell_idx[0] * " + topo_name +
-                 "_spacing_dx;\n"});
+    cell_idx(code);
+    code.insert(topo_name + "_cell_loc[0] = " + topo_name + "_origin_x + " +
+                topo_name + "_cell_idx[0] * " + topo_name + "_spacing_dx;\n");
     if(num_dims >= 2)
     {
-      code.insert({"double " + topo_name + "_cell_y = " + topo_name +
-                   "_origin_y + " + topo_name + "_cell_idx[1] * " + topo_name +
-                   "_spacing_dy;\n"});
+      code.insert(topo_name + "_cell_loc[0] = " + topo_name + "_origin_y + " +
+                  topo_name + "_cell_idx[1] * " + topo_name + "_spacing_dy;\n");
     }
     if(num_dims == 3)
     {
-      code.insert({"double " + topo_name + "_cell_z = " + topo_name +
-                   "_origin_z + " + topo_name + "_cell_idx[2] * " + topo_name +
-                   "_spacing_dz;\n"});
+      code.insert(topo_name + "_cell_loc[0] = " + topo_name + "_origin_z + " +
+                  topo_name + "_cell_idx[2] * " + topo_name + "_spacing_dz;\n");
     }
   }
   else if(topo_type == "rectilinear")
   {
-    code.insert("double " + topo_name + "_cell_x = (" + topo_name +
-                "_coords_x[" + topo_name + "_cell_idx[0]] + " + topo_name +
-                "_coords_x[" + topo_name + "_cell_idx[0] + 1]) / 2;\n");
+    cell_idx(code);
+    code.insert(topo_name + "_cell_loc[0] = (" + topo_name + "_coords_x[" +
+                topo_name + "_cell_idx[0]] + " + topo_name + "_coords_x[" +
+                topo_name + "_cell_idx[0] + 1]) / 2.0;\n");
 
     if(num_dims >= 2)
     {
-      code.insert("double " + topo_name + "_cell_y = (" + topo_name +
-                  "_coords_y[" + topo_name + "_cell_idx[1]] + " + topo_name +
-                  "_coords_y[" + topo_name + "_cell_idx[1] + 1]) / 2;\n");
+      code.insert(topo_name + "_cell_loc[1] = (" + topo_name + "_coords_y[" +
+                  topo_name + "_cell_idx[1]] + " + topo_name + "_coords_y[" +
+                  topo_name + "_cell_idx[1] + 1]) / 2.0;\n");
     }
     if(num_dims == 3)
     {
-      code.insert("double " + topo_name + "_cell_z = (" + topo_name +
-                  "_coords_z[" + topo_name + "_cell_idx[2]] + " + topo_name +
-                  "_coords_z[" + topo_name + "_cell_idx[2] + 1]) / 2;\n");
+      code.insert(topo_name + "_cell_loc[2] = (" + topo_name + "_coords_z[" +
+                  topo_name + "_cell_idx[2]] + " + topo_name + "_coords_z[" +
+                  topo_name + "_cell_idx[2] + 1]) / 2.0;\n");
     }
+  }
+  else if(topo_type == "structured")
+  {
+    structured_vertices(code);
+
+    // sum components and divide by num_vertices
+    const double num_vertices = std::pow(2, num_dims);
+    for(int i = 0; i < num_dims; ++i)
+    {
+      std::stringstream vert_avg;
+      vert_avg << "(";
+      for(int j = 0; j < num_vertices; ++j)
+      {
+        if(j != 0)
+        {
+          vert_avg << " + ";
+        }
+        vert_avg << topo_name + "_vertices_" << j << "[" << i << "]";
+      }
+      vert_avg << ") / " << num_vertices;
+      code.insert(topo_name + "_cell_loc[" + std::to_string(i) +
+                  "] = " + vert_avg.str() + ";\n");
+    }
+  }
+  else
+  {
+    ASCENT_ERROR("Cannot get cell location for unstructured topology with "
+                 << num_dims << " dimensions.");
   }
 }
 
 void
 TopologyCode::vertex_idx(InsertionOrderedSet<std::string> &code)
 {
-  code.insert(
-      {topo_name + "_vertex_idx[" + std::to_string(num_dims) + "];\n",
-       topo_name + "_vertex_idx[0] = item % (" + topo_name + "_dims_i);\n"});
+  if(topo_type == "uniform" || topo_type == "rectilinear" ||
+     topo_type == "structured")
+  {
+    code.insert(
+        {"int " + topo_name + "_vertex_idx[" + std::to_string(num_dims) +
+             "];\n",
+         topo_name + "_vertex_idx[0] = item % (" + topo_name + "_dims_i);\n"});
+    if(num_dims >= 2)
+    {
+      code.insert(topo_name + "_vertex_idx[1] = (item / (" + topo_name +
+                  "_dims_i)) % (" + topo_name + "_dims_j);\n");
+    }
+    if(num_dims == 3)
+    {
+      code.insert(topo_name + "_vertex_idx[2] = item / ((" + topo_name +
+                  "_dims_i) * (" + topo_name + "_dims_j));\n");
+    }
+  }
+  else
+  {
+    // vertex_idx is just item for explicit (unstructured) coords
+    // vertex_idx[0] = item
+    // vertex_idx[1] = item
+    // vertex_idx[2] = item
+    ASCENT_ERROR("vertex_idx does not need to be calculated for unstructured "
+                 "topologies.");
+  }
+}
+
+void
+TopologyCode::vertex_xyz(InsertionOrderedSet<std::string> &code,
+                         const std::string &index_name,
+                         const bool index_array,
+                         const std::string &res_name)
+{
+  code.insert({"double " + res_name + "[" + std::to_string(num_dims) + "];\n",
+               res_name + "[0] = " + topo_name + "_coords_x[" + index_name +
+                   (index_array ? "[0]" : "") + "];\n"});
   if(num_dims >= 2)
   {
-    code.insert(topo_name + "vertex_idx[1] = (item / (" + topo_name +
-                "_dims_i)) % (" + topo_name + "_dims_j);\n");
+    code.insert(res_name + "[1] = " + topo_name + "_coords_y[" + index_name +
+                (index_array ? "[1]" : "") + "];\n");
   }
   if(num_dims == 3)
   {
-    code.insert(topo_name + "_vertex_idx[2] = item / ((" + topo_name +
-                "_dims_i) * (" + topo_name + "_dims_j));\n");
+    code.insert(res_name + "[2] = " + topo_name + "_coords_z[" + index_name +
+                (index_array ? "[2]" : "") + "];\n");
   }
 }
 
 void
 TopologyCode::vertex_xyz(InsertionOrderedSet<std::string> &code)
 {
-  vertex_idx(code);
-  code.insert("double " + topo_name + "_vertex_x = " + topo_name +
-              "_coords_x[" + topo_name + "_vertex_idx[0]];\n");
-  if(num_dims >= 2)
+  if(topo_type == "uniform" || topo_type == "rectilinear" ||
+     topo_type == "structured")
   {
-    code.insert("double " + topo_name + "_vertex_y = " + topo_name +
-                "_coords_y[" + topo_name + "_vertex_idx[1]];\n");
+    vertex_idx(code);
+    vertex_xyz(
+        code, topo_name + "_vertex_idx", true, topo_name + "_vertex_loc");
   }
-  if(num_dims == 3)
+  else if(topo_type == "unstructured")
   {
-    code.insert("double " + topo_name + "_vertex_z = " + topo_name +
-                "_coords_z[" + topo_name + "_vertex_idx[2]];\n");
+    vertex_xyz(code, "item", false, topo_name + "_vertex_loc");
   }
 }
 
 void
 TopologyCode::dxdydz(InsertionOrderedSet<std::string> &code)
 {
-  cell_idx(code);
-  code.insert("double " + topo_name + "_dx = " + topo_name + "_coords_x[" +
-              topo_name + "_cell_idx[0]+1] - " + topo_name + "_coords_x[" +
-              topo_name + "_cell_idx[0]];\n");
-  if(num_dims >= 2)
+  if(topo_type == "rectilinear")
   {
-    code.insert("double " + topo_name + "_dy = " + topo_name + "_coords_y[" +
-                topo_name + "_cell_idx[1]+1] - " + topo_name + "_coords_y[" +
-                topo_name + "_cell_idx[1]];\n");
+    cell_idx(code);
+    code.insert("double " + topo_name + "_dx = " + topo_name + "_coords_x[" +
+                topo_name + "_cell_idx[0] + 1] - " + topo_name + "_coords_x[" +
+                topo_name + "_cell_idx[0]];\n");
+    if(num_dims >= 2)
+    {
+      code.insert("double " + topo_name + "_dy = " + topo_name + "_coords_y[" +
+                  topo_name + "_cell_idx[1] + 1] - " + topo_name +
+                  "_coords_y[" + topo_name + "_cell_idx[1]];\n");
+    }
+    if(num_dims == 3)
+    {
+      code.insert({"double " + topo_name + "_dz = " + topo_name + "_coords_z[" +
+                   topo_name + "_cell_idx[2] + 1] - " + topo_name +
+                   "_coords_z[" + topo_name + "_cell_idx[2]];\n"});
+    }
   }
-  if(num_dims == 3)
+}
+
+void
+determinant_3x3(InsertionOrderedSet<std::string> &code,
+                const std::string &a,
+                const std::string &b,
+                const std::string &c,
+                const std::string &res_name)
+{
+  code.insert("double " + res_name + " = " + a + "[0] * (" + b + "[1] * " + c +
+              "[2] - " + c + "[1] * " + b + "[2]) - " + a + "[1] * (" + b +
+              "[0] * " + c + "[2] - " + c + "[0] * " + b + "[2]) + " + a +
+              "[2] * (" + b + "[0] * " + c + "[1] - " + c + "[0] * " + b +
+              "[1]);\n");
+}
+
+void
+vector_subtract(InsertionOrderedSet<std::string> &code,
+                const std::string &a,
+                const std::string &b,
+                const std::string &res_name,
+                const int num_dims)
+{
+  code.insert("double " + res_name + "[" + std::to_string(num_dims) + "];\n");
+  for(int i = 0; i < num_dims; ++i)
   {
-    code.insert({"double " + topo_name + "_dz = " + topo_name + "_coords_z[" +
-                 topo_name + "_cell_idx[2]+1] - " + topo_name + "_coords_z[" +
-                 topo_name + "_cell_idx[2]];\n"});
+    code.insert(res_name + "[" + std::to_string(i) + "] = " + a + "[" +
+                std::to_string(i) + "] - " + b + "[" + std::to_string(i) +
+                "];\n");
   }
+}
+
+// https://www.osti.gov/servlets/purl/632793 (14)
+// switch vertices 2 and 3 and vertices 6 and 7 to match vtk order
+void
+hexahedral_volume(InsertionOrderedSet<std::string> &code,
+                  const std::string &vertices_name,
+                  const std::string &res_name)
+{
+  vector_subtract(
+      code, vertices_name + "_6", vertices_name + "_0", res_name + "_6m0", 3);
+  vector_subtract(
+      code, vertices_name + "_1", vertices_name + "_0", res_name + "_1m0", 3);
+  vector_subtract(
+      code, vertices_name + "_2", vertices_name + "_5", res_name + "_2m5", 3);
+  vector_subtract(
+      code, vertices_name + "_4", vertices_name + "_0", res_name + "_4m0", 3);
+  vector_subtract(
+      code, vertices_name + "_5", vertices_name + "_7", res_name + "_5m7", 3);
+  vector_subtract(
+      code, vertices_name + "_3", vertices_name + "_0", res_name + "_3m0", 3);
+  vector_subtract(
+      code, vertices_name + "_7", vertices_name + "_2", res_name + "_7m2", 3);
+  // can save 4 flops if we use the fact that 6m0 is always the first column of
+  // the determinant
+  determinant_3x3(code,
+                  res_name + "_6m0",
+                  res_name + "_1m0",
+                  res_name + "_2m5",
+                  res_name + "_det0");
+  determinant_3x3(code,
+                  res_name + "_6m0",
+                  res_name + "_4m0",
+                  res_name + "_5m7",
+                  res_name + "_det1");
+  determinant_3x3(code,
+                  res_name + "_6m0",
+                  res_name + "_3m0",
+                  res_name + "_7m2",
+                  res_name + "_det2");
+  code.insert("double " + res_name + " = (" + res_name + "_det0 + " + res_name +
+              "_det1 + " + res_name + "_det2) / 6.0;\n");
 }
 
 void
@@ -457,13 +574,34 @@ TopologyCode::volume(InsertionOrderedSet<std::string> &code)
       code.insert("double " + topo_name + "_volume = " + topo_name + "_dx;\n");
     }
   }
+  else if(topo_type == "structured")
+  {
+    structured_vertices(code);
+    if(num_dims == 3)
+    {
+      hexahedral_volume(code, topo_name + "_vertices", topo_name + "_volume");
+    }
+    else if(num_dims == 1)
+    {
+      vector_subtract(code,
+                      topo_name + "vertices_1",
+                      topo_name + "vertices_0",
+                      topo_name + "_volume",
+                      1);
+    }
+    else
+    {
+      ASCENT_ERROR("volume is not implemented for structured topologies with "
+                   << num_dims << " dimensions.");
+    }
+  }
+  else if(topo_type == "unstructured")
+  {
+  }
 }
-//-----------------------------------------------------------------------------
-
-// clang-format on
 
 //-----------------------------------------------------------------------------
-// Kernel Class
+// -- Kernel
 //-----------------------------------------------------------------------------
 void
 Kernel::fuse_kernel(const Kernel &from)
@@ -474,7 +612,7 @@ Kernel::fuse_kernel(const Kernel &from)
 }
 
 //-----------------------------------------------------------------------------
-// Jitable Class
+// -- Jitable
 //-----------------------------------------------------------------------------
 void
 Jitable::fuse_vars(const Jitable &from)
@@ -514,13 +652,13 @@ Jitable::fuse_vars(const Jitable &from)
     {
       if(to_dom_info.has_path("entries"))
       {
-        if(to_dom_info["entries"].as_int32() !=
-           from_dom_info["entries"].as_int32())
+        if(to_dom_info["entries"].to_int64() !=
+           from_dom_info["entries"].to_int64())
         {
           ASCENT_ERROR("JIT: Failed to fuse kernels due to an incompatible "
                        "number of entries: "
-                       << to_dom_info["entries"].as_int32() << " versus "
-                       << from_dom_info["entries"].as_int32());
+                       << to_dom_info["entries"].to_int64() << " versus "
+                       << from_dom_info["entries"].to_int64());
         }
       }
       else
@@ -605,7 +743,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 
     const std::string kernel_string = generate_kernel(i);
 
-    const int entries = cur_dom_info["entries"].as_int32();
+    const int entries = cur_dom_info["entries"].to_int64();
 
     std::cout << kernel_string << std::endl;
 
@@ -644,18 +782,27 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         array_memories.emplace_back();
         if(arg.dtype().is_float64())
         {
-          const double *vals = arg.as_float64_ptr();
-          array_memories.back() = device.malloc(size * sizeof(double), vals);
+          const conduit::float64 *vals = arg.as_float64_ptr();
+          array_memories.back() =
+              device.malloc(size * sizeof(conduit::float64), vals);
         }
         else if(arg.dtype().is_float32())
         {
-          const float *vals = arg.as_float32_ptr();
-          array_memories.back() = device.malloc(size * sizeof(float), vals);
+          const conduit::float32 *vals = arg.as_float32_ptr();
+          array_memories.back() =
+              device.malloc(size * sizeof(conduit::float32), vals);
+        }
+        else if(arg.dtype().is_int64())
+        {
+          const conduit::int64 *vals = arg.as_int64_ptr();
+          array_memories.back() =
+              device.malloc(size * sizeof(conduit::int64), vals);
         }
         else if(arg.dtype().is_int32())
         {
-          const int *vals = arg.as_int32_ptr();
-          array_memories.back() = device.malloc(size * sizeof(int), vals);
+          const conduit::int32 *vals = arg.as_int32_ptr();
+          array_memories.back() =
+              device.malloc(size * sizeof(conduit::int32), vals);
         }
         else
         {
@@ -674,7 +821,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
       }
       else
       {
-        ASCENT_ERROR("JIT: Unknown argument type. Argument: " << arg.to_yaml());
+        ASCENT_ERROR("JIT: Unknown argument type of argument: " << arg.name());
       }
     }
 

@@ -191,6 +191,7 @@ math_op(const double lhs, const double rhs, const std::string &op)
   }
   else
   {
+    res = 0;
     ASCENT_ERROR("unknown math op " << op << " for type double");
   }
   return res;
@@ -223,6 +224,7 @@ math_op(const int lhs, const int rhs, const std::string &op)
   }
   else
   {
+    res = 0;
     ASCENT_ERROR("unknown math op " << op << " for type int");
   }
   return res;
@@ -258,6 +260,7 @@ comp_op(const double lhs, const double rhs, const std::string &op)
   }
   else
   {
+    res = 0;
     ASCENT_ERROR("unknown comparison op " << op);
   }
   return res;
@@ -282,6 +285,7 @@ logic_op(const bool lhs, const bool rhs, const std::string &op)
   }
   else
   {
+    res = 0;
     ASCENT_ERROR("unknown boolean op " << op);
   }
   return res;
@@ -796,15 +800,39 @@ DotAccess::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 DotAccess::execute()
 {
-  const conduit::Node *n_obj = input<Node>("obj");
+  conduit::Node *n_obj = input<Node>("obj");
   std::string name = params()["name"].as_string();
 
   conduit::Node *output = new conduit::Node();
 
+  // fills attrs for basic types like vectors
+  detail::fill_attrs(*n_obj);
+
   // TODO test accessing non-existant attribute
   if(!n_obj->has_path("attrs/" + name))
   {
-    ASCENT_ERROR(name << " is not a valid object attribute.");
+    n_obj->print();
+    std::stringstream ss;
+    if(n_obj->has_path("attrs"))
+    {
+      std::string attr_yaml = (*n_obj)["attrs"].to_yaml();
+      if(attr_yaml == "")
+      {
+        ss << " No known attribtues.";
+      }
+      else
+      {
+        ss << " Known attributes: " << attr_yaml;
+      }
+    }
+    else
+    {
+      ss << " No known attributes.";
+    }
+
+    ASCENT_ERROR("'" << name << "' is not a valid object attribute for"
+                     << " type '" << (*n_obj)["type"].as_string() << "'."
+                     << ss.str());
   }
   (*output) = (*n_obj)["attrs/" + name];
 
@@ -1571,7 +1599,8 @@ void
 Field::declare_interface(Node &i)
 {
   i["type_name"] = "field";
-  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "field_name";
+  i["port_names"].append() = "component";
   i["output_port"] = "true";
 }
 
@@ -1588,9 +1617,11 @@ Field::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 Field::execute()
 {
-  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *n_field_name = input<Node>("field_name");
+  std::string field_name = (*n_field_name)["value"].as_string();
 
-  const std::string field = (*arg1)["value"].as_string();
+  // optional parameters
+  const conduit::Node *n_component = input<Node>("component");
 
   if(!graph().workspace().registry().has_entry("dataset"))
   {
@@ -1600,15 +1631,33 @@ Field::execute()
   const conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
 
-  if(!has_field(*dataset, field))
+  if(!has_field(*dataset, field_name))
   {
     ASCENT_ERROR("Field: dataset does not contain field '"
-                 << field << "'"
+                 << field_name << "'"
                  << " known = " << known_fields(*dataset));
   }
 
+  std::string component;
+  if(!n_component->dtype().is_empty())
+  {
+    component = (*n_component)["value"].as_string();
+    if(!has_component(*dataset, field_name, component))
+    {
+      ASCENT_ERROR("Field variable '"
+                   << field_name << "'"
+                   << " does not have component '" << component << "'."
+                   << " known components = "
+                   << possible_components(*dataset, field_name));
+    }
+  }
+
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = field;
+  (*output)["value"] = field_name;
+  if(!component.empty())
+  {
+    (*output)["component"] = component;
+  }
   (*output)["type"] = "field";
   set_output<conduit::Node>(output);
 }
@@ -2139,6 +2188,7 @@ PaintBinning::declare_interface(Node &i)
   i["port_names"].append() = "name";
   i["port_names"].append() = "topo";
   i["port_names"].append() = "assoc";
+  i["port_names"].append() = "default_value";
   i["output_port"] = "true";
 }
 
@@ -2160,6 +2210,7 @@ PaintBinning::execute()
   const conduit::Node *n_name = input<conduit::Node>("name");
   const conduit::Node *n_topo = input<conduit::Node>("topo");
   const conduit::Node *n_assoc = input<conduit::Node>("assoc");
+  const conduit::Node *n_default = input<conduit::Node>("default_value");
 
   conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
@@ -2195,7 +2246,13 @@ PaintBinning::execute()
   {
     assoc = (*n_assoc)["value"].as_string();
   }
-  paint_binning(*binning, *dataset, name, topo, assoc);
+  double default_value = 0;
+  if(!n_default->dtype().is_empty())
+  {
+    default_value = (*n_default)["value"].to_float64();
+  }
+
+  paint_binning(*binning, *dataset, name, topo, assoc, default_value);
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = name;
@@ -2934,7 +2991,8 @@ JitFilter::execute()
           const std::string coords_name = n_topo["coordset"].as_string();
           const std::string topo_type = n_topo["type"].as_string();
 
-          pack_topo(topo_name, dom, jitable.dom_info.child(i)["args"]);
+          std::unique_ptr<Topology> topo = topologyFactory(topo_name, dom);
+          topo->pack(jitable.dom_info.child(i)["args"]);
 
           const std::string kernel_type = topo_name + "=" + topo_type;
           jitable.dom_info.child(i)["kernel_type"] = kernel_type;
@@ -2984,17 +3042,23 @@ JitFilter::execute()
 
             conduit::Node &cur_dom_info = jitable.dom_info.child(i);
 
-            cur_dom_info["args/" + param_str].set_external(field["values"]);
+            std::string values_path = "values";
+            if(inp->has_path("component"))
+            {
+              values_path += "/" + (*inp)["component"].as_string();
+            }
+            cur_dom_info["args/" + param_str].set_external(field[values_path]);
 
             // update number of entries
             int entries;
+            std::unique_ptr<Topology> topo = topologyFactory(topo_name, dom);
             if(assoc_str == "element")
             {
-              entries = num_cells(dom, topo_name);
+              entries = topo->get_num_cells();
             }
             else
             {
-              entries = num_points(dom, topo_name);
+              entries = topo->get_num_points();
             }
             cur_dom_info["entries"] = entries;
 
@@ -3056,10 +3120,17 @@ JitFilter::execute()
   }
   if(func == "execute")
   {
+    // just copy over the existing kernels, no need to fuse
     out_jitable->kernels = input_jitables[0]->kernels;
   }
   else
   {
+    std::map<std::string, std::string> builtin_funcs = {
+        {"field_field_max", "max"},
+        {"field_sin", "sin"},
+        {"field_sqrt", "sqrt"},
+        {"field_abs", "abs"}};
+    const auto builtin_func_it = builtin_funcs.find(func);
     // fuse kernels
     std::unordered_set<std::string> fused_kernel_types;
     for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
@@ -3081,12 +3152,12 @@ JitFilter::execute()
       (*out_jitable).dom_info.child(dom_idx)["kernel_type"] = out_kernel_type;
       Kernel &out_kernel = (*out_jitable).kernels[out_kernel_type];
 
-      if(func == "binary_op")
+      if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
       {
-        if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
+        if(func == "binary_op")
         {
-          const int lhs_port = inputs["lhs/port"].as_int32();
-          const int rhs_port = inputs["rhs/port"].as_int32();
+          const int lhs_port = inputs["lhs/port"].to_int32();
+          const int rhs_port = inputs["rhs/port"].to_int32();
           const Kernel &lhs_kernel = *input_kernels[lhs_port];
           const Kernel &rhs_kernel = *input_kernels[rhs_port];
           // union the field/mesh vars
@@ -3099,127 +3170,107 @@ JitFilter::execute()
           out_kernel.expr =
               "(" + lhs_expr + " " + op_str + " " + rhs_expr + ")";
         }
-      }
-      // TODO combine these
-      else if(func == "field_field_max")
-      {
-        // max of two fields or a field and a scalar
-        if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
+        else if(builtin_func_it != builtin_funcs.cend())
         {
-          const int arg1_port = inputs["arg1/port"].as_int32();
-          const int arg2_port = inputs["arg2/port"].as_int32();
-          out_kernel.fuse_kernel(*input_kernels[arg1_port]);
-          out_kernel.fuse_kernel(*input_kernels[arg2_port]);
-          const std::string arg1_expr = input_kernels[arg1_port]->expr;
-          const std::string arg2_expr = input_kernels[arg2_port]->expr;
-          out_kernel.expr = "max(" + arg1_expr + ", " + arg2_expr + ")";
-        }
-      }
-      else if(func == "field_sin")
-      {
-        if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
-        {
-          const int arg1_port = inputs["arg1/port"].as_int32();
-          out_kernel.fuse_kernel(*input_kernels[arg1_port]);
-          const std::string arg1_expr = input_kernels[arg1_port]->expr;
-          out_kernel.expr = "sin(" + arg1_expr + ")";
-        }
-      }
-      else if(func == "field_abs")
-      {
-        if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
-        {
-          const int arg1_port = inputs["arg1/port"].as_int32();
-          out_kernel.fuse_kernel(*input_kernels[arg1_port]);
-          const std::string arg1_expr = input_kernels[arg1_port]->expr;
-          out_kernel.expr = "abs(" + arg1_expr + ")";
-        }
-        else
-        {
-          // kernel type has already been generated
-        }
-      }
-      else if(func == "expr_dot")
-      {
-        const int obj_port = inputs["obj/port"].as_int32();
-        const conduit::Node &obj = input_kernels[obj_port]->obj;
-        const std::string &name = params()["name"].as_string();
-        std::unordered_set<std::string> valid_attrs;
-        if(obj["type"].as_string() == "topo")
-        {
-          const std::string &topo_name = obj["topo_name"].as_string();
-          const int topo_dim = obj["topo_dim"].to_int32();
-          if(obj.has_path("attr"))
+          out_kernel.expr = builtin_func_it->second + "(";
+          const int num_inputs = inputs.number_of_children();
+          for(int i = 0; i < num_inputs; ++i)
           {
-            if(fused_kernel_types.find(out_kernel_type) ==
-               fused_kernel_types.end())
+            const int port_num = inputs.child(i)["port"].to_int32();
+            const Kernel &inp_kernel = *input_kernels[port_num];
+            const std::string &inp_expr = inp_kernel.expr;
+            out_kernel.fuse_kernel(inp_kernel);
+            if(i != 0)
             {
-              const conduit::Node &assoc = obj["attr"].child(0);
-              TopologyCode topo_code = TopologyCode(topo_name, dom);
-              if(assoc.name() == "cell")
-              {
-                if(is_xyz(name) && available_axis(name, topo_dim, topo_name))
-                {
-                  topo_code.cell_xyz(out_kernel.inner_scope);
-                  out_kernel.expr = topo_name + "_cell_" + name;
-                }
-                else if(name == "volume")
-                {
-                  topo_code.volume(out_kernel.inner_scope);
-                  out_kernel.expr = topo_name + "_volume";
-                }
-              }
-              else if(assoc.name() == "vertex")
-              {
-                if(is_xyz(name) && available_axis(name, topo_dim, topo_name))
-                {
-                  topo_code.vertex_xyz(out_kernel.inner_scope);
-                  out_kernel.expr = topo_name + "_vertex_" + name;
-                }
-              }
-              else
-              {
-                ASCENT_ERROR("Topo has no attribute " << assoc.name());
-              }
+              out_kernel.expr += ", ";
             }
+            out_kernel.expr += inp_expr;
           }
-          else
+          out_kernel.expr += ")";
+        }
+        else if(func == "expr_dot")
+        {
+          const int obj_port = inputs["obj/port"].as_int32();
+          const conduit::Node &obj = input_kernels[obj_port]->obj;
+          const std::string &name = params()["name"].as_string();
+          std::unordered_set<std::string> valid_attrs;
+          if(obj["type"].as_string() == "topo")
           {
-            if(name == "cell")
+            const std::string &topo_name = obj["topo_name"].as_string();
+            const int topo_dim = obj["topo_dim"].to_int32();
+            if(obj.has_path("attr"))
             {
-              if(obj["topo_type"].as_string() == "points")
+              if(fused_kernel_types.find(out_kernel_type) ==
+                 fused_kernel_types.end())
               {
-                ASCENT_ERROR("Point topology '" << obj["topo_name"].as_string()
-                                                << "' has no cell attributes.");
-              }
-              out_jitable->dom_info.child(dom_idx)["entries"] =
-                  num_cells(dom, topo_name);
-              if(out_jitable->association.empty())
-              {
-                out_jitable->association = "element";
+                const conduit::Node &assoc = obj["attr"].child(0);
+                TopologyCode topo_code = TopologyCode(topo_name, dom);
+                if(assoc.name() == "cell")
+                {
+                  if(is_xyz(name) && available_axis(name, topo_dim, topo_name))
+                  {
+                    topo_code.cell_xyz(out_kernel.inner_scope);
+                    out_kernel.expr = topo_name + "_cell_loc[" +
+                                      std::to_string(name[0] - 'x') + "]";
+                  }
+                  else if(name == "volume")
+                  {
+                    topo_code.volume(out_kernel.inner_scope);
+                    out_kernel.expr = topo_name + "_volume";
+                  }
+                }
+                else if(assoc.name() == "vertex")
+                {
+                  if(is_xyz(name) && available_axis(name, topo_dim, topo_name))
+                  {
+                    topo_code.vertex_xyz(out_kernel.inner_scope);
+                    out_kernel.expr = topo_name + "_vertex_loc[" +
+                                      std::to_string(name[0] - 'x') + "]";
+                  }
+                }
+                else
+                {
+                  ASCENT_ERROR("Topo has no attribute " << assoc.name());
+                }
               }
             }
             else
             {
-              out_jitable->dom_info.child(dom_idx)["entries"] =
-                  num_points(dom, topo_name);
-              if(out_jitable->association.empty())
+              std::unique_ptr<Topology> topo = topologyFactory(topo_name, dom);
+              if(name == "cell")
               {
-                out_jitable->association = "vertex";
+                if(obj["topo_type"].as_string() == "points")
+                {
+                  ASCENT_ERROR("Point topology '"
+                               << obj["topo_name"].as_string()
+                               << "' has no cell attributes.");
+                }
+                out_jitable->dom_info.child(dom_idx)["entries"] =
+                    topo->get_num_cells();
+                if(out_jitable->association.empty())
+                {
+                  out_jitable->association = "element";
+                }
               }
+              else
+              {
+                out_jitable->dom_info.child(dom_idx)["entries"] =
+                    topo->get_num_points();
+                if(out_jitable->association.empty())
+                {
+                  out_jitable->association = "vertex";
+                }
+              }
+              out_kernel.obj = obj;
+              out_kernel.obj["attr/" + name];
             }
-            out_kernel.obj = obj;
-            out_kernel.obj["attr/" + name];
+          }
+          else
+          {
+            ASCENT_ERROR("JitFilter: Unknown obj:\n" << obj.to_yaml());
           }
         }
-        else
-        {
-          ASCENT_ERROR("JitFilter: Unknown obj:\n" << obj.to_yaml());
-        }
-      }
-      else if(func == "expr_if")
-      {
-        if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
+        else if(func == "expr_if")
         {
           const int condition_port = inputs["condition/port"].as_int32();
           const int if_port = inputs["if/port"].as_int32();
@@ -3242,12 +3293,12 @@ JitFilter::execute()
           out_kernel.for_body += "}\n";
           out_kernel.expr = res_name;
         }
+        else
+        {
+          ASCENT_ERROR("JitFilter: Unknown func: '" << func << "'");
+        }
+        fused_kernel_types.insert(out_kernel_type);
       }
-      else
-      {
-        ASCENT_ERROR("JitFilter: Unknown func: '" << func << "'");
-      }
-      fused_kernel_types.insert(out_kernel_type);
     }
   }
 

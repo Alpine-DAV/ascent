@@ -55,6 +55,8 @@
 #include <conduit.hpp>
 #include <unordered_map>
 #include <unordered_set>
+// TODO maybe move Topology class into its own file
+#include "ascent_blueprint_architect.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -73,10 +75,6 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace expressions
 {
-void pack_topo(const std::string &topo_name,
-               const conduit::Node &dom,
-               conduit::Node &args);
-
 template <typename T>
 class InsertionOrderedSet
 {
@@ -129,8 +127,15 @@ public:
   void cell_xyz(InsertionOrderedSet<std::string> &code);
   void dxdydz(InsertionOrderedSet<std::string> &code);
   void volume(InsertionOrderedSet<std::string> &code);
+  void structured_vertices(InsertionOrderedSet<std::string> &code);
+  void unstructured_vertices(InsertionOrderedSet<std::string> &code);
 
 private:
+  void vertex_xyz(InsertionOrderedSet<std::string> &code,
+                  const std::string &index_name,
+                  const bool index_array,
+                  const std::string &res_name);
+
   int num_dims;
   std::string topo_type;
   std::string topo_name;

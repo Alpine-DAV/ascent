@@ -74,13 +74,150 @@ namespace runtime
 namespace expressions
 {
 
-conduit::Node vert_location(const conduit::Node &domain,
-                            const int &index,
-                            const std::string &topo_name = "");
+class Topology
+{
 
-conduit::Node element_location(const conduit::Node &domain,
-                               const int &index,
-                               const std::string &topo_name = "");
+public:
+  Topology(const std::string &topo_name,
+           const conduit::Node &domain,
+           const size_t num_dims);
+  virtual ~Topology()
+  {
+  }
+  virtual std::array<conduit::float64, 3>
+  vertex_location(const size_t index) const = 0;
+  virtual std::array<conduit::float64, 3>
+  element_location(const size_t index) const = 0;
+  virtual size_t get_num_points() const;
+  virtual size_t get_num_cells() const;
+
+  // Used by JitFilter
+  virtual void pack(conduit::Node &args) const = 0;
+
+  const conduit::Node &domain;
+  const std::string topo_name;
+  const std::string topo_type;
+  const std::string coords_name;
+  const std::string coords_type;
+  const size_t num_dims;
+
+protected:
+  size_t num_points;
+  size_t num_cells;
+};
+
+// T is either float32 or float64
+// N is the number of dimensions
+template <typename T, size_t N>
+class PointTopology : public Topology
+{
+  static_assert(N >= 1 && N <= 3,
+                "Number of Topology dimensions must be between 1 and 3.");
+
+public:
+  PointTopology(const std::string &topo_name, const conduit::Node &domain);
+  virtual std::array<conduit::float64, 3>
+  vertex_location(const size_t index) const;
+  virtual std::array<conduit::float64, 3>
+  element_location(const size_t index) const;
+  virtual size_t get_num_cells() const;
+
+private:
+  // uniform coords data
+  std::array<size_t, N> dims;
+  std::array<T, N> origin;
+  std::array<T, N> spacing;
+  // rectilinear or explicit coords data
+  std::array<conduit::DataArray<T>, N> coords;
+};
+
+template <typename T, size_t N>
+class UniformTopology : public Topology
+{
+  static_assert(N >= 1 && N <= 3,
+                "Number of Topology dimensions must be between 1 and 3.");
+
+public:
+  UniformTopology(const std::string &topo_name, const conduit::Node &domain);
+  virtual std::array<conduit::float64, 3>
+  vertex_location(const size_t index) const;
+  virtual std::array<conduit::float64, 3>
+  element_location(const size_t index) const;
+
+  virtual void pack(conduit::Node &args) const;
+
+private:
+  std::array<size_t, N> dims;
+  std::array<T, N> origin;
+  std::array<T, N> spacing;
+};
+
+template <typename T, size_t N>
+class RectilinearTopology : public Topology
+{
+  static_assert(N >= 1 && N <= 3,
+                "Number of Topology dimensions must be between 1 and 3.");
+
+public:
+  RectilinearTopology(const std::string &topo_name,
+                      const conduit::Node &domain);
+  virtual std::array<conduit::float64, 3>
+  vertex_location(const size_t index) const;
+  virtual std::array<conduit::float64, 3>
+  element_location(const size_t index) const;
+
+  virtual void pack(conduit::Node &args) const;
+
+private:
+  std::array<conduit::DataArray<T>, N> coords;
+};
+
+template <typename T, size_t N>
+class StructuredTopology : public Topology
+{
+  static_assert(N >= 1 && N <= 3,
+                "Number of Topology dimensions must be between 1 and 3.");
+
+public:
+  StructuredTopology(const std::string &topo_name, const conduit::Node &domain);
+  virtual std::array<conduit::float64, 3>
+  vertex_location(const size_t index) const;
+  virtual std::array<conduit::float64, 3>
+  element_location(const size_t index) const;
+
+  virtual void pack(conduit::Node &args) const;
+
+private:
+  std::array<size_t, N> dims;
+  std::array<conduit::DataArray<T>, N> coords;
+};
+
+// TODO only supports single shape topologies
+template <typename T, size_t N>
+class UnstructuredTopology : public Topology
+{
+  static_assert(N >= 1 && N <= 3,
+                "Number of Topology dimensions must be between 1 and 3.");
+
+public:
+  UnstructuredTopology(const std::string &topo_name,
+                       const conduit::Node &domain);
+  virtual std::array<conduit::float64, 3>
+  vertex_location(const size_t index) const;
+  virtual std::array<conduit::float64, 3>
+  element_location(const size_t index) const;
+  virtual size_t get_num_points() const;
+
+  virtual void pack(conduit::Node &args) const;
+
+private:
+  std::array<conduit::DataArray<T>, N> coords;
+  conduit::DataArray<conduit::int32> connectivity;
+  size_t num_vertices;
+};
+
+std::unique_ptr<Topology> topologyFactory(const std::string &topo_name,
+                                          const conduit::Node &domain);
 
 conduit::Node field_max(const conduit::Node &dataset,
                         const std::string &field_name);
@@ -125,7 +262,8 @@ void paint_binning(const conduit::Node &binning,
                    conduit::Node &dataset,
                    const std::string &field_name,
                    const std::string &topo_name,
-                   const std::string &assoc_str);
+                   const std::string &assoc_str,
+                   const double default_value);
 
 void binning_mesh(const conduit::Node &binning,
                   conduit::Node &mesh,
@@ -168,21 +306,20 @@ std::string field_assoc(const conduit::Node &dataset,
 // double or float, checks for global consistency
 std::string field_type(const conduit::Node &dataset,
                        const std::string &field_name);
+//
+// double or float
+std::string coord_dtype(const std::string &topo_name,
+                        const conduit::Node &domain);
 
 // double or float, checks for global consistency
-std::string coord_type(const conduit::Node &dataset,
-                       const std::string &topo_name);
+std::string global_coord_dtype(const std::string &topo_name,
+                               const conduit::Node &dataset);
 
 // topo_types = [points, uniform, rectilinear, curvilinear, unstructured]
 // expects that a topology does exist or else it will return none
 void topology_types(const conduit::Node &dataset,
                     const std::string &topo_name,
                     int topo_types[5]);
-
-// assumes that the topology exists
-int num_cells(const conduit::Node &domain, const std::string &topo_name);
-// assumes that the topology exists
-int num_points(const conduit::Node &domain, const std::string &topo_name);
 
 // assumes that the topology exists, globally checks for constistency
 int spatial_dims(const conduit::Node &dataset, const std::string &topo_name);
@@ -195,10 +332,6 @@ int topo_dim(const std::string &topo_name, const conduit::Node &dom);
 std::string field_topology(const conduit::Node &dataset,
                            const std::string &field_name);
 
-// finds the associate and topology of a vector of fields and ensures they are
-// the same.
-conduit::Node global_topo_and_assoc(const conduit::Node &dataset,
-                                    const std::vector<std::string> field_names);
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

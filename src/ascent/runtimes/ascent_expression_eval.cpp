@@ -579,7 +579,11 @@ initialize_functions()
   conduit::Node &field_sig = (*functions)["field"].append();
   field_sig["return_type"] = "field";
   field_sig["filter_name"] = "field";
-  field_sig["args/arg1/type"] = "string";
+  field_sig["args/field_name/type"] = "string";
+  field_sig["args/component/type"] = "string";
+  field_sig["args/component/optional"];
+  field_sig["args/component/description"] =
+      "Used to specify a single component if the field is a vector field.";
   field_sig["description"] = "Return a mesh field given a its name.";
 
   //---------------------------------------------------------------------------
@@ -762,6 +766,11 @@ initialize_functions()
       "must have all the fields used for the axes of ``binning``. It only "
       "makes sense to specify this when the only bin axes are a subset of "
       "``x``, ``y``, ``z``.";
+  paint_binning_sig["args/default_value/type"] = "scalar";
+  paint_binning_sig["args/default_value/optional"];
+  paint_binning_sig["args/default_value/description"] =
+      "Defaults to ``0``. The value given to elements which do not fall into "
+      "any of the bins.";
   paint_binning_sig["description"] =
       "Paints back the bin values onto an existing mesh by binning the "
       "elements of the mesh and creating a new field there the value at each "
@@ -882,6 +891,16 @@ initialize_functions()
 
   //---------------------------------------------------------------------------
 
+  conduit::Node &field_sqrt_sig = (*functions)["sqrt"].append();
+  field_sqrt_sig["return_type"] = "jitable";
+  field_sqrt_sig["filter_name"] = "field_sqrt";
+  field_sqrt_sig["args/arg1/type"] = "field";
+  field_sqrt_sig["jitable"];
+  field_sqrt_sig["description"] =
+      "Return a derived field that is the square root value of a field.";
+
+  //---------------------------------------------------------------------------
+
   count_params();
   // functions->save("functions.json", "json");
 }
@@ -920,6 +939,7 @@ initialize_objects()
   cell["volume/type"] = "jitable";
 
   conduit::Node &vertex = (*objects)["vertex/attrs"];
+  (*objects)["vertex/jitable"];
   vertex["x/type"] = "jitable";
   vertex["y/type"] = "jitable";
   vertex["z/type"] = "jitable";

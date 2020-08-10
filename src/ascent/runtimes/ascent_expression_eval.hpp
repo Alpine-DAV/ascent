@@ -109,7 +109,6 @@ public:
                          const std::string &session);
 
   conduit::Node evaluate(const std::string expr, std::string exp_name = "");
-  void evaluate_derived(const std::string expr, std::string exp_name = "");
 };
 
 //-----------------------------------------------------------------------------
