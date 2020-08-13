@@ -1474,6 +1474,7 @@ void AscentRuntime::Execute(const conduit::Node &actions)
 
     auto t_detail = std::chrono::system_clock::now();
 
+    // std::cout << "** set info " << std::endl;
     Node *images = w.registry().fetch<Node>("image_list");
 
     const int size = images->number_of_children();

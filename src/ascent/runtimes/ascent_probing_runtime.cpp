@@ -967,16 +967,20 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             if (render_cfg.probing_stride && (j % render_cfg.probing_stride == 0)) // probing image
             {
                 const index_t id = j / render_cfg.probing_stride;
-                render_ptrs[j].emplace_back(parts_probing[i]);
+                if (parts_probing[i])
+                    render_ptrs[j].emplace_back(parts_probing[i]);
                 render_arrangement[j].emplace_back(id);
                 // std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
 
                 {   // keep track of probing images
-                    ++probing_enum_sim[i];
                     // reset probing counter if first render in vis chunks
-                    if (j - g_render_counts[src_ranks[i]] == 0)
+                    if (j == g_render_counts[src_ranks[i]] + probing_enum_sim[i])
                         probing_enum_vis[i] = 0;
-                    ++probing_enum_vis[i];
+                    if (j < g_render_counts[src_ranks[i]] + probing_enum_sim[i]) 
+                        ++probing_enum_sim[i];
+                    else
+                        ++probing_enum_vis[i];
+                        
                 }
             }
             else if (j < g_render_counts[src_ranks[i]] + probing_enum_sim[i]) // part comes from sim node (inline)
@@ -985,30 +989,33 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                 int sum = 0;
                 for (size_t k = 0; k < sim_batch_sizes[i].size(); k++)
                 {
-                    sum += sim_batch_sizes[i][k] + int(std::round(sim_batch_sizes[i][k]*render_cfg.probing_factor)) + 1;
+                    sum += sim_batch_sizes[i][k] + probing_enum_sim[i];
                     if (j > sum)
                         ++batch_id;
                 }
 
                 index_t id = j;
-                for (size_t k = 0; k < batch_id; k++)
+                for (int k = 0; k < batch_id; k++)
                     id -= sim_batch_sizes[i][k];
                 
                 id -= probing_enum_sim[i];
-                // std::cout << " " << mpi_props.rank << " sim  " << id << std::endl;
-                render_ptrs[j].emplace_back(parts_sim[i][batch_id]);
+                // std::cout << " " << mpi_props.rank << " sim  " << id << " | batch " << batch_id << std::endl;
+                if (parts_sim[i][batch_id])
+                    render_ptrs[j].emplace_back(parts_sim[i][batch_id]);
                 render_arrangement[j].emplace_back(id);
             }
             else    // part rendered on this vis node
             {
                 // Reset the probing counter if this is the first render in vis node chunks 
-                // and this is not a probing render.
-                if (j - g_render_counts[src_ranks[i]] == 0)
+                // and this is not a probing render. (should not happen)
+                if (j == g_render_counts[src_ranks[i]] + probing_enum_sim[i])
                     probing_enum_vis[i] = 0;
 
-                const index_t id = (j - g_render_counts[src_ranks[i]]) - probing_enum_vis[i];
+                const index_t id = j - (g_render_counts[src_ranks[i]] + probing_enum_sim[i])
+                                     - probing_enum_vis[i];
                 // std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
-                render_ptrs[j].emplace_back(render_chunks_vis[i]);
+                if (render_chunks_vis[i])
+                    render_ptrs[j].emplace_back(render_chunks_vis[i]);
                 render_arrangement[j].emplace_back(id);
             }
         }
@@ -1051,10 +1058,10 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         // std::cout << "Compositing with thread count " << omp_get_num_threads() << std::endl;
         auto t_start = std::chrono::system_clock::now();
         // gather all dephts values from vis nodes
-        std::vector<float> v_depths(mpi_props.sim_node_count, 0.f);
+        std::vector<float> v_depths(mpi_props.sim_node_count, std::numeric_limits<float>::lowest());
 
-        std::vector<float> depths(my_data_recv_cnt);
-    #pragma omp parallel for
+        std::vector<float> depths(render_ptrs[j].size());
+
         for (int i = 0; i < render_ptrs[j].size(); i++)
             depths[i] = (*render_ptrs[j][i])["depths"].child(render_arrangement[j][i]).to_float();
 
@@ -1063,7 +1070,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                         MPI_FLOAT, mpi_props.comm_vis);
 
         std::vector<std::pair<float, int> > depth_id(v_depths.size());
-    #pragma omp parallel for
+
         for (int k = 0; k < v_depths.size(); k++)
             depth_id[k] = std::make_pair(v_depths[k], depth_id_order[k]);
         // sort based on depth values
@@ -1079,24 +1086,31 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
 
         vtkh::Compositor compositor;
         compositor.SetCompositeMode(vtkh::Compositor::VIS_ORDER_BLEND);
-        
+
         int image_cnt = 0;
         // loop over render parts (= 1 per sim node) and add as images
-        for (int i = 0; i < my_data_recv_cnt; ++i)
+        for (int i = 0; i < render_ptrs[j].size(); ++i)
         {
             if (depths[i] > std::numeric_limits<float>::lowest())
             {
                 const int id = depths_order_id[src_ranks[i]];
-                compositor.AddImage((*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr(),
-                                    (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr(),
-                                    render_cfg.WIDTH, render_cfg.HEIGHT, id);
+                std::cout << ".. render_arrangement " << id << std::endl;
+                unsigned char *cb = (*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr();
+                std::cout << ".. color " << int(*(cb + 800*799*4)) << std::endl;
+                float *db = (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr();
+                std::cout << ".. depth " << *(db + 800*799) << std::endl;
+                
+                // TODO: fix! (the whole damn buffer pipeline)
+                compositor.AddImage(cb, db, render_cfg.WIDTH, render_cfg.HEIGHT, id);
+                std::cout << " added image " << std::endl;
                 ++image_cnt;
             }
         }
-
+        // MPI_Barrier(mpi_props.comm_vis);
+        // std::cout << ".. composite " << j << " img count " << image_cnt << std::endl;
+        
         // composited
-        if (image_cnt)
-            results[j] = compositor.CompositeNoCopy();
+        results[j] = compositor.CompositeNoCopy();
 
         // TODO: add screen annotations for hybrid (see vtk-h Scene::Render)
         // See vtk-h Renderer::ImageToCanvas() for how to get from result image to canvas.
@@ -1105,14 +1119,14 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         log_time(t_start, "+ compositing image ", mpi_props.rank);
         log_global_time("end composit image", mpi_props.rank);
 
-        // print_time(t_start, "end composite ", mpi_props.rank);
+        print_time(t_start, "end composite ", mpi_props.rank);
 
         // save render using separate thread to hide latency
         if (my_vis_rank == 0 && image_cnt)
         {
             assert(render_arrangement[j].size() > 0);
             std::string name = (*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string();
-            // std::cout << name << std::endl;
+            std::cout << name << std::endl;
 
             std::unique_lock<std::mutex> locker(mu);
             cond.wait(locker, [&buffer, &max_buffer_size](){ return buffer.size() < max_buffer_size; });
@@ -1144,11 +1158,11 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
     log_global_time("end compositing", mpi_props.rank);
 }
 
-void pack_and_send(Node &data, Node &compact_node, const int destination, const int tag, 
+void pack_and_send(Node &data, const int destination, const int tag, 
                    const MPI_Comm comm, MPI_Request &req)
 {
     // debug_break();
-    pack_node_external(data, compact_node);
+    Node compact_node = pack_node(data);
 
     int mpi_error = MPI_Ibsend(compact_node.data_ptr(),
                                compact_node.total_bytes_compact(),
@@ -1209,8 +1223,11 @@ void hybrid_render(const MPI_Properties &mpi_props,
                                                       my_probing_times.end(), 0.0);
 
             sum_render_times = std::isnan(sum_render_times) ? 0.0 : sum_render_times;
-            my_avg_probing_time = float(sum_render_times / my_probing_times.size());
-            my_avg_probing_time /= 1000.0; // convert to seconds
+            if (my_probing_times.size())
+            {
+                my_avg_probing_time = float(sum_render_times / my_probing_times.size());
+                my_avg_probing_time /= 1000.0; // convert to seconds
+            }
 
             // if probing time is close to zero, add overhead costs
             // if (my_avg_probing_time < 0.f + std::numeric_limits<float>::min())
@@ -1235,9 +1252,12 @@ void hybrid_render(const MPI_Properties &mpi_props,
         if (render_cfg.insitu_type == "hybrid")
         {
             // TODO: this is ugly 
-            float my_depth = render_chunks_probing["depths"].child(0).to_float();
-            if (my_depth == std::numeric_limits<float>::lowest())
-                skipped_render = 1;
+            float my_depth = std::numeric_limits<float>::lowest();
+            skipped_render = 1;
+            if (render_chunks_probing["depths"].children().has_next()) 
+                my_depth = render_chunks_probing["depths"].child(0).to_float();
+            if (my_depth > std::numeric_limits<float>::lowest())
+                skipped_render = 0;
         }
     }
     log_global_time("end packData", mpi_props.rank);
@@ -1276,7 +1296,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
     // DEBUG: OUT
     if (mpi_props.rank == 0)
     {
-        std::cout << "=== skipped_renders (%) " << skipped_renders << std::endl;
+        std::cout << "=== skipped_renders (relative) " << skipped_renders << std::endl;
 
         std::cout << "=== node_map ";
         for (auto &a : node_map)
@@ -1496,6 +1516,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     // ascent_main_runtime : out.set_external(m_info);
                     ascent_renders[i].info(*render_chunks_vis[i]);
                 }
+
                 log_time(start, "+ render vis " + std::to_string(current_render_count - probing_count_part) + " ", mpi_props.rank);
             }
             else
@@ -1536,7 +1557,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
             // compact_probing_renders are now packed and send in separate thread
-            Node compact_probing_renders;// = pack_node(render_chunks_probing);
+            // Node compact_probing_renders = pack_node(render_chunks_probing);
             // const int my_render_count = g_render_counts[mpi_props.rank] + int(g_render_counts[mpi_props.rank]*render_cfg.probing_factor);
             // RenderBatch batch = get_batch(my_render_count, render_cfg.batch_count);
             std::vector<int> batch_sizes = get_batch_sizes(g_render_counts[mpi_props.rank], render_cfg.batch_count, 
@@ -1571,7 +1592,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
             MPI_Request request_probing = MPI_REQUEST_NULL;
             // pack and send probing renders in separate thread
             std::thread pack_renders_thread(&pack_and_send, std::ref(render_chunks_probing), 
-                                            std::ref(compact_probing_renders),
                                             destination, tag_probing, mpi_props.comm_world, 
                                             std::ref(request_probing));
             // pack_and_send(render_chunks_probing, destination, tag_probing, mpi_props.comm_world, 
@@ -1584,7 +1604,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
             std::vector<MPI_Request> requests(batch_sizes.size(), MPI_REQUEST_NULL);
             std::vector<conduit::Node> info(batch_sizes.size());
             Node renders_inline;
-            Node renders_compact;
 
             std::vector<std::thread> threads;
             // std::thread thread_pack(&test_function);
@@ -1635,7 +1654,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 renders_inline["render_file_names"].set_external(info[i]["render_file_names"]);
 
                 threads.push_back(std::thread(&pack_and_send, std::ref(renders_inline), 
-                                              std::ref(renders_compact), destination, 
+                                              destination, 
                                               tag_inline + i, mpi_props.comm_world, 
                                               std::ref(requests[i])));
 
@@ -1847,10 +1866,15 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
                 render_times.push_back(t.to_double());
             }
 
-            render_chunks["depths"].set_external(info["depths"]);
-            render_chunks["color_buffers"].set_external(info["color_buffers"]);
-            render_chunks["depth_buffers"].set_external(info["depth_buffers"]);
             render_chunks["render_file_names"].set_external(info["render_file_names"]);
+            render_chunks["depths"].set_external(info["depths"]);
+
+            if (info["depths"].children().has_next() && 
+                info["depths"].child(0).to_float() > std::numeric_limits<float>::lowest())
+            {
+                render_chunks["color_buffers"].set_external(info["color_buffers"]);
+                render_chunks["depth_buffers"].set_external(info["depth_buffers"]);
+            }
 
             int probing_images = int(std::round(probing_factor * phi * theta));
             log_time(start, "probing " + std::to_string(probing_images) + " ", world_rank);

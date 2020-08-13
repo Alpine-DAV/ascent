@@ -353,7 +353,7 @@ public:
 
     scene.Render(is_inline);
 
-    std::chrono::duration<double> t_img_data;
+    // std::chrono::duration<double> t_img_data;
 
     for (int i = 0; i < m_renderer_count; i++)
     {
@@ -380,10 +380,11 @@ public:
 
         // NOTE: move costs about 0.02 seconds per node per batch (20 renders)
         m_render_times.push_back(std::move(r->GetRenderTimes()));
+
         int size = renders.at(i).GetWidth() * renders.at(i).GetHeight();
         // NOTE: only getting canvas from domain 0 for now
         
-        if (r->GetDepthBuffers().at(0).size() > 0)  // skipped image
+        if (r->GetDepthBuffers().size() && r->GetDepthBuffers().at(0).size())  // skipped image
         {
           m_color_buffers.push_back(std::move(r->GetColorBuffers()));
           m_depth_buffers.push_back(std::move(r->GetDepthBuffers()));
@@ -396,7 +397,6 @@ public:
       // m_registry->consume(oss.str());
     }
     
-    // std::cout << "** move data " << t_img_data.count() << std::endl;
 
   }
 
@@ -2694,13 +2694,14 @@ void add_images(std::vector<vtkh::Render> *renders,
       }
     }
 
-    avg_render_time /= double(count);
+    avg_render_time /= count ? double(count) : 1.0;
     image_data[i]["render_time"] = avg_render_time;
-
 
     int size = renders->at(i).GetWidth() * renders->at(i).GetHeight();
     // NOTE: only getting canvas from domain 0 for now
-    if (color_buffers != nullptr && depth_buffers != nullptr && depths != nullptr)
+    if (   color_buffers && color_buffers != nullptr 
+        && depth_buffers && depth_buffers != nullptr 
+        && depths &&  depths != nullptr)
     {
       image_data[i]["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
       image_data[i]["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
@@ -2708,6 +2709,8 @@ void add_images(std::vector<vtkh::Render> *renders,
     }
     else
     {
+      image_data[i]["color_buffer"] = static_cast<unsigned char>(0);
+      image_data[i]["depth_buffer"] = 0.f;
       // hijack depth as a skipped image indicator
       image_data[i]["depth"] = std::numeric_limits<float>::lowest();
     }
