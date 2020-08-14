@@ -384,7 +384,7 @@ public:
         int size = renders.at(i).GetWidth() * renders.at(i).GetHeight();
         // NOTE: only getting canvas from domain 0 for now
         
-        if (r->GetDepthBuffers().size() && r->GetDepthBuffers().at(0).size())  // skipped image
+        // if (r->GetDepthBuffers().size() && r->GetDepthBuffers().at(0).size())  // skipped image
         {
           m_color_buffers.push_back(std::move(r->GetColorBuffers()));
           m_depth_buffers.push_back(std::move(r->GetDepthBuffers()));
@@ -2644,6 +2644,13 @@ void add_images(std::vector<vtkh::Render> *renders,
                 std::vector<std::vector<float> > *depth_buffers,
                 std::vector<float> *depths)
 {
+  // check if anything was rendered
+  if (color_buffers->size() == 0)
+  {
+    std::cout << "no image to add." << std::endl;
+    return;
+  }
+
   if (!graph->workspace().registry().has_entry("image_list"))
   {
     conduit::Node *image_list = new conduit::Node();
@@ -2699,21 +2706,21 @@ void add_images(std::vector<vtkh::Render> *renders,
 
     int size = renders->at(i).GetWidth() * renders->at(i).GetHeight();
     // NOTE: only getting canvas from domain 0 for now
-    if (   color_buffers && color_buffers != nullptr 
-        && depth_buffers && depth_buffers != nullptr 
-        && depths &&  depths != nullptr)
+    // if (   color_buffers && color_buffers != nullptr 
+    //     && depth_buffers && depth_buffers != nullptr 
+    //     && depths &&  depths != nullptr)
     {
       image_data[i]["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
       image_data[i]["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
       image_data[i]["depth"] = depths->at(i);
     }
-    else
-    {
-      image_data[i]["color_buffer"] = static_cast<unsigned char>(0);
-      image_data[i]["depth_buffer"] = 0.f;
-      // hijack depth as a skipped image indicator
-      image_data[i]["depth"] = std::numeric_limits<float>::lowest();
-    }
+    // else
+    // {
+    //   image_data[i]["color_buffer"] = static_cast<unsigned char>(0);
+    //   image_data[i]["depth_buffer"] = 0.f;
+    //   // hijack depth as a skipped image indicator
+    //   image_data[i]["depth"] = std::numeric_limits<float>::lowest();
+    // }
     // get depth buffer directly from vtk-m -> memory error bc renderer is consumed ?
     // image_data[i]["depth_buffer"].set_external(vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer()), size);
 

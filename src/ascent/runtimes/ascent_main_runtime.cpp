@@ -1475,9 +1475,21 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     auto t_detail = std::chrono::system_clock::now();
 
     // std::cout << "** set info " << std::endl;
-    Node *images = w.registry().fetch<Node>("image_list");
+    Node *images;
+    if (w.registry().has_entry("image_list"))
+    {
+      images = w.registry().fetch<Node>("image_list");
+    }
+    else
+    {
+      std::cout << "No image list." << std::endl;
+      return;
+    }
 
     const int size = images->number_of_children();
+
+    std::cout << "number of images " << size << std::endl;
+
     // Note: this copy costs ~1.5 seconds -> avoid it (only needed for interactive web interface?)
     // Node image_params = *images;
     // m_info["images"].set_external(image_params);
@@ -1546,7 +1558,8 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     m_info["flow_graph_dot_html"] = w.graph().to_dot_html();
 
     // m_web_interface.PushRenders(render_file_names);
-    m_web_interface.PushRenders(m_info["render_file_names"]);
+    if (m_info["render_file_names"].number_of_children() > 0)
+      m_web_interface.PushRenders(m_info["render_file_names"]);
 
     // w.registry().reset();
   }
