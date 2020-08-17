@@ -56,6 +56,8 @@ RUN apt-get -y install \
                zlib1g-dev \
                curl\
                mpich \
-               libmpich-dev 
+               libmpich-dev \
+               libblas-dev \
+               liblapack-dev
 
 

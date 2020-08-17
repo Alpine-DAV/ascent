@@ -14,6 +14,6 @@ cd alpinedav_ubuntu_18_devel_tpls
 cd alpinedav_ubuntu_16_cuda_9.2_devel
 ./build.sh 
 cd ..
-cd alpinedav_ubuntu_16_cuda_9.2_devel_tps
+cd alpinedav_ubuntu_16_cuda_9.2_devel_tpls
 ./build.sh
 
