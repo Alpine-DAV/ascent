@@ -570,7 +570,7 @@ Workspace::register_filter_type(const std::string &filter_type_name,
 {
     if(supports_filter_type(filter_type_name))
     {
-        CONDUIT_ERROR("filter type named:"
+        CONDUIT_INFO("filter type named:"
                       << filter_type_name
                       << " is already registered");
         return;

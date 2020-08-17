@@ -61,6 +61,8 @@
 #include "t_config.hpp"
 #include "t_utils.hpp"
 
+#include <occa.hpp>
+
 using namespace std;
 using namespace conduit;
 using namespace ascent;
@@ -68,8 +70,19 @@ using namespace ascent;
 index_t EXAMPLE_MESH_SIDE_DIM = 3;
 
 //-----------------------------------------------------------------------------
+void crash()
+{
+  for(int i = 0; i < 10000; ++i)
+  {
+    occa::setDevice("mode: 'Serial'");
+    occa::array<double> o_output(27000);
+  }
+}
 TEST(ascent_expressions, derived_expressions)
 {
+  crash();
+  crash();
+
   Node n;
   ascent::about(n);
 
@@ -77,18 +90,26 @@ TEST(ascent_expressions, derived_expressions)
   // Create an example mesh.
   //
   Node data, verify_info;
+  // conduit::blueprint::mesh::examples::basic("polyhedra",
+  // conduit::blueprint::mesh::examples::basic("polygons",
+  // conduit::blueprint::mesh::examples::braid("tris",
+  // conduit::blueprint::mesh::examples::braid("quads",
+  conduit::blueprint::mesh::examples::braid("tets",
   // conduit::blueprint::mesh::examples::braid("hexs",
+  // conduit::blueprint::mesh::examples::braid("uniform",
   // conduit::blueprint::mesh::examples::braid("rectilinear",
-  conduit::blueprint::mesh::examples::braid("structured",
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            data);
-  // conduit::blueprint::mesh::examples::basic("uniform", 20, 20, 20, data);
+  // conduit::blueprint::mesh::examples::braid("structured",
+      EXAMPLE_MESH_SIDE_DIM,
+      EXAMPLE_MESH_SIDE_DIM,
+      EXAMPLE_MESH_SIDE_DIM,
+      //0,
+      data);
   // ascent normally adds this but we are doing an end around
   data["state/domain_id"] = 0;
   Node multi_dom;
   blueprint::mesh::to_multi_domain(data, multi_dom);
+
+  multi_dom.print();
 
   runtime::expressions::register_builtin();
   runtime::expressions::ExpressionEval eval(&multi_dom);
@@ -134,14 +155,17 @@ TEST(ascent_expressions, derived_expressions)
   // res = eval.evaluate(expr);
   // res.print();
 
-  // expr = "if field('braid') > 0 then field('braid') else 0";
-  // eval.evaluate(expr);
+  // expr = "if field('braid') > 0 then field('braid') else if field('braid') >
+  // -1 then -1 else 0"; eval.evaluate(expr);
 
   // expr = "topo('mesh').cell.x";
   // eval.evaluate(expr);
 
   expr = "topo('mesh').cell.volume";
   eval.evaluate(expr);
+
+  // expr = "magnitude(gradient(field('braid') + 1))";
+  // eval.evaluate(expr);
 
   // expr = "sin(field('braid'))";
   // eval.evaluate(expr);

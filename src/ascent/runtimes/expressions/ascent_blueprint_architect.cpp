@@ -81,11 +81,14 @@ namespace runtime
 {
 
 //-----------------------------------------------------------------------------
-// -- begin ascent::runtime::expressions--
+// -- begin ascent::runtime::expressions --
 //-----------------------------------------------------------------------------
 namespace expressions
 {
 
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::expressions::detail --
+//-----------------------------------------------------------------------------
 namespace detail
 {
 int
@@ -114,7 +117,8 @@ get_num_vertices(const std::string &shape_type)
   }
   else
   {
-    ASCENT_ERROR("Unsupported element type " << shape_type);
+    ASCENT_ERROR("Cannot get the number of vertices for the shape '"
+                 << shape_type << "'.");
   }
   return num;
 }
@@ -206,8 +210,8 @@ PointTopology<T, N>::PointTopology(const std::string &topo_name,
       dims[i] = n_dims[dim].to_int();
       origin[i] = n_origin[dim].to_float64();
       spacing[i] = n_spacing["d" + coord].to_float64();
-      num_points = dims[i];
-      num_cells = dims[i] - 1;
+      num_points *= dims[i];
+      num_cells *= dims[i] - 1;
     }
   }
   else if(this->coord_type == "rectilinear")
@@ -318,6 +322,8 @@ UniformTopology<T, N>::UniformTopology(const std::string &topo_name,
   const conduit::Node &n_dims = n_coords["dims"];
   const conduit::Node &n_origin = n_coords["origin"];
   const conduit::Node &n_spacing = n_coords["spacing"];
+  num_points = 1;
+  num_cells = 1;
   for(size_t i = 0; i < N; ++i)
   {
     const std::string dim = std::string(1, 'i' + i);
@@ -325,8 +331,8 @@ UniformTopology<T, N>::UniformTopology(const std::string &topo_name,
     dims[i] = n_dims[dim].to_int32();
     origin[i] = n_origin[coord].to_float64();
     spacing[i] = n_spacing["d" + coord].to_float64();
-    num_points = dims[i];
-    num_cells = dims[i] - 1;
+    num_points *= dims[i];
+    num_cells *= dims[i] - 1;
   }
 }
 
@@ -356,7 +362,7 @@ UniformTopology<T, N>::element_location(const size_t index) const
   std::array<conduit::float64, 3> loc{};
   for(size_t i = 0; i < N; ++i)
   {
-    loc[i] = origin[i] + l_index[i] * spacing[i] + spacing[i] * 0.5;
+    loc[i] = origin[i] + (l_index[i] + 0.5) * spacing[i];
   }
   return loc;
 }
@@ -492,7 +498,7 @@ StructuredTopology<T, N>::StructuredTopology(const std::string &topo_name,
   if(coords[0].dtype().number_of_elements() != num_points)
   {
     ASCENT_ERROR(
-        "UnstructuredTopology ("
+        "StructuredTopology ("
         << topo_name << "): The number of points calculated (" << num_points
         << ") differs from the number of vertices in corresponding coordset ("
         << coords[0].dtype().number_of_elements() << ").");
@@ -612,9 +618,38 @@ UnstructuredTopology<T, N>::UnstructuredTopology(const std::string &topo_name,
   }
   const conduit::Node &elements =
       domain["topologies/" + topo_name + "/elements"];
-  connectivity = elements["connectivity"].value();
-  num_vertices = detail::get_num_vertices(elements["shape"].as_string());
-  num_cells = connectivity.dtype().number_of_elements() / num_vertices;
+  shape = elements["shape"].as_string();
+  if(shape == "polyhedral")
+  {
+    polyhedral_connectivity = elements["connectivity"].value();
+    polyhedral_sizes = elements["sizes"].value();
+    polyhedral_offsets = elements["offsets"].value();
+    num_cells = polyhedral_sizes.dtype().number_of_elements();
+
+    const conduit::Node &subelements =
+        domain["topologies/" + topo_name + "/subelements"];
+    connectivity = subelements["connectivity"].value();
+    sizes = subelements["sizes"].value();
+    offsets = subelements["offsets"].value();
+    polyhedral_shape = subelements["shape"].as_string();
+    if(polyhedral_shape != "polygonal")
+    {
+      polyhedral_shape_size = detail::get_num_vertices(polyhedral_shape);
+    }
+  }
+  else if(shape == "polygonal")
+  {
+    connectivity = elements["connectivity"].value();
+    sizes = elements["sizes"].value();
+    offsets = elements["offsets"].value();
+    num_cells = sizes.dtype().number_of_elements();
+  }
+  else
+  {
+    connectivity = elements["connectivity"].value();
+    shape_size = detail::get_num_vertices(shape);
+    num_cells = connectivity.dtype().number_of_elements() / shape_size;
+  }
 }
 
 template <typename T, size_t N>
@@ -625,7 +660,21 @@ UnstructuredTopology<T, N>::get_num_points() const
   const conduit::int32 *conn_begin = (conduit::int32 *)connectivity.data_ptr();
   const conduit::int32 *conn_end =
       conn_begin + connectivity.dtype().number_of_elements();
-  return std::unordered_set<T>(conn_begin, conn_end).size();
+  const auto num_points = std::unordered_set<T>(conn_begin, conn_end).size();
+  const auto coords_size = domain["coordsets/" + coords_name + "/values"]
+                               .child(0)
+                               .dtype()
+                               .number_of_elements();
+  if(num_points != coords_size)
+  {
+    ASCENT_ERROR("Unstructured topology '"
+                 << topo_name << "' has " << coords_size
+                 << " points in its associated coordset '" << coords_name
+                 << "' but the connectivity "
+                    "array only uses "
+                 << num_points << " of them.");
+  }
+  return num_points;
 }
 
 template <typename T, size_t N>
@@ -645,8 +694,23 @@ std::array<conduit::float64, 3>
 UnstructuredTopology<T, N>::element_location(const size_t index) const
 {
   std::array<conduit::float64, 3> loc{};
-  const auto offset = index * num_vertices;
-  for(size_t i = 0; i < num_vertices; ++i)
+  size_t offset;
+  size_t cur_shape_vertices;
+  if(shape == "polygonal")
+  {
+    offset = offsets[index];
+    cur_shape_vertices = sizes[index];
+  }
+  else if(shape == "polyhedral")
+  {
+    ASCENT_ERROR("element_location for polyhedral shapes is not implemented.");
+  }
+  else
+  {
+    offset = index * shape_size;
+    cur_shape_vertices = shape_size;
+  }
+  for(size_t i = 0; i < cur_shape_vertices; ++i)
   {
     const auto vert_loc = vertex_location(connectivity[offset + i]);
     for(size_t i = 0; i < N; ++i)
@@ -656,7 +720,7 @@ UnstructuredTopology<T, N>::element_location(const size_t index) const
   }
   for(size_t i = 0; i < N; ++i)
   {
-    loc[i] /= num_vertices;
+    loc[i] /= cur_shape_vertices;
   }
   return loc;
 }
@@ -665,20 +729,45 @@ template <typename T, size_t N>
 void
 UnstructuredTopology<T, N>::pack(conduit::Node &args) const
 {
-  // "const int num_points,\n"
   // "const double * coords_x,\n"
   // "const double * coords_y,\n"
   // "const double * coords_z,\n"
   // "const int * connectivity,\n"
   // "const int shape,\n";
-  args["const int num_points,\n"] = get_num_points();
   for(size_t i = 0; i < N; ++i)
   {
     const std::string coord = std::string(1, 'x' + i);
-    args["const double *coords_" + coord + ",\n"].set_external(coords[i]);
+    args["const double *" + topo_name + "_coords_" + coord + ",\n"]
+        .set_external(coords[i]);
   }
-  args["const double *connectivity,\n"].set_external(connectivity);
-  args["const int shape,\n"] = num_vertices;
+  args["const int *" + topo_name + "_connectivity,\n"].set_external(
+      connectivity);
+  // polygonal and polyhedral need to pack additional things
+  if(shape == "polygonal")
+  {
+    args["const int *" + topo_name + "_sizes,\n"].set_external(sizes);
+    args["const int *" + topo_name + "_offsets,\n"].set_external(offsets);
+  }
+  else if(shape == "polyhedral")
+  {
+    args["const int *" + topo_name + "_polyhedral_sizes,\n"].set_external(
+        polyhedral_sizes);
+    args["const int *" + topo_name + "_polyhedral_offsets,\n"].set_external(
+        polyhedral_offsets);
+    args["const int *" + topo_name + "_polyhedral_connectivity,\n"]
+        .set_external(polyhedral_connectivity);
+
+    args["const int *" + topo_name + "_sizes,\n"].set_external(sizes);
+    args["const int *" + topo_name + "_offsets,\n"].set_external(offsets);
+    if(polyhedral_shape != "polygonal")
+    {
+      args["const int " + topo_name + "_shape_size,\n"] = polyhedral_shape_size;
+    }
+  }
+  else
+  {
+    args["const int " + topo_name + "_shape_size,\n"] = shape_size;
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -993,13 +1082,11 @@ known_fields(const conduit::Node &dataset)
   return ss.str();
 }
 
-// TODO If someone names their fields x,y,z things will go wrong
 bool
 has_component(const conduit::Node &dataset,
               const std::string &field_name,
               const std::string &component)
 {
-
   bool has_comp = false;
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {

@@ -901,6 +901,24 @@ initialize_functions()
 
   //---------------------------------------------------------------------------
 
+  conduit::Node &field_gradient_sig = (*functions)["gradient"].append();
+  field_gradient_sig["return_type"] = "jitable";
+  field_gradient_sig["filter_name"] = "gradient";
+  field_gradient_sig["args/field/type"] = "field";
+  field_gradient_sig["jitable"];
+  field_gradient_sig["description"] =
+      "Return a derived field that is the gradient of a field.";
+
+  //---------------------------------------------------------------------------
+
+  conduit::Node &field_magnitude_sig = (*functions)["magnitude"].append();
+  field_magnitude_sig["return_type"] = "jitable";
+  field_magnitude_sig["filter_name"] = "magnitude";
+  field_magnitude_sig["args/vector/type"] = "jitable";
+  field_magnitude_sig["jitable"];
+  field_magnitude_sig["description"] =
+      "Return a derived field that is the magnitude of a vector field.";
+
   count_params();
   // functions->save("functions.json", "json");
 }

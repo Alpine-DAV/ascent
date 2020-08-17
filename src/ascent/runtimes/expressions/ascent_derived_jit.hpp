@@ -97,6 +97,7 @@ public:
       insert(item);
     }
   }
+
   void
   insert(const InsertionOrderedSet<T> &ios)
   {
@@ -104,6 +105,17 @@ public:
     {
       insert(item);
     }
+  }
+
+  T
+  accumulate() const
+  {
+    T res;
+    for(const auto &item : insertion_ordered_data)
+    {
+      res += item;
+    }
+    return res;
   }
 
   const std::vector<T> &
@@ -117,46 +129,136 @@ private:
   std::vector<T> insertion_ordered_data;
 };
 
+class MathCode
+{
+public:
+  void determinant_3x3(InsertionOrderedSet<std::string> &code,
+                       const std::string &a,
+                       const std::string &b,
+                       const std::string &c,
+                       const std::string &res_name);
+  void vector_subtract(InsertionOrderedSet<std::string> &code,
+                       const std::string &a,
+                       const std::string &b,
+                       const std::string &res_name,
+                       const int num_components,
+                       const bool declare = true);
+  void vector_add(InsertionOrderedSet<std::string> &code,
+                  const std::string &a,
+                  const std::string &b,
+                  const std::string &res_name,
+                  const int num_components,
+                  const bool declare = true);
+  void cross_product(InsertionOrderedSet<std::string> &code,
+                     const std::string &a,
+                     const std::string &b,
+                     const std::string &res_name,
+                     const int num_components);
+  void dot_product(InsertionOrderedSet<std::string> &code,
+                   const std::string &a,
+                   const std::string &b,
+                   const std::string &res_name,
+                   const int num_components);
+  void magnitude(InsertionOrderedSet<std::string> &code,
+                 const std::string &a,
+                 const std::string &res_name,
+                 const int num_components);
+};
+
 class TopologyCode
 {
 public:
-  TopologyCode(const std::string &topo_name, const conduit::Node &dom);
-  void vertex_idx(InsertionOrderedSet<std::string> &code);
+  TopologyCode(const std::string &topo_name, const conduit::Node &domain);
   void vertex_xyz(InsertionOrderedSet<std::string> &code);
-  void cell_idx(InsertionOrderedSet<std::string> &code);
-  void cell_xyz(InsertionOrderedSet<std::string> &code);
-  void dxdydz(InsertionOrderedSet<std::string> &code);
+  void element_xyz(InsertionOrderedSet<std::string> &code);
   void volume(InsertionOrderedSet<std::string> &code);
-  void structured_vertices(InsertionOrderedSet<std::string> &code);
-  void unstructured_vertices(InsertionOrderedSet<std::string> &code);
 
-private:
+  // helper functions
+  void vertex_idx(InsertionOrderedSet<std::string> &code);
+  void element_idx(InsertionOrderedSet<std::string> &code);
+  void dxdydz(InsertionOrderedSet<std::string> &code);
+  void structured_vertices(InsertionOrderedSet<std::string> &code);
+  void unstructured_vertices(InsertionOrderedSet<std::string> &code,
+                             const std::string &index_name = "item");
+  void vertex_coord(InsertionOrderedSet<std::string> &code,
+                    const std::string &coord,
+                    const std::string &index_name,
+                    const std::string &res_name,
+                    const bool declare = true);
+  void element_coord(InsertionOrderedSet<std::string> &code,
+                     const std::string &coord,
+                     const std::string &index_name,
+                     const std::string &res_name,
+                     const bool declare = true);
   void vertex_xyz(InsertionOrderedSet<std::string> &code,
                   const std::string &index_name,
                   const bool index_array,
-                  const std::string &res_name);
+                  const std::string &res_name,
+                  const bool declare = true);
+  void hexahedral_volume(InsertionOrderedSet<std::string> &code,
+                         const std::string &vertices_name,
+                         const std::string &res_name);
+  void tetrahedral_volume(InsertionOrderedSet<std::string> &code,
+                          const std::string &vertices_name,
+                          const std::string &res_name);
+  void quadrilateral_volume(InsertionOrderedSet<std::string> &code,
+                            const std::string &vertices_name,
+                            const std::string &res_name);
+  void triangle_volume(InsertionOrderedSet<std::string> &code,
+                       const std::string &vertices_name,
+                       const std::string &res_name);
+  void polygon_volume_vec(InsertionOrderedSet<std::string> &code,
+                          const std::string &vertices_name,
+                          const std::string &res_name);
+  void polygon_volume(InsertionOrderedSet<std::string> &code,
+                      const std::string &vertices_name,
+                      const std::string &res_name);
+  void polyhedron_volume(InsertionOrderedSet<std::string> &code,
+                         const std::string &vertices_name,
+                         const std::string &res_name);
 
-  int num_dims;
-  std::string topo_type;
   std::string topo_name;
+  std::string topo_type;
+  int num_dims;
+  std::string shape;
+  int shape_size;
+
+  MathCode math_code;
+};
+
+class FieldCode
+{
+public:
+  FieldCode(const std::string &field_name,
+            const std::string &topo_name,
+            const std::string &association,
+            const conduit::Node &domain);
+  void gradient(InsertionOrderedSet<std::string> &code);
+  void field_idx(InsertionOrderedSet<std::string> &code,
+                 const std::string &index_name,
+                 const std::string &res_name,
+                 const std::string &association,
+                 const bool declare = true);
+
+  std::string field_name;
+  std::string association;
+  TopologyCode topo_code;
 };
 
 class Kernel
 {
 public:
   void fuse_kernel(const Kernel &from);
-  std::string generate_for_body(const std::string &output,
-                                bool output_exists) const;
+  std::string generate_output(const std::string &output,
+                              bool output_exists) const;
   std::string generate_loop(const std::string &output) const;
 
   std::string kernel_body;
-  std::string for_body;
-  InsertionOrderedSet<std::string> inner_scope;
+  InsertionOrderedSet<std::string> for_body;
   std::string expr;
-  conduit::Node obj;
-
-private:
-  std::string generate_inner_scope() const;
+  // number of components associated with the expression in expr
+  // if the expression is a vector expr will just be the name of a single vector
+  int num_components;
 };
 
 class Jitable
@@ -175,9 +277,12 @@ public:
   std::string generate_kernel(const int dom_idx) const;
 
   std::unordered_map<std::string, Kernel> kernels;
+  // stores entries and argument values for each domain
   conduit::Node dom_info;
   std::string topology;
   std::string association;
+  // metadata used to make the . operator work and store various jitable state
+  conduit::Node obj;
 };
 };
 //-----------------------------------------------------------------------------

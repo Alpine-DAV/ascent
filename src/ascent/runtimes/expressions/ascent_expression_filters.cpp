@@ -2941,6 +2941,74 @@ fused_kernel_type(const std::vector<std::string> kernel_types)
   return ss.str();
 }
 
+void
+handle_topo_attrs(const conduit::Node &obj,
+                  const std::string &name,
+                  Kernel &out_kernel,
+                  Jitable *out_jitable,
+                  const conduit::Node &dom,
+                  const int dom_idx,
+                  const bool not_fused)
+{
+  const std::string &topo_name = obj["value"].as_string();
+  std::unique_ptr<Topology> topo = topologyFactory(topo_name, dom);
+  if(obj.has_path("attr"))
+  {
+    if(not_fused)
+    {
+      const conduit::Node &assoc = obj["attr"].child(0);
+      TopologyCode topo_code = TopologyCode(topo_name, dom);
+      if(assoc.name() == "cell")
+      {
+        if(available_axis(name, topo->num_dims, topo_name))
+        {
+          topo_code.element_coord(
+              out_kernel.for_body, name, "", topo_name + "_cell_" + name);
+          out_kernel.expr = topo_name + "_cell_" + name;
+        }
+        else if(name == "volume")
+        {
+          topo_code.volume(out_kernel.for_body);
+          out_kernel.expr = topo_name + "_volume";
+        }
+      }
+      else if(assoc.name() == "vertex")
+      {
+        if(available_axis(name, topo->num_dims, topo_name))
+        {
+          topo_code.vertex_coord(
+              out_kernel.for_body, name, "", topo_name + "_vertex_" + name);
+          out_kernel.expr = topo_name + "_vertex_" + name;
+        }
+      }
+      else
+      {
+        ASCENT_ERROR("Topo has no attribute " << assoc.name());
+      }
+    }
+  }
+  else
+  {
+    if(name == "cell")
+    {
+      if(topo->topo_type == "points")
+      {
+        ASCENT_ERROR("Point topology '" << topo_name
+                                        << "' has no cell attributes.");
+      }
+      out_jitable->dom_info.child(dom_idx)["entries"] = topo->get_num_cells();
+      out_jitable->association = "element";
+    }
+    else
+    {
+      out_jitable->dom_info.child(dom_idx)["entries"] = topo->get_num_points();
+      out_jitable->association = "vertex";
+    }
+    out_jitable->obj = obj;
+    out_jitable->obj["attr/" + name];
+  }
+}
+
 // each jitable has kernels and dom_info
 // dom_info holds number_of entries, kernel_type, and args for the dom
 // kernel_type maps to a kernel in kernels
@@ -2996,15 +3064,9 @@ JitFilter::execute()
 
           const std::string kernel_type = topo_name + "=" + topo_type;
           jitable.dom_info.child(i)["kernel_type"] = kernel_type;
-          if(built_kernel_types.find(kernel_type) == built_kernel_types.end())
-          {
-            Kernel &kernel = jitable.kernels[kernel_type];
-            kernel.obj["type"] = "topo";
-            kernel.obj["topo_name"] = topo_name;
-            kernel.obj["topo_type"] = topo_type;
-            kernel.obj["topo_dim"] = topo_dim(topo_name, dom);
-            built_kernel_types.insert(kernel_type);
-          }
+          jitable.kernels[kernel_type];
+          jitable.obj = *inp;
+          built_kernel_types.insert(kernel_type);
         }
       }
       else
@@ -3046,6 +3108,11 @@ JitFilter::execute()
             if(inp->has_path("component"))
             {
               values_path += "/" + (*inp)["component"].as_string();
+              default_kernel.num_components = 1;
+            }
+            else
+            {
+              default_kernel.num_components = field.number_of_children();
             }
             cur_dom_info["args/" + param_str].set_external(field[values_path]);
 
@@ -3093,14 +3160,19 @@ JitFilter::execute()
               jitable.association = assoc_str;
             }
           }
-          default_kernel.inner_scope.insert("const double " + field_name +
-                                            " = " + field_name +
-                                            "_ptr[item];\n");
+          jitable.obj = *inp;
+          // used to determine if we need to generate an entire derived field
+          // beforehand for things like gradient(field)
+          // trivial goes away as soon as we do something like field + 1
+          jitable.obj["trivial"];
+          default_kernel.for_body.insert("const double " + field_name + " = " +
+                                         field_name + "_ptr[item];\n");
           default_kernel.expr = field_name;
         }
         else
         {
-          ASCENT_ERROR("Cannot convert: '" << type << "' to jitable.");
+          ASCENT_ERROR("Cannot convert object of type '" << type
+                                                         << "' to jitable.");
         }
       }
     }
@@ -3120,7 +3192,7 @@ JitFilter::execute()
   }
   if(func == "execute")
   {
-    // just copy over the existing kernels, no need to fuse
+    // just copy over the existing kernels, no need to fuse multiple kernels
     out_jitable->kernels = input_jitables[0]->kernels;
   }
   else
@@ -3150,11 +3222,13 @@ JitFilter::execute()
       }
       const std::string out_kernel_type = fused_kernel_type(input_kernel_types);
       (*out_jitable).dom_info.child(dom_idx)["kernel_type"] = out_kernel_type;
-      Kernel &out_kernel = (*out_jitable).kernels[out_kernel_type];
+      Kernel &out_kernel = out_jitable->kernels[out_kernel_type];
+      const bool not_fused =
+          fused_kernel_types.find(out_kernel_type) == fused_kernel_types.cend();
 
-      if(fused_kernel_types.find(out_kernel_type) == fused_kernel_types.end())
+      if(func == "binary_op")
       {
-        if(func == "binary_op")
+        if(not_fused)
         {
           const int lhs_port = inputs["lhs/port"].to_int32();
           const int rhs_port = inputs["rhs/port"].to_int32();
@@ -3169,8 +3243,17 @@ JitFilter::execute()
           const std::string &op_str = params()["op_string"].as_string();
           out_kernel.expr =
               "(" + lhs_expr + " " + op_str + " " + rhs_expr + ")";
+          out_kernel.num_components = 1;
         }
-        else if(builtin_func_it != builtin_funcs.cend())
+        else
+        {
+          // kernel of this type has already been fused, do nothing on a
+          // per-domain basis
+        }
+      }
+      else if(builtin_func_it != builtin_funcs.cend())
+      {
+        if(not_fused)
         {
           out_kernel.expr = builtin_func_it->second + "(";
           const int num_inputs = inputs.number_of_children();
@@ -3187,118 +3270,131 @@ JitFilter::execute()
             out_kernel.expr += inp_expr;
           }
           out_kernel.expr += ")";
+          out_kernel.num_components = 1;
         }
-        else if(func == "expr_dot")
+      }
+      else if(func == "expr_dot")
+      {
+        const int obj_port = inputs["obj/port"].as_int32();
+        const conduit::Node &obj = input_jitables[obj_port]->obj;
+        const std::string &name = params()["name"].as_string();
+        if(obj["type"].as_string() == "topo")
         {
-          const int obj_port = inputs["obj/port"].as_int32();
-          const conduit::Node &obj = input_kernels[obj_port]->obj;
-          const std::string &name = params()["name"].as_string();
-          std::unordered_set<std::string> valid_attrs;
-          if(obj["type"].as_string() == "topo")
-          {
-            const std::string &topo_name = obj["topo_name"].as_string();
-            const int topo_dim = obj["topo_dim"].to_int32();
-            if(obj.has_path("attr"))
-            {
-              if(fused_kernel_types.find(out_kernel_type) ==
-                 fused_kernel_types.end())
-              {
-                const conduit::Node &assoc = obj["attr"].child(0);
-                TopologyCode topo_code = TopologyCode(topo_name, dom);
-                if(assoc.name() == "cell")
-                {
-                  if(is_xyz(name) && available_axis(name, topo_dim, topo_name))
-                  {
-                    topo_code.cell_xyz(out_kernel.inner_scope);
-                    out_kernel.expr = topo_name + "_cell_loc[" +
-                                      std::to_string(name[0] - 'x') + "]";
-                  }
-                  else if(name == "volume")
-                  {
-                    topo_code.volume(out_kernel.inner_scope);
-                    out_kernel.expr = topo_name + "_volume";
-                  }
-                }
-                else if(assoc.name() == "vertex")
-                {
-                  if(is_xyz(name) && available_axis(name, topo_dim, topo_name))
-                  {
-                    topo_code.vertex_xyz(out_kernel.inner_scope);
-                    out_kernel.expr = topo_name + "_vertex_loc[" +
-                                      std::to_string(name[0] - 'x') + "]";
-                  }
-                }
-                else
-                {
-                  ASCENT_ERROR("Topo has no attribute " << assoc.name());
-                }
-              }
-            }
-            else
-            {
-              std::unique_ptr<Topology> topo = topologyFactory(topo_name, dom);
-              if(name == "cell")
-              {
-                if(obj["topo_type"].as_string() == "points")
-                {
-                  ASCENT_ERROR("Point topology '"
-                               << obj["topo_name"].as_string()
-                               << "' has no cell attributes.");
-                }
-                out_jitable->dom_info.child(dom_idx)["entries"] =
-                    topo->get_num_cells();
-                if(out_jitable->association.empty())
-                {
-                  out_jitable->association = "element";
-                }
-              }
-              else
-              {
-                out_jitable->dom_info.child(dom_idx)["entries"] =
-                    topo->get_num_points();
-                if(out_jitable->association.empty())
-                {
-                  out_jitable->association = "vertex";
-                }
-              }
-              out_kernel.obj = obj;
-              out_kernel.obj["attr/" + name];
-            }
-          }
-          else
-          {
-            ASCENT_ERROR("JitFilter: Unknown obj:\n" << obj.to_yaml());
-          }
+          // needs to run for every domain not just every kernel type to
+          // populate num_entries
+          handle_topo_attrs(
+              obj, name, out_kernel, out_jitable, dom, dom_idx, not_fused);
         }
-        else if(func == "expr_if")
+        else
+        {
+          ASCENT_ERROR("JitFilter: Unknown obj:\n" << obj.to_yaml());
+        }
+        out_kernel.num_components = 1;
+      }
+      else if(func == "expr_if")
+      {
+        if(not_fused)
         {
           const int condition_port = inputs["condition/port"].as_int32();
           const int if_port = inputs["if/port"].as_int32();
           const int else_port = inputs["else/port"].as_int32();
-          out_kernel.kernel_body += input_kernels[condition_port]->kernel_body;
-          out_kernel.kernel_body += input_kernels[if_port]->kernel_body;
-          out_kernel.kernel_body += input_kernels[else_port]->kernel_body;
+          const Kernel &condition_kernel = *input_kernels[condition_port];
+          const Kernel &if_kernel = *input_kernels[if_port];
+          const Kernel &else_kernel = *input_kernels[else_port];
+          out_kernel.kernel_body += condition_kernel.kernel_body;
+          out_kernel.kernel_body += if_kernel.kernel_body;
+          out_kernel.kernel_body += else_kernel.kernel_body;
           const std::string cond_name = filter_name + "_cond";
           const std::string res_name = filter_name + "_res";
-          out_kernel.for_body +=
-              input_kernels[condition_port]->generate_for_body(cond_name,
-                                                               false);
-          out_kernel.for_body += "double " + res_name + ";\n";
-          out_kernel.for_body += "if(" + cond_name + ")\n{\n";
-          out_kernel.for_body +=
-              input_kernels[if_port]->generate_for_body(res_name, true);
-          out_kernel.for_body += "}\nelse\n{\n";
-          out_kernel.for_body +=
-              input_kernels[else_port]->generate_for_body(res_name, true);
-          out_kernel.for_body += "}\n";
+
+          out_kernel.for_body.insert(condition_kernel.for_body);
+          out_kernel.for_body.insert(
+              condition_kernel.generate_output(cond_name, true));
+
+          InsertionOrderedSet<std::string> if_else;
+          if_else.insert("double " + res_name + ";\n");
+          if_else.insert("if(" + cond_name + ")\n{\n");
+          if_else.insert(if_kernel.for_body.accumulate() +
+                         if_kernel.generate_output(res_name, false));
+          if_else.insert("}\nelse\n{\n");
+          if_else.insert(else_kernel.for_body.accumulate() +
+                         else_kernel.generate_output(res_name, false));
+          if_else.insert("}\n");
+
+          out_kernel.for_body.insert(if_else.accumulate());
           out_kernel.expr = res_name;
+          out_kernel.num_components = 1;
         }
-        else
-        {
-          ASCENT_ERROR("JitFilter: Unknown func: '" << func << "'");
-        }
-        fused_kernel_types.insert(out_kernel_type);
       }
+      else if(func == "gradient")
+      {
+        const int field_port = inputs["field/port"].as_int32();
+        const Kernel &field_kernel = *input_kernels[field_port];
+        const Jitable &field_jitable = *input_jitables[field_port];
+        const conduit::Node &obj = field_jitable.obj;
+        if(field_jitable.topology == "none")
+        {
+          ASCENT_ERROR(
+              "Could not take the gradient of the derived field because the "
+              "associated topology could not be determined.");
+        }
+        if(field_jitable.association == "none")
+        {
+          ASCENT_ERROR("Could not take the gradient of the derived field "
+                       "because the association could not be determined.");
+        }
+        std::unique_ptr<Topology> topo =
+            topologyFactory(field_jitable.topology, dom);
+        topo->pack(out_jitable->dom_info.child(dom_idx)["args"]);
+        if(not_fused)
+        {
+          // vectors use the intereleaved memory layout because it is easier to
+          // pass "gradient[i]" to a function that takes in a vector and
+          // have it concatentate "[0]" to access the first element resulting in
+          // "gradient[i][0]" rather than "gradient[0][i]" where the "[0]" would
+          // have to be inserted between "gradient" and "[i]"
+          std::string input_field;
+          if(obj.has_path("trivial"))
+          {
+            input_field = obj["value"].as_string() + "_ptr";
+          }
+          else
+          {
+            input_field = filter_name + "_inp";
+            out_kernel.kernel_body += "double " + input_field + "[entries];\n";
+            out_kernel.kernel_body += field_kernel.generate_loop(input_field);
+          }
+          FieldCode field_code = FieldCode(input_field,
+                                           field_jitable.topology,
+                                           field_jitable.association,
+                                           dom);
+          field_code.gradient(out_kernel.for_body);
+          out_kernel.expr = input_field + "_gradient";
+          out_kernel.num_components = 3;
+        }
+      }
+      else if(func == "magnitude")
+      {
+        const int vector_port = inputs["vector/port"].as_int32();
+        const Kernel &vector_kernel = *input_kernels[vector_port];
+        if(vector_kernel.num_components <= 1)
+        {
+          ASCENT_ERROR("Cannot take the magnitude of a vector with "
+                       << vector_kernel.num_components << " components.");
+        }
+        out_kernel.fuse_kernel(vector_kernel);
+        MathCode().magnitude(out_kernel.for_body,
+                             vector_kernel.expr,
+                             filter_name,
+                             vector_kernel.num_components);
+        out_kernel.expr = filter_name;
+        out_kernel.num_components = 1;
+      }
+      else
+      {
+        ASCENT_ERROR("JitFilter: Unknown func: '" << func << "'");
+      }
+      fused_kernel_types.insert(out_kernel_type);
     }
   }
 

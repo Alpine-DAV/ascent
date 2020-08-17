@@ -53,8 +53,6 @@
 
 #include <ascent.hpp>
 #include <conduit.hpp>
-// TODO this is temporary
-#include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -69,10 +67,21 @@ namespace runtime
 {
 
 //-----------------------------------------------------------------------------
-// -- begin ascent::runtime::expressions--
+// -- begin ascent::runtime::expressions --
 //-----------------------------------------------------------------------------
 namespace expressions
 {
+
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::expressions::detail --
+//-----------------------------------------------------------------------------
+namespace detail
+{
+int get_num_vertices(const std::string &shape_type);
+}
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime::expressions::detail --
+//-----------------------------------------------------------------------------
 
 class Topology
 {
@@ -213,7 +222,19 @@ public:
 private:
   std::array<conduit::DataArray<T>, N> coords;
   conduit::DataArray<conduit::int32> connectivity;
-  size_t num_vertices;
+  std::string shape;
+  // single shape
+  size_t shape_size;
+  // polygonal
+  conduit::DataArray<conduit::int32> sizes;
+  conduit::DataArray<conduit::int32> offsets;
+  // polyhedral
+  conduit::DataArray<conduit::int32> polyhedral_sizes;
+  conduit::DataArray<conduit::int32> polyhedral_offsets;
+  conduit::DataArray<conduit::int32> polyhedral_connectivity;
+  std::string polyhedral_shape;
+  // polyhedra consisting of single shapes
+  size_t polyhedral_shape_size;
 };
 
 std::unique_ptr<Topology> topologyFactory(const std::string &topo_name,
