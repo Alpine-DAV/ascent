@@ -55,6 +55,14 @@
 #include "expressions/ascent_expressions_parser.hpp"
 #include "expressions/ascent_expressions_tokens.hpp"
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctime>
+
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#include <conduit_relay_mpi.hpp>
+#endif
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -73,9 +81,144 @@ namespace runtime
 namespace expressions
 {
 
-conduit::Node ExpressionEval::m_cache;
 conduit::Node g_function_table;
 conduit::Node g_object_table;
+
+Cache ExpressionEval::m_cache;
+
+double Cache::last_known_time()
+{
+  double res = 0;
+  if(m_data.has_path("last_known_time"))
+  {
+    res = m_data["last_known_time"].as_float64();
+  }
+  return res;
+}
+
+bool Cache::filtered()
+{
+  return m_filtered;
+}
+
+void Cache::last_known_time(double time)
+{
+  m_data["last_known_time"] = time;
+}
+
+void Cache::filter_time(double ftime)
+{
+  const int num_entries = m_data.number_of_children();
+  int removal_count = 0;
+  for(int i = 0; i < num_entries; ++i)
+  {
+    conduit::Node &entry = m_data.child(i);
+    if(entry.name() == "last_known_time" ||
+       entry.name() == "session_cache_info")
+    {
+      continue;
+    }
+
+    bool invalid_time = true;
+    while(invalid_time && entry.number_of_children() > 0)
+    {
+      int last = entry.number_of_children() - 1;
+
+      if(!entry.child(last).has_path("time"))
+      {
+        // if there is no time, we can reason about
+        // anything
+        entry.remove(last);
+        removal_count++;
+      }
+      else if(entry.child(last)["time"].to_float64() >= ftime)
+      {
+        entry.remove(last);
+        removal_count++;
+      }
+      else
+      {
+        invalid_time = false;
+      }
+    }
+  }
+
+  // clean up entries with no children
+  bool clean = false;
+  while(!clean)
+  {
+    const int size = m_data.number_of_children();
+    bool removed = false;
+    for(int i = 0; i < size; ++i)
+    {
+      if(m_data.child(i).number_of_children() == 0)
+      {
+        m_data.remove(i);
+        removed = true;
+        break;
+      }
+    }
+    clean = !removed;
+  }
+
+  time_t t ;
+  char curr_time[100];
+  time( &t );
+
+  std::strftime(curr_time, sizeof(curr_time), "%A %c", std::localtime(&t));
+  std::stringstream msg;
+  msg<<"Time travel detected at "<< curr_time << '\n';
+  msg<<"Removed all expression cache entries ("<<removal_count<<")"
+     <<" after simulation time "<<ftime<<".";
+  m_data["ascent_cache_info"].append() = msg.str();
+  m_filtered = true;
+}
+
+bool Cache::loaded()
+{
+  return m_loaded;
+}
+
+void Cache::load(const std::string &dir,
+                 const std::string &session)
+{
+  m_rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Comm_rank(mpi_comm, &m_rank);
+#endif
+
+  std::string file_name = session + ".yaml";
+  std::string session_file = conduit::utils::join_path(dir, file_name);
+  m_session_file = session_file;
+
+  bool exists = conduit::utils::is_file(session_file);
+
+  if(m_rank == 0 && exists)
+  {
+    m_data.load(session_file, "yaml");
+  }
+
+#ifdef ASCENT_MPI_ENABLED
+  if(exists)
+  {
+    conduit::relay::mpi::broadcast_using_schema(m_data, 0, mpi_comm);
+  }
+#endif
+  m_loaded = true;
+}
+
+Cache::~Cache()
+{
+  // the session file can be blank during testing,
+  // since its not actually opening ascent
+  if(m_rank == 0 &&
+     !m_data.dtype().is_empty()
+     && m_session_file != "")
+  {
+    m_data.save(m_session_file,"yaml");
+  }
+}
 
 void
 register_builtin()
@@ -117,6 +260,9 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::Cycle>();
   flow::Workspace::register_filter_type<expressions::ArrayAccess>();
   flow::Workspace::register_filter_type<expressions::DotAccess>();
+  flow::Workspace::register_filter_type<expressions::PointAndAxis>();
+  flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
+  flow::Workspace::register_filter_type<expressions::Bin>();
 
   initialize_functions();
   initialize_objects();
@@ -124,6 +270,17 @@ register_builtin()
 
 ExpressionEval::ExpressionEval(conduit::Node *data) : m_data(data)
 {
+}
+
+void
+ExpressionEval::load_cache(const std::string &dir,
+                           const std::string &session)
+{
+  // the cache is static so don't load if we already have
+  if(!m_cache.loaded())
+  {
+    m_cache.load(dir,session);
+  }
 }
 
 void
@@ -422,6 +579,40 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
+  conduit::Node &point_and_axis_sig = (*functions)["point_and_axis"].append();
+  point_and_axis_sig["return_type"] = "bin";
+  point_and_axis_sig["filter_name"] = "point_and_axis";
+  point_and_axis_sig["args/binning/type"] = "binning";
+  point_and_axis_sig["args/axis/type"] = "string";
+  point_and_axis_sig["args/threshold/type"] = "double";
+  point_and_axis_sig["args/point/type"] = "double";
+  point_and_axis_sig["args/miss_value/type"] = "scalar";
+  point_and_axis_sig["args/miss_value/optional"];
+  point_and_axis_sig["args/direction/type"] = "int";
+  point_and_axis_sig["args/direction/optional"];
+  point_and_axis_sig["description"] = "returns the first values in"
+    " a binning that exceeds a threshold from the given point.";
+
+  conduit::Node &bin_sig = (*functions)["bin"].append();
+  bin_sig["return_type"] = "bin";
+  bin_sig["filter_name"] = "bin";
+  bin_sig["args/binning/type"] = "binning";
+  bin_sig["args/index/type"] = "int";
+  bin_sig["description"] = "returns a bin from a binning by index";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &max_from_point_sig = (*functions)["max_from_point"].append();
+  max_from_point_sig["return_type"] = "value_position";
+  max_from_point_sig["filter_name"] = "max_from_point";
+  max_from_point_sig["args/binning/type"] = "binning";
+  max_from_point_sig["args/axis/type"] = "string";
+  max_from_point_sig["args/point/type"] = "double";
+  max_from_point_sig["description"] = "returns the closest max"
+    " value from a reference point on an axis";
+
+  // -------------------------------------------------------------
+
   conduit::Node &quantile_sig = (*functions)["quantile"].append();
   quantile_sig["return_type"] = "double";
   quantile_sig["filter_name"] = "quantile";
@@ -520,6 +711,11 @@ initialize_functions()
   binning_sig["args/empty_bin_val/optional"];
   binning_sig["args/empty_bin_val/description"] =
       "The value that empty bins should have. Defaults to ``0``.";
+  binning_sig["args/component/type"] = "string";
+  binning_sig["args/component/optional"];
+  binning_sig["args/component/description"] =
+      "the component of a vector field to use for the reduction."
+      " Example 'x' for a field defined as 'velocity/x'";
   binning_sig["args/output/type"] = "string";
   binning_sig["args/output/optional"];
   binning_sig["args/output/description"] =
@@ -559,6 +755,12 @@ initialize_objects()
   vector_atts["y/type"] = "double";
   vector_atts["z/type"] = "double";
 
+  conduit::Node &bin_atts = (*objects)["bin/attrs"];
+  bin_atts["min/type"] = "double";
+  bin_atts["max/type"] = "double";
+  bin_atts["center/type"] = "double";
+  bin_atts["value/type"] = "double";
+
   // objects->save("objects.json", "json");
 }
 
@@ -572,7 +774,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   }
 
   w.registry().add<conduit::Node>("dataset", m_data, -1);
-  w.registry().add<conduit::Node>("cache", &m_cache, -1);
+  w.registry().add<conduit::Node>("cache", &m_cache.m_data, -1);
   w.registry().add<conduit::Node>("function_table", &g_function_table, -1);
   w.registry().add<conduit::Node>("object_table", &g_object_table, -1);
   int cycle = get_state_var(*m_data, "cycle").to_int32();
@@ -612,12 +814,39 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
   conduit::Node return_val = *n_res;
 
+  // add the sim time
+  conduit::Node n_time = get_state_var(*m_data, "time");
+  double time = 0;
+  bool valid_time = false;
+  if(!n_time.dtype().is_empty())
+  {
+    valid_time = true;
+    time = n_time.to_float64();
+  }
+  return_val["time"] = time;
+
+  // check the cache for signs of time travel
+  // i.e., someone could have restarted the simulation from the beginning
+  // or from some earlier checkpoint
+  // There are a couple conditions:
+  // 1) only filter if we haven't done so before
+  // 2) only filter if we detect time travel
+  // 3) only filter if we have state/time
+  if(!m_cache.filtered() &&
+     time <= m_cache.last_known_time()
+     && valid_time)
+  {
+    // remove all cache entries that occur in the future
+    m_cache.filter_time(time);
+  }
+  m_cache.last_known_time(time);
+
   std::stringstream cache_entry;
   cache_entry << expr_name << "/" << cycle;
 
-  // this causes an invalid read in conduit in the expression tests
-  // m_cache[cache_entry.str()] = *n_res;
-  m_cache[cache_entry.str()] = return_val;
+  m_cache.m_data[cache_entry.str()] = return_val;
+
+  //return_val.print();
 
   delete expression;
   w.reset();
@@ -627,7 +856,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 const conduit::Node &
 ExpressionEval::get_cache()
 {
-  return m_cache;
+  return m_cache.m_data;
 }
 //-----------------------------------------------------------------------------
 };

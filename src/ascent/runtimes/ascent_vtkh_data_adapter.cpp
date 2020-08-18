@@ -501,6 +501,7 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
     VTKHCollection *res = new VTKHCollection();
     std::map<std::string, vtkh::DataSet> datasets;
     vtkm::UInt64 cycle = 0;
+    double time = 0;
 
     for(int i = 0; i < num_domains; ++i)
     {
@@ -519,6 +520,11 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
         cycle = dom["state/cycle"].to_uint64();
       }
 
+      if(dom.has_path("state/time"))
+      {
+        time = dom["state/time"].to_float64();
+      }
+
       for(int t = 0; t < topo_names.size(); ++t)
       {
         const std::string topo_name = topo_names[t];
@@ -529,9 +535,10 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
 
     }
 
+    res->cycle(cycle);
+    res->time(time);
     for(auto dset_it : datasets)
     {
-      dset_it.second.SetCycle(cycle);
       res->add(dset_it.second, dset_it.first);
     }
 
@@ -2156,6 +2163,7 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
   node.reset();
 
   const int cycle = collection->cycle();
+  const double time = collection->time();
   // we have to re-merge the domains so all domains with the same
   // domain id end up in a single domain
   std::map<int, std::map<std::string,vtkm::cont::DataSet>> domain_map;
@@ -2168,6 +2176,7 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
     conduit::Node &dom = node.append();
     dom["state/domain_id"] = (int) domain_id;
     dom["state/cycle"] = cycle;
+    dom["state/time"] = time;
 
     for(auto topo_it : domain_it.second)
     {

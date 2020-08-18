@@ -137,6 +137,7 @@ AscentRuntime::AscentRuntime()
  m_refinement_level(2), // default refinement level for high order meshes
  m_rank(0),
  m_default_output_dir("."),
+ m_session_name("ascent_session"),
  m_field_filtering(false)
 {
     m_ghost_fields.append() = "ascent_ghosts";
@@ -274,6 +275,14 @@ AscentRuntime::Initialize(const conduit::Node &options)
     runtime::filters::register_builtin();
     // filters for expression evaluation
     runtime::expressions::register_builtin();
+
+    if(options.has_path("session_name"))
+    {
+      m_session_name = options["session_name"].as_string();
+    }
+
+    runtime::expressions::ExpressionEval::load_cache(m_default_output_dir,
+                                                     m_session_name);
 
     if(options.has_path("web/stream") &&
        options["web/stream"].as_string() == "true" &&
@@ -830,7 +839,8 @@ AscentRuntime::ConvertTriggerToFlow(const conduit::Node &trigger,
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
-                                  const std::string query_name)
+                                  const std::string query_name,
+                                  const std::string prev_name)
 {
   std::string filter_name;
 
@@ -846,13 +856,29 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
     pipeline = query["pipeline"].as_string();
   }
 
+
   w.graph().add_filter("basic_query",
                        query_name,
                        params);
 
+
+  // connection port to enforce order of execution
+  std::string conn_port;
+  if(prev_name == "")
+  {
+    conn_port = "source";
+  }
+  else
+  {
+    conn_port = prev_name;
+  }
+
+  w.graph().connect(conn_port,
+                    query_name,
+                    "dummy");
+
   // this is the blueprint mesh
   m_connections[query_name] = pipeline;
-
 }
 //-----------------------------------------------------------------------------
 void
@@ -991,10 +1017,12 @@ void
 AscentRuntime::CreateQueries(const conduit::Node &queries)
 {
   std::vector<std::string> names = queries.child_names();
+  std::string prev_name = "";
   for(int i = 0; i < queries.number_of_children(); ++i)
   {
     conduit::Node query = queries.child(i);
-    ConvertQueryToFlow(query, names[i]);
+    ConvertQueryToFlow(query, names[i], prev_name);
+    prev_name = names[i];
   }
 }
 
