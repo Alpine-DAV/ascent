@@ -1020,17 +1020,22 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             else    // part rendered on this vis node
             {
                 // Reset the probing counter if this is the first render in vis node chunks 
-                // and this is not a probing render. (should not happen)
+                // and this is not a probing render.
                 if (j == g_render_counts[src_ranks[i]] + probing_enum_sim[i])
                     probing_enum_vis[i] = 0;
 
                 const index_t id = j - (g_render_counts[src_ranks[i]] + probing_enum_sim[i])
                                      - probing_enum_vis[i];
                 std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
-                if (render_chunks_vis[i]->has_child("render_file_names"))
+                if (render_chunks_vis[i] && render_chunks_vis[i]->has_child("render_file_names"))
                 {
                     render_ptrs[j].emplace_back(render_chunks_vis[i]);
                     render_arrangement[j].emplace_back(id);
+                }
+                else
+                {
+                    std::cout << mpi_props.rank << " | No render part " << id << " from vis node " 
+                              << i << " for image "  << j << std::endl;
                 }
             }
         }
@@ -1385,7 +1390,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                   << node_string.str() << std::endl;
 
         const std::vector<int> src_ranks = sending_node_ranks;
-        vec_node_sptr render_chunks_vis;//(my_data_recv_cnt);
+        vec_node_sptr render_chunks_vis(my_data_recv_cnt);
         std::vector<std::unique_ptr<Node> > datasets(my_data_recv_cnt);
 
         // post recv for datasets
@@ -1530,17 +1535,21 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     ascent_renders[i].execute(blank_actions);
                     // print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
 
-                    // render_chunks_vis[i] = std::make_shared<Node>();
-                    // ascent_renders[i].info(*render_chunks_vis[i]);
+                    render_chunks_vis[i] = std::make_shared<Node>();
                     
                     // ascent_main_runtime : out.set_external(m_info);
                     conduit::Node info;
                     ascent_renders[i].info(info);
 
                     if (info.has_child("render_file_names"))
-                        render_chunks_vis.push_back(std::make_shared<Node>(info));
+                        ascent_renders[i].info(*render_chunks_vis[i]);
+                        // render_chunks_vis.push_back(std::make_shared<Node>(info));
                     else
-                        render_chunks_vis.push_back(std::make_shared<Node>(Node()));
+                        render_chunks_vis[i] = nullptr;
+                }
+                else
+                {
+                    render_chunks_vis[i] = nullptr;
                 }
 
                 log_time(start, "+ render vis " + std::to_string(current_render_count - probing_count_part) + " ", mpi_props.rank);
