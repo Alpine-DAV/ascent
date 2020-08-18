@@ -42,7 +42,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
-export TAG_NAME=alpinedav/ascent-ci:ubuntu-16-cuda-9.2-devel-tpls
+export TAG_NAME=alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel-tpls
 
 # remove old source tarball if it exists
 echo "rm -f ascent.docker.src.tar.gz"

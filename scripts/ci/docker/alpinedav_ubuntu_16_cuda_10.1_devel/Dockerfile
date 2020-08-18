@@ -42,7 +42,7 @@
 #
 ###############################################################################
 
-FROM nvidia/cuda:9.2-devel-ubuntu16.04
+FROM nvidia/cuda:10.1-devel-ubuntu16.04
 MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 # add sudo to base cuda devel env
 # so we can install additional packages as
@@ -58,6 +58,6 @@ RUN apt-get -y install \
                mpich \
                libmpich-dev \
                libblas-dev \
-               liblapack-dev
+               liblapack-dev 
 
 
