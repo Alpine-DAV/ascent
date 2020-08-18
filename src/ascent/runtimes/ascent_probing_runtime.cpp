@@ -968,10 +968,10 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         render_ptrs[j].reserve(my_data_recv_cnt);
         render_arrangement[j].reserve(my_data_recv_cnt);
 
-        // std::cout << "\nimage " << j << std::endl;
+        std::cout << "\nimage " << j << std::endl;
         for (int i = 0; i < my_data_recv_cnt; ++i)
         {
-            // std::cout << "  " << i << " ";
+            std::cout << "  " << i << " ";
             if (render_cfg.probing_stride && (j % render_cfg.probing_stride == 0)) // probing image
             {
                 const index_t id = j / render_cfg.probing_stride;
@@ -979,7 +979,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                 {
                     render_ptrs[j].emplace_back(parts_probing[i]);
                     render_arrangement[j].emplace_back(id);
-                    // std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
+                    std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
                 }
 
                 {   // keep track of probing images
@@ -1008,8 +1008,8 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                     id -= sim_batch_sizes[i][k];
                 
                 id -= probing_enum_sim[i];
-                // std::cout << " " << mpi_props.rank << " sim  " << id << " | batch " << batch_id << std::endl;
-                // std::cout << "     " << mpi_props.rank << " batch size  " << sim_batch_sizes[i][0] << " | probe " << probing_enum_sim[i] << std::endl;
+                std::cout << " " << mpi_props.rank << " sim  " << id << " | batch " << batch_id << std::endl;
+                std::cout << "     " << mpi_props.rank << " batch size  " << sim_batch_sizes[i][0] << " | probe " << probing_enum_sim[i] << std::endl;
 
                 if (parts_sim[i][batch_id]->has_child("render_file_names"))
                 {
@@ -1026,7 +1026,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
 
                 const index_t id = j - (g_render_counts[src_ranks[i]] + probing_enum_sim[i])
                                      - probing_enum_vis[i];
-                // std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
+                std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
                 if (render_chunks_vis[i]->has_child("render_file_names"))
                 {
                     render_ptrs[j].emplace_back(render_chunks_vis[i]);
@@ -1531,6 +1531,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     // print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
 
                     // render_chunks_vis[i] = std::make_shared<Node>();
+                    // ascent_renders[i].info(*render_chunks_vis[i]);
+                    
                     // ascent_main_runtime : out.set_external(m_info);
                     conduit::Node info;
                     ascent_renders[i].info(info);
