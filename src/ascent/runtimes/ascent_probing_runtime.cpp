@@ -981,6 +981,10 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                     render_arrangement[j].emplace_back(id);
                     std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
                 }
+                else
+                {
+                    std::cout << " " << mpi_props.rank << " skip probe " << id << std::endl;
+                }
 
                 {   // keep track of probing images
                     // reset probing counter if first render in vis chunks
@@ -1008,13 +1012,17 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                     id -= sim_batch_sizes[i][k];
                 
                 id -= probing_enum_sim[i];
-                std::cout << " " << mpi_props.rank << " sim  " << id << " | batch " << batch_id << std::endl;
-                std::cout << "     " << mpi_props.rank << " batch size  " << sim_batch_sizes[i][0] << " | probe " << probing_enum_sim[i] << std::endl;
 
                 if (parts_sim[i][batch_id]->has_child("render_file_names"))
                 {
                     render_ptrs[j].emplace_back(parts_sim[i][batch_id]);
                     render_arrangement[j].emplace_back(id);
+                    std::cout << " " << mpi_props.rank << " sim  " << id << " | batch " << batch_id << std::endl;
+                    std::cout << "     " << mpi_props.rank << " batch size  " << sim_batch_sizes[i][0] << " | probe " << probing_enum_sim[i] << std::endl;
+                }
+                else
+                {
+                    std::cout << " " << mpi_props.rank << " skip sim  " << id << std::endl;
                 }
             }
             else    // part rendered on this vis node
@@ -1026,16 +1034,15 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
 
                 const index_t id = j - (g_render_counts[src_ranks[i]] + probing_enum_sim[i])
                                      - probing_enum_vis[i];
-                std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
                 if (render_chunks_vis[i] && render_chunks_vis[i]->has_child("render_file_names"))
                 {
                     render_ptrs[j].emplace_back(render_chunks_vis[i]);
                     render_arrangement[j].emplace_back(id);
+                    std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
                 }
                 else
                 {
-                    std::cout << mpi_props.rank << " | No render part " << id << " from vis node " 
-                              << i << " for image "  << j << std::endl;
+                    std::cout << " " << mpi_props.rank << " skip vis " << id << std::endl;
                 }
             }
         }
@@ -1112,10 +1119,10 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         // loop over render parts (= 1 per sim node) and add as images
         for (int i = 0; i < render_ptrs.at(j).size(); ++i)
         {
-            if (depths.at(i) > std::numeric_limits<float>::lowest())
+            if (render_ptrs[j][i] && depths.at(i) > std::numeric_limits<float>::lowest())
             {
                 const int id = depths_order_id.at(src_ranks.at(i));
-                // std::cout << ".. render_arrangement " << j << " " << render_arrangement.at(j).at(i) << std::endl;
+                std::cout << mpi_props.rank << " | ..render_arrangement " << j << " " << render_arrangement.at(j).at(i) << std::endl;
                 unsigned char *cb = (*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr();
                 float *db = (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr();
                 
@@ -1124,7 +1131,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             }
         }
         // MPI_Barrier(mpi_props.comm_vis);
-        // std::cout << ".. composite " << j << " img count " << image_cnt << std::endl;
+        std::cout << mpi_props.rank << " | ..composite " << j << " img count " << image_cnt << std::endl;
         
         // composited
         results[j] = compositor.CompositeNoCopy();
@@ -1535,14 +1542,15 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     ascent_renders[i].execute(blank_actions);
                     // print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
 
-                    render_chunks_vis[i] = std::make_shared<Node>();
+                    // render_chunks_vis[i] = std::make_shared<Node>();
                     
                     // ascent_main_runtime : out.set_external(m_info);
                     conduit::Node info;
                     ascent_renders[i].info(info);
 
                     if (info.has_child("render_file_names"))
-                        ascent_renders[i].info(*render_chunks_vis[i]);
+                        render_chunks_vis[i] = std::make_shared<Node>(info);
+                        // ascent_renders[i].info(*render_chunks_vis[i]);
                         // render_chunks_vis.push_back(std::make_shared<Node>(info));
                     else
                         render_chunks_vis[i] = nullptr;
