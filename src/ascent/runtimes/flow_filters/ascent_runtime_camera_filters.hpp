@@ -183,6 +183,16 @@ std::vector<Triangle>
 GetTriangles(vtkh::DataSet &vtkhData, std::string field_name );
 double CalculateNormalCameraDot(double* cameraPositions, Triangle tri);
 
+
+//Stefan's copied over for simplex
+float calculateMetric(vtkh::DataSet*, std::string, std::string, std::vector<Triangle> &, int, int, Camera);
+
+vtkh::DataSet* AddTriangleFields(vtkh::DataSet &);
+
+std::vector<Triangle> GetTriangles(vtkh::DataSet &);
+//End Stefan's copied over
+
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------

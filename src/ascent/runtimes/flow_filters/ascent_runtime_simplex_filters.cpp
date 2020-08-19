@@ -667,7 +667,7 @@ Matrix::TransformPoint(const double *ptIn, double *ptOut)
 }
 
 */
-
+/*
 void fibonacciSphere(int i, int samples, double* points)
 {
   int rnd = 1;
@@ -690,17 +690,13 @@ void fibonacciSphere(int i, int samples, double* points)
   points[2] = z;
 }
 
-#include <cmath> /* using fmod for modulo on doubles */
+#include <cmath> // using fmod for modulo on doubles 
 
-/* This is a test of overloading it for doubles to use in place of linear interpolation */
 void fibonacciSphere(double i, int samples, double* points)
 {
-  /* This a bit odd but it didn't seem to do well when doing over samples */
-  /* It might be bcause of the i + rnd */
   if (i > (samples-1)){
       i = i - (samples - 1);
   }
-  /* */
 
   int rnd = 1;
   //if randomize:
@@ -721,7 +717,9 @@ void fibonacciSphere(double i, int samples, double* points)
   points[1] = y;
   points[2] = z;
 }
+*/
 
+/*
 Camera
 GetCamera2(int frame, int nframes, double radius, double* lookat)
 {
@@ -734,13 +732,13 @@ GetCamera2(int frame, int nframes, double radius, double* lookat)
 //  c.far = zoom*25;
 //  c.angle = M_PI/6;
 
-/*  if(abs(points[0]) < radius && abs(points[1]) < radius && abs(points[2]) < radius)
-  {
-    if(points[2] >= 0)
-      points[2] += radius;
-    if(points[2] < 0)
-      points[2] -= radius;
-  }*/
+  //if(abs(points[0]) < radius && abs(points[1]) < radius && abs(points[2]) < radius)
+ // {
+   // if(points[2] >= 0)
+   //   points[2] += radius;
+   // if(points[2] < 0)
+   //   points[2] -= radius;
+  //}
 
   c.position[0] = zoom*radius*points[0];
   c.position[1] = zoom*radius*points[1];
@@ -757,7 +755,6 @@ GetCamera2(int frame, int nframes, double radius, double* lookat)
   return c;
 }
 
-/* This is a test of overloading it for doubles to use in place of linear interpolation */
 Camera
 GetCamera2(double frame, int nframes, double radius, double* lookat)
 {
@@ -770,13 +767,13 @@ GetCamera2(double frame, int nframes, double radius, double* lookat)
 //  c.far = zoom*25;
 //  c.angle = M_PI/6;
 
-/*  if(abs(points[0]) < radius && abs(points[1]) < radius && abs(points[2]) < radius)
-  {
-    if(points[2] >= 0)
-      points[2] += radius;
-    if(points[2] < 0)
-      points[2] -= radius;
-  }*/
+  //if(abs(points[0]) < radius && abs(points[1]) < radius && abs(points[2]) < radius)
+  //{
+  //  if(points[2] >= 0)
+  //    points[2] += radius;
+  //  if(points[2] < 0)
+  //    points[2] -= radius;
+  //}
 
   c.position[0] = zoom*radius*points[0];
   c.position[1] = zoom*radius*points[1];
@@ -792,6 +789,7 @@ GetCamera2(double frame, int nframes, double radius, double* lookat)
 //  c.up[2] = 0;
   return c;
 }
+*/
 
 #include <cmath>
 //Use this file stuff later but figured I'd put it next to mine
@@ -831,6 +829,8 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
 #include <vtkm/cont/Invoker.h>
 #include <vtkm/cont/DataSetFieldAdd.h>
 #include <vtkm/worklet/WorkletMapTopology.h>
+
+/*
 
 class ProcessTriangle2 : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
@@ -1128,18 +1128,18 @@ Triangle transformTriangle2(Triangle t, Camera c, int width, int height)
   view = c.ViewTransform();
   camToView = Matrix::ComposeMatrices(cam, view);
   m0 = Matrix::ComposeMatrices(camToView, c.DeviceTransform(width, height));
-  /*
-  cerr<< "cam" << endl;
-  cam.Print(cerr);
-  cerr<< "view" << endl;
-  view.Print(cerr);
-  cerr<< "m0" << endl;
-  m0.Print(cerr);
-  cerr<< "camToView" << endl;
-  camToView.Print(cerr);
-  cerr<< "device t" << endl;
-  c.DeviceTransform(width, height).Print(cerr);
-  */
+  
+  //cerr<< "cam" << endl;
+  //cam.Print(cerr);
+  //cerr<< "view" << endl;
+  //view.Print(cerr);
+  //cerr<< "m0" << endl;
+  //m0.Print(cerr);
+  //cerr<< "camToView" << endl;
+  //camToView.Print(cerr);
+  //cerr<< "device t" << endl;
+  //c.DeviceTransform(width, height).Print(cerr);
+  
 
   Triangle triangle;
   // Zero XYZ
@@ -1188,87 +1188,86 @@ Triangle transformTriangle2(Triangle t, Camera c, int width, int height)
 
 
 
-void CalcSilhouette2(float * data_in, int width, int height, double &length, double &curvature, double &curvatureExtrema, double &entropy)
-{
-	/*
-  std::vector<std::vector<cv::Point> > contours;
-  std::vector<cv::Vec4i> hierarchy;
-  std::vector<unsigned int> curvatureHistogram(9,0);
-  double silhouetteLength = 0; 
-  std::vector<double> silhouetteCurvature;
+//void CalcSilhouette2(float * data_in, int width, int height, double &length, double &curvature, double &curvatureExtrema, double &entropy)
+//{
+  //std::vector<std::vector<cv::Point> > contours;
+  //std::vector<cv::Vec4i> hierarchy;
+  //std::vector<unsigned int> curvatureHistogram(9,0);
+  //double silhouetteLength = 0; 
+  //std::vector<double> silhouetteCurvature;
 
-  cv::Mat image_gray;
-  cv::Mat image(width, height, CV_32F, data_in); 
-  cv::cvtColor(image, image_gray, cv::COLOR_BGR2GRAY );
-  cv::blur(image_gray, image_gray, cv::Size(3,3) );
-  cv::findContours(image_gray, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
+  //cv::Mat image_gray;
+  //cv::Mat image(width, height, CV_32F, data_in); 
+  //cv::cvtColor(image, image_gray, cv::COLOR_BGR2GRAY );
+  //cv::blur(image_gray, image_gray, cv::Size(3,3) );
+  //cv::findContours(image_gray, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
 
-  unsigned int numberOfAngles = 0;
-  cout << "CONTOURS SIZE " << contours.size() << endl;
-  for( int j = 0; j < contours.size(); j++ )
-  {
-    silhouetteLength += cv::arcLength( contours.at(j), true );
-    unsigned int contourSize = (unsigned int)contours.at(j).size();
-    silhouetteCurvature.resize(numberOfAngles + contourSize);
-    for( unsigned int k = 0; k < contourSize; k++ )
-    {
-      cv::Point diff1 = contours.at(j).at(k) - contours.at(j).at((k + 1) % contourSize);
-      cv::Point diff2 = contours.at(j).at((k + 1) % contourSize) - contours.at(j).at((k + 2) % contourSize);
-      double angle = 0.0;
-      if(diff1.x != diff2.x || diff1.y != diff2.y)
-      {
-        double v1[3];
-        double v2[3];
-        v1[0] = diff1.x;
-        v1[1] = diff1.y;
-        v1[2] = 0;
-        v2[0] = diff2.x;
-        v2[1] = diff2.y;
-        v2[2] = 0;
-        normalize(v1);
-        normalize(v2);
-        double dotprod = dotProduct(v1,v2,2);
-        double mag1 = magnitude3d(v1);
-        double mag2 = magnitude3d(v2);
-        double rad = acos(dotprod/(mag1*mag2));
-        angle = rad*(double)180/M_PI;
-      }
-      silhouetteCurvature[numberOfAngles + k] = angle;
-    }
-    numberOfAngles += contourSize;
-  }
+  //unsigned int numberOfAngles = 0;
+  //cout << "CONTOURS SIZE " << contours.size() << endl;
+  //for( int j = 0; j < contours.size(); j++ )
+  //{
+    //silhouetteLength += cv::arcLength( contours.at(j), true );
+    //unsigned int contourSize = (unsigned int)contours.at(j).size();
+    //silhouetteCurvature.resize(numberOfAngles + contourSize);
+    //for( unsigned int k = 0; k < contourSize; k++ )
+    //{
+      //cv::Point diff1 = contours.at(j).at(k) - contours.at(j).at((k + 1) % contourSize);
+      //cv::Point diff2 = contours.at(j).at((k + 1) % contourSize) - contours.at(j).at((k + 2) % contourSize);
+      //double angle = 0.0;
+      //if(diff1.x != diff2.x || diff1.y != diff2.y)
+      //{
+        //double v1[3];
+        //double v2[3];
+        //v1[0] = diff1.x;
+        //v1[1] = diff1.y;
+        //v1[2] = 0;
+        //v2[0] = diff2.x;
+        //v2[1] = diff2.y;
+        //v2[2] = 0;
+        //normalize(v1);
+        //normalize(v2);
+        //double dotprod = dotProduct(v1,v2,2);
+        //double mag1 = magnitude3d(v1);
+        //double mag2 = magnitude3d(v2);
+        //double rad = acos(dotprod/(mag1*mag2));
+        //angle = rad*(double)180/M_PI;
+      //}
+      //silhouetteCurvature[numberOfAngles + k] = angle;
+    //}
+    //numberOfAngles += contourSize;
+  //}
 
   //Calculate Curvature and Entropy Metrics
-  entropy = 0;
-  curvature = 0;
-  curvatureExtrema = 0;
-  int num_curves = silhouetteCurvature.size();
-  for(int i = 0; i < num_curves; i++)
-  {
-    double angle = silhouetteCurvature[i];
-    curvature += abs(angle)/90.0;
-    curvatureExtrema += pow((abs(angle)/90), 2.0);
-    int bin = (int) ((angle + 180.0)/45.0);
-    curvatureHistogram[bin]++;
-  }
+  //entropy = 0;
+  //curvature = 0;
+  //curvatureExtrema = 0;
+  //int num_curves = silhouetteCurvature.size();
+  //for(int i = 0; i < num_curves; i++)
+  //{
+    //double angle = silhouetteCurvature[i];
+    //curvature += abs(angle)/90.0;
+    //curvatureExtrema += pow((abs(angle)/90), 2.0);
+    //int bin = (int) ((angle + 180.0)/45.0);
+    //curvatureHistogram[bin]++;
+  //}
 
-  for(int i = 0; i < curvatureHistogram.size(); i++)
-  {
-    unsigned int value = curvatureHistogram[i];
-    if(value != 0)
-    {
-      double aux = value/(double)num_curves;
-      entropy += aux*log2(aux);
-    }
-  }
+  //for(int i = 0; i < curvatureHistogram.size(); i++)
+  //{
+    //unsigned int value = curvatureHistogram[i];
+    //if(value != 0)
+    //{
+      //double aux = value/(double)num_curves;
+      //entropy += aux*log2(aux);
+   // }
+ // }
 
   //Final Values
-  length           = silhouetteLength;
-  curvature        = curvature/(double)num_curves;
-  curvatureExtrema = curvatureExtrema/(double)num_curves;
-  entropy          = (-1)*entropy;
-  */
-}
+  //length           = silhouetteLength;
+  //curvature        = curvature/(double)num_curves;
+  //curvatureExtrema = curvatureExtrema/(double)num_curves;
+  //entropy          = (-1)*entropy;
+  
+//}
 
 template< typename T >
 T calcentropy2( const T* array, long len, int nBins )
@@ -1329,12 +1328,10 @@ calcArea2(std::vector<float> triangle, Camera c, int width, int height)
                triangle[3], triangle[4], triangle[5],
                triangle[6], triangle[7], triangle[8]);
   Triangle d_tri = transformTriangle2(w_tri, c, width, height);
-  /*
-  cerr << "w_tri: " << endl;
-  w_tri.printTri();
-  cerr << "d_tri: " << endl;
-  d_tri.printTri();
-  */
+  //cerr << "w_tri: " << endl;
+  //w_tri.printTri();
+  //cerr << "d_tri: " << endl;
+  //d_tri.printTri();
   return d_tri.calculateTriArea();
 }
 
@@ -2007,53 +2004,51 @@ calculateMaxDepth2(vtkh::DataSet *dataset, int height, int width)
   return depth;
 }
 
-/*
-float
-calculateMaxSilhouette2(vtkh::DataSet *dataset, int height, int width)
-{
-    #if ASCENT_MPI_ENABLED
-      // Get the number of processes
-      int world_size;
-      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
-      // Get the rank of this process
-      int rank;
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      MPI_Status status;
-      if(rank == 0)
-      {
-        int size = height*width;
-        std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
-        for(int i = 0; i < size; i++)
-          if(depth_data[i] == depth_data[i])
-            depth_data[i] = 255.0; //data = white
-          else
-            depth_data[i] = 0.0; //background = black
-
-        float data_in[width*height];
-        float contour[width*height];
-        std::copy(depth_data.begin(), depth_data.end(), data_in);
-        double length, curvature, curvatureExtrema, entropy;
-        CalcSilhouette2(data_in, width, height, length, curvature, curvatureExtrema, entropy);
-        MPI_Bcast(&length, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-      }
-    #else
-      int size = height*width;
-      std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
-      for(int i = 0; i < size; i++)
-        if(depth_data[i] == depth_data[i])
-          depth_data[i] = 255.0;
-        else
-          depth_data[i] = 0.0;
-      float data_in[size];
-      float contour[size];
-      std::copy(depth_data.begin(), depth_data.end(), data_in);
-      double length, curvature, curvatureExtrema, entropy;
-      CalcSilhouette2(data_in, width, height, length, curvature, curvatureExtrema, entropy);
-    #endif
-    return (float)length;
-} 
-*/
+//float
+//calculateMaxSilhouette2(vtkh::DataSet *dataset, int height, int width)
+//{
+  //  #if ASCENT_MPI_ENABLED
+//      // Get the number of processes
+//      int world_size;
+//      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+//
+//      // Get the rank of this process
+//      int rank;
+//      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//      MPI_Status status;
+//      if(rank == 0)
+//      {
+//        int size = height*width;
+//        std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+//        for(int i = 0; i < size; i++)
+//          if(depth_data[i] == depth_data[i])
+//            depth_data[i] = 255.0; //data = white
+//          else
+//            depth_data[i] = 0.0; //background = black
+//
+//        float data_in[width*height];
+//        float contour[width*height];
+//        std::copy(depth_data.begin(), depth_data.end(), data_in);
+//        double length, curvature, curvatureExtrema, entropy;
+//        CalcSilhouette2(data_in, width, height, length, curvature, curvatureExtrema, entropy);
+//        MPI_Bcast(&length, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+//      }
+//    #else
+//      int size = height*width;
+//      std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+//      for(int i = 0; i < size; i++)
+//        if(depth_data[i] == depth_data[i])
+//          depth_data[i] = 255.0;
+//        else
+//          depth_data[i] = 0.0;
+//      float data_in[size];
+//      float contour[size];
+//      std::copy(depth_data.begin(), depth_data.end(), data_in);
+//      double length, curvature, curvatureExtrema, entropy;
+//      CalcSilhouette2(data_in, width, height, length, curvature, curvatureExtrema, entropy);
+//    #endif
+//    return (float)length;
+//} 
 
 float
 calculateMetric2(vtkh::DataSet* dataset, std::string metric, std::string field_name,
@@ -2104,172 +2099,171 @@ calculateMetric2(vtkh::DataSet* dataset, std::string metric, std::string field_n
   return score;
 }
 
-/*
-float
-calculateMetric2(vtkh::DataSet* dataset, std::string metric, std::string field_name, int height, int width)
-{
-  float score = 0.0;
-
-  if(metric == "data_entropy")
-  {
-    float entropy = 0.0;
-    #if ASCENT_MPI_ENABLED //pass screens among all ranks
-      // Get the number of processes
-      int world_size;
-      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
-      // Get the rank of this process
-      int rank;
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      MPI_Status status;
-      if(rank == 0)
-      {
-	int size = height*width;
-        std::vector<float> field_data = GetScalarData2(*dataset, field_name, height, width);
-	for(int i = 0; i < size; i++)
-          if(field_data[i] != field_data[i])
-	    field_data[i] = -FLT_MAX;
-	float field_array[size];
-	std::copy(field_data.begin(), field_data.end(), field_array);
-	entropy = calcentropy2(field_array, field_data.size(), 100);
-
-      }
-      MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-      score = entropy;
-    #else
-      int size = height*width;
-      std::vector<float> field_data = GetScalarData2(*dataset, field_name, height, width);
-      for(int i = 0; i < size; i++)
-        if(field_data[i] != field_data[i])
-          field_data[i] = -FLT_MAX;
-      float field_array[size];
-      std::copy(field_data.begin(), field_data.end(), field_array);
-      entropy = calcentropy2(field_array, field_data.size(), 100);
-      score = entropy;
-    #endif
-  }
-  else if (metric == "depth_entropy")
-  {
-    float entropy = 0.0;
-    #if ASCENT_MPI_ENABLED 
-      // Get the number of processes
-      int world_size;
-      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-      
-      // Get the rank of this process
-      int rank;
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      MPI_Status status;
-      if(rank == 0)
-      { 
-        int size = height*width;
-        std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
-        for(int i = 0; i < size; i++)
-          if(depth_data[i] != depth_data[i])
-            depth_data[i] = -FLT_MAX;
-        float depth_array[size];
-        std::copy(depth_data.begin(), depth_data.end(), depth_array);
-        entropy = calcentropy2(depth_array, depth_data.size(), 100);
-      
-      }
-      MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-      score = entropy;
-    #else
-      int size = height*width;
-      std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
-      for(int i = 0; i < size; i++)
-        if(depth_data[i] != depth_data[i])
-          depth_data[i] = -FLT_MAX;
-      float depth_array[size];
-      std::copy(depth_data.begin(), depth_data.end(), depth_array);
-      entropy = calcentropy2(depth_array, depth_data.size(), 100);
-      score = entropy;
-    #endif
-  }
-  else if (metric == "max_depth")
-  {
-    float depth = -FLT_MAX;
-    #if ASCENT_MPI_ENABLED
-      // Get the number of processes
-      int world_size;
-      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
-      // Get the rank of this process
-      int rank;
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      MPI_Status status;
-      if(rank == 0)
-      {
-        int size = height*width;
-        std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
-        for(int i = 0; i < size; i++)
-          if(depth_data[i] == depth_data[i])
-            if(depth < depth_data[i])
-	      depth = depth_data[i];
-        score = depth;
-      }
-      MPI_Bcast(&score, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    #else
-      int size = height*width;
-      std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
-      for(int i = 0; i < size; i++)
-        if(depth_data[i] == depth_data[i])
-	  if(depth < depth_data[i])
-            depth = depth_data[i];
-      score = depth;
-    #endif
-  }
-  else if (metric == "max_silhouette")
-  {
-    #if ASCENT_MPI_ENABLED
-      // Get the number of processes
-      int world_size;
-      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
-      // Get the rank of this process
-      int rank;
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      MPI_Status status;
-      if(rank == 0)
-      {
-        int size = height*width;
-        std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
-        for(int i = 0; i < size; i++)
-          if(depth_data[i] == depth_data[i])
-	    depth_data[i] = 255.0; //data = white
-          else
-	    depth_data[i] = 0.0; //background = black
-
-	float data_in[width*height];
-	float contour[width*height];
-	std::copy(depth_data.begin(), depth_data.end(), data_in);
-	double length, curvature, curvatureExtrema, entropy;
-	CalcSilhouette2(data_in, width, height, length, curvature, curvatureExtrema, entropy);
-	score = (float)length;
-        MPI_Bcast(&score, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-      }
-    #else
-      int size = height*width;
-      std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
-      for(int i = 0; i < size; i++)
-        if(depth_data[i] == depth_data[i])
-	  depth_data[i] = 255.0;
-        else
-	  depth_data[i] = 0.0;
-      float data_in[size];
-      float contour[size];
-      std::copy(depth_data.begin(), depth_data.end(), data_in);
-      double length, curvature, curvatureExtrema, entropy;
-      CalcSilhouette2(data_in, width, height, length, curvature, curvatureExtrema, entropy);
-      score = (float)length;
-    #endif
-    
-  }
-  else
-    ASCENT_ERROR("This metric is not supported. \n");
-
-  return score;
-}
+//float
+//calculateMetric2(vtkh::DataSet* dataset, std::string metric, std::string field_name, int height, int width)
+//{
+//  float score = 0.0;
+//
+//  if(metric == "data_entropy")
+//  {
+//    float entropy = 0.0;
+//    #if ASCENT_MPI_ENABLED //pass screens among all ranks
+//      // Get the number of processes
+//      int world_size;
+//      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+//
+//      // Get the rank of this process
+//      int rank;
+//      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//      MPI_Status status;
+//      if(rank == 0)
+//      {
+//	int size = height*width;
+//        std::vector<float> field_data = GetScalarData2(*dataset, field_name, height, width);
+//	for(int i = 0; i < size; i++)
+//          if(field_data[i] != field_data[i])
+//	    field_data[i] = -FLT_MAX;
+//	float field_array[size];
+//	std::copy(field_data.begin(), field_data.end(), field_array);
+///	entropy = calcentropy2(field_array, field_data.size(), 100);
+//
+//      }
+//      MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+//      score = entropy;
+//    #else
+//      int size = height*width;
+//      std::vector<float> field_data = GetScalarData2(*dataset, field_name, height, width);
+//      for(int i = 0; i < size; i++)
+//        if(field_data[i] != field_data[i])
+//          field_data[i] = -FLT_MAX;
+//      float field_array[size];
+//      std::copy(field_data.begin(), field_data.end(), field_array);
+//     entropy = calcentropy2(field_array, field_data.size(), 100);
+//      score = entropy;
+//    #endif
+//  }
+//  else if (metric == "depth_entropy")
+//  {
+//    float entropy = 0.0;
+//    #if ASCENT_MPI_ENABLED 
+//      // Get the number of processes
+//      int world_size;
+//      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+//      
+//      // Get the rank of this process
+//      int rank;
+//      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//      MPI_Status status;
+//      if(rank == 0)
+//      { 
+//        int size = height*width;
+//        std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+//        for(int i = 0; i < size; i++)
+//          if(depth_data[i] != depth_data[i])
+//            depth_data[i] = -FLT_MAX;
+//        float depth_array[size];
+//        std::copy(depth_data.begin(), depth_data.end(), depth_array);
+//        entropy = calcentropy2(depth_array, depth_data.size(), 100);
+//      
+//      }
+//      MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+//      score = entropy;
+//    #else
+//      int size = height*width;
+//      std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+//      for(int i = 0; i < size; i++)
+//        if(depth_data[i] != depth_data[i])
+//          depth_data[i] = -FLT_MAX;
+//      float depth_array[size];
+//      std::copy(depth_data.begin(), depth_data.end(), depth_array);
+//      entropy = calcentropy2(depth_array, depth_data.size(), 100);
+//      score = entropy;
+//    #endif
+//  }
+ // else if (metric == "max_depth")
+ //  {
+ //    float depth = -FLT_MAX;
+  //   #if ASCENT_MPI_ENABLED
+   //    // Get the number of processes
+    //   int world_size;
+ //      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+// 
+ //      // Get the rank of this process
+  //     int rank;
+   //    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    //   MPI_Status status;
+ //      if(rank == 0)
+  //     {
+   //      int size = height*width;
+    //     std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+     //    for(int i = 0; i < size; i++)
+ //          if(depth_data[i] == depth_data[i])
+  //           if(depth < depth_data[i])
+	//       depth = depth_data[i];
+   //      score = depth;
+ //      }
+ //      MPI_Bcast(&score, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+ //    #else
+ //      int size = height*width;
+ //      std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+ //      for(int i = 0; i < size; i++)
+ //        if(depth_data[i] == depth_data[i])
+	//   if(depth < depth_data[i])
+        //     depth = depth_data[i];
+ //      score = depth;
+ //    #endif
+ //  }
+ //  else if (metric == "max_silhouette")
+ //  {
+ //    #if ASCENT_MPI_ENABLED
+ //      // Get the number of processes
+ //      int world_size;
+ //      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+// 
+ //      // Get the rank of this process
+  //     int rank;
+ //      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+ //      MPI_Status status;
+ //      if(rank == 0)
+ //      {
+ //        int size = height*width;
+ //        std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+  //       for(int i = 0; i < size; i++)
+ //          if(depth_data[i] == depth_data[i])
+	//     depth_data[i] = 255.0; //data = white
+        //   else
+	//     depth_data[i] = 0.0; //background = black
+// 
+	// float data_in[width*height];
+	// float contour[width*height];
+	// std::copy(depth_data.begin(), depth_data.end(), data_in);
+	// double length, curvature, curvatureExtrema, entropy;
+	// CalcSilhouette2(data_in, width, height, length, curvature, curvatureExtrema, entropy);
+	// score = (float)length;
+        // MPI_Bcast(&score, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+      // }
+    // #else
+     //  int size = height*width;
+     //  std::vector<float> depth_data = GetScalarData2(*dataset, "depth", height, width);
+     //  for(int i = 0; i < size; i++)
+      //   if(depth_data[i] == depth_data[i])
+	//   depth_data[i] = 255.0;
+        // else
+	//   depth_data[i] = 0.0;
+    //   float data_in[size];
+  //     float contour[size];
+   //    std::copy(depth_data.begin(), depth_data.end(), data_in);
+  //     double length, curvature, curvatureExtrema, entropy;
+  //     CalcSilhouette2(data_in, width, height, length, curvature, curvatureExtrema, entropy);
+  //     score = (float)length;
+  //   #endif
+  //   
+  // }
+  // else
+  //   ASCENT_ERROR("This metric is not supported. \n");
+// 
+ //  return score;
+//}  
 */
 
 //-----------------------------------------------------------------------------
@@ -2390,9 +2384,9 @@ CameraSimplex::execute()
     double triangle_time = 0.;
     auto triangle_start = high_resolution_clock::now();
     //std::vector<Triangle> triangles;// = GetTriangles2(dataset,field_name);
-    std::vector<Triangle> triangles = GetTriangles2(dataset);
+    std::vector<Triangle> triangles = GetTriangles(dataset);
     float total_triangles = (float) triangles.size();
-    vtkh::DataSet* data = AddTriangleFields2(dataset);
+    vtkh::DataSet* data = AddTriangleFields(dataset);
     auto triangle_stop = high_resolution_clock::now();
     triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
     /*#if ASCENT_MPI_ENABLED
@@ -2451,6 +2445,8 @@ CameraSimplex::execute()
 
     cout << "Gathering data for metric: " << metric.c_str() << endl;
 
+    /* // For testing weird geometry
+
     // File stuff
     FILE *datafile;
     float buffer[numTheta][numPhi];
@@ -2488,7 +2484,7 @@ CameraSimplex::execute()
 
         vtkh::DataSet *output = tracer.GetOutput();
 
-        float score = calculateMetric2(output, metric, field_name,
+        float score = calculateMetric(output, metric, field_name,
 		       triangles, height, width, cam);
 
         buffer[i][j] = score;
@@ -2514,6 +2510,7 @@ CameraSimplex::execute()
     }
 
     fclose(datafile);
+    */ // For testing weird geometry
 
     /*
     for(int sample = 0; sample < samples; sample++)
@@ -2734,6 +2731,46 @@ CameraSimplex::execute()
 */
 
     //Camera best_c = GetCamera2(best_sample, samples, radius, focus);
+   
+
+    /* // For testing weird geometry
+    Camera best_c = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+		       	        radius, winning_i, numTheta, winning_j, numPhi, focus);
+    */ // For testing weird geometry
+  
+
+    for (int i = 50 ; i < 76 ; i++) {
+      for (int j = 40 ; j < 51 ; j++) {
+        Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+		       	        radius, i, numTheta, j, numPhi, focus); 
+
+        vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
+                                  (float)cam.position[1],
+                                  (float)cam.position[2]};
+
+        camera->SetPosition(pos);
+        vtkh::ScalarRenderer tracer;
+        tracer.SetWidth(width);
+        tracer.SetHeight(height);
+        tracer.SetInput(data); //vtkh dataset by toponame
+        tracer.SetCamera(*camera);
+        tracer.Update();
+
+        vtkh::DataSet *output = tracer.GetOutput();
+
+        float score = calculateMetric(output, metric, field_name,
+		       triangles, height, width, cam);
+
+	if (score > winning_score) {
+            winning_score = score;
+            winning_i = i;
+            winning_j = j;
+        }
+        
+        cout << "Value at (" << i << ", " << j << ")" << " = " << score << endl;
+      }
+    }
+
     Camera best_c = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
 		       	        radius, winning_i, numTheta, winning_j, numPhi, focus);
 
