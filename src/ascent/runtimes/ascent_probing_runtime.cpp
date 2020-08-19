@@ -1122,9 +1122,9 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             if (render_ptrs[j][i] && depths.at(i) > std::numeric_limits<float>::lowest())
             {
                 const int id = depths_order_id.at(src_ranks.at(i));
-                std::cout << mpi_props.rank << " | ..render_arrangement " << j << " " << render_arrangement.at(j).at(i) << std::endl;
                 unsigned char *cb = (*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr();
                 float *db = (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr();
+                std::cout << mpi_props.rank << " | ..add image " << j << " " << render_arrangement.at(j).at(i) << std::endl;
                 
                 compositor.AddImage(cb, db, render_cfg.WIDTH, render_cfg.HEIGHT, id);
                 ++image_cnt;
@@ -1276,15 +1276,9 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
         if (render_cfg.insitu_type == "hybrid")
         {
-            // TODO: this is ugly 
-            float my_depth = std::numeric_limits<float>::lowest();
             skipped_render = 1;
             if (render_chunks_probing.has_child("render_file_names"))
                 skipped_render = 0; // false
-            // if (render_chunks_probing["depths"].children().has_next()) 
-            //     my_depth = render_chunks_probing["depths"].child(0).to_float();
-            // if (my_depth > std::numeric_limits<float>::lowest())
-            //     skipped_render = 0;
         }
     }
     log_global_time("end packData", mpi_props.rank);
@@ -1444,9 +1438,10 @@ void hybrid_render(const MPI_Properties &mpi_props,
         // pre-allocate the mpi receive buffers
         for (int i = 0; i < my_render_recv_cnt; i++)
         {   
-            int buffer_size = calc_render_msg_size(render_cfg.probing_count, 0);
-            if (g_skipped[src_ranks[i]])
-                buffer_size = 288;
+            // TODO: we don't need so send/recv empty buffers
+            int buffer_size = 288;
+            if (!g_skipped[src_ranks[i]])
+                buffer_size = calc_render_msg_size(render_cfg.probing_count, 0);
             render_chunks_probe[i] = make_unique<Node>(DataType::uint8(buffer_size));
 
             render_chunks_sim[i].resize(sim_batch_sizes[i].size());
@@ -1464,8 +1459,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
         // post the receives for the render chunks to receive asynchronous (non-blocking)
         for (int i = 0; i < my_render_recv_cnt; ++i)
         {
-            std::cout << " ~~~ vis node " << mpi_props.rank << " receiving " << sim_batch_sizes[i].size()
-                      << " batches from " << src_ranks[i] << std::endl;
             // receive probing render chunks
             int mpi_error = MPI_Irecv(render_chunks_probe[i]->data_ptr(),
                                       render_chunks_probe[i]->total_bytes_compact(),
@@ -1478,6 +1471,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
             if (mpi_error)
                 std::cout << "ERROR receiving probing parts from " << src_ranks[i] << std::endl;
 
+            std::cout << " ~~~ vis node " << mpi_props.rank << " receiving " << sim_batch_sizes[i].size()
+                    << " batches from " << src_ranks[i] << std::endl;
             for (int j = 0; j < sim_batch_sizes[i].size(); ++j)
             {
                 if (sim_batch_sizes[i][j] <= 0)
@@ -1542,7 +1537,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     ascent_renders[i].execute(blank_actions);
                     // print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
 
-                    // render_chunks_vis[i] = std::make_shared<Node>();
+                    render_chunks_vis[i] = std::make_shared<Node>();
                     
                     // ascent_main_runtime : out.set_external(m_info);
                     conduit::Node info;
@@ -1552,12 +1547,12 @@ void hybrid_render(const MPI_Properties &mpi_props,
                         render_chunks_vis[i] = std::make_shared<Node>(info);
                         // ascent_renders[i].info(*render_chunks_vis[i]);
                         // render_chunks_vis.push_back(std::make_shared<Node>(info));
-                    else
-                        render_chunks_vis[i] = nullptr;
+                    // else
+                    //     render_chunks_vis[i] = nullptr;
                 }
                 else
                 {
-                    render_chunks_vis[i] = nullptr;
+                    render_chunks_vis[i] = std::make_shared<Node>(); //nullptr;
                 }
 
                 log_time(start, "+ render vis " + std::to_string(current_render_count - probing_count_part) + " ", mpi_props.rank);
@@ -1600,9 +1595,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
             // compact_probing_renders are now packed and send in separate thread
-            // Node compact_probing_renders = pack_node(render_chunks_probing);
-            // const int my_render_count = g_render_counts[mpi_props.rank] + int(g_render_counts[mpi_props.rank]*render_cfg.probing_factor);
-            // RenderBatch batch = get_batch(my_render_count, render_cfg.batch_count);
             std::vector<int> batch_sizes = get_batch_sizes(g_render_counts[mpi_props.rank], 
                                                            render_cfg, true);
 
@@ -1612,8 +1604,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 const index_t msg_size_render = calc_render_msg_size(g_render_counts[mpi_props.rank], 0);
                 const index_t msg_size_probing = calc_render_msg_size(render_cfg.probing_count, 0);
                 const int overhead = MPI_BSEND_OVERHEAD * (batch_sizes.size() + 1); // 1 probing batch
-                MPI_Buffer_attach(malloc(msg_size_render + msg_size_probing + overhead), //my_data_size + overhead), 
-                                         msg_size_render + msg_size_probing + overhead); //my_data_size + overhead);
+                MPI_Buffer_attach(malloc(msg_size_render + msg_size_probing + overhead), 
+                                         msg_size_render + msg_size_probing + overhead);
                 // std::cout << "-- buffer size: " << (msg_size_render + msg_size_probing + overhead) << std::endl;
             }
 
@@ -1637,8 +1629,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
             std::thread pack_renders_thread(&pack_and_send, std::ref(render_chunks_probing), 
                                             destination, tag_probing, mpi_props.comm_world, 
                                             std::ref(request_probing));
-            // pack_and_send(render_chunks_probing, destination, tag_probing, mpi_props.comm_world, 
-            //               request_probing);
 
             log_global_time("end sendData", mpi_props.rank);
 
@@ -1917,13 +1907,8 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
             {
                 render_chunks["render_file_names"].set_external(info["render_file_names"]);
                 render_chunks["depths"].set_external(info["depths"]);
-
-                // if (info["depths"].children().has_next() && 
-                //     info["depths"].child(0).to_float() > std::numeric_limits<float>::lowest())
-                {
-                    render_chunks["color_buffers"].set_external(info["color_buffers"]);
-                    render_chunks["depth_buffers"].set_external(info["depth_buffers"]);
-                }
+                render_chunks["color_buffers"].set_external(info["color_buffers"]);
+                render_chunks["depth_buffers"].set_external(info["depth_buffers"]);
             }
             else
             {
