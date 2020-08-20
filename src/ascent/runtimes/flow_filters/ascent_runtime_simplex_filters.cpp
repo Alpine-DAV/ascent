@@ -466,6 +466,8 @@ CameraSimplex::execute()
 
     cout << "Gathering data for metric: " << metric.c_str() << endl;
 
+/* Testing stuff so commenting out main loop
+
     // File stuff
     FILE *datafile;
     float buffer[numTheta][numPhi];
@@ -530,7 +532,67 @@ CameraSimplex::execute()
 
     fclose(datafile);
 
+*/
+
+
     /*================ End Scalar Renderer  ======================*/
+
+    // Testing specific scores
+
+    winning_i = 54;
+    winning_j = 47;
+
+    Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+        	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
+
+    vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
+                                  (float)cam.position[1],
+                                  (float)cam.position[2]};
+
+    camera->SetPosition(postest);
+    vtkh::ScalarRenderer tracer;
+    tracer.SetWidth(width);
+    tracer.SetHeight(height);
+    tracer.SetInput(data); //vtkh dataset by toponame
+    tracer.SetCamera(*camera);
+    tracer.Update();
+
+    vtkh::DataSet *output = tracer.GetOutput();
+
+    float score = calculateMetric(output, metric, field_name,
+		       triangles, height, width, cam);
+
+    cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl << endl;
+
+    delete output;
+
+    winning_i = 47;
+    winning_j = 54;
+
+    cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+        	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
+
+    vtkm::Vec<vtkm::Float32, 3> postest2{(float)cam.position[0],
+                                  (float)cam.position[1],
+                                  (float)cam.position[2]};
+
+    camera->SetPosition(postest2);
+    tracer.SetWidth(width);
+    tracer.SetHeight(height);
+    tracer.SetInput(data); //vtkh dataset by toponame
+    tracer.SetCamera(*camera);
+    tracer.Update();
+
+    output = tracer.GetOutput();
+
+    score = calculateMetric(output, metric, field_name,
+		       triangles, height, width, cam);
+
+    cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl;
+
+    delete output;
+
+    // Testing specific Scores
 
     Camera best_c = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
 		       	        radius, winning_i, numTheta, winning_j, numPhi, focus);

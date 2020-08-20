@@ -1411,6 +1411,11 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
     return viewpoint_entropy;
   #else
     int size = height*width;
+
+    //Stefan print statement
+    cout << "Size is " << size << endl;
+    //End Stefan print statement
+    
     std::vector<float> x0 = GetScalarData(*dataset, "X0", height, width);
     std::vector<float> y0 = GetScalarData(*dataset, "Y0", height, width);
     std::vector<float> z0 = GetScalarData(*dataset, "Z0", height, width);
@@ -1433,7 +1438,17 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
     std::sort(triangles.begin(), triangles.end());
     triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
     int num_triangles = triangles.size();
+
+    //Stefan print statement
+    cout << "Num triangles is " << num_triangles << endl;
+    //End Stefan print statement
+    
     int num_all_triangles = all_triangles.size();
+
+    //Stefan print statement
+    cout << "Num all triangles is " << num_all_triangles << endl;
+    //End Stefan print statement
+    
     float total_area      = 0.0;
     float viewpoint_ratio = 0.0;
     for(int i = 0; i < num_all_triangles; i++)
@@ -1445,9 +1460,20 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
     for(int i = 0; i < num_triangles; i++)
     {
       float area = calcArea(triangles[i]);
+
       viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
     }
+
+    //Stefan print statement
+    cout << setprecision(13) << "Viewpoint entropy before *-1.0 is " << viewpoint_entropy << endl;
+    //End Stefan print statement
+    
     viewpoint_entropy = (-1.0)*viewpoint_ratio;
+
+    //Stefan print statement
+    cout << setprecision(13) << "Viewpoint entropy at end is " << viewpoint_entropy << endl;
+    //End Stefan print statement
+
     return viewpoint_entropy;
   #endif
 }
