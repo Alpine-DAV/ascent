@@ -1510,7 +1510,7 @@ void AscentRuntime::Execute(const conduit::Node &actions)
       m_info["render_file_names"][i].set_external(images->child(i)["image_name"]);
       m_info["render_times"][i].set_external(images->child(i)["render_time"]);
       m_info["depths"][i].set_external(images->child(i)["depth"]);
-      
+
       m_info["color_buffers"][i].set_external(images->child(i)["color_buffer"]);
       m_info["depth_buffers"][i].set_external(images->child(i)["depth_buffer"]);
     }
