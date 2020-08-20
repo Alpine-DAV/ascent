@@ -1624,7 +1624,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
                        
             // debug_break();
             MPI_Request request_probing = MPI_REQUEST_NULL;
-            // pack and send probing renders in separate thread
+            // TODO: skip empty probing chunks?
+            // pack and send probing renders in separate thread 
             std::thread pack_renders_thread(&pack_and_send, std::ref(render_chunks_probing), 
                                             destination, tag_probing, mpi_props.comm_world, 
                                             std::ref(request_probing));
@@ -1722,7 +1723,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 // probing
                 MPI_Wait(&request_probing, MPI_STATUS_IGNORE);
                 // render chunks
-                MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+                if (requests.size())
+                    MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
                 log_time(t_start, "+ wait send img ", mpi_props.rank);
             }
             log_global_time("end sendRenders", mpi_props.rank);
