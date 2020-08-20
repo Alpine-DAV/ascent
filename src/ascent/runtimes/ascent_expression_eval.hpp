@@ -106,6 +106,7 @@ public:
   ExpressionEval(conduit::Node *data);
 
   static const conduit::Node &get_cache();
+  static void get_last(conduit::Node &data);
   static void load_cache(const std::string &dir,
                          const std::string &session);
 

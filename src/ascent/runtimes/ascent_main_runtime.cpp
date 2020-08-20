@@ -70,6 +70,7 @@
 #endif
 
 #include <flow.hpp>
+#include <flow_timer.hpp>
 #include <ascent_actions_utils.hpp>
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
@@ -1491,7 +1492,9 @@ AscentRuntime::Execute(const conduit::Node &actions)
     // --- open try --- //
     try
     {
+        flow::Timer timer; 
         ResetInfo();
+        std::cout<<" cc "<<timer.elapsed()<<"\n";
 
         conduit::Node diff_info;
         bool different_actions = m_previous_actions.diff(actions, diff_info);
@@ -1525,6 +1528,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
           ConnectSource();
         }
 
+
         m_previous_actions = actions;
 
         PopulateMetadata(); // add metadata so filters can access it
@@ -1540,7 +1544,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         int cycle = 0;
         if(meta->has_path("cycle"))
         {
-        cycle = (*meta)["cycle"].to_int32();
+          cycle = (*meta)["cycle"].to_int32();
         }
         std::stringstream ss;
         ss<<"cycle_"<<cycle;
@@ -1563,13 +1567,13 @@ AscentRuntime::Execute(const conduit::Node &actions)
         FindRenders(renders, render_file_names);
         m_info["images"] = renders;
 
-        const conduit::Node &expression_cache =
-          runtime::expressions::ExpressionEval::get_cache();
+        //const conduit::Node &expression_cache =
+        //  runtime::expressions::ExpressionEval::get_cache();
 
-        if(expression_cache.number_of_children() > 0)
-        {
-          m_info["expressions"] = expression_cache;
-        }
+        //if(expression_cache.number_of_children() > 0)
+        //{
+        //  m_info["expressions"].set_external(expression_cache);
+        //}
 
         m_info["flow_graph_dot"]      = w.graph().to_dot();
         m_info["flow_graph_dot_html"] = w.graph().to_dot_html();

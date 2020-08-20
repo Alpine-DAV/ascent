@@ -64,6 +64,7 @@
 #include "ascent_conduit_reductions.hpp"
 #include <ascent_logging.hpp>
 #include <flow_graph.hpp>
+#include <flow_timer.hpp>
 #include <flow_workspace.hpp>
 
 #include <limits>
@@ -379,7 +380,6 @@ Identifier::execute()
   }
   // grab the last one calculated
   (*output) = (*cache)[i_name].child(entries - 1);
-  (*output)["attrs/history"].set_external((*cache)[i_name]);
   set_output<conduit::Node>(output);
 }
 
@@ -1433,7 +1433,18 @@ void
 History::execute()
 {
   conduit::Node *output = new conduit::Node();
-  conduit::Node history = (*input<Node>("expr_name"))["attrs/history"];
+  const std::string expr_name  = (*input<Node>("expr_name")).as_string();
+  //conduit::Node history = (*input<Node>("expr_name"))["attrs/history"];
+
+  const conduit::Node *const cache =
+      graph().workspace().registry().fetch<Node>("cache");
+
+  if(!cache->has_path(expr_name+"/attrs/history"))
+  {
+    ASCENT_ERROR("History: unknown identifier "<<  expr_name);
+  }
+  const conduit::Node &history = (*cache)[expr_name+"/attrs/history"];
+
   const conduit::Node *n_absolute_index = input<Node>("absolute_index");
   const conduit::Node *n_relative_index = input<Node>("relative_index");
 
@@ -1443,6 +1454,7 @@ History::execute()
     ASCENT_ERROR(
         "History: Specify only one of relative_index or absolute_index.");
   }
+
 
   const int entries = history.number_of_children();
   if(!n_relative_index->dtype().is_empty())
