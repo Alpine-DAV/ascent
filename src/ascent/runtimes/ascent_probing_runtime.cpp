@@ -1463,13 +1463,13 @@ void hybrid_render(const MPI_Properties &mpi_props,
             {
                 // receive probing render chunks
                 int mpi_error = MPI_Irecv(render_chunks_probe[i]->data_ptr(),
-                                            render_chunks_probe[i]->total_bytes_compact(),
-                                            MPI_BYTE,
-                                            src_ranks[i],
-                                            tag_probing,
-                                            mpi_props.comm_world,
-                                            &requests_probing[i]
-                                            );
+                                          render_chunks_probe[i]->total_bytes_compact(),
+                                          MPI_BYTE,
+                                          src_ranks[i],
+                                          tag_probing,
+                                          mpi_props.comm_world,
+                                          &requests_probing[i]
+                                          );
                 if (mpi_error)
                     std::cout << "ERROR receiving probing parts from " << src_ranks[i] << std::endl;
             }
@@ -1631,11 +1631,13 @@ void hybrid_render(const MPI_Properties &mpi_props,
             // debug_break();
             MPI_Request request_probing = MPI_REQUEST_NULL;
             // pack and send probing renders in separate thread
-            std::thread pack_probing_thread;
+            // std::thread pack_probing_thread;
             if (!skipped_render)
-                pack_probing_thread = std::thread(&pack_and_send, std::ref(render_chunks_probing), 
-                                                  destination, tag_probing, mpi_props.comm_world, 
-                                                  std::ref(request_probing));
+            //     pack_probing_thread = std::thread(&pack_and_send, std::ref(render_chunks_probing), 
+            //                                       destination, tag_probing, mpi_props.comm_world, 
+            //                                       std::ref(request_probing));
+                pack_and_send(render_chunks_probing, destination, tag_probing, 
+                              mpi_props.comm_world, request_probing);
 
             log_global_time("end sendData", mpi_props.rank);
 
@@ -1697,10 +1699,10 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 renders_inline["depth_buffers"].set_external(info[i]["depth_buffers"]);
                 renders_inline["render_file_names"].set_external(info[i]["render_file_names"]);
 
-                threads.push_back(std::thread(&pack_and_send, std::ref(renders_inline), 
-                                              destination, 
-                                              tag_inline + i, mpi_props.comm_world, 
-                                              std::ref(requests[i])));
+                // threads.push_back(std::thread(&pack_and_send, std::ref(renders_inline), 
+                //                               destination, tag_inline + i, mpi_props.comm_world, 
+                //                               std::ref(requests[i])));
+                pack_and_send(renders_inline, destination, tag_inline + i, mpi_props.comm_world, requests[i]);
 
                 t_end = std::chrono::system_clock::now();
                 sum_copy += t_end - t_render;
@@ -1729,12 +1731,11 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 // probing
                 if (!skipped_render)
                 {
-                    pack_probing_thread.join();
+                    // pack_probing_thread.join();
                     MPI_Wait(&request_probing, MPI_STATUS_IGNORE);
                 }
                 // render chunks
-                if (requests.size())
-                    MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+                MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
                 log_time(t_start, "+ wait send img ", mpi_props.rank);
             }
             log_global_time("end sendRenders", mpi_props.rank);
