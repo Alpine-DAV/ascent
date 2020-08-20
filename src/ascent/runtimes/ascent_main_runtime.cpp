@@ -1267,42 +1267,42 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
   } // each scene
 }
 
-void AscentRuntime::FindRenders(conduit::Node &image_params, 
-                                conduit::Node &image_list,
-                                conduit::Node &render_times,
-                                conduit::Node &color_buffers,
-                                conduit::Node &depth_buffers,
-                                conduit::Node &depths)
-{
-  image_list.reset();
+// void AscentRuntime::FindRenders(conduit::Node &image_params, 
+//                                 conduit::Node &image_list,
+//                                 conduit::Node &render_times,
+//                                 conduit::Node &color_buffers,
+//                                 conduit::Node &depth_buffers,
+//                                 conduit::Node &depths)
+// {
+//   image_list.reset();
 
-  if (!w.registry().has_entry("image_list"))
-  {
-    return;
-  }
+//   if (!w.registry().has_entry("image_list"))
+//   {
+//     return;
+//   }
 
-  Node *images = w.registry().fetch<Node>("image_list");
+//   Node *images = w.registry().fetch<Node>("image_list");
 
-  const int size = images->number_of_children();
-  image_params = *images;
+//   const int size = images->number_of_children();
+//   image_params = *images;
 
-  for (int i = 0; i < size; i++)
-  {
-    Node &image_name = image_list.append();
-    image_name.set_external(images->child(i)["image_name"]);
-    Node &times = render_times.append();
-    times.set_external(images->child(i)["render_time"]);
+//   for (int i = 0; i < size; i++)
+//   {
+//     Node &image_name = image_list.append();
+//     image_name.set_external(images->child(i)["image_name"]);
+//     Node &times = render_times.append();
+//     times.set_external(images->child(i)["render_time"]);
 
-    Node &cb = color_buffers.append();
-    cb.set_external(images->child(i)["color_buffer"]);
-    Node &db = depth_buffers.append();
-    db.set_external(images->child(i)["depth_buffer"]);
-    Node &depths_tmp = depths.append();
-    depths_tmp.set_external(images->child(i)["depth"]);
-  }
+//     Node &cb = color_buffers.append();
+//     cb.set_external(images->child(i)["color_buffer"]);
+//     Node &db = depth_buffers.append();
+//     db.set_external(images->child(i)["depth_buffer"]);
+//     Node &depths_tmp = depths.append();
+//     depths_tmp.set_external(images->child(i)["depth"]);
+//   }
 
-  // images->reset();
-}
+//   // images->reset();
+// }
 
 //-----------------------------------------------------------------------------
 void AscentRuntime::BuildGraph(const conduit::Node &actions)
@@ -1511,11 +1511,8 @@ void AscentRuntime::Execute(const conduit::Node &actions)
       m_info["render_times"][i].set_external(images->child(i)["render_time"]);
       m_info["depths"][i].set_external(images->child(i)["depth"]);
       
-      if (images->child(i)["depth"].as_float() > std::numeric_limits<float>::lowest())
-      {
-        m_info["color_buffers"][i].set_external(images->child(i)["color_buffer"]);
-        m_info["depth_buffers"][i].set_external(images->child(i)["depth_buffer"]);
-      }
+      m_info["color_buffers"][i].set_external(images->child(i)["color_buffer"]);
+      m_info["depth_buffers"][i].set_external(images->child(i)["depth_buffer"]);
     }
 
     // Node renders;

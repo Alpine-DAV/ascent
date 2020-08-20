@@ -1119,16 +1119,16 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         // loop over render parts (= 1 per sim node) and add as images
         for (int i = 0; i < render_ptrs.at(j).size(); ++i)
         {
-            if (render_ptrs[j][i] && depths.at(i) > std::numeric_limits<float>::lowest())
-            {
+            // if (render_ptrs[j][i] && depths.at(i) > std::numeric_limits<float>::lowest())
+            // {
                 const int id = depths_order_id.at(src_ranks.at(i));
                 unsigned char *cb = (*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr();
                 float *db = (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr();
                 std::cout << mpi_props.rank << " | ..add image " << j << " " << render_arrangement.at(j).at(i) << std::endl;
-                
+                std::cout << db[800*800-1] << "  " << int(cb[800*800*4 - 4]) << " | id " << id << std::endl;
                 compositor.AddImage(cb, db, render_cfg.WIDTH, render_cfg.HEIGHT, id);
                 ++image_cnt;
-            }
+            // }
         }
         // MPI_Barrier(mpi_props.comm_vis);
         std::cout << mpi_props.rank << " | ..composite " << j << " img count " << image_cnt << std::endl;
@@ -1391,7 +1391,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
                   << node_string.str() << std::endl;
 
         const std::vector<int> src_ranks = sending_node_ranks;
-        vec_node_sptr render_chunks_vis(my_data_recv_cnt);
         std::vector<std::unique_ptr<Node> > datasets(my_data_recv_cnt);
 
         // post recv for datasets
@@ -1503,6 +1502,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
         // render all data sets
         std::vector<Ascent> ascent_renders(my_data_recv_cnt);
+        vec_node_sptr render_chunks_vis(my_data_recv_cnt);
+
         for (int i = 0; i < my_data_recv_cnt; ++i)
         {
             // std::cout << "=== dataset size " << mpi_props.rank << " "
@@ -1547,12 +1548,10 @@ void hybrid_render(const MPI_Properties &mpi_props,
                         render_chunks_vis[i] = std::make_shared<Node>(info);
                         // ascent_renders[i].info(*render_chunks_vis[i]);
                         // render_chunks_vis.push_back(std::make_shared<Node>(info));
-                    // else
-                    //     render_chunks_vis[i] = nullptr;
                 }
                 else
                 {
-                    render_chunks_vis[i] = std::make_shared<Node>(); //nullptr;
+                    render_chunks_vis[i] = std::make_shared<Node>();
                 }
 
                 log_time(start, "+ render vis " + std::to_string(current_render_count - probing_count_part) + " ", mpi_props.rank);
@@ -1868,7 +1867,6 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 
     std::vector<double> render_times;
     double total_probing_time = 0.0;
-    // TODO: handle corner case where there is no probing (and no probing chunks)
     Ascent ascent_probing;
     Node render_chunks;
     // run probing only if this is a sim node
