@@ -83,7 +83,7 @@ public:
   BabelGraphWrapper(const ImageData& input_img,
                     const std::string& img_name,
                     int32_t rank_id,
-                    int32_t n_blocks,
+                    int32_t n_ranks,
                     int32_t fanin,
                     MPI_Comm mpi_comm);
   virtual ~BabelGraphWrapper() {}
@@ -93,7 +93,7 @@ public:
 protected:
   ImageData m_inputImg;
   uint32_t m_rankId;
-  uint32_t m_numBlocks;
+  uint32_t m_nRanks;
   uint32_t m_fanin;
   MPI_Comm m_comm;
 
@@ -112,14 +112,11 @@ public:
                   int32_t rank_id,
                   int32_t n_blocks,
                   int32_t fanin,
-                  MPI_Comm mpi_comm,
-                  const int32_t* blk_arr);
+                  MPI_Comm mpi_comm);
   virtual ~BabelCompReduce() {}
   virtual void Initialize() override;
 
 private:
-  uint32_t m_nBlocks[3];
-
   BabelFlow::KWayReduction m_graph;
   BabelFlow::KWayReductionTaskMap m_taskMap; 
   BabelFlow::PreProcessInputTaskGraph m_modGraph;
@@ -171,8 +168,8 @@ private:
   BabelFlow::RadixKExchange m_radixkGr;
   BabelFlow::RadixKExchangeTaskMap m_radixkMp; 
 
-  BabelFlow::SingleTaskGraph m_gatherTaskGr;
-  BabelFlow::ModuloMap m_gatherTaskMp;
+  BabelFlow::KWayReduction m_gatherTaskGr;
+  BabelFlow::KWayReductionTaskMap m_gatherTaskMp; 
 
   BabelFlow::ComposableTaskGraph m_radGatherGraph;
   BabelFlow::ComposableTaskMap m_radGatherTaskMap;

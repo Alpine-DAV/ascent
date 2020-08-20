@@ -174,14 +174,12 @@ void ascent::runtime::filters::BFlowCompose::execute()
   {
     case CompositingType::REDUCE:
       {
-        int32_t n_blocks[3] = {2, 2, 1};
         bflow_comp::BabelCompReduce red_graph(input_img,
                                               image_name,
                                               my_rank, 
                                               n_ranks,
                                               fanin,
-                                              mpi_comm,
-                                              n_blocks);
+                                              mpi_comm);
 
         red_graph.Initialize();
         red_graph.Execute();
