@@ -55,8 +55,6 @@
 #include "expressions/ascent_expressions_parser.hpp"
 #include "expressions/ascent_expressions_tokens.hpp"
 
-#include <flow_timer.hpp>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctime>
@@ -769,7 +767,6 @@ initialize_objects()
 conduit::Node
 ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 {
-  flow::Timer timer;
   if(expr_name == "")
   {
     expr_name = expr;
@@ -851,8 +848,6 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   delete expression;
   w.reset();
-  float elapsed = timer.elapsed();
-  std::cout<<"# "<<expr_name<<" "<<elapsed<<"\n";
   return return_val;
 }
 
@@ -862,7 +857,7 @@ ExpressionEval::get_cache()
   return m_cache.m_data;
 }
 
-void ExpressionEvel::get_last(conduit::Node &data)
+void ExpressionEval::get_last(conduit::Node &data)
 {
   data.reset();
   const int entries = m_cache.m_data.number_of_children();
