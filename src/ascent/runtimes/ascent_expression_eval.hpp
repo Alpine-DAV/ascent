@@ -107,6 +107,7 @@ public:
 
   static const conduit::Node &get_cache();
   static void get_last(conduit::Node &data);
+  static void reset_cache();
   static void load_cache(const std::string &dir,
                          const std::string &session);
 

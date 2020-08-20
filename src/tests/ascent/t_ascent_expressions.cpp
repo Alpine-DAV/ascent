@@ -568,7 +568,7 @@ TEST(ascent_expressions, test_history)
 
   expr = "history(val, 3)";
   res = eval.evaluate(expr);
-  EXPECT_EQ(res["value"].to_int32(), 1);
+  EXPECT_EQ(res["value"].to_int32(), 2);
   EXPECT_EQ(res["type"].as_string(), "int");
 
   bool threw = false;

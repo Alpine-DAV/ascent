@@ -378,8 +378,11 @@ Identifier::execute()
   {
     ASCENT_ERROR("Expression identifier: needs at least one entry");
   }
-  // grab the last one calculated
+  // grab the last one calculated so we have type info
   (*output) = (*cache)[i_name].child(entries - 1);
+  // we need to keep the name to retrieve the chache
+  // if history is called.
+  (*output)["name"] = i_name;
   set_output<conduit::Node>(output);
 }
 
@@ -1433,20 +1436,21 @@ void
 History::execute()
 {
   conduit::Node *output = new conduit::Node();
-  const std::string expr_name  = (*input<Node>("expr_name")).as_string();
-  //conduit::Node history = (*input<Node>("expr_name"))["attrs/history"];
+
+  const std::string expr_name  = (*input<Node>("expr_name"))["name"].as_string();
 
   const conduit::Node *const cache =
       graph().workspace().registry().fetch<Node>("cache");
 
-  if(!cache->has_path(expr_name+"/attrs/history"))
+  if(!cache->has_path(expr_name))
   {
     ASCENT_ERROR("History: unknown identifier "<<  expr_name);
   }
-  const conduit::Node &history = (*cache)[expr_name+"/attrs/history"];
+  const conduit::Node &history = (*cache)[expr_name];
 
   const conduit::Node *n_absolute_index = input<Node>("absolute_index");
   const conduit::Node *n_relative_index = input<Node>("relative_index");
+
 
   if(!n_absolute_index->dtype().is_empty() &&
      !n_relative_index->dtype().is_empty())
