@@ -1121,10 +1121,15 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         for (int i = 0; i < render_ptrs.at(j).size(); ++i)
         {
             const int id = depths_order_id.at(src_ranks.at(i));
+            
             unsigned char *cb = (*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr();
+            for (int k = 0; k < 800*800*4; ++k)
+                if (int(cb[k]) == 16)
+                    std::cout << int(cb[k]) << " ";
+            std::cout << std::endl;
             float *db = (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr();
             
-            std::cout << mpi_props.rank << " | ..add image " << j << " " << render_arrangement.at(j).at(i) << std::endl;
+            std::cout << mpi_props.rank << " | ..add image " << j << " " << render_arrangement.at(j).at(i) << " | id " << id << std::endl;
             compositor.AddImage(cb, db, render_cfg.WIDTH, render_cfg.HEIGHT, id);
             ++image_cnt;
         }
@@ -1432,7 +1437,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
         // pre-allocate the mpi receive buffers
         for (int i = 0; i < my_render_recv_cnt; i++)
         {   
-            // TODO: we don't need so send/recv empty buffers
             int buffer_size = 0;
             if (g_skipped[src_ranks[i]])
             {
@@ -1506,7 +1510,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
         // render all data sets
         std::vector<Ascent> ascent_renders(my_data_recv_cnt);
-        vec_node_sptr render_chunks_vis(my_data_recv_cnt);
+        vec_node_sptr render_chunks_vis(my_data_recv_cnt, nullptr);
 
         for (int i = 0; i < my_data_recv_cnt; ++i)
         {
@@ -1543,7 +1547,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     ascent_renders[i].execute(blank_actions);
                     // print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
 
-                    render_chunks_vis[i] = std::make_shared<Node>();
                     
                     conduit::Node info;
                     // ascent_main_runtime : out.set_external(m_info);
