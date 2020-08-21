@@ -67,22 +67,11 @@ using namespace std;
 using namespace conduit;
 using namespace ascent;
 
-index_t EXAMPLE_MESH_SIDE_DIM = 3;
+index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 //-----------------------------------------------------------------------------
-void crash()
-{
-  for(int i = 0; i < 10000; ++i)
-  {
-    occa::setDevice("mode: 'Serial'");
-    occa::array<double> o_output(27000);
-  }
-}
 TEST(ascent_expressions, derived_expressions)
 {
-  crash();
-  crash();
-
   Node n;
   ascent::about(n);
 
@@ -93,23 +82,22 @@ TEST(ascent_expressions, derived_expressions)
   // conduit::blueprint::mesh::examples::basic("polyhedra",
   // conduit::blueprint::mesh::examples::basic("polygons",
   // conduit::blueprint::mesh::examples::braid("tris",
-  // conduit::blueprint::mesh::examples::braid("quads",
-  conduit::blueprint::mesh::examples::braid("tets",
-  // conduit::blueprint::mesh::examples::braid("hexs",
-  // conduit::blueprint::mesh::examples::braid("uniform",
-  // conduit::blueprint::mesh::examples::braid("rectilinear",
-  // conduit::blueprint::mesh::examples::braid("structured",
+  conduit::blueprint::mesh::examples::braid(
+      "quads",
+      // conduit::blueprint::mesh::examples::braid("tets",
+      // conduit::blueprint::mesh::examples::braid("hexs",
+      // conduit::blueprint::mesh::examples::braid("uniform",
+      // conduit::blueprint::mesh::examples::braid("rectilinear",
+      // conduit::blueprint::mesh::examples::braid("structured",
       EXAMPLE_MESH_SIDE_DIM,
       EXAMPLE_MESH_SIDE_DIM,
       EXAMPLE_MESH_SIDE_DIM,
-      //0,
+      // 0,
       data);
   // ascent normally adds this but we are doing an end around
   data["state/domain_id"] = 0;
   Node multi_dom;
   blueprint::mesh::to_multi_domain(data, multi_dom);
-
-  multi_dom.print();
 
   runtime::expressions::register_builtin();
   runtime::expressions::ExpressionEval eval(&multi_dom);
@@ -161,8 +149,8 @@ TEST(ascent_expressions, derived_expressions)
   // expr = "topo('mesh').cell.x";
   // eval.evaluate(expr);
 
-  expr = "topo('mesh').cell.volume";
-  eval.evaluate(expr);
+  // expr = "topo('mesh').cell.volume";
+  // eval.evaluate(expr);
 
   // expr = "magnitude(gradient(field('braid') + 1))";
   // eval.evaluate(expr);
@@ -184,37 +172,43 @@ TEST(ascent_expressions, derived_expressions)
 /*
 TEST(ascent_expressions, derived_temperature)
 {
-  conduit::Node replay_data, replay_opts;
-  replay_opts["root_file"] =
-      "/Users/ibrahim5/datasets/fishtank/fishtank.cycle_000000.root";
-  ascent::hola("relay/blueprint/mesh", replay_opts, replay_data);
+  // conduit::Node replay_data, replay_opts;
+  // replay_opts["root_file"] =
+  // "/Users/ibrahim5/datasets/fishtank/fishtank.cycle_000000.root";
+  // replay_opts["root_file"] =
+  //     "/Users/ibrahim5/datasets/sharknato/sharknato_7221.cycle_000000.root";
+  // std::cout << "importing..." << std::endl;
+  // ascent::hola("relay/blueprint/mesh", replay_opts, replay_data);
+  // std::cout << "done importing..." << std::endl;
+
+  conduit::Node data, multi_dom;
+  conduit::blueprint::mesh::examples::braid("structured",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            0,
+                                            data);
+  data["state/domain_id"] = 0;
+  blueprint::mesh::to_multi_domain(data, multi_dom);
 
   runtime::expressions::register_builtin();
-  runtime::expressions::ExpressionEval eval(&replay_data);
+  // runtime::expressions::ExpressionEval eval(&replay_data);
+  runtime::expressions::ExpressionEval eval(&multi_dom);
 
   conduit::Node res;
   std::string expr;
 
-  expr = "paint_binning(binning('temperature', 'std', [axis('z', num_bins=15), "
-         "axis('x', bins=[6, 22]), axis('y', bins=[-8, 8])], component='c0'), "
-         "name='temp_std', default_value=1)";
-  eval.evaluate(expr);
-  expr = "paint_binning(binning('temperature', 'avg', [axis('z', num_bins=15), "
-         "axis('x', bins=[6, 22]), axis('y', bins=[-8, 8])], component='c0'), "
-         "name='temp_avg')";
-  eval.evaluate(expr);
-  expr = "(field('temperature', 'c0') - field('temp_avg'))/field('temp_std')";
-  eval.evaluate(expr, "std_from_avg");
-
-  //  expr = "field('temperature', 'c0') / sqrt((topo('topo').vertex.x - "
-  //         "14.5) * (topo('topo').vertex.x - 14.5) + "
-  //         "(topo('topo').vertex.y) * (topo('topo').vertex.y))";
-  // eval.evaluate(expr, "temp1");
+  // expr = "gradient(field('temperature', 'c0'))";
+  // eval.evaluate(expr, "temp_gradient");
+  // expr = "gradient(field('uinterp', 'c0'))";
+  // eval.evaluate(expr, "uinterp_gradient");
+  // ascent normally adds this but we are doing an end around
+  expr = "gradient(field('braid'))";
+  eval.evaluate(expr, "braid_grad");
 
   const std::string output_path = prepare_output_dir();
 
   std::string output_file =
-      conduit::utils::join_file_path(output_path, "fishtank_temp");
+      conduit::utils::join_file_path(output_path, "braid_grad");
 
   conduit::Node actions;
 
@@ -227,15 +221,15 @@ TEST(ascent_expressions, derived_temperature)
   add_extracts["action"] = "add_extracts";
   add_extracts["extracts"] = extracts;
 
-  conduit::Node scenes;
-  scenes["s1/plots/p1/type"] = "pseudocolor";
-  scenes["s1/plots/p1/field"] = "mass";
-  scenes["s1/renders/r1/image_prefix"] = output_file;
-  scenes["s1/renders/r1/camera/azimuth"] = 30.0;
+  // conduit::Node scenes;
+  // scenes["s1/plots/p1/type"] = "pseudocolor";
+  // scenes["s1/plots/p1/field"] = "mass";
+  // scenes["s1/renders/r1/image_prefix"] = output_file;
+  // scenes["s1/renders/r1/camera/azimuth"] = 30.0;
 
-  conduit::Node &add_plots = actions.append();
-  add_plots["action"] = "add_scenes";
-  add_plots["scenes"] = scenes;
+  // conduit::Node &add_plots = actions.append();
+  // add_plots["action"] = "add_scenes";
+  // add_plots["scenes"] = scenes;
 
   //
   // Run Ascent
@@ -248,8 +242,10 @@ TEST(ascent_expressions, derived_temperature)
   ascent_opts["timings"] = "enabled";
   ascent_opts["runtime/type"] = "ascent";
 
+  multi_dom.print();
   ascent.open(ascent_opts);
-  ascent.publish(replay_data);
+  // ascent.publish(replay_data);
+  ascent.publish(multi_dom);
   ascent.execute(actions);
   ascent.close();
 }

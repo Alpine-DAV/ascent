@@ -80,9 +80,13 @@ class InsertionOrderedSet
 {
 public:
   void
-  insert(const T &item)
+  insert(const T &item, const bool unique = true)
   {
-    if(data_set.find(item) == data_set.end())
+    if(!unique)
+    {
+      insertion_ordered_data.push_back(item);
+    }
+    else if(data_set.find(item) == data_set.end())
     {
       data_set.insert(item);
       insertion_ordered_data.push_back(item);
@@ -90,20 +94,20 @@ public:
   }
 
   void
-  insert(std::initializer_list<T> ilist)
+  insert(std::initializer_list<T> ilist, const bool unique = true)
   {
     for(const auto &item : ilist)
     {
-      insert(item);
+      insert(item, unique);
     }
   }
 
   void
-  insert(const InsertionOrderedSet<T> &ios)
+  insert(const InsertionOrderedSet<T> &ios, const bool unique = true)
   {
     for(const auto &item : ios.data())
     {
-      insert(item);
+      insert(item, unique);
     }
   }
 
@@ -132,11 +136,17 @@ private:
 class MathCode
 {
 public:
+  void determinant_2x2(InsertionOrderedSet<std::string> &code,
+                       const std::string &a,
+                       const std::string &b,
+                       const std::string &res_name,
+                       const bool declare = true);
   void determinant_3x3(InsertionOrderedSet<std::string> &code,
                        const std::string &a,
                        const std::string &b,
                        const std::string &c,
-                       const std::string &res_name);
+                       const std::string &res_name,
+                       const bool declare = true);
   void vector_subtract(InsertionOrderedSet<std::string> &code,
                        const std::string &a,
                        const std::string &b,
@@ -153,16 +163,19 @@ public:
                      const std::string &a,
                      const std::string &b,
                      const std::string &res_name,
-                     const int num_components);
+                     const int num_components,
+                     const bool declare = true);
   void dot_product(InsertionOrderedSet<std::string> &code,
                    const std::string &a,
                    const std::string &b,
                    const std::string &res_name,
-                   const int num_components);
+                   const int num_components,
+                   const bool declare = true);
   void magnitude(InsertionOrderedSet<std::string> &code,
                  const std::string &a,
                  const std::string &res_name,
-                 const int num_components);
+                 const int num_components,
+                 const bool declare = true);
 };
 
 class TopologyCode
@@ -172,6 +185,7 @@ public:
   void vertex_xyz(InsertionOrderedSet<std::string> &code);
   void element_xyz(InsertionOrderedSet<std::string> &code);
   void volume(InsertionOrderedSet<std::string> &code);
+  void area(InsertionOrderedSet<std::string> &code);
 
   // helper functions
   void vertex_idx(InsertionOrderedSet<std::string> &code);
@@ -196,26 +210,44 @@ public:
                   const std::string &res_name,
                   const bool declare = true);
   void hexahedral_volume(InsertionOrderedSet<std::string> &code,
-                         const std::string &vertices_name,
+                         const std::string &vertex_locs,
                          const std::string &res_name);
   void tetrahedral_volume(InsertionOrderedSet<std::string> &code,
-                          const std::string &vertices_name,
+                          const std::string &vertex_locs,
                           const std::string &res_name);
-  void quadrilateral_volume(InsertionOrderedSet<std::string> &code,
-                            const std::string &vertices_name,
-                            const std::string &res_name);
-  void triangle_volume(InsertionOrderedSet<std::string> &code,
-                       const std::string &vertices_name,
-                       const std::string &res_name);
-  void polygon_volume_vec(InsertionOrderedSet<std::string> &code,
-                          const std::string &vertices_name,
+  void quadrilateral_area(InsertionOrderedSet<std::string> &code,
+                          const std::string &p0,
+                          const std::string &p1,
+                          const std::string &p2,
+                          const std::string &p3,
                           const std::string &res_name);
-  void polygon_volume(InsertionOrderedSet<std::string> &code,
-                      const std::string &vertices_name,
-                      const std::string &res_name);
+  void quadrilateral_area(InsertionOrderedSet<std::string> &code,
+                          const std::string &vertex_locs,
+                          const std::string &res_name);
+  void triangle_area(InsertionOrderedSet<std::string> &code,
+                     const std::string &p0,
+                     const std::string &p1,
+                     const std::string &p2,
+                     const std::string &res_name);
+  void triangle_area(InsertionOrderedSet<std::string> &code,
+                     const std::string &vertex_locs,
+                     const std::string &res_name);
+  void polygon_area_vec(InsertionOrderedSet<std::string> &code,
+                        const std::string &vertex_locs,
+                        const std::string &res_name);
+  void polygon_area(InsertionOrderedSet<std::string> &code,
+                    const std::string &vertex_locs,
+                    const std::string &res_name);
   void polyhedron_volume(InsertionOrderedSet<std::string> &code,
-                         const std::string &vertices_name,
+                         const std::string &vertex_locs,
                          const std::string &res_name);
+  void hexahedral_surface_area(InsertionOrderedSet<std::string> &code,
+                               const std::string &vertex_locs,
+                               const std::string &res_name);
+  void tetrahedral_surface_area(InsertionOrderedSet<std::string> &code,
+                                const std::string &vertex_locs,
+                                const std::string &res_name);
+  void surface_area(InsertionOrderedSet<std::string> &code);
 
   std::string topo_name;
   std::string topo_type;
@@ -234,6 +266,10 @@ public:
             const std::string &association,
             const conduit::Node &domain);
   void gradient(InsertionOrderedSet<std::string> &code);
+  void hex_gradient(InsertionOrderedSet<std::string> &code,
+                    const std::string &res_name);
+  void quad_gradient(InsertionOrderedSet<std::string> &code,
+                     const std::string &res_name);
   void field_idx(InsertionOrderedSet<std::string> &code,
                  const std::string &index_name,
                  const std::string &res_name,
@@ -243,6 +279,8 @@ public:
   std::string field_name;
   std::string association;
   TopologyCode topo_code;
+
+  MathCode math_code;
 };
 
 class Kernel
@@ -251,7 +289,8 @@ public:
   void fuse_kernel(const Kernel &from);
   std::string generate_output(const std::string &output,
                               bool output_exists) const;
-  std::string generate_loop(const std::string &output) const;
+  std::string generate_loop(const std::string &output,
+                            const std::string &entries_name) const;
 
   std::string kernel_body;
   InsertionOrderedSet<std::string> for_body;
@@ -273,7 +312,7 @@ public:
   }
 
   void fuse_vars(const Jitable &from);
-  void execute(conduit::Node &dataset, const std::string &field_name);
+  void execute(conduit::Node &dataset, const std::string &field_name) const;
   std::string generate_kernel(const int dom_idx) const;
 
   std::unordered_map<std::string, Kernel> kernels;
@@ -284,6 +323,20 @@ public:
   // metadata used to make the . operator work and store various jitable state
   conduit::Node obj;
 };
+
+/*
+class JitableFunctions
+{
+  conduit::Node &inputs;
+  std::vector<const Kernel *> input_kernels;
+  std::vector<const Jitable *> input_jitables;
+  std::string &filter_name;
+  Kernel &out_kernel;
+  Jitable *out_jitable;
+  const conduit::Node &dom;
+  const int dom_idx;
+};
+*/
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

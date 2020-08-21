@@ -121,17 +121,28 @@ indent_code(const std::string &input_code, const int num_spaces)
 //-----------------------------------------------------------------------------
 // {{{
 void
+MathCode::determinant_2x2(InsertionOrderedSet<std::string> &code,
+                          const std::string &a,
+                          const std::string &b,
+                          const std::string &res_name,
+                          const bool declare)
+{
+  code.insert((declare ? "const double " : "") + res_name + " = " + a +
+              "[0] * " + b + "[1] - " + b + "[0] * " + a + "[1];\n");
+}
+void
 MathCode::determinant_3x3(InsertionOrderedSet<std::string> &code,
                           const std::string &a,
                           const std::string &b,
                           const std::string &c,
-                          const std::string &res_name)
+                          const std::string &res_name,
+                          const bool declare)
 {
-  code.insert("double " + res_name + " = " + a + "[0] * (" + b + "[1] * " + c +
-              "[2] - " + c + "[1] * " + b + "[2]) - " + a + "[1] * (" + b +
-              "[0] * " + c + "[2] - " + c + "[0] * " + b + "[2]) + " + a +
-              "[2] * (" + b + "[0] * " + c + "[1] - " + c + "[0] * " + b +
-              "[1]);\n");
+  code.insert((declare ? "const double " : "") + res_name + " = " + a +
+              "[0] * (" + b + "[1] * " + c + "[2] - " + c + "[1] * " + b +
+              "[2]) - " + a + "[1] * (" + b + "[0] * " + c + "[2] - " + c +
+              "[0] * " + b + "[2]) + " + a + "[2] * (" + b + "[0] * " + c +
+              "[1] - " + c + "[0] * " + b + "[1]);\n");
 }
 
 void
@@ -181,9 +192,13 @@ MathCode::cross_product(InsertionOrderedSet<std::string> &code,
                         const std::string &a,
                         const std::string &b,
                         const std::string &res_name,
-                        const int num_components)
+                        const int num_components,
+                        const bool declare)
 {
-  code.insert("double " + res_name + "[3];\n");
+  if(declare)
+  {
+    code.insert("double " + res_name + "[3];\n");
+  }
   if(num_components == 3)
   {
     code.insert(res_name + "[0] = " + a + "[1] * " + b + "[2] - " + a +
@@ -211,10 +226,14 @@ MathCode::dot_product(InsertionOrderedSet<std::string> &code,
                       const std::string &a,
                       const std::string &b,
                       const std::string &res_name,
-                      const int num_components)
+                      const int num_components,
+                      const bool declare)
 {
-  code.insert("double " + res_name + "[" + std::to_string(num_components) +
-              "];\n");
+  if(declare)
+  {
+    code.insert("double " + res_name + "[" + std::to_string(num_components) +
+                "];\n");
+  }
   for(int i = 0; i < num_components; ++i)
   {
     code.insert(res_name + "[" + std::to_string(i) + "] = " + a + "[" +
@@ -227,18 +246,19 @@ void
 MathCode::magnitude(InsertionOrderedSet<std::string> &code,
                     const std::string &a,
                     const std::string &res_name,
-                    const int num_components)
+                    const int num_components,
+                    const bool declare)
 {
   if(num_components == 3)
   {
-    code.insert("double " + res_name + " = sqrt(" + a + "[0] * " + a +
-                "[0] + " + a + "[1] * " + a + "[1] + " + a + "[2] * " + a +
-                "[2]);\n");
+    code.insert((declare ? "const double " : "") + res_name + " = sqrt(" + a +
+                "[0] * " + a + "[0] + " + a + "[1] * " + a + "[1] + " + a +
+                "[2] * " + a + "[2]);\n");
   }
   else if(num_components == 2)
   {
-    code.insert("double " + res_name + " = sqrt(" + a + "[0] * " + a +
-                "[0] + " + a + "[1] * " + a + "[1]);\n");
+    code.insert((declare ? "const double " : "") + res_name + " = sqrt(" + a +
+                "[0] * " + a + "[0] + " + a + "[1] * " + a + "[1]);\n");
   }
   else
   {
@@ -321,6 +341,7 @@ TopologyCode::element_idx(InsertionOrderedSet<std::string> &code)
 
 // vertices are ordered in the VTK format
 // https://vtk.org/wp-content/uploads/2015/04/file-formats.pdf
+// I'm also assuming the x,y,z axis shown to the left of VTK_HEXAHEDRON
 void
 TopologyCode::structured_vertices(InsertionOrderedSet<std::string> &code)
 {
@@ -329,6 +350,7 @@ TopologyCode::structured_vertices(InsertionOrderedSet<std::string> &code)
     ASCENT_ERROR("The function structured_vertices only supports structured "
                  "topologies.");
   }
+  element_idx(code);
 
   // vertex indices
   code.insert("int " + topo_name + "_vertices[" +
@@ -490,8 +512,8 @@ component_avg(InsertionOrderedSet<std::string> &code,
     vert_avg << array_name + "[" << j << "][" << component << "]";
   }
   vert_avg << ") / " << length;
-  code.insert((declare ? "double " : "") + res_name + " = " + vert_avg.str() +
-              ";\n");
+  code.insert((declare ? "const double " : "") + res_name + " = " +
+              vert_avg.str() + ";\n");
 }
 
 void
@@ -516,16 +538,16 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
   }
   if(topo_type == "uniform")
   {
-    code.insert((declare ? "double " : "") + res_name + " = " + topo_name +
-                "_origin_" + coord + +" + (" + my_index_name + " + 0.5) * " +
-                topo_name + "_spacing_d" + coord + ";\n");
+    code.insert((declare ? "const double " : "") + res_name + " = " +
+                topo_name + "_origin_" + coord + +" + (" + my_index_name +
+                " + 0.5) * " + topo_name + "_spacing_d" + coord + ";\n");
   }
   else if(topo_type == "rectilinear")
   {
-    element_idx(code);
-    code.insert((declare ? "double " : "") + res_name + " = (" + topo_name +
-                "_coords_" + coord + "[" + my_index_name + "] + " + topo_name +
-                "_coords_x[" + my_index_name + " + 1]) / 2.0;\n");
+    code.insert((declare ? "const double " : "") + res_name + " = (" +
+                topo_name + "_coords_" + coord + "[" + my_index_name + "] + " +
+                topo_name + "_coords_" + coord + "[" + my_index_name +
+                " + 1]) / 2.0;\n");
   }
   else if(topo_type == "structured")
   {
@@ -663,14 +685,14 @@ TopologyCode::vertex_coord(InsertionOrderedSet<std::string> &code,
   }
   if(topo_type == "uniform")
   {
-    code.insert((declare ? "double " : "") + res_name + " = " + topo_name +
-                "_origin_" + coord + " + " + my_index_name + " * " + topo_name +
-                "_spacing_d" + coord + ";\n");
+    code.insert((declare ? "const double " : "") + res_name + " = " +
+                topo_name + "_origin_" + coord + " + " + my_index_name + " * " +
+                topo_name + "_spacing_d" + coord + ";\n");
   }
   else
   {
-    code.insert((declare ? "double " : "") + res_name + " = " + topo_name +
-                "_coords_" + coord + "[" + my_index_name + "];\n");
+    code.insert((declare ? "const double " : "") + res_name + " = " +
+                topo_name + "_coords_" + coord + "[" + my_index_name + "];\n");
   }
 }
 
@@ -723,27 +745,33 @@ TopologyCode::vertex_xyz(InsertionOrderedSet<std::string> &code)
   }
 }
 
+// get rectilinear spacing for a cell
 void
 TopologyCode::dxdydz(InsertionOrderedSet<std::string> &code)
 {
   if(topo_type == "rectilinear")
   {
     element_idx(code);
-    code.insert("double " + topo_name + "_dx = " + topo_name + "_coords_x[" +
-                topo_name + "_element_idx[0] + 1] - " + topo_name +
-                "_coords_x[" + topo_name + "_element_idx[0]];\n");
+    code.insert("const double " + topo_name + "_dx = " + topo_name +
+                "_coords_x[" + topo_name + "_element_idx[0] + 1] - " +
+                topo_name + "_coords_x[" + topo_name + "_element_idx[0]];\n");
     if(num_dims >= 2)
     {
-      code.insert("double " + topo_name + "_dy = " + topo_name + "_coords_y[" +
-                  topo_name + "_element_idx[1] + 1] - " + topo_name +
-                  "_coords_y[" + topo_name + "_element_idx[1]];\n");
+      code.insert("const double " + topo_name + "_dy = " + topo_name +
+                  "_coords_y[" + topo_name + "_element_idx[1] + 1] - " +
+                  topo_name + "_coords_y[" + topo_name + "_element_idx[1]];\n");
     }
     if(num_dims == 3)
     {
-      code.insert({"double " + topo_name + "_dz = " + topo_name + "_coords_z[" +
-                   topo_name + "_element_idx[2] + 1] - " + topo_name +
-                   "_coords_z[" + topo_name + "_element_idx[2]];\n"});
+      code.insert({"const double " + topo_name + "_dz = " + topo_name +
+                   "_coords_z[" + topo_name + "_element_idx[2] + 1] - " +
+                   topo_name + "_coords_z[" + topo_name +
+                   "_element_idx[2]];\n"});
     }
+  }
+  else
+  {
+    ASCENT_ERROR("Function dxdydz only works on rectilinear topologies.");
   }
 }
 
@@ -751,23 +779,23 @@ TopologyCode::dxdydz(InsertionOrderedSet<std::string> &code)
 // switch vertices 2 and 3 and vertices 6 and 7 to match vtk order
 void
 TopologyCode::hexahedral_volume(InsertionOrderedSet<std::string> &code,
-                                const std::string &vertices_name,
+                                const std::string &vertex_locs,
                                 const std::string &res_name)
 {
   math_code.vector_subtract(
-      code, vertices_name + "[6]", vertices_name + "[0]", res_name + "_6m0", 3);
+      code, vertex_locs + "[6]", vertex_locs + "[0]", res_name + "_6m0", 3);
   math_code.vector_subtract(
-      code, vertices_name + "[1]", vertices_name + "[0]", res_name + "_1m0", 3);
+      code, vertex_locs + "[1]", vertex_locs + "[0]", res_name + "_1m0", 3);
   math_code.vector_subtract(
-      code, vertices_name + "[2]", vertices_name + "[5]", res_name + "_2m5", 3);
+      code, vertex_locs + "[2]", vertex_locs + "[5]", res_name + "_2m5", 3);
   math_code.vector_subtract(
-      code, vertices_name + "[4]", vertices_name + "[0]", res_name + "_4m0", 3);
+      code, vertex_locs + "[4]", vertex_locs + "[0]", res_name + "_4m0", 3);
   math_code.vector_subtract(
-      code, vertices_name + "[5]", vertices_name + "[7]", res_name + "_5m7", 3);
+      code, vertex_locs + "[5]", vertex_locs + "[7]", res_name + "_5m7", 3);
   math_code.vector_subtract(
-      code, vertices_name + "[3]", vertices_name + "[0]", res_name + "_3m0", 3);
+      code, vertex_locs + "[3]", vertex_locs + "[0]", res_name + "_3m0", 3);
   math_code.vector_subtract(
-      code, vertices_name + "[7]", vertices_name + "[2]", res_name + "_7m2", 3);
+      code, vertex_locs + "[7]", vertex_locs + "[2]", res_name + "_7m2", 3);
   // can save 4 flops if we use the fact that 6m0 is always the first column
   // of the determinant
   math_code.determinant_3x3(code,
@@ -785,78 +813,94 @@ TopologyCode::hexahedral_volume(InsertionOrderedSet<std::string> &code,
                             res_name + "_3m0",
                             res_name + "_7m2",
                             res_name + "_det2");
-  code.insert("double " + res_name + " = (" + res_name + "_det0 + " + res_name +
-              "_det1 + " + res_name + "_det2) / 6.0;\n");
+  code.insert("const double " + res_name + " = (" + res_name + "_det0 + " +
+              res_name + "_det1 + " + res_name + "_det2) / 6.0;\n");
 }
 
 // ||(p3-p0) (p2-p0) (p1-p0)|| / 6
 void
 TopologyCode::tetrahedral_volume(InsertionOrderedSet<std::string> &code,
-                                 const std::string &vertices_name,
+                                 const std::string &vertex_locs,
                                  const std::string &res_name)
 {
   math_code.vector_subtract(
-      code, vertices_name + "[1]", vertices_name + "[0]", res_name + "_1m0", 3);
+      code, vertex_locs + "[1]", vertex_locs + "[0]", res_name + "_1m0", 3);
   math_code.vector_subtract(
-      code, vertices_name + "[2]", vertices_name + "[0]", res_name + "_2m0", 3);
+      code, vertex_locs + "[2]", vertex_locs + "[0]", res_name + "_2m0", 3);
   math_code.vector_subtract(
-      code, vertices_name + "[3]", vertices_name + "[0]", res_name + "_3m0", 3);
+      code, vertex_locs + "[3]", vertex_locs + "[0]", res_name + "_3m0", 3);
   math_code.determinant_3x3(code,
                             res_name + "_3m0",
                             res_name + "_2m0",
                             res_name + "_1m0",
                             res_name + "_det");
-  code.insert("double " + res_name + " = " + res_name + "_det / 6.0;\n");
+  code.insert("const double " + res_name + " = " + res_name + "_det / 6.0;\n");
 }
 
 // 1/2 * |(p2 - p0) X (p3 - p1)|
 void
-TopologyCode::quadrilateral_volume(InsertionOrderedSet<std::string> &code,
-                                   const std::string &vertices_name,
-                                   const std::string &res_name)
+TopologyCode::quadrilateral_area(InsertionOrderedSet<std::string> &code,
+                                 const std::string &p0,
+                                 const std::string &p1,
+                                 const std::string &p2,
+                                 const std::string &p3,
+                                 const std::string &res_name)
 {
-  math_code.vector_subtract(code,
-                            vertices_name + "[2]",
-                            vertices_name + "[0]",
-                            res_name + "_2m0",
-                            num_dims);
-  math_code.vector_subtract(code,
-                            vertices_name + "[3]",
-                            vertices_name + "[1]",
-                            res_name + "_3m1",
-                            num_dims);
+  math_code.vector_subtract(code, p2, p0, res_name + "_2m0", num_dims);
+  math_code.vector_subtract(code, p3, p1, res_name + "_3m1", num_dims);
   math_code.cross_product(code,
                           res_name + "_2m0",
                           res_name + "_3m1",
                           res_name + "_cross",
                           num_dims);
   math_code.magnitude(code, res_name + "_cross", res_name + "_cross_mag", 3);
-  code.insert("double " + res_name + " = " + res_name + "_cross_mag / 2.0;\n");
+  code.insert("const double " + res_name + " = " + res_name +
+              "_cross_mag / 2.0;\n");
+}
+
+void
+TopologyCode::quadrilateral_area(InsertionOrderedSet<std::string> &code,
+                                 const std::string &vertex_locs,
+                                 const std::string &res_name)
+{
+  quadrilateral_area(code,
+                     vertex_locs + "[0]",
+                     vertex_locs + "[1]",
+                     vertex_locs + "[2]",
+                     vertex_locs + "[3]",
+                     res_name);
 }
 
 // 1/2 * |(p1 - p0) X (p2 - p0)|
 void
-TopologyCode::triangle_volume(InsertionOrderedSet<std::string> &code,
-                              const std::string &vertices_name,
-                              const std::string &res_name)
+TopologyCode::triangle_area(InsertionOrderedSet<std::string> &code,
+                            const std::string &p0,
+                            const std::string &p1,
+                            const std::string &p2,
+                            const std::string &res_name)
 {
-  math_code.vector_subtract(code,
-                            vertices_name + "[1]",
-                            vertices_name + "[0]",
-                            res_name + "_1m0",
-                            num_dims);
-  math_code.vector_subtract(code,
-                            vertices_name + "[2]",
-                            vertices_name + "[0]",
-                            res_name + "_2m0",
-                            num_dims);
+  math_code.vector_subtract(code, p1, p0, res_name + "_1m0", num_dims);
+  math_code.vector_subtract(code, p2, p0, res_name + "_2m0", num_dims);
   math_code.cross_product(code,
                           res_name + "_1m0",
                           res_name + "_2m0",
                           res_name + "_cross",
                           num_dims);
   math_code.magnitude(code, res_name + "_cross", res_name + "_cross_mag", 3);
-  code.insert("double " + res_name + " = " + res_name + "_cross_mag / 2.0;\n");
+  code.insert("const double " + res_name + " = " + res_name +
+              "_cross_mag / 2.0;\n");
+}
+
+void
+TopologyCode::triangle_area(InsertionOrderedSet<std::string> &code,
+                            const std::string &vertex_locs,
+                            const std::string &res_name)
+{
+  triangle_area(code,
+                vertex_locs + "[0]",
+                vertex_locs + "[1]",
+                vertex_locs + "[2]",
+                res_name);
 }
 
 // http://index-of.co.uk/Game-Development/Programming/Graphics%20Gems%205.pdf
@@ -864,9 +908,9 @@ TopologyCode::triangle_volume(InsertionOrderedSet<std::string> &code,
 // 2A = sum_{i=1}^{h - 1}((P_2i - P_0) X (P_2i+1 - P_2i-1)) +
 // (P_2h - P_0) X (P_l - P_2h-1)
 void
-TopologyCode::polygon_volume_vec(InsertionOrderedSet<std::string> &code,
-                                 const std::string &vertices_name,
-                                 const std::string &res_name)
+TopologyCode::polygon_area_vec(InsertionOrderedSet<std::string> &code,
+                               const std::string &vertex_locs,
+                               const std::string &res_name)
 {
   code.insert({"double " + res_name + "_vec[3];\n",
                res_name + "_vec[0] = 0;\n",
@@ -877,13 +921,13 @@ TopologyCode::polygon_volume_vec(InsertionOrderedSet<std::string> &code,
   InsertionOrderedSet<std::string> for_loop;
   for_loop.insert({"for(int i = 1; i < " + res_name + "_h; ++i)\n", "{\n"});
   math_code.vector_subtract(for_loop,
-                            vertices_name + "[2 * i]",
-                            vertices_name + "[0]",
+                            vertex_locs + "[2 * i]",
+                            vertex_locs + "[0]",
                             res_name + "_2im0",
                             num_dims);
   math_code.vector_subtract(for_loop,
-                            vertices_name + "[2 * i + 1]",
-                            vertices_name + "[2 * i - 1]",
+                            vertex_locs + "[2 * i + 1]",
+                            vertex_locs + "[2 * i - 1]",
                             res_name + "_2ip1_m_2im1",
                             num_dims);
   math_code.cross_product(for_loop,
@@ -903,13 +947,13 @@ TopologyCode::polygon_volume_vec(InsertionOrderedSet<std::string> &code,
                "_shape_size & 1) ^ 1) * (" + topo_name +
                "_shape_size - 1);\n"});
   math_code.vector_subtract(code,
-                            vertices_name + "[2 * " + res_name + "_h]",
-                            vertices_name + "[0]",
+                            vertex_locs + "[2 * " + res_name + "_h]",
+                            vertex_locs + "[0]",
                             res_name + "_2hm0",
                             num_dims);
   math_code.vector_subtract(code,
-                            vertices_name + "[" + res_name + "_last]",
-                            vertices_name + "[2 * " + res_name + "_h - 1]",
+                            vertex_locs + "[" + res_name + "_last]",
+                            vertex_locs + "[2 * " + res_name + "_h - 1]",
                             res_name + "_l_m_2hm1",
                             num_dims);
   math_code.cross_product(code,
@@ -926,23 +970,25 @@ TopologyCode::polygon_volume_vec(InsertionOrderedSet<std::string> &code,
 }
 
 void
-TopologyCode::polygon_volume(InsertionOrderedSet<std::string> &code,
-                             const std::string &vertices_name,
-                             const std::string &res_name)
+TopologyCode::polygon_area(InsertionOrderedSet<std::string> &code,
+                           const std::string &vertex_locs,
+                           const std::string &res_name)
 {
-  polygon_volume_vec(code, vertices_name, res_name);
+  polygon_area_vec(code, vertex_locs, res_name);
   math_code.magnitude(code, res_name + "_vec", res_name + "_vec_mag", 3);
-  code.insert("double " + res_name + " = " + res_name + "_vec_mag / 2.0;\n");
+  code.insert("const double " + res_name + " = " + res_name +
+              "_vec_mag / 2.0;\n");
 }
 
 // TODO this doesn't work because A_j needs to point outside the polyhedron
+// (i.e. vertices need to be ordered counter-clockwise when looking from
+// outside)
 // m is number of faces
 // 1/6 * sum_{j=0}^{m-1}(P_j . 2*A_j)
-// P_j is some point on face j
-// A_j is the area vector of face j
+// P_j is some point on face j A_j is the area vector of face j
 void
 TopologyCode::polyhedron_volume(InsertionOrderedSet<std::string> &code,
-                                const std::string &vertices_name,
+                                const std::string &vertex_locs,
                                 const std::string &res_name)
 {
   code.insert({"double " + res_name + "_vec[3];\n",
@@ -961,7 +1007,7 @@ TopologyCode::polyhedron_volume(InsertionOrderedSet<std::string> &code,
   unstructured_vertices(for_loop,
                         topo_name + "_polyhedral_connectivity[" + topo_name +
                             "_polyhedral_offset + j]");
-  polygon_volume_vec(for_loop, topo_name + "_vertex_locs", res_name + "_face");
+  polygon_area_vec(for_loop, topo_name + "_vertex_locs", res_name + "_face");
   math_code.dot_product(for_loop,
                         topo_name + "_vertex_locs[4]",
                         res_name + "_face_vec",
@@ -984,107 +1030,238 @@ TopologyCode::volume(InsertionOrderedSet<std::string> &code)
 {
   if(topo_type == "uniform")
   {
-    if(num_dims == 3)
-    {
-      code.insert("double " + topo_name + "_volume = " + topo_name +
-                  "_spacing_dx * " + topo_name + "_spacing_dy * " + topo_name +
-                  "_spacing_dz;\n");
-    }
-    else if(num_dims == 2)
-    {
-      code.insert("double " + topo_name + "_volume = " + topo_name +
-                  "_spacing_dx * " + topo_name + "_spacing_dy;\n");
-    }
-    else
-    {
-      code.insert("double " + topo_name + "_volume = " + topo_name +
-                  "_spacing_dx;\n");
-    }
+    code.insert("const double " + topo_name + "_volume = " + topo_name +
+                "_spacing_dx * " + topo_name + "_spacing_dy * " + topo_name +
+                "_spacing_dz;\n");
   }
   else if(topo_type == "rectilinear")
   {
     dxdydz(code);
-    if(num_dims == 3)
-    {
-      code.insert("double " + topo_name + "_volume = " + topo_name + "_dx * " +
-                  topo_name + "_dy * " + topo_name + "_dz;\n");
-    }
-    else if(num_dims == 2)
-    {
-      code.insert("double " + topo_name + "_volume = " + topo_name + "_dx * " +
-                  topo_name + "_dy;\n");
-    }
-    else
-    {
-      code.insert("double " + topo_name + "_volume = " + topo_name + "_dx;\n");
-    }
+    code.insert("const double " + topo_name + "_volume = " + topo_name +
+                "_dx * " + topo_name + "_dy * " + topo_name + "_dz;\n");
   }
   else if(topo_type == "structured")
   {
-    element_idx(code);
     structured_vertices(code);
-    if(num_dims == 3)
-    {
-      hexahedral_volume(
-          code, topo_name + "_vertex_locs", topo_name + "_volume");
-    }
-    else if(num_dims == 2)
-    {
-      quadrilateral_volume(
-          code, topo_name + "_vertex_locs", topo_name + "_volume");
-    }
-    else if(num_dims == 1)
-    {
-      math_code.vector_subtract(code,
-                                topo_name + "vertex_locs[1]",
-                                topo_name + "vertex_locs[0]",
-                                topo_name + "_volume",
-                                1);
-    }
-    else
-    {
-      ASCENT_ERROR("volume is not implemented for structured topologies with "
-                   << num_dims << " dimensions.");
-    }
+    hexahedral_volume(code, topo_name + "_vertex_locs", topo_name + "_volume");
   }
   else if(topo_type == "unstructured")
   {
+    unstructured_vertices(code);
     if(shape == "hex")
     {
-      unstructured_vertices(code);
       hexahedral_volume(
           code, topo_name + "_vertex_locs", topo_name + "_volume");
     }
     else if(shape == "tet")
     {
-      unstructured_vertices(code);
       tetrahedral_volume(
           code, topo_name + "_vertex_locs", topo_name + "_volume");
-    }
-    else if(shape == "quad")
-    {
-      unstructured_vertices(code);
-      quadrilateral_volume(
-          code, topo_name + "_vertex_locs", topo_name + "_volume");
-    }
-    else if(shape == "tri")
-    {
-      unstructured_vertices(code);
-      triangle_volume(code, topo_name + "_vertex_locs", topo_name + "_volume");
-    }
-    else if(shape == "polygonal")
-    {
-      unstructured_vertices(code);
-      polygon_volume(code, topo_name + "_vertex_locs", topo_name + "_volume");
     }
     // else if(shape == "polyhedral")
     // {
     //   polyhedron_volume(
     //       code, topo_name + "_vertex_locs", topo_name + "_volume");
     // }
+  }
+}
+
+void
+TopologyCode::hexahedral_surface_area(InsertionOrderedSet<std::string> &code,
+                                      const std::string &vertex_locs,
+                                      const std::string &res_name)
+{
+  // negative x face
+  quadrilateral_area(code,
+                     vertex_locs + "[4]",
+                     vertex_locs + "[0]",
+                     vertex_locs + "[3]",
+                     vertex_locs + "[7]",
+                     res_name + "_nx");
+  // positive x face
+  quadrilateral_area(code,
+                     vertex_locs + "[1]",
+                     vertex_locs + "[5]",
+                     vertex_locs + "[6]",
+                     vertex_locs + "[2]",
+                     res_name + "_px");
+  quadrilateral_area(code,
+                     vertex_locs + "[4]",
+                     vertex_locs + "[5]",
+                     vertex_locs + "[1]",
+                     vertex_locs + "[0]",
+                     res_name + "_ny");
+  quadrilateral_area(code,
+                     vertex_locs + "[3]",
+                     vertex_locs + "[2]",
+                     vertex_locs + "[6]",
+                     vertex_locs + "[7]",
+                     res_name + "_py");
+  quadrilateral_area(code,
+                     vertex_locs + "[0]",
+                     vertex_locs + "[1]",
+                     vertex_locs + "[2]",
+                     vertex_locs + "[3]",
+                     res_name + "_nz");
+  quadrilateral_area(code,
+                     vertex_locs + "[4]",
+                     vertex_locs + "[5]",
+                     vertex_locs + "[6]",
+                     vertex_locs + "[7]",
+                     res_name + "_pz");
+  code.insert("const double " + res_name + " = " + res_name + "_nx + " +
+              res_name + "_px + " + res_name + "_ny + " + res_name + "_py + " +
+              topo_name + "_area_nz + " + res_name + "_pz;\n");
+}
+
+void
+TopologyCode::tetrahedral_surface_area(InsertionOrderedSet<std::string> &code,
+                                       const std::string &vertex_locs,
+                                       const std::string &res_name)
+{
+  triangle_area(code,
+                vertex_locs + "[0]",
+                vertex_locs + "[2]",
+                vertex_locs + "[1]",
+                res_name + "_f0");
+  triangle_area(code,
+                vertex_locs + "[0]",
+                vertex_locs + "[3]",
+                vertex_locs + "[2]",
+                res_name + "_f1");
+  triangle_area(code,
+                vertex_locs + "[0]",
+                vertex_locs + "[1]",
+                vertex_locs + "[3]",
+                res_name + "_f2");
+  triangle_area(code,
+                vertex_locs + "[1]",
+                vertex_locs + "[2]",
+                vertex_locs + "[3]",
+                res_name + "_f3");
+  code.insert("const double " + res_name + " = " + res_name + "_f0 + " +
+              res_name + "_f1 + " + res_name + "_f2 + " + res_name + "_f3;\n");
+}
+
+void
+TopologyCode::area(InsertionOrderedSet<std::string> &code)
+{
+  if(topo_type == "uniform")
+  {
+    if(num_dims == 2)
+    {
+      code.insert("const double " + topo_name + "_area = " + topo_name +
+                  "_spacing_dx * " + topo_name + "_spacing_dy;\n");
+    }
     else
     {
-      ASCENT_ERROR("volume for unstructured topology with shape '"
+      code.insert("const double " + topo_name + "_area = " + topo_name +
+                  "_spacing_dx;\n");
+    }
+  }
+  else if(topo_type == "rectilinear")
+  {
+    dxdydz(code);
+    if(num_dims == 2)
+    {
+      code.insert("const double " + topo_name + "_area = " + topo_name +
+                  "_dx * " + topo_name + "_dy;\n");
+    }
+    else
+    {
+      code.insert("const double " + topo_name + "_area = " + topo_name +
+                  "_dx;\n");
+    }
+  }
+  else if(topo_type == "structured")
+  {
+    structured_vertices(code);
+    if(num_dims == 2)
+    {
+      quadrilateral_area(code, topo_name + "_vertex_locs", topo_name + "_area");
+    }
+    else if(num_dims == 1)
+    {
+      math_code.vector_subtract(code,
+                                topo_name + "vertex_locs[1]",
+                                topo_name + "vertex_locs[0]",
+                                topo_name + "_area",
+                                1);
+    }
+    else
+    {
+      ASCENT_ERROR("area is not implemented for structured topologies with "
+                   << num_dims << " dimensions.");
+    }
+  }
+  else if(topo_type == "unstructured")
+  {
+    unstructured_vertices(code);
+    if(shape == "quad")
+    {
+      quadrilateral_area(code, topo_name + "_vertex_locs", topo_name + "_area");
+    }
+    else if(shape == "tri")
+    {
+      triangle_area(code, topo_name + "_vertex_locs", topo_name + "_area");
+    }
+    else if(shape == "polygonal")
+    {
+      polygon_area(code, topo_name + "_vertex_locs", topo_name + "_area");
+    }
+    else
+    {
+      ASCENT_ERROR("area for unstructured topology with shape '"
+                   << shape << "' is not implemented.");
+    }
+  }
+}
+
+void
+TopologyCode::surface_area(InsertionOrderedSet<std::string> &code)
+{
+  if(topo_type == "uniform")
+  {
+    code.insert("const double " + topo_name + "_area = 2.0 * (" + topo_name +
+                "_spacing_dx * " + topo_name + "_spacing_dy + " + topo_name +
+                "_spacing_dx * " + topo_name + "_spacing_dz + " + topo_name +
+                "_spacing_dy * " + topo_name + "_spacing_dz);\n");
+  }
+  else if(topo_type == "rectilinear")
+  {
+    dxdydz(code);
+    code.insert("const double " + topo_name + "_area = 2.0 * (" + topo_name +
+                "_dx * " + topo_name + "_dy + " + topo_name + "_dx * " +
+                topo_name + "_dz + " + topo_name + "_dy * " + topo_name +
+                "_dz);\n");
+  }
+  else if(topo_type == "structured")
+  {
+    structured_vertices(code);
+    hexahedral_surface_area(
+        code, topo_name + "_vertex_locs", topo_name + "_area");
+  }
+  else if(topo_type == "unstructured")
+  {
+    unstructured_vertices(code);
+    if(shape == "hex")
+    {
+      hexahedral_surface_area(
+          code, topo_name + "_vertex_locs", topo_name + "_area");
+    }
+    else if(shape == "tet")
+    {
+      tetrahedral_surface_area(
+          code, topo_name + "_vertex_locs", topo_name + "_area");
+    }
+    // else if(shape == "polyhedral")
+    // {
+    //   polyhedron_surface_area(
+    //       code, topo_name + "_vertex_locs", topo_name + "_area");
+    // }
+    else
+    {
+      ASCENT_ERROR("area for unstructured topology with shape '"
                    << shape << "' is not implemented.");
     }
   }
@@ -1115,7 +1292,7 @@ FieldCode::field_idx(InsertionOrderedSet<std::string> &code,
   std::string res;
   if(declare)
   {
-    res += "double ";
+    res += "const double ";
   }
   res += res_name + " = " + index_name + "[0]";
   if(topo_code.num_dims >= 2)
@@ -1145,16 +1322,245 @@ FieldCode::field_idx(InsertionOrderedSet<std::string> &code,
   code.insert(res);
 }
 
+// Calculate the element associated gradient of a vertex associated field on a
+// quadrilateral mesh
+// https://github.com/visit-dav/visit/blob/f835d5132bdf7c6c8da09157ff86541290675a6f/src/avt/Expressions/General/avtGradientExpression.C#L1417
+// gradient mapping : vtk mapping
+// 1 : 0
+// 2 : 1
+// 3 : 2
+// 0 : 3
+void
+FieldCode::quad_gradient(InsertionOrderedSet<std::string> &code,
+                         const std::string &res_name)
+{
+  // xi = .5 * (x[3] + x[0] - x[1] - x[2]);
+  // xj = .5 * (x[0] + x[1] - x[2] - x[3]);
+
+  // yi = .5 * (y[3] + y[0] - y[1] - y[2]);
+  // yj = .5 * (y[0] + y[1] - y[2] - y[3]);
+
+  // vi = .5 * (v[3] + v[0] - v[1] - v[2]);
+  // vj = .5 * (v[0] + v[1] - v[2] - v[3]);
+  const std::string vertex_locs = topo_code.topo_name + "_vertex_locs";
+  const std::string vertices = topo_code.topo_name + "_vertices";
+  code.insert(
+      {"double " + res_name + "_x[3];\n",
+       res_name + "_x[0] = .5 * (" + vertex_locs + "[3][0] + " + vertex_locs +
+           "[0][0] - " + vertex_locs + "[1][0] - " + vertex_locs + "[2][0]);\n",
+       res_name + "_x[1] = .5 * (" + vertex_locs + "[0][0] + " + vertex_locs +
+           "[1][0] - " + vertex_locs + "[2][0] - " + vertex_locs + "[3][0]);\n",
+       "double " + res_name + "_y[3];\n",
+       res_name + "_y[0] = .5 * (" + vertex_locs + "[3][1] + " + vertex_locs +
+           "[0][1] - " + vertex_locs + "[1][1] - " + vertex_locs + "[2][1]);\n",
+       res_name + "_y[1] = .5 * (" + vertex_locs + "[0][1] + " + vertex_locs +
+           "[1][1] - " + vertex_locs + "[2][1] - " + vertex_locs + "[3][1]);\n",
+       "double " + res_name + "_v[3];\n",
+       res_name + "_v[0] = .5 * (" + field_name + "[" + vertices + "[3]] + " +
+           field_name + "[" + vertices + "[0]] - " + field_name + "[" +
+           vertices + "[1]] - " + field_name + "[" + vertices + "[2]]);\n",
+       res_name + "_v[1] = .5 * (" + field_name + "[" + vertices + "[0]] + " +
+           field_name + "[" + vertices + "[1]] - " + field_name + "[" +
+           vertices + "[2]] - " + field_name + "[" + vertices + "[3]]);\n"});
+  math_code.determinant_2x2(
+      code, res_name + "_x", res_name + "_y", res_name + "_area");
+  code.insert("const double inv_vol = 1.0 / (tiny + " + res_name + "_area);\n");
+  math_code.determinant_2x2(
+      code, res_name + "_v", res_name + "_y", res_name + "[0]", false);
+  code.insert(res_name + "[0] *= inv_vol;\n");
+  math_code.determinant_2x2(
+      code, res_name + "_x", res_name + "_v", res_name + "[1]", false);
+  code.insert(res_name + "[1] *= inv_vol;\n");
+  code.insert(res_name + "[2] = 0;\n");
+}
+
+// Calculate the element associated gradient of a vertex associated field on a
+// hexahedral mesh
+// https://github.com/visit-dav/visit/blob/f835d5132bdf7c6c8da09157ff86541290675a6f/src/avt/Expressions/General/avtGradientExpression.C#L1511
+// gradient mapping : vtk mapping
+// 0 : 3
+// 1 : 0
+// 2 : 1
+// 3 : 2
+// 4 : 7
+// 5 : 4
+// 6 : 5
+// 7 : 6
+void
+FieldCode::hex_gradient(InsertionOrderedSet<std::string> &code,
+                        const std::string &res_name)
+{
+  // assume vertex locations are populated (either structured or unstructured
+  // hexes)
+  // xi = .25 * ( (x[3] + x[0] + x[7] + x[4]) - (x[2] + x[1] + x[5] + x[6]) );
+  // xj = .25 * ( (x[0] + x[1] + x[5] + x[4]) - (x[3] + x[2] + x[6] + x[7]) );
+  // xk = .25 * ( (x[7] + x[4] + x[5] + x[6]) - (x[3] + x[0] + x[1] + x[2]) );
+
+  // yi = .25 * ( (y[3] + y[0] + y[7] + y[4]) - (y[2] + y[1] + y[5] + y[6]) );
+  // yj = .25 * ( (y[0] + y[1] + y[5] + y[4]) - (y[3] + y[2] + y[6] + y[7]) );
+  // yk = .25 * ( (y[7] + y[4] + y[5] + y[6]) - (y[3] + y[0] + y[1] + y[2]) );
+
+  // zi = .25 * ( (z[3] + z[0] + z[7] + z[4]) - (z[2] + z[1] + z[5] + z[6]) );
+  // zj = .25 * ( (z[0] + z[1] + z[5] + z[4]) - (z[3] + z[2] + z[6] + z[7]) );
+  // zk = .25 * ( (z[7] + z[4] + z[5] + z[6]) - (z[3] + z[0] + z[1] + z[2]) );
+
+  // vi = .25 * ( (v[3] + v[0] + v[7] + v[4]) - (v[2] + v[1] + v[5] + v[6]) );
+  // vj = .25 * ( (v[0] + v[1] + v[5] + v[4]) - (v[3] + v[2] + v[6] + v[7]) );
+  // vk = .25 * ( (v[7] + v[4] + v[5] + v[6]) - (v[3] + v[0] + v[1] + v[2]) );
+  const std::string vertex_locs = topo_code.topo_name + "_vertex_locs";
+  const std::string vertices = topo_code.topo_name + "_vertices";
+  code.insert(
+      {"double " + res_name + "_x[3];\n",
+       res_name + "_x[0] = .25 * ( (" + vertex_locs + "[3][0] + " +
+           vertex_locs + "[0][0] + " + vertex_locs + "[7][0] + " + vertex_locs +
+           "[4][0]) - (" + vertex_locs + "[2][0] + " + vertex_locs +
+           "[1][0] + " + vertex_locs + "[5][0] + " + vertex_locs +
+           "[6][0]) );\n",
+       res_name + "_x[1] = .25 * ( (" + vertex_locs + "[0][0] + " +
+           vertex_locs + "[1][0] + " + vertex_locs + "[5][0] + " + vertex_locs +
+           "[4][0]) - (" + vertex_locs + "[3][0] + " + vertex_locs +
+           "[2][0] + " + vertex_locs + "[6][0] + " + vertex_locs +
+           "[7][0]) );\n",
+       res_name + "_x[2] = .25 * ( (" + vertex_locs + "[7][0] + " +
+           vertex_locs + "[4][0] + " + vertex_locs + "[5][0] + " + vertex_locs +
+           "[6][0]) - (" + vertex_locs + "[3][0] + " + vertex_locs +
+           "[0][0] + " + vertex_locs + "[1][0] + " + vertex_locs +
+           "[2][0]) );\n",
+       "double " + res_name + "_y[3];\n",
+       res_name + "_y[0] = .25 * ( (" + vertex_locs + "[3][1] + " +
+           vertex_locs + "[0][1] + " + vertex_locs + "[7][1] + " + vertex_locs +
+           "[4][1]) - (" + vertex_locs + "[2][1] + " + vertex_locs +
+           "[1][1] + " + vertex_locs + "[5][1] + " + vertex_locs +
+           "[6][1]) );\n",
+       res_name + "_y[1] = .25 * ( (" + vertex_locs + "[0][1] + " +
+           vertex_locs + "[1][1] + " + vertex_locs + "[5][1] + " + vertex_locs +
+           "[4][1]) - (" + vertex_locs + "[3][1] + " + vertex_locs +
+           "[2][1] + " + vertex_locs + "[6][1] + " + vertex_locs +
+           "[7][1]) );\n",
+       res_name + "_y[2] = .25 * ( (" + vertex_locs + "[7][1] + " +
+           vertex_locs + "[4][1] + " + vertex_locs + "[5][1] + " + vertex_locs +
+           "[6][1]) - (" + vertex_locs + "[3][1] + " + vertex_locs +
+           "[0][1] + " + vertex_locs + "[1][1] + " + vertex_locs +
+           "[2][1]) );\n",
+       "double " + res_name + "_z[3];\n",
+       res_name + "_z[0] = .25 * ( (" + vertex_locs + "[3][2] + " +
+           vertex_locs + "[0][2] + " + vertex_locs + "[7][2] + " + vertex_locs +
+           "[4][2]) - (" + vertex_locs + "[2][2] + " + vertex_locs +
+           "[1][2] + " + vertex_locs + "[5][2] + " + vertex_locs +
+           "[6][2]) );\n",
+       "double " + res_name + "_z[3];\n",
+       res_name + "_z[1] = .25 * ( (" + vertex_locs + "[0][2] + " +
+           vertex_locs + "[1][2] + " + vertex_locs + "[5][2] + " + vertex_locs +
+           "[4][2]) - (" + vertex_locs + "[3][2] + " + vertex_locs +
+           "[2][2] + " + vertex_locs + "[6][2] + " + vertex_locs +
+           "[7][2]) );\n",
+       res_name + "_z[2] = .25 * ( (" + vertex_locs + "[7][2] + " +
+           vertex_locs + "[4][2] + " + vertex_locs + "[5][2] + " + vertex_locs +
+           "[6][2]) - (" + vertex_locs + "[3][2] + " + vertex_locs +
+           "[0][2] + " + vertex_locs + "[1][2] + " + vertex_locs +
+           "[2][2]) );\n",
+       "double " + res_name + "_v[3];\n",
+       res_name + "_v[0] = .25 * ( (" + field_name + "[" + vertices +
+           "[3]] + " + field_name + "[" + vertices + "[0]] + " + field_name +
+           "[" + vertices + "[7]] + " + field_name + "[" + vertices +
+           "[4]]) - (" + field_name + "[" + vertices + "[2]] + " + field_name +
+           "[" + vertices + "[1]] + " + field_name + "[" + vertices +
+           "[5]] + " + field_name + "[" + vertices + "[6]]) );\n",
+       res_name + "_v[1] = .25 * ( (" + field_name + "[" + vertices +
+           "[0]] + " + field_name + "[" + vertices + "[1]] + " + field_name +
+           "[" + vertices + "[5]] + " + field_name + "[" + vertices +
+           "[4]]) - (" + field_name + "[" + vertices + "[3]] + " + field_name +
+           "[" + vertices + "[2]] + " + field_name + "[" + vertices +
+           "[6]] + " + field_name + "[" + vertices + "[7]]) );\n",
+       res_name + "_v[2] = .25 * ( (" + field_name + "[" + vertices +
+           "[7]] + " + field_name + "[" + vertices + "[4]] + " + field_name +
+           "[" + vertices + "[5]] + " + field_name + "[" + vertices +
+           "[6]]) - (" + field_name + "[" + vertices + "[3]] + " + field_name +
+           "[" + vertices + "[0]] + " + field_name + "[" + vertices +
+           "[1]] + " + field_name + "[" + vertices + "[2]]) );\n"});
+  math_code.determinant_3x3(code,
+                            res_name + "_x",
+                            res_name + "_y",
+                            res_name + "_z",
+                            res_name + "_vol");
+  code.insert("const double inv_vol = 1.0 / (tiny + " + res_name + "_vol);\n");
+  math_code.determinant_3x3(code,
+                            res_name + "_v",
+                            res_name + "_y",
+                            res_name + "_z",
+                            res_name + "[0]",
+                            false);
+  code.insert(res_name + "[0] *= inv_vol;\n");
+  math_code.determinant_3x3(code,
+                            res_name + "_v",
+                            res_name + "_z",
+                            res_name + "_x",
+                            res_name + "[1]",
+                            false);
+  code.insert(res_name + "[1] *= inv_vol;\n");
+  math_code.determinant_3x3(code,
+                            res_name + "_v",
+                            res_name + "_x",
+                            res_name + "_y",
+                            res_name + "[2]",
+                            false);
+  code.insert(res_name + "[2] *= inv_vol;\n");
+}
+
 void
 FieldCode::gradient(InsertionOrderedSet<std::string> &code)
 {
-  if(topo_code.topo_type != "uniform" && topo_code.topo_type != "rectilinear" &&
-     topo_code.topo_type != "structured")
+  const std::string gradient_name = field_name + "_gradient";
+  code.insert("double " + gradient_name + "[3];\n");
+
+  // handle hex and quad gradients (for now only structured) elsewhere
+  if(association == "vertex")
   {
-    ASCENT_ERROR(
-        "Unsupported topo_type: '"
-        << topo_code.topo_type
-        << "'. Gradient is not implemented for unstructured topologies.");
+    code.insert("double " + gradient_name + "[3];\n");
+    code.insert("const double tiny = 1.e-37;\n");
+    if(topo_code.topo_type == "structured")
+    {
+      topo_code.structured_vertices(code);
+      if(topo_code.num_dims == 3)
+      {
+        hex_gradient(code, gradient_name);
+      }
+      else if(topo_code.num_dims == 2)
+      {
+        quad_gradient(code, gradient_name);
+      }
+      else
+      {
+        ASCENT_ERROR("Gradient is not implemented for 1D structured meshes.");
+      }
+    }
+    else if(topo_code.topo_type == "unstructured")
+    {
+      topo_code.structured_vertices(code);
+      if(topo_code.shape == "hex")
+      {
+        hex_gradient(code, gradient_name);
+      }
+      else if(topo_code.shape == "quad")
+      {
+        quad_gradient(code, gradient_name);
+      }
+      else
+      {
+        ASCENT_ERROR("Gradient of unstructured vertex associated fields only "
+                     "works on hex and quad shapes.");
+      }
+    }
+    return;
+  }
+
+  // handle uniforma and rectilinear gradients
+  if(topo_code.topo_type != "uniform" && topo_code.topo_type != "rectilinear")
+  {
+    ASCENT_ERROR("Unsupported topo_type: '"
+                 << topo_code.topo_type
+                 << "'. Gradient is not implemented for unstructured "
+                    "topologies nor structured element associated fields.");
   }
 
   if(association == "element")
@@ -1172,11 +1578,9 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
 
   const std::string index_name =
       topo_code.topo_name + "_" + association + "_idx";
-  const std::string gradient_name = field_name + "_gradient";
   const std::string upper = gradient_name + "_upper";
   const std::string lower = gradient_name + "_lower";
-  code.insert({"double " + gradient_name + "[3];\n",
-               "double " + upper + ";\n",
+  code.insert({"double " + upper + ";\n",
                "double " + lower + ";\n",
                "double " + upper + "_loc;\n",
                "double " + lower + "_loc;\n",
@@ -1273,7 +1677,8 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
 
       // calculate delta
       code.insert(gradient_name + "_delta = " + upper + "_loc - " + lower +
-                  "_loc;\n");
+                      "_loc;\n",
+                  false);
 
       // calculate gradient
       code.insert(gradient_name + "[" + std::to_string(i) + "] = (" + upper +
@@ -1328,14 +1733,14 @@ Kernel::generate_output(const std::string &output, bool declare) const
 
 // clang-format off
 std::string
-Kernel::generate_loop(const std::string& output) const
+Kernel::generate_loop(const std::string& output, const std::string &entries_name) const
 {
   std::string res =
-    "for (int group = 0; group < entries; group += 128; @outer)\n"
+    "for (int group = 0; group < " + entries_name + "; group += 128; @outer)\n"
        "{\n"
          "for (int item = group; item < (group + 128); ++item; @inner)\n"
          "{\n"
-           "if (item < entries)\n"
+           "if (item < " + entries_name + ")\n"
            "{\n" +
               for_body.accumulate();
               if(num_components > 1)
@@ -1369,14 +1774,14 @@ Jitable::generate_kernel(const int dom_idx) const
 {
   const conduit::Node &cur_dom_info = dom_info.child(dom_idx);
   const Kernel &kernel = kernels.at(cur_dom_info["kernel_type"].as_string());
-  std::string kernel_string = "@kernel void map(const int entries,\n";
+  std::string kernel_string = "@kernel void map(";
   for(const auto &param : cur_dom_info["args"].child_names())
   {
     kernel_string += "                 " + param;
   }
   kernel_string += "                 double *output_ptr)\n{\n";
   kernel_string += kernel.kernel_body;
-  kernel_string += kernel.generate_loop("output_ptr");
+  kernel_string += kernel.generate_loop("output_ptr", "entries");
   kernel_string += "}";
   return detail::indent_code(kernel_string, 0);
 }
@@ -1482,7 +1887,7 @@ Jitable::fuse_vars(const Jitable &from)
 // TODO for now we just put the field on the mesh when calling execute
 // should probably delete it later if it's an intermediate field
 void
-Jitable::execute(conduit::Node &dataset, const std::string &field_name)
+Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
 {
   // TODO set this automatically?
   // occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 1");
@@ -1495,8 +1900,6 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
   }
   occa::device &device = occa::getDevice();
   occa::kernel occa_kernel;
-  // occa::array<double> l_output(27000);
-  // return;
 
   // we need an association and topo so we can put the field back on the mesh
   // TODO create a new topo with vertex assoc for temporary fields
@@ -1522,9 +1925,10 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 
     const std::string kernel_string = generate_kernel(i);
 
+    // the final number of entries
     const int entries = cur_dom_info["entries"].to_int64();
 
-    // std::cout << kernel_string << std::endl;
+    std::cout << kernel_string << std::endl;
 
     try
     {
@@ -1550,9 +1954,6 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     }
 
     occa_kernel.clearArgs();
-
-    // pass invocation size
-    occa_kernel.pushArg(entries);
 
     // these are reference counted
     // need to keep the mem in scope or bad things happen
@@ -1610,7 +2011,6 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
       }
     }
 
-    std::cout << "INVOKE SIZE " << entries << "\n";
     conduit::Node &n_output = dom["fields/" + field_name];
     n_output["association"] = association;
     n_output["topology"] = topology;
