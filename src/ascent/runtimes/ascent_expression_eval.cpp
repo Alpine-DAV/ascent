@@ -811,55 +811,6 @@ initialize_functions()
   //---------------------------------------------------------------------------
 
   // same as above but scalar goes first, field goes second
-  conduit::Node &scalar_field_max_sig = (*functions)["max"].append();
-  scalar_field_max_sig["return_type"] = "jitable";
-  scalar_field_max_sig["filter_name"] = "field_field_max";
-  scalar_field_max_sig["args/arg1/type"] = "scalar";
-  scalar_field_max_sig["args/arg2/type"] = "field";
-  scalar_field_max_sig["jitable"];
-  scalar_field_max_sig["description"] =
-      "Return a derived field that is the max of a scalar and a field. Same "
-      "functionality as above but the order of the arguments is switched.";
-
-  //---------------------------------------------------------------------------
-
-  // same as above but scalar goes first, field goes second
-  conduit::Node &field_field_max_sig = (*functions)["max"].append();
-  field_field_max_sig["return_type"] = "jitable";
-  field_field_max_sig["filter_name"] = "field_field_max";
-  field_field_max_sig["args/arg1/type"] = "field";
-  field_field_max_sig["args/arg2/type"] = "field";
-  field_field_max_sig["jitable"];
-  field_field_max_sig["description"] =
-      "Return a derived field that is the max of two fields.";
-
-  //---------------------------------------------------------------------------
-
-  conduit::Node &field_scalar_min_sig = (*functions)["min"].append();
-  field_scalar_min_sig["return_type"] = "jitable";
-  field_scalar_min_sig["filter_name"] = "field_field_min";
-  field_scalar_min_sig["args/arg1/type"] = "field";
-  field_scalar_min_sig["args/arg2/type"] = "scalar";
-  field_scalar_min_sig["jitable"];
-  field_scalar_min_sig["description"] =
-      "Return a derived field that is the min of a field and a scalar.";
-
-  //---------------------------------------------------------------------------
-
-  // same as above but scalar goes first, field goes second
-  conduit::Node &scalar_field_min_sig = (*functions)["min"].append();
-  scalar_field_min_sig["return_type"] = "jitable";
-  scalar_field_min_sig["filter_name"] = "field_field_min";
-  scalar_field_min_sig["args/arg1/type"] = "scalar";
-  scalar_field_min_sig["args/arg2/type"] = "field";
-  scalar_field_min_sig["jitable"];
-  scalar_field_min_sig["description"] =
-      "Return a derived field that is the min of a scalar and a field. Same "
-      "functionality as above but the order of the arguments is switched.";
-
-  //---------------------------------------------------------------------------
-
-  // same as above but scalar goes first, field goes second
   conduit::Node &field_field_min_sig = (*functions)["min"].append();
   field_field_min_sig["return_type"] = "jitable";
   field_field_min_sig["filter_name"] = "field_field_min";
@@ -914,10 +865,66 @@ initialize_functions()
   conduit::Node &field_magnitude_sig = (*functions)["magnitude"].append();
   field_magnitude_sig["return_type"] = "jitable";
   field_magnitude_sig["filter_name"] = "magnitude";
-  field_magnitude_sig["args/vector/type"] = "jitable";
+  field_magnitude_sig["args/vector/type"] = "field";
   field_magnitude_sig["jitable"];
   field_magnitude_sig["description"] =
       "Return a derived field that is the magnitude of a vector field.";
+
+  //---------------------------------------------------------------------------
+
+  conduit::Node &field_vector = (*functions)["vector"].append();
+  field_vector["return_type"] = "jitable";
+  field_vector["filter_name"] = "vector";
+  field_vector["args/arg1/type"] = "field";
+  field_vector["args/arg2/type"] = "field";
+  field_vector["args/arg3/type"] = "field";
+  field_vector["jitable"];
+  field_vector["description"] = "Return a vector field on the mesh.";
+
+  //---------------------------------------------------------------------------
+
+  conduit::Node &derived_field = (*functions)["derived_field"].append();
+  derived_field["return_type"] = "jitable";
+  derived_field["filter_name"] = "derived_field";
+  derived_field["args/arg1/type"] = "scalar";
+  derived_field["args/arg1/description"] =
+      "The scalar to be cast to a derived field.";
+  derived_field["args/topology/type"] = "string";
+  derived_field["args/topology/optional"];
+  derived_field["args/topology/description"] =
+      "The topology to put the derived field onto. The language tries to infer "
+      "this if not specified.";
+  derived_field["args/association/type"] = "string";
+  derived_field["args/association/optional"];
+  derived_field["args/association/description"] =
+      "The association of the derived field. The language will try to infer "
+      "this if not specified.";
+  derived_field["jitable"];
+  derived_field["description"] =
+      "Cast a scalar to a derived field (type `jitable`).";
+
+  //---------------------------------------------------------------------------
+
+  conduit::Node &derived_field2 = (*functions)["derived_field"].append();
+  derived_field2["return_type"] = "jitable";
+  derived_field2["filter_name"] = "derived_field";
+  derived_field2["args/arg1/type"] = "field";
+  derived_field2["args/arg1/description"] =
+      "The scalar to be cast to a derived field.";
+  derived_field2["args/topology/type"] = "string";
+  derived_field2["args/topology/optional"];
+  derived_field2["args/topology/description"] =
+      "The topology to put the derived field onto. The language tries to infer "
+      "this if not specified.";
+  derived_field2["args/association/type"] = "string";
+  derived_field2["args/association/optional"];
+  derived_field2["args/association/description"] =
+      "The association of the derived field. The language will try to infer "
+      "this if not specified.";
+  derived_field2["jitable"];
+  derived_field2["description"] =
+      "Used to explicitly specfiy the topology and association of a derived "
+      "field (e.g. in case it cannot be inferred).";
 
   count_params();
   // functions->save("functions.json", "json");
@@ -955,6 +962,7 @@ initialize_objects()
   cell["dz/type"] = "jitable";
   cell["id/type"] = "jitable";
   cell["volume/type"] = "jitable";
+  cell["area/type"] = "jitable";
 
   conduit::Node &vertex = (*objects)["vertex/attrs"];
   (*objects)["vertex/jitable"];
@@ -973,6 +981,14 @@ initialize_objects()
   bin_atts["max/type"] = "double";
   bin_atts["center/type"] = "double";
   bin_atts["value/type"] = "double";
+
+  conduit::Node &jitable = (*objects)["jitable/attrs"];
+  jitable["x/type"] = "jitable";
+  jitable["y/type"] = "jitable";
+  jitable["z/type"] = "jitable";
+
+  // we give field the attributes of jitable since all fields are jitables
+  (*objects)["field/attrs"].update(jitable);
 
   // objects->save("objects.json", "json");
 }
@@ -1050,6 +1066,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
   conduit::Node return_val = *n_res;
+  return_val.print();
 
   std::stringstream cache_entry;
   cache_entry << expr_name << "/" << cycle;
