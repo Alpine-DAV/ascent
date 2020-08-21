@@ -377,18 +377,14 @@ public:
         // auto start = std::chrono::system_clock::now();
 
         vtkh::Renderer *r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
+        int size = renders.at(i).GetWidth() * renders.at(i).GetHeight();
 
+        // move render buffers and data from vtkh to ascent
+        // NOTE: only getting canvas from domain 0 for now
         // NOTE: move costs about 0.02 seconds per node per batch (20 renders)
         m_render_times.push_back(std::move(r->GetRenderTimes()));
-
-        int size = renders.at(i).GetWidth() * renders.at(i).GetHeight();
-        // NOTE: only getting canvas from domain 0 for now
-        
-        // if (r->GetDepthBuffers().size() && r->GetDepthBuffers().at(0).size())  // skipped image
-        {
-          m_color_buffers.push_back(std::move(r->GetColorBuffers()));
-          m_depth_buffers.push_back(std::move(r->GetDepthBuffers()));
-        }
+        m_color_buffers.push_back(std::move(r->GetColorBuffers()));
+        m_depth_buffers.push_back(std::move(r->GetDepthBuffers()));
         m_depths.push_back(std::move(r->GetDepths()));
 
         // t_img_data += std::chrono::system_clock::now() - start;
@@ -396,8 +392,6 @@ public:
 
       // m_registry->consume(oss.str());
     }
-    
-
   }
 
   void ConsumeRenderers()
@@ -2706,21 +2700,10 @@ void add_images(std::vector<vtkh::Render> *renders,
 
     int size = renders->at(i).GetWidth() * renders->at(i).GetHeight();
     // NOTE: only getting canvas from domain 0 for now
-    // if (   color_buffers && color_buffers != nullptr 
-    //     && depth_buffers && depth_buffers != nullptr 
-    //     && depths &&  depths != nullptr)
-    {
-      image_data[i]["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
-      image_data[i]["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
-      image_data[i]["depth"] = depths->at(i);
-    }
-    // else
-    // {
-    //   image_data[i]["color_buffer"] = static_cast<unsigned char>(0);
-    //   image_data[i]["depth_buffer"] = 0.f;
-    //   // hijack depth as a skipped image indicator
-    //   image_data[i]["depth"] = std::numeric_limits<float>::lowest();
-    // }
+    image_data[i]["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
+    image_data[i]["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
+    image_data[i]["depth"] = depths->at(i);
+
     // get depth buffer directly from vtk-m -> memory error bc renderer is consumed ?
     // image_data[i]["depth_buffer"].set_external(vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer()), size);
 
@@ -2779,7 +2762,7 @@ void ExecScene::execute()
 
   scene->Execute(*renders, is_inline, sleep);
 
-  std::vector< std::vector<double>> *render_times = scene->GetRenderTimes();
+  std::vector<std::vector<double> > *render_times = scene->GetRenderTimes();
   // NOTE: only domain 0 for now
   std::vector<std::vector<unsigned char> > *color_buffers = scene->GetColorBuffers(0);
   std::vector<std::vector<float> > *depth_buffers = scene->GetDepthBuffers(0); 

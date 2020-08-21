@@ -1531,6 +1531,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     std::cout   << "~~~~ VIS node " << mpi_props.rank << " rendering " 
                                 << render_offset << " - " 
                                 << render_offset + current_render_count << std::endl;
+
                     ascent_opts["render_count"] = current_render_count;
                     ascent_opts["render_offset"] = render_offset;
                     ascent_opts["cinema_increment"] = (i == 0) ? true : false;
@@ -1599,6 +1600,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
         Node verify_info;
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
+            // Node compact_probing_renders = pack_node(render_chunks_probing);
             // compact_probing_renders are now packed and send in separate thread
             std::vector<int> batch_sizes = get_batch_sizes(g_render_counts[mpi_props.rank], 
                                                            render_cfg, true);
@@ -1631,13 +1633,13 @@ void hybrid_render(const MPI_Properties &mpi_props,
             // debug_break();
             MPI_Request request_probing = MPI_REQUEST_NULL;
             // pack and send probing renders in separate thread
-            // std::thread pack_probing_thread;
+            std::thread pack_probing_thread;
             if (!skipped_render)
-            //     pack_probing_thread = std::thread(&pack_and_send, std::ref(render_chunks_probing), 
-            //                                       destination, tag_probing, mpi_props.comm_world, 
-            //                                       std::ref(request_probing));
-                pack_and_send(render_chunks_probing, destination, tag_probing, 
-                              mpi_props.comm_world, request_probing);
+                pack_probing_thread = std::thread(&pack_and_send, std::ref(render_chunks_probing), 
+                                                  destination, tag_probing, mpi_props.comm_world, 
+                                                  std::ref(request_probing));
+                // pack_and_send(render_chunks_probing, destination, tag_probing, mpi_props.comm_world, 
+                //                                   request_probing); 
 
             log_global_time("end sendData", mpi_props.rank);
 
@@ -1651,7 +1653,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             // std::thread thread_pack(&test_function);
             std::chrono::duration<double> sum_render(0);
             std::chrono::duration<double> sum_copy(0);
-            
+
             auto t_start = std::chrono::system_clock::now();
             for (int i = 0; i < batch_sizes.size(); ++i)
             {
@@ -1699,10 +1701,10 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 renders_inline["depth_buffers"].set_external(info[i]["depth_buffers"]);
                 renders_inline["render_file_names"].set_external(info[i]["render_file_names"]);
 
-                // threads.push_back(std::thread(&pack_and_send, std::ref(renders_inline), 
-                //                               destination, tag_inline + i, mpi_props.comm_world, 
-                //                               std::ref(requests[i])));
-                pack_and_send(renders_inline, destination, tag_inline + i, mpi_props.comm_world, requests[i]);
+                threads.push_back(std::thread(&pack_and_send, std::ref(renders_inline), 
+                                              destination, 
+                                              tag_inline + i, mpi_props.comm_world, 
+                                              std::ref(requests[i])));
 
                 t_end = std::chrono::system_clock::now();
                 sum_copy += t_end - t_render;
@@ -1731,7 +1733,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 // probing
                 if (!skipped_render)
                 {
-                    // pack_probing_thread.join();
+                    if (pack_probing_thread.joinable())
+                        pack_probing_thread.join();
                     MPI_Wait(&request_probing, MPI_STATUS_IGNORE);
                 }
                 // render chunks
