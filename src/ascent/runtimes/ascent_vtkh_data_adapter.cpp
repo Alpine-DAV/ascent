@@ -1695,45 +1695,6 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
 
     vtkm::cont::VariantArrayHandle coordsHandle(coords.GetData());
 
-    vtkm::cont::ArrayHandleVirtual<vtkm::Vec<double,3>> double_handle;
-    vtkm::cont::ArrayHandleVirtual<vtkm::Vec<float,3>> float_handle;
-
-    bool is_double = false;
-    bool is_float = false;
-    if(coordsHandle.IsType<vtkm::cont::ArrayHandleVirtual<vtkm::Vec<double,3>>>())
-    {
-      is_double = true;
-      std::cout<<"I am a double\n";
-    }
-
-    if(coordsHandle.IsType<vtkm::cont::ArrayHandleVirtual<vtkm::Vec<float,3>>>())
-    {
-      is_float = true;
-    }
-
-    if(!is_double && !is_float)
-    {
-      std::cout<<"NOOOOOOOOOOOOO\n";
-    }
-
-    if(is_double)
-    {
-      double_handle = coordsHandle.Cast<vtkm::cont::ArrayHandleVirtual<vtkm::Vec<double,3>>>();
-      if(vtkm::cont::IsType<Coords64>(double_handle))
-      {
-        std::cout<<"Coords64\n";
-      }
-      if(vtkm::cont::IsType<CoordsVec64>(double_handle))
-      {
-        std::cout<<"CoordsVec64\n";
-      }
-    }
-
-    if(is_float)
-    {
-      float_handle = coordsHandle.Cast<vtkm::cont::ArrayHandleVirtual<vtkm::Vec<float,3>>>();
-    }
-
     if(coordsHandle.IsType<Coords32>())
     {
       Coords32 points = coordsHandle.Cast<Coords32>();
@@ -1808,10 +1769,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       }
 
     }
-    else if(is_double && vtkm::cont::IsType<Coords64>(double_handle))
+    else if(vtkm::cont::IsType<Coords64>(coordsHandle))
     {
-      //Coords64 points = coordsHandle.Cast<Coords64>();
-      Coords64 points = vtkm::cont::Cast<Coords64>(double_handle);
+      Coords64 points = coordsHandle.Cast<Coords64>();
 
       auto x_handle = vtkm::get<0>(points.GetStorage().GetArrayTuple());
       auto y_handle = vtkm::get<1>(points.GetStorage().GetArrayTuple());
@@ -1840,11 +1800,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
 
       }
     }
-    //else if(coordsHandle.IsType<CoordsVec64>() || coordsHandle.IsType<VCoordsVec64>())
-    //else if(coordsHandle.IsType<CoordsVec64>())
-    else if(is_double && vtkm::cont::IsType<CoordsVec64>(double_handle))
+    else if(coordsHandle.IsType<CoordsVec64>())
     {
-      CoordsVec64 points = vtkm::cont::Cast<CoordsVec64>(double_handle);
+     CoordsVec64 points = vtkm::cont::Cast<CoordsVec64>(coordsHandle);
 
       const int num_vals = points.GetNumberOfValues();
       vtkm::Float64 *points_ptr = (vtkm::Float64*)vtkh::GetVTKMPointer(points);
@@ -1885,10 +1843,14 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else
     {
-      if(coordsHandle.IsValueType<vtkm::Vec<double,3>>()) std::cout<<"DOUBLE\n";
+      // Ok vtkm has handed us something we don't know about, and its really
+      // hard to ask vtkm to tell us what it is. Before we give up, we will
+      // attempt to copy the data to a known type and copy that copy.
+      // We can't avoid the double copy since conduit can't take ownership
+      // and we can't seem to write to a zero copied array
+
       if(coordsHandle.IsType<vtkm::cont::ArrayHandleVirtual<vtkm::Vec<double,3>>>())
       {
-        std::cout<<"V DOUBLE\n";
         auto vcoords = coordsHandle.Cast<vtkm::cont::ArrayHandleVirtual<vtkm::Vec<double,3>>>();
         vtkm::cont::ArrayHandle<vtkm::Vec<double,3>> copy;
         vtkm::cont::ArrayCopy(vcoords, copy);
@@ -1896,6 +1858,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         const int num_vals = vcoords.GetNumberOfValues();
         vtkm::Float64 *points_ptr = (vtkm::Float64*)vtkh::GetVTKMPointer(copy);
         const int byte_size = sizeof(vtkm::Float64);
+
 
         output["coordsets/"+coords_name+"/values/x"].set(points_ptr,
                                                          num_vals,
@@ -1911,24 +1874,36 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
                                                          byte_size*3); // stride
 
       }
+      else if(coordsHandle.IsType<vtkm::cont::ArrayHandleVirtual<vtkm::Vec<float,3>>>())
+      {
+        auto vcoords = coordsHandle.Cast<vtkm::cont::ArrayHandleVirtual<vtkm::Vec<float,3>>>();
+        vtkm::cont::ArrayHandle<vtkm::Vec<float,3>> copy;
+        vtkm::cont::ArrayCopy(vcoords, copy);
+
+        const int num_vals = vcoords.GetNumberOfValues();
+        vtkm::Float32 *points_ptr = (vtkm::Float32*)vtkh::GetVTKMPointer(copy);
+        const int byte_size = sizeof(vtkm::Float32);
+
+
+        output["coordsets/"+coords_name+"/values/x"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*0,  // byte offset
+                                                         byte_size*3); // stride
+        output["coordsets/"+coords_name+"/values/y"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*1,  // byte offset
+                                                         byte_size*3); // stride
+        output["coordsets/"+coords_name+"/values/z"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*2,  // byte offset
+                                                         byte_size*3); // stride
+      }
       else
       {
-        std::cout<<"VERY BAD\n";
+        coords.PrintSummary(std::cerr);
+        ASCENT_ERROR("Unknown coords type");
       }
-      if(coordsHandle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<double,3>>>()) std::cout<<"A DOUBLE\n";
-      //auto vcoords = coordsHandle.Cast<vtkm::cont::ArrayHandleVirtualCoordinates>();
-      //vcoords.PrintSummary(std::cout);
-      //if(vcoords.IsType<Coords64>()) std::cout<<"AA DOUBLE\n";
-      //if(vcoords.IsType<CoordsVec64>()) std::cout<<"AAVEC DOUBLE\n";
-      //if(vcoords.IsType<Coords32>()) std::cout<<"AA DOUBLE\n";
-      //if(vcoords.IsType<CoordsVec32>()) std::cout<<"AAVEC DOUBLE\n";
-      //if(coordsHandle.IsType<vtkm::Vec<double,3>>()) std::cout<<"BBB DOUBLE\n";
 
-      //CoordsVec64 tt;
-      //coordsHandle.CopyTo(tt);
-
-      //coords.PrintSummary(std::cerr);
-      //ASCENT_ERROR("Unknown coords type");
     }
 
     vtkm::UInt8 shape_id = 0;
