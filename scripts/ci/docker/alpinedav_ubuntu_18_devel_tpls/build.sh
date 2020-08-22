@@ -44,20 +44,9 @@
 ###############################################################################
 export TAG_NAME=alpinedav/ascent-ci:ubuntu-18-devel-tpls
 
-# remove old source tarball if it exists
-echo "rm -f ascent.docker.src.tar.gz"
-rm -f ascent.docker.src.tar.gz
+date
 
-WORKING_DIR=`pwd`
+python ../build_and_tag.py ${TAG_BASE}
 
-# get current copy of the ascent source
-echo "cd ../../../../ && python package.py ${WORKING_DIR}/ascent.docker.src.tar.gz"
-cd ../../../../ && python package.py ${WORKING_DIR}/ascent.docker.src.tar.gz
+date
 
-# change back to the dir with our Dockerfile
-echo "cd ${WORKING_DIR}"
-cd ${WORKING_DIR}
-
-# exec docker build to create image
-echo "docker build -t ${TAG_NAME} ."
-docker build -t ${TAG_NAME} .
