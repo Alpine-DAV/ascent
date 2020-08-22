@@ -1417,9 +1417,9 @@ binning(const conduit::Node &dataset,
       else
       {
         const conduit::float64_array values = dom[values_path].value();
-#ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef ASCENT_USE_OPENMP
+//#pragma omp parallel for
+//#endif
         for(int i = 0; i < homes_size; ++i)
         {
           if(homes[i] != -1)
@@ -1432,9 +1432,9 @@ binning(const conduit::Node &dataset,
     else if(is_xyz(reduction_var))
     {
       int coord = reduction_var[0] - 'x';
-#ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef ASCENT_USE_OPENMP
+//#pragma omp parallel for
+//#endif
       for(int i = 0; i < homes_size; ++i)
       {
         conduit::Node n_loc;
