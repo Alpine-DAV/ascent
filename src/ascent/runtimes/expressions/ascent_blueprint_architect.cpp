@@ -1239,8 +1239,8 @@ update_bin(double *bins,
   }
 }
 
-void init_bins(double *bins, 
-               const int size, 
+void init_bins(double *bins,
+               const int size,
                const std::string reduction_op)
 {
   if(reduction_op != "max" && reduction_op != "min")
@@ -1258,7 +1258,7 @@ void init_bins(double *bins,
   {
     init_val = std::numeric_limits<double>::max();
   }
-  
+
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
@@ -1383,9 +1383,9 @@ binning(const conduit::Node &dataset,
     // update bins
     if(reduction_var.empty())
     {
-#ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef ASCENT_USE_OPENMP
+//#pragma omp parallel for
+//#endif
       for(int i = 0; i < homes_size; ++i)
       {
         if(homes[i] != -1)
@@ -1403,9 +1403,9 @@ binning(const conduit::Node &dataset,
       if(dom[values_path].dtype().is_float32())
       {
         const conduit::float32_array values = dom[values_path].value();
-#ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef ASCENT_USE_OPENMP
+//#pragma omp parallel for
+//#endif
         for(int i = 0; i < homes_size; ++i)
         {
           if(homes[i] != -1)
