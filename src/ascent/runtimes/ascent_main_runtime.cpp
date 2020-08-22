@@ -1525,6 +1525,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
           ConnectSource();
         }
 
+
         m_previous_actions = actions;
 
         PopulateMetadata(); // add metadata so filters can access it
@@ -1540,7 +1541,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         int cycle = 0;
         if(meta->has_path("cycle"))
         {
-        cycle = (*meta)["cycle"].to_int32();
+          cycle = (*meta)["cycle"].to_int32();
         }
         std::stringstream ss;
         ss<<"cycle_"<<cycle;
@@ -1568,7 +1569,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
 
         if(expression_cache.number_of_children() > 0)
         {
-          m_info["expressions"] = expression_cache;
+          runtime::expressions::ExpressionEval::get_last(m_info["expressions"]);
         }
 
         m_info["flow_graph_dot"]      = w.graph().to_dot();

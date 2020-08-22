@@ -48,5 +48,5 @@ compilers:
       cxx: /usr/bin/clang++
       f77: /usr/local/Cellar/gcc@8/8.4.0_1/bin/gfortran-8
       fc: /usr/local/Cellar/gcc@8/8.4.0_1/bin/gfortran-8
-    spec: clang@10.0.0-apple
+    spec: clang@11.0.0-apple
     target: x86_64
