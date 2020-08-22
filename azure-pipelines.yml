@@ -205,7 +205,7 @@ stages:
         displayName: 'Test vs Install (using-with-make)'
         condition: eq(variables['ENABLE_VTKH'], 'ON')
 
-  - job: Main_Ubuntu_16_Cuda_9_2
+  - job: Main_Ubuntu_16_Cuda_10_1
     pool:
       vmImage: 'ubuntu-16.04'
     timeoutInMinutes: 0
