@@ -1604,7 +1604,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
     std::copy(field_data.begin(), field_data.end(), field_array);
     entropy = calcentropy(field_array, field_data.size(), 100);
   #endif
-  return entropy;
+  return (-1)*entropy;
 }
 
 float 
@@ -1644,7 +1644,7 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width)
     std::copy(depth_data.begin(), depth_data.end(), depth_array);
     entropy = calcentropy(depth_array, depth_data.size(), 100);
   #endif
-  return entropy;
+  return (-1)*entropy;
 }
 
 float
@@ -2191,6 +2191,7 @@ AutoCamera::execute()
 
       vtkh::DataSet *output = tracer.GetOutput();
       float score = calculateMetric(output, metric, field_name, triangles, height, width, cam);
+      std::cerr << "sample " << sample << " score: " << score << std::endl;
       delete output;
 
     /*================ End Scalar Renderer  ======================*/
