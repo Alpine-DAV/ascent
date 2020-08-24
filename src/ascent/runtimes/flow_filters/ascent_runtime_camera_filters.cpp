@@ -664,7 +664,7 @@ double SineParameterize(int curFrame, int nFrames, int ramp)
 }
 
 Camera
-GetCamera(int frame, int nframes, double radius, double* lookat)
+GetCamera(int frame, int nframes, double radius, double* lookat, float *bounds)
 {
 //  double t = SineParameterize(frame, nframes, nframes/10);
   double points[3];
@@ -682,10 +682,13 @@ GetCamera(int frame, int nframes, double radius, double* lookat)
     if(points[2] < 0)
       points[2] -= radius;
   }*/
+  float x = (bounds[0] + bounds[1])/2;
+  float y = (bounds[2] + bounds[3])/2;
+  float z = (bounds[4] + bounds[5])/2;
 
-  c.position[0] = zoom*radius*points[0];
-  c.position[1] = zoom*radius*points[1];
-  c.position[2] = zoom*radius*points[2];
+  c.position[0] = zoom*radius*(points[0] + x);
+  c.position[1] = zoom*radius*(points[1] + y);
+  c.position[2] = zoom*radius*(points[2] + z);
 
 //cerr << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
     
@@ -2145,14 +2148,14 @@ void
 AutoCamera::execute()
 {
     double time = 0.;
+    int cycle = params()["state/cycle"].to_int32();
     auto time_start = high_resolution_clock::now();
-    cout << "USING CAMERA PIPELINE" << endl;
+    cout << "=====USING CAMERA PIPELINE===== CYCLE: " << cycle << endl;
     #if ASCENT_MPI_ENABLED
       int rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
       
     #endif  
-
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
     std::string field_name = params()["field"].as_string();
@@ -2188,6 +2191,9 @@ AutoCamera::execute()
     vtkm::Float32 xb = vtkm::Float32(b.X.Length());
     vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
     vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
+    float bounds[6] = {(float)b.X.Max, (float)b.X.Min, 
+	              (float)b.Y.Max, (float)b.Y.Min, 
+	              (float)b.Z.Max, (float)b.Z.Min};
     //double bounds[3] = {(double)xb, (double)yb, (double)zb};
 //    cerr << "x y z bounds " << xb << " " << yb << " " << zb << endl;
     vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
@@ -2220,7 +2226,7 @@ AutoCamera::execute()
     //What it does: Quick ray tracing of data (replaces get triangles and scanline).
     //What we need: z buffer, any other important buffers (tri ids, scalar values, etc.)
       
-      Camera cam = GetCamera(sample, samples, radius, focus);
+      Camera cam = GetCamera(sample, samples, radius, focus, bounds);
       vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
                                 (float)cam.position[1],
                                 (float)cam.position[2]};
@@ -2292,7 +2298,8 @@ AutoCamera::execute()
     if(winning_sample == -1)
       ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
     cerr << "winning_sample " << winning_sample << " score: " << winning_score << endl;
-    Camera best_c = GetCamera(winning_sample, samples, radius, focus);
+    Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
+    //Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
 
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
