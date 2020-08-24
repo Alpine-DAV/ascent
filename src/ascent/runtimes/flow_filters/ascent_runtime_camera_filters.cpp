@@ -2148,9 +2148,7 @@ void
 AutoCamera::execute()
 {
     double time = 0.;
-    int cycle = params()["state/cycle"].to_int32();
     auto time_start = high_resolution_clock::now();
-    cout << "=====USING CAMERA PIPELINE===== CYCLE: " << cycle << endl;
     #if ASCENT_MPI_ENABLED
       int rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -2158,6 +2156,14 @@ AutoCamera::execute()
     #endif  
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+    //int cycle = params()["state/cycle"].to_int32();
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+int cycle = -1;
+if(meta->has_path("cycle"))
+{
+  cycle = (*meta)["cycle"].to_int32();
+}
+    cout << "=====USING CAMERA PIPELINE===== CYCLE: " << cycle << endl;
     std::string field_name = params()["field"].as_string();
     std::string metric     = params()["metric"].as_string();
 
@@ -2298,8 +2304,8 @@ AutoCamera::execute()
     if(winning_sample == -1)
       ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
     cerr << "winning_sample " << winning_sample << " score: " << winning_score << endl;
-    Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
-    //Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
+    //Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
+    Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
 
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
