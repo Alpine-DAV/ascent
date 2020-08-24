@@ -767,7 +767,6 @@ initialize_objects()
 conduit::Node
 ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 {
-
   if(expr_name == "")
   {
     expr_name = expr;
@@ -793,7 +792,6 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   ASTExpression *expression = get_result();
 
   conduit::Node root;
-
   try
   {
     // expression->access();
@@ -829,24 +827,28 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   // i.e., someone could have restarted the simulation from the beginning
   // or from some earlier checkpoint
   // There are a couple conditions:
+  // 0) only check one time on startup
   // 1) only filter if we haven't done so before
   // 2) only filter if we detect time travel
   // 3) only filter if we have state/time
-  if(!m_cache.filtered() &&
-     time <= m_cache.last_known_time()
-     && valid_time)
+  static bool first_execute = true;
+
+  if(first_execute && 
+     !m_cache.filtered() &&
+     time <= m_cache.last_known_time() &&
+     valid_time)
   {
     // remove all cache entries that occur in the future
     m_cache.filter_time(time);
   }
+  first_execute = false;
+
   m_cache.last_known_time(time);
 
   std::stringstream cache_entry;
   cache_entry << expr_name << "/" << cycle;
 
   m_cache.m_data[cache_entry.str()] = return_val;
-
-  //return_val.print();
 
   delete expression;
   w.reset();
@@ -857,6 +859,29 @@ const conduit::Node &
 ExpressionEval::get_cache()
 {
   return m_cache.m_data;
+}
+
+void
+ExpressionEval::reset_cache()
+{
+  m_cache.m_data.reset();
+}
+
+void ExpressionEval::get_last(conduit::Node &data)
+{
+  data.reset();
+  const int entries = m_cache.m_data.number_of_children();
+
+  for(int i = 0; i < entries; ++i)
+  {
+    conduit::Node &entry = m_cache.m_data.child(i); 
+    const int cycles = entry.number_of_children(); 
+    if(cycles > 0)
+    {
+      conduit::Node &cycle = entry.child(cycles-1);
+      data[cycle.path()].set_external(cycle);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 };
