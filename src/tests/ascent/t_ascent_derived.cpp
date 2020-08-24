@@ -83,7 +83,7 @@ TEST(ascent_expressions, derived_expressions)
   // conduit::blueprint::mesh::examples::basic("polygons",
   // conduit::blueprint::mesh::examples::braid("tris",
   conduit::blueprint::mesh::examples::braid(
-      "quads",
+      "tris",
       // conduit::blueprint::mesh::examples::braid("tets",
       // conduit::blueprint::mesh::examples::braid("hexs",
       // conduit::blueprint::mesh::examples::braid("uniform",
@@ -149,8 +149,9 @@ TEST(ascent_expressions, derived_expressions)
   // expr = "topo('mesh').cell.x";
   // eval.evaluate(expr);
 
-  // expr = "topo('mesh').cell.volume";
-  // eval.evaluate(expr);
+  expr = "topo('mesh').cell.area";
+  eval.evaluate(expr);
+  multi_dom.print();
 
   // expr = "magnitude(gradient(field('braid') + 1))";
   // eval.evaluate(expr);
@@ -167,43 +168,44 @@ TEST(ascent_expressions, derived_expressions)
 
   // expr = "field('field') * topo('mesh').cell.volume";
   // eval.evaluate(expr, "mass");
+
 }
 
-/*
 TEST(ascent_expressions, derived_temperature)
 {
-  // conduit::Node replay_data, replay_opts;
+  conduit::Node replay_data, replay_opts;
   // replay_opts["root_file"] =
   // "/Users/ibrahim5/datasets/fishtank/fishtank.cycle_000000.root";
-  // replay_opts["root_file"] =
-  //     "/Users/ibrahim5/datasets/sharknato/sharknato_7221.cycle_000000.root";
-  // std::cout << "importing..." << std::endl;
-  // ascent::hola("relay/blueprint/mesh", replay_opts, replay_data);
-  // std::cout << "done importing..." << std::endl;
+  replay_opts["root_file"] =
+      "/Users/ibrahim5/datasets/sharknato/sharknato_7221.cycle_000000.root";
+  std::cout << "importing..." << std::endl;
+  ascent::hola("relay/blueprint/mesh", replay_opts, replay_data);
+  std::cout << "done importing..." << std::endl;
 
-  conduit::Node data, multi_dom;
-  conduit::blueprint::mesh::examples::braid("structured",
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            0,
-                                            data);
-  data["state/domain_id"] = 0;
-  blueprint::mesh::to_multi_domain(data, multi_dom);
+  // conduit::Node data, multi_dom;
+  // conduit::blueprint::mesh::examples::braid("structured",
+  //                                           EXAMPLE_MESH_SIDE_DIM,
+  //                                           EXAMPLE_MESH_SIDE_DIM,
+  //                                           0,
+  //                                           data);
+  // data["state/domain_id"] = 0;
+  // blueprint::mesh::to_multi_domain(data, multi_dom);
 
   runtime::expressions::register_builtin();
-  // runtime::expressions::ExpressionEval eval(&replay_data);
-  runtime::expressions::ExpressionEval eval(&multi_dom);
+  runtime::expressions::ExpressionEval eval(&replay_data);
+  // runtime::expressions::ExpressionEval eval(&multi_dom);
 
   conduit::Node res;
   std::string expr;
 
   // expr = "gradient(field('temperature', 'c0'))";
   // eval.evaluate(expr, "temp_gradient");
-  // expr = "gradient(field('uinterp', 'c0'))";
-  // eval.evaluate(expr, "uinterp_gradient");
-  // ascent normally adds this but we are doing an end around
-  expr = "gradient(field('braid'))";
-  eval.evaluate(expr, "braid_grad");
+  expr = "gradient(field('uinterp', 'c0'))";
+  eval.evaluate(expr, "uinterp_gradient");
+  // expr = "gradient(field('braid'))";
+  // eval.evaluate(expr, "braid_grad");
+  // expr = "vorticity(field('uinterp', 'c0'))";
+  // eval.evaluate(expr, "uinterp_vorticity");
 
   const std::string output_path = prepare_output_dir();
 
@@ -242,14 +244,12 @@ TEST(ascent_expressions, derived_temperature)
   ascent_opts["timings"] = "enabled";
   ascent_opts["runtime/type"] = "ascent";
 
-  multi_dom.print();
   ascent.open(ascent_opts);
-  // ascent.publish(replay_data);
-  ascent.publish(multi_dom);
+  ascent.publish(replay_data);
+  // ascent.publish(multi_dom);
   ascent.execute(actions);
   ascent.close();
 }
-*/
 
 //-----------------------------------------------------------------------------
 

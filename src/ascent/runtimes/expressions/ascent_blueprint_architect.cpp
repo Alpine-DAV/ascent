@@ -367,21 +367,6 @@ UniformTopology<T, N>::element_location(const size_t index) const
   return loc;
 }
 
-template <typename T, size_t N>
-void
-UniformTopology<T, N>::pack(conduit::Node &args) const
-{
-  for(size_t i = 0; i < N; ++i)
-  {
-    const std::string dim = std::string(1, 'i' + i);
-    const std::string coord = std::string(1, 'x' + i);
-    args["const int " + topo_name + "_dims_" + dim + ",\n"] = dims[i];
-    args["const double " + topo_name + "_spacing_d" + coord + ",\n"] =
-        spacing[i];
-    args["const double " + topo_name + "_origin_" + coord + ",\n"] = origin[i];
-  }
-}
-
 //-----------------------------------------------------------------------------
 // -- RectilinearTopology
 //-----------------------------------------------------------------------------
@@ -444,22 +429,6 @@ RectilinearTopology<T, N>::element_location(const size_t index) const
     loc[i] = (coords[i][l_index[i]] + coords[i][l_index[i] + 1]) / 2;
   }
   return loc;
-}
-
-template <typename T, size_t N>
-void
-RectilinearTopology<T, N>::pack(conduit::Node &args) const
-{
-
-  for(size_t i = 0; i < N; ++i)
-  {
-    const std::string dim = std::string(1, 'i' + i);
-    const std::string coord = std::string(1, 'x' + i);
-    args["const double *" + topo_name + "_coords_" + coord + ",\n"]
-        .set_external(coords[i]);
-    args["const int " + topo_name + "_dims_" + dim + ",\n"] =
-        coords[i].dtype().number_of_elements();
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -578,20 +547,6 @@ StructuredTopology<T, N>::element_location(const size_t index) const
     loc[i] /= num_vertices;
   }
   return loc;
-}
-
-template <typename T, size_t N>
-void
-StructuredTopology<T, N>::pack(conduit::Node &args) const
-{
-  for(size_t i = 0; i < N; ++i)
-  {
-    const std::string dim = std::string(1, 'i' + i);
-    const std::string coord = std::string(1, 'x' + i);
-    args["const int " + topo_name + "_dims_" + dim + ",\n"] = dims[i];
-    args["const double *" + topo_name + "_coords_" + coord + ",\n"]
-        .set_external(coords[i]);
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -725,6 +680,63 @@ UnstructuredTopology<T, N>::element_location(const size_t index) const
   return loc;
 }
 
+//-----------------------------------------------------------------------------
+// -- Topology Packing Functions
+//-----------------------------------------------------------------------------
+// {{{
+
+// Packing requires a lot of the info available to the Topology class
+
+// I can't define these in ascent_derived_jit.cpp because they are templated and
+// must be defined in the same place that the templates are initialized
+
+// TODO at the end of each function we need to repack to conduit arrays
+// properly
+template <typename T, size_t N>
+void
+UniformTopology<T, N>::pack(conduit::Node &args) const
+{
+  for(size_t i = 0; i < N; ++i)
+  {
+    const std::string dim = std::string(1, 'i' + i);
+    const std::string coord = std::string(1, 'x' + i);
+    args["const int " + topo_name + "_dims_" + dim + ",\n"] = dims[i];
+    args["const double " + topo_name + "_spacing_d" + coord + ",\n"] =
+        spacing[i];
+    args["const double " + topo_name + "_origin_" + coord + ",\n"] = origin[i];
+  }
+}
+
+template <typename T, size_t N>
+void
+RectilinearTopology<T, N>::pack(conduit::Node &args) const
+{
+
+  for(size_t i = 0; i < N; ++i)
+  {
+    const std::string dim = std::string(1, 'i' + i);
+    const std::string coord = std::string(1, 'x' + i);
+    args["const double *" + topo_name + "_coords_" + coord + ",\n"]
+        .set_external(coords[i]);
+    args["const int " + topo_name + "_dims_" + dim + ",\n"] =
+        coords[i].dtype().number_of_elements();
+  }
+}
+
+template <typename T, size_t N>
+void
+StructuredTopology<T, N>::pack(conduit::Node &args) const
+{
+  for(size_t i = 0; i < N; ++i)
+  {
+    const std::string dim = std::string(1, 'i' + i);
+    const std::string coord = std::string(1, 'x' + i);
+    args["const int " + topo_name + "_dims_" + dim + ",\n"] = dims[i];
+    args["const double *" + topo_name + "_coords_" + coord + ",\n"]
+        .set_external(coords[i]);
+  }
+}
+
 template <typename T, size_t N>
 void
 UnstructuredTopology<T, N>::pack(conduit::Node &args) const
@@ -770,12 +782,14 @@ UnstructuredTopology<T, N>::pack(conduit::Node &args) const
   }
 }
 
+// }}}
+
 //-----------------------------------------------------------------------------
 // -- topologyFactory
 //-----------------------------------------------------------------------------
 
 // make_unique is a c++14 feature
-// this is not as general
+// this is not as general (e.g. doesn't work on array types)
 template <typename T, typename... Args>
 std::unique_ptr<T>
 my_make_unique(Args &&... args)

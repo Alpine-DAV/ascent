@@ -117,6 +117,144 @@ indent_code(const std::string &input_code, const int num_spaces)
 };
 
 //-----------------------------------------------------------------------------
+// -- StridedArray
+//-----------------------------------------------------------------------------
+//{{{
+StridedArray::StridedArray(const std::string name,
+                           const ptrdiff_t offset,
+                           const ptrdiff_t stride,
+                           const size_t pointer_size)
+    : name(name), offset(offset), stride(stride), pointer_size(pointer_size)
+{
+}
+
+std::string
+StridedArray::get_name() const
+{
+  return name;
+}
+
+std::string
+StridedArray::index(const std::string &index) const
+{
+  if(offset % pointer_size != 0)
+  {
+    ASCENT_ERROR(
+        "StridedArray: The offset of "
+        << offset
+        << " bytes does not divide into the array's pointer size which is "
+        << pointer_size << " bytes.");
+  }
+  if(stride % pointer_size != 0)
+  {
+    ASCENT_ERROR(
+        "StridedArray: The stride of "
+        << stride
+        << " bytes does not divide into the array's pointer size which is "
+        << pointer_size << " bytes.");
+  }
+
+  const int pointer_offset = offset / pointer_size;
+  const int pointer_stride = stride / pointer_size;
+  // don't want to clutter the code with 0 + 1 * x
+  const std::string offset_str =
+      (pointer_offset == 0 ? "" : std::to_string(pointer_offset) + " + ");
+  const std::string stride_str =
+      (pointer_stride == 1 ? "" : std::to_string(pointer_stride) + " * ");
+  return name + "[" + offset_str + stride_str + index + "]";
+}
+
+//}}}
+
+//-----------------------------------------------------------------------------
+// -- ArrayCode
+//-----------------------------------------------------------------------------
+// {{{
+ArrayCode::ArrayCode(const conduit::Node &args)
+{
+  const int num_args = args.number_of_children();
+  for(int i = 0; i < num_args; ++i)
+  {
+    const conduit::Node &arg = args.child(i);
+    if(arg.number_of_children() > 1 || arg.dtype().number_of_elements() > 1)
+    {
+      array_map.insert(std::make_pair(arg.name(), arg.schema()));
+    }
+  }
+}
+std::string
+ArrayCode::index(const std::string &array_name,
+                 const std::string &index,
+                 const int component) const
+{
+  // TODO we need to get the name of the pointer
+  // for now assume one pointer (i.e. one contiguous memory region), we need to
+  // decide on a naming convention for the pointers corresponding to the
+  // different contiguous memory regions
+  std::string pointer_name = array_name;
+
+  ptrdiff_t offset;
+  ptrdiff_t stride;
+  size_t pointer_size;
+  const auto array_it = array_map.find("const float *" + array_name + ",\n");
+  if(array_it == array_map.end())
+  {
+    // array is not in the map meaning it was created in the kernel and is
+    // interleaved
+    if(component == -1)
+    {
+      offset = 0;
+      stride = 8;
+      pointer_size = 8;
+    }
+    else
+    {
+      offset = 8 * component;
+      stride = 8;
+      pointer_size = 8;
+    }
+  }
+  else
+  {
+    const int num_components = array_it->second.number_of_children();
+    if(component == -1)
+    {
+      // check that the array only has one component
+      if(num_components != 0)
+      {
+        ASCENT_ERROR("ArrayCode could not get the index of array '"
+                     << pointer_name << "' because it has " << num_components
+                     << " components and no component was specified.");
+      }
+      offset = array_it->second.dtype().offset();
+      stride = array_it->second.dtype().stride();
+      pointer_size = array_it->second.dtype().element_bytes();
+    }
+    else
+    {
+      if(component >= num_components)
+      {
+        ASCENT_ERROR("ArrayCode could not get component "
+                     << component << " of an array which only has "
+                     << num_components << " components.");
+      }
+      // TODO uncomment this, for now only interleaved
+      // offset = array_it->second.child(component).dtype().offset();
+      // stride = array_it->second.child(component).dtype().stride();
+      // pointer_size =
+      // array_it->second.child(component).dtype().element_bytes();
+
+      pointer_size = array_it->second.child(component).dtype().element_bytes();
+      offset = pointer_size * component;
+      stride = pointer_size * num_components;
+    }
+  }
+
+  return StridedArray(pointer_name, offset, stride, pointer_size).index(index);
+}
+// }}}
+
+//-----------------------------------------------------------------------------
 // -- MathCode
 //-----------------------------------------------------------------------------
 // {{{
@@ -125,7 +263,7 @@ MathCode::determinant_2x2(InsertionOrderedSet<std::string> &code,
                           const std::string &a,
                           const std::string &b,
                           const std::string &res_name,
-                          const bool declare)
+                          const bool declare) const
 {
   code.insert((declare ? "const double " : "") + res_name + " = " + a +
               "[0] * " + b + "[1] - " + b + "[0] * " + a + "[1];\n");
@@ -136,7 +274,7 @@ MathCode::determinant_3x3(InsertionOrderedSet<std::string> &code,
                           const std::string &b,
                           const std::string &c,
                           const std::string &res_name,
-                          const bool declare)
+                          const bool declare) const
 {
   code.insert((declare ? "const double " : "") + res_name + " = " + a +
               "[0] * (" + b + "[1] * " + c + "[2] - " + c + "[1] * " + b +
@@ -151,7 +289,7 @@ MathCode::vector_subtract(InsertionOrderedSet<std::string> &code,
                           const std::string &b,
                           const std::string &res_name,
                           const int num_components,
-                          const bool declare)
+                          const bool declare) const
 {
   if(declare)
   {
@@ -172,7 +310,7 @@ MathCode::vector_add(InsertionOrderedSet<std::string> &code,
                      const std::string &b,
                      const std::string &res_name,
                      const int num_components,
-                     const bool declare)
+                     const bool declare) const
 {
   if(declare)
   {
@@ -193,7 +331,7 @@ MathCode::cross_product(InsertionOrderedSet<std::string> &code,
                         const std::string &b,
                         const std::string &res_name,
                         const int num_components,
-                        const bool declare)
+                        const bool declare) const
 {
   if(declare)
   {
@@ -227,7 +365,7 @@ MathCode::dot_product(InsertionOrderedSet<std::string> &code,
                       const std::string &b,
                       const std::string &res_name,
                       const int num_components,
-                      const bool declare)
+                      const bool declare) const
 {
   if(declare)
   {
@@ -247,7 +385,7 @@ MathCode::magnitude(InsertionOrderedSet<std::string> &code,
                     const std::string &a,
                     const std::string &res_name,
                     const int num_components,
-                    const bool declare)
+                    const bool declare) const
 {
   if(num_components == 3)
   {
@@ -273,8 +411,9 @@ MathCode::magnitude(InsertionOrderedSet<std::string> &code,
 //-----------------------------------------------------------------------------
 // {{{
 TopologyCode::TopologyCode(const std::string &topo_name,
-                           const conduit::Node &domain)
-    : topo_name(topo_name)
+                           const conduit::Node &domain,
+                           const conduit::Node &arrays)
+    : topo_name(topo_name), array_code(arrays)
 {
   const conduit::Node &n_topo = domain["topologies/" + topo_name];
   const std::string coords_name = n_topo["coordset"].as_string();
@@ -312,7 +451,7 @@ TopologyCode::TopologyCode(const std::string &topo_name,
 }
 
 void
-TopologyCode::element_idx(InsertionOrderedSet<std::string> &code)
+TopologyCode::element_idx(InsertionOrderedSet<std::string> &code) const
 {
   if(topo_type == "uniform" || topo_type == "rectilinear" ||
      topo_type == "structured")
@@ -343,7 +482,7 @@ TopologyCode::element_idx(InsertionOrderedSet<std::string> &code)
 // https://vtk.org/wp-content/uploads/2015/04/file-formats.pdf
 // I'm also assuming the x,y,z axis shown to the left of VTK_HEXAHEDRON
 void
-TopologyCode::structured_vertices(InsertionOrderedSet<std::string> &code)
+TopologyCode::structured_vertices(InsertionOrderedSet<std::string> &code) const
 {
   if(topo_type != "structured")
   {
@@ -444,7 +583,7 @@ TopologyCode::structured_vertices(InsertionOrderedSet<std::string> &code)
 
 void
 TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
-                                    const std::string &index_name)
+                                    const std::string &index_name) const
 {
   if(topo_type != "unstructured")
   {
@@ -521,7 +660,7 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
                             const std::string &coord,
                             const std::string &index_name,
                             const std::string &res_name,
-                            const bool declare)
+                            const bool declare) const
 {
   std::string my_index_name;
   if(index_name.empty() &&
@@ -566,7 +705,8 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
     {
       // multiple shapes
       // This will generate 3 for loops if we want to calculate element_xyz
-      // If this is an issue we can make a special case for it in element_xyz
+      // If this is an issue we can make a special case for it in
+      // element_xyz
       InsertionOrderedSet<std::string> for_loop;
       for_loop.insert(
           {"for(int i = 0; i < " + topo_name + "_shape_size; ++i)\n", "{\n"});
@@ -602,7 +742,7 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
 }
 
 void
-TopologyCode::element_xyz(InsertionOrderedSet<std::string> &code)
+TopologyCode::element_xyz(InsertionOrderedSet<std::string> &code) const
 {
   code.insert("double " + topo_name + "_element_loc[" +
               std::to_string(num_dims) + "];\n");
@@ -627,7 +767,7 @@ TopologyCode::element_xyz(InsertionOrderedSet<std::string> &code)
 }
 
 void
-TopologyCode::vertex_idx(InsertionOrderedSet<std::string> &code)
+TopologyCode::vertex_idx(InsertionOrderedSet<std::string> &code) const
 {
   if(topo_type == "uniform" || topo_type == "rectilinear" ||
      topo_type == "structured")
@@ -663,7 +803,7 @@ TopologyCode::vertex_coord(InsertionOrderedSet<std::string> &code,
                            const std::string &coord,
                            const std::string &index_name,
                            const std::string &res_name,
-                           const bool declare)
+                           const bool declare) const
 {
   std::string my_index_name;
   if(index_name.empty())
@@ -701,7 +841,7 @@ TopologyCode::vertex_xyz(InsertionOrderedSet<std::string> &code,
                          const std::string &index_name,
                          const bool index_array,
                          const std::string &res_name,
-                         const bool declare)
+                         const bool declare) const
 {
   if(declare)
   {
@@ -731,7 +871,7 @@ TopologyCode::vertex_xyz(InsertionOrderedSet<std::string> &code,
 }
 
 void
-TopologyCode::vertex_xyz(InsertionOrderedSet<std::string> &code)
+TopologyCode::vertex_xyz(InsertionOrderedSet<std::string> &code) const
 {
   if(topo_type == "uniform" || topo_type == "rectilinear")
   {
@@ -747,7 +887,7 @@ TopologyCode::vertex_xyz(InsertionOrderedSet<std::string> &code)
 
 // get rectilinear spacing for a cell
 void
-TopologyCode::dxdydz(InsertionOrderedSet<std::string> &code)
+TopologyCode::dxdydz(InsertionOrderedSet<std::string> &code) const
 {
   if(topo_type == "rectilinear")
   {
@@ -780,7 +920,7 @@ TopologyCode::dxdydz(InsertionOrderedSet<std::string> &code)
 void
 TopologyCode::hexahedral_volume(InsertionOrderedSet<std::string> &code,
                                 const std::string &vertex_locs,
-                                const std::string &res_name)
+                                const std::string &res_name) const
 {
   math_code.vector_subtract(
       code, vertex_locs + "[6]", vertex_locs + "[0]", res_name + "_6m0", 3);
@@ -821,7 +961,7 @@ TopologyCode::hexahedral_volume(InsertionOrderedSet<std::string> &code,
 void
 TopologyCode::tetrahedral_volume(InsertionOrderedSet<std::string> &code,
                                  const std::string &vertex_locs,
-                                 const std::string &res_name)
+                                 const std::string &res_name) const
 {
   math_code.vector_subtract(
       code, vertex_locs + "[1]", vertex_locs + "[0]", res_name + "_1m0", 3);
@@ -844,7 +984,7 @@ TopologyCode::quadrilateral_area(InsertionOrderedSet<std::string> &code,
                                  const std::string &p1,
                                  const std::string &p2,
                                  const std::string &p3,
-                                 const std::string &res_name)
+                                 const std::string &res_name) const
 {
   math_code.vector_subtract(code, p2, p0, res_name + "_2m0", num_dims);
   math_code.vector_subtract(code, p3, p1, res_name + "_3m1", num_dims);
@@ -861,7 +1001,7 @@ TopologyCode::quadrilateral_area(InsertionOrderedSet<std::string> &code,
 void
 TopologyCode::quadrilateral_area(InsertionOrderedSet<std::string> &code,
                                  const std::string &vertex_locs,
-                                 const std::string &res_name)
+                                 const std::string &res_name) const
 {
   quadrilateral_area(code,
                      vertex_locs + "[0]",
@@ -877,7 +1017,7 @@ TopologyCode::triangle_area(InsertionOrderedSet<std::string> &code,
                             const std::string &p0,
                             const std::string &p1,
                             const std::string &p2,
-                            const std::string &res_name)
+                            const std::string &res_name) const
 {
   math_code.vector_subtract(code, p1, p0, res_name + "_1m0", num_dims);
   math_code.vector_subtract(code, p2, p0, res_name + "_2m0", num_dims);
@@ -889,12 +1029,13 @@ TopologyCode::triangle_area(InsertionOrderedSet<std::string> &code,
   math_code.magnitude(code, res_name + "_cross", res_name + "_cross_mag", 3);
   code.insert("const double " + res_name + " = " + res_name +
               "_cross_mag / 2.0;\n");
+  code.insert("if("+res_name+" == 0)\n{\nprintf(\"%f\", "+res_name+");\n}\n");
 }
 
 void
 TopologyCode::triangle_area(InsertionOrderedSet<std::string> &code,
                             const std::string &vertex_locs,
-                            const std::string &res_name)
+                            const std::string &res_name) const
 {
   triangle_area(code,
                 vertex_locs + "[0]",
@@ -910,7 +1051,7 @@ TopologyCode::triangle_area(InsertionOrderedSet<std::string> &code,
 void
 TopologyCode::polygon_area_vec(InsertionOrderedSet<std::string> &code,
                                const std::string &vertex_locs,
-                               const std::string &res_name)
+                               const std::string &res_name) const
 {
   code.insert({"double " + res_name + "_vec[3];\n",
                res_name + "_vec[0] = 0;\n",
@@ -972,7 +1113,7 @@ TopologyCode::polygon_area_vec(InsertionOrderedSet<std::string> &code,
 void
 TopologyCode::polygon_area(InsertionOrderedSet<std::string> &code,
                            const std::string &vertex_locs,
-                           const std::string &res_name)
+                           const std::string &res_name) const
 {
   polygon_area_vec(code, vertex_locs, res_name);
   math_code.magnitude(code, res_name + "_vec", res_name + "_vec_mag", 3);
@@ -989,7 +1130,7 @@ TopologyCode::polygon_area(InsertionOrderedSet<std::string> &code,
 void
 TopologyCode::polyhedron_volume(InsertionOrderedSet<std::string> &code,
                                 const std::string &vertex_locs,
-                                const std::string &res_name)
+                                const std::string &res_name) const
 {
   code.insert({"double " + res_name + "_vec[3];\n",
                res_name + "_vec[0] = 0;\n",
@@ -1026,7 +1167,7 @@ TopologyCode::polyhedron_volume(InsertionOrderedSet<std::string> &code,
 }
 
 void
-TopologyCode::volume(InsertionOrderedSet<std::string> &code)
+TopologyCode::volume(InsertionOrderedSet<std::string> &code) const
 {
   if(topo_type == "uniform")
   {
@@ -1069,7 +1210,7 @@ TopologyCode::volume(InsertionOrderedSet<std::string> &code)
 void
 TopologyCode::hexahedral_surface_area(InsertionOrderedSet<std::string> &code,
                                       const std::string &vertex_locs,
-                                      const std::string &res_name)
+                                      const std::string &res_name) const
 {
   // negative x face
   quadrilateral_area(code,
@@ -1117,7 +1258,7 @@ TopologyCode::hexahedral_surface_area(InsertionOrderedSet<std::string> &code,
 void
 TopologyCode::tetrahedral_surface_area(InsertionOrderedSet<std::string> &code,
                                        const std::string &vertex_locs,
-                                       const std::string &res_name)
+                                       const std::string &res_name) const
 {
   triangle_area(code,
                 vertex_locs + "[0]",
@@ -1144,7 +1285,7 @@ TopologyCode::tetrahedral_surface_area(InsertionOrderedSet<std::string> &code,
 }
 
 void
-TopologyCode::area(InsertionOrderedSet<std::string> &code)
+TopologyCode::area(InsertionOrderedSet<std::string> &code) const
 {
   if(topo_type == "uniform")
   {
@@ -1218,7 +1359,7 @@ TopologyCode::area(InsertionOrderedSet<std::string> &code)
 }
 
 void
-TopologyCode::surface_area(InsertionOrderedSet<std::string> &code)
+TopologyCode::surface_area(InsertionOrderedSet<std::string> &code) const
 {
   if(topo_type == "uniform")
   {
@@ -1273,11 +1414,14 @@ TopologyCode::surface_area(InsertionOrderedSet<std::string> &code)
 //-----------------------------------------------------------------------------
 // {{{
 FieldCode::FieldCode(const std::string &field_name,
-                     const std::string &topo_name,
                      const std::string &association,
-                     const conduit::Node &domain)
+                     TopologyCode &&topo_code,
+                     const conduit::Node &arrays,
+                     const int num_components,
+                     const int component)
     : field_name(field_name), association(association),
-      topo_code(topo_name, domain)
+      num_components(num_components), component(component), array_code(arrays),
+      topo_code(topo_code)
 {
 }
 
@@ -1322,8 +1466,8 @@ FieldCode::field_idx(InsertionOrderedSet<std::string> &code,
   code.insert(res);
 }
 
-// Calculate the element associated gradient of a vertex associated field on a
-// quadrilateral mesh
+// Calculate the element associated gradient of a vertex associated field on
+// a quadrilateral mesh
 // https://github.com/visit-dav/visit/blob/f835d5132bdf7c6c8da09157ff86541290675a6f/src/avt/Expressions/General/avtGradientExpression.C#L1417
 // gradient mapping : vtk mapping
 // 1 : 0
@@ -1356,26 +1500,31 @@ FieldCode::quad_gradient(InsertionOrderedSet<std::string> &code,
        res_name + "_y[1] = .5 * (" + vertex_locs + "[0][1] + " + vertex_locs +
            "[1][1] - " + vertex_locs + "[2][1] - " + vertex_locs + "[3][1]);\n",
        "double " + res_name + "_v[3];\n",
-       res_name + "_v[0] = .5 * (" + field_name + "[" + vertices + "[3]] + " +
-           field_name + "[" + vertices + "[0]] - " + field_name + "[" +
-           vertices + "[1]] - " + field_name + "[" + vertices + "[2]]);\n",
-       res_name + "_v[1] = .5 * (" + field_name + "[" + vertices + "[0]] + " +
-           field_name + "[" + vertices + "[1]] - " + field_name + "[" +
-           vertices + "[2]] - " + field_name + "[" + vertices + "[3]]);\n"});
+       res_name + "_v[0] = .5 * (" +
+           array_code.index(field_name, vertices + "[3]", component) + " + " +
+           array_code.index(field_name, vertices + "[0]", component) + " - " +
+           array_code.index(field_name, vertices + "[1]", component) + " - " +
+           array_code.index(field_name, vertices + "[2]", component) + ");\n",
+       res_name + "_v[1] = .5 * (" +
+           array_code.index(field_name, vertices + "[0]", component) + " + " +
+           array_code.index(field_name, vertices + "[1]", component) + " - " +
+           array_code.index(field_name, vertices + "[2]", component) + " - " +
+           array_code.index(field_name, vertices + "[3]", component) + ");\n"});
   math_code.determinant_2x2(
       code, res_name + "_x", res_name + "_y", res_name + "_area");
-  code.insert("const double inv_vol = 1.0 / (tiny + " + res_name + "_area);\n");
+  code.insert("const double " + res_name + "_inv_vol = 1.0 / (tiny + " +
+              res_name + "_area);\n");
   math_code.determinant_2x2(
       code, res_name + "_v", res_name + "_y", res_name + "[0]", false);
-  code.insert(res_name + "[0] *= inv_vol;\n");
+  code.insert(res_name + "[0] *= " + res_name + "_inv_vol;\n");
   math_code.determinant_2x2(
       code, res_name + "_x", res_name + "_v", res_name + "[1]", false);
-  code.insert(res_name + "[1] *= inv_vol;\n");
+  code.insert(res_name + "[1] *= " + res_name + "_inv_vol;\n");
   code.insert(res_name + "[2] = 0;\n");
 }
 
-// Calculate the element associated gradient of a vertex associated field on a
-// hexahedral mesh
+// Calculate the element associated gradient of a vertex associated field on
+// a hexahedral mesh
 // https://github.com/visit-dav/visit/blob/f835d5132bdf7c6c8da09157ff86541290675a6f/src/avt/Expressions/General/avtGradientExpression.C#L1511
 // gradient mapping : vtk mapping
 // 0 : 3
@@ -1390,131 +1539,148 @@ void
 FieldCode::hex_gradient(InsertionOrderedSet<std::string> &code,
                         const std::string &res_name)
 {
-  // assume vertex locations are populated (either structured or unstructured
-  // hexes)
-  // xi = .25 * ( (x[3] + x[0] + x[7] + x[4]) - (x[2] + x[1] + x[5] + x[6]) );
-  // xj = .25 * ( (x[0] + x[1] + x[5] + x[4]) - (x[3] + x[2] + x[6] + x[7]) );
-  // xk = .25 * ( (x[7] + x[4] + x[5] + x[6]) - (x[3] + x[0] + x[1] + x[2]) );
+  // assume vertex locations are populated (either structured or
+  // unstructured hexes) xi = .25 * ( (x[3] + x[0] + x[7] + x[4]) - (x[2] +
+  // x[1] + x[5] + x[6]) ); xj = .25 * ( (x[0] + x[1] + x[5] + x[4]) - (x[3]
+  // + x[2] + x[6] + x[7]) ); xk = .25 * ( (x[7] + x[4] + x[5] + x[6]) -
+  // (x[3] + x[0] + x[1] + x[2]) );
 
-  // yi = .25 * ( (y[3] + y[0] + y[7] + y[4]) - (y[2] + y[1] + y[5] + y[6]) );
-  // yj = .25 * ( (y[0] + y[1] + y[5] + y[4]) - (y[3] + y[2] + y[6] + y[7]) );
-  // yk = .25 * ( (y[7] + y[4] + y[5] + y[6]) - (y[3] + y[0] + y[1] + y[2]) );
+  // yi = .25 * ( (y[3] + y[0] + y[7] + y[4]) - (y[2] + y[1] + y[5] + y[6])
+  // ); yj = .25 * ( (y[0] + y[1] + y[5] + y[4]) - (y[3] + y[2] + y[6] +
+  // y[7]) ); yk = .25 * ( (y[7] + y[4] + y[5] + y[6]) - (y[3] + y[0] + y[1]
+  // + y[2]) );
 
-  // zi = .25 * ( (z[3] + z[0] + z[7] + z[4]) - (z[2] + z[1] + z[5] + z[6]) );
-  // zj = .25 * ( (z[0] + z[1] + z[5] + z[4]) - (z[3] + z[2] + z[6] + z[7]) );
-  // zk = .25 * ( (z[7] + z[4] + z[5] + z[6]) - (z[3] + z[0] + z[1] + z[2]) );
+  // zi = .25 * ( (z[3] + z[0] + z[7] + z[4]) - (z[2] + z[1] + z[5] + z[6])
+  // ); zj = .25 * ( (z[0] + z[1] + z[5] + z[4]) - (z[3] + z[2] + z[6] +
+  // z[7]) ); zk = .25 * ( (z[7] + z[4] + z[5] + z[6]) - (z[3] + z[0] + z[1]
+  // + z[2]) );
 
-  // vi = .25 * ( (v[3] + v[0] + v[7] + v[4]) - (v[2] + v[1] + v[5] + v[6]) );
-  // vj = .25 * ( (v[0] + v[1] + v[5] + v[4]) - (v[3] + v[2] + v[6] + v[7]) );
-  // vk = .25 * ( (v[7] + v[4] + v[5] + v[6]) - (v[3] + v[0] + v[1] + v[2]) );
+  // vi = .25 * ( (v[3] + v[0] + v[7] + v[4]) - (v[2] + v[1] + v[5] + v[6])
+  // ); vj = .25 * ( (v[0] + v[1] + v[5] + v[4]) - (v[3] + v[2] + v[6] +
+  // v[7]) ); vk = .25 * ( (v[7] + v[4] + v[5] + v[6]) - (v[3] + v[0] + v[1]
+  // + v[2]) );
   const std::string vertex_locs = topo_code.topo_name + "_vertex_locs";
   const std::string vertices = topo_code.topo_name + "_vertices";
-  code.insert(
-      {"double " + res_name + "_x[3];\n",
-       res_name + "_x[0] = .25 * ( (" + vertex_locs + "[3][0] + " +
-           vertex_locs + "[0][0] + " + vertex_locs + "[7][0] + " + vertex_locs +
-           "[4][0]) - (" + vertex_locs + "[2][0] + " + vertex_locs +
-           "[1][0] + " + vertex_locs + "[5][0] + " + vertex_locs +
-           "[6][0]) );\n",
-       res_name + "_x[1] = .25 * ( (" + vertex_locs + "[0][0] + " +
-           vertex_locs + "[1][0] + " + vertex_locs + "[5][0] + " + vertex_locs +
-           "[4][0]) - (" + vertex_locs + "[3][0] + " + vertex_locs +
-           "[2][0] + " + vertex_locs + "[6][0] + " + vertex_locs +
-           "[7][0]) );\n",
-       res_name + "_x[2] = .25 * ( (" + vertex_locs + "[7][0] + " +
-           vertex_locs + "[4][0] + " + vertex_locs + "[5][0] + " + vertex_locs +
-           "[6][0]) - (" + vertex_locs + "[3][0] + " + vertex_locs +
-           "[0][0] + " + vertex_locs + "[1][0] + " + vertex_locs +
-           "[2][0]) );\n",
-       "double " + res_name + "_y[3];\n",
-       res_name + "_y[0] = .25 * ( (" + vertex_locs + "[3][1] + " +
-           vertex_locs + "[0][1] + " + vertex_locs + "[7][1] + " + vertex_locs +
-           "[4][1]) - (" + vertex_locs + "[2][1] + " + vertex_locs +
-           "[1][1] + " + vertex_locs + "[5][1] + " + vertex_locs +
-           "[6][1]) );\n",
-       res_name + "_y[1] = .25 * ( (" + vertex_locs + "[0][1] + " +
-           vertex_locs + "[1][1] + " + vertex_locs + "[5][1] + " + vertex_locs +
-           "[4][1]) - (" + vertex_locs + "[3][1] + " + vertex_locs +
-           "[2][1] + " + vertex_locs + "[6][1] + " + vertex_locs +
-           "[7][1]) );\n",
-       res_name + "_y[2] = .25 * ( (" + vertex_locs + "[7][1] + " +
-           vertex_locs + "[4][1] + " + vertex_locs + "[5][1] + " + vertex_locs +
-           "[6][1]) - (" + vertex_locs + "[3][1] + " + vertex_locs +
-           "[0][1] + " + vertex_locs + "[1][1] + " + vertex_locs +
-           "[2][1]) );\n",
-       "double " + res_name + "_z[3];\n",
-       res_name + "_z[0] = .25 * ( (" + vertex_locs + "[3][2] + " +
-           vertex_locs + "[0][2] + " + vertex_locs + "[7][2] + " + vertex_locs +
-           "[4][2]) - (" + vertex_locs + "[2][2] + " + vertex_locs +
-           "[1][2] + " + vertex_locs + "[5][2] + " + vertex_locs +
-           "[6][2]) );\n",
-       "double " + res_name + "_z[3];\n",
-       res_name + "_z[1] = .25 * ( (" + vertex_locs + "[0][2] + " +
-           vertex_locs + "[1][2] + " + vertex_locs + "[5][2] + " + vertex_locs +
-           "[4][2]) - (" + vertex_locs + "[3][2] + " + vertex_locs +
-           "[2][2] + " + vertex_locs + "[6][2] + " + vertex_locs +
-           "[7][2]) );\n",
-       res_name + "_z[2] = .25 * ( (" + vertex_locs + "[7][2] + " +
-           vertex_locs + "[4][2] + " + vertex_locs + "[5][2] + " + vertex_locs +
-           "[6][2]) - (" + vertex_locs + "[3][2] + " + vertex_locs +
-           "[0][2] + " + vertex_locs + "[1][2] + " + vertex_locs +
-           "[2][2]) );\n",
-       "double " + res_name + "_v[3];\n",
-       res_name + "_v[0] = .25 * ( (" + field_name + "[" + vertices +
-           "[3]] + " + field_name + "[" + vertices + "[0]] + " + field_name +
-           "[" + vertices + "[7]] + " + field_name + "[" + vertices +
-           "[4]]) - (" + field_name + "[" + vertices + "[2]] + " + field_name +
-           "[" + vertices + "[1]] + " + field_name + "[" + vertices +
-           "[5]] + " + field_name + "[" + vertices + "[6]]) );\n",
-       res_name + "_v[1] = .25 * ( (" + field_name + "[" + vertices +
-           "[0]] + " + field_name + "[" + vertices + "[1]] + " + field_name +
-           "[" + vertices + "[5]] + " + field_name + "[" + vertices +
-           "[4]]) - (" + field_name + "[" + vertices + "[3]] + " + field_name +
-           "[" + vertices + "[2]] + " + field_name + "[" + vertices +
-           "[6]] + " + field_name + "[" + vertices + "[7]]) );\n",
-       res_name + "_v[2] = .25 * ( (" + field_name + "[" + vertices +
-           "[7]] + " + field_name + "[" + vertices + "[4]] + " + field_name +
-           "[" + vertices + "[5]] + " + field_name + "[" + vertices +
-           "[6]]) - (" + field_name + "[" + vertices + "[3]] + " + field_name +
-           "[" + vertices + "[0]] + " + field_name + "[" + vertices +
-           "[1]] + " + field_name + "[" + vertices + "[2]]) );\n"});
+  code.insert({
+      "double " + res_name + "_x[3];\n",
+      res_name + "_x[0] = .25 * ( (" + vertex_locs + "[3][0] + " + vertex_locs +
+          "[0][0] + " + vertex_locs + "[7][0] + " + vertex_locs +
+          "[4][0]) - (" + vertex_locs + "[2][0] + " + vertex_locs +
+          "[1][0] + " + vertex_locs + "[5][0] + " + vertex_locs +
+          "[6][0]) );\n",
+      res_name + "_x[1] = .25 * ( (" + vertex_locs + "[0][0] + " + vertex_locs +
+          "[1][0] + " + vertex_locs + "[5][0] + " + vertex_locs +
+          "[4][0]) - (" + vertex_locs + "[3][0] + " + vertex_locs +
+          "[2][0] + " + vertex_locs + "[6][0] + " + vertex_locs +
+          "[7][0]) );\n",
+      res_name + "_x[2] = .25 * ( (" + vertex_locs + "[7][0] + " + vertex_locs +
+          "[4][0] + " + vertex_locs + "[5][0] + " + vertex_locs +
+          "[6][0]) - (" + vertex_locs + "[3][0] + " + vertex_locs +
+          "[0][0] + " + vertex_locs + "[1][0] + " + vertex_locs +
+          "[2][0]) );\n",
+      "double " + res_name + "_y[3];\n",
+      res_name + "_y[0] = .25 * ( (" + vertex_locs + "[3][1] + " + vertex_locs +
+          "[0][1] + " + vertex_locs + "[7][1] + " + vertex_locs +
+          "[4][1]) - (" + vertex_locs + "[2][1] + " + vertex_locs +
+          "[1][1] + " + vertex_locs + "[5][1] + " + vertex_locs +
+          "[6][1]) );\n",
+      res_name + "_y[1] = .25 * ( (" + vertex_locs + "[0][1] + " + vertex_locs +
+          "[1][1] + " + vertex_locs + "[5][1] + " + vertex_locs +
+          "[4][1]) - (" + vertex_locs + "[3][1] + " + vertex_locs +
+          "[2][1] + " + vertex_locs + "[6][1] + " + vertex_locs +
+          "[7][1]) );\n",
+      res_name + "_y[2] = .25 * ( (" + vertex_locs + "[7][1] + " + vertex_locs +
+          "[4][1] + " + vertex_locs + "[5][1] + " + vertex_locs +
+          "[6][1]) - (" + vertex_locs + "[3][1] + " + vertex_locs +
+          "[0][1] + " + vertex_locs + "[1][1] + " + vertex_locs +
+          "[2][1]) );\n",
+      "double " + res_name + "_z[3];\n",
+      res_name + "_z[0] = .25 * ( (" + vertex_locs + "[3][2] + " + vertex_locs +
+          "[0][2] + " + vertex_locs + "[7][2] + " + vertex_locs +
+          "[4][2]) - (" + vertex_locs + "[2][2] + " + vertex_locs +
+          "[1][2] + " + vertex_locs + "[5][2] + " + vertex_locs +
+          "[6][2]) );\n",
+      "double " + res_name + "_z[3];\n",
+      res_name + "_z[1] = .25 * ( (" + vertex_locs + "[0][2] + " + vertex_locs +
+          "[1][2] + " + vertex_locs + "[5][2] + " + vertex_locs +
+          "[4][2]) - (" + vertex_locs + "[3][2] + " + vertex_locs +
+          "[2][2] + " + vertex_locs + "[6][2] + " + vertex_locs +
+          "[7][2]) );\n",
+      res_name + "_z[2] = .25 * ( (" + vertex_locs + "[7][2] + " + vertex_locs +
+          "[4][2] + " + vertex_locs + "[5][2] + " + vertex_locs +
+          "[6][2]) - (" + vertex_locs + "[3][2] + " + vertex_locs +
+          "[0][2] + " + vertex_locs + "[1][2] + " + vertex_locs +
+          "[2][2]) );\n",
+      "double " + res_name + "_v[3];\n",
+      res_name + "_v[0] = .25 * ( (" +
+          array_code.index(field_name, vertices + "[3]", component) + " + " +
+          array_code.index(field_name, vertices + "[0]", component) + " + " +
+          array_code.index(field_name, vertices + "[7]", component) + " + " +
+          array_code.index(field_name, vertices + "[4]", component) + ") - (" +
+          array_code.index(field_name, vertices + "[2]", component) + " + " +
+          array_code.index(field_name, vertices + "[1]", component) + " + " +
+          array_code.index(field_name, vertices + "[5]", component) + " + " +
+          array_code.index(field_name, vertices + "[6]", component) + ") );\n",
+      res_name + "_v[1] = .25 * ( (" +
+          array_code.index(field_name, vertices + "[0]", component) + " + " +
+          array_code.index(field_name, vertices + "[1]", component) + " + " +
+          array_code.index(field_name, vertices + "[5]", component) + " + " +
+          array_code.index(field_name, vertices + "[4]", component) + ") - (" +
+          array_code.index(field_name, vertices + "[3]", component) + " + " +
+          array_code.index(field_name, vertices + "[2]", component) + " + " +
+          array_code.index(field_name, vertices + "[6]", component) + " + " +
+          array_code.index(field_name, vertices + "[7]", component) + ") );\n",
+      res_name + "_v[2] = .25 * ( (" +
+          array_code.index(field_name, vertices + "[7]", component) + " + " +
+          array_code.index(field_name, vertices + "[4]", component) + " + " +
+          array_code.index(field_name, vertices + "[5]", component) + " + " +
+          array_code.index(field_name, vertices + "[6]", component) + ") - (" +
+          array_code.index(field_name, vertices + "[3]", component) + " + " +
+          array_code.index(field_name, vertices + "[0]", component) + " + " +
+          array_code.index(field_name, vertices + "[1]", component) + " + " +
+          array_code.index(field_name, vertices + "[2]", component) + ") );\n",
+  });
   math_code.determinant_3x3(code,
                             res_name + "_x",
                             res_name + "_y",
                             res_name + "_z",
                             res_name + "_vol");
-  code.insert("const double inv_vol = 1.0 / (tiny + " + res_name + "_vol);\n");
+  code.insert("const double " + res_name + "_inv_vol = 1.0 / (tiny + " +
+              res_name + "_vol);\n");
   math_code.determinant_3x3(code,
                             res_name + "_v",
                             res_name + "_y",
                             res_name + "_z",
                             res_name + "[0]",
                             false);
-  code.insert(res_name + "[0] *= inv_vol;\n");
+  code.insert(res_name + "[0] *= " + res_name + "_inv_vol;\n");
   math_code.determinant_3x3(code,
                             res_name + "_v",
                             res_name + "_z",
                             res_name + "_x",
                             res_name + "[1]",
                             false);
-  code.insert(res_name + "[1] *= inv_vol;\n");
+  code.insert(res_name + "[1] *= " + res_name + "_inv_vol;\n");
   math_code.determinant_3x3(code,
                             res_name + "_v",
                             res_name + "_x",
                             res_name + "_y",
                             res_name + "[2]",
                             false);
-  code.insert(res_name + "[2] *= inv_vol;\n");
+  code.insert(res_name + "[2] *= " + res_name + "_inv_vol;\n");
 }
 
 void
 FieldCode::gradient(InsertionOrderedSet<std::string> &code)
 {
-  const std::string gradient_name = field_name + "_gradient";
+  const std::string gradient_name =
+      field_name + (component == -1 ? "" : "_" + std::to_string(component)) +
+      "_gradient";
   code.insert("double " + gradient_name + "[3];\n");
 
-  // handle hex and quad gradients (for now only structured) elsewhere
-  if(association == "vertex")
+  // handle hex and quad gradients elsewhere
+  if(association == "vertex" && (topo_code.topo_type == "structured" ||
+                                 topo_code.topo_type == "unstructured"))
   {
     code.insert("double " + gradient_name + "[3];\n");
     code.insert("const double tiny = 1.e-37;\n");
@@ -1606,7 +1772,9 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
 
       InsertionOrderedSet<std::string> upper_body;
       field_idx(upper_body, index_name, upper + "_idx", association, false);
-      upper_body.insert(upper + " = " + field_name + "[" + upper + "_idx];\n");
+      upper_body.insert(
+          upper + " = " +
+          array_code.index(field_name, upper + "_idx", component) + ";\n");
       if(association == "vertex")
       {
         topo_code.vertex_coord(upper_body,
@@ -1645,7 +1813,9 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
 
       InsertionOrderedSet<std::string> lower_body;
       field_idx(lower_body, index_name, lower + "_idx", association, false);
-      lower_body.insert(lower + " = " + field_name + "[" + lower + "_idx];\n");
+      lower_body.insert(
+          lower + " = " +
+          array_code.index(field_name, lower + "_idx", component) + ";\n");
       if(association == "vertex")
       {
         topo_code.vertex_coord(lower_body,
@@ -1690,6 +1860,685 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
     }
   }
 }
+
+void
+FieldCode::vorticity(InsertionOrderedSet<std::string> &code)
+{
+  // assumes the gradient for each component is present (generated in
+  // JitableFunctions::vorticity)
+  const std::string vorticity_name = field_name + "_vorticity";
+  code.insert({
+      "double " + vorticity_name + "[" + std::to_string(num_components) +
+          "];\n",
+      vorticity_name + "[0] = " + field_name + "_2_gradient[1] - " +
+          field_name + "_1_gradient[2];\n",
+      vorticity_name + "[1] = " + field_name + "_0_gradient[2] - " +
+          field_name + "_2_gradient[0];\n",
+      vorticity_name + "[2] = " + field_name + "_1_gradient[0] - " +
+          field_name + "_0_gradient[1];\n",
+  });
+}
+// }}}
+
+//-----------------------------------------------------------------------------
+// -- JitableFunctions
+//-----------------------------------------------------------------------------
+// {{{
+JitableFunctions::JitableFunctions(
+    const conduit::Node &params,
+    const std::vector<const Jitable *> &input_jitables,
+    const std::vector<const Kernel *> &input_kernels,
+    const std::string &filter_name,
+    const conduit::Node &dataset,
+    const int dom_idx,
+    const bool not_fused,
+    Jitable &out_jitable,
+    Kernel &out_kernel)
+    : params(params), input_jitables(input_jitables),
+      input_kernels(input_kernels), filter_name(filter_name), dataset(dataset),
+      dom_idx(dom_idx), not_fused(not_fused), out_jitable(out_jitable),
+      out_kernel(out_kernel), inputs(params["inputs"]),
+      domain(dataset.child(dom_idx))
+{
+}
+
+void
+JitableFunctions::binary_op()
+{
+  if(not_fused)
+  {
+    const int lhs_port = inputs["lhs/port"].to_int32();
+    const int rhs_port = inputs["rhs/port"].to_int32();
+    const Kernel &lhs_kernel = *input_kernels[lhs_port];
+    const Kernel &rhs_kernel = *input_kernels[rhs_port];
+    // union the field/mesh vars
+    out_kernel.fuse_kernel(lhs_kernel);
+    out_kernel.fuse_kernel(rhs_kernel);
+    const std::string lhs_expr = lhs_kernel.expr;
+    const std::string rhs_expr = rhs_kernel.expr;
+    const std::string &op_str = params["op_string"].as_string();
+    if(lhs_kernel.num_components == 1 && rhs_kernel.num_components == 1)
+    {
+      // generate the new expression string (main line of code)
+      out_kernel.expr = "(" + lhs_expr + " " + op_str + " " + rhs_expr + ")";
+      out_kernel.num_components = 1;
+    }
+    else
+    {
+      bool error = false;
+      if(lhs_kernel.num_components == rhs_kernel.num_components)
+      {
+        if(op_str == "+")
+        {
+          MathCode().vector_add(out_kernel.for_body,
+                                lhs_expr,
+                                rhs_expr,
+                                filter_name,
+                                lhs_kernel.num_components);
+        }
+        else if(op_str == "-")
+        {
+          MathCode().vector_subtract(out_kernel.for_body,
+                                     lhs_expr,
+                                     rhs_expr,
+                                     filter_name,
+                                     lhs_kernel.num_components);
+        }
+        else if(op_str == "*")
+        {
+          MathCode().dot_product(out_kernel.for_body,
+                                 lhs_expr,
+                                 rhs_expr,
+                                 filter_name,
+                                 lhs_kernel.num_components);
+        }
+        else
+        {
+          error = true;
+        }
+        out_kernel.expr = filter_name;
+        out_kernel.num_components = lhs_kernel.num_components;
+      }
+      else
+      {
+        error = true;
+      }
+      if(error)
+      {
+        ASCENT_ERROR("Unsupported binary_op: field["
+                     << lhs_kernel.num_components << "] " << op_str << " field["
+                     << rhs_kernel.num_components << "].");
+      }
+    }
+  }
+  else
+  {
+    // kernel of this type has already been fused, do nothing on a
+    // per-domain basis
+  }
+}
+
+void
+JitableFunctions::builtin_functions(const std::string &function_name)
+{
+  if(not_fused)
+  {
+    out_kernel.expr = function_name + "(";
+    const int num_inputs = inputs.number_of_children();
+    for(int i = 0; i < num_inputs; ++i)
+    {
+      const int port_num = inputs.child(i)["port"].to_int32();
+      const Kernel &inp_kernel = *input_kernels[port_num];
+      if(inp_kernel.num_components > 1)
+      {
+        ASCENT_ERROR("Built-in function '"
+                     << function_name
+                     << "' does not support vector fields with "
+                     << inp_kernel.num_components << " components.");
+      }
+      const std::string &inp_expr = inp_kernel.expr;
+      out_kernel.fuse_kernel(inp_kernel);
+      if(i != 0)
+      {
+        out_kernel.expr += ", ";
+      }
+      out_kernel.expr += inp_expr;
+    }
+    out_kernel.expr += ")";
+    out_kernel.num_components = 1;
+  }
+}
+
+bool
+available_component(const std::string &axis,
+                    const int num_axes,
+                    const std::string &topo_name)
+{
+  // if a field has only 1 component it doesn't have .x .y .z
+  if((axis == "x" && num_axes >= 2) || (axis == "y" && num_axes >= 2) ||
+     (axis == "z" && num_axes >= 3))
+  {
+    return true;
+  }
+  ASCENT_ERROR("Derived field with "
+               << num_axes << " components does not have component '" << axis
+               << "'.");
+  return false;
+}
+
+bool
+available_axis(const std::string &axis,
+               const int num_axes,
+               const std::string &topo_name)
+{
+  if(((axis == "x" || axis == "dx") && num_axes >= 1) ||
+     ((axis == "y" || axis == "dy") && num_axes >= 2) ||
+     ((axis == "z" || axis == "dz") && num_axes >= 3))
+  {
+    return true;
+  }
+  ASCENT_ERROR("Topology '" << topo_name << "' with " << num_axes
+                            << " dimensions does not have axis '" << axis
+                            << "'.");
+  return false;
+}
+
+void
+JitableFunctions::topo_attrs(const conduit::Node &obj, const std::string &name)
+{
+  const std::string &topo_name = obj["value"].as_string();
+  std::unique_ptr<Topology> topo = topologyFactory(topo_name, domain);
+  if(obj.has_path("attr"))
+  {
+    if(not_fused)
+    {
+      const conduit::Node &assoc = obj["attr"].child(0);
+      const conduit::Node &args = out_jitable.dom_info.child(dom_idx)["args"];
+      TopologyCode topo_code = TopologyCode(topo_name, domain, args);
+      if(assoc.name() == "cell")
+      {
+        // x, y, z
+        if(is_xyz(name) && available_axis(name, topo->num_dims, topo_name))
+        {
+          topo_code.element_coord(
+              out_kernel.for_body, name, "", topo_name + "_cell_" + name);
+          out_kernel.expr = topo_name + "_cell_" + name;
+        }
+        // dx, dy, dz
+        else if(name[0] == 'd' && is_xyz(std::string(1, name[1])) &&
+                available_axis(name, topo->num_dims, topo_name))
+        {
+          if(topo->topo_type == "uniform")
+          {
+            out_kernel.expr = topo_name + "_spacing_" + name;
+          }
+          else if(topo->topo_type == "rectilinear")
+          {
+            topo_code.dxdydz(out_kernel.for_body);
+            out_kernel.expr = topo_name + "_" + name;
+          }
+          else
+          {
+            ASCENT_ERROR("Can only get dx, dy, dz for uniform or rectiilnear "
+                         "topologies not topologies of type '"
+                         << topo->topo_type << "'.");
+          }
+        }
+        else if(name == "volume")
+        {
+          if(topo->num_dims != 3)
+          {
+            ASCENT_ERROR("Cell volume is only defined for topologies with 3 "
+                         "dimensions. The specified topology '"
+                         << topo->topo_name << "' has " << topo->num_dims
+                         << " dimensions.");
+          }
+          topo_code.volume(out_kernel.for_body);
+          out_kernel.expr = topo_name + "_volume";
+        }
+        else if(name == "area")
+        {
+          if(topo->num_dims < 2)
+          {
+            ASCENT_ERROR("Cell area is only defined for topologies at most 2 "
+                         "dimensions. The specified topology '"
+                         << topo->topo_name << "' has " << topo->num_dims
+                         << " dimensions.");
+          }
+          topo_code.area(out_kernel.for_body);
+          out_kernel.expr = topo_name + "_area";
+        }
+        else if(name == "surface_area")
+        {
+          if(topo->num_dims != 3)
+          {
+            ASCENT_ERROR(
+                "Cell surface area is only defined for topologies with 3 "
+                "dimensions. The specified topology '"
+                << topo->topo_name << "' has " << topo->num_dims
+                << " dimensions.");
+          }
+          topo_code.surface_area(out_kernel.for_body);
+          out_kernel.expr = topo_name + "_surface_area";
+        }
+        else if(name == "id")
+        {
+          out_kernel.expr = "item";
+        }
+        else
+        {
+          ASCENT_ERROR("Could not find attribute '"
+                       << name << "' of topo.cell at runtime.");
+        }
+      }
+      else if(assoc.name() == "vertex")
+      {
+        if(is_xyz(name) && available_axis(name, topo->num_dims, topo_name))
+        {
+          topo_code.vertex_coord(
+              out_kernel.for_body, name, "", topo_name + "_vertex_" + name);
+          out_kernel.expr = topo_name + "_vertex_" + name;
+        }
+        else if(name == "id")
+        {
+          out_kernel.expr = "item";
+        }
+        else
+        {
+          ASCENT_ERROR("Could not find attribute '"
+                       << name << "' of topo.vertex at runtime.");
+        }
+      }
+      else
+      {
+        ASCENT_ERROR("Could not find attribute '" << assoc.name()
+                                                  << "' of topo at runtime.");
+      }
+    }
+  }
+  else
+  {
+    if(name == "cell")
+    {
+      if(topo->topo_type == "points")
+      {
+        ASCENT_ERROR("Point topology '" << topo_name
+                                        << "' has no cell attributes.");
+      }
+      out_jitable.dom_info.child(dom_idx)["entries"] = topo->get_num_cells();
+      out_jitable.association = "element";
+    }
+    else
+    {
+      out_jitable.dom_info.child(dom_idx)["entries"] = topo->get_num_points();
+      out_jitable.association = "vertex";
+    }
+    out_jitable.obj = obj;
+    out_jitable.obj["attr/" + name];
+  }
+}
+
+void
+JitableFunctions::expr_dot()
+{
+  const int obj_port = inputs["obj/port"].as_int32();
+  const Kernel &obj_kernel = *input_kernels[obj_port];
+  const conduit::Node &obj = input_jitables[obj_port]->obj;
+  const std::string &name = params["name"].as_string();
+  if(!obj.has_path("type"))
+  {
+    // field objects
+    if(is_xyz(name) && available_component(name, obj_kernel.num_components, ""))
+    {
+      out_kernel.expr =
+          obj_kernel.expr + "[" + std::to_string(name[0] - 'x') + "]";
+      out_kernel.num_components = 1;
+    }
+    else
+    {
+
+      ASCENT_ERROR("Could not find attribute '" << name
+                                                << "' of field at runtime.");
+    }
+  }
+  else
+  {
+    // all other objects
+    if(obj["type"].as_string() == "topo")
+    {
+      // needs to run for every domain not just every kernel type to
+      // populate entries
+      topo_attrs(obj, name);
+      // for now all topology attributes have one component :)
+      out_kernel.num_components = 1;
+    }
+    else
+    {
+      ASCENT_ERROR("JitFilter: Unknown obj:\n" << obj.to_yaml());
+    }
+  }
+}
+
+void
+JitableFunctions::expr_if()
+{
+  if(not_fused)
+  {
+    const int condition_port = inputs["condition/port"].as_int32();
+    const int if_port = inputs["if/port"].as_int32();
+    const int else_port = inputs["else/port"].as_int32();
+    const Kernel &condition_kernel = *input_kernels[condition_port];
+    const Kernel &if_kernel = *input_kernels[if_port];
+    const Kernel &else_kernel = *input_kernels[else_port];
+    out_kernel.kernel_body.insert(condition_kernel.kernel_body);
+    out_kernel.kernel_body.insert(if_kernel.kernel_body);
+    out_kernel.kernel_body.insert(else_kernel.kernel_body);
+    const std::string cond_name = filter_name + "_cond";
+    const std::string res_name = filter_name + "_res";
+
+    out_kernel.for_body.insert(condition_kernel.for_body);
+    out_kernel.for_body.insert(
+        condition_kernel.generate_output(cond_name, true));
+
+    InsertionOrderedSet<std::string> if_else;
+    if_else.insert("double " + res_name + ";\n");
+    if_else.insert("if(" + cond_name + ")\n{\n");
+    if_else.insert(if_kernel.for_body.accumulate() +
+                   if_kernel.generate_output(res_name, false));
+    if_else.insert("}\nelse\n{\n");
+    if_else.insert(else_kernel.for_body.accumulate() +
+                   else_kernel.generate_output(res_name, false));
+    if_else.insert("}\n");
+
+    out_kernel.for_body.insert(if_else.accumulate());
+    out_kernel.expr = res_name;
+    if(if_kernel.num_components != else_kernel.num_components)
+    {
+      ASCENT_ERROR("Jitable if-else: The if-branch results in "
+                   << if_kernel.num_components
+                   << " components and the else-branch results in "
+                   << else_kernel.num_components
+                   << " but they must have the same number of components.");
+    }
+    out_kernel.num_components = if_kernel.num_components;
+  }
+}
+
+void
+JitableFunctions::derived_field()
+{
+  // setting association and topology should run once for Jitable not for
+  // each domain, but won't hurt
+  if(inputs.has_path("association"))
+  {
+    const conduit::Node &string_obj =
+        input_jitables[inputs["association/port"].as_int32()]->obj;
+    const std::string &new_association = string_obj["value"].as_string();
+    if(new_association != "vertex" && new_association != "element")
+    {
+      ASCENT_ERROR("derived_field: Unknown association '"
+                   << new_association
+                   << "'. Known associations are 'vertex' and 'element'.");
+    }
+    out_jitable.association = new_association;
+  }
+  if(inputs.has_path("topology"))
+  {
+    const conduit::Node &string_obj =
+        input_jitables[inputs["topology/port"].as_int32()]->obj;
+    const std::string &new_topology = string_obj["value"].as_string();
+    // We repeat this check because we pass the topology name as a
+    // string. If we pass a topo object it will get packed which is
+    // unnecessary if we only want to output on the topology.
+    if(!has_topology(dataset, new_topology))
+    {
+      ASCENT_ERROR(": dataset does not contain topology '"
+                   << new_topology << "'"
+                   << " known = " << known_topos(dataset));
+    }
+    if(!out_jitable.association.empty() && out_jitable.association != "none")
+    {
+      // update entries
+      std::unique_ptr<Topology> topo = topologyFactory(new_topology, domain);
+      conduit::Node &cur_dom_info = out_jitable.dom_info.child(dom_idx);
+      int new_entries = 0;
+      if(out_jitable.association == "vertex")
+      {
+        new_entries = topo->get_num_points();
+      }
+      else if(out_jitable.association == "element")
+      {
+        new_entries = topo->get_num_cells();
+      }
+      // ensure entries doesn't change if it's already defined
+      if(cur_dom_info.has_child("entries"))
+      {
+        const int cur_entries = cur_dom_info["entries"].to_int32();
+        if(new_entries != cur_entries)
+        {
+          ASCENT_ERROR(
+              "derived_field: cannot put a derived field with "
+              << cur_entries << " entries as a " << out_jitable.association
+              << "-associated derived field on the topology '" << new_topology
+              << "' since the resulting field would need to have "
+              << new_entries << " entries.");
+        }
+      }
+      else
+      {
+        cur_dom_info["entries"] = new_entries;
+      }
+    }
+    out_jitable.topology = new_topology;
+  }
+  if(not_fused)
+  {
+    const int arg1_port = inputs["arg1/port"].as_int32();
+    const Kernel &arg1_kernel = *input_kernels[arg1_port];
+    out_kernel.fuse_kernel(arg1_kernel);
+  }
+}
+
+void
+JitableFunctions::gradient(const Jitable &field_jitable,
+                           const Kernel &field_kernel,
+                           const std::string &input_field,
+                           const int component)
+{
+  // association and topology should be the same for out_jitable and
+  // field_jitable because we have already fused jitables at this point
+  if(out_jitable.topology.empty() || out_jitable.topology == "none")
+  {
+    ASCENT_ERROR("Could not take the gradient of the derived field because the "
+                 "associated topology could not be determined.");
+  }
+  if(out_jitable.association.empty() || out_jitable.association == "none")
+  {
+    ASCENT_ERROR("Could not take the gradient of the derived field "
+                 "because the association could not be determined.");
+  }
+  conduit::Node &args = out_jitable.dom_info.child(dom_idx)["args"];
+  // gradient needs to pack the topology
+  std::unique_ptr<Topology> topo =
+      topologyFactory(field_jitable.topology, domain);
+  topo->pack(args);
+  // we need to change entries for each domain if we're doing a vertex to
+  // element gradient
+  if(topo->topo_type == "structured" && field_jitable.association == "vertex")
+  {
+    conduit::Node &n_entries = out_jitable.dom_info.child(dom_idx)["entries"];
+    // pass the old value of entries in args if it's needed
+    // (i.e. when we have to create generate a new derived field)
+    if(input_field.empty())
+    {
+      const std::string param_str = "const int " + filter_name + "_entries,\n";
+      out_jitable.dom_info.child(dom_idx)["args/" + param_str] =
+          n_entries.to_int32();
+    }
+    n_entries = topo->get_num_cells();
+    out_jitable.association = "element";
+  }
+  if(not_fused)
+  {
+    // vectors use the intereleaved memory layout because it is easier to
+    // pass "gradient[i]" to a function that takes in a vector and
+    // have it concatentate "[0]" to access the first element resulting in
+    // "gradient[i][0]" rather than "gradient[0][i]" where the "[0]" would
+    // have to be inserted between "gradient" and "[i]"
+
+    // generate a new derived field if the field we're taking the gradient of
+    // wasn't originally on the dataset
+    std::string my_input_field;
+    if(input_field.empty())
+    {
+      my_input_field = filter_name + "_inp";
+      out_kernel.kernel_body.insert("double " + input_field + "[" +
+                                    filter_name + "_entries];\n");
+      out_kernel.kernel_body.insert(
+          field_kernel.generate_loop(input_field, filter_name + "_entries"));
+    }
+    else
+    {
+      my_input_field = input_field;
+    }
+    TopologyCode topo_code = TopologyCode(topo->topo_name, domain, args);
+    FieldCode field_code = FieldCode(my_input_field,
+                                     field_jitable.association,
+                                     std::move(topo_code),
+                                     args,
+                                     1,
+                                     component);
+    field_code.gradient(out_kernel.for_body);
+    out_kernel.expr = my_input_field +
+                      (component == -1 ? "" : "_" + std::to_string(component)) +
+                      "_gradient";
+  }
+}
+
+void
+JitableFunctions::gradient()
+{
+  const int field_port = inputs["field/port"].as_int32();
+  const Jitable &field_jitable = *input_jitables[field_port];
+  const Kernel &field_kernel = *input_kernels[field_port];
+  const conduit::Node &obj = field_jitable.obj;
+  std::string field_name;
+  if(obj.has_path("value"))
+  {
+    field_name = obj["value"].as_string();
+  }
+  if(field_kernel.num_components > 1)
+  {
+    ASCENT_ERROR("gradient is only supported on scalar fields but a field with "
+                 << field_kernel.num_components << " components was given.");
+  }
+  gradient(field_jitable, field_kernel, field_name, -1);
+  out_kernel.num_components = 3;
+}
+
+void
+JitableFunctions::vorticity()
+{
+  const int field_port = inputs["field/port"].as_int32();
+  const Jitable &field_jitable = *input_jitables[field_port];
+  const Kernel &field_kernel = *input_kernels[field_port];
+  const conduit::Node &obj = field_jitable.obj;
+  if(field_kernel.num_components < 2)
+  {
+    ASCENT_ERROR("Vorticity is only implemented for fields with at least 2 "
+                 "components. The input field has "
+                 << field_kernel.num_components << ".");
+  }
+  std::string field_name;
+  if(obj.has_path("value"))
+  {
+    field_name = obj["value"].as_string();
+  }
+  else
+  {
+    // generate a new derived field and set field_name
+    field_name = filter_name + "_inp";
+    out_kernel.kernel_body.insert("double " + field_name + "[" + filter_name +
+                                  "_entries];\n");
+    out_kernel.kernel_body.insert(
+        field_kernel.generate_loop(field_name, filter_name + "_entries"));
+  }
+  // it's easier to call gradient here instead of inside FieldCode because we
+  // get to reuse the logic for changing the number of entries in the case of
+  // an vertex to element gradient
+  for(int i = 0; i < field_kernel.num_components; ++i)
+  {
+    gradient(field_jitable, field_kernel, field_name, i);
+  }
+  // TODO make it easier to construct FieldCode
+  if(not_fused)
+  {
+    conduit::Node &args = out_jitable.dom_info.child(dom_idx)["args"];
+    TopologyCode topo_code = TopologyCode(out_jitable.topology, domain, args);
+    FieldCode field_code = FieldCode(field_name,
+                                     field_jitable.association,
+                                     std::move(topo_code),
+                                     args,
+                                     field_kernel.num_components,
+                                     -1);
+    field_code.vorticity(out_kernel.for_body);
+    out_kernel.expr = field_name + "_vorticity";
+    out_kernel.num_components = field_kernel.num_components;
+  }
+}
+
+void
+JitableFunctions::magnitude()
+{
+  if(not_fused)
+  {
+    const int vector_port = inputs["vector/port"].as_int32();
+    const Kernel &vector_kernel = *input_kernels[vector_port];
+    if(vector_kernel.num_components <= 1)
+    {
+      ASCENT_ERROR("Cannot take the magnitude of a vector with "
+                   << vector_kernel.num_components << " components.");
+    }
+    out_kernel.fuse_kernel(vector_kernel);
+    MathCode().magnitude(out_kernel.for_body,
+                         vector_kernel.expr,
+                         filter_name,
+                         vector_kernel.num_components);
+    out_kernel.expr = filter_name;
+    out_kernel.num_components = 1;
+  }
+}
+
+void
+JitableFunctions::vector()
+{
+  if(not_fused)
+  {
+    const int arg1_port = inputs["arg1/port"].to_int32();
+    const int arg2_port = inputs["arg2/port"].to_int32();
+    const int arg3_port = inputs["arg3/port"].to_int32();
+    const Kernel &arg1_kernel = *input_kernels[arg1_port];
+    const Kernel &arg2_kernel = *input_kernels[arg2_port];
+    const Kernel &arg3_kernel = *input_kernels[arg3_port];
+    if(arg1_kernel.num_components != 1 || arg2_kernel.num_components != 1 ||
+       arg2_kernel.num_components != 1)
+    {
+      ASCENT_ERROR("Vector arguments must all have exactly one component.");
+    }
+    out_kernel.fuse_kernel(arg1_kernel);
+    out_kernel.fuse_kernel(arg2_kernel);
+    out_kernel.fuse_kernel(arg3_kernel);
+    const std::string arg1_expr = arg1_kernel.expr;
+    const std::string arg2_expr = arg2_kernel.expr;
+    const std::string arg3_expr = arg3_kernel.expr;
+    out_kernel.for_body.insert({"double " + filter_name + "[3];\n",
+                                filter_name + "[0] = " + arg1_expr + ";\n",
+                                filter_name + "[1] = " + arg2_expr + ";\n",
+                                filter_name + "[2] = " + arg3_expr + ";\n"});
+    out_kernel.expr = filter_name;
+    out_kernel.num_components = 3;
+  }
+}
 // }}}
 
 //-----------------------------------------------------------------------------
@@ -1699,7 +2548,7 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
 void
 Kernel::fuse_kernel(const Kernel &from)
 {
-  kernel_body = kernel_body + from.kernel_body;
+  kernel_body.insert(from.kernel_body);
   for_body.insert(from.for_body);
 }
 
@@ -1775,12 +2624,21 @@ Jitable::generate_kernel(const int dom_idx) const
   const conduit::Node &cur_dom_info = dom_info.child(dom_idx);
   const Kernel &kernel = kernels.at(cur_dom_info["kernel_type"].as_string());
   std::string kernel_string = "@kernel void map(";
+  bool first = true;
   for(const auto &param : cur_dom_info["args"].child_names())
   {
-    kernel_string += "                 " + param;
+    if(first)
+    {
+      first = false;
+      kernel_string += param;
+    }
+    else
+    {
+      kernel_string += "                 " + param;
+    }
   }
   kernel_string += "                 double *output_ptr)\n{\n";
-  kernel_string += kernel.kernel_body;
+  kernel_string += kernel.kernel_body.accumulate();
   kernel_string += kernel.generate_loop("output_ptr", "entries");
   kernel_string += "}";
   return detail::indent_code(kernel_string, 0);
@@ -1789,6 +2647,11 @@ Jitable::generate_kernel(const int dom_idx) const
 void
 Jitable::fuse_vars(const Jitable &from)
 {
+  // none is set when we try to fuse kernels with different topologies or
+  // associations. This allows the expression to have multiple topologies but
+  // we'll need a way of figuring out where to output things can't infer it
+  // anymore. The derived_field() function can be used to explicitly specify
+  // the topology and association.
   if(!from.topology.empty())
   {
     if(topology.empty())
@@ -1797,8 +2660,6 @@ Jitable::fuse_vars(const Jitable &from)
     }
     else if(topology != from.topology)
     {
-      // allow the expression to have multiple topologies but we'll need a way
-      // of figuring out where to output things
       topology = "none";
     }
   }
@@ -1811,7 +2672,6 @@ Jitable::fuse_vars(const Jitable &from)
     }
     else if(association != from.association)
     {
-      // TODO should this throw an error?
       association = "none";
     }
   }
@@ -1819,7 +2679,7 @@ Jitable::fuse_vars(const Jitable &from)
   int num_domains = from.dom_info.number_of_children();
   for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
   {
-    // fuse entries
+    // fuse entries, ensure they are the same
     const conduit::Node &from_dom_info = from.dom_info.child(dom_idx);
     conduit::Node &to_dom_info = dom_info.child(dom_idx);
     if(from_dom_info.has_path("entries"))
@@ -1842,9 +2702,11 @@ Jitable::fuse_vars(const Jitable &from)
     }
 
     // copy kernel_type
+    // This will be overwritten in all cases except when func="execute" in
+    // JitFilter::execute
     dom_info.child(dom_idx)["kernel_type"] = from_dom_info["kernel_type"];
 
-    // fuse args
+    // fuse args, set_external arrays and copy other arguments
     conduit::NodeConstIterator arg_itr = from_dom_info["args"].children();
     while(arg_itr.has_next())
     {
@@ -1854,7 +2716,6 @@ Jitable::fuse_vars(const Jitable &from)
       {
         if(arg.dtype().number_of_elements() > 1)
         {
-          // don't copy arrays
           to_args[arg.name()].set_external(arg);
         }
         else
@@ -1882,7 +2743,8 @@ Jitable::fuse_vars(const Jitable &from)
 //    (e.g. "::map(const int &, const double *, const double &, double *)")
 // 8  lldb ./tests/ascent/t_ascent_derived
 // 9. break at the function name found above and run
-//    (e.g. "b ::map(const int &, const double *, const double &, double *)")
+//    (e.g. "b ::map(const int &, const double *, const double &, double
+//    *)")
 
 // TODO for now we just put the field on the mesh when calling execute
 // should probably delete it later if it's an intermediate field
@@ -1901,17 +2763,20 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
   occa::device &device = occa::getDevice();
   occa::kernel occa_kernel;
 
-  // we need an association and topo so we can put the field back on the mesh
+  // we need an association and topo so we can put the field back on the
+  // mesh
   // TODO create a new topo with vertex assoc for temporary fields
   if(topology.empty() || topology == "none")
   {
-    ASCENT_ERROR("Error while executing derived field: Could not determine the "
-                 "topology.");
+    ASCENT_ERROR("Error while executing derived field: Could not infer the "
+                 "topology. Try using the derived_field function to set it "
+                 "explicitely.");
   }
   if(association.empty() || association == "none")
   {
     ASCENT_ERROR("Error while executing derived field: Could not determine the "
-                 "association.");
+                 "association. Try using the derived_field function to set it "
+                 "explicitely.");
   }
 
   const int num_domains = dataset.number_of_children();
@@ -1939,18 +2804,12 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
       ASCENT_ERROR("Jitable: Expression compilation failed:\n"
                    << e.what() << "\n\n"
                    << kernel_string);
-      // ASCENT_ERROR("Jitable: Expression compilation failed:\n"
-      //              << e.what() << "\n\n"
-      //              << cur_dom_info.to_yaml() << kernel_string);
     }
     catch(...)
     {
-      ASCENT_ERROR(
-          "Jitable: Expression compilation failed with an unknown error.\n\n"
-          << kernel_string);
-      // ASCENT_ERROR(
-      //     "Jitable: Expression compilation failed with an unknown error.\n"
-      //     << cur_dom_info.to_yaml() << kernel_string);
+      ASCENT_ERROR("Jitable: Expression compilation failed with an unknown "
+                   "error.\n\n"
+                   << kernel_string);
     }
 
     occa_kernel.clearArgs();
@@ -1962,52 +2821,97 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
     for(int i = 0; i < num_args; ++i)
     {
       const conduit::Node &arg = cur_dom_info["args"].child(i);
-      const int size = arg.dtype().number_of_elements();
-      if(size > 1)
+      const int num_components = arg.number_of_children();
+      if(num_components != 0)
       {
+        const int size = arg.child(0).dtype().number_of_elements();
         array_memories.emplace_back();
-        if(arg.dtype().is_float64())
+        if(arg.child(0).dtype().is_float64())
         {
-          const conduit::float64 *vals = arg.as_float64_ptr();
           array_memories.back() =
-              device.malloc(size * sizeof(conduit::float64), vals);
+              device.malloc(num_components * size * sizeof(conduit::float64));
+          // mcarray
+          double *interleaved_array = new double[size * num_components];
+          for(int i = 0; i < num_components; ++i)
+          {
+            const conduit::float64 *component_array = arg.child(i).value();
+            for(int j = 0; j < size; ++j)
+            {
+              interleaved_array[num_components * j + i] = component_array[j];
+            }
+          }
+          array_memories.back().copyFrom(interleaved_array);
+          delete[] interleaved_array;
         }
-        else if(arg.dtype().is_float32())
+        else
         {
-          const conduit::float32 *vals = arg.as_float32_ptr();
           array_memories.back() =
-              device.malloc(size * sizeof(conduit::float32), vals);
+              device.malloc(num_components * size * sizeof(conduit::float32));
+          // mcarray
+          float *interleaved_array = new float[size * num_components];
+          for(int i = 0; i < num_components; ++i)
+          {
+            const conduit::float32 *component_array = arg.child(i).value();
+            for(int j = 0; j < size; ++j)
+            {
+              interleaved_array[num_components * j + i] = component_array[j];
+            }
+          }
+          array_memories.back().copyFrom(interleaved_array);
+          delete[] interleaved_array;
         }
-        else if(arg.dtype().is_int64())
+        occa_kernel.pushArg(array_memories.back());
+      }
+      else
+      {
+        const int size = arg.dtype().number_of_elements();
+        if(size > 1)
         {
-          const conduit::int64 *vals = arg.as_int64_ptr();
-          array_memories.back() =
-              device.malloc(size * sizeof(conduit::int64), vals);
+          array_memories.emplace_back();
+          if(arg.dtype().is_float64())
+          {
+            const conduit::float64 *vals = arg.as_float64_ptr();
+            array_memories.back() =
+                device.malloc(size * sizeof(conduit::float64), vals);
+          }
+          else if(arg.dtype().is_float32())
+          {
+            const conduit::float32 *vals = arg.as_float32_ptr();
+            array_memories.back() =
+                device.malloc(size * sizeof(conduit::float32), vals);
+          }
+          else if(arg.dtype().is_int64())
+          {
+            const conduit::int64 *vals = arg.as_int64_ptr();
+            array_memories.back() =
+                device.malloc(size * sizeof(conduit::int64), vals);
+          }
+          else if(arg.dtype().is_int32())
+          {
+            const conduit::int32 *vals = arg.as_int32_ptr();
+            array_memories.back() =
+                device.malloc(size * sizeof(conduit::int32), vals);
+          }
+          else
+          {
+            ASCENT_ERROR(
+                "JIT: Unknown array argument type. Array: " << arg.to_yaml());
+          }
+          occa_kernel.pushArg(array_memories.back());
         }
-        else if(arg.dtype().is_int32())
+        else if(arg.dtype().is_integer())
         {
-          const conduit::int32 *vals = arg.as_int32_ptr();
-          array_memories.back() =
-              device.malloc(size * sizeof(conduit::int32), vals);
+          occa_kernel.pushArg(arg.to_int32());
+        }
+        else if(arg.dtype().is_floating_point())
+        {
+          occa_kernel.pushArg(arg.to_float64());
         }
         else
         {
           ASCENT_ERROR(
-              "JIT: Unknown array argument type. Array: " << arg.to_yaml());
+              "JIT: Unknown argument type of argument: " << arg.name());
         }
-        occa_kernel.pushArg(array_memories.back());
-      }
-      else if(arg.dtype().is_integer())
-      {
-        occa_kernel.pushArg(arg.to_int32());
-      }
-      else if(arg.dtype().is_floating_point())
-      {
-        occa_kernel.pushArg(arg.to_float64());
-      }
-      else
-      {
-        ASCENT_ERROR("JIT: Unknown argument type of argument: " << arg.name());
       }
     }
 

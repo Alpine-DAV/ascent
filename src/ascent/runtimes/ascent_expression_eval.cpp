@@ -798,6 +798,10 @@ initialize_functions()
   //---------------------------------------------------------------------------
   // Jitable Functions
   //---------------------------------------------------------------------------
+  // Functions below this line call JitFilter
+  // All jitable functions need to have ["jitable"] in order for this to happen
+  // filter_name is passed to JitFilter so that it can determine which function
+  // to execute
 
   conduit::Node &field_scalar_max_sig = (*functions)["max"].append();
   field_scalar_max_sig["return_type"] = "jitable";
@@ -806,11 +810,10 @@ initialize_functions()
   field_scalar_max_sig["args/arg2/type"] = "scalar";
   field_scalar_max_sig["jitable"];
   field_scalar_max_sig["description"] =
-      "Return a derived field that is the max of a field and a scalar.";
+      "Return a derived field that is the max of two fields.";
 
   //---------------------------------------------------------------------------
 
-  // same as above but scalar goes first, field goes second
   conduit::Node &field_field_min_sig = (*functions)["min"].append();
   field_field_min_sig["return_type"] = "jitable";
   field_field_min_sig["filter_name"] = "field_field_min";
@@ -859,6 +862,16 @@ initialize_functions()
   field_gradient_sig["jitable"];
   field_gradient_sig["description"] =
       "Return a derived field that is the gradient of a field.";
+
+  //---------------------------------------------------------------------------
+
+  conduit::Node &field_vorticity_sig = (*functions)["vorticity"].append();
+  field_vorticity_sig["return_type"] = "jitable";
+  field_vorticity_sig["filter_name"] = "vorticity";
+  field_vorticity_sig["args/field/type"] = "field";
+  field_vorticity_sig["jitable"];
+  field_vorticity_sig["description"] =
+      "Return a derived field that is the vorticity of a vector field.";
 
   //---------------------------------------------------------------------------
 
@@ -1054,6 +1067,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     }
     w.graph().save_dot_html("ascent_expressions_graph.html");
     w.execute();
+    // m_data->print();
   }
   catch(std::exception &e)
   {

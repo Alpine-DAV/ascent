@@ -100,7 +100,7 @@ public:
   virtual size_t get_num_points() const;
   virtual size_t get_num_cells() const;
 
-  // Used by JitFilter
+  // Defined in ascent_derived_jit.cpp
   virtual void pack(conduit::Node &args) const = 0;
 
   const conduit::Node &domain;
