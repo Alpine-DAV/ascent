@@ -3,7 +3,7 @@
   probing:
     factor: 0.1
     node_split: 0.875
-    batch_count: 3
+    batch_count: 2
     insitu_type: "hybrid"
   scenes:
     s1:
