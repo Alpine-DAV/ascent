@@ -2665,14 +2665,14 @@ void add_images(std::vector<vtkh::Render> *renders,
     const std::string image_name = renders->at(i).GetImageName() + ".png";
 
     image_data.at(i)["image_name"] = image_name;
-    image_data.at(i)["image_height"] = renders->at(i).GetHeight();
-    image_data.at(i)["image_width"] = renders->at(i).GetWidth();
+    image_data[i]["image_width"] = renders->at(i).GetWidth();
+    image_data[i]["image_height"] = renders->at(i).GetHeight();
 
-    image_data.at(i)["camera/position"].set(&renders->at(i).GetCamera().GetPosition()[0], 3);
-    image_data.at(i)["camera/look_at"].set(&renders->at(i).GetCamera().GetLookAt()[0], 3);
-    image_data.at(i)["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0], 3);
-    image_data.at(i)["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
-    image_data.at(i)["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
+    image_data[i]["camera/position"].set(&renders->at(i).GetCamera().GetPosition()[0], 3);
+    image_data[i]["camera/look_at"].set(&renders->at(i).GetCamera().GetLookAt()[0], 3);
+    image_data[i]["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0], 3);
+    image_data[i]["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
+    image_data[i]["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
     vtkm::Bounds bounds = renders->at(i).GetSceneBounds();
     double coord_bounds[6] = {bounds.X.Min,
                               bounds.Y.Min,
@@ -2680,7 +2680,7 @@ void add_images(std::vector<vtkh::Render> *renders,
                               bounds.X.Max,
                               bounds.Y.Max,
                               bounds.Z.Max};
-    image_data.at(i)["scene_bounds"].set(coord_bounds, 6);
+    image_data[i]["scene_bounds"].set(coord_bounds, 6);
 
     double avg_render_time = 0.0;
     int count = 0;
@@ -2696,13 +2696,13 @@ void add_images(std::vector<vtkh::Render> *renders,
     }
 
     avg_render_time /= count ? double(count) : 1.0;
-    image_data.at(i)["render_time"] = avg_render_time;
+    image_data[i]["render_time"] = avg_render_time;
 
     int size = renders->at(i).GetWidth() * renders->at(i).GetHeight();
     // NOTE: only getting canvas from domain 0 for now
-    image_data.at(i)["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
-    image_data.at(i)["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
-    image_data.at(i)["depth"] = depths->at(i);
+    image_data[i]["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
+    image_data[i]["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
+    image_data[i]["depth"] = depths->at(i);
 
     // get depth buffer directly from vtk-m -> memory error bc renderer is consumed ?
     // image_data[i]["depth_buffer"].set_external(vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer()), size);

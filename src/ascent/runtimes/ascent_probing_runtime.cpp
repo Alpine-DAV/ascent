@@ -912,6 +912,37 @@ void image_consumer(std::mutex &mu, std::condition_variable &cond,
 }
 
 
+void ActivePixelDecoding(unsigned char *colors, float *depths, const int size,
+                        std::vector<unsigned char> &dec_colors, std::vector<float> &dec_depths)
+{
+    // TODO: assert depth.size() >= 2
+    int pos = 1;
+    int dec_pos = 1;
+    dec_depths.resize(size); 
+    dec_colors.resize(size * 4);
+    dec_depths[0] = depths[0];
+
+    while (dec_pos < size - 1)
+    {
+        for (int i = 0; i < 4; i++)
+            dec_colors[dec_pos*4 + i] = colors[pos*4 + i];
+        dec_depths[dec_pos++] = depths[pos++];
+
+        if (dec_depths.at(dec_pos - 1) == dec_depths.at(dec_pos))
+        {
+            int count = int(depths[pos++]);
+            for (int i = 0; i < count - 1; i++)
+            {
+                for (int i = 0; i < 4; i++)
+                    dec_colors[dec_pos*4 + i] = colors[(pos - 2)*4 + i];
+                dec_depths[dec_pos++] = depths[pos - 2];
+            }
+        }
+    }
+    // TODO: validate if this works as intended
+}
+
+
 /**
  *  Composite render chunks from probing, simulation nodes, and visualization nodes.
  */
@@ -1125,6 +1156,15 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             unsigned char *cb = (*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr();
             float *db = (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr();
             // std::cout << mpi_props.rank << " | ..add image " << j << " " << render_arrangement.at(j).at(i) << " | id " << id << std::endl;
+            
+            // TODO: test
+            // std::vector<unsigned char> dec_colors;
+            // std::vector<float> dec_depths;
+            // ActivePixelDecoding(cb, db, render_cfg.WIDTH * render_cfg.HEIGHT, 
+                                //    dec_colors, dec_depths);
+            // compositors[j].AddImage(dec_colors.data(), dec_depths.data(), render_cfg.WIDTH, 
+                                        // render_cfg.HEIGHT, id);
+
             compositors[j].AddImage(cb, db, render_cfg.WIDTH, render_cfg.HEIGHT, id);
             ++image_cnt;
         }
@@ -1235,31 +1275,28 @@ void hybrid_render(const MPI_Properties &mpi_props,
     {
         assert(my_probing_times.size() > 0);
         
-        bool use_time_per_render = true;
-        if (use_time_per_render) // render time per probing image (w/o overhead)
+        double sum_render_times = std::accumulate(my_probing_times.begin(), 
+                                                    my_probing_times.end(), 0.0);
+
+        sum_render_times = std::isnan(sum_render_times) ? 0.0 : sum_render_times;
+        if (my_probing_times.size())
         {
-            double sum_render_times = std::accumulate(my_probing_times.begin(), 
-                                                      my_probing_times.end(), 0.0);
-
-            sum_render_times = std::isnan(sum_render_times) ? 0.0 : sum_render_times;
-            if (my_probing_times.size())
-            {
-                my_avg_probing_time = float(sum_render_times / my_probing_times.size());
-                my_avg_probing_time /= 1000.0; // convert to seconds
-            }
-
-            // if probing time is close to zero, add overhead costs
-            // if (my_avg_probing_time < 0.f + std::numeric_limits<float>::min())
-            //     my_avg_probing_time = total_probing_time / render_cfg.probing_count / 1.f;
-
-            // std::cout << "+++ probing times ";
-            // for (auto &a : my_probing_times)
-            //     std::cout << a << " ";
-            std::cout << "probing w/o overhead " << sum_render_times/1000.0 << std::endl;
-            std::cout << "probing w/  overhead " << total_probing_time << std::endl;
-            my_render_overhead = total_probing_time - sum_render_times/1000.0;
+            my_avg_probing_time = float(sum_render_times / my_probing_times.size());
+            my_avg_probing_time /= 1000.0; // convert to seconds
         }
-        else // use whole probing time including overhead
+
+        // if probing time is close to zero, add overhead costs
+        // if (my_avg_probing_time < 0.f + std::numeric_limits<float>::min())
+        //     my_avg_probing_time = total_probing_time / render_cfg.probing_count / 1.f;
+
+        // std::cout << "+++ probing times ";
+        // for (auto &a : my_probing_times)
+        //     std::cout << a << " ";
+        std::cout << "probing w/o overhead " << sum_render_times/1000.0 << std::endl;
+        std::cout << "probing w/  overhead " << total_probing_time << std::endl;
+        my_render_overhead = total_probing_time - sum_render_times/1000.0;
+
+        if (true) // use whole probing time including overhead instead of single render times
         {
             my_avg_probing_time = total_probing_time;
             if (render_cfg.probing_count)
