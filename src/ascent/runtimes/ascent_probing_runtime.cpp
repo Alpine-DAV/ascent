@@ -1157,15 +1157,20 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             float *db = (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr();
             // std::cout << mpi_props.rank << " | ..add image " << j << " " << render_arrangement.at(j).at(i) << " | id " << id << std::endl;
             
-            // TODO: test
-            // std::vector<unsigned char> dec_colors;
-            // std::vector<float> dec_depths;
-            // ActivePixelDecoding(cb, db, render_cfg.WIDTH * render_cfg.HEIGHT, 
-                                //    dec_colors, dec_depths);
-            // compositors[j].AddImage(dec_colors.data(), dec_depths.data(), render_cfg.WIDTH, 
-                                        // render_cfg.HEIGHT, id);
-
-            compositors[j].AddImage(cb, db, render_cfg.WIDTH, render_cfg.HEIGHT, id);
+            // TODO: test & debug
+            if (false)
+            {
+                std::vector<unsigned char> dec_colors;
+                std::vector<float> dec_depths;
+                ActivePixelDecoding(cb, db, render_cfg.WIDTH * render_cfg.HEIGHT, 
+                                    dec_colors, dec_depths);
+                compositors[j].AddImage(dec_colors.data(), dec_depths.data(), render_cfg.WIDTH, 
+                                            render_cfg.HEIGHT, id);
+            }
+            else
+            {
+                compositors[j].AddImage(cb, db, render_cfg.WIDTH, render_cfg.HEIGHT, id);
+            }
             ++image_cnt;
         }
         // MPI_Barrier(mpi_props.comm_vis);
@@ -1275,28 +1280,32 @@ void hybrid_render(const MPI_Properties &mpi_props,
     {
         assert(my_probing_times.size() > 0);
         
-        double sum_render_times = std::accumulate(my_probing_times.begin(), 
-                                                    my_probing_times.end(), 0.0);
-
-        sum_render_times = std::isnan(sum_render_times) ? 0.0 : sum_render_times;
-        if (my_probing_times.size())
+        bool use_time_per_render = true;
+        if (use_time_per_render) // render time per probing image (w/o overhead)
         {
-            my_avg_probing_time = float(sum_render_times / my_probing_times.size());
-            my_avg_probing_time /= 1000.0; // convert to seconds
+            double sum_render_times = std::accumulate(my_probing_times.begin(), 
+                                                      my_probing_times.end(), 0.0);
+
+            sum_render_times = std::isnan(sum_render_times) ? 0.0 : sum_render_times;
+            if (my_probing_times.size())
+            {
+                my_avg_probing_time = float(sum_render_times / my_probing_times.size());
+                my_avg_probing_time /= 1000.0; // convert to seconds
+                my_avg_probing_time *= 2.0;
+            }
+
+            // if probing time is close to zero, add overhead costs
+            // if (my_avg_probing_time < 0.f + std::numeric_limits<float>::min())
+            //     my_avg_probing_time = total_probing_time / render_cfg.probing_count / 1.f;
+
+            // std::cout << "+++ probing times ";
+            // for (auto &a : my_probing_times)
+            //     std::cout << a << " ";
+            std::cout << "probing w/o overhead " << sum_render_times/1000.0 << std::endl;
+            std::cout << "probing w/  overhead " << total_probing_time << std::endl;
+            my_render_overhead = total_probing_time - sum_render_times/1000.0;
         }
-
-        // if probing time is close to zero, add overhead costs
-        // if (my_avg_probing_time < 0.f + std::numeric_limits<float>::min())
-        //     my_avg_probing_time = total_probing_time / render_cfg.probing_count / 1.f;
-
-        // std::cout << "+++ probing times ";
-        // for (auto &a : my_probing_times)
-        //     std::cout << a << " ";
-        std::cout << "probing w/o overhead " << sum_render_times/1000.0 << std::endl;
-        std::cout << "probing w/  overhead " << total_probing_time << std::endl;
-        my_render_overhead = total_probing_time - sum_render_times/1000.0;
-
-        if (true) // use whole probing time including overhead instead of single render times
+        else // use whole probing time including overhead
         {
             my_avg_probing_time = total_probing_time;
             if (render_cfg.probing_count)
