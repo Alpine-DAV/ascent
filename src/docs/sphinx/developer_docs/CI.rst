@@ -20,11 +20,12 @@ To speed up our CI testing we use Docker containers with pre-built third party l
  
  * To change which Docker Image is used by Azure, edit ``azure-pipelines.yml`` and change `container_tag` variable. ::
 
-    #####
-    # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
-    #####
-    variables:
-      container_tag: visitdav/visit-ci-develop:2020-08-21-sha124a77
+#####
+# TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
+#####
+variables:
+  main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2020-08-21-sha3a2c4e
+  cuda_tag : alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel-tpls_2020-08-21-sha3a2c4e
 
 When the PR is merged, the azure changes will be merged and PRs to develop will use now the new containers.
 
