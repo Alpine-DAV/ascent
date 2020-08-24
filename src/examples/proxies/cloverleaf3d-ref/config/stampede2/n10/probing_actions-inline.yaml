@@ -2,7 +2,7 @@
   action: "add_scenes"
   probing:
     factor: 1.0
-    batch_size: 40
+    batch_count: 2
     insitu_type: "inline"
     node_split: 0.8
   scenes:
@@ -27,8 +27,8 @@
       renders:
         r1:
           type: "cinema"
-          phi: 15
-          theta: 15
+          phi: 20
+          theta: 20
           camera:
             zoom: 0.3
           db_name: "clover_db"

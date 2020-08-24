@@ -969,10 +969,10 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         render_ptrs[j].reserve(my_data_recv_cnt);
         render_arrangement[j].reserve(my_data_recv_cnt);
 
-        std::cout << "\nimage " << j << std::endl;
+        // std::cout << "\nimage " << j << std::endl;
         for (int i = 0; i < my_data_recv_cnt; ++i)
         {
-            std::cout << "  " << i << " ";
+            // std::cout << "  " << i << " ";
             if (render_cfg.probing_stride && (j % render_cfg.probing_stride == 0)) // probing image
             {
                 const index_t id = j / render_cfg.probing_stride;
@@ -980,11 +980,11 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                 {
                     render_ptrs[j].emplace_back(parts_probing[i]);
                     render_arrangement[j].emplace_back(id);
-                    std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
+                    // std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
                 }
                 else
                 {
-                    std::cout << " " << mpi_props.rank << " skip probe " << id << std::endl;
+                    // std::cout << " " << mpi_props.rank << " skip probe " << id << std::endl;
                 }
 
                 {   // keep track of probing images
@@ -1018,12 +1018,12 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                 {
                     render_ptrs[j].emplace_back(parts_sim[i][batch_id]);
                     render_arrangement[j].emplace_back(id);
-                    std::cout << " " << mpi_props.rank << " sim  " << id << " | batch " << batch_id << std::endl;
-                    std::cout << "     " << mpi_props.rank << " batch size  " << sim_batch_sizes[i][0] << " | probe " << probing_enum_sim[i] << std::endl;
+                    // std::cout << " " << mpi_props.rank << " sim  " << id << " | batch " << batch_id << std::endl;
+                    // std::cout << "     " << mpi_props.rank << " batch size  " << sim_batch_sizes[i][0] << " | probe " << probing_enum_sim[i] << std::endl;
                 }
                 else
                 {
-                    std::cout << " " << mpi_props.rank << " skip sim  " << id << std::endl;
+                    // std::cout << " " << mpi_props.rank << " skip sim  " << id << std::endl;
                 }
             }
             else    // part rendered on this vis node
@@ -1039,11 +1039,11 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                 {
                     render_ptrs[j].emplace_back(render_chunks_vis[i]);
                     render_arrangement[j].emplace_back(id);
-                    std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
+                    // std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
                 }
                 else
                 {
-                    std::cout << " " << mpi_props.rank << " skip vis " << id << std::endl;
+                    // std::cout << " " << mpi_props.rank << " skip vis " << id << std::endl;
                 }
             }
         }
@@ -1077,11 +1077,14 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             consumers[i] = std::thread(&image_consumer, std::ref(mu), std::ref(cond), std::ref(buffer));
     }
 
+    std::vector<vtkh::Compositor> compositors(render_cfg.max_count);
     std::vector<vtkh::Image *> results(render_cfg.max_count);
     std::vector<std::thread> threads;
+
     // loop over images (camera positions)
     for (int j = 0; j < render_cfg.max_count; ++j)
     {
+        compositors[j].SetCompositeMode(vtkh::Compositor::VIS_ORDER_BLEND);
         auto t_start = std::chrono::system_clock::now();
         // gather all dephts values from vis nodes
         std::vector<float> v_depths(mpi_props.sim_node_count, std::numeric_limits<float>::lowest());
@@ -1113,9 +1116,6 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         // get a mapping from MPI src rank to depth rank
         std::vector<int> depths_order_id = sort_indices(depths_order);
 
-        vtkh::Compositor compositor;
-        compositor.SetCompositeMode(vtkh::Compositor::VIS_ORDER_BLEND);
-
         int image_cnt = 0;
         // loop over render parts (= 1 per sim node) and add as images
         for (int i = 0; i < render_ptrs.at(j).size(); ++i)
@@ -1123,21 +1123,16 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             const int id = depths_order_id.at(src_ranks.at(i));
             
             unsigned char *cb = (*render_ptrs[j][i])["color_buffers"].child(render_arrangement[j][i]).as_unsigned_char_ptr();
-            for (int k = 0; k < 800*800*4; ++k)
-                if (int(cb[k]) == 16)
-                    std::cout << int(cb[k]) << " ";
-            std::cout << std::endl;
             float *db = (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr();
-            
-            std::cout << mpi_props.rank << " | ..add image " << j << " " << render_arrangement.at(j).at(i) << " | id " << id << std::endl;
-            compositor.AddImage(cb, db, render_cfg.WIDTH, render_cfg.HEIGHT, id);
+            // std::cout << mpi_props.rank << " | ..add image " << j << " " << render_arrangement.at(j).at(i) << " | id " << id << std::endl;
+            compositors[j].AddImage(cb, db, render_cfg.WIDTH, render_cfg.HEIGHT, id);
             ++image_cnt;
         }
         // MPI_Barrier(mpi_props.comm_vis);
-        std::cout << mpi_props.rank << " | ..composite " << j << " img count " << image_cnt << std::endl;
+        // std::cout << mpi_props.rank << " | ..composite " << j << " img count " << image_cnt << std::endl;
         
         // composited
-        results[j] = compositor.CompositeNoCopy();
+        results[j] = compositors[j].CompositeNoCopy();
 
         // TODO: add screen annotations for hybrid (see vtk-h Scene::Render)
         // See vtk-h Renderer::ImageToCanvas() for how to get from result image to canvas.
@@ -1155,12 +1150,11 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             std::string name = (*render_ptrs[j][0])["render_file_names"].child(render_arrangement[j][0]).as_string();
             // std::cout << name << std::endl;
 
-            std::unique_lock<std::mutex> locker(mu);
-            cond.wait(locker, [&buffer, &max_buffer_size](){ return buffer.size() < max_buffer_size; });
+            std::unique_lock<std::mutex> mlock(mu);
+            cond.wait(mlock, [&buffer, &max_buffer_size](){ return buffer.size() < max_buffer_size; });
             buffer.push_back(std::make_pair(results[j], name));
             // std::cout << "produced " << name << std::endl;
-
-            locker.unlock();
+            mlock.unlock();
             cond.notify_all();
 
             if (j == render_cfg.max_count - 1)  // last image -> kill consumers
@@ -1653,7 +1647,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
             Node renders_inline;
 
             std::vector<std::thread> threads;
-            // std::thread thread_pack(&test_function);
             std::chrono::duration<double> sum_render(0);
             std::chrono::duration<double> sum_copy(0);
 
