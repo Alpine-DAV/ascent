@@ -460,13 +460,17 @@ CameraSimplex::execute()
     int winning_i = -1;
     int winning_j = -1;
 
+    double losing_score = DBL_MAX;
+    int losing_i = -1;
+    int losing_j = -1;
+
     // New theta and phi camera code
     int numTheta = 100;
     int numPhi = 100;
 
     cout << "Gathering data for metric: " << metric.c_str() << endl;
 
-/* Testing stuff so commenting out main loop
+///* Testing stuff so commenting out main loop
 
     // File stuff
     FILE *datafile;
@@ -521,10 +525,17 @@ CameraSimplex::execute()
             winning_j = j;
         }
 
+	if (score < losing_score) {
+            losing_score = score;
+            losing_i = i;
+            losing_j = j;
+        }
+
       }
     }
 
     cout << "Winning score: " << winning_score << " at (" << winning_i << ", " << winning_j << ")" << endl;
+    cout << "Losing score: " << losing_score << " at (" << losing_i << ", " << losing_j << ")" << endl;
 
     for (int k = 0 ; k < numTheta ; k++) {
       fwrite(buffer[k], sizeof(float), numPhi, datafile);
@@ -532,13 +543,13 @@ CameraSimplex::execute()
 
     fclose(datafile);
 
-*/
+//*/
 
 
     /*================ End Scalar Renderer  ======================*/
 
     // Testing specific scores
-
+    /*
     winning_i = 54;
     winning_j = 47;
 
@@ -563,35 +574,7 @@ CameraSimplex::execute()
 		       triangles, height, width, cam);
 
     cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl << endl;
-
-    delete output;
-
-    winning_i = 47;
-    winning_j = 54;
-
-    cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
-        	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
-
-    vtkm::Vec<vtkm::Float32, 3> postest2{(float)cam.position[0],
-                                  (float)cam.position[1],
-                                  (float)cam.position[2]};
-
-    camera->SetPosition(postest2);
-    tracer.SetWidth(width);
-    tracer.SetHeight(height);
-    tracer.SetInput(data); //vtkh dataset by toponame
-    tracer.SetCamera(*camera);
-    tracer.Update();
-
-    output = tracer.GetOutput();
-
-    score = calculateMetric(output, metric, field_name,
-		       triangles, height, width, cam);
-
-    cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl;
-
-    delete output;
-
+    */
     // Testing specific Scores
 
     Camera best_c = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
