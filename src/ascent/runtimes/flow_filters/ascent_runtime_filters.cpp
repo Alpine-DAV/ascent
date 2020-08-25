@@ -134,7 +134,6 @@ register_builtin()
 
     AscentRuntime::register_filter_type<VTKHBounds>();
     AscentRuntime::register_filter_type<VTKHUnionBounds>();
-
     // transforms, the current crop expect vtk-h input data
     AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
     AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");

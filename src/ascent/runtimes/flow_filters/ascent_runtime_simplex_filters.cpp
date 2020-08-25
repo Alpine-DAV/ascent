@@ -269,9 +269,9 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   double ym = (y0 + y1) / 2.0;
   double zm = (z0 + z1) / 2.0;
 
-  c.position[0] = ( ( radius * sin(theta) * cos(phi) ) + xm ) * zoom;
-  c.position[1] = ( ( radius * sin(theta) * sin(phi) ) + ym ) * zoom;
-  c.position[2] = ( ( radius * cos(theta) ) + zm ) * zoom;
+  c.position[0] = (  radius * (sin(theta) * cos(phi)  + xm )) * zoom;
+  c.position[1] = (  radius * (sin(theta) * sin(phi)  + ym )) * zoom;
+  c.position[2] = (  radius * (cos(theta)  + zm )) * zoom;
 
   c.focus[0] = lookat[0];
   c.focus[1] = lookat[1];

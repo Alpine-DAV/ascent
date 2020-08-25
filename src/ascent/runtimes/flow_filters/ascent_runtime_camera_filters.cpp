@@ -664,7 +664,7 @@ double SineParameterize(int curFrame, int nFrames, int ramp)
 }
 
 Camera
-GetCamera(int frame, int nframes, double radius, double* lookat)
+GetCamera(int frame, int nframes, double radius, double* lookat, float *bounds)
 {
 //  double t = SineParameterize(frame, nframes, nframes/10);
   double points[3];
@@ -682,10 +682,13 @@ GetCamera(int frame, int nframes, double radius, double* lookat)
     if(points[2] < 0)
       points[2] -= radius;
   }*/
+  float x = (bounds[0] + bounds[1])/2;
+  float y = (bounds[2] + bounds[3])/2;
+  float z = (bounds[4] + bounds[5])/2;
 
-  c.position[0] = zoom*radius*points[0];
-  c.position[1] = zoom*radius*points[1];
-  c.position[2] = zoom*radius*points[2];
+  c.position[0] = zoom*radius*(points[0] + x);
+  c.position[1] = zoom*radius*(points[1] + y);
+  c.position[2] = zoom*radius*(points[2] + z);
 
 //cerr << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
     
@@ -1402,7 +1405,8 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
       for(int i = 0; i < num_triangles; i++)
       {
         float area = calcArea(triangles[i]);
-        viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
+	if(area != 0.0)
+          viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
       }
       viewpoint_entropy = (-1.0)*viewpoint_ratio;
     }
@@ -1465,8 +1469,8 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
     for(int i = 0; i < num_triangles; i++)
     {
       float area = calcArea(triangles[i]);
-
-      viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
+      if(area != 0.0)
+        viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
 
       //Stefan print statement
       
@@ -1555,7 +1559,8 @@ calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int h
       {
 	float area   = calcArea(triangles[i], camera, width, height);
         float w_area = calcArea(triangles[i]);
-	vkl += (area/projected_area)*std::log((area/projected_area)/(w_area/w_total_area));
+	if(area != 0.0 && w_area != 0.0)
+	  vkl += (area/projected_area)*std::log((area/projected_area)/(w_area/w_total_area));
       }
     }
     MPI_Bcast(&vkl, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -1606,7 +1611,8 @@ calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int h
     {
       float area   = calcArea(triangles[i], camera, width, height);
       float w_area = calcArea(triangles[i]);
-      vkl += (area/projected_area)*std::log((area/projected_area)/(w_area/w_total_area));
+      if(area != 0.0 && w_area != 0.0)
+        vkl += (area/projected_area)*std::log((area/projected_area)/(w_area/w_total_area));
     }
     return (-1.0)*vkl;
   #endif
@@ -1648,7 +1654,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
     std::copy(field_data.begin(), field_data.end(), field_array);
     entropy = calcentropy(field_array, field_data.size(), 100);
   #endif
-  return entropy;
+  return (-1)*entropy;
 }
 
 float 
@@ -1668,11 +1674,13 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width)
     if(rank == 0)
     {
       int size = height*width;
-      std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
+      std::vector<float> depth = GetScalarData(*dataset, "depth", height, width);
+      std::vector<float> depth_data;
       for(int i = 0; i < size; i++)
-        if(depth_data[i] != depth_data[i])
-          depth_data[i] = -FLT_MAX;
-      float depth_array[size];
+        if(depth[i] == depth[i] && depth[i] <= 1)
+          depth_data.push_back(depth[i]);
+          //depth_data[i] = -FLT_MAX;
+      float depth_array[depth_data.size()];
       std::copy(depth_data.begin(), depth_data.end(), depth_array);
       entropy = calcentropy(depth_array, depth_data.size(), 100);
 
@@ -1680,15 +1688,18 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width)
     MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
   #else
     int size = height*width;
-    std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
+    std::vector<float> depth = GetScalarData(*dataset, "depth", height, width);
+    std::vector<float> depth_data;
     for(int i = 0; i < size; i++)
-      if(depth_data[i] != depth_data[i])
-        depth_data[i] = -FLT_MAX;
-    float depth_array[size];
+      if(depth[i] == depth[i] && depth[i] <= 1)
+        depth_data.push_back(depth[i]);
+        //depth_data[i] = -FLT_MAX;
+    float depth_array[depth_data.size()];
     std::copy(depth_data.begin(), depth_data.end(), depth_array);
     entropy = calcentropy(depth_array, depth_data.size(), 100);
   #endif
   return entropy;
+  //return (-1)*entropy;
 }
 
 float
@@ -1945,7 +1956,7 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
       std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
       for(int i = 0; i < size; i++)
         if(depth_data[i] == depth_data[i])
-          if(depth < depth_data[i])
+          if(depth < depth_data[i] && depth_data[i] <= 1)
             depth = depth_data[i];
     }
     MPI_Bcast(&depth, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -1954,7 +1965,7 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
     std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
     for(int i = 0; i < size; i++)
       if(depth_data[i] == depth_data[i])
-        if(depth < depth_data[i])
+        if(depth < depth_data[i] && depth_data[i] <= 1)
           depth = depth_data[i];
   #endif
   return depth;
@@ -2146,15 +2157,21 @@ AutoCamera::execute()
 {
     double time = 0.;
     auto time_start = high_resolution_clock::now();
-    cout << "USING CAMERA PIPELINE" << endl;
     #if ASCENT_MPI_ENABLED
       int rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
       
     #endif  
-
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+    //int cycle = params()["state/cycle"].to_int32();
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+int cycle = -1;
+if(meta->has_path("cycle"))
+{
+  cycle = (*meta)["cycle"].to_int32();
+}
+    cout << "=====USING CAMERA PIPELINE===== CYCLE: " << cycle << endl;
     std::string field_name = params()["field"].as_string();
     std::string metric     = params()["metric"].as_string();
 
@@ -2188,6 +2205,9 @@ AutoCamera::execute()
     vtkm::Float32 xb = vtkm::Float32(b.X.Length());
     vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
     vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
+    float bounds[6] = {(float)b.X.Max, (float)b.X.Min, 
+	              (float)b.Y.Max, (float)b.Y.Min, 
+	              (float)b.Z.Max, (float)b.Z.Min};
     //double bounds[3] = {(double)xb, (double)yb, (double)zb};
 //    cerr << "x y z bounds " << xb << " " << yb << " " << zb << endl;
     vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
@@ -2220,7 +2240,7 @@ AutoCamera::execute()
     //What it does: Quick ray tracing of data (replaces get triangles and scanline).
     //What we need: z buffer, any other important buffers (tri ids, scalar values, etc.)
       
-      Camera cam = GetCamera(sample, samples, radius, focus);
+      Camera cam = GetCamera(sample, samples, radius, focus, bounds);
       vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
                                 (float)cam.position[1],
                                 (float)cam.position[2]};
@@ -2235,6 +2255,7 @@ AutoCamera::execute()
 
       vtkh::DataSet *output = tracer.GetOutput();
       float score = calculateMetric(output, metric, field_name, triangles, height, width, cam);
+      std::cerr << "sample " << sample << " score: " << score << std::endl;
       delete output;
 
     /*================ End Scalar Renderer  ======================*/
@@ -2291,8 +2312,9 @@ AutoCamera::execute()
     if(winning_sample == -1)
       ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
     cerr << "winning_sample " << winning_sample << " score: " << winning_score << endl;
-    Camera best_c = GetCamera(winning_sample, samples, radius, focus);
-
+   // Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
+    Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
+    
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
 				    (float)best_c.position[2]}; 
@@ -2330,7 +2352,7 @@ AutoCamera::execute()
     //set_output<vtkmCamera>(camera);
     auto time_stop = high_resolution_clock::now();
     time += duration_cast<seconds>(time_stop - time_start).count();
-
+    cerr << "========END CAMERA PIPELINE=======" << endl;
     /*#if ASCENT_MPI_ENABLED
       cerr << "rank: " << rank << " secs total: " << time << endl;
     #endif*/
