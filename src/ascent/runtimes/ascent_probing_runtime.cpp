@@ -1307,7 +1307,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             {
                 my_avg_probing_time = float(sum_render_times / my_probing_times.size());
                 my_avg_probing_time /= 1000.0; // convert to seconds
-                my_avg_probing_time = total_probing_time;
+                // my_avg_probing_time = total_probing_time;
             }
 
             // if probing time is close to zero, add overhead costs
