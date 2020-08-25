@@ -1673,7 +1673,7 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width)
       int size = height*width;
       std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
       for(int i = 0; i < size; i++)
-        if(depth_data[i] != depth_data[i])
+        if(depth_data[i] != depth_data[i] || depth_data[i] > 1)
           depth_data[i] = -FLT_MAX;
       float depth_array[size];
       std::copy(depth_data.begin(), depth_data.end(), depth_array);
@@ -1685,7 +1685,7 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width)
     int size = height*width;
     std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
     for(int i = 0; i < size; i++)
-      if(depth_data[i] != depth_data[i])
+      if(depth_data[i] != depth_data[i] || depth_data[i] > 1)
         depth_data[i] = -FLT_MAX;
     float depth_array[size];
     std::copy(depth_data.begin(), depth_data.end(), depth_array);
@@ -1948,7 +1948,7 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
       std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
       for(int i = 0; i < size; i++)
         if(depth_data[i] == depth_data[i])
-          if(depth < depth_data[i])
+          if(depth < depth_data[i] && depth_data[i] <= 1)
             depth = depth_data[i];
     }
     MPI_Bcast(&depth, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -1957,7 +1957,7 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
     std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
     for(int i = 0; i < size; i++)
       if(depth_data[i] == depth_data[i])
-        if(depth < depth_data[i])
+        if(depth < depth_data[i] && depth_data[i] <= 1)
           depth = depth_data[i];
   #endif
   return depth;
