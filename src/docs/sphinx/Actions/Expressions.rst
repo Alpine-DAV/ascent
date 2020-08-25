@@ -257,15 +257,15 @@ Functions
     Defines a uniform or rectilinear axis. When used for binning the bins are inclusive on the lower boundary and exclusive on the higher boundary of each bin. Either specify only ``bins`` or a subset of the ``min_val``, ``max_val``, ``num_bins`` options.
     
     :type name: string
-    :param name: The name of a scalar field on the mesh or one of ``'x'``, ``'y'``, or ``'z'``.
+    :param name: The name of a scalar field on the mesh or one of ``'x'``, ``'y'``, or ``'z'``. `name` can also be the empty string `''` if `reduction_op` is either `sum` or `pdf` to mean we want to count the number of elements in the bin as our reduction variable.
     :type bins: list
     :param bins: A strictly increasing list of scalars containing the values for each tick. Used to specify a rectilinear axis.
     :type min_val: scalar
-    :param min_val: Minimum value of the axis (i.e. the value of the first tick).
+    :param min_val: Minimum value of the axis (i.e. the value of the first tick). Defaults to ``min(name)`` for fields and for ``'x'``, ``'y'``, or ``'z'`` the minimum value on the topology.
     :type max_val: scalar
-    :param max_val: Maximum value of the axis (i.e. the value of the last tick).
+    :param max_val: Maximum value of the axis (i.e. the value of the last tick).Defaults to ``max(name)`` for fields and for ``'x'``, ``'y'``, or ``'z'`` the maximum value on the topology.
     :type num_bins: int
-    :param num_bins: Number of bins on the axis (i.e. the number of ticks minus 1).
+    :param num_bins: Number of bins on the axis (i.e. the number of ticks minus 1). Defaults to ``256``.
     :type clamp: bool
     :param clamp: Defaults to ``False``. If ``True``, values outside the axis should be put into the bins on the boundaries.
     :rtype: axis
@@ -280,19 +280,18 @@ Functions
     :type reduction_op: string
     :param reduction_op: The reduction operator to use when   putting values in bins. Available reductions are: 
     
-       - cnt: number of elements in a bin 
        - min: minimum value in a bin 
        - max: maximum value in a bin 
        - sum: sum of values in a bin 
        - avg: average of values in a bin 
-       - pdf: probability distribution function over all bins 
+       - pdf: probability distribution function 
        - std: standard deviation of values in a bin 
        - var: variance of values in a bin 
        - rms: root mean square of values in a bin
     :type bin_axes: list
     :param bin_axes: List of Axis objects which define the bin axes.
     :type empty_bin_val: scalar
-    :param empty_bin_val: The value that empty bins should have. Defaults to 0.
+    :param empty_bin_val: The value that empty bins should have. Defaults to ``0``.
     :type output: string
     :param output: Defaults to ``'none'``. If set to ``'bins'`` a binning with 3 or fewer dimensions will be output as a new topology on the dataset. This is useful for directly visualizing the binning. If set to ``'mesh'`` the bins will be "painted" back onto the original mesh as a new field.
     :rtype: binning
@@ -311,6 +310,8 @@ Objects
     :param max_val:
     :type num_bins: int
     :param num_bins:
+    :type clamp: bool
+    :param clamp:
     
     
 .. attribute:: value_position

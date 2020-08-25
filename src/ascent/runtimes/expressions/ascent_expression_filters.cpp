@@ -64,6 +64,7 @@
 #include "ascent_conduit_reductions.hpp"
 #include <ascent_logging.hpp>
 #include <flow_graph.hpp>
+#include <flow_timer.hpp>
 #include <flow_workspace.hpp>
 
 #include <limits>
@@ -98,6 +99,21 @@ namespace expressions
 
 namespace detail
 {
+// We want to allow some objects to have basic
+// attributes like vectors, but since its a base
+// type, its overly burdensome to always set these
+// as the return types in every filter. Thus, do this.
+void fill_attrs(conduit::Node &obj)
+{
+  const std::string type = obj["type"].as_string();
+  if(type == "vector")
+  {
+    double *vals = obj["value"].value();
+    obj["attrs/x"] = vals[0];
+    obj["attrs/y"] = vals[1];
+    obj["attrs/z"] = vals[2];
+  }
+}
 
 bool
 is_math(const std::string &op)
@@ -362,9 +378,11 @@ Identifier::execute()
   {
     ASCENT_ERROR("Expression identifier: needs at least one entry");
   }
-  // grab the last one calculated
+  // grab the last one calculated so we have type info
   (*output) = (*cache)[i_name].child(entries - 1);
-  (*output)["attrs/history"].set_external((*cache)[i_name]);
+  // we need to keep the name to retrieve the chache
+  // if history is called.
+  (*output)["name"] = i_name;
   set_output<conduit::Node>(output);
 }
 
@@ -807,15 +825,39 @@ DotAccess::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 DotAccess::execute()
 {
-  const conduit::Node *n_obj = input<Node>("obj");
+  conduit::Node *n_obj = input<Node>("obj");
   std::string name = params()["name"].as_string();
 
   conduit::Node *output = new conduit::Node();
 
+  // fills attrs for basic types like vectors
+  detail::fill_attrs(*n_obj);
+
   // TODO test accessing non-existant attribute
   if(!n_obj->has_path("attrs/" + name))
   {
-    ASCENT_ERROR(name << " is not a valid object attribute.");
+    n_obj->print();
+    std::stringstream ss;
+    if(n_obj->has_path("attrs"))
+    {
+      std::string attr_yaml = (*n_obj)["attrs"].to_yaml();
+      if(attr_yaml == "")
+      {
+        ss<<" No known attribtues.";
+      }
+      else
+      {
+        ss<<" Known attributes: "<<attr_yaml;
+      }
+    }
+    else
+    {
+      ss<<" No known attributes.";
+    }
+
+    ASCENT_ERROR("'"<<name << "' is not a valid object attribute for"
+                      <<" type '"<<(*n_obj)["type"].as_string()<<"'."
+                      <<ss.str());
   }
   (*output) = (*n_obj)["attrs/" + name];
 
@@ -1094,6 +1136,11 @@ FieldMin::execute()
   (*output)["attrs/value/type"] = "double";
   (*output)["attrs/position/value"] = n_min["position"];
   (*output)["attrs/position/type"] = "vector";
+  // information about the element/field
+  (*output)["attrs/element/rank"] = n_min["rank"];
+  (*output)["attrs/element/domain_index"] = n_min["domain_id"];
+  (*output)["attrs/element/index"] = n_min["index"];
+  (*output)["attrs/element/assoc"] = n_min["assoc"];
 
   set_output<conduit::Node>(output);
 }
@@ -1195,6 +1242,11 @@ FieldMax::execute()
   (*output)["attrs/value/type"] = "double";
   (*output)["attrs/position/value"] = n_max["position"];
   (*output)["attrs/position/type"] = "vector";
+  // information about the element/field
+  (*output)["attrs/element/rank"] = n_max["rank"];
+  (*output)["attrs/element/domain_index"] = n_max["domain_id"];
+  (*output)["attrs/element/index"] = n_max["index"];
+  (*output)["attrs/element/assoc"] = n_max["assoc"];
 
   set_output<conduit::Node>(output);
 }
@@ -1384,9 +1436,21 @@ void
 History::execute()
 {
   conduit::Node *output = new conduit::Node();
-  conduit::Node history = (*input<Node>("expr_name"))["attrs/history"];
+
+  const std::string expr_name  = (*input<Node>("expr_name"))["name"].as_string();
+
+  const conduit::Node *const cache =
+      graph().workspace().registry().fetch<Node>("cache");
+
+  if(!cache->has_path(expr_name))
+  {
+    ASCENT_ERROR("History: unknown identifier "<<  expr_name);
+  }
+  const conduit::Node &history = (*cache)[expr_name];
+
   const conduit::Node *n_absolute_index = input<Node>("absolute_index");
   const conduit::Node *n_relative_index = input<Node>("relative_index");
+
 
   if(!n_absolute_index->dtype().is_empty() &&
      !n_relative_index->dtype().is_empty())
@@ -1394,6 +1458,7 @@ History::execute()
     ASCENT_ERROR(
         "History: Specify only one of relative_index or absolute_index.");
   }
+
 
   const int entries = history.number_of_children();
   if(!n_relative_index->dtype().is_empty())
@@ -1709,18 +1774,51 @@ Axis::execute()
   else
   {
     output = new conduit::Node();
+
+    double min_val;
+    bool min_found = false;
     if(!n_min->dtype().is_empty())
     {
-      (*output)["value/" + name + "/min_val"] = (*n_min)["value"].to_float64();
+      min_val = (*n_min)["value"].to_float64();
+      (*output)["value/" + name + "/min_val"] = min_val;
+      min_found = true;
     }
+    else if(!is_xyz(name))
+    {
+      min_val = field_min(*dataset, name)["value"].to_float64();
+      (*output)["value/" + name + "/min_val"] = min_val;
+      min_found = true;
+    }
+
+    double max_val;
+    bool max_found = false;
     if(!n_max->dtype().is_empty())
     {
-      (*output)["value/" + name + "/max_val"] = (*n_max)["value"].to_float64();
+      max_val = (*n_max)["value"].to_float64();
+      max_found = true;
+      (*output)["value/" + name + "/max_val"] = max_val;
     }
+    else if(!is_xyz(name))
+    {
+      // add 1 because the last bin isn't inclusive
+      max_val = field_max(*dataset, name)["value"].to_float64() + 1.0;
+      (*output)["value/" + name + "/max_val"] = max_val;
+      max_found = true;
+    }
+
+    (*output)["value/" + name + "/num_bins"] = 256;
     if(!n_num_bins->dtype().is_empty())
     {
       (*output)["value/" + name + "/num_bins"] =
           (*n_num_bins)["value"].to_int32();
+    }
+
+    if(min_found && max_found && min_val >= max_val)
+    {
+      delete output;
+      ASCENT_ERROR("Axis: axis with name '"
+                   << name << "': min_val (" << min_val
+                   << ") must be smaller than max_val (" << max_val << ")");
     }
   }
 
@@ -1783,10 +1881,11 @@ Histogram::execute()
   const conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
 
-  // TODO add test for passing a non-scalar field
   if(!is_scalar_field(*dataset, field))
   {
-    ASCENT_ERROR("Histogram: arg1 must be a scalar field");
+    ASCENT_ERROR("Histogram: axis for histogram must be a scalar field. "
+                 "Invalid axis field: '"
+                 << field << "'.");
   }
 
   // handle the optional inputs
@@ -1835,6 +1934,8 @@ Histogram::execute()
   (*output)["attrs/max_val/type"] = "double";
   (*output)["attrs/num_bins/value"] = num_bins;
   (*output)["attrs/num_bins/type"] = "int";
+  (*output)["attrs/clamp/value"] = true;
+  (*output)["attrs/clamp/type"] = "bool";
   set_output<conduit::Node>(output);
 }
 
@@ -1859,6 +1960,7 @@ Binning::declare_interface(Node &i)
   i["port_names"].append() = "reduction_op";
   i["port_names"].append() = "bin_axes";
   i["port_names"].append() = "empty_bin_val";
+  i["port_names"].append() = "component";
   i["port_names"].append() = "output";
   i["output_port"] = "true";
 }
@@ -1883,7 +1985,14 @@ Binning::execute()
   const conduit::Node *n_axes_list = input<Node>("bin_axes");
   // optional arguments
   const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
+  const conduit::Node *n_component = input<conduit::Node>("component");
   const conduit::Node *n_output_opt = input<conduit::Node>("output");
+
+  std::string component = "";
+  if(!n_component->dtype().is_empty())
+  {
+    component = (*n_component)["value"].as_string();
+  }
 
   conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
@@ -1902,25 +2011,71 @@ Binning::execute()
   }
 
   // verify reduction_var
-  if(!has_field(*dataset, reduction_var) && !is_xyz(reduction_var))
+  if(reduction_var.empty())
   {
-    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
-    std::stringstream ss;
-    ss << "[";
-    for(size_t i = 0; i < names.size(); ++i)
+    if(reduction_op != "sum" && reduction_op != "pdf")
     {
-      ss << " " << names[i];
+      ASCENT_ERROR("Binning: reduction_var can only be left empty if "
+                   "reduction_op is 'sum' or 'pdf'.");
     }
-    ss << "]";
-    ASCENT_ERROR("Field: dataset does not contain field '"
-                 << reduction_var << "'"
-                 << " known = " << ss.str());
+  }
+  else if(!is_xyz(reduction_var))
+  {
+    if(!has_field(*dataset, reduction_var))
+    {
+      std::string known;
+      if(dataset->number_of_children() > 0 )
+      {
+        std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+        std::stringstream ss;
+        ss << "[";
+        for(size_t i = 0; i < names.size(); ++i)
+        {
+          ss << " '" << names[i]<<"'";
+        }
+        ss << "]";
+        known = ss.str();
+      }
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var
+                   << "' must be a scalar field in the dataset or x/y/z or empty."
+                   << " known = " << known);
+    }
+
+    bool scalar = is_scalar_field(*dataset, reduction_var);
+    if(!scalar && component == "")
+    {
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var <<"'"
+                   << " has multiple components and no 'component' is"
+                   << " specified."
+                   << " known components = "
+                   << possible_components(*dataset, reduction_var));
+    }
+    if(scalar && component != "")
+    {
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var <<"'"
+                   << " is a scalar(i.e., has not components "
+                   << " but 'component' " << " '"<<component<<"' was"
+                   << " specified. Remove the 'component' argument"
+                   << " or choose a vector variable.");
+    }
+    if(!has_component(*dataset, reduction_var, component))
+    {
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var << "'"
+                   << " does not have component '"<<component<<"'."
+                   << " known components = "
+                   << possible_components(*dataset, reduction_var));
+
+    }
   }
 
   // verify reduction_op
-  if(reduction_op != "cnt" && reduction_op != "sum" && reduction_op != "min" &&
-     reduction_op != "max" && reduction_op != "avg" && reduction_op != "pdf" &&
-     reduction_op != "std" && reduction_op != "var" && reduction_op != "rms")
+  if(reduction_op != "sum" && reduction_op != "min" && reduction_op != "max" &&
+     reduction_op != "avg" && reduction_op != "pdf" && reduction_op != "std" &&
+     reduction_op != "var" && reduction_op != "rms")
   {
     ASCENT_ERROR(
         "Unknown reduction_op: '"
@@ -1935,8 +2090,12 @@ Binning::execute()
     empty_bin_val = (*n_empty_bin_val)["value"].to_float64();
   }
 
-  const conduit::Node &n_binning =
-      binning(*dataset, n_bin_axes, reduction_var, reduction_op, empty_bin_val);
+  const conduit::Node &n_binning = binning(*dataset,
+                                           n_bin_axes,
+                                           reduction_var,
+                                           reduction_op,
+                                           empty_bin_val,
+                                           component);
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "binning";
@@ -1946,8 +2105,8 @@ Binning::execute()
   (*output)["attrs/reduction_var/type"] = "string";
   (*output)["attrs/reduction_op/value"] = reduction_op;
   (*output)["attrs/reduction_op/type"] = "string";
-  (*output)["attrs/bin_axes/value"] = n_binning["bin_axes"];
-  (*output)["attrs/bin_axes/type"] = "list";
+  (*output)["attrs/bin_axes/value"] = n_bin_axes;
+  //(*output)["attrs/bin_axes/type"] = "list";
   (*output)["attrs/association/value"] = n_binning["association"];
   (*output)["attrs/association/type"] = "string";
   set_output<conduit::Node>(output);
@@ -2468,6 +2627,329 @@ ArraySum::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = array_sum((*input<Node>("arg1"))["value"])["value"];
   (*output)["type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+//-----------------------------------------------------------------------------
+PointAndAxis::PointAndAxis() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+PointAndAxis::~PointAndAxis()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+PointAndAxis::declare_interface(Node &i)
+{
+  i["type_name"] = "point_and_axis";
+  i["port_names"].append() = "binning";
+  i["port_names"].append() = "axis";
+  i["port_names"].append() = "threshold";
+  i["port_names"].append() = "point";
+  i["port_names"].append() = "miss_value";
+  i["port_names"].append() = "direction";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+PointAndAxis::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+PointAndAxis::execute()
+{
+  conduit::Node &in_binning = *input<Node>("binning");
+  conduit::Node &in_axis =  *input<Node>("axis");
+  conduit::Node &in_threshold =  *input<Node>("threshold");
+  conduit::Node &in_point =  *input<Node>("point");
+  conduit::Node &n_miss_val =  *input<Node>("miss_value");
+  conduit::Node &n_dir =  *input<Node>("direction");
+  conduit::Node *output = new conduit::Node();
+
+  const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
+  if(num_axes > 1)
+  {
+    ASCENT_ERROR("point_and_axis: only one axis is implemented");
+  }
+
+  int direction = 1;
+  if(!n_dir.dtype().is_empty())
+  {
+    direction = n_dir["value"].to_int32();
+    if(direction != 1 && direction != -1)
+    {
+      ASCENT_ERROR("point_and_axis: invalid direction `"<<direction<<"'."
+                  <<" Valid directions are 1 or -1.");
+    }
+  }
+
+  const double point = in_point["value"].to_float64();
+  const double threshold = in_threshold["value"].to_float64();
+
+  const conduit::Node &axis = in_binning["attrs/bin_axes/value"].child(0);
+  const int num_bins = axis["num_bins"].to_int32();
+  const double min_val = axis["min_val"].to_float64();
+  const double max_val = axis["max_val"].to_float64();
+  const double bin_size = (max_val - min_val) / double(num_bins);
+
+  double *bins = in_binning["attrs/value/value"].value();
+  double min_dist = std::numeric_limits<double>::max();
+  int index = -1;
+  for(int i = 0; i < num_bins; ++i)
+  {
+    double val = bins[i];
+    if(val > threshold)
+    {
+      double left = min_val + double(i) * bin_size;
+      double right = min_val + double(i+1) * bin_size;
+      double center = left + (right-left) / 2.0;
+      double dist = center - point;
+      // skip if distance is behind
+      bool behind = dist * double(direction) < 0;
+
+      if(!behind && dist < min_dist)
+      {
+        min_dist = dist;
+        index = i;
+      }
+    }
+  }
+
+  double bin_value = std::numeric_limits<double>::quiet_NaN();
+
+  if(!n_miss_val.dtype().is_empty())
+  {
+    bin_value = n_miss_val["value"].to_float64();
+  }
+
+  // init with miss
+  double bin_min = bin_value;
+  double bin_max = bin_value;
+  double bin_center = bin_value;
+
+  if(index != -1)
+  {
+    bin_value = bins[index];
+    bin_min = min_val + double(index) * bin_size;
+    bin_max = min_val + double(index+1) * bin_size;
+    bin_center = bin_min + (bin_max-bin_min) / 2.0;
+  }
+
+  (*output)["type"] = "bin";
+
+  (*output)["attrs/value/value"] = bin_value;
+  (*output)["attrs/value/type"] = "double";
+
+  (*output)["attrs/min/value"] = bin_min;
+  (*output)["attrs/min/type"] = "double";
+
+  (*output)["attrs/max/value"] = bin_max;
+  (*output)["attrs/max/type"] = "double";
+
+  (*output)["attrs/center/value"] = bin_center;
+  (*output)["attrs/center/type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+MaxFromPoint::MaxFromPoint() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+MaxFromPoint::~MaxFromPoint()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+MaxFromPoint::declare_interface(Node &i)
+{
+  i["type_name"] = "max_from_point";
+  i["port_names"].append() = "binning";
+  i["port_names"].append() = "axis";
+  i["port_names"].append() = "point";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+MaxFromPoint::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+MaxFromPoint::execute()
+{
+  conduit::Node &in_binning = *input<Node>("binning");
+  conduit::Node &in_axis =  *input<Node>("axis");
+  conduit::Node &in_point =  *input<Node>("point");
+  conduit::Node *output = new conduit::Node();
+
+  const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
+  if(num_axes > 1)
+  {
+    ASCENT_ERROR("max_from_point: only one axis is implemented");
+  }
+
+  const double point = in_point["value"].to_float64();
+
+  const conduit::Node &axis = in_binning["attrs/bin_axes/value"].child(0);
+  const int num_bins = axis["num_bins"].to_int32();
+  const double min_val = axis["min_val"].to_float64();
+  const double max_val = axis["max_val"].to_float64();
+  const double bin_size = (max_val - min_val) / double(num_bins);
+
+  double *bins = in_binning["attrs/value/value"].value();
+  double max_bin_val = std::numeric_limits<double>::lowest();
+  double dist_value = 0;
+  double min_dist = std::numeric_limits<double>::max();
+  int index = -1;
+  for(int i = 0; i < num_bins; ++i)
+  {
+    double val = bins[i];
+    if(val >= max_bin_val)
+    {
+      double left = min_val + double(i) * bin_size;
+      double right = min_val + double(i+1) * bin_size;
+      double center = left + (right-left) / 2.0;
+      double dist = fabs(center - point);
+      if(val > max_bin_val ||
+         ((dist < min_dist) && val == max_bin_val))
+      {
+        min_dist = dist;
+        max_bin_val = val;
+        dist_value = center - point;
+        index = i;
+      }
+    }
+  }
+
+  double loc[3] = {0.0, 0.0, 0.0};
+  std::string axis_str = in_axis["value"].as_string();
+
+  if(axis_str == "z")
+  {
+    loc[2] = dist_value;
+  }
+  else if (axis_str == "y")
+  {
+    loc[1] = dist_value;
+  }
+  else
+  {
+    loc[0] = dist_value;
+  }
+
+  (*output)["type"] = "value_position";
+  (*output)["attrs/value/value"] = max_bin_val;
+  (*output)["attrs/value/type"] = "double";
+  (*output)["attrs/position/value"].set(loc,3);
+  (*output)["attrs/position/type"] = "vector";
+
+  (*output)["value"] = min_dist;
+  (*output)["type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Bin::Bin() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Bin::~Bin()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Bin::declare_interface(Node &i)
+{
+  i["type_name"] = "bin";
+  i["port_names"].append() = "binning";
+  i["port_names"].append() = "index";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Bin::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Bin::execute()
+{
+  conduit::Node &in_binning = *input<Node>("binning");
+  conduit::Node &in_index =  *input<Node>("index");
+  conduit::Node *output = new conduit::Node();
+
+  const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
+  if(num_axes > 1)
+  {
+    ASCENT_ERROR("bin: only one axis is implemented");
+  }
+
+  int bindex = in_index["value"].to_int32();
+
+  const conduit::Node &axis = in_binning["attrs/bin_axes/value"].child(0);
+  const int num_bins = axis["num_bins"].to_int32();
+
+  if(bindex < 0 || bindex >= num_bins)
+  {
+    ASCENT_ERROR("bin: invalid bin "<<bindex<<"."
+                <<" Number of bins "<<num_bins);
+  }
+
+  const double min_val = axis["min_val"].to_float64();
+  const double max_val = axis["max_val"].to_float64();
+  const double bin_size = (max_val - min_val) / double(num_bins);
+  double *bins = in_binning["attrs/value/value"].value();
+
+  double left = min_val + double(bindex) * bin_size;
+  double right = min_val + double(bindex+1) * bin_size;
+  double center = left + (right-left) / 2.0;
+  double val = bins[bindex];
+
+  (*output)["type"] = "bin";
+
+  (*output)["attrs/value/value"] = val;
+  (*output)["attrs/value/type"] = "double";
+
+  (*output)["attrs/min/value"] = left;
+  (*output)["attrs/min/type"] = "double";
+
+  (*output)["attrs/max/value"] = right;
+  (*output)["attrs/max/type"] = "double";
+
+  (*output)["attrs/center/value"] = center;
+  (*output)["attrs/center/type"] = "double";
 
   set_output<conduit::Node>(output);
 }

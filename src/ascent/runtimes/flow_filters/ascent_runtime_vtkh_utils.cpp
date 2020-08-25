@@ -45,16 +45,13 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_expression_eval.hpp
+/// file: ascent_runtime_vtkh_utils.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_EXPRESSION_EVAL_HPP
-#define ASCENT_EXPRESSION_EVAL_HPP
-#include <conduit.hpp>
-#include <ascent_exports.h>
+#include "ascent_runtime_vtkh_utils.hpp"
+#include <ascent_runtime_utils.hpp>
 
-#include "flow_workspace.hpp"
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -67,74 +64,108 @@ namespace ascent
 namespace runtime
 {
 
-namespace expressions
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::filters --
+//-----------------------------------------------------------------------------
+namespace filters
 {
 
-void ASCENT_API register_builtin();
-void ASCENT_API initialize_functions();
-void ASCENT_API initialize_objects();
-
-struct Cache
+namespace detail
 {
-  conduit::Node m_data;
-  int m_rank;
-  bool m_filtered = false;
-  bool m_loaded = false;
-  std::string m_session_file;
 
-  void load(const std::string &dir,
-            const std::string &session);
 
-  double last_known_time();
-  void last_known_time(double time);
-  void filter_time(double ftime);
-  bool filtered();
-  bool loaded();
-
-  ~Cache();
-};
-
-static conduit::Node m_function_table;
-
-class ASCENT_API ExpressionEval
+void field_error(const std::string field_name,
+                 const std::string filter_name,
+                 std::shared_ptr<VTKHCollection> collection)
 {
-protected:
-  conduit::Node *m_data;
-  flow::Workspace w;
-  static Cache m_cache;
-public:
-  ExpressionEval(conduit::Node *data);
+  std::string fpath = filter_to_path(filter_name);
+  std::vector<std::string> possible_names = collection->field_names();
+  std::stringstream ss;
+  ss<<" possible field names: ";
+  for(int i = 0; i < possible_names.size(); ++i)
+  {
+    ss<<"'"<<possible_names[i]<<"'";
+    if(i != possible_names.size() - 1)
+    {
+      ss<<", ";
+    }
+  }
+  ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'"
+               <<ss.str());
+}
 
-  static const conduit::Node &get_cache();
-  static void get_last(conduit::Node &data);
-  static void reset_cache();
-  static void load_cache(const std::string &dir,
-                         const std::string &session);
+std::string possible_topologies(std::shared_ptr<VTKHCollection> collection)
+{
+   std::stringstream ss;
+   ss<<" possible topology names: ";
+   std::vector<std::string> names = collection->topology_names();
+   for(int i = 0; i < names.size(); ++i)
+   {
+     ss<<"'"<<names[i]<<"'";
+     if(i != names.size() -1)
+     {
+       ss<<", ";
+     }
+   }
+   return ss.str();
+}
 
-  conduit::Node evaluate(const std::string expr, std::string exp_name = "");
-};
+std::string resolve_topology(const conduit::Node &params,
+                             const std::string filter_name,
+                             std::shared_ptr<VTKHCollection> collection)
+{
+  int num_topologies = collection->number_of_topologies();
+  std::string topo_name;
+  std::string fpath = filter_to_path(filter_name);
+  if(num_topologies > 1)
+  {
+    if(!params.has_path("topology"))
+    {
+      std::string topo_names = detail::possible_topologies(collection);;
+      ASCENT_ERROR(fpath<<": data set has multiple topologies "
+                   <<"and no topology is specified. "<<topo_names);
+    }
 
+    topo_name = params["topology"].as_string();
+    if(!collection->has_topology(topo_name))
+    {
+      std::string topo_names = detail::possible_topologies(collection);;
+      ASCENT_ERROR(fpath<<": no topology named '"<<topo_name<<"'."
+                   <<topo_names);
+
+    }
+
+    if(!collection->has_topology(topo_name))
+    {
+      ASCENT_ERROR(fpath<<": no topology named '"<<topo_name<<"'");
+
+    }
+  }
+  else
+  {
+    topo_name = collection->topology_names()[0];
+  }
+
+  return topo_name;
+}
+
+} // namespace detail
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end ascent::expressions--
+// -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
-

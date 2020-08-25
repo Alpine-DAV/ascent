@@ -55,15 +55,15 @@ Exporting input mesh data to Blueprint HDF5 files
 
 Related docs: :ref:`extracts_relay`
 
-:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp>`
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example1.cpp>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example1.cpp
    :language: cpp
    :lines: 50-
 
-:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py>`
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example1.py>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example1.py
    :language: python
    :lines: 45-
 
@@ -80,15 +80,15 @@ Exporting selected fields from input mesh data to Blueprint HDF5 files
 
 Related docs: :ref:`extracts_relay`
 
-:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example2.cpp>`
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example2.cpp>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example2.cpp
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example2.cpp
    :language: cpp
    :lines: 50-
 
-:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example2.py>`
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example2.py>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example2.py
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example2.py
    :language: python
    :lines: 45-
 
@@ -102,15 +102,15 @@ Exporting the result of a pipeline to Blueprint HDF5 files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Related docs: :ref:`extracts_relay`
 
-:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example3.cpp>`
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example3.cpp>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example3.cpp
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example3.cpp
    :language: cpp
    :lines: 50-
 
-:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example3.py>`
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example3.py>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example3.py
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example3.py
    :language: python
    :lines: 45-
 

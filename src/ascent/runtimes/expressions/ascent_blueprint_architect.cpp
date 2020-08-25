@@ -529,6 +529,7 @@ get_explicit_element(const conduit::Node &n_coords,
   res.set(vert, 3);
   return res;
 }
+
 //-----------------------------------------------------------------------------
 }; // namespace detail
 //-----------------------------------------------------------------------------
@@ -617,6 +618,34 @@ element_location(const conduit::Node &domain,
   return res;
 }
 
+std::string
+possible_components(const conduit::Node &dataset,
+                   const std::string &field_name)
+{
+  std::string res;
+  if(dataset.number_of_children() > 0)
+  {
+    const conduit::Node &dom = dataset.child(0);
+    if(dom.has_path("fields/" + field_name))
+    {
+      if(dom["fields/"+field_name+"/values"].number_of_children() > 0)
+      {
+        std::vector<std::string> names
+          = dom["fields/"+field_name+"/values"].child_names();
+        std::stringstream ss;
+        ss<<"[";
+        for(auto name : names)
+        {
+          ss<<" '"<<name<<"'";
+        }
+        ss<<"]";
+        res = ss.str();
+      }
+    }
+  }
+  return res;
+}
+
 bool
 is_scalar_field(const conduit::Node &dataset, const std::string &field_name)
 {
@@ -656,6 +685,26 @@ has_field(const conduit::Node &dataset, const std::string &field_name)
   // check to see if the field exists in any rank
   has_field = detail::at_least_one(has_field);
   return has_field;
+}
+
+bool
+has_component(const conduit::Node &dataset,
+              const std::string &field_name,
+              const std::string &component)
+{
+
+  bool has_comp= false;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(!has_comp && dom.has_path("fields/" + field_name + "/values/"+component))
+    {
+      has_comp = true;
+    }
+  }
+  // check to see if the field exists in any rank
+  has_comp= detail::at_least_one(has_comp);
+  return has_comp;
 }
 
 // TODO If someone names their fields x,y,z things will go wrong
@@ -960,11 +1009,16 @@ global_topo_and_assoc(const conduit::Node &dataset,
     ASCENT_ERROR("All Binning fields must have the same topology.");
   }
 #endif
-  if(assoc_str != "vertex" && assoc_str != "element")
+  if(assoc_str.empty())
+  {
+    ASCENT_ERROR("Could not determine the associate from the given "
+                 "reduction_var and axes. Try supplying a field.");
+  }
+  else if(assoc_str != "vertex" && assoc_str != "element")
   {
     ASCENT_ERROR("Unknown association: '"
                  << assoc_str
-                 << "'. Binning only supports vertex and element association");
+                 << "'. Binning only supports vertex and element association.");
   }
 
   conduit::Node res;
@@ -1158,23 +1212,16 @@ update_bin(double *bins,
            const double value,
            const std::string &reduction_op)
 {
-  if(reduction_op == "cnt" || reduction_op == "pdf")
+  if(reduction_op == "min")
   {
-    bins[i] += 1;
-  }
-  else if(reduction_op == "min")
-  {
-    // have to keep track of count anyways in order to detect which bins are
-    // empty
-    bins[2 * i] = std::min(bins[i], value);
-    bins[2 * i + 1] += 1;
+    bins[i] = std::min(bins[i], value);
   }
   else if(reduction_op == "max")
   {
-    bins[2 * i] = std::max(bins[i], value);
-    bins[2 * i + 1] += 1;
+    bins[i] = std::max(bins[i], value);
   }
-  else if(reduction_op == "avg" || reduction_op == "sum")
+  else if(reduction_op == "avg" || reduction_op == "sum" ||
+          reduction_op == "pdf")
   {
     bins[2 * i] += value;
     bins[2 * i + 1] += 1;
@@ -1192,23 +1239,50 @@ update_bin(double *bins,
   }
 }
 
-// reduction_op: cnt, sum, min, max, avg, pdf, std, var, rms
+void init_bins(double *bins,
+               const int size,
+               const std::string reduction_op)
+{
+  if(reduction_op != "max" && reduction_op != "min")
+  {
+    // already init to 0, so do nothing
+    return;
+  }
+
+  double init_val;
+  if(reduction_op == "max")
+  {
+    init_val = std::numeric_limits<double>::lowest();
+  }
+  else
+  {
+    init_val = std::numeric_limits<double>::max();
+  }
+
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+  for(int i = 0; i < size; ++i)
+  {
+    bins[i] = init_val;
+  }
+
+}
+
+// reduction_op: sum, min, max, avg, pdf, std, var, rms
 conduit::Node
 binning(const conduit::Node &dataset,
         conduit::Node &bin_axes,
         const std::string &reduction_var,
         const std::string &reduction_op,
-        const double empty_bin_val)
+        const double empty_bin_val,
+        const std::string &component)
 {
-  // for now only support reductions on scalars
-  if(!is_xyz(reduction_var) && !is_scalar_field(dataset, reduction_var))
-  {
-    ASCENT_ERROR("Binning: reduction variable '"
-                 << reduction_var
-                 << "' must be a scalar field in the dataset or x/y/z.");
-  }
   std::vector<std::string> var_names = bin_axes.child_names();
-  var_names.push_back(reduction_var);
+  if(!reduction_var.empty())
+  {
+    var_names.push_back(reduction_var);
+  }
   const conduit::Node &topo_and_assoc =
       global_topo_and_assoc(dataset, var_names);
   const std::string topo_name = topo_and_assoc["topo_name"].as_string();
@@ -1219,7 +1293,7 @@ binning(const conduit::Node &dataset,
   const double *max_coords = bounds["max_coords"].value();
   const std::string axes[3][3] = {
       {"x", "i", "dx"}, {"y", "j", "dy"}, {"z", "k", "dz"}};
-  // populate min_val, max_val, num_bins for x,y,z
+  // populate min_val, max_val, for x,y,z
   for(int axis_num = 0; axis_num < 3; ++axis_num)
   {
     if(bin_axes.has_path(axes[axis_num][0]))
@@ -1247,42 +1321,16 @@ binning(const conduit::Node &dataset,
 
       if(!axis.has_path("max_val"))
       {
-        // We add 1 because the last bin isn't inclusive
-        axis["max_val"] = max_coords[axis_num] + 1.0;
-      }
-
-      if(!axis.has_path("num_bins"))
-      {
-        axis["num_bins"] = 256;
+        // We add eps because the last bin isn't inclusive
+        double min_val = axis["min_val"].to_float64();
+        double length = max_coords[axis_num] - min_val;
+        double eps = length * 1e-8;
+        axis["max_val"] = max_coords[axis_num] + eps;
       }
     }
   }
 
   int num_axes = bin_axes.number_of_children();
-
-  // populate min_val, max_val, num_bins for other axis fields
-  for(int axis_index = 0; axis_index < num_axes; ++axis_index)
-  {
-    conduit::Node &axis = bin_axes.child(axis_index);
-    const std::string axis_name = axis.name();
-    if(!is_xyz(axis_name) && !axis.has_path("bins"))
-    {
-      if(!axis.has_path("min_val"))
-      {
-        axis["min_val"] = field_min(dataset, axis_name)["value"];
-      }
-      if(!axis.has_path("max_val"))
-      {
-        axis["max_val"] =
-            field_max(dataset, axis_name)["value"].to_float64() + 1.0;
-      }
-      if(!axis.has_path("num_bins"))
-      {
-        axis["num_bins"] =
-            axis["max_val"].to_int32() - axis["min_val"].to_int32();
-      }
-    }
-  }
 
   // create bins
   size_t num_bins = 1;
@@ -1302,16 +1350,17 @@ binning(const conduit::Node &dataset,
   }
   // number of variables held per bin (e.g. sum and cnt for average)
   int num_bin_vars = 2;
-  if(reduction_op == "cnt" || reduction_op == "pdf")
-  {
-    num_bin_vars = 1;
-  }
-  else if(reduction_op == "var" || reduction_op == "std")
+  if(reduction_op == "var" || reduction_op == "std")
   {
     num_bin_vars = 3;
   }
+  else if(reduction_op == "min" || reduction_op == "max")
+  {
+    num_bin_vars = 1;
+  }
   const int bins_size = num_bins * num_bin_vars;
   double *bins = new double[bins_size]();
+  init_bins(bins, bins_size, reduction_op);
 
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {
@@ -1319,6 +1368,7 @@ binning(const conduit::Node &dataset,
 
     conduit::Node n_homes;
     populate_homes(dom, bin_axes, topo_name, assoc_str, n_homes);
+
     if(n_homes.has_path("error"))
     {
       ASCENT_INFO("Binning: not binning domain "
@@ -1331,15 +1381,31 @@ binning(const conduit::Node &dataset,
     const int homes_size = n_homes.dtype().number_of_elements();
 
     // update bins
-    if(dom.has_path("fields/" + reduction_var))
+    if(reduction_var.empty())
     {
-      const std::string values_path = "fields/" + reduction_var + "/values";
+//#ifdef ASCENT_USE_OPENMP
+//#pragma omp parallel for
+//#endif
+      for(int i = 0; i < homes_size; ++i)
+      {
+        if(homes[i] != -1)
+        {
+          update_bin(bins, homes[i], 1, reduction_op);
+        }
+      }
+    }
+    else if(dom.has_path("fields/" + reduction_var))
+    {
+      const std::string comp_path = component == "" ? "" : "/" + component;
+      const std::string values_path
+        = "fields/" + reduction_var + "/values" + comp_path;
+
       if(dom[values_path].dtype().is_float32())
       {
         const conduit::float32_array values = dom[values_path].value();
-#ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef ASCENT_USE_OPENMP
+//#pragma omp parallel for
+//#endif
         for(int i = 0; i < homes_size; ++i)
         {
           if(homes[i] != -1)
@@ -1351,9 +1417,9 @@ binning(const conduit::Node &dataset,
       else
       {
         const conduit::float64_array values = dom[values_path].value();
-#ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef ASCENT_USE_OPENMP
+//#pragma omp parallel for
+//#endif
         for(int i = 0; i < homes_size; ++i)
         {
           if(homes[i] != -1)
@@ -1366,9 +1432,9 @@ binning(const conduit::Node &dataset,
     else if(is_xyz(reduction_var))
     {
       int coord = reduction_var[0] - 'x';
-#ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef ASCENT_USE_OPENMP
+//#pragma omp parallel for
+//#endif
       for(int i = 0; i < homes_size; ++i)
       {
         conduit::Node n_loc;
@@ -1389,16 +1455,17 @@ binning(const conduit::Node &dataset,
     }
     else
     {
-      ASCENT_ERROR("Field " << reduction_var << "not found in all domains");
+      ASCENT_INFO("Binning: not binning domain "
+                  << dom_index << " because field: '" << reduction_var
+                  << "' was not found.");
     }
   }
 
 #ifdef ASCENT_MPI_ENABLED
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   double *global_bins = new double[bins_size];
-  if(reduction_op == "cnt" || reduction_op == "sum" || reduction_op == "pdf" ||
-     reduction_op == "avg" || reduction_op == "std" || reduction_op == "var" ||
-     reduction_op == "rms")
+  if(reduction_op == "sum" || reduction_op == "pdf" || reduction_op == "avg" ||
+     reduction_op == "std" || reduction_op == "var" || reduction_op == "rms")
   {
     MPI_Allreduce(bins, global_bins, bins_size, MPI_DOUBLE, MPI_SUM, mpi_comm);
   }
@@ -1417,36 +1484,67 @@ binning(const conduit::Node &dataset,
   conduit::Node res;
   res["value"].set(conduit::DataType::c_double(num_bins));
   double *res_bins = res["value"].value();
-  if(reduction_op == "cnt")
+  if(reduction_op == "pdf")
   {
+    double total = 0;
 #ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for
+#pragma omp parallel for reduction(+ : total)
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
-      res_bins[i] = bins[i];
-    }
-  }
-  else if(reduction_op == "pdf")
-  {
-    int n = 0;
-#ifdef ASCENT_USE_OPENMP
-#pragma omp parallel for reduction(+ : n)
-#endif
-    for(int i = 0; i < num_bins; ++i)
-    {
-      n += bins[i];
+      total += bins[2 * i];
     }
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
-      res_bins[i] = bins[i] / n;
+      if(bins[2 * i + 1] == 0)
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = bins[2 * i] / total;
+      }
     }
   }
-  else if(reduction_op == "sum" || reduction_op == "min" ||
-          reduction_op == "max")
+  else if(reduction_op == "min")
+  {
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      if(bins[i] == std::numeric_limits<double>::max())
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = bins[i];
+      }
+    }
+  }
+  else if(reduction_op == "max")
+  {
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      if(bins[i] == std::numeric_limits<double>::lowest())
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = bins[i];
+      }
+    }
+
+  }
+  else if(reduction_op == "sum")
   {
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
@@ -1541,7 +1639,6 @@ binning(const conduit::Node &dataset,
       }
     }
   }
-  res["bin_axes"] = bin_axes;
   res["association"] = assoc_str;
   delete[] bins;
   return res;
@@ -1595,8 +1692,14 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
     const int *homes = n_homes.as_int_ptr();
     const int homes_size = n_homes.dtype().number_of_elements();
 
+    std::string reduction_var =
+        binning["attrs/reduction_var/value"].as_string();
+    if(reduction_var.empty())
+    {
+      reduction_var = "cnt";
+    }
     const std::string field_name =
-        "painted_" + binning["attrs/reduction_var/value"].as_string() + "_" +
+        "painted_" + reduction_var + "_" +
         binning["attrs/reduction_op/value"].as_string();
     dom["fields/" + field_name + "/association"] = assoc_str;
     dom["fields/" + field_name + "/topology"] = topo_name;
@@ -1668,9 +1771,13 @@ binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
   mesh["topologies/binning_topo/coordset"] = "binning_coords";
 
   // create field
+  std::string reduction_var = binning["attrs/reduction_var/value"].as_string();
+  if(reduction_var.empty())
+  {
+    reduction_var = "cnt";
+  }
   const std::string field_name =
-      binning["attrs/reduction_var/value"].as_string() + "_" +
-      binning["attrs/reduction_op/value"].as_string();
+      reduction_var + "_" + binning["attrs/reduction_op/value"].as_string();
   mesh["fields/" + field_name + "/association"] = "element";
   mesh["fields/" + field_name + "/topology"] = "binning_topo";
   mesh["fields/" + field_name + "/values"].set(binning["attrs/value/value"]);
@@ -1932,6 +2039,7 @@ field_min(const conduit::Node &dataset, const std::string &field)
   double *ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, minloc_res.rank, mpi_comm);
   MPI_Bcast(&domain_id, 1, MPI_INT, minloc_res.rank, mpi_comm);
+  MPI_Bcast(&index, 1, MPI_INT, minloc_res.rank, mpi_comm);
 
   loc.set(ploc, 3);
 
@@ -1939,6 +2047,8 @@ field_min(const conduit::Node &dataset, const std::string &field)
 #endif
   res["rank"] = rank;
   res["domain_id"] = domain_id;
+  res["index"] = index;
+  res["assoc"] = assoc_str;
   res["position"] = loc;
   res["value"] = min_value;
 
@@ -2066,12 +2176,15 @@ field_max(const conduit::Node &dataset, const std::string &field)
   double *ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, maxloc_res.rank, mpi_comm);
   MPI_Bcast(&domain_id, 1, MPI_INT, maxloc_res.rank, mpi_comm);
+  MPI_Bcast(&index, 1, MPI_INT, maxloc_res.rank, mpi_comm);
 
   loc.set(ploc, 3);
   rank = maxloc_res.rank;
 #endif
   res["rank"] = rank;
   res["domain_id"] = domain_id;
+  res["index"] = index;
+  res["assoc"] = assoc_str;
   res["position"] = loc;
   res["value"] = max_value;
 
@@ -2092,14 +2205,173 @@ get_state_var(const conduit::Node &dataset, const std::string &var_name)
       state = dom["state/" + var_name];
     }
   }
-
-  // TODO: make sure everyone has this
-  if(!has_state)
-  {
-    ASCENT_ERROR("Unable to retrieve state variable '" << var_name << "'");
-  }
   return state;
 }
+
+void paint_nestsets(const std::string nestset_name,
+                    conduit::Node &dom,
+                    conduit::Node &field)
+{
+  if(!dom.has_path("nestsets/"+nestset_name))
+  {
+    ASCENT_ERROR("No nestset with that name");
+  }
+
+  conduit::Node &nestset = dom["nestsets/"+nestset_name];
+  const std::string topo_name = nestset["topology"].as_string();
+  const conduit::Node &topo = dom["topologies/"+topo_name];
+
+  if(topo["type"].as_string() == "unstructured")
+  {
+    ASCENT_ERROR("Paint nestsets: cannot paint on unstructured topology");
+  }
+
+  int el_dims[3] = {1,1,1};
+  bool is_3d = false;
+
+  if(topo["type"].as_string() == "structured")
+  {
+    el_dims[0] = topo["elements/dims/i"].to_int32();
+    el_dims[1] = topo["elements/dims/j"].to_int32();
+    if(topo.has_path("elements/dims/k"))
+    {
+      is_3d = true;
+      el_dims[2] = topo["elements/dims/k"].to_int32();
+    }
+
+  }
+  else
+  {
+    const std::string coord_name = topo["coordset"].as_string();
+    const conduit::Node &coords = dom["coordsets/"+coord_name];
+    if(coords["type"].as_string() == "uniform")
+    {
+      el_dims[0] = coords["dims/i"].as_int32() - 1;
+      el_dims[1] = coords["dims/j"].as_int32() - 1;
+
+      if(coords.has_path("dims/k"))
+      {
+        is_3d = true;
+        el_dims[2] = topo["dims/k"].to_int32();
+      }
+    }
+    else if(coords["type"].as_string() == "rectilinear")
+    {
+      el_dims[0] = coords["values/x"].dtype().number_of_elements() - 1;
+      el_dims[1] = coords["values/y"].dtype().number_of_elements() - 1;
+      if(coords.has_path("values/z"))
+      {
+        is_3d = true;
+        el_dims[1] = coords["values/z"].dtype().number_of_elements() - 1;
+      }
+    }
+    else
+    {
+      ASCENT_ERROR("unknown coord type");
+    }
+  }
+  // ok, now paint
+
+  conduit::int32 field_size = el_dims[0] * el_dims[1];
+  if(is_3d)
+  {
+    field_size *= el_dims[2];
+  }
+
+  conduit::int32_array levels;
+  // check to see if the field already has data or if
+  // we need to create a new field
+  if(field.has_path("values"))
+  {
+    const int fsize = field["values"].dtype().number_of_elements();
+    if(fsize != field_size)
+    {
+      ASCENT_ERROR("Paint: field given is allocated, but does not"
+                   <<" match the expected size "<<fsize<<" "<<field_size);
+    }
+    levels = field["values"].value();
+  }
+  else
+  {
+    field["association"] = "element";
+    field["topology"] = topo_name;
+    field["values"] = conduit::DataType::int32(field_size);
+    levels = field["values"].value();
+    for(int i = 0; i < field_size; ++i)
+    {
+      levels[i] = 0;
+    }
+  }
+
+  const int windows = nestset["windows"].number_of_children();
+
+  for(int i = 0; i < windows; ++i)
+  {
+    const conduit::Node &window = nestset["windows"].child(i);
+    if(window["domain_type"].as_string() != "child")
+    {
+      continue;
+    }
+
+    int origin[3];
+    origin[0] = window["origin/i"].to_int32();
+    origin[1] = window["origin/j"].to_int32();
+
+    if(is_3d)
+    {
+      origin[2] = window["origin/k"].to_int32();
+    }
+
+    int dims[3];
+    dims[0] = window["dims/i"].to_int32();
+    dims[1] = window["dims/j"].to_int32();
+    if(is_3d)
+    {
+      dims[2] = window["dims/k"].to_int32();
+    }
+    if(is_3d)
+    {
+      // all the nesting relationship is local
+      for(int z = origin[2]; z < origin[2] + dims[2]; ++z)
+      {
+        const int z_offset = z * el_dims[0] * el_dims[1];
+        for(int y = origin[1]; y < origin[1] + dims[1]; ++y)
+        {
+          const conduit::int32 y_offset = y * el_dims[0];
+          for(int x = origin[0]; x < origin[0] + dims[0]; ++x)
+          {
+            // this might a ghost field, but we only want to
+            // mask real zones that are masked by finer grids
+            conduit::int32 value = levels[z_offset + y_offset + x];
+            if(value == 0)
+            {
+              levels[z_offset + y_offset + x] = 1;
+            }
+          }
+        }
+      }
+    }
+    else
+    {
+      // all the nesting relationship is local
+      for(int y = origin[1]; y < origin[1] + dims[1]; ++y)
+      {
+        const conduit::int32 y_offset = y * el_dims[0];
+        for(int x = origin[0]; x < origin[0] + dims[0]; ++x)
+        {
+          // this might a ghost field, but we only want to
+          // mask real zones that are masked by finer grids
+          conduit::int32 value = levels[y_offset + x];
+          if(value == 0)
+          {
+            levels[y_offset + x] = 1;
+          }
+        }
+      }
+    }
+  }
+
+} // paint
 
 //-----------------------------------------------------------------------------
 };
