@@ -2223,7 +2223,7 @@ void paint_nestsets(const std::string nestset_name,
 
   if(topo["type"].as_string() == "unstructured")
   {
-    std::cout<<"Paint nestsets: cannot paint on unstructured topology\n";
+    ASCENT_ERROR("Paint nestsets: cannot paint on unstructured topology");
   }
 
   int el_dims[3] = {1,1,1};
