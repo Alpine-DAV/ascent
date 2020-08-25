@@ -587,7 +587,7 @@ TEST(ascent_relay, test_relay_bp_num_files)
 
     // use spiral , with 7 domains
     conduit::blueprint::mesh::examples::spiral(7,data);
-    
+
     // rank 0 gets first 4 domains, rank 1 gets the rest
     if(par_rank == 0)
     {
@@ -616,7 +616,7 @@ TEST(ascent_relay, test_relay_bp_num_files)
     std::ostringstream oss;
 
     // lets try with -1 to 8 files.
-    
+
     // nfiles less than 1 should trigger default case
     // (n output files = n domains)
     for(int nfiles=-1; nfiles < 9; nfiles++)
@@ -638,9 +638,9 @@ TEST(ascent_relay, test_relay_bp_num_files)
             utils::remove_directory(output_dir);
             utils::remove_directory(output_root);
         }
-        
+
         MPI_Barrier(comm);
-        
+
         conduit::Node actions;
         // add the extracts
         conduit::Node &add_extracts = actions.append();
@@ -684,11 +684,11 @@ TEST(ascent_relay, test_relay_bp_num_files)
         char fmt_buff[64] = {0};
         for(int i=0;i<nfiles_to_check;i++)
         {
-            
+
             std::string fprefix = "file_";
             if(nfiles_to_check == 7)
             {
-                // in the n domains == n files case, the file prefix is 
+                // in the n domains == n files case, the file prefix is
                 // domain_
                 fprefix = "domain_";
             }
@@ -701,7 +701,7 @@ TEST(ascent_relay, test_relay_bp_num_files)
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(conduit::utils::is_file(fcheck));
         }
-        
+
         MPI_Barrier(comm);
     }
 }
