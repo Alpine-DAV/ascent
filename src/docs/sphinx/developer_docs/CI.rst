@@ -24,7 +24,7 @@ To speed up our CI testing we use Docker containers with pre-built third party l
 # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
 #####
 variables:
-  main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2020-08-21-sha3a2c4e
+  main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2020-08-25-sha784de7
   cuda_tag : alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel-tpls_2020-08-21-sha3a2c4e
 
 When the PR is merged, the azure changes will be merged and PRs to develop will use now the new containers.
