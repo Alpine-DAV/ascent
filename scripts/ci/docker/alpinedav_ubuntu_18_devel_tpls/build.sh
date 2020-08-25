@@ -42,7 +42,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
-export TAG_NAME=alpinedav/ascent-ci:ubuntu-18-devel-tpls
+export TAG_BASE=alpinedav/ascent-ci:ubuntu-18-devel-tpls
 
 date
 
