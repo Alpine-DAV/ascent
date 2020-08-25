@@ -1815,11 +1815,27 @@ void AscentRuntime::PaintNestsets()
 
       if(has_ghost)
       {
-        std::string ghost_name = topo_ghosts["topo_name"];
+        std::string ghost_name = topo_ghosts[topo_name];
         if(dom.has_path("fields/" + ghost_name))
         {
+          // ok, we need to alter the ghosts but the simulation
+          // gave us this data. In most cases, the ascent
+          // integration made the ghost zones, so it would
+          // be safe to change them. That said, it would
+          // be bad practice to alter the data, so we will make a
+          // copy and update our tree to point at the copy.
+          const std::string ghost_path = "fields/" + ghost_name;
+          const std::string temp_path = "fields/" + ghost_name + "_bananas";
+
           conduit::Node &field = dom["fields/" + ghost_name];
-          runtime::expressions::paint_nestsets(nest_name, dom, field);
+          dom[temp_path].set(field);
+          dom.remove(ghost_path);
+          //dom.rename_child(temp_path, ghost_path);
+          dom["fields/"].rename_child(ghost_name+"_bananas", ghost_name);
+
+          conduit::Node &ghost_field = dom[ghost_path];
+
+          runtime::expressions::paint_nestsets(nest_name, dom, ghost_field);
         }
         else
         {

@@ -69,7 +69,6 @@ using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
-
 //-----------------------------------------------------------------------------
 TEST(ascent_amr, test_amr_render_simple)
 {
@@ -185,6 +184,100 @@ TEST(ascent_amr, test_amr_render_complex)
     scenes["s1/plots/p1/field"] = "iters";
     //scenes["s1/plots/p1/field"] = "topo_ghosts";
     //scenes["s1/plots/p2/type"] = "mesh";
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file,0.01,"0"));
+    std::string msg = "An example of rendering amr data";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_amr, test_amr_render_complex_ghosts)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+        return;
+    }
+
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    blueprint::mesh::examples::julia_nestsets_complex(EXAMPLE_MESH_SIDE_DIM,
+                                                      EXAMPLE_MESH_SIDE_DIM,
+                                                      -2.0,  2.0, // x range
+                                                      -2.0,  2.0, // y range
+                                                      0.285, 0.01, // c value
+                                                      2, // amr levels
+                                                      data);
+
+    const int num_domains = data.number_of_children();
+    for(int i = 0; i < num_domains; ++i)
+    {
+      conduit::Node &dom = data.child(i);
+      const int field_size = dom["fields/iters/values"].dtype().number_of_elements();
+      //std::cout<<"Field size "<<field_size<<"\n";
+      dom["fields/ascent_ghosts/values"].set(conduit::DataType::int32(field_size));
+      dom["fields/ascent_ghosts/topology"] = "topo";
+      dom["fields/ascent_ghosts/association"] = "element";
+      conduit::int32_array ghosts = dom["fields/ascent_ghosts/values"].value();
+      for(int a = 0; a < field_size; ++a)
+      {
+        if(a == 0)
+        {
+          ghosts[a] = 1;
+        }
+        else
+        {
+          ghosts[a] = 0;
+        }
+      }
+    }
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                                        "tout_render_amr_complex_ghost");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "iters";
     scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
