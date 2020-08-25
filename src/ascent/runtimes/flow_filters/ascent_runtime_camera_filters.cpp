@@ -1411,7 +1411,7 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
       viewpoint_entropy = (-1.0)*viewpoint_ratio;
     }
     MPI_Bcast(&viewpoint_entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    cerr << "viewpoint_entropy " << viewpoint_entropy << endl;
+//    cerr << "viewpoint_entropy " << viewpoint_entropy << endl;
     return viewpoint_entropy;
   #else
     int size = height*width;
@@ -1897,6 +1897,8 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, float total_triangles, int 
 
       float pixel_ratio = projected_area/size;
       float triangle_ratio = num_triangles/total_triangles;
+      cerr << "pixel_ratio: " << pixel_ratio << endl;
+      cerr << "triangle_ratio: " << triangle_ratio << endl;
       pb_score = pixel_ratio + triangle_ratio;
     }
     MPI_Bcast(&pb_score, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
