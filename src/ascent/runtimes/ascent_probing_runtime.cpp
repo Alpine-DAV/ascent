@@ -356,15 +356,14 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         const int target_vis_node = node_map[i];
 
         t_intransit[target_vis_node] += t_inline[i] * (vis_factor/sim_factor);
-        if (t_inline[i] < 0.f + std::numeric_limits<float>::min())
-            // avoid skipped renders to sim nodes
-            t_inline[i] = std::numeric_limits<float>::max(); 
+        if (t_inline[i] <= 0.f + std::numeric_limits<float>::min())
+            t_inline[i] = 0;
         else
             t_inline[i] = vis_overheads[i];
         render_counts_vis[target_vis_node] += render_cfg.non_probing_count;
+
     }
 
-    // vis budget of 1 implies intransit only (i.e., only vis nodes render)
     if (render_cfg.insitu_type != "intransit")
     {
         // push back load to sim nodes until 
@@ -372,11 +371,25 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         // NOTE: this loop is ineffective w/ higher node counts
         int i = 0;
         std::valarray<float> t_inline_sim = t_inline + t_sim;
+        float t_inline_sim_max = t_inline_sim.max();
+
         while (t_inline_sim.max() < t_intransit.max()) 
         {
             // always push back to the fastest sim node
-            const int min_id = std::min_element(begin(t_inline_sim), end(t_inline_sim)) 
-                                - begin(t_inline_sim);
+            int min_id = -1;
+            float min_val = std::numeric_limits<float>::max();
+            // std::min_element(begin(t_inline_sim), end(t_inline_sim)) - begin(t_inline_sim);
+            for (int j = 0; j < t_inline_sim.size(); j++)
+            {
+                // don't process skipped nodes on sim nodes
+                if (t_inline[j] > 0 && t_inline_sim[j] < min_val)
+                {
+                    min_id = j;
+                    min_val = t_inline_sim[j];
+                }
+            }
+            if (min_id == -1)   // no rendering at all
+                break;
 
             // find the corresponding vis node 
             const int target_vis_node = node_map[min_id];
@@ -391,7 +404,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
                 t_inline[min_id] += vis_estimates[min_id] * sim_factor;
                 render_counts_sim[min_id]++;
             }
-            else    // we ran out of renderings on this vis node
+            else    // We ran out of renderings on this vis node. This should not happen.
             {
                 std::cout << "=== Ran out of renderings on node " 
                         << target_vis_node << std::endl;
@@ -399,7 +412,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
             }
 
             // if sim node got all its images back for inline rendering
-            // -> throw it out of consideration
+            // -> take it out of consideration
             if (render_counts_sim[min_id] == render_cfg.non_probing_count)
                 t_inline[min_id] = std::numeric_limits<float>::max() - t_sim[min_id];
 
@@ -916,11 +929,14 @@ void ActivePixelDecoding(unsigned char *colors, float *depths, const int size,
                         std::vector<unsigned char> &dec_colors, std::vector<float> &dec_depths)
 {
     // TODO: assert depth.size() >= 2
-    int pos = 1;
-    int dec_pos = 1;
     dec_depths.resize(size); 
     dec_colors.resize(size * 4);
-    dec_depths[0] = depths[0];
+    // set first value
+    int pos = 0;
+    int dec_pos = 0;
+    for (int i = 0; i < 4; i++)
+        dec_colors[dec_pos + i] = colors[dec_pos + i];
+    dec_depths[dec_pos++] = depths[pos++];
 
     while (dec_pos < size - 1)
     {
@@ -1291,7 +1307,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             {
                 my_avg_probing_time = float(sum_render_times / my_probing_times.size());
                 my_avg_probing_time /= 1000.0; // convert to seconds
-                my_avg_probing_time *= 2.0;
+                my_avg_probing_time = total_probing_time;
             }
 
             // if probing time is close to zero, add overhead costs
