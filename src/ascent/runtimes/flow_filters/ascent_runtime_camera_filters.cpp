@@ -1411,7 +1411,7 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
       viewpoint_entropy = (-1.0)*viewpoint_ratio;
     }
     MPI_Bcast(&viewpoint_entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    cerr << "viewpoint_entropy " << viewpoint_entropy << endl;
+//    cerr << "viewpoint_entropy " << viewpoint_entropy << endl;
     return viewpoint_entropy;
   #else
     int size = height*width;
@@ -1636,26 +1636,28 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
     {
       int size = height*width;
       std::vector<float> field_data = GetScalarData(*dataset, field_name, height, width);
+      std::vector<float> data;
       for(int i = 0; i < size; i++)
-        if(field_data[i] != field_data[i])
-          field_data[i] = -FLT_MAX;
-      float field_array[size];
-      std::copy(field_data.begin(), field_data.end(), field_array);
-      entropy = calcentropy(field_array, field_data.size(), 100);
+        if(field_data[i] == field_data[i])
+          data.push_back(field_data[i]);
+      float field_array[data.size()];
+      std::copy(data.begin(), data.end(), field_array);
+      entropy = calcentropy(field_array, data.size(), 100);
 
     }
     MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
   #else
     int size = height*width;
     std::vector<float> field_data = GetScalarData(*dataset, field_name, height, width);
+    std::vector<float> data;
     for(int i = 0; i < size; i++)
-      if(field_data[i] != field_data[i])
-        field_data[i] = -FLT_MAX;
-    float field_array[size];
-    std::copy(field_data.begin(), field_data.end(), field_array);
-    entropy = calcentropy(field_array, field_data.size(), 100);
+      if(field_data[i] == field_data[i])
+        data.push_back(field_data[i]);
+    float field_array[data.size()];
+    std::copy(data.begin(), data.end(), field_array);
+    entropy = calcentropy(field_array, data.size(), 100);
   #endif
-  return (-1)*entropy;
+  return entropy;
 }
 
 float 
@@ -1700,7 +1702,6 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width)
     entropy = calcentropy(depth_array, depth_data.size(), 100);
   #endif
   return entropy;
-  //return (-1)*entropy;
 }
 
 float
@@ -1896,6 +1897,8 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, float total_triangles, int 
 
       float pixel_ratio = projected_area/size;
       float triangle_ratio = num_triangles/total_triangles;
+      cerr << "pixel_ratio: " << pixel_ratio << endl;
+      cerr << "triangle_ratio: " << triangle_ratio << endl;
       pb_score = pixel_ratio + triangle_ratio;
     }
     MPI_Bcast(&pb_score, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
