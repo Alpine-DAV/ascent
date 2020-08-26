@@ -681,110 +681,6 @@ UnstructuredTopology<T, N>::element_location(const size_t index) const
 }
 
 //-----------------------------------------------------------------------------
-// -- Topology Packing Functions
-//-----------------------------------------------------------------------------
-// {{{
-
-// Packing requires a lot of the info available to the Topology class
-
-// I can't define these in ascent_derived_jit.cpp because they are templated and
-// must be defined in the same place that the templates are initialized
-
-// TODO at the end of each function we need to repack to conduit arrays
-// properly
-template <typename T, size_t N>
-void
-UniformTopology<T, N>::pack(conduit::Node &args) const
-{
-  for(size_t i = 0; i < N; ++i)
-  {
-    const std::string dim = std::string(1, 'i' + i);
-    const std::string coord = std::string(1, 'x' + i);
-    args["const int " + topo_name + "_dims_" + dim + ",\n"] = dims[i];
-    args["const double " + topo_name + "_spacing_d" + coord + ",\n"] =
-        spacing[i];
-    args["const double " + topo_name + "_origin_" + coord + ",\n"] = origin[i];
-  }
-}
-
-template <typename T, size_t N>
-void
-RectilinearTopology<T, N>::pack(conduit::Node &args) const
-{
-
-  for(size_t i = 0; i < N; ++i)
-  {
-    const std::string dim = std::string(1, 'i' + i);
-    const std::string coord = std::string(1, 'x' + i);
-    args["const double *" + topo_name + "_coords_" + coord + ",\n"]
-        .set_external(coords[i]);
-    args["const int " + topo_name + "_dims_" + dim + ",\n"] =
-        coords[i].dtype().number_of_elements();
-  }
-}
-
-template <typename T, size_t N>
-void
-StructuredTopology<T, N>::pack(conduit::Node &args) const
-{
-  for(size_t i = 0; i < N; ++i)
-  {
-    const std::string dim = std::string(1, 'i' + i);
-    const std::string coord = std::string(1, 'x' + i);
-    args["const int " + topo_name + "_dims_" + dim + ",\n"] = dims[i];
-    args["const double *" + topo_name + "_coords_" + coord + ",\n"]
-        .set_external(coords[i]);
-  }
-}
-
-template <typename T, size_t N>
-void
-UnstructuredTopology<T, N>::pack(conduit::Node &args) const
-{
-  // "const double * coords_x,\n"
-  // "const double * coords_y,\n"
-  // "const double * coords_z,\n"
-  // "const int * connectivity,\n"
-  // "const int shape,\n";
-  for(size_t i = 0; i < N; ++i)
-  {
-    const std::string coord = std::string(1, 'x' + i);
-    args["const double *" + topo_name + "_coords_" + coord + ",\n"]
-        .set_external(coords[i]);
-  }
-  args["const int *" + topo_name + "_connectivity,\n"].set_external(
-      connectivity);
-  // polygonal and polyhedral need to pack additional things
-  if(shape == "polygonal")
-  {
-    args["const int *" + topo_name + "_sizes,\n"].set_external(sizes);
-    args["const int *" + topo_name + "_offsets,\n"].set_external(offsets);
-  }
-  else if(shape == "polyhedral")
-  {
-    args["const int *" + topo_name + "_polyhedral_sizes,\n"].set_external(
-        polyhedral_sizes);
-    args["const int *" + topo_name + "_polyhedral_offsets,\n"].set_external(
-        polyhedral_offsets);
-    args["const int *" + topo_name + "_polyhedral_connectivity,\n"]
-        .set_external(polyhedral_connectivity);
-
-    args["const int *" + topo_name + "_sizes,\n"].set_external(sizes);
-    args["const int *" + topo_name + "_offsets,\n"].set_external(offsets);
-    if(polyhedral_shape != "polygonal")
-    {
-      args["const int " + topo_name + "_shape_size,\n"] = polyhedral_shape_size;
-    }
-  }
-  else
-  {
-    args["const int " + topo_name + "_shape_size,\n"] = shape_size;
-  }
-}
-
-// }}}
-
-//-----------------------------------------------------------------------------
 // -- topologyFactory
 //-----------------------------------------------------------------------------
 
@@ -2904,7 +2800,7 @@ field_topology(const conduit::Node &dataset, const std::string &field_name)
 std::string
 coord_dtype(const std::string &topo_name, const conduit::Node &domain)
 {
-  // ok, so we  can have a mix of uniform and non-uniform
+  // ok, so we can have a mix of uniform and non-uniform
   // coords, where non-uniform coords have arrays
   // if we only have unirform, the double,
   // if some have arrays, then go with whatever

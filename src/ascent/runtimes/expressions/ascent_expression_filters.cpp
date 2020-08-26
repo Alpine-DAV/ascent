@@ -2978,8 +2978,10 @@ JitFilter::execute()
           const std::string topo_type = n_topo["type"].as_string();
 
           std::unique_ptr<Topology> topo = topologyFactory(topo_name, dom);
-          topo->pack(jitable.dom_info.child(i)["args"]);
-
+          pack_topology(topo_name,
+                        dom,
+                        jitable.dom_info.child(i)["args"],
+                        jitable.arrays[i]);
           const std::string kernel_type = topo_name + "=" + topo_type;
           jitable.dom_info.child(i)["kernel_type"] = kernel_type;
           jitable.kernels[kernel_type];
@@ -2999,22 +3001,18 @@ JitFilter::execute()
         if(type == "int" || type == "double")
         {
           // force everthing to a double
-          const std::string param_str =
-              "const " + type + " " + input_fname + ",\n";
           for(int i = 0; i < num_domains; ++i)
           {
-            jitable.dom_info.child(i)["args/" + param_str] = (*inp)["value"];
+            jitable.dom_info.child(i)["args/" + input_fname] = (*inp)["value"];
           }
           default_kernel.expr = "((double)" + input_fname + ")";
           default_kernel.num_components = 1;
         }
         else if(type == "vector")
         {
-          const std::string param_str =
-              "const double " + input_fname + "[3],\n";
           for(int i = 0; i < num_domains; ++i)
           {
-            jitable.dom_info.child(i)["args/" + param_str] = (*inp)["value"];
+            jitable.dom_info.child(i)["args/" + input_fname] = (*inp)["value"];
           }
           default_kernel.expr = input_fname;
           default_kernel.num_components = 3;
@@ -3052,12 +3050,13 @@ JitFilter::execute()
             {
               is_float64 = field[values_path].dtype().is_float64();
             }
-            const std::string param_str = std::string("const ") +
-                                          (is_float64 ? "double" : "float") +
-                                          " *" + field_name + ",\n";
-            cur_dom_info["args/" + param_str].set_external(field[values_path]);
             // every domain should have the same number of components...
             num_components = field[values_path].number_of_children();
+            pack_array(field[values_path],
+                       field_name,
+                       cur_dom_info["args"],
+                       jitable.arrays[i]);
+            cur_dom_info["args/" + field_name].set_external(field[values_path]);
 
             // update number of entries
             int entries;
@@ -3110,10 +3109,13 @@ JitFilter::execute()
           // indicating we are no longer dealing with an original field and will
           // have to generate it.
           jitable.obj = *inp;
-          // TODO use FieldCode here
-          default_kernel.expr = field_name + "[item]";
-          // TODO pack mcarrays
+          // we assume that arrays don't have different strides/offsets in
+          // different domains
           default_kernel.num_components = std::max(1, num_components);
+          if(default_kernel.num_components == 1)
+          {
+            default_kernel.expr = jitable.arrays[0].index(field_name, "item");
+          }
         }
         else if(type == "string")
         {
@@ -3150,8 +3152,7 @@ JitFilter::execute()
     for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
     {
       conduit::Node &cur_dom_info = out_jitable->dom_info.child(dom_idx);
-      const std::string param_str = "const int entries,\n";
-      cur_dom_info["args/" + param_str] = cur_dom_info["entries"];
+      cur_dom_info["args/entries"] = cur_dom_info["entries"];
     }
   }
   else

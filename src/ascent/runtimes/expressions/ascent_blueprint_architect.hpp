@@ -100,9 +100,6 @@ public:
   virtual size_t get_num_points() const;
   virtual size_t get_num_cells() const;
 
-  // Defined in ascent_derived_jit.cpp
-  virtual void pack(conduit::Node &args) const = 0;
-
   const conduit::Node &domain;
   const std::string topo_name;
   const std::string topo_type;
@@ -153,8 +150,6 @@ public:
   virtual std::array<conduit::float64, 3>
   element_location(const size_t index) const;
 
-  virtual void pack(conduit::Node &args) const;
-
 private:
   std::array<size_t, N> dims;
   std::array<T, N> origin;
@@ -175,8 +170,6 @@ public:
   virtual std::array<conduit::float64, 3>
   element_location(const size_t index) const;
 
-  virtual void pack(conduit::Node &args) const;
-
 private:
   std::array<conduit::DataArray<T>, N> coords;
 };
@@ -193,8 +186,6 @@ public:
   vertex_location(const size_t index) const;
   virtual std::array<conduit::float64, 3>
   element_location(const size_t index) const;
-
-  virtual void pack(conduit::Node &args) const;
 
 private:
   std::array<size_t, N> dims;
@@ -216,8 +207,6 @@ public:
   virtual std::array<conduit::float64, 3>
   element_location(const size_t index) const;
   virtual size_t get_num_points() const;
-
-  virtual void pack(conduit::Node &args) const;
 
 private:
   std::array<conduit::DataArray<T>, N> coords;

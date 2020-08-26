@@ -133,42 +133,21 @@ private:
   std::vector<T> insertion_ordered_data;
 };
 
-// abstraction for accessing arrays with a stride and offset
-class StridedArray
-{
-
-public:
-  StridedArray(const std::string name,
-               const ptrdiff_t offset,
-               const ptrdiff_t stride,
-               const size_t pointer_size);
-  StridedArray(const std::string name, const conduit::Schema &schema);
-
-  std::string index(const std::string &index) const;
-  // this will cast and is less safe
-  // assumes index is in terms of the size of type
-  // if offset or stride don't divide into pointer_size, things will be cast to
-  // char* and back
-  std::string index(const std::string &index, const std::string &type) const;
-  std::string get_name() const;
-
-private:
-  const std::string name;
-  // all in bytes
-  const ptrdiff_t offset;
-  const ptrdiff_t stride;
-  const size_t pointer_size;
-};
-
 class ArrayCode
 {
 public:
-  ArrayCode(const conduit::Node &args);
   std::string index(const std::string &array_name,
-                    const std::string &index,
-                    const int component) const;
+                    const std::string &idx,
+                    const int component = -1) const;
+  std::string index(const std::string &idx,
+                    const std::string name,
+                    const ptrdiff_t offset,
+                    const ptrdiff_t stride,
+                    const size_t pointer_size) const;
+  std::string index(const std::string &array_name,
+                    const std::string &idx,
+                    const std::string &component) const;
 
-private:
   std::unordered_map<std::string, conduit::Schema> array_map;
 };
 
@@ -222,7 +201,10 @@ class TopologyCode
 public:
   TopologyCode(const std::string &topo_name,
                const conduit::Node &domain,
-               const conduit::Node &arrays);
+               const ArrayCode &array_code);
+
+  void pack(conduit::Node &args) const;
+
   void vertex_xyz(InsertionOrderedSet<std::string> &code) const;
   void element_xyz(InsertionOrderedSet<std::string> &code) const;
   void volume(InsertionOrderedSet<std::string> &code) const;
@@ -291,12 +273,13 @@ public:
   void surface_area(InsertionOrderedSet<std::string> &code) const;
 
   const std::string topo_name;
+  const conduit::Node &domain;
   std::string topo_type;
   int num_dims;
   std::string shape;
   int shape_size;
 
-  const ArrayCode array_code;
+  const ArrayCode &array_code;
 
   const MathCode math_code;
 };
@@ -307,7 +290,7 @@ public:
   FieldCode(const std::string &field_name,
             const std::string &association,
             TopologyCode &&topo_code,
-            const conduit::Node &arrays,
+            const ArrayCode &array_code,
             const int num_components,
             const int component);
   void gradient(InsertionOrderedSet<std::string> &code);
@@ -329,7 +312,7 @@ private:
   const int num_components;
   const int component;
 
-  const ArrayCode array_code;
+  const ArrayCode &array_code;
 
   const TopologyCode topo_code;
   const MathCode math_code;
@@ -361,15 +344,20 @@ public:
     {
       dom_info.append();
     }
+    arrays.resize(num_domains);
   }
 
   void fuse_vars(const Jitable &from);
-  void execute(conduit::Node &dataset, const std::string &field_name) const;
+  void execute(conduit::Node &dataset, const std::string &field_name);
   std::string generate_kernel(const int dom_idx) const;
 
+  // map of kernel types (e.g. for different topologies)
   std::unordered_map<std::string, Kernel> kernels;
   // stores entries and argument values for each domain
   conduit::Node dom_info;
+  // store the array schemas used by code generation we will copy to these
+  // schemas when we execute
+  std::vector<ArrayCode> arrays;
   std::string topology;
   std::string association;
   // metadata used to make the . operator work and store various jitable state
@@ -420,6 +408,15 @@ private:
   const conduit::Node &inputs;
   const conduit::Node &domain;
 };
+
+void pack_topology(const std::string &topo_name,
+                   const conduit::Node &domain,
+                   conduit::Node &args,
+                   ArrayCode &array);
+void pack_array(const conduit::Node &array,
+                const std::string &name,
+                conduit::Node &args,
+                ArrayCode &array_code);
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

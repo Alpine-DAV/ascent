@@ -116,26 +116,114 @@ indent_code(const std::string &input_code, const int num_spaces)
 }
 };
 
-//-----------------------------------------------------------------------------
-// -- StridedArray
-//-----------------------------------------------------------------------------
-//{{{
-StridedArray::StridedArray(const std::string name,
-                           const ptrdiff_t offset,
-                           const ptrdiff_t stride,
-                           const size_t pointer_size)
-    : name(name), offset(offset), stride(stride), pointer_size(pointer_size)
+std::string
+type_string(const conduit::Node &n)
 {
+  std::string type;
+  if(n.dtype().is_float64())
+  {
+    type = "double";
+  }
+  else if(n.dtype().is_float32())
+  {
+    type = "float";
+  }
+  else if(n.dtype().is_int32())
+  {
+    type = "int";
+  }
+  else if(n.dtype().is_int64())
+  {
+    type = "long";
+  }
+  else if(n.dtype().is_unsigned_integer())
+  {
+    type = "unsigned long";
+  }
+  else
+  {
+    ASCENT_ERROR("JIT: unknown argument type: " << n.dtype().to_string());
+  }
+  return type;
 }
 
-std::string
-StridedArray::get_name() const
+// pack allocate the host array using the contiguous schema
+void
+alloc_host_array(const conduit::Node &src_array,
+                 const conduit::Schema &dest_schema,
+                 conduit::Node &dest_array)
 {
-  return name;
+  // This check isn't strong enough, it will pass if the objects have different
+  // child names
+  if(!dest_schema.compatible(src_array.schema()))
+  {
+    ASCENT_ERROR("JIT: failed to allocate host array because the source and "
+                 "destination schemas are incompatible.");
+  }
+  if(src_array.schema().equals(dest_schema))
+  {
+    // we don't need to copy the data since it's already in a contiguous schema
+    dest_array.set_external(src_array);
+  }
+  else
+  {
+    dest_array.set(dest_schema);
+    dest_array.update_compatible(src_array);
+  }
 }
 
+void
+alloc_device_array(const conduit::Node &array,
+                   const conduit::Schema &dest_schema,
+                   conduit::Node &args,
+                   std::vector<occa::memory> &array_memories,
+                   occa::device &device)
+{
+
+  // for now we always copy from the cpu but we can check here if array is on
+  // the gpu and call occa::cuda::wrapMemory
+  conduit::Node res_array;
+  alloc_host_array(array, dest_schema, res_array);
+  const void *start_ptr = res_array.data_ptr();
+  // assume one allocation starting at child(0).data_ptr() of size
+  // .dtype().bytes_compact()
+  occa::memory mem = device.malloc(res_array.total_bytes_compact(), start_ptr);
+  if(array.number_of_children() == 0)
+  {
+    const std::string param = type_string(array) + " *" + array.name();
+    args[param + "/index"] = array_memories.size();
+    array_memories.push_back(mem);
+  }
+  else
+  {
+    // pack a pointer for each component
+    // the codegen will generate code for pointers with the naming convention
+    // "array.name()_component"
+    for(const std::string &component : res_array.child_names())
+    {
+      const conduit::Node &n_component = res_array[component];
+      const std::string param =
+          type_string(n_component) + " *" + array.name() + "_" + component;
+      args[param + "/index"] = array_memories.size();
+      array_memories.push_back(mem.slice(
+          (char *)res_array[component].data_ptr() - (char *)start_ptr));
+    }
+  }
+  // will remove the original argument and add it as separate pointer arguments
+  // with an index into array_memories
+  args.remove(array.name());
+}
+
+//-----------------------------------------------------------------------------
+// -- ArrayCode
+//-----------------------------------------------------------------------------
+// {{{
 std::string
-StridedArray::index(const std::string &index) const
+ArrayCode::index(const std::string &idx,
+                 const std::string name,
+                 const ptrdiff_t offset,
+                 const ptrdiff_t stride,
+                 const size_t pointer_size) const
 {
   if(offset % pointer_size != 0)
   {
@@ -161,46 +249,26 @@ StridedArray::index(const std::string &index) const
       (pointer_offset == 0 ? "" : std::to_string(pointer_offset) + " + ");
   const std::string stride_str =
       (pointer_stride == 1 ? "" : std::to_string(pointer_stride) + " * ");
-  return name + "[" + offset_str + stride_str + index + "]";
+  return name + "[" + offset_str + stride_str + idx + "]";
 }
 
-//}}}
-
-//-----------------------------------------------------------------------------
-// -- ArrayCode
-//-----------------------------------------------------------------------------
-// {{{
-ArrayCode::ArrayCode(const conduit::Node &args)
-{
-  const int num_args = args.number_of_children();
-  for(int i = 0; i < num_args; ++i)
-  {
-    const conduit::Node &arg = args.child(i);
-    if(arg.number_of_children() > 1 || arg.dtype().number_of_elements() > 1)
-    {
-      array_map.insert(std::make_pair(arg.name(), arg.schema()));
-    }
-  }
-}
 std::string
 ArrayCode::index(const std::string &array_name,
-                 const std::string &index,
+                 const std::string &idx,
                  const int component) const
 {
-  // TODO we need to get the name of the pointer
-  // for now assume one pointer (i.e. one contiguous memory region), we need to
-  // decide on a naming convention for the pointers corresponding to the
-  // different contiguous memory regions
-  std::string pointer_name = array_name;
+  // each component has a pointer, get the pointer name
+  std::string pointer_name;
 
   ptrdiff_t offset;
   ptrdiff_t stride;
   size_t pointer_size;
-  const auto array_it = array_map.find("const float *" + array_name + ",\n");
+  const auto array_it = array_map.find(array_name);
   if(array_it == array_map.end())
   {
     // array is not in the map meaning it was created in the kernel and is
     // interleaved
+    pointer_name = array_name;
     if(component == -1)
     {
       offset = 0;
@@ -223,12 +291,14 @@ ArrayCode::index(const std::string &array_name,
       if(num_components != 0)
       {
         ASCENT_ERROR("ArrayCode could not get the index of array '"
-                     << pointer_name << "' because it has " << num_components
+                     << array_name << "' because it has " << num_components
                      << " components and no component was specified.");
       }
       offset = array_it->second.dtype().offset();
       stride = array_it->second.dtype().stride();
       pointer_size = array_it->second.dtype().element_bytes();
+
+      pointer_name = array_name;
     }
     else
     {
@@ -238,19 +308,34 @@ ArrayCode::index(const std::string &array_name,
                      << component << " of an array which only has "
                      << num_components << " components.");
       }
-      // TODO uncomment this, for now only interleaved
-      // offset = array_it->second.child(component).dtype().offset();
-      // stride = array_it->second.child(component).dtype().stride();
-      // pointer_size =
-      // array_it->second.child(component).dtype().element_bytes();
+      const conduit::Schema &component_schema =
+          array_it->second.child(component);
+      offset = component_schema.dtype().offset();
+      stride = component_schema.dtype().stride();
+      pointer_size = component_schema.dtype().element_bytes();
 
-      pointer_size = array_it->second.child(component).dtype().element_bytes();
-      offset = pointer_size * component;
-      stride = pointer_size * num_components;
+      pointer_name = array_name + "_" + component_schema.name();
     }
   }
 
-  return StridedArray(pointer_name, offset, stride, pointer_size).index(index);
+  return index(idx, pointer_name, offset, stride, pointer_size);
+}
+
+std::string
+ArrayCode::index(const std::string &array_name,
+                 const std::string &idx,
+                 const std::string &component) const
+{
+
+  const auto array_it = array_map.find(array_name);
+  if(array_it == array_map.end())
+  {
+    ASCENT_ERROR("Cannot get the component '"
+                 << component << "' of array '" << array_name
+                 << "' because its schema was not found. Try using an integer "
+                    "component instead of a string component.");
+  }
+  return index(array_name, idx, array_it->second.child_index(component));
 }
 // }}}
 
@@ -412,8 +497,8 @@ MathCode::magnitude(InsertionOrderedSet<std::string> &code,
 // {{{
 TopologyCode::TopologyCode(const std::string &topo_name,
                            const conduit::Node &domain,
-                           const conduit::Node &arrays)
-    : topo_name(topo_name), array_code(arrays)
+                           const ArrayCode &array_code)
+    : topo_name(topo_name), domain(domain), array_code(array_code)
 {
   const conduit::Node &n_topo = domain["topologies/" + topo_name];
   const std::string coords_name = n_topo["coordset"].as_string();
@@ -605,7 +690,8 @@ TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
     for_loop.insert(
         {"for(int i = 0; i < " + topo_name + "_shape_size; ++i)\n", "{\n"});
     vertex_xyz(for_loop,
-               topo_name + "_connectivity[" + topo_name + "_offset + i]",
+               array_code.index(topo_name + "_connectivity",
+                                topo_name + "_offset + i"),
                false,
                topo_name + "_vertex_locs[i]",
                false);
@@ -621,8 +707,9 @@ TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
     for(int i = 0; i < shape_size; ++i)
     {
       vertex_xyz(code,
-                 topo_name + "_connectivity[" + index_name + " * " + topo_name +
-                     "_shape_size + " + std::to_string(i) + "]",
+                 array_code.index(topo_name + "_connectivity",
+                                  index_name + " * " + topo_name +
+                                      "_shape_size + " + std::to_string(i)),
                  false,
                  topo_name + "_vertex_locs[" + std::to_string(i) + "]",
                  false);
@@ -662,6 +749,7 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
                             const std::string &res_name,
                             const bool declare) const
 {
+  // if the logical index is provided, don't regenerate it
   std::string my_index_name;
   if(index_name.empty() &&
      (topo_type == "uniform" || topo_type == "rectilinear" ||
@@ -683,10 +771,11 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
   }
   else if(topo_type == "rectilinear")
   {
-    code.insert((declare ? "const double " : "") + res_name + " = (" +
-                topo_name + "_coords_" + coord + "[" + my_index_name + "] + " +
-                topo_name + "_coords_" + coord + "[" + my_index_name +
-                " + 1]) / 2.0;\n");
+    code.insert(
+        (declare ? "const double " : "") + res_name + " = (" +
+        array_code.index(topo_name + "_coords", my_index_name, coord) + " + " +
+        array_code.index(topo_name + "_coords", my_index_name + " + 1", coord) +
+        ") / 2.0;\n");
   }
   else if(topo_type == "structured")
   {
@@ -789,7 +878,7 @@ TopologyCode::vertex_idx(InsertionOrderedSet<std::string> &code) const
   }
   else
   {
-    // vertex_idx is just item for explicit (unstructured) coords
+    // vertex_idx is just item for explicit (unstructured)
     // vertex_idx[0] = item
     // vertex_idx[1] = item
     // vertex_idx[2] = item
@@ -832,7 +921,8 @@ TopologyCode::vertex_coord(InsertionOrderedSet<std::string> &code,
   else
   {
     code.insert((declare ? "const double " : "") + res_name + " = " +
-                topo_name + "_coords_" + coord + "[" + my_index_name + "];\n");
+                array_code.index(topo_name + "_coords", my_index_name, coord) +
+                ";\n");
   }
 }
 
@@ -889,29 +979,40 @@ TopologyCode::vertex_xyz(InsertionOrderedSet<std::string> &code) const
 void
 TopologyCode::dxdydz(InsertionOrderedSet<std::string> &code) const
 {
-  if(topo_type == "rectilinear")
-  {
-    element_idx(code);
-    code.insert("const double " + topo_name + "_dx = " + topo_name +
-                "_coords_x[" + topo_name + "_element_idx[0] + 1] - " +
-                topo_name + "_coords_x[" + topo_name + "_element_idx[0]];\n");
-    if(num_dims >= 2)
-    {
-      code.insert("const double " + topo_name + "_dy = " + topo_name +
-                  "_coords_y[" + topo_name + "_element_idx[1] + 1] - " +
-                  topo_name + "_coords_y[" + topo_name + "_element_idx[1]];\n");
-    }
-    if(num_dims == 3)
-    {
-      code.insert({"const double " + topo_name + "_dz = " + topo_name +
-                   "_coords_z[" + topo_name + "_element_idx[2] + 1] - " +
-                   topo_name + "_coords_z[" + topo_name +
-                   "_element_idx[2]];\n"});
-    }
-  }
-  else
+  if(topo_type != "rectilinear")
   {
     ASCENT_ERROR("Function dxdydz only works on rectilinear topologies.");
+  }
+  element_idx(code);
+  code.insert("const double " + topo_name + "_dx = " +
+              array_code.index(topo_name + "_coords",
+                               topo_name + "_element_idx[0] + 1",
+                               "x") +
+              " - " +
+              array_code.index(
+                  topo_name + "_coords", topo_name + "_element_idx[0]", "x") +
+              ";\n");
+  if(num_dims >= 2)
+  {
+    code.insert("const double " + topo_name + "_dy = " +
+                array_code.index(topo_name + "_coords",
+                                 topo_name + "_element_idx[1] + 1",
+                                 "y") +
+                " - " +
+                array_code.index(
+                    topo_name + "_coords", topo_name + "_element_idx[1]", "y") +
+                ";\n");
+  }
+  if(num_dims == 3)
+  {
+    code.insert("const double " + topo_name + "_dz = " +
+                array_code.index(topo_name + "_coords",
+                                 topo_name + "_element_idx[2] + 1",
+                                 "z") +
+                " - " +
+                array_code.index(
+                    topo_name + "_coords", topo_name + "_element_idx[2]", "z") +
+                ";\n");
   }
 }
 
@@ -1029,7 +1130,8 @@ TopologyCode::triangle_area(InsertionOrderedSet<std::string> &code,
   math_code.magnitude(code, res_name + "_cross", res_name + "_cross_mag", 3);
   code.insert("const double " + res_name + " = " + res_name +
               "_cross_mag / 2.0;\n");
-  code.insert("if("+res_name+" == 0)\n{\nprintf(\"%f\", "+res_name+");\n}\n");
+  // code.insert("if("+res_name+" == 0)\n{\nprintf(\"%f\",
+  // "+res_name+");\n}\n");
 }
 
 void
@@ -1138,16 +1240,17 @@ TopologyCode::polyhedron_volume(InsertionOrderedSet<std::string> &code,
                res_name + "_vec[2] = 0;\n",
                "int " + topo_name + "_polyhedral_shape_size = " + topo_name +
                    "_polyhedral_sizes[item];\n",
-               "int " + topo_name + "_polyhedral_offset = " + topo_name +
-                   "_polyhedral_offsets[item];\n"});
+               "int " + topo_name + "_polyhedral_offset = " +
+                   array_code.index(topo_name + "_polyhedral_offsets", "item") +
+                   ";\n"});
 
   InsertionOrderedSet<std::string> for_loop;
   for_loop.insert(
       {"for(int j = 0; j < " + topo_name + "_polyhedral_shape_size; ++j)\n",
        "{\n"});
   unstructured_vertices(for_loop,
-                        topo_name + "_polyhedral_connectivity[" + topo_name +
-                            "_polyhedral_offset + j]");
+                        array_code.index(topo_name + "_polyhedral_connectivity",
+                                         topo_name + "_polyhedral_offset + j"));
   polygon_area_vec(for_loop, topo_name + "_vertex_locs", res_name + "_face");
   math_code.dot_product(for_loop,
                         topo_name + "_vertex_locs[4]",
@@ -1410,13 +1513,176 @@ TopologyCode::surface_area(InsertionOrderedSet<std::string> &code) const
 // }}}
 
 //-----------------------------------------------------------------------------
+// -- Packing Functions
+//-----------------------------------------------------------------------------
+// {{{
+
+// Compacts an array (generates a contigous schema) so that only one allocation
+// is needed. Code generation will read this schema from array_code. The array
+// in args is a set_external to the original data so that we can copy it at the
+// end.
+void
+pack_array(const conduit::Node &array,
+           const std::string &name,
+           conduit::Node &args,
+           ArrayCode &array_code)
+{
+  args[name].set_external(array);
+  if(array.is_contiguous() /* || array is on the device */)
+  {
+    // copy the existing schema
+    array_code.array_map[name] = array.schema();
+  }
+  else
+  {
+    const int num_components = array.number_of_children();
+    conduit::Schema s;
+    if(array.child(0).dtype().is_float64())
+    {
+      if(num_components > 1)
+      {
+        for(int i = 0; i < num_components; ++i)
+        {
+          const int size = array.child(i).dtype().number_of_elements();
+          // interleaved
+          // s[array.child(i).name()].set(conduit::DataType::float64(
+          //     size,
+          //     sizeof(conduit::float64) * i,
+          //     sizeof(conduit::float64) * num_components));
+
+          // contiguous
+          s[array.child(i).name()].set(
+              conduit::DataType::float64(size,
+                                         size * sizeof(conduit::float64) * i,
+                                         sizeof(conduit::float64)));
+        }
+      }
+      else
+      {
+        const int size = array.dtype().number_of_elements();
+        s.set(conduit::DataType::c_double(size));
+      }
+    }
+    else
+    {
+      if(num_components > 1)
+      {
+        for(int i = 0; i < num_components; ++i)
+        {
+          const int size = array.child(i).dtype().number_of_elements();
+          // interleaved
+          // s[array.child(i).name()].set(conduit::DataType::float32(
+          //     size,
+          //     sizeof(conduit::float32) * i,
+          //     sizeof(conduit::float32) * num_components));
+
+          // contiguous
+          s[array.child(i).name()].set(
+              conduit::DataType::float32(size,
+                                         size * sizeof(conduit::float32) * i,
+                                         sizeof(conduit::float32)));
+        }
+      }
+      else
+      {
+        const int size = array.dtype().number_of_elements();
+        s.set(conduit::DataType::c_float(size));
+      }
+    }
+    array_code.array_map[name] = s;
+  }
+}
+
+// TODO a lot of duplicated code from TopologyCode and Topology
+void
+pack_topology(const std::string &topo_name,
+              const conduit::Node &domain,
+              conduit::Node &args,
+              ArrayCode &array)
+{
+  const conduit::Node &topo = domain["topologies/" + topo_name];
+  const std::string &topo_type = topo["type"].as_string();
+  const conduit::Node &coords =
+      domain["coordsets/" + topo["coordset"].as_string()];
+  const int num_dims = topo_dim(topo_name, domain);
+  if(topo_type == "uniform")
+  {
+    for(size_t i = 0; i < num_dims; ++i)
+    {
+      const std::string dim = std::string(1, 'i' + i);
+      const std::string coord = std::string(1, 'x' + i);
+      args[topo_name + "_dims_" + dim] = coords["dims"].child(i);
+      args[topo_name + "_spacing_d" + coord] = coords["spacing"].child(i);
+      args[topo_name + "_origin_" + coord] = coords["origin"].child(i);
+    }
+  }
+  else if(topo_type == "rectilinear")
+  {
+    for(size_t i = 0; i < num_dims; ++i)
+    {
+      const std::string dim = std::string(1, 'i' + i);
+      args[topo_name + "_dims_" + dim] =
+          coords["values"].child(i).dtype().number_of_elements();
+    }
+    pack_array(coords["values"], topo_name + "_coords", args, array);
+  }
+  else if(topo_type == "structured")
+  {
+    for(size_t i = 0; i < num_dims; ++i)
+    {
+      const std::string dim = std::string(1, 'i' + i);
+      args[topo_name + "_dims_" + dim] =
+          topo["elements/dims"].child(i).to_int64() + 1;
+    }
+    pack_array(coords["values"], topo_name + "_coords", args, array);
+  }
+  else if(topo_type == "unstructured")
+  {
+    pack_array(coords["values"], topo_name + "_coords", args, array);
+    pack_array(topo["elements/connectivity"],
+               topo_name + "_connectivity",
+               args,
+               array);
+
+    // TODO polygonal and polyhedral need to pack additional things
+    // if(shape == "polygonal")
+    // {
+    //   args[topo_name + "_sizes"].set_external(sizes);
+    //   args[topo_name + "_offsets"].set_external(offsets);
+    // }
+    // else if(shape == "polyhedral")
+    // {
+    //   args[topo_name + "_polyhedral_sizes"].set_external(polyhedral_sizes);
+    //   args[topo_name +
+    //   "_polyhedral_offsets"].set_external(polyhedral_offsets); args[topo_name
+    //   + "_polyhedral_connectivity"].set_external(
+    //       polyhedral_connectivity);
+
+    //   args[topo_name + "_sizes"].set_external(sizes);
+    //   args[topo_name + "_offsets"].set_external(offsets);
+    //   if(polyhedral_shape != "polygonal")
+    //   {
+    //     args[topo_name + "_shape_size"] = polyhedral_shape_size;
+    //   }
+    // }
+    // else
+    // {
+    const std::string &shape = topo["elements/shape"].as_string();
+    const int shape_size = detail::get_num_vertices(shape);
+    args[topo_name + "_shape_size"] = shape_size;
+    // }
+  }
+}
+// }}}
+
+//-----------------------------------------------------------------------------
 // -- FieldCode
 //-----------------------------------------------------------------------------
 // {{{
 FieldCode::FieldCode(const std::string &field_name,
                      const std::string &association,
                      TopologyCode &&topo_code,
-                     const conduit::Node &arrays,
+                     const ArrayCode &arrays,
                      const int num_components,
                      const int component)
     : field_name(field_name), association(association),
@@ -1539,26 +1805,25 @@ void
 FieldCode::hex_gradient(InsertionOrderedSet<std::string> &code,
                         const std::string &res_name)
 {
-  // assume vertex locations are populated (either structured or
-  // unstructured hexes) xi = .25 * ( (x[3] + x[0] + x[7] + x[4]) - (x[2] +
-  // x[1] + x[5] + x[6]) ); xj = .25 * ( (x[0] + x[1] + x[5] + x[4]) - (x[3]
-  // + x[2] + x[6] + x[7]) ); xk = .25 * ( (x[7] + x[4] + x[5] + x[6]) -
-  // (x[3] + x[0] + x[1] + x[2]) );
+  // assume vertex locations are populated (either structured or unstructured
+  // hexes)
+  // clang-format off
+  // xi = .25 * ( (x[3] + x[0] + x[7] + x[4]) - (x[2] + x[1] + x[5] + x[6]) );
+  // xj = .25 * ( (x[0] + x[1] + x[5] + x[4]) - (x[3] + x[2] + x[6] + x[7]) );
+  // xk = .25 * ( (x[7] + x[4] + x[5] + x[6]) - (x[3] + x[0] + x[1] + x[2]) );
 
-  // yi = .25 * ( (y[3] + y[0] + y[7] + y[4]) - (y[2] + y[1] + y[5] + y[6])
-  // ); yj = .25 * ( (y[0] + y[1] + y[5] + y[4]) - (y[3] + y[2] + y[6] +
-  // y[7]) ); yk = .25 * ( (y[7] + y[4] + y[5] + y[6]) - (y[3] + y[0] + y[1]
-  // + y[2]) );
+  // yi = .25 * ( (y[3] + y[0] + y[7] + y[4]) - (y[2] + y[1] + y[5] + y[6]) );
+  // yj = .25 * ( (y[0] + y[1] + y[5] + y[4]) - (y[3] + y[2] + y[6] + y[7]) );
+  // yk = .25 * ( (y[7] + y[4] + y[5] + y[6]) - (y[3] + y[0] + y[1] + y[2]) );
 
-  // zi = .25 * ( (z[3] + z[0] + z[7] + z[4]) - (z[2] + z[1] + z[5] + z[6])
-  // ); zj = .25 * ( (z[0] + z[1] + z[5] + z[4]) - (z[3] + z[2] + z[6] +
-  // z[7]) ); zk = .25 * ( (z[7] + z[4] + z[5] + z[6]) - (z[3] + z[0] + z[1]
-  // + z[2]) );
+  // zi = .25 * ( (z[3] + z[0] + z[7] + z[4]) - (z[2] + z[1] + z[5] + z[6]) );
+  // zj = .25 * ( (z[0] + z[1] + z[5] + z[4]) - (z[3] + z[2] + z[6] + z[7]) );
+  // zk = .25 * ( (z[7] + z[4] + z[5] + z[6]) - (z[3] + z[0] + z[1] + z[2]) );
 
-  // vi = .25 * ( (v[3] + v[0] + v[7] + v[4]) - (v[2] + v[1] + v[5] + v[6])
-  // ); vj = .25 * ( (v[0] + v[1] + v[5] + v[4]) - (v[3] + v[2] + v[6] +
-  // v[7]) ); vk = .25 * ( (v[7] + v[4] + v[5] + v[6]) - (v[3] + v[0] + v[1]
-  // + v[2]) );
+  // vi = .25 * ( (v[3] + v[0] + v[7] + v[4]) - (v[2] + v[1] + v[5] + v[6]) );
+  // vj = .25 * ( (v[0] + v[1] + v[5] + v[4]) - (v[3] + v[2] + v[6] + v[7]) );
+  // vk = .25 * ( (v[7] + v[4] + v[5] + v[6]) - (v[3] + v[0] + v[1] + v[2]) );
+  // clang-format on
   const std::string vertex_locs = topo_code.topo_name + "_vertex_locs";
   const std::string vertices = topo_code.topo_name + "_vertices";
   code.insert({
@@ -2053,8 +2318,8 @@ JitableFunctions::topo_attrs(const conduit::Node &obj, const std::string &name)
     if(not_fused)
     {
       const conduit::Node &assoc = obj["attr"].child(0);
-      const conduit::Node &args = out_jitable.dom_info.child(dom_idx)["args"];
-      TopologyCode topo_code = TopologyCode(topo_name, domain, args);
+      TopologyCode topo_code =
+          TopologyCode(topo_name, domain, out_jitable.arrays[dom_idx]);
       if(assoc.name() == "cell")
       {
         // x, y, z
@@ -2361,7 +2626,8 @@ JitableFunctions::gradient(const Jitable &field_jitable,
   // gradient needs to pack the topology
   std::unique_ptr<Topology> topo =
       topologyFactory(field_jitable.topology, domain);
-  topo->pack(args);
+  pack_topology(
+      field_jitable.topology, domain, args, out_jitable.arrays[dom_idx]);
   // we need to change entries for each domain if we're doing a vertex to
   // element gradient
   if(topo->topo_type == "structured" && field_jitable.association == "vertex")
@@ -2401,11 +2667,12 @@ JitableFunctions::gradient(const Jitable &field_jitable,
     {
       my_input_field = input_field;
     }
-    TopologyCode topo_code = TopologyCode(topo->topo_name, domain, args);
+    TopologyCode topo_code =
+        TopologyCode(topo->topo_name, domain, out_jitable.arrays[dom_idx]);
     FieldCode field_code = FieldCode(my_input_field,
                                      field_jitable.association,
                                      std::move(topo_code),
-                                     args,
+                                     out_jitable.arrays[dom_idx],
                                      1,
                                      component);
     field_code.gradient(out_kernel.for_body);
@@ -2473,12 +2740,12 @@ JitableFunctions::vorticity()
   // TODO make it easier to construct FieldCode
   if(not_fused)
   {
-    conduit::Node &args = out_jitable.dom_info.child(dom_idx)["args"];
-    TopologyCode topo_code = TopologyCode(out_jitable.topology, domain, args);
+    TopologyCode topo_code =
+        TopologyCode(out_jitable.topology, domain, out_jitable.arrays[dom_idx]);
     FieldCode field_code = FieldCode(field_name,
                                      field_jitable.association,
                                      std::move(topo_code),
-                                     args,
+                                     out_jitable.arrays[dom_idx],
                                      field_kernel.num_components,
                                      -1);
     field_code.vorticity(out_kernel.for_body);
@@ -2624,18 +2891,26 @@ Jitable::generate_kernel(const int dom_idx) const
   const conduit::Node &cur_dom_info = dom_info.child(dom_idx);
   const Kernel &kernel = kernels.at(cur_dom_info["kernel_type"].as_string());
   std::string kernel_string = "@kernel void map(";
+  const int num_args = cur_dom_info["args"].number_of_children();
   bool first = true;
-  for(const auto &param : cur_dom_info["args"].child_names())
+  for(int i = 0; i < num_args; ++i)
   {
-    if(first)
+    const conduit::Node &arg = cur_dom_info["args"].child(i);
+    std::string type;
+    if(arg.has_path("index"))
     {
-      first = false;
-      kernel_string += param;
+      // array type was already determined in alloc_device_array
     }
     else
     {
-      kernel_string += "                 " + param;
+      type = type_string(arg) + " ";
     }
+    if(!first)
+    {
+      kernel_string += "                 ";
+    }
+    kernel_string += "const " + type + arg.name() + ",\n";
+    first = false;
   }
   kernel_string += "                 double *output_ptr)\n{\n";
   kernel_string += kernel.kernel_body.accumulate();
@@ -2680,49 +2955,56 @@ Jitable::fuse_vars(const Jitable &from)
   for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
   {
     // fuse entries, ensure they are the same
-    const conduit::Node &from_dom_info = from.dom_info.child(dom_idx);
-    conduit::Node &to_dom_info = dom_info.child(dom_idx);
-    if(from_dom_info.has_path("entries"))
+    const conduit::Node &src_dom_info = from.dom_info.child(dom_idx);
+    conduit::Node &dest_dom_info = dom_info.child(dom_idx);
+    if(src_dom_info.has_path("entries"))
     {
-      if(to_dom_info.has_path("entries"))
+      if(dest_dom_info.has_path("entries"))
       {
-        if(to_dom_info["entries"].to_int64() !=
-           from_dom_info["entries"].to_int64())
+        if(dest_dom_info["entries"].to_int64() !=
+           src_dom_info["entries"].to_int64())
         {
           ASCENT_ERROR("JIT: Failed to fuse kernels due to an incompatible "
                        "number of entries: "
-                       << to_dom_info["entries"].to_int64() << " versus "
-                       << from_dom_info["entries"].to_int64());
+                       << dest_dom_info["entries"].to_int64() << " versus "
+                       << src_dom_info["entries"].to_int64());
         }
       }
       else
       {
-        to_dom_info["entries"] = from_dom_info["entries"];
+        dest_dom_info["entries"] = src_dom_info["entries"];
       }
     }
 
     // copy kernel_type
     // This will be overwritten in all cases except when func="execute" in
     // JitFilter::execute
-    dom_info.child(dom_idx)["kernel_type"] = from_dom_info["kernel_type"];
+    dom_info.child(dom_idx)["kernel_type"] = src_dom_info["kernel_type"];
 
     // fuse args, set_external arrays and copy other arguments
-    conduit::NodeConstIterator arg_itr = from_dom_info["args"].children();
+    conduit::NodeConstIterator arg_itr = src_dom_info["args"].children();
     while(arg_itr.has_next())
     {
       const conduit::Node &arg = arg_itr.next();
-      conduit::Node &to_args = dom_info.child(dom_idx)["args"];
-      if(!to_args.has_path(arg.name()))
+      conduit::Node &dest_args = dom_info.child(dom_idx)["args"];
+      if(!dest_args.has_path(arg.name()))
       {
         if(arg.dtype().number_of_elements() > 1)
         {
-          to_args[arg.name()].set_external(arg);
+          dest_args[arg.name()].set_external(arg);
         }
         else
         {
-          to_args[arg.name()].set(arg);
+          dest_args[arg.name()].set(arg);
         }
       }
+    }
+
+    // fuse array_code
+    for(size_t i = 0; i < from.arrays.size(); ++i)
+    {
+      arrays[i].array_map.insert(from.arrays[i].array_map.begin(),
+                                 from.arrays[i].array_map.end());
     }
   }
 }
@@ -2749,7 +3031,7 @@ Jitable::fuse_vars(const Jitable &from)
 // TODO for now we just put the field on the mesh when calling execute
 // should probably delete it later if it's an intermediate field
 void
-Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
+Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 {
   // TODO set this automatically?
   // occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 1");
@@ -2763,9 +3045,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
   occa::device &device = occa::getDevice();
   occa::kernel occa_kernel;
 
-  // we need an association and topo so we can put the field back on the
-  // mesh
-  // TODO create a new topo with vertex assoc for temporary fields
+  // we need an association and topo so we can put the field back on the mesh
   if(topology.empty() || topology == "none")
   {
     ASCENT_ERROR("Error while executing derived field: Could not infer the "
@@ -2780,18 +3060,47 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
   }
 
   const int num_domains = dataset.number_of_children();
-  for(int i = 0; i < num_domains; ++i)
+  for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
   {
-    conduit::Node &dom = dataset.child(i);
+    conduit::Node &dom = dataset.child(dom_idx);
 
-    const conduit::Node &cur_dom_info = dom_info.child(i);
+    conduit::Node &cur_dom_info = dom_info.child(dom_idx);
 
     const Kernel &kernel = kernels.at(cur_dom_info["kernel_type"].as_string());
 
-    const std::string kernel_string = generate_kernel(i);
+    // these are reference counted
+    // need to keep the mem in scope or bad things happen
+    std::vector<occa::memory> array_memories;
 
-    // the final number of entries
-    const int entries = cur_dom_info["entries"].to_int64();
+    // allocate arrays
+    const int original_num_args = cur_dom_info["args"].number_of_children();
+    for(int i = 0, num_processed = 0; num_processed < original_num_args;
+        ++i, ++num_processed)
+    {
+      const conduit::Node &arg = cur_dom_info["args"].child(i);
+      if(arg.number_of_children() != 0 || arg.dtype().number_of_elements() > 1)
+      {
+        try
+        {
+          alloc_device_array(arg,
+                             arrays[dom_idx].array_map.at(arg.name()),
+                             cur_dom_info["args"],
+                             array_memories,
+                             device);
+        }
+        catch(std::out_of_range)
+        {
+          ASCENT_ERROR("JIT: Could not find the destination schema for array: '"
+                       << arg.name() << "'.");
+        }
+        --i;
+      }
+    }
+
+    // pass input arguments
+    occa_kernel.clearArgs();
+
+    const std::string kernel_string = generate_kernel(dom_idx);
 
     std::cout << kernel_string << std::endl;
 
@@ -2812,108 +3121,34 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
                    << kernel_string);
     }
 
-    occa_kernel.clearArgs();
-
-    // these are reference counted
-    // need to keep the mem in scope or bad things happen
-    std::vector<occa::memory> array_memories;
     const int num_args = cur_dom_info["args"].number_of_children();
     for(int i = 0; i < num_args; ++i)
     {
       const conduit::Node &arg = cur_dom_info["args"].child(i);
-      const int num_components = arg.number_of_children();
-      if(num_components != 0)
+      if(arg.dtype().is_integer())
       {
-        const int size = arg.child(0).dtype().number_of_elements();
-        array_memories.emplace_back();
-        if(arg.child(0).dtype().is_float64())
-        {
-          array_memories.back() =
-              device.malloc(num_components * size * sizeof(conduit::float64));
-          // mcarray
-          double *interleaved_array = new double[size * num_components];
-          for(int i = 0; i < num_components; ++i)
-          {
-            const conduit::float64 *component_array = arg.child(i).value();
-            for(int j = 0; j < size; ++j)
-            {
-              interleaved_array[num_components * j + i] = component_array[j];
-            }
-          }
-          array_memories.back().copyFrom(interleaved_array);
-          delete[] interleaved_array;
-        }
-        else
-        {
-          array_memories.back() =
-              device.malloc(num_components * size * sizeof(conduit::float32));
-          // mcarray
-          float *interleaved_array = new float[size * num_components];
-          for(int i = 0; i < num_components; ++i)
-          {
-            const conduit::float32 *component_array = arg.child(i).value();
-            for(int j = 0; j < size; ++j)
-            {
-              interleaved_array[num_components * j + i] = component_array[j];
-            }
-          }
-          array_memories.back().copyFrom(interleaved_array);
-          delete[] interleaved_array;
-        }
-        occa_kernel.pushArg(array_memories.back());
+        occa_kernel.pushArg(arg.to_int64());
+      }
+      else if(arg.dtype().is_float64())
+      {
+        occa_kernel.pushArg(arg.to_float64());
+      }
+      else if(arg.dtype().is_float32())
+      {
+        occa_kernel.pushArg(arg.to_float32());
+      }
+      else if(arg.has_path("index"))
+      {
+        occa_kernel.pushArg(array_memories[arg["index"].to_int32()]);
       }
       else
       {
-        const int size = arg.dtype().number_of_elements();
-        if(size > 1)
-        {
-          array_memories.emplace_back();
-          if(arg.dtype().is_float64())
-          {
-            const conduit::float64 *vals = arg.as_float64_ptr();
-            array_memories.back() =
-                device.malloc(size * sizeof(conduit::float64), vals);
-          }
-          else if(arg.dtype().is_float32())
-          {
-            const conduit::float32 *vals = arg.as_float32_ptr();
-            array_memories.back() =
-                device.malloc(size * sizeof(conduit::float32), vals);
-          }
-          else if(arg.dtype().is_int64())
-          {
-            const conduit::int64 *vals = arg.as_int64_ptr();
-            array_memories.back() =
-                device.malloc(size * sizeof(conduit::int64), vals);
-          }
-          else if(arg.dtype().is_int32())
-          {
-            const conduit::int32 *vals = arg.as_int32_ptr();
-            array_memories.back() =
-                device.malloc(size * sizeof(conduit::int32), vals);
-          }
-          else
-          {
-            ASCENT_ERROR(
-                "JIT: Unknown array argument type. Array: " << arg.to_yaml());
-          }
-          occa_kernel.pushArg(array_memories.back());
-        }
-        else if(arg.dtype().is_integer())
-        {
-          occa_kernel.pushArg(arg.to_int32());
-        }
-        else if(arg.dtype().is_floating_point())
-        {
-          occa_kernel.pushArg(arg.to_float64());
-        }
-        else
-        {
-          ASCENT_ERROR(
-              "JIT: Unknown argument type of argument: " << arg.name());
-        }
+        ASCENT_ERROR("JIT: Unknown argument type of argument: " << arg.name());
       }
     }
+
+    // the final number of entries
+    const int entries = cur_dom_info["entries"].to_int64();
 
     conduit::Node &n_output = dom["fields/" + field_name];
     n_output["association"] = association;
@@ -2942,6 +3177,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
     occa_kernel.pushArg(o_output);
     occa_kernel.run();
 
+    // copy back
     o_output.memory().copyTo(output_ptr);
 
     // dom["fields/" + field_name].print();
