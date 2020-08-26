@@ -141,8 +141,8 @@ public:
                     const int component = -1) const;
   std::string index(const std::string &idx,
                     const std::string name,
-                    const ptrdiff_t offset,
-                    const ptrdiff_t stride,
+                    const std::ptrdiff_t offset,
+                    const std::ptrdiff_t stride,
                     const size_t pointer_size) const;
   std::string index(const std::string &array_name,
                     const std::string &idx,

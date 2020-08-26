@@ -218,8 +218,8 @@ alloc_device_array(const conduit::Node &array,
 std::string
 ArrayCode::index(const std::string &idx,
                  const std::string name,
-                 const ptrdiff_t offset,
-                 const ptrdiff_t stride,
+                 const std::ptrdiff_t offset,
+                 const std::ptrdiff_t stride,
                  const size_t pointer_size) const
 {
   if(offset % pointer_size != 0)
@@ -257,8 +257,8 @@ ArrayCode::index(const std::string &array_name,
   // each component has a pointer, get the pointer name
   std::string pointer_name;
 
-  ptrdiff_t offset;
-  ptrdiff_t stride;
+  std::ptrdiff_t offset;
+  std::ptrdiff_t stride;
   size_t pointer_size;
   const auto array_it = array_map.find(array_name);
   if(array_it == array_map.end())
@@ -495,7 +495,7 @@ MathCode::magnitude(InsertionOrderedSet<std::string> &code,
 TopologyCode::TopologyCode(const std::string &topo_name,
                            const conduit::Node &domain,
                            const ArrayCode &array_code)
-    : topo_name(topo_name), domain(domain), array_code(array_code)
+    : topo_name(topo_name), domain(domain), array_code(array_code), math_code()
 {
   const conduit::Node &n_topo = domain["topologies/" + topo_name];
   const std::string coords_name = n_topo["coordset"].as_string();
@@ -1682,7 +1682,7 @@ FieldCode::FieldCode(const std::string &field_name,
                      const int component)
     : field_name(field_name), association(association),
       num_components(num_components), component(component), array_code(arrays),
-      topo_code(topo_code)
+      topo_code(topo_code), math_code()
 {
 }
 
@@ -2474,7 +2474,7 @@ JitableFunctions::expr_dot()
     }
     else
     {
-      ASCENT_ERROR("JitFilter: Unknown obj:\n" << obj.to_yaml());
+      ASCENT_ERROR("JIT: Unknown obj:\n" << obj.to_yaml());
     }
   }
 }

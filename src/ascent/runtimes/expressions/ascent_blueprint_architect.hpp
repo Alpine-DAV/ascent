@@ -53,6 +53,7 @@
 
 #include <ascent.hpp>
 #include <conduit.hpp>
+#include <memory>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
