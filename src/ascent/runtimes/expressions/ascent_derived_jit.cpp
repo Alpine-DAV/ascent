@@ -209,9 +209,6 @@ alloc_device_array(const conduit::Node &array,
           (char *)res_array[component].data_ptr() - (char *)start_ptr));
     }
   }
-  // will remove the original argument and add it as separate pointer arguments
-  // with an index into array_memories
-  args.remove(array.name());
 }
 
 //-----------------------------------------------------------------------------
@@ -1130,8 +1127,6 @@ TopologyCode::triangle_area(InsertionOrderedSet<std::string> &code,
   math_code.magnitude(code, res_name + "_cross", res_name + "_cross_mag", 3);
   code.insert("const double " + res_name + " = " + res_name +
               "_cross_mag / 2.0;\n");
-  // code.insert("if("+res_name+" == 0)\n{\nprintf(\"%f\",
-  // "+res_name+");\n}\n");
 }
 
 void
@@ -2885,17 +2880,19 @@ Kernel::generate_loop(const std::string& output, const std::string &entries_name
 // -- Jitable
 //-----------------------------------------------------------------------------
 // {{{
+// I pass in args because I want execute to generate new args and also be const
+// so it can't just update the object's args
 std::string
-Jitable::generate_kernel(const int dom_idx) const
+Jitable::generate_kernel(const int dom_idx, const conduit::Node &args) const
 {
   const conduit::Node &cur_dom_info = dom_info.child(dom_idx);
   const Kernel &kernel = kernels.at(cur_dom_info["kernel_type"].as_string());
   std::string kernel_string = "@kernel void map(";
-  const int num_args = cur_dom_info["args"].number_of_children();
+  const int num_args = args.number_of_children();
   bool first = true;
   for(int i = 0; i < num_args; ++i)
   {
-    const conduit::Node &arg = cur_dom_info["args"].child(i);
+    const conduit::Node &arg = args.child(i);
     std::string type;
     if(arg.has_path("index"))
     {
@@ -3031,7 +3028,7 @@ Jitable::fuse_vars(const Jitable &from)
 // TODO for now we just put the field on the mesh when calling execute
 // should probably delete it later if it's an intermediate field
 void
-Jitable::execute(conduit::Node &dataset, const std::string &field_name)
+Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
 {
   // TODO set this automatically?
   // occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 1");
@@ -3064,7 +3061,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
   {
     conduit::Node &dom = dataset.child(dom_idx);
 
-    conduit::Node &cur_dom_info = dom_info.child(dom_idx);
+    const conduit::Node &cur_dom_info = dom_info.child(dom_idx);
 
     const Kernel &kernel = kernels.at(cur_dom_info["kernel_type"].as_string());
 
@@ -3074,8 +3071,8 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 
     // allocate arrays
     const int original_num_args = cur_dom_info["args"].number_of_children();
-    for(int i = 0, num_processed = 0; num_processed < original_num_args;
-        ++i, ++num_processed)
+    conduit::Node new_args;
+    for(int i = 0; i < original_num_args; ++i)
     {
       const conduit::Node &arg = cur_dom_info["args"].child(i);
       if(arg.number_of_children() != 0 || arg.dtype().number_of_elements() > 1)
@@ -3084,7 +3081,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         {
           alloc_device_array(arg,
                              arrays[dom_idx].array_map.at(arg.name()),
-                             cur_dom_info["args"],
+                             new_args,
                              array_memories,
                              device);
         }
@@ -3093,14 +3090,17 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
           ASCENT_ERROR("JIT: Could not find the destination schema for array: '"
                        << arg.name() << "'.");
         }
-        --i;
+      }
+      else
+      {
+        new_args[arg.name()] = arg;
       }
     }
 
     // pass input arguments
     occa_kernel.clearArgs();
 
-    const std::string kernel_string = generate_kernel(dom_idx);
+    const std::string kernel_string = generate_kernel(dom_idx, new_args);
 
     std::cout << kernel_string << std::endl;
 
@@ -3121,10 +3121,10 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
                    << kernel_string);
     }
 
-    const int num_args = cur_dom_info["args"].number_of_children();
-    for(int i = 0; i < num_args; ++i)
+    const int num_new_args = new_args.number_of_children();
+    for(int i = 0; i < num_new_args; ++i)
     {
-      const conduit::Node &arg = cur_dom_info["args"].child(i);
+      const conduit::Node &arg = new_args.child(i);
       if(arg.dtype().is_integer())
       {
         occa_kernel.pushArg(arg.to_int64());

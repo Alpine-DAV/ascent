@@ -348,8 +348,8 @@ public:
   }
 
   void fuse_vars(const Jitable &from);
-  void execute(conduit::Node &dataset, const std::string &field_name);
-  std::string generate_kernel(const int dom_idx) const;
+  void execute(conduit::Node &dataset, const std::string &field_name) const;
+  std::string generate_kernel(const int dom_idx, const conduit::Node &args) const;
 
   // map of kernel types (e.g. for different topologies)
   std::unordered_map<std::string, Kernel> kernels;

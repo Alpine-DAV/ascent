@@ -296,6 +296,7 @@ TEST(ascent_expressions, derived_temperature)
   ascent_opts["timings"] = "enabled";
   ascent_opts["runtime/type"] = "ascent";
 
+  multi_dom.print();
   ascent.open(ascent_opts);
   ascent.publish(replay_data);
   // ascent.publish(multi_dom);
