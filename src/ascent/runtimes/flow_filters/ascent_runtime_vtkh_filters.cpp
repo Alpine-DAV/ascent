@@ -353,7 +353,7 @@ public:
 
     scene.Render(is_inline);
 
-    // std::chrono::duration<double> t_img_data;
+    std::chrono::duration<double> t_img_data;
 
     for (int i = 0; i < m_renderer_count; i++)
     {
@@ -381,7 +381,7 @@ public:
 
         // move render buffers and data from vtkh to ascent
         // NOTE: only getting canvas from domain 0 for now
-        // NOTE: move costs about 0.02 seconds per node per batch (20 renders)
+        // NOTE: move costs < 0.2 seconds per node per batch (200-400 renders)
         m_render_times.push_back(std::move(r->GetRenderTimes()));
         m_color_buffers.push_back(std::move(r->GetColorBuffers()));
         m_depth_buffers.push_back(std::move(r->GetDepthBuffers()));
@@ -389,6 +389,7 @@ public:
 
         // t_img_data += std::chrono::system_clock::now() - start;
       }
+      // std::cout << "** copy from vtkh " << t_img_data.count()  << " rank " << rank << std::endl;
 
       // m_registry->consume(oss.str());
     }

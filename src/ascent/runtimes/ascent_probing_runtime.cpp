@@ -330,8 +330,8 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
                                  const float skipped_renders)
 {
     // optional render factors for sim and/or vis nodes (empirically determined)
-    const float sim_factor = 1.24;
-    const float vis_factor = 0.97;       // 0.9317 for n33, 1.0069 for n10
+    const float sim_factor = 1.5;       // 1.24;
+    const float vis_factor = 1.5;       // 0.97;       // 0.9317 for n33, 1.0069 for n10
 
     assert(sim_estimate.size() == vis_estimates.size());
     
@@ -782,17 +782,21 @@ int calc_render_msg_size(const int render_count, const int probing_count,
 std::vector<int> get_batch_sizes(const int render_count, const RenderConfig render_cfg, 
                                  bool include_probing)
 {
-    assert(batch_count > 0 && probing_stride > 2);
+    assert(render_cfg.batch_count > 0 && render_cfg.probing_stride > 2);
 
     if (render_count <= 0)
         return std::vector<int>();
 
-    std::vector<int> batch_sizes(render_cfg.batch_count - 1);
+    int batch_count = render_cfg.batch_count;
+    if (render_count < 50)
+        batch_count = 1;
+
+    std::vector<int> batch_sizes(batch_count - 1);
 
     int total_count = render_count;
     if (include_probing)    // render count includes probing images
         total_count = render_cfg.get_render_count_from_non_probing(render_count);
-    int size = total_count / render_cfg.batch_count;
+    int size = total_count / batch_count;
     // round to next image before a probing, so that we always start a batch with a probing image
     if (size > 0 && include_probing)
         size += (render_cfg.probing_stride) - (size % (render_cfg.probing_stride));
@@ -1294,40 +1298,40 @@ void hybrid_render(const MPI_Properties &mpi_props,
     }
     else if (mpi_props.size > 1) // otherwise this is a sim node
     {
-        assert(my_probing_times.size() > 0);
-        
-        bool use_time_per_render = true;
-        if (use_time_per_render) // render time per probing image (w/o overhead)
+        double sum_render_times = std::accumulate(my_probing_times.begin(), 
+                                                  my_probing_times.end(), 0.0);
+        sum_render_times = std::isnan(sum_render_times) ? 0.0 : sum_render_times;
+
+        if (my_probing_times.size() == 0)
         {
-            double sum_render_times = std::accumulate(my_probing_times.begin(), 
-                                                      my_probing_times.end(), 0.0);
-
-            sum_render_times = std::isnan(sum_render_times) ? 0.0 : sum_render_times;
-            if (my_probing_times.size())
-            {
-                my_avg_probing_time = float(sum_render_times / my_probing_times.size());
-                my_avg_probing_time /= 1000.0; // convert to seconds
-                // my_avg_probing_time = total_probing_time;
-            }
-
-            // if probing time is close to zero, add overhead costs
-            // if (my_avg_probing_time < 0.f + std::numeric_limits<float>::min())
-            //     my_avg_probing_time = total_probing_time / render_cfg.probing_count / 1.f;
-
-            // std::cout << "+++ probing times ";
-            // for (auto &a : my_probing_times)
-            //     std::cout << a << " ";
-            std::cout << "probing w/o overhead " << sum_render_times/1000.0 << std::endl;
-            std::cout << "probing w/  overhead " << total_probing_time << std::endl;
-            my_render_overhead = total_probing_time - sum_render_times/1000.0;
-            my_render_overhead *= render_cfg.batch_count;
+            my_avg_probing_time = 0.f;
         }
-        else // use whole probing time including overhead
+        else
+        {
+            my_avg_probing_time = float(sum_render_times / my_probing_times.size());
+            my_avg_probing_time /= 1000.f; // convert to seconds
+        }
+
+        bool use_total_time = true;
+        if (my_avg_probing_time > 0.f && use_total_time)
         {
             my_avg_probing_time = total_probing_time;
             if (render_cfg.probing_count)
                 my_avg_probing_time /= render_cfg.probing_count;
         }
+
+        // if probing time is close to zero, add overhead costs
+        // if (my_avg_probing_time < 0.f + std::numeric_limits<float>::min())
+        //     my_avg_probing_time = total_probing_time / render_cfg.probing_count / 1.f;
+
+        // std::cout << "+++ probing times ";
+        // for (auto &a : my_probing_times)
+        //     std::cout << a << " ";
+        std::cout << "probing w/o overhead " << sum_render_times/1000.0 << std::endl;
+        std::cout << "probing w/  overhead " << total_probing_time << std::endl;
+        my_render_overhead = total_probing_time - sum_render_times/1000.0;
+        // my_render_overhead *= render_cfg.batch_count;
+
         std::cout << mpi_props.rank << " ~ vis time estimate (per render): " 
                   << my_avg_probing_time << std::endl;
 
@@ -1603,7 +1607,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     ascent_renders[i].publish(dataset);
                     ascent_renders[i].execute(blank_actions);
                     // print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
-                    
+
                     conduit::Node info;
                     // ascent_main_runtime : out.set_external(m_info);
                     ascent_renders[i].info(info);
