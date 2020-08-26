@@ -56,9 +56,9 @@
 #include "expressions/ascent_expressions_parser.hpp"
 #include "expressions/ascent_expressions_tokens.hpp"
 
-#include <chrono>
 #include <ctime>
-#include <iomanip>
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef ASCENT_MPI_ENABLED
 #include <conduit_relay_mpi.hpp>
@@ -111,7 +111,7 @@ Cache::last_known_time(double time)
 }
 
 void
-Cache::filter_time(double time)
+Cache::filter_time(double ftime)
 {
   const int num_entries = m_data.number_of_children();
   int removal_count = 0;
@@ -136,7 +136,7 @@ Cache::filter_time(double time)
         entry.remove(last);
         removal_count++;
       }
-      else if(entry.child(last)["time"].to_float64() >= time)
+      else if(entry.child(last)["time"].to_float64() >= ftime)
       {
         entry.remove(last);
         removal_count++;
@@ -166,13 +166,15 @@ Cache::filter_time(double time)
     clean = !removed;
   }
 
-  using std::chrono::system_clock;
-  std::time_t tt = system_clock::to_time_t(system_clock::now());
-  struct std::tm *ptm = std::localtime(&tt);
+  time_t t;
+  char curr_time[100];
+  time(&t);
+
+  std::strftime(curr_time, sizeof(curr_time), "%A %c", std::localtime(&t));
   std::stringstream msg;
-  msg << "Time travel detected at " << std::put_time(ptm, "%c") << '\n';
+  msg << "Time travel detected at " << curr_time << '\n';
   msg << "Removed all expression cache entries (" << removal_count << ")"
-      << " after simulation time " << time << ".";
+      << " after simulation time " << ftime << ".";
   m_data["ascent_cache_info"].append() = msg.str();
   m_filtered = true;
 }
@@ -1044,7 +1046,6 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   ASTExpression *expression = get_result();
 
   conduit::Node root;
-
   try
   {
     root = expression->build_graph(w);
@@ -1082,13 +1083,6 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node return_val = *n_res;
   return_val.print();
 
-  std::stringstream cache_entry;
-  cache_entry << expr_name << "/" << cycle;
-
-  // this causes an invalid read in conduit in the expression tests
-  // m_cache[cache_entry.str()] = *n_res;
-  m_cache.m_data[cache_entry.str()] = return_val;
-
   // remove temporary fields, topologies, and coordsets from the dataset
   const int num_domains = m_data->number_of_children();
   for(int i = 0; i < num_domains; ++i)
@@ -1123,15 +1117,26 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   // i.e., someone could have restarted the simulation from the beginning
   // or from some earlier checkpoint
   // There are a couple conditions:
+  // 0) only check one time on startup
   // 1) only filter if we haven't done so before
   // 2) only filter if we detect time travel
   // 3) only filter if we have state/time
-  if(!m_cache.filtered() && time <= m_cache.last_known_time() && valid_time)
+  static bool first_execute = true;
+
+  if(first_execute && !m_cache.filtered() &&
+     time <= m_cache.last_known_time() && valid_time)
   {
     // remove all cache entries that occur in the future
     m_cache.filter_time(time);
   }
+  first_execute = false;
+
   m_cache.last_known_time(time);
+
+  std::stringstream cache_entry;
+  cache_entry << expr_name << "/" << cycle;
+
+  m_cache.m_data[cache_entry.str()] = return_val;
 
   delete expression;
   w.reset();
@@ -1143,6 +1148,30 @@ const conduit::Node &
 ExpressionEval::get_cache()
 {
   return m_cache.m_data;
+}
+
+void
+ExpressionEval::reset_cache()
+{
+  m_cache.m_data.reset();
+}
+
+void
+ExpressionEval::get_last(conduit::Node &data)
+{
+  data.reset();
+  const int entries = m_cache.m_data.number_of_children();
+
+  for(int i = 0; i < entries; ++i)
+  {
+    conduit::Node &entry = m_cache.m_data.child(i);
+    const int cycles = entry.number_of_children();
+    if(cycles > 0)
+    {
+      conduit::Node &cycle = entry.child(cycles - 1);
+      data[cycle.path()].set_external(cycle);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 };

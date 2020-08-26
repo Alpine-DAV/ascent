@@ -1696,6 +1696,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     using CoordsVec32 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
     using CoordsVec64 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
 
+    using VCoordsVec64 = vtkm::cont::ArrayHandleVirtual<vtkm::Vec<vtkm::Float64,3>>;
+
     vtkm::cont::VariantArrayHandle coordsHandle(coords.GetData());
 
     if(coordsHandle.IsType<Coords32>())
@@ -1772,7 +1774,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       }
 
     }
-    else if(coordsHandle.IsType<Coords64>())
+    else if(vtkm::cont::IsType<Coords64>(coordsHandle))
     {
       Coords64 points = coordsHandle.Cast<Coords64>();
 
@@ -1802,11 +1804,10 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
           set(vtkh::GetVTKMPointer(z_handle), point_dims[2]);
 
       }
-
     }
     else if(coordsHandle.IsType<CoordsVec64>())
     {
-      CoordsVec64 points = coordsHandle.Cast<CoordsVec64>();
+     CoordsVec64 points = vtkm::cont::Cast<CoordsVec64>(coordsHandle);
 
       const int num_vals = points.GetNumberOfValues();
       vtkm::Float64 *points_ptr = (vtkm::Float64*)vtkh::GetVTKMPointer(points);
@@ -1847,9 +1848,69 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else
     {
-      coords.PrintSummary(std::cerr);
-      ASCENT_ERROR("Unknown coords type");
+      // Ok vtkm has handed us something we don't know about, and its really
+      // hard to ask vtkm to tell us what it is. Before we give up, we will
+      // attempt to copy the data to a known type and copy that copy.
+      // We can't avoid the double copy since conduit can't take ownership
+      // and we can't seem to write to a zero copied array
+
+      if(coordsHandle.IsType<vtkm::cont::ArrayHandleVirtual<vtkm::Vec<double,3>>>())
+      {
+        auto vcoords = coordsHandle.Cast<vtkm::cont::ArrayHandleVirtual<vtkm::Vec<double,3>>>();
+        vtkm::cont::ArrayHandle<vtkm::Vec<double,3>> copy;
+        vtkm::cont::ArrayCopy(vcoords, copy);
+
+        const int num_vals = vcoords.GetNumberOfValues();
+        vtkm::Float64 *points_ptr = (vtkm::Float64*)vtkh::GetVTKMPointer(copy);
+        const int byte_size = sizeof(vtkm::Float64);
+
+
+        output["coordsets/"+coords_name+"/values/x"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*0,  // byte offset
+                                                         byte_size*3); // stride
+        output["coordsets/"+coords_name+"/values/y"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*1,  // byte offset
+                                                         byte_size*3); // stride
+        output["coordsets/"+coords_name+"/values/z"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*2,  // byte offset
+                                                         byte_size*3); // stride
+
+      }
+      else if(coordsHandle.IsType<vtkm::cont::ArrayHandleVirtual<vtkm::Vec<float,3>>>())
+      {
+        auto vcoords = coordsHandle.Cast<vtkm::cont::ArrayHandleVirtual<vtkm::Vec<float,3>>>();
+        vtkm::cont::ArrayHandle<vtkm::Vec<float,3>> copy;
+        vtkm::cont::ArrayCopy(vcoords, copy);
+
+        const int num_vals = vcoords.GetNumberOfValues();
+        vtkm::Float32 *points_ptr = (vtkm::Float32*)vtkh::GetVTKMPointer(copy);
+        const int byte_size = sizeof(vtkm::Float32);
+
+
+        output["coordsets/"+coords_name+"/values/x"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*0,  // byte offset
+                                                         byte_size*3); // stride
+        output["coordsets/"+coords_name+"/values/y"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*1,  // byte offset
+                                                         byte_size*3); // stride
+        output["coordsets/"+coords_name+"/values/z"].set(points_ptr,
+                                                         num_vals,
+                                                         byte_size*2,  // byte offset
+                                                         byte_size*3); // stride
+      }
+      else
+      {
+        coords.PrintSummary(std::cerr);
+        ASCENT_ERROR("Unknown coords type");
+      }
+
     }
+
     vtkm::UInt8 shape_id = 0;
     if(is_structured)
     {
@@ -1942,6 +2003,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       else
       {
         ASCENT_ERROR("Mixed explicit types not implemented");
+        data_set.PrintSummary(std::cout);
         MixedType cells = dyn_cells.Cast<MixedType>();
       }
 

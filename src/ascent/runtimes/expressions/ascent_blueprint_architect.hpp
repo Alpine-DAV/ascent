@@ -342,6 +342,10 @@ int topo_dim(const std::string &topo_name, const conduit::Node &dom);
 std::string field_topology(const conduit::Node &dataset,
                            const std::string &field_name);
 
+// if the field node is empty, we will allocate space
+void paint_nestsets(const std::string nestset_name,
+                    conduit::Node &dom,
+                    conduit::Node &field); // field to paint on
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
