@@ -105,7 +105,7 @@ SUBROUTINE hydro
     
     advect_x = .NOT. advect_x
 
-    time = time + dt
+    time = time + dt    ! TODO: 
 
     wall_clock=timer() - timerstart
 

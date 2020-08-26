@@ -305,6 +305,9 @@ struct RenderConfig
 
     int get_render_count_from_non_probing(const int non_probing_renders, const int render_offset = 0) const
     {
+        if (probing_stride == 0)
+            return non_probing_renders;    
+
         const int probing_renders = std::ceil(non_probing_renders / float(probing_stride - 1));
         return non_probing_renders + probing_renders;
     }
@@ -682,7 +685,7 @@ void pack_node_external(Node &node, Node &packed)
     packed["data"].update(node);
 }
 
-Node pack_node(Node &node)
+Node pack_node(Node &node)  // TODO: use/test pack_node_external
 {
     conduit::Schema s_data_compact;
     
@@ -712,7 +715,7 @@ Node pack_node(Node &node)
     // these sets won't realloc since schemas are compatible
     n_msg["schema_len"].set((int64)snd_schema_json.length());
     n_msg["schema"].set(snd_schema_json);
-    n_msg["data"].update(node);
+    n_msg["data"].update(node); // TODO: change to set_external
 
     return n_msg;
 }
