@@ -1320,6 +1320,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             std::cout << "probing w/o overhead " << sum_render_times/1000.0 << std::endl;
             std::cout << "probing w/  overhead " << total_probing_time << std::endl;
             my_render_overhead = total_probing_time - sum_render_times/1000.0;
+            my_render_overhead *= render_cfg.batch_count;
         }
         else // use whole probing time including overhead
         {
@@ -1602,7 +1603,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     ascent_renders[i].publish(dataset);
                     ascent_renders[i].execute(blank_actions);
                     // print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
-
                     
                     conduit::Node info;
                     // ascent_main_runtime : out.set_external(m_info);
