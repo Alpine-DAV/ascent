@@ -470,7 +470,7 @@ CameraSimplex::execute()
 
     cout << "Gathering data for metric: " << metric.c_str() << endl;
 
-/* Testing stuff so commenting out main loop
+///* Testing stuff so commenting out main loop
 
     // File stuff
     FILE *datafile;
@@ -544,15 +544,15 @@ CameraSimplex::execute()
 
     fclose(datafile);
 
-*/
+//*/
 
 
     /*================ End Scalar Renderer  ======================*/
 
     // Testing specific scores
-///*
-    winning_i = 58;
-    winning_j = 30;
+/*
+    winning_i = 40;
+    winning_j = 86;
 
     Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
         	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
@@ -575,7 +575,7 @@ CameraSimplex::execute()
 		       triangles, height, width, cam);
 
     cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl << endl;
-//*/
+*/
     // Testing specific Scores
 
     Camera best_c = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
