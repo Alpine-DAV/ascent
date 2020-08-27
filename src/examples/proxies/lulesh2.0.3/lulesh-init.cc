@@ -229,6 +229,10 @@ Domain::Domain(Int_t numRanks, Int_t myRank,
       m_ascent_node["fields/q/topology"]    = "mesh";
       m_ascent_node["fields/q/values"].set_external(m_q);
 
+      m_ascent_node["fields/elem_mass/association"] = "element";
+      m_ascent_node["fields/elem_mass/topology"]    = "mesh";
+      m_ascent_node["fields/elem_mass/values"].set_external(m_elemMass);
+
       m_ascent_node["fields/velocity/association"] = "vertex";
       m_ascent_node["fields/velocity/topology"]    = "mesh";
       m_ascent_node["fields/velocity/values/u"].set_external(m_xd);

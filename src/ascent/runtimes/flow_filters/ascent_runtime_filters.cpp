@@ -122,6 +122,7 @@ register_builtin()
 
     AscentRuntime::register_filter_type<BasicTrigger>();
     AscentRuntime::register_filter_type<BasicQuery>();
+    AscentRuntime::register_filter_type<FilterQuery>("transforms","expression");
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();

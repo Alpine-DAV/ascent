@@ -3019,6 +3019,8 @@ Jitable::fuse_vars(const Jitable &from)
 //-----------------------------------------------------------------------------
 // 1. occa::setDevice("mode: 'Serial'");
 // 2. export CXXFLAGS="-g" OCCA_VERBOSE=1
+//    OCCA_CUDA_COMPILER_FLAGS
+//    OCCA_CXXFLAGS
 // 3. Run ascent (e.g. ./tests/ascent/t_ascent_derived)
 // 4. Occa will print the path to the kernel binaries
 //    (e.g. ~/.occa/cache/e1da5a95477a48db/build)
@@ -3045,7 +3047,8 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
   if(!device_set)
   {
     // running this in a loop segfaults...
-    occa::setDevice("mode: 'Serial'");
+    occa::setDevice("mode: 'CUDA', device_id: 0");
+    //occa::setDevice("mode: 'Serial'");
     device_set = true;
   }
   occa::device &device = occa::getDevice();
