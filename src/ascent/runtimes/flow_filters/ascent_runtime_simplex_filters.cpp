@@ -258,7 +258,7 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
 	       	int thetaPos, int numTheta, int phiPos, int numPhi, double *lookat)
 {
   Camera c;
-  double zoom = 3.0;
+  double zoom = 1.0;
   c.near = zoom/20;
   c.far = zoom*25;
   c.angle = M_PI/6;
@@ -269,10 +269,12 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   double ym = (y0 + y1) / 2.0;
   double zm = (z0 + z1) / 2.0;
 
-  c.position[0] = (  radius * (sin(theta) * cos(phi)  + xm )) * zoom;
-  c.position[1] = (  radius * (sin(theta) * sin(phi)  + ym )) * zoom;
-  c.position[2] = (  radius * (cos(theta)  + zm )) * zoom;
-
+  c.position[0] = (  zoom*radius * (sin(theta) * cos(phi)  + xm ));
+  c.position[1] = (  zoom*radius * (sin(theta) * sin(phi)  + ym ));
+  c.position[2] = (  zoom*radius * (cos(theta)  + zm ));
+  //check lookat vs middle
+  //cerr << "xm ym zm : " << xm <<  " " << ym << " " << zm << endl;
+  //cerr << "lookat: " << lookat[0] << " " << lookat[1] << " " << lookat[2] << endl;
   c.focus[0] = lookat[0];
   c.focus[1] = lookat[1];
   c.focus[2] = lookat[2];
