@@ -149,11 +149,11 @@ type_string(const conduit::Node &n)
   return type;
 }
 
-// pack allocate the host array using the contiguous schema
+// pack/allocate the host array using a contiguous schema
 void
-alloc_host_array(const conduit::Node &src_array,
-                 const conduit::Schema &dest_schema,
-                 conduit::Node &dest_array)
+host_realloc(const conduit::Node &src_array,
+             const conduit::Schema &dest_schema,
+             conduit::Node &dest_array)
 {
   // This check isn't strong enough, it will pass if the objects have different
   // child names
@@ -164,11 +164,12 @@ alloc_host_array(const conduit::Node &src_array,
   }
   if(src_array.schema().equals(dest_schema))
   {
-    // we don't need to copy the data since it's already in a contiguous schema
+    // we don't need to copy the data since it's already the schema we want
     dest_array.set_external(src_array);
   }
   else
   {
+    // reallocate to a better schema
     dest_array.set(dest_schema);
     dest_array.update_compatible(src_array);
   }
@@ -187,14 +188,27 @@ alloc_device_array(const conduit::Node &array,
   // the gpu and call occa::cuda::wrapMemory
   conduit::Node res_array;
   flow::Timer host_array_timer;
-  alloc_host_array(array, dest_schema, res_array);
-  std::cout <<"          host array reallocation time: "<< host_array_timer.elapsed() << std::endl;
-  const void *start_ptr = res_array.data_ptr();
+  host_realloc(array, dest_schema, res_array);
+  std::cout << "          host array reallocation time: "
+            << host_array_timer.elapsed() << std::endl;
+  void *start_ptr;
+  // If there are children Cyrus guarantees that child(0).data_ptr() is the
+  // pointer to the beginning. If you find this not to be the case email
+  // harrison37@llnl.gov.
+  if(res_array.number_of_children() != 0)
+  {
+    start_ptr = res_array.child(0).data_ptr();
+  }
+  else
+  {
+    start_ptr = res_array.data_ptr();
+  }
   // assume one allocation starting at child(0).data_ptr() of size
-  // .dtype().bytes_compact()
+  // .total_bytes_compact()
   flow::Timer device_array_timer;
   occa::memory mem = device.malloc(res_array.total_bytes_compact(), start_ptr);
-  std::cout <<"          copy to device time: "<< device_array_timer.elapsed() << std::endl;
+  std::cout << "          copy to device time: " << device_array_timer.elapsed()
+            << std::endl;
   if(array.number_of_children() == 0)
   {
     const std::string param = type_string(array) + " *" + array.name();
@@ -212,11 +226,13 @@ alloc_device_array(const conduit::Node &array,
       const std::string param =
           type_string(n_component) + " *" + array.name() + "_" + component;
       args[param + "/index"] = array_memories.size();
-      array_memories.push_back(mem.slice(
-          (char *)res_array[component].data_ptr() - (char *)start_ptr));
+      // array_memories.push_back(mem.slice(
+      //(char *)res_array[component].data_ptr() - (char *)start_ptr));
+      array_memories.push_back(mem);
     }
   }
-  std::cout << "        array["<<array.total_bytes_compact()<<"] allocation time: "<<array_timer.elapsed()<<std::endl;
+  std::cout << "        array[" << array.total_bytes_compact()
+            << "] allocation time: " << array_timer.elapsed() << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -707,14 +723,15 @@ TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
   {
     // single shape
     // inline the for-loop
-    code.insert("double " + topo_name + "_vertex_locs[" + topo_name +
-                "_shape_size][" + std::to_string(num_dims) + "];\n");
+    code.insert("double " + topo_name + "_vertex_locs[" +
+                std::to_string(shape_size) + "][" + std::to_string(num_dims) +
+                "];\n");
     for(int i = 0; i < shape_size; ++i)
     {
       vertex_xyz(code,
                  array_code.index(topo_name + "_connectivity",
-                                  index_name + " * " + topo_name +
-                                      "_shape_size + " + std::to_string(i)),
+                                  index_name + " * " + std::to_string(shape_size) +
+                                      " + " + std::to_string(i)),
                  false,
                  topo_name + "_vertex_locs[" + std::to_string(i) + "]",
                  false);
@@ -1672,9 +1689,7 @@ pack_topology(const std::string &topo_name,
     // }
     // else
     // {
-    const std::string &shape = topo["elements/shape"].as_string();
-    const int shape_size = detail::get_num_vertices(shape);
-    args[topo_name + "_shape_size"] = shape_size;
+    // single shape
     // }
   }
 }
@@ -2984,17 +2999,18 @@ Jitable::fuse_vars(const Jitable &from)
     // copy kernel_type
     // This will be overwritten in all cases except when func="execute" in
     // JitFilter::execute
-    dom_info.child(dom_idx)["kernel_type"] = src_dom_info["kernel_type"];
+    dest_dom_info["kernel_type"] = src_dom_info["kernel_type"];
 
     // fuse args, set_external arrays and copy other arguments
     conduit::NodeConstIterator arg_itr = src_dom_info["args"].children();
     while(arg_itr.has_next())
     {
       const conduit::Node &arg = arg_itr.next();
-      conduit::Node &dest_args = dom_info.child(dom_idx)["args"];
+      conduit::Node &dest_args = dest_dom_info["args"];
       if(!dest_args.has_path(arg.name()))
       {
-        if(arg.dtype().number_of_elements() > 1)
+        if(arg.number_of_children() != 0 ||
+           arg.dtype().number_of_elements() > 1)
         {
           dest_args[arg.name()].set_external(arg);
         }
@@ -3048,7 +3064,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
   {
     // running this in a loop segfaults...
     occa::setDevice("mode: 'CUDA', device_id: 0");
-    //occa::setDevice("mode: 'Serial'");
+    // occa::setDevice("mode: 'Serial'");
     device_set = true;
   }
   occa::device &device = occa::getDevice();
@@ -3199,8 +3215,8 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
     occa::array<double> o_output(entries * kernel.num_components);
 
     occa_kernel.pushArg(o_output);
-    std::cout << "      allocating output array time: " << alloc_output_timer.elapsed()
-              << std::endl;
+    std::cout << "      allocating output array time: "
+              << alloc_output_timer.elapsed() << std::endl;
 
     flow::Timer kernel_run_timer;
     occa_kernel.run();

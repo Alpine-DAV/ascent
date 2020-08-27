@@ -61,8 +61,6 @@
 #include "t_config.hpp"
 #include "t_utils.hpp"
 
-#include <occa.hpp>
-
 using namespace std;
 using namespace conduit;
 using namespace ascent;
