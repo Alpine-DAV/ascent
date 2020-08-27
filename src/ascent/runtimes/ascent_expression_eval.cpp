@@ -57,6 +57,7 @@
 #include "expressions/ascent_expressions_tokens.hpp"
 
 #include <ctime>
+#include <flow_timer.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -1011,6 +1012,8 @@ initialize_objects()
 conduit::Node
 ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 {
+  std::cout << "\n\nexpression: '" << expr << "'" << std::endl;
+  flow::Timer expression_timer;
   if(expr_name == "")
   {
     expr_name = expr;
@@ -1048,6 +1051,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node root;
   try
   {
+    flow::Timer build_graph_timer;
     root = expression->build_graph(w);
     // if root is a derived field add a JitFilter to execute it
     if(root["type"].as_string() == "jitable")
@@ -1066,9 +1070,12 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
       root["filter_name"] = "jit_execute";
       root["type"] = "field";
     }
-    w.graph().save_dot_html("ascent_expressions_graph.html");
+    // w.graph().save_dot_html("ascent_expressions_graph.html");
+    std::cout << "  build_graph time: " << build_graph_timer.elapsed()
+              << std::endl;
+    flow::Timer execute_timer;
     w.execute();
-    // m_data->print();
+    std::cout << "  execute time: " << execute_timer.elapsed() << std::endl;
   }
   catch(std::exception &e)
   {
@@ -1081,7 +1088,6 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
   conduit::Node return_val = *n_res;
-  return_val.print();
 
   // remove temporary fields, topologies, and coordsets from the dataset
   const int num_domains = m_data->number_of_children();
@@ -1140,6 +1146,8 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   delete expression;
   w.reset();
+  std::cout << "total expression execution time: " << expression_timer.elapsed()
+            << std::endl;
   return return_val;
 }
 

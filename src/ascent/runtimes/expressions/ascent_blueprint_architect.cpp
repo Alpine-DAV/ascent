@@ -464,7 +464,7 @@ StructuredTopology<T, N>::StructuredTopology(const std::string &topo_name,
   }
   // check that number of vertices in coordset matches dims
   // TODO maybe this is fine and should just be a warning?
-  if(coords[0].dtype().number_of_elements() != num_points)
+  if((size_t)coords[0].dtype().number_of_elements() != num_points)
   {
     ASCENT_ERROR(
         "StructuredTopology ("
@@ -615,8 +615,10 @@ UnstructuredTopology<T, N>::get_num_points() const
   const conduit::int32 *conn_begin = (conduit::int32 *)connectivity.data_ptr();
   const conduit::int32 *conn_end =
       conn_begin + connectivity.dtype().number_of_elements();
-  const auto num_points = std::unordered_set<T>(conn_begin, conn_end).size();
-  const auto coords_size = domain["coordsets/" + coords_name + "/values"]
+  // points used in the topology
+  const size_t num_points = std::unordered_set<T>(conn_begin, conn_end).size();
+  // points available in the coordset
+  const size_t coords_size = domain["coordsets/" + coords_name + "/values"]
                                .child(0)
                                .dtype()
                                .number_of_elements();
@@ -658,6 +660,7 @@ UnstructuredTopology<T, N>::element_location(const size_t index) const
   }
   else if(shape == "polyhedral")
   {
+    cur_shape_vertices = -1;
     ASCENT_ERROR("element_location for polyhedral shapes is not implemented.");
   }
   else
@@ -962,7 +965,7 @@ known_topos(const conduit::Node &dataset)
   std::vector<std::string> names = dataset.child(0)["topologies"].child_names();
   std::stringstream ss;
   ss << "[";
-  for(int i = 0; i < names.size(); ++i)
+  for(size_t i = 0; i < names.size(); ++i)
   {
     ss << names[i];
     if(i < names.size() - 1)
@@ -980,7 +983,7 @@ known_fields(const conduit::Node &dataset)
   std::vector<std::string> names = dataset.child(0)["fields"].child_names();
   std::stringstream ss;
   ss << "[";
-  for(int i = 0; i < names.size(); ++i)
+  for(size_t i = 0; i < names.size(); ++i)
   {
     ss << names[i];
     if(i < names.size() - 1)
@@ -1083,7 +1086,7 @@ uniform_bin(const T value,
             const bool clamp)
 {
   const double inv_delta = num_bins / (max_val - min_val);
-  const int bin_index = static_cast<int>((value - min_val) * inv_delta);
+  const size_t bin_index = static_cast<size_t>((value - min_val) * inv_delta);
   if(clamp)
   {
     if(bin_index < 0)
@@ -1244,7 +1247,7 @@ populate_homes(const conduit::Node &dom,
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
-      for(int i = 0; i < homes_size; ++i)
+      for(size_t i = 0; i < homes_size; ++i)
       {
         loc = topo->vertex_location(i);
         coords[0][i] = loc[0];
@@ -1257,7 +1260,7 @@ populate_homes(const conduit::Node &dom,
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
-      for(int i = 0; i < homes_size; ++i)
+      for(size_t i = 0; i < homes_size; ++i)
       {
         loc = topo->element_location(i);
         coords[0][i] = loc[0];
@@ -1761,14 +1764,14 @@ binning(const conduit::Node &dataset,
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for reduction(+ : total)
 #endif
-    for(int i = 0; i < num_bins; ++i)
+    for(size_t i = 0; i < num_bins; ++i)
     {
       total += bins[i];
     }
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for(int i = 0; i < num_bins; ++i)
+    for(size_t i = 0; i < num_bins; ++i)
     {
       if(bins[num_bins + i] == 0)
       {
@@ -1786,7 +1789,7 @@ binning(const conduit::Node &dataset,
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for(int i = 0; i < num_bins; ++i)
+    for(size_t i = 0; i < num_bins; ++i)
     {
       if(bins[num_bins + i] == 0)
       {
@@ -1803,7 +1806,7 @@ binning(const conduit::Node &dataset,
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for(int i = 0; i < num_bins; ++i)
+    for(size_t i = 0; i < num_bins; ++i)
     {
       const double sumX = bins[i];
       const double n = bins[num_bins + i];
@@ -1822,7 +1825,7 @@ binning(const conduit::Node &dataset,
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for(int i = 0; i < num_bins; ++i)
+    for(size_t i = 0; i < num_bins; ++i)
     {
       const double sumX = bins[i];
       const double n = bins[num_bins + i];
@@ -1841,7 +1844,7 @@ binning(const conduit::Node &dataset,
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for(int i = 0; i < num_bins; ++i)
+    for(size_t i = 0; i < num_bins; ++i)
     {
       const double sumX2 = bins[i];
       const double sumX = bins[num_bins + i];
@@ -1861,7 +1864,7 @@ binning(const conduit::Node &dataset,
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for(int i = 0; i < num_bins; ++i)
+    for(size_t i = 0; i < num_bins; ++i)
     {
       const double sumX2 = bins[i];
       const double sumX = bins[num_bins + i];

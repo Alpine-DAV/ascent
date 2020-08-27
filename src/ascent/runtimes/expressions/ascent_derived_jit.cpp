@@ -59,6 +59,8 @@
 #include <limits>
 #include <occa.hpp>
 
+#include <flow.hpp>
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -180,14 +182,19 @@ alloc_device_array(const conduit::Node &array,
                    occa::device &device)
 {
 
+  flow::Timer array_timer;
   // for now we always copy from the cpu but we can check here if array is on
   // the gpu and call occa::cuda::wrapMemory
   conduit::Node res_array;
+  flow::Timer host_array_timer;
   alloc_host_array(array, dest_schema, res_array);
+  std::cout <<"          host array reallocation time: "<< host_array_timer.elapsed() << std::endl;
   const void *start_ptr = res_array.data_ptr();
   // assume one allocation starting at child(0).data_ptr() of size
   // .dtype().bytes_compact()
+  flow::Timer device_array_timer;
   occa::memory mem = device.malloc(res_array.total_bytes_compact(), start_ptr);
+  std::cout <<"          copy to device time: "<< device_array_timer.elapsed() << std::endl;
   if(array.number_of_children() == 0)
   {
     const std::string param = type_string(array) + " *" + array.name();
@@ -209,6 +216,7 @@ alloc_device_array(const conduit::Node &array,
           (char *)res_array[component].data_ptr() - (char *)start_ptr));
     }
   }
+  std::cout << "        array["<<array.total_bytes_compact()<<"] allocation time: "<<array_timer.elapsed()<<std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -1224,6 +1232,7 @@ TopologyCode::polygon_area(InsertionOrderedSet<std::string> &code,
 // m is number of faces
 // 1/6 * sum_{j=0}^{m-1}(P_j . 2*A_j)
 // P_j is some point on face j A_j is the area vector of face j
+/*
 void
 TopologyCode::polyhedron_volume(InsertionOrderedSet<std::string> &code,
                                 const std::string &vertex_locs,
@@ -1246,9 +1255,9 @@ TopologyCode::polyhedron_volume(InsertionOrderedSet<std::string> &code,
   unstructured_vertices(for_loop,
                         array_code.index(topo_name + "_polyhedral_connectivity",
                                          topo_name + "_polyhedral_offset + j"));
-  polygon_area_vec(for_loop, topo_name + "_vertex_locs", res_name + "_face");
+  polygon_area_vec(for_loop, vertex_locs, res_name + "_face");
   math_code.dot_product(for_loop,
-                        topo_name + "_vertex_locs[4]",
+                        vertex_locs + "[4]",
                         res_name + "_face_vec",
                         res_name + "_dot",
                         num_dims);
@@ -1263,6 +1272,7 @@ TopologyCode::polyhedron_volume(InsertionOrderedSet<std::string> &code,
   math_code.magnitude(code, res_name + "_vec", res_name + "_vec_mag", num_dims);
   code.insert("double " + res_name + " = " + res_name + "_vec_mag / 6.0;\n");
 }
+*/
 
 void
 TopologyCode::volume(InsertionOrderedSet<std::string> &code) const
@@ -1599,7 +1609,7 @@ pack_topology(const std::string &topo_name,
   const std::string &topo_type = topo["type"].as_string();
   const conduit::Node &coords =
       domain["coordsets/" + topo["coordset"].as_string()];
-  const int num_dims = topo_dim(topo_name, domain);
+  const size_t num_dims = topo_dim(topo_name, domain);
   if(topo_type == "uniform")
   {
     for(size_t i = 0; i < num_dims; ++i)
@@ -2270,9 +2280,7 @@ JitableFunctions::builtin_functions(const std::string &function_name)
 }
 
 bool
-available_component(const std::string &axis,
-                    const int num_axes,
-                    const std::string &topo_name)
+available_component(const std::string &axis, const int num_axes)
 {
   // if a field has only 1 component it doesn't have .x .y .z
   if((axis == "x" && num_axes >= 2) || (axis == "y" && num_axes >= 2) ||
@@ -2448,7 +2456,7 @@ JitableFunctions::expr_dot()
   if(!obj.has_path("type"))
   {
     // field objects
-    if(is_xyz(name) && available_component(name, obj_kernel.num_components, ""))
+    if(is_xyz(name) && available_component(name, obj_kernel.num_components))
     {
       out_kernel.expr =
           obj_kernel.expr + "[" + std::to_string(name[0] - 'x') + "]";
@@ -3030,6 +3038,7 @@ Jitable::fuse_vars(const Jitable &from)
 void
 Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
 {
+  flow::Timer jitable_execute_timer;
   // TODO set this automatically?
   // occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 1");
   static bool device_set = false;
@@ -3069,6 +3078,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
     // need to keep the mem in scope or bad things happen
     std::vector<occa::memory> array_memories;
 
+    flow::Timer array_allocation_timer;
     // allocate arrays
     const int original_num_args = cur_dom_info["args"].number_of_children();
     conduit::Node new_args;
@@ -3096,17 +3106,22 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
         new_args[arg.name()] = arg;
       }
     }
+    std::cout << "      total input array allocation time: "
+              << array_allocation_timer.elapsed() << std::endl;
 
     // pass input arguments
     occa_kernel.clearArgs();
 
     const std::string kernel_string = generate_kernel(dom_idx, new_args);
 
-    std::cout << kernel_string << std::endl;
+    // std::cout << kernel_string << std::endl;
 
     try
     {
+      flow::Timer kernel_compile_timer;
       occa_kernel = device.buildKernelFromString(kernel_string, "map");
+      std::cout << "      kernel compile time: "
+                << kernel_compile_timer.elapsed() << std::endl;
     }
     catch(const occa::exception &e)
     {
@@ -3121,6 +3136,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
                    << kernel_string);
     }
 
+    flow::Timer push_args_timer;
     const int num_new_args = new_args.number_of_children();
     for(int i = 0; i < num_new_args; ++i)
     {
@@ -3146,6 +3162,8 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
         ASCENT_ERROR("JIT: Unknown argument type of argument: " << arg.name());
       }
     }
+    std::cout << "      push input args time: " << push_args_timer.elapsed()
+              << std::endl;
 
     // the final number of entries
     const int entries = cur_dom_info["entries"].to_int64();
@@ -3153,6 +3171,9 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
     conduit::Node &n_output = dom["fields/" + field_name];
     n_output["association"] = association;
     n_output["topology"] = topology;
+
+    flow::Timer alloc_output_timer;
+
     conduit::float64 *output_ptr;
     if(kernel.num_components > 1)
     {
@@ -3175,12 +3196,23 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
     occa::array<double> o_output(entries * kernel.num_components);
 
     occa_kernel.pushArg(o_output);
+    std::cout << "      allocating output array time: " << alloc_output_timer.elapsed()
+              << std::endl;
+
+    flow::Timer kernel_run_timer;
     occa_kernel.run();
+    std::cout << "      kernel run time: " << kernel_run_timer.elapsed()
+              << std::endl;
 
     // copy back
+    flow::Timer copy_back_timer;
     o_output.memory().copyTo(output_ptr);
+    std::cout << "      copy to host time: " << copy_back_timer.elapsed()
+              << std::endl;
 
     // dom["fields/" + field_name].print();
+    std::cout << "    Jitable::execute time: "
+              << jitable_execute_timer.elapsed() << std::endl;
   }
 }
 // }}}
