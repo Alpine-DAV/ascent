@@ -56,6 +56,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <functional>
 #include <limits>
 #include <occa.hpp>
 
@@ -149,6 +150,29 @@ type_string(const conduit::Node &n)
   return type;
 }
 
+//-----------------------------------------------------------------------------
+// -- MemoryRegion
+//-----------------------------------------------------------------------------
+//{{{
+MemoryRegion::MemoryRegion(const void *start, const void *end)
+    : start(static_cast<const char *>(start)),
+      end(static_cast<const char *>(end)), allocated(false)
+{
+}
+
+MemoryRegion::MemoryRegion(const void *start, const size_t size)
+    : start(static_cast<const char *>(start)), end(this->start + size),
+      allocated(false)
+{
+}
+
+bool
+MemoryRegion::operator<(const MemoryRegion &other) const
+{
+  return std::less<const void *>()(end, other.start);
+}
+//}}}
+
 // pack/allocate the host array using a contiguous schema
 void
 host_realloc(const conduit::Node &src_array,
@@ -185,12 +209,9 @@ alloc_device_array(const conduit::Node &array,
                    std::vector<occa::memory> &array_memories,
                    occa::device &device)
 {
-
   flow::Timer array_timer;
-  // for now we always copy from the cpu but we can check here if array is on
-  // the gpu and call occa::cuda::wrapMemory
-  conduit::Node res_array;
   flow::Timer host_array_timer;
+  conduit::Node res_array;
   host_realloc(array, dest_schema, res_array);
   std::cout << "          host array reallocation time: "
             << host_array_timer.elapsed() << std::endl;
@@ -198,47 +219,62 @@ alloc_device_array(const conduit::Node &array,
   if(array.number_of_children() == 0)
   {
     const void *start_ptr = res_array.data_ptr();
-    flow::Timer device_array_timer;
     occa::memory mem =
         device.malloc(res_array.total_bytes_compact(), start_ptr);
-    std::cout << "          copy to device time: "
-              << device_array_timer.elapsed() << std::endl;
     const std::string param = type_string(array) + " *" + array.name();
     args[param + "/index"] = array_memories.size();
     array_memories.push_back(mem);
   }
   else
   {
-    // pack a pointer for each component
-    // the codegen will generate code for pointers with the naming convention
-    // "array.name()_component"
-    std::unordered_map<const void *, int> allocated;
-    std::unordered_map<const void *, int> sizes;
-    for(const std::string &component : res_array.child_names())
-    {
-      const conduit::Node &n_component = res_array[component];
-      const void *start_ptr = n_component.data_ptr();
-      sizes[start_ptr] += n_component.total_bytes_compact();
-    }
+    std::set<MemoryRegion> memory_regions;
     for(const std::string &component : res_array.child_names())
     {
       const conduit::Node &n_component = res_array[component];
       const void *start_ptr = res_array[component].data_ptr();
-      if(allocated.find(start_ptr) == allocated.end())
+      const size_t size = n_component.dtype().spanned_bytes();
+      MemoryRegion memory_region(start_ptr, size);
+      const auto inserted = memory_regions.insert(memory_region);
+      // if not inserted union two regions
+      if(!inserted.second)
       {
-        allocated[start_ptr] = array_memories.size();
-        occa::memory mem = device.malloc(sizes[start_ptr], start_ptr);
+        auto hint = inserted.first;
+        hint++;
+        const char *min_start = std::min(inserted.first->start,
+                                         memory_region.start,
+                                         std::less<const char *>());
+        const char *max_end = std::max(
+            inserted.first->end, memory_region.end, std::less<const char *>());
+        MemoryRegion unioned_region(min_start, max_end);
+        memory_regions.erase(inserted.first);
+        memory_regions.insert(unioned_region);
+      }
+    }
+
+    for(const std::string &component : res_array.child_names())
+    {
+      const conduit::Node &n_component = res_array[component];
+      const void *start_ptr = res_array[component].data_ptr();
+      const size_t size = n_component.dtype().spanned_bytes();
+      MemoryRegion sub_region(start_ptr, size);
+      const auto full_region_it = memory_regions.find(sub_region);
+      if(!full_region_it->allocated)
+      {
+        full_region_it->allocated = true;
+        occa::memory mem = device.malloc(
+            full_region_it->end - full_region_it->start, full_region_it->start);
+        full_region_it->index = array_memories.size();
         array_memories.push_back(mem);
       }
       const std::string param =
           type_string(n_component) + " *" + array.name() + "_" + component;
-      args[param + "/index"] = allocated[start_ptr];
+      args[param + "/index"] = full_region_it->index;
     }
-    std::cout << "          copy to device time: "
-              << device_array_timer.elapsed() << std::endl;
-    std::cout << "        array[" << array.total_bytes_compact()
-              << "] allocation time: " << array_timer.elapsed() << std::endl;
   }
+  std::cout << "          copy to device time: " << device_array_timer.elapsed()
+            << std::endl;
+  std::cout << "        array[" << array.total_bytes_compact()
+            << "] allocation time: " << array_timer.elapsed() << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -1547,7 +1583,40 @@ TopologyCode::surface_area(InsertionOrderedSet<std::string> &code) const
 // -- Packing Functions
 //-----------------------------------------------------------------------------
 // {{{
+bool
+is_compact_interleaved(const conduit::Node &array)
+{
+  const char *min_start = nullptr;
+  const char *max_end = nullptr;
+  if(array.number_of_children() == 0)
+  {
+    min_start = static_cast<const char *>(array.data_ptr());
+    max_end = min_start + array.dtype().spanned_bytes();
+  }
+  else
+  {
+    for(const std::string &component : array.child_names())
+    {
+      const conduit::Node &n_component = array[component];
+      if(min_start == nullptr || max_end == nullptr)
+      {
+        min_start = static_cast<const char *>(n_component.data_ptr());
+        max_end = min_start + array.dtype().spanned_bytes();
+      }
+      else
+      {
+        const char *new_start =
+            static_cast<const char *>(n_component.data_ptr());
+        min_start = std::min(min_start, new_start, std::less<const char *>());
 
+        max_end = std::max(max_end,
+                           new_start + n_component.dtype().spanned_bytes(),
+                           std::less<const char *>());
+      }
+    }
+  }
+  return (max_end - min_start) == array.total_bytes_compact();
+}
 // Compacts an array (generates a contigous schema) so that only one
 // allocation is needed. Code generation will read this schema from
 // array_code. The array in args is a set_external to the original data so we
@@ -1559,7 +1628,8 @@ pack_array(const conduit::Node &array,
            ArrayCode &array_code)
 {
   args[name].set_external(array);
-  if(array.is_compact() /* || array is on the device */)
+  if(array.is_compact() ||
+     is_compact_interleaved(array) /* || array is on the device */)
   {
     // copy the existing schema
     array_code.array_map[name] = array.schema();
@@ -1997,7 +2067,7 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
     }
     else if(topo_code.topo_type == "unstructured")
     {
-      topo_code.structured_vertices(code);
+      topo_code.unstructured_vertices(code);
       if(topo_code.shape == "hex")
       {
         hex_gradient(code, gradient_name);

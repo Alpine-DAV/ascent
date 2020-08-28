@@ -349,7 +349,8 @@ public:
 
   void fuse_vars(const Jitable &from);
   void execute(conduit::Node &dataset, const std::string &field_name) const;
-  std::string generate_kernel(const int dom_idx, const conduit::Node &args) const;
+  std::string generate_kernel(const int dom_idx,
+                              const conduit::Node &args) const;
 
   // map of kernel types (e.g. for different topologies)
   std::unordered_map<std::string, Kernel> kernels;
@@ -417,6 +418,19 @@ void pack_array(const conduit::Node &array,
                 const std::string &name,
                 conduit::Node &args,
                 ArrayCode &array_code);
+
+class MemoryRegion
+{
+public:
+  MemoryRegion(const void *start, const void *end);
+  MemoryRegion(const void *start, const size_t size);
+  bool operator<(const MemoryRegion &other) const;
+
+  const char *start;
+  const char *end;
+  mutable bool allocated;
+  mutable size_t index;
+};
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
