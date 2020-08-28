@@ -3203,7 +3203,7 @@ JitFilter::execute()
       const bool not_fused =
           fused_kernel_types.find(out_kernel_type) == fused_kernel_types.cend();
 
-      // this class knows how to combine kernels and execute jitable functions
+      // this class knows how to combine kernels and generate jitable functions
       JitableFunctions jitable_functions(params(),
                                          input_jitables,
                                          input_kernels,

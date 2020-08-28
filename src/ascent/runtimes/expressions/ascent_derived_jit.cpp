@@ -117,7 +117,6 @@ indent_code(const std::string &input_code, const int num_spaces)
   }
   return output_code;
 }
-};
 
 std::string
 type_string(const conduit::Node &n)
@@ -149,6 +148,7 @@ type_string(const conduit::Node &n)
   }
   return type;
 }
+};
 
 //-----------------------------------------------------------------------------
 // -- MemoryRegion
@@ -173,11 +173,15 @@ MemoryRegion::operator<(const MemoryRegion &other) const
 }
 //}}}
 
+//-----------------------------------------------------------------------------
+// -- Array Allocation Functions
+//-----------------------------------------------------------------------------
+//{{{
 // pack/allocate the host array using a contiguous schema
 void
-host_realloc(const conduit::Node &src_array,
-             const conduit::Schema &dest_schema,
-             conduit::Node &dest_array)
+host_realloc_array(const conduit::Node &src_array,
+                   const conduit::Schema &dest_schema,
+                   conduit::Node &dest_array)
 {
   // This check isn't strong enough, it will pass if the objects have different
   // child names
@@ -203,7 +207,7 @@ host_realloc(const conduit::Node &src_array,
 }
 
 void
-alloc_device_array(const conduit::Node &array,
+device_alloc_array(const conduit::Node &array,
                    const conduit::Schema &dest_schema,
                    conduit::Node &args,
                    std::vector<occa::memory> &array_memories,
@@ -212,7 +216,7 @@ alloc_device_array(const conduit::Node &array,
   flow::Timer array_timer;
   flow::Timer host_array_timer;
   conduit::Node res_array;
-  host_realloc(array, dest_schema, res_array);
+  host_realloc_array(array, dest_schema, res_array);
   std::cout << "          host array reallocation time: "
             << host_array_timer.elapsed() << std::endl;
   flow::Timer device_array_timer;
@@ -221,7 +225,7 @@ alloc_device_array(const conduit::Node &array,
     const void *start_ptr = res_array.data_ptr();
     occa::memory mem =
         device.malloc(res_array.total_bytes_compact(), start_ptr);
-    const std::string param = type_string(array) + " *" + array.name();
+    const std::string param = detail::type_string(array) + " *" + array.name();
     args[param + "/index"] = array_memories.size();
     array_memories.push_back(mem);
   }
@@ -266,8 +270,8 @@ alloc_device_array(const conduit::Node &array,
         full_region_it->index = array_memories.size();
         array_memories.push_back(mem);
       }
-      const std::string param =
-          type_string(n_component) + " *" + array.name() + "_" + component;
+      const std::string param = detail::type_string(n_component) + " *" +
+                                array.name() + "_" + component;
       args[param + "/index"] = full_region_it->index;
     }
   }
@@ -276,6 +280,7 @@ alloc_device_array(const conduit::Node &array,
   std::cout << "        array[" << array.total_bytes_compact()
             << "] allocation time: " << array_timer.elapsed() << std::endl;
 }
+//}}}
 
 //-----------------------------------------------------------------------------
 // -- ArrayCode
@@ -3004,7 +3009,7 @@ Jitable::generate_kernel(const int dom_idx, const conduit::Node &args) const
     }
     else
     {
-      type = type_string(arg) + " ";
+      type = detail::type_string(arg) + " ";
     }
     if(!first)
     {
@@ -3093,12 +3098,10 @@ Jitable::fuse_vars(const Jitable &from)
         if(arg.number_of_children() != 0 ||
            arg.dtype().number_of_elements() > 1)
         {
-          std::cout << "set_external: " << arg.name() << std::endl;
           dest_args[arg.name()].set_external(arg);
         }
         else
         {
-          std::cout << "set:" << arg.name() << std::endl;
           dest_args[arg.name()].set(arg);
         }
       }
@@ -3191,7 +3194,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
       {
         try
         {
-          alloc_device_array(arg,
+          device_alloc_array(arg,
                              arrays[dom_idx].array_map.at(arg.name()),
                              new_args,
                              array_memories,
@@ -3211,17 +3214,26 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
     std::cout << "      total input array allocation time: "
               << array_allocation_timer.elapsed() << std::endl;
 
-    // pass input arguments
-    occa_kernel.clearArgs();
-
     const std::string kernel_string = generate_kernel(dom_idx, new_args);
 
     // std::cout << kernel_string << std::endl;
 
+    // store kernels so that we don't have to recompile, even loading a cached
+    // kernel from disk is slow
+    static std::unordered_map<std::string, occa::kernel> kernel_map;
     try
     {
       flow::Timer kernel_compile_timer;
-      occa_kernel = device.buildKernelFromString(kernel_string, "map");
+      auto kernel_it = kernel_map.find(kernel_string);
+      if(kernel_it == kernel_map.end())
+      {
+        occa_kernel = device.buildKernelFromString(kernel_string, "map");
+        kernel_map[kernel_string] = occa_kernel;
+      }
+      else
+      {
+        occa_kernel = kernel_it->second;
+      }
       std::cout << "      kernel compile time: "
                 << kernel_compile_timer.elapsed() << std::endl;
     }
@@ -3237,6 +3249,9 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
                    "error.\n\n"
                    << kernel_string);
     }
+
+    // pass input arguments
+    occa_kernel.clearArgs();
 
     flow::Timer push_args_timer;
     const int num_new_args = new_args.number_of_children();
