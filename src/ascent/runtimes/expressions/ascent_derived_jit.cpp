@@ -2079,7 +2079,8 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
       else
       {
         ASCENT_ERROR("Gradient of unstructured vertex associated fields only "
-                     "works on hex and quad shapes.");
+                     "works on hex and quad shapes. The given shape was '"
+                     << topo_code.shape << "'.");
       }
     }
     return;
@@ -3092,10 +3093,12 @@ Jitable::fuse_vars(const Jitable &from)
         if(arg.number_of_children() != 0 ||
            arg.dtype().number_of_elements() > 1)
         {
+          std::cout << "set_external: " << arg.name() << std::endl;
           dest_args[arg.name()].set_external(arg);
         }
         else
         {
+          std::cout << "set:" << arg.name() << std::endl;
           dest_args[arg.name()].set(arg);
         }
       }

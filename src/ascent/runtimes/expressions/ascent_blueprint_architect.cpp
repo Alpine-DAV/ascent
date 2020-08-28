@@ -2688,7 +2688,7 @@ topo_dim(const std::string &topo_name, const conduit::Node &dom)
   const conduit::Node &n_topo = dom["topologies/" + topo_name];
 
   const std::string c_name = n_topo["coordset"].as_string();
-  const conduit::Node n_coords = dom["coordsets/" + c_name];
+  const conduit::Node &n_coords = dom["coordsets/" + c_name];
   const std::string c_type = n_coords["type"].as_string();
 
   int num_dims;
