@@ -172,6 +172,9 @@ host_realloc(const conduit::Node &src_array,
     // reallocate to a better schema
     dest_array.set(dest_schema);
     dest_array.update_compatible(src_array);
+    src_array.info().print();
+    std::cout << "start of realloced array" << std::endl;
+    dest_array.info().print();
   }
 }
 
@@ -191,26 +194,15 @@ alloc_device_array(const conduit::Node &array,
   host_realloc(array, dest_schema, res_array);
   std::cout << "          host array reallocation time: "
             << host_array_timer.elapsed() << std::endl;
-  void *start_ptr;
-  // If there are children Cyrus guarantees that child(0).data_ptr() is the
-  // pointer to the beginning. If you find this not to be the case email
-  // harrison37@llnl.gov.
-  if(res_array.number_of_children() != 0)
-  {
-    start_ptr = res_array.child(0).data_ptr();
-  }
-  else
-  {
-    start_ptr = res_array.data_ptr();
-  }
-  // assume one allocation starting at child(0).data_ptr() of size
-  // .total_bytes_compact()
   flow::Timer device_array_timer;
-  occa::memory mem = device.malloc(res_array.total_bytes_compact(), start_ptr);
-  std::cout << "          copy to device time: " << device_array_timer.elapsed()
-            << std::endl;
   if(array.number_of_children() == 0)
   {
+    const void *start_ptr = res_array.data_ptr();
+    flow::Timer device_array_timer;
+    occa::memory mem =
+        device.malloc(res_array.total_bytes_compact(), start_ptr);
+    std::cout << "          copy to device time: "
+              << device_array_timer.elapsed() << std::endl;
     const std::string param = type_string(array) + " *" + array.name();
     args[param + "/index"] = array_memories.size();
     array_memories.push_back(mem);
@@ -220,19 +212,33 @@ alloc_device_array(const conduit::Node &array,
     // pack a pointer for each component
     // the codegen will generate code for pointers with the naming convention
     // "array.name()_component"
+    std::unordered_map<const void *, int> allocated;
+    std::unordered_map<const void *, int> sizes;
     for(const std::string &component : res_array.child_names())
     {
       const conduit::Node &n_component = res_array[component];
+      const void *start_ptr = n_component.data_ptr();
+      sizes[start_ptr] += n_component.total_bytes_compact();
+    }
+    for(const std::string &component : res_array.child_names())
+    {
+      const conduit::Node &n_component = res_array[component];
+      const void *start_ptr = res_array[component].data_ptr();
+      if(allocated.find(start_ptr) == allocated.end())
+      {
+        allocated[start_ptr] = array_memories.size();
+        occa::memory mem = device.malloc(sizes[start_ptr], start_ptr);
+        array_memories.push_back(mem);
+      }
       const std::string param =
           type_string(n_component) + " *" + array.name() + "_" + component;
-      args[param + "/index"] = array_memories.size();
-      // array_memories.push_back(mem.slice(
-      //(char *)res_array[component].data_ptr() - (char *)start_ptr));
-      array_memories.push_back(mem);
+      args[param + "/index"] = allocated[start_ptr];
     }
+    std::cout << "          copy to device time: "
+              << device_array_timer.elapsed() << std::endl;
+    std::cout << "        array[" << array.total_bytes_compact()
+              << "] allocation time: " << array_timer.elapsed() << std::endl;
   }
-  std::cout << "        array[" << array.total_bytes_compact()
-            << "] allocation time: " << array_timer.elapsed() << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -730,8 +736,9 @@ TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
     {
       vertex_xyz(code,
                  array_code.index(topo_name + "_connectivity",
-                                  index_name + " * " + std::to_string(shape_size) +
-                                      " + " + std::to_string(i)),
+                                  index_name + " * " +
+                                      std::to_string(shape_size) + " + " +
+                                      std::to_string(i)),
                  false,
                  topo_name + "_vertex_locs[" + std::to_string(i) + "]",
                  false);
@@ -1262,7 +1269,8 @@ TopologyCode::polyhedron_volume(InsertionOrderedSet<std::string> &code,
                "int " + topo_name + "_polyhedral_shape_size = " + topo_name +
                    "_polyhedral_sizes[item];\n",
                "int " + topo_name + "_polyhedral_offset = " +
-                   array_code.index(topo_name + "_polyhedral_offsets", "item") +
+                   array_code.index(topo_name + "_polyhedral_offsets", "item")
++
                    ";\n"});
 
   InsertionOrderedSet<std::string> for_loop;
@@ -1270,8 +1278,8 @@ TopologyCode::polyhedron_volume(InsertionOrderedSet<std::string> &code,
       {"for(int j = 0; j < " + topo_name + "_polyhedral_shape_size; ++j)\n",
        "{\n"});
   unstructured_vertices(for_loop,
-                        array_code.index(topo_name + "_polyhedral_connectivity",
-                                         topo_name + "_polyhedral_offset + j"));
+                        array_code.index(topo_name +
+"_polyhedral_connectivity", topo_name + "_polyhedral_offset + j"));
   polygon_area_vec(for_loop, vertex_locs, res_name + "_face");
   math_code.dot_product(for_loop,
                         vertex_locs + "[4]",
@@ -1286,8 +1294,9 @@ TopologyCode::polyhedron_volume(InsertionOrderedSet<std::string> &code,
                        false);
   for_loop.insert("}\n");
   code.insert(for_loop.accumulate());
-  math_code.magnitude(code, res_name + "_vec", res_name + "_vec_mag", num_dims);
-  code.insert("double " + res_name + " = " + res_name + "_vec_mag / 6.0;\n");
+  math_code.magnitude(code, res_name + "_vec", res_name + "_vec_mag",
+num_dims); code.insert("double " + res_name + " = " + res_name + "_vec_mag
+/ 6.0;\n");
 }
 */
 
@@ -1539,10 +1548,10 @@ TopologyCode::surface_area(InsertionOrderedSet<std::string> &code) const
 //-----------------------------------------------------------------------------
 // {{{
 
-// Compacts an array (generates a contigous schema) so that only one allocation
-// is needed. Code generation will read this schema from array_code. The array
-// in args is a set_external to the original data so that we can copy it at the
-// end.
+// Compacts an array (generates a contigous schema) so that only one
+// allocation is needed. Code generation will read this schema from
+// array_code. The array in args is a set_external to the original data so we
+// can copy from it later.
 void
 pack_array(const conduit::Node &array,
            const std::string &name,
@@ -1550,7 +1559,7 @@ pack_array(const conduit::Node &array,
            ArrayCode &array_code)
 {
   args[name].set_external(array);
-  if(array.is_contiguous() /* || array is on the device */)
+  if(array.is_compact() /* || array is on the device */)
   {
     // copy the existing schema
     array_code.array_map[name] = array.schema();
@@ -1676,7 +1685,8 @@ pack_topology(const std::string &topo_name,
     // {
     //   args[topo_name + "_polyhedral_sizes"].set_external(polyhedral_sizes);
     //   args[topo_name +
-    //   "_polyhedral_offsets"].set_external(polyhedral_offsets); args[topo_name
+    //   "_polyhedral_offsets"].set_external(polyhedral_offsets);
+    //   args[topo_name
     //   + "_polyhedral_connectivity"].set_external(
     //       polyhedral_connectivity);
 
@@ -2903,8 +2913,8 @@ Kernel::generate_loop(const std::string& output, const std::string &entries_name
 // -- Jitable
 //-----------------------------------------------------------------------------
 // {{{
-// I pass in args because I want execute to generate new args and also be const
-// so it can't just update the object's args
+// I pass in args because I want execute to generate new args and also be
+// const so it can't just update the object's args
 std::string
 Jitable::generate_kernel(const int dom_idx, const conduit::Node &args) const
 {

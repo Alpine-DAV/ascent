@@ -355,7 +355,7 @@ public:
   std::unordered_map<std::string, Kernel> kernels;
   // stores entries and argument values for each domain
   conduit::Node dom_info;
-  // store the array schemas used by code generation we will copy to these
+  // Store the array schemas. Used by code generation. We will copy to these
   // schemas when we execute
   std::vector<ArrayCode> arrays;
   std::string topology;
