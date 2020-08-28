@@ -553,8 +553,8 @@ CameraSimplex::execute()
 
     // Testing specific scores
 /*
-    winning_i = 24;
-    winning_j = 12;
+    winning_i = 38;
+    winning_j = 5;
 
     Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
         	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
