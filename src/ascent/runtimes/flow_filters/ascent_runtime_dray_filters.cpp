@@ -119,6 +119,55 @@ namespace filters
 
 namespace detail
 {
+dray::PointLight default_light(dray::Camera &camera)
+{
+  dray::Vec<float32,3> look_at = camera.get_look_at();
+  dray::Vec<float32,3> pos = camera.get_pos();
+  dray::Vec<float32,3> up = camera.get_up();
+  up.normalize();
+  dray::Vec<float32,3> look = look_at - pos;
+  dray::float32 mag = look.magnitude();
+  dray::Vec<float32,3> right = cross (look, up);
+  right.normalize();
+
+  dray::Vec<float32, 3> miner_up = cross (right, look);
+  miner_up.normalize();
+  dray::Vec<float32, 3> light_pos = pos + .1f * mag * miner_up;
+  dray::PointLight light;
+  light.m_pos = light_pos;
+  return light;
+}
+
+void frame_buffer_to_node(dray::Framebuffer &fb, conduit::Node &mesh)
+{
+  mesh.reset();
+  mesh["coordsets/coords/type"] = "uniform";
+  mesh["coordsets/coords/dims/i"] = fb.width();
+  mesh["coordsets/coords/dims/j"] = fb.height();
+
+  const int size = fb.width() * fb.height();
+
+  mesh["topologies/topo/coordset"] = "coords";
+  mesh["topologies/topo/type"] = "uniform";
+
+  const std::string path = "fields/colors/";
+  mesh[path + "association"] = "vertex";
+  mesh[path + "topology"] = "topo";
+  const float *colors =  (float*)fb.colors().get_host_ptr_const();
+  mesh[path + "values"].set(colors, size*4);
+
+  mesh["fields/depth/association"] = "vertex";
+  mesh["fields/depth/topology"] = "topo";
+  const float32 *depths = fb.depths().get_host_ptr_const();
+  mesh["fields/depth/values"].set(depths, size);
+
+  conduit::Node verify_info;
+  bool ok = conduit::blueprint::mesh::verify(mesh,verify_info);
+  if(!ok)
+  {
+    verify_info.print();
+  }
+}
 
 dray::Collection boundary(dray::Collection &collection)
 {
@@ -499,8 +548,11 @@ parse_params(const conduit::Node &params,
     cycle = (*meta)["cycle"].as_int32();
   }
 
-  image_name = params["image_prefix"].as_string();
-  image_name = expand_family_name(image_name, cycle);
+  if(params.has_path("image_prefix"))
+  {
+    image_name = params["image_prefix"].as_string();
+    image_name = expand_family_name(image_name, cycle);
+  }
 }
 
 }; // namespace detail
@@ -1266,6 +1318,138 @@ DRayProject2d::execute()
     }
 
     DataObject *res =  new DataObject(output);
+    set_output<DataObject>(res);
+
+}
+
+//-----------------------------------------------------------------------------
+DRayProjectColors2d::DRayProjectColors2d()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+DRayProjectColors2d::~DRayProjectColors2d()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayProjectColors2d::declare_interface(Node &i)
+{
+    i["type_name"]   = "dray_project_colors_2d";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+DRayProjectColors2d::verify_params(const conduit::Node &params,
+                               conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+
+    res &= check_numeric("image_width",params, info, false);
+    res &= check_numeric("image_height",params, info, false);
+    res &= check_string("field",params, info, true);
+
+    res &= check_numeric("min_value",params, info, false);
+    res &= check_numeric("max_value",params, info, false);
+    res &= check_numeric("image_width",params, info, false);
+    res &= check_numeric("image_height",params, info, false);
+    res &= check_string("log_scale",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
+
+    valid_paths.push_back("image_width");
+    valid_paths.push_back("image_height");
+    valid_paths.push_back("min_value");
+    valid_paths.push_back("max_value");
+    valid_paths.push_back("log_scale");
+    valid_paths.push_back("field");
+
+    ignore_paths.push_back("camera");
+    ignore_paths.push_back("color_table");
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(params.has_path("color_table"))
+    {
+      surprises += detail::dray_color_table_surprises(params["color_table"]);
+    }
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayProjectColors2d::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("dray_project2d input must be a DataObject");
+    }
+
+    DataObject *d_input = input<DataObject>(0);
+
+    dray::Collection *dcol = d_input->as_dray_collection().get();
+
+    dray::Collection faces = detail::boundary(*dcol);
+
+    dray::Camera camera;
+    dray::ColorMap color_map("cool2warm");
+    std::string field_name;
+    std::string image_name;
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+
+    detail::parse_params(params(),
+                         &faces,
+                         meta,
+                         camera,
+                         color_map,
+                         field_name,
+                         image_name);
+
+
+    const int num_domains = faces.size();
+
+    dray::Framebuffer framebuffer (camera.get_width(), camera.get_height());
+    std::shared_ptr<dray::Surface> surface = std::make_shared<dray::Surface>(faces);
+
+    dray::Array<dray::PointLight> lights;
+    lights.resize(1);
+    dray::PointLight light = detail::default_light(camera);
+    dray::PointLight* light_ptr = lights.get_host_ptr();
+    light_ptr[0] = light;
+
+    dray::Array<dray::Ray> rays;
+    camera.create_rays (rays);
+
+    conduit::Node* image_data = new conduit::Node();
+
+    for(int i = 0; i < num_domains; ++i)
+    {
+      framebuffer.clear();
+      surface->active_domain(i);
+      surface->field(field_name);
+      dray::Array<dray::RayHit> hits = surface->nearest_hit(rays);
+      dray::Array<dray::Fragment> fragments = surface->fragments(hits);
+      surface->shade(rays, hits, fragments, lights, framebuffer);
+      conduit::Node &img = image_data->append();
+      detail::frame_buffer_to_node(framebuffer, img);
+    }
+
+    DataObject *res =  new DataObject(image_data);
     set_output<DataObject>(res);
 
 }
