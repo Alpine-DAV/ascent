@@ -83,6 +83,40 @@ namespace expressions
 
 namespace detail
 {
+
+void get_occa_mem(std::vector<Array<unsigned char>> &buffers,
+                  std::vector<occa::memory> &occa)
+{
+  occa::device &device = occa::getDevice();
+  std::cout<<"MOOOOOOOOOOOODEEEEE "<<device.mode()<<"\n";
+  const std::string mode = device.mode();
+
+  // I think the valid modes are: "Serial" "OpenMP", "CUDA:
+  const int size = buffers.size();
+  occa.resize(size);
+
+  for(size_t i = 0; i < size; ++i)
+  {
+    size_t buff_size = buffers[i].size();
+    if(mode == "Serial" || mode == "OpenMP")
+    {
+      unsigned char * ptr = buffers[i].get_host_ptr();
+      occa[i] = occa::cpu::wrapMemory(device, ptr, size * sizeof(unsigned char));
+    }
+#ifdef ASCENT_CUDA_ENABLED
+    else if(mode == "CUDA")
+    {
+      unsigned char * ptr = buffers[i].get_device_ptr();
+      occa[i] = occa::cpu::wrapMemory(device, ptr, size * sizeof(unsigned char));
+    }
+#endif
+    else
+    {
+      ASCENT_ERROR("Unknow occa mode "<<mode);
+    }
+  }
+}
+
 std::string
 indent_code(const std::string &input_code, const int num_spaces)
 {
@@ -213,11 +247,13 @@ void
 device_alloc_temporary(const std::string &array_name,
                        const conduit::Schema &dest_schema,
                        conduit::Node &args,
-                       std::vector<occa::memory> &array_memories,
+                       std::vector<Array<unsigned char>> &array_memories,
                        occa::device &device)
 {
   flow::Timer device_array_timer;
-  occa::memory mem = device.malloc(dest_schema.total_bytes_compact());
+  Array<unsigned char> mem;
+  mem.resize(dest_schema.total_bytes_compact());
+  //occa::memory mem = device.malloc(dest_schema.total_bytes_compact());
   array_memories.push_back(mem);
   if(dest_schema.number_of_children() == 0)
   {
@@ -244,7 +280,7 @@ void
 device_alloc_array(const conduit::Node &array,
                    const conduit::Schema &dest_schema,
                    conduit::Node &args,
-                   std::vector<occa::memory> &array_memories,
+                   std::vector<Array<unsigned char>> &array_memories,
                    occa::device &device)
 {
   flow::Timer array_timer;
@@ -256,9 +292,14 @@ device_alloc_array(const conduit::Node &array,
   flow::Timer device_array_timer;
   if(array.number_of_children() == 0)
   {
-    const void *start_ptr = res_array.data_ptr();
-    occa::memory mem =
-        device.malloc(res_array.total_bytes_compact(), start_ptr);
+    unsigned char *start_ptr
+      = static_cast<unsigned char*>(const_cast<void *>(res_array.data_ptr()));
+
+    Array<unsigned char> mem;
+    mem.set(start_ptr, res_array.total_bytes_compact());
+    //occa::memory mem =
+    //    device.malloc(res_array.total_bytes_compact(), start_ptr);
+
     const std::string param =
         detail::type_string(array.dtype()) + " *" + array.name();
     args[param + "/index"] = array_memories.size();
@@ -290,7 +331,12 @@ device_alloc_array(const conduit::Node &array,
         memory_regions.insert(hint, unioned_region);
       }
     }
-
+    //
+    // Matt: I feel like this is overkill, although I don't claim to know
+    //       what this code fully does. Right now, its either block copyable
+    //       or not. It should not matter if the block is in some larger region.
+    //       I am just a cave man.
+    //
     for(const std::string &component : res_array.child_names())
     {
       const conduit::Node &n_component = res_array[component];
@@ -301,8 +347,11 @@ device_alloc_array(const conduit::Node &array,
       if(!full_region_it->allocated)
       {
         full_region_it->allocated = true;
-        occa::memory mem = device.malloc(
-            full_region_it->end - full_region_it->start, full_region_it->start);
+        Array<unsigned char> mem;
+        unsigned char * data_ptr = const_cast<unsigned char*>(full_region_it->start);
+        mem.set(data_ptr, full_region_it->end - full_region_it->start);
+        //occa::memory mem = device.malloc(
+        //    full_region_it->end - full_region_it->start, full_region_it->start);
         full_region_it->index = array_memories.size();
         array_memories.push_back(mem);
       }
@@ -3273,7 +3322,6 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 
     // these are reference counted
     // need to keep the mem in scope or bad things happen
-    std::vector<occa::memory> array_memories;
     std::vector<Array<unsigned char>> array_buffers;
 
     flow::Timer array_allocation_timer;
@@ -3287,18 +3335,19 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         device_alloc_array(cur_dom_info["args/" + array.first],
                            array.second,
                            new_args,
-                           array_memories,
+                           //array_memories,
+                           array_buffers,
                            device);
       }
       else
       {
         if(array.first == "output")
         {
-          output_index = array_memories.size();
+          output_index = array_buffers.size();
         }
         // if it's not in args it doesn't point to any data so it's a temporary
         device_alloc_temporary(
-            array.first, array.second, new_args, array_memories, device);
+            array.first, array.second, new_args, array_buffers, device);
       }
     }
     // copy the non-array types to new_args
@@ -3354,6 +3403,9 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 
     // pass input arguments
     occa_kernel.clearArgs();
+    // get occa mem for devices
+    std::vector<occa::memory> array_memories;
+    detail::get_occa_mem(array_buffers, array_memories);
 
     flow::Timer push_args_timer;
     const int num_new_args = new_args.number_of_children();

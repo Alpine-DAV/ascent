@@ -149,9 +149,9 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 
   void resize (const size_t size)
   {
-    if(m_own_host)
+    if(!m_own_host)
     {
-      ASCENT_ERROR("Cannot resize zero copied array");
+      ASCENT_ERROR("Array: Cannot resize zero copied array");
     }
 
     if (size == m_size) return;
