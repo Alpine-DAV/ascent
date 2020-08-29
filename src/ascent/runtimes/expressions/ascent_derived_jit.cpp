@@ -119,32 +119,32 @@ indent_code(const std::string &input_code, const int num_spaces)
 }
 
 std::string
-type_string(const conduit::Node &n)
+type_string(const conduit::DataType &dtype)
 {
   std::string type;
-  if(n.dtype().is_float64())
+  if(dtype.is_float64())
   {
     type = "double";
   }
-  else if(n.dtype().is_float32())
+  else if(dtype.is_float32())
   {
     type = "float";
   }
-  else if(n.dtype().is_int32())
+  else if(dtype.is_int32())
   {
     type = "int";
   }
-  else if(n.dtype().is_int64())
+  else if(dtype.is_int64())
   {
     type = "long";
   }
-  else if(n.dtype().is_unsigned_integer())
+  else if(dtype.is_unsigned_integer())
   {
     type = "unsigned long";
   }
   else
   {
-    ASCENT_ERROR("JIT: unknown argument type: " << n.dtype().to_string());
+    ASCENT_ERROR("JIT: unknown argument type: " << dtype.to_string());
   }
   return type;
 }
@@ -200,10 +200,43 @@ host_realloc_array(const conduit::Node &src_array,
     // reallocate to a better schema
     dest_array.set(dest_schema);
     dest_array.update_compatible(src_array);
+
     src_array.info().print();
     std::cout << "start of realloced array" << std::endl;
     dest_array.info().print();
   }
+}
+
+// temporaries will always be one chunk of memory
+void
+device_alloc_temporary(const std::string &array_name,
+                       const conduit::Schema &dest_schema,
+                       conduit::Node &args,
+                       std::vector<occa::memory> &array_memories,
+                       occa::device &device)
+{
+  flow::Timer device_array_timer;
+  occa::memory mem = device.malloc(dest_schema.total_bytes_compact());
+  array_memories.push_back(mem);
+  if(dest_schema.number_of_children() == 0)
+  {
+    const std::string param =
+        detail::type_string(dest_schema.dtype()) + " *" + array_name;
+    args[param + "/index"] = array_memories.size() - 1;
+  }
+  else
+  {
+    for(const std::string &component : dest_schema.child_names())
+    {
+      const std::string param =
+          detail::type_string(dest_schema[component].dtype()) + " *" +
+          array_name + "_" + component;
+      args[param + "/index"] = array_memories.size() - 1;
+    }
+  }
+  std::cout << "        temporary array[" << dest_schema.total_bytes_compact()
+            << "] allocation time: " << device_array_timer.elapsed()
+            << std::endl;
 }
 
 void
@@ -225,7 +258,8 @@ device_alloc_array(const conduit::Node &array,
     const void *start_ptr = res_array.data_ptr();
     occa::memory mem =
         device.malloc(res_array.total_bytes_compact(), start_ptr);
-    const std::string param = detail::type_string(array) + " *" + array.name();
+    const std::string param =
+        detail::type_string(array.dtype()) + " *" + array.name();
     args[param + "/index"] = array_memories.size();
     array_memories.push_back(mem);
   }
@@ -239,7 +273,7 @@ device_alloc_array(const conduit::Node &array,
       const size_t size = n_component.dtype().spanned_bytes();
       MemoryRegion memory_region(start_ptr, size);
       const auto inserted = memory_regions.insert(memory_region);
-      // if not inserted union two regions
+      // if overlaps, union two regions
       if(!inserted.second)
       {
         auto hint = inserted.first;
@@ -251,7 +285,7 @@ device_alloc_array(const conduit::Node &array,
             inserted.first->end, memory_region.end, std::less<const char *>());
         MemoryRegion unioned_region(min_start, max_end);
         memory_regions.erase(inserted.first);
-        memory_regions.insert(unioned_region);
+        memory_regions.insert(hint, unioned_region);
       }
     }
 
@@ -270,8 +304,10 @@ device_alloc_array(const conduit::Node &array,
         full_region_it->index = array_memories.size();
         array_memories.push_back(mem);
       }
-      const std::string param = detail::type_string(n_component) + " *" +
-                                array.name() + "_" + component;
+      const std::string param = detail::type_string(n_component.dtype()) +
+                                " *" + array.name() + "_" + component;
+      // TODO should make a slice, push it and use that to support cases where
+      // we have multiple pointers inside one allocation
       args[param + "/index"] = full_region_it->index;
     }
   }
@@ -1622,6 +1658,57 @@ is_compact_interleaved(const conduit::Node &array)
   }
   return (max_end - min_start) == array.total_bytes_compact();
 }
+
+// num_components should be 0 if you don't want an mcarray
+void
+schemaFactory(const std::string &schema_type,
+              const conduit::DataType::TypeID type_id,
+              const size_t component_size,
+              const std::vector<std::string> &component_names,
+              conduit::Schema &out_schema)
+{
+  if(component_names.size() == 0)
+  {
+    out_schema.set(conduit::DataType(type_id, component_size));
+  }
+  else
+  {
+    if(schema_type == "contiguous")
+    {
+      for(size_t i = 0; i < component_names.size(); ++i)
+      {
+        const auto element_bytes = conduit::DataType::default_bytes(type_id);
+        out_schema[component_names[i]].set(
+            conduit::DataType(type_id,
+                              component_size,
+                              component_size * element_bytes * i,
+                              element_bytes,
+                              element_bytes,
+                              conduit::Endianness::DEFAULT_ID));
+      }
+    }
+    else if(schema_type == "interleaved")
+    {
+      for(size_t i = 0; i < component_names.size(); ++i)
+      {
+        const auto element_bytes = conduit::DataType::default_bytes(type_id);
+        out_schema[component_names[i]].set(
+            conduit::DataType(type_id,
+                              component_size,
+                              element_bytes * i,
+                              element_bytes * component_names.size(),
+                              element_bytes,
+                              conduit::Endianness::DEFAULT_ID));
+      }
+    }
+    else
+    {
+      ASCENT_ERROR("schemaFactory: Unknown schema type '" << schema_type
+                                                          << "'.");
+    }
+  }
+}
+
 // Compacts an array (generates a contigous schema) so that only one
 // allocation is needed. Code generation will read this schema from
 // array_code. The array in args is a set_external to the original data so we
@@ -1642,59 +1729,23 @@ pack_array(const conduit::Node &array,
   else
   {
     const int num_components = array.number_of_children();
-    conduit::Schema s;
-    if(array.child(0).dtype().is_float64())
+    size_t size;
+    conduit::DataType::TypeID type_id;
+    if(num_components == 0)
     {
-      if(num_components > 1)
-      {
-        for(int i = 0; i < num_components; ++i)
-        {
-          const int size = array.child(i).dtype().number_of_elements();
-          // interleaved
-          // s[array.child(i).name()].set(conduit::DataType::float64(
-          //     size,
-          //     sizeof(conduit::float64) * i,
-          //     sizeof(conduit::float64) * num_components));
-
-          // contiguous
-          s[array.child(i).name()].set(
-              conduit::DataType::float64(size,
-                                         size * sizeof(conduit::float64) * i,
-                                         sizeof(conduit::float64)));
-        }
-      }
-      else
-      {
-        const int size = array.dtype().number_of_elements();
-        s.set(conduit::DataType::c_double(size));
-      }
+      type_id = static_cast<conduit::DataType::TypeID>(array.dtype().id());
+      size = array.dtype().number_of_elements();
     }
     else
     {
-      if(num_components > 1)
-      {
-        for(int i = 0; i < num_components; ++i)
-        {
-          const int size = array.child(i).dtype().number_of_elements();
-          // interleaved
-          // s[array.child(i).name()].set(conduit::DataType::float32(
-          //     size,
-          //     sizeof(conduit::float32) * i,
-          //     sizeof(conduit::float32) * num_components));
-
-          // contiguous
-          s[array.child(i).name()].set(
-              conduit::DataType::float32(size,
-                                         size * sizeof(conduit::float32) * i,
-                                         sizeof(conduit::float32)));
-        }
-      }
-      else
-      {
-        const int size = array.dtype().number_of_elements();
-        s.set(conduit::DataType::c_float(size));
-      }
+      type_id =
+          static_cast<conduit::DataType::TypeID>(array.child(0).dtype().id());
+      size = array.child(0).dtype().number_of_elements();
     }
+
+    conduit::Schema s;
+    // TODO for now it's always contiguous
+    schemaFactory("contiguous", type_id, size, array.child_names(), s);
     array_code.array_map[name] = s;
   }
 }
@@ -2708,6 +2759,36 @@ JitableFunctions::derived_field()
   }
 }
 
+// generate a temporary field on the device, used by things like gradient which
+// have data dependencies that require the entire field to be present
+void
+JitableFunctions::temporary_field(const Kernel &field_kernel)
+{
+  // pass the value of entries for the temporary field
+  const auto entries =
+      out_jitable.dom_info.child(dom_idx)["entries"].to_int64();
+  const std::string entries_name = filter_name + "_entries";
+  out_jitable.dom_info.child(dom_idx)["args/" + entries_name] = entries;
+
+  // we will need to allocate a temporary array so make a schema for it and put
+  // it in the array map
+  const std::string tmp_field = filter_name + "_inp";
+  conduit::Schema s;
+  schemaFactory("interleaved",
+                conduit::DataType::FLOAT64_ID,
+                entries,
+                {"x", "y", "z"},
+                s);
+  // The array will have to be allocated but doesn't point to any data so we
+  // won't put it in args
+  out_jitable.arrays[dom_idx].array_map[tmp_field] = s;
+  if(not_fused)
+  {
+    out_kernel.kernel_body.insert(field_kernel.generate_loop(
+        tmp_field, out_jitable.arrays[dom_idx], filter_name + "_entries"));
+  }
+}
+
 void
 JitableFunctions::gradient(const Jitable &field_jitable,
                            const Kernel &field_kernel,
@@ -2734,17 +2815,20 @@ JitableFunctions::gradient(const Jitable &field_jitable,
       field_jitable.topology, domain, args, out_jitable.arrays[dom_idx]);
   // we need to change entries for each domain if we're doing a vertex to
   // element gradient
+  std::string my_input_field;
+  if(input_field.empty())
+  {
+    // need to generate a temporary field
+    temporary_field(field_kernel);
+    my_input_field = filter_name + "_inp";
+  }
+  else
+  {
+    my_input_field = input_field;
+  }
   if(topo->topo_type == "structured" && field_jitable.association == "vertex")
   {
     conduit::Node &n_entries = out_jitable.dom_info.child(dom_idx)["entries"];
-    // pass the old value of entries in args if it's needed
-    // (i.e. when we have to create generate a new derived field)
-    if(input_field.empty())
-    {
-      const std::string param_str = "const int " + filter_name + "_entries,\n";
-      out_jitable.dom_info.child(dom_idx)["args/" + param_str] =
-          n_entries.to_int32();
-    }
     n_entries = topo->get_num_cells();
     out_jitable.association = "element";
   }
@@ -2758,19 +2842,6 @@ JitableFunctions::gradient(const Jitable &field_jitable,
 
     // generate a new derived field if the field we're taking the gradient of
     // wasn't originally on the dataset
-    std::string my_input_field;
-    if(input_field.empty())
-    {
-      my_input_field = filter_name + "_inp";
-      out_kernel.kernel_body.insert("double " + input_field + "[" +
-                                    filter_name + "_entries];\n");
-      out_kernel.kernel_body.insert(
-          field_kernel.generate_loop(input_field, filter_name + "_entries"));
-    }
-    else
-    {
-      my_input_field = input_field;
-    }
     TopologyCode topo_code =
         TopologyCode(topo->topo_name, domain, out_jitable.arrays[dom_idx]);
     FieldCode field_code = FieldCode(my_input_field,
@@ -2827,16 +2898,10 @@ JitableFunctions::vorticity()
   }
   else
   {
-    // generate a new derived field and set field_name
     field_name = filter_name + "_inp";
-    out_kernel.kernel_body.insert("double " + field_name + "[" + filter_name +
-                                  "_entries];\n");
-    out_kernel.kernel_body.insert(
-        field_kernel.generate_loop(field_name, filter_name + "_entries"));
+    temporary_field(field_kernel);
   }
-  // it's easier to call gradient here instead of inside FieldCode because we
-  // get to reuse the logic for changing the number of entries in the case of
-  // an vertex to element gradient
+  // calling gradient here reuses the logic to update entries and association
   for(int i = 0; i < field_kernel.num_components; ++i)
   {
     gradient(field_jitable, field_kernel, field_name, i);
@@ -2951,10 +3016,12 @@ Kernel::generate_output(const std::string &output, bool declare) const
   return res;
 }
 
-// clang-format off
 std::string
-Kernel::generate_loop(const std::string& output, const std::string &entries_name) const
+Kernel::generate_loop(const std::string &output,
+                      const ArrayCode &array_code,
+                      const std::string &entries_name) const
 {
+  // clang-format off
   std::string res =
     "for (int group = 0; group < " + entries_name + "; group += 128; @outer)\n"
        "{\n"
@@ -2967,22 +3034,21 @@ Kernel::generate_loop(const std::string& output, const std::string &entries_name
               {
                 for(int i = 0; i < num_components; ++i)
                 {
-                  res += output + "[" + std::to_string(num_components) +
-                    " * item + " + std::to_string(i) + "] = " + expr +
+                  res += array_code.index(output, "item", i) + " = " + expr +
                     "[" + std::to_string(i) + "];\n";
                 }
               }
               else
               {
-                res += output + "[item] = " + expr + ";\n";
+                res += array_code.index(output, "item") + " = " + expr + ";\n";
               }
   res +=
            "}\n"
          "}\n"
        "}\n";
   return res;
+  // clang-format on
 }
-// clang-format on
 // }}}
 
 //-----------------------------------------------------------------------------
@@ -3003,24 +3069,26 @@ Jitable::generate_kernel(const int dom_idx, const conduit::Node &args) const
   {
     const conduit::Node &arg = args.child(i);
     std::string type;
-    if(arg.has_path("index"))
+    // array type was already determined in alloc_device_array
+    if(!arg.has_path("index"))
     {
-      // array type was already determined in alloc_device_array
-    }
-    else
-    {
-      type = detail::type_string(arg) + " ";
+      type = detail::type_string(arg.dtype()) + " ";
     }
     if(!first)
     {
       kernel_string += "                 ";
     }
-    kernel_string += "const " + type + arg.name() + ",\n";
+    // TODO i need a better way of figuring out what to make const
+    // i can't just check this because temporaries can't be const either
+    // if(arg.name().find("output") == args.name().npos)
+    // {
+    //   kernel_string += "const ";
+    // }
+    kernel_string += type + arg.name() + (i == num_args - 1 ? ")\n{\n" : ",\n");
     first = false;
   }
-  kernel_string += "                 double *output_ptr)\n{\n";
   kernel_string += kernel.kernel_body.accumulate();
-  kernel_string += kernel.generate_loop("output_ptr", "entries");
+  kernel_string += kernel.generate_loop("output", arrays[dom_idx], "entries");
   kernel_string += "}";
   return detail::indent_code(kernel_string, 0);
 }
@@ -3140,7 +3208,7 @@ Jitable::fuse_vars(const Jitable &from)
 // TODO for now we just put the field on the mesh when calling execute
 // should probably delete it later if it's an intermediate field
 void
-Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
+Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 {
   flow::Timer jitable_execute_timer;
   // TODO set this automatically?
@@ -3179,34 +3247,62 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
 
     const Kernel &kernel = kernels.at(cur_dom_info["kernel_type"].as_string());
 
+    // the final number of entries
+    const int entries = cur_dom_info["entries"].to_int64();
+
+    // create output array and put it in array_map
+    conduit::Schema output_schema;
+    std::vector<std::string> component_names{};
+    if(kernel.num_components > 1)
+    {
+      for(int i = 0; i < kernel.num_components; ++i)
+      {
+        component_names.push_back(std::string(1, 'x' + i));
+      }
+    }
+    schemaFactory("interleaved",
+                  conduit::DataType::FLOAT64_ID,
+                  entries,
+                  component_names,
+                  output_schema);
+    arrays[dom_idx].array_map["output"] = output_schema;
+
     // these are reference counted
     // need to keep the mem in scope or bad things happen
     std::vector<occa::memory> array_memories;
 
     flow::Timer array_allocation_timer;
     // allocate arrays
-    const int original_num_args = cur_dom_info["args"].number_of_children();
+    size_t output_index;
     conduit::Node new_args;
+    for(const auto &array : arrays[dom_idx].array_map)
+    {
+      if(cur_dom_info["args"].has_path(array.first))
+      {
+        device_alloc_array(cur_dom_info["args/" + array.first],
+                           array.second,
+                           new_args,
+                           array_memories,
+                           device);
+      }
+      else
+      {
+        if(array.first == "output")
+        {
+          output_index = array_memories.size();
+        }
+        // if it's not in args it doesn't point to any data so it's a temporary
+        device_alloc_temporary(
+            array.first, array.second, new_args, array_memories, device);
+      }
+    }
+    // copy the non-array types to new_args
+    const int original_num_args = cur_dom_info["args"].number_of_children();
     for(int i = 0; i < original_num_args; ++i)
     {
       const conduit::Node &arg = cur_dom_info["args"].child(i);
-      if(arg.number_of_children() != 0 || arg.dtype().number_of_elements() > 1)
-      {
-        try
-        {
-          device_alloc_array(arg,
-                             arrays[dom_idx].array_map.at(arg.name()),
-                             new_args,
-                             array_memories,
-                             device);
-        }
-        catch(std::out_of_range)
-        {
-          ASCENT_ERROR("JIT: Could not find the destination schema for array: '"
-                       << arg.name() << "'.");
-        }
-      }
-      else
+      if(arg.dtype().number_of_elements() == 1 &&
+         arg.number_of_children() == 0 && !arg.dtype().is_string())
       {
         new_args[arg.name()] = arg;
       }
@@ -3214,6 +3310,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
     std::cout << "      total input array allocation time: "
               << array_allocation_timer.elapsed() << std::endl;
 
+    // generate and compile the kernel
     const std::string kernel_string = generate_kernel(dom_idx, new_args);
 
     // std::cout << kernel_string << std::endl;
@@ -3282,39 +3379,18 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
     std::cout << "      push input args time: " << push_args_timer.elapsed()
               << std::endl;
 
-    // the final number of entries
-    const int entries = cur_dom_info["entries"].to_int64();
-
     conduit::Node &n_output = dom["fields/" + field_name];
     n_output["association"] = association;
     n_output["topology"] = topology;
 
     flow::Timer alloc_output_timer;
-
     conduit::float64 *output_ptr;
-    if(kernel.num_components > 1)
-    {
-      conduit::Schema s;
-      for(int i = 0; i < kernel.num_components; ++i)
-      {
-        s[std::string(1, 'x' + i)].set(conduit::DataType::float64(
-            entries,
-            sizeof(conduit::float64) * i,
-            sizeof(conduit::float64) * kernel.num_components));
-      }
-      n_output["values"].set(s);
-    }
-    else
-    {
-      n_output["values"] =
-          conduit::DataType::float64(entries * kernel.num_components);
-    }
+    n_output["values"].set(output_schema);
     output_ptr = (conduit::float64 *)n_output["values"].data_ptr();
-    occa::array<double> o_output(entries * kernel.num_components);
-
-    occa_kernel.pushArg(o_output);
-    std::cout << "      allocating output array time: "
-              << alloc_output_timer.elapsed() << std::endl;
+    // output to the host will always be contiguous
+    std::cout << "      allocating cpu output array["
+              << output_schema.total_bytes_compact()
+              << "] time: " << alloc_output_timer.elapsed() << std::endl;
 
     flow::Timer kernel_run_timer;
     occa_kernel.run();
@@ -3323,7 +3399,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name) const
 
     // copy back
     flow::Timer copy_back_timer;
-    o_output.memory().copyTo(output_ptr);
+    array_memories[output_index].copyTo(output_ptr);
     std::cout << "      copy to host time: " << copy_back_timer.elapsed()
               << std::endl;
 

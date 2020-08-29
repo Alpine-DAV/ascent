@@ -149,6 +149,7 @@ TEST(ascent_expressions, derived_expressions)
 
   // expr = "topo('mesh').cell.area";
   // eval.evaluate(expr);
+
   // expr = "topo('mesh').cell.volume";
   // eval.evaluate(expr);
 
@@ -162,65 +163,64 @@ TEST(ascent_expressions, derived_expressions)
   //        "(max(field('braid')).value - min(field('braid')).value)";
   // eval.evaluate(expr);
 
-  expr = "1 + field('braid') + 1";
-  eval.evaluate(expr);
+  // expr = "1 + field('braid') + 1";
+  // eval.evaluate(expr);
 
   // expr = "field('field') * topo('mesh').cell.volume";
   // eval.evaluate(expr, "mass");
 
-  conduit::Node m, info;
-  std::cout << "interleaved" << std::endl;
-  conduit::blueprint::mcarray::examples::xyz("interleaved", 10, m);
-  m.info(info);
-  info.print();
-  std::cout << "is_obj" << (m.child(0).dtype().id() == DataType::OBJECT_ID) << std::endl;
-  std::cout << "dtype().is_compact: " <<  m.dtype().is_compact() << std::endl;
-  std::cout << "dtype().stride: " <<  m.child(0).dtype().stride() << std::endl;
-  std::cout << "dtype().total_strided_bytes: " <<  m.total_strided_bytes() << std::endl;
-  std::cout << "dtype().strided_bytes: " <<  m.child(1).dtype().strided_bytes() << std::endl;
-  std::cout << "dtype().spanned_bytes: " <<  m.child(1).dtype().spanned_bytes() << std::endl;
-  std::cout << "child(0).data_ptr: " <<  m.child(0).data_ptr() << std::endl;
-  std::cout << "child(1).data_ptr: " <<  m.child(1).data_ptr() << std::endl;
-  std::cout << "child(2).data_ptr: " <<  m.child(2).data_ptr() << std::endl;
-  std::cout << "number_of_children: " <<  m.number_of_children() << std::endl;
-  std::cout << "is_contiguous: " <<  m.is_contiguous() << std::endl;
-  std::cout << "is_compact: " <<  m.is_compact() << std::endl;
-  m.print_detailed();
-  std::cout << "separate" << std::endl;
-  conduit::blueprint::mcarray::examples::xyz("separate", 10, m);
-  m.info(info);
-  info.print();
-  std::cout << "dtype().total_strided_bytes: " <<  m.total_strided_bytes() << std::endl;
-  std::cout << "dtype().is_compact: " <<  m.dtype().is_compact() << std::endl;
-  std::cout << "dtype().stride: " <<  m.child(0).dtype().stride() << std::endl;
-  std::cout << "dtype().strided_bytes: " <<  m.child(0).dtype().strided_bytes() << std::endl;
-  std::cout << "dtype().spanned_bytes: " <<  m.child(0).dtype().spanned_bytes() << std::endl;
-  std::cout << "child(0).data_ptr: " <<  m.child(0).data_ptr() << std::endl;
-  std::cout << "child(1).data_ptr: " <<  m.child(1).data_ptr() << std::endl;
-  std::cout << "child(2).data_ptr: " <<  m.child(2).data_ptr() << std::endl;
-  std::cout << "number_of_children: " <<  m.number_of_children() << std::endl;
-  std::cout << "is_contiguous: " <<  m.is_contiguous() << std::endl;
-  std::cout << "is_compact: " <<  m.is_compact() << std::endl;
-  m.print_detailed();
-  std::cout << "contiguous" << std::endl;
-  conduit::blueprint::mcarray::examples::xyz("contiguous", 10, m);
-  m.info(info);
-  info.print();
-  std::cout << "dtype().total_strided_bytes: " <<  m.total_strided_bytes() << std::endl;
-  std::cout << "dtype().is_compact: " <<  m.dtype().is_compact() << std::endl;
-  std::cout << "dtype().stride: " <<  m.child(0).dtype().stride() << std::endl;
-  std::cout << "dtype().strided_bytes: " <<  m.child(0).dtype().strided_bytes() << std::endl;
-  std::cout << "dtype().spanned_bytes: " <<  m.child(0).dtype().spanned_bytes() << std::endl;
-  std::cout << "child(0).data_ptr: " <<  m.child(0).data_ptr() << std::endl;
-  std::cout << "child(1).data_ptr: " <<  m.child(1).data_ptr() << std::endl;
-  std::cout << "child(2).data_ptr: " <<  m.child(2).data_ptr() << std::endl;
-  std::cout << "number_of_children: " <<  m.number_of_children() << std::endl;
-  std::cout << "is_contiguous: " <<  m.is_contiguous() << std::endl;
-  std::cout << "is_compact: " <<  m.is_compact() << std::endl;
-  m.print_detailed();
+  // conduit::Node m, info;
+  // std::cout << "interleaved" << std::endl;
+  // conduit::blueprint::mcarray::examples::xyz("interleaved", 10, m);
+  // m.info(info);
+  // info.print();
+  // std::cout << "is_obj" << (m.child(0).dtype().id() == DataType::OBJECT_ID) << std::endl;
+  // std::cout << "dtype().is_compact: " <<  m.dtype().is_compact() << std::endl;
+  // std::cout << "dtype().stride: " <<  m.child(0).dtype().stride() << std::endl;
+  // std::cout << "dtype().total_strided_bytes: " <<  m.total_strided_bytes() << std::endl;
+  // std::cout << "dtype().strided_bytes: " <<  m.child(1).dtype().strided_bytes() << std::endl;
+  // std::cout << "dtype().spanned_bytes: " <<  m.child(1).dtype().spanned_bytes() << std::endl;
+  // std::cout << "child(0).data_ptr: " <<  m.child(0).data_ptr() << std::endl;
+  // std::cout << "child(1).data_ptr: " <<  m.child(1).data_ptr() << std::endl;
+  // std::cout << "child(2).data_ptr: " <<  m.child(2).data_ptr() << std::endl;
+  // std::cout << "number_of_children: " <<  m.number_of_children() << std::endl;
+  // std::cout << "is_contiguous: " <<  m.is_contiguous() << std::endl;
+  // std::cout << "is_compact: " <<  m.is_compact() << std::endl;
+  // m.print_detailed();
+  // std::cout << "separate" << std::endl;
+  // conduit::blueprint::mcarray::examples::xyz("separate", 10, m);
+  // m.info(info);
+  // info.print();
+  // std::cout << "dtype().total_strided_bytes: " <<  m.total_strided_bytes() << std::endl;
+  // std::cout << "dtype().is_compact: " <<  m.dtype().is_compact() << std::endl;
+  // std::cout << "dtype().stride: " <<  m.child(0).dtype().stride() << std::endl;
+  // std::cout << "dtype().strided_bytes: " <<  m.child(0).dtype().strided_bytes() << std::endl;
+  // std::cout << "dtype().spanned_bytes: " <<  m.child(0).dtype().spanned_bytes() << std::endl;
+  // std::cout << "child(0).data_ptr: " <<  m.child(0).data_ptr() << std::endl;
+  // std::cout << "child(1).data_ptr: " <<  m.child(1).data_ptr() << std::endl;
+  // std::cout << "child(2).data_ptr: " <<  m.child(2).data_ptr() << std::endl;
+  // std::cout << "number_of_children: " <<  m.number_of_children() << std::endl;
+  // std::cout << "is_contiguous: " <<  m.is_contiguous() << std::endl;
+  // std::cout << "is_compact: " <<  m.is_compact() << std::endl;
+  // m.print_detailed();
+  // std::cout << "contiguous" << std::endl;
+  // conduit::blueprint::mcarray::examples::xyz("contiguous", 10, m);
+  // m.info(info);
+  // info.print();
+  // std::cout << "dtype().total_strided_bytes: " <<  m.total_strided_bytes() << std::endl;
+  // std::cout << "dtype().is_compact: " <<  m.dtype().is_compact() << std::endl;
+  // std::cout << "dtype().stride: " <<  m.child(0).dtype().stride() << std::endl;
+  // std::cout << "dtype().strided_bytes: " <<  m.child(0).dtype().strided_bytes() << std::endl;
+  // std::cout << "dtype().spanned_bytes: " <<  m.child(0).dtype().spanned_bytes() << std::endl;
+  // std::cout << "child(0).data_ptr: " <<  m.child(0).data_ptr() << std::endl;
+  // std::cout << "child(1).data_ptr: " <<  m.child(1).data_ptr() << std::endl;
+  // std::cout << "child(2).data_ptr: " <<  m.child(2).data_ptr() << std::endl;
+  // std::cout << "number_of_children: " <<  m.number_of_children() << std::endl;
+  // std::cout << "is_contiguous: " <<  m.is_contiguous() << std::endl;
+  // std::cout << "is_compact: " <<  m.is_compact() << std::endl;
+  // m.print_detailed();
 }
 
-/*
 TEST(ascent_expressions, derived_temperature)
 {
   conduit::Node replay_data, replay_opts;
@@ -250,12 +250,21 @@ TEST(ascent_expressions, derived_temperature)
 
   // expr = "gradient(field('temperature', 'c0'))";
   // eval.evaluate(expr, "temp_gradient");
-  expr = "gradient(field('uinterp', 'c0'))";
-  eval.evaluate(expr, "uinterp_gradient");
+  // expr = "gradient(field('uinterp', 'c0'))";
+  // eval.evaluate(expr, "uinterp_gradient");
   // expr = "gradient(field('braid'))";
   // eval.evaluate(expr, "braid_grad");
   // expr = "vorticity(field('uinterp', 'c0'))";
   // eval.evaluate(expr, "uinterp_vorticity");
+
+  expr = "vorticity(vector(field('uinterp', 'c0'), field('vinterp', 'c0'), field('winterp', 'c0')))";
+  eval.evaluate(expr, "velocity_vorticity");
+
+  // expr = "vector(field('uinterp', 'c0'), field('vinterp', 'c0'), field('winterp', 'c0'))";
+  // eval.evaluate(expr, "velocity");
+
+  // expr = "vorticity(field('velocity'))";
+  // eval.evaluate(expr, "velocity_vorticity");
 
   const std::string output_path = prepare_output_dir();
 
@@ -294,14 +303,13 @@ TEST(ascent_expressions, derived_temperature)
   ascent_opts["timings"] = "enabled";
   ascent_opts["runtime/type"] = "ascent";
 
-  multi_dom.print();
+  // multi_dom.print();
   ascent.open(ascent_opts);
   ascent.publish(replay_data);
   // ascent.publish(multi_dom);
   ascent.execute(actions);
   ascent.close();
 }
-*/
 
 //-----------------------------------------------------------------------------
 
