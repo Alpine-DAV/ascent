@@ -76,6 +76,7 @@ class Ascent(Package, CudaPackage):
     variant("adios", default=False, description="Build Adios filter support")
     variant("dray", default=False, description="Build with Devil Ray support")
     variant("occa", default=False, description="Build with OCCA support")
+    variant("umpire", default=True, description="Build with OCCA support")
 
     # variants for dev-tools (docs, etc)
     variant("doc", default=False, description="Build Ascent's documentation")
@@ -169,10 +170,11 @@ class Ascent(Package, CudaPackage):
     depends_on("occa@1.0.9+cuda+openmp", when="+occa+cuda+openmp")
     depends_on("occa@1.0.9+cuda~openmp", when="+occa+cuda~openmp")
 
-#    depends_on("vtk-h@0.6.0~shared",             when="~shared+vtkh")
-#    depends_on("vtk-h@0.6.0~shared~openmp",      when="~shared+vtkh~openmp")
-#    depends_on("vtk-h@0.6.0~shared+cuda",        when="~shared+vtkh+cuda")
-#    depends_on("vtk-h@0.6.0~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
+    depends_on("umpire@1.0.0+cuda+shared", when="+cuda+shared")
+    depends_on("umpire@1.0.0+cuda~shared", when="+cuda~shared")
+    depends_on("umpire@1.0.0~cuda+shared", when="~cuda+shared")
+    depends_on("umpire@1.0.0~cuda~shared", when="~cuda~shared")
+
     #######################
     # Documentation related
     #######################
@@ -523,6 +525,15 @@ class Ascent(Package, CudaPackage):
             cfg.write(cmake_cache_entry("OCCA_DIR", spec['occa'].prefix))
         else:
             cfg.write("# occa not built by spack \n")
+
+        #######################
+        # Umpire
+        #######################
+        if "+umpire" in spec:
+            cfg.write("# umpire from spack \n")
+            cfg.write(cmake_cache_entry("UMPIRE_DIR", spec['umpire'].prefix))
+        else:
+            cfg.write("# umpire not built by spack \n")
 
         #######################
         # Adios

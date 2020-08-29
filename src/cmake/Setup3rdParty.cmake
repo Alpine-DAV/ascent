@@ -125,6 +125,16 @@ else()
 message(STATUS "NOOOOOOOOOOOOOOOOOOOOOOOO OCCA")
 endif()
 
+################################
+# Setup Umpire
+################################
+if (UMPIRE_DIR)
+message(STATUS "Umpire")
+  include(cmake/thirdparty/SetupUmpire.cmake)
+else()
+message(STATUS "NOOOOOOOOOOOOOOOOOOOOOOOO UMPIRE")
+endif()
+
 
 ################################
 # Setup ADIOS
