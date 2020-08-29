@@ -93,6 +93,10 @@ set(ascent_sources
     runtimes/ascent_empty_runtime.cpp
     runtimes/ascent_expression_eval.cpp
     runtimes/ascent_transmogrifier.cpp
+    runtimes/expressions/array.cpp
+    runtimes/expressions/array_internals.cpp
+    runtimes/expressions/array_internals_base.cpp
+    runtimes/expressions/array_registry.cpp
     runtimes/expressions/ascent_blueprint_architect.cpp
     runtimes/expressions/ascent_conduit_reductions.cpp
     runtimes/expressions/ascent_derived_jit.cpp
@@ -133,6 +137,10 @@ set(ascent_headers
     runtimes/ascent_empty_runtime.hpp
     runtimes/ascent_expression_eval.hpp
     runtimes/ascent_transmogrifier.hpp
+    runtimes/expressions/array.hpp
+    runtimes/expressions/array_internals.hpp
+    runtimes/expressions/array_internals_base.hpp
+    runtimes/expressions/array_registry.hpp
     runtimes/expressions/ascent_blueprint_architect.hpp
     runtimes/expressions/ascent_conduit_reductions.hpp
     runtimes/expressions/ascent_derived_jit.hpp
@@ -302,6 +310,9 @@ if (ENABLE_SERIAL)
 
     set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
     target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
+    if(CUDA_FOUND)
+      target_compile_definitions(ascent PRIVATE ASCENT_CUDA_ENABLED)
+    endif()
 
     if(VTKM_FOUND)
         set(ascent_device_sources ${ascent_vtkh_dep_sources})
@@ -366,9 +377,9 @@ if(MPI_FOUND)
     set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi)
 
     if (ENABLE_BABELFLOW)
-	    if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-		    add_compile_definitions("BABELFLOW_DEBUG")
-	    endif()
+      if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+        add_compile_definitions("BABELFLOW_DEBUG")
+      endif()
 
       list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
@@ -421,6 +432,9 @@ if(MPI_FOUND)
 
     set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
     target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
+    if(CUDA_FOUND)
+      target_compile_definitions(ascent PRIVATE ASCENT_CUDA_ENABLED)
+    endif()
 
     if(VTKM_FOUND)
         vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_device_sources})
