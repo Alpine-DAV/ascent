@@ -325,6 +325,7 @@ public:
   std::string generate_output(const std::string &output,
                               bool output_exists) const;
   std::string generate_loop(const std::string &output,
+                            const ArrayCode &array_code,
                             const std::string &entries_name) const;
 
   InsertionOrderedSet<std::string> kernel_body;
@@ -348,7 +349,7 @@ public:
   }
 
   void fuse_vars(const Jitable &from);
-  void execute(conduit::Node &dataset, const std::string &field_name) const;
+  void execute(conduit::Node &dataset, const std::string &field_name);
   std::string generate_kernel(const int dom_idx,
                               const conduit::Node &args) const;
 
@@ -396,6 +397,7 @@ private:
                 const Kernel &field_kernel,
                 const std::string &input_field,
                 const int component);
+  void temporary_field(const Kernel &field_kernel);
 
   const conduit::Node &params;
   const std::vector<const Jitable *> &input_jitables;
