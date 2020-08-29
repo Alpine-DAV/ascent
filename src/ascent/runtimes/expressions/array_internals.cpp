@@ -10,6 +10,7 @@ namespace ascent
 namespace runtime
 {
 
+template class ArrayInternals<unsigned char>;
 template class ArrayInternals<int>;
 template class ArrayInternals<long long int>;
 template class ArrayInternals<float>;

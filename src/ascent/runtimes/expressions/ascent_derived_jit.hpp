@@ -428,8 +428,8 @@ public:
   MemoryRegion(const void *start, const size_t size);
   bool operator<(const MemoryRegion &other) const;
 
-  const char *start;
-  const char *end;
+  const unsigned char *start;
+  const unsigned char *end;
   mutable bool allocated;
   mutable size_t index;
 };

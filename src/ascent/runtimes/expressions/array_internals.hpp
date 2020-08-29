@@ -48,7 +48,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 #endif
   }
 
-  ArrayInternals (T *data, const int size)
+  ArrayInternals (T *data, const size_t size)
   : ArrayInternalsBase (),
     m_device (nullptr),
     m_host (data),
@@ -64,7 +64,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 #endif
   }
 
-  T get_value (const int i)
+  T get_value (const size_t i)
   {
     assert (i >= 0);
     assert (i < m_size);
@@ -106,7 +106,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     return val;
   }
 
-  void set(T *data, const int size)
+  void set(T *data, const size_t size)
   {
     if (m_host)
     {
@@ -121,6 +121,25 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     m_size = size;
     m_device_dirty = true;
     m_host_dirty = false;
+  }
+
+  void copy(const T *data, const size_t size)
+  {
+    if (m_host)
+    {
+      deallocate_host ();
+    }
+    if (m_device)
+    {
+      deallocate_device ();
+    }
+
+    m_size = size;
+    allocate_host ();
+    memcpy (m_host, data, sizeof (T) * m_size);
+    m_device_dirty = true;
+    m_host_dirty = true;
+    m_own_host = true;
   }
 
   size_t size () const
@@ -316,7 +335,12 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   protected:
   void deallocate_host ()
   {
-    if (m_host != nullptr && !m_own_host)
+    if(!m_own_host)
+    {
+      m_host = nullptr;
+      m_host_dirty = true;
+    }
+    else if (m_host != nullptr)
     {
       auto &rm = umpire::ResourceManager::getInstance ();
       umpire::Allocator host_allocator = rm.getAllocator ("HOST");

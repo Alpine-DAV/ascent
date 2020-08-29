@@ -22,13 +22,15 @@ template <typename T> class Array
   public:
   Array ();
   // zero copy a pointer provided by an external source
-  Array (T *data, const int size);
+  Array (T *data, const size_t size);
   ~Array ();
 
+  // copy data from this data pointer
+  void copy(const T *data, const size_t size);
   size_t size () const;
   void resize (const size_t size);
   // zero copy a pointer provided by an external source
-  void set (T *data, const int size);
+  void set (T *data, const size_t size);
   T *get_host_ptr ();
   T *get_device_ptr ();
   const T *get_host_ptr_const () const;
@@ -37,7 +39,7 @@ template <typename T> class Array
   void operator= (const Array<T> &other);
   // gets a single value and does not synch data between
   // host and device
-  T get_value (const int i) const;
+  T get_value (const size_t i) const;
   Array<T> copy ();
 
   protected:

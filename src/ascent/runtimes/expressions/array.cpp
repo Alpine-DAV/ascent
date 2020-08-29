@@ -16,12 +16,17 @@ template <typename T>
 Array<T>::Array () : m_internals (new ArrayInternals<T> ()){};
 
 template <typename T>
-Array<T>::Array (T *data, const int size)
+Array<T>::Array (T *data, const size_t size)
 : m_internals (new ArrayInternals<T> (data, size)){};
 
-template <typename T> void Array<T>::set (T *data, const int size)
+template <typename T> void Array<T>::set (T *data, const size_t size)
 {
   m_internals->set (data, size);
+};
+
+template <typename T> void Array<T>::copy (const T *data, const size_t size)
+{
+  m_internals->copy (data, size);
 };
 
 template <typename T> Array<T>::~Array ()
@@ -68,12 +73,13 @@ template <typename T> void Array<T>::summary ()
   m_internals->summary ();
 }
 
-template <typename T> T Array<T>::get_value (const int i) const
+template <typename T> T Array<T>::get_value (const size_t i) const
 {
   return m_internals->get_value (i);
 }
 
 // Type Explicit instatiations
+template class Array<unsigned char>;
 template class Array<int>;
 template class Array<long long int>;
 template class Array<float>;

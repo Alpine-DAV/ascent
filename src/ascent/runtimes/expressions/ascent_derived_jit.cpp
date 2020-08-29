@@ -51,6 +51,7 @@
 #include "ascent_derived_jit.hpp"
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_expressions_ast.hpp"
+#include "array.hpp"
 
 #include <ascent_logging.hpp>
 
@@ -155,13 +156,13 @@ type_string(const conduit::DataType &dtype)
 //-----------------------------------------------------------------------------
 //{{{
 MemoryRegion::MemoryRegion(const void *start, const void *end)
-    : start(static_cast<const char *>(start)),
-      end(static_cast<const char *>(end)), allocated(false)
+    : start(static_cast<const unsigned char *>(start)),
+      end(static_cast<const unsigned char *>(end)), allocated(false)
 {
 }
 
 MemoryRegion::MemoryRegion(const void *start, const size_t size)
-    : start(static_cast<const char *>(start)), end(this->start + size),
+    : start(static_cast<const unsigned char *>(start)), end(this->start + size),
       allocated(false)
 {
 }
@@ -278,11 +279,12 @@ device_alloc_array(const conduit::Node &array,
       {
         auto hint = inserted.first;
         hint++;
-        const char *min_start = std::min(inserted.first->start,
-                                         memory_region.start,
-                                         std::less<const char *>());
-        const char *max_end = std::max(
-            inserted.first->end, memory_region.end, std::less<const char *>());
+        const unsigned char *min_start
+          = std::min(inserted.first->start,
+                     memory_region.start,
+                     std::less<const unsigned char *>());
+        const unsigned char *max_end = std::max(
+            inserted.first->end, memory_region.end, std::less<const unsigned char *>());
         MemoryRegion unioned_region(min_start, max_end);
         memory_regions.erase(inserted.first);
         memory_regions.insert(hint, unioned_region);
@@ -1627,11 +1629,11 @@ TopologyCode::surface_area(InsertionOrderedSet<std::string> &code) const
 bool
 is_compact_interleaved(const conduit::Node &array)
 {
-  const char *min_start = nullptr;
-  const char *max_end = nullptr;
+  const unsigned char *min_start = nullptr;
+  const unsigned char *max_end = nullptr;
   if(array.number_of_children() == 0)
   {
-    min_start = static_cast<const char *>(array.data_ptr());
+    min_start = static_cast<const unsigned char *>(array.data_ptr());
     max_end = min_start + array.dtype().spanned_bytes();
   }
   else
@@ -1641,18 +1643,18 @@ is_compact_interleaved(const conduit::Node &array)
       const conduit::Node &n_component = array[component];
       if(min_start == nullptr || max_end == nullptr)
       {
-        min_start = static_cast<const char *>(n_component.data_ptr());
+        min_start = static_cast<const unsigned char *>(n_component.data_ptr());
         max_end = min_start + array.dtype().spanned_bytes();
       }
       else
       {
-        const char *new_start =
-            static_cast<const char *>(n_component.data_ptr());
-        min_start = std::min(min_start, new_start, std::less<const char *>());
+        const unsigned char *new_start =
+            static_cast<const unsigned char *>(n_component.data_ptr());
+        min_start = std::min(min_start, new_start, std::less<const unsigned char *>());
 
         max_end = std::max(max_end,
                            new_start + n_component.dtype().spanned_bytes(),
-                           std::less<const char *>());
+                           std::less<const unsigned char *>());
       }
     }
   }
@@ -3260,16 +3262,19 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         component_names.push_back(std::string(1, 'x' + i));
       }
     }
+
     schemaFactory("interleaved",
                   conduit::DataType::FLOAT64_ID,
                   entries,
                   component_names,
                   output_schema);
+
     arrays[dom_idx].array_map["output"] = output_schema;
 
     // these are reference counted
     // need to keep the mem in scope or bad things happen
     std::vector<occa::memory> array_memories;
+    std::vector<Array<unsigned char>> array_buffers;
 
     flow::Timer array_allocation_timer;
     // allocate arrays
