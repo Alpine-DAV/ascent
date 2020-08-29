@@ -21,12 +21,14 @@ template <typename T> class Array
 {
   public:
   Array ();
-  Array (const T *data, const int size);
+  // zero copy a pointer provided by an external source
+  Array (T *data, const int size);
   ~Array ();
 
   size_t size () const;
   void resize (const size_t size);
-  void set (const T *data, const int size);
+  // zero copy a pointer provided by an external source
+  void set (T *data, const int size);
   T *get_host_ptr ();
   T *get_device_ptr ();
   const T *get_host_ptr_const () const;

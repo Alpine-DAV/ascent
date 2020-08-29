@@ -16,10 +16,10 @@ template <typename T>
 Array<T>::Array () : m_internals (new ArrayInternals<T> ()){};
 
 template <typename T>
-Array<T>::Array (const T *data, const int size)
+Array<T>::Array (T *data, const int size)
 : m_internals (new ArrayInternals<T> (data, size)){};
 
-template <typename T> void Array<T>::set (const T *data, const int size)
+template <typename T> void Array<T>::set (T *data, const int size)
 {
   m_internals->set (data, size);
 };

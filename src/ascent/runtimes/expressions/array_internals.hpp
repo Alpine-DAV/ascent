@@ -7,6 +7,7 @@
 #define ASCENT_ARRAY_INTERNALS
 
 #include "array_internals_base.hpp"
+#include "ascent_logging.hpp"
 
 #include <umpire/Umpire.hpp>
 
@@ -28,11 +29,17 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   bool m_host_dirty;
   size_t m_size;
   bool m_cuda_enabled;
+  bool m_own_host;
 
   public:
   ArrayInternals ()
-  : ArrayInternalsBase (), m_device (nullptr), m_host (nullptr),
-    m_device_dirty (true), m_host_dirty (true), m_size (0)
+  : ArrayInternalsBase (),
+    m_device (nullptr),
+    m_host (nullptr),
+    m_device_dirty (true),
+    m_host_dirty (true),
+    m_size (0),
+    m_own_host(true)
   {
 #ifdef ASCENT_CUDA_ENABLED
     m_cuda_enabled = true;
@@ -41,18 +48,20 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 #endif
   }
 
-  ArrayInternals (const T *data, const int size)
-  : ArrayInternalsBase (), m_device (nullptr), m_host (nullptr),
-    m_device_dirty (true), m_host_dirty (false), m_size (size)
+  ArrayInternals (T *data, const int size)
+  : ArrayInternalsBase (),
+    m_device (nullptr),
+    m_host (data),
+    m_device_dirty (true),
+    m_host_dirty (false),
+    m_size (size),
+    m_own_host(false)
   {
 #ifdef ASCENT_CUDA_ENABLED
     m_cuda_enabled = true;
 #else
     m_cuda_enabled = false;
 #endif
-    allocate_host ();
-    // copy data in
-    memcpy (m_host, data, sizeof (T) * m_size);
   }
 
   T get_value (const int i)
@@ -97,11 +106,12 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     return val;
   }
 
-  void set (const T *data, const int size)
+  void set(T *data, const int size)
   {
     if (m_host)
     {
       deallocate_host ();
+      m_own_host = true;
     }
     if (m_device)
     {
@@ -109,10 +119,8 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     }
 
     m_size = size;
-    allocate_host ();
-    memcpy (m_host, data, sizeof (T) * m_size);
     m_device_dirty = true;
-    m_host_dirty = true;
+    m_host_dirty = false;
   }
 
   size_t size () const
@@ -122,6 +130,10 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 
   void resize (const size_t size)
   {
+    if(m_own_host)
+    {
+      ASCENT_ERROR("Cannot resize zero copied array");
+    }
 
     if (size == m_size) return;
 
@@ -304,7 +316,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   protected:
   void deallocate_host ()
   {
-    if (m_host != nullptr)
+    if (m_host != nullptr && !m_own_host)
     {
       auto &rm = umpire::ResourceManager::getInstance ();
       umpire::Allocator host_allocator = rm.getAllocator ("HOST");
@@ -317,6 +329,11 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   void allocate_host ()
   {
     if (m_size == 0) return;
+    if(!m_own_host)
+    {
+      ASCENT_ERROR("Array: cannot allocate host when zero copied");
+    }
+
     if (m_host == nullptr)
     {
       auto &rm = umpire::ResourceManager::getInstance ();
