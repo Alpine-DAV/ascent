@@ -269,9 +269,9 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   double ym = (y0 + y1) / 2.0;
   double zm = (z0 + z1) / 2.0;
 
-  c.position[0] = (  zoom*radius * (sin(theta) * cos(phi)  + xm ));
-  c.position[1] = (  zoom*radius * (sin(theta) * sin(phi)  + ym ));
-  c.position[2] = (  zoom*radius * (cos(theta)  + zm ));
+  c.position[0] = (  zoom*radius * sin(theta) * cos(phi)  + xm );
+  c.position[1] = (  zoom*radius * sin(theta) * sin(phi)  + ym );
+  c.position[2] = (  zoom*radius * cos(theta)  + zm );
   //check lookat vs middle
   //cerr << "xm ym zm : " << xm <<  " " << ym << " " << zm << endl;
   //cerr << "lookat: " << lookat[0] << " " << lookat[1] << " " << lookat[2] << endl;
