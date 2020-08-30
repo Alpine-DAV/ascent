@@ -1565,7 +1565,8 @@ calculateI2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int he
       for(int i = 0; i < num_all_triangles; i++)
       {
         float area = all_triangles[i].calculateTriArea();
-        hz += (area/real_total_area)*log((area/real_total_area));
+	if(area != 0 && real_total_area != 0)
+          hz += (area/real_total_area)*log((area/real_total_area));
       }
       viewpoint_entropy = (-1.0)*viewpoint_ratio;
       hz = (-1.0)*hz;
@@ -1624,7 +1625,8 @@ calculateI2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int he
     for(int i = 0; i < num_all_triangles; i++)
     {
       float area = all_triangles[i].calculateTriArea();
-      hz += (area/real_total_area)*log((area/real_total_area));
+      if(area != 0 && real_total_area != 0)
+        hz += (area/real_total_area)*log((area/real_total_area));
     }
     viewpoint_entropy = (-1.0)*viewpoint_ratio;
     hz = (-1.0)*hz;
