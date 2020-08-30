@@ -6,7 +6,7 @@
 #ifndef ASCENT_ARRAY_INTERNALS
 #define ASCENT_ARRAY_INTERNALS
 
-#include "array_internals_base.hpp"
+#include "ascent_array_internals_base.hpp"
 #include "ascent_logging.hpp"
 
 #include <umpire/Umpire.hpp>

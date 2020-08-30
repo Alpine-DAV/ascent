@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
 
-#include "array_internals_base.hpp"
-#include "array_registry.hpp"
+#include "ascent_array_internals_base.hpp"
+#include "ascent_array_registry.hpp"
 
 #include <algorithm>
 #include <iostream>

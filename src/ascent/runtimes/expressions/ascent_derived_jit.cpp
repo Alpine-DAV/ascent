@@ -51,7 +51,7 @@
 #include "ascent_derived_jit.hpp"
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_expressions_ast.hpp"
-#include "array.hpp"
+#include "ascent_array.hpp"
 
 #include <ascent_logging.hpp>
 

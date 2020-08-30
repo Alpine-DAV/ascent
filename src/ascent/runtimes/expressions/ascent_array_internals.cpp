@@ -3,24 +3,18 @@
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
 
-#include "array_internals_base.hpp"
-#include "array_registry.hpp"
+#include "ascent_array_internals.hpp"
 
 namespace ascent
 {
-
 namespace runtime
 {
 
-ArrayInternalsBase::ArrayInternalsBase ()
-{
-  ArrayRegistry::add_array (this);
-}
-
-ArrayInternalsBase::~ArrayInternalsBase ()
-{
-  ArrayRegistry::remove_array (this);
-}
+template class ArrayInternals<unsigned char>;
+template class ArrayInternals<int>;
+template class ArrayInternals<long long int>;
+template class ArrayInternals<float>;
+template class ArrayInternals<double>;
 
 } // namespace runtime
 } // namespace ascent

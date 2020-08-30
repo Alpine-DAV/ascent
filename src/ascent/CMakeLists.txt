@@ -93,10 +93,10 @@ set(ascent_sources
     runtimes/ascent_empty_runtime.cpp
     runtimes/ascent_expression_eval.cpp
     runtimes/ascent_transmogrifier.cpp
-    runtimes/expressions/array.cpp
-    runtimes/expressions/array_internals.cpp
-    runtimes/expressions/array_internals_base.cpp
-    runtimes/expressions/array_registry.cpp
+    runtimes/expressions/ascent_array.cpp
+    runtimes/expressions/ascent_array_internals.cpp
+    runtimes/expressions/ascent_array_internals_base.cpp
+    runtimes/expressions/ascent_array_registry.cpp
     runtimes/expressions/ascent_blueprint_architect.cpp
     runtimes/expressions/ascent_conduit_reductions.cpp
     runtimes/expressions/ascent_derived_jit.cpp
@@ -137,10 +137,10 @@ set(ascent_headers
     runtimes/ascent_empty_runtime.hpp
     runtimes/ascent_expression_eval.hpp
     runtimes/ascent_transmogrifier.hpp
-    runtimes/expressions/array.hpp
-    runtimes/expressions/array_internals.hpp
-    runtimes/expressions/array_internals_base.hpp
-    runtimes/expressions/array_registry.hpp
+    runtimes/expressions/ascent_array.hpp
+    runtimes/expressions/ascent_array_internals.hpp
+    runtimes/expressions/ascent_array_internals_base.hpp
+    runtimes/expressions/ascent_array_registry.hpp
     runtimes/expressions/ascent_blueprint_architect.hpp
     runtimes/expressions/ascent_conduit_reductions.hpp
     runtimes/expressions/ascent_derived_jit.hpp
@@ -322,8 +322,8 @@ if (ENABLE_SERIAL)
     endif()
 
     if(CUDA_FOUND)
-      set_source_files_properties(runtimes/expressions/array.cpp  PROPERTIES LANGUAGE CUDA)
-      set_source_files_properties(runtimes/expressions/array_internals.cpp  PROPERTIES LANGUAGE CUDA)
+      set_source_files_properties(runtimes/expressions/ascent_array.cpp  PROPERTIES LANGUAGE CUDA)
+      set_source_files_properties(runtimes/expressions/ascent_array_internals.cpp  PROPERTIES LANGUAGE CUDA)
     endif()
 
     # install target for serial ascent lib
