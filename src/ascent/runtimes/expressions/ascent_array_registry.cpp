@@ -38,6 +38,11 @@ void ArrayRegistry::remove_array (ArrayInternalsBase *array)
   m_arrays.remove (array);
 }
 
+void ArrayRegistry::reset_high_water_mark()
+{
+  m_high_water_mark = 0;
+}
+
 size_t ArrayRegistry::device_usage ()
 {
  return  m_device_bytes;

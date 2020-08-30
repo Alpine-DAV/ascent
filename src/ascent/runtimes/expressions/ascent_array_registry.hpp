@@ -31,6 +31,7 @@ class ArrayRegistry
   static void remove_device_bytes(size_t bytes);
   static void add_host_bytes(size_t bytes);
   static void remove_host_bytes(size_t bytes);
+  static void reset_high_water_mark();
 
   private:
   static std::list<ArrayInternalsBase *> m_arrays;
