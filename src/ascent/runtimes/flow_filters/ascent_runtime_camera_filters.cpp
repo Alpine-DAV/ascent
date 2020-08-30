@@ -1480,16 +1480,8 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
     triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
     int num_triangles = triangles.size();
 
-    //Stefan print statement
-    //cout << "Num triangles is " << num_triangles << endl;
-    //End Stefan print statement
-    
     int num_all_triangles = all_triangles.size();
 
-    //Stefan print statement
-    //cout << "Num all triangles is " << num_all_triangles << endl;
-    //End Stefan print statement
-    
     float total_area      = 0.0;
     float viewpoint_ratio = 0.0;
     for(int i = 0; i < num_all_triangles; i++)
@@ -1499,42 +1491,148 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
       total_area += area;
     }
 
-    //Stefan print statement
-    //cout << setprecision(13) << "Total area is " << total_area << endl;
-    //End Stefan print statement
-    
     for(int i = 0; i < num_triangles; i++)
     {
       float area = calcArea(triangles[i]);
 
       if(area != 0.0)
         viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
-
-      //Stefan print statement
-      
-      // at i == 4 the area is 0, and log(0) is undefined so viewpoint_ration gets stuck as nan
-      //if (i <= 6 && i >= 2) {
-      //  cout << setprecision(13) << "  Area at " << i << " is " << area << endl;
-      //  cout << setprecision(13) << "  Viewpoint ratio is " << viewpoint_ratio << endl;
-      //}
-      //End Stefan print statement
     }
-
-    //Stefan print statement
-    //cout << setprecision(13) << "Viewpoint entropy before *-1.0 is " << viewpoint_entropy << endl;
-    //End Stefan print statement
-   
-    //Stefan print statement
-    //cout << setprecision(13) << "Viewpoint ratio is " << viewpoint_ratio << endl;
-    //End Stefan print statement
 
     viewpoint_entropy = (-1.0)*viewpoint_ratio;
 
-    //Stefan print statement
-    //cout << setprecision(13) << "Viewpoint entropy at end is " << viewpoint_entropy << endl;
-    //End Stefan print statement
-
     return viewpoint_entropy;
+  #endif
+}
+
+float
+calculateI2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int height, int width, Camera camera)
+{
+  float viewpoint_entropy = 0.0;
+  float i2 = 0.0;
+  #if ASCENT_MPI_ENABLED //pass screens among all ranks
+      // Get the number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+      // Get the rank of this process
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Status status;
+    if(rank == 0)
+    {
+      int size = height*width;
+      std::vector<float> x0 = GetScalarData(*dataset, "X0", height, width);
+      std::vector<float> y0 = GetScalarData(*dataset, "Y0", height, width);
+      std::vector<float> z0 = GetScalarData(*dataset, "Z0", height, width);
+      std::vector<float> x1 = GetScalarData(*dataset, "X1", height, width);
+      std::vector<float> y1 = GetScalarData(*dataset, "Y1", height, width);
+      std::vector<float> z1 = GetScalarData(*dataset, "Z1", height, width);
+      std::vector<float> x2 = GetScalarData(*dataset, "X2", height, width);
+      std::vector<float> y2 = GetScalarData(*dataset, "Y2", height, width);
+      std::vector<float> z2 = GetScalarData(*dataset, "Z2", height, width);
+
+      std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+      for(int i = 0; i < size; i++)
+      {
+        if(x0[i] == x0[i]) //!nan
+        {
+          std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+          triangles.push_back(tri);
+        }
+      }
+      std::sort(triangles.begin(), triangles.end());
+      triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+      int num_triangles     = triangles.size();
+      int num_all_triangles = all_triangles.size();
+      float total_area      = 0.0;
+      float real_total_area = 0.0;
+      float viewpoint_ratio = 0.0;
+      float hz              = 0.0;
+      for(int i = 0; i < num_all_triangles; i++)
+      {
+        Triangle t = transformTriangle(all_triangles[i], camera, width, height);
+        float area = t.calculateTriArea();
+        total_area += area;
+	real_total_area += all_triangles[i].calculateTriArea();
+      }
+      for(int i = 0; i < num_triangles; i++)
+      {
+        float area = calcArea(triangles[i]);
+        if(area != 0.0)
+          viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
+      }
+      for(int i = 0; i < num_all_triangles; i++)
+      {
+        float area = all_triangles[i].calculateTriArea();
+        hz += (area/real_total_area)*log((area/real_total_area));
+      }
+      viewpoint_entropy = (-1.0)*viewpoint_ratio;
+      hz = (-1.0)*hz;
+
+      i2 = hz - viewpoint_entropy;
+      i2 = (-1.0)*i2;
+    }
+    MPI_Bcast(&i2, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    return i2;
+  #else
+    int size = height*width;
+
+    std::vector<float> x0 = GetScalarData(*dataset, "X0", height, width);
+    std::vector<float> y0 = GetScalarData(*dataset, "Y0", height, width);
+    std::vector<float> z0 = GetScalarData(*dataset, "Z0", height, width);
+    std::vector<float> x1 = GetScalarData(*dataset, "X1", height, width);
+    std::vector<float> y1 = GetScalarData(*dataset, "Y1", height, width);
+    std::vector<float> z1 = GetScalarData(*dataset, "Z1", height, width);
+    std::vector<float> x2 = GetScalarData(*dataset, "X2", height, width);
+    std::vector<float> y2 = GetScalarData(*dataset, "Y2", height, width);
+    std::vector<float> z2 = GetScalarData(*dataset, "Z2", height, width);
+
+    std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
+    for(int i = 0; i < size; i++)
+    {
+      if(x0[i] == x0[i]) //!nan
+      {
+        std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
+        triangles.push_back(tri);
+       }
+    }
+    std::sort(triangles.begin(), triangles.end());
+    triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+    int num_triangles = triangles.size();
+
+    int num_all_triangles = all_triangles.size();
+
+    float total_area      = 0.0;
+    float real_total_area = 0.0;
+    float hz              = 0.0;
+    float viewpoint_ratio = 0.0;
+    for(int i = 0; i < num_all_triangles; i++)
+    {
+      Triangle t = transformTriangle(all_triangles[i], camera, width, height);
+      float area = t.calculateTriArea();
+      total_area += area;
+    }
+
+    for(int i = 0; i < num_triangles; i++)
+    {
+      float area = calcArea(triangles[i]);
+
+      if(area != 0.0)
+        viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
+    }
+    for(int i = 0; i < num_all_triangles; i++)
+    {
+      float area = all_triangles[i].calculateTriArea();
+      hz += (area/real_total_area)*log((area/real_total_area));
+    }
+    viewpoint_entropy = (-1.0)*viewpoint_ratio;
+    hz = (-1.0)*hz;
+
+    i2 = hz - viewpoint_entropy;
+    i2 = (-1.0)*i2;
+
+    return i2;
   #endif
 }
 
@@ -2076,6 +2174,10 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
   {
     score = calculateViewpointEntropy(dataset, all_triangles, height, width, camera);
   }
+  else if (metric == "i2")
+  {
+    score = calculateI2(dataset, all_triangles, height, width, camera);
+  }
   else if (metric == "vkl")
   {
     score = calculateVKL(dataset, all_triangles, height, width, camera);
@@ -2273,8 +2375,10 @@ if(meta->has_path("cycle"))
     screen.triCameraInitialize();
     screen.valueInitialize();
 */
-    double winning_score = -DBL_MAX;
+    double winning_score  = -DBL_MAX;
     int    winning_sample = -1;
+    double losing_score   = DBL_MAX;
+    int    losing_sample  = -1;
     //loop through number of camera samples.
     double scanline_time = 0.;
     double metric_time   = 0.;
@@ -2350,14 +2454,20 @@ if(meta->has_path("cycle"))
         winning_score = score;
 	winning_sample = sample;
       }
+      if(losing_score > score)
+      {
+        losing_score = score;
+	losing_sample = sample;
+      }
     } //end of sample loop
     delete data;
 
     if(winning_sample == -1)
       ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
     cerr << "winning_sample " << winning_sample << " score: " << winning_score << endl;
-    Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
-    //Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
+    cerr << "losing_sample " << losing_sample << " score: " << losing_score << endl;
+   // Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
+    Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
     
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
