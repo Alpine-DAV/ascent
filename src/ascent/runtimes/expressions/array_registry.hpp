@@ -25,10 +25,12 @@ class ArrayRegistry
   static void release_device_res ();
   static size_t device_usage ();
   static size_t host_usage ();
+  static size_t high_water_mark();
   static int num_arrays ();
 
   private:
   static std::list<ArrayInternalsBase *> m_arrays;
+  static size_t m_high_water_mark;
 };
 
 } // namespace runtime

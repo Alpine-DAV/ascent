@@ -16,10 +16,13 @@ namespace runtime
 {
 
 std::list<ArrayInternalsBase *> ArrayRegistry::m_arrays;
+size_t ArrayRegistry::m_high_water_mark = 0;
 
 void ArrayRegistry::add_array (ArrayInternalsBase *array)
 {
   m_arrays.push_front (array);
+  size_t current_usage = device_usage();
+  m_high_water_mark = std::max(m_high_water_mark, current_usage);
 }
 
 void ArrayRegistry::remove_array (ArrayInternalsBase *array)
@@ -31,6 +34,9 @@ void ArrayRegistry::remove_array (ArrayInternalsBase *array)
   {
     std::cerr << "Registry: cannot remove array " << array << "\n";
   }
+
+  size_t current_usage = device_usage();
+  m_high_water_mark = std::max(m_high_water_mark, current_usage);
   m_arrays.remove (array);
 }
 
@@ -42,6 +48,11 @@ size_t ArrayRegistry::device_usage ()
     tot += (*b)->device_alloc_size ();
   }
   return tot;
+}
+
+size_t ArrayRegistry::high_water_mark()
+{
+  return m_high_water_mark;
 }
 
 size_t ArrayRegistry::host_usage ()
