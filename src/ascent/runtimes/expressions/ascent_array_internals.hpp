@@ -347,7 +347,8 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     else if (m_host != nullptr)
     {
       auto &rm = umpire::ResourceManager::getInstance ();
-      umpire::Allocator host_allocator = rm.getAllocator ("HOST");
+      const int allocator_id = ArrayRegistry::host_allocator_id();
+      umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
       host_allocator.deallocate (m_host);
       ArrayRegistry::remove_host_bytes(m_size * sizeof(T));
       m_host = nullptr;
@@ -366,7 +367,8 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     if (m_host == nullptr)
     {
       auto &rm = umpire::ResourceManager::getInstance ();
-      umpire::Allocator host_allocator = rm.getAllocator ("HOST");
+      const int allocator_id = ArrayRegistry::host_allocator_id();
+      umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
       m_host = static_cast<T *> (host_allocator.allocate (m_size * sizeof (T)));
       ArrayRegistry::add_host_bytes(m_size * sizeof(T));
     }
@@ -379,7 +381,9 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
       if (m_device != nullptr)
       {
         auto &rm = umpire::ResourceManager::getInstance ();
-        umpire::Allocator device_allocator = rm.getAllocator ("DEVICE");
+        const int allocator_id = ArrayRegistry::device_allocator_id();
+        umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
+        //umpire::Allocator device_allocator = rm.getAllocator ("DEVICE");
         device_allocator.deallocate (m_device);
         ArrayRegistry::remove_device_bytes(m_size * sizeof(T));
         m_device = nullptr;
@@ -396,7 +400,9 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
       if (m_device == nullptr)
       {
         auto &rm = umpire::ResourceManager::getInstance ();
-        umpire::Allocator device_allocator = rm.getAllocator ("DEVICE");
+        const int allocator_id = ArrayRegistry::device_allocator_id();
+        umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
+        //umpire::Allocator device_allocator = rm.getAllocator ("DEVICE");
         m_device = static_cast<T *> (device_allocator.allocate (m_size * sizeof (T)));
         ArrayRegistry::add_device_bytes(m_size * sizeof(T));
       }

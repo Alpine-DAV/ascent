@@ -49,6 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_expression_eval.hpp"
+#include "expressions/ascent_array_registry.hpp"
 #include "expressions/ascent_blueprint_architect.hpp"
 #include "expressions/ascent_derived_jit.hpp"
 #include "expressions/ascent_expression_filters.hpp"
@@ -1148,6 +1149,9 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   w.reset();
   std::cout << "total expression execution time: " << expression_timer.elapsed()
             << std::endl;
+  std::cout << "Device high water mark: "<<ArrayRegistry::high_water_mark()<<"\n";
+  std::cout << "Current Device usage "<<ArrayRegistry::device_usage()<<"\n";
+  std::cout << "Current host usage "<<ArrayRegistry::host_usage()<<"\n";
   return return_val;
 }
 
