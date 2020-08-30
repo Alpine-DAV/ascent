@@ -17,12 +17,12 @@ namespace runtime
 
 std::list<ArrayInternalsBase *> ArrayRegistry::m_arrays;
 size_t ArrayRegistry::m_high_water_mark = 0;
+size_t ArrayRegistry::m_device_bytes = 0;
+size_t ArrayRegistry::m_host_bytes = 0;
 
 void ArrayRegistry::add_array (ArrayInternalsBase *array)
 {
   m_arrays.push_front (array);
-  size_t current_usage = device_usage();
-  m_high_water_mark = std::max(m_high_water_mark, current_usage);
 }
 
 void ArrayRegistry::remove_array (ArrayInternalsBase *array)
@@ -35,19 +35,12 @@ void ArrayRegistry::remove_array (ArrayInternalsBase *array)
     std::cerr << "Registry: cannot remove array " << array << "\n";
   }
 
-  size_t current_usage = device_usage();
-  m_high_water_mark = std::max(m_high_water_mark, current_usage);
   m_arrays.remove (array);
 }
 
 size_t ArrayRegistry::device_usage ()
 {
-  size_t tot = 0;
-  for (auto b = m_arrays.begin (); b != m_arrays.end (); ++b)
-  {
-    tot += (*b)->device_alloc_size ();
-  }
-  return tot;
+ return  m_device_bytes;
 }
 
 size_t ArrayRegistry::high_water_mark()
@@ -57,12 +50,7 @@ size_t ArrayRegistry::high_water_mark()
 
 size_t ArrayRegistry::host_usage ()
 {
-  size_t tot = 0;
-  for (auto b = m_arrays.begin (); b != m_arrays.end (); ++b)
-  {
-    tot += (*b)->host_alloc_size ();
-  }
-  return tot;
+  return m_host_bytes;
 }
 
 void ArrayRegistry::release_device_res ()
@@ -71,6 +59,27 @@ void ArrayRegistry::release_device_res ()
   {
     (*b)->release_device_ptr ();
   }
+}
+
+void ArrayRegistry::add_device_bytes(size_t bytes)
+{
+  m_device_bytes += bytes;
+  m_high_water_mark = std::max(m_high_water_mark, m_device_bytes);
+}
+
+void ArrayRegistry::remove_device_bytes(size_t bytes)
+{
+  m_device_bytes -= bytes;
+}
+
+void ArrayRegistry::add_host_bytes(size_t bytes)
+{
+  m_host_bytes += bytes;
+}
+
+void ArrayRegistry::remove_host_bytes(size_t bytes)
+{
+  m_host_bytes += bytes;
 }
 
 } // namespace runtime

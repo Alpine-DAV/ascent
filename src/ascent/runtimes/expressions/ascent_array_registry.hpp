@@ -27,10 +27,16 @@ class ArrayRegistry
   static size_t host_usage ();
   static size_t high_water_mark();
   static int num_arrays ();
+  static void add_device_bytes(size_t bytes);
+  static void remove_device_bytes(size_t bytes);
+  static void add_host_bytes(size_t bytes);
+  static void remove_host_bytes(size_t bytes);
 
   private:
   static std::list<ArrayInternalsBase *> m_arrays;
   static size_t m_high_water_mark;
+  static size_t m_device_bytes;
+  static size_t m_host_bytes;
 };
 
 } // namespace runtime

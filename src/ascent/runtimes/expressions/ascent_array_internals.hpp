@@ -349,6 +349,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
       auto &rm = umpire::ResourceManager::getInstance ();
       umpire::Allocator host_allocator = rm.getAllocator ("HOST");
       host_allocator.deallocate (m_host);
+      ArrayRegistry::remove_host_bytes(m_size * sizeof(T));
       m_host = nullptr;
       m_host_dirty = true;
     }
@@ -367,6 +368,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
       auto &rm = umpire::ResourceManager::getInstance ();
       umpire::Allocator host_allocator = rm.getAllocator ("HOST");
       m_host = static_cast<T *> (host_allocator.allocate (m_size * sizeof (T)));
+      ArrayRegistry::add_host_bytes(m_size * sizeof(T));
     }
   }
 
@@ -379,6 +381,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
         auto &rm = umpire::ResourceManager::getInstance ();
         umpire::Allocator device_allocator = rm.getAllocator ("DEVICE");
         device_allocator.deallocate (m_device);
+        ArrayRegistry::remove_device_bytes(m_size * sizeof(T));
         m_device = nullptr;
         m_device_dirty = true;
       }
@@ -395,6 +398,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
         auto &rm = umpire::ResourceManager::getInstance ();
         umpire::Allocator device_allocator = rm.getAllocator ("DEVICE");
         m_device = static_cast<T *> (device_allocator.allocate (m_size * sizeof (T)));
+        ArrayRegistry::add_device_bytes(m_size * sizeof(T));
       }
     }
   }
