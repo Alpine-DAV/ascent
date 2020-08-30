@@ -685,12 +685,15 @@ GetCamera(int frame, int nframes, double radius, double* lookat, float *bounds)
   float x = (bounds[0] + bounds[1])/2;
   float y = (bounds[2] + bounds[3])/2;
   float z = (bounds[4] + bounds[5])/2;
+  
 
-  c.position[0] = zoom*radius*(points[0] + x);
-  c.position[1] = zoom*radius*(points[1] + y);
-  c.position[2] = zoom*radius*(points[2] + z);
+  c.position[0] = (zoom*radius*points[0]) + lookat[0];
+  c.position[1] = (zoom*radius*points[1]) + lookat[1];
+  c.position[2] = (zoom*radius*points[2]) + lookat[2];
 
-//cerr << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
+  cerr << "radius: " << radius << endl;
+  cerr << "lookat: " << lookat[0] << " " << lookat[1] << " " << lookat[2] << endl;
+cerr << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
     
   c.focus[0] = lookat[0];
   c.focus[1] = lookat[1];
@@ -1178,6 +1181,40 @@ void fibonacci_sphere(int i, int samples, double* points)
 
   double x = cos(phi) * r;
   double z = sin(phi) * r;
+
+
+
+/*	
+  double gr = (sqrt(5.0)+1)/2;
+  double ga = (2 - gr)*(2.0*M_PI);
+  cerr << "ga: " << ga << endl;
+  cerr << "gr: " << gr << endl;
+  double lat = asin(-1.0 + 2.0*i/(samples+1.0));
+  double lon = ga*i;
+  cerr << "lat: " << lat << endl;
+  cerr << "lon: " << lon << endl;
+  
+  double x = cos(lon)*cos(lat);
+  double y = sin(lon)*cos(lat);
+  double z = sin(lat);
+  
+  cerr << "x: " << x << endl;
+  cerr << "y: " << y << endl;
+  cerr << "z: " << z << endl;
+*/
+/*
+  double phi = acos(1 - 2*(i + .5)/samples);
+  double gr = (sqrt(5.0)+1)/2;
+  double theta = 2*M_PI*(i+.5)/gr;
+
+  double x = cos(theta)*sin(phi);
+  double y = sin(theta)*sin(phi);
+  double z = cos(phi);
+*/
+  cerr << "x: " << x << endl;
+  cerr << "y: " << y << endl;
+  cerr << "z: " << z << endl;
+  
   points[0] = x;
   points[1] = y;
   points[2] = z;
@@ -2175,7 +2212,7 @@ if(meta->has_path("cycle"))
 {
   cycle = (*meta)["cycle"].to_int32();
 }
-    cout << "=====USING CAMERA PIPELINE===== CYCLE: " << cycle << endl;
+    cerr << "=====USING CAMERA PIPELINE===== CYCLE: " << cycle << endl;
     std::string field_name = params()["field"].as_string();
     std::string metric     = params()["metric"].as_string();
 
@@ -2199,7 +2236,7 @@ if(meta->has_path("cycle"))
     vtkh::DataSet* data = AddTriangleFields(dataset);
     auto triangle_stop = high_resolution_clock::now();
     triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
-    //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
+    cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
     /*#if ASCENT_MPI_ENABLED
       cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
       cerr << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
@@ -2213,7 +2250,8 @@ if(meta->has_path("cycle"))
 	              (float)b.Y.Max, (float)b.Y.Min, 
 	              (float)b.Z.Max, (float)b.Z.Min};
     //double bounds[3] = {(double)xb, (double)yb, (double)zb};
-//    cerr << "x y z bounds " << xb << " " << yb << " " << zb << endl;
+    cerr << "x y z bounds " << xb << " " << yb << " " << zb << endl;
+
     vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
     //cerr << "radius " << radius << endl;
     //if(radius<1)
@@ -2221,6 +2259,8 @@ if(meta->has_path("cycle"))
     //vtkm::Float32 x_pos = 0., y_pos = 0., z_pos = 0.;
     vtkmCamera *camera = new vtkmCamera;
     camera->ResetToBounds(data->GetGlobalBounds());
+    cerr << "vtkm Cam" << endl;
+    camera->Print();
     vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
     double focus[3] = {(double)lookat[0],(double)lookat[1],(double)lookat[2]};
 
@@ -2316,8 +2356,8 @@ if(meta->has_path("cycle"))
     if(winning_sample == -1)
       ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
     cerr << "winning_sample " << winning_sample << " score: " << winning_score << endl;
-   // Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
-    Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
+    Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
+    //Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
     
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
