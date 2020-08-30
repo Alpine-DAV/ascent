@@ -7,6 +7,7 @@
 #define ASCENT_ARRAY_INTERNALS
 
 #include "ascent_array_internals_base.hpp"
+#include "ascent_array_registry.hpp"
 #include "ascent_logging.hpp"
 
 #include <umpire/Umpire.hpp>
@@ -46,6 +47,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 #else
     m_cuda_enabled = false;
 #endif
+    ArrayRegistry::add_array (this);
   }
 
   ArrayInternals (T *data, const size_t size)
@@ -62,6 +64,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 #else
     m_cuda_enabled = false;
 #endif
+    ArrayRegistry::add_array (this);
   }
 
   T get_value (const size_t i)
@@ -287,6 +290,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   {
     deallocate_host ();
     deallocate_device ();
+    ArrayRegistry::remove_array (this);
   }
 
   //
@@ -326,7 +330,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 
   virtual size_t host_alloc_size () override
   {
-    if (m_host == nullptr)
+    if (m_host == nullptr && m_own_host)
       return 0;
     else
       return static_cast<size_t> (sizeof (T)) * m_size;
@@ -407,6 +411,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     auto &rm = umpire::ResourceManager::getInstance ();
     rm.copy (m_device, m_host);
   }
+
 };
 
 } // namespace runtime
