@@ -320,6 +320,12 @@ if (ENABLE_SERIAL)
 
         vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
     endif()
+
+    if(CUDA_FOUND)
+      set_source_files_properties(runtimes/expressions/array.cpp  PROPERTIES LANGUAGE CUDA)
+      set_source_files_properties(runtimes/expressions/array_internals.cpp  PROPERTIES LANGUAGE CUDA)
+    endif()
+
     # install target for serial ascent lib
     install(TARGETS ascent
             EXPORT  ascent

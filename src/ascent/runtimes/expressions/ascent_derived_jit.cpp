@@ -61,6 +61,10 @@
 #include <limits>
 #include <occa.hpp>
 
+#ifdef ASCENT_CUDA_ENABLED
+#include <occa/modes/cuda/utils.hpp>
+#endif
+
 #include <flow.hpp>
 
 //-----------------------------------------------------------------------------
@@ -107,7 +111,7 @@ void get_occa_mem(std::vector<Array<unsigned char>> &buffers,
     else if(mode == "CUDA")
     {
       unsigned char * ptr = buffers[i].get_device_ptr();
-      occa[i] = occa::cpu::wrapMemory(device, ptr, size * sizeof(unsigned char));
+      occa[i] = occa::cuda::wrapMemory(device, ptr, size * sizeof(unsigned char));
     }
 #endif
     else
