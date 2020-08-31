@@ -71,6 +71,7 @@ option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
+option(ENABLE_LOGGING     "Enabe data logging"        OFF)
 
 option(ENABLE_BABELFLOW   "Enable BabelFlow runtime"  OFF)
 

@@ -114,6 +114,7 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_utils.cpp
     # utils
     utils/ascent_actions_utils.cpp
+    utils/ascent_data_logger.cpp
     utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
     utils/ascent_logging.cpp
@@ -161,6 +162,7 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_utils.hpp
     # utils
     utils/ascent_actions_utils.hpp
+    utils/ascent_data_logger.hpp
     utils/ascent_logging.hpp
     utils/ascent_file_system.hpp
     utils/ascent_block_timer.hpp
@@ -310,8 +312,13 @@ if (ENABLE_SERIAL)
 
     set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
     target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
+
     if(CUDA_FOUND)
       target_compile_definitions(ascent PRIVATE ASCENT_CUDA_ENABLED)
+    endif()
+
+    if(LOGGING_ENABLED)
+      target_compile_definitions(ascent PRIVATE ASCENT_LOGGING_ENABLED)
     endif()
 
     if(VTKM_FOUND)
@@ -438,8 +445,13 @@ if(MPI_FOUND)
 
     set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
     target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
+
+    if(ENABLE_LOGGING)
+      target_compile_definitions(ascent_mpi PRIVATE ASCENT_LOGGING_ENABLED)
+    endif()
+
     if(CUDA_FOUND)
-      target_compile_definitions(ascent PRIVATE ASCENT_CUDA_ENABLED)
+      target_compile_definitions(ascent_mpi PRIVATE ASCENT_CUDA_ENABLED)
     endif()
 
     if(VTKM_FOUND)
