@@ -414,14 +414,16 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   // synchs assumes that both arrays are allocated
   void synch_to_host ()
   {
-    auto &rm = umpire::ResourceManager::getInstance ();
-    rm.copy (m_host, m_device);
+#ifdef ASCENT_CUDA_ENABLED
+    cudaMemcpy(m_host, m_device, m_size * sizeof(T), cudaMemcpyDeviceToHost);
+#endif
   }
 
   void synch_to_device ()
   {
-    auto &rm = umpire::ResourceManager::getInstance ();
-    rm.copy (m_device, m_host);
+#ifdef ASCENT_CUDA_ENABLED
+    cudaMemcpy(m_device, m_host, m_size * sizeof(T), cudaMemcpyHostToDevice);
+#endif
   }
 
 };
