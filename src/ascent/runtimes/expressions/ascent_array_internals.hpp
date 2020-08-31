@@ -121,6 +121,8 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
       deallocate_device ();
     }
 
+    m_own_host = false;
+    m_host = data;
     m_size = size;
     m_device_dirty = true;
     m_host_dirty = false;

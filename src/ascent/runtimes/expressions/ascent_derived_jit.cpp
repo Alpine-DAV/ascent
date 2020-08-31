@@ -49,12 +49,12 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_derived_jit.hpp"
+#include "ascent_array.hpp"
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_expressions_ast.hpp"
-#include "ascent_array.hpp"
 
-#include <ascent_logging.hpp>
 #include <ascent_data_logger.hpp>
+#include <ascent_logging.hpp>
 
 #include <cmath>
 #include <cstring>
@@ -89,16 +89,17 @@ namespace expressions
 namespace detail
 {
 
-void get_occa_mem(std::vector<Array<unsigned char>> &buffers,
-                  std::vector<occa::memory> &occa)
+void
+get_occa_mem(std::vector<Array<unsigned char>> &buffers,
+             std::vector<occa::memory> &occa)
 {
   flow::Timer device_array_timer;
   occa::device &device = occa::getDevice();
-  ASCENT_DATA_ADD("occa device ",device.mode());
+  ASCENT_DATA_ADD("occa device ", device.mode());
   const std::string mode = device.mode();
 
   // I think the valid modes are: "Serial" "OpenMP", "CUDA:
-  const int size = buffers.size();
+  const size_t size = buffers.size();
   occa.resize(size);
 
   for(size_t i = 0; i < size; ++i)
@@ -106,19 +107,21 @@ void get_occa_mem(std::vector<Array<unsigned char>> &buffers,
     size_t buff_size = buffers[i].size();
     if(mode == "Serial" || mode == "OpenMP")
     {
-      unsigned char * ptr = buffers[i].get_host_ptr();
-      occa[i] = occa::cpu::wrapMemory(device, ptr, size * sizeof(unsigned char));
+      unsigned char *ptr = buffers[i].get_host_ptr();
+      occa[i] =
+          occa::cpu::wrapMemory(device, ptr, buff_size * sizeof(unsigned char));
     }
 #ifdef ASCENT_CUDA_ENABLED
     else if(mode == "CUDA")
     {
-      unsigned char * ptr = buffers[i].get_device_ptr();
-      occa[i] = occa::cuda::wrapMemory(device, ptr, size * sizeof(unsigned char));
+      unsigned char *ptr = buffers[i].get_device_ptr();
+      occa[i] = occa::cuda::wrapMemory(
+          device, ptr, buff_size * sizeof(unsigned char));
     }
 #endif
     else
     {
-      ASCENT_ERROR("Unknow occa mode "<<mode);
+      ASCENT_ERROR("Unknow occa mode " << mode);
     }
   }
 
@@ -254,13 +257,12 @@ void
 device_alloc_temporary(const std::string &array_name,
                        const conduit::Schema &dest_schema,
                        conduit::Node &args,
-                       std::vector<Array<unsigned char>> &array_memories,
-                       occa::device &device)
+                       std::vector<Array<unsigned char>> &array_memories)
 {
   flow::Timer device_array_timer;
   Array<unsigned char> mem;
   mem.resize(dest_schema.total_bytes_compact());
-  //occa::memory mem = device.malloc(dest_schema.total_bytes_compact());
+  // occa::memory mem = device.malloc(dest_schema.total_bytes_compact());
   array_memories.push_back(mem);
   if(dest_schema.number_of_children() == 0)
   {
@@ -278,16 +280,15 @@ device_alloc_temporary(const std::string &array_name,
       args[param + "/index"] = array_memories.size() - 1;
     }
   }
-  ASCENT_DATA_ADD("temp array bytes",dest_schema.total_bytes_compact());
-  ASCENT_DATA_ADD("temp allocation time",device_array_timer.elapsed());
+  ASCENT_DATA_ADD("temp array bytes", dest_schema.total_bytes_compact());
+  ASCENT_DATA_ADD("temp allocation time", device_array_timer.elapsed());
 }
 
 void
 device_alloc_array(const conduit::Node &array,
                    const conduit::Schema &dest_schema,
                    conduit::Node &args,
-                   std::vector<Array<unsigned char>> &array_memories,
-                   occa::device &device)
+                   std::vector<Array<unsigned char>> &array_memories)
 {
   flow::Timer array_timer;
   flow::Timer host_array_timer;
@@ -297,12 +298,12 @@ device_alloc_array(const conduit::Node &array,
   flow::Timer device_array_timer;
   if(array.number_of_children() == 0)
   {
-    unsigned char *start_ptr
-      = static_cast<unsigned char*>(const_cast<void *>(res_array.data_ptr()));
+    unsigned char *start_ptr =
+        static_cast<unsigned char *>(const_cast<void *>(res_array.data_ptr()));
 
     Array<unsigned char> mem;
     mem.set(start_ptr, res_array.total_bytes_compact());
-    //occa::memory mem =
+    // occa::memory mem =
     //    device.malloc(res_array.total_bytes_compact(), start_ptr);
 
     const std::string param =
@@ -325,12 +326,14 @@ device_alloc_array(const conduit::Node &array,
       {
         auto hint = inserted.first;
         hint++;
-        const unsigned char *min_start
-          = std::min(inserted.first->start,
+        const unsigned char *min_start =
+            std::min(inserted.first->start,
                      memory_region.start,
                      std::less<const unsigned char *>());
-        const unsigned char *max_end = std::max(
-            inserted.first->end, memory_region.end, std::less<const unsigned char *>());
+        const unsigned char *max_end =
+            std::max(inserted.first->end,
+                     memory_region.end,
+                     std::less<const unsigned char *>());
         MemoryRegion unioned_region(min_start, max_end);
         memory_regions.erase(inserted.first);
         memory_regions.insert(hint, unioned_region);
@@ -353,10 +356,12 @@ device_alloc_array(const conduit::Node &array,
       {
         full_region_it->allocated = true;
         Array<unsigned char> mem;
-        unsigned char * data_ptr = const_cast<unsigned char*>(full_region_it->start);
+        unsigned char *data_ptr =
+            const_cast<unsigned char *>(full_region_it->start);
         mem.set(data_ptr, full_region_it->end - full_region_it->start);
-        //occa::memory mem = device.malloc(
-        //    full_region_it->end - full_region_it->start, full_region_it->start);
+        // occa::memory mem = device.malloc(
+        //    full_region_it->end - full_region_it->start,
+        //    full_region_it->start);
         full_region_it->index = array_memories.size();
         array_memories.push_back(mem);
       }
@@ -1700,7 +1705,8 @@ is_compact_interleaved(const conduit::Node &array)
       {
         const unsigned char *new_start =
             static_cast<const unsigned char *>(n_component.data_ptr());
-        min_start = std::min(min_start, new_start, std::less<const unsigned char *>());
+        min_start =
+            std::min(min_start, new_start, std::less<const unsigned char *>());
 
         max_end = std::max(max_end,
                            new_start + n_component.dtype().spanned_bytes(),
@@ -3337,9 +3343,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         device_alloc_array(cur_dom_info["args/" + array.first],
                            array.second,
                            new_args,
-                           //array_memories,
-                           array_buffers,
-                           device);
+                           array_buffers);
       }
       else
       {
@@ -3349,7 +3353,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         }
         // if it's not in args it doesn't point to any data so it's a temporary
         device_alloc_temporary(
-            array.first, array.second, new_args, array_buffers, device);
+            array.first, array.second, new_args, array_buffers);
       }
     }
     // copy the non-array types to new_args
@@ -3363,7 +3367,8 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         new_args[arg.name()] = arg;
       }
     }
-    ASCENT_DATA_ADD("total input allocation time", array_allocation_timer.elapsed());
+    ASCENT_DATA_ADD("total input allocation time",
+                    array_allocation_timer.elapsed());
 
     // generate and compile the kernel
     const std::string kernel_string = generate_kernel(dom_idx, new_args);
@@ -3386,7 +3391,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
       {
         occa_kernel = kernel_it->second;
       }
-      ASCENT_DATA_ADD("kernal compile time",kernel_compile_timer.elapsed());
+      ASCENT_DATA_ADD("kernal compile time", kernel_compile_timer.elapsed());
     }
     catch(const occa::exception &e)
     {
@@ -3433,7 +3438,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         ASCENT_ERROR("JIT: Unknown argument type of argument: " << arg.name());
       }
     }
-    ASCENT_DATA_ADD("push_input_args",push_args_timer.elapsed());
+    ASCENT_DATA_ADD("push_input_args", push_args_timer.elapsed());
 
     conduit::Node &n_output = dom["fields/" + field_name];
     n_output["association"] = association;
@@ -3444,21 +3449,20 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     n_output["values"].set(output_schema);
     output_ptr = (conduit::float64 *)n_output["values"].data_ptr();
     // output to the host will always be contiguous
-    ASCENT_DATA_ADD("cpu output alloc",alloc_output_timer.elapsed());
-    ASCENT_DATA_ADD("cpu output bytes",output_schema.total_bytes_compact());
+    ASCENT_DATA_ADD("cpu output alloc", alloc_output_timer.elapsed());
+    ASCENT_DATA_ADD("cpu output bytes", output_schema.total_bytes_compact());
 
     flow::Timer kernel_run_timer;
     occa_kernel.run();
-    ASCENT_DATA_ADD("kernel runtime",kernel_run_timer.elapsed());
+    ASCENT_DATA_ADD("kernel runtime", kernel_run_timer.elapsed());
 
     // copy back
     flow::Timer copy_back_timer;
     array_memories[output_index].copyTo(output_ptr);
-    ASCENT_DATA_ADD("copy to host",copy_back_timer.elapsed());
+    ASCENT_DATA_ADD("copy to host", copy_back_timer.elapsed());
 
     // dom["fields/" + field_name].print();
     ASCENT_DATA_ADD("domain execute time: ", jitable_execute_timer.elapsed());
-
   }
   ASCENT_DATA_CLOSE();
 }
