@@ -827,6 +827,7 @@ TopologyCode::structured_vertices(InsertionOrderedSet<std::string> &code) const
   }
 }
 
+// TODO generate vertices array
 void
 TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
                                     const std::string &index_name) const
@@ -863,16 +864,22 @@ TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
   {
     // single shape
     // inline the for-loop
+    code.insert("int " + topo_name + "_vertices[" +
+                std::to_string(shape_size) + "];\n");
+    for(int i = 0; i < shape_size; ++i)
+    {
+      code.insert(topo_name + "_vertices[" + std::to_string(i) +
+                  "] = " + topo_name + "_connectivity[" + index_name + " * " +
+                  std::to_string(shape_size) + " + " + std::to_string(i) +
+                  "];\n");
+    }
     code.insert("double " + topo_name + "_vertex_locs[" +
                 std::to_string(shape_size) + "][" + std::to_string(num_dims) +
                 "];\n");
     for(int i = 0; i < shape_size; ++i)
     {
       vertex_xyz(code,
-                 array_code.index(topo_name + "_connectivity",
-                                  index_name + " * " +
-                                      std::to_string(shape_size) + " + " +
-                                      std::to_string(i)),
+                 array_code.index(topo_name + "_vertices", std::to_string(i)),
                  false,
                  topo_name + "_vertex_locs[" + std::to_string(i) + "]",
                  false);
@@ -2884,8 +2891,9 @@ JitableFunctions::gradient(const Jitable &field_jitable,
   {
     my_input_field = input_field;
   }
-  if(topo->topo_type == "structured" && field_jitable.association == "vertex")
+  if((topo->topo_type == "structured" || topo->topo_type == "unstructured") && field_jitable.association == "vertex")
   {
+    // this does a vertex to cell gradient so update entries
     conduit::Node &n_entries = out_jitable.dom_info.child(dom_idx)["entries"];
     n_entries = topo->get_num_cells();
     out_jitable.association = "element";
