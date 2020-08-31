@@ -317,7 +317,7 @@ if (ENABLE_SERIAL)
       target_compile_definitions(ascent PRIVATE ASCENT_CUDA_ENABLED)
     endif()
 
-    if(LOGGING_ENABLED)
+    if(ENABLE_LOGGING)
       target_compile_definitions(ascent PRIVATE ASCENT_LOGGING_ENABLED)
     endif()
 

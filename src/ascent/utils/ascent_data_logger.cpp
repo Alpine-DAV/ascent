@@ -48,8 +48,8 @@ void
 DataLogger::write_indent()
 {
 #ifdef ASCENT_LOGGING_ENABLED
-  int indent = this->CurrentBlock().m_indent;
-  bool listStart = this->CurrentBlock().m_at_list_item_start;
+  int indent = this->current_block().m_indent;
+  bool listStart = this->current_block().m_at_list_item_start;
 
   if (listStart)
   {

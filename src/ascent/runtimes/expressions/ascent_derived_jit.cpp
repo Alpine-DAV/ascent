@@ -54,6 +54,7 @@
 #include "ascent_array.hpp"
 
 #include <ascent_logging.hpp>
+#include <ascent_data_logger.hpp>
 
 #include <cmath>
 #include <cstring>
@@ -91,8 +92,9 @@ namespace detail
 void get_occa_mem(std::vector<Array<unsigned char>> &buffers,
                   std::vector<occa::memory> &occa)
 {
+  flow::Timer device_array_timer;
   occa::device &device = occa::getDevice();
-  std::cout<<"MOOOOOOOOOOOODEEEEE "<<device.mode()<<"\n";
+  ASCENT_DATA_ADD("occa device ",device.mode());
   const std::string mode = device.mode();
 
   // I think the valid modes are: "Serial" "OpenMP", "CUDA:
@@ -119,6 +121,8 @@ void get_occa_mem(std::vector<Array<unsigned char>> &buffers,
       ASCENT_ERROR("Unknow occa mode "<<mode);
     }
   }
+
+  ASCENT_DATA_ADD("copy to device", device_array_timer.elapsed());
 }
 
 std::string
@@ -241,7 +245,6 @@ host_realloc_array(const conduit::Node &src_array,
     dest_array.update_compatible(src_array);
 
     src_array.info().print();
-    std::cout << "start of realloced array" << std::endl;
     dest_array.info().print();
   }
 }
@@ -275,9 +278,8 @@ device_alloc_temporary(const std::string &array_name,
       args[param + "/index"] = array_memories.size() - 1;
     }
   }
-  std::cout << "        temporary array[" << dest_schema.total_bytes_compact()
-            << "] allocation time: " << device_array_timer.elapsed()
-            << std::endl;
+  ASCENT_DATA_ADD("temp array bytes",dest_schema.total_bytes_compact());
+  ASCENT_DATA_ADD("temp allocation time",device_array_timer.elapsed());
 }
 
 void
@@ -291,8 +293,7 @@ device_alloc_array(const conduit::Node &array,
   flow::Timer host_array_timer;
   conduit::Node res_array;
   host_realloc_array(array, dest_schema, res_array);
-  std::cout << "          host array reallocation time: "
-            << host_array_timer.elapsed() << std::endl;
+  ASCENT_DATA_ADD("host array reallocation time", host_array_timer.elapsed());
   flow::Timer device_array_timer;
   if(array.number_of_children() == 0)
   {
@@ -366,10 +367,6 @@ device_alloc_array(const conduit::Node &array,
       args[param + "/index"] = full_region_it->index;
     }
   }
-  std::cout << "          copy to device time: " << device_array_timer.elapsed()
-            << std::endl;
-  std::cout << "        array[" << array.total_bytes_compact()
-            << "] allocation time: " << array_timer.elapsed() << std::endl;
 }
 //}}}
 
@@ -3265,7 +3262,7 @@ Jitable::fuse_vars(const Jitable &from)
 void
 Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 {
-  flow::Timer jitable_execute_timer;
+  ASCENT_DATA_OPEN("jitable_execute");
   // TODO set this automatically?
   // occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 1");
   static bool device_set = false;
@@ -3296,6 +3293,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
   const int num_domains = dataset.number_of_children();
   for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
   {
+    flow::Timer jitable_execute_timer;
     conduit::Node &dom = dataset.child(dom_idx);
 
     const conduit::Node &cur_dom_info = dom_info.child(dom_idx);
@@ -3365,8 +3363,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         new_args[arg.name()] = arg;
       }
     }
-    std::cout << "      total input array allocation time: "
-              << array_allocation_timer.elapsed() << std::endl;
+    ASCENT_DATA_ADD("total input allocation time", array_allocation_timer.elapsed());
 
     // generate and compile the kernel
     const std::string kernel_string = generate_kernel(dom_idx, new_args);
@@ -3389,8 +3386,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
       {
         occa_kernel = kernel_it->second;
       }
-      std::cout << "      kernel compile time: "
-                << kernel_compile_timer.elapsed() << std::endl;
+      ASCENT_DATA_ADD("kernal compile time",kernel_compile_timer.elapsed());
     }
     catch(const occa::exception &e)
     {
@@ -3437,8 +3433,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         ASCENT_ERROR("JIT: Unknown argument type of argument: " << arg.name());
       }
     }
-    std::cout << "      push input args time: " << push_args_timer.elapsed()
-              << std::endl;
+    ASCENT_DATA_ADD("push_input_args",push_args_timer.elapsed());
 
     conduit::Node &n_output = dom["fields/" + field_name];
     n_output["association"] = association;
@@ -3449,25 +3444,23 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     n_output["values"].set(output_schema);
     output_ptr = (conduit::float64 *)n_output["values"].data_ptr();
     // output to the host will always be contiguous
-    std::cout << "      allocating cpu output array["
-              << output_schema.total_bytes_compact()
-              << "] time: " << alloc_output_timer.elapsed() << std::endl;
+    ASCENT_DATA_ADD("cpu output alloc",alloc_output_timer.elapsed());
+    ASCENT_DATA_ADD("cpu output bytes",output_schema.total_bytes_compact());
 
     flow::Timer kernel_run_timer;
     occa_kernel.run();
-    std::cout << "      kernel run time: " << kernel_run_timer.elapsed()
-              << std::endl;
+    ASCENT_DATA_ADD("kernel runtime",kernel_run_timer.elapsed());
 
     // copy back
     flow::Timer copy_back_timer;
     array_memories[output_index].copyTo(output_ptr);
-    std::cout << "      copy to host time: " << copy_back_timer.elapsed()
-              << std::endl;
+    ASCENT_DATA_ADD("copy to host",copy_back_timer.elapsed());
 
     // dom["fields/" + field_name].print();
-    std::cout << "    Jitable::execute time: "
-              << jitable_execute_timer.elapsed() << std::endl;
+    ASCENT_DATA_ADD("domain execute time: ", jitable_execute_timer.elapsed());
+
   }
+  ASCENT_DATA_CLOSE();
 }
 // }}}
 //-----------------------------------------------------------------------------

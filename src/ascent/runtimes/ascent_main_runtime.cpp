@@ -76,6 +76,7 @@
 #include <expressions/ascent_blueprint_architect.hpp>
 #include <ascent_transmogrifier.hpp>
 #include <ascent_data_object.hpp>
+#include <ascent_data_logger.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkm/cont/Error.h>
@@ -180,6 +181,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
     MPI_Comm_rank(comm,&m_rank);
     InfoHandler::m_rank = m_rank;
+    DataLogger::instance()->rank(m_rank);
 #else  // non mpi version
     if(options.has_child("mpi_comm"))
     {

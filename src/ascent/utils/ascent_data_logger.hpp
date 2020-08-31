@@ -58,9 +58,9 @@ protected:
   int m_rank;
 };
 
-#define ASCENT_DATA_OPEN(key) vtkh::DataLogger::instance()->open_entry(key);
-#define ASCENT_DATA_CLOSE() vtkh::DataLogger::instance()->close_entry();
-#define ASCENT_DATA_ADD(key,value) vtkh::DataLogger::instance()->add_data(key, value);
+#define ASCENT_DATA_OPEN(key) ascent::DataLogger::instance()->open_entry(key);
+#define ASCENT_DATA_CLOSE() ascent::DataLogger::instance()->close_entry();
+#define ASCENT_DATA_ADD(key,value) ascent::DataLogger::instance()->add_data(key, value);
 
 }; // namespace ascent
 

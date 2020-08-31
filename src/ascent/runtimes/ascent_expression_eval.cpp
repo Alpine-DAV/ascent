@@ -56,6 +56,7 @@
 #include "expressions/ascent_expressions_ast.hpp"
 #include "expressions/ascent_expressions_parser.hpp"
 #include "expressions/ascent_expressions_tokens.hpp"
+#include "ascent_data_logger.hpp"
 
 #include <ctime>
 #include <flow_timer.hpp>
@@ -1013,7 +1014,8 @@ initialize_objects()
 conduit::Node
 ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 {
-  std::cout << "\n\nexpression: '" << expr << "'" << std::endl;
+  ASCENT_DATA_OPEN("expression_eval");
+  ASCENT_DATA_ADD("expression",expr);
   flow::Timer expression_timer;
   if(expr_name == "")
   {
@@ -1072,11 +1074,10 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
       root["type"] = "field";
     }
     // w.graph().save_dot_html("ascent_expressions_graph.html");
-    std::cout << "  build_graph time: " << build_graph_timer.elapsed()
-              << std::endl;
+    ASCENT_DATA_ADD("build_graph time: ",build_graph_timer.elapsed());
     flow::Timer execute_timer;
     w.execute();
-    std::cout << "  execute time: " << execute_timer.elapsed() << std::endl;
+    ASCENT_DATA_ADD("execute time",execute_timer.elapsed());
   }
   catch(std::exception &e)
   {
@@ -1147,11 +1148,10 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   delete expression;
   w.reset();
-  std::cout << "total expression execution time: " << expression_timer.elapsed()
-            << std::endl;
-  std::cout << "Device high water mark: "<<ArrayRegistry::high_water_mark()<<"\n";
-  std::cout << "Current Device usage "<<ArrayRegistry::device_usage()<<"\n";
-  std::cout << "Current host usage "<<ArrayRegistry::host_usage()<<"\n";
+  ASCENT_DATA_ADD("Device high water mark: ",ArrayRegistry::high_water_mark());
+  ASCENT_DATA_ADD("Current Device usage ",ArrayRegistry::device_usage());
+  ASCENT_DATA_ADD("Current host usage ",ArrayRegistry::host_usage());
+  ASCENT_DATA_CLOSE();
   return return_val;
 }
 
