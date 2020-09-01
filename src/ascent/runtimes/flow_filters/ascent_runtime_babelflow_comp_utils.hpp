@@ -157,9 +157,12 @@ public:
                   MPI_Comm mpi_comm,
                   const std::vector<uint32_t>& radix_v);
   virtual ~BabelCompRadixK();
+  
+  virtual void InitRadixKGraph();
+  virtual void InitGatherGraph();
   virtual void Initialize() override;
-
-private:
+  
+protected:
   std::vector<uint32_t> m_Radices;
   
   BabelFlow::SingleTaskGraph m_preProcTaskGr;
