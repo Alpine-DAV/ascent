@@ -269,9 +269,9 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   double ym = (y0 + y1) / 2.0;
   double zm = (z0 + z1) / 2.0;
 
-  c.position[0] = (  zoom*radius * sin(theta) * cos(phi)  + xm );
-  c.position[1] = (  zoom*radius * sin(theta) * sin(phi)  + ym );
-  c.position[2] = (  zoom*radius * cos(theta)  + zm );
+  c.position[0] = (  zoom*3*radius * sin(theta) * cos(phi)  + xm );
+  c.position[1] = (  zoom*3*radius * sin(theta) * sin(phi)  + ym );
+  c.position[2] = (  zoom*3*radius * cos(theta)  + zm );
   //check lookat vs middle
   //cerr << "xm ym zm : " << xm <<  " " << ym << " " << zm << endl;
   //cerr << "lookat: " << lookat[0] << " " << lookat[1] << " " << lookat[2] << endl;
@@ -467,12 +467,12 @@ CameraSimplex::execute()
     int losing_j = -1;
 
     // New theta and phi camera code
-    int numTheta = 100;
-    int numPhi = 100;
+    int numTheta = 5;
+    int numPhi = 5;
 
     cout << "Gathering data for metric: " << metric.c_str() << endl;
 
-///* Testing stuff so commenting out main loop
+/* Testing stuff so commenting out main loop
 
     // File stuff
     FILE *datafile;
@@ -546,15 +546,15 @@ CameraSimplex::execute()
 
     fclose(datafile);
 
-//*/
+*/
 
 
     /*================ End Scalar Renderer  ======================*/
 
     // Testing specific scores
-/*
-    winning_i = 30;
-    winning_j = 12;
+///*
+    winning_i = 2;
+    winning_j = 1;
 
     Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
         	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
@@ -577,7 +577,7 @@ CameraSimplex::execute()
 		       triangles, height, width, cam);
 
     cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl << endl;
-*/
+//*/
     // Testing specific Scores
 
     Camera best_c = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
