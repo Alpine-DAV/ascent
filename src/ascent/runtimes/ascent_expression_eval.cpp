@@ -1074,7 +1074,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
       root["type"] = "field";
     }
     // w.graph().save_dot_html("ascent_expressions_graph.html");
-    ASCENT_DATA_ADD("build_graph time: ",build_graph_timer.elapsed());
+    ASCENT_DATA_ADD("build_graph time",build_graph_timer.elapsed());
     flow::Timer execute_timer;
     w.execute();
     ASCENT_DATA_ADD("execute time",execute_timer.elapsed());
@@ -1148,7 +1148,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   delete expression;
   w.reset();
-  ASCENT_DATA_ADD("Device high water mark: ",ArrayRegistry::high_water_mark());
+  ASCENT_DATA_ADD("Device high water mark",ArrayRegistry::high_water_mark());
   ASCENT_DATA_ADD("Current Device usage ",ArrayRegistry::device_usage());
   ASCENT_DATA_ADD("Current host usage ",ArrayRegistry::host_usage());
   ASCENT_DATA_CLOSE();
