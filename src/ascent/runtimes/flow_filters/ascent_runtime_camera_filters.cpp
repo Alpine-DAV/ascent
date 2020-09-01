@@ -691,9 +691,9 @@ GetCamera(int frame, int nframes, double radius, double* lookat, float *bounds)
   c.position[1] = (zoom*radius*points[1]) + lookat[1];
   c.position[2] = (zoom*radius*points[2]) + lookat[2];
 
-  cerr << "radius: " << radius << endl;
-  cerr << "lookat: " << lookat[0] << " " << lookat[1] << " " << lookat[2] << endl;
-cerr << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
+  //cerr << "radius: " << radius << endl;
+  //cerr << "lookat: " << lookat[0] << " " << lookat[1] << " " << lookat[2] << endl;
+  //cerr << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
     
   c.focus[0] = lookat[0];
   c.focus[1] = lookat[1];
@@ -1210,10 +1210,11 @@ void fibonacci_sphere(int i, int samples, double* points)
   double x = cos(theta)*sin(phi);
   double y = sin(theta)*sin(phi);
   double z = cos(phi);
-*/
+
   cerr << "x: " << x << endl;
   cerr << "y: " << y << endl;
   cerr << "z: " << z << endl;
+*/
   
   points[0] = x;
   points[1] = y;
@@ -1347,7 +1348,7 @@ calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &all_tria
       visibility_ratio = projected_area/total_area;
     }
     MPI_Bcast(&visibility_ratio, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    cerr << "visibility_ratio " << visibility_ratio << endl;
+    //cerr << "visibility_ratio " << visibility_ratio << endl;
     return visibility_ratio;
   #else
     int size = height*width;
@@ -1569,7 +1570,10 @@ calculateI2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int he
           hz += (area/real_total_area)*log((area/real_total_area));
       }
       viewpoint_entropy = (-1.0)*viewpoint_ratio;
+
       hz = (-1.0)*hz;
+      cerr << "viewpiont ent: " << viewpoint_entropy;
+      cerr << "hz: " << hz << endl;
 
       i2 = hz - viewpoint_entropy;
       i2 = (-1.0)*i2;
@@ -1702,7 +1706,7 @@ calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int h
       }
     }
     MPI_Bcast(&vkl, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    cerr << "vkl " << vkl << endl;
+    //cerr << "vkl " << vkl << endl;
     return (-1.0)*vkl;
   #else
     int size = height*width;
@@ -1817,8 +1821,10 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width)
       std::vector<float> depth = GetScalarData(*dataset, "depth", height, width);
       std::vector<float> depth_data;
       for(int i = 0; i < size; i++)
-        if(depth[i] == depth[i] && depth[i] <= 1)
+        if(depth[i] == depth[i] && depth[i] <= 1000)
+	{
           depth_data.push_back(depth[i]);
+	}
           //depth_data[i] = -FLT_MAX;
       float depth_array[depth_data.size()];
       std::copy(depth_data.begin(), depth_data.end(), depth_array);
@@ -1831,8 +1837,10 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width)
     std::vector<float> depth = GetScalarData(*dataset, "depth", height, width);
     std::vector<float> depth_data;
     for(int i = 0; i < size; i++)
-      if(depth[i] == depth[i] && depth[i] <= 1)
+      if(depth[i] == depth[i] && depth[i] <= 1000)
+      {
         depth_data.push_back(depth[i]);
+      }
         //depth_data[i] = -FLT_MAX;
     float depth_array[depth_data.size()];
     std::copy(depth_data.begin(), depth_data.end(), depth_array);
@@ -2034,8 +2042,8 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, float total_triangles, int 
 
       float pixel_ratio = projected_area/size;
       float triangle_ratio = num_triangles/total_triangles;
-      cerr << "pixel_ratio: " << pixel_ratio << endl;
-      cerr << "triangle_ratio: " << triangle_ratio << endl;
+      //cerr << "pixel_ratio: " << pixel_ratio << endl;
+      //cerr << "triangle_ratio: " << triangle_ratio << endl;
       pb_score = pixel_ratio + triangle_ratio;
     }
     MPI_Bcast(&pb_score, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -2097,8 +2105,12 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
       std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
       for(int i = 0; i < size; i++)
         if(depth_data[i] == depth_data[i])
-          if(depth < depth_data[i] && depth_data[i] <= 1)
+	{
+          if(depth < depth_data[i] && depth_data[i] <= 1000)
+	  {
             depth = depth_data[i];
+	  }
+	}
     }
     MPI_Bcast(&depth, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
   #else
@@ -2106,7 +2118,7 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
     std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
     for(int i = 0; i < size; i++)
       if(depth_data[i] == depth_data[i])
-        if(depth < depth_data[i] && depth_data[i] <= 1)
+        if(depth < depth_data[i] && depth_data[i] <= 1000)
           depth = depth_data[i];
   #endif
   return depth;
@@ -2338,9 +2350,10 @@ if(meta->has_path("cycle"))
     std::vector<Triangle> triangles = GetTriangles(dataset);
     float total_triangles = (float) triangles.size();
     vtkh::DataSet* data = AddTriangleFields(dataset);
+    //data->PrintSummary(cerr);
     auto triangle_stop = high_resolution_clock::now();
     triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
-    cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
+    //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
     /*#if ASCENT_MPI_ENABLED
       cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
       cerr << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
@@ -2354,7 +2367,7 @@ if(meta->has_path("cycle"))
 	              (float)b.Y.Max, (float)b.Y.Min, 
 	              (float)b.Z.Max, (float)b.Z.Min};
     //double bounds[3] = {(double)xb, (double)yb, (double)zb};
-    cerr << "x y z bounds " << xb << " " << yb << " " << zb << endl;
+    //cerr << "x y z bounds " << xb << " " << yb << " " << zb << endl;
 
     vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
     //cerr << "radius " << radius << endl;
@@ -2363,8 +2376,8 @@ if(meta->has_path("cycle"))
     //vtkm::Float32 x_pos = 0., y_pos = 0., z_pos = 0.;
     vtkmCamera *camera = new vtkmCamera;
     camera->ResetToBounds(data->GetGlobalBounds());
-    cerr << "vtkm Cam" << endl;
-    camera->Print();
+    //cerr << "vtkm Cam" << endl;
+    //camera->Print();
     vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
     double focus[3] = {(double)lookat[0],(double)lookat[1],(double)lookat[2]};
 
@@ -2466,9 +2479,10 @@ if(meta->has_path("cycle"))
 
     if(winning_sample == -1)
       ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
-    cerr << "winning_sample " << winning_sample << " score: " << winning_score << endl;
-    cerr << "losing_sample " << losing_sample << " score: " << losing_score << endl;
+    cerr << metric << " winning_sample " << winning_sample << " score: " << winning_score << endl;
+    cerr << metric << " losing_sample " << losing_sample << " score: " << losing_score << endl;
    // Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
+    //Camera best_c = GetCamera(losing_sample, samples, radius, focus, bounds);
     Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
     
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
