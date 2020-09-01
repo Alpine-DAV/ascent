@@ -258,7 +258,7 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
 	       	int thetaPos, int numTheta, int phiPos, int numPhi, double *lookat)
 {
   Camera c;
-  double zoom = 1.0;
+  double zoom = 3.0;
   c.near = zoom/20;
   c.far = zoom*25;
   c.angle = M_PI/6;
@@ -467,8 +467,8 @@ CameraSimplex::execute()
     int losing_j = -1;
 
     // New theta and phi camera code
-    int numTheta = 100;
-    int numPhi = 100;
+    int numTheta = 5;
+    int numPhi = 5;
 
     cout << "Gathering data for metric: " << metric.c_str() << endl;
 
@@ -579,6 +579,22 @@ CameraSimplex::execute()
     cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl << endl;
 */
     // Testing specific Scores
+
+     conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+
+    int cycle = -1;
+
+    if (meta->has_path("cycle")) {
+      cycle = (*meta)["cycle"].to_int32();
+    }
+
+    int cycle_i = cycle / 5;
+    int cycle_j = cycle % 5;
+
+    cout << "  cycle is (" << cycle_i << ", " << cycle_j << ")" << endl;
+
+    winning_i = cycle_i;
+    winning_j = cycle_j;
 
     Camera best_c = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
 		       	        radius, winning_i, numTheta, winning_j, numPhi, focus);
