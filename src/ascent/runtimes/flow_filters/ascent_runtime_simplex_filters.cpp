@@ -555,6 +555,9 @@ CameraSimplex::execute()
 ///*
     winning_i = 2;
     winning_j = 1;
+/*
+    winning_i = 68;
+    winning_j = 63;
 
     Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
         	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
