@@ -258,7 +258,7 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
 	       	int thetaPos, int numTheta, int phiPos, int numPhi, double *lookat)
 {
   Camera c;
-  double zoom = 3.0;
+  double zoom = 1.0;
   c.near = zoom/20;
   c.far = zoom*25;
   c.angle = M_PI/6;
@@ -275,6 +275,7 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   //check lookat vs middle
   //cerr << "xm ym zm : " << xm <<  " " << ym << " " << zm << endl;
   //cerr << "lookat: " << lookat[0] << " " << lookat[1] << " " << lookat[2] << endl;
+  //cerr << "position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
   c.focus[0] = lookat[0];
   c.focus[1] = lookat[1];
   c.focus[2] = lookat[2];
@@ -467,12 +468,12 @@ CameraSimplex::execute()
     int losing_j = -1;
 
     // New theta and phi camera code
-    int numTheta = 5;
-    int numPhi = 5;
+    int numTheta = 100;
+    int numPhi = 100;
 
     cout << "Gathering data for metric: " << metric.c_str() << endl;
 
-/* Testing stuff so commenting out main loop
+///* Testing stuff so commenting out main loop
 
     // File stuff
     FILE *datafile;
@@ -546,18 +547,15 @@ CameraSimplex::execute()
 
     fclose(datafile);
 
-*/
+//*/
 
 
     /*================ End Scalar Renderer  ======================*/
 
+/* 
     // Testing specific scores
-///*
-    winning_i = 2;
-    winning_j = 1;
-/*
-    winning_i = 68;
-    winning_j = 63;
+    winning_i = 54;
+    winning_j = 27;
 
     Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
         	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
@@ -580,10 +578,12 @@ CameraSimplex::execute()
 		       triangles, height, width, cam);
 
     cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl << endl;
-//*/
-    // Testing specific Scores
+*/
 
-     conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+
+/*
+    // Getting all pictures	
+    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
 
     int cycle = -1;
 
@@ -591,13 +591,14 @@ CameraSimplex::execute()
       cycle = (*meta)["cycle"].to_int32();
     }
 
-    int cycle_i = cycle / 5;
-    int cycle_j = cycle % 5;
+    int cycle_i = cycle / 10;
+    int cycle_j = cycle % 10;
 
     cout << "  cycle is (" << cycle_i << ", " << cycle_j << ")" << endl;
 
     winning_i = cycle_i;
     winning_j = cycle_j;
+*/
 
     Camera best_c = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
 		       	        radius, winning_i, numTheta, winning_j, numPhi, focus);
