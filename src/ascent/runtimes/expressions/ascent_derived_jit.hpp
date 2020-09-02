@@ -53,11 +53,10 @@
 
 #include <ascent.hpp>
 #include <conduit.hpp>
+#include <flow.hpp>
 #include <unordered_map>
 #include <unordered_set>
-// TODO maybe move Topology class into its own file
 // Matt: there is a lot of code that needs its own file
-#include "ascent_blueprint_architect.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -413,15 +412,6 @@ private:
   const conduit::Node &domain;
 };
 
-void pack_topology(const std::string &topo_name,
-                   const conduit::Node &domain,
-                   conduit::Node &args,
-                   ArrayCode &array);
-void pack_array(const conduit::Node &array,
-                const std::string &name,
-                conduit::Node &args,
-                ArrayCode &array_code);
-
 class MemoryRegion
 {
 public:
@@ -434,6 +424,37 @@ public:
   mutable bool allocated;
   mutable size_t index;
 };
+
+class JitExecutionPolicy
+{
+public:
+  JitExecutionPolicy(const Jitable &jitable);
+  virtual bool should_execute() = 0;
+
+private:
+  const Jitable &jitable;
+};
+
+class FusePolicy : JitExecutionPolicy
+{
+  public:
+    bool should_execute();
+};
+
+class RoundtripPolicy : JitExecutionPolicy
+{
+  public:
+    bool should_execute();
+};
+
+void pack_topology(const std::string &topo_name,
+                   const conduit::Node &domain,
+                   conduit::Node &args,
+                   ArrayCode &array);
+void pack_array(const conduit::Node &array,
+                const std::string &name,
+                conduit::Node &args,
+                ArrayCode &array_code);
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

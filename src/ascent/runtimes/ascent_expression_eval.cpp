@@ -49,6 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_expression_eval.hpp"
+#include "ascent_data_logger.hpp"
 #include "expressions/ascent_array_registry.hpp"
 #include "expressions/ascent_blueprint_architect.hpp"
 #include "expressions/ascent_derived_jit.hpp"
@@ -56,7 +57,6 @@
 #include "expressions/ascent_expressions_ast.hpp"
 #include "expressions/ascent_expressions_parser.hpp"
 #include "expressions/ascent_expressions_tokens.hpp"
-#include "ascent_data_logger.hpp"
 
 #include <ctime>
 #include <flow_timer.hpp>
@@ -1015,7 +1015,7 @@ conduit::Node
 ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 {
   ASCENT_DATA_OPEN("expression_eval");
-  ASCENT_DATA_ADD("expression",expr);
+  ASCENT_DATA_ADD("expression", expr);
   flow::Timer expression_timer;
   if(expr_name == "")
   {
@@ -1056,6 +1056,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   {
     flow::Timer build_graph_timer;
     root = expression->build_graph(w);
+    // set_jit_execution_policy(w);
     // if root is a derived field add a JitFilter to execute it
     if(root["type"].as_string() == "jitable")
     {
@@ -1074,10 +1075,10 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
       root["type"] = "field";
     }
     // w.graph().save_dot_html("ascent_expressions_graph.html");
-    ASCENT_DATA_ADD("build_graph time: ",build_graph_timer.elapsed());
+    ASCENT_DATA_ADD("build_graph time", build_graph_timer.elapsed());
     flow::Timer execute_timer;
     w.execute();
-    ASCENT_DATA_ADD("execute time",execute_timer.elapsed());
+    ASCENT_DATA_ADD("execute time", execute_timer.elapsed());
   }
   catch(std::exception &e)
   {
@@ -1148,9 +1149,9 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   delete expression;
   w.reset();
-  ASCENT_DATA_ADD("Device high water mark: ",ArrayRegistry::high_water_mark());
-  ASCENT_DATA_ADD("Current Device usage ",ArrayRegistry::device_usage());
-  ASCENT_DATA_ADD("Current host usage ",ArrayRegistry::host_usage());
+  ASCENT_DATA_ADD("Device high water mark", ArrayRegistry::high_water_mark());
+  ASCENT_DATA_ADD("Current Device usage ", ArrayRegistry::device_usage());
+  ASCENT_DATA_ADD("Current host usage ", ArrayRegistry::host_usage());
   ASCENT_DATA_CLOSE();
   return return_val;
 }

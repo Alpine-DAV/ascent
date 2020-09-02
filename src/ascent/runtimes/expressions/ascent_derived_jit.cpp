@@ -66,8 +66,6 @@
 #include <occa/modes/cuda/utils.hpp>
 #endif
 
-#include <flow.hpp>
-
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -93,9 +91,9 @@ void
 get_occa_mem(std::vector<Array<unsigned char>> &buffers,
              std::vector<occa::memory> &occa)
 {
-  flow::Timer device_array_timer;
   occa::device &device = occa::getDevice();
-  ASCENT_DATA_ADD("occa device ", device.mode());
+  ASCENT_DATA_ADD("occa device", device.mode());
+  ASCENT_DATA_OPEN("copy to device");
   const std::string mode = device.mode();
 
   // I think the valid modes are: "Serial" "OpenMP", "CUDA:
@@ -104,6 +102,8 @@ get_occa_mem(std::vector<Array<unsigned char>> &buffers,
 
   for(size_t i = 0; i < size; ++i)
   {
+    ASCENT_DATA_OPEN("array_" + std::to_string(i));
+    flow::Timer device_array_timer;
     size_t buff_size = buffers[i].size();
     if(mode == "Serial" || mode == "OpenMP")
     {
@@ -123,9 +123,10 @@ get_occa_mem(std::vector<Array<unsigned char>> &buffers,
     {
       ASCENT_ERROR("Unknow occa mode " << mode);
     }
+    ASCENT_DATA_ADD("bytes", buff_size);
+    ASCENT_DATA_CLOSE();
   }
-
-  ASCENT_DATA_ADD("copy to device", device_array_timer.elapsed());
+  ASCENT_DATA_CLOSE();
 }
 
 std::string
@@ -259,10 +260,9 @@ device_alloc_temporary(const std::string &array_name,
                        conduit::Node &args,
                        std::vector<Array<unsigned char>> &array_memories)
 {
-  flow::Timer device_array_timer;
+  ASCENT_DATA_OPEN("temp Array");
   Array<unsigned char> mem;
   mem.resize(dest_schema.total_bytes_compact());
-  // occa::memory mem = device.malloc(dest_schema.total_bytes_compact());
   array_memories.push_back(mem);
   if(dest_schema.number_of_children() == 0)
   {
@@ -280,8 +280,8 @@ device_alloc_temporary(const std::string &array_name,
       args[param + "/index"] = array_memories.size() - 1;
     }
   }
-  ASCENT_DATA_ADD("temp array bytes", dest_schema.total_bytes_compact());
-  ASCENT_DATA_ADD("temp allocation time", device_array_timer.elapsed());
+  ASCENT_DATA_ADD("bytes", dest_schema.total_bytes_compact());
+  ASCENT_DATA_CLOSE();
 }
 
 void
@@ -290,11 +290,11 @@ device_alloc_array(const conduit::Node &array,
                    conduit::Node &args,
                    std::vector<Array<unsigned char>> &array_memories)
 {
-  flow::Timer array_timer;
-  flow::Timer host_array_timer;
+  ASCENT_DATA_OPEN("input Array");
   conduit::Node res_array;
+  flow::Timer host_array_timer;
   host_realloc_array(array, dest_schema, res_array);
-  ASCENT_DATA_ADD("host array reallocation time", host_array_timer.elapsed());
+  ASCENT_DATA_ADD("bytes", res_array.total_bytes_compact());
   flow::Timer device_array_timer;
   if(array.number_of_children() == 0)
   {
@@ -303,11 +303,9 @@ device_alloc_array(const conduit::Node &array,
 
     Array<unsigned char> mem;
     mem.set(start_ptr, res_array.total_bytes_compact());
-    // occa::memory mem =
-    //    device.malloc(res_array.total_bytes_compact(), start_ptr);
 
     const std::string param =
-        detail::type_string(array.dtype()) + " *" + array.name();
+        "const " + detail::type_string(array.dtype()) + " *" + array.name();
     args[param + "/index"] = array_memories.size();
     array_memories.push_back(mem);
   }
@@ -359,19 +357,18 @@ device_alloc_array(const conduit::Node &array,
         unsigned char *data_ptr =
             const_cast<unsigned char *>(full_region_it->start);
         mem.set(data_ptr, full_region_it->end - full_region_it->start);
-        // occa::memory mem = device.malloc(
-        //    full_region_it->end - full_region_it->start,
-        //    full_region_it->start);
         full_region_it->index = array_memories.size();
         array_memories.push_back(mem);
       }
-      const std::string param = detail::type_string(n_component.dtype()) +
+      const std::string param = "const " +
+                                detail::type_string(n_component.dtype()) +
                                 " *" + array.name() + "_" + component;
       // TODO should make a slice, push it and use that to support cases where
       // we have multiple pointers inside one allocation
       args[param + "/index"] = full_region_it->index;
     }
   }
+  ASCENT_DATA_CLOSE();
 }
 //}}}
 
@@ -827,6 +824,7 @@ TopologyCode::structured_vertices(InsertionOrderedSet<std::string> &code) const
   }
 }
 
+// TODO generate vertices array
 void
 TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
                                     const std::string &index_name) const
@@ -863,16 +861,22 @@ TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
   {
     // single shape
     // inline the for-loop
+    code.insert("int " + topo_name + "_vertices[" + std::to_string(shape_size) +
+                "];\n");
+    for(int i = 0; i < shape_size; ++i)
+    {
+      code.insert(topo_name + "_vertices[" + std::to_string(i) +
+                  "] = " + topo_name + "_connectivity[" + index_name + " * " +
+                  std::to_string(shape_size) + " + " + std::to_string(i) +
+                  "];\n");
+    }
     code.insert("double " + topo_name + "_vertex_locs[" +
                 std::to_string(shape_size) + "][" + std::to_string(num_dims) +
                 "];\n");
     for(int i = 0; i < shape_size; ++i)
     {
       vertex_xyz(code,
-                 array_code.index(topo_name + "_connectivity",
-                                  index_name + " * " +
-                                      std::to_string(shape_size) + " + " +
-                                      std::to_string(i)),
+                 array_code.index(topo_name + "_vertices", std::to_string(i)),
                  false,
                  topo_name + "_vertex_locs[" + std::to_string(i) + "]",
                  false);
@@ -2347,16 +2351,21 @@ FieldCode::vorticity(InsertionOrderedSet<std::string> &code)
   // assumes the gradient for each component is present (generated in
   // JitableFunctions::vorticity)
   const std::string vorticity_name = field_name + "_vorticity";
-  code.insert({
-      "double " + vorticity_name + "[" + std::to_string(num_components) +
-          "];\n",
-      vorticity_name + "[0] = " + field_name + "_2_gradient[1] - " +
-          field_name + "_1_gradient[2];\n",
-      vorticity_name + "[1] = " + field_name + "_0_gradient[2] - " +
-          field_name + "_2_gradient[0];\n",
-      vorticity_name + "[2] = " + field_name + "_1_gradient[0] - " +
-          field_name + "_0_gradient[1];\n",
-  });
+  code.insert("double " + vorticity_name + "[3];\n");
+  if(num_components == 3)
+  {
+
+    code.insert({vorticity_name + "[0] = " + field_name + "_2_gradient[1] - " +
+                     field_name + "_1_gradient[2];\n",
+                 vorticity_name + "[1] = " + field_name + "_0_gradient[2] - " +
+                     field_name + "_2_gradient[0];\n"});
+  }
+  else if(num_components == 2)
+  {
+    code.insert({vorticity_name + "[0] = 0;\n", vorticity_name + "[1] = 0;\n"});
+  }
+  code.insert(vorticity_name + "[2] = " + field_name + "_1_gradient[0] - " +
+              field_name + "_0_gradient[1];\n");
 }
 // }}}
 
@@ -2884,8 +2893,10 @@ JitableFunctions::gradient(const Jitable &field_jitable,
   {
     my_input_field = input_field;
   }
-  if(topo->topo_type == "structured" && field_jitable.association == "vertex")
+  if((topo->topo_type == "structured" || topo->topo_type == "unstructured") &&
+     field_jitable.association == "vertex")
   {
+    // this does a vertex to cell gradient so update entries
     conduit::Node &n_entries = out_jitable.dom_info.child(dom_idx)["entries"];
     n_entries = topo->get_num_cells();
     out_jitable.association = "element";
@@ -3036,6 +3047,32 @@ JitableFunctions::vector()
 // }}}
 
 //-----------------------------------------------------------------------------
+// -- JitExecutionPolicy
+//-----------------------------------------------------------------------------
+//{{{
+
+JitExecutionPolicy::JitExecutionPolicy(const Jitable &jitable)
+    : jitable(jitable)
+{
+}
+
+// fuse policy
+bool
+FusePolicy::should_execute()
+{
+  return false;
+}
+
+// roundtrip policy
+bool
+RoundtripPolicy::should_execute()
+{
+  return true;
+}
+
+//}}}
+
+//-----------------------------------------------------------------------------
 // -- Kernel
 //-----------------------------------------------------------------------------
 // {{{
@@ -3046,6 +3083,7 @@ Kernel::fuse_kernel(const Kernel &from)
   for_body.insert(from.for_body);
 }
 
+// copy expr into a variable (scalar or vector) "output"
 std::string
 Kernel::generate_output(const std::string &output, bool declare) const
 {
@@ -3074,6 +3112,7 @@ Kernel::generate_output(const std::string &output, bool declare) const
   return res;
 }
 
+// generate a loop to set expr into the array "output"
 std::string
 Kernel::generate_loop(const std::string &output,
                       const ArrayCode &array_code,
@@ -3127,21 +3166,15 @@ Jitable::generate_kernel(const int dom_idx, const conduit::Node &args) const
   {
     const conduit::Node &arg = args.child(i);
     std::string type;
-    // array type was already determined in alloc_device_array
+    // array type was already determined in device_alloc_array
     if(!arg.has_path("index"))
     {
-      type = detail::type_string(arg.dtype()) + " ";
+      type = "const " + detail::type_string(arg.dtype()) + " ";
     }
     if(!first)
     {
       kernel_string += "                 ";
     }
-    // TODO i need a better way of figuring out what to make const
-    // i can't just check this because temporaries can't be const either
-    // if(arg.name().find("output") == args.name().npos)
-    // {
-    //   kernel_string += "const ";
-    // }
     kernel_string += type + arg.name() + (i == num_args - 1 ? ")\n{\n" : ",\n");
     first = false;
   }
@@ -3332,7 +3365,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     // need to keep the mem in scope or bad things happen
     std::vector<Array<unsigned char>> array_buffers;
 
-    flow::Timer array_allocation_timer;
+    ASCENT_DATA_OPEN("host array alloc");
     // allocate arrays
     size_t output_index;
     conduit::Node new_args;
@@ -3367,8 +3400,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         new_args[arg.name()] = arg;
       }
     }
-    ASCENT_DATA_ADD("total input allocation time",
-                    array_allocation_timer.elapsed());
+    ASCENT_DATA_CLOSE();
 
     // generate and compile the kernel
     const std::string kernel_string = generate_kernel(dom_idx, new_args);
@@ -3391,7 +3423,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
       {
         occa_kernel = kernel_it->second;
       }
-      ASCENT_DATA_ADD("kernal compile time", kernel_compile_timer.elapsed());
+      ASCENT_DATA_ADD("kernel compile", kernel_compile_timer.elapsed());
     }
     catch(const occa::exception &e)
     {
@@ -3444,13 +3476,13 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     n_output["association"] = association;
     n_output["topology"] = topology;
 
-    flow::Timer alloc_output_timer;
+    ASCENT_DATA_OPEN("host output alloc");
     conduit::float64 *output_ptr;
     n_output["values"].set(output_schema);
     output_ptr = (conduit::float64 *)n_output["values"].data_ptr();
     // output to the host will always be contiguous
-    ASCENT_DATA_ADD("cpu output alloc", alloc_output_timer.elapsed());
-    ASCENT_DATA_ADD("cpu output bytes", output_schema.total_bytes_compact());
+    ASCENT_DATA_ADD("bytes", output_schema.total_bytes_compact());
+    ASCENT_DATA_CLOSE();
 
     flow::Timer kernel_run_timer;
     occa_kernel.run();
@@ -3462,7 +3494,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     ASCENT_DATA_ADD("copy to host", copy_back_timer.elapsed());
 
     // dom["fields/" + field_name].print();
-    ASCENT_DATA_ADD("domain execute time: ", jitable_execute_timer.elapsed());
+    ASCENT_DATA_ADD("domain execute", jitable_execute_timer.elapsed());
   }
   ASCENT_DATA_CLOSE();
 }
