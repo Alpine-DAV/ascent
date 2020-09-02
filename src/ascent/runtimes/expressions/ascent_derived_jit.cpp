@@ -66,8 +66,6 @@
 #include <occa/modes/cuda/utils.hpp>
 #endif
 
-#include <flow.hpp>
-
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -265,7 +263,6 @@ device_alloc_temporary(const std::string &array_name,
   ASCENT_DATA_OPEN("temp Array");
   Array<unsigned char> mem;
   mem.resize(dest_schema.total_bytes_compact());
-  // occa::memory mem = device.malloc(dest_schema.total_bytes_compact());
   array_memories.push_back(mem);
   if(dest_schema.number_of_children() == 0)
   {
@@ -308,7 +305,7 @@ device_alloc_array(const conduit::Node &array,
     mem.set(start_ptr, res_array.total_bytes_compact());
 
     const std::string param =
-        detail::type_string(array.dtype()) + " *" + array.name();
+        "const " + detail::type_string(array.dtype()) + " *" + array.name();
     args[param + "/index"] = array_memories.size();
     array_memories.push_back(mem);
   }
@@ -363,7 +360,8 @@ device_alloc_array(const conduit::Node &array,
         full_region_it->index = array_memories.size();
         array_memories.push_back(mem);
       }
-      const std::string param = detail::type_string(n_component.dtype()) +
+      const std::string param = "const " +
+                                detail::type_string(n_component.dtype()) +
                                 " *" + array.name() + "_" + component;
       // TODO should make a slice, push it and use that to support cases where
       // we have multiple pointers inside one allocation
@@ -2353,16 +2351,21 @@ FieldCode::vorticity(InsertionOrderedSet<std::string> &code)
   // assumes the gradient for each component is present (generated in
   // JitableFunctions::vorticity)
   const std::string vorticity_name = field_name + "_vorticity";
-  code.insert({
-      "double " + vorticity_name + "[" + std::to_string(num_components) +
-          "];\n",
-      vorticity_name + "[0] = " + field_name + "_2_gradient[1] - " +
-          field_name + "_1_gradient[2];\n",
-      vorticity_name + "[1] = " + field_name + "_0_gradient[2] - " +
-          field_name + "_2_gradient[0];\n",
-      vorticity_name + "[2] = " + field_name + "_1_gradient[0] - " +
-          field_name + "_0_gradient[1];\n",
-  });
+  code.insert("double " + vorticity_name + "[3];\n");
+  if(num_components == 3)
+  {
+
+    code.insert({vorticity_name + "[0] = " + field_name + "_2_gradient[1] - " +
+                     field_name + "_1_gradient[2];\n",
+                 vorticity_name + "[1] = " + field_name + "_0_gradient[2] - " +
+                     field_name + "_2_gradient[0];\n"});
+  }
+  else if(num_components == 2)
+  {
+    code.insert({vorticity_name + "[0] = 0;\n", vorticity_name + "[1] = 0;\n"});
+  }
+  code.insert(vorticity_name + "[2] = " + field_name + "_1_gradient[0] - " +
+              field_name + "_0_gradient[1];\n");
 }
 // }}}
 
@@ -3044,6 +3047,32 @@ JitableFunctions::vector()
 // }}}
 
 //-----------------------------------------------------------------------------
+// -- JitExecutionPolicy
+//-----------------------------------------------------------------------------
+//{{{
+
+JitExecutionPolicy::JitExecutionPolicy(const Jitable &jitable)
+    : jitable(jitable)
+{
+}
+
+// fuse policy
+bool
+FusePolicy::should_execute()
+{
+  return false;
+}
+
+// roundtrip policy
+bool
+RoundtripPolicy::should_execute()
+{
+  return true;
+}
+
+//}}}
+
+//-----------------------------------------------------------------------------
 // -- Kernel
 //-----------------------------------------------------------------------------
 // {{{
@@ -3054,6 +3083,7 @@ Kernel::fuse_kernel(const Kernel &from)
   for_body.insert(from.for_body);
 }
 
+// copy expr into a variable (scalar or vector) "output"
 std::string
 Kernel::generate_output(const std::string &output, bool declare) const
 {
@@ -3082,6 +3112,7 @@ Kernel::generate_output(const std::string &output, bool declare) const
   return res;
 }
 
+// generate a loop to set expr into the array "output"
 std::string
 Kernel::generate_loop(const std::string &output,
                       const ArrayCode &array_code,
@@ -3135,21 +3166,15 @@ Jitable::generate_kernel(const int dom_idx, const conduit::Node &args) const
   {
     const conduit::Node &arg = args.child(i);
     std::string type;
-    // array type was already determined in alloc_device_array
+    // array type was already determined in device_alloc_array
     if(!arg.has_path("index"))
     {
-      type = detail::type_string(arg.dtype()) + " ";
+      type = "const " + detail::type_string(arg.dtype()) + " ";
     }
     if(!first)
     {
       kernel_string += "                 ";
     }
-    // TODO i need a better way of figuring out what to make const
-    // i can't just check this because temporaries can't be const either
-    // if(arg.name().find("output") == args.name().npos)
-    // {
-    //   kernel_string += "const ";
-    // }
     kernel_string += type + arg.name() + (i == num_args - 1 ? ")\n{\n" : ",\n");
     first = false;
   }
