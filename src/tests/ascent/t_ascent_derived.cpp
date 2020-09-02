@@ -163,8 +163,8 @@ TEST(ascent_expressions, derived_expressions)
   //        "(max(field('braid')).value - min(field('braid')).value)";
   // eval.evaluate(expr);
 
-  // expr = "1 + field('braid') + 1";
-  // eval.evaluate(expr);
+  expr = "1 + field('braid') + 1";
+  eval.evaluate(expr);
 
   // expr = "field('field') * topo('mesh').cell.volume";
   // eval.evaluate(expr, "mass");

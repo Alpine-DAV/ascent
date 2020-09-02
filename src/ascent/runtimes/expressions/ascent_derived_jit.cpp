@@ -3275,6 +3275,13 @@ Jitable::fuse_vars(const Jitable &from)
   }
 }
 
+bool
+Jitable::can_execute()
+{
+  return !(topology.empty() || topology == "none") &&
+         !(association.empty() || association == "none");
+}
+
 //-----------------------------------------------------------------------------
 // How to Debug OCCA Kernels with LLDB
 //-----------------------------------------------------------------------------
@@ -3405,7 +3412,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     // generate and compile the kernel
     const std::string kernel_string = generate_kernel(dom_idx, new_args);
 
-    // std::cout << kernel_string << std::endl;
+    std::cout << kernel_string << std::endl;
 
     // store kernels so that we don't have to recompile, even loading a cached
     // kernel from disk is slow
