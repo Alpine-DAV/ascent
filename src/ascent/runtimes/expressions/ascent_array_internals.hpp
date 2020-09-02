@@ -21,6 +21,40 @@ namespace ascent
 namespace runtime
 {
 
+namespace detail
+{
+
+inline void is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
+{
+  is_gpu = false;
+  is_unified = false;
+#if ASCENT_CUDA_ENABLED
+  cudaPointerAttributes atts;
+  const cudaError_t perr = cudaPointerGetAttributes(&atts, ptr);
+
+  is_gpu = false;
+  is_unified = false;
+  // clear last error so other error checking does
+  // not pick it up
+  cudaError_t error = cudaGetLastError();
+#if CUDART_VERSION >= 10000
+  is_gpu = perr == cudaSuccess &&
+                   (atts.type == cudaMemoryTypeDevice ||
+                   atts.type == cudaMemoryTypeManaged);
+  is_unified = cudaSuccess && atts.type == cudaMemoryTypeDevice;
+#else
+  is_gpu = perr == cudaSuccess && atts.memoryType == cudaMemoryTypeDevice;
+  is_unified = false;
+#endif
+  // This will gen an error when the pointer is not a GPU pointer.
+  // Clear the error so others don't pick it up.
+  error = cudaGetLastError();
+  (void) error;
+#endif
+}
+
+}
+
 template <typename T> class ArrayInternals : public ArrayInternalsBase
 {
   protected:
@@ -31,6 +65,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   size_t m_size;
   bool m_cuda_enabled;
   bool m_own_host;
+  bool m_own_device;
 
   public:
   ArrayInternals ()
@@ -40,7 +75,8 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     m_device_dirty (true),
     m_host_dirty (true),
     m_size (0),
-    m_own_host(true)
+    m_own_host(true),
+    m_own_device(true)
   {
 #ifdef ASCENT_CUDA_ENABLED
     m_cuda_enabled = true;
@@ -50,20 +86,51 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     ArrayRegistry::add_array (this);
   }
 
+  void pointer_assignment(T *data)
+  {
+    bool is_gpu, is_unified;
+    detail::is_gpu_ptr(data, is_gpu, is_unified);
+
+    if(is_gpu)
+    {
+      m_device = data;
+      m_own_device = false;
+      if(is_unified)
+      {
+        m_host = data;
+        m_own_host = true;
+        m_host_dirty = false;
+        m_device_dirty = false;
+      }
+      else
+      {
+        m_host = nullptr;
+        m_own_host = true;
+        m_host_dirty = true;
+      }
+    }
+    else
+    {
+      m_own_device = true;
+      m_device = nullptr;
+      m_device_dirty = false;
+
+      m_own_host = false;
+      m_host_dirty = false;
+      m_host = data;
+    }
+  }
+
   ArrayInternals (T *data, const size_t size)
   : ArrayInternalsBase (),
-    m_device (nullptr),
-    m_host (data),
-    m_device_dirty (true),
-    m_host_dirty (false),
-    m_size (size),
-    m_own_host(false)
+    m_size (size)
   {
 #ifdef ASCENT_CUDA_ENABLED
     m_cuda_enabled = true;
 #else
     m_cuda_enabled = false;
 #endif
+    pointer_assignment(data);
     ArrayRegistry::add_array (this);
   }
 
@@ -85,7 +152,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     {
       if (!m_host_dirty)
       {
-        // host data is valud just return the index
+        // host data is valid just return the index
         if (m_host == nullptr)
         {
           std::cout << "get_value with null host ptr: this should not happen\n";
@@ -114,18 +181,14 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     if (m_host)
     {
       deallocate_host ();
-      m_own_host = true;
     }
     if (m_device)
     {
       deallocate_device ();
     }
-
-    m_own_host = false;
-    m_host = data;
     m_size = size;
-    m_device_dirty = true;
-    m_host_dirty = false;
+
+    pointer_assignment(data);
   }
 
   void copy(const T *data, const size_t size)
@@ -324,7 +387,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 
   virtual size_t device_alloc_size () override
   {
-    if (m_device == nullptr)
+    if (m_device == nullptr || !m_own_device )
       return 0;
     else
       return static_cast<size_t> (sizeof (T)) * m_size;
@@ -332,7 +395,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 
   virtual size_t host_alloc_size () override
   {
-    if (m_host == nullptr && m_own_host)
+    if (m_host == nullptr || !m_own_host)
       return 0;
     else
       return static_cast<size_t> (sizeof (T)) * m_size;
@@ -380,7 +443,12 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   {
     if (m_cuda_enabled)
     {
-      if (m_device != nullptr)
+      if(!m_own_host)
+      {
+        m_host = nullptr;
+        m_host_dirty = true;
+      }
+      if (m_device != nullptr && m_own_device)
       {
         auto &rm = umpire::ResourceManager::getInstance ();
         const int allocator_id = ArrayRegistry::device_allocator_id();
@@ -397,6 +465,10 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   void allocate_device ()
   {
     if (m_size == 0) return;
+    if(!m_own_device)
+    {
+      ASCENT_ERROR("Array: cannot allocate device when zero copied");
+    }
     if (m_cuda_enabled)
     {
       if (m_device == nullptr)
@@ -404,7 +476,6 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
         auto &rm = umpire::ResourceManager::getInstance ();
         const int allocator_id = ArrayRegistry::device_allocator_id();
         umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
-        //umpire::Allocator device_allocator = rm.getAllocator ("DEVICE");
         m_device = static_cast<T *> (device_allocator.allocate (m_size * sizeof (T)));
         ArrayRegistry::add_device_bytes(m_size * sizeof(T));
       }
@@ -414,6 +485,11 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   // synchs assumes that both arrays are allocated
   void synch_to_host ()
   {
+    if(!m_own_host && !m_own_device)
+    {
+      // this is unified memory, so do nothing
+      return;
+    }
 #ifdef ASCENT_CUDA_ENABLED
     cudaMemcpy(m_host, m_device, m_size * sizeof(T), cudaMemcpyDeviceToHost);
 #endif
@@ -421,6 +497,11 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 
   void synch_to_device ()
   {
+    if(!m_own_host && !m_own_device)
+    {
+      // this is unified memory, so do nothing
+      return;
+    }
 #ifdef ASCENT_CUDA_ENABLED
     cudaMemcpy(m_device, m_host, m_size * sizeof(T), cudaMemcpyHostToDevice);
 #endif
