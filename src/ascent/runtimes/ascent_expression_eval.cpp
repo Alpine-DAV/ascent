@@ -1022,11 +1022,6 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     expr_name = expr;
   }
 
-  // used to eliminate common subexpressions
-  // ex: (x - min) / (max - min) then min should only be evaluated once
-  conduit::Node subexpr_cache;
-  w.registry().add<conduit::Node>("subexpr_cache", &subexpr_cache, -1);
-
   // stores temporary fields, topos, and coords that need to be removed after
   // the expression runs
   conduit::Node remove;
@@ -1055,9 +1050,11 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   try
   {
     flow::Timer build_graph_timer;
-    root = expression->build_graph(w);
-    // set_jit_execution_policy(w);
+    BuildGraphVisitor build_graph(w, false);
+    expression->accept(&build_graph);
+    root = build_graph.get_output();
     // if root is a derived field add a JitFilter to execute it
+    /*
     if(root["type"].as_string() == "jitable")
     {
       conduit::Node params;
@@ -1074,6 +1071,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
       root["filter_name"] = "jit_execute";
       root["type"] = "field";
     }
+    */
     // w.graph().save_dot_html("ascent_expressions_graph.html");
     ASCENT_DATA_ADD("build_graph time", build_graph_timer.elapsed());
     flow::Timer execute_timer;

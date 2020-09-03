@@ -258,11 +258,21 @@ void
 device_alloc_temporary(const std::string &array_name,
                        const conduit::Schema &dest_schema,
                        conduit::Node &args,
-                       std::vector<Array<unsigned char>> &array_memories)
+                       std::vector<Array<unsigned char>> &array_memories,
+                       unsigned char *host_ptr = nullptr)
 {
   ASCENT_DATA_OPEN("temp Array");
   Array<unsigned char> mem;
-  mem.resize(dest_schema.total_bytes_compact());
+  if(host_ptr == nullptr)
+  {
+    mem.resize(dest_schema.total_bytes_compact());
+  }
+  else
+  {
+    // instead of using a temporary array for output and copying, we can point
+    // Array<> at the destination conduit array
+    mem.set(host_ptr, dest_schema.total_bytes_compact());
+  }
   array_memories.push_back(mem);
   if(dest_schema.number_of_children() == 0)
   {
@@ -2874,12 +2884,8 @@ JitableFunctions::gradient(const Jitable &field_jitable,
     ASCENT_ERROR("Could not take the gradient of the derived field "
                  "because the association could not be determined.");
   }
-  conduit::Node &args = out_jitable.dom_info.child(dom_idx)["args"];
-  // gradient needs to pack the topology
   std::unique_ptr<Topology> topo =
       topologyFactory(field_jitable.topology, domain);
-  pack_topology(
-      field_jitable.topology, domain, args, out_jitable.arrays[dom_idx]);
   // we need to change entries for each domain if we're doing a vertex to
   // element gradient
   std::string my_input_field;
@@ -3275,6 +3281,14 @@ Jitable::fuse_vars(const Jitable &from)
   }
 }
 
+bool
+Jitable::can_execute()
+{
+  return !(topology.empty() || topology == "none") &&
+         !(association.empty() || association == "none") &&
+         !kernels.begin()->second.expr.empty();
+}
+
 //-----------------------------------------------------------------------------
 // How to Debug OCCA Kernels with LLDB
 //-----------------------------------------------------------------------------
@@ -3308,8 +3322,9 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
   if(!device_set)
   {
     // running this in a loop segfaults...
-    occa::setDevice("mode: 'CUDA', device_id: 0");
+    // occa::setDevice("mode: 'CUDA', device_id: 0");
     // occa::setDevice("mode: 'Serial'");
+    occa::setDevice("mode: 'OpenMP'");
     device_set = true;
   }
   occa::device &device = occa::getDevice();
@@ -3342,7 +3357,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     // the final number of entries
     const int entries = cur_dom_info["entries"].to_int64();
 
-    // create output array and put it in array_map
+    // create output array schema and put it in array_map
     conduit::Schema output_schema;
     std::vector<std::string> component_names{};
     if(kernel.num_components > 1)
@@ -3360,6 +3375,19 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
                   output_schema);
 
     arrays[dom_idx].array_map["output"] = output_schema;
+
+    // allocate the output array in conduit
+    conduit::Node &n_output = dom["fields/" + field_name];
+    n_output["association"] = association;
+    n_output["topology"] = topology;
+
+    ASCENT_DATA_OPEN("host output alloc");
+    n_output["values"].set(output_schema);
+    unsigned char *output_ptr =
+        static_cast<unsigned char *>(n_output["values"].data_ptr());
+    // output to the host will always be contiguous
+    ASCENT_DATA_ADD("bytes", output_schema.total_bytes_compact());
+    ASCENT_DATA_CLOSE();
 
     // these are reference counted
     // need to keep the mem in scope or bad things happen
@@ -3380,13 +3408,24 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
       }
       else
       {
+        // if it's not in args it doesn't point to any data so it's a temporary
         if(array.first == "output")
         {
           output_index = array_buffers.size();
         }
-        // if it's not in args it doesn't point to any data so it's a temporary
-        device_alloc_temporary(
-            array.first, array.second, new_args, array_buffers);
+        if(array.first == "output" &&
+           (device.mode() == "Serial" || device.mode() == "OpenMP"))
+        {
+          // in Serial and OpenMP we don't need a separate output array for
+          // the device, so just pass it conduit's array
+          device_alloc_temporary(
+              array.first, array.second, new_args, array_buffers, output_ptr);
+        }
+        else
+        {
+          device_alloc_temporary(
+              array.first, array.second, new_args, array_buffers);
+        }
       }
     }
     // copy the non-array types to new_args
@@ -3472,25 +3511,16 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     }
     ASCENT_DATA_ADD("push_input_args", push_args_timer.elapsed());
 
-    conduit::Node &n_output = dom["fields/" + field_name];
-    n_output["association"] = association;
-    n_output["topology"] = topology;
-
-    ASCENT_DATA_OPEN("host output alloc");
-    conduit::float64 *output_ptr;
-    n_output["values"].set(output_schema);
-    output_ptr = (conduit::float64 *)n_output["values"].data_ptr();
-    // output to the host will always be contiguous
-    ASCENT_DATA_ADD("bytes", output_schema.total_bytes_compact());
-    ASCENT_DATA_CLOSE();
-
     flow::Timer kernel_run_timer;
     occa_kernel.run();
     ASCENT_DATA_ADD("kernel runtime", kernel_run_timer.elapsed());
 
     // copy back
     flow::Timer copy_back_timer;
-    array_memories[output_index].copyTo(output_ptr);
+    if(device.mode() != "Serial" && device.mode() != "OpenMP")
+    {
+      array_memories[output_index].copyTo(output_ptr);
+    }
     ASCENT_DATA_ADD("copy to host", copy_back_timer.elapsed());
 
     // dom["fields/" + field_name].print();

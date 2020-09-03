@@ -349,6 +349,7 @@ public:
   }
 
   void fuse_vars(const Jitable &from);
+  bool can_execute();
   void execute(conduit::Node &dataset, const std::string &field_name);
   std::string generate_kernel(const int dom_idx,
                               const conduit::Node &args) const;
@@ -437,14 +438,14 @@ private:
 
 class FusePolicy : JitExecutionPolicy
 {
-  public:
-    bool should_execute();
+public:
+  bool should_execute();
 };
 
 class RoundtripPolicy : JitExecutionPolicy
 {
-  public:
-    bool should_execute();
+public:
+  bool should_execute();
 };
 
 void pack_topology(const std::string &topo_name,

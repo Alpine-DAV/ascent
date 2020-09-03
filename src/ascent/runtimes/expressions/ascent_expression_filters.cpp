@@ -1434,20 +1434,19 @@ History::execute()
 {
   conduit::Node *output = new conduit::Node();
 
-  const std::string expr_name  = (*input<Node>("expr_name"))["name"].as_string();
+  const std::string expr_name = (*input<Node>("expr_name"))["name"].as_string();
 
   const conduit::Node *const cache =
       graph().workspace().registry().fetch<Node>("cache");
 
   if(!cache->has_path(expr_name))
   {
-    ASCENT_ERROR("History: unknown identifier "<<  expr_name);
+    ASCENT_ERROR("History: unknown identifier " << expr_name);
   }
   const conduit::Node &history = (*cache)[expr_name];
 
   const conduit::Node *n_absolute_index = input<Node>("absolute_index");
   const conduit::Node *n_relative_index = input<Node>("relative_index");
-
 
   if(!n_absolute_index->dtype().is_empty() &&
      !n_relative_index->dtype().is_empty())
@@ -1455,7 +1454,6 @@ History::execute()
     ASCENT_ERROR(
         "History: Specify only one of relative_index or absolute_index.");
   }
-
 
   const int entries = history.number_of_children();
   if(!n_relative_index->dtype().is_empty())
@@ -2971,7 +2969,15 @@ JitFilter::execute()
   {
     const std::string input_fname = inputs.child(i)["filter_name"].as_string();
     const std::string type = inputs.child(i)["type"].as_string();
-    if(type != "jitable")
+    // something that was determined a jitable at "compile time" may have been
+    // executed at runtime and turned into a field in which case
+    // check_type<Jitable> would fail
+    if(type == "jitable" && input(i).check_type<Jitable>())
+    {
+      // push back an existing jitable
+      input_jitables.push_back(input<Jitable>(i));
+    }
+    else
     {
       const conduit::Node *inp = input<conduit::Node>(i);
       // make a new jitable
@@ -3033,7 +3039,8 @@ JitFilter::execute()
           default_kernel.expr = input_fname;
           default_kernel.num_components = 3;
         }
-        else if(type == "field")
+        // field or a jitable that was executed at runtime
+        else if(type == "field" || type == "jitable")
         {
           const std::string &field_name = (*inp)["value"].as_string();
           // error checking and dom args information
@@ -3146,30 +3153,44 @@ JitFilter::execute()
         }
       }
     }
-    else
-    {
-      // push back an existing jitable
-      input_jitables.push_back(input<Jitable>(i));
-    }
   }
 
   // fuse
   Jitable *out_jitable = new Jitable(num_domains);
   // fuse jitable variables (e.g. entries) and args
-  for(const auto jitable : input_jitables)
+  for(const Jitable *input_jitable : input_jitables)
   {
-    out_jitable->fuse_vars(*jitable);
+    out_jitable->fuse_vars(*input_jitable);
   }
+
+  // some functions need to pack the topology
+  // hack: add a new input jitable with the topology
+  if(func == "gradient" || func == "vorticity")
+  {
+    new_jitables.emplace_back(num_domains);
+    Jitable &jitable = new_jitables.back();
+    input_jitables.push_back(&jitable);
+    for(int i = 0; i < num_domains; ++i)
+    {
+      const conduit::Node &dom = dataset->child(i);
+      std::unique_ptr<Topology> topo =
+          topologyFactory(out_jitable->topology, dom);
+      pack_topology(out_jitable->topology,
+                    dom,
+                    jitable.dom_info.child(i)["args"],
+                    jitable.arrays[i]);
+      const std::string kernel_type =
+          out_jitable->topology + "=" + topo->topo_type;
+      jitable.dom_info.child(i)["kernel_type"] = kernel_type;
+      jitable.kernels[kernel_type];
+    }
+    out_jitable->fuse_vars(jitable);
+  }
+
   if(func == "execute")
   {
     // just copy over the existing kernels, no need to fuse
     out_jitable->kernels = input_jitables[0]->kernels;
-    // pass entries into args just before we need to execute
-    for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
-    {
-      conduit::Node &cur_dom_info = out_jitable->dom_info.child(dom_idx);
-      cur_dom_info["args/entries"] = cur_dom_info["entries"];
-    }
   }
   else
   {
@@ -3189,13 +3210,12 @@ JitFilter::execute()
       // determine the type of the fused kernel
       std::vector<const Kernel *> input_kernels;
       std::vector<std::string> input_kernel_types;
-      for(int i = 0; i < num_inputs; ++i)
+      for(const Jitable *input_jitable : input_jitables)
       {
-        const Jitable &input_jitable = *input_jitables[i];
         const std::string kernel_type =
-            input_jitable.dom_info.child(dom_idx)["kernel_type"].as_string();
+            input_jitable->dom_info.child(dom_idx)["kernel_type"].as_string();
         input_kernel_types.push_back(kernel_type);
-        input_kernels.push_back(&(input_jitable.kernels.at(kernel_type)));
+        input_kernels.push_back(&(input_jitable->kernels.at(kernel_type)));
       }
       const std::string out_kernel_type = fused_kernel_type(input_kernel_types);
       (*out_jitable).dom_info.child(dom_idx)["kernel_type"] = out_kernel_type;
@@ -3258,8 +3278,16 @@ JitFilter::execute()
     }
   }
 
-  if(execute)
+  // if(execute)
+  if(out_jitable->can_execute())
   {
+    // pass entries into args just before we need to execute
+    for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
+    {
+      conduit::Node &cur_dom_info = out_jitable->dom_info.child(dom_idx);
+      cur_dom_info["args/entries"] = cur_dom_info["entries"];
+    }
+
     std::string field_name;
     if(params().has_path("field_name"))
     {

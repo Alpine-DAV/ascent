@@ -4,22 +4,21 @@
 #include <iostream>
 #include <vector>
 
+class ASTVisitor;
+
 class ASTNode
 {
 public:
   virtual ~ASTNode()
   {
   }
-  virtual void access() = 0;
-  virtual conduit::Node build_graph(flow::Workspace &w,
-                                    bool verbose = false) = 0;
+  virtual void accept(ASTVisitor *visitor) const = 0;
 };
 
 class ASTExpression : public ASTNode
 {
 public:
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 };
 
 class ASTIdentifier : public ASTExpression
@@ -29,8 +28,7 @@ public:
   ASTIdentifier(const std::string &name) : m_name(name)
   {
   }
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 };
 
 class ASTNamedExpression : public ASTExpression
@@ -42,8 +40,7 @@ public:
       : key(key), value(value)
   {
   }
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 
   virtual ~ASTNamedExpression()
   {
@@ -52,7 +49,7 @@ public:
   }
 };
 
-typedef std::vector<ASTNamedExpression *> ASTNamedExpressionList;
+using ASTNamedExpressionList = std::vector<ASTNamedExpression *>;
 
 class ASTInteger : public ASTExpression
 {
@@ -61,8 +58,7 @@ public:
   ASTInteger(int value) : m_value(value)
   {
   }
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 };
 
 class ASTDouble : public ASTExpression
@@ -72,8 +68,7 @@ public:
   ASTDouble(double value) : m_value(value)
   {
   }
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 };
 
 class ASTString : public ASTExpression
@@ -83,8 +78,7 @@ public:
   ASTString(const std::string &name) : m_name(name)
   {
   }
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 };
 
 class ASTBoolean : public ASTExpression
@@ -94,16 +88,14 @@ public:
   ASTBoolean(const int tok) : tok(tok)
   {
   }
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 };
 
 class ASTExpressionList : public ASTExpression
 {
 public:
   std::vector<ASTExpression *> exprs;
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 
   virtual ~ASTExpressionList()
   {
@@ -123,7 +115,6 @@ public:
       : pos_args(pos_args), named_args(named_args)
   {
   }
-  virtual void access();
 
   virtual ~ASTArguments()
   {
@@ -153,8 +144,7 @@ public:
   ASTMethodCall(ASTIdentifier *id) : m_id(id)
   {
   }
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 
   virtual ~ASTMethodCall()
   {
@@ -173,8 +163,7 @@ public:
       : m_lhs(lhs), m_op(op), m_rhs(rhs)
   {
   }
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 
   virtual ~ASTBinaryOp()
   {
@@ -195,8 +184,7 @@ public:
       : m_condition(m_condition), m_if(m_if), m_else(m_else)
   {
   }
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 
   virtual ~ASTIfExpr()
   {
@@ -215,8 +203,7 @@ public:
       : array(array), index(index)
   {
   }
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 
   virtual ~ASTArrayAccess()
   {
@@ -234,12 +221,86 @@ public:
       : obj(obj), name(name)
   {
   }
-  virtual void access();
-  virtual conduit::Node build_graph(flow::Workspace &w, bool verbose = false);
+  virtual void accept(ASTVisitor *visitor) const override;
 
   virtual ~ASTDotAccess()
   {
     delete obj;
   }
 };
+
+// abstract base class for visiting ASTs using the visitor pattern
+class ASTVisitor
+{
+public:
+  virtual ~ASTVisitor()
+  {
+  }
+  virtual void visit(const ASTExpression &expr) = 0;
+  virtual void visit(const ASTInteger &expr) = 0;
+  virtual void visit(const ASTDouble &expr) = 0;
+  virtual void visit(const ASTIdentifier &expr) = 0;
+  virtual void visit(const ASTNamedExpression &expr) = 0;
+  virtual void visit(const ASTMethodCall &call) = 0;
+  virtual void visit(const ASTIfExpr &expr) = 0;
+  virtual void visit(const ASTBinaryOp &expr) = 0;
+  virtual void visit(const ASTString &expr) = 0;
+  virtual void visit(const ASTBoolean &expr) = 0;
+  virtual void visit(const ASTArrayAccess &expr) = 0;
+  virtual void visit(const ASTDotAccess &expr) = 0;
+  virtual void visit(const ASTExpressionList &list) = 0;
+};
+
+class PrintVisitor : public ASTVisitor
+{
+public:
+  void visit(const ASTExpression &expr) override;
+  void visit(const ASTInteger &expr) override;
+  void visit(const ASTDouble &expr) override;
+  void visit(const ASTIdentifier &expr) override;
+  void visit(const ASTNamedExpression &expr) override;
+  void visit(const ASTMethodCall &call) override;
+  void visit(const ASTIfExpr &expr) override;
+  void visit(const ASTBinaryOp &expr) override;
+  void visit(const ASTString &expr) override;
+  void visit(const ASTBoolean &expr) override;
+  void visit(const ASTArrayAccess &expr) override;
+  void visit(const ASTDotAccess &expr) override;
+  void visit(const ASTExpressionList &list) override;
+};
+
+class BuildGraphVisitor : public ASTVisitor
+{
+public:
+  BuildGraphVisitor(flow::Workspace &w, const bool verbose);
+  void visit(const ASTExpression &expr) override;
+  void visit(const ASTInteger &expr) override;
+  void visit(const ASTDouble &expr) override;
+  void visit(const ASTIdentifier &expr) override;
+  void visit(const ASTNamedExpression &expr) override;
+  void visit(const ASTMethodCall &call) override;
+  void visit(const ASTIfExpr &expr) override;
+  void visit(const ASTBinaryOp &expr) override;
+  void visit(const ASTString &expr) override;
+  void visit(const ASTBoolean &expr) override;
+  void visit(const ASTArrayAccess &expr) override;
+  void visit(const ASTDotAccess &expr) override;
+  void visit(const ASTExpressionList &list) override;
+
+  conduit::Node
+  get_output() const
+  {
+    return output;
+  }
+
+private:
+  flow::Workspace &w;
+  const bool verbose;
+  conduit::Node output;
+  // used to eliminate common subexpressions
+  // ex: (x - min) / (max - min) then min should only be evaluated once
+  conduit::Node subexpr_cache;
+  int ast_counter = 0;
+};
+
 #endif
