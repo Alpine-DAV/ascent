@@ -1152,6 +1152,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   ASCENT_DATA_ADD("Device high water mark", ArrayRegistry::high_water_mark());
   ASCENT_DATA_ADD("Current Device usage ", ArrayRegistry::device_usage());
   ASCENT_DATA_ADD("Current host usage ", ArrayRegistry::host_usage());
+  ArrayRegistry::reset_high_water_mark();
   ASCENT_DATA_CLOSE();
   return return_val;
 }
