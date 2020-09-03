@@ -2874,12 +2874,8 @@ JitableFunctions::gradient(const Jitable &field_jitable,
     ASCENT_ERROR("Could not take the gradient of the derived field "
                  "because the association could not be determined.");
   }
-  conduit::Node &args = out_jitable.dom_info.child(dom_idx)["args"];
-  // gradient needs to pack the topology
   std::unique_ptr<Topology> topo =
       topologyFactory(field_jitable.topology, domain);
-  pack_topology(
-      field_jitable.topology, domain, args, out_jitable.arrays[dom_idx]);
   // we need to change entries for each domain if we're doing a vertex to
   // element gradient
   std::string my_input_field;

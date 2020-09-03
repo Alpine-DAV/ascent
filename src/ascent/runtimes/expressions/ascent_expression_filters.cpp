@@ -3158,10 +3158,35 @@ JitFilter::execute()
   // fuse
   Jitable *out_jitable = new Jitable(num_domains);
   // fuse jitable variables (e.g. entries) and args
-  for(const auto jitable : input_jitables)
+  for(const Jitable *input_jitable : input_jitables)
   {
-    out_jitable->fuse_vars(*jitable);
+    out_jitable->fuse_vars(*input_jitable);
   }
+
+  // some functions need to pack the topology
+  // hack: add a new input jitable with the topology
+  if(func == "gradient" || func == "vorticity")
+  {
+    new_jitables.emplace_back(num_domains);
+    Jitable &jitable = new_jitables.back();
+    input_jitables.push_back(&jitable);
+    for(int i = 0; i < num_domains; ++i)
+    {
+      const conduit::Node &dom = dataset->child(i);
+      std::unique_ptr<Topology> topo =
+          topologyFactory(out_jitable->topology, dom);
+      pack_topology(out_jitable->topology,
+                    dom,
+                    jitable.dom_info.child(i)["args"],
+                    jitable.arrays[i]);
+      const std::string kernel_type =
+          out_jitable->topology + "=" + topo->topo_type;
+      jitable.dom_info.child(i)["kernel_type"] = kernel_type;
+      jitable.kernels[kernel_type];
+    }
+    out_jitable->fuse_vars(jitable);
+  }
+
   if(func == "execute")
   {
     // just copy over the existing kernels, no need to fuse
@@ -3185,13 +3210,12 @@ JitFilter::execute()
       // determine the type of the fused kernel
       std::vector<const Kernel *> input_kernels;
       std::vector<std::string> input_kernel_types;
-      for(int i = 0; i < num_inputs; ++i)
+      for(const Jitable *input_jitable : input_jitables)
       {
-        const Jitable &input_jitable = *input_jitables[i];
         const std::string kernel_type =
-            input_jitable.dom_info.child(dom_idx)["kernel_type"].as_string();
+            input_jitable->dom_info.child(dom_idx)["kernel_type"].as_string();
         input_kernel_types.push_back(kernel_type);
-        input_kernels.push_back(&(input_jitable.kernels.at(kernel_type)));
+        input_kernels.push_back(&(input_jitable->kernels.at(kernel_type)));
       }
       const std::string out_kernel_type = fused_kernel_type(input_kernel_types);
       (*out_jitable).dom_info.child(dom_idx)["kernel_type"] = out_kernel_type;
