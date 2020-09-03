@@ -1056,7 +1056,6 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   {
     flow::Timer build_graph_timer;
     root = expression->build_graph(w);
-    // set_jit_execution_policy(w);
     // if root is a derived field add a JitFilter to execute it
     /*
     if(root["type"].as_string() == "jitable")

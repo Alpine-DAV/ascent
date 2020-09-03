@@ -3279,7 +3279,8 @@ bool
 Jitable::can_execute()
 {
   return !(topology.empty() || topology == "none") &&
-         !(association.empty() || association == "none");
+         !(association.empty() || association == "none") &&
+         !kernels.begin()->second.expr.empty();
 }
 
 //-----------------------------------------------------------------------------
