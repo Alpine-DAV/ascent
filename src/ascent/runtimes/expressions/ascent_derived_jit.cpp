@@ -89,6 +89,7 @@ namespace detail
 
 void
 get_occa_mem(std::vector<Array<unsigned char>> &buffers,
+             const std::vector<std::tuple<size_t, size_t, size_t>> &slices,
              std::vector<occa::memory> &occa)
 {
   occa::device &device = occa::getDevice();
@@ -97,33 +98,35 @@ get_occa_mem(std::vector<Array<unsigned char>> &buffers,
   const std::string mode = device.mode();
 
   // I think the valid modes are: "Serial" "OpenMP", "CUDA:
-  const size_t size = buffers.size();
-  occa.resize(size);
+  const size_t num_slices = slices.size();
+  occa.resize(num_slices);
 
-  for(size_t i = 0; i < size; ++i)
+  for(size_t i = 0; i < num_slices; ++i)
   {
     ASCENT_DATA_OPEN("array_" + std::to_string(i));
     flow::Timer device_array_timer;
-    size_t buff_size = buffers[i].size();
+    Array<unsigned char> &buf = buffers[std::get<0>(slices[i])];
+    size_t buf_offset = std::get<1>(slices[i]);
+    size_t buf_size = std::get<2>(slices[i]);
     if(mode == "Serial" || mode == "OpenMP")
     {
-      unsigned char *ptr = buffers[i].get_host_ptr();
-      occa[i] =
-          occa::cpu::wrapMemory(device, ptr, buff_size * sizeof(unsigned char));
+      unsigned char *ptr = buf.get_host_ptr();
+      occa[i] = occa::cpu::wrapMemory(
+          device, ptr + buf_offset, buf_size * sizeof(unsigned char));
     }
 #ifdef ASCENT_CUDA_ENABLED
     else if(mode == "CUDA")
     {
-      unsigned char *ptr = buffers[i].get_device_ptr();
+      unsigned char *ptr = buf.get_device_ptr();
       occa[i] = occa::cuda::wrapMemory(
-          device, ptr, buff_size * sizeof(unsigned char));
+          device, ptr + buf_offset, buf_size * sizeof(unsigned char));
     }
 #endif
     else
     {
       ASCENT_ERROR("Unknow occa mode " << mode);
     }
-    ASCENT_DATA_ADD("bytes", buff_size);
+    ASCENT_DATA_ADD("bytes", buf_size);
     ASCENT_DATA_CLOSE();
   }
   ASCENT_DATA_CLOSE();
@@ -259,26 +262,31 @@ device_alloc_temporary(const std::string &array_name,
                        const conduit::Schema &dest_schema,
                        conduit::Node &args,
                        std::vector<Array<unsigned char>> &array_memories,
-                       unsigned char *host_ptr = nullptr)
+                       std::vector<std::tuple<size_t, size_t, size_t>> &slices,
+                       unsigned char *host_ptr)
 {
   ASCENT_DATA_OPEN("temp Array");
+
+  const auto size = dest_schema.total_bytes_compact();
   Array<unsigned char> mem;
   if(host_ptr == nullptr)
   {
-    mem.resize(dest_schema.total_bytes_compact());
+    mem.resize(size);
   }
   else
   {
     // instead of using a temporary array for output and copying, we can point
     // Array<> at the destination conduit array
-    mem.set(host_ptr, dest_schema.total_bytes_compact());
+    mem.set(host_ptr, size);
   }
   array_memories.push_back(mem);
+  slices.push_back({array_memories.size() - 1, 0, size});
+
   if(dest_schema.number_of_children() == 0)
   {
     const std::string param =
         detail::type_string(dest_schema.dtype()) + " *" + array_name;
-    args[param + "/index"] = array_memories.size() - 1;
+    args[param + "/index"] = slices.size() - 1;
   }
   else
   {
@@ -287,9 +295,10 @@ device_alloc_temporary(const std::string &array_name,
       const std::string param =
           detail::type_string(dest_schema[component].dtype()) + " *" +
           array_name + "_" + component;
-      args[param + "/index"] = array_memories.size() - 1;
+      args[param + "/index"] = slices.size() - 1;
     }
   }
+
   ASCENT_DATA_ADD("bytes", dest_schema.total_bytes_compact());
   ASCENT_DATA_CLOSE();
 }
@@ -298,7 +307,8 @@ void
 device_alloc_array(const conduit::Node &array,
                    const conduit::Schema &dest_schema,
                    conduit::Node &args,
-                   std::vector<Array<unsigned char>> &array_memories)
+                   std::vector<Array<unsigned char>> &array_memories,
+                   std::vector<std::tuple<size_t, size_t, size_t>> &slices)
 {
   ASCENT_DATA_OPEN("input Array");
   conduit::Node res_array;
@@ -311,13 +321,15 @@ device_alloc_array(const conduit::Node &array,
     unsigned char *start_ptr =
         static_cast<unsigned char *>(const_cast<void *>(res_array.data_ptr()));
 
+    const auto size = res_array.total_bytes_compact();
     Array<unsigned char> mem;
-    mem.set(start_ptr, res_array.total_bytes_compact());
+    mem.set(start_ptr, size);
 
     const std::string param =
         "const " + detail::type_string(array.dtype()) + " *" + array.name();
-    args[param + "/index"] = array_memories.size();
     array_memories.push_back(mem);
+    slices.push_back({array_memories.size() - 1, 0, size});
+    args[param + "/index"] = slices.size() - 1;
   }
   else
   {
@@ -367,15 +379,19 @@ device_alloc_array(const conduit::Node &array,
         unsigned char *data_ptr =
             const_cast<unsigned char *>(full_region_it->start);
         mem.set(data_ptr, full_region_it->end - full_region_it->start);
-        full_region_it->index = array_memories.size();
         array_memories.push_back(mem);
+        full_region_it->index = array_memories.size() - 1;
       }
       const std::string param = "const " +
                                 detail::type_string(n_component.dtype()) +
                                 " *" + array.name() + "_" + component;
       // TODO should make a slice, push it and use that to support cases where
       // we have multiple pointers inside one allocation
-      args[param + "/index"] = full_region_it->index;
+      slices.push_back({full_region_it->index,
+                        static_cast<const unsigned char *>(start_ptr) -
+                            full_region_it->start,
+                        size});
+      args[param + "/index"] = slices.size() - 1;
     }
   }
   ASCENT_DATA_CLOSE();
@@ -3392,7 +3408,8 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     // these are reference counted
     // need to keep the mem in scope or bad things happen
     std::vector<Array<unsigned char>> array_buffers;
-
+    // slice is {index in array_buffers, offset, size}
+    std::vector<std::tuple<size_t, size_t, size_t>> slices;
     ASCENT_DATA_OPEN("host array alloc");
     // allocate arrays
     size_t output_index;
@@ -3404,7 +3421,8 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         device_alloc_array(cur_dom_info["args/" + array.first],
                            array.second,
                            new_args,
-                           array_buffers);
+                           array_buffers,
+                           slices);
       }
       else
       {
@@ -3418,13 +3436,21 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         {
           // in Serial and OpenMP we don't need a separate output array for
           // the device, so just pass it conduit's array
-          device_alloc_temporary(
-              array.first, array.second, new_args, array_buffers, output_ptr);
+          device_alloc_temporary(array.first,
+                                 array.second,
+                                 new_args,
+                                 array_buffers,
+                                 slices,
+                                 output_ptr);
         }
         else
         {
-          device_alloc_temporary(
-              array.first, array.second, new_args, array_buffers);
+          device_alloc_temporary(array.first,
+                                 array.second,
+                                 new_args,
+                                 array_buffers,
+                                 slices,
+                                 nullptr);
         }
       }
     }
@@ -3444,7 +3470,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     // generate and compile the kernel
     const std::string kernel_string = generate_kernel(dom_idx, new_args);
 
-    // std::cout << kernel_string << std::endl;
+    std::cout << kernel_string << std::endl;
 
     // store kernels so that we don't have to recompile, even loading a cached
     // kernel from disk is slow
@@ -3481,7 +3507,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     occa_kernel.clearArgs();
     // get occa mem for devices
     std::vector<occa::memory> array_memories;
-    detail::get_occa_mem(array_buffers, array_memories);
+    detail::get_occa_mem(array_buffers, slices, array_memories);
 
     flow::Timer push_args_timer;
     const int num_new_args = new_args.number_of_children();

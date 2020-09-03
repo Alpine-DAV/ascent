@@ -3278,8 +3278,8 @@ JitFilter::execute()
     }
   }
 
-  // if(execute)
-  if(out_jitable->can_execute())
+  if(execute)
+  // if(out_jitable->can_execute())
   {
     // pass entries into args just before we need to execute
     for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
