@@ -1054,7 +1054,6 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     expression->accept(&build_graph);
     root = build_graph.get_output();
     // if root is a derived field add a JitFilter to execute it
-    /*
     if(root["type"].as_string() == "jitable")
     {
       conduit::Node params;
@@ -1071,7 +1070,6 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
       root["filter_name"] = "jit_execute";
       root["type"] = "field";
     }
-    */
     // w.graph().save_dot_html("ascent_expressions_graph.html");
     ASCENT_DATA_ADD("build_graph time", build_graph_timer.elapsed());
     flow::Timer execute_timer;
