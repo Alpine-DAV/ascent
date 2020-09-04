@@ -87,9 +87,47 @@ namespace expressions
 namespace detail
 {
 
+std::string
+type_string(const conduit::DataType &dtype)
+{
+  std::string type;
+  if(dtype.is_float64())
+  {
+    type = "double";
+  }
+  else if(dtype.is_float32())
+  {
+    type = "float";
+  }
+  else if(dtype.is_int32())
+  {
+    type = "int";
+  }
+  else if(dtype.is_int64())
+  {
+    type = "long";
+  }
+  else if(dtype.is_unsigned_integer())
+  {
+    type = "unsigned long";
+  }
+  else
+  {
+    ASCENT_ERROR("JIT: unknown argument type: " << dtype.to_string());
+  }
+  return type;
+}
+
+//-----------------------------------------------------------------------------
+// -- Array Allocation Functions
+//-----------------------------------------------------------------------------
+//{{{
+
+using slice_t = std::tuple<size_t, size_t, size_t>;
+
 void
 get_occa_mem(std::vector<Array<unsigned char>> &buffers,
-             const std::vector<std::tuple<size_t, size_t, size_t>> &slices,
+             const std::vector<slice_t> &slices,
              std::vector<occa::memory> &occa)
 {
   occa::device &device = occa::getDevice();
@@ -131,101 +169,6 @@ get_occa_mem(std::vector<Array<unsigned char>> &buffers,
   ASCENT_DATA_CLOSE();
 }
 
-std::string
-indent_code(const std::string &input_code, const int num_spaces)
-{
-  std::stringstream ss(input_code);
-  std::string line;
-  std::unordered_set<std::string> lines;
-  std::string output_code;
-  // num_spaces is the starting indentation level
-  std::string indent(num_spaces, ' ');
-  while(std::getline(ss, line))
-  {
-    if(line == "{")
-    {
-      output_code += indent + line + "\n";
-      indent += "  ";
-    }
-    else if(line == "}")
-    {
-      try
-      {
-        indent = indent.substr(2);
-      }
-      catch(const std::out_of_range &e)
-      {
-        ASCENT_ERROR("Could not indent string:\n" << input_code);
-      }
-      output_code += indent + line + "\n";
-    }
-    else
-    {
-      output_code += indent + line + "\n";
-    }
-  }
-  return output_code;
-}
-
-std::string
-type_string(const conduit::DataType &dtype)
-{
-  std::string type;
-  if(dtype.is_float64())
-  {
-    type = "double";
-  }
-  else if(dtype.is_float32())
-  {
-    type = "float";
-  }
-  else if(dtype.is_int32())
-  {
-    type = "int";
-  }
-  else if(dtype.is_int64())
-  {
-    type = "long";
-  }
-  else if(dtype.is_unsigned_integer())
-  {
-    type = "unsigned long";
-  }
-  else
-  {
-    ASCENT_ERROR("JIT: unknown argument type: " << dtype.to_string());
-  }
-  return type;
-}
-};
-
-//-----------------------------------------------------------------------------
-// -- MemoryRegion
-//-----------------------------------------------------------------------------
-//{{{
-MemoryRegion::MemoryRegion(const void *start, const void *end)
-    : start(static_cast<const unsigned char *>(start)),
-      end(static_cast<const unsigned char *>(end)), allocated(false)
-{
-}
-
-MemoryRegion::MemoryRegion(const void *start, const size_t size)
-    : start(static_cast<const unsigned char *>(start)), end(this->start + size),
-      allocated(false)
-{
-}
-
-bool
-MemoryRegion::operator<(const MemoryRegion &other) const
-{
-  return std::less<const void *>()(end, other.start);
-}
-//}}}
-
-//-----------------------------------------------------------------------------
-// -- Array Allocation Functions
-//-----------------------------------------------------------------------------
-//{{{
 // pack/allocate the host array using a contiguous schema
 void
 host_realloc_array(const conduit::Node &src_array,
@@ -261,7 +204,7 @@ device_alloc_temporary(const std::string &array_name,
                        const conduit::Schema &dest_schema,
                        conduit::Node &args,
                        std::vector<Array<unsigned char>> &array_memories,
-                       std::vector<std::tuple<size_t, size_t, size_t>> &slices,
+                       std::vector<slice_t> &slices,
                        unsigned char *host_ptr)
 {
   ASCENT_DATA_OPEN("temp Array");
@@ -279,7 +222,7 @@ device_alloc_temporary(const std::string &array_name,
     mem.set(host_ptr, size);
   }
   array_memories.push_back(mem);
-  slices.push_back({array_memories.size() - 1, 0, size});
+  slices.push_back(slice_t(array_memories.size() - 1, 0, size));
 
   if(dest_schema.number_of_children() == 0)
   {
@@ -307,7 +250,7 @@ device_alloc_array(const conduit::Node &array,
                    const conduit::Schema &dest_schema,
                    conduit::Node &args,
                    std::vector<Array<unsigned char>> &array_memories,
-                   std::vector<std::tuple<size_t, size_t, size_t>> &slices)
+                   std::vector<slice_t> &slices)
 {
   ASCENT_DATA_OPEN("input Array");
   conduit::Node res_array;
@@ -327,7 +270,7 @@ device_alloc_array(const conduit::Node &array,
     const std::string param =
         "const " + detail::type_string(array.dtype()) + " *" + array.name();
     array_memories.push_back(mem);
-    slices.push_back({array_memories.size() - 1, 0, size});
+    slices.push_back(slice_t(array_memories.size() - 1, 0, size));
     args[param + "/index"] = slices.size() - 1;
   }
   else
@@ -386,14 +329,75 @@ device_alloc_array(const conduit::Node &array,
                                 " *" + array.name() + "_" + component;
       // TODO should make a slice, push it and use that to support cases where
       // we have multiple pointers inside one allocation
-      slices.push_back({full_region_it->index,
+      slices.push_back(slice_t(full_region_it->index,
                         static_cast<const unsigned char *>(start_ptr) -
                             full_region_it->start,
-                        size});
+                        size));
       args[param + "/index"] = slices.size() - 1;
     }
   }
   ASCENT_DATA_CLOSE();
+}
+//}}}
+
+
+std::string
+indent_code(const std::string &input_code, const int num_spaces)
+{
+  std::stringstream ss(input_code);
+  std::string line;
+  std::unordered_set<std::string> lines;
+  std::string output_code;
+  // num_spaces is the starting indentation level
+  std::string indent(num_spaces, ' ');
+  while(std::getline(ss, line))
+  {
+    if(line == "{")
+    {
+      output_code += indent + line + "\n";
+      indent += "  ";
+    }
+    else if(line == "}")
+    {
+      try
+      {
+        indent = indent.substr(2);
+      }
+      catch(const std::out_of_range &e)
+      {
+        ASCENT_ERROR("Could not indent string:\n" << input_code);
+      }
+      output_code += indent + line + "\n";
+    }
+    else
+    {
+      output_code += indent + line + "\n";
+    }
+  }
+  return output_code;
+}
+};
+
+//-----------------------------------------------------------------------------
+// -- MemoryRegion
+//-----------------------------------------------------------------------------
+//{{{
+MemoryRegion::MemoryRegion(const void *start, const void *end)
+    : start(static_cast<const unsigned char *>(start)),
+      end(static_cast<const unsigned char *>(end)), allocated(false)
+{
+}
+
+MemoryRegion::MemoryRegion(const void *start, const size_t size)
+    : start(static_cast<const unsigned char *>(start)), end(this->start + size),
+      allocated(false)
+{
+}
+
+bool
+MemoryRegion::operator<(const MemoryRegion &other) const
+{
+  return std::less<const void *>()(end, other.start);
 }
 //}}}
 
@@ -3337,9 +3341,9 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
   if(!device_set)
   {
     // running this in a loop segfaults...
-    // occa::setDevice("mode: 'CUDA', device_id: 0");
+    occa::setDevice("mode: 'CUDA', device_id: 0");
     // occa::setDevice("mode: 'Serial'");
-    occa::setDevice("mode: 'OpenMP'");
+    // occa::setDevice("mode: 'OpenMP'");
     device_set = true;
   }
   occa::device &device = occa::getDevice();
@@ -3409,7 +3413,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     // need to keep the mem in scope or bad things happen
     std::vector<Array<unsigned char>> array_buffers;
     // slice is {index in array_buffers, offset, size}
-    std::vector<std::tuple<size_t, size_t, size_t>> slices;
+    std::vector<detail::slice_t> slices;
     ASCENT_DATA_OPEN("host array alloc");
     // allocate arrays
     size_t output_index;
@@ -3418,7 +3422,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     {
       if(cur_dom_info["args"].has_path(array.first))
       {
-        device_alloc_array(cur_dom_info["args/" + array.first],
+	      detail::device_alloc_array(cur_dom_info["args/" + array.first],
                            array.second,
                            new_args,
                            array_buffers,
@@ -3436,21 +3440,21 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         {
           // in Serial and OpenMP we don't need a separate output array for
           // the device, so just pass it conduit's array
-          device_alloc_temporary(array.first,
-                                 array.second,
-                                 new_args,
-                                 array_buffers,
-                                 slices,
-                                 output_ptr);
+  	  detail::device_alloc_temporary(array.first,
+					 array.second,
+					 new_args,
+					 array_buffers,
+					 slices,
+					 output_ptr);
         }
         else
         {
-          device_alloc_temporary(array.first,
-                                 array.second,
-                                 new_args,
-                                 array_buffers,
-                                 slices,
-                                 nullptr);
+	  detail::device_alloc_temporary(array.first,
+	    			         array.second,
+	    			         new_args,
+	    			         array_buffers,
+	    			         slices,
+	    			         nullptr);
         }
       }
     }
