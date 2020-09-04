@@ -3379,7 +3379,6 @@ void
 PointAndAxis::execute()
 {
   conduit::Node &in_binning = *input<Node>("binning");
-  conduit::Node &in_axis = *input<Node>("axis");
   conduit::Node &in_threshold = *input<Node>("threshold");
   conduit::Node &in_point = *input<Node>("point");
   conduit::Node &n_miss_val = *input<Node>("miss_value");

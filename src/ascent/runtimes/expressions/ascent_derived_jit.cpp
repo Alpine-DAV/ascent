@@ -93,7 +93,6 @@ get_occa_mem(std::vector<Array<unsigned char>> &buffers,
              std::vector<occa::memory> &occa)
 {
   occa::device &device = occa::getDevice();
-  ASCENT_DATA_ADD("occa device", device.mode());
   ASCENT_DATA_OPEN("copy to device");
   const std::string mode = device.mode();
 
@@ -3344,6 +3343,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     device_set = true;
   }
   occa::device &device = occa::getDevice();
+  ASCENT_DATA_ADD("occa device", device.mode());
   occa::kernel occa_kernel;
 
   // we need an association and topo so we can put the field back on the mesh
@@ -3363,7 +3363,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
   const int num_domains = dataset.number_of_children();
   for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
   {
-    flow::Timer jitable_execute_timer;
+    ASCENT_DATA_OPEN("domain execute");
     conduit::Node &dom = dataset.child(dom_idx);
 
     const conduit::Node &cur_dom_info = dom_info.child(dom_idx);
@@ -3550,7 +3550,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     ASCENT_DATA_ADD("copy to host", copy_back_timer.elapsed());
 
     // dom["fields/" + field_name].print();
-    ASCENT_DATA_ADD("domain execute", jitable_execute_timer.elapsed());
+    ASCENT_DATA_CLOSE();
   }
   ASCENT_DATA_CLOSE();
 }
