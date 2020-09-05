@@ -1664,11 +1664,13 @@ VTKHHistSampling::verify_params(const conduit::Node &params,
     bool res = check_string("field",params, info, true);
     res &= check_numeric("bins",params, info, false);
     res &= check_numeric("sample_rate",params, info, false);
+    res &= check_string("use_gradient",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
     valid_paths.push_back("bins");
     valid_paths.push_back("sample_rate");
+    valid_paths.push_back("use_gradient");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -1727,6 +1729,15 @@ VTKHHistSampling::execute()
       }
     }
 
+    bool use_gradient = false;
+    if(params().has_path("use_gradient"))
+    {
+      if(params()["use_gradient"].as_string() == "true")
+      {
+        use_gradient = true;
+      }
+    }
+
     // TODO: write helper functions for this
     std::string ghost_field = "";
     Node * meta = graph().workspace().registry().fetch<Node>("metadata");
@@ -1757,6 +1768,7 @@ VTKHHistSampling::execute()
     hist.SetField(field_name);
     hist.SetNumBins(bins);
     hist.SetSamplingPercent(sample_rate);
+    hist.SetGradientSampling(use_gradient);
     if(ghost_field != "")
     {
       hist.SetGhostField(ghost_field);
