@@ -330,16 +330,15 @@ device_alloc_array(const conduit::Node &array,
       // TODO should make a slice, push it and use that to support cases where
       // we have multiple pointers inside one allocation
       slices.push_back(slice_t(full_region_it->index,
-                        static_cast<const unsigned char *>(start_ptr) -
-                            full_region_it->start,
-                        size));
+                               static_cast<const unsigned char *>(start_ptr) -
+                                   full_region_it->start,
+                               size));
       args[param + "/index"] = slices.size() - 1;
     }
   }
   ASCENT_DATA_CLOSE();
 }
 //}}}
-
 
 std::string
 indent_code(const std::string &input_code, const int num_spaces)
@@ -3422,11 +3421,11 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     {
       if(cur_dom_info["args"].has_path(array.first))
       {
-	      detail::device_alloc_array(cur_dom_info["args/" + array.first],
-                           array.second,
-                           new_args,
-                           array_buffers,
-                           slices);
+        detail::device_alloc_array(cur_dom_info["args/" + array.first],
+                                   array.second,
+                                   new_args,
+                                   array_buffers,
+                                   slices);
       }
       else
       {
@@ -3440,21 +3439,21 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         {
           // in Serial and OpenMP we don't need a separate output array for
           // the device, so just pass it conduit's array
-  	  detail::device_alloc_temporary(array.first,
-					 array.second,
-					 new_args,
-					 array_buffers,
-					 slices,
-					 output_ptr);
+          detail::device_alloc_temporary(array.first,
+                                         array.second,
+                                         new_args,
+                                         array_buffers,
+                                         slices,
+                                         output_ptr);
         }
         else
         {
-	  detail::device_alloc_temporary(array.first,
-	    			         array.second,
-	    			         new_args,
-	    			         array_buffers,
-	    			         slices,
-	    			         nullptr);
+          detail::device_alloc_temporary(array.first,
+                                         array.second,
+                                         new_args,
+                                         array_buffers,
+                                         slices,
+                                         nullptr);
         }
       }
     }

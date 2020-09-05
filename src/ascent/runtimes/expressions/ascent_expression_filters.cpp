@@ -3132,12 +3132,25 @@ JitFilter::execute()
           // indicating we are no longer dealing with an original field and will
           // have to generate it.
           jitable.obj = *inp;
-          // we assume that arrays don't have different strides/offsets in
-          // different domains
+          // TODO we assume that arrays don't have different strides/offsets in
+          // different domains so just use the first domain array for code gen
           default_kernel.num_components = std::max(1, num_components);
           if(default_kernel.num_components == 1)
           {
             default_kernel.expr = jitable.arrays[0].index(field_name, "item");
+          }
+          else
+          {
+            default_kernel.for_body.insert("double " + field_name + "_item[" +
+                                           std::to_string(num_components) +
+                                           "];\n");
+            for(int i = 0; i < default_kernel.num_components; ++i)
+            {
+              default_kernel.for_body.insert(
+                  field_name + "_item[" + std::to_string(i) + "] = " +
+                  jitable.arrays[0].index(field_name, "item", i) + ";\n");
+            }
+            default_kernel.expr = field_name + "_item";
           }
         }
         else if(type == "string")
