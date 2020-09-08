@@ -16,6 +16,7 @@
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_string_utils.hpp>
 #include <flow_workspace.hpp>
 
 
@@ -57,7 +58,7 @@ bool ascent::runtime::filters::BFlowCompose::verify_params(const conduit::Node &
 
   res &= check_string("color_field", params, info, true);
   res &= check_string("depth_field", params, info, true);
-  res &= check_string("image_name", params, info, true);
+  res &= check_string("image_prefix", params, info, true);
   res &= check_numeric("compositing", params, info, true);
   res &= check_numeric("fanin", params, info, false);
   
@@ -155,7 +156,16 @@ MPI_Comm mpi_comm;
   
   int64_t fanin = p["fanin"].as_int64();
   CompositingType compositing_flag = CompositingType(p["compositing"].as_int64());
-  std::string image_name = p["image_name"].as_string();
+  std::string image_name = p["image_prefix"].as_string();
+
+  int cycle = 0;
+  conduit::Node * meta = graph().workspace().registry().fetch<conduit::Node>("metadata");
+  if( meta->has_path("cycle") )
+  {
+    cycle = (*meta)["cycle"].as_int32();
+  }
+
+  image_name = expand_family_name(image_name, cycle);
   
 #ifdef BFLOW_COMP_DEBUG
   {
