@@ -46,16 +46,20 @@ namespace bflow_comp
 
 struct ImageData
 {
+  using PixelType = float;
+
   static const uint32_t sNUM_CHANNELS = 4;
+  constexpr static const PixelType sOPAQUE = 0.f;
   
-  unsigned char* image; 
-  unsigned char* zbuf;
+  PixelType* image; 
+  PixelType* zbuf;
   uint32_t* bounds;
   uint32_t* rend_bounds;     // Used only for binswap and k-radix
   
   ImageData() : image( nullptr ), zbuf( nullptr ), bounds( nullptr ), rend_bounds( nullptr ) {}
   
   void writeImage(const char* filename, uint32_t* extent);
+  void writeDepth(const char* filename, uint32_t* extent);
   BabelFlow::Payload serialize() const;
   void deserialize(BabelFlow::Payload buffer);
   void delBuffers();

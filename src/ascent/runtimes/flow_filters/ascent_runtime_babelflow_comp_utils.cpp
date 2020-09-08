@@ -17,7 +17,7 @@
 #include "BabelFlow/ComposableTaskMap.h"
 
 
-#define BFLOW_COMP_UTIL_DEBUG
+// #define BFLOW_COMP_UTIL_DEBUG
 
 
 //-----------------------------------------------------------------------------
@@ -67,7 +67,7 @@ void ImageData::writeImage(const char* filename, uint32_t* extent)
   int y_extent = extent[3] - extent[2] + 1;
   
   // PNGEncoder works with rgba -- 4 channels
-  unsigned char* pixel_buff = new unsigned char[x_extent*y_extent*4]();
+  PixelType* pixel_buff = new PixelType[x_extent*y_extent*4]();
   
   uint32_t x_size = rend_bounds[1] - rend_bounds[0] + 1;
   uint32_t y_size = rend_bounds[3] - rend_bounds[2] + 1;
@@ -85,51 +85,104 @@ void ImageData::writeImage(const char* filename, uint32_t* extent)
           continue;
         }
         
-        uint32_t myidx = (x + extent[0] -rend_bounds[0]) + (y + extent[2] - rend_bounds[2])*x_size;
+        uint32_t myidx = (x + extent[0] - rend_bounds[0]) + (y + extent[2] - rend_bounds[2])*x_size;
         uint32_t myimgidx = myidx*ImageData::sNUM_CHANNELS;
         
-        pixel_buff[imgidx + 3] = 255;
-        memcpy(pixel_buff + imgidx, image + myimgidx, ImageData::sNUM_CHANNELS);
+        pixel_buff[imgidx + 3] = ImageData::sOPAQUE;
+        memcpy( pixel_buff + imgidx, image + myimgidx, ImageData::sNUM_CHANNELS*sizeof(PixelType) );
       }
   }
 
   // Use Ascent's PNGEncoder to write image to disk
   PNGEncoder encoder;
-  encoder.Encode(pixel_buff, x_extent, y_extent);
-  encoder.Save(filename);
+  encoder.Encode( pixel_buff, x_extent, y_extent );
+  encoder.Save( filename );
+  
+  delete[] pixel_buff;
+}
+
+void ImageData::writeDepth(const char* filename, uint32_t* extent)
+{
+  int x_extent = extent[1] - extent[0] + 1;
+  int y_extent = extent[3] - extent[2] + 1;
+  
+  // PNGEncoder works with rgba -- 4 channels
+  PixelType* pixel_buff = new PixelType[x_extent*y_extent*4]();
+  
+  uint32_t x_size = rend_bounds[1] - rend_bounds[0] + 1;
+  uint32_t y_size = rend_bounds[3] - rend_bounds[2] + 1;
+
+  PixelType max_depth = -1.f, min_depth = zbuf[0];
+  for( uint32_t i = 0; i < x_size*y_size; ++i )
+  {
+    if( zbuf[i] >= std::numeric_limits<float>::infinity() )
+      continue;
+    if( zbuf[i] > max_depth ) max_depth = zbuf[i];
+    if( zbuf[i] < min_depth ) min_depth = zbuf[i];
+  }
+  
+  for(int y=0; y < y_extent; ++y)
+  {
+      for(int x=0; x < x_extent; ++x)
+      {
+        int idx = x + y*x_extent; 
+        int imgidx = idx*4;
+        
+        if( (x + extent[0] < rend_bounds[0]) || (x + extent[0] > rend_bounds[1]) || 
+            (y + extent[2] < rend_bounds[2]) || (y + extent[2] > rend_bounds[3]) )
+        {
+          continue;
+        }
+        
+        uint32_t myidx = (x + extent[0] - rend_bounds[0]) + (y + extent[2] - rend_bounds[2])*x_size;
+        
+        PixelType pval = (zbuf[myidx] - min_depth) / (max_depth - min_depth);
+        if( pval >= std::numeric_limits<float>::infinity() )
+          pval = 1.f;
+        pixel_buff[imgidx + 0] = pval;
+        pixel_buff[imgidx + 1] = pval;
+        pixel_buff[imgidx + 2] = pval;
+        pixel_buff[imgidx + 3] = 1.f;
+      }
+  }
+
+  // Use Ascent's PNGEncoder to write image to disk
+  PNGEncoder encoder;
+  encoder.Encode( pixel_buff, x_extent, y_extent );
+  encoder.Save( filename );
   
   delete[] pixel_buff;
 }
 
 BabelFlow::Payload ImageData::serialize() const
 {
-  uint32_t zsize = (rend_bounds[1]-rend_bounds[0]+1)*(rend_bounds[3]-rend_bounds[2]+1);
+  uint32_t zsize = (rend_bounds[1]-rend_bounds[0]+1) * (rend_bounds[3]-rend_bounds[2]+1) * sizeof(PixelType);
   uint32_t psize = zsize*ImageData::sNUM_CHANNELS;
   uint32_t bounds_size = 4*sizeof(uint32_t);
   uint32_t total_size = 2*bounds_size + zsize + psize;
 
   char* out_buffer = new char[total_size];
-  memcpy(out_buffer, (const char*)bounds, bounds_size);
-  memcpy(out_buffer + bounds_size, (const char*)rend_bounds, bounds_size);
-  memcpy(out_buffer + 2*bounds_size, (const char*)zbuf, zsize);
-  memcpy(out_buffer + 2*bounds_size + zsize, (const char*)image, psize);
+  memcpy( out_buffer, (const char*)bounds, bounds_size );
+  memcpy( out_buffer + bounds_size, (const char*)rend_bounds, bounds_size );
+  memcpy( out_buffer + 2*bounds_size, (const char*)zbuf, zsize );
+  memcpy( out_buffer + 2*bounds_size + zsize, (const char*)image, psize );
 
   return BabelFlow::Payload(total_size, out_buffer);
 }
 
 void ImageData::deserialize(BabelFlow::Payload payload)
 {
-  unsigned char* img_buff = (unsigned char*)payload.buffer();
+  char* img_buff = payload.buffer();
   uint32_t bounds_size = 4*sizeof(uint32_t);
   
   bounds = (uint32_t*)img_buff;
   rend_bounds = (uint32_t*)(img_buff + bounds_size);
 
-  uint32_t zsize = (rend_bounds[1]-rend_bounds[0]+1)*(rend_bounds[3]-rend_bounds[2]+1);
+  uint32_t zsize = (rend_bounds[1]-rend_bounds[0]+1) * (rend_bounds[3]-rend_bounds[2]+1) * sizeof(PixelType);
   uint32_t psize = ImageData::sNUM_CHANNELS*zsize;
   
-  zbuf = img_buff + 2*bounds_size;
-  image = img_buff + 2*bounds_size + zsize;
+  zbuf = (PixelType*)(img_buff + 2*bounds_size);
+  image = (PixelType*)(img_buff + 2*bounds_size + zsize);
 }
 
 void ImageData::delBuffers()
@@ -202,14 +255,15 @@ void split_and_blend(const std::vector<ImageData>& input_images,
 
     uint32_t zsize = 
       (outimg.rend_bounds[1] - outimg.rend_bounds[0] + 1) * (outimg.rend_bounds[3] - outimg.rend_bounds[2] + 1);
-    outimg.image = new unsigned char[zsize*ImageData::sNUM_CHANNELS]();
+    outimg.image = new ImageData::PixelType[zsize*ImageData::sNUM_CHANNELS]();
     // Initialize alpha channel to 255 (fully opaque)
     if( ImageData::sNUM_CHANNELS > 3 )
     {
       for( uint32_t j = 0; j < zsize; ++j )
-        outimg.image[j*ImageData::sNUM_CHANNELS + 3] = 255;
+        outimg.image[j*ImageData::sNUM_CHANNELS + 3] = ImageData::sOPAQUE;
     }
-    outimg.zbuf = new unsigned char[zsize]();
+    outimg.zbuf = new ImageData::PixelType[zsize];
+    std::fill( outimg.zbuf, outimg.zbuf + zsize, std::numeric_limits<float>::infinity() );
     
     if( zsize == 0 )
       std::cout << i << " image is empty" << std::endl;
@@ -247,10 +301,10 @@ void split_and_blend(const std::vector<ImageData>& input_images,
           uint32_t myidx = (x - bound[0]) + (y - bound[2]) * (bound[1] - bound[0] + 1);
           uint32_t imgmyidx = myidx*ImageData::sNUM_CHANNELS;
 
-          if( skip_z_check || outimg.zbuf[myidx] < inimg.zbuf[idx] )
+          if( skip_z_check || outimg.zbuf[myidx] > inimg.zbuf[idx] )
           {
             outimg.zbuf[myidx] = inimg.zbuf[idx];
-            memcpy(outimg.image + imgmyidx, inimg.image + imgidx, ImageData::sNUM_CHANNELS);
+            memcpy( outimg.image + imgmyidx, inimg.image + imgidx, ImageData::sNUM_CHANNELS*sizeof(ImageData::PixelType));
           }
         }
       }
@@ -305,8 +359,12 @@ int generic_composite(std::vector<BabelFlow::Payload>& inputs,
 #ifdef BFLOW_COMP_UTIL_DEBUG    // DEBUG -- write local rendering result to a file
     {
       std::stringstream filename;
-      filename << "composite_" << task_id << "_" << i << ".png";
+      filename << "comp_img_" << task_id << "_" << i << ".png";
       out_images[i].writeImage(filename.str().c_str(), out_images[i].rend_bounds);
+
+      std::stringstream filename1;
+      filename1 << "comp_dep_" << task_id << "_" << i << ".png";
+      out_images[i].writeDepth(filename1.str().c_str(), out_images[i].rend_bounds);
     }
 #endif
     
@@ -464,6 +522,14 @@ int write_results_radixk(std::vector<BabelFlow::Payload>& inputs,
   std::stringstream filename;
   filename << BabelGraphWrapper::sIMAGE_NAME << ".png";
   out_image.writeImage(filename.str().c_str(), out_image.rend_bounds);
+
+#ifdef BFLOW_COMP_UTIL_DEBUG    // DEBUG -- write local rendering result to a file
+  {
+    std::stringstream filename;
+    filename << BabelGraphWrapper::sIMAGE_NAME << "_dep.png";
+    out_image.writeDepth(filename.str().c_str(), out_image.rend_bounds);
+  }
+#endif
   
   comp_outputs[0].reset();
 

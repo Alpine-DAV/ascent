@@ -211,8 +211,8 @@ int vtkm_rendering(std::vector<BabelFlow::Payload>& inputs,
   assert( color_portal.GetNumberOfValues() == iso_surf_data.m_Width*iso_surf_data.m_Height );
 
   bflow_comp::ImageData input_img;  
-  input_img.image = new unsigned char[iso_surf_data.m_Width*iso_surf_data.m_Height*bflow_comp::ImageData::sNUM_CHANNELS];
-  input_img.zbuf = new unsigned char[iso_surf_data.m_Width*iso_surf_data.m_Height];
+  input_img.image = new bflow_comp::ImageData::PixelType[iso_surf_data.m_Width*iso_surf_data.m_Height*bflow_comp::ImageData::sNUM_CHANNELS];
+  input_img.zbuf = new bflow_comp::ImageData::PixelType[iso_surf_data.m_Width*iso_surf_data.m_Height];
   input_img.bounds = new uint32_t[4];
   input_img.rend_bounds = new uint32_t[4];
   input_img.bounds[0] = input_img.rend_bounds[0] = 0;
