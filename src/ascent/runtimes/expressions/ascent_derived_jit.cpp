@@ -470,7 +470,7 @@ ArrayCode::index(const std::string &array_name,
   }
   else
   {
-    const int num_components = array_it->second.number_of_children();
+    const int num_components = array_it->second.schema.number_of_children();
     if(component == -1)
     {
       // check that the array only has one component
@@ -480,9 +480,9 @@ ArrayCode::index(const std::string &array_name,
                      << array_name << "' because it has " << num_components
                      << " components and no component was specified.");
       }
-      offset = array_it->second.dtype().offset();
-      stride = array_it->second.dtype().stride();
-      pointer_size = array_it->second.dtype().element_bytes();
+      offset = array_it->second.schema.dtype().offset();
+      stride = array_it->second.schema.dtype().stride();
+      pointer_size = array_it->second.schema.dtype().element_bytes();
 
       pointer_name = array_name;
     }
@@ -495,12 +495,19 @@ ArrayCode::index(const std::string &array_name,
                      << num_components << " components.");
       }
       const conduit::Schema &component_schema =
-          array_it->second.child(component);
+          array_it->second.schema.child(component);
       offset = component_schema.dtype().offset();
       stride = component_schema.dtype().stride();
       pointer_size = component_schema.dtype().element_bytes();
 
-      pointer_name = array_name + "_" + component_schema.name();
+      if(array_it->second.codegen_array)
+      {
+        pointer_name = component_schema.name();
+      }
+      else
+      {
+        pointer_name = array_name + "_" + component_schema.name();
+      }
     }
   }
 
@@ -521,7 +528,7 @@ ArrayCode::index(const std::string &array_name,
                  << "' because its schema was not found. Try using an integer "
                     "component instead of a string component.");
   }
-  return index(array_name, idx, array_it->second.child_index(component));
+  return index(array_name, idx, array_it->second.schema.child_index(component));
 }
 // }}}
 
@@ -1814,7 +1821,8 @@ pack_array(const conduit::Node &array,
      is_compact_interleaved(array) /* || array is on the device */)
   {
     // copy the existing schema
-    array_code.array_map[name] = array.schema();
+    array_code.array_map.insert(
+        std::make_pair(name, SchemaBool(array.schema(), false)));
   }
   else
   {
@@ -1834,9 +1842,9 @@ pack_array(const conduit::Node &array,
     }
 
     conduit::Schema s;
-    // TODO for now it's always contiguous
+    // TODO for now, if we need to copy we copy to contiguous
     schemaFactory("contiguous", type_id, size, array.child_names(), s);
-    array_code.array_map[name] = s;
+    array_code.array_map.insert(std::make_pair(name, SchemaBool(s, false)));
   }
 }
 
@@ -2700,9 +2708,9 @@ JitableFunctions::expr_dot()
   const Kernel &obj_kernel = *input_kernels[obj_port];
   const conduit::Node &obj = input_jitables[obj_port]->obj;
   const std::string &name = params["name"].as_string();
-  if(!obj.has_path("type"))
+  // derived fields or trivial fields
+  if(!obj.has_path("type") || obj["type"].as_string() == "field")
   {
-    // field objects
     if(is_xyz(name) && available_component(name, obj_kernel.num_components))
     {
       out_kernel.expr =
@@ -2716,21 +2724,17 @@ JitableFunctions::expr_dot()
                                                 << "' of field at runtime.");
     }
   }
+  else if(obj["type"].as_string() == "topo")
+  {
+    // needs to run for every domain not just every kernel type to
+    // populate entries
+    topo_attrs(obj, name);
+    // for now all topology attributes have one component :)
+    out_kernel.num_components = 1;
+  }
   else
   {
-    // all other objects
-    if(obj["type"].as_string() == "topo")
-    {
-      // needs to run for every domain not just every kernel type to
-      // populate entries
-      topo_attrs(obj, name);
-      // for now all topology attributes have one component :)
-      out_kernel.num_components = 1;
-    }
-    else
-    {
-      ASCENT_ERROR("JIT: Unknown obj:\n" << obj.to_yaml());
-    }
+    ASCENT_ERROR("JIT: Unknown obj:\n" << obj.to_yaml());
   }
 }
 
@@ -2876,7 +2880,8 @@ JitableFunctions::temporary_field(const Kernel &field_kernel)
                 s);
   // The array will have to be allocated but doesn't point to any data so we
   // won't put it in args
-  out_jitable.arrays[dom_idx].array_map[tmp_field] = s;
+  out_jitable.arrays[dom_idx].array_map.insert(
+      std::make_pair(tmp_field, SchemaBool(s, false)));
   if(not_fused)
   {
     out_kernel.kernel_body.insert(field_kernel.generate_loop(
@@ -3041,11 +3046,34 @@ JitableFunctions::magnitude()
 void
 JitableFunctions::vector()
 {
+  const int arg1_port = inputs["arg1/port"].to_int32();
+  const int arg2_port = inputs["arg2/port"].to_int32();
+  const int arg3_port = inputs["arg3/port"].to_int32();
+  const Jitable &arg1_jitable = *input_jitables[arg1_port];
+  const Jitable &arg2_jitable = *input_jitables[arg2_port];
+  const Jitable &arg3_jitable = *input_jitables[arg3_port];
+  // if all the inputs to the vector are "trivial" fields then we don't need
+  // to regenerate the vector in a separate for-loop
+  if(arg1_jitable.obj.has_path("type") && arg2_jitable.obj.has_path("type") &&
+     arg3_jitable.obj.has_path("type"))
+  {
+    // We construct a fake schema with the input arrays as the components
+    const std::string &arg1_field = arg1_jitable.obj["value"].as_string();
+    const std::string &arg2_field = arg2_jitable.obj["value"].as_string();
+    const std::string &arg3_field = arg3_jitable.obj["value"].as_string();
+    std::unordered_map<std::string, SchemaBool> &array_map =
+        out_jitable.arrays[dom_idx].array_map;
+    conduit::Schema s;
+    s[arg1_field].set(array_map.at(arg1_field).schema);
+    s[arg2_field].set(array_map.at(arg2_field).schema);
+    s[arg3_field].set(array_map.at(arg3_field).schema);
+    array_map.insert(std::make_pair(filter_name, SchemaBool(s, true)));
+    out_jitable.obj["value"] = filter_name;
+    out_jitable.obj["type"] = "field";
+  }
+
   if(not_fused)
   {
-    const int arg1_port = inputs["arg1/port"].to_int32();
-    const int arg2_port = inputs["arg2/port"].to_int32();
-    const int arg3_port = inputs["arg3/port"].to_int32();
     const Kernel &arg1_kernel = *input_kernels[arg1_port];
     const Kernel &arg2_kernel = *input_kernels[arg2_port];
     const Kernel &arg3_kernel = *input_kernels[arg3_port];
@@ -3075,23 +3103,49 @@ JitableFunctions::vector()
 //-----------------------------------------------------------------------------
 //{{{
 
-JitExecutionPolicy::JitExecutionPolicy(const Jitable &jitable)
-    : jitable(jitable)
+JitExecutionPolicy::JitExecutionPolicy()
 {
 }
 
 // fuse policy
 bool
-FusePolicy::should_execute()
+FusePolicy::should_execute(const Jitable &jitable) const
 {
   return false;
 }
 
+// unique name
+std::string
+FusePolicy::get_name() const
+{
+  return "fuse";
+}
+
 // roundtrip policy
 bool
-RoundtripPolicy::should_execute()
+RoundtripPolicy::should_execute(const Jitable &jitable) const
+{
+  return jitable.can_execute();
+}
+
+std::string
+RoundtripPolicy::get_name() const
+{
+  return "roundtrip";
+}
+
+// Used when we need to execute (e.g. for a top-level JitFilter or a JitFilter
+// feeding into a reduction)
+bool
+AlwaysExecutePolicy::should_execute(const Jitable &jitable) const
 {
   return true;
+}
+
+std::string
+AlwaysExecutePolicy::get_name() const
+{
+  return "always_execute";
 }
 
 //}}}
@@ -3300,7 +3354,7 @@ Jitable::fuse_vars(const Jitable &from)
 }
 
 bool
-Jitable::can_execute()
+Jitable::can_execute() const
 {
   return !(topology.empty() || topology == "none") &&
          !(association.empty() || association == "none") &&
@@ -3369,12 +3423,21 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     ASCENT_DATA_OPEN("domain execute");
     conduit::Node &dom = dataset.child(dom_idx);
 
-    const conduit::Node &cur_dom_info = dom_info.child(dom_idx);
+    conduit::Node &cur_dom_info = dom_info.child(dom_idx);
 
     const Kernel &kernel = kernels.at(cur_dom_info["kernel_type"].as_string());
 
+    if(kernel.expr.empty())
+    {
+      ASCENT_ERROR("Cannot compile a kernel with an empty expr field. This "
+                   "shouldn't happen, call someone.");
+    }
+
     // the final number of entries
     const int entries = cur_dom_info["entries"].to_int64();
+
+    // pass entries into args just before we need to execute
+    cur_dom_info["args/entries"] = entries;
 
     // create output array schema and put it in array_map
     conduit::Schema output_schema;
@@ -3393,7 +3456,8 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
                   component_names,
                   output_schema);
 
-    arrays[dom_idx].array_map["output"] = output_schema;
+    arrays[dom_idx].array_map.insert(
+        std::make_pair("output", SchemaBool(output_schema, false)));
 
     // allocate the output array in conduit
     conduit::Node &n_output = dom["fields/" + field_name];
@@ -3419,17 +3483,22 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     conduit::Node new_args;
     for(const auto &array : arrays[dom_idx].array_map)
     {
+      if(array.second.codegen_array)
+      {
+        // codegen_arrays are false arrays used by the codegen
+        continue;
+      }
       if(cur_dom_info["args"].has_path(array.first))
       {
         detail::device_alloc_array(cur_dom_info["args/" + array.first],
-                                   array.second,
+                                   array.second.schema,
                                    new_args,
                                    array_buffers,
                                    slices);
       }
       else
       {
-        // if it's not in args it doesn't point to any data so it's a temporary
+        // not in args so doesn't point to any data, allocate a temporary
         if(array.first == "output")
         {
           output_index = array_buffers.size();
@@ -3440,7 +3509,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
           // in Serial and OpenMP we don't need a separate output array for
           // the device, so just pass it conduit's array
           detail::device_alloc_temporary(array.first,
-                                         array.second,
+                                         array.second.schema,
                                          new_args,
                                          array_buffers,
                                          slices,
@@ -3449,7 +3518,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
         else
         {
           detail::device_alloc_temporary(array.first,
-                                         array.second,
+                                         array.second.schema,
                                          new_args,
                                          array_buffers,
                                          slices,
@@ -3558,9 +3627,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
   ASCENT_DATA_CLOSE();
 }
 // }}}
-//-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

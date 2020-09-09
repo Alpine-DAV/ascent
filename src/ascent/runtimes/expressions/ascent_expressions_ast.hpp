@@ -1,8 +1,12 @@
 #ifndef ASCENT_RUNTIME_AST
 #define ASCENT_RUNTIME_AST
+#include "ascent_derived_jit.hpp"
 #include "flow_workspace.hpp"
 #include <iostream>
 #include <vector>
+
+// alias because it's too long
+namespace expressions = ascent::runtime::expressions;
 
 class ASTVisitor;
 
@@ -251,7 +255,7 @@ public:
   virtual void visit(const ASTExpressionList &list) = 0;
 };
 
-class PrintVisitor : public ASTVisitor
+class PrintVisitor final : public ASTVisitor
 {
 public:
   void visit(const ASTExpression &expr) override;
@@ -269,10 +273,13 @@ public:
   void visit(const ASTExpressionList &list) override;
 };
 
-class BuildGraphVisitor : public ASTVisitor
+class BuildGraphVisitor final : public ASTVisitor
 {
 public:
-  BuildGraphVisitor(flow::Workspace &w, const bool verbose);
+  BuildGraphVisitor(
+      flow::Workspace &w,
+      const std::shared_ptr<const expressions::JitExecutionPolicy> exec_policy,
+      const bool verbose);
   void visit(const ASTExpression &expr) override;
   void visit(const ASTInteger &expr) override;
   void visit(const ASTDouble &expr) override;
@@ -301,6 +308,7 @@ private:
   // ex: (x - min) / (max - min) then min should only be evaluated once
   conduit::Node subexpr_cache;
   int ast_counter = 0;
+  const std::shared_ptr<const expressions::JitExecutionPolicy> exec_policy;
 };
 
 #endif

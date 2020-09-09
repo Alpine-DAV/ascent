@@ -1050,7 +1050,12 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   try
   {
     flow::Timer build_graph_timer;
-    BuildGraphVisitor build_graph(w, false);
+    // change the execution policy here
+    // change false to true to generate a graph with verbose names
+    BuildGraphVisitor build_graph(
+        w, std::make_shared<const FusePolicy>(), false);
+    // BuildGraphVisitor build_graph(
+    //     w, std::make_shared<const RoundtripPolicy>(), false);
     expression->accept(&build_graph);
     root = build_graph.get_output();
     // if root is a derived field add a JitFilter to execute it
@@ -1059,18 +1064,21 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
       conduit::Node params;
       params["func"] = "execute";
       params["filter_name"] = "jit_execute";
-      params["execute"] = true;
       params["field_name"] = expr_name;
       conduit::Node &inp = params["inputs/jitable"];
       inp = root;
       inp["port"] = 0;
-      w.graph().add_filter(register_jit_filter(w, 1), "jit_execute", params);
+      w.graph().add_filter(
+          register_jit_filter(
+              w, 1, std::make_shared<const AlwaysExecutePolicy>()),
+          "jit_execute",
+          params);
       // src, dest, port
       w.graph().connect(root["filter_name"].as_string(), "jit_execute", 0);
       root["filter_name"] = "jit_execute";
       root["type"] = "field";
     }
-    // w.graph().save_dot_html("ascent_expressions_graph.html");
+    w.graph().save_dot_html("ascent_expressions_graph.html");
     ASCENT_DATA_ADD("build_graph time", build_graph_timer.elapsed());
     flow::Timer execute_timer;
     w.execute();

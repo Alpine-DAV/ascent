@@ -1,5 +1,4 @@
 #include "ascent_expressions_ast.hpp"
-#include "ascent_derived_jit.hpp"
 #include "ascent_expression_filters.hpp"
 #include "ascent_expressions_parser.hpp"
 #include <array>
@@ -12,7 +11,6 @@
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
 
-using namespace std;
 /* -- Code Generation -- */
 
 namespace detail
@@ -194,19 +192,19 @@ PrintVisitor::visit(const ASTExpression &expr)
 void
 PrintVisitor::visit(const ASTInteger &expr)
 {
-  std::cout << "Creating integer: " << expr.m_value << endl;
+  std::cout << "Creating integer: " << expr.m_value << std::endl;
 }
 
 void
 PrintVisitor::visit(const ASTDouble &expr)
 {
-  std::cout << "Creating double: " << expr.m_value << endl;
+  std::cout << "Creating double: " << expr.m_value << std::endl;
 }
 
 void
 PrintVisitor::visit(const ASTIdentifier &expr)
 {
-  std::cout << "Creating identifier reference: " << expr.m_name << endl;
+  std::cout << "Creating identifier reference: " << expr.m_name << std::endl;
 }
 
 void
@@ -290,7 +288,7 @@ PrintVisitor::visit(const ASTBinaryOp &expr)
 void
 PrintVisitor::visit(const ASTString &expr)
 {
-  std::cout << "Creating string " << expr.m_name << endl;
+  std::cout << "Creating string " << expr.m_name << std::endl;
 }
 
 void
@@ -345,8 +343,11 @@ PrintVisitor::visit(const ASTExpressionList &list)
 //-----------------------------------------------------------------------------
 //{{{
 
-BuildGraphVisitor::BuildGraphVisitor(flow::Workspace &w, const bool verbose)
-    : w(w), verbose(verbose)
+BuildGraphVisitor::BuildGraphVisitor(
+    flow::Workspace &w,
+    const std::shared_ptr<const expressions::JitExecutionPolicy> exec_policy,
+    const bool verbose)
+    : w(w), verbose(verbose), exec_policy(exec_policy)
 {
 }
 
@@ -696,7 +697,6 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
       conduit::Node params;
       params["func"] = func["filter_name"].as_string();
       params["filter_name"] = name;
-      params["execute"] = false;
       int port = 0;
       for(auto const &arg : args_map)
       {
@@ -707,7 +707,7 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
       }
 
       w.graph().add_filter(
-          ascent::runtime::expressions::register_jit_filter(w, args_map.size()),
+          expressions::register_jit_filter(w, args_map.size(), exec_policy),
           name,
           params);
 
@@ -783,16 +783,19 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
             conduit::Node params;
             params["func"] = "execute";
             params["filter_name"] = jit_execute_name;
-            params["execute"] = true;
             conduit::Node &inp = params["inputs/jitable"];
             inp = *arg.second;
             inp["port"] = 0;
             w.graph().add_filter(
-                ascent::runtime::expressions::register_jit_filter(w, 1),
+                expressions::register_jit_filter(
+                    w,
+                    1,
+                    std::make_shared<const expressions::AlwaysExecutePolicy>()),
                 jit_execute_name,
                 params);
             // src, dest, port
             w.graph().connect(inp_filter_name, jit_execute_name, 0);
+            subexpr_cache[jit_execute_name];
           }
           inp_filter_name = jit_execute_name;
         }
@@ -914,7 +917,6 @@ BuildGraphVisitor::visit(const ASTIfExpr &expr)
     conduit::Node params;
     params["func"] = "expr_if";
     params["filter_name"] = name;
-    params["execute"] = false;
     conduit::Node &condition = params["inputs/condition"];
     condition = n_condition;
     condition["port"] = 0;
@@ -926,7 +928,7 @@ BuildGraphVisitor::visit(const ASTIfExpr &expr)
     p_else["port"] = 2;
 
     w.graph().add_filter(
-        ascent::runtime::expressions::register_jit_filter(w, 3), name, params);
+        expressions::register_jit_filter(w, 3, exec_policy), name, params);
     // src, dest, port
     w.graph().connect(n_condition["filter_name"].as_string(), name, 0);
     w.graph().connect(n_if["filter_name"].as_string(), name, 1);
@@ -1102,7 +1104,6 @@ BuildGraphVisitor::visit(const ASTBinaryOp &expr)
     conduit::Node params;
     params["func"] = "binary_op";
     params["filter_name"] = name;
-    params["execute"] = false;
     params["op_string"] = op_str;
     conduit::Node &l_param = params["inputs/lhs"];
     l_param = l_in;
@@ -1112,7 +1113,7 @@ BuildGraphVisitor::visit(const ASTBinaryOp &expr)
     r_param["port"] = 1;
 
     w.graph().add_filter(
-        ascent::runtime::expressions::register_jit_filter(w, 2), name, params);
+        expressions::register_jit_filter(w, 2, exec_policy), name, params);
 
     // src, dest, port
     w.graph().connect(l_in["filter_name"].as_string(), name, 0);
@@ -1315,14 +1316,11 @@ BuildGraphVisitor::visit(const ASTDotAccess &expr)
     conduit::Node params;
     params["func"] = "expr_dot";
     params["filter_name"] = f_name;
-    params["execute"] = false;
     params["inputs/obj"] = jit_filter_obj;
     params["inputs/obj/port"] = 0;
     params["name"] = expr.name;
     w.graph().add_filter(
-        ascent::runtime::expressions::register_jit_filter(w, 1),
-        f_name,
-        params);
+        expressions::register_jit_filter(w, 1, exec_policy), f_name, params);
     // src, dest, port
     w.graph().connect(input_obj["filter_name"].as_string(), f_name, 0);
   }
@@ -1399,10 +1397,7 @@ BuildGraphVisitor::visit(const ASTExpressionList &list)
 
   conduit::Node params;
   w.graph().add_filter(
-      ascent::runtime::expressions::register_expression_list_filter(w,
-                                                                    list_size),
-      name,
-      params);
+      expressions::register_expression_list_filter(w, list_size), name, params);
 
   // Connect all items to the list
   for(size_t i = 0; i < list_size; ++i)

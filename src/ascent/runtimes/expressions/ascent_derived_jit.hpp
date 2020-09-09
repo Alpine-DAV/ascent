@@ -133,6 +133,20 @@ private:
   std::vector<T> insertion_ordered_data;
 };
 
+// codegen_arrays are a way to trick the codegen into bundling multiple fields
+// into a single vector field by constructing a false schema. Their components
+// are accessed using just the "component_name" rather than
+// "<array_name>_<component_name>". They are not packed into args.
+class SchemaBool
+{
+public:
+  SchemaBool(const conduit::Schema &schema, bool codegen_array)
+      : schema(schema), codegen_array(codegen_array){};
+
+  conduit::Schema schema;
+  bool codegen_array;
+};
+
 class ArrayCode
 {
 public:
@@ -148,7 +162,7 @@ public:
                     const std::string &idx,
                     const std::string &component) const;
 
-  std::unordered_map<std::string, conduit::Schema> array_map;
+  std::unordered_map<std::string, SchemaBool> array_map;
 };
 
 class MathCode
@@ -349,7 +363,7 @@ public:
   }
 
   void fuse_vars(const Jitable &from);
-  bool can_execute();
+  bool can_execute() const;
   void execute(conduit::Node &dataset, const std::string &field_name);
   std::string generate_kernel(const int dom_idx,
                               const conduit::Node &args) const;
@@ -429,23 +443,42 @@ public:
 class JitExecutionPolicy
 {
 public:
-  JitExecutionPolicy(const Jitable &jitable);
-  virtual bool should_execute() = 0;
+  JitExecutionPolicy();
+  virtual bool should_execute(const Jitable &jitable) const = 0;
+  virtual std::string get_name() const = 0;
+};
+
+class FusePolicy final : public JitExecutionPolicy
+{
+public:
+  bool should_execute(const Jitable &jitable) const override;
+  std::string get_name() const override;
+};
+
+class AlwaysExecutePolicy final : public JitExecutionPolicy
+{
+public:
+  bool should_execute(const Jitable &jitable) const override;
+  std::string get_name() const override;
+};
+
+class RoundtripPolicy final : public JitExecutionPolicy
+{
+public:
+  bool should_execute(const Jitable &jitable) const override;
+  std::string get_name() const override;
+};
+
+// fuse until the number of bytes in args exceeds a threshold
+class InputBytesPolicy final : public JitExecutionPolicy
+{
+public:
+  InputBytesPolicy(const size_t num_bytes);
+  bool should_execute(const Jitable &jitable) const override;
+  std::string get_name() const override;
 
 private:
-  const Jitable &jitable;
-};
-
-class FusePolicy : JitExecutionPolicy
-{
-public:
-  bool should_execute();
-};
-
-class RoundtripPolicy : JitExecutionPolicy
-{
-public:
-  bool should_execute();
+  const size_t num_bytes;
 };
 
 void pack_topology(const std::string &topo_name,

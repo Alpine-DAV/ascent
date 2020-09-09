@@ -51,6 +51,7 @@
 #ifndef ASCENT_EXPRESSION_FILTERS
 #define ASCENT_EXPRESSION_FILTERS
 
+#include "ascent_derived_jit.hpp"
 #include <ascent.hpp>
 #include <flow_filter.hpp>
 
@@ -527,7 +528,8 @@ public:
 class JitFilter : public ::flow::Filter
 {
 public:
-  JitFilter(const int num_inputs);
+  JitFilter(const int num_inputs,
+            const std::shared_ptr<const JitExecutionPolicy> exec_policy);
   ~JitFilter();
 
   virtual void declare_interface(conduit::Node &i);
@@ -536,8 +538,12 @@ public:
 
 private:
   int num_inputs;
+  const std::shared_ptr<const JitExecutionPolicy> exec_policy;
 };
-std::string register_jit_filter(flow::Workspace &w, const int num_inputs);
+std::string register_jit_filter(
+    flow::Workspace &w,
+    const int num_inputs,
+    const std::shared_ptr<const JitExecutionPolicy> exec_policy);
 
 class PointAndAxis : public ::flow::Filter
 {
@@ -561,7 +567,7 @@ public:
   virtual void execute();
 };
 
-class Bin: public ::flow::Filter
+class Bin : public ::flow::Filter
 {
 public:
   Bin();

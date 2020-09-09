@@ -62,7 +62,6 @@
 //-----------------------------------------------------------------------------
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_conduit_reductions.hpp"
-#include "ascent_derived_jit.hpp"
 #include <ascent_logging.hpp>
 #include <ascent_runtime_param_check.hpp>
 #include <flow_graph.hpp>
@@ -811,7 +810,6 @@ DotAccess::execute()
   // fills attrs for basic types like vectors
   detail::fill_attrs(*n_obj);
 
-  // TODO test accessing non-existant attribute
   if(!n_obj->has_path("attrs/" + name))
   {
     n_obj->print();
@@ -2849,9 +2847,11 @@ ArraySum::execute()
 }
 
 //-----------------------------------------------------------------------------
-JitFilter::JitFilter(const int num_inputs) : Filter()
+JitFilter::JitFilter(
+    const int num_inputs,
+    const std::shared_ptr<const JitExecutionPolicy> exec_policy)
+    : Filter(), num_inputs(num_inputs), exec_policy(exec_policy)
 {
-  this->num_inputs = num_inputs;
 }
 
 //-----------------------------------------------------------------------------
@@ -2865,7 +2865,7 @@ void
 JitFilter::declare_interface(Node &i)
 {
   stringstream ss;
-  ss << "jit_filter_" << num_inputs;
+  ss << "jit_filter_" << num_inputs << "_" << exec_policy->get_name();
   i["type_name"] = ss.str();
   for(int inp_num = 0; inp_num < num_inputs; ++inp_num)
   {
@@ -2883,7 +2883,6 @@ JitFilter::verify_params(const conduit::Node &params, conduit::Node &info)
   info.reset();
   bool res = filters::check_string("func", params, info, true);
   res &= filters::check_string("filter_name", params, info, true);
-  res &= filters::check_numeric("execute", params, info, true);
   if(!params.has_path("inputs"))
   {
     info["errors"].append() = "Missing required JitFilter parameter 'inputs'";
@@ -2939,23 +2938,28 @@ fused_kernel_type(const std::vector<std::string> kernel_types)
 }
 
 // each jitable has kernels and dom_info
-// dom_info holds number_of entries, kernel_type, and args for the dom
-// entries is a list to allow for recentering???
+// dom_info holds number of entries, kernel_type, and args for the dom
 // kernel_type maps to a kernel in kernels
 // each kernel has 3 bodies of code:
-// expr: the main line of code at the end of the for loop
+// expr: the main expression being transformed (e.g topo_volume * density[item])
 // for_body: for-loop body that holds code needed for expr
 // kernel_body: code that we already generated but aren't touching (i.e. past
-// for loops)
-//
-// TODO check num_components and give errors
+// for-loops). for_body gets wrapped in a for-loop and added to kernel_body when
+// we need to generate an temporary field.
 void
 JitFilter::execute()
 {
   const std::string &func = params()["func"].as_string();
   const std::string &filter_name = params()["filter_name"].as_string();
-  const bool execute = params()["execute"].to_uint8();
   const conduit::Node &inputs = params()["inputs"];
+
+  // don't execute if we just executed
+  if(func == "execute" && input(0).check_type<conduit::Node>())
+  {
+    set_output(input<conduit::Node>(0));
+    return;
+  }
+
   // create a vector of input_jitables ot be fused
   std::vector<const Jitable *> input_jitables;
   // keep around the new jitables we create
@@ -2969,9 +2973,8 @@ JitFilter::execute()
   {
     const std::string input_fname = inputs.child(i)["filter_name"].as_string();
     const std::string type = inputs.child(i)["type"].as_string();
-    // something that was determined a jitable at "compile time" may have been
-    // executed at runtime and turned into a field in which case
-    // check_type<Jitable> would fail
+    // A jitable at "compile time" may have been executed at runtime so we
+    // need check_type to get the runtime type to make sure it hasn't executed
     if(type == "jitable" && input(i).check_type<Jitable>())
     {
       // push back an existing jitable
@@ -2991,29 +2994,27 @@ JitFilter::execute()
         // domain (kernel types)
         const std::string topo_name = (*inp)["value"].as_string();
         jitable.topology = topo_name;
-        std::unordered_set<std::string> built_kernel_types;
         for(int i = 0; i < num_domains; ++i)
         {
           const conduit::Node &dom = dataset->child(i);
-          const conduit::Node &n_topo = dom["topologies/" + topo_name];
-          const std::string coords_name = n_topo["coordset"].as_string();
-          const std::string topo_type = n_topo["type"].as_string();
 
           std::unique_ptr<Topology> topo = topologyFactory(topo_name, dom);
           pack_topology(topo_name,
                         dom,
                         jitable.dom_info.child(i)["args"],
                         jitable.arrays[i]);
-          const std::string kernel_type = topo_name + "=" + topo_type;
+          const std::string kernel_type = topo_name + "=" + topo->topo_type;
           jitable.dom_info.child(i)["kernel_type"] = kernel_type;
           jitable.kernels[kernel_type];
-          jitable.obj = *inp;
-          built_kernel_types.insert(kernel_type);
         }
+        jitable.obj = *inp;
       }
       else
       {
-        // these only build the default kernel type
+        // default kernel type means we don't need to generate any
+        // topology-specific code.
+        // During kernel fusion the type of the output kernel is the "union" of
+        // the types of the input kernels.
         Kernel &default_kernel = jitable.kernels["default"];
         for(int i = 0; i < num_domains; ++i)
         {
@@ -3042,9 +3043,8 @@ JitFilter::execute()
         // field or a jitable that was executed at runtime
         else if(type == "field" || type == "jitable")
         {
-          const std::string &field_name = (*inp)["value"].as_string();
+          std::string field_name = (*inp)["value"].as_string();
           // error checking and dom args information
-          int num_components;
           for(int i = 0; i < num_domains; ++i)
           {
             const conduit::Node &dom = dataset->child(i);
@@ -3057,13 +3057,17 @@ JitFilter::execute()
             std::string values_path = "values";
             if(inp->has_path("component"))
             {
-              values_path += "/" + (*inp)["component"].as_string();
+              const std::string &component = (*inp)["component"].as_string();
+              values_path += "/" + component;
+              field_name += "_" + component;
               default_kernel.num_components = 1;
             }
             else
             {
-              default_kernel.num_components = field.number_of_children();
+              const int num_children = field[values_path].number_of_children();
+              default_kernel.num_components = std::max(1, num_children);
             }
+
             bool is_float64;
             if(field[values_path].number_of_children() > 1)
             {
@@ -3073,13 +3077,11 @@ JitFilter::execute()
             {
               is_float64 = field[values_path].dtype().is_float64();
             }
-            // every domain should have the same number of components...
-            num_components = field[values_path].number_of_children();
+
             pack_array(field[values_path],
                        field_name,
                        cur_dom_info["args"],
                        jitable.arrays[i]);
-            cur_dom_info["args/" + field_name].set_external(field[values_path]);
 
             // update number of entries
             int entries;
@@ -3124,26 +3126,28 @@ JitFilter::execute()
             {
               jitable.association = assoc_str;
             }
+
+            // Used to determine if we need to generate an entire derived field
+            // beforehand for things like gradient(field).
+            // obj["value"] will have the name of the field, "value" goes away
+            // as soon as we do something like field + 1, indicating we are no
+            // longer dealing with an original field and will have to generate
+            // it via a for-loop.
+            jitable.obj["value"] = field_name;
+            jitable.obj["type"] = "field";
           }
-          // Used to determine if we need to generate an entire derived field
-          // beforehand for things like gradient(field).
-          // obj["value"] will have the name of the field in the dataset,
-          // "value" goes away as soon as we do something like field + 1,
-          // indicating we are no longer dealing with an original field and will
-          // have to generate it.
-          jitable.obj = *inp;
-          // TODO we assume that arrays don't have different strides/offsets in
-          // different domains so just use the first domain array for code gen
-          default_kernel.num_components = std::max(1, num_components);
+          // We assume that fields don't have different strides/offsets in
+          // different domains (otherwise we might need to compile a kernel for
+          // every domain) so just use the first domain array for codegen
           if(default_kernel.num_components == 1)
           {
             default_kernel.expr = jitable.arrays[0].index(field_name, "item");
           }
           else
           {
-            default_kernel.for_body.insert("double " + field_name + "_item[" +
-                                           std::to_string(num_components) +
-                                           "];\n");
+            default_kernel.for_body.insert(
+                "double " + field_name + "_item[" +
+                std::to_string(default_kernel.num_components) + "];\n");
             for(int i = 0; i < default_kernel.num_components; ++i)
             {
               default_kernel.for_body.insert(
@@ -3177,7 +3181,8 @@ JitFilter::execute()
   }
 
   // some functions need to pack the topology
-  // hack: add a new input jitable with the topology
+  // hack: add a new input jitable to the end with the topology (some of this
+  // code is duplicated from when type="topo")
   if(func == "gradient" || func == "vorticity")
   {
     new_jitables.emplace_back(num_domains);
@@ -3207,7 +3212,7 @@ JitFilter::execute()
   }
   else
   {
-    // these are functions that can just be called in OCCA
+    // These are functions that can just be called in OCCA
     // filter_name from the function signature : function name in OCCA
     std::map<std::string, std::string> builtin_funcs = {
         {"field_field_max", "max"},
@@ -3291,16 +3296,8 @@ JitFilter::execute()
     }
   }
 
-  if(execute)
-  // if(out_jitable->can_execute())
+  if(exec_policy->should_execute(*out_jitable))
   {
-    // pass entries into args just before we need to execute
-    for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
-    {
-      conduit::Node &cur_dom_info = out_jitable->dom_info.child(dom_idx);
-      cur_dom_info["args/entries"] = cur_dom_info["entries"];
-    }
-
     std::string field_name;
     if(params().has_path("field_name"))
     {
@@ -3327,27 +3324,46 @@ JitFilter::execute()
 }
 
 //-----------------------------------------------------------------------------
-Filter *
-JitFilterFactoryMethod(const std::string &filter_type_name)
+class JitFilterFactoryFunctor
 {
-  // "jit_filter_" is 11 characters long
-  const std::string num_inputs_str =
-      filter_type_name.substr(11, filter_type_name.size() - 11);
-  const int num_inputs = std::stoi(num_inputs_str);
-  return new JitFilter(num_inputs);
-}
+public:
+  static void
+  set(const int num_inputs_,
+      const std::shared_ptr<const JitExecutionPolicy> exec_policy_)
+  {
+    num_inputs = num_inputs_;
+    exec_policy = exec_policy_;
+  }
+  static Filter *
+  JitFilterFactory(const std::string &filter_type_name)
+  {
+    return new JitFilter(num_inputs, exec_policy);
+  }
+
+private:
+  static int num_inputs;
+  static std::shared_ptr<const JitExecutionPolicy> exec_policy;
+};
+
+// apparently I have to do this for the linker to be happy
+int JitFilterFactoryFunctor::num_inputs;
+std::shared_ptr<const JitExecutionPolicy> JitFilterFactoryFunctor::exec_policy;
 
 //-----------------------------------------------------------------------------
-// register a JitFilter with the correct number of inputs or return its
-// type_name if it exists
+// register a JitFilter with the correct number of inputs and execution policy
+// or return its type_name if it exists
 std::string
-register_jit_filter(flow::Workspace &w, const int num_inputs)
+register_jit_filter(flow::Workspace &w,
+                    const int num_inputs,
+                    const std::shared_ptr<const JitExecutionPolicy> exec_policy)
 {
+  JitFilterFactoryFunctor::set(num_inputs, exec_policy);
   std::stringstream ss;
-  ss << "jit_filter_" << num_inputs;
+  ss << "jit_filter_" << num_inputs << "_" << exec_policy->get_name();
   if(!w.supports_filter_type(ss.str()))
   {
-    flow::Workspace::register_filter_type(ss.str(), JitFilterFactoryMethod);
+    flow::Workspace::register_filter_type(
+        ss.str(), JitFilterFactoryFunctor::JitFilterFactory);
   }
   return ss.str();
 }
