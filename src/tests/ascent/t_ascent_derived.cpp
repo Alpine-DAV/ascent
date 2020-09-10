@@ -163,8 +163,12 @@ TEST(ascent_expressions, derived_expressions)
   //        "(max(field('braid')).value - min(field('braid')).value)";
   // eval.evaluate(expr);
 
-  expr = "1 + field('braid') + 1";
-  eval.evaluate(expr);
+  // expr = "1 + field('braid') + 1";
+  // eval.evaluate(expr);
+
+  // expr = "f1 = 1 + field('braid') \n"
+  //        "f1 + 1";
+  // eval.evaluate(expr);
 
   // expr = "field('field') * topo('mesh').cell.volume";
   // eval.evaluate(expr, "mass");
@@ -257,7 +261,16 @@ TEST(ascent_expressions, derived_temperature)
   // expr = "vorticity(field('uinterp', 'c0'))";
   // eval.evaluate(expr, "uinterp_vorticity");
 
-  expr = "vorticity(vector(field('uinterp', 'c0'), field('vinterp', 'c0'), field('winterp', 'c0')))";
+  // expr = "vorticity(vector(field('uinterp', 'c0'), field('vinterp', 'c0'), field('winterp', 'c0')))";
+  // eval.evaluate(expr, "velocity_vorticity");
+
+  expr = "du = gradient(field('uinterp', 'c0'))\n"
+         "dv = gradient(field('vinterp', 'c0'))\n"
+         "dw = gradient(field('winterp', 'c0'))\n"
+         "w_x = dw.y - dv.z\n"
+         "w_y = du.z - dw.x\n"
+         "w_z = dv.x - du.y\n"
+         "vector(w_x, w_y, w_z)";
   eval.evaluate(expr, "velocity_vorticity");
 
   // expr = "vector(field('uinterp', 'c0'), field('vinterp', 'c0'), field('winterp', 'c0'))";

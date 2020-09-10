@@ -1044,7 +1044,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     ASCENT_ERROR("Expression parsing error: " << msg << " in '" << expr << "'");
   }
 
-  ASTExpression *expression = get_result();
+  ASTNode *root_node = get_result();
 
   conduit::Node root;
   try
@@ -1056,7 +1056,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
         w, std::make_shared<const FusePolicy>(), false);
     // BuildGraphVisitor build_graph(
     //     w, std::make_shared<const RoundtripPolicy>(), false);
-    expression->accept(&build_graph);
+    root_node->accept(&build_graph);
     root = build_graph.get_output();
     // if root is a derived field add a JitFilter to execute it
     if(root["type"].as_string() == "jitable")
@@ -1086,7 +1086,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   }
   catch(std::exception &e)
   {
-    delete expression;
+    delete root_node;
     w.reset();
     ASCENT_ERROR("Error while executing expression '" << expr
                                                       << "': " << e.what());
@@ -1151,7 +1151,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   m_cache.m_data[cache_entry.str()] = return_val;
 
-  delete expression;
+  delete root_node;
   w.reset();
   ASCENT_DATA_ADD("Device high water mark", ArrayRegistry::high_water_mark());
   ASCENT_DATA_ADD("Current Device usage ", ArrayRegistry::device_usage());

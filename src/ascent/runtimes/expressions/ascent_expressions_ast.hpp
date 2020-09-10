@@ -55,6 +55,27 @@ public:
 
 using ASTNamedExpressionList = std::vector<ASTNamedExpression *>;
 
+class ASTBlock : public ASTNode
+{
+public:
+  ASTNamedExpressionList *stmts;
+  ASTExpression *expr;
+  ASTBlock(ASTNamedExpressionList *stmts, ASTExpression *expr)
+      : stmts(stmts), expr(expr)
+  {
+  }
+  virtual void accept(ASTVisitor *visitor) const override;
+
+  virtual ~ASTBlock()
+  {
+    delete expr;
+    for(auto stmt : *stmts)
+    {
+      delete stmt;
+    }
+  }
+};
+
 class ASTInteger : public ASTExpression
 {
 public:
@@ -240,6 +261,7 @@ public:
   virtual ~ASTVisitor()
   {
   }
+  virtual void visit(const ASTBlock &block) = 0;
   virtual void visit(const ASTExpression &expr) = 0;
   virtual void visit(const ASTInteger &expr) = 0;
   virtual void visit(const ASTDouble &expr) = 0;
@@ -258,6 +280,7 @@ public:
 class PrintVisitor final : public ASTVisitor
 {
 public:
+  void visit(const ASTBlock &block) override;
   void visit(const ASTExpression &expr) override;
   void visit(const ASTInteger &expr) override;
   void visit(const ASTDouble &expr) override;
@@ -280,6 +303,8 @@ public:
       flow::Workspace &w,
       const std::shared_ptr<const expressions::JitExecutionPolicy> exec_policy,
       const bool verbose);
+
+  void visit(const ASTBlock &block) override;
   void visit(const ASTExpression &expr) override;
   void visit(const ASTInteger &expr) override;
   void visit(const ASTDouble &expr) override;
@@ -309,6 +334,8 @@ private:
   conduit::Node subexpr_cache;
   int ast_counter = 0;
   const std::shared_ptr<const expressions::JitExecutionPolicy> exec_policy;
+  // we only have one scope so no need for a stack of symbol tables
+  conduit::Node symbol_table;
 };
 
 #endif

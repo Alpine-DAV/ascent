@@ -2736,6 +2736,10 @@ JitableFunctions::expr_dot()
   {
     ASCENT_ERROR("JIT: Unknown obj:\n" << obj.to_yaml());
   }
+  if(not_fused)
+  {
+    out_kernel.fuse_kernel(obj_kernel);
+  }
 }
 
 void

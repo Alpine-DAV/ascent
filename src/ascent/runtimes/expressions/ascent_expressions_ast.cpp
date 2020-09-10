@@ -113,6 +113,11 @@ is_field_type(const std::string &type)
 //-----------------------------------------------------------------------------
 //{{{
 void
+ASTBlock::accept(ASTVisitor *visitor) const
+{
+  visitor->visit(*this);
+}
+void
 ASTExpression::accept(ASTVisitor *visitor) const
 {
   visitor->visit(*this);
@@ -183,6 +188,22 @@ ASTExpressionList::accept(ASTVisitor *visitor) const
 // -- PrintVisitor
 //-----------------------------------------------------------------------------
 //{{{
+
+void
+PrintVisitor::visit(const ASTBlock &block)
+{
+  std::cout << "Creating block" << std::endl;
+
+  std::cout << "Creating statements" << std::endl;
+  for(auto stmt : *block.stmts)
+  {
+    stmt->accept(this);
+  }
+
+  std::cout << "Creating end expr" << std::endl;
+  block.expr->accept(this);
+}
+
 void
 PrintVisitor::visit(const ASTExpression &expr)
 {
@@ -353,6 +374,18 @@ BuildGraphVisitor::BuildGraphVisitor(
 
 //-----------------------------------------------------------------------------
 void
+BuildGraphVisitor::visit(const ASTBlock &block)
+{
+  for(auto stmt : *block.stmts)
+  {
+    stmt->accept(this);
+    symbol_table[stmt->key->m_name] = output;
+  }
+  block.expr->accept(this);
+}
+
+//-----------------------------------------------------------------------------
+void
 BuildGraphVisitor::visit(const ASTExpression &expr)
 {
   // placeholder to make binary op work with "not"
@@ -440,6 +473,14 @@ BuildGraphVisitor::visit(const ASTDouble &expr)
 void
 BuildGraphVisitor::visit(const ASTIdentifier &expr)
 {
+  // look in the symbol table before the cache
+  if(symbol_table.has_path(expr.m_name))
+  {
+    output = symbol_table[expr.m_name];
+    return;
+  }
+
+  // look in the cache
   std::stringstream ss;
   ss << "ident_" << expr.m_name;
   const std::string name = ss.str();
