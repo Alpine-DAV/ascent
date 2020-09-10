@@ -58,26 +58,30 @@ We hand out IP addresses and login info to attendees during these events.
 Using Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you have Docker installed you can obtain a Docker image with a ready-to-use ascent install from `Docker Hub <https://hub.docker.com/r/alpinedav/ascent/>`_. This image also includes a jupyter install to support running Ascent's tutorial notebooks.
+If you have Docker installed you can obtain a Docker image with a ready-to-use ascent install from `Docker Hub <https://hub.docker.com/r/alpinedav/ascent/>`_. This image also includes a Jupyter install to support running Ascent's tutorial notebooks.
 
-Fetch the latest Ascent image:
+
+To directly start the Jupyter Notebook server and run the tutorial notebooks, run:
 
 .. code::
 
-    docker pull alpinedav/ascent
+    docker run -p 8000:8000 -p 8888:8888 -p 10000:10000 -t -i alpinedav/ascent-jupyter
 
-After the download completes, create and run a container using this image:
+(The ``-p`` is used to forward ports between the container and your host machine, we use these ports to allow web servers on the container to serve data to the host.)
+
+This image automatically launches a Jupyter Notebook server on port 8888. Assuming you forwarded port 8888 from the Docker container to your host machine, you should be able to connect to the notebook server using http://localhost:8888. The current password for the notebook server is: ``learn``
+
+
+To start the base image and explore the install and tutorial examples with bash, run:
 
 .. code::
 
     docker run -p 8000:8000 -p 8888:8888 -p 10000:10000 -t -i alpinedav/ascent
 
-(The ``-p`` is used to forward ports between the container and your host machine, we use these ports to allow web servers on the container to serve data to the host.)
-
 
 You will now be at a bash prompt in you container.
 
-To add the proper paths to Python and MPI to your environment run:
+To add the proper paths to Python and MPI to your environment, run:
 
 .. code::
 
@@ -87,13 +91,13 @@ The ascent source code is at ``/home/user/ascent/src/``, and the install is at `
 The tutorial examples are at ``/home/user/ascent/install-debug/examples/ascent/tutorial/`` and the tutorial notebooks are at ``/home/user/ascent/install-debug/examples/ascent/tutorial/ascent_intro/notebooks/``.
 
 
-To launch the a jupyter notebook server run:
+You can also launch the a Jupyter Notebook server from this image using the following:
 
 .. code::
 
     ./ascent_docker_run_jupyter.sh
 
-This will launch a notebook server on port 8888. Assuming you forwarded port 8888 from the Docker container to your host machine, you should be able to connect to the notebook server using http://localhost:8888. The current password for the notebook server is: ``learn``
+The url (http://localhost:8888) and password (``learn``) are the same as above.
 
 
 .. _tutorial_setup_public_installs:

@@ -113,6 +113,7 @@ private:
     int               m_rank;
     conduit::Node     m_ghost_fields; // a list of strings
     std::string       m_default_output_dir;
+    std::string       m_session_name;
 
     bool              m_field_filtering;
     std::set<std::string> m_field_list;
@@ -130,7 +131,8 @@ private:
     void ConvertTriggerToFlow(const conduit::Node &trigger,
                               const std::string trigger_name);
     void ConvertQueryToFlow(const conduit::Node &trigger,
-                            const std::string trigger_name);
+                            const std::string trigger_name,
+                            const std::string prev_name);
     void CreatePipelines(const conduit::Node &pipelines);
     void CreateExtracts(const conduit::Node &extracts);
     void CreateTriggers(const conduit::Node &triggers);
@@ -142,6 +144,8 @@ private:
     void ConnectSource();
     void ConnectGraphs();
     void SourceFieldFilter();
+    void PaintNestsets();
+    void VerifyGhosts();
 
     void BuildGraph(const conduit::Node &actions);
     void EnsureDomainIds();

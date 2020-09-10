@@ -443,6 +443,7 @@ ASTMethodCall::build_graph(flow::Workspace &w)
     if(valid)
     {
       matched_index = i;
+      break;
     }
 
   next_overload:;
@@ -911,8 +912,26 @@ ASTDotAccess::build_graph(flow::Workspace &w)
   std::string path = "attrs/" + name + "/type";
   if(!obj.has_path(path))
   {
-    obj.print();
-    ASCENT_ERROR("Attribute " << name << " of " << obj_type << " not found");
+    std::stringstream ss;
+    if(obj.has_path("attrs"))
+    {
+      std::string attr_yaml = obj["attrs"].to_yaml();
+      if(attr_yaml == "")
+      {
+        ss<<" No known attribtues.";
+      }
+      else
+      {
+        ss<<" Known attributes: "<<attr_yaml;
+      }
+    }
+    else
+    {
+      ss<<" No known attributes.";
+    }
+    ASCENT_ERROR("Attribute " << name
+                 << " of " << obj_type
+                 << " not found."<<ss.str());
   }
   std::string res_type = obj[path].as_string();
 

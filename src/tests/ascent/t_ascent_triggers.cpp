@@ -143,6 +143,7 @@ TEST(ascent_triggers, simple_rick)
     conduit::Node info;
     ascent.info(info);
     std::string path = "expressions/" + condition + "/100/value";
+    info["expressions"].print();
     EXPECT_TRUE(info[path].to_int32() == 1);
     std::string msg = "A simple example of triggering actions based on a boolean"
                       " expression.";

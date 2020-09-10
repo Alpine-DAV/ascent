@@ -45,19 +45,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_mfem_data_adapter.hpp
+/// file: ascent_runtime_utils.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_MFEM_DATA_ADAPTER_HPP
-#define ASCENT_MFEM_DATA_ADAPTER_HPP
+#ifndef ASCENT_RUNTIME_VTKH_UTILS_HPP
+#define ASCENT_RUNTIME_VTKH_UTILS_HPP
 
-
-// conduit includes
-#include <conduit.hpp>
-#include <mfem.hpp>
-
-#include <ascent_exports.h>
+#include <ascent_data_object.hpp>
+#include <ascent_vtkh_collection.hpp>
+#include <string>
+#include <vector>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -65,82 +63,51 @@
 namespace ascent
 {
 
-
-class ASCENT_API MFEMDataSet
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime --
+//-----------------------------------------------------------------------------
+namespace runtime
 {
-public:
-  using FieldMap = std::map<std::string, mfem::GridFunction*>;
-  MFEMDataSet();
-  ~MFEMDataSet();
-  MFEMDataSet(mfem::Mesh *mesh);
 
-  void set_mesh(mfem::Mesh *mesh);
-  mfem::Mesh* get_mesh();
-
-  void add_field(mfem::GridFunction *field, const std::string &name);
-  bool has_field(const std::string &field_name);
-  mfem::GridFunction* get_field(const std::string &field_name);
-  int num_fields();
-  FieldMap get_field_map();
-  int cycle();
-  void cycle(int cycle);
-
-  double time();
-  void time(double time);
-protected:
-  FieldMap    m_fields;
-  mfem::Mesh *m_mesh;
-  int m_cycle;
-  double m_time;
-
-};
-
-struct ASCENT_API MFEMDomains
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::filters --
+//-----------------------------------------------------------------------------
+namespace filters
 {
-  std::vector<MFEMDataSet*> m_data_sets;
-  std::vector<int> m_domain_ids;
-  ~MFEMDomains()
-  {
-    for(int i = 0; i < m_data_sets.size(); ++i)
-    {
-      delete m_data_sets[i];
-    }
-  }
+
+namespace detail
+{
+
+
+// call an error due to an known field and build
+// up a list of altenative field names
+void field_error(const std::string field_name,
+                 const std::string filter_name,
+                 std::shared_ptr<VTKHCollection> collection);
+
+// build a list of possible topologies in this collection
+std::string possible_topologies(std::shared_ptr<VTKHCollection> collection);
+
+// resolve the name of the topology and throw errors if the
+// name cannot be deduced or found
+std::string resolve_topology(const conduit::Node &params,
+                             const std::string filter_name,
+                             std::shared_ptr<VTKHCollection> collection);
+
+} // namespace detail
+//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// Class that Handles Blueprint to mfem
-//-----------------------------------------------------------------------------
+// -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
-class ASCENT_API MFEMDataAdapter
-{
-public:
 
-    // convert blueprint mfem data to a mfem data set
-    // assumes "n" conforms to the mesh blueprint
-    //
-    //  conduit::blueprint::mesh::verify(n,info) == true
-    //
-    static MFEMDomains* BlueprintToMFEMDataSet(const conduit::Node &n,
-                                               const std::string &topo_name="");
-
-    static bool IsHighOrder(const conduit::Node &n);
-
-    static void Linearize(MFEMDomains *ho_domains, conduit::Node &output, const int refinement);
-
-    static void GridFunctionToBlueprintField(mfem::GridFunction *gf,
-                                            conduit::Node &out,
-                                            const std::string &main_topology_name = "main");
-    static void MeshToBlueprintMesh(mfem::Mesh *m,
-                                    conduit::Node &out,
-                                    const std::string &coordset_name = "coords",
-                                    const std::string &main_topology_name = "main",
-                                    const std::string &boundary_topology_name = "boundary");
-
-    static std::string ElementTypeToShapeName(mfem::Element::Type element_type);
-
+//-----------------------------------------------------------------------------
 };
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime --
+//-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
@@ -148,9 +115,10 @@ public:
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
+
+
+
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-

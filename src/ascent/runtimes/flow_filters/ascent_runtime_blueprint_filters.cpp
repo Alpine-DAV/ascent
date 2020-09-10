@@ -120,7 +120,6 @@ namespace runtime
 namespace filters
 {
 
-
 //-----------------------------------------------------------------------------
 BlueprintVerify::BlueprintVerify()
 :Filter()
@@ -868,7 +867,6 @@ Learn::execute()
 
     //set_output<DataObject>(d_input);
 }
-
 
 //-----------------------------------------------------------------------------
 };
