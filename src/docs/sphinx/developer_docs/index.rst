@@ -54,6 +54,7 @@ Developer Documentation
    BuildEnvironment
    VTKh_Filter
    Flow_Filter
+   CI
 
 ..
 

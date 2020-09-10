@@ -1,6 +1,6 @@
 #!/bin/bash
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2020, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -42,7 +42,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
+export TAG_BASE=alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel-tpls
 
-# exec docker build to create image
-echo "docker build -t alpinedav/ascent-ci:cuda-9.2-dev ."
-docker build -t alpinedav/ascent-ci:cuda-9.2-dev .
+date
+
+python ../build_and_tag.py ${TAG_BASE}
+
+date
