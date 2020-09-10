@@ -239,10 +239,10 @@ main()
     if [[ $keep_going -gt 0 ]]; then
         keep_going=$((keep_going - 1))
     fi
-    if ! testParaViewAscent paraview@develop+python3+mpi+osmesa~opengl2+shared${build_dependency} ascent@develop~vtkh${build_dependency}; then
+    if ! testParaViewAscent paraview@develop+python3+mpi+osmesa+shared${build_dependency} ascent@develop~vtkh${build_dependency}; then
         return 1
     fi
-    if ! testParaViewAscent paraview@develop+python3+mpi+osmesa~opengl2~shared${build_dependency} ascent@develop~vtkh${build_dependency}; then
+    if ! testParaViewAscent paraview@develop+python3+mpi+osmesa~shared${build_dependency} ascent@develop~vtkh${build_dependency}; then
         return 1
     fi
     echo "All Ascent ParaView tests passed"

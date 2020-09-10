@@ -228,20 +228,15 @@ int main (int argc, char *argv[])
     replay_opts["root_file"] = time_steps[i];
     if(rank == 0)
     {
-<<<<<<< HEAD
       std::cout<<"loading file "<<time_steps[i]<<"\n";
     }
-=======
-      std::cout<<"Root file "<<time_steps[i]<<"\n";
-    }
     flow::Timer load;
->>>>>>> develop
     ascent::hola("relay/blueprint/mesh", replay_opts, replay_data);
 #ifdef REPLAY_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     float load_time = load.elapsed();
-      
+
     flow::Timer publish;
     ascent.publish(replay_data);
 #ifdef REPLAY_MPI

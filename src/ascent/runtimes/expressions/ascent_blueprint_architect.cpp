@@ -722,7 +722,7 @@ num_points(const conduit::Node &domain, const std::string &topo_name)
   const conduit::Node &n_topo = domain["topologies/" + topo_name];
 
   const std::string c_name = n_topo["coordset"].as_string();
-  const conduit::Node n_coords = domain["coordsets/" + c_name];
+  const conduit::Node &n_coords = domain["coordsets/" + c_name];
   const std::string c_type = n_coords["type"].as_string();
 
   if(c_type == "uniform")
@@ -784,7 +784,7 @@ num_cells(const conduit::Node &domain, const std::string &topo_name)
   }
 
   const std::string c_name = n_topo["coordset"].as_string();
-  const conduit::Node n_coords = domain["coordsets/" + c_name];
+  const conduit::Node &n_coords = domain["coordsets/" + c_name];
 
   if(topo_type == "uniform")
   {
@@ -2252,7 +2252,7 @@ void paint_nestsets(const std::string nestset_name,
       if(coords.has_path("dims/k"))
       {
         is_3d = true;
-        el_dims[2] = topo["dims/k"].to_int32();
+        el_dims[2] = coords["dims/k"].to_int32();
       }
     }
     else if(coords["type"].as_string() == "rectilinear")
